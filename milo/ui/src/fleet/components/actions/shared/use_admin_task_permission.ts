@@ -12,39 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import { logging } from '@/common/tools/logging';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
 export function usePermission(group: string) {
   const fleetConsoleClient = useFleetConsoleClient();
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
+  const queryOptions = fleetConsoleClient.CheckPermission.query({
+    group: group,
+  });
+
+  const { data, isError, error } = useQuery({
+    ...queryOptions,
+    staleTime: 1 * 60 * 1000, // 1 minute
+    retry: false,
+  });
 
   useEffect(() => {
-    let isMounted = true;
-    const checkPermission = async () => {
-      try {
-        const resp = await fleetConsoleClient.CheckPermission({
-          group: group,
-        });
-        if (isMounted) {
-          setHasPermission(resp.hasPermission);
-        }
-      } catch (e) {
-        if (isMounted) {
-          logging.error(`Failed to check permission for ${group}:`, e);
-          setHasPermission(false);
-        }
-      }
-    };
-    void checkPermission();
-    return () => {
-      isMounted = false;
-    };
-  }, [fleetConsoleClient, group]);
+    if (isError && error) {
+      logging.error(`Failed to check permission for ${group}:`, error);
+    }
+  }, [isError, error, group]);
 
-  return hasPermission;
+  if (isError) {
+    return false;
+  }
+
+  return data?.hasPermission ?? null;
 }
 
 export function useAdminTaskPermission() {
