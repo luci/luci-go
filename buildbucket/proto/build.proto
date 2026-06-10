@@ -634,6 +634,9 @@ message BuildInfra {
       //
       // See go/buildbucket-settings.cfg for the list of global experiments.
       EXPERIMENT_REASON_GLOBAL_INACTIVE = 5;
+
+      // This experiment was explicitly set by Turbo CI.
+      EXPERIMENT_REASON_TURBO_CI = 6;
     }
 
     // This contains a map of all the experiments involved for this build, as

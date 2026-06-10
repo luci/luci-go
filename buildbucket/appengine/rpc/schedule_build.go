@@ -629,7 +629,7 @@ func activeGlobalExpsForBuilder(build *pb.Build, globalCfg *pb.SettingsCfg) (act
 // build.Infra.Buildbucket, build.Input and build.Exe must not be nil (see
 // setInfra, setInput and setExecutable respectively). The request must not set
 // legacy experiment values (see normalizeSchedule).
-func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg, build *pb.Build) {
+func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg, build *pb.Build, params *scheduleBuildsParams) {
 	globalExps, ignoredExps := activeGlobalExpsForBuilder(build, globalCfg)
 
 	// Set up the dice-rolling apparatus
@@ -662,7 +662,13 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 			exps[name] = 0
 		}
 	}
-	// 5. Remove all inactive global expirements
+	// 5. Set Turbo CI experiment for build created by RunStage
+	if params != nil && params.TurboCIHost != "" {
+		exps[bb.ExperimentRunInTurboCI] = 100
+		er[bb.ExperimentRunInTurboCI] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_TURBO_CI
+	}
+
+	// 6. Remove all inactive global experiments
 	ignoredExps.Iter(func(expName string) bool {
 		if _, ok := exps[expName]; ok {
 			er[expName] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_INACTIVE
@@ -1043,7 +1049,7 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.
 // determined at creation time.
 //
 // TODO(b/371610971): Refactor the code to use a struct to organize the arguments.
-func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, pRunID string, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg) (b *pb.Build) {
+func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, pRunID string, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg, params *scheduleBuildsParams) (b *pb.Build) {
 	b = &pb.Build{
 		Builder:         req.Builder,
 		Critical:        cfg.GetCritical(),
@@ -1081,7 +1087,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setInput(ctx, req, cfg, b)
 	setTags(req, b, pRunID)
 	setTimeouts(req, cfg, b)
-	setExperiments(ctx, req, cfg, globalCfg, b)         // Requires setExecutable, setInfra, setInput.
+	setExperiments(ctx, req, cfg, globalCfg, b, params) // Requires setExecutable, setInfra, setInput.
 	setSwarmingOrBackend(ctx, req, cfg, b, globalCfg)   // Requires setExecutable, setInfra, setInput, setExperiments.
 	if err := setInfraAgent(b, globalCfg); err != nil { // Requires setExecutable, setInfra, setExperiments, setSwarmingOrBackend.
 		// TODO(crbug.com/1266060) bubble up the error after TaskBackend workflow is ready.
@@ -1668,7 +1674,7 @@ func prepareNewBuild(ctx context.Context, op *scheduleBuildOp, params *scheduleB
 			}
 		}
 	} else {
-		buildPb = buildFromScheduleRequest(ctx, req, ancestors, pRunID, cfg, op.GlobalCfg)
+		buildPb = buildFromScheduleRequest(ctx, req, ancestors, pRunID, cfg, op.GlobalCfg, params)
 	}
 
 	if params.TurboCIHost != "" {

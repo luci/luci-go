@@ -1756,9 +1756,9 @@ func TestScheduleBuild(t *testing.T) {
 			Experiments: map[string]bool{},
 		}
 
-		setExps := func() {
+		setExps := func(params *scheduleBuildsParams) {
 			normalizeSchedule(req)
-			setExperiments(ctx, req, cfg, gCfg, ent.Proto)
+			setExperiments(ctx, req, cfg, gCfg, ent.Proto, params)
 			setExperimentsFromProto(ent)
 		}
 		initReasons := func() map[string]pb.BuildInfra_Buildbucket_ExperimentReason {
@@ -1768,7 +1768,7 @@ func TestScheduleBuild(t *testing.T) {
 		}
 
 		t.Run("nil", func(t *ftt.Test) {
-			setExps()
+			setExps(nil)
 			assert.Loosely(t, ent, should.Resemble(expect))
 		})
 
@@ -1776,7 +1776,7 @@ func TestScheduleBuild(t *testing.T) {
 			for i := 0; i < 100; i += 10 {
 				cfg.Experiments["exp"+strconv.Itoa(i)] = int32(i)
 			}
-			setExps()
+			setExps(nil)
 
 			assert.Loosely(t, ent.Proto.Input.Experiments, should.Resemble([]string{
 				"exp60", "exp70", "exp80", "exp90",
@@ -1786,7 +1786,7 @@ func TestScheduleBuild(t *testing.T) {
 		t.Run("command", func(t *ftt.Test) {
 			t.Run("recipes", func(t *ftt.Test) {
 				req.Experiments[bb.ExperimentBBAgent] = false
-				setExps()
+				setExps(nil)
 
 				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"recipes"},
@@ -1798,7 +1798,7 @@ func TestScheduleBuild(t *testing.T) {
 			t.Run("recipes (explicit)", func(t *ftt.Test) {
 				ent.Proto.Exe.Cmd = []string{"recipes"}
 				req.Experiments[bb.ExperimentBBAgent] = false
-				setExps()
+				setExps(nil)
 
 				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"recipes"},
@@ -1810,7 +1810,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			t.Run("luciexe (experiment)", func(t *ftt.Test) {
 				req.Experiments[bb.ExperimentBBAgent] = true
-				setExps()
+				setExps(nil)
 
 				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"luciexe"},
@@ -1823,7 +1823,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			t.Run("luciexe (explicit)", func(t *ftt.Test) {
 				ent.Proto.Exe.Cmd = []string{"luciexe"}
-				setExps()
+				setExps(nil)
 
 				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"luciexe"},
@@ -1836,7 +1836,7 @@ func TestScheduleBuild(t *testing.T) {
 			t.Run("cmd > experiment", func(t *ftt.Test) {
 				req.Experiments[bb.ExperimentBBAgent] = false
 				ent.Proto.Exe.Cmd = []string{"command"}
-				setExps()
+				setExps(nil)
 
 				assert.Loosely(t, ent.Proto.Exe, should.Resemble(&pb.Executable{
 					Cmd: []string{"command"},
@@ -1850,7 +1850,7 @@ func TestScheduleBuild(t *testing.T) {
 		t.Run("request only", func(t *ftt.Test) {
 			req.Experiments["experiment1"] = true
 			req.Experiments["experiment2"] = false
-			setExps()
+			setExps(nil)
 
 			expect.Experiments = []string{
 				"+experiment1",
@@ -1867,7 +1867,7 @@ func TestScheduleBuild(t *testing.T) {
 		t.Run("legacy only", func(t *ftt.Test) {
 			req.Canary = pb.Trinary_YES
 			req.Experimental = pb.Trinary_NO
-			setExps()
+			setExps(nil)
 
 			expect.Canary = true
 			expect.Experiments = []string{
@@ -1886,7 +1886,7 @@ func TestScheduleBuild(t *testing.T) {
 		t.Run("config only", func(t *ftt.Test) {
 			cfg.Experiments["experiment1"] = 100
 			cfg.Experiments["experiment2"] = 0
-			setExps()
+			setExps(nil)
 
 			expect.Experiments = []string{
 				"+experiment1",
@@ -1906,7 +1906,7 @@ func TestScheduleBuild(t *testing.T) {
 				req.Experimental = pb.Trinary_NO
 				req.Experiments[bb.ExperimentBBCanarySoftware] = false
 				req.Experiments[bb.ExperimentNonProduction] = true
-				setExps()
+				setExps(nil)
 
 				expect.Experiments = []string{
 					"+" + bb.ExperimentNonProduction,
@@ -1927,7 +1927,7 @@ func TestScheduleBuild(t *testing.T) {
 				req.Experimental = pb.Trinary_NO
 				cfg.Experiments[bb.ExperimentBBCanarySoftware] = 0
 				cfg.Experiments[bb.ExperimentNonProduction] = 100
-				setExps()
+				setExps(nil)
 
 				expect.Experiments = []string{
 					"+" + bb.ExperimentBBCanarySoftware,
@@ -1948,7 +1948,7 @@ func TestScheduleBuild(t *testing.T) {
 				req.Experiments["experiment2"] = false
 				cfg.Experiments["experiment1"] = 0
 				cfg.Experiments["experiment2"] = 100
-				setExps()
+				setExps(nil)
 
 				expect.Experiments = []string{
 					"+experiment1",
@@ -1973,7 +1973,7 @@ func TestScheduleBuild(t *testing.T) {
 				cfg.Experiments[bb.ExperimentNonProduction] = 100
 				cfg.Experiments["experiment1"] = 0
 				cfg.Experiments["experiment2"] = 0
-				setExps()
+				setExps(nil)
 
 				expect.Experiments = []string{
 					"+experiment1",
@@ -2012,7 +2012,7 @@ func TestScheduleBuild(t *testing.T) {
 				addExp("always", 100, 0, false, nil)
 
 				t.Run("will fill in if unset", func(t *ftt.Test) {
-					setExps()
+					setExps(nil)
 
 					assert.Loosely(t, ent.Proto.Input.Experiments, should.Resemble([]string{"always"}))
 					assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
@@ -2022,7 +2022,7 @@ func TestScheduleBuild(t *testing.T) {
 
 				t.Run("can be overridden from request", func(t *ftt.Test) {
 					req.Experiments["always"] = false
-					setExps()
+					setExps(nil)
 
 					assert.Loosely(t, ent.Proto.Input.Experiments, should.BeEmpty)
 					assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
@@ -2038,7 +2038,7 @@ func TestScheduleBuild(t *testing.T) {
 				addExp("other.builder", 100, 0, false, &pb.BuilderPredicate{
 					Regex: []string{"project/bucket/other"},
 				})
-				setExps()
+				setExps(nil)
 
 				assert.Loosely(t, ent.Proto.Input.Experiments, should.Resemble([]string{"per.builder"}))
 				assert.Loosely(t, ent.Experiments, should.Contain("-other.builder"))
@@ -2055,7 +2055,7 @@ func TestScheduleBuild(t *testing.T) {
 
 				t.Run("overrides builder config", func(t *ftt.Test) {
 					cfg.Experiments["min.value"] = 0
-					setExps()
+					setExps(nil)
 
 					assert.Loosely(t, ent.Proto.Input.Experiments, should.Resemble([]string{"min.value"}))
 					assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
@@ -2065,7 +2065,7 @@ func TestScheduleBuild(t *testing.T) {
 
 				t.Run("can be overridden from request", func(t *ftt.Test) {
 					req.Experiments["min.value"] = false
-					setExps()
+					setExps(nil)
 
 					assert.Loosely(t, ent.Proto.Input.Experiments, should.BeEmpty)
 					assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
@@ -2078,7 +2078,7 @@ func TestScheduleBuild(t *testing.T) {
 				addExp("inactive", 30, 30, true, nil)
 				addExp("other_inactive", 30, 30, true, nil)
 				cfg.Experiments["inactive"] = 100
-				setExps()
+				setExps(nil)
 
 				assert.Loosely(t, ent.Proto.Input.Experiments, should.BeEmpty)
 				assert.Loosely(t, ent.Proto.Infra.Buildbucket.ExperimentReasons, should.Resemble(map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
@@ -2087,6 +2087,22 @@ func TestScheduleBuild(t *testing.T) {
 					// absent here.
 				}))
 			})
+		})
+
+		t.Run("turboci", func(t *ftt.Test) {
+			req.Experiments[bb.ExperimentRunInTurboCI] = false
+			setExps(&scheduleBuildsParams{
+				TurboCIHost: "host",
+			})
+
+			expect.Experiments = []string{
+				fmt.Sprintf("+%s", bb.ExperimentRunInTurboCI),
+			}
+			expect.Proto.Input.Experiments = []string{bb.ExperimentRunInTurboCI}
+			er := initReasons()
+			er[bb.ExperimentRunInTurboCI] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_TURBO_CI
+
+			assert.Loosely(t, ent, should.Resemble(expect))
 		})
 	})
 
@@ -2133,7 +2149,7 @@ func TestScheduleBuild(t *testing.T) {
 				Priority:  100,
 			}
 
-			buildResult := buildFromScheduleRequest(ctx, req, nil, "", bldrCfg, s)
+			buildResult := buildFromScheduleRequest(ctx, req, nil, "", bldrCfg, s, nil)
 			expectedBackendConfig := &structpb.Struct{}
 			expectedBackendConfig.Fields = make(map[string]*structpb.Value)
 			expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 100}}
@@ -3038,7 +3054,7 @@ func TestScheduleBuild(t *testing.T) {
 			// Need these to be set so that setSwarmingOrBackend can be set.
 			setExecutable(nil, bldrCfg, b)
 			setInput(ctx, nil, bldrCfg, b)
-			setExperiments(ctx, nil, bldrCfg, s, b)
+			setExperiments(ctx, nil, bldrCfg, s, b, nil)
 
 			t.Run("use builder Priority and ServiceAccount", func(t *ftt.Test) {
 				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)

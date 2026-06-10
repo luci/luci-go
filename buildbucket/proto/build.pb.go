@@ -63,6 +63,8 @@ const (
 	//
 	// See go/buildbucket-settings.cfg for the list of global experiments.
 	BuildInfra_Buildbucket_EXPERIMENT_REASON_GLOBAL_INACTIVE BuildInfra_Buildbucket_ExperimentReason = 5
+	// This experiment was explicitly set by Turbo CI.
+	BuildInfra_Buildbucket_EXPERIMENT_REASON_TURBO_CI BuildInfra_Buildbucket_ExperimentReason = 6
 )
 
 // Enum value maps for BuildInfra_Buildbucket_ExperimentReason.
@@ -74,6 +76,7 @@ var (
 		3: "EXPERIMENT_REASON_GLOBAL_MINIMUM",
 		4: "EXPERIMENT_REASON_REQUESTED",
 		5: "EXPERIMENT_REASON_GLOBAL_INACTIVE",
+		6: "EXPERIMENT_REASON_TURBO_CI",
 	}
 	BuildInfra_Buildbucket_ExperimentReason_value = map[string]int32{
 		"EXPERIMENT_REASON_UNSET":           0,
@@ -82,6 +85,7 @@ var (
 		"EXPERIMENT_REASON_GLOBAL_MINIMUM":  3,
 		"EXPERIMENT_REASON_REQUESTED":       4,
 		"EXPERIMENT_REASON_GLOBAL_INACTIVE": 5,
+		"EXPERIMENT_REASON_TURBO_CI":        6,
 	}
 )
 
@@ -3136,7 +3140,7 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\n" +
 	"was_cached\x18\x04 \x01(\x0e2\x17.buildbucket.v2.TrinaryR\twasCached\x12>\n" +
 	"\x06timing\x18\x05 \x01(\v2&.buildbucket.v2.ResolvedDataRef.TimingR\x06timingB\v\n" +
-	"\tdata_type\"\xe9*\n" +
+	"\tdata_type\"\x89+\n" +
 	"\n" +
 	"BuildInfra\x12P\n" +
 	"\vbuildbucket\x18\x01 \x01(\v2&.buildbucket.v2.BuildInfra.BuildbucketB\x06\x8a\xc3\x1a\x02\b\x02R\vbuildbucket\x12?\n" +
@@ -3147,7 +3151,7 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\abbagent\x18\x06 \x01(\v2\".buildbucket.v2.BuildInfra.BBAgentR\abbagent\x12<\n" +
 	"\abackend\x18\a \x01(\v2\".buildbucket.v2.BuildInfra.BackendR\abackend\x120\n" +
 	"\x03led\x18\b \x01(\v2\x1e.buildbucket.v2.BuildInfra.LedR\x03led\x12<\n" +
-	"\aturboci\x18\t \x01(\v2\".buildbucket.v2.BuildInfra.TurboCIR\aturboci\x1a\xa5\x18\n" +
+	"\aturboci\x18\t \x01(\v2\".buildbucket.v2.BuildInfra.TurboCIR\aturboci\x1a\xc5\x18\n" +
 	"\vBuildbucket\x126\n" +
 	"\x17service_config_revision\x18\x02 \x01(\tR\x15serviceConfigRevision\x12J\n" +
 	"\x14requested_properties\x18\x05 \x01(\v2\x17.google.protobuf.StructR\x13requestedProperties\x12U\n" +
@@ -3210,14 +3214,15 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\x0e27.buildbucket.v2.BuildInfra.Buildbucket.ExperimentReasonR\x05value:\x028\x01\x1ac\n" +
 	"\x14AgentExecutableEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x125\n" +
-	"\x05value\x18\x02 \x01(\v2\x1f.buildbucket.v2.ResolvedDataRefR\x05value:\x028\x01\"\xe9\x01\n" +
+	"\x05value\x18\x02 \x01(\v2\x1f.buildbucket.v2.ResolvedDataRefR\x05value:\x028\x01\"\x89\x02\n" +
 	"\x10ExperimentReason\x12\x1b\n" +
 	"\x17EXPERIMENT_REASON_UNSET\x10\x00\x12$\n" +
 	" EXPERIMENT_REASON_GLOBAL_DEFAULT\x10\x01\x12$\n" +
 	" EXPERIMENT_REASON_BUILDER_CONFIG\x10\x02\x12$\n" +
 	" EXPERIMENT_REASON_GLOBAL_MINIMUM\x10\x03\x12\x1f\n" +
 	"\x1bEXPERIMENT_REASON_REQUESTED\x10\x04\x12%\n" +
-	"!EXPERIMENT_REASON_GLOBAL_INACTIVE\x10\x05J\x04\b\x04\x10\x05\x1a\xb0\x04\n" +
+	"!EXPERIMENT_REASON_GLOBAL_INACTIVE\x10\x05\x12\x1e\n" +
+	"\x1aEXPERIMENT_REASON_TURBO_CI\x10\x06J\x04\b\x04\x10\x05\x1a\xb0\x04\n" +
 	"\bSwarming\x12\"\n" +
 	"\bhostname\x18\x01 \x01(\tB\x06\x8a\xc3\x1a\x02\b\x02R\bhostname\x12\x1c\n" +
 	"\atask_id\x18\x02 \x01(\tB\x03\xe0A\x03R\x06taskId\x12\"\n" +

@@ -97,7 +97,7 @@ func synthesizeShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest,
 		cfgCopy = applyShadowAdjustment(cfg)
 	}
 
-	bld := buildFromScheduleRequest(ctx, schReq, ancestors, "", cfgCopy, globalCfg)
+	bld := buildFromScheduleRequest(ctx, schReq, ancestors, "", cfgCopy, globalCfg, nil)
 
 	if shadowBucket != "" && shadowBucket != origBucket {
 		bld.Infra.Led = &pb.BuildInfra_Led{
