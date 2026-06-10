@@ -94,6 +94,8 @@ type Failure struct {
 	Test string
 	// The value assigned to the identifier "reason".
 	Reason string
+	// The value assigned to the identifier "variant.<key>".
+	Variant map[string]string
 }
 
 type boolEval func(Failure) bool
@@ -523,17 +525,27 @@ func (e *stringExpr) evaluator(v *validator) stringEval {
 	if e.Ident != nil {
 		varName := *e.Ident
 		var accessor func(c Failure) string
-		switch varName {
-		case "test":
+		if strings.HasPrefix(varName, "variant.") {
+			key := strings.TrimPrefix(varName, "variant.")
 			accessor = func(f Failure) string {
-				return f.Test
+				if f.Variant == nil {
+					return ""
+				}
+				return f.Variant[key]
 			}
-		case "reason":
-			accessor = func(f Failure) string {
-				return f.Reason
+		} else {
+			switch varName {
+			case "test":
+				accessor = func(f Failure) string {
+					return f.Test
+				}
+			case "reason":
+				accessor = func(f Failure) string {
+					return f.Reason
+				}
+			default:
+				v.reportError(fmt.Errorf("undeclared identifier %q", varName))
 			}
-		default:
-			v.reportError(fmt.Errorf("undeclared identifier %q", varName))
 		}
 		return func(f Failure) string { return accessor(f) }
 	}
@@ -544,7 +556,7 @@ var (
 	lex = lexer.MustSimple([]lexer.SimpleRule{
 		{Name: "whitespace", Pattern: `\s+`},
 		{Name: "Keyword", Pattern: `(?i)(TRUE|FALSE|AND|OR|NOT|LIKE|IN)\b`},
-		{Name: "Ident", Pattern: `([a-zA-Z_][a-zA-Z0-9_]*)\b`},
+		{Name: "Ident", Pattern: `([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\b`},
 		{Name: "String", Pattern: stringLiteralPattern},
 		{Name: "Operators", Pattern: `!=|<>|[,()=]`},
 	})

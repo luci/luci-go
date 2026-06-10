@@ -177,6 +177,11 @@ message ClusterRequest {
 
         // The failure reason of the test (if any).
         luci.analysis.v1.FailureReason failure_reason = 3;
+
+        // Description of one specific way of running the test,
+        // e.g. a specific bucket, builder and test suite.
+        // Optional. If not provided, rules matching on variant will not match.
+        luci.analysis.v1.Variant variant = 4;
     }
     // The LUCI Project for which the test result should be clustered.
     string project = 1;

@@ -30,6 +30,8 @@ type Failure struct {
 	PreviousTestID string
 	// The failure reason explaining the reason why the test failed.
 	Reason *pb.FailureReason
+	// Key-value pairs describing how the test was run.
+	Variant *pb.Variant
 }
 
 // FailureFromProto extracts failure information relevant for clustering from
@@ -41,6 +43,9 @@ func FailureFromProto(f *cpb.Failure) *Failure {
 	}
 	if f.FailureReason != nil {
 		result.Reason = proto.Clone(f.FailureReason).(*pb.FailureReason)
+	}
+	if f.Variant != nil {
+		result.Variant = proto.Clone(f.Variant).(*pb.Variant)
 	}
 	return result
 }

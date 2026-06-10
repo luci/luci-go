@@ -58,6 +58,9 @@ func TestRules(t *testing.T) {
 				`regexp_contains (test, "^arc\\.")`,
 				`not regexp_contains(test, "^arc\\.")`,
 				`test = "arc.Boot" AND reason LIKE "%failed%"`,
+				`variant.os = "linux"`,
+				`variant.os_type = "linux"`,
+				`variant.os = "linux" AND test = "foo"`,
 			}
 			for _, v := range validInputs {
 				assert.Loosely(t, parse(v), should.BeNil)
@@ -83,6 +86,8 @@ func TestRules(t *testing.T) {
 				`regexp_contains(test)`,       // Incorrect argument count.
 				`bad_func(test, test)`,        // Undeclared function.
 				`reason NOTLIKE "%failed%"`,   // Bad operator.
+				`variant = "linux"`,           // variant alone is invalid.
+				`variant. = "linux"`,          // trailing dot.
 			}
 			for _, v := range invalidInputs {
 				assert.Loosely(t, parse(v), should.NotBeNil)
@@ -98,6 +103,10 @@ func TestRules(t *testing.T) {
 		boot := Failure{
 			Test:   "tast.arc.Boot",
 			Reason: "annotation 1: annotation 2: failure",
+			Variant: map[string]string{
+				"os":   "linux",
+				"arch": "x86",
+			},
 		}
 		dbus := Failure{
 			Test:   "tast.example.DBus",
@@ -111,6 +120,11 @@ func TestRules(t *testing.T) {
 				Test: "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042",
 			}
 			assert.Loosely(t, eval(`test = "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042"`, escaping), should.BeTrue)
+			assert.Loosely(t, eval(`variant.os = "linux"`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`variant.os = "windows"`, boot), should.BeFalse)
+			assert.Loosely(t, eval(`variant.arch = "x86"`, boot), should.BeTrue)
+			assert.Loosely(t, eval(`variant.missing = ""`, boot), should.BeTrue) // Missing variant keys return empty string.
+			assert.Loosely(t, eval(`variant.os = "linux"`, dbus), should.BeFalse) // Nil variant map returns empty string.
 		})
 		t.Run(`Boolean Constants`, func(t *ftt.Test) {
 			assert.Loosely(t, eval(`TRUE`, boot), should.BeTrue)

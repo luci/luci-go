@@ -68,16 +68,22 @@ func (a *Algorithm) Cluster(ruleset *cache.Ruleset, existingRulesVersion time.Ti
 	// last call to Cluster(...).
 	newRules := ruleset.ActiveRulesWithPredicateUpdatedSince(existingRulesVersion)
 	for _, r := range newRules {
+		var variant map[string]string
+		if failure.Variant != nil {
+			variant = failure.Variant.Def
+		}
 		f := lang.Failure{
-			Test:   failure.TestID,
-			Reason: failure.Reason.GetPrimaryErrorMessage(),
+			Test:    failure.TestID,
+			Reason:  failure.Reason.GetPrimaryErrorMessage(),
+			Variant: variant,
 		}
 		matches := r.Expr.Evaluate(f)
 		if failure.PreviousTestID != "" {
 			// Also try matching against the old test ID.
 			f = lang.Failure{
-				Test:   failure.PreviousTestID,
-				Reason: failure.Reason.GetPrimaryErrorMessage(),
+				Test:    failure.PreviousTestID,
+				Reason:  failure.Reason.GetPrimaryErrorMessage(),
+				Variant: variant,
 			}
 			matches = matches || r.Expr.Evaluate(f)
 		}

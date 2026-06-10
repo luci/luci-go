@@ -120,6 +120,14 @@ func TestClusters(t *testing.T) {
 					System: "monorail",
 					ID:     "chromium/912345",
 				}).Build(),
+			rules.NewRule(3).
+				WithProject("testproject").
+				WithRuleDefinition(`test LIKE "%VariantTest%" AND variant.os = "linux"`).
+				WithPredicateLastUpdateTime(rulesVersion.Add(-3 * time.Hour)).
+				WithBug(bugs.BugID{
+					System: "monorail",
+					ID:     "chromium/123456",
+				}).Build(),
 		}
 		err = rules.SetForTesting(ctx, t, rs)
 		assert.Loosely(t, err, should.BeNil)
@@ -168,6 +176,24 @@ func TestClusters(t *testing.T) {
 					{
 						RequestTag: "my tag 2",
 						TestId:     "Other_test",
+					},
+					{
+						RequestTag: "my tag 3",
+						TestId:     "VariantTest",
+						Variant: &pb.Variant{
+							Def: map[string]string{
+								"os": "linux",
+							},
+						},
+					},
+					{
+						RequestTag: "my tag 4",
+						TestId:     "VariantTest",
+						Variant: &pb.Variant{
+							Def: map[string]string{
+								"os": "windows",
+							},
+						},
 					},
 				},
 			}
@@ -241,6 +267,31 @@ func TestClusters(t *testing.T) {
 									},
 								},
 								testNameClusterEntry(compiledTestProjectCfg, "Other_test"),
+							}),
+						},
+						{
+							RequestTag: "my tag 3",
+							Clusters: sortClusterEntries([]*pb.ClusterResponse_ClusteredTestResult_ClusterEntry{
+								{
+									ClusterId: &pb.ClusterId{
+										Algorithm: "rules",
+										Id:        rs[3].RuleID,
+									},
+									Bug: &pb.AssociatedBug{
+										System:   "monorail",
+										Id:       "chromium/123456",
+										LinkText: "crbug.com/123456",
+										Url:      "https://bugs.chromium.org/p/chromium/issues/detail?id=123456",
+									},
+								},
+								testNameClusterEntry(compiledTestProjectCfg, "VariantTest"),
+							}),
+						},
+						{
+							RequestTag: "my tag 4",
+							Clusters: sortClusterEntries([]*pb.ClusterResponse_ClusteredTestResult_ClusterEntry{
+								// Should NOT match rs[3] because os is windows.
+								testNameClusterEntry(compiledTestProjectCfg, "VariantTest"),
 							}),
 						},
 					},

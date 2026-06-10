@@ -99,8 +99,9 @@ func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb
 			return nil, err
 		}
 		failures = append(failures, &clustering.Failure{
-			TestID: tr.TestId,
-			Reason: tr.FailureReason,
+			TestID:  tr.TestId,
+			Reason:  tr.FailureReason,
+			Variant: tr.Variant,
 		})
 	}
 
