@@ -46,7 +46,10 @@ import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { getAndroidColumns } from '@/fleet/pages/device_list_page/android/android_columns';
-import { ANDROID_COLUMN_OVERRIDES } from '@/fleet/pages/device_list_page/android/android_fields';
+import {
+  ANDROID_COLUMN_OVERRIDES,
+  AndroidColumnDef,
+} from '@/fleet/pages/device_list_page/android/android_fields';
 import { ANDROID_EXTRA_FILTERS } from '@/fleet/pages/device_list_page/android/android_filters';
 import { AndroidSummaryHeader } from '@/fleet/pages/device_list_page/android/android_summary_header';
 import { AdminTasksAlert } from '@/fleet/pages/device_list_page/common/admin_tasks_alert';
@@ -198,10 +201,6 @@ export const AndroidDevicesPage = () => {
     return _.uniq([...requiredCols, ...extraColumnIds]);
   }, [searchParams, extraColumnIds]);
 
-  const visibleColumns = useMemo(() => {
-    return getAndroidColumns(columnIds);
-  }, [columnIds]);
-
   const availableColumns = useMemo(() => {
     const list: { id: string; label: string }[] = [];
 
@@ -224,6 +223,10 @@ export const AndroidDevicesPage = () => {
 
     return _.uniqBy(list, 'id');
   }, [extraColumnIds, dimensionsQuery.data]);
+
+  const allColumns = useMemo(() => {
+    return getAndroidColumns(availableColumns.map((c) => c.id));
+  }, [availableColumns]);
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
@@ -255,11 +258,11 @@ export const AndroidDevicesPage = () => {
     setSearchParams,
   ]);
 
-  const fleetMrtState = useFleetMRTState({
+  const fleetMrtState = useFleetMRTState<AndroidColumnDef>({
     setSearchParams,
     pagerCtx,
     filterValues: filterCategoryDatas.filterValues,
-    visibleColumns: visibleColumns,
+    visibleColumns: allColumns,
     orderByParam,
     localStorageKey: ANDROID_DEVICES_LOCAL_STORAGE_KEY,
     defaultColumnIds: ANDROID_DEFAULT_COLUMNS,
@@ -288,13 +291,6 @@ export const AndroidDevicesPage = () => {
     onColumnSizingChange,
     resetColumnWidths,
   } = fleetMrtState;
-
-  const visibleEnrichedColumns = useMemo(() => {
-    return enrichedColumns.filter((col) => {
-      const id = col.id ?? (col.accessorKey as string);
-      return visibleColumnIds.includes(id);
-    });
-  }, [enrichedColumns, visibleColumnIds]);
 
   const meta = useMemo<FleetTableMeta<AndroidDevice>>(
     () => ({
@@ -333,7 +329,7 @@ export const AndroidDevicesPage = () => {
     filterValues?: Record<string, FilterCategory>;
   } = useMemo(
     () => ({
-      columns: visibleEnrichedColumns,
+      columns: enrichedColumns,
       data: devices as AndroidDevice[],
       displayColumnDefOptions: {
         'mrt-row-select': {
@@ -384,7 +380,6 @@ export const AndroidDevicesPage = () => {
       ),
     }),
     [
-      visibleEnrichedColumns,
       devices,
       onRowSelectionChange,
       onSortingChange,
