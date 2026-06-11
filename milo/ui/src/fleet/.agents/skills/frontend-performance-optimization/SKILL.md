@@ -1,11 +1,17 @@
 ---
 name: frontend-performance-optimization
-description: Standard procedure, metrics guidelines, and referential stability standards for measuring and vetting frontend performance optimizations in the LUCI Fleet Console.
+description: Guidelines, metrics, testing patterns, and referential stability standards for measuring and vetting frontend performance optimizations in the LUCI Fleet Console. Use this skill when refactoring React hooks, tuning custom data fetching hooks (e.g., using TanStack Query), stabilizing component re-renders, or writing robust Cypress tests for tables.
 ---
 
 # Vetting & Measuring Frontend Performance Improvements
 
 This skill defines the mandatory guidelines and best practices for identifying, implementing, profiling, and verifying frontend performance improvements in the LUCI Fleet Console (React/TypeScript) codebase.
+
+Progress:
+- [ ] Step 1: Analyze rendering loops and hook dependency arrays
+- [ ] Step 2: Memoize query configurations and client proxy references
+- [ ] Step 3: Implement stable callbacks or combine/downstream options for TanStack Query
+- [ ] Step 4: Ensure Cypress selectors use resilient test IDs on target components
 
 ---
 
@@ -130,11 +136,12 @@ export const useChromeOSFilters = () => {
 };
 ```
 
-#### Option B: React Query Custom Hooks Downstream Memoization
+#### Option B: React Query Custom Hooks Aggregation and Memoization
 
-When utilizing TanStack Query (`useQueries` / `useQuery`), note that the `combine` option does **NOT** structurally share or memoize its output object. Returning an object literal or map from `combine` will recreate a new reference on every single render cycle.
+When utilizing TanStack Query (`useQueries` / `useQuery`), we have two strategies to ensure referential stability:
 
-To ensure referential stability of your hook's output, capture the raw query results array and perform your data aggregation inside a downstream `useMemo` block. Because TanStack Query performs automatic structural sharing on the query data payloads inside the cache, the elements of the `results` array are referentially stable if the underlying data has not changed.
+##### Strategy 1: Downstream `useMemo` over query results array
+Capture the raw query results array and perform your data aggregation inside a downstream `useMemo` block. Because TanStack Query performs automatic structural sharing on the query data payloads inside the cache, the elements of the `results` array are referentially stable if the underlying data has not changed.
 
 ```typescript
 // GOOD: Output reference is stable unless the aggregated data changes
@@ -171,9 +178,137 @@ export const useChromeOSCurrentTasks = (devices: Device[]) => {
 };
 ```
 
+##### Strategy 2: React Query native `combine` callback (Plain Objects + Stable Reference)
+Utilize React Query v5's native `combine` property inside `useQueries` or `useQuery`. To achieve referential stability and optimize render performance:
+1. **Plain Objects over Maps**: Aggregate queries into plain JavaScript objects (`Record<string, T>`) rather than ES6 `Map` instances. Structural sharing (`replaceEqualDeep`) natively compares plain objects to prevent reference changes across renders, but does not optimize `Map` references.
+2. **Stable `combine` Callback Reference**: Wrap the `combine` callback in `useCallback` (or define it statically outside the hook) with an empty dependency array to prevent React Query from executing the aggregation loop on every render.
+> [!NOTE]
+> If the `combine` function logic depends on other dynamic parameters or hook state (e.g., custom filter constraints), those variables must be listed in the `useCallback` dependency array. Note that if these dependencies change on every render, it will invalidate the callback reference and trigger loop execution, so keep dependencies minimal and stable.
+
+```typescript
+export const useChromeOSCurrentTasks = (devices: Device[]) => {
+  // ... config setup ...
+
+  const combineTasks = useCallback((results: UseQueryResult<readonly BotInfo[], Error>[]) => {
+    const isPending = results.some((q) => q.isPending);
+    const isError = results.some((q) => q.isError);
+    const error = results.find((q) => q.error)?.error || null;
+
+    const tasks: Record<string, TaskResult> = {};
+    if (!isPending && !isError) {
+      for (const query of results) {
+        if (query.data) {
+          for (const bot of query.data) {
+            if (bot.taskId) {
+              const dutIdDimension = bot.dimensions?.find(
+                (dim) => dim.key === 'dut_id',
+              );
+              if (dutIdDimension?.value?.length) {
+                tasks[dutIdDimension.value[0]] = {
+                  taskId: bot.taskId,
+                  taskName: bot.taskName || '',
+                };
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return { tasks, error, isError, isPending };
+  }, []);
+
+  return useQueries({
+    queries: queriesConfig,
+    combine: combineTasks,
+  });
+};
+```
+
 ---
 
-## 4. Performance Verification Checklist
+## 4. API Client and Proxy Memoization
+
+When wrapping pRPC services or API client proxies in hooks, ensure the client instance or proxy reference remains completely stable.
+
+**Why**: Standard API client proxy builders return a new Proxy wrapper object on every invocation. If a custom hook returns this builder output directly, every downstream hook using the client as a dependency (such as TanStack Query configurations) will invalidate its dependency cache, triggering redundant query rebuilds.
+
+```typescript
+interface PrpcServiceClientOptions {
+  host: string;
+  additionalHeaders?: HeadersInit;
+}
+
+// USE: Memoize client proxies and serialize header objects
+export const usePrpcServiceClient = (opts: PrpcServiceClientOptions) => {
+  const { host, additionalHeaders } = opts;
+
+  const additionalHeadersObj = useMemo(() => {
+    if (!additionalHeaders) return {};
+    try {
+      return Object.fromEntries(new Headers(additionalHeaders).entries());
+    } catch {
+      return {};
+    }
+  }, [additionalHeaders]);
+
+  const client = useSingleton({
+    key: ['@/common/hooks/prpc_query', host, additionalHeadersObj],
+    fn: () => new ServiceClient(host, additionalHeadersObj),
+  });
+
+  // Return a memoized Proxy of the client to ensure client stability
+  return useMemo(() => {
+    return new Proxy(client, {
+      get(target, prop, receiver) {
+        const value = Reflect.get(target, prop, receiver);
+        // Bind functions to client target to preserve 'this' context
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+  }, [client]);
+};
+```
+
+---
+
+## 5. Resilient Cypress Table Selectors
+
+When writing Cypress integration tests for interactive table columns (such as selection checkboxes), avoid generic selectors based on DOM structure.
+
+**Why**: DOM layouts are prone to refactoring (e.g. converting a semantic HTML `<table>` into a CSS Grid `<div>`). Relying on `tr` or `tbody` paths leads to fragile tests.
+
+### Implementation Pattern
+1. In the table component, configure the selection checkbox properties to mount a descriptive `data-testid` directly on the input element.
+> [!NOTE]
+> Since Material-UI's `CheckboxProps['inputProps']` type definition (based on React's `InputHTMLAttributes`) lacks a dynamic string index signature, assigning custom attributes like `data-testid` directly inside `inputProps` triggers a TypeScript compilation error. To bypass this strict typing constraint cleanly without using the forbidden `any` keyword, use a type intersection:
+
+```tsx
+// muiSelectCheckboxProps passes properties to MUI Checkbox
+muiSelectCheckboxProps: ({ row }) => ({
+  inputProps: {
+    'data-testid': `select-checkbox-${row.id}`,
+  } as React.InputHTMLAttributes<HTMLInputElement> & {
+    'data-testid'?: string;
+  },
+}),
+```
+
+2. In the Cypress spec, select the element using attribute selectors. Prefer targeting specific item IDs over index-based positions (`.first()`) when possible to guarantee robust test assertions:
+
+```typescript
+// A. Verify interaction with the first visible checkbox
+cy.get('[data-testid^="select-checkbox-"]').first().click();
+cy.get('[data-testid^="select-checkbox-"]').first().should('be.checked');
+
+// B. Verify interaction with a specific device/row checkbox
+cy.get(`[data-testid="select-checkbox-${someId}"]`).click();
+cy.get(`[data-testid="select-checkbox-${someId}"]`).should('be.checked');
+```
+
+---
+
+## 6. Performance Verification Checklist
 
 Every frontend performance CL must detail the following metrics in its description:
 

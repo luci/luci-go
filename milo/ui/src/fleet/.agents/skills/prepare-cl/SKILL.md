@@ -24,6 +24,7 @@ Progress:
 ## Procedures
 
 0. **Branch Safety Check**:
+   - **Sync Before Branching**: Before creating a new task branch, you MUST run `git fetch origin` to update your local repository refs. Always create the branch off the updated remote main: `git checkout -b <branch-name> origin/main`. Creating branches from stale local representations of `origin/main` is a major cause of early merge conflicts on Gerrit.
    - **New Task Branching**: Generally start a new branch when starting a new task.
    - **Check for Unrelated Changes**: Double check that the branch you're currently on doesn't have unrelated changes before you upload a CL. Run `git log origin/main..HEAD` to see the commits on your branch relative to main, and ensure they are all related to the current task.
 

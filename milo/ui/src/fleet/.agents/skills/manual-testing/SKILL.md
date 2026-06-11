@@ -38,3 +38,9 @@ Use this skill when you need to verify UI changes, filter interactions, or page 
 ### High-Density UI Grid Alignment
 - **Finding**: When moving or adding custom components to high-density grids (like `Device Health Metrics`), ensure horizontal padding and margins match existing components like `SingleMetric` to maintain vertical alignment.
 - **Action**: Use `px: 1` (padding horizontal 1 unit) on containers to align with standard breakdown items, and `mt: 0.5` (margin top 0.5) to match spacing between headers and lists.
+
+### Deploying UI Demos & Context Aware Access Workaround
+- **Finding**: When deploying UI demos (`make deploy-ui-demo`), you may encounter Context Aware Access (CAA) blocking errors if you are running in a restricted corporate environment.
+- **Action**: Before running `make deploy-ui-demo`, configure gcloud to use client certificates:
+  `gcloud config set context_aware/use_client_certificate true`
+  This permits gcloud commands to bypass CAA blocks during deployment.
