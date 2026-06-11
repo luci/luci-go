@@ -196,6 +196,7 @@ func newPluginHandler(facetID string) pluginHandler {
 func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply, error) {
 	logging.Debugf(ctx, "Starting pluginHandler.Handle")
 	defer logging.Debugf(ctx, "Exiting pluginHandler.Handle")
+	logging.Debugf(ctx, "Got RPID %q", c.SecurityKey.RelyingPartyID)
 	logging.Debugf(ctx, "Got AppID %q", c.SecurityKey.AppID)
 	dc := c.SecurityKey.DeviceChallenges
 	if len(dc) == 0 {
