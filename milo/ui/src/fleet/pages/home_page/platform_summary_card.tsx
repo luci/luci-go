@@ -17,6 +17,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Link,
   Skeleton,
   Typography,
@@ -26,6 +27,17 @@ import { NavLink } from 'react-router';
 
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { colors } from '@/fleet/theme/colors';
+
+// Health thresholds aligned with Fleet Console UX standards to indicate
+// platform health status (Healthy >= 90%, Warning >= 75%, Danger < 75%).
+const HEALTH_THRESHOLD_HIGH = 90;
+const HEALTH_THRESHOLD_WARN = 75;
+
+const HEALTH_COLOR_MAP = {
+  high: { bg: colors.green[100], text: colors.green[800] },
+  warn: { bg: colors.yellow[100], text: colors.yellow[900] },
+  low: { bg: colors.red[100], text: colors.red[800] },
+} as const;
 
 const PermissionWarningTooltip = () => (
   <InfoTooltip color="warning.main" fontSize="1.25rem">
@@ -64,6 +76,7 @@ export interface PlatformSummaryCardProps {
   secondaryLinkIcon?: ReactNode;
   secondTotal?: number;
   secondTotalText?: string;
+  healthyPercentage?: number;
 }
 
 export function PlatformSummaryCard({
@@ -81,7 +94,22 @@ export function PlatformSummaryCard({
   secondaryLinkIcon,
   secondTotal,
   secondTotalText,
+  healthyPercentage,
 }: PlatformSummaryCardProps) {
+  const roundedPercentage =
+    healthyPercentage !== undefined
+      ? Math.round(healthyPercentage * 10) / 10
+      : undefined;
+
+  const status =
+    roundedPercentage !== undefined
+      ? roundedPercentage >= HEALTH_THRESHOLD_HIGH
+        ? 'high'
+        : roundedPercentage >= HEALTH_THRESHOLD_WARN
+          ? 'warn'
+          : 'low'
+      : null;
+
   return (
     <Card
       variant="outlined"
@@ -113,6 +141,21 @@ export function PlatformSummaryCard({
           <Typography variant="h5" component="h2" sx={{ m: 0 }}>
             {title}
           </Typography>
+          {roundedPercentage !== undefined && (
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}
+            >
+              <Chip
+                size="small"
+                label={`${roundedPercentage.toFixed(1)}% Healthy`}
+                sx={{
+                  bgcolor: status ? HEALTH_COLOR_MAP[status].bg : undefined,
+                  color: status ? HEALTH_COLOR_MAP[status].text : undefined,
+                  fontWeight: 500,
+                }}
+              />
+            </Box>
+          )}
         </Box>
 
         {isLoading ? (

@@ -41,34 +41,32 @@ describe('<HomePage />', () => {
     (useFleetConsoleClient as jest.Mock).mockReturnValue({
       CountDevices: {
         query: jest.fn().mockImplementation((req) => ({
-          queryKey: ['CountDevices', req.platform],
+          queryKey: ['CountDevices', req.platform, req.filter],
           queryFn: () => {
             if (req.platform === Platform.CHROMEOS) {
               return Promise.resolve({
                 total: 1000,
-                deviceState: { ready: 900 },
+                deviceState: {
+                  ready: 800,
+                  needRepair: 50,
+                  repairFailed: 50,
+                },
               });
             }
             if (req.platform === Platform.ANDROID) {
+              if (req.filter === 'fc_is_offline = "true"') {
+                return Promise.resolve({
+                  androidCount: {
+                    totalDevices: 300,
+                  },
+                });
+              }
               return Promise.resolve({
                 androidCount: {
                   totalDevices: 500,
                   idleDevices: 250,
                   busyDevices: 100,
                 },
-              });
-            }
-            return Promise.resolve({});
-          },
-        })),
-      },
-      CountRepairMetrics: {
-        query: jest.fn().mockImplementation((req) => ({
-          queryKey: ['CountRepairMetrics', req.platform],
-          queryFn: () => {
-            if (req.platform === Platform.ANDROID) {
-              return Promise.resolve({
-                offlineDevices: 300,
               });
             }
             return Promise.resolve({});
@@ -179,7 +177,7 @@ describe('<HomePage />', () => {
     expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument();
   });
 
-  it('displays the loaded data and no longer calculates percentages', async () => {
+  it('displays the loaded data and calculates healthy percentages', async () => {
     render(
       <FakeContextProvider>
         <HomePage />
@@ -190,25 +188,23 @@ describe('<HomePage />', () => {
     expect(screen.getByText('200')).toBeInTheDocument();
     expect(screen.getByText('500')).toBeInTheDocument();
     expect(screen.getByText('300')).toBeInTheDocument();
+
+    // Check healthy percentages
+    expect(screen.getByText('90.0% Healthy')).toBeInTheDocument();
+    expect(screen.getByText('40.0% Healthy')).toBeInTheDocument();
   });
 
   it('displays the error state if counts fail to load', async () => {
     (useFleetConsoleClient as jest.Mock).mockReturnValue({
       CountDevices: {
         query: jest.fn().mockImplementation((req) => ({
-          queryKey: ['CountDevices', req.platform],
+          queryKey: ['CountDevices', req.platform, req.filter],
           isError: true,
         })),
       },
       CountBrowserDevices: {
         query: jest.fn().mockImplementation(() => ({
           queryKey: ['CountBrowserDevices'],
-          isError: true,
-        })),
-      },
-      CountRepairMetrics: {
-        query: jest.fn().mockImplementation(() => ({
-          queryKey: ['CountRepairMetrics'],
           isError: true,
         })),
       },
@@ -228,7 +224,7 @@ describe('<HomePage />', () => {
     (useFleetConsoleClient as jest.Mock).mockReturnValue({
       CountDevices: {
         query: jest.fn().mockImplementation((req) => ({
-          queryKey: ['CountDevices', req.platform],
+          queryKey: ['CountDevices', req.platform, req.filter],
           queryFn: () => {
             if (req.platform === Platform.CHROMEOS) {
               return Promise.resolve({
@@ -236,6 +232,13 @@ describe('<HomePage />', () => {
               });
             }
             if (req.platform === Platform.ANDROID) {
+              if (req.filter === 'fc_is_offline = "true"') {
+                return Promise.resolve({
+                  androidCount: {
+                    totalDevices: 0,
+                  },
+                });
+              }
               return Promise.resolve({
                 androidCount: {
                   totalDevices: 0,
@@ -244,15 +247,6 @@ describe('<HomePage />', () => {
             }
             return Promise.resolve({});
           },
-        })),
-      },
-      CountRepairMetrics: {
-        query: jest.fn().mockImplementation(() => ({
-          queryKey: ['CountRepairMetrics'],
-          queryFn: () =>
-            Promise.resolve({
-              offlineDevices: 0,
-            }),
         })),
       },
       CountBrowserDevices: {
@@ -277,5 +271,85 @@ describe('<HomePage />', () => {
 
     const warningIcons = screen.getAllByTestId('InfoOutlinedIcon');
     expect(warningIcons.length).toBe(4);
+  });
+
+  it('rounds healthy percentage and applies correct color status', async () => {
+    (useFleetConsoleClient as jest.Mock).mockReturnValue({
+      CountDevices: {
+        query: jest.fn().mockImplementation((req) => ({
+          queryKey: ['CountDevices', req.platform, req.filter],
+          queryFn: () => {
+            if (req.platform === Platform.CHROMEOS) {
+              return Promise.resolve({
+                total: 2000,
+                deviceState: {
+                  ready: 1799, // 1799 / 2000 * 100 = 89.95%
+                },
+              });
+            }
+            return Promise.resolve({});
+          },
+        })),
+      },
+      CountBrowserDevices: {
+        query: jest.fn().mockImplementation(() => ({
+          queryKey: ['CountBrowserDevices'],
+          queryFn: () => Promise.resolve({ total: 0 }),
+        })),
+      },
+    });
+
+    render(
+      <FakeContextProvider>
+        <HomePage />
+      </FakeContextProvider>,
+    );
+
+    // Should display '90.0% Healthy'
+    const chipLabel = await screen.findByText('90.0% Healthy');
+    expect(chipLabel).toBeInTheDocument();
+
+    const chip = chipLabel.closest('.MuiChip-root');
+    expect(chip).toBeInTheDocument();
+
+    // Should have green background (high status) instead of yellow (warn status)
+    expect(chip).toHaveStyleRule('background-color', 'hsl(137, 40%, 86%)');
+  });
+
+  it('clamps healthy percentage to a maximum of 100%', async () => {
+    (useFleetConsoleClient as jest.Mock).mockReturnValue({
+      CountDevices: {
+        query: jest.fn().mockImplementation((req) => ({
+          queryKey: ['CountDevices', req.platform, req.filter],
+          queryFn: () => {
+            if (req.platform === Platform.CHROMEOS) {
+              return Promise.resolve({
+                total: 100,
+                deviceState: {
+                  ready: 105,
+                },
+              });
+            }
+            return Promise.resolve({});
+          },
+        })),
+      },
+      CountBrowserDevices: {
+        query: jest.fn().mockImplementation(() => ({
+          queryKey: ['CountBrowserDevices'],
+          queryFn: () => Promise.resolve({ total: 0 }),
+        })),
+      },
+    });
+
+    render(
+      <FakeContextProvider>
+        <HomePage />
+      </FakeContextProvider>,
+    );
+
+    // Should display '100.0% Healthy'
+    const chip = await screen.findByText('100.0% Healthy');
+    expect(chip).toBeInTheDocument();
   });
 });

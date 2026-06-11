@@ -28,48 +28,8 @@ import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { getMetricsGridStyles } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
-
-interface DeviceStateData {
-  deviceState?: {
-    ready?: number;
-    needRepair?: number;
-    repairFailed?: number;
-    needManualRepair?: number;
-    needsDeploy?: number;
-    needsReplacement?: number;
-  };
-}
-
-function parseDeviceMetrics(data: DeviceStateData | undefined, total: number) {
-  const ready = data?.deviceState?.ready || 0;
-  const needRepair = data?.deviceState?.needRepair || 0;
-  const repairFailed = data?.deviceState?.repairFailed || 0;
-  const recovering = needRepair + repairFailed;
-  const healthy = ready + recovering;
-  const needManualRepair = data?.deviceState?.needManualRepair || 0;
-  const unhealthy = needManualRepair;
-  const needsDeploy = data?.deviceState?.needsDeploy || 0;
-  const needsReplacement = data?.deviceState?.needsReplacement || 0;
-
-  const other = Math.max(0, total - healthy - unhealthy);
-  const otherStates = Math.max(0, other - needsDeploy - needsReplacement);
-
-  return {
-    total,
-    ready,
-    needRepair,
-    repairFailed,
-    recovering,
-    healthy,
-    needManualRepair,
-    unhealthy,
-    needsDeploy,
-    needsReplacement,
-    other,
-    otherStates,
-  };
-}
 
 // Recommended filters for finding all CrOS labstations. See: b/398911822#comment4
 const LABSTATION_FILTERS: Record<string, string[]> = {
@@ -197,8 +157,8 @@ export function ChromeOSSummaryHeader({
       needsReplacement: labstationsNeedsReplacement,
       other: labstationsOther,
       otherStates: labstationsOtherStates,
-    } = parseDeviceMetrics(
-      labstationsQuery.data,
+    } = parseChromeosDeviceMetrics(
+      labstationsQuery.data?.deviceState,
       labstationsQuery.data?.total || 0,
     );
 
@@ -215,7 +175,10 @@ export function ChromeOSSummaryHeader({
       needsReplacement: devicesNeedsReplacement,
       other: devicesOther,
       otherStates: devicesOtherStates,
-    } = parseDeviceMetrics(countQuery.data, countQuery.data?.total || 0);
+    } = parseChromeosDeviceMetrics(
+      countQuery.data?.deviceState,
+      countQuery.data?.total || 0,
+    );
 
     const isLoading =
       countQuery.isPending ||

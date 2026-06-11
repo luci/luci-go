@@ -26,9 +26,11 @@ import { genFeedbackUrl } from '@/common/tools/utils';
 import androidLogo from '@/fleet/assets/logos/android.png';
 import browserLogo from '@/fleet/assets/logos/browser.png';
 import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
+import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -61,19 +63,39 @@ export const HomePage = () => {
     enabled: !isAnonymous,
   });
 
-  const androidRepairsQuery = useQuery({
-    ...client.CountRepairMetrics.query({
-      filter: '',
+  const androidOfflineQuery = useQuery({
+    ...client.CountDevices.query({
+      filter: stringifyFilters({ fc_is_offline: ['true'] }),
       platform: Platform.ANDROID,
     }),
     enabled: !isAnonymous,
   });
 
   const chromeosTotal = chromeosQuery.data?.total ?? 0;
+  const chromeosMetrics = parseChromeosDeviceMetrics(
+    chromeosQuery.data?.deviceState,
+    chromeosTotal,
+  );
+  const chromeosHealthy =
+    chromeosTotal > 0
+      ? Math.min(
+          100,
+          Math.max(0, (chromeosMetrics.healthy / chromeosTotal) * 100),
+        )
+      : undefined;
 
   const browserTotal = browserQuery.data?.total ?? 0;
 
   const androidTotal = androidQuery.data?.androidCount?.totalDevices ?? 0;
+  const androidOffline =
+    androidOfflineQuery.data?.androidCount?.totalDevices ?? 0;
+  const androidHealthy =
+    androidTotal > 0 && androidOfflineQuery.data
+      ? Math.min(
+          100,
+          (Math.max(0, androidTotal - androidOffline) / androidTotal) * 100,
+        )
+      : undefined;
 
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-home">
@@ -126,6 +148,7 @@ export const HomePage = () => {
                   title="ChromeOS"
                   logoSrc={chromeosLogo}
                   total={chromeosTotal}
+                  healthyPercentage={chromeosHealthy}
                   isLoading={chromeosQuery.isPending}
                   isError={chromeosQuery.isError}
                   linkTo="/ui/fleet/p/chromeos/devices"
@@ -154,10 +177,11 @@ export const HomePage = () => {
                   title="Android"
                   logoSrc={androidLogo}
                   total={androidTotal}
+                  healthyPercentage={androidHealthy}
                   isLoading={
-                    androidQuery.isPending || androidRepairsQuery.isPending
+                    androidQuery.isPending || androidOfflineQuery.isPending
                   }
-                  isError={androidQuery.isError}
+                  isError={androidQuery.isError || androidOfflineQuery.isError}
                   linkTo="/ui/fleet/p/android/devices"
                   linkText="View all devices"
                   linkIcon={<DevicesIcon />}
@@ -165,7 +189,7 @@ export const HomePage = () => {
                   secondaryLinkText="View all repairs"
                   secondaryLinkIcon={<ConstructionIcon />}
                   secondTotalText="Devices offline"
-                  secondTotal={androidRepairsQuery.data?.offlineDevices}
+                  secondTotal={androidOffline}
                 />
               </Grid2>
             </Grid2>
