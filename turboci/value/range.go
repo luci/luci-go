@@ -29,9 +29,9 @@ type RefSlot byte
 const (
 	// StageArgsSlot indicates the ValueRef is from `Stage.args`.
 	StageArgsSlot RefSlot = iota
-	// StageLegacyWorkPlanSlot indicates the ValueRef is from
+	// StageLegacyWorkNodeSlot indicates the ValueRef is from
 	// `Stage.legacy.worknode`.
-	StageLegacyWorkPlanSlot
+	StageLegacyWorkNodeSlot
 
 	// StageEditReasonDetailsSlot indicates the ValueRef is from
 	// `Stage.edits.reason.details`.
@@ -70,7 +70,7 @@ func RefsInStage(stage *orchestratorpb.Stage) iter.Seq2[RefSlot, *orchestratorpb
 			return
 		}
 
-		if worknode := stage.GetLegacy().GetWorknode(); worknode != nil && !yield(StageLegacyWorkPlanSlot, worknode) {
+		if worknode := stage.GetLegacy().GetWorknode(); worknode != nil && !yield(StageLegacyWorkNodeSlot, worknode) {
 			return
 		}
 

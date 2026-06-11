@@ -54,6 +54,7 @@ func ParseFilter(vf *orchestratorpb.ValueFilter) (*ParsedFilter, error) {
 		}
 	}
 	setVF(StageArgsSlot, vf.GetStageArgs())
+	setVF(StageLegacyWorkNodeSlot, vf.GetStageLegacyWorknode())
 	setVF(StageAttemptDetailsSlot, vf.GetStageAttemptDetails())
 	setVF(StageAttemptProgressDetailsSlot, vf.GetStageAttemptProgressDetails())
 	setVF(StageEditAttemptDetailsSlot, vf.GetStageEditAttemptDetails())

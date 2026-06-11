@@ -9,7 +9,7 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[StageArgsSlot-0]
-	_ = x[StageLegacyWorkPlanSlot-1]
+	_ = x[StageLegacyWorkNodeSlot-1]
 	_ = x[StageEditReasonDetailsSlot-2]
 	_ = x[StageEditAttemptDetailsSlot-3]
 	_ = x[StageAttemptDetailsSlot-4]
@@ -21,7 +21,7 @@ func _() {
 	_ = x[CheckEditResultsDataSlot-10]
 }
 
-const _RefSlot_name = "StageArgsSlotStageLegacyWorkPlanSlotStageEditReasonDetailsSlotStageEditAttemptDetailsSlotStageAttemptDetailsSlotStageAttemptProgressDetailsSlotCheckOptionsSlotCheckResultsDataSlotCheckEditReasonDetailsSlotCheckEditOptionsSlotCheckEditResultsDataSlot"
+const _RefSlot_name = "StageArgsSlotStageLegacyWorkNodeSlotStageEditReasonDetailsSlotStageEditAttemptDetailsSlotStageAttemptDetailsSlotStageAttemptProgressDetailsSlotCheckOptionsSlotCheckResultsDataSlotCheckEditReasonDetailsSlotCheckEditOptionsSlotCheckEditResultsDataSlot"
 
 var _RefSlot_index = [...]uint8{0, 13, 36, 62, 89, 112, 143, 159, 179, 205, 225, 249}
 
