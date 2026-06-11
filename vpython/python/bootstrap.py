@@ -17,6 +17,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import shutil
 
 DISABLE_PERIODIC_UPDATE = False  # This option only exists for newer virtualenv
 if sys.version_info[0] > 2:
@@ -47,6 +48,14 @@ if virtualenv.endswith('.pyz'):
     subprocess.check_call(args + ['--app-data', d])
 else:
   subprocess.check_call(args)
+
+# Replicate python.exe to python3.exe in the venv.
+if sys.platform == 'win32':
+  scripts_dir = os.path.join(os.environ['out'], 'Scripts')
+  p1 = os.path.join(scripts_dir, 'python.exe')
+  p3 = os.path.join(scripts_dir, 'python3.exe')
+  if os.path.exists(p1) and not os.path.exists(p3):
+    shutil.copyfile(p1, p3)
 
 # Install wheels to virtual environment
 if 'wheels' in os.environ:
