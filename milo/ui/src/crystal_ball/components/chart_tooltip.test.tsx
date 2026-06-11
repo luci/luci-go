@@ -136,12 +136,14 @@ describe('ChartTooltip', () => {
     render(<ChartTooltip {...defaultProps} />);
 
     // Metric Series A: base value is 100, target is 150.
-    // Difference is +50 (+50.0%)
-    expect(screen.getByText('+50 (+50.0%)')).toBeInTheDocument();
+    // Difference is +50 (+50.0%), trend is up
+    expect(screen.getAllByText('+50 (+50.0%)')).toHaveLength(2);
+    expect(screen.getAllByTestId('TrendingUpIcon')).toHaveLength(2);
 
     // Metric Series B: base value is 200, target is 180.
-    // Difference is -20 (-10.0%)
-    expect(screen.getByText('-20 (-10.0%)')).toBeInTheDocument();
+    // Difference is -20 (-10.0%), trend is down
+    expect(screen.getAllByText('-20 (-10.0%)')).toHaveLength(2);
+    expect(screen.getAllByTestId('TrendingDownIcon')).toHaveLength(2);
   });
 
   test('does NOT render regression trend change badges when isDistribution is true', () => {

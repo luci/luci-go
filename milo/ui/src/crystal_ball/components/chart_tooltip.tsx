@@ -165,12 +165,81 @@ export function ChartTooltip({
                       color: trendInfo.color,
                       fontWeight: 'bold',
                       whiteSpace: 'nowrap',
+                      mr: 0.5,
                     }}
+                    title="Change vs baseline (first point)"
                   >
                     {icon}
                     {text}
                   </Box>
                 );
+              }
+
+              const currentIndex = currentSeries.data.findIndex(
+                (p) => p.x === item.data[0],
+              );
+
+              if (currentIndex > 0) {
+                const prevY = currentSeries.data[currentIndex - 1].y;
+                const { diff: prevDiff, pctChange: prevPctChange } =
+                  calculateChange(prevY, val);
+
+                if (Math.abs(prevDiff) >= 0.0001) {
+                  const trendInfo = getTrendInfo(
+                    prevDiff,
+                    currentSeries.metricField,
+                  );
+                  const text = formatChange(prevDiff, prevPctChange);
+
+                  const icon =
+                    trendInfo.trend === 'up' ? (
+                      <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
+                    ) : trendInfo.trend === 'down' ? (
+                      <TrendingDownIcon fontSize="small" sx={{ mr: 0.5 }} />
+                    ) : (
+                      <TrendingFlatIcon fontSize="small" sx={{ mr: 0.5 }} />
+                    );
+
+                  const prevChangeBadge = (
+                    <Box
+                      sx={{
+                        bgcolor: (theme) =>
+                          trendInfo.color === 'error.main'
+                            ? alpha(theme.palette.error.main, 0.08)
+                            : trendInfo.color === 'success.main'
+                              ? alpha(theme.palette.success.main, 0.08)
+                              : 'action.hover',
+                        border: '1px solid',
+                        borderColor:
+                          trendInfo.color === 'error.main'
+                            ? 'error.light'
+                            : trendInfo.color === 'success.main'
+                              ? 'success.light'
+                              : 'divider',
+                        borderRadius: '10px',
+                        px: 0.75,
+                        py: 0.15,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        fontSize: '10px',
+                        color: trendInfo.color,
+                        fontWeight: 'bold',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title="Change vs preceding point"
+                    >
+                      {icon}
+                      {text}
+                    </Box>
+                  );
+
+                  changeBadge = (
+                    <>
+                      {changeBadge}
+                      {prevChangeBadge}
+                    </>
+                  );
+                }
               }
             }
 
