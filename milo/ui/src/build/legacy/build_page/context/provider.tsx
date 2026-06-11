@@ -15,7 +15,9 @@
 import { Alert } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { ReactNode } from 'react';
+import { useLocation } from 'react-router';
 
+import { isFailureStatus } from '@/build/tools/build_utils';
 import { OutputBuild } from '@/build/types';
 import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import { QueryAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
@@ -27,6 +29,9 @@ export interface BuildProviderProps {
 }
 
 export function BuildContextProvider({ build, children }: BuildProviderProps) {
+  const location = useLocation();
+  const isBlamelistTab = location.pathname.endsWith('/blamelist');
+  const isTryJob = (build?.input?.gerritChanges?.length ?? 0) > 0;
   const analysisClient = useAnalysesClient();
   const {
     data: response,
@@ -41,7 +46,19 @@ export function BuildContextProvider({ build, children }: BuildProviderProps) {
         },
       }),
     ),
-    enabled: !!(build && build.id),
+    // only use the query if:
+    // 1. a Buildbucket ID has been provided
+    // 2. the build has failed (bisection only runs on failed builds; querying
+    //    passing builds by BBID will never return results)
+    // 3. it is not a try job (bisection is only for post-submit)
+    // 4. we are on the blamelist tab
+    enabled: !!(
+      build &&
+      build.id &&
+      isFailureStatus(build.status) &&
+      !isTryJob &&
+      isBlamelistTab
+    ),
     throwOnError: false,
     retry: false,
   });
