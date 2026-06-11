@@ -18,6 +18,7 @@ import argparse
 import os
 import subprocess
 import sys
+import shutil
 
 
 def main():
@@ -55,10 +56,19 @@ def main():
     print("Creating virtualenv via UV...")
     subprocess.check_call(venv_cmd, env=env)
 
-    # Install requirements.
-    venv_python = os.path.join(target_dir, "bin", "python")
+    # UV doesn't really care about python3.exe existence, unlike some libraries that
+    # call it directly. Ascertain that both are present in the Scripts folder.
     if sys.platform == "win32":
-        venv_python = os.path.join(target_dir, "Scripts", "python.exe")
+        scripts_dir = os.path.join(target_dir, "Scripts")
+        p1 = os.path.join(scripts_dir, "python.exe")
+        p3 = os.path.join(scripts_dir, "python3.exe")
+        if os.path.exists(p1) and not os.path.exists(p3):
+            shutil.copyfile(p1, p3)
+
+    # Install requirements.
+    venv_python = os.path.join(target_dir, "bin", "python3")
+    if sys.platform == "win32":
+        venv_python = os.path.join(target_dir, "Scripts", "python3.exe")
 
     sync_cmd = [
         args.uv_bin,
