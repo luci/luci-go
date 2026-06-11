@@ -33,7 +33,7 @@ const DefaultARURL = "https://us-python.pkg.dev/chrome-python-ar/chrome-python-a
 
 const (
 	// Must be changed +1 to invalidate cache.
-	VpythonCacheSalt = "2"
+	VpythonCacheSalt = "3"
 )
 
 // Python returns the python path in python installation.
