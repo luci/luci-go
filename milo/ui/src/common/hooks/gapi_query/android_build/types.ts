@@ -27,7 +27,7 @@ export interface InvocationResponse {
   /**
    * Unique ID. Assigned at creation time by the API backend.
    */
-  resource: InvocationJson;
+  invocation: InvocationJson;
 }
 
 export interface InvocationJson {

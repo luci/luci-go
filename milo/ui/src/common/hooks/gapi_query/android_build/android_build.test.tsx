@@ -19,8 +19,8 @@ import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
 
 import { useGapiQuery } from '../gapi_query';
 
-import { useListBuilds } from './android_build';
-import { ListBuildsResponse } from './types';
+import { useGetInvocation, useListBuilds } from './android_build';
+import { InvocationResponse, ListBuildsResponse } from './types';
 
 // Mock useGapiQuery
 jest.mock('../gapi_query', () => ({
@@ -85,6 +85,31 @@ describe('useListBuilds', () => {
           page_size: 10,
           fields: 'nextPageToken,builds(buildId)',
         }),
+      }),
+      expect.objectContaining({ enabled: true }),
+    );
+  });
+});
+
+describe('useGetInvocation', () => {
+  it('should call useGapiQuery with correct parameters', async () => {
+    const { result } = renderHook(() =>
+      useGetInvocation(
+        {
+          invocationId: 'I12345',
+        },
+        {
+          enabled: true,
+        } as WrapperQueryOptions<InvocationResponse>,
+      ),
+    );
+
+    await waitFor(() => expect(result.current.data).toBeDefined());
+
+    expect(useGapiQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        path: 'https://androidteststorage.pa.googleapis.com/v4/invocations/I12345',
       }),
       expect.objectContaining({ enabled: true }),
     );

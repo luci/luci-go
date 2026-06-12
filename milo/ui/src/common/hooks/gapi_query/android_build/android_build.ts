@@ -26,6 +26,7 @@ import {
 } from './types';
 
 const API_BASE_PATH = 'https://androidbuild-pa.googleapis.com/';
+const ANTS_API_BASE_PATH = 'https://androidteststorage.pa.googleapis.com/';
 
 /**
  * Gets the current state of a single component
@@ -37,9 +38,7 @@ export const useGetInvocation = (
   return useGapiQuery<InvocationResponse>(
     {
       method: 'GET',
-      path:
-        API_BASE_PATH +
-        `android/internal/build/v3/invocations/${params.invocationId}`,
+      path: `${ANTS_API_BASE_PATH}v4/invocations/${params.invocationId}`,
     },
     queryOptions,
   );
