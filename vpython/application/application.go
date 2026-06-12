@@ -447,6 +447,17 @@ func (a *Application) GetExecCommand() *exec.Cmd {
 	env := environ.New(a.Environments)
 	python.IsolateEnvironment(&env)
 
+	// Prepend venv path in the path to make sure system python
+	// will not get executed.
+	if a.PythonExecutable != "" {
+		venvDir := filepath.Dir(a.PythonExecutable)
+		if curPath, ok := env.Lookup("PATH"); ok {
+			env.Set("PATH", strings.Join([]string{venvDir, curPath}, string(os.PathListSeparator)))
+		} else {
+			env.Set("PATH", venvDir)
+		}
+	}
+
 	cl := a.PythonCommandLine.Clone()
 	cl.AddSingleFlag("s")
 
