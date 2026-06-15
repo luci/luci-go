@@ -101,6 +101,7 @@ const defaultProps = {
   availableColumns: [
     {
       column: Column.ATP_TEST_NAME,
+      displayName: 'ATP Test Name',
       primary: true,
       dataType: MeasurementFilterColumn_ColumnDataType.STRING,
       sampleValues: [],
@@ -109,6 +110,7 @@ const defaultProps = {
     },
     {
       column: 'build_branch',
+      displayName: 'Build Branch',
       primary: false,
       dataType: MeasurementFilterColumn_ColumnDataType.STRING,
       sampleValues: [],
@@ -117,6 +119,7 @@ const defaultProps = {
     },
     {
       column: 'build_target',
+      displayName: 'Build Target',
       primary: false,
       dataType: MeasurementFilterColumn_ColumnDataType.STRING,
       sampleValues: [],
@@ -125,6 +128,7 @@ const defaultProps = {
     },
     {
       column: 'test_name',
+      displayName: 'Test Name',
       primary: true,
       dataType: MeasurementFilterColumn_ColumnDataType.STRING,
       sampleValues: [],
@@ -133,6 +137,7 @@ const defaultProps = {
     },
     {
       column: 'model',
+      displayName: 'Model',
       primary: false,
       dataType: MeasurementFilterColumn_ColumnDataType.STRING,
       sampleValues: [],
@@ -141,6 +146,7 @@ const defaultProps = {
     },
     {
       column: 'sku',
+      displayName: 'Sku',
       primary: true,
       dataType: MeasurementFilterColumn_ColumnDataType.STRING,
       sampleValues: [],

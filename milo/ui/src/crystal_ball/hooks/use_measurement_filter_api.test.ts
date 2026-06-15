@@ -88,6 +88,7 @@ describe('use_measurement_filter_api', () => {
         measurementFilterColumns: [
           {
             column: 'build_target',
+            displayName: 'Build Target',
             dataType: MeasurementFilterColumn_ColumnDataType.STRING,
             sampleValues: ['target1', 'target2'],
             primary: true,

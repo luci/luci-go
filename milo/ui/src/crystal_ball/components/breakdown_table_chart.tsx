@@ -76,6 +76,14 @@ const AGGREGATION_LABELS: Record<
   [BreakdownTableConfig_BreakdownAggregation.P75]: 'P75',
   [BreakdownTableConfig_BreakdownAggregation.P90]: 'P90',
   [BreakdownTableConfig_BreakdownAggregation.P99]: 'P99',
+  [BreakdownTableConfig_BreakdownAggregation.DELTA_COUNT]: 'Δ COUNT',
+  [BreakdownTableConfig_BreakdownAggregation.DELTA_MIN]: 'Δ MIN',
+  [BreakdownTableConfig_BreakdownAggregation.DELTA_MAX]: 'Δ MAX',
+  [BreakdownTableConfig_BreakdownAggregation.DELTA_MEAN]: 'Δ MEAN',
+  [BreakdownTableConfig_BreakdownAggregation.DELTA_P50]: 'Δ P50',
+  [BreakdownTableConfig_BreakdownAggregation.DELTA_P75]: 'Δ P75',
+  [BreakdownTableConfig_BreakdownAggregation.DELTA_P90]: 'Δ P90',
+  [BreakdownTableConfig_BreakdownAggregation.DELTA_P99]: 'Δ P99',
 };
 
 /**

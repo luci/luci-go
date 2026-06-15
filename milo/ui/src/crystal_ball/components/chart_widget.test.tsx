@@ -456,6 +456,7 @@ describe('ChartWidget', () => {
         filterColumns={[
           {
             column: 'test_name',
+            displayName: 'Test Name',
             primary: true,
             dataType: MeasurementFilterColumn_ColumnDataType.STRING,
             sampleValues: [],

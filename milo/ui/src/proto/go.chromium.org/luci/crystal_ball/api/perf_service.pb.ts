@@ -75,6 +75,8 @@ export interface MeasurementFilterColumn {
    * A column can be valid in multiple scopes.
    */
   readonly applicableScopes: readonly MeasurementFilterColumn_FilterScope[];
+  /** User-friendly display name for this column. */
+  readonly displayName: string;
 }
 
 /** Enum defining the possible data types for a filter column. */
@@ -1222,6 +1224,12 @@ export interface PerfYAxisConfig {
     | undefined;
   /** Whether to use a logarithmic scale. */
   readonly logarithmic: boolean;
+  /**
+   * Specifies the display unit for the Y-axis (e.g., "bytes", "megabytes",
+   * "seconds").
+   * The client can use this to determine scaling and axis label formatting.
+   */
+  readonly displayUnit: string;
 }
 
 /** How to split a metric into multiple series. */
@@ -1258,7 +1266,10 @@ export interface BreakdownTableConfig {
   readonly defaultDimension: string;
 }
 
-/** Aggregation functions. */
+/**
+ * Aggregation functions.
+ * This enum is not frozen, and new values may be added in the future.
+ */
 export enum BreakdownTableConfig_BreakdownAggregation {
   /** BREAKDOWN_AGGREGATION_UNSPECIFIED - Unspecified aggregation. */
   BREAKDOWN_AGGREGATION_UNSPECIFIED = 0,
@@ -1278,6 +1289,25 @@ export enum BreakdownTableConfig_BreakdownAggregation {
   P90 = 7,
   /** P99 - 99th percentile. */
   P99 = 8,
+  /**
+   * DELTA_COUNT - Delta variants.
+   * Delta of counts.
+   */
+  DELTA_COUNT = 9,
+  /** DELTA_MIN - Delta of minimum values. */
+  DELTA_MIN = 10,
+  /** DELTA_MAX - Delta of maximum values. */
+  DELTA_MAX = 11,
+  /** DELTA_MEAN - Delta of mean values. */
+  DELTA_MEAN = 12,
+  /** DELTA_P50 - Delta of 50th percentile. */
+  DELTA_P50 = 13,
+  /** DELTA_P75 - Delta of 75th percentile. */
+  DELTA_P75 = 14,
+  /** DELTA_P90 - Delta of 90th percentile. */
+  DELTA_P90 = 15,
+  /** DELTA_P99 - Delta of 99th percentile. */
+  DELTA_P99 = 16,
 }
 
 export function breakdownTableConfig_BreakdownAggregationFromJSON(
@@ -1311,6 +1341,30 @@ export function breakdownTableConfig_BreakdownAggregationFromJSON(
     case 8:
     case "P99":
       return BreakdownTableConfig_BreakdownAggregation.P99;
+    case 9:
+    case "DELTA_COUNT":
+      return BreakdownTableConfig_BreakdownAggregation.DELTA_COUNT;
+    case 10:
+    case "DELTA_MIN":
+      return BreakdownTableConfig_BreakdownAggregation.DELTA_MIN;
+    case 11:
+    case "DELTA_MAX":
+      return BreakdownTableConfig_BreakdownAggregation.DELTA_MAX;
+    case 12:
+    case "DELTA_MEAN":
+      return BreakdownTableConfig_BreakdownAggregation.DELTA_MEAN;
+    case 13:
+    case "DELTA_P50":
+      return BreakdownTableConfig_BreakdownAggregation.DELTA_P50;
+    case 14:
+    case "DELTA_P75":
+      return BreakdownTableConfig_BreakdownAggregation.DELTA_P75;
+    case 15:
+    case "DELTA_P90":
+      return BreakdownTableConfig_BreakdownAggregation.DELTA_P90;
+    case 16:
+    case "DELTA_P99":
+      return BreakdownTableConfig_BreakdownAggregation.DELTA_P99;
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum BreakdownTableConfig_BreakdownAggregation",
@@ -1340,6 +1394,22 @@ export function breakdownTableConfig_BreakdownAggregationToJSON(
       return "P90";
     case BreakdownTableConfig_BreakdownAggregation.P99:
       return "P99";
+    case BreakdownTableConfig_BreakdownAggregation.DELTA_COUNT:
+      return "DELTA_COUNT";
+    case BreakdownTableConfig_BreakdownAggregation.DELTA_MIN:
+      return "DELTA_MIN";
+    case BreakdownTableConfig_BreakdownAggregation.DELTA_MAX:
+      return "DELTA_MAX";
+    case BreakdownTableConfig_BreakdownAggregation.DELTA_MEAN:
+      return "DELTA_MEAN";
+    case BreakdownTableConfig_BreakdownAggregation.DELTA_P50:
+      return "DELTA_P50";
+    case BreakdownTableConfig_BreakdownAggregation.DELTA_P75:
+      return "DELTA_P75";
+    case BreakdownTableConfig_BreakdownAggregation.DELTA_P90:
+      return "DELTA_P90";
+    case BreakdownTableConfig_BreakdownAggregation.DELTA_P99:
+      return "DELTA_P99";
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum BreakdownTableConfig_BreakdownAggregation",
@@ -1966,6 +2036,52 @@ export interface SummarizeDashboardStateResponse {
 }
 
 /**
+ * Request message for summarizing a dashboard widget.
+ * (-- api-linter: core::0154::declarative-friendly-required=disabled
+ *     aip.dev/not-precedent: This is a summarization method, not an update to
+ *     an existing resource, so etag is not applicable. --)
+ */
+export interface SummarizeDashboardWidgetRequest {
+  /**
+   * The resource name of the DashboardState containing the widget to
+   * summarize.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly name?:
+    | string
+    | undefined;
+  /**
+   * The core content of the dashboard containing the widget to summarize.
+   * Useful for summarizing unsaved changes.
+   */
+  readonly dashboardContent?:
+    | PerfDashboardContent
+    | undefined;
+  /**
+   * The ID of the widget within the dashboard to summarize.
+   * This ID must match one of the widget IDs defined in the
+   * PerfDashboardContent.widgets list.
+   */
+  readonly widgetId: string;
+  /**
+   * Optional. A natural language prompt to guide the summary.
+   * For example, "Focus on regressions" or "Summarize the P99 trends".
+   */
+  readonly prompt: string;
+  /**
+   * Optional. If set to true, the request is validated but not actually
+   * executed.
+   */
+  readonly validateOnly: boolean;
+}
+
+/** Response message for summarizing a dashboard widget. */
+export interface SummarizeDashboardWidgetResponse {
+  /** The natural language summary of the dashboard widget and its data. */
+  readonly summary: string;
+}
+
+/**
  * Request message for fetching raw samples for a specific widget.
  * This is typically used when a user clicks on a point in a chart or a row in a
  * table and wants to see the underlying raw data that contributed to that
@@ -2232,7 +2348,15 @@ export const ListMeasurementFilterColumnsResponse: MessageFns<ListMeasurementFil
 };
 
 function createBaseMeasurementFilterColumn(): MeasurementFilterColumn {
-  return { column: "", dataType: 0, sampleValues: [], primary: false, isMetricKey: false, applicableScopes: [] };
+  return {
+    column: "",
+    dataType: 0,
+    sampleValues: [],
+    primary: false,
+    isMetricKey: false,
+    applicableScopes: [],
+    displayName: "",
+  };
 }
 
 export const MeasurementFilterColumn: MessageFns<MeasurementFilterColumn> = {
@@ -2254,6 +2378,9 @@ export const MeasurementFilterColumn: MessageFns<MeasurementFilterColumn> = {
     }
     for (const v of message.applicableScopes) {
       writer.uint32(48).int32(v!);
+    }
+    if (message.displayName !== "") {
+      writer.uint32(58).string(message.displayName);
     }
     return writer;
   },
@@ -2323,6 +2450,14 @@ export const MeasurementFilterColumn: MessageFns<MeasurementFilterColumn> = {
 
           break;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2344,6 +2479,7 @@ export const MeasurementFilterColumn: MessageFns<MeasurementFilterColumn> = {
       applicableScopes: globalThis.Array.isArray(object?.applicableScopes)
         ? object.applicableScopes.map((e: any) => measurementFilterColumn_FilterScopeFromJSON(e))
         : [],
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "",
     };
   },
 
@@ -2367,6 +2503,9 @@ export const MeasurementFilterColumn: MessageFns<MeasurementFilterColumn> = {
     if (message.applicableScopes?.length) {
       obj.applicableScopes = message.applicableScopes.map((e) => measurementFilterColumn_FilterScopeToJSON(e));
     }
+    if (message.displayName !== "") {
+      obj.displayName = message.displayName;
+    }
     return obj;
   },
 
@@ -2381,6 +2520,7 @@ export const MeasurementFilterColumn: MessageFns<MeasurementFilterColumn> = {
     message.primary = object.primary ?? false;
     message.isMetricKey = object.isMetricKey ?? false;
     message.applicableScopes = object.applicableScopes?.map((e) => e) || [];
+    message.displayName = object.displayName ?? "";
     return message;
   },
 };
@@ -6553,7 +6693,7 @@ export const PerfXAxisConfig: MessageFns<PerfXAxisConfig> = {
 };
 
 function createBasePerfYAxisConfig(): PerfYAxisConfig {
-  return { displayName: "", minValue: undefined, maxValue: undefined, logarithmic: false };
+  return { displayName: "", minValue: undefined, maxValue: undefined, logarithmic: false, displayUnit: "" };
 }
 
 export const PerfYAxisConfig: MessageFns<PerfYAxisConfig> = {
@@ -6569,6 +6709,9 @@ export const PerfYAxisConfig: MessageFns<PerfYAxisConfig> = {
     }
     if (message.logarithmic !== false) {
       writer.uint32(32).bool(message.logarithmic);
+    }
+    if (message.displayUnit !== "") {
+      writer.uint32(42).string(message.displayUnit);
     }
     return writer;
   },
@@ -6612,6 +6755,14 @@ export const PerfYAxisConfig: MessageFns<PerfYAxisConfig> = {
           message.logarithmic = reader.bool();
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.displayUnit = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6627,6 +6778,7 @@ export const PerfYAxisConfig: MessageFns<PerfYAxisConfig> = {
       minValue: isSet(object.minValue) ? globalThis.Number(object.minValue) : undefined,
       maxValue: isSet(object.maxValue) ? globalThis.Number(object.maxValue) : undefined,
       logarithmic: isSet(object.logarithmic) ? globalThis.Boolean(object.logarithmic) : false,
+      displayUnit: isSet(object.displayUnit) ? globalThis.String(object.displayUnit) : "",
     };
   },
 
@@ -6644,6 +6796,9 @@ export const PerfYAxisConfig: MessageFns<PerfYAxisConfig> = {
     if (message.logarithmic !== false) {
       obj.logarithmic = message.logarithmic;
     }
+    if (message.displayUnit !== "") {
+      obj.displayUnit = message.displayUnit;
+    }
     return obj;
   },
 
@@ -6656,6 +6811,7 @@ export const PerfYAxisConfig: MessageFns<PerfYAxisConfig> = {
     message.minValue = object.minValue ?? undefined;
     message.maxValue = object.maxValue ?? undefined;
     message.logarithmic = object.logarithmic ?? false;
+    message.displayUnit = object.displayUnit ?? "";
     return message;
   },
 };
@@ -8931,6 +9087,192 @@ export const SummarizeDashboardStateResponse: MessageFns<SummarizeDashboardState
   },
 };
 
+function createBaseSummarizeDashboardWidgetRequest(): SummarizeDashboardWidgetRequest {
+  return { name: undefined, dashboardContent: undefined, widgetId: "", prompt: "", validateOnly: false };
+}
+
+export const SummarizeDashboardWidgetRequest: MessageFns<SummarizeDashboardWidgetRequest> = {
+  encode(message: SummarizeDashboardWidgetRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== undefined) {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.dashboardContent !== undefined) {
+      PerfDashboardContent.encode(message.dashboardContent, writer.uint32(18).fork()).join();
+    }
+    if (message.widgetId !== "") {
+      writer.uint32(26).string(message.widgetId);
+    }
+    if (message.prompt !== "") {
+      writer.uint32(34).string(message.prompt);
+    }
+    if (message.validateOnly !== false) {
+      writer.uint32(40).bool(message.validateOnly);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SummarizeDashboardWidgetRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSummarizeDashboardWidgetRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dashboardContent = PerfDashboardContent.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.widgetId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.prompt = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.validateOnly = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SummarizeDashboardWidgetRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : undefined,
+      dashboardContent: isSet(object.dashboardContent)
+        ? PerfDashboardContent.fromJSON(object.dashboardContent)
+        : undefined,
+      widgetId: isSet(object.widgetId) ? globalThis.String(object.widgetId) : "",
+      prompt: isSet(object.prompt) ? globalThis.String(object.prompt) : "",
+      validateOnly: isSet(object.validateOnly) ? globalThis.Boolean(object.validateOnly) : false,
+    };
+  },
+
+  toJSON(message: SummarizeDashboardWidgetRequest): unknown {
+    const obj: any = {};
+    if (message.name !== undefined) {
+      obj.name = message.name;
+    }
+    if (message.dashboardContent !== undefined) {
+      obj.dashboardContent = PerfDashboardContent.toJSON(message.dashboardContent);
+    }
+    if (message.widgetId !== "") {
+      obj.widgetId = message.widgetId;
+    }
+    if (message.prompt !== "") {
+      obj.prompt = message.prompt;
+    }
+    if (message.validateOnly !== false) {
+      obj.validateOnly = message.validateOnly;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SummarizeDashboardWidgetRequest>): SummarizeDashboardWidgetRequest {
+    return SummarizeDashboardWidgetRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SummarizeDashboardWidgetRequest>): SummarizeDashboardWidgetRequest {
+    const message = createBaseSummarizeDashboardWidgetRequest() as any;
+    message.name = object.name ?? undefined;
+    message.dashboardContent = (object.dashboardContent !== undefined && object.dashboardContent !== null)
+      ? PerfDashboardContent.fromPartial(object.dashboardContent)
+      : undefined;
+    message.widgetId = object.widgetId ?? "";
+    message.prompt = object.prompt ?? "";
+    message.validateOnly = object.validateOnly ?? false;
+    return message;
+  },
+};
+
+function createBaseSummarizeDashboardWidgetResponse(): SummarizeDashboardWidgetResponse {
+  return { summary: "" };
+}
+
+export const SummarizeDashboardWidgetResponse: MessageFns<SummarizeDashboardWidgetResponse> = {
+  encode(message: SummarizeDashboardWidgetResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.summary !== "") {
+      writer.uint32(10).string(message.summary);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SummarizeDashboardWidgetResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSummarizeDashboardWidgetResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.summary = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SummarizeDashboardWidgetResponse {
+    return { summary: isSet(object.summary) ? globalThis.String(object.summary) : "" };
+  },
+
+  toJSON(message: SummarizeDashboardWidgetResponse): unknown {
+    const obj: any = {};
+    if (message.summary !== "") {
+      obj.summary = message.summary;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SummarizeDashboardWidgetResponse>): SummarizeDashboardWidgetResponse {
+    return SummarizeDashboardWidgetResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SummarizeDashboardWidgetResponse>): SummarizeDashboardWidgetResponse {
+    const message = createBaseSummarizeDashboardWidgetResponse() as any;
+    message.summary = object.summary ?? "";
+    return message;
+  },
+};
+
 function createBaseFetchWidgetRawSamplesRequest(): FetchWidgetRawSamplesRequest {
   return {
     name: "",
@@ -9624,6 +9966,13 @@ export interface PerfService {
    *     recommendations. --)
    */
   SummarizeDashboardState(request: SummarizeDashboardStateRequest): Promise<SummarizeDashboardStateResponse>;
+  /**
+   * Summarizes a specific widget within a dashboard state, including its
+   * configuration and data. This method uses an LLM to generate a natural
+   * language summary of the widget and the performance data it displays.
+   * (Imperative only.)
+   */
+  SummarizeDashboardWidget(request: SummarizeDashboardWidgetRequest): Promise<SummarizeDashboardWidgetResponse>;
 }
 
 export const PerfServiceServiceName = "google.android.perf.v1.PerfService";
@@ -9654,6 +10003,7 @@ export class PerfServiceClientImpl implements PerfService {
     this.UnstarDashboard = this.UnstarDashboard.bind(this);
     this.GenerateDashboardState = this.GenerateDashboardState.bind(this);
     this.SummarizeDashboardState = this.SummarizeDashboardState.bind(this);
+    this.SummarizeDashboardWidget = this.SummarizeDashboardWidget.bind(this);
   }
   ListMeasurementFilterColumns(
     request: ListMeasurementFilterColumnsRequest,
@@ -9779,6 +10129,12 @@ export class PerfServiceClientImpl implements PerfService {
     const data = SummarizeDashboardStateRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "SummarizeDashboardState", data);
     return promise.then((data) => SummarizeDashboardStateResponse.fromJSON(data));
+  }
+
+  SummarizeDashboardWidget(request: SummarizeDashboardWidgetRequest): Promise<SummarizeDashboardWidgetResponse> {
+    const data = SummarizeDashboardWidgetRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "SummarizeDashboardWidget", data);
+    return promise.then((data) => SummarizeDashboardWidgetResponse.fromJSON(data));
   }
 }
 

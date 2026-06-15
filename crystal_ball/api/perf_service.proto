@@ -289,6 +289,19 @@ service PerfService {
       additional_bindings { post: "/v1:summarizeDashboardState" body: "*" }
     };
   }
+
+  // Summarizes a specific widget within a dashboard state, including its
+  // configuration and data. This method uses an LLM to generate a natural
+  // language summary of the widget and the performance data it displays.
+  // (Imperative only.)
+  rpc SummarizeDashboardWidget(SummarizeDashboardWidgetRequest)
+      returns (SummarizeDashboardWidgetResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=dashboardStates/*}:summarizeDashboardWidget"
+      body: "*"
+      additional_bindings { post: "/v1:summarizeDashboardWidget" body: "*" }
+    };
+  }
 }
 
 // Request message for getting filter columns.
@@ -383,6 +396,9 @@ message MeasurementFilterColumn {
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = UNORDERED_LIST
   ];
+
+  // User-friendly display name for this column.
+  string display_name = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // Request message for getting filter values.
@@ -1205,6 +1221,11 @@ message PerfYAxisConfig {
 
   // Whether to use a logarithmic scale.
   bool logarithmic = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Specifies the display unit for the Y-axis (e.g., "bytes", "megabytes",
+  // "seconds").
+  // The client can use this to determine scaling and axis label formatting.
+  string display_unit = 5 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // How to split a metric into multiple series.
@@ -1241,6 +1262,7 @@ message InvocationDistributionConfig {
 // Configuration for a Breakdown Table chart.
 message BreakdownTableConfig {
   // Aggregation functions.
+  // This enum is not frozen, and new values may be added in the future.
   enum BreakdownAggregation {
     // Unspecified aggregation.
     BREAKDOWN_AGGREGATION_UNSPECIFIED = 0;
@@ -1260,6 +1282,24 @@ message BreakdownTableConfig {
     P90 = 7;
     // 99th percentile.
     P99 = 8;
+
+    // Delta variants.
+    // Delta of counts.
+    DELTA_COUNT = 9;
+    // Delta of minimum values.
+    DELTA_MIN = 10;
+    // Delta of maximum values.
+    DELTA_MAX = 11;
+    // Delta of mean values.
+    DELTA_MEAN = 12;
+    // Delta of 50th percentile.
+    DELTA_P50 = 13;
+    // Delta of 75th percentile.
+    DELTA_P75 = 14;
+    // Delta of 90th percentile.
+    DELTA_P90 = 15;
+    // Delta of 99th percentile.
+    DELTA_P99 = 16;
   }
   // The aggregation functions to apply to the metrics in the table.
   repeated BreakdownAggregation aggregations = 1;
@@ -1690,6 +1730,50 @@ message SummarizeDashboardStateRequest {
 // Response message for summarizing a dashboard state.
 message SummarizeDashboardStateResponse {
   // The natural language summary of the dashboard state and its data.
+  string summary = 1;
+}
+
+// Request message for summarizing a dashboard widget.
+// (-- api-linter: core::0154::declarative-friendly-required=disabled
+//     aip.dev/not-precedent: This is a summarization method, not an update to
+//     an existing resource, so etag is not applicable. --)
+message SummarizeDashboardWidgetRequest {
+  // The source of the dashboard definition containing the widget to summarize.
+  // Exactly one must be provided.
+  oneof source {
+    // The resource name of the DashboardState containing the widget to
+    // summarize.
+    // Format: dashboardStates/{dashboard_state}
+    string name = 1 [
+      (google.api.field_behavior) = OPTIONAL,
+      (google.api.resource_reference) = {
+        type: "crystalballperf.googleapis.com/DashboardState"
+      }
+    ];
+
+    // The core content of the dashboard containing the widget to summarize.
+    // Useful for summarizing unsaved changes.
+    PerfDashboardContent dashboard_content = 2
+        [(google.api.field_behavior) = OPTIONAL];
+  }
+
+  // The ID of the widget within the dashboard to summarize.
+  // This ID must match one of the widget IDs defined in the
+  // PerfDashboardContent.widgets list.
+  string widget_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. A natural language prompt to guide the summary.
+  // For example, "Focus on regressions" or "Summarize the P99 trends".
+  string prompt = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. If set to true, the request is validated but not actually
+  // executed.
+  bool validate_only = 5 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for summarizing a dashboard widget.
+message SummarizeDashboardWidgetResponse {
+  // The natural language summary of the dashboard widget and its data.
   string summary = 1;
 }
 
