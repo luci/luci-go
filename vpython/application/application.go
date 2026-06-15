@@ -447,12 +447,22 @@ func (a *Application) GetExecCommand() *exec.Cmd {
 	env := environ.New(a.Environments)
 	python.IsolateEnvironment(&env)
 
-	// Prepend venv path in the path to make sure system python
-	// will not get executed.
+	// Prepend venv path in the path to make sure system python will not get
+	// executed. Handle Windows case-insensitive environment keys.
 	if a.PythonExecutable != "" {
 		venvDir := filepath.Dir(a.PythonExecutable)
-		if curPath, ok := env.Lookup("PATH"); ok {
-			env.Set("PATH", strings.Join([]string{venvDir, curPath}, string(os.PathListSeparator)))
+		var matchKey string
+		var curPath string
+		for k, v := range env.Map() {
+			if strings.EqualFold(k, "PATH") {
+				matchKey = k
+				curPath = v
+				break
+			}
+		}
+
+		if matchKey != "" {
+			env.Set(matchKey, strings.Join([]string{venvDir, curPath}, string(os.PathListSeparator)))
 		} else {
 			env.Set("PATH", venvDir)
 		}
