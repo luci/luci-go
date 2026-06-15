@@ -48,9 +48,9 @@ If you cd into `<your_repo_dir>`, copy and paste this into your terminal so
 that you can copy and paste the rest of the commands in this guide:
 
 ```sh
-$ export GO_DIR="$(PWD)/infra/go"
-$ export MILO_DIR="$(PWD)/infra/go/src/go.chromium.org/luci/milo"
-$ export UI_DIR="$(PWD)/infra/go/src/go.chromium.org/luci/milo/ui"
+$ export GO_DIR="${PWD}/infra/go"
+$ export MILO_DIR="${PWD}/infra/go/src/go.chromium.org/luci/milo"
+$ export UI_DIR="${PWD}/infra/go/src/go.chromium.org/luci/milo/ui"
 ```
 
 ### 1. Activate the Infra Environment
