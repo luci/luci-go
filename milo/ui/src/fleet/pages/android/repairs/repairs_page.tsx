@@ -188,7 +188,9 @@ export const RepairListPage = () => {
     enableColumnFilters: false,
     manualFiltering: true,
     filterValues: filterCategoryDatas.filterValues,
-    positionToolbarAlertBanner: 'none',
+    error: repairMetricsList.error
+      ? getErrorMessage(repairMetricsList.error, 'get repair metrics')
+      : undefined,
     enableRowSelection: true,
     renderTopToolbarCustomActions: ({ table }) => (
       <div
@@ -228,22 +230,12 @@ export const RepairListPage = () => {
       columnVisibility: mrtColumnManager.columnVisibility,
       showProgressBars:
         repairMetricsList.isPending || repairMetricsList.isPlaceholderData,
-      showAlertBanner: repairMetricsList.isError,
       pagination: pagination,
     },
     onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
     muiPaginationProps: {
       rowsPerPageOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     },
-    muiToolbarAlertBannerProps: repairMetricsList.isError
-      ? {
-          color: 'error',
-          children: getErrorMessage(
-            repairMetricsList.error,
-            'get repair metrics',
-          ),
-        }
-      : undefined,
 
     // Sorting
     manualSorting: true,

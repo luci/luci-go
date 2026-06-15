@@ -40,6 +40,7 @@ import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { extractDutId, extractDutState } from '@/fleet/utils/devices';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -234,7 +235,6 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
         },
       },
       enableRowSelection: true,
-      positionToolbarAlertBanner: 'none',
       renderTopToolbarCustomActions: ({ table }) => (
         <FleetTopToolbar table={table}>
           <ChromeOSActions table={table} />
@@ -293,7 +293,16 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
     ],
   );
 
-  const table = useFCDataTable(tableOptions);
+  const table = useFCDataTable({
+    ...tableOptions,
+    error:
+      devicesQuery.error || countQuery.error
+        ? getErrorMessage(
+            devicesQuery.error || countQuery.error,
+            'fetch devices',
+          )
+        : undefined,
+  });
 
   return (
     <>

@@ -81,7 +81,10 @@ export type FC_TableOptions<TData extends MRT_RowData, TValue = unknown> = Omit<
 const SELECT_COL_PADDING = '8px !important';
 
 export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
-  tableOptions: FC_TableOptions<TData, TValue>,
+  tableOptions: FC_TableOptions<TData, TValue> & {
+    filterValues?: Record<string, FilterCategory>;
+    error?: string;
+  },
 ): MRT_TableInstance<TData> => {
   const [settings, setSettings] = useSettings();
 
@@ -391,12 +394,27 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
     data,
     muiTableContainerProps,
     filterValues,
+    error,
     meta,
     ...restTableOptions
   } = tableOptions;
+
+  const errorOptions: Partial<MRT_TableOptions<TData>> = error
+    ? {
+        state: {
+          showAlertBanner: true,
+        },
+        muiToolbarAlertBannerProps: {
+          color: 'error',
+          children: error,
+        },
+      }
+    : {};
+
   const mergedTableOptions = _.merge(
     {},
     defaultOptions,
+    errorOptions,
     restTableOptions,
   ) as FC_TableOptions<TData, TValue>;
 

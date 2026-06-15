@@ -182,6 +182,9 @@ export const ProductCataloguePage = () => {
     enablePagination: true,
     manualPagination: false,
     manualFiltering: false,
+    error: query.error
+      ? getErrorMessage(query.error, 'get product catalog')
+      : undefined,
     onSortingChange: onSortingChange,
     onPaginationChange: onPaginationChange,
     autoResetPageIndex: false,
@@ -193,14 +196,7 @@ export const ProductCataloguePage = () => {
       sorting,
       isLoading: query.isLoading,
       showProgressBars: query.isFetching,
-      showAlertBanner: query.isError,
     },
-    muiToolbarAlertBannerProps: query.isError
-      ? {
-          color: 'error',
-          children: getErrorMessage(query.error, 'get product catalog'),
-        }
-      : undefined,
   });
 
   return (

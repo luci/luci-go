@@ -49,6 +49,7 @@ import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -279,8 +280,10 @@ export const BrowserDevicesPage = () => {
     enableColumnResizing: true,
     enablePagination: false,
     enableRowSelection: true,
-    positionToolbarAlertBanner: 'none',
     manualFiltering: true,
+    error: devicesQuery.error
+      ? getErrorMessage(devicesQuery.error, 'fetch devices')
+      : undefined,
 
     manualSorting: true,
     manualPagination: true,

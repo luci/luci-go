@@ -54,6 +54,7 @@ import { ANDROID_EXTRA_FILTERS } from '@/fleet/pages/device_list_page/android/an
 import { AndroidSummaryHeader } from '@/fleet/pages/device_list_page/android/android_summary_header';
 import { AdminTasksAlert } from '@/fleet/pages/device_list_page/common/admin_tasks_alert';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
@@ -338,7 +339,6 @@ export const AndroidDevicesPage = () => {
         },
       },
       enableRowSelection: true,
-      positionToolbarAlertBanner: 'none',
       getRowId: (row: AndroidDevice) => row.id,
       onRowSelectionChange,
       onSortingChange,
@@ -399,7 +399,12 @@ export const AndroidDevicesPage = () => {
     ],
   );
 
-  const table = useFCDataTable(tableOptions);
+  const table = useFCDataTable({
+    ...tableOptions,
+    error: devicesQuery.error
+      ? getErrorMessage(devicesQuery.error, 'fetch devices')
+      : undefined,
+  });
 
   return (
     <div

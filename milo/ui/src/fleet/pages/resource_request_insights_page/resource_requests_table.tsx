@@ -140,7 +140,13 @@ export const ResourceRequestTable = () => {
     manualFiltering: true,
     enableColumnFilters: false,
     filterValues: filterValues,
-    positionToolbarAlertBanner: 'none',
+    error:
+      query.error || countQuery.error
+        ? getErrorMessage(
+            query.error || countQuery.error,
+            'get resource requests',
+          )
+        : undefined,
     enableRowSelection: false,
     renderTopToolbarCustomActions: ({ table }) => (
       <div
@@ -185,7 +191,6 @@ export const ResourceRequestTable = () => {
       sorting,
       columnVisibility: mrtColumnManager.columnVisibility,
       showProgressBars: query.isPending || query.isPlaceholderData,
-      showAlertBanner: query.isError,
       pagination: pagination,
     },
     onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
@@ -197,12 +202,6 @@ export const ResourceRequestTable = () => {
       },
     },
 
-    muiToolbarAlertBannerProps: query.isError
-      ? {
-          color: 'error',
-          children: getErrorMessage(query.error, 'get resource requests'),
-        }
-      : undefined,
     manualSorting: true,
     onSortingChange: (updater) => {
       const newSorting =
