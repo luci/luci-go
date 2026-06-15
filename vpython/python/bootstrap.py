@@ -50,12 +50,22 @@ else:
   subprocess.check_call(args)
 
 # Replicate python.exe to python3.exe in the venv.
+# Replace venv launchers with actual physical copies of host CPython binary and
+# copy DLLs so that Python can be executed entirely from Venv.
 if sys.platform == 'win32':
   scripts_dir = os.path.join(os.environ['out'], 'Scripts')
+  cpython_dir = os.path.dirname(sys.executable)
   p1 = os.path.join(scripts_dir, 'python.exe')
   p3 = os.path.join(scripts_dir, 'python3.exe')
-  if os.path.exists(p1) and not os.path.exists(p3):
-    shutil.copyfile(p1, p3)
+  for p in (p1, p3):
+    if os.path.exists(p):
+      os.remove(p)
+    shutil.copyfile(sys.executable, p)
+  for dll in glob.glob(os.path.join(cpython_dir, '*.dll')):
+    target_dll = os.path.join(scripts_dir, os.path.basename(dll))
+    if os.path.exists(target_dll):
+        os.remove(target_dll)
+    shutil.copyfile(dll, target_dll)
 
 # Install wheels to virtual environment
 if 'wheels' in os.environ:

@@ -15,6 +15,7 @@
 """Wrapper script to initialize and build a UV-backed virtualenv using UV."""
 
 import argparse
+import glob
 import os
 import subprocess
 import sys
@@ -56,14 +57,23 @@ def main():
     print("Creating virtualenv via UV...")
     subprocess.check_call(venv_cmd, env=env)
 
-    # UV doesn't really care about python3.exe existence, unlike some libraries that
-    # call it directly. Ascertain that both are present in the Scripts folder.
+    # Replicate python.exe to python3.exe in the venv from current executable.
+    # Replace venv launchers with actual physical copies of host CPython binary and
+    # copy DLLs so that Python can be executed entirely from Venv.
     if sys.platform == "win32":
         scripts_dir = os.path.join(target_dir, "Scripts")
+        cpython_dir = os.path.dirname(sys.executable)
         p1 = os.path.join(scripts_dir, "python.exe")
         p3 = os.path.join(scripts_dir, "python3.exe")
-        if os.path.exists(p1) and not os.path.exists(p3):
-            shutil.copyfile(p1, p3)
+        for p in (p1, p3):
+            if os.path.exists(p):
+                os.remove(p)
+                shutil.copyfile(sys.executable, p)
+        for dll in glob.glob(os.path.join(cpython_dir, '*.dll')):
+            target_dll = os.path.join(scripts_dir, os.path.basename(dll))
+            if os.path.exists(target_dll):
+                os.remove(target_dll)
+            shutil.copyfile(dll, target_dll)
 
     # Install requirements.
     venv_python = os.path.join(target_dir, "bin", "python3")
