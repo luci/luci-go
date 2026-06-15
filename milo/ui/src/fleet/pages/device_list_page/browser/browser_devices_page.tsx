@@ -200,7 +200,6 @@ export const BrowserDevicesPage = () => {
     aip160,
     warnings: filterWarnings,
     isLoading,
-    onApplyFilter,
   } = useBrowserFilters(() => {
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   });
@@ -353,7 +352,6 @@ export const BrowserDevicesPage = () => {
       >
         <FilterBar
           filterCategoryDatas={Object.values(filterValues || {})}
-          onApply={onApplyFilter}
           isLoading={isLoading}
           searchPlaceholder='Add a filter (e.g. "os:Linux" or "sw.pool:default")'
         />

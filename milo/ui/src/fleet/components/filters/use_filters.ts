@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { parseFilter } from '@/fleet/utils/aip160/parser/parser';
@@ -42,17 +42,24 @@ export const useFilters = <
   T extends Record<string, FilterCategoryBuilder<FilterCategory>>,
 >(
   rawBuilders: T | undefined,
-  options: { areFilterValuesLoading?: boolean } = {},
+  options: {
+    areFilterValuesLoading?: boolean;
+    onFilterChange?: () => void;
+  } = {},
 ): {
   filterValues: FilterValuesFromBuilders<T> | undefined;
   aip160: () => string;
   warnings: string[];
   setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
-  const { areFilterValuesLoading = false } = options;
+  const { areFilterValuesLoading = false, onFilterChange = () => {} } = options;
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [warnings, addWarning] = useWarnings();
   const filtersAIP160 = searchParams.get(FILTERS_PARAM_KEY);
+
+  //This is needed to prevent infinite loops in the filter builder
+  const onFilterChangeRef = useRef(onFilterChange);
+  onFilterChangeRef.current = onFilterChange;
 
   // Stabilize builders to prevent infinite loops if the parent passes a new object every render.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -79,6 +86,7 @@ export const useFilters = <
         },
         { replace: replaceHistory },
       );
+      onFilterChangeRef.current();
     },
     [setSearchParams],
   );
@@ -97,7 +105,7 @@ export const useFilters = <
     );
 
     return [filters, warnings];
-  }, [builders, filtersAIP160, updateUrl, areFilterValuesLoading]);
+  }, [builders, filtersAIP160, areFilterValuesLoading, updateUrl]);
 
   useEffect(() => {
     if (
@@ -322,7 +330,6 @@ function buildFilters<
   T extends Record<string, FilterCategoryBuilder<FilterCategory>>,
 >(
   builders: T,
-  // onFilterUpdate: (key: string, newFilterValue: FilterCategory) => void,
   onFilterUpdate: (filterValues: Record<string, FilterCategory>) => void,
   filtersAIP160: string | null,
   areFilterValuesLoading: boolean,

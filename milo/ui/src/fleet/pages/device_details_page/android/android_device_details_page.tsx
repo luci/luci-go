@@ -125,7 +125,7 @@ export const AndroidDeviceDetailsPage = () => {
     [device],
   );
 
-  const labels = useMemo(() => {
+  const labels = useMemo<{ key: string; value: React.ReactNode }[]>(() => {
     if (!device) return [];
     const l = Object.entries(device.omnilabSpec?.labels ?? {}).map(
       ([key, value]) => {

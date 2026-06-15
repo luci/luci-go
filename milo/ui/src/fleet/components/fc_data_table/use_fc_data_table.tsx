@@ -65,16 +65,27 @@ export type FC_ColumnDef<
   filterKey?: string;
 };
 
+// This type exists to be able to add custom fields to MRT_TableOptions (such as filterValue)
+// and becuase the library provided type doesn't allow to specify the column value
+//
+// For everything to keep working this needs to be kept as a superset of the original MRT_TableOptions,
+// please be careful when modifing existing fields
+export type FC_TableOptions<TData extends MRT_RowData, TValue = unknown> = Omit<
+  MRT_TableOptions<TData>,
+  'columns'
+> & {
+  columns: FC_ColumnDef<TData, TValue>[];
+  filterValues?: Record<string, FilterCategory>;
+};
+
 const SELECT_COL_PADDING = '8px !important';
 
-export const useFCDataTable = <TData extends MRT_RowData>(
-  tableOptions: MRT_TableOptions<TData> & {
-    filterValues?: Record<string, FilterCategory>;
-  },
+export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
+  tableOptions: FC_TableOptions<TData, TValue>,
 ): MRT_TableInstance<TData> => {
   const [settings, setSettings] = useSettings();
 
-  const defaultOptions: Partial<MRT_TableOptions<TData>> = {
+  const defaultOptions: Partial<FC_TableOptions<TData, TValue>> = {
     enableKeyboardShortcuts: false, // Prevents stealing Arrow Keys from Dropdown Menus
     enableColumnFilters: false,
     enableGlobalFilter: false,
@@ -387,7 +398,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     {},
     defaultOptions,
     restTableOptions,
-  ) as MRT_TableOptions<TData>;
+  ) as FC_TableOptions<TData, TValue>;
 
   if (meta) {
     mergedTableOptions.meta = meta;
@@ -417,6 +428,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     let userSxConfig = {};
     if (typeof injectedProps.sx === 'function') {
       // Technically sx can be a function, but that's very hard to merge transparently.
+      //
       // We fall back to the user's function if provided, accepting we might lose default padding.
       // For arrays/objects, we eagerly merge.
       userSxConfig = injectedProps.sx;
@@ -443,5 +455,9 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     mergedTableOptions.data = data;
   }
 
-  return useMaterialReactTable(mergedTableOptions);
+  /// SAFETY: This type casting is ok because FC_TableOptions is constrained to be a super set of MRT_TableOptions
+  /// @type {FC_TableOptions}
+  return useMaterialReactTable(
+    mergedTableOptions as unknown as MRT_TableOptions<TData>,
+  );
 };

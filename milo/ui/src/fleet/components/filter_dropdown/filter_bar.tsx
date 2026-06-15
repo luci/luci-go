@@ -25,7 +25,7 @@ import { SearchBar } from './search_bar';
 
 interface FilterBarProps {
   filterCategoryDatas: FilterCategory[];
-  onApply: () => void;
+  onApply?: () => void;
   isLoading?: boolean;
   searchPlaceholder?: string;
 }
@@ -72,7 +72,7 @@ export function FilterBar({
         onChangeDropdownOpen={setIsDropdownOpen}
         isLoading={isLoading}
         ref={searchBarRef}
-        onChipEditApplied={onApply}
+        onChipEditApplied={onApply ?? (() => {})}
         placeholder={searchPlaceholder}
       />
       <FilterDropdown
@@ -86,7 +86,7 @@ export function FilterBar({
         }}
         filterCategoryDatas={filterCategoryDatas}
         onApply={() => {
-          onApply();
+          onApply?.();
           setValue('');
           searchBarRef.current?.focus();
         }}

@@ -51,7 +51,6 @@ export const ChromeOSDevicesPage = () => {
     filterValues,
     isLoading,
     warnings: filterWarnings,
-    onApplyFilter,
     setFiltersBatch,
     aip160,
   } = useChromeOSFilters(handleFilterChange);
@@ -92,7 +91,6 @@ export const ChromeOSDevicesPage = () => {
       >
         <FilterBar
           filterCategoryDatas={Object.values(filterValues || {})}
-          onApply={onApplyFilter}
           isLoading={isLoading || filterValues === undefined}
           searchPlaceholder='Add a filter (e.g. "dut1" or "state:ready")'
         />

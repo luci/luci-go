@@ -15,11 +15,7 @@
 import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
 import { Box, Button, TablePagination } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import {
-  MaterialReactTable,
-  MRT_ColumnDef,
-  MRT_PaginationState,
-} from 'material-react-table';
+import { MaterialReactTable, MRT_PaginationState } from 'material-react-table';
 import { useMemo } from 'react';
 
 import {
@@ -38,8 +34,10 @@ import {
   useMRTColumnManagement,
 } from '@/fleet/components/columns/use_mrt_column_management';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
-import { FilterOption } from '@/fleet/components/fc_data_table/mrt_filter_menu_item';
-import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import {
+  FC_ColumnDef,
+  useFCDataTable,
+} from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { PAGE_TOKEN_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
@@ -54,7 +52,6 @@ import {
   COLUMNS,
   DEFAULT_COLUMNS,
   DEFAULT_SORT_COLUMN_ID,
-  type RriColumnDef,
 } from './rri_columns';
 import { getRow, type RriGridRow } from './rri_utils';
 import { useRriFilters } from './use_rri_filters';
@@ -86,34 +83,7 @@ export const ResourceRequestTable = () => {
 
   const client = useFleetConsoleClient();
 
-  const { data: filterOptionsData } = useQuery(
-    client.GetResourceRequestsMultiselectFilterValues.query({}),
-  );
-
-  const columns = useMemo(() => {
-    const columnList = Object.values(COLUMNS) as RriColumnDef<
-      keyof RriGridRow
-    >[];
-    return columnList.map((c) => {
-      let filterSelectOptions: FilterOption[] | undefined = undefined;
-
-      if (filterOptionsData && 'rriFilterKey' in c && c.rriFilterKey) {
-        filterSelectOptions = filterOptionsData[
-          c.rriFilterKey as keyof typeof filterOptionsData
-        ] as FilterOption[];
-      }
-
-      return {
-        ...c,
-        filterVariant:
-          'enableColumnFilter' in c && c.enableColumnFilter === false
-            ? undefined
-            : c.filterVariant || 'multi-select',
-        filterSelectOptions: (filterSelectOptions ?? []).filter(Boolean),
-      } as MRT_ColumnDef<RriGridRow>;
-    });
-  }, [filterOptionsData]);
-
+  const columns = useMemo(() => Object.values(COLUMNS), []);
   const sorting = useMrtSorting();
   const pagination = useMemo<MRT_PaginationState>(
     () => ({
@@ -157,15 +127,15 @@ export const ResourceRequestTable = () => {
     [filterValues],
   );
 
-  const mrtColumnManager = useMRTColumnManagement<RriGridRow>({
+  const mrtColumnManager = useMRTColumnManagement({
     columns,
     defaultColumnIds,
     localStorageKey: RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
     highlightedColumnIds,
   });
 
-  const table = useFCDataTable<RriGridRow>({
-    columns: mrtColumnManager.columns,
+  const table = useFCDataTable<RriGridRow, unknown>({
+    columns: mrtColumnManager.columns as FC_ColumnDef<RriGridRow, unknown>[],
     enableColumnActions: true,
     manualFiltering: true,
     enableColumnFilters: false,

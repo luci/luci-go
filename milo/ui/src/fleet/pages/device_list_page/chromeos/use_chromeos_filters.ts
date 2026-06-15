@@ -34,7 +34,6 @@ export const useChromeOSFilters = (
   isLoading: boolean;
   warnings: string[];
   setFiltersBatch: (updates: Record<string, string[]>) => void;
-  onApplyFilter: () => void;
 } => {
   const { availableFields, getValues, isLoading } = useChromeOSFields();
   const { trackEvent } = useGoogleAnalytics();
@@ -71,6 +70,7 @@ export const useChromeOSFilters = (
     filterOptions,
     {
       areFilterValuesLoading: isLoading,
+      onFilterChange: onApplyFilter,
     },
   );
 
@@ -82,6 +82,5 @@ export const useChromeOSFilters = (
     isLoading: isLoading,
     warnings,
     setFiltersBatch,
-    onApplyFilter,
   };
 };

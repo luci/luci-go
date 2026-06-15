@@ -15,6 +15,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
+import {
+  emptyPageTokenUpdater,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { DateFilterCategoryDataBuilder } from '@/fleet/components/filters/date_filter';
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
@@ -23,6 +27,7 @@ import { useFilters } from '@/fleet/components/filters/use_filters';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FilterType } from '@/fleet/types';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { GetResourceRequestsMultiselectFilterValuesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import type { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
@@ -187,8 +192,14 @@ export const useRriFilters = () => {
     RriBuildersInstance | undefined
   >(undefined);
 
+  const [_, setSearchParams] = useSyncedSearchParams();
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: [25, 50, 100, 200],
+    defaultPageSize: 50,
+  });
   const { filterValues, aip160, warnings } = useFilters(filterOptions, {
     areFilterValuesLoading: query.isLoading,
+    onFilterChange: () => setSearchParams(emptyPageTokenUpdater(pagerCtx)),
   });
 
   const nextFilterOptions = useMemo(() => {

@@ -52,7 +52,6 @@ export const ResourceRequestListPage = () => {
           filterCategoryDatas={Object.values(filterValues || {})}
           isLoading={isLoading}
           searchPlaceholder='Add a filter (e.g. "rr_id" or "status")'
-          onApply={() => {}}
         />
       </div>
       <ResourceRequestTable />

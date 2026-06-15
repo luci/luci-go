@@ -40,7 +40,6 @@ export const useBrowserFilters = (
   aip160: () => string;
   isLoading: boolean;
   warnings: string[];
-  onApplyFilter: () => void;
 } => {
   const { trackEvent } = useGoogleAnalytics();
   const [searchParams] = useSyncedSearchParams();
@@ -111,6 +110,7 @@ export const useBrowserFilters = (
 
   const filterCategoryDatas = useFilters(filterOptions, {
     areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
+    onFilterChange: onApplyFilter,
   });
 
   return {
@@ -118,6 +118,5 @@ export const useBrowserFilters = (
     aip160: filterCategoryDatas.aip160,
     warnings: filterCategoryDatas.warnings,
     isLoading: !isDimensionsQueryProperlyLoaded,
-    onApplyFilter,
   };
 };

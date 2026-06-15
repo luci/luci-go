@@ -307,6 +307,37 @@ describe('useFilters', () => {
     ).toEqual(['v1']);
   });
 
+  it('should call onFilterChange when setFiltersBatch is called', async () => {
+    const builder = new StringListFilterCategoryBuilder()
+      .setLabel('Model')
+      .setOptions([{ label: 'v1', value: 'v1' }]);
+
+    const builders = {
+      model: builder,
+    };
+
+    const onFilterChangeMock = jest.fn();
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(
+      () => useFilters(builders, { onFilterChange: onFilterChangeMock }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+
+    act(() => {
+      result.current.setFiltersBatch({ model: ['v1'] });
+    });
+
+    expect(onFilterChangeMock).toHaveBeenCalled();
+  });
+
   const testFilterParsing = async (
     filterString: string,
     expectedFilters: Record<string, string[]>,

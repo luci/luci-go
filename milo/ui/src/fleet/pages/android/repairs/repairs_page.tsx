@@ -128,6 +128,13 @@ export const RepairListPage = () => {
 
   const filterCategoryDatas = useFilters(loadedFilterOptions, {
     areFilterValuesLoading: !repairMetricsFilterValues.data,
+    onFilterChange: () => {
+      trackEvent('filter_changed', {
+        componentName: 'device_list_filter',
+      });
+
+      setSearchParams(emptyPageTokenUpdater(pagerCtx));
+    },
   });
 
   const repairMetricsList = useQuery({
@@ -320,11 +327,6 @@ export const RepairListPage = () => {
           filterCategoryDatas={Object.values(
             filterCategoryDatas.filterValues || {},
           )}
-          onApply={() => {
-            trackEvent('filter_changed', {
-              componentName: 'device_list_filter',
-            });
-          }}
           isLoading={
             repairMetricsFilterValues.isPending ||
             filterCategoryDatas.filterValues === undefined

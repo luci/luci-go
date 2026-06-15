@@ -98,6 +98,13 @@ export const AndroidDevicesPage = () => {
     dimensionsQuery.data.baseDimensions &&
     dimensionsQuery.data.labels;
 
+  const onApplyFilter = useCallback(() => {
+    trackEvent('filter_changed', {
+      componentName: 'device_list_filter',
+    });
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
+  }, [pagerCtx, setSearchParams, trackEvent]);
+
   const filterOptions = useMemo(() => {
     const extraFilters: Record<
       string,
@@ -155,14 +162,8 @@ export const AndroidDevicesPage = () => {
 
   const filterCategoryDatas = useFilters(filterOptions, {
     areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
+    onFilterChange: onApplyFilter,
   });
-
-  const onApplyFilter = useCallback(() => {
-    trackEvent('filter_changed', {
-      componentName: 'device_list_filter',
-    });
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  }, [pagerCtx, setSearchParams, trackEvent]);
 
   const request = useMemo(
     () =>
@@ -433,7 +434,6 @@ export const AndroidDevicesPage = () => {
           filterCategoryDatas={Object.values(
             filterCategoryDatas.filterValues || {},
           )}
-          onApply={onApplyFilter}
           isLoading={
             dimensionsQuery.isPending ||
             filterCategoryDatas.filterValues === undefined
