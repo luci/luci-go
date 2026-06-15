@@ -167,7 +167,6 @@ export function DashboardTimeRangeSelector({
                 ? [
                     newStartTime ? (newStartTime.toISO() ?? '') : '',
                     newEndTime ? (newEndTime.toISO() ?? '') : '',
-                    newOption,
                   ]
                 : [newOption],
             filterOperator:

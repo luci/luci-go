@@ -16,7 +16,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { DateTime } from 'luxon';
 
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
-import { DashboardState } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+import {
+  DashboardState,
+  PerfFilterDefault_FilterOperator,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { DashboardTimeRangeSelector } from './dashboard_time_range_selector';
 
@@ -153,6 +156,30 @@ describe('DashboardTimeRangeSelector', () => {
     const applyButtons = screen.getAllByText('Apply');
     fireEvent.click(applyButtons[1]);
 
-    expect(mockOnApply).toHaveBeenCalled();
+    expect(mockOnApply).toHaveBeenCalledWith(
+      DashboardState.fromPartial({
+        ...defaultState,
+        dashboardContent: {
+          widgets: [],
+          dataSpecs: {},
+          globalFilters: [
+            {
+              id: 'global_time_range',
+              column: 'build_creation_timestamp',
+              displayName: 'Time Range (UTC)',
+              range: {
+                defaultValue: {
+                  values: [
+                    '2026-04-15T12:00:00.000+00:00',
+                    '2026-04-16T12:00:00.000+00:00',
+                  ],
+                  filterOperator: PerfFilterDefault_FilterOperator.BETWEEN,
+                },
+              },
+            },
+          ],
+        },
+      }),
+    );
   });
 });
