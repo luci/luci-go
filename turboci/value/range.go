@@ -75,7 +75,7 @@ func RefsInStage(stage *orchestratorpb.Stage) iter.Seq2[RefSlot, *orchestratorpb
 		}
 
 		for _, edit := range stage.GetEdits() {
-			for slot, ref := range RefsInStageEdit(edit) {
+			for slot, ref := range RefsInEdit(edit) {
 				if ref != nil && !yield(slot, ref) {
 					return
 				}
@@ -111,23 +111,49 @@ func RefsInStageAttempt(attempt *orchestratorpb.Stage_Attempt) iter.Seq2[RefSlot
 	}
 }
 
-// RefsInStageEdit is an iterator which iterates through every non-nil
-// *ValueRef in the stage edit.
-func RefsInStageEdit(edit *orchestratorpb.Edit) iter.Seq2[RefSlot, *orchestratorpb.ValueRef] {
-	return func(yield func(RefSlot, *orchestratorpb.ValueRef) bool) {
-		for _, detail := range edit.GetReason().GetDetails() {
-			if detail != nil && !yield(StageEditReasonDetailsSlot, detail) {
-				return
+// RefsInEdit is an iterator which iterates through every non-nil
+// *ValueRef in the edit.
+func RefsInEdit(edit *orchestratorpb.Edit) iter.Seq2[RefSlot, *orchestratorpb.ValueRef] {
+	switch edit.WhichDelta() {
+	case orchestratorpb.Edit_Stage_case:
+		return func(yield func(RefSlot, *orchestratorpb.ValueRef) bool) {
+			for _, detail := range edit.GetReason().GetDetails() {
+				if detail != nil && !yield(StageEditReasonDetailsSlot, detail) {
+					return
+				}
+			}
+			for _, attempt := range edit.GetStage().GetAttempts() {
+				for _, detail := range attempt.GetDetails() {
+					if detail != nil && !yield(StageEditAttemptDetailsSlot, detail) {
+						return
+					}
+				}
 			}
 		}
-		for _, attempt := range edit.GetStage().GetAttempts() {
-			for _, detail := range attempt.GetDetails() {
-				if detail != nil && !yield(StageEditAttemptDetailsSlot, detail) {
+
+	case orchestratorpb.Edit_Check_case:
+		return func(yield func(RefSlot, *orchestratorpb.ValueRef) bool) {
+			for _, detail := range edit.GetReason().GetDetails() {
+				if detail != nil && !yield(CheckEditReasonDetailsSlot, detail) {
 					return
+				}
+			}
+			for _, option := range edit.GetCheck().GetOptions() {
+				if option != nil && !yield(CheckEditOptionsSlot, option) {
+					return
+				}
+			}
+			for _, result := range edit.GetCheck().GetResults() {
+				for _, dat := range result.GetData() {
+					if dat != nil && !yield(CheckEditResultsDataSlot, dat) {
+						return
+					}
 				}
 			}
 		}
 	}
+
+	panic("impossible")
 }
 
 // RefsInCheck is an iterator which iterates through every non-nil
@@ -147,32 +173,8 @@ func RefsInCheck(check *orchestratorpb.Check) iter.Seq2[RefSlot, *orchestratorpb
 			}
 		}
 		for _, edit := range check.GetEdits() {
-			for slot, ref := range RefsInCheckEdit(edit) {
+			for slot, ref := range RefsInEdit(edit) {
 				if ref != nil && !yield(slot, ref) {
-					return
-				}
-			}
-		}
-	}
-}
-
-// RefsInCheckEdit is an iterator which iterates through every non-nil
-// *ValueRef in the check edit.
-func RefsInCheckEdit(edit *orchestratorpb.Edit) iter.Seq2[RefSlot, *orchestratorpb.ValueRef] {
-	return func(yield func(RefSlot, *orchestratorpb.ValueRef) bool) {
-		for _, detail := range edit.GetReason().GetDetails() {
-			if detail != nil && !yield(CheckEditReasonDetailsSlot, detail) {
-				return
-			}
-		}
-		for _, option := range edit.GetCheck().GetOptions() {
-			if option != nil && !yield(CheckEditOptionsSlot, option) {
-				return
-			}
-		}
-		for _, result := range edit.GetCheck().GetResults() {
-			for _, dat := range result.GetData() {
-				if dat != nil && !yield(CheckEditResultsDataSlot, dat) {
 					return
 				}
 			}

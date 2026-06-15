@@ -172,7 +172,7 @@ func TestRefsInStageEdit(t *testing.T) {
 	expect := populateAllValueRefs(edit, Stage)
 
 	var found int
-	for range RefsInStageEdit(edit) {
+	for range RefsInEdit(edit) {
 		found++
 	}
 
@@ -210,7 +210,7 @@ func TestRefsInCheckEdit(t *testing.T) {
 	expect := populateAllValueRefs(edit, Check)
 
 	var found int
-	for range RefsInCheckEdit(edit) {
+	for range RefsInEdit(edit) {
 		found++
 	}
 
