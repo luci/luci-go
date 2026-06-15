@@ -154,6 +154,8 @@ type CompileFailureAnalysis struct {
 	Id int64 `gae:"$id"`
 	// Key to the CompileFailure that this analysis analyses.
 	CompileFailure *datastore.Key `gae:"compile_failure"`
+	// The LUCI project of the compile failure this analysis analyses.
+	Project string `gae:"project"`
 	// Time when the analysis is created.
 	CreateTime time.Time `gae:"create_time"`
 	// Time when the analysis starts to run.

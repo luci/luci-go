@@ -530,7 +530,7 @@ func TestCompileFailureAnalysisToBqRow(t *testing.T) {
 		}
 		assert.Loosely(t, datastore.Put(ctx, lfb), should.BeNil)
 		cf := testutil.CreateCompileFailure(ctx, t, lfb)
-		cfa := testutil.CreateCompileFailureAnalysis(ctx, t, 123, cf)
+		cfa := testutil.CreateCompileFailureAnalysis(ctx, t, 123, cf, "chromium")
 		cfa.FirstFailedBuildId = 9000
 		cfa.CreateTime = time.Unix(200, 0).UTC()
 		cfa.StartTime = time.Unix(210, 0).UTC()

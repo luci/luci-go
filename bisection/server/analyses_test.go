@@ -612,28 +612,39 @@ func TestListAnalyses(t *testing.T) {
 		// Set up context and AEAD so that page tokens can be generated
 		c := memory.Use(context.Background())
 		c = secrets.GeneratePrimaryTinkAEADForTest(c)
+		testutil.UpdateIndices(c)
 
 		// Prepares datastore
 		failureAnalysis1 := &model.CompileFailureAnalysis{
 			Id:         1,
+			Project:    "chromium",
 			CreateTime: (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
 		}
 		failureAnalysis2 := &model.CompileFailureAnalysis{
 			Id:         2,
+			Project:    "chrome",
 			CreateTime: (&timestamppb.Timestamp{Seconds: 102}).AsTime(),
 		}
 		failureAnalysis3 := &model.CompileFailureAnalysis{
 			Id:         3,
+			Project:    "chromium",
 			CreateTime: (&timestamppb.Timestamp{Seconds: 101}).AsTime(),
 		}
 		failureAnalysis4 := &model.CompileFailureAnalysis{
 			Id:         4,
+			Project:    "chrome",
 			CreateTime: (&timestamppb.Timestamp{Seconds: 103}).AsTime(),
+		}
+		failureAnalysis5 := &model.CompileFailureAnalysis{
+			Id:         5,
+			Project:    "",
+			CreateTime: (&timestamppb.Timestamp{Seconds: 99}).AsTime(),
 		}
 		assert.Loosely(t, datastore.Put(c, failureAnalysis1), should.BeNil)
 		assert.Loosely(t, datastore.Put(c, failureAnalysis2), should.BeNil)
 		assert.Loosely(t, datastore.Put(c, failureAnalysis3), should.BeNil)
 		assert.Loosely(t, datastore.Put(c, failureAnalysis4), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, failureAnalysis5), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		t.Run("Invalid page size", func(t *ftt.Test) {
@@ -649,16 +660,40 @@ func TestListAnalyses(t *testing.T) {
 			req := &pb.ListAnalysesRequest{}
 			res, err := server.ListAnalyses(c, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, len(res.Analyses), should.Equal(4))
+			assert.Loosely(t, len(res.Analyses), should.Equal(3))
 
 			t.Run("Next page token is empty if there are no more analyses", func(t *ftt.Test) {
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 			})
 		})
 
+		t.Run("Filter by project chrome", func(t *ftt.Test) {
+			req := &pb.ListAnalysesRequest{
+				Project: "chrome",
+			}
+			res, err := server.ListAnalyses(c, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.Analyses), should.Equal(2))
+			assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(4))
+			assert.Loosely(t, res.Analyses[1].AnalysisId, should.Equal(2))
+		})
+
+		t.Run("Filter by project chromium (includes legacy empty project)", func(t *ftt.Test) {
+			req := &pb.ListAnalysesRequest{
+				Project: "chromium",
+			}
+			res, err := server.ListAnalyses(c, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.Analyses), should.Equal(3))
+			assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(3))
+			assert.Loosely(t, res.Analyses[1].AnalysisId, should.Equal(1))
+			assert.Loosely(t, res.Analyses[2].AnalysisId, should.Equal(5))
+		})
+
 		t.Run("Response is limited by the page size", func(t *ftt.Test) {
 			req := &pb.ListAnalysesRequest{
-				PageSize: 3,
+				Project:  "chromium",
+				PageSize: 2,
 			}
 			res, err := server.ListAnalyses(c, req)
 			assert.Loosely(t, err, should.BeNil)
@@ -666,21 +701,56 @@ func TestListAnalyses(t *testing.T) {
 			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 
 			t.Run("Returned analyses are sorted correctly", func(t *ftt.Test) {
-				assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(4))
-				assert.Loosely(t, res.Analyses[1].AnalysisId, should.Equal(2))
-				assert.Loosely(t, res.Analyses[2].AnalysisId, should.Equal(3))
+				assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(3))
+				assert.Loosely(t, res.Analyses[1].AnalysisId, should.Equal(1))
 
 				t.Run("Page token will get the next page of analyses", func(t *ftt.Test) {
 					req = &pb.ListAnalysesRequest{
-						PageSize:  3,
+						Project:   "chromium",
+						PageSize:  2,
 						PageToken: res.NextPageToken,
 					}
 					res, err = server.ListAnalyses(c, req)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(res.Analyses), should.Equal(1))
-					assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(1))
+					assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(5))
 				})
 			})
+		})
+	})
+}
+
+func TestValidateListAnalysesRequest(t *testing.T) {
+	t.Parallel()
+	ftt.Run("validateListAnalysesRequest", t, func(t *ftt.Test) {
+		t.Run("Empty project", func(t *ftt.Test) {
+			req := &pb.ListAnalysesRequest{
+				Project: "",
+			}
+			err := validateListAnalysesRequest(req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("project must not be empty"))
+		})
+
+		t.Run("Invalid page size", func(t *ftt.Test) {
+			req := &pb.ListAnalysesRequest{
+				Project:  "chromium",
+				PageSize: -5,
+			}
+			err := validateListAnalysesRequest(req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("Page size can't be negative"))
+		})
+
+		t.Run("Valid request", func(t *ftt.Test) {
+			req := &pb.ListAnalysesRequest{
+				Project:  "chromium",
+				PageSize: 10,
+			}
+			err := validateListAnalysesRequest(req)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

@@ -569,7 +569,7 @@ func TestShouldCancelAnalysis(t *testing.T) {
 		assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		cf := testutil.CreateCompileFailure(c, t, fb)
-		cfa := testutil.CreateCompileFailureAnalysis(c, t, 789, cf)
+		cfa := testutil.CreateCompileFailureAnalysis(c, t, 789, cf, "chromium")
 
 		build := &buildbucketpb.Build{
 			Output: &buildbucketpb.Build_Output{

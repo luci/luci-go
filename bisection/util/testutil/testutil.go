@@ -72,11 +72,12 @@ func CreateCompileFailure(c context.Context, t testing.TB, fb *model.LuciFailedB
 	return cf
 }
 
-func CreateCompileFailureAnalysis(c context.Context, t testing.TB, id int64, cf *model.CompileFailure) *model.CompileFailureAnalysis {
+func CreateCompileFailureAnalysis(c context.Context, t testing.TB, id int64, cf *model.CompileFailure, project string) *model.CompileFailureAnalysis {
 	t.Helper()
 	cfa := &model.CompileFailureAnalysis{
 		Id:             id,
 		CompileFailure: datastore.KeyForObj(c, cf),
+		Project:        project,
 	}
 	assert.Loosely(t, datastore.Put(c, cfa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
@@ -87,7 +88,7 @@ func CreateCompileFailureAnalysisAnalysisChain(c context.Context, t testing.TB, 
 	t.Helper()
 	fb := CreateLUCIFailedBuild(c, t, bbid, project)
 	cf := CreateCompileFailure(c, t, fb)
-	cfa := CreateCompileFailureAnalysis(c, t, analysisID, cf)
+	cfa := CreateCompileFailureAnalysis(c, t, analysisID, cf, project)
 	return fb, cf, cfa
 }
 
@@ -705,6 +706,18 @@ func UpdateIndices(c context.Context) {
 		},
 		&datastore.IndexDefinition{
 			Kind: "TestFailureAnalysis",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "project",
+				},
+				{
+					Property:   "create_time",
+					Descending: true,
+				},
+			},
+		},
+		&datastore.IndexDefinition{
+			Kind: "CompileFailureAnalysis",
 			SortBy: []datastore.IndexColumn{
 				{
 					Property: "project",

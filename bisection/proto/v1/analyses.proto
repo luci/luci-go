@@ -98,6 +98,8 @@ message ListAnalysesRequest {
   // match the call that provided the page token,
   // with the exception of page_size and page_token.
   string page_token = 2;
+  // The project that the compile analyses belong to.
+  string project = 3 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 message ListAnalysesResponse {

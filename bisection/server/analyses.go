@@ -867,6 +867,11 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 	if err != nil {
 		return nil, err
 	}
+	// Temporarily allow empty project (default to "chromium").
+	// TODO: this can be removed once UI is updated to always provide the project.
+	if req.Project == "" {
+		req.Project = "chromium"
+	}
 	// Validate the request
 	if err := validateListAnalysesRequest(req); err != nil {
 		return nil, err
@@ -886,13 +891,27 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 	// Override the page size if necessary
 	pageSize := int(listAnalysesPageSizeLimiter.Adjust(req.PageSize))
 
-	// Construct the query
-	q := datastore.NewQuery("CompileFailureAnalysis").Order("-create_time").Start(cursor)
+	project := req.Project
+
+	var q *datastore.Query
+	var isQueryForChromium bool
+
+	if project == "chromium" {
+		// legacy chromium entries doesn't have a project set, query all and filter in memory.
+		q = datastore.NewQuery("CompileFailureAnalysis").Order("-create_time").Start(cursor)
+		isQueryForChromium = true
+	} else {
+		q = datastore.NewQuery("CompileFailureAnalysis").Eq("project", project).Order("-create_time").Start(cursor)
+	}
 
 	// Query datastore for compile failure analyses
 	compileFailureAnalyses := make([]*model.CompileFailureAnalysis, 0, pageSize)
 	var nextCursor datastore.Cursor
 	err = datastore.Run(c, q, func(compileFailureAnalysis *model.CompileFailureAnalysis, getCursor datastore.CursorCB) error {
+		// TODO(2026-07-11): remove this in-memory filter.
+		if isQueryForChromium && compileFailureAnalysis.Project != "" && compileFailureAnalysis.Project != "chromium" {
+			return nil
+		}
 		compileFailureAnalyses = append(compileFailureAnalyses, compileFailureAnalysis)
 
 		// Check whether the page size limit has been reached
@@ -943,6 +962,9 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 
 // validateListAnalysesRequest checks if the request is valid.
 func validateListAnalysesRequest(req *pb.ListAnalysesRequest) error {
+	if req.Project == "" {
+		return status.Errorf(codes.InvalidArgument, "project must not be empty")
+	}
 	if req.PageSize < 0 {
 		return status.Errorf(codes.InvalidArgument, "Page size can't be negative")
 	}

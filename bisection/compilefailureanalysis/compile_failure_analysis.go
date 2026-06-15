@@ -92,9 +92,15 @@ func AnalyzeFailure(
 		return nil, e
 	}
 
+	project := ""
+	if firstFailedBuild != nil && firstFailedBuild.Builder != nil {
+		project = firstFailedBuild.Builder.Project
+	}
+
 	// Creates a new CompileFailureAnalysis entity in datastore
 	analysis := &model.CompileFailureAnalysis{
 		CompileFailure:         datastore.KeyForObj(c, cf),
+		Project:                project,
 		CreateTime:             clock.Now(c),
 		Status:                 pb.AnalysisStatus_RUNNING,
 		RunStatus:              pb.AnalysisRunStatus_STARTED,

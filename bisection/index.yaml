@@ -78,3 +78,10 @@ indexes:
   - name: project
   - name: create_time
     direction: desc
+
+- kind: CompileFailureAnalysis
+  properties:
+  - name: project
+  - name: create_time
+    direction: desc
+
