@@ -215,6 +215,7 @@ export function BreakdownTableWidget({
         error={error}
         currentAggregations={currentAggregations}
         hasAtpTestFilter={hasAtpTestFilter}
+        filterColumns={filterColumns}
         hasEmptyMetricField={hasEmptyMetricField}
         onUpdateAggregations={(finalValues) => {
           onUpdate(

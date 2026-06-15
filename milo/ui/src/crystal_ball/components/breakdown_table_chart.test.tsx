@@ -16,7 +16,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
-import { BreakdownSection } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+import {
+  BreakdownSection,
+  MeasurementFilterColumn,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { BreakdownTableChart } from './breakdown_table_chart';
 
@@ -111,6 +114,63 @@ describe('BreakdownTableChart', () => {
       screen.getByRole('combobox', { name: 'Breakdown by category' }),
     ).toHaveTextContent(/TESTNAME/i);
     expect(screen.getByText('test1')).toBeInTheDocument();
+  });
+
+  it('renders the friendly dimension name in column header when filterColumns metadata is provided', () => {
+    const sections: BreakdownSection[] = [
+      {
+        dimensionColumn: 'testname',
+        rows: [{ dimension_value: 'test1', COUNT: 10 }],
+      },
+    ];
+
+    render(
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+        filterColumns={[
+          {
+            column: 'testname',
+            displayName: 'Friendly Test Name',
+          } as MeasurementFilterColumn,
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole('columnheader', { name: /Friendly Test Name/ }),
+    ).toBeInTheDocument();
+  });
+
+  it('renders the formatted raw name in column header when displayName is missing', () => {
+    const sections: BreakdownSection[] = [
+      {
+        dimensionColumn: 'build_target',
+        rows: [{ dimension_value: 'target1', COUNT: 10 }],
+      },
+    ];
+
+    render(
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+        filterColumns={[
+          {
+            column: 'build_target',
+          } as MeasurementFilterColumn,
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole('columnheader', { name: /BUILD TARGET/ }),
+    ).toBeInTheDocument();
   });
 
   it('renders the default dimension when specified', () => {

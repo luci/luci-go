@@ -49,15 +49,17 @@ import {
   COMPACT_SELECT_SX,
 } from '@/crystal_ball/styles';
 import {
+  deriveTableColumns,
+  formatColumnNameFallback,
+  getColumnDisplayNameMap,
+  UNKNOWN_DIMENSION,
+} from '@/crystal_ball/utils';
+import {
   BreakdownSection,
   BreakdownTableConfig_BreakdownAggregation,
   breakdownTableConfig_BreakdownAggregationFromJSON,
+  MeasurementFilterColumn,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
-
-import {
-  deriveTableColumns,
-  UNKNOWN_DIMENSION,
-} from '../utils/breakdown_utils';
 
 /**
  * Labels for breakdown aggregations.
@@ -99,6 +101,7 @@ interface InnerTableProps {
   pagination: MRT_PaginationState;
   /** State setter to update the parent-hoisted pagination state. */
   setPagination: Dispatch<SetStateAction<MRT_PaginationState>>;
+  filterColumns: readonly MeasurementFilterColumn[];
 }
 
 interface TableCellProps {
@@ -217,6 +220,7 @@ function InnerTable({
   section,
   pagination,
   setPagination,
+  filterColumns,
 }: InnerTableProps): React.ReactElement {
   const dimensionColumn = section.dimensionColumn ?? 'unknown';
   const data: BreakdownRow[] = useMemo(
@@ -258,10 +262,13 @@ function InnerTable({
   const columns = useMemo<
     MRT_ColumnDef<BreakdownRow, number | string | null | undefined>[]
   >(() => {
+    const match = filterColumns.find((c) => c.column === dimensionColumn);
+    const dimensionHeader =
+      match?.displayName || formatColumnNameFallback(dimensionColumn);
     return [
       {
         accessorKey: dimensionKey,
-        header: dimensionColumn.replace(/_/g, ' ').toUpperCase(),
+        header: dimensionHeader,
         Cell: DimensionCell,
       },
       {
@@ -301,6 +308,7 @@ function InnerTable({
     globalMinMax,
     minKey,
     maxKey,
+    filterColumns,
   ]);
 
   const countLabel =
@@ -353,6 +361,7 @@ export interface BreakdownTableChartProps {
   onUpdateDefaultDimension: (dimension: string) => void;
   onExport?: () => void;
   isExporting?: boolean;
+  filterColumns?: readonly MeasurementFilterColumn[];
 }
 
 /**
@@ -372,11 +381,17 @@ export function BreakdownTableChart({
   onUpdateDefaultDimension,
   onExport,
   isExporting = false,
+  filterColumns = [],
 }: BreakdownTableChartProps): React.ReactElement {
   const [pagination, setPagination] = useState<MRT_PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
+
+  const columnDisplayNameMap = useMemo(
+    () => getColumnDisplayNameMap(filterColumns),
+    [filterColumns],
+  );
 
   const currentDimension =
     defaultDimension || sections[0]?.dimensionColumn || UNKNOWN_DIMENSION;
@@ -488,24 +503,30 @@ export function BreakdownTableChart({
                 if (!sec) {
                   return sections.length === 0 ? 'N/A' : UNKNOWN_DIMENSION;
                 }
+                const rawCol = sec.dimensionColumn ?? '';
                 return (
-                  sec.dimensionColumn?.replace(/_/g, ' ').toUpperCase() ||
+                  columnDisplayNameMap[rawCol] ||
+                  formatColumnNameFallback(rawCol) ||
                   UNKNOWN_DIMENSION
                 );
               }}
             >
-              {sections.map((section, idx) => (
-                <MenuItem
-                  key={section.dimensionColumn ?? `${UNKNOWN_DIMENSION}-${idx}`}
-                  value={section.dimensionColumn || UNKNOWN_DIMENSION}
-                  sx={{
-                    fontSize: (theme) => theme.typography.body2.fontSize,
-                  }}
-                >
-                  {section.dimensionColumn?.replace(/_/g, ' ').toUpperCase() ||
-                    UNKNOWN_DIMENSION}
-                </MenuItem>
-              ))}
+              {sections.map((section, idx) => {
+                const rawCol = section.dimensionColumn ?? '';
+                return (
+                  <MenuItem
+                    key={rawCol || `${UNKNOWN_DIMENSION}-${idx}`}
+                    value={rawCol || UNKNOWN_DIMENSION}
+                    sx={{
+                      fontSize: (theme) => theme.typography.body2.fontSize,
+                    }}
+                  >
+                    {columnDisplayNameMap[rawCol] ||
+                      formatColumnNameFallback(rawCol) ||
+                      UNKNOWN_DIMENSION}
+                  </MenuItem>
+                );
+              })}
             </Select>
           </FormControl>
         </Box>
@@ -712,6 +733,7 @@ export function BreakdownTableChart({
                 section={activeSection}
                 pagination={pagination}
                 setPagination={setPagination}
+                filterColumns={filterColumns}
               />
             )}
           </Box>

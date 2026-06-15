@@ -215,10 +215,10 @@ describe('SplitSeriesDialog', () => {
     fireEvent.mouseDown(screen.getByLabelText('Select Dimension to Split On'));
     await waitFor(() => {
       expect(
-        screen.getByRole('option', { name: 'build_branch' }),
+        screen.getByRole('option', { name: 'BUILD BRANCH' }),
       ).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole('option', { name: 'build_branch' }));
+    fireEvent.click(screen.getByRole('option', { name: 'BUILD BRANCH' }));
 
     // Wait for values input to appear
     await waitFor(() => {
@@ -252,10 +252,10 @@ describe('SplitSeriesDialog', () => {
     fireEvent.mouseDown(screen.getByLabelText('Select Dimension to Split On'));
     await waitFor(() => {
       expect(
-        screen.getByRole('option', { name: 'build_branch' }),
+        screen.getByRole('option', { name: 'BUILD BRANCH' }),
       ).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole('option', { name: 'build_branch' }));
+    fireEvent.click(screen.getByRole('option', { name: 'BUILD BRANCH' }));
 
     // Wait for values input to appear
     await waitFor(() => {

@@ -52,8 +52,9 @@ import {
   COMPACT_TEXTFIELD_SX,
 } from '@/crystal_ball/styles';
 import { DataTestId } from '@/crystal_ball/tests';
-import { buildFilterString } from '@/crystal_ball/utils';
+import { buildFilterString, getColumnDisplayName } from '@/crystal_ball/utils';
 import {
+  MeasurementFilterColumn,
   MeasurementFilterColumn_ColumnDataType,
   PerfFilter,
   PerfFilterDefault_FilterOperator,
@@ -63,8 +64,8 @@ import {
 interface FilterEditorRowProps {
   filter: PerfFilter;
   dataSpecId: string;
-  primaryColumns: string[];
-  secondaryColumns: string[];
+  primaryColumns: MeasurementFilterColumn[];
+  secondaryColumns: MeasurementFilterColumn[];
   dataType: MeasurementFilterColumn_ColumnDataType;
   isCheckboxFilter?: boolean;
   onUpdateColumn: (column: string) => void;
@@ -234,23 +235,23 @@ export function FilterEditorRow({
         MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
       >
         {filter.column &&
-          !primaryColumns.includes(filter.column) &&
-          !secondaryColumns.includes(filter.column) && (
+          !primaryColumns.some((c) => c.column === filter.column) &&
+          !secondaryColumns.some((c) => c.column === filter.column) && (
             <MenuItem key={filter.column} value={filter.column}>
               {filter.column}
             </MenuItem>
           )}
         {primaryColumns.map((col) => (
-          <MenuItem key={col} value={col}>
-            {col}
+          <MenuItem key={col.column} value={col.column}>
+            {getColumnDisplayName(col)}
           </MenuItem>
         ))}
 
         {secondaryColumns.length > 0 && [
           <Divider key="divider" />,
           ...secondaryColumns.map((col) => (
-            <MenuItem key={col} value={col}>
-              {col}
+            <MenuItem key={col.column} value={col.column}>
+              {getColumnDisplayName(col)}
             </MenuItem>
           )),
         ]}

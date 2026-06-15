@@ -83,6 +83,7 @@ import {
   calculateChange,
   formatChange,
   generateColor,
+  getColumnDisplayNameMap,
   getFilterLabel,
   getTrendInfo,
   isStringArray,
@@ -673,6 +674,11 @@ export function ChartSeriesItem({
   onToggleChildren,
   regressionInfo,
 }: ChartSeriesItemProps) {
+  const columnDisplayNameMap = useMemo(
+    () => getColumnDisplayNameMap(metricFilterColumns),
+    [metricFilterColumns],
+  );
+
   const trendInfo = useMemo(() => {
     if (!regressionInfo) return null;
     return getTrendInfo(regressionInfo.diff, series.metricField);
@@ -881,7 +887,11 @@ export function ChartSeriesItem({
         {!expanded && series.filters?.length > 0 && (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
             {series.filters.map((filter) => {
-              const label = getFilterLabel(filter, OPERATOR_DISPLAY_NAMES);
+              const label = getFilterLabel(
+                filter,
+                OPERATOR_DISPLAY_NAMES,
+                columnDisplayNameMap,
+              );
               return <Chip key={filter.id} label={label} size="small" />;
             })}
           </Box>

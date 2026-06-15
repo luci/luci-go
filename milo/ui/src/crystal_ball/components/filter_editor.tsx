@@ -55,7 +55,11 @@ import {
   UseEditorUiStateOptions,
 } from '@/crystal_ball/hooks';
 import { DataTestId } from '@/crystal_ball/tests';
-import { getFilterLabel } from '@/crystal_ball/utils';
+import {
+  getColumnDisplayName,
+  getColumnDisplayNameMap,
+  getFilterLabel,
+} from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
   MeasurementFilterColumn_ColumnDataType,
@@ -226,6 +230,11 @@ export function FilterEditor({
     ...uiStateOptions,
   });
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+
+  const columnDisplayNameMap = useMemo(
+    () => getColumnDisplayNameMap(availableColumns),
+    [availableColumns],
+  );
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -421,20 +430,20 @@ export function FilterEditor({
   const primaryColumns = useMemo(
     () =>
       availableColumns
-        .filter((c) => c.primary)
-        .map((c) => c.column ?? '')
-        .filter((c) => !!c)
-        .sort((a, b) => a.localeCompare(b)),
+        .filter((c) => c.primary && !!c.column)
+        .sort((a, b) =>
+          getColumnDisplayName(a).localeCompare(getColumnDisplayName(b)),
+        ),
     [availableColumns],
   );
 
   const secondaryColumns = useMemo(
     () =>
       availableColumns
-        .filter((c) => !c.primary)
-        .map((c) => c.column ?? '')
-        .filter((c) => !!c)
-        .sort((a, b) => a.localeCompare(b)),
+        .filter((c) => !c.primary && !!c.column)
+        .sort((a, b) =>
+          getColumnDisplayName(a).localeCompare(getColumnDisplayName(b)),
+        ),
     [availableColumns],
   );
 
@@ -649,7 +658,11 @@ export function FilterEditor({
               filters.map((filter) => (
                 <Chip
                   key={filter.id}
-                  label={getFilterLabel(filter, OPERATOR_DISPLAY_NAMES)}
+                  label={getFilterLabel(
+                    filter,
+                    OPERATOR_DISPLAY_NAMES,
+                    columnDisplayNameMap,
+                  )}
                   size="small"
                 />
               ))}

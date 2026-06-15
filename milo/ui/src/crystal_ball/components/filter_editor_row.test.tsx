@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useParams } from 'react-router';
 
 import {
@@ -23,6 +23,7 @@ import {
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks';
 import { createMockQueryResult } from '@/crystal_ball/tests';
 import {
+  MeasurementFilterColumn,
   MeasurementFilterColumn_ColumnDataType,
   PerfFilter,
   PerfFilterDefault_FilterOperator,
@@ -60,8 +61,13 @@ describe('FilterEditorRow', () => {
       },
     } as PerfFilter,
     dataSpecId: 'spec-1',
-    primaryColumns: ['test_name', 'build_branch'],
-    secondaryColumns: ['model'],
+    primaryColumns: [
+      { column: 'test_name', displayName: 'Test Name' },
+      { column: 'build_branch', displayName: 'Build Branch' },
+    ] as MeasurementFilterColumn[],
+    secondaryColumns: [
+      { column: 'model', displayName: 'Model' },
+    ] as MeasurementFilterColumn[],
     dataType: MeasurementFilterColumn_ColumnDataType.STRING,
     onUpdateColumn: jest.fn(),
     onUpdateOperator: jest.fn(),
@@ -85,7 +91,7 @@ describe('FilterEditorRow', () => {
     // Check column select
     expect(
       screen.getByRole('combobox', { name: COMMON_MESSAGES.COLUMN }),
-    ).toHaveTextContent('test_name');
+    ).toHaveTextContent('Test Name');
 
     // Check operator select
     // MUI Select renders a div for display value when not expanded
@@ -107,7 +113,7 @@ describe('FilterEditorRow', () => {
     });
     fireEvent.mouseDown(columnSelect);
 
-    const option = screen.getByRole('option', { name: 'build_branch' });
+    const option = screen.getByRole('option', { name: 'Build Branch' });
     fireEvent.click(option);
 
     expect(defaultProps.onUpdateColumn).toHaveBeenCalledWith('build_branch');
@@ -351,5 +357,20 @@ describe('FilterEditorRow', () => {
     fireEvent.click(trueButton);
 
     expect(defaultProps.onUpdateOperator).not.toHaveBeenCalled();
+  });
+
+  it('renders with fallback column names formatted when displayName is missing', async () => {
+    const props = {
+      ...defaultProps,
+      primaryColumns: [{ column: 'build_target' }] as MeasurementFilterColumn[],
+    };
+    render(<FilterEditorRow {...props} />);
+
+    fireEvent.mouseDown(screen.getByLabelText(COMMON_MESSAGES.COLUMN));
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: 'BUILD TARGET' }),
+      ).toBeInTheDocument();
+    });
   });
 });

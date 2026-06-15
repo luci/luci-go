@@ -39,6 +39,7 @@ import {
 import {
   buildFilterString,
   generateColor,
+  getColumnDisplayName,
   getFilterableColumns,
 } from '@/crystal_ball/utils';
 import {
@@ -263,11 +264,11 @@ export function SplitSeriesDialog({
             Step 1: Choose Dimension
           </Typography>
           <Autocomplete
-            options={columns.map((c) => c.column)}
-            getOptionLabel={(option) => option}
-            value={selectedColumn}
+            options={columns}
+            getOptionLabel={getColumnDisplayName}
+            value={columns.find((c) => c.column === selectedColumn) ?? null}
             onChange={(_event, newValue) => {
-              setSelectedColumn(newValue);
+              setSelectedColumn(newValue?.column ?? null);
               setSelectedValues([]);
             }}
             renderInput={(params) => (

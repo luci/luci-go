@@ -299,6 +299,7 @@ export const buildFilterString = (
 export const getFilterLabel = (
   filter: PerfFilter,
   operatorDisplayNames: Record<PerfFilterDefault_FilterOperator, string>,
+  columnDisplayNameMap?: Record<string, string>,
 ): string => {
   const values =
     filter.textInput?.defaultValue?.values ??
@@ -318,6 +319,7 @@ export const getFilterLabel = (
   const opStr =
     operatorDisplayNames[op] ?? PerfFilterDefault_FilterOperator[op];
   const isNumber = Boolean(filter.numberInput);
+  const columnName = columnDisplayNameMap?.[filter.column] ?? filter.column;
 
   if (
     op === PerfFilterDefault_FilterOperator.IN ||
@@ -326,9 +328,39 @@ export const getFilterLabel = (
     const formattedVals = values
       .map((v) => (isNumber ? v : `"${v}"`))
       .join(', ');
-    return `${filter.column} ${opStr} (${formattedVals})`;
+    return `${columnName} ${opStr} (${formattedVals})`;
   }
 
   const val = values[0] ?? '';
-  return `${filter.column} ${opStr} ${isNumber ? val : `"${val}"`}`;
+  return `${columnName} ${opStr} ${isNumber ? val : `"${val}"`}`;
+};
+
+/**
+ * Formats a raw column name to a capitalized, friendly name as a fallback.
+ * e.g., 'build_branch' -> 'BUILD BRANCH'
+ */
+export const formatColumnNameFallback = (column: string): string => {
+  return column.replace(/_/g, ' ').toUpperCase();
+};
+
+/**
+ * Gets the display name for a filter column, falling back to its raw name if not provided.
+ */
+export const getColumnDisplayName = (col: MeasurementFilterColumn): string => {
+  return col.displayName || formatColumnNameFallback(col.column);
+};
+
+/**
+ * Creates a map from raw column name to its display name.
+ */
+export const getColumnDisplayNameMap = (
+  columns: readonly MeasurementFilterColumn[],
+): Record<string, string> => {
+  const map: Record<string, string> = {};
+  for (const col of columns) {
+    if (col.column) {
+      map[col.column] = getColumnDisplayName(col);
+    }
+  }
+  return map;
 };

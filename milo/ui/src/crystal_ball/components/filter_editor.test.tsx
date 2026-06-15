@@ -222,7 +222,7 @@ describe('FilterEditor', () => {
     );
 
     // Check chip label when collapsed
-    expect(screen.getByText('test_name = "initialValue"')).toBeInTheDocument();
+    expect(screen.getByText('Test Name = "initialValue"')).toBeInTheDocument();
 
     // Expand the accordion
     fireEvent.click(screen.getByText('Filters'));
@@ -234,7 +234,7 @@ describe('FilterEditor', () => {
       'initialValue',
     );
     expect(screen.getByLabelText(COMMON_MESSAGES.COLUMN)).toHaveTextContent(
-      'test_name',
+      'Test Name',
     );
     expect(screen.getByLabelText(COMMON_MESSAGES.OPERATOR)).toHaveTextContent(
       '=',
@@ -261,7 +261,7 @@ describe('FilterEditor', () => {
     );
 
     expect(
-      screen.getByText('test_name in ("val1", "val2")'),
+      screen.getByText('Test Name in ("val1", "val2")'),
     ).toBeInTheDocument();
   });
 
@@ -371,9 +371,9 @@ describe('FilterEditor', () => {
     // interact with the combobox
     fireEvent.mouseDown(screen.getByLabelText(COMMON_MESSAGES.COLUMN));
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'sku' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Sku' })).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole('option', { name: 'sku' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Sku' }));
 
     expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
     const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
@@ -534,16 +534,16 @@ describe('FilterEditor', () => {
     // Primary components should be visible and sorted alphabetically
     await waitFor(() => {
       expect(
-        screen.getByRole('option', { name: 'atp_test_name' }),
+        screen.getByRole('option', { name: 'ATP Test Name' }),
       ).toBeInTheDocument();
       expect(screen.getAllByRole('option').length).toBeGreaterThan(3);
     });
 
     const allOptions = screen.getAllByRole('option');
     // First 3 are primary
-    expect(allOptions[0]).toHaveTextContent('atp_test_name'); // Primary 1
-    expect(allOptions[1]).toHaveTextContent('sku'); // Primary 2
-    expect(allOptions[2]).toHaveTextContent('test_name'); // Primary 3
+    expect(allOptions[0]).toHaveTextContent('ATP Test Name'); // Primary 1
+    expect(allOptions[1]).toHaveTextContent('Sku'); // Primary 2
+    expect(allOptions[2]).toHaveTextContent('Test Name'); // Primary 3
     // Then the divider
     expect(allOptions[3]).toHaveTextContent('');
 
@@ -551,13 +551,13 @@ describe('FilterEditor', () => {
 
     // First 3 are primary, remaining are secondary (in alphabetical order)
     expect(optionsText).toEqual([
-      'atp_test_name',
-      'sku',
-      'test_name',
+      'ATP Test Name',
+      'Sku',
+      'Test Name',
       '',
-      'build_branch',
-      'build_target',
-      'model',
+      'Build Branch',
+      'Build Target',
+      'Model',
     ]);
   });
 
