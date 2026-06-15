@@ -21,10 +21,10 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	commonpb "go.chromium.org/turboci/proto/go/data/common/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -77,7 +77,7 @@ func TestMakeTypeMatcher(t *testing.T) {
 				URL[*structpb.Struct](),
 				URL[*emptypb.Empty](),
 			},
-			rejects: []string{"hi", URL[*buildbucketpb.Build]()},
+			rejects: []string{"hi", URL[*commonpb.DisplayMessage]()},
 		},
 		{
 			name: "prefix_star",
@@ -90,7 +90,7 @@ func TestMakeTypeMatcher(t *testing.T) {
 				URL[*structpb.ListValue](),
 				URL[*structpb.Struct](),
 				URL[*emptypb.Empty](),
-				URL[*buildbucketpb.Build](),
+				URL[*commonpb.DisplayMessage](),
 			},
 			rejects: []string{"hi"},
 		},
@@ -105,7 +105,7 @@ func TestMakeTypeMatcher(t *testing.T) {
 				URL[*structpb.ListValue](),
 				URL[*structpb.Struct](),
 				URL[*emptypb.Empty](),
-				URL[*buildbucketpb.Build](),
+				URL[*commonpb.DisplayMessage](),
 				TypePrefix + "very.long.package.Spam",
 				TypePrefix + "very.Cool",
 				TypePrefix + "very.Cool",
