@@ -64,4 +64,17 @@ describe('ChromeOS Devices Page', () => {
     cy.get('table').should('be.visible');
     cy.get('table').find('td').contains('1').should('be.visible');
   });
+
+  it('should support row selection', () => {
+    const targetUrl = `/ui/fleet/p/chromeos/devices`;
+
+    cy.visit(targetUrl);
+    cy.wait(['@listDevices', '@countDevices']);
+
+    // Locate the first row checkbox and click it
+    cy.get('[data-testid^="select-checkbox-"]').first().click();
+
+    // Verify the row becomes selected/checked
+    cy.get('[data-testid^="select-checkbox-"]').first().should('be.checked');
+  });
 });

@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import stableStringify from 'fast-json-stable-stringify';
+import { useMemo } from 'react';
+
 import {
   TokenType,
   useAuthState,
@@ -210,9 +213,21 @@ export function usePrpcServiceClient<
 
   const { identity } = useAuthState();
   const getAuthToken = useGetAuthToken(tokenType);
-  const additionalHeadersObj = Object.fromEntries(
-    new Headers(additionalHeaders).entries(),
-  );
+
+  const additionalHeadersStr = useMemo(() => {
+    if (!additionalHeaders) return '';
+    try {
+      const obj = Object.fromEntries(new Headers(additionalHeaders).entries());
+      return stableStringify(obj);
+    } catch {
+      return '';
+    }
+  }, [additionalHeaders]);
+
+  const additionalHeadersObj = useMemo(() => {
+    if (!additionalHeadersStr) return {};
+    return JSON.parse(additionalHeadersStr) as Record<string, string>;
+  }, [additionalHeadersStr]);
 
   const client = useSingleton({
     key: [
@@ -223,7 +238,7 @@ export function usePrpcServiceClient<
       host,
       insecure,
       getObjectId(getAuthToken),
-      additionalHeaders,
+      additionalHeadersStr,
       serializableParams,
     ],
     fn: () =>
@@ -233,43 +248,45 @@ export function usePrpcServiceClient<
       ),
   });
 
-  return new Proxy(client, {
-    get(target, p, receiver) {
-      const mk = p as MethodKeys<S, unknown, unknown>;
-      const value = Reflect.get(target, mk, receiver);
-      if (typeof value !== 'function') {
-        return value;
-      }
-      const fn = (...args: unknown[]) => value.apply(target, args);
-      fn.query = (req: object, ...params: unknown[]) => ({
-        queryKey: [
-          identity,
-          'prpc',
-          host,
-          ClientImpl.DEFAULT_SERVICE,
-          additionalHeadersObj,
-          mk,
-          req,
-        ],
-        queryFn: () => fn(req, ...params),
-      });
-      fn.queryPaged = (req: object, ...params: unknown[]) => ({
-        queryKey: [
-          identity,
-          'prpc-paged',
-          host,
-          ClientImpl.DEFAULT_SERVICE,
-          additionalHeadersObj,
-          mk,
-          req,
-        ],
-        queryFn: ({ pageParam = '' }) =>
-          fn(pageParam ? { ...req, pageToken: pageParam } : req, ...params),
-        // Return `null` when the next page token is an empty string so it get
-        // treated as no next page.
-        getNextPageParam: ({ nextPageToken = '' }) => nextPageToken || null,
-      });
-      return fn;
-    },
-  }) as DecoratedClient<S>;
+  return useMemo(() => {
+    return new Proxy(client, {
+      get(target, p, receiver) {
+        const mk = p as MethodKeys<S, unknown, unknown>;
+        const value = Reflect.get(target, mk, receiver);
+        if (typeof value !== 'function') {
+          return value;
+        }
+        const fn = (...args: unknown[]) => value.apply(target, args);
+        fn.query = (req: object, ...params: unknown[]) => ({
+          queryKey: [
+            identity,
+            'prpc',
+            host,
+            ClientImpl.DEFAULT_SERVICE,
+            additionalHeadersObj,
+            mk,
+            req,
+          ],
+          queryFn: () => fn(req, ...params),
+        });
+        fn.queryPaged = (req: object, ...params: unknown[]) => ({
+          queryKey: [
+            identity,
+            'prpc-paged',
+            host,
+            ClientImpl.DEFAULT_SERVICE,
+            additionalHeadersObj,
+            mk,
+            req,
+          ],
+          queryFn: ({ pageParam = '' }) =>
+            fn(pageParam ? { ...req, pageToken: pageParam } : req, ...params),
+          // Return `null` when the next page token is an empty string so it get
+          // treated as no next page.
+          getNextPageParam: ({ nextPageToken = '' }) => nextPageToken || null,
+        });
+        return fn;
+      },
+    }) as DecoratedClient<S>;
+  }, [client, identity, host, ClientImpl, additionalHeadersObj]);
 }

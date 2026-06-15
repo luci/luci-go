@@ -166,16 +166,17 @@ export const AndroidDevicesPage = () => {
     onFilterChange: onApplyFilter,
   });
 
+  const aip160Filter = filterCategoryDatas.aip160();
   const request = useMemo(
     () =>
       ListDevicesRequest.fromPartial({
         pageSize: getPageSize(pagerCtx, searchParams),
         pageToken: getPageToken(pagerCtx, searchParams),
         orderBy: orderByParam,
-        filter: filterCategoryDatas.aip160(),
+        filter: aip160Filter,
         platform: platform,
       }),
-    [pagerCtx, searchParams, orderByParam, filterCategoryDatas],
+    [pagerCtx, searchParams, orderByParam, aip160Filter],
   );
 
   const devicesQuery = useAndroidDevices(request);

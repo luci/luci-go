@@ -122,16 +122,18 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
     ),
   });
 
+  const aip160Filter = filterCategoryDatas.aip160();
+
   const request = useMemo(
     () =>
       ListDevicesRequest.fromPartial({
         pageSize: getPageSize(pagerCtx, searchParams),
         pageToken: getPageToken(pagerCtx, searchParams),
         orderBy: orderByParam,
-        filter: filterCategoryDatas.aip160(),
+        filter: aip160Filter,
         platform: Platform.CHROMEOS,
       }),
-    [pagerCtx, searchParams, orderByParam, filterCategoryDatas],
+    [pagerCtx, searchParams, orderByParam, aip160Filter],
   );
 
   const devicesQuery = useDevices(request);
@@ -179,11 +181,11 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
         }))
       : devices.map((d) => ({
           ...d,
-          current_task: currentTasks.map.get(extractDutId(d)),
+          current_task: currentTasks.tasks[extractDutId(d)],
         }));
 
     return baseRows;
-  }, [devices, currentTasks.map, currentTasks.isPending]);
+  }, [devices, currentTasks.tasks, currentTasks.isPending]);
 
   useEffect(() => {
     columnFiltersRef.current = columnFilters;
@@ -235,6 +237,14 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
         },
       },
       enableRowSelection: true,
+      muiSelectCheckboxProps: ({ row }) => ({
+        inputProps: {
+          'data-testid': `select-checkbox-${row.id}`,
+        } as React.InputHTMLAttributes<HTMLInputElement> & {
+          'data-testid'?: string;
+        },
+      }),
+      positionToolbarAlertBanner: 'none',
       renderTopToolbarCustomActions: ({ table }) => (
         <FleetTopToolbar table={table}>
           <ChromeOSActions table={table} />

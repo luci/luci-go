@@ -68,7 +68,7 @@ describe('useChromeOSCurrentTasks', () => {
 
     // isPending should be false immediately if there are no queries to make.
     expect(result.current.isPending).toBe(false);
-    expect(result.current.map.size).toBe(0);
+    expect(Object.keys(result.current.tasks).length).toBe(0);
     expect(result.current.isError).toBe(false);
     expect(
       (global.fetch as jest.Mock).mock.calls.filter((args) =>
@@ -93,8 +93,8 @@ describe('useChromeOSCurrentTasks', () => {
 
     await waitFor(() => expect(result.current.isPending).toBe(false));
 
-    expect(result.current.map.size).toBe(1);
-    expect(result.current.map.get('dut-1')).toEqual({
+    expect(Object.keys(result.current.tasks).length).toBe(1);
+    expect(result.current.tasks['dut-1']).toEqual({
       taskId: 'task-123',
       taskName: '',
     });
@@ -183,16 +183,16 @@ describe('useChromeOSCurrentTasks', () => {
     expect(calls.length % 2).toBe(0);
     expect(result.current.error).toBeNull();
     expect(result.current.isError).toBe(false);
-    expect(result.current.map.size).toBe(3);
-    expect(result.current.map.get('dut-1')).toEqual({
+    expect(Object.keys(result.current.tasks).length).toBe(3);
+    expect(result.current.tasks['dut-1']).toEqual({
       taskId: 'task-1',
       taskName: '',
     });
-    expect(result.current.map.get('dut-2')).toEqual({
+    expect(result.current.tasks['dut-2']).toEqual({
       taskId: 'task-2',
       taskName: '',
     });
-    expect(result.current.map.get('dut-3')).toEqual({
+    expect(result.current.tasks['dut-3']).toEqual({
       taskId: 'task-3',
       taskName: '',
     });
@@ -208,8 +208,66 @@ describe('useChromeOSCurrentTasks', () => {
 
     await waitFor(() => expect(result.current.isPending).toBe(false));
 
-    expect(result.current.map.size).toBe(0);
+    expect(Object.keys(result.current.tasks).length).toBe(0);
     expect(result.current.isError).toBe(true);
     expect(result.current.error).toBeInstanceOf(Error);
+  });
+
+  it('should maintain referential stability of return values if data does not change', async () => {
+    const devices = [createDevice('dut-1')];
+    mockSwarmingListBotsSuccess([
+      BotInfo.fromPartial({
+        botId: 'bot-dut-1-id',
+        taskId: 'task-123',
+        dimensions: [{ key: 'dut_id', value: ['dut-1'] }],
+      }),
+    ]);
+
+    const { result, rerender } = renderHook(
+      () => useChromeOSCurrentTasks(devices),
+      {
+        wrapper: FakeContextProvider,
+      },
+    );
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+
+    const initialResult = result.current;
+
+    // Rerender the hook
+    rerender();
+
+    // Verify that the reference of the returned object is identical
+    expect(result.current).toBe(initialResult);
+  });
+
+  it('should maintain referential stability of return values if devices array reference changes but contents are identical', async () => {
+    mockSwarmingListBotsSuccess([
+      BotInfo.fromPartial({
+        botId: 'bot-dut-1-id',
+        taskId: 'task-123',
+        dimensions: [{ key: 'dut_id', value: ['dut-1'] }],
+      }),
+    ]);
+
+    const devices1 = [createDevice('dut-1')];
+    const devices2 = [createDevice('dut-1')];
+
+    const { result, rerender } = renderHook(
+      ({ devList }) => useChromeOSCurrentTasks(devList),
+      {
+        wrapper: FakeContextProvider,
+        initialProps: { devList: devices1 },
+      },
+    );
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+
+    const initialResult = result.current;
+
+    // Rerender with a different devices array reference but same contents
+    rerender({ devList: devices2 });
+
+    expect(result.current).toBe(initialResult);
   });
 });

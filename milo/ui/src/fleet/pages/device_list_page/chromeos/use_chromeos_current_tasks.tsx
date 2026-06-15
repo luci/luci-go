@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import _ from 'lodash';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { extractDutId } from '@/fleet/utils/devices';
@@ -35,7 +35,7 @@ export type TaskResult =
     };
 
 export interface CurrentTasksResult {
-  map: Map<string, TaskResult>;
+  tasks: Record<string, TaskResult>;
   error: Error | null;
   isError: boolean;
   isPending: boolean;
@@ -70,10 +70,9 @@ export const useChromeOSCurrentTasks = (
     [dutIds, chunkSize],
   );
 
-  // 2. Use `useQueries` to create a separate query for each chunk.
-  const queryClient = useQueryClient();
-  const queries = useQueries({
-    queries: dutIdChunks.map((chunk) => {
+  // 2. Use `useQueries` to create a separate query for each chunk and aggregate them.
+  const queriesConfig = useMemo(() => {
+    return dutIdChunks.map((chunk) => {
       const dutIdsString = chunk.join('|');
       return {
         queryKey: ['swarming-bots-current-tasks', dutIdsString],
@@ -87,46 +86,56 @@ export const useChromeOSCurrentTasks = (
         },
         staleTime: 30000,
         refetchInterval: 60000,
-        Client: queryClient,
       };
-    }),
-  });
+    });
+  }, [dutIdChunks, swarmingClient]);
 
-  // 3. Aggregate the results from all queries into a single map and state.
-  // Find the first error object among the queries.
-  const error = queries.find((q) => q.error)?.error || null;
-  // The overall state is an error if any of the queries have an error.
-  const isError = queries.some((q) => q.isError);
-  // The overall state is pending if any of the queries are pending.
-  const isPending = queries.some((q) => q.isPending);
+  const combineTasks = useCallback(
+    (
+      results: readonly {
+        data?: readonly BotInfo[];
+        isPending: boolean;
+        isError: boolean;
+        error: Error | null;
+      }[],
+    ) => {
+      const isPending = results.some((q) => q.isPending);
+      const isError = results.some((q) => q.isError);
+      const error = results.find((q) => q.error)?.error || null;
 
-  // Combine data from all successful queries.
-  const map = useMemo(() => {
-    const m = new Map<string, TaskResult>();
-    if (!isPending && !isError) {
-      for (const query of queries) {
-        if (query.data) {
-          for (const bot of query.data) {
-            if (bot.taskId) {
-              const dutIdDimension = bot.dimensions?.find(
-                (dim) => dim.key === 'dut_id',
-              );
-              if (dutIdDimension?.value?.length) {
-                m.set(dutIdDimension.value[0], {
-                  taskId: bot.taskId,
-                  taskName: bot.taskName,
-                });
+      const tasks: Record<string, TaskResult> = {};
+      if (!isPending && !isError) {
+        for (const query of results) {
+          if (query.data) {
+            for (const bot of query.data) {
+              if (bot.taskId) {
+                const dutIdDimension = bot.dimensions?.find(
+                  (dim) => dim.key === 'dut_id',
+                );
+                if (dutIdDimension?.value?.length) {
+                  tasks[dutIdDimension.value[0]] = {
+                    taskId: bot.taskId,
+                    taskName: bot.taskName || '',
+                  };
+                }
               }
             }
           }
         }
       }
-    }
-    return m;
-  }, [queries, isPending, isError]);
 
-  return useMemo(
-    () => ({ map, error, isError, isPending }),
-    [map, error, isError, isPending],
+      return {
+        tasks,
+        error,
+        isError,
+        isPending,
+      };
+    },
+    [],
   );
+
+  return useQueries({
+    queries: queriesConfig,
+    combine: combineTasks,
+  });
 };
