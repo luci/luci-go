@@ -47,7 +47,6 @@ func init() {
 	})
 }
 
-
 type Client interface {
 	// Register registers vsa client configs as CLI flags.
 	Register(f *flag.FlagSet)
@@ -132,7 +131,6 @@ func (c *client) Init(ctx context.Context) error {
 		c.client = &http.Client{Transport: tr}
 	}
 
-
 	if c.bqlog == nil {
 		c.bqlog = bqlog.Log
 	}
@@ -187,6 +185,13 @@ func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instanc
 		logEntry.ErrorMessage = err.Error()
 		return nil, err
 	}
+
+	// Determine whether the package is allowed based on the existence of VSA
+	// since M2 seems like allowing packages unconditionally.
+	// Workaround for verifying packages can be potentially rejected if we switch
+	// to M4. Remove this when we are actually at M4.
+	resp.Allowed = (resp.VerificationSummary != "")
+
 	logEntry.Allowed = resp.Allowed
 	logEntry.RejectionMessage = resp.RejectionMessage
 
@@ -223,4 +228,3 @@ func (c *client) callVerifySoftwareArtifact(ctx context.Context, r *api.VerifySo
 	}
 	return &ret, nil
 }
-
