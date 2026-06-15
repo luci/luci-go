@@ -25,9 +25,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/common/testing/truth"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -61,31 +58,31 @@ func TestComputeDigest(t *testing.T) {
 			t.Parallel()
 
 			apb, err := anypb.New(tc.msg)
-			assert.NoErr(t, err, truth.LineContext())
+			assertNoErr(t, err)
 
 			dgst := ComputeDigest(apb)
-			assert.That(t, dgst, should.Equal(tc.want), truth.LineContext())
+			assertEqual(t, tc.want, dgst)
 
 			dgstPb, err := dgst.ToProto()
-			assert.NoErr(t, err, truth.LineContext())
+			assertNoErr(t, err)
 
 			wantSize := proto.Size(apb)
 			enc, err := proto.Marshal(apb)
-			assert.NoErr(t, err)
-			assert.That(t, len(enc), should.Equal(wantSize), truth.LineContext())
+			assertNoErr(t, err)
+			assertEqual(t, wantSize, len(enc))
 
 			detEnc := DeterministicallySerializeAny(apb)
-			assert.Loosely(t, detEnc, should.HaveLength(wantSize), truth.LineContext())
+			assertLen(t, detEnc, wantSize)
 
 			dec := &anypb.Any{}
-			assert.NoErr(t, proto.Unmarshal(detEnc, dec), truth.LineContext())
+			assertNoErr(t, proto.Unmarshal(detEnc, dec))
 
-			assert.That(t, proto.Equal(dec, apb), should.BeTrue, truth.LineContext())
+			assertTrue(t, proto.Equal(dec, apb))
 
 			sha := sha256.Sum256(detEnc)
-			assert.That(t, dgstPb.GetHash(), should.Match(sha[:]))
+			assertMatch(t, sha[:], dgstPb.GetHash())
 
-			assert.That(t, dgstPb.GetSizeBytes(), should.Equal(uint64(wantSize)), truth.LineContext())
+			assertEqual(t, uint64(wantSize), dgstPb.GetSizeBytes())
 		})
 	}
 }
@@ -104,7 +101,7 @@ func TestDigestToProtoErrors(t *testing.T) {
 	cases := []struct {
 		name    string
 		digest  Digest
-		wantErr any
+		wantErr string
 	}{
 		{
 			name:    "bad_base64",
@@ -136,7 +133,7 @@ func TestDigestToProtoErrors(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := tc.digest.ToProto()
-			assert.ErrIsLike(t, err, tc.wantErr)
+			assertErrLike(t, err, tc.wantErr)
 		})
 	}
 }

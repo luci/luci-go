@@ -21,9 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
-
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -34,7 +31,7 @@ func TestInline(t *testing.T) {
 		t.Parallel()
 
 		_, err := Inline(nil, "proj:realm")
-		assert.ErrIsLike(t, err, "nil source message")
+		assertErrLike(t, err, "nil source message")
 	})
 
 	t.Run(`ok`, func(t *testing.T) {
@@ -42,19 +39,19 @@ func TestInline(t *testing.T) {
 
 		sval := structpb.NewStringValue("hello")
 		svalAny, err := anypb.New(sval)
-		assert.NoErr(t, err)
+		assertNoErr(t, err)
 		svalBytes, err := proto.Marshal(sval)
-		assert.NoErr(t, err)
+		assertNoErr(t, err)
 
-		assert.That(t, MustInline(sval, "proj:realm"), should.Match(orchestratorpb.ValueRef_builder{
+		assertMatch(t, orchestratorpb.ValueRef_builder{
 			TypeUrl: proto.String(URL[*structpb.Value]()),
 			Realm:   proto.String("proj:realm"),
 			Inline: &anypb.Any{
 				TypeUrl: URL[*structpb.Value](),
 				Value:   svalBytes,
 			},
-			Digest:  proto.String(string(ComputeDigest(svalAny))),
-		}.Build()))
+			Digest: proto.String(string(ComputeDigest(svalAny))),
+		}.Build(), MustInline(sval, "proj:realm"))
 	})
 
 	t.Run(`any`, func(t *testing.T) {
@@ -62,14 +59,14 @@ func TestInline(t *testing.T) {
 
 		sval := structpb.NewStringValue("hello")
 		svalAny, err := anypb.New(sval)
-		assert.NoErr(t, err)
+		assertNoErr(t, err)
 
-		assert.That(t, MustInline(sval, "proj:realm"), should.Match(orchestratorpb.ValueRef_builder{
+		assertMatch(t, orchestratorpb.ValueRef_builder{
 			TypeUrl: proto.String(URL[*structpb.Value]()),
 			Realm:   proto.String("proj:realm"),
 			Inline:  svalAny,
 			Digest:  proto.String(string(ComputeDigest(svalAny))),
-		}.Build()))
+		}.Build(), MustInline(sval, "proj:realm"))
 	})
 }
 
@@ -80,7 +77,7 @@ func TestAbsorbInline(t *testing.T) {
 
 	ref := MustInline(structpb.NewStringValue("hello"), "proj:realm")
 
-	assert.That(t, ref.HasInline(), should.BeTrue)
+	assertTrue(t, ref.HasInline())
 
 	origBinData := ref.GetInline()
 
@@ -88,13 +85,13 @@ func TestAbsorbInline(t *testing.T) {
 
 	// ref now contains the digest
 	wantDigest := Digest("Umz0vGbOEPay3Z8mD9wDfGKojbSTVMQMyosq3zgqszk0AQ")
-	assert.That(t, ref.GetDigest(), should.Equal(string(wantDigest)))
+	assertEqual(t, string(wantDigest), ref.GetDigest())
 
 	// dSrc now has the data and it's identical.
 	//
 	// Note that DataSource avoids copying the data and will return the
 	// identical pointer which was in `ref`.
-	assert.That(t, dSrc.Retrieve(wantDigest).GetBinary(), should.Equal(origBinData))
+	assertEqual(t, origBinData, dSrc.Retrieve(wantDigest).GetBinary())
 
 	// Absorbing again is a no-op.
 	AbsorbInline(dSrc, ref)

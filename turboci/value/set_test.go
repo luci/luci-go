@@ -21,8 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -30,7 +28,7 @@ func TestSetAddIn(t *testing.T) {
 	t.Parallel()
 
 	s, err := structpb.NewStruct(map[string]any{"hello": "world"})
-	assert.NoErr(t, err)
+	assertNoErr(t, err)
 
 	toSet := []*orchestratorpb.ValueRef{
 		// NOTE: BoolValue and StringValue are the same proto message type.
@@ -47,34 +45,34 @@ func TestSetAddIn(t *testing.T) {
 	for _, ref := range toSet {
 		var realmConflict bool
 		set, realmConflict = SetByTypeIn(set, ref)
-		assert.That(t, realmConflict, should.BeFalse)
+		assertFalse(t, realmConflict)
 	}
 
-	assert.That(t, set, should.Match([]*orchestratorpb.ValueRef{
+	assertMatch(t, []*orchestratorpb.ValueRef{
 		MustInline(&emptypb.Empty{}, "proj:realm"),
 		MustInline(s, "proj:realm"),
 		MustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
-	}))
+	}, set)
 
 	set, realmConflict := SetByTypeIn(set, MustInline(structpb.NewBoolValue(false), "other:realm"))
-	assert.That(t, realmConflict, should.BeTrue)
+	assertTrue(t, realmConflict)
 
-	assert.That(t, set, should.Match([]*orchestratorpb.ValueRef{
+	assertMatch(t, []*orchestratorpb.ValueRef{
 		MustInline(&emptypb.Empty{}, "proj:realm"),
 		MustInline(s, "proj:realm"),
 		MustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
-	}))
+	}, set)
 
 	set, added := AddByTypeIn(set, MustInline(structpb.NewBoolValue(true), "proj:realm"))
-	assert.That(t, added, should.BeFalse)
+	assertFalse(t, added)
 
 	set, added = AddByTypeIn(set, MustInline(&wrapperspb.BoolValue{Value: true}, "proj:realm"))
-	assert.That(t, added, should.BeTrue)
+	assertTrue(t, added)
 
-	assert.That(t, set, should.Match([]*orchestratorpb.ValueRef{
+	assertMatch(t, []*orchestratorpb.ValueRef{
 		MustInline(&wrapperspb.BoolValue{Value: true}, "proj:realm"),
 		MustInline(&emptypb.Empty{}, "proj:realm"),
 		MustInline(s, "proj:realm"),
 		MustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
-	}))
+	}, set)
 }

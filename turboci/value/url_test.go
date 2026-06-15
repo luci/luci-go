@@ -18,21 +18,18 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/types/known/emptypb"
-
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestURL(t *testing.T) {
 	t.Parallel()
 
-	assert.That(t, URL[*emptypb.Empty](), should.Equal(TypePrefix+"google.protobuf.Empty"))
-	assert.That(t, URLMsg((*emptypb.Empty)(nil)), should.Equal(TypePrefix+"google.protobuf.Empty"))
+	assertEqual(t, TypePrefix+"google.protobuf.Empty", URL[*emptypb.Empty]())
+	assertEqual(t, TypePrefix+"google.protobuf.Empty", URLMsg((*emptypb.Empty)(nil)))
 }
 
 func TestURLPatternPackageOf(t *testing.T) {
 	t.Parallel()
 
-	assert.That(t, URLPatternPackageOf[*emptypb.Empty](), should.Equal(TypePrefix+"google.protobuf.*"))
-	assert.That(t, URLPatternPackageOfMsg((*emptypb.Empty)(nil)), should.Equal(TypePrefix+"google.protobuf.*"))
+	assertEqual(t, TypePrefix+"google.protobuf.*", URLPatternPackageOf[*emptypb.Empty]())
+	assertEqual(t, TypePrefix+"google.protobuf.*", URLPatternPackageOfMsg((*emptypb.Empty)(nil)))
 }
