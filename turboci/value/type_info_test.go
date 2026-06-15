@@ -21,9 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/common/testing/truth"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	commonpb "go.chromium.org/turboci/proto/go/data/common/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
@@ -164,22 +161,19 @@ func TestMakeTypeMatcher(t *testing.T) {
 				TypeUrls: tc.urls,
 			}.Build())
 			if tc.wantErr != "" {
-				assert.ErrIsLike(t, err, tc.wantErr)
+				assertErrLike(t, err, tc.wantErr)
 				return
 			}
 
-			assert.Loosely(t, matcher.patterns, should.HaveLength(tc.wantN),
-				truth.Explain("patterns: %v", matcher.patterns))
+			assertLen(t, matcher.patterns, tc.wantN)
 
-			assert.NoErr(t, err)
+			assertNoErr(t, err)
 
 			for _, matchCandidate := range tc.matches {
-				assert.That(t, matcher.Match(matchCandidate), should.BeTrue, truth.Explain(
-					"%q does not match %q", matchCandidate, matcher.patterns))
+				assertTrue(t, matcher.Match(matchCandidate))
 			}
 			for _, rejectCandidate := range tc.rejects {
-				assert.That(t, matcher.Match(rejectCandidate), should.BeFalse, truth.Explain(
-					"%q matches %q", rejectCandidate, matcher.patterns))
+				assertFalse(t, matcher.Match(rejectCandidate))
 			}
 		})
 	}
@@ -192,16 +186,16 @@ func TestTypeSetBuilder(t *testing.T) {
 		t.Parallel()
 
 		tb, err := TypeSetBuilder{}.Build()
-		assert.NoErr(t, err)
-		assert.Loosely(t, tb, should.BeNil)
+		assertNoErr(t, err)
+		assertNil(t, tb)
 	})
 
 	t.Run(`fixed`, func(t *testing.T) {
 		t.Parallel()
 
 		tb, err := TypeSetBuilder{}.WithMessages(&emptypb.Empty{}, &structpb.Struct{}).Build()
-		assert.NoErr(t, err)
-		assert.Loosely(t, tb.GetTypeUrls(), should.HaveLength(2))
+		assertNoErr(t, err)
+		assertLen(t, tb.GetTypeUrls(), 2)
 	})
 
 	t.Run(`normalized`, func(t *testing.T) {
@@ -211,9 +205,8 @@ func TestTypeSetBuilder(t *testing.T) {
 			WithMessages(&emptypb.Empty{}, &structpb.Struct{}).
 			WithPackagesOf(&structpb.ListValue{}).
 			Build())
-		assert.NoErr(t, err)
-		assert.Loosely(t, tb.GetTypeUrls(), should.HaveLength(1))
-		assert.That(t, tb.GetTypeUrls()[0], should.Equal(
-			TypePrefix+"google.protobuf.*"))
+		assertNoErr(t, err)
+		assertLen(t, tb.GetTypeUrls(), 1)
+		assertEqual(t, TypePrefix+"google.protobuf.*", tb.GetTypeUrls()[0])
 	})
 }

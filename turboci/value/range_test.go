@@ -21,8 +21,6 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -139,7 +137,7 @@ func TestRefsInStage(t *testing.T) {
 		found++
 	}
 
-	assert.That(t, found, should.Equal(expect))
+	assertEqual(t, expect, found)
 }
 
 // TestRefsInStageAttempt ensures that `RefsInStageAttempt` actually covers all
@@ -157,7 +155,7 @@ func TestRefsInStageAttempt(t *testing.T) {
 		found++
 	}
 
-	assert.That(t, found, should.Equal(expect))
+	assertEqual(t, expect, found)
 }
 
 // TestRefsInStageEdit ensures that `RefsInStageEdit` actually covers all
@@ -176,7 +174,7 @@ func TestRefsInStageEdit(t *testing.T) {
 		found++
 	}
 
-	assert.That(t, found, should.Equal(expect))
+	assertEqual(t, expect, found)
 }
 
 // TestRefsInCheck ensures that `RefsInCheck` actually covers all ValueRefs in
@@ -193,7 +191,7 @@ func TestRefsInCheck(t *testing.T) {
 		found++
 	}
 
-	assert.That(t, found, should.Equal(expect))
+	assertEqual(t, expect, found)
 }
 
 // TestRefsInCheckEdit ensures that `RefsInCheckEdit` actually covers all
@@ -214,5 +212,5 @@ func TestRefsInCheckEdit(t *testing.T) {
 		found++
 	}
 
-	assert.That(t, found, should.Equal(expect))
+	assertEqual(t, expect, found)
 }

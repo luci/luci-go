@@ -20,8 +20,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -50,48 +48,48 @@ func TestPickData(t *testing.T) {
 	t.Run("a is nil", func(t *testing.T) {
 		b := mkBin("b")
 		ret := PickData(nil, b)
-		assert.That(t, ret, should.Equal(b))
+		assertEqual(t, b, ret)
 	})
 
 	t.Run("no-op same", func(t *testing.T) {
 		a := mkBin("a")
 		ret := PickData(a, a)
-		assert.That(t, ret, should.Equal(a))
+		assertEqual(t, a, ret)
 	})
 
 	t.Run("binary + json -> json", func(t *testing.T) {
 		a := mkBin("a")
 		b := mkJson("b")
 		ret := PickData(a, b)
-		assert.That(t, ret, should.Equal(b))
+		assertEqual(t, b, ret)
 	})
 
 	t.Run("binary + binary -> no-op", func(t *testing.T) {
 		a := mkBin("a")
 		b := mkBin("b")
 		ret := PickData(a, b)
-		assert.That(t, ret, should.Equal(a))
+		assertEqual(t, a, ret)
 	})
 
 	t.Run("json + binary -> no-op", func(t *testing.T) {
 		a := mkJson("a")
 		b := mkBin("b")
 		ret := PickData(a, b)
-		assert.That(t, ret, should.Equal(a))
+		assertEqual(t, a, ret)
 	})
 
 	t.Run("json + json -> no-op", func(t *testing.T) {
 		a := mkJson("a")
 		b := mkJson("b")
 		ret := PickData(a, b)
-		assert.That(t, ret, should.Equal(a))
+		assertEqual(t, a, ret)
 	})
 
 	t.Run("json + failure -> json", func(t *testing.T) {
 		a := mkJson("a")
 		b := withFail(mkBin("a"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)
 		ret := PickData(a, b)
-		assert.That(t, ret, should.Equal(a))
+		assertEqual(t, a, ret)
 	})
 
 	t.Run("failure merge", func(t *testing.T) {
@@ -99,20 +97,20 @@ func TestPickData(t *testing.T) {
 		b := withFail(mkBin("b"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)
 		ret := PickData(a, b)
 		// * failure: unset -> set
-		assert.That(t, ret, should.Equal(b))
+		assertEqual(t, b, ret)
 	})
 
 	t.Run("existing failure -> no-op", func(t *testing.T) {
 		a := withFail(mkBin("a"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)
 		b := withFail(mkBin("b"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR)
 		ret := PickData(a, b)
-		assert.That(t, ret, should.Equal(a))
+		assertEqual(t, a, ret)
 	})
 
 	t.Run("binary w/ failure + json -> json w/o failure", func(t *testing.T) {
 		a := withFail(mkBin("a"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)
 		b := mkJson("b")
 		ret := PickData(a, b)
-		assert.That(t, ret, should.Equal(b))
+		assertEqual(t, b, ret)
 	})
 }

@@ -29,8 +29,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -61,11 +59,11 @@ func TestDataSource(t *testing.T) {
 
 	ds := SyncDataSourceFromMap(dat)
 
-	assert.That(t, ds.Retrieve("1").HasBinary(), should.BeTrue)
+	assertTrue(t, ds.Retrieve("1").HasBinary())
 
-	assert.That(t, ds.Retrieve("4").HasJson(), should.BeTrue)
+	assertTrue(t, ds.Retrieve("4").HasJson())
 
-	assert.Loosely(t, ds.Retrieve("NX"), should.BeNil)
+	assertNil(t, ds.Retrieve("NX"))
 
 	ds.Intern("2", mkJson())
 	ds.Intern("4", mkBin())
@@ -73,14 +71,12 @@ func TestDataSource(t *testing.T) {
 
 	// At this point, 1, 3, 5 are binary and 2, 4, 6 are JSON.
 
-	assert.That(t, ds.Retrieve("2").HasJson(), should.BeTrue)
+	assertTrue(t, ds.Retrieve("2").HasJson())
 
-	assert.That(t, ds.Retrieve("4").HasJson(), should.BeTrue)
+	assertTrue(t, ds.Retrieve("4").HasJson())
 
-	assert.Loosely(t, ds.Retrieve("NX"), should.BeNil)
-	assert.That(t, ds.DataSize(), should.Equal(
-		int64(6+proto.Size(mkBin())*3+proto.Size(mkJson())*3)),
-	)
+	assertNil(t, ds.Retrieve("NX"))
+	assertEqual(t, int64(6+proto.Size(mkBin())*3+proto.Size(mkJson())*3), ds.DataSize())
 }
 
 type mockDatum struct {

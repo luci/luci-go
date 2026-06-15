@@ -22,8 +22,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -44,7 +42,7 @@ func TestWriteMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Inline:  data1,
 		}.Build()
-		assert.That(t, WriteMatchesRef(write, ref), should.BeTrue)
+		assertTrue(t, WriteMatchesRef(write, ref))
 	})
 
 	t.Run(`match digest`, func(t *testing.T) {
@@ -58,7 +56,7 @@ func TestWriteMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Digest:  proto.String(string(ComputeDigest(data1))),
 		}.Build()
-		assert.That(t, WriteMatchesRef(write, ref), should.BeTrue)
+		assertTrue(t, WriteMatchesRef(write, ref))
 	})
 
 	t.Run(`mismatch realm`, func(t *testing.T) {
@@ -72,7 +70,7 @@ func TestWriteMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Inline:  data1,
 		}.Build()
-		assert.That(t, WriteMatchesRef(write, ref), should.BeFalse)
+		assertFalse(t, WriteMatchesRef(write, ref))
 	})
 
 	t.Run(`mismatch type url`, func(t *testing.T) {
@@ -86,7 +84,7 @@ func TestWriteMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data2.TypeUrl),
 			Inline:  data1,
 		}.Build()
-		assert.That(t, WriteMatchesRef(write, ref), should.BeFalse)
+		assertFalse(t, WriteMatchesRef(write, ref))
 	})
 
 	t.Run(`mismatch inline data`, func(t *testing.T) {
@@ -100,7 +98,7 @@ func TestWriteMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Inline:  data2,
 		}.Build()
-		assert.That(t, WriteMatchesRef(write, ref), should.BeFalse)
+		assertFalse(t, WriteMatchesRef(write, ref))
 	})
 
 	t.Run(`mismatch digest`, func(t *testing.T) {
@@ -114,7 +112,7 @@ func TestWriteMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Digest:  proto.String(string(ComputeDigest(data2))),
 		}.Build()
-		assert.That(t, WriteMatchesRef(write, ref), should.BeFalse)
+		assertFalse(t, WriteMatchesRef(write, ref))
 	})
 }
 
@@ -138,7 +136,7 @@ func TestRefMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Inline:  data1,
 		}.Build()
-		assert.That(t, RefMatchesRef(a, b), should.BeTrue)
+		assertTrue(t, RefMatchesRef(a, b))
 	})
 
 	t.Run(`match inline-digest`, func(t *testing.T) {
@@ -153,7 +151,7 @@ func TestRefMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Digest:  proto.String(digest1),
 		}.Build()
-		assert.That(t, RefMatchesRef(a, b), should.BeTrue)
+		assertTrue(t, RefMatchesRef(a, b))
 	})
 
 	t.Run(`match digest-inline`, func(t *testing.T) {
@@ -168,7 +166,7 @@ func TestRefMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Inline:  data1,
 		}.Build()
-		assert.That(t, RefMatchesRef(a, b), should.BeTrue)
+		assertTrue(t, RefMatchesRef(a, b))
 	})
 
 	t.Run(`match digest-digest`, func(t *testing.T) {
@@ -183,7 +181,7 @@ func TestRefMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Digest:  proto.String(digest1),
 		}.Build()
-		assert.That(t, RefMatchesRef(a, b), should.BeTrue)
+		assertTrue(t, RefMatchesRef(a, b))
 	})
 
 	t.Run(`mismatch realm`, func(t *testing.T) {
@@ -198,7 +196,7 @@ func TestRefMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Inline:  data1,
 		}.Build()
-		assert.That(t, RefMatchesRef(a, b), should.BeFalse)
+		assertFalse(t, RefMatchesRef(a, b))
 	})
 
 	t.Run(`mismatch type url`, func(t *testing.T) {
@@ -213,7 +211,7 @@ func TestRefMatchesRef(t *testing.T) {
 			TypeUrl: proto.String("type2"),
 			Inline:  data1,
 		}.Build()
-		assert.That(t, RefMatchesRef(a, b), should.BeFalse)
+		assertFalse(t, RefMatchesRef(a, b))
 	})
 
 	t.Run(`mismatch inline data`, func(t *testing.T) {
@@ -228,7 +226,7 @@ func TestRefMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Inline:  data2,
 		}.Build()
-		assert.That(t, RefMatchesRef(a, b), should.BeFalse)
+		assertFalse(t, RefMatchesRef(a, b))
 	})
 
 	t.Run(`mismatch digest`, func(t *testing.T) {
@@ -243,7 +241,7 @@ func TestRefMatchesRef(t *testing.T) {
 			TypeUrl: proto.String(data1.TypeUrl),
 			Digest:  proto.String(digest2),
 		}.Build()
-		assert.That(t, RefMatchesRef(a, b), should.BeFalse)
+		assertFalse(t, RefMatchesRef(a, b))
 	})
 
 	t.Run(`one missing content`, func(t *testing.T) {
@@ -257,6 +255,6 @@ func TestRefMatchesRef(t *testing.T) {
 			Realm:   proto.String("realm"),
 			TypeUrl: proto.String(data1.TypeUrl),
 		}.Build()
-		assert.That(t, RefMatchesRef(a, b), should.BeFalse)
+		assertFalse(t, RefMatchesRef(a, b))
 	})
 }
