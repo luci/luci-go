@@ -18,6 +18,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import { useParams } from 'react-router';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
+import { ProblemsSection } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/problems_section/problems_section';
 import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
@@ -54,19 +55,24 @@ export const RulePage = () => {
             <Grid size={12}>
               <RuleTopPanel project={project} ruleId={id} />
             </Grid>
-            <Grid size={12}>
-              {rule?.isActive ? (
-                <ClusterContextProvider
-                  project={project}
-                  clusterAlgorithm="rules"
-                  clusterId={id}
-                >
+            {rule?.isActive ? (
+              <ClusterContextProvider
+                project={project}
+                clusterAlgorithm="rules"
+                clusterId={id}
+              >
+                <Grid size={12}>
+                  <ProblemsSection />
+                </Grid>
+                <Grid size={12}>
                   <ClusterAnalysisSection />
-                </ClusterContextProvider>
-              ) : (
+                </Grid>
+              </ClusterContextProvider>
+            ) : (
+              <Grid size={12}>
                 <RuleArchivedMessage />
-              )}
-            </Grid>
+              </Grid>
+            )}
           </>
         )}
       </Grid>

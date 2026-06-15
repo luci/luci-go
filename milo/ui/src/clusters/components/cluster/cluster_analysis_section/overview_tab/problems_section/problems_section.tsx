@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
 import Link from '@mui/material/Link';
+import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -63,27 +65,34 @@ export const ProblemsSection = () => {
   } = useFetchRule(clusterId.project, clusterId.id);
 
   return (
-    <Box>
-      <PanelHeading>
-        Problems
-        <HelpTooltip content={problemsTooltipText} />
-      </PanelHeading>
-      {configError && (
-        <LoadErrorAlert entityName="project config" error={configError} />
-      )}
-      {!configError && ruleError && (
-        <LoadErrorAlert entityName="rule" error={ruleError} />
-      )}
-      {!(configError || ruleError) && (isConfigLoading || isRuleLoading) && (
-        <CentralizedProgress />
-      )}
-      {projectConfig && rule && (
-        <ProblemsSummary
-          bugManagementState={rule.bugManagementState!}
-          config={projectConfig.bugManagement}
-        ></ProblemsSummary>
-      )}
-    </Box>
+    <Paper
+      data-cy="problems-section"
+      elevation={3}
+      sx={{ pt: 2, pb: 2, mt: 1 }}
+    >
+      <Container maxWidth={false}>
+        <Box>
+          <PanelHeading>
+            Problems
+            <HelpTooltip content={problemsTooltipText} />
+          </PanelHeading>
+          {configError && (
+            <LoadErrorAlert entityName="project config" error={configError} />
+          )}
+          {!configError && ruleError && (
+            <LoadErrorAlert entityName="rule" error={ruleError} />
+          )}
+          {!(configError || ruleError) &&
+            (isConfigLoading || isRuleLoading) && <CentralizedProgress />}
+          {projectConfig && rule && (
+            <ProblemsSummary
+              bugManagementState={rule.bugManagementState!}
+              config={projectConfig.bugManagement}
+            ></ProblemsSummary>
+          )}
+        </Box>
+      </Container>
+    </Paper>
   );
 };
 

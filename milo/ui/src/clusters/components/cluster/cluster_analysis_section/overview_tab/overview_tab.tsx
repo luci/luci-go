@@ -13,8 +13,6 @@
 // limitations under the License.
 
 import TabPanel from '@mui/lab/TabPanel';
-import Divider from '@mui/material/Divider';
-import Stack from '@mui/material/Stack';
 import { useContext } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
@@ -24,7 +22,6 @@ import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_al
 import useFetchMetrics from '@/clusters/hooks/use_fetch_metrics';
 
 import { HistoryChartsSection } from './history_charts/history_charts_section';
-import { ProblemsSection } from './problems_section/problems_section';
 
 interface Props {
   // The name of the tab.
@@ -32,7 +29,7 @@ interface Props {
 }
 
 const OverviewTab = ({ value }: Props) => {
-  const { project, algorithm } = useContext(ClusterContext);
+  const { project } = useContext(ClusterContext);
 
   const {
     isLoading,
@@ -46,17 +43,7 @@ const OverviewTab = ({ value }: Props) => {
       <TabPanel value={value}>
         {error && <LoadErrorAlert entityName="metrics" error={error} />}
         {isLoading && <CentralizedProgress />}
-        {isSuccess && metrics !== undefined && (
-          <Stack direction="column" spacing={4}>
-            {algorithm === 'rules' && (
-              <>
-                <ProblemsSection />
-                <Divider />
-              </>
-            )}
-            <HistoryChartsSection />
-          </Stack>
-        )}
+        {isSuccess && metrics !== undefined && <HistoryChartsSection />}
       </TabPanel>
     </OverviewTabContextProvider>
   );

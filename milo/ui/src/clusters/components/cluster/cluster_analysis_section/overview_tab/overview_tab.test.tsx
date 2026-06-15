@@ -27,14 +27,6 @@ import {
   getMockMetricsList,
   mockFetchMetrics,
 } from '@/clusters/testing_tools/mocks/metrics_mock';
-import {
-  createMockProjectConfig,
-  mockFetchProjectConfig,
-} from '@/clusters/testing_tools/mocks/projects_mock';
-import {
-  createDefaultMockRule,
-  mockFetchRule,
-} from '@/clusters/testing_tools/mocks/rule_mock';
 import { QueryClusterHistoryResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { resetMockFetch } from '@/testing_tools/jest_utils';
 
@@ -58,11 +50,8 @@ describe('Test OverviewTab component', () => {
     const algorithm = 'rules';
     const id = '123456';
 
-    mockFetchRule(createDefaultMockRule());
     const mockCluster = getMockCluster(id, project, algorithm);
     mockGetCluster(project, algorithm, id, mockCluster);
-    const mockConfig = createMockProjectConfig();
-    mockFetchProjectConfig(mockConfig);
 
     const history: QueryClusterHistoryResponse = {
       days: [
@@ -98,14 +87,6 @@ describe('Test OverviewTab component', () => {
     // Wait for the cluster analysis overview tab to load.
     await screen.findByTestId('history-charts-container');
 
-    expect(
-      screen.getByText(
-        'test variant(s) are being exonerated (ignored) in presubmit',
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('many CL(s) are being rejected'),
-    ).toBeInTheDocument();
     // Expect charts only for the default metrics.
     mockMetrics
       .filter((metric) => metric.isDefault)
