@@ -16,6 +16,7 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
 import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -59,7 +60,17 @@ const theme = createTheme({
   },
 });
 
+const getExternalConfigUrl = (name: string): string | null => {
+  const match = name.match(/^(mdb|google)\/(.+)$/);
+  if (match) {
+    const groupName = match[2];
+    return `http://cs/f:groups_push_cron/config.yaml%20${encodeURIComponent(groupName)}`;
+  }
+  return null;
+};
+
 export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
+  const configUrl = getExternalConfigUrl(name);
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
   const handleTabChange = (newValue: string) => {
@@ -98,9 +109,27 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
       <ThemeProvider theme={theme}>
         <TabContext value={value}>
           <Box sx={{ width: '100%' }}>
-            <Typography variant="h4" sx={{ pl: 2, pb: 0.5, pt: 2 }}>
-              {name}
-            </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                pl: 2,
+                pb: 0.5,
+                pt: 2,
+              }}
+            >
+              <Typography variant="h4">{name}</Typography>
+              {configUrl && (
+                <Link
+                  href={configUrl}
+                  target="_blank"
+                  rel="noopener"
+                  sx={{ ml: 2, fontSize: '1.2rem' }}
+                >
+                  [config]
+                </Link>
+              )}
+            </Box>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
                 <Tab label="Overview" {...a11yProps('overview')} />

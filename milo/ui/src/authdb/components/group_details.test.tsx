@@ -37,4 +37,64 @@ describe('<GroupDetails />', () => {
 
     expect(screen.getByText(mockGroup.name)).toBeInTheDocument();
   });
+
+  test('displays config link for mdb/ group', async () => {
+    const mockGroup = createMockGroupIndividual('mdb/foo', true, true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+          <GroupDetails name="mdb/foo" refetchList={() => {}} />
+        </List>
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getByText('mdb/foo')).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: '[config]' });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute(
+      'href',
+      'http://cs/f:groups_push_cron/config.yaml%20foo',
+    );
+  });
+
+  test('displays config link for google/ group', async () => {
+    const mockGroup = createMockGroupIndividual('google/bar', true, true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+          <GroupDetails name="google/bar" refetchList={() => {}} />
+        </List>
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getByText('google/bar')).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: '[config]' });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute(
+      'href',
+      'http://cs/f:groups_push_cron/config.yaml%20bar',
+    );
+  });
+
+  test('does not display config link for regular group', async () => {
+    const mockGroup = createMockGroupIndividual('regular-group', true, true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+          <GroupDetails name="regular-group" refetchList={() => {}} />
+        </List>
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getByText('regular-group')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: '[config]' }),
+    ).not.toBeInTheDocument();
+  });
 });
