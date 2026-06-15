@@ -299,7 +299,7 @@ export function DashboardListTable({
     },
     positionActionsColumn: 'last',
     renderRowActionMenuItems: ({ closeMenu, row }) => [
-      showDeleted ? (
+      tab === 'deleted' ? (
         <MenuItem
           key="recover"
           onClick={(e) => {
@@ -353,7 +353,7 @@ export function DashboardListTable({
       sx: { border: (theme) => `1px solid ${theme.palette.divider}` },
     },
     muiTableBodyRowProps: (args: { row: MRT_Row<DashboardState> }) => {
-      const isClickable = !showDeleted && !!onDashboardClick;
+      const isClickable = tab !== 'deleted' && !!onDashboardClick;
       return {
         onClick: isClickable
           ? () => onDashboardClick(args.row.original)
@@ -393,7 +393,7 @@ export function DashboardListTable({
 
   return (
     <>
-      {showDeleted && (
+      {tab === 'deleted' && (
         <Alert severity="warning" sx={{ mb: 2 }}>
           Deleted dashboards will be permanently purged after 30 days.
         </Alert>

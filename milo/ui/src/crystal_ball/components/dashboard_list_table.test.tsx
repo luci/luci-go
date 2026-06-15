@@ -459,4 +459,74 @@ describe('<DashboardListTable />', () => {
       expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
+
+  it('does not trigger onDashboardClick for deleted dashboards (tab="deleted")', () => {
+    const onDashboardClick = jest.fn();
+
+    (hooks.useListDashboardStatesInfinite as jest.Mock).mockReturnValue({
+      data: { pages: [{ dashboardStates: mockDashboards }] },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+    });
+
+    render(
+      <DashboardListTable tab="deleted" onDashboardClick={onDashboardClick} />,
+    );
+
+    const dashboardRow = screen.getByText('Generic Dashboard Beta');
+    dashboardRow.click();
+
+    expect(onDashboardClick).not.toHaveBeenCalled();
+  });
+
+  it('recovers the dashboard successfully when tab="deleted" (regression test)', async () => {
+    const mockUndeleteAsync = jest.fn().mockResolvedValue({
+      response: { name: 'dashboardStates/dashboard1' },
+    });
+    (hooks.useUndeleteDashboardState as jest.Mock).mockReturnValue({
+      mutateAsync: mockUndeleteAsync,
+      isPending: false,
+    });
+
+    (hooks.useListDashboardStatesInfinite as jest.Mock).mockReturnValue({
+      data: { pages: [{ dashboardStates: mockDashboards }] },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+    });
+
+    render(<DashboardListTable tab="deleted" />);
+
+    // Verify it passes filter: "deleted = true" to the API
+    expect(hooks.useListDashboardStatesInfinite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filter: 'deleted = true',
+      }),
+    );
+
+    // Click the Row actions menu for the first row
+    const rowActionButtons = screen.getAllByRole('button', {
+      name: /Row Actions/i,
+    });
+    fireEvent.click(rowActionButtons[0]);
+
+    // Click the Recover Dashboard menu item
+    const recoverMenuItem = await screen.findByText('Recover Dashboard');
+    fireEvent.click(recoverMenuItem);
+
+    await waitFor(() => {
+      expect(mockUndeleteAsync).toHaveBeenCalledWith(
+        UndeleteDashboardStateRequest.fromPartial({
+          name: 'dashboardStates/dashboard1',
+        }),
+      );
+      expect(mockInvalidateQueries).toHaveBeenCalled();
+      expect(
+        screen.getByText('Dashboard recovered successfully'),
+      ).toBeVisible();
+      // No navigate should be called
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+  });
 });
