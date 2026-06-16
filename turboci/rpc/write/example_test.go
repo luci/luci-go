@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/turboci/proto/go/utils/ids"
 	"go.chromium.org/turboci/proto/go/utils/value"
 
-	"go.chromium.org/luci/turboci/check"
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/rpc/write/dep"
 )
@@ -39,13 +38,13 @@ func ExampleNewRequest() {
 
 	req.SetReason("stuff", value.MustWrite(numData))
 
-	chk := req.AddNewCheck(ids.Check("fleeporp"), check.KindAnalysis)
+	chk := req.AddNewCheck(ids.Check("fleeporp"), orchestratorpb.CheckKind_CHECK_KIND_ANALYSIS)
 	chk.AddOptions(value.MustWrite(numData), value.MustWrite(boolData))
 	chk.AddResultData(value.MustWrite(numData), value.MustWrite(boolData, "very/secret"))
 
 	chk = req.AddCheckUpdate(cid)
 	chk.Msg.SetDependencies(dep.MustGroup(
-		dep.ConditionalCheck(ids.Check("plorp"), check.StatePlanned),
+		dep.ConditionalCheck(ids.Check("plorp"), orchestratorpb.CheckState_CHECK_STATE_PLANNED),
 		dep.MustGroup(
 			ids.Check("external"),
 			ids.Check("fleeporp"),
@@ -55,12 +54,12 @@ func ExampleNewRequest() {
 	chk.Msg.SetFinalizeResults(true)
 
 	chk = req.AddCheckUpdate(cid2)
-	chk.Msg.SetState(check.StateFinal)
+	chk.Msg.SetState(orchestratorpb.CheckState_CHECK_STATE_FINAL)
 	chk.Msg.SetFinalizeResults(true)
 
 	stg := req.AddNewStage(ids.Stage("neeple"), numData)
 	stg.Msg.SetDependencies(dep.MustGroup(
-		dep.ConditionalCheck(ids.Check("fleeporp"), check.StatePlanned),
+		dep.ConditionalCheck(ids.Check("fleeporp"), orchestratorpb.CheckState_CHECK_STATE_PLANNED),
 	))
 	sep := &orchestratorpb.StageExecutionPolicy{}
 	stg.Msg.SetRequestedStageExecutionPolicy(sep)
@@ -75,7 +74,7 @@ func ExampleNewRequest() {
 			PendingThrottled: durationpb.New(time.Hour),
 		}.Build(),
 	}.Build())
-	stg.AddCheckAssignment(ids.Check("fleeporp"), check.StateFinal)
+	stg.AddCheckAssignment(ids.Check("fleeporp"), orchestratorpb.CheckState_CHECK_STATE_FINAL)
 
 	req.AddNewStage(ids.Stage("bleeple"), numData)
 

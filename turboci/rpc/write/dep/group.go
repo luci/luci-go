@@ -23,9 +23,6 @@ import (
 
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-
-	"go.chromium.org/luci/turboci/check"
-	"go.chromium.org/luci/turboci/stage"
 )
 
 func makeConditionExp(expressions []string) *string {
@@ -44,7 +41,7 @@ func makeConditionExp(expressions []string) *string {
 //
 // `cond` should be a CEL expression; if more than one value is passed for
 // `cond`, they are AND'd together like: `(cond[0)&&(cond[1])...`.
-func ConditionalCheck(id *idspb.Check, onState check.State, cond ...string) *orchestratorpb.Edge {
+func ConditionalCheck(id *idspb.Check, onState orchestratorpb.CheckState, cond ...string) *orchestratorpb.Edge {
 	return orchestratorpb.Edge_builder{
 		Check: orchestratorpb.Edge_Check_builder{
 			Identifier: id,
@@ -61,7 +58,7 @@ func ConditionalCheck(id *idspb.Check, onState check.State, cond ...string) *orc
 //
 // `cond` should be a CEL expression; if more than one value is passed for
 // `cond`, they are AND'd together like: `(cond[0)&&(cond[1])...`.
-func ConditionalStage(id *idspb.Stage, onState stage.State, cond ...string) *orchestratorpb.Edge {
+func ConditionalStage(id *idspb.Stage, onState orchestratorpb.StageState, cond ...string) *orchestratorpb.Edge {
 	return orchestratorpb.Edge_builder{
 		Stage: orchestratorpb.Edge_Stage_builder{
 			Identifier: id,
