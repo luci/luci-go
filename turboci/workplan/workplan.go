@@ -17,9 +17,9 @@ package workplan
 import (
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/value"
 
 	"go.chromium.org/luci/turboci/id"
-	"go.chromium.org/luci/turboci/value"
 )
 
 // flatStageID is a version of idspb.Stage which can be used as a map key.
