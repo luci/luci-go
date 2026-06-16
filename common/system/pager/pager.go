@@ -38,6 +38,7 @@ func done(err error) int {
 }
 
 // Main implements paging using commands "less" or "more" if they are available.
+// If $ANTIGRAVITY_AGENT is "1", paging is bypassed.
 // If os.Stdout is not terminal or less/more are not available in $PATH, Main
 // calls fn with out set to os.Stdout and returns its exit code. Otherwise
 // creates a pager subprocess, directs its stdout to os.Stdout and calls fn with
@@ -58,7 +59,7 @@ func done(err error) int {
 //		})
 //	}
 func Main(ctx context.Context, fn func(ctx context.Context, out io.WriteCloser) int) int {
-	if !term.IsTerminal(int(os.Stdout.Fd())) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) || os.Getenv("ANTIGRAVITY_AGENT") == "1" {
 		return fn(ctx, os.Stdout)
 	}
 
