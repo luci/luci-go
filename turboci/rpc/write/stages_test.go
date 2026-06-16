@@ -22,10 +22,10 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/ids"
 	"go.chromium.org/turboci/proto/go/utils/value"
 
 	"go.chromium.org/luci/turboci/check"
-	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
 )
 
@@ -34,16 +34,16 @@ func TestStageWrite(t *testing.T) {
 
 	sw := write.StageWrite{Msg: &orchestratorpb.WriteNodesRequest_StageWrite{}}
 
-	assigned := sw.AddCheckAssignment(id.Check("nerp"), check.StatePlanned)
+	assigned := sw.AddCheckAssignment(ids.Check("nerp"), check.StatePlanned)
 	assert.That(t, assigned, should.Match(orchestratorpb.Stage_Assignment_builder{
-		Target:    id.Check("nerp"),
+		Target:    ids.Check("nerp"),
 		GoalState: check.StatePlanned.Enum(),
 	}.Build()))
 
 	assert.That(t, sw.Msg, should.Match(orchestratorpb.WriteNodesRequest_StageWrite_builder{
 		Assignments: []*orchestratorpb.Stage_Assignment{
 			orchestratorpb.Stage_Assignment_builder{
-				Target:    id.Check("nerp"),
+				Target:    ids.Check("nerp"),
 				GoalState: check.StatePlanned.Enum(),
 			}.Build(),
 		},
@@ -54,18 +54,18 @@ func TestAddNewStage(t *testing.T) {
 	t.Parallel()
 
 	req := write.NewRequest()
-	stg := req.AddNewStage(id.Stage("stg"), boolData)
+	stg := req.AddNewStage(ids.Stage("stg"), boolData)
 
-	stg.AddCheckAssignment(id.Check("nerp"), check.StateWaiting)
+	stg.AddCheckAssignment(ids.Check("nerp"), check.StateWaiting)
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
 		Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
 			orchestratorpb.WriteNodesRequest_StageWrite_builder{
-				Identifier: id.Stage("stg"),
+				Identifier: ids.Stage("stg"),
 				Args:       value.MustWrite(boolData, value.RealmFromContainer),
 				Assignments: []*orchestratorpb.Stage_Assignment{
 					orchestratorpb.Stage_Assignment_builder{
-						Target:    id.Check("nerp"),
+						Target:    ids.Check("nerp"),
 						GoalState: check.StateWaiting.Enum(),
 					}.Build(),
 				},
@@ -78,12 +78,12 @@ func TestAddStageCancellation(t *testing.T) {
 	t.Parallel()
 
 	req := write.NewRequest()
-	req.AddStageCancellation(id.Stage("stg"))
+	req.AddStageCancellation(ids.Stage("stg"))
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
 		Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
 			orchestratorpb.WriteNodesRequest_StageWrite_builder{
-				Identifier: id.Stage("stg"),
+				Identifier: ids.Stage("stg"),
 				Cancelled:  proto.Bool(true),
 			}.Build(),
 		},

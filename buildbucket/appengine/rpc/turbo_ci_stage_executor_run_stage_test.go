@@ -39,11 +39,11 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
-	"go.chromium.org/luci/turboci/id"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/ids"
 	"go.chromium.org/turboci/proto/go/utils/value"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
@@ -106,7 +106,7 @@ func TestRunStage(t *testing.T) {
 			}
 			ctx = context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: schReq})
 
-			aID, err := id.FromString("Lplan-id:Sstage-id:A1")
+			aID, err := ids.FromString("Lplan-id:Sstage-id:A1")
 			assert.NoErr(t, err)
 			attemptID := aID.GetStageAttempt()
 
@@ -145,7 +145,7 @@ func TestRunStage(t *testing.T) {
 		}
 		t.Run("OK", func(t *ftt.Test) {
 			ctx, req, attemptID, mockOrch, se := setup()
-			attemptIDStr := id.ToString(attemptID)
+			attemptIDStr := ids.ToString(attemptID)
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
 			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
@@ -195,7 +195,7 @@ func TestRunStage(t *testing.T) {
 		t.Run("validation failures", func(t *ftt.Test) {
 			t.Run("attempt not found", func(t *ftt.Test) {
 				ctx, req, _, _, se := setup()
-				missingAttemptID, err := id.FromString("Lplan-id:Sstage-id:A3")
+				missingAttemptID, err := ids.FromString("Lplan-id:Sstage-id:A3")
 				assert.NoErr(t, err)
 				req.SetAttempt(missingAttemptID.GetStageAttempt())
 
@@ -221,7 +221,7 @@ func TestRunStage(t *testing.T) {
 		t.Run("get parent failure", func(t *ftt.Test) {
 			ctx, req, _, mockOrch, se := setup()
 			pStageAttemptIDStr := "Lplan-id:Sstage-id:A0"
-			pStageAttemptID, err := id.FromString(pStageAttemptIDStr)
+			pStageAttemptID, err := ids.FromString(pStageAttemptIDStr)
 			assert.NoErr(t, err)
 			req.GetStage().SetCreatedBy(orchestratorpb.Actor_builder{
 				StageAttempt: pStageAttemptID.GetStageAttempt(),
@@ -241,7 +241,7 @@ func TestRunStage(t *testing.T) {
 		t.Run("get parent transient failure", func(t *ftt.Test) {
 			ctx, req, _, mockOrch, se := setup()
 			pStageAttemptIDStr := "Lplan-id:Sstage-id:A0"
-			pStageAttemptID, err := id.FromString(pStageAttemptIDStr)
+			pStageAttemptID, err := ids.FromString(pStageAttemptIDStr)
 			assert.NoErr(t, err)
 			req.GetStage().SetCreatedBy(orchestratorpb.Actor_builder{
 				StageAttempt: pStageAttemptID.GetStageAttempt(),
@@ -342,7 +342,7 @@ func TestRunStage(t *testing.T) {
 
 		t.Run("dedup request id - OK", func(t *ftt.Test) {
 			ctx, req, attemptID, mockOrch, se := setup()
-			attemptIDStr := id.ToString(attemptID)
+			attemptIDStr := ids.ToString(attemptID)
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
 			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 

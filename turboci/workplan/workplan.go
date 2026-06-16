@@ -17,9 +17,8 @@ package workplan
 import (
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/ids"
 	"go.chromium.org/turboci/proto/go/utils/value"
-
-	"go.chromium.org/luci/turboci/id"
 )
 
 // flatStageID is a version of idspb.Stage which can be used as a map key.
@@ -103,7 +102,7 @@ func ToNodeBag(data map[string]*orchestratorpb.ValueData, workplans ...*orchestr
 //
 // Returns (nil, nil) if the identifier's Root is not in this NodeBag.
 func (n *NodeBag) RootFor(ident *idspb.Identifier) (*orchestratorpb.Check, *orchestratorpb.Stage) {
-	_, checkRoot, stageRoot := id.Root(ident)
+	_, checkRoot, stageRoot := ids.Root(ident)
 	if checkRoot != nil {
 		return n.Check(checkRoot), nil
 	}

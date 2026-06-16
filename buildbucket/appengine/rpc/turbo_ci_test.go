@@ -30,9 +30,9 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/turboci/id"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/ids"
 	"go.chromium.org/turboci/proto/go/utils/value"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
@@ -141,7 +141,7 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 				orchestratorpb.Query_builder{
 					NodesById: orchestratorpb.Query_NodesByID_builder{
 						Nodes: []*idspb.Identifier{
-							id.Wrap(stageID),
+							ids.Wrap(stageID),
 						},
 					}.Build(),
 					SelectStages: &orchestratorpb.Query_SelectStages{},
@@ -194,7 +194,7 @@ func TestLaunchTurboCIChildren(t *testing.T) {
 	parent := &model.Build{
 		ID:                11111,
 		Proto:             &pb.Build{Builder: parentBuilder},
-		StageAttemptID:    id.ToString(parentStageAttemptID),
+		StageAttemptID:    ids.ToString(parentStageAttemptID),
 		StageAttemptToken: "token",
 	}
 
@@ -293,8 +293,8 @@ func TestPollingSchedule(t *testing.T) {
 func mockQueryNodesResponse(planID *idspb.WorkPlan, stageID *idspb.Stage, state orchestratorpb.StageState, buildID int64, buildErr error) *orchestratorpb.QueryNodesResponse {
 	if !proto.Equal(stageID.GetWorkPlan(), planID) {
 		panic(fmt.Sprintf("unexpected planID inside the stageID: got %s, want %s",
-			id.ToString(stageID.GetWorkPlan()),
-			id.ToString(planID),
+			ids.ToString(stageID.GetWorkPlan()),
+			ids.ToString(planID),
 		))
 	}
 	var attempts []*orchestratorpb.Stage_Attempt

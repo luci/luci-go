@@ -31,9 +31,9 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/turboci/id"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/ids"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -183,7 +183,7 @@ func TestValidateStage(t *testing.T) {
 
 		t.Run("with_parent", func(t *ftt.Test) {
 			pStageAttemptIDStr := "L123456789:Sstage-id:A1"
-			pStageAttemptID, err := id.FromString(pStageAttemptIDStr)
+			pStageAttemptID, err := ids.FromString(pStageAttemptIDStr)
 			assert.NoErr(t, err)
 
 			pBld := &model.Build{
