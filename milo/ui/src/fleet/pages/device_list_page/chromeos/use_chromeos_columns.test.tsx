@@ -64,11 +64,16 @@ describe('useChromeOSColumns', () => {
       </MemoryRouter>
     );
 
-    const { result } = renderHook(() => useChromeOSColumns(false, false), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useChromeOSColumns(undefined, false, false),
+      {
+        wrapper,
+      },
+    );
 
-    const availableColumnIds = result.current.availableColumns.map((c) => c.id);
+    const availableColumnIds = result.current.mrtColumnManager.columns.map(
+      (c) => c.id,
+    );
 
     // Should include columns from availableFields
     expect(availableColumnIds).toContain('id');
@@ -112,11 +117,16 @@ describe('useChromeOSColumns', () => {
       </MemoryRouter>
     );
 
-    const { result } = renderHook(() => useChromeOSColumns(false, false), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useChromeOSColumns(undefined, false, false),
+      {
+        wrapper,
+      },
+    );
 
-    const availableColumnIds = result.current.availableColumns.map((c) => c.id);
+    const availableColumnIds = result.current.mrtColumnManager.columns.map(
+      (c) => c.id,
+    );
 
     expect(availableColumnIds).toContain('id');
     expect(availableColumnIds).toContain('label-board');
@@ -148,11 +158,16 @@ describe('useChromeOSColumns', () => {
       </MemoryRouter>
     );
 
-    const { result } = renderHook(() => useChromeOSColumns(false, false), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useChromeOSColumns(undefined, false, false),
+      {
+        wrapper,
+      },
+    );
 
-    const availableColumnIds = result.current.availableColumns.map((c) => c.id);
+    const availableColumnIds = result.current.mrtColumnManager.columns.map(
+      (c) => c.id,
+    );
 
     // Should include 'id'
     expect(availableColumnIds).toContain('id');
@@ -179,11 +194,16 @@ describe('useChromeOSColumns', () => {
       </MemoryRouter>
     );
 
-    const { result } = renderHook(() => useChromeOSColumns(false, false), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useChromeOSColumns(undefined, false, false),
+      {
+        wrapper,
+      },
+    );
 
-    const visibleColumnIds = result.current.visibleColumns.map((c) => c.id);
+    const visibleColumnIds = result.current.mrtColumnManager.columns
+      .filter((c) => result.current.mrtColumnManager.columnVisibility[c.id])
+      .map((c) => c.id);
 
     // The URL requested 'realm' then 'id'.
     // But availableColumns has 'id' then 'realm' (since it follows availableFields order).
@@ -209,11 +229,16 @@ describe('useChromeOSColumns', () => {
       </MemoryRouter>
     );
 
-    const { result } = renderHook(() => useChromeOSColumns(false, false), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useChromeOSColumns(undefined, false, false),
+      {
+        wrapper,
+      },
+    );
 
-    const availableColumnIds = result.current.availableColumns.map((c) => c.id);
+    const availableColumnIds = result.current.mrtColumnManager.columns.map(
+      (c) => c.id,
+    );
 
     // Should include columns from availableFields
     expect(availableColumnIds).toContain('id');

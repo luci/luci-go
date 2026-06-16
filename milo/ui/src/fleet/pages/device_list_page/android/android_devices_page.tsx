@@ -26,7 +26,6 @@ import {
 import { createFeatureFlag, useFeatureFlag } from '@/common/feature_flags';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
-import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
@@ -287,52 +286,23 @@ export const AndroidDevicesPage = () => {
       selectOnlyColumn,
     },
     visibleColumnIds,
-    goToPrevPage,
-    goToNextPage,
-    onRowsPerPageChange,
     columnSizing,
     onColumnSizingChange,
     resetColumnWidths,
   } = fleetMrtState;
 
-  const meta = useMemo<FleetTableMeta<AndroidDevice>>(
-    () => ({
-      availableColumns,
-      visibleColumnIds,
-      onToggleColumn,
-      selectOnlyColumn,
-      resetDefaultColumns,
-      resetColumnWidths,
-      pagerCtx,
-      searchParams,
-      goToPrevPage,
-      goToNextPage,
-      onRowsPerPageChange,
-      totalSize: devicesQuery.data?.totalSize,
-      nextPageToken: devicesQuery.data?.nextPageToken,
-    }),
-    [
-      availableColumns,
-      visibleColumnIds,
-      onToggleColumn,
-      selectOnlyColumn,
-      resetDefaultColumns,
-      resetColumnWidths,
-      pagerCtx,
-      searchParams,
-      goToPrevPage,
-      goToNextPage,
-      onRowsPerPageChange,
-      devicesQuery.data?.totalSize,
-      devicesQuery.data?.nextPageToken,
-    ],
-  );
+  const visibleEnrichedColumns = useMemo(() => {
+    return enrichedColumns.filter((col) => {
+      const id = col.id ?? (col.accessorKey as string);
+      return visibleColumnIds.includes(id);
+    });
+  }, [enrichedColumns, visibleColumnIds]);
 
   const tableOptions: MRT_TableOptions<AndroidDevice> & {
     filterValues?: Record<string, FilterCategory>;
   } = useMemo(
     () => ({
-      columns: enrichedColumns,
+      columns: visibleEnrichedColumns,
       data: devices as AndroidDevice[],
       displayColumnDefOptions: {
         'mrt-row-select': {
@@ -345,7 +315,6 @@ export const AndroidDevicesPage = () => {
       onSortingChange,
       enablePagination: false,
       filterValues: filterCategoryDatas.filterValues,
-      meta,
       state: {
         rowSelection,
         sorting,
@@ -375,18 +344,31 @@ export const AndroidDevicesPage = () => {
         },
       },
       renderTopToolbarCustomActions: ({ table }) => (
-        <FleetTopToolbar table={table} />
+        <FleetTopToolbar
+          table={table}
+          availableColumns={availableColumns}
+          visibleColumnIds={visibleColumnIds}
+          onToggleColumn={onToggleColumn}
+          selectOnlyColumn={selectOnlyColumn}
+          resetDefaultColumns={resetDefaultColumns}
+          resetColumnWidths={resetColumnWidths}
+        />
       ),
       renderBottomToolbarCustomActions: ({ table }) => (
-        <FleetBottomToolbar table={table} />
+        <FleetBottomToolbar
+          table={table}
+          totalSize={devicesQuery.data?.totalSize}
+          nextPageToken={devicesQuery.data?.nextPageToken}
+          pagerCtx={pagerCtx}
+        />
       ),
     }),
     [
+      visibleEnrichedColumns,
       devices,
       onRowSelectionChange,
       onSortingChange,
       filterCategoryDatas.filterValues,
-      meta,
       rowSelection,
       sorting,
       columnVisibility,
@@ -397,6 +379,15 @@ export const AndroidDevicesPage = () => {
       enrichedColumns,
       setColumnVisibility,
       onColumnSizingChange,
+      availableColumns,
+      visibleColumnIds,
+      onToggleColumn,
+      selectOnlyColumn,
+      resetDefaultColumns,
+      resetColumnWidths,
+      devicesQuery.data?.totalSize,
+      devicesQuery.data?.nextPageToken,
+      pagerCtx,
     ],
   );
 

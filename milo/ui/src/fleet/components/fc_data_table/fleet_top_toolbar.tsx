@@ -20,28 +20,27 @@ import * as React from 'react';
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 
-import { useFleetTableMeta } from './types';
-
 interface FleetTopToolbarProps<TData extends MRT_RowData> {
   table: MRT_TableInstance<TData>;
+  availableColumns?: { id: string; label: string }[];
+  visibleColumnIds?: string[];
+  onToggleColumn?: (id: string) => void;
+  selectOnlyColumn?: (id: string) => void;
+  resetDefaultColumns?: () => void;
+  resetColumnWidths?: () => void;
   children?: React.ReactNode;
 }
 
 export function FleetTopToolbar<TData extends MRT_RowData>({
   table,
+  availableColumns = [],
+  visibleColumnIds = [],
+  onToggleColumn = () => {},
+  selectOnlyColumn = () => {},
+  resetDefaultColumns = () => {},
+  resetColumnWidths,
   children,
 }: FleetTopToolbarProps<TData>) {
-  const meta = useFleetTableMeta(table);
-
-  const {
-    availableColumns = [],
-    visibleColumnIds = [],
-    onToggleColumn = () => {},
-    selectOnlyColumn = () => {},
-    resetDefaultColumns = () => {},
-    resetColumnWidths,
-  } = meta;
-
   return (
     <Stack
       direction="row"

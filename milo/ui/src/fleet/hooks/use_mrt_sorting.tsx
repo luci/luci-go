@@ -20,20 +20,35 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 
 import { OrderByDirection, ORDER_BY_PARAM_KEY } from './order_by';
 
-export function useMrtSorting(): MRT_SortingState {
+export function useMrtSorting(
+  columns?: Array<{ id: string; orderByField?: string }>,
+): MRT_SortingState {
   const [searchParams] = useSyncedSearchParams();
   const orderByParam = searchParams.get(ORDER_BY_PARAM_KEY);
 
-  return useMemo<MRT_SortingState>(
-    () =>
-      (orderByParam || '')
-        .split(', ')
-        .map(parseOrderByParam)
-        .filter((x): x is NonNullable<typeof x> => !!x)
-        .map((x) => ({
-          id: x.field,
-          desc: x.direction === OrderByDirection.DESC,
-        })),
-    [orderByParam],
-  );
+  return useMemo<MRT_SortingState>(() => {
+    if (!orderByParam) return [];
+    return orderByParam
+      .split(', ')
+      .map((sort: string) => {
+        const parsed = parseOrderByParam(sort);
+        if (!parsed) return null;
+
+        const match = columns?.find(
+          (c) =>
+            parsed.field === (c.orderByField ?? c.id) || parsed.field === c.id,
+        );
+        if (match) {
+          return {
+            id: match.id,
+            desc: parsed.direction === OrderByDirection.DESC,
+          };
+        }
+        return {
+          id: parsed.field,
+          desc: parsed.direction === OrderByDirection.DESC,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => !!x);
+  }, [orderByParam, columns]);
 }

@@ -16,35 +16,32 @@ import { Box, TablePagination } from '@mui/material';
 import { MRT_RowData, MRT_TableInstance } from 'material-react-table';
 import * as React from 'react';
 
-import {
-  getCurrentPageIndex,
-  getPageSize,
-} from '@/common/components/params_pager';
+import { PagerContext } from '@/common/components/params_pager/context';
+import { usePager } from '@/fleet/hooks/use_pager';
 
-import { DEFAULT_PAGE_SIZE_OPTIONS, useFleetTableMeta } from './types';
+export const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500, 1000];
 
 interface FleetBottomToolbarProps<TData extends MRT_RowData> {
   table: MRT_TableInstance<TData>;
+  totalSize?: number;
+  nextPageToken?: string;
+  pagerCtx: PagerContext;
 }
 
 export function FleetBottomToolbar<TData extends MRT_RowData>({
   table,
+  totalSize,
+  nextPageToken,
+  pagerCtx,
 }: FleetBottomToolbarProps<TData>) {
-  const meta = useFleetTableMeta(table);
-
   const {
-    totalSize,
-    nextPageToken,
-    goToPrevPage,
+    pageSize,
+    pageIndex: currentPage,
     goToNextPage,
+    goToPrevPage,
     onRowsPerPageChange,
-    pagerCtx,
-    searchParams,
-  } = meta;
-
+  } = usePager(pagerCtx);
   const data = table.options.data || [];
-  const currentPage = getCurrentPageIndex(pagerCtx);
-  const pageSize = getPageSize(pagerCtx, searchParams);
 
   // Extract condition to improve readability per review feedback
   const isTableEmpty = totalSize === 0 && !nextPageToken && !data.length;

@@ -67,6 +67,13 @@ export interface FleetMRTStateProps<
   orderByParam?: string;
 }
 
+/**
+ * @deprecated Use granular hooks instead:
+ * - `useMrtColumnSizing` for column resizing state and local storage syncing.
+ * - `useMrtSortingState` for sorting state and URL search param syncing.
+ * - `usePager` for pagination logic.
+ * - `useMRTColumnManagement` (from `use_mrt_column_management`) for column visibility and order management.
+ */
 export const useFleetMRTState = <
   TColumnDef extends Omit<FleetColumnDefExt, 'meta'> = FleetColumnDefExt,
 >({

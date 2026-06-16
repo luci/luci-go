@@ -36,7 +36,6 @@ import {
 } from '@/fleet/components/actions/request_repair/request_repair_utils';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
-import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
@@ -231,43 +230,9 @@ export const BrowserDevicesPage = () => {
     platform: Platform.CHROMIUM,
   });
 
-  const meta = useMemo<FleetTableMeta<BrowserDevice>>(
-    () => ({
-      availableColumns: fleetMrtState.allColumns,
-      visibleColumnIds: fleetMrtState.visibleColumnIds,
-      onToggleColumn: fleetMrtState.mrtColumnManager.onToggleColumn,
-      selectOnlyColumn: fleetMrtState.mrtColumnManager.selectOnlyColumn,
-      resetDefaultColumns: fleetMrtState.mrtColumnManager.resetDefaultColumns,
-      resetColumnWidths: fleetMrtState.resetColumnWidths,
-      devices,
-      nextPageToken,
-      totalSize,
-      pagerCtx,
-      searchParams,
-      goToPrevPage: fleetMrtState.goToPrevPage,
-      goToNextPage: fleetMrtState.goToNextPage,
-      onRowsPerPageChange: fleetMrtState.onRowsPerPageChange,
-    }),
-    [
-      fleetMrtState.allColumns,
-      fleetMrtState.visibleColumnIds,
-      fleetMrtState.mrtColumnManager,
-      fleetMrtState.resetColumnWidths,
-      devices,
-      nextPageToken,
-      totalSize,
-      pagerCtx,
-      searchParams,
-      fleetMrtState.goToPrevPage,
-      fleetMrtState.goToNextPage,
-      fleetMrtState.onRowsPerPageChange,
-    ],
-  );
-
   const table = useFCDataTable({
     columns: fleetMrtState.enrichedColumns as MRT_ColumnDef<BrowserDevice>[],
     data: devices as BrowserDevice[],
-    meta,
     filterValues: filterValues,
     displayColumnDefOptions: {
       'mrt-row-select': {
@@ -310,12 +275,25 @@ export const BrowserDevicesPage = () => {
       },
     },
     renderTopToolbarCustomActions: ({ table }) => (
-      <FleetTopToolbar table={table}>
+      <FleetTopToolbar
+        table={table}
+        availableColumns={fleetMrtState.allColumns}
+        visibleColumnIds={fleetMrtState.visibleColumnIds}
+        onToggleColumn={fleetMrtState.mrtColumnManager.onToggleColumn}
+        selectOnlyColumn={fleetMrtState.mrtColumnManager.selectOnlyColumn}
+        resetDefaultColumns={fleetMrtState.mrtColumnManager.resetDefaultColumns}
+        resetColumnWidths={fleetMrtState.resetColumnWidths}
+      >
         <BrowserActions table={table} />
       </FleetTopToolbar>
     ),
     renderBottomToolbarCustomActions: ({ table }) => (
-      <FleetBottomToolbar table={table} />
+      <FleetBottomToolbar
+        table={table}
+        totalSize={totalSize}
+        nextPageToken={nextPageToken}
+        pagerCtx={pagerCtx}
+      />
     ),
   });
 

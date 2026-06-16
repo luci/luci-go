@@ -55,7 +55,8 @@ export const ChromeOSDevicesPage = () => {
     aip160,
   } = useChromeOSFilters(handleFilterChange);
 
-  const { availableColumns, warnings: columnWarnings } = useChromeOSColumns(
+  const { mrtColumnManager, warnings: columnWarnings } = useChromeOSColumns(
+    filterValues,
     isLoading || filterValues === undefined,
     false,
   );
@@ -100,7 +101,7 @@ export const ChromeOSDevicesPage = () => {
           marginTop: 24,
         }}
       >
-        <ChromeOSTable availableColumns={availableColumns} />
+        <ChromeOSTable mrtColumnManager={mrtColumnManager} />
       </div>
     </div>
   );

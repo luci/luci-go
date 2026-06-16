@@ -26,6 +26,24 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 
+export interface MrtColumnManager<TColumnDef> {
+  columns: TColumnDef[];
+  columnVisibility: MRT_VisibilityState;
+  setColumnVisibility: (
+    updater:
+      | MRT_VisibilityState
+      | ((old: MRT_VisibilityState) => MRT_VisibilityState),
+  ) => void;
+  visibleColumnIds: string[];
+  setVisibleColumnIds: (
+    update: string[] | ((prev: string[]) => string[]),
+  ) => void;
+  onToggleColumn: (id: string) => void;
+  selectOnlyColumn: (id: string) => void;
+  allColumns: { id: string; label: string }[];
+  resetDefaultColumns: () => void;
+}
+
 export const highlightedColumnClassName = 'column-highlight';
 export const temporaryColumnClassName = `${highlightedColumnClassName} temporary-column-highlight`;
 
@@ -243,6 +261,7 @@ export function useMRTColumnManagement<
       columnVisibility,
       setColumnVisibility,
       visibleColumnIds,
+      setVisibleColumnIds,
       onToggleColumn,
       selectOnlyColumn,
       allColumns,
@@ -253,6 +272,7 @@ export function useMRTColumnManagement<
       columnVisibility,
       setColumnVisibility,
       visibleColumnIds,
+      setVisibleColumnIds,
       onToggleColumn,
       selectOnlyColumn,
       allColumns,

@@ -15,34 +15,28 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   MaterialReactTable,
-  MRT_ColumnDef,
+  MRT_RowSelectionState,
   MRT_TableInstance,
   MRT_TableOptions,
 } from 'material-react-table';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import {
-  getPageSize,
-  getPageToken,
-  usePagerContext,
-} from '@/common/components/params_pager';
+import { usePagerContext } from '@/common/components/params_pager';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
+import { MrtColumnManager } from '@/fleet/components/columns/use_mrt_column_management';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
-import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
-import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
-import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { CHROMEOS_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
-import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useDevices } from '@/fleet/hooks/use_devices';
+import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
+import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
+import { usePager } from '@/fleet/hooks/use_pager';
 import { extractDutId, extractDutState } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   CountDevicesRequest,
   ListDevicesRequest,
@@ -51,7 +45,7 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 
 import { ChromeOSExportButton } from './chromeos_export_button';
 import { getLabelValue, getLabelValues } from './chromeos_fields_config';
-import { ChromeOSDevice, ChromeOSColumnDef } from './chromeos_types';
+import { ChromeOSColumnDef, ChromeOSDevice } from './chromeos_types';
 import { useChromeOSCurrentTasks } from './use_chromeos_current_tasks';
 import { useChromeOSFilters } from './use_chromeos_filters';
 
@@ -94,24 +88,26 @@ const ChromeOSActions = ({
 };
 
 interface ChromeOSTableProps {
-  availableColumns: ChromeOSColumnDef[];
+  mrtColumnManager: MrtColumnManager<ChromeOSColumnDef>;
 }
 
-export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const [orderByParam] = useOrderByParam();
-  const { trackEvent } = useGoogleAnalytics();
+export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100, 500, 1000],
     defaultPageSize: 100,
   });
 
+  const { pageSize, pageToken } = usePager(pagerCtx);
+
+  const [sorting, onSortingChange, orderByParam] = useMrtSortingState(
+    mrtColumnManager.columns,
+    pagerCtx,
+  );
+
   const client = useFleetConsoleClient();
   const filterCategoryDatas = useChromeOSFilters(() => {
     // Dummy onApply for now, URL updates are handled by the page component or useFilters.
   });
-
-  const columnFiltersRef = useRef<{ id: string; value: unknown }[]>([]);
 
   const countQuery = useQuery({
     ...client.CountDevices.query(
@@ -127,13 +123,13 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
   const request = useMemo(
     () =>
       ListDevicesRequest.fromPartial({
-        pageSize: getPageSize(pagerCtx, searchParams),
-        pageToken: getPageToken(pagerCtx, searchParams),
+        pageSize,
+        pageToken,
         orderBy: orderByParam,
         filter: aip160Filter,
         platform: Platform.CHROMEOS,
       }),
-    [pagerCtx, searchParams, orderByParam, aip160Filter],
+    [pageSize, pageToken, orderByParam, aip160Filter],
   );
 
   const devicesQuery = useDevices(request);
@@ -142,36 +138,16 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
 
   const currentTasks = useChromeOSCurrentTasks(devices);
 
-  const fleetMrtState = useFleetMRTState({
-    setSearchParams,
-    pagerCtx,
-    filterValues: filterCategoryDatas.filterValues,
-    visibleColumns: availableColumns,
-    orderByParam,
-    localStorageKey: CHROMEOS_DEVICES_LOCAL_STORAGE_KEY,
-    defaultColumnIds: CHROMEOS_DEFAULT_COLUMNS,
-    platform: Platform.CHROMEOS,
-    isLoadingOptions: filterCategoryDatas.isLoading,
-    onColumnFiltersChangeOverride: () => {
-      trackEvent('filter_changed', {
-        componentName: 'device_list_filter',
-      });
-    },
-  });
+  const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
-  const {
-    enrichedColumns,
-    onRowSelectionChange,
-    onSortingChange,
-    onColumnFiltersChange,
-    rowSelection,
-    sorting,
-    columnFilters,
-    columnVisibility,
-    mrtColumnManager: { setColumnVisibility },
-    columnSizing,
-    onColumnSizingChange,
-  } = fleetMrtState;
+  const { columnSizing, onColumnSizingChange, resetColumnWidths } =
+    useMrtColumnSizing(CHROMEOS_DEVICES_LOCAL_STORAGE_KEY);
+
+  // Clear row selection when filters change to prevent performing bulk actions
+  // on hidden/invisible rows.
+  useEffect(() => {
+    setRowSelection({});
+  }, [filterCategoryDatas.filterValues]);
 
   const rows = useMemo(() => {
     const baseRows = currentTasks.isPending
@@ -187,50 +163,10 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
     return baseRows;
   }, [devices, currentTasks.tasks, currentTasks.isPending]);
 
-  useEffect(() => {
-    columnFiltersRef.current = columnFilters;
-  }, [columnFilters]);
-
-  const meta = useMemo<FleetTableMeta<ChromeOSDevice>>(
-    () => ({
-      availableColumns: fleetMrtState.allColumns,
-      visibleColumnIds: fleetMrtState.visibleColumnIds,
-      onToggleColumn: fleetMrtState.mrtColumnManager.onToggleColumn,
-      selectOnlyColumn: fleetMrtState.mrtColumnManager.selectOnlyColumn,
-      resetDefaultColumns: fleetMrtState.mrtColumnManager.resetDefaultColumns,
-      resetColumnWidths: fleetMrtState.resetColumnWidths,
-      devicesQuery,
-      nextPageToken,
-      devices,
-      pagerCtx,
-      searchParams,
-      goToPrevPage: fleetMrtState.goToPrevPage,
-      goToNextPage: fleetMrtState.goToNextPage,
-      onRowsPerPageChange: fleetMrtState.onRowsPerPageChange,
-      countQuery,
-      totalSize: countQuery?.data?.total,
-    }),
-    [
-      fleetMrtState.allColumns,
-      fleetMrtState.visibleColumnIds,
-      fleetMrtState.mrtColumnManager,
-      fleetMrtState.resetColumnWidths,
-      devicesQuery,
-      nextPageToken,
-      devices,
-      pagerCtx,
-      searchParams,
-      countQuery,
-      fleetMrtState.goToPrevPage,
-      fleetMrtState.goToNextPage,
-      fleetMrtState.onRowsPerPageChange,
-    ],
-  );
-
   const tableOptions: MRT_TableOptions<ChromeOSDevice> = useMemo(
     () => ({
-      columns: enrichedColumns as MRT_ColumnDef<ChromeOSDevice>[],
-      data: rows,
+      columns: mrtColumnManager.columns,
+      data: rows as ChromeOSDevice[],
       displayColumnDefOptions: {
         'mrt-row-select': {
           size: 40,
@@ -246,58 +182,65 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
       }),
       positionToolbarAlertBanner: 'none',
       renderTopToolbarCustomActions: ({ table }) => (
-        <FleetTopToolbar table={table}>
+        <FleetTopToolbar
+          table={table}
+          availableColumns={mrtColumnManager.allColumns}
+          visibleColumnIds={mrtColumnManager.columns
+            .filter((col) => mrtColumnManager.columnVisibility[col.id])
+            .map((col) => col.id)}
+          onToggleColumn={mrtColumnManager.onToggleColumn}
+          selectOnlyColumn={mrtColumnManager.selectOnlyColumn}
+          resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
+          resetColumnWidths={resetColumnWidths}
+        >
           <ChromeOSActions table={table} />
         </FleetTopToolbar>
       ),
       renderBottomToolbarCustomActions: ({ table }) => (
-        <FleetBottomToolbar table={table} />
+        <FleetBottomToolbar
+          table={table}
+          totalSize={countQuery?.data?.total}
+          nextPageToken={nextPageToken}
+          pagerCtx={pagerCtx}
+        />
       ),
       getRowId: (row: ChromeOSDevice) => row.id,
-      onRowSelectionChange,
+      onRowSelectionChange: setRowSelection,
       onSortingChange,
-      onColumnFiltersChange,
       enablePagination: false,
       enableColumnVirtualization: process.env.NODE_ENV !== 'test',
       filterValues: filterCategoryDatas.filterValues,
-      meta,
       state: {
         rowSelection,
         sorting,
-        columnFilters,
-        columnVisibility,
+        columnVisibility: mrtColumnManager.columnVisibility,
         columnSizing,
         isLoading: devicesQuery.isPending && !devicesQuery.isPlaceholderData,
         showProgressBars: devicesQuery.isFetching,
         columnOrder: [
           'mrt-row-select',
-          ...enrichedColumns
-            .filter((col) => {
-              const id = (col.id || col.accessorKey) as string;
-              return columnVisibility[id];
-            })
-            .map((col) => (col.id || col.accessorKey) as string),
+          ...mrtColumnManager.columns.map((col) => col.id),
         ],
       },
       manualFiltering: true,
       manualPagination: true,
-      onColumnVisibilityChange: setColumnVisibility,
+      onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
       onColumnSizingChange,
     }),
     [
-      enrichedColumns,
+      mrtColumnManager,
+      resetColumnWidths,
       rows,
-      onRowSelectionChange,
       onSortingChange,
-      onColumnFiltersChange,
       filterCategoryDatas.filterValues,
-      meta,
       rowSelection,
       sorting,
-      columnFilters,
-      columnVisibility,
-      devicesQuery,
-      setColumnVisibility,
+      devicesQuery.isPending,
+      devicesQuery.isPlaceholderData,
+      devicesQuery.isFetching,
+      countQuery?.data?.total,
+      nextPageToken,
+      pagerCtx,
       columnSizing,
       onColumnSizingChange,
     ],

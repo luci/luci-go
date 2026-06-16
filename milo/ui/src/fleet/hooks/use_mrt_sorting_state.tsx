@@ -15,27 +15,62 @@
 import { MRT_SortingState, MRT_Updater } from 'material-react-table';
 import { useCallback } from 'react';
 
-import { useOrderByParam } from './order_by';
+import {
+  emptyPageTokenUpdater,
+  PagerContext,
+} from '@/common/components/params_pager';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+
+import { ORDER_BY_PARAM_KEY } from './order_by';
 import { useMrtSorting } from './use_mrt_sorting';
 
-export function useMrtSortingState(): [
+/**
+ * Hook for managing the Material React Table (MRT) sorting state.
+ * Syncs the sorting state with the `order_by` search parameter. If a `pagerCtx` is provided,
+ * changing the sorting direction or sorted column will atomically reset the pagination token.
+ */
+export function useMrtSortingState(
+  columns?: Array<{ id: string; orderByField?: string }>,
+  pagerCtx?: PagerContext,
+): [
   MRT_SortingState,
   (updater: MRT_Updater<MRT_SortingState>) => void,
+  string,
 ] {
-  const sorting = useMrtSorting();
-  const [, updateOrderByParam] = useOrderByParam();
+  const sorting = useMrtSorting(columns);
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const orderByParam = searchParams.get(ORDER_BY_PARAM_KEY) ?? '';
 
   const onSortingChange = useCallback(
     (updater: MRT_Updater<MRT_SortingState>) => {
       const newSorting =
         typeof updater === 'function' ? updater(sorting) : updater;
 
-      updateOrderByParam(
-        newSorting.map((s) => (s.desc ? `${s.id} desc` : s.id)).join(', '),
-      );
+      const nextOrderBy = newSorting
+        .map((s) => {
+          const col = columns?.find((c) => c.id === s.id);
+          const field = col?.orderByField ?? s.id;
+          return s.desc ? `${field} desc` : field;
+        })
+        .join(', ');
+
+      if (orderByParam !== nextOrderBy) {
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          if (nextOrderBy === '') {
+            next.delete(ORDER_BY_PARAM_KEY);
+          } else {
+            next.set(ORDER_BY_PARAM_KEY, nextOrderBy);
+          }
+          if (pagerCtx) {
+            return emptyPageTokenUpdater(pagerCtx)(next);
+          }
+          return next;
+        });
+      }
     },
-    [sorting, updateOrderByParam],
+    [sorting, columns, orderByParam, pagerCtx, setSearchParams],
   );
 
-  return [sorting, onSortingChange];
+  return [sorting, onSortingChange, orderByParam];
 }

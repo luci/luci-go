@@ -31,6 +31,10 @@ export interface OrderBy {
 /**
  * Generic hook for handling an order_by URL parameter based on AIP-132.
  * See: https://google.aip.dev/132#ordering
+ *
+ * NOTE: Avoid using this hook if you need to perform multiple URL state updates atomically
+ * (e.g., resetting the pagination token when changing sort direction). In those cases, read
+ * and write using `useSyncedSearchParams` directly.
  */
 export function useOrderByParam(): [string, (value: string) => void] {
   const [searchParams, setSearchParams] = useSyncedSearchParams();

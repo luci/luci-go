@@ -12,36 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import _ from 'lodash';
 import { useMemo, useEffect } from 'react';
 
+import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
+import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
+import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
+import { CHROMEOS_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useWarnings } from '@/fleet/utils/use_warnings';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
-import { EXTRA_COLUMN_IDS, getFieldDefinition } from './chromeos_fields';
+import { getFieldDefinition } from './chromeos_fields';
 import { useChromeOSFields } from './use_chromeos_available_columns';
 
 export const useChromeOSColumns = (
+  filterValues: Record<string, FilterCategory> | undefined,
   isLoadingFilters: boolean,
   isLoadingDevices: boolean,
 ) => {
   const { availableFields } = useChromeOSFields();
-
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const [searchParams] = useSyncedSearchParams();
 
   const urlCols = useMemo(() => {
     const columnsParamStr = searchParams.getAll(COLUMNS_PARAM_KEY).join(',');
     return columnsParamStr ? columnsParamStr.split(',') : [];
   }, [searchParams]);
-
-  const visibleColumnIds = useMemo(() => {
-    const requiredCols =
-      urlCols.length > 0 ? urlCols : CHROMEOS_DEFAULT_COLUMNS;
-
-    return _.uniq([...requiredCols, ...EXTRA_COLUMN_IDS]);
-  }, [urlCols]);
 
   const availableColumns = useMemo(() => {
     const baseCols = availableFields.map((def) => def.columnDef);
@@ -56,46 +53,69 @@ export const useChromeOSColumns = (
     return [...baseCols, ...missingCols];
   }, [availableFields, urlCols]);
 
-  const visibleColumns = useMemo(() => {
-    return availableColumns.filter((col) => visibleColumnIds.includes(col.id));
-  }, [availableColumns, visibleColumnIds]);
+  const { filterByFieldToId } = useMemo(() => {
+    const fromFieldId = new Map<string, string>();
+    availableColumns.forEach((c) => {
+      const cId = c.id;
+      const filterKey = c.filterKey || cId;
+      if (filterKey && cId) {
+        fromFieldId.set(filterKey, cId);
+      }
+    });
+    return { filterByFieldToId: fromFieldId };
+  }, [availableColumns]);
+
+  const highlightedColumnIds = useMemo(() => {
+    if (!filterValues) return [];
+    return Object.entries(filterValues)
+      .filter(([, cat]) => cat.isActive())
+      .map(([key]) => {
+        const norm = normalizeFilterKey(key);
+        return filterByFieldToId.get(norm) || norm;
+      });
+  }, [filterValues, filterByFieldToId]);
+
+  const mrtColumnManager = useMRTColumnManagement({
+    columns: availableColumns,
+    defaultColumnIds: CHROMEOS_DEFAULT_COLUMNS,
+    localStorageKey: CHROMEOS_DEVICES_LOCAL_STORAGE_KEY,
+    highlightedColumnIds,
+    platform: Platform.CHROMEOS,
+  });
 
   const [warnings, addWarning] = useWarnings();
+
+  // Validates the column search parameters and alerts the user of any invalid columns.
+  // This is purely for validation and UI alert purposes. Syncing of columns between
+  // the URL and local state is handled entirely inside useMRTColumnManagement.
   useEffect(() => {
     if (isLoadingFilters || isLoadingDevices) return;
 
-    // Note: Since availableColumns (and thus visibleColumns) now includes
-    // missing columns from visibleColumnIds as fallbacks, invalid columns will
-    // be filtered out on the first render, executing setSearchParams exactly once
-    // and avoiding infinite loops.
-    const invalidCols = visibleColumnIds.filter(
-      (id) => !visibleColumns.some((col) => col.id === id),
+    const invalidCols = mrtColumnManager.visibleColumnIds.filter(
+      (id) => !availableColumns.some((col) => col.id === id),
     );
+
     if (invalidCols.length === 0) return;
+
     addWarning(
       `The following columns are not available: ${invalidCols.join(', ')}`,
     );
-    for (const col of invalidCols) {
-      searchParams.delete(COLUMNS_PARAM_KEY, col);
-    }
-    if (searchParams.getAll(COLUMNS_PARAM_KEY).length <= 1)
-      searchParams.delete(COLUMNS_PARAM_KEY);
 
-    setSearchParams(searchParams);
+    mrtColumnManager.setVisibleColumnIds(
+      mrtColumnManager.visibleColumnIds.filter(
+        (id) => !invalidCols.includes(id),
+      ),
+    );
   }, [
     addWarning,
-    visibleColumnIds,
+    availableColumns,
     isLoadingFilters,
     isLoadingDevices,
-    searchParams,
-    setSearchParams,
-    availableColumns,
-    visibleColumns,
+    mrtColumnManager,
   ]);
 
   return {
-    availableColumns,
-    visibleColumns,
+    mrtColumnManager,
     warnings,
   };
 };
