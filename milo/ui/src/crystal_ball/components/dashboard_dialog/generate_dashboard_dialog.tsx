@@ -32,6 +32,7 @@ import {
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   DATA_SPEC_ID,
   MAX_SUGGEST_RESULTS,
+  Z_INDEX,
 } from '@/crystal_ball/constants';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks';
 
@@ -140,7 +141,7 @@ export function GenerateDashboardDialog({
       onClose={handleClose}
       disableScrollLock
       sx={{
-        zIndex: (theme) => theme.zIndex.modal + 10,
+        zIndex: Z_INDEX.SIDE_DRAWER,
       }}
       PaperProps={{
         sx: {
@@ -278,6 +279,13 @@ export function GenerateDashboardDialog({
             value={selectedMetrics}
             loading={isLoading && isFocused}
             filterOptions={(x) => x}
+            slotProps={{
+              popper: {
+                sx: {
+                  zIndex: Z_INDEX.DRAWER_POPUP,
+                },
+              },
+            }}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             inputValue={inputValue}

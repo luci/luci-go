@@ -15,6 +15,7 @@
 import Box from '@mui/material/Box';
 import { Outlet } from 'react-router';
 
+import { Z_INDEX } from '@/crystal_ball/constants';
 import {
   EditorUiProvider,
   FiltersClipboardProvider,
@@ -46,7 +47,7 @@ export function Layout() {
                     theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
                 }}
               >
-                <Sticky top sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+                <Sticky top sx={{ zIndex: Z_INDEX.STICKY_HEADER }}>
                   <TopBar />
                 </Sticky>
                 <Box component="main" sx={{ flexGrow: 1 }}>

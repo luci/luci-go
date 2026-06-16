@@ -277,4 +277,59 @@ describe('SplitSeriesDialog', () => {
     expect(mockOnSplit).toHaveBeenCalledWith(['value1'], 'build_branch');
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
+
+  it('renders autocomplete dropdowns with a higher z-index than the drawer', async () => {
+    render(
+      <SplitSeriesDialog
+        open={true}
+        onClose={mockOnClose}
+        series={sampleSeries}
+        onSplit={mockOnSplit}
+        dataSpecId="test-spec"
+      />,
+    );
+
+    const drawer = screen.getByRole('dialog');
+    const drawerStyle = window.getComputedStyle(drawer);
+    const drawerZIndex = parseInt(drawerStyle.zIndex, 10);
+
+    // 1. Check dimension chooser autocomplete popper z-index
+    fireEvent.mouseDown(screen.getByLabelText('Select Dimension to Split On'));
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: 'BUILD BRANCH' }),
+      ).toBeInTheDocument();
+    });
+
+    const optionElement1 = screen.getByRole('option', { name: 'BUILD BRANCH' });
+    const popper1 = optionElement1.closest('.MuiAutocomplete-popper');
+    expect(popper1).not.toBeNull();
+
+    const popperStyle1 = window.getComputedStyle(popper1!);
+    const popperZIndex1 = parseInt(popperStyle1.zIndex, 10);
+    expect(popperZIndex1).toBeGreaterThan(drawerZIndex);
+
+    // Select the option to reveal the second autocomplete
+    fireEvent.click(optionElement1);
+
+    // 2. Check value selector autocomplete popper z-index
+    await waitFor(() => {
+      expect(screen.getByLabelText('Select Values')).toBeInTheDocument();
+    });
+
+    fireEvent.mouseDown(screen.getByLabelText('Select Values'));
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: 'value1' }),
+      ).toBeInTheDocument();
+    });
+
+    const optionElement2 = screen.getByRole('option', { name: 'value1' });
+    const popper2 = optionElement2.closest('.MuiAutocomplete-popper');
+    expect(popper2).not.toBeNull();
+
+    const popperStyle2 = window.getComputedStyle(popper2!);
+    const popperZIndex2 = parseInt(popperStyle2.zIndex, 10);
+    expect(popperZIndex2).toBeGreaterThan(drawerZIndex);
+  });
 });

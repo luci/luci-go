@@ -48,6 +48,7 @@ import {
   GLOBAL_TIME_RANGE_COLUMN,
   GROUP_BY_CONFIG,
   NUM_AGGREGATED_ROWS,
+  Z_INDEX,
 } from '@/crystal_ball/constants';
 import { WidgetPortalContext } from '@/crystal_ball/context';
 import {
@@ -661,7 +662,7 @@ export function ChartWidget({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 10,
+              zIndex: Z_INDEX.LOCAL_OVERLAY,
               borderRadius: 1,
             }}
           >

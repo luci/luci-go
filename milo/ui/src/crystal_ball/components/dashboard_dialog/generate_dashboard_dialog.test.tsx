@@ -157,4 +157,34 @@ describe('<GenerateDashboardDialog />', () => {
 
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
   });
+
+  it('renders autocomplete dropdown with a higher z-index than the drawer', async () => {
+    render(
+      <GenerateDashboardDialog
+        onClose={mockOnClose}
+        onSubmit={mockOnSubmit}
+        open={true}
+      />,
+    );
+
+    const drawer = screen.getByRole('dialog');
+    const drawerStyle = window.getComputedStyle(drawer);
+    const drawerZIndex = parseInt(drawerStyle.zIndex, 10);
+
+    const autocompleteInput = screen.getByLabelText('Metric Keys');
+    fireEvent.focus(autocompleteInput);
+    fireEvent.change(autocompleteInput, { target: { value: 'metric' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('metric_key_1')).toBeInTheDocument();
+    });
+
+    const optionElement = screen.getByText('metric_key_1');
+    const popper = optionElement.closest('.MuiAutocomplete-popper');
+    expect(popper).not.toBeNull();
+
+    const popperStyle = window.getComputedStyle(popper!);
+    const popperZIndex = parseInt(popperStyle.zIndex, 10);
+    expect(popperZIndex).toBeGreaterThan(drawerZIndex);
+  });
 });

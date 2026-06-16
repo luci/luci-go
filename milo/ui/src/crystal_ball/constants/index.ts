@@ -20,3 +20,4 @@ export * from './operators';
 export * from './table';
 export * from './url';
 export * from './widget';
+export * from './z_index';

@@ -32,6 +32,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 
+import { Z_INDEX } from '@/crystal_ball/constants';
 import {
   useListMeasurementFilterColumns,
   useSuggestMeasurementFilterValues,
@@ -138,7 +139,7 @@ export function SplitSeriesDialog({
       onClose={onClose}
       disableScrollLock
       sx={{
-        zIndex: (theme) => theme.zIndex.modal + 10,
+        zIndex: Z_INDEX.SIDE_DRAWER,
       }}
       PaperProps={{
         sx: {
@@ -148,6 +149,10 @@ export function SplitSeriesDialog({
           height: '100%',
           boxShadow: (theme) => theme.shadows[24],
         },
+      }}
+      ModalProps={{
+        role: 'dialog',
+        'aria-labelledby': 'split-series-title',
       }}
     >
       {/* Header */}
@@ -176,6 +181,7 @@ export function SplitSeriesDialog({
           </Box>
           <Box>
             <Typography
+              id="split-series-title"
               variant="subtitle1"
               sx={{ fontWeight: 700, lineHeight: 1.2 }}
             >
@@ -265,6 +271,13 @@ export function SplitSeriesDialog({
           </Typography>
           <Autocomplete
             options={columns}
+            slotProps={{
+              popper: {
+                sx: {
+                  zIndex: Z_INDEX.DRAWER_POPUP,
+                },
+              },
+            }}
             getOptionLabel={getColumnDisplayName}
             value={columns.find((c) => c.column === selectedColumn) ?? null}
             onChange={(_event, newValue) => {
@@ -327,6 +340,13 @@ export function SplitSeriesDialog({
               <Autocomplete
                 multiple
                 options={options}
+                slotProps={{
+                  popper: {
+                    sx: {
+                      zIndex: Z_INDEX.DRAWER_POPUP,
+                    },
+                  },
+                }}
                 disableCloseOnSelect
                 getOptionLabel={(option) => option}
                 value={selectedValues}

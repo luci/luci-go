@@ -42,7 +42,11 @@ import {
 } from 'material-react-table';
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 
-import { COMMON_MESSAGES, COMMON_MRT_CONFIG } from '@/crystal_ball/constants';
+import {
+  COMMON_MESSAGES,
+  COMMON_MRT_CONFIG,
+  Z_INDEX,
+} from '@/crystal_ball/constants';
 import {
   BackgroundAlpha,
   COMPACT_ICON_SX,
@@ -685,7 +689,7 @@ export function BreakdownTableChart({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 10,
+              zIndex: Z_INDEX.LOCAL_OVERLAY,
               borderRadius: 1,
             }}
           >
