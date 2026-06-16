@@ -55,6 +55,36 @@ func TestFilter(t *testing.T) {
 			})
 		})
 
+		t.Run("GetExcludedBuildersForCompile", func(t *ftt.Test) {
+			projectCfg := CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{
+				ExcludedBuilders: []string{"builder1", "builder2"},
+			}
+			configs := map[string]*configpb.ProjectConfig{
+				"chromium": projectCfg,
+			}
+			assert.Loosely(t, SetTestProjectConfig(ctx, configs), should.BeNil)
+
+			res, err := GetExcludedBuildersForCompile(ctx, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Match([]string{"builder1", "builder2"}))
+		})
+
+		t.Run("GetAllowedBuildersForCompile", func(t *ftt.Test) {
+			projectCfg := CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{
+				AllowedBuilders: []string{"builder3"},
+			}
+			configs := map[string]*configpb.ProjectConfig{
+				"chromium": projectCfg,
+			}
+			assert.Loosely(t, SetTestProjectConfig(ctx, configs), should.BeNil)
+
+			res, err := GetAllowedBuildersForCompile(ctx, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Match([]string{"builder3"}))
+		})
+
 		t.Run("GetExcludedBuilderGroupsForTest", func(t *ftt.Test) {
 			projectCfg := CreatePlaceholderProjectConfig()
 			projectCfg.TestAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{

@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -150,6 +151,26 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 	// TODO (nqmtuan): Move this into config
 	if !(project == "chromium" && bucket == "ci") && !(project == "chrome" && bucket == "ci") {
 		logging.Debugf(c, "Unsupported build for bucket (%q, %q). Exiting early...", project, bucket)
+		bbCounter.Add(c, 1, project, string(OutcomeTypeUnsupported))
+		return nil
+	}
+
+	excludedBuilders, err := config.GetExcludedBuildersForCompile(c, project)
+	if err != nil {
+		return errors.Fmt("get excluded builders for compile: %w", err)
+	}
+	if slices.Contains(excludedBuilders, builder) {
+		logging.Debugf(c, "Builder %s is excluded. Exiting early...", builder)
+		bbCounter.Add(c, 1, project, string(OutcomeTypeUnsupported))
+		return nil
+	}
+
+	allowedBuilders, err := config.GetAllowedBuildersForCompile(c, project)
+	if err != nil {
+		return errors.Fmt("get allowed builders for compile: %w", err)
+	}
+	if len(allowedBuilders) > 0 && !slices.Contains(allowedBuilders, builder) {
+		logging.Debugf(c, "Builder %s is not in allowed builders list. Exiting early...", builder)
 		bbCounter.Add(c, 1, project, string(OutcomeTypeUnsupported))
 		return nil
 	}

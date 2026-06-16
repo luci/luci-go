@@ -26,6 +26,22 @@ func GetExcludedBuilderGroupsForCompile(ctx context.Context, project string) ([]
 	return cfg.CompileAnalysisConfig.GetFailureIngestionFilter().GetExcludedBuilderGroups(), nil
 }
 
+func GetExcludedBuildersForCompile(ctx context.Context, project string) ([]string, error) {
+	cfg, err := Project(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.CompileAnalysisConfig.GetFailureIngestionFilter().GetExcludedBuilders(), nil
+}
+
+func GetAllowedBuildersForCompile(ctx context.Context, project string) ([]string, error) {
+	cfg, err := Project(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.CompileAnalysisConfig.GetFailureIngestionFilter().GetAllowedBuilders(), nil
+}
+
 func GetExcludedBuilderGroupsForTest(ctx context.Context, project string) ([]string, error) {
 	cfg, err := Project(ctx, project)
 	if err != nil {

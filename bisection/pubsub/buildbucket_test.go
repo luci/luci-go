@@ -135,6 +135,79 @@ func TestBuildBucketPubsub(t *testing.T) {
 			assert.Loosely(t, bbCounter.Get(c, "chromium", "unsupported"), should.Equal(1))
 		})
 
+		t.Run("Excluded builder", func(t *ftt.Test) {
+			c, _ := tsmon.WithDummyInMemory(c)
+			projectCfg := config.CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{
+				ExcludedBuilders: []string{"excluded-builder"},
+			}
+			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+			assert.Loosely(t, config.SetTestProjectConfig(c, cfg), should.BeNil)
+
+			buildPubsub := &buildbucketpb.BuildsV2PubSub{
+				Build: &buildbucketpb.Build{
+					Builder: &buildbucketpb.BuilderID{
+						Project: "chromium",
+						Bucket:  "ci",
+						Builder: "excluded-builder",
+					},
+					Status: buildbucketpb.Status_FAILURE,
+				},
+			}
+			err := BuildbucketPubSubHandler(c, message, buildPubsub)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bbCounter.Get(c, "chromium", "unsupported"), should.Equal(1))
+		})
+
+		t.Run("Allowed builders", func(t *ftt.Test) {
+			c, _ := tsmon.WithDummyInMemory(c)
+			projectCfg := config.CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{
+				AllowedBuilders: []string{"allowed-builder"},
+			}
+			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+			assert.Loosely(t, config.SetTestProjectConfig(c, cfg), should.BeNil)
+
+			t.Run("Matching allowed builder", func(t *ftt.Test) {
+				c, scheduler := tq.TestingContext(c, nil)
+				largeField, err := largeField("bg")
+				assert.Loosely(t, err, should.BeNil)
+
+				buildPubsub := &buildbucketpb.BuildsV2PubSub{
+					Build: &buildbucketpb.Build{
+						Id: 8000,
+						Builder: &buildbucketpb.BuilderID{
+							Project: "chromium",
+							Bucket:  "ci",
+							Builder: "allowed-builder",
+						},
+						Status: buildbucketpb.Status_FAILURE,
+					},
+					BuildLargeFields: largeField,
+				}
+				err = BuildbucketPubSubHandler(c, message, buildPubsub)
+				assert.Loosely(t, err, should.BeNil)
+				task := &taskpb.FailedBuildIngestionTask{Bbid: 8000}
+				assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(task))
+			})
+
+			t.Run("Not matching allowed builder", func(t *ftt.Test) {
+				buildPubsub := &buildbucketpb.BuildsV2PubSub{
+					Build: &buildbucketpb.Build{
+						Builder: &buildbucketpb.BuilderID{
+							Project: "chromium",
+							Bucket:  "ci",
+							Builder: "other-builder",
+						},
+						Status: buildbucketpb.Status_FAILURE,
+					},
+				}
+				err := BuildbucketPubSubHandler(c, message, buildPubsub)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, bbCounter.Get(c, "chromium", "unsupported"), should.Equal(1))
+			})
+		})
+
 		t.Run("Rerun metrics captured", func(t *ftt.Test) {
 			c, _ := tsmon.WithDummyInMemory(c)
 
