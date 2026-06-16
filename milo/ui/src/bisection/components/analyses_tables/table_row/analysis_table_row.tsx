@@ -15,7 +15,7 @@
 import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
-import { Link as RouterLink } from 'react-router';
+import { Link as RouterLink, useParams } from 'react-router';
 
 import {
   ANALYSIS_STATUS_DISPLAY_MAP,
@@ -36,6 +36,7 @@ export interface AnalysisTableRowProps {
 }
 
 export function AnalysisTableRow({ analysis }: AnalysisTableRowProps) {
+  const { project } = useParams();
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
   return (
@@ -46,7 +47,7 @@ export function AnalysisTableRow({ analysis }: AnalysisTableRowProps) {
           // TODO: handle the case where the first failed build does not exist
           // in LUCI Bisection; currently, this link will navigate to a page
           // that will display an error alert
-          to={`/ui/bisection/analysis/b/${analysis.firstFailedBbid}`}
+          to={`/ui/p/${project}/bisection/compile-analysis/b/${analysis.firstFailedBbid}`}
           data-testid="analysis_table_row_analysis_link"
         >
           {analysis.firstFailedBbid}

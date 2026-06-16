@@ -156,6 +156,8 @@ export interface ListAnalysesRequest {
    * with the exception of page_size and page_token.
    */
   readonly pageToken: string;
+  /** Optional. The project that the compile analyses belong to. */
+  readonly project: string;
 }
 
 export interface ListAnalysesResponse {
@@ -777,7 +779,7 @@ export const QueryAnalysisResponse: MessageFns<QueryAnalysisResponse> = {
 };
 
 function createBaseListAnalysesRequest(): ListAnalysesRequest {
-  return { pageSize: 0, pageToken: "" };
+  return { pageSize: 0, pageToken: "", project: "" };
 }
 
 export const ListAnalysesRequest: MessageFns<ListAnalysesRequest> = {
@@ -787,6 +789,9 @@ export const ListAnalysesRequest: MessageFns<ListAnalysesRequest> = {
     }
     if (message.pageToken !== "") {
       writer.uint32(18).string(message.pageToken);
+    }
+    if (message.project !== "") {
+      writer.uint32(26).string(message.project);
     }
     return writer;
   },
@@ -814,6 +819,14 @@ export const ListAnalysesRequest: MessageFns<ListAnalysesRequest> = {
           message.pageToken = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -827,6 +840,7 @@ export const ListAnalysesRequest: MessageFns<ListAnalysesRequest> = {
     return {
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
     };
   },
 
@@ -838,6 +852,9 @@ export const ListAnalysesRequest: MessageFns<ListAnalysesRequest> = {
     if (message.pageToken !== "") {
       obj.pageToken = message.pageToken;
     }
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
     return obj;
   },
 
@@ -848,6 +865,7 @@ export const ListAnalysesRequest: MessageFns<ListAnalysesRequest> = {
     const message = createBaseListAnalysesRequest() as any;
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
+    message.project = object.project ?? "";
     return message;
   },
 };

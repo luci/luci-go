@@ -16,7 +16,7 @@ import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import { DateTime } from 'luxon';
-import { Link as RouterLink } from 'react-router';
+import { Link as RouterLink, useParams } from 'react-router';
 
 import { ANALYSIS_STATUS_DISPLAY_MAP } from '@/bisection/constants';
 import { linkToBuilder } from '@/bisection/tools/link_constructors';
@@ -32,6 +32,7 @@ export interface TestAnalysisTableRowProps {
 }
 
 export function TestAnalysisTableRow({ analysis }: TestAnalysisTableRowProps) {
+  const { project } = useParams();
   const builderLink = analysis.builder ? linkToBuilder(analysis.builder) : null;
 
   const failureStartHour = analysis.testFailures[0]?.startHour
@@ -47,7 +48,7 @@ export function TestAnalysisTableRow({ analysis }: TestAnalysisTableRowProps) {
       <TableCell>
         <Link
           component={RouterLink}
-          to={`/ui/bisection/test-analysis/b/${analysis.analysisId}`}
+          to={`/ui/p/${project}/bisection/test-analysis/b/${analysis.analysisId}`}
           data-testid="analysis_table_row_analysis_link"
         >
           {analysis.analysisId}

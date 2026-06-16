@@ -57,7 +57,7 @@ describe('<TestAnalysesTable />', () => {
       const analysisIDLink = screen.getByText(mockAnalysis.analysisId);
       expect(analysisIDLink).toBeInTheDocument();
       expect(analysisIDLink.getAttribute('href')).toBe(
-        `/ui/bisection/test-analysis/b/${mockAnalysis.analysisId}`,
+        `/ui/p/testproject/bisection/test-analysis/b/${mockAnalysis.analysisId}`,
       );
     });
   });

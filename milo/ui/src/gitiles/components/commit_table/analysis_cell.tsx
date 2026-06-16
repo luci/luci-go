@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Link, TableCell } from '@mui/material';
-import { Link as RouterLink } from 'react-router';
+import { Link as RouterLink, useParams } from 'react-router';
 
 import { GenericSuspect } from '@/bisection/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
@@ -34,6 +34,8 @@ export interface AnalysisCellProps {
 }
 
 export function AnalysisContentCell({ suspect, bbid }: AnalysisCellProps) {
+  const { project } = useParams();
+
   if (!suspect?.verificationDetails || !bbid) {
     return <TableCell />;
   }
@@ -66,7 +68,7 @@ export function AnalysisContentCell({ suspect, bbid }: AnalysisCellProps) {
       <TableCell data-testid="culprit" sx={{ minWidth: '30px' }}>
         <Link
           component={RouterLink}
-          to={`/ui/bisection/compile-analysis/b/${bbid}`}
+          to={`/ui/p/${project}/bisection/compile-analysis/b/${bbid}`}
         >
           {verificationStatus}
         </Link>

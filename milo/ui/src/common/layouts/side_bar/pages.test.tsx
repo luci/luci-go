@@ -301,6 +301,19 @@ describe('generateSidebarSections', () => {
     ]);
   });
 
+  it('should generate correct links for chrome', () => {
+    const sidebarItems = generateSidebarSections(
+      'chrome',
+      undefined,
+      undefined,
+    );
+    expect(sidebarItems[0].pages).toContainEqual({
+      page: UiPage.Bisection,
+      url: `/ui/p/chrome/bisection`,
+      icon: <GrainTwoToneIcon />,
+    });
+  });
+
   it('should generate correct links for chromeos', () => {
     const sidebarItems = generateSidebarSections(
       'chromeos',

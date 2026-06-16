@@ -30,7 +30,12 @@ describe('<TestAnalysisTableRow />', () => {
     const mockAnalysis: TestAnalysis = createMockTestAnalysis('123');
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/p/:project/bisection/test-analysis"
+        routerOptions={{
+          initialEntries: ['/p/chromium/bisection/test-analysis'],
+        }}
+      >
         <Table>
           <TableBody>
             <TestAnalysisTableRow analysis={mockAnalysis} />
@@ -46,7 +51,7 @@ describe('<TestAnalysisTableRow />', () => {
     expect(analysisLink).toBeInTheDocument();
     expect(analysisLink.textContent).toBe(mockAnalysis.analysisId);
     expect(analysisLink.getAttribute('href')).toBe(
-      `/ui/bisection/test-analysis/b/${mockAnalysis.analysisId}`,
+      `/ui/p/chromium/bisection/test-analysis/b/${mockAnalysis.analysisId}`,
     );
 
     // Check the start time is displayed. Example formatted timestamps:
@@ -107,7 +112,12 @@ describe('<TestAnalysisTableRow />', () => {
     });
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/p/:project/bisection/test-analysis"
+        routerOptions={{
+          initialEntries: ['/p/chromium/bisection/test-analysis'],
+        }}
+      >
         <Table>
           <TableBody>
             <TestAnalysisTableRow analysis={mockAnalysis} />

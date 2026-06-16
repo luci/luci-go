@@ -36,7 +36,12 @@ describe('<SearchTestAnalysisTable />', () => {
     mockGetTestAnalysis(mockAnalysis);
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/p/:project/bisection/test-analysis"
+        routerOptions={{
+          initialEntries: ['/p/chromium/bisection/test-analysis'],
+        }}
+      >
         <SearchTestAnalysisTable analysisId="123" />
       </FakeContextProvider>,
     );
@@ -47,7 +52,7 @@ describe('<SearchTestAnalysisTable />', () => {
     const analysisIDLink = screen.getByText(mockAnalysis.analysisId);
     expect(analysisIDLink).toBeInTheDocument();
     expect(analysisIDLink.getAttribute('href')).toBe(
-      `/ui/bisection/test-analysis/b/${mockAnalysis.analysisId}`,
+      `/ui/p/chromium/bisection/test-analysis/b/${mockAnalysis.analysisId}`,
     );
   });
 

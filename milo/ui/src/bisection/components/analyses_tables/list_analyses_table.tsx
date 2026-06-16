@@ -29,12 +29,10 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router';
 
 import { useAnalysesClient } from '@/common/hooks/prpc_clients';
-import {
-  Analysis,
-  ListAnalysesRequest,
-} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { ListAnalysesRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { AnalysisTableRow } from './table_row';
 
@@ -44,6 +42,7 @@ export interface DisplayedRowsLabelProps {
 
 export function ListAnalysesTable() {
   // TODO: implement sorting & filtering for certain columns
+  const { project } = useParams();
 
   // The current page of analyses
   const [page, setPage] = useState<number>(0);
@@ -72,6 +71,7 @@ export function ListAnalysesTable() {
       ListAnalysesRequest.fromPartial({
         pageSize: pageSize,
         pageToken: pageTokens.get(page * pageSize) || '',
+        project: project,
       }),
     ),
     placeholderData: keepPreviousData,
@@ -91,7 +91,7 @@ export function ListAnalysesTable() {
     }
   }, [page, pageSize, pageTokens, response]);
 
-  const analyses: readonly Analysis[] = response?.analyses || [];
+  const analyses = response?.analyses || [];
 
   const handleChangePage = (_: React.MouseEvent | null, newPage: number) => {
     setPage(newPage);
