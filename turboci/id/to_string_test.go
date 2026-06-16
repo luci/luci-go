@@ -16,14 +16,15 @@ package id
 
 import (
 	"fmt"
-
-	"go.chromium.org/luci/common/clock/testclock"
+	"time"
 )
+
+var sampleTimeUTC = time.Date(2016, time.February, 3, 4, 5, 6, 7, time.UTC)
 
 func ExampleToString() {
 	fmt.Println(ToString(SetWorkplan(Check("my-check"), "my-workplan")))
 	fmt.Println(ToString(SetWorkplan(
-		must(CheckEditErr("some check", testclock.TestRecentTimeUTC)),
+		must(CheckEditErr("some check", sampleTimeUTC)),
 		"the workplan")))
 	// Output:
 	// Lmy-workplan:Cmy-check
