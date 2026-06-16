@@ -21,8 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -33,35 +31,35 @@ func TestWrite(t *testing.T) {
 		t.Parallel()
 
 		vw, err := Write(&emptypb.Empty{})
-		assert.NoErr(t, err)
-		assert.That(t, vw, should.Match(orchestratorpb.ValueWrite_builder{
+		assertNoErr(t, err)
+		assertMatch(t, orchestratorpb.ValueWrite_builder{
 			Data:  &anypb.Any{TypeUrl: URL[*emptypb.Empty]()},
 			Realm: proto.String(RealmFromContainer),
-		}.Build()))
+		}.Build(), vw)
 	})
 
 	t.Run(`ok_realm`, func(t *testing.T) {
 		t.Parallel()
 
 		vw, err := Write(&emptypb.Empty{}, "project:realm")
-		assert.NoErr(t, err)
-		assert.That(t, vw, should.Match(orchestratorpb.ValueWrite_builder{
+		assertNoErr(t, err)
+		assertMatch(t, orchestratorpb.ValueWrite_builder{
 			Data:  &anypb.Any{TypeUrl: URL[*emptypb.Empty]()},
 			Realm: proto.String("project:realm"),
-		}.Build()))
+		}.Build(), vw)
 	})
 
 	t.Run(`err_two_realms`, func(t *testing.T) {
 		t.Parallel()
 
 		_, err := Write(&emptypb.Empty{}, "project:realm", "what")
-		assert.ErrIsLike(t, err, "realm provided more than once")
+		assertErrLike(t, err, "realm provided more than once")
 	})
 
 	t.Run(`err_any`, func(t *testing.T) {
 		t.Parallel()
 
 		_, err := Write(&anypb.Any{})
-		assert.ErrIsLike(t, err, "cannot handle google.protobuf.Any")
+		assertErrLike(t, err, "cannot handle google.protobuf.Any")
 	})
 }

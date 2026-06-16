@@ -25,9 +25,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"go.chromium.org/luci/common/testing/truth"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -40,9 +37,9 @@ func TestDecode(t *testing.T) {
 		vref := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		sval, err := Decode[*structpb.Value](nil, vref)
-		assert.NoErr(t, err)
+		assertNoErr(t, err)
 
-		assert.That(t, sval, should.Match(structpb.NewStringValue("hi")))
+		assertMatch(t, structpb.NewStringValue("hi"), sval)
 	})
 
 	t.Run(`ok_source`, func(t *testing.T) {
@@ -53,12 +50,12 @@ func TestDecode(t *testing.T) {
 		dSrc := SimpleDataSource{}
 		AbsorbInline(dSrc, vref)
 
-		assert.That(t, vref.HasDigest(), should.BeTrue)
+		assertTrue(t, vref.HasDigest())
 
 		sval, err := Decode[*structpb.Value](dSrc, vref)
-		assert.NoErr(t, err)
+		assertNoErr(t, err)
 
-		assert.That(t, sval, should.Match(structpb.NewStringValue("hi")))
+		assertMatch(t, structpb.NewStringValue("hi"), sval)
 	})
 
 	t.Run(`ok_source_json`, func(t *testing.T) {
@@ -69,13 +66,13 @@ func TestDecode(t *testing.T) {
 		dSrc := SimpleDataSource{}
 		AbsorbAsJSON(dSrc, vref, protojson.MarshalOptions{})
 
-		assert.That(t, vref.HasDigest(), should.BeTrue)
-		assert.That(t, dSrc.Retrieve(Digest(vref.GetDigest())).HasJson(), should.BeTrue)
+		assertTrue(t, vref.HasDigest())
+		assertTrue(t, dSrc.Retrieve(Digest(vref.GetDigest())).HasJson())
 
 		sval, err := Decode[*structpb.Value](dSrc, vref)
-		assert.NoErr(t, err)
+		assertNoErr(t, err)
 
-		assert.That(t, sval, should.Match(structpb.NewStringValue("hi")))
+		assertMatch(t, structpb.NewStringValue("hi"), sval)
 	})
 
 	t.Run(`missing`, func(t *testing.T) {
@@ -89,8 +86,8 @@ func TestDecode(t *testing.T) {
 		dSrc := SimpleDataSource{}
 
 		sval, err := Decode[*structpb.Value](dSrc, vref)
-		assert.NoErr(t, err)
-		assert.Loosely(t, sval, should.BeNil)
+		assertNoErr(t, err)
+		assertNil(t, sval)
 	})
 
 	t.Run(`mismatch`, func(t *testing.T) {
@@ -104,7 +101,7 @@ func TestDecode(t *testing.T) {
 		dSrc := SimpleDataSource{}
 
 		_, err := Decode[*structpb.Value](dSrc, vref)
-		assert.ErrIsLike(t, err, "mismatched types")
+		assertErrLike(t, err, "mismatched types")
 	})
 }
 
@@ -122,16 +119,16 @@ func TestLookup(t *testing.T) {
 	AbsorbInline(dSrc, options[0]) // bool
 
 	valGot, err := Lookup[*structpb.Value](dSrc, options)
-	assert.NoErr(t, err)
-	assert.That(t, valGot, should.Match(structpb.NewStringValue("hey")))
+	assertNoErr(t, err)
+	assertMatch(t, structpb.NewStringValue("hey"), valGot)
 
 	boolGot, err := Lookup[*wrapperspb.BoolValue](dSrc, options)
-	assert.NoErr(t, err)
-	assert.That(t, boolGot, should.Match(wrapperspb.Bool(true)))
+	assertNoErr(t, err)
+	assertMatch(t, wrapperspb.Bool(true), boolGot)
 
 	missing, err := Lookup[*wrapperspb.StringValue](dSrc, options)
-	assert.NoErr(t, err)
-	assert.Loosely(t, missing, should.BeNil)
+	assertNoErr(t, err)
+	assertNil(t, missing)
 }
 
 func TestFind(t *testing.T) {
@@ -161,16 +158,16 @@ func TestFind(t *testing.T) {
 	AbsorbInline(dSrc, options[0]) // bool
 
 	valGot := Find(options, URL[*structpb.Value]())
-	assert.That(t, valGot, should.Match(MustInline(structpb.NewStringValue("hey"), "proj:realm")))
+	assertMatch(t, MustInline(structpb.NewStringValue("hey"), "proj:realm"), valGot)
 
 	boolGot := Find(options, URL[*wrapperspb.BoolValue]())
-	assert.That(t, boolGot, should.Match(options[0]))
+	assertMatch(t, options[0], boolGot)
 
 	missing := Find(options, URL[*wrapperspb.StringValue]())
-	assert.Loosely(t, missing, should.BeNil)
+	assertNil(t, missing)
 
 	emptyGot := Find(options, URL[*emptypb.Empty]())
-	assert.That(t, emptyGot, should.Match(MustInline(&emptypb.Empty{}, "proj:other_realm")))
+	assertMatch(t, MustInline(&emptypb.Empty{}, "proj:other_realm"), emptyGot)
 }
 
 func TestResults(t *testing.T) {
@@ -181,7 +178,7 @@ func TestResults(t *testing.T) {
 		for _, ref := range refs {
 			ok := false
 			ret, ok = AddByTypeIn(ret, ref)
-			assert.That(t, ok, should.BeTrue, truth.Explain("duplicate type %q", ref.GetTypeUrl()))
+			assertTrue(t, ok)
 		}
 		return ret
 	}
@@ -213,25 +210,25 @@ func TestResults(t *testing.T) {
 	}.Build()
 
 	emptyRslts, err := Results[*emptypb.Empty](nil, check)
-	assert.NoErr(t, err)
-	assert.Loosely(t, emptyRslts, should.HaveLength(3))
+	assertNoErr(t, err)
+	assertLen(t, emptyRslts, 3)
 
 	boolRslts, err := Results[*wrapperspb.BoolValue](nil, check)
-	assert.NoErr(t, err)
-	assert.That(t, boolRslts, should.Match([]*wrapperspb.BoolValue{
+	assertNoErr(t, err)
+	assertMatch(t, []*wrapperspb.BoolValue{
 		wrapperspb.Bool(true),
 		wrapperspb.Bool(false),
-	}))
+	}, boolRslts)
 
 	strResults, err := Results[*wrapperspb.StringValue](nil, check)
-	assert.NoErr(t, err)
-	assert.That(t, strResults, should.Match([]*wrapperspb.StringValue{
+	assertNoErr(t, err)
+	assertMatch(t, []*wrapperspb.StringValue{
 		wrapperspb.String("hey"),
 		wrapperspb.String("norp"),
 		wrapperspb.String("dorp"),
-	}))
+	}, strResults)
 
 	intResults, err := Results[*wrapperspb.Int32Value](nil, check)
-	assert.NoErr(t, err)
-	assert.Loosely(t, intResults, should.BeEmpty)
+	assertNoErr(t, err)
+	assertEmpty(t, intResults)
 }
