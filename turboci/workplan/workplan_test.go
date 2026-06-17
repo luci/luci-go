@@ -24,8 +24,9 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-	"go.chromium.org/turboci/proto/go/utils/ids"
 	"go.chromium.org/turboci/proto/go/utils/value"
+
+	"go.chromium.org/luci/turboci/id"
 )
 
 func TestNodeBag(t *testing.T) {
@@ -36,9 +37,9 @@ func TestNodeBag(t *testing.T) {
 		nb := ToNodeBag(nil)
 
 		assert.Loosely(t,
-			nb.Check(ids.SetWorkplan(ids.Check("somecheck"), "someplan")), should.BeNil)
+			nb.Check(id.SetWorkplan(id.Check("somecheck"), "someplan")), should.BeNil)
 
-		stageID := ids.SetWorkplan(ids.Stage("somestage"), "someplan")
+		stageID := id.SetWorkplan(id.Stage("somestage"), "someplan")
 
 		assert.Loosely(t, nb.Stage(stageID), should.BeNil)
 
@@ -50,7 +51,7 @@ func TestNodeBag(t *testing.T) {
 
 	t.Run(`with_nodes`, func(t *testing.T) {
 		cCheck := orchestratorpb.Check_builder{
-			Identifier: ids.SetWorkplan(ids.Check("C"), "wp"),
+			Identifier: id.SetWorkplan(id.Check("C"), "wp"),
 		}.Build()
 
 		opts, _ := value.AddByTypeIn(cCheck.GetOptions(), value.MustInline(&emptypb.Empty{}, "project:realm"))
@@ -61,26 +62,26 @@ func TestNodeBag(t *testing.T) {
 			orchestratorpb.WorkPlan_builder{
 				Checks: []*orchestratorpb.Check{
 					orchestratorpb.Check_builder{
-						Identifier: ids.SetWorkplan(ids.Check("A"), "wp"),
+						Identifier: id.SetWorkplan(id.Check("A"), "wp"),
 					}.Build(),
 					orchestratorpb.Check_builder{
-						Identifier: ids.SetWorkplan(ids.Check("B"), "wp"),
+						Identifier: id.SetWorkplan(id.Check("B"), "wp"),
 					}.Build(),
 					cCheck,
 				},
 				Stages: []*orchestratorpb.Stage{
 					orchestratorpb.Stage_builder{
-						Identifier: ids.SetWorkplan(ids.Stage("A"), "wp"),
+						Identifier: id.SetWorkplan(id.Stage("A"), "wp"),
 					}.Build(),
 					orchestratorpb.Stage_builder{
-						Identifier: ids.SetWorkplan(ids.StageWorkNode("B"), "wp"),
+						Identifier: id.SetWorkplan(id.StageWorkNode("B"), "wp"),
 					}.Build(),
 					orchestratorpb.Stage_builder{
-						Identifier: ids.SetWorkplan(ids.Stage("C"), "wp"),
+						Identifier: id.SetWorkplan(id.Stage("C"), "wp"),
 						Attempts: []*orchestratorpb.Stage_Attempt{
 							orchestratorpb.Stage_Attempt_builder{
 								Identifier: idspb.StageAttempt_builder{
-									Stage: ids.SetWorkplan(ids.Stage("C"), "wp"),
+									Stage: id.SetWorkplan(id.Stage("C"), "wp"),
 									Idx:   proto.Int32(1),
 								}.Build(),
 							}.Build(),
@@ -91,25 +92,25 @@ func TestNodeBag(t *testing.T) {
 		)
 
 		assert.Loosely(t,
-			nb.Check(ids.SetWorkplan(ids.Check("A"), "not-present")), should.BeNil)
+			nb.Check(id.SetWorkplan(id.Check("A"), "not-present")), should.BeNil)
 		assert.That(t,
-			nb.Check(ids.SetWorkplan(ids.Check("C"), "wp")), should.Match(orchestratorpb.Check_builder{
-				Identifier: ids.SetWorkplan(ids.Check("C"), "wp"),
+			nb.Check(id.SetWorkplan(id.Check("C"), "wp")), should.Match(orchestratorpb.Check_builder{
+				Identifier: id.SetWorkplan(id.Check("C"), "wp"),
 				Options: []*orchestratorpb.ValueRef{
 					value.MustInline(&emptypb.Empty{}, "project:realm"),
 				},
 			}.Build()))
 
-		assert.That(t, nb.Stage(ids.SetWorkplan(ids.Stage("A"), "wp")), should.Match(orchestratorpb.Stage_builder{
-			Identifier: ids.SetWorkplan(ids.Stage("A"), "wp"),
+		assert.That(t, nb.Stage(id.SetWorkplan(id.Stage("A"), "wp")), should.Match(orchestratorpb.Stage_builder{
+			Identifier: id.SetWorkplan(id.Stage("A"), "wp"),
 		}.Build()))
 
-		assert.That(t, nb.Stage(ids.SetWorkplan(ids.StageWorkNode("B"), "wp")), should.Match(orchestratorpb.Stage_builder{
-			Identifier: ids.SetWorkplan(ids.StageWorkNode("B"), "wp"),
+		assert.That(t, nb.Stage(id.SetWorkplan(id.StageWorkNode("B"), "wp")), should.Match(orchestratorpb.Stage_builder{
+			Identifier: id.SetWorkplan(id.StageWorkNode("B"), "wp"),
 		}.Build()))
 
 		attemptID := idspb.StageAttempt_builder{
-			Stage: ids.SetWorkplan(ids.Stage("C"), "wp"),
+			Stage: id.SetWorkplan(id.Stage("C"), "wp"),
 			Idx:   proto.Int32(1),
 		}.Build()
 

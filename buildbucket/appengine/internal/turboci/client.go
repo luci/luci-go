@@ -31,13 +31,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc"
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/workplan"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-	"go.chromium.org/turboci/proto/go/utils/ids"
 	"go.chromium.org/turboci/proto/go/utils/value"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -187,7 +187,7 @@ func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.Buil
 			orchestratorpb.Query_builder{
 				NodesById: orchestratorpb.Query_NodesByID_builder{
 					Nodes: []*idspb.Identifier{
-						ids.Wrap(stageID),
+						id.Wrap(stageID),
 					},
 				}.Build(),
 				SelectStages: &orchestratorpb.Query_SelectStages{},
@@ -211,7 +211,7 @@ func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.Buil
 	// This in theory should not be possible (because the stage we wrote doesn't
 	// have any dependencies and can be attempted immediately), but check anyway.
 	if len(stage.GetAttempts()) == 0 {
-		logging.Warningf(ctx, "turbo-ci: %s: the stage has no attempts yet", ids.ToString(stageID.GetWorkPlan()))
+		logging.Warningf(ctx, "turbo-ci: %s: the stage has no attempts yet", id.ToString(stageID.GetWorkPlan()))
 		return nil, nil
 	}
 

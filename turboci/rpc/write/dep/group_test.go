@@ -22,9 +22,9 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-	"go.chromium.org/turboci/proto/go/utils/ids"
 
 	"go.chromium.org/luci/turboci/check"
+	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write/dep"
 	"go.chromium.org/luci/turboci/stage"
 )
@@ -33,13 +33,13 @@ func TestGroup(t *testing.T) {
 	t.Parallel()
 
 	grp := dep.MustGroup(
-		ids.Check("check"),
-		ids.Stage("stage"),
-		dep.ConditionalCheck(ids.Check("other"), check.StatePlanned, `bogus == "true"`),
-		dep.ConditionalStage(ids.Stage("stage other"), stage.StateAwaitingGroup, `true`, `false`),
+		id.Check("check"),
+		id.Stage("stage"),
+		dep.ConditionalCheck(id.Check("other"), check.StatePlanned, `bogus == "true"`),
+		dep.ConditionalStage(id.Stage("stage other"), stage.StateAwaitingGroup, `true`, `false`),
 		dep.MustGroup(
-			ids.Check("a"),
-			ids.Check("b"),
+			id.Check("a"),
+			id.Check("b"),
 		),
 		dep.Threshold(2),
 	)
@@ -48,17 +48,17 @@ func TestGroup(t *testing.T) {
 		Edges: []*orchestratorpb.Edge{
 			orchestratorpb.Edge_builder{
 				Check: orchestratorpb.Edge_Check_builder{
-					Identifier: ids.Check("check"),
+					Identifier: id.Check("check"),
 				}.Build(),
 			}.Build(),
 			orchestratorpb.Edge_builder{
 				Stage: orchestratorpb.Edge_Stage_builder{
-					Identifier: ids.Stage("stage"),
+					Identifier: id.Stage("stage"),
 				}.Build(),
 			}.Build(),
 			orchestratorpb.Edge_builder{
 				Check: orchestratorpb.Edge_Check_builder{
-					Identifier: ids.Check("other"),
+					Identifier: id.Check("other"),
 					Condition: orchestratorpb.Edge_Check_Condition_builder{
 						OnState:    check.StatePlanned.Enum(),
 						Expression: proto.String(`bogus == "true"`),
@@ -67,7 +67,7 @@ func TestGroup(t *testing.T) {
 			}.Build(),
 			orchestratorpb.Edge_builder{
 				Stage: orchestratorpb.Edge_Stage_builder{
-					Identifier: ids.Stage("stage other"),
+					Identifier: id.Stage("stage other"),
 					Condition: orchestratorpb.Edge_Stage_Condition_builder{
 						OnState:    stage.StateAwaitingGroup.Enum(),
 						Expression: proto.String(`(true)&&(false)`),
@@ -80,12 +80,12 @@ func TestGroup(t *testing.T) {
 				Edges: []*orchestratorpb.Edge{
 					orchestratorpb.Edge_builder{
 						Check: orchestratorpb.Edge_Check_builder{
-							Identifier: ids.Check("a"),
+							Identifier: id.Check("a"),
 						}.Build(),
 					}.Build(),
 					orchestratorpb.Edge_builder{
 						Check: orchestratorpb.Edge_Check_builder{
-							Identifier: ids.Check("b"),
+							Identifier: id.Check("b"),
 						}.Build(),
 					}.Build(),
 				},
