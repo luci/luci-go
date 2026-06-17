@@ -15,7 +15,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 
-import { COMMON_MESSAGES } from '@/crystal_ball/constants';
+import {
+  BREAKDOWN_AGGREGATION_LABELS,
+  BREAKDOWN_AGGREGATIONS_LIST,
+  COMMON_MESSAGES,
+} from '@/crystal_ball/constants';
 import {
   BreakdownSection,
   MeasurementFilterColumn,
@@ -415,5 +419,37 @@ describe('BreakdownTableChart', () => {
     fireEvent.click(exportButton);
 
     expect(mockOnExport).toHaveBeenCalledTimes(1);
+  });
+
+  it('displays all aggregation options', () => {
+    const sections: BreakdownSection[] = [
+      {
+        dimensionColumn: 'testname',
+        rows: [{ dimension_value: 'test1', COUNT: 10, MIN: 1, MAX: 5 }],
+      },
+    ];
+
+    render(
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+      />,
+    );
+
+    const aggregatesSelect = screen.getByRole('combobox', {
+      name: COMMON_MESSAGES.AGGREGATES,
+    });
+    fireEvent.mouseDown(aggregatesSelect);
+
+    const expectedLabels = BREAKDOWN_AGGREGATIONS_LIST.map(
+      (agg) => BREAKDOWN_AGGREGATION_LABELS[agg],
+    );
+
+    for (const label of expectedLabels) {
+      expect(screen.getByRole('option', { name: label })).toBeInTheDocument();
+    }
   });
 });

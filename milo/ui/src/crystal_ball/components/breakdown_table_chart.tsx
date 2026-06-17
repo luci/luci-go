@@ -43,8 +43,11 @@ import {
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 
 import {
+  BREAKDOWN_AGGREGATION_LABELS,
+  BREAKDOWN_AGGREGATIONS_LIST,
   COMMON_MESSAGES,
   COMMON_MRT_CONFIG,
+  REQUIRED_BREAKDOWN_AGGREGATIONS,
   Z_INDEX,
 } from '@/crystal_ball/constants';
 import {
@@ -64,33 +67,6 @@ import {
   breakdownTableConfig_BreakdownAggregationFromJSON,
   MeasurementFilterColumn,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
-
-/**
- * Labels for breakdown aggregations.
- */
-const AGGREGATION_LABELS: Record<
-  BreakdownTableConfig_BreakdownAggregation,
-  string
-> = {
-  [BreakdownTableConfig_BreakdownAggregation.BREAKDOWN_AGGREGATION_UNSPECIFIED]:
-    'UNKNOWN',
-  [BreakdownTableConfig_BreakdownAggregation.COUNT]: 'COUNT',
-  [BreakdownTableConfig_BreakdownAggregation.MIN]: 'MIN',
-  [BreakdownTableConfig_BreakdownAggregation.MAX]: 'MAX',
-  [BreakdownTableConfig_BreakdownAggregation.MEAN]: 'MEAN',
-  [BreakdownTableConfig_BreakdownAggregation.P50]: 'P50',
-  [BreakdownTableConfig_BreakdownAggregation.P75]: 'P75',
-  [BreakdownTableConfig_BreakdownAggregation.P90]: 'P90',
-  [BreakdownTableConfig_BreakdownAggregation.P99]: 'P99',
-  [BreakdownTableConfig_BreakdownAggregation.DELTA_COUNT]: 'Δ COUNT',
-  [BreakdownTableConfig_BreakdownAggregation.DELTA_MIN]: 'Δ MIN',
-  [BreakdownTableConfig_BreakdownAggregation.DELTA_MAX]: 'Δ MAX',
-  [BreakdownTableConfig_BreakdownAggregation.DELTA_MEAN]: 'Δ MEAN',
-  [BreakdownTableConfig_BreakdownAggregation.DELTA_P50]: 'Δ P50',
-  [BreakdownTableConfig_BreakdownAggregation.DELTA_P75]: 'Δ P75',
-  [BreakdownTableConfig_BreakdownAggregation.DELTA_P90]: 'Δ P90',
-  [BreakdownTableConfig_BreakdownAggregation.DELTA_P99]: 'Δ P99',
-};
 
 /**
  * Represents a single row of breakdown data, where keys are dimension names
@@ -316,7 +292,9 @@ function InnerTable({
   ]);
 
   const countLabel =
-    AGGREGATION_LABELS[BreakdownTableConfig_BreakdownAggregation.COUNT];
+    BREAKDOWN_AGGREGATION_LABELS[
+      BreakdownTableConfig_BreakdownAggregation.COUNT
+    ];
   const table = useMaterialReactTable<BreakdownRow>({
     ...COMMON_MRT_CONFIG,
     columns,
@@ -434,11 +412,7 @@ export function BreakdownTableChart({
   };
 
   const handleAggregationsClose = () => {
-    const required = [
-      BreakdownTableConfig_BreakdownAggregation.COUNT,
-      BreakdownTableConfig_BreakdownAggregation.MIN,
-      BreakdownTableConfig_BreakdownAggregation.MAX,
-    ];
+    const required = REQUIRED_BREAKDOWN_AGGREGATIONS;
     const finalValues = Array.from(new Set([...required, ...tempAggregations]));
     onUpdateAggregations(finalValues);
   };
@@ -558,7 +532,7 @@ export function BreakdownTableChart({
               value={tempAggregations}
               onChange={handleAggregationsChange}
               onClose={handleAggregationsClose}
-              inputProps={{ 'aria-label': 'Aggregates' }}
+              inputProps={{ 'aria-label': COMMON_MESSAGES.AGGREGATES }}
               sx={COMPACT_SELECT_SX}
               renderValue={(selected) => {
                 if (!Array.isArray(selected)) {
@@ -572,7 +546,9 @@ export function BreakdownTableChart({
                         : typeof val === 'number'
                           ? val
                           : BreakdownTableConfig_BreakdownAggregation.BREAKDOWN_AGGREGATION_UNSPECIFIED;
-                    return AGGREGATION_LABELS[normalizedVal] ?? 'UNKNOWN';
+                    return (
+                      BREAKDOWN_AGGREGATION_LABELS[normalizedVal] ?? 'UNKNOWN'
+                    );
                   })
                   .join(', ');
               }}
@@ -588,22 +564,11 @@ export function BreakdownTableChart({
               >
                 SELECT COLUMNS
               </ListSubheader>
-              {[
-                BreakdownTableConfig_BreakdownAggregation.COUNT,
-                BreakdownTableConfig_BreakdownAggregation.MIN,
-                BreakdownTableConfig_BreakdownAggregation.MAX,
-                BreakdownTableConfig_BreakdownAggregation.P50,
-                BreakdownTableConfig_BreakdownAggregation.P75,
-                BreakdownTableConfig_BreakdownAggregation.P90,
-                BreakdownTableConfig_BreakdownAggregation.MEAN,
-              ].map((agg) => {
-                const isRequired = [
-                  BreakdownTableConfig_BreakdownAggregation.COUNT,
-                  BreakdownTableConfig_BreakdownAggregation.MIN,
-                  BreakdownTableConfig_BreakdownAggregation.MAX,
-                ].includes(agg);
+              {BREAKDOWN_AGGREGATIONS_LIST.map((agg) => {
+                const isRequired =
+                  REQUIRED_BREAKDOWN_AGGREGATIONS.includes(agg);
 
-                const label = AGGREGATION_LABELS[agg] ?? 'UNKNOWN';
+                const label = BREAKDOWN_AGGREGATION_LABELS[agg] ?? 'UNKNOWN';
 
                 const isChecked =
                   isRequired ||
