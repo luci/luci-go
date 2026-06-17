@@ -60,7 +60,8 @@ const createColumnDef = (
     id: id,
     header: header,
     orderByField:
-      def?.orderByField ?? (def?.type === 'label' ? `labels.${id}` : id),
+      def?.orderByField ??
+      (def === undefined || def.type === 'label' ? `labels.${id}` : id),
     filterKey: filterKey,
     enableEditing: false,
     minSize: 70,
