@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/testutil"
 )
 
@@ -251,45 +252,49 @@ func TestPrepareBlamelist(t *testing.T) {
 	t.Parallel()
 
 	t.Run("valid_changelogs", func(t *testing.T) {
-		changeLogs := []*model.ChangeLog{
+		changeLogs := []*changelogutil.ExpandedChangeLog{
 			{
-				Commit: "abc123def456",
-				Author: model.ChangeLogActor{
-					Time: "2024-01-02T15:04:05Z",
-				},
-				Message: "Fix undefined function in test.cc\n\nThis change adds the missing function declaration.",
-				ChangeLogDiffs: []model.ChangeLogDiff{
-					{
-						Type:    model.ChangeType_MODIFY,
-						OldPath: "src/test.cc",
-						NewPath: "src/test.cc",
+				ChangeLog: &model.ChangeLog{
+					Commit: "abc123def456",
+					Author: model.ChangeLogActor{
+						Time: "2024-01-02T15:04:05Z",
 					},
-					{
-						Type:    model.ChangeType_ADD,
-						NewPath: "src/new_file.h",
+					Message: "Fix undefined function in test.cc\n\nThis change adds the missing function declaration.",
+					ChangeLogDiffs: []model.ChangeLogDiff{
+						{
+							Type:    model.ChangeType_MODIFY,
+							OldPath: "src/test.cc",
+							NewPath: "src/test.cc",
+						},
+						{
+							Type:    model.ChangeType_ADD,
+							NewPath: "src/new_file.h",
+						},
 					},
 				},
 			},
 			{
-				Commit: "def456ghi789",
-				Author: model.ChangeLogActor{
-					Time: "2024-01-01T10:00:00Z",
-				},
-				Message: "Update header includes",
-				ChangeLogDiffs: []model.ChangeLogDiff{
-					{
-						Type:    model.ChangeType_DELETE,
-						OldPath: "src/old_header.h",
+				ChangeLog: &model.ChangeLog{
+					Commit: "def456ghi789",
+					Author: model.ChangeLogActor{
+						Time: "2024-01-01T10:00:00Z",
 					},
-					{
-						Type:    model.ChangeType_RENAME,
-						OldPath: "src/old_name.cc",
-						NewPath: "src/new_name.cc",
-					},
-					{
-						Type:    model.ChangeType_COPY,
-						OldPath: "src/template.cc",
-						NewPath: "src/copy.cc",
+					Message: "Update header includes",
+					ChangeLogDiffs: []model.ChangeLogDiff{
+						{
+							Type:    model.ChangeType_DELETE,
+							OldPath: "src/old_header.h",
+						},
+						{
+							Type:    model.ChangeType_RENAME,
+							OldPath: "src/old_name.cc",
+							NewPath: "src/new_name.cc",
+						},
+						{
+							Type:    model.ChangeType_COPY,
+							OldPath: "src/template.cc",
+							NewPath: "src/copy.cc",
+						},
 					},
 				},
 			},
@@ -311,20 +316,22 @@ func TestPrepareBlamelist(t *testing.T) {
 	})
 
 	t.Run("empty_changelogs", func(t *testing.T) {
-		var changeLogs []*model.ChangeLog
+		var changeLogs []*changelogutil.ExpandedChangeLog
 		_, err := prepareBlamelist(changeLogs)
 		assert.Loosely(t, err, should.NotBeNil)
 		assert.Loosely(t, err.Error(), should.ContainSubstring("no changelogs available"))
 	})
 
 	t.Run("changelog_without_diffs", func(t *testing.T) {
-		changeLogs := []*model.ChangeLog{
+		changeLogs := []*changelogutil.ExpandedChangeLog{
 			{
-				Commit: "abc123def456",
-				Author: model.ChangeLogActor{
-					Time: "2024-01-02T15:04:05Z",
+				ChangeLog: &model.ChangeLog{
+					Commit: "abc123def456",
+					Author: model.ChangeLogActor{
+						Time: "2024-01-02T15:04:05Z",
+					},
+					Message: "Simple commit without file changes",
 				},
-				Message: "Simple commit without file changes",
 			},
 		}
 
@@ -392,5 +399,180 @@ func TestParseGenAIResponse(t *testing.T) {
 		assert.Loosely(t, commitID, should.Equal("abc123def456"))
 		assert.Loosely(t, score, should.Equal(9))
 		assert.Loosely(t, justification, should.Equal("Unordered response"))
+	})
+}
+
+func TestGenAiAnalysisWithRoll(t *testing.T) {
+	t.Parallel()
+	ctx := gologger.StdConfig.Use(context.Background())
+	ctx = logging.SetLevel(ctx, logging.Info)
+	cl := testclock.New(testclock.TestTimeUTC)
+	ctx = clock.Set(ctx, cl)
+	ctx = memory.Use(ctx)
+
+	mockGitilesData := map[string]string{
+		"https://chromium.googlesource.com/chromium/src/+log/def456ghi789..abc123def456": `{
+  "log": [
+    {
+      "commit": "abc123def456",
+      "tree": "tree123",
+      "parents": ["parent123"],
+      "author": {
+        "name": "Roll Bot",
+        "email": "chromium-autoroll@skia-public.iam.gserviceaccount.com",
+        "time": "Tue Jan 02 15:04:05 2024"
+      },
+      "committer": {
+        "name": "Commit Bot",
+        "email": "commit-bot@chromium.org",
+        "time": "Tue Jan 02 15:04:05 2024"
+      },
+      "message": "Roll src/third_party/skia/ c1d2e3f4f..a5b6c7d8e\n\nhttps://skia.googlesource.com/skia.git/+log/c1d2e3f4f..a5b6c7d8e",
+      "tree_diff": [
+        {
+          "type": "modify",
+          "old_path": "DEPS",
+          "new_path": "DEPS"
+        }
+      ]
+    }
+  ]
+}`,
+		"https://skia.googlesource.com/skia/+log/c1d2e3f4f..a5b6c7d8e": `{
+  "log": [
+    {
+      "commit": "subcommit123",
+      "tree": "treeSub",
+      "parents": ["parentSub"],
+      "author": {
+        "name": "Skia Author",
+        "email": "skia-author@google.com",
+        "time": "Tue Jan 02 14:00:00 2024"
+      },
+      "committer": {
+        "name": "Skia Committer",
+        "email": "skia-committer@google.com",
+        "time": "Tue Jan 02 14:00:00 2024"
+      },
+      "message": "Fix bug in SkCanvas\n\nChange-Id: Isub123456",
+      "tree_diff": [
+        {
+          "type": "modify",
+          "old_path": "src/core/SkCanvas.cpp",
+          "new_path": "src/core/SkCanvas.cpp"
+        }
+      ]
+    }
+  ]
+}`,
+	}
+	ctx = gitiles.MockedGitilesClientContext(ctx, mockGitilesData)
+
+	_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 123, "chromium", 456)
+
+	regressionRange := &pb.RegressionRange{
+		FirstFailed: &buildbucketpb.GitilesCommit{
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Ref:     "refs/heads/main",
+			Id:      "abc123def456",
+		},
+		LastPassed: &buildbucketpb.GitilesCommit{
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Ref:     "refs/heads/main",
+			Id:      "def456ghi789",
+		},
+	}
+
+	compileLogs := &model.CompileLogs{
+		FailureSummaryLog: "error: SkCanvas build error\nsrc/third_party/skia/src/core/SkCanvas.cpp:42:5: error: failed",
+		StdOutLog:         "error: SkCanvas build error\nsrc/third_party/skia/src/core/SkCanvas.cpp:42:5: error: failed",
+		NinjaLog: &model.NinjaLog{
+			Failures: []*model.NinjaLogFailure{
+				{
+					Rule:        "cxx",
+					Output:      "compilation failed",
+					OutputNodes: []string{"obj/skia.o"},
+				},
+			},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := llm.NewMockClient(ctrl)
+	mockResponse := "Commit ID: subcommit123\nConfidence Score: 9\nJustification: Fix bug in SkCanvas"
+	mockClient.EXPECT().GenerateContent(gomock.Any(), gomock.Any()).Return(mockResponse, nil)
+
+	result, err := Analyze(ctx, mockClient, cfa, regressionRange, compileLogs)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, result, should.NotBeNil)
+
+	var suspects []*model.Suspect
+	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(ctx, result))
+	err = datastore.GetAll(ctx, q, &suspects)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, len(suspects), should.Equal(1))
+	assert.Loosely(t, suspects[0].GitilesCommit.Id, should.Equal("abc123def456"))
+	assert.Loosely(t, suspects[0].GitilesCommit.Host, should.Equal("chromium.googlesource.com"))
+	assert.Loosely(t, suspects[0].GitilesCommit.Project, should.Equal("chromium/src"))
+	assert.Loosely(t, suspects[0].SubCommit, should.Equal("subcommit123"))
+}
+
+func TestTraceToMainCommit(t *testing.T) {
+	t.Parallel()
+	main1 := &changelogutil.ExpandedChangeLog{
+		ChangeLog: &model.ChangeLog{Commit: "main1"},
+	}
+	main2 := &changelogutil.ExpandedChangeLog{
+		ChangeLog: &model.ChangeLog{Commit: "main2"},
+	}
+	roll1 := &changelogutil.ExpandedChangeLog{
+		ChangeLog:  &model.ChangeLog{Commit: "roll1"},
+		RollParent: "main2",
+	}
+	roll2 := &changelogutil.ExpandedChangeLog{
+		ChangeLog:  &model.ChangeLog{Commit: "roll2"},
+		RollParent: "roll1",
+	}
+	// Cycle for safety testing
+	cycle1 := &changelogutil.ExpandedChangeLog{
+		ChangeLog:  &model.ChangeLog{Commit: "cycle1"},
+		RollParent: "cycle2",
+	}
+	cycle2 := &changelogutil.ExpandedChangeLog{
+		ChangeLog:  &model.ChangeLog{Commit: "cycle2"},
+		RollParent: "cycle1",
+	}
+
+	changelogs := []*changelogutil.ExpandedChangeLog{main1, main2, roll1, roll2, cycle1, cycle2}
+
+	t.Run("main commit returns itself", func(t *testing.T) {
+		assert.Loosely(t, traceToMainCommit(main1, changelogs), should.Equal(main1))
+	})
+
+	t.Run("roll commit 1-level traces to main", func(t *testing.T) {
+		assert.Loosely(t, traceToMainCommit(roll1, changelogs), should.Equal(main2))
+	})
+
+	t.Run("roll commit 2-level traces to main", func(t *testing.T) {
+		assert.Loosely(t, traceToMainCommit(roll2, changelogs), should.Equal(main2))
+	})
+
+	t.Run("parent not in list returns current", func(t *testing.T) {
+		orphan := &changelogutil.ExpandedChangeLog{
+			ChangeLog:  &model.ChangeLog{Commit: "orphan"},
+			RollParent: "non-existent",
+		}
+		assert.Loosely(t, traceToMainCommit(orphan, changelogs), should.Equal(orphan))
+	})
+
+	t.Run("cycle does not hang and returns something", func(t *testing.T) {
+		// It should stop at the loop limit and return one of them
+		res := traceToMainCommit(cycle1, changelogs)
+		assert.Loosely(t, res, should.NotBeNil)
+		assert.Loosely(t, res.Commit, should.BeIn("cycle1", "cycle2"))
 	})
 }

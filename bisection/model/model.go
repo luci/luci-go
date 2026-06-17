@@ -286,10 +286,16 @@ type Suspect struct {
 	// The commit of the suspect
 	buildbucketpb.GitilesCommit
 
-	// The Url where the suspect was reviewed
+	// If the suspect is a sub-commit inside a roll, this stores the sub-commit hash
+	// while the GitilesCommit stores the roll commit in the main repo.
+	SubCommit string `gae:"sub_commit"`
+
+	// The Url where the suspect was reviewed.
+	// If the suspect is a sub-commit inside a roll, this is the review URL of the sub-commit.
 	ReviewUrl string `gae:"review_url"`
 
-	// Title of the review for the suspect
+	// Title of the review for the suspect.
+	// If the suspect is a sub-commit inside a roll, this is the title of the sub-commit's review.
 	ReviewTitle string `gae:"review_title"`
 
 	// Score is an integer representing the how confident we believe the suspect

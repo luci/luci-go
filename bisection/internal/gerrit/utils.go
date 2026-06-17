@@ -167,3 +167,16 @@ func CommitMessage(ctx context.Context, change *gerritpb.ChangeInfo) (string, er
 
 	return commitInfo.Message, nil
 }
+
+// GetProject extracts the Gerrit project from the given Gerrit review URL.
+// It assumes the URL format is https://<host>/c/<project>/+/<change-number>
+func GetProject(ctx context.Context, rawReviewURL string) (string, error) {
+	reviewURL := strings.TrimSpace(rawReviewURL)
+	pattern := regexp.MustCompile(`https://[^/]+/c/(.+)/\+/`)
+	matches := pattern.FindStringSubmatch(reviewURL)
+	if matches == nil {
+		return "", fmt.Errorf("could not find Gerrit project from review URL = '%s'",
+			reviewURL)
+	}
+	return matches[1], nil
+}

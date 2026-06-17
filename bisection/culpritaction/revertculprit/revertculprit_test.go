@@ -348,6 +348,121 @@ func TestRevertCulprit(t *testing.T) {
 			}))
 		})
 
+		t.Run("sub-commit suspect - comments but does not revert", func(t *ftt.Test) {
+			// Setup suspect in datastore with SubCommit populated
+			genaiSuspect := &model.Suspect{
+				Id:             200,
+				Type:           model.SuspectType_GenAI,
+				Score:          10,
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "roll_commit_hash",
+				},
+				SubCommit:          "sub_commit_hash_123",
+				ReviewUrl:          "https://skia-review.googlesource.com/c/skia/+/12345",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+			}
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set up mock responses
+			// Note that the query should be for project "skia" and commit "sub_commit_hash_123"
+			culpritRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{{
+					Number:          12345,
+					Project:         "skia",
+					Status:          gerritpb.ChangeStatus_MERGED,
+					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
+					CurrentRevision: "sub_commit_hash_123",
+					Revisions: map[string]*gerritpb.RevisionInfo{
+						"sub_commit_hash_123": {
+							Commit: &gerritpb.CommitInfo{
+								Message: "Skia change description.\n\nChange-Id: Iskia123",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "Skia Author",
+									Email: "skia-author@example.com",
+								},
+							},
+						},
+					},
+				}},
+			}
+			revertRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{}, // No reverts
+			}
+
+			// We expect ListChanges to be called on skia-review (via mockClient.Client)
+			// First call to get the change info of the culprit
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), proto.MatcherEqual(
+				&gerritpb.ListChangesRequest{
+					Query: `project:"skia" commit:"sub_commit_hash_123"`,
+					Options: []gerritpb.QueryOption{
+						gerritpb.QueryOption_LABELS,
+						gerritpb.QueryOption_CURRENT_REVISION,
+						gerritpb.QueryOption_CURRENT_COMMIT,
+						gerritpb.QueryOption_DETAILED_ACCOUNTS,
+						gerritpb.QueryOption_MESSAGES,
+						gerritpb.QueryOption_CHANGE_ACTIONS,
+						gerritpb.QueryOption_SKIP_MERGEABLE,
+						gerritpb.QueryOption_CHECK,
+					},
+				},
+			)).Return(culpritRes, nil).Times(1)
+
+			// Second call to get reverts (query: project:"skia" revertof:12345)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), proto.MatcherEqual(
+				&gerritpb.ListChangesRequest{
+					Query: `project:"skia" revertof:12345`,
+					Options: []gerritpb.QueryOption{
+						gerritpb.QueryOption_LABELS,
+						gerritpb.QueryOption_CURRENT_REVISION,
+						gerritpb.QueryOption_CURRENT_COMMIT,
+						gerritpb.QueryOption_DETAILED_ACCOUNTS,
+						gerritpb.QueryOption_MESSAGES,
+						gerritpb.QueryOption_CHANGE_ACTIONS,
+						gerritpb.QueryOption_SKIP_MERGEABLE,
+						gerritpb.QueryOption_CHECK,
+					},
+				},
+			)).Return(revertRes, nil).Times(1)
+
+			// We expect SetReview to be called to add a comment on the Skia CL
+			skiaBugURL := util.ConstructBuganizerURLForAnalysis(analysisURL, genaiSuspect.ReviewUrl)
+			expectedMessage := fmt.Sprintf("LUCI Bisection has identified this change as the culprit of a build failure. See the analysis: %s\n\n"+
+				"A revert for this change was not created because this culprit is a sub-commit inside a rolled dependency, and LUCI Bisection does not support auto-reverting changes in sub-repositories.\n\n"+
+				"Sample failed build: %s\n\nIf this is a false positive, please report it at %s",
+				analysisURL, buildURL, skiaBugURL)
+
+			mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+				&gerritpb.SetReviewRequest{
+					Project:    "skia",
+					Number:     12345,
+					RevisionId: "current",
+					Message:    expectedMessage,
+				},
+			)).Return(&gerritpb.ReviewResult{}, nil).Times(1)
+
+			err := TakeCulpritAction(ctx, genaiSuspect)
+			assert.Loosely(t, err, should.BeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       true,
+				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
+			}))
+		})
+
 		t.Run("tree closer already reverted - triggers LUCI Notify RPC", func(t *ftt.Test) {
 			// Initialize analysis chain and suspect record for tree closer scenario.
 			_, _, tcAnalysis := testutil.CreateCompileFailureAnalysisAnalysisChain(

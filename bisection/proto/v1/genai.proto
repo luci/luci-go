@@ -23,8 +23,10 @@ message GenAiSuspect {
   // A suspect revision of gen AI analysis.
   buildbucket.v2.GitilesCommit commit = 1;
   // Review URL for the suspect commit.
+  // If the suspect is a sub-commit inside a roll, this is the review URL of the sub-commit.
   string reviewUrl = 2;
   // Title of the review for the suspect commit.
+  // If the suspect is a sub-commit inside a roll, this is the title of the sub-commit's review.
   string reviewTitle = 3;
   // True if the suspect is confirmed as the culprit by bisection.
   bool verified = 4;
@@ -34,4 +36,7 @@ message GenAiSuspect {
   string justification = 6;
   // Confidence score for this suspect (0-10).
   int32 confidence_score = 7;
+  // If the suspect is a sub-commit inside a roll, this stores the sub-commit hash
+  // while the commit field stores the roll commit in the main repo.
+  string sub_commit = 8;
 }

@@ -53,6 +53,35 @@ func TestGetHost(t *testing.T) {
 	})
 }
 
+func TestGetProject(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	ftt.Run("Empty string returns error", t, func(t *ftt.Test) {
+		project, err := GetProject(ctx, "")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit project"))
+		assert.Loosely(t, project, should.BeEmpty)
+	})
+
+	ftt.Run("Non-URL format returns error", t, func(t *ftt.Test) {
+		project, err := GetProject(ctx, "[Test] This is a review title, not a URL")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit project"))
+		assert.Loosely(t, project, should.BeEmpty)
+	})
+
+	ftt.Run("Gets project from review URL with sub-project", t, func(t *ftt.Test) {
+		project, err := GetProject(ctx, " https://chromium-review.googlesource.com/c/chromium/src/+/7941473\n")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, project, should.Equal("chromium/src"))
+	})
+
+	ftt.Run("Gets project from review URL with simple project", t, func(t *ftt.Test) {
+		project, err := GetProject(ctx, "https://skia-review.googlesource.com/c/skia/+/12345")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, project, should.Equal("skia"))
+	})
+}
+
 func TestHasLUCIBisectionComment(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())

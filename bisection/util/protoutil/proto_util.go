@@ -646,6 +646,7 @@ func SuspectToGenAiSuspectPb(s *model.Suspect) *pb.GenAiSuspect {
 		VerificationDetails: &pb.SuspectVerificationDetails{
 			Status: verificationStatusToPb(s.VerificationStatus).String(),
 		},
+		SubCommit: s.SubCommit,
 	}
 }
 

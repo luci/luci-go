@@ -36,6 +36,10 @@ import (
 //   - the error if one occurred.
 func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	culprit *gerritpb.ChangeInfo, culpritModel *model.Suspect, project string) (bool, string, error) {
+	if culpritModel.SubCommit != "" {
+		return false, "this culprit is a sub-commit inside a rolled dependency, and LUCI Bisection does not support auto-reverting changes in sub-repositories", nil
+	}
+
 	// We only create revert if it belongs to a builder being watched
 	// by sheriffs.
 	if culpritModel.AnalysisType == bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {

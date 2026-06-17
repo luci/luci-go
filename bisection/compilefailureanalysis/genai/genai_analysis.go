@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/resultai/server"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
+	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -62,8 +63,16 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 		return genaiAnalysis, errors.Fmt("failed to get changelogs: %w", err)
 	}
 
+	// Expand roll CLs in changelogs for GenAI analysis
+	mainRepoURL := gitiles.GetRepoUrl(c, regressionRange.FirstFailed)
+	expandedChangelogs, err := changelogutil.ExpandChangeLogs(c, changelogs, mainRepoURL)
+	if err != nil {
+		setStatusError(c, genaiAnalysis)
+		return genaiAnalysis, errors.Fmt("failed to expand changelogs: %w", err)
+	}
+
 	// Prepare blamelist from changelogs
-	blamelist, err := prepareBlamelist(changelogs)
+	blamelist, err := prepareBlamelist(expandedChangelogs)
 	if err != nil {
 		setStatusError(c, genaiAnalysis)
 		return genaiAnalysis, errors.Fmt("failed to prepare blamelist: %w", err)
@@ -129,7 +138,8 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 	// Find the changelog for the suspect commit to extract review info
 	var reviewUrl, reviewTitle string
 	var suspectCommitTime *timestamppb.Timestamp
-	for _, cl := range changelogs {
+	var mainCommit *changelogutil.ExpandedChangeLog
+	for _, cl := range expandedChangelogs {
 		if cl.Commit == suspectCommitID {
 			if url, err := cl.GetReviewUrl(); err == nil {
 				reviewUrl = url
@@ -140,8 +150,14 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 			if commitTime, err := cl.GetCommitTime(); err == nil {
 				suspectCommitTime = commitTime
 			}
+			mainCommit = traceToMainCommit(cl, expandedChangelogs)
 			break
 		}
+	}
+
+	suspectCommitIDForVerification := suspectCommitID
+	if mainCommit != nil {
+		suspectCommitIDForVerification = mainCommit.Commit
 	}
 
 	// Save suspect to datastore
@@ -155,12 +171,15 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 			Host:    regressionRange.LastPassed.Host,
 			Project: regressionRange.LastPassed.Project,
 			Ref:     regressionRange.LastPassed.Ref,
-			Id:      suspectCommitID,
+			Id:      suspectCommitIDForVerification,
 		},
 		VerificationStatus: model.SuspectVerificationStatus_Unverified,
 		Type:               model.SuspectType_GenAI,
 		AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		CommitTime:         suspectCommitTime.AsTime(),
+	}
+	if suspectCommitIDForVerification != suspectCommitID {
+		suspect.SubCommit = suspectCommitID
 	}
 	datastore.Put(c, suspect)
 
@@ -234,7 +253,7 @@ func prepareStackTrace(compileLogs *model.CompileLogs) (string, error) {
 }
 
 // prepareBlamelist formats changeLogs into a readable blamelist
-func prepareBlamelist(changeLogs []*model.ChangeLog) (string, error) {
+func prepareBlamelist(changeLogs []*changelogutil.ExpandedChangeLog) (string, error) {
 	if len(changeLogs) == 0 {
 		return "", errors.New("no changelogs available")
 	}
@@ -288,4 +307,31 @@ func setStatusError(c context.Context, genaiAnalysis *model.CompileGenAIAnalysis
 	genaiAnalysis.RunStatus = pb.AnalysisRunStatus_ENDED
 	genaiAnalysis.EndTime = clock.Now(c)
 	datastore.Put(c, genaiAnalysis)
+}
+
+// traceToMainCommit traces a sub-repo changelog back to its parent commit in the main repository
+// by following the RollParent links. If the commit is already a main repo commit (RollParent is empty),
+// or if the parent commit cannot be found in the blamelist, it returns the commit itself.
+func traceToMainCommit(cl *changelogutil.ExpandedChangeLog, changelogs []*changelogutil.ExpandedChangeLog) *changelogutil.ExpandedChangeLog {
+	curr := cl
+	// Limit loop iterations to prevent infinite loop in case of cycles.
+	// The blamelist length is a safe upper bound.
+	for i := 0; i < len(changelogs); i++ {
+		if curr.RollParent == "" {
+			return curr
+		}
+		found := false
+		for _, parentCl := range changelogs {
+			if parentCl.Commit == curr.RollParent {
+				curr = parentCl
+				found = true
+				break
+			}
+		}
+		if !found {
+			// Parent commit not found in the blamelist, stop tracing.
+			break
+		}
+	}
+	return curr
 }

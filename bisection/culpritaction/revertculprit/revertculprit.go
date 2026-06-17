@@ -231,9 +231,20 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 		return err
 	}
 
+	gerritProject := culpritModel.GitilesCommit.Project
+	commitID := culpritModel.GitilesCommit.Id
+	if culpritModel.SubCommit != "" {
+		commitID = culpritModel.SubCommit
+		parsedProject, err := gerrit.GetProject(ctx, culpritModel.ReviewUrl)
+		if err != nil {
+			logging.Errorf(ctx, "failed to parse project from review URL %s: %s", culpritModel.ReviewUrl, err)
+			return err
+		}
+		gerritProject = parsedProject
+	}
+
 	// Get the culprit's Gerrit change
-	culprit, err := gerritClient.GetChange(ctx,
-		culpritModel.GitilesCommit.Project, culpritModel.GitilesCommit.Id)
+	culprit, err := gerritClient.GetChange(ctx, gerritProject, commitID)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
