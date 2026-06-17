@@ -82,6 +82,11 @@ export interface EventPayload {
    * User feedback on whether the Smart Repair saved them time: 'up' (Yes) or 'down' (No).
    */
   feedback?: 'up' | 'down';
+
+  /**
+   * The total number of devices present in the repair group.
+   */
+  total_devices?: number;
 }
 
 /**

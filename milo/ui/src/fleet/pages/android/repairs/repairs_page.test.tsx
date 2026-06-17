@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent, within } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
@@ -23,12 +23,21 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { RepairListPage } from './repairs_page';
 
+const mockTrackEvent = jest.fn();
+jest.mock('@/generic_libs/components/google_analytics', () => ({
+  ...jest.requireActual('@/generic_libs/components/google_analytics'),
+  useGoogleAnalytics: () => ({ trackEvent: mockTrackEvent }),
+  TrackLeafRoutePageView: ({ children }: { children: React.ReactNode }) =>
+    children,
+}));
+
 describe('RepairListPage', () => {
   let queryClient: QueryClient;
   let mockUseFleetConsoleClient: jest.SpyInstance;
 
   beforeEach(() => {
     jest.useFakeTimers();
+    mockTrackEvent.mockClear();
     queryClient = new QueryClient();
 
     mockUseFleetConsoleClient = jest
@@ -94,5 +103,18 @@ describe('RepairListPage', () => {
     await act(async () => fireEvent.click(filterButton!));
 
     expect(screen.getByText('Filter')).toBeVisible();
+  });
+
+  it('tracks Explore in Arsenal clicks in google analytics', async () => {
+    const labRow = (await screen.findByText('lab1')).closest('tr')!;
+    const link = within(labRow).getByRole('link', {
+      name: /explore in arsenal/i,
+    });
+
+    fireEvent.click(link);
+
+    expect(mockTrackEvent).toHaveBeenCalledWith('explore_in_arsenal_clicked', {
+      total_devices: 2,
+    });
   });
 });

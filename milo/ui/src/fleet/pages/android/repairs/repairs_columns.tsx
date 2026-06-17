@@ -24,12 +24,47 @@ import {
 import { ORDER_BY_PARAM_KEY, OrderByDirection } from '@/fleet/hooks/order_by';
 import { colors } from '@/fleet/theme/colors';
 import { getFilterQueryString } from '@/fleet/utils/search_param';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import {
   RepairMetric_Priority,
   repairMetric_PriorityToJSON,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getPriorityIcon, type Row } from './repairs_columns.utils';
+
+interface ExploreInArsenalLinkProps {
+  to: string;
+  totalDevices: number;
+}
+
+const ExploreInArsenalLink = ({
+  to,
+  totalDevices,
+}: ExploreInArsenalLinkProps) => {
+  const { trackEvent } = useGoogleAnalytics();
+
+  return (
+    <Link
+      aria-label="Explore in Arsenal"
+      css={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100%',
+      }}
+      to={to}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() =>
+        trackEvent('explore_in_arsenal_clicked', {
+          total_devices: totalDevices,
+        })
+      }
+    >
+      <OpenInNewIcon />
+    </Link>
+  );
+};
 
 export const COLUMNS = {
   priority: {
@@ -294,19 +329,10 @@ export const COLUMNS = {
       const to = `https://omnilab.corp.google.com/recovery?${params.toString()}`;
 
       return (
-        <Link
-          css={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100%',
-          }}
+        <ExploreInArsenalLink
           to={to}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <OpenInNewIcon />
-        </Link>
+          totalDevices={x.row.original.total_devices}
+        />
       );
     },
   },
@@ -332,6 +358,7 @@ export const COLUMNS = {
 
       return (
         <Link
+          aria-label="Explore devices"
           css={{
             display: 'flex',
             justifyContent: 'center',
