@@ -321,6 +321,7 @@ describe('TimeSeriesChart', () => {
       JSON.stringify({ foo: 'bar' }),
       's1',
       0,
+      10,
     ]);
   });
 

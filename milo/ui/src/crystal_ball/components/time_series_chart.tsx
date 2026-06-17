@@ -57,6 +57,10 @@ export interface TimeSeriesDataSet {
    * The series unique identifier.
    */
   seriesId?: string;
+  /**
+   * Optional factor to scale the y-values for plotting.
+   */
+  yScaleFactor?: number;
 }
 
 /**
@@ -66,7 +70,7 @@ export interface ChartTooltipParam {
   axisValue: string | number;
   marker: string;
   seriesName: string;
-  data: [number, number, number, string?, string?, number?];
+  data: [number, number, number, string?, string?, number?, number?];
 }
 
 /**
@@ -75,7 +79,7 @@ export interface ChartTooltipParam {
 export interface PointClickParams {
   componentType: string;
   seriesName: string;
-  data: [number, number, number, string?, string?, number?];
+  data: [number, number, number, string?, string?, number?, number?];
 }
 
 /**
@@ -477,11 +481,12 @@ export function TimeSeriesChart({
           showSymbol: chartType === 'scatter' || s.data.length === 1,
           data: s.data.map((pt) => [
             pt.x,
-            pt.y,
+            pt.y * (s.yScaleFactor ?? 1),
             pt.count,
             pt.point ? JSON.stringify(pt.point) : '',
             pt.seriesId,
             pt.seriesIndex,
+            pt.y,
           ]),
           itemStyle: { color: s.stroke },
           clip: true,

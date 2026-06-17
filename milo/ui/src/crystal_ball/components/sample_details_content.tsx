@@ -113,7 +113,7 @@ export function SampleDetailsContent({
       });
     }
     if (isDistribution) {
-      selectionContext['value'] = String(selectedPoint.y);
+      selectionContext['value'] = String(selectedPoint.rawY ?? selectedPoint.y);
     }
 
     const orderBy = `value ${sortDirection}`;

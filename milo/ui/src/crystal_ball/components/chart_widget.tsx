@@ -58,8 +58,11 @@ import {
 } from '@/crystal_ball/hooks';
 import {
   dataPointsToData,
+  detectRawUnit,
+  findUnitInfo,
   generateColor,
   getSafeChartType,
+  getScaleFactor,
   isDataPointsValid,
   isStringArray,
   parseSingleFilter,
@@ -94,6 +97,7 @@ export interface SelectedPointInfo {
   point?: Record<string, unknown>;
   seriesId?: string;
   seriesIndex?: number;
+  rawY?: number;
 }
 
 function isPointClickParams(params: unknown): params is PointClickParams {
@@ -295,11 +299,15 @@ export function ChartWidget({
   >([]);
   const portalContext = useContext(WidgetPortalContext);
 
+  const displayUnitStr = widget.leftYAxis?.displayUnit;
+  const isScaled = !!(displayUnitStr && findUnitInfo(displayUnitStr));
+
   const handlePointClick = useCallback(
     (params: unknown) => {
       if (isPointClickParams(params) && params.componentType === 'series') {
         setIsStale(false);
-        const [x, y, count, rawPointStr, seriesId, seriesIndex] = params.data;
+        const [x, y, count, rawPointStr, seriesId, seriesIndex, rawY] =
+          params.data;
         let point: Record<string, unknown> | undefined;
         if (rawPointStr) {
           try {
@@ -317,6 +325,7 @@ export function ChartWidget({
           point,
           seriesId,
           seriesIndex,
+          rawY: typeof rawY === 'number' ? rawY : isScaled ? undefined : y,
         });
         portalContext?.setOpen(true);
         if (portalContext?.isFolded) {
@@ -324,7 +333,7 @@ export function ChartWidget({
         }
       }
     },
-    [portalContext],
+    [portalContext, isScaled],
   );
 
   const handleFiltersUpdate = (updatedFilters: PerfFilter[]) => {
@@ -368,6 +377,21 @@ export function ChartWidget({
       PerfChartWidget.fromPartial({
         ...widget,
         xAxis: newXAxis,
+      }),
+    );
+  };
+
+  const handleDisplayUnitChange = (newDisplayUnit: string) => {
+    onUpdate(
+      PerfChartWidget.fromPartial({
+        ...widget,
+        leftYAxis: {
+          displayName: widget.leftYAxis?.displayName ?? '',
+          minValue: widget.leftYAxis?.minValue,
+          maxValue: widget.leftYAxis?.maxValue,
+          logarithmic: widget.leftYAxis?.logarithmic ?? false,
+          displayUnit: newDisplayUnit,
+        },
       }),
     );
   };
@@ -501,6 +525,20 @@ export function ChartWidget({
     [widget.chartType, widgetResponse, widget.series],
   );
 
+  const scaledChartSeries = useMemo(() => {
+    if (!displayUnitStr) return chartSeries;
+    const targetUnit = findUnitInfo(displayUnitStr);
+    if (!targetUnit) return chartSeries;
+
+    return chartSeries.map((s) => {
+      const rawUnit = detectRawUnit(s.metricField ?? s.name);
+      return {
+        ...s,
+        yScaleFactor: getScaleFactor(rawUnit, targetUnit),
+      };
+    });
+  }, [chartSeries, displayUnitStr]);
+
   const xAxisBounds = useMemo(() => {
     let timeRangeStart: number | undefined;
     let timeRangeEnd: number | undefined;
@@ -578,8 +616,8 @@ export function ChartWidget({
   );
 
   const hasData = useMemo(
-    () => chartSeries.some((series) => series.data.length > 0),
-    [chartSeries],
+    () => scaledChartSeries.some((series) => series.data.length > 0),
+    [scaledChartSeries],
   );
 
   const widgetFilterColumns = useMemo(
@@ -634,6 +672,8 @@ export function ChartWidget({
           onGroupByChange={handleWidgetGroupByUpdate}
           currentAggregation={currentAggregation}
           onAggregationChange={handleWidgetAggregationUpdate}
+          currentDisplayUnit={widget.leftYAxis?.displayUnit ?? ''}
+          onDisplayUnitChange={handleDisplayUnitChange}
           isZoomActive={isZoomActive}
           onZoomActiveToggle={() => setIsZoomActive((prev) => !prev)}
           fitY={fitY}
@@ -703,8 +743,12 @@ export function ChartWidget({
           )}
         {!isWidgetError && widgetResponse && hasData && (
           <TimeSeriesChart
-            series={chartSeries}
-            yAxisLabel="Value"
+            series={scaledChartSeries}
+            yAxisLabel={
+              displayUnitStr
+                ? `Value (${findUnitInfo(displayUnitStr)?.id ?? displayUnitStr})`
+                : 'Value'
+            }
             xAxisType={
               (isDistribution
                 ? widgetResponse?.invocationDistributionData?.xAxisDataKey
@@ -756,7 +800,7 @@ export function ChartWidget({
           createPortal(
             <ChartTooltip
               items={tooltipItems}
-              chartSeries={chartSeries}
+              chartSeries={scaledChartSeries}
               isDistribution={isDistribution}
               timeZone={timeZone}
               xAxisDataKey={
@@ -783,7 +827,7 @@ export function ChartWidget({
         widgetFilters={widget.filters}
         filterColumns={filterColumns}
         isLoadingFilterColumns={isLoadingFilterColumns}
-        chartData={chartSeries}
+        chartData={scaledChartSeries}
         disableRegression={isDistribution}
       />
     </Box>

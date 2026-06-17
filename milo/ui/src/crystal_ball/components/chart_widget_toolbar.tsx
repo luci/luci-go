@@ -42,6 +42,7 @@ import {
   GROUP_BY_OPTIONS,
 } from '@/crystal_ball/constants';
 import { COMPACT_ICON_SX, COMPACT_SELECT_SX } from '@/crystal_ball/styles';
+import { SUPPORTED_UNITS } from '@/crystal_ball/utils';
 import {
   PerfChartWidget_ChartType,
   PerfChartSeries_PerfAggregationFunction,
@@ -56,6 +57,8 @@ interface ChartWidgetToolbarProps {
   onAggregationChange: (
     aggregation: PerfChartSeries_PerfAggregationFunction,
   ) => void;
+  currentDisplayUnit: string;
+  onDisplayUnitChange: (displayUnit: string) => void;
   isZoomActive: boolean;
   onZoomActiveToggle: () => void;
   fitY: boolean;
@@ -71,6 +74,8 @@ export function ChartWidgetToolbar({
   onGroupByChange,
   currentAggregation,
   onAggregationChange,
+  currentDisplayUnit,
+  onDisplayUnitChange,
   isZoomActive,
   onZoomActiveToggle,
   fitY,
@@ -208,6 +213,38 @@ export function ChartWidgetToolbar({
           </FormControl>
         </>
       )}
+
+      <Divider orientation="vertical" flexItem light />
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          fontWeight: (theme) => theme.typography.fontWeightBold,
+          textTransform: 'uppercase',
+          lineHeight: 1,
+        }}
+      >
+        Y-Axis Unit
+      </Typography>
+      <FormControl size="small" variant="outlined">
+        <Select
+          id="widget-yunit-select"
+          value={currentDisplayUnit}
+          onChange={(e: SelectChangeEvent<string>) => {
+            onDisplayUnitChange(e.target.value);
+          }}
+          displayEmpty
+          inputProps={{ 'aria-label': 'Y-Axis Display Unit' }}
+          sx={COMPACT_SELECT_SX}
+        >
+          <MenuItem value="">Raw / None</MenuItem>
+          {SUPPORTED_UNITS.map((unit) => (
+            <MenuItem key={unit.id} value={unit.id}>
+              {unit.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
       <Box sx={{ flexGrow: 1 }} />
       <Divider orientation="vertical" flexItem light />

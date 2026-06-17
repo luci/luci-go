@@ -33,6 +33,8 @@ describe('ChartWidgetToolbar', () => {
     onGroupByChange: jest.fn(),
     currentAggregation: PerfChartSeries_PerfAggregationFunction.P50,
     onAggregationChange: jest.fn(),
+    currentDisplayUnit: '',
+    onDisplayUnitChange: jest.fn(),
     isZoomActive: false,
     onZoomActiveToggle: jest.fn(),
     fitY: false,
@@ -161,5 +163,18 @@ describe('ChartWidgetToolbar', () => {
     expect(screen.getByLabelText('Horizontal Zoom')).not.toHaveClass(
       'MuiIconButton-colorPrimary',
     );
+  });
+
+  it('should call onDisplayUnitChange when a unit option is selected', () => {
+    render(<ChartWidgetToolbar {...mockProps} />);
+
+    const select = screen.getByLabelText('Y-Axis Display Unit');
+    fireEvent.mouseDown(select);
+
+    const option = screen.getByText('Megabytes (MB)');
+    fireEvent.click(option);
+
+    expect(mockProps.onDisplayUnitChange).toHaveBeenCalledTimes(1);
+    expect(mockProps.onDisplayUnitChange).toHaveBeenCalledWith('MB');
   });
 });
