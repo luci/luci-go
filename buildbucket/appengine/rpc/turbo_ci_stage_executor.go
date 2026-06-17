@@ -28,9 +28,9 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/turboci/value"
 	executorgrpcpb "go.chromium.org/turboci/proto/go/graph/executor/v1/grpcpb"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-	"go.chromium.org/turboci/proto/go/utils/value"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	pb "go.chromium.org/luci/buildbucket/proto"

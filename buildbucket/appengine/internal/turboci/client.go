@@ -34,11 +34,11 @@ import (
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc"
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/value"
 	"go.chromium.org/luci/turboci/workplan"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-	"go.chromium.org/turboci/proto/go/utils/value"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
