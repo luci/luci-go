@@ -17,6 +17,8 @@ package write
 import (
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+
+	"go.chromium.org/luci/turboci/check"
 )
 
 // CheckWrite wraps an orchestratorpb.WriteNodesRequest_CheckWrite.
@@ -42,7 +44,7 @@ func (cw CheckWrite) AddResultData(rslt ...*orchestratorpb.ValueWrite) {
 // AddNewCheck adds a new CheckWrite to the request for the creation of
 // a new Check (i.e. the writer believes the check does not already exist in the
 // graph).
-func (req Request) AddNewCheck(id *idspb.Check, kind orchestratorpb.CheckKind) CheckWrite {
+func (req Request) AddNewCheck(id *idspb.Check, kind check.Kind) CheckWrite {
 	ret := req.AddCheckUpdate(id)
 	ret.Msg.SetKind(kind)
 	return ret

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/turboci/proto/go/utils/ids"
 	"go.chromium.org/turboci/proto/go/utils/value"
 
+	"go.chromium.org/luci/turboci/check"
 	"go.chromium.org/luci/turboci/rpc/write"
 )
 
@@ -85,14 +86,14 @@ func TestCheckAddNew(t *testing.T) {
 
 	req := write.NewRequest()
 
-	chk := req.AddNewCheck(ids.Check("something"), orchestratorpb.CheckKind_CHECK_KIND_BUILD)
+	chk := req.AddNewCheck(ids.Check("something"), check.KindBuild)
 	chk.AddOptions(value.MustWrite(numData, "some/realm"))
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
 		Checks: []*orchestratorpb.WriteNodesRequest_CheckWrite{
 			orchestratorpb.WriteNodesRequest_CheckWrite_builder{
 				Identifier: ids.Check("something"),
-				Kind:       orchestratorpb.CheckKind_CHECK_KIND_BUILD.Enum(),
+				Kind:       check.KindBuild.Enum(),
 				Options: []*orchestratorpb.ValueWrite{
 					orchestratorpb.ValueWrite_builder{
 						Data:  mustAny(numData),

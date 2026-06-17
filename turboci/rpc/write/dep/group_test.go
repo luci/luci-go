@@ -24,7 +24,9 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	"go.chromium.org/turboci/proto/go/utils/ids"
 
+	"go.chromium.org/luci/turboci/check"
 	"go.chromium.org/luci/turboci/rpc/write/dep"
+	"go.chromium.org/luci/turboci/stage"
 )
 
 func TestGroup(t *testing.T) {
@@ -33,8 +35,8 @@ func TestGroup(t *testing.T) {
 	grp := dep.MustGroup(
 		ids.Check("check"),
 		ids.Stage("stage"),
-		dep.ConditionalCheck(ids.Check("other"), orchestratorpb.CheckState_CHECK_STATE_PLANNED, `bogus == "true"`),
-		dep.ConditionalStage(ids.Stage("stage other"), orchestratorpb.StageState_STAGE_STATE_AWAITING_GROUP, `true`, `false`),
+		dep.ConditionalCheck(ids.Check("other"), check.StatePlanned, `bogus == "true"`),
+		dep.ConditionalStage(ids.Stage("stage other"), stage.StateAwaitingGroup, `true`, `false`),
 		dep.MustGroup(
 			ids.Check("a"),
 			ids.Check("b"),
@@ -58,7 +60,7 @@ func TestGroup(t *testing.T) {
 				Check: orchestratorpb.Edge_Check_builder{
 					Identifier: ids.Check("other"),
 					Condition: orchestratorpb.Edge_Check_Condition_builder{
-						OnState:    orchestratorpb.CheckState_CHECK_STATE_PLANNED.Enum(),
+						OnState:    check.StatePlanned.Enum(),
 						Expression: proto.String(`bogus == "true"`),
 					}.Build(),
 				}.Build(),
@@ -67,7 +69,7 @@ func TestGroup(t *testing.T) {
 				Stage: orchestratorpb.Edge_Stage_builder{
 					Identifier: ids.Stage("stage other"),
 					Condition: orchestratorpb.Edge_Stage_Condition_builder{
-						OnState:    orchestratorpb.StageState_STAGE_STATE_AWAITING_GROUP.Enum(),
+						OnState:    stage.StateAwaitingGroup.Enum(),
 						Expression: proto.String(`(true)&&(false)`),
 					}.Build(),
 				}.Build(),

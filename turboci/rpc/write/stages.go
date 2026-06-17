@@ -20,6 +20,8 @@ import (
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	"go.chromium.org/turboci/proto/go/utils/value"
+
+	"go.chromium.org/luci/turboci/check"
 )
 
 // StageWrite wraps an orchestratorpb.WriteNodesRequest_StageWrite.
@@ -33,7 +35,7 @@ type StageWrite struct {
 }
 
 // AddCheckAssignment adds a new Assignment to the StageWrite.
-func (sw StageWrite) AddCheckAssignment(id *idspb.Check, goalState orchestratorpb.CheckState) *orchestratorpb.Stage_Assignment {
+func (sw StageWrite) AddCheckAssignment(id *idspb.Check, goalState check.State) *orchestratorpb.Stage_Assignment {
 	ret := orchestratorpb.Stage_Assignment_builder{
 		Target:    id,
 		GoalState: &goalState,
