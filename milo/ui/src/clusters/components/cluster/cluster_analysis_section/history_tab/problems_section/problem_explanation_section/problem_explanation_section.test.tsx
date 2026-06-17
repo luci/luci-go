@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
 
-import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/provider';
+import { HistoryTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/provider';
 import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import { renderTabWithRouterAndClient } from '@/clusters/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
@@ -83,9 +83,9 @@ describe('Test ProblemExplanationSection component', () => {
         clusterAlgorithm={algorithm}
         clusterId={id}
       >
-        <OverviewTabContextProvider metrics={metrics}>
+        <HistoryTabContextProvider metrics={metrics}>
           <ProblemExplanationSection problem={problem} />
-        </OverviewTabContextProvider>
+        </HistoryTabContextProvider>
       </ClusterContextProvider>,
     );
 
@@ -156,9 +156,9 @@ describe('Test ProblemExplanationSection component', () => {
         clusterAlgorithm={algorithm}
         clusterId={id}
       >
-        <OverviewTabContextProvider metrics={metrics}>
+        <HistoryTabContextProvider metrics={metrics}>
           <ProblemExplanationSection problem={problem} />
-        </OverviewTabContextProvider>
+        </HistoryTabContextProvider>
       </ClusterContextProvider>,
     );
 

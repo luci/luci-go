@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
-import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/provider';
+import { HistoryTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/provider';
 import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
@@ -59,9 +59,9 @@ describe('test HistoryChartsSection component', () => {
         clusterAlgorithm="rules"
         clusterId="123456"
       >
-        <OverviewTabContextProvider metrics={metrics}>
+        <HistoryTabContextProvider metrics={metrics}>
           <HistoryChartsSection />
-        </OverviewTabContextProvider>
+        </HistoryTabContextProvider>
       </ClusterContextProvider>,
     );
 
@@ -103,9 +103,9 @@ describe('test HistoryChartsSection component', () => {
         clusterAlgorithm="rules"
         clusterId="123456"
       >
-        <OverviewTabContextProvider metrics={metrics}>
+        <HistoryTabContextProvider metrics={metrics}>
           <HistoryChartsSection />
-        </OverviewTabContextProvider>
+        </HistoryTabContextProvider>
       </ClusterContextProvider>,
     );
 

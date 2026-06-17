@@ -16,10 +16,10 @@ import { createContext } from 'react';
 
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
-export interface OverviewTabData {
+export interface HistoryTabData {
   metrics: readonly ProjectMetric[];
 }
 
-export const OverviewTabContextData = createContext<OverviewTabData>({
+export const HistoryTabContextData = createContext<HistoryTabData>({
   metrics: [],
 });

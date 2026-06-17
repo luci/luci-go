@@ -16,7 +16,7 @@ import TabPanel from '@mui/lab/TabPanel';
 import { useContext } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
-import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/provider';
+import { HistoryTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/provider';
 import { ClusterContext } from '@/clusters/components/cluster/context';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
 import useFetchMetrics from '@/clusters/hooks/use_fetch_metrics';
@@ -28,7 +28,7 @@ interface Props {
   value: string;
 }
 
-const OverviewTab = ({ value }: Props) => {
+const HistoryTab = ({ value }: Props) => {
   const { project } = useContext(ClusterContext);
 
   const {
@@ -39,14 +39,14 @@ const OverviewTab = ({ value }: Props) => {
   } = useFetchMetrics(project);
 
   return (
-    <OverviewTabContextProvider metrics={metrics}>
+    <HistoryTabContextProvider metrics={metrics}>
       <TabPanel value={value}>
         {error && <LoadErrorAlert entityName="metrics" error={error} />}
         {isLoading && <CentralizedProgress />}
         {isSuccess && metrics !== undefined && <HistoryChartsSection />}
       </TabPanel>
-    </OverviewTabContextProvider>
+    </HistoryTabContextProvider>
   );
 };
 
-export default OverviewTab;
+export default HistoryTab;

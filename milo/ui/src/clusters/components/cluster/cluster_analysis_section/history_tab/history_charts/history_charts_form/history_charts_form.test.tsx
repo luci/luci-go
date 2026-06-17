@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 
-import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/provider';
+import { HistoryTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/provider';
 import { renderWithRouter } from '@/clusters/testing_tools/libs/mock_router';
 import { getMockMetricsList } from '@/clusters/testing_tools/mocks/metrics_mock';
 
@@ -28,9 +28,9 @@ describe('Test HistoryChartsForm component', () => {
 
   it('annotations can be toggled', async () => {
     renderWithRouter(
-      <OverviewTabContextProvider>
+      <HistoryTabContextProvider>
         <HistoryChartsForm />
-      </OverviewTabContextProvider>,
+      </HistoryTabContextProvider>,
     );
 
     await screen.findAllByText('Annotate values');
@@ -47,9 +47,9 @@ describe('Test HistoryChartsForm component', () => {
 
   it('should display all time range options', async () => {
     renderWithRouter(
-      <OverviewTabContextProvider metrics={[]}>
+      <HistoryTabContextProvider metrics={[]}>
         <HistoryChartsForm />
-      </OverviewTabContextProvider>,
+      </HistoryTabContextProvider>,
     );
 
     await screen.findAllByText('Time Range');
@@ -69,9 +69,9 @@ describe('Test HistoryChartsForm component', () => {
     const lastOption =
       HISTORY_TIME_RANGE_OPTIONS[HISTORY_TIME_RANGE_OPTIONS.length - 1];
     renderWithRouter(
-      <OverviewTabContextProvider metrics={[]}>
+      <HistoryTabContextProvider metrics={[]}>
         <HistoryChartsForm />
-      </OverviewTabContextProvider>,
+      </HistoryTabContextProvider>,
       `/?historyTimeRange=${lastOption.id}`,
     );
 
@@ -83,9 +83,9 @@ describe('Test HistoryChartsForm component', () => {
 
   it('should have no time range when given an unrecognized time range ID', async () => {
     renderWithRouter(
-      <OverviewTabContextProvider metrics={[]}>
+      <HistoryTabContextProvider metrics={[]}>
         <HistoryChartsForm />
-      </OverviewTabContextProvider>,
+      </HistoryTabContextProvider>,
       '/?historyTimeRange=9d',
     );
 
@@ -97,9 +97,9 @@ describe('Test HistoryChartsForm component', () => {
 
   it('should display all metrics options', async () => {
     renderWithRouter(
-      <OverviewTabContextProvider metrics={metrics}>
+      <HistoryTabContextProvider metrics={metrics}>
         <HistoryChartsForm />
-      </OverviewTabContextProvider>,
+      </HistoryTabContextProvider>,
     );
 
     await screen.findAllByText('Metrics');
@@ -118,9 +118,9 @@ describe('Test HistoryChartsForm component', () => {
   it('given selected metrics in the URL, the selected metrics should match', async () => {
     const selectedMetrics = [metrics[0].metricId, metrics[1].metricId];
     renderWithRouter(
-      <OverviewTabContextProvider metrics={metrics}>
+      <HistoryTabContextProvider metrics={metrics}>
         <HistoryChartsForm />
-      </OverviewTabContextProvider>,
+      </HistoryTabContextProvider>,
       `/?selectedMetrics=${selectedMetrics.join(',')}`,
     );
 
@@ -133,9 +133,9 @@ describe('Test HistoryChartsForm component', () => {
   it('should have only known metrics when given an unrecognized metric ID', async () => {
     const selectedMetrics = [metrics[0].metricId, metrics[1].metricId];
     renderWithRouter(
-      <OverviewTabContextProvider metrics={metrics}>
+      <HistoryTabContextProvider metrics={metrics}>
         <HistoryChartsForm />
-      </OverviewTabContextProvider>,
+      </HistoryTabContextProvider>,
       `/?selectedMetrics=testMetric,${selectedMetrics.join(',')}`,
     );
 

@@ -31,9 +31,9 @@ import { QueryClusterHistoryResponse } from '@/proto/go.chromium.org/luci/analys
 import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { ClusterContextProvider } from './../../provider';
-import OverviewTab from './overview_tab';
+import HistoryTab from './history_tab';
 
-describe('Test OverviewTab component', () => {
+describe('Test HistoryTab component', () => {
   const project = 'chrome';
   const mockMetrics = getMockMetricsList(project);
 
@@ -78,7 +78,7 @@ describe('Test OverviewTab component', () => {
         clusterAlgorithm={algorithm}
         clusterId={id}
       >
-        <OverviewTab value="test" />
+        <HistoryTab value="test" />
       </ClusterContextProvider>,
       'test',
       route,

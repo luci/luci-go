@@ -20,7 +20,7 @@ import Typography from '@mui/material/Typography';
 import { DateTime } from 'luxon';
 import { useContext } from 'react';
 
-import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
+import { HistoryTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/context';
 import { Problem } from '@/clusters/tools/problems';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { displayApproxDuration } from '@/common/tools/time_utils';
@@ -35,7 +35,7 @@ interface Props {
 }
 
 export const ProblemRow = ({ problem, openProblemDialog }: Props) => {
-  const { metrics } = useContext(OverviewTabContextData);
+  const { metrics } = useContext(HistoryTabContextData);
   const [, setSearchParams] = useSyncedSearchParams();
 
   const problemMetricID = problem.policy.metrics[0].metricId;

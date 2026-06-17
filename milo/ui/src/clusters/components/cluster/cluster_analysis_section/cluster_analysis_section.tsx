@@ -23,7 +23,7 @@ import { useLocation } from 'react-router';
 
 import ExonerationsTab from '@/clusters/components/cluster/cluster_analysis_section/exonerations_tab/exonerations_tab';
 import FailuresTab from '@/clusters/components/cluster/cluster_analysis_section/failures_tab/failures_tab';
-import OverviewTab from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/overview_tab';
+import HistoryTab from '@/clusters/components/cluster/cluster_analysis_section/history_tab/history_tab';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ClusterContext } from '../context';
@@ -50,7 +50,7 @@ const ClusterAnalysisSection = () => {
   const exonerationV1Available = exonerationV1Projects.includes(project);
   const exonerationV2Available = exonerationV2Projects.includes(project);
 
-  const validValues = ['overview', 'recent-failures'];
+  const validValues = ['history', 'recent-failures'];
   if (exonerationV1Available || exonerationV2Available) {
     validValues.push('exonerations');
   }
@@ -81,13 +81,13 @@ const ClusterAnalysisSection = () => {
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
               <Tab label="Recent Failures" value="recent-failures" />
-              <Tab label="Overview" value="overview" />
+              <Tab label="History" value="history" />
               {(exonerationV1Available || exonerationV2Available) && (
                 <Tab label="Exonerations" value="exonerations" />
               )}
             </TabList>
           </Box>
-          <OverviewTab value="overview" />
+          <HistoryTab value="history" />
           <FailuresTab value="recent-failures" />
           {exonerationV1Available && <ExonerationsTab value="exonerations" />}
           {exonerationV2Available && <ExonerationsV2Tab value="exonerations" />}

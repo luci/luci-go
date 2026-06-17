@@ -23,7 +23,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/provider';
+import { HistoryTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/provider';
 import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import { renderTabWithRouterAndClient } from '@/clusters/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
@@ -96,9 +96,9 @@ describe('Test ProblemSection component', () => {
         clusterAlgorithm={algorithm}
         clusterId={id}
       >
-        <OverviewTabContextProvider metrics={metrics}>
+        <HistoryTabContextProvider metrics={metrics}>
           <ProblemsSection />
-        </OverviewTabContextProvider>
+        </HistoryTabContextProvider>
       </ClusterContextProvider>,
     );
 
@@ -201,9 +201,9 @@ describe('Test ProblemSection component', () => {
         clusterAlgorithm={algorithm}
         clusterId={id}
       >
-        <OverviewTabContextProvider metrics={metrics}>
+        <HistoryTabContextProvider metrics={metrics}>
           <ProblemsSection />
-        </OverviewTabContextProvider>
+        </HistoryTabContextProvider>
       </ClusterContextProvider>,
     );
 
@@ -228,9 +228,9 @@ describe('Test ProblemSection component', () => {
         clusterAlgorithm={algorithm}
         clusterId={id}
       >
-        <OverviewTabContextProvider metrics={metrics}>
+        <HistoryTabContextProvider metrics={metrics}>
           <ProblemsSection />
-        </OverviewTabContextProvider>
+        </HistoryTabContextProvider>
       </ClusterContextProvider>,
     );
 

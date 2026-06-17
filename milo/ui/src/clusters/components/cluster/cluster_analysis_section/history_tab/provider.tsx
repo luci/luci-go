@@ -14,7 +14,7 @@
 
 import { useMemo } from 'react';
 
-import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
+import { HistoryTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/context';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 interface Props {
@@ -22,17 +22,17 @@ interface Props {
   children: React.ReactNode;
 }
 
-export const OverviewTabContextProvider = ({ metrics, children }: Props) => {
+export const HistoryTabContextProvider = ({ metrics, children }: Props) => {
   const stableMetics = useMemo(() => {
     return metrics || [];
   }, [metrics]);
   return (
-    <OverviewTabContextData.Provider
+    <HistoryTabContextData.Provider
       value={{
         metrics: stableMetics,
       }}
     >
       {children}
-    </OverviewTabContextData.Provider>
+    </HistoryTabContextData.Provider>
   );
 };

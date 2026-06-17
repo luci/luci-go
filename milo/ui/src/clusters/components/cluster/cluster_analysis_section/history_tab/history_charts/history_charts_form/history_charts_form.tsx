@@ -23,7 +23,7 @@ import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import { useContext } from 'react';
 
-import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
+import { HistoryTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/context';
 import PanelHeading from '@/clusters/components/headings/panel_heading/panel_heading';
 import MetricsSelector from '@/clusters/components/metrics_selector/metrics_selector';
 import { MetricId } from '@/clusters/types/metric_id';
@@ -48,7 +48,7 @@ const MenuProps = {
 };
 
 export const HistoryChartsForm = () => {
-  const { metrics } = useContext(OverviewTabContextData);
+  const { metrics } = useContext(HistoryTabContextData);
 
   const [isAnnotated, updateAnnotatedParam] = useAnnotatedParam();
   const [selectedHistoryTimeRange, updateHistoryTimeRangeParam] =

@@ -18,7 +18,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import { useParams } from 'react-router';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
-import { ProblemsSection } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/problems_section/problems_section';
+import { ProblemsSection } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/problems_section/problems_section';
 import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';

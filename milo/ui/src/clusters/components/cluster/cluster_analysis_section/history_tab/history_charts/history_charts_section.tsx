@@ -22,7 +22,7 @@ import { useContext, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
-import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
+import { HistoryTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/history_tab/context';
 import { ClusterContext } from '@/clusters/components/cluster/context';
 import {
   FilterHelp,
@@ -46,7 +46,7 @@ import { SingleMetricChart } from './single_metric_chart';
 
 export const HistoryChartsSection = () => {
   const clusterId = useContext(ClusterContext);
-  const { metrics } = useContext(OverviewTabContextData);
+  const { metrics } = useContext(HistoryTabContextData);
   const [isAnnotated, updateAnnotatedParam] = useAnnotatedParam();
   const [failureFilter, updateFailureFilterParam] = useFilterParam();
   const schema = useClusterFailuresSchema(clusterId.project);
