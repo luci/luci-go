@@ -133,15 +133,16 @@ export function ChartSeriesEditor({
     if (!currentData || currentData.data.length === 0) return undefined;
 
     const latestPt = currentData.data[currentData.data.length - 1];
+    const scale = currentData.yScaleFactor ?? 1;
     const { diff, pctChange } = calculateChange(
-      currentData.data[0].y,
-      latestPt.y,
+      currentData.data[0].y * scale,
+      latestPt.y * scale,
     );
 
     return {
       diff,
       pctChange,
-      latestVal: latestPt.y,
+      latestVal: latestPt.y * scale,
     };
   };
 

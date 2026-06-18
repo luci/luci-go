@@ -122,8 +122,9 @@ export function ChartTooltip({
               currentSeries.data &&
               currentSeries.data.length > 0
             ) {
+              const scale = currentSeries.yScaleFactor ?? 1;
               const { diff, pctChange } = calculateChange(
-                currentSeries.data[0].y,
+                currentSeries.data[0].y * scale,
                 val,
               );
 
@@ -180,7 +181,7 @@ export function ChartTooltip({
               );
 
               if (currentIndex > 0) {
-                const prevY = currentSeries.data[currentIndex - 1].y;
+                const prevY = currentSeries.data[currentIndex - 1].y * scale;
                 const { diff: prevDiff, pctChange: prevPctChange } =
                   calculateChange(prevY, val);
 

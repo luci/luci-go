@@ -572,6 +572,40 @@ describe('ChartSeriesEditor', () => {
     expect(updatedSeries[0].id).toBe('child-1');
     expect(updatedSeries[0].parentSeriesId).toBeFalsy();
   });
+
+  it('scales regression info when yScaleFactor is defined on chartData', async () => {
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        id: 'series-1',
+        displayName: 'Series 1',
+        metricField: 'metric1',
+        dataSpecId: 'test-spec-id',
+      }),
+    ];
+
+    const chartData = [
+      {
+        name: 'Series 1',
+        seriesId: 'series-1',
+        stroke: '#8884d8',
+        data: [
+          { x: 1, y: 1000000, count: 1 },
+          { x: 2, y: 1500000, count: 1 },
+        ],
+        yScaleFactor: 0.001,
+      },
+    ];
+
+    render(
+      <ChartSeriesEditor
+        {...defaultProps}
+        series={initialSeries}
+        chartData={chartData}
+      />,
+    );
+
+    expect(screen.getByText('+500 (+50.0%)')).toBeInTheDocument();
+  });
 });
 
 describe('ChartSeriesItem', () => {

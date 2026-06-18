@@ -146,6 +146,48 @@ describe('ChartTooltip', () => {
     expect(screen.getAllByTestId('TrendingDownIcon')).toHaveLength(2);
   });
 
+  test('renders scaled regression trend change badges when yScaleFactor is defined', () => {
+    const scaledSeries: TimeSeriesDataSet[] = [
+      {
+        name: 'Metric Series A',
+        metricField: 'metric_key_a',
+        data: [
+          { x: 1716900000000, y: 1000000, count: 1 },
+          { x: 1716903600000, y: 1500000, count: 2 },
+        ],
+        stroke: '#8884d8',
+        yScaleFactor: 0.001,
+      },
+    ];
+
+    const scaledItems: ChartTooltipParam[] = [
+      {
+        axisValue: 1716903600000,
+        marker: '<span style="background-color:#8884d8;"></span>',
+        seriesName: 'Metric Series A',
+        data: [
+          1716903600000,
+          1500,
+          2,
+          JSON.stringify({ point_meta: 'point_a' }),
+          's1',
+          0,
+        ],
+      },
+    ];
+
+    render(
+      <ChartTooltip
+        {...defaultProps}
+        chartSeries={scaledSeries}
+        items={scaledItems}
+      />,
+    );
+
+    expect(screen.getAllByText('+500 (+50.0%)')).toHaveLength(2);
+    expect(screen.getAllByTestId('TrendingUpIcon')).toHaveLength(2);
+  });
+
   test('does NOT render regression trend change badges when isDistribution is true', () => {
     render(<ChartTooltip {...defaultProps} isDistribution={true} />);
 
