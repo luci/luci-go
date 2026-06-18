@@ -57,6 +57,7 @@ const DEVICE_TYPE_ALIASES = {
   flo: "Nexus 7 [2013]",
   flounder: "Nexus 9",
   foster: "NVIDIA Shield [2015]",
+  frankel: "Pixel 10",
   fugu: "Nexus Player",
   gce_x86: "Android on GCE",
   goyawifi: "Galaxy Tab 3",
@@ -94,6 +95,7 @@ const DEVICE_TYPE_ALIASES = {
   panther: "Pixel 7",
   raven: "Pixel 6 Pro",
   redfin: "Pixel 5",
+  s5e9945: "Galaxy S24",
   sailfish: "Pixel",
   sargo: "Pixel 3a",
   shamu: "Nexus 6",
@@ -109,6 +111,7 @@ const DEVICE_TYPE_ALIASES = {
 
 const GPU_ALIASES = {
   1002: "AMD",
+  "1002:13c0": "AMD Granite Ridge",
   "1002:6613": "AMD Radeon R7 240",
   "1002:6646": "AMD Radeon R9 M280X",
   "1002:6779": "AMD Radeon HD 6450/7450/8450",
@@ -118,6 +121,7 @@ const GPU_ALIASES = {
   "1002:683d": "AMD Radeon HD 7770/8760",
   "1002:7340": "AMD Radeon RX 5500 XT",
   "1002:7480": "AMD Radeon RX 7600",
+  "1002:7550": "AMD Radeon RX 9070 XT",
   "1002:9830": "AMD Radeon HD 8400",
   "1002:9874": "AMD Carrizo",
   "1a03": "ASPEED",
@@ -140,6 +144,7 @@ const GPU_ALIASES = {
   "10de:1cb3": "NVIDIA Quadro P400",
   "10de:2184": "NVIDIA GeForce GTX 1660",
   "10de:2783": "NVIDIA GeForce RTX 4070 Super",
+  "10de:2c02": "NVIDIA GeForce RTX 5080",
   8086: "Intel",
   "8086:0046": "Intel Ironlake HD Graphics",
   "8086:0102": "Intel Sandy Bridge HD Graphics 2000",
@@ -168,9 +173,11 @@ const GPU_ALIASES = {
   "8086:5912": "Intel Kaby Lake HD Graphics 630",
   "8086:591e": "Intel Kaby Lake HD Graphics 615",
   "8086:5926": "Intel Kaby Lake Iris Plus Graphics 640",
+  "8086:64a0": "Intel Lunar Lake Arc 140V",
   "8086:9bc5": "Intel Comet Lake S UHD Graphics 630",
   qcom: "Qualcomm",
   "qcom:043a": "Qualcomm Adreno 690",
+  "qcom:0c36": "Qualcomm Adreno X1",
 };
 
 const DEVICE_ALIASES = {
