@@ -15,6 +15,7 @@
 import {
   ArrowDownward as ArrowDownwardIcon,
   ArrowUpward as ArrowUpwardIcon,
+  AutoAwesome as AutoAwesomeIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   LibraryAdd as LibraryAddIcon,
@@ -45,6 +46,7 @@ import {
 
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { WidgetPortalContext } from '@/crystal_ball/context';
+import { AI_BUTTON_STYLE } from '@/crystal_ball/styles';
 
 /**
  * Props for the WidgetContainer component.
@@ -65,6 +67,7 @@ export interface WidgetContainerProps {
    */
   disableMoveDown?: boolean;
   onTitleChange?: (newTitle: string) => void;
+  onSummarize?: () => void;
   /**
    * Whether to remove the default padding from the container's content area.
    */
@@ -86,6 +89,7 @@ export function WidgetContainer({
   disableMoveUp = false,
   disableMoveDown = false,
   onTitleChange,
+  onSummarize,
   disablePadding = false,
 }: WidgetContainerProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -156,6 +160,18 @@ export function WidgetContainer({
                     />
                   ) : (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {onSummarize && (
+                        <Tooltip title="Analyze Widget with AI">
+                          <IconButton
+                            size="small"
+                            onClick={onSummarize}
+                            aria-label={`Analyze ${title}`}
+                            sx={{ ...AI_BUTTON_STYLE, mr: 0.5 }}
+                          >
+                            <AutoAwesomeIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                       <Typography
                         variant="body1"
                         sx={{
@@ -233,6 +249,7 @@ export function WidgetContainer({
                         </IconButton>
                       </Tooltip>
                     )}
+
                     {onDelete && (
                       <Tooltip title={COMMON_MESSAGES.DELETE}>
                         <IconButton

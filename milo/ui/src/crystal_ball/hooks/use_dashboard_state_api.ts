@@ -42,10 +42,14 @@ import {
   ListDashboardStatesRequest,
   ListDashboardStatesResponse,
   RollbackDashboardStateRequest,
-  UndeleteDashboardStateRequest,
-  UpdateDashboardStateRequest,
   StarDashboardRequest,
+  SummarizeDashboardStateRequest,
+  SummarizeDashboardStateResponse,
+  SummarizeDashboardWidgetRequest,
+  SummarizeDashboardWidgetResponse,
+  UndeleteDashboardStateRequest,
   UnstarDashboardRequest,
+  UpdateDashboardStateRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { Operation } from '@/proto/google/longrunning/operations.pb';
 
@@ -401,4 +405,66 @@ export const useUnstarDashboardState = (
     }),
     options,
   );
+};
+
+/**
+ * Hook for SummarizeDashboardState.
+ * @param options - Optional mutation options.
+ * @returns A mutation result to summarize a dashboard state.
+ */
+export const useSummarizeDashboardState = (
+  options?: UseMutationOptions<
+    SummarizeDashboardStateResponse,
+    Error,
+    SummarizeDashboardStateRequest
+  >,
+): UseMutationResult<
+  SummarizeDashboardStateResponse,
+  Error,
+  SummarizeDashboardStateRequest
+> => {
+  return useGapiMutation<
+    SummarizeDashboardStateRequest,
+    SummarizeDashboardStateResponse
+  >((request) => {
+    const { name, ...body } = request;
+    return {
+      path: name
+        ? `${BASE_PATH}/${name}:summarize`
+        : `${BASE_PATH}:summarizeDashboardState`,
+      method: 'POST',
+      body,
+    };
+  }, options);
+};
+
+/**
+ * Hook for SummarizeDashboardWidget.
+ * @param options - Optional mutation options.
+ * @returns A mutation result to summarize a dashboard widget.
+ */
+export const useSummarizeDashboardWidget = (
+  options?: UseMutationOptions<
+    SummarizeDashboardWidgetResponse,
+    Error,
+    SummarizeDashboardWidgetRequest
+  >,
+): UseMutationResult<
+  SummarizeDashboardWidgetResponse,
+  Error,
+  SummarizeDashboardWidgetRequest
+> => {
+  return useGapiMutation<
+    SummarizeDashboardWidgetRequest,
+    SummarizeDashboardWidgetResponse
+  >((request) => {
+    const { name, ...body } = request;
+    return {
+      path: name
+        ? `${BASE_PATH}/${name}:summarizeDashboardWidget`
+        : `${BASE_PATH}:summarizeDashboardWidget`,
+      method: 'POST',
+      body,
+    };
+  }, options);
 };

@@ -12,6 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './ai_button';
-export * from './forms';
-export * from './theme';
+export const AI_BUTTON_STYLE = {
+  color: '#9c27b0',
+  p: '3px',
+  '&:hover': {
+    backgroundColor: 'transparent',
+    '& .MuiSvgIcon-root': {
+      animation: 'sparkle 1.5s infinite ease-in-out',
+    },
+  },
+  '& .MuiSvgIcon-root': {
+    transition: 'transform 0.2s ease-in-out',
+    '@keyframes sparkle': {
+      '0%': {
+        transform: 'scale(1) rotate(0deg)',
+      },
+      '50%': {
+        transform: 'scale(1.15) rotate(15deg)',
+      },
+      '100%': {
+        transform: 'scale(1) rotate(0deg)',
+      },
+    },
+  },
+};

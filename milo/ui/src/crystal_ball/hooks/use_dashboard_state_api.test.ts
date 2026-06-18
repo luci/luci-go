@@ -19,16 +19,18 @@ import { API_V1_BASE_PATH as BASE_PATH } from '@/crystal_ball/constants';
 import {
   TypedDashboardStateOperation,
   useCreateDashboardState,
+  useDeleteDashboardState,
+  useGenerateDashboardState,
   useGetDashboardState,
+  useGetDashboardStateRevision,
+  useListDashboardStateRevisions,
   useListDashboardStates,
   useListDashboardStatesInfinite,
-  useUpdateDashboardState,
-  useDeleteDashboardState,
-  useUndeleteDashboardState,
-  useListDashboardStateRevisions,
-  useGetDashboardStateRevision,
   useRollbackDashboardState,
-  useGenerateDashboardState,
+  useSummarizeDashboardState,
+  useSummarizeDashboardWidget,
+  useUndeleteDashboardState,
+  useUpdateDashboardState,
 } from '@/crystal_ball/hooks';
 import {
   createMockInfiniteQueryResult,
@@ -36,17 +38,19 @@ import {
   createMockQueryResult,
 } from '@/crystal_ball/tests';
 import {
-  DashboardState,
   CreateDashboardStateRequest,
-  UpdateDashboardStateRequest,
-  GetDashboardStateRequest,
-  ListDashboardStatesRequest,
+  DashboardState,
   DeleteDashboardStateRequest,
-  UndeleteDashboardStateRequest,
-  ListDashboardStateRevisionsRequest,
-  GetDashboardStateRevisionRequest,
-  RollbackDashboardStateRequest,
   GenerateDashboardStateRequest,
+  GetDashboardStateRequest,
+  GetDashboardStateRevisionRequest,
+  ListDashboardStateRevisionsRequest,
+  ListDashboardStatesRequest,
+  RollbackDashboardStateRequest,
+  SummarizeDashboardStateRequest,
+  SummarizeDashboardWidgetRequest,
+  UndeleteDashboardStateRequest,
+  UpdateDashboardStateRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -526,6 +530,124 @@ describe('use_dashboard_state_api', () => {
         expect.any(Function),
         options,
       );
+    });
+  });
+
+  describe('useSummarizeDashboardState', () => {
+    it('should call useGapiMutation with correct path when name is provided', () => {
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest
+            .fn()
+            .mockResolvedValue({ summary: 'A great summary' }),
+        }),
+      );
+      renderHook(() => useSummarizeDashboardState(), {
+        wrapper: FakeContextProvider,
+      });
+
+      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
+
+      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
+      const request = SummarizeDashboardStateRequest.fromPartial({
+        name: 'dashboardStates/test-id',
+        prompt: 'focus on regressions',
+      });
+      const builtRequest = requestBuilder(request);
+
+      const { name: _name, ...expectedBody } = request;
+      expect(builtRequest).toEqual({
+        path: `${BASE_PATH}/${request.name}:summarize`,
+        method: 'POST',
+        body: expectedBody,
+      });
+    });
+
+    it('should call useGapiMutation with fallback path when name is not provided', () => {
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest
+            .fn()
+            .mockResolvedValue({ summary: 'A great summary' }),
+        }),
+      );
+      renderHook(() => useSummarizeDashboardState(), {
+        wrapper: FakeContextProvider,
+      });
+
+      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
+
+      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
+      const request = SummarizeDashboardStateRequest.fromPartial({
+        prompt: 'focus on regressions',
+      });
+      const builtRequest = requestBuilder(request);
+
+      expect(builtRequest).toEqual({
+        path: `${BASE_PATH}:summarizeDashboardState`,
+        method: 'POST',
+        body: request,
+      });
+    });
+  });
+
+  describe('useSummarizeDashboardWidget', () => {
+    it('should call useGapiMutation with correct path when name is provided', () => {
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest
+            .fn()
+            .mockResolvedValue({ summary: 'A widget summary' }),
+        }),
+      );
+      renderHook(() => useSummarizeDashboardWidget(), {
+        wrapper: FakeContextProvider,
+      });
+
+      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
+
+      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
+      const request = SummarizeDashboardWidgetRequest.fromPartial({
+        name: 'dashboardStates/test-id',
+        widgetId: 'widget-1',
+        prompt: 'focus on regressions',
+      });
+      const builtRequest = requestBuilder(request);
+
+      const { name: _name, ...expectedBody } = request;
+      expect(builtRequest).toEqual({
+        path: `${BASE_PATH}/${request.name}:summarizeDashboardWidget`,
+        method: 'POST',
+        body: expectedBody,
+      });
+    });
+
+    it('should call useGapiMutation with fallback path when name is not provided', () => {
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest
+            .fn()
+            .mockResolvedValue({ summary: 'A widget summary' }),
+        }),
+      );
+      renderHook(() => useSummarizeDashboardWidget(), {
+        wrapper: FakeContextProvider,
+      });
+
+      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
+
+      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
+      const request = SummarizeDashboardWidgetRequest.fromPartial({
+        widgetId: 'widget-1',
+        prompt: 'focus on regressions',
+      });
+      const builtRequest = requestBuilder(request);
+
+      expect(builtRequest).toEqual({
+        path: `${BASE_PATH}:summarizeDashboardWidget`,
+        method: 'POST',
+        body: request,
+      });
     });
   });
 });

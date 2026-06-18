@@ -30,6 +30,7 @@ export * from './raw_sample_list';
 export * from './require_login';
 export * from './sample_details_content';
 export * from './split_series_dialog';
+export * from './summarize_dialog';
 export * from './time_series_chart';
 export * from './widget_container';
 export * from './widget_side_panel';

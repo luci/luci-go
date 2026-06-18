@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  AutoAwesome as AutoAwesomeIcon,
   Edit as EditIcon,
   InfoOutlined as InfoOutlinedIcon,
   Share as ShareIcon,
@@ -43,7 +44,7 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { deepEqual } from 'fast-equals';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useBlocker, useNavigate, useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -59,6 +60,7 @@ import {
   PeriodComparisonWidget,
   RequireLogin,
   ShareDashboardDialog,
+  SummarizeDialog,
   WidgetContainer,
   useTopBarConfig,
 } from '@/crystal_ball/components';
@@ -76,12 +78,15 @@ import {
   useCreateDashboardState,
   useDeleteDashboardState,
   useGetDashboardState,
-  useUpdateDashboardState,
   useStarDashboardState,
+  useSummarizeDashboardState,
+  useSummarizeDashboardWidget,
   useUnstarDashboardState,
+  useUpdateDashboardState,
 } from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
+import { AI_BUTTON_STYLE } from '@/crystal_ball/styles';
 import {
   extractIdFromName,
   formatApiError,
@@ -113,9 +118,11 @@ import {
 function DashboardTitleBar({
   dashboardState,
   onApply,
+  onSummarize,
 }: {
   dashboardState: DashboardState;
   onApply: (state: DashboardState) => void;
+  onSummarize?: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -175,22 +182,38 @@ function DashboardTitleBar({
           },
         }}
       >
-        <IconButton
-          size="small"
-          onClick={handleStarClick}
-          aria-label={
-            dashboardState.starred ? 'Unstar dashboard' : 'Star dashboard'
-          }
-          sx={{
-            color: dashboardState.starred ? 'warning.main' : 'action.active',
-          }}
+        <Tooltip
+          title={dashboardState.starred ? 'Unstar dashboard' : 'Star dashboard'}
         >
-          {dashboardState.starred ? (
-            <StarIcon fontSize="small" />
-          ) : (
-            <StarBorderIcon fontSize="small" />
-          )}
-        </IconButton>
+          <IconButton
+            size="small"
+            onClick={handleStarClick}
+            aria-label={
+              dashboardState.starred ? 'Unstar dashboard' : 'Star dashboard'
+            }
+            sx={{
+              color: dashboardState.starred ? 'warning.main' : 'action.active',
+            }}
+          >
+            {dashboardState.starred ? (
+              <StarIcon fontSize="small" />
+            ) : (
+              <StarBorderIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Tooltip>
+        {onSummarize && (
+          <Tooltip title="Summarize Dashboard with AI">
+            <IconButton
+              size="small"
+              onClick={onSummarize}
+              aria-label="Summarize Dashboard with AI"
+              sx={AI_BUTTON_STYLE}
+            >
+              <AutoAwesomeIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
         <Typography variant="h6">{dashboardState.displayName}</Typography>
         {dashboardState.description && (
           <>
@@ -607,6 +630,14 @@ export function DashboardPage() {
   const [addWidgetModalOpen, setAddWidgetModalOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [duplicateOptionsOpen, setDuplicateOptionsOpen] = useState(false);
+  const [dashboardSummarizeOpen, setDashboardSummarizeOpen] = useState(false);
+  const [widgetSummarizeOpen, setWidgetSummarizeOpen] = useState(false);
+  const [summarizeWidgetId, setSummarizeWidgetId] = useState<string | null>(
+    null,
+  );
+
+  const { mutateAsync: summarizeDashboard } = useSummarizeDashboardState();
+  const { mutateAsync: summarizeWidget } = useSummarizeDashboardWidget();
 
   const {
     data: dashboardState,
@@ -1052,6 +1083,52 @@ export function DashboardPage() {
     [],
   );
 
+  const handleSummarizeDashboard = useCallback(
+    async (prompt: string) => {
+      if (!localDashboardState) throw new Error('No dashboard state');
+      const response = await summarizeDashboard(
+        hasUnsavedChanges
+          ? {
+              dashboardContent: localDashboardState.dashboardContent,
+              prompt,
+              validateOnly: false,
+            }
+          : {
+              name: localDashboardState.name,
+              prompt,
+              validateOnly: false,
+            },
+      );
+      return response.summary;
+    },
+    [localDashboardState, summarizeDashboard, hasUnsavedChanges],
+  );
+
+  const handleSummarizeWidget = useCallback(
+    async (widgetId: string, prompt: string) => {
+      if (!localDashboardState) {
+        throw new Error('No dashboard state');
+      }
+      const response = await summarizeWidget(
+        hasUnsavedChanges
+          ? {
+              dashboardContent: localDashboardState.dashboardContent,
+              widgetId,
+              prompt,
+              validateOnly: false,
+            }
+          : {
+              name: localDashboardState.name,
+              widgetId,
+              prompt,
+              validateOnly: false,
+            },
+      );
+      return response.summary;
+    },
+    [localDashboardState, summarizeWidget, hasUnsavedChanges],
+  );
+
   const topBarAction = useMemo(
     () => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -1130,6 +1207,7 @@ export function DashboardPage() {
         <DashboardTitleBar
           dashboardState={localDashboardState}
           onApply={setLocalDashboardState}
+          onSummarize={() => setDashboardSummarizeOpen(true)}
         />
       );
     }
@@ -1260,53 +1338,79 @@ export function DashboardPage() {
             const widgetType = getWidgetType(widget);
 
             return (
-              <WidgetContainer
-                key={widget.id ?? `widget-${index}`}
-                title={widget.displayName ?? 'Widget'}
-                disablePadding={widgetType === WidgetType.CHART_BREAKDOWN_TABLE}
-                onMoveUp={
-                  index > 0 ? () => handleMoveWidget(index, 'UP') : undefined
-                }
-                onMoveDown={
-                  index <
-                  (localDashboardState.dashboardContent?.widgets?.length || 0) -
-                    1
-                    ? () => handleMoveWidget(index, 'DOWN')
-                    : undefined
-                }
-                onDuplicate={() => handleDuplicateWidget(index)}
-                onDelete={() => handleDeleteWidget(index)}
-                onTitleChange={(newTitle) =>
-                  handleUpdateWidget(index, {
-                    ...widget,
-                    displayName: newTitle,
-                  })
-                }
-              >
-                {(() => {
-                  const widgetType = getWidgetType(widget);
-                  if (!WIDGET_RENDERERS[widgetType]) return null;
-                  return (
-                    <RecoverableErrorBoundary key={index}>
-                      {WIDGET_RENDERERS[widgetType](
-                        widget,
-                        {
-                          globalFilters:
-                            localDashboardState?.dashboardContent
-                              ?.globalFilters ?? [],
-                          filterColumns,
-                          isLoadingFilterColumns,
-                          dataSpecs:
-                            localDashboardState?.dashboardContent?.dataSpecs,
-                          dashboardId,
-                        },
-                        (updatedWidget) =>
-                          handleUpdateWidget(index, updatedWidget),
-                      )}
-                    </RecoverableErrorBoundary>
-                  );
-                })()}
-              </WidgetContainer>
+              <Fragment key={widget.id ?? `widget-${index}`}>
+                <WidgetContainer
+                  title={widget.displayName ?? 'Widget'}
+                  disablePadding={
+                    widgetType === WidgetType.CHART_BREAKDOWN_TABLE
+                  }
+                  onMoveUp={
+                    index > 0 ? () => handleMoveWidget(index, 'UP') : undefined
+                  }
+                  onMoveDown={
+                    index <
+                    (localDashboardState.dashboardContent?.widgets?.length ||
+                      0) -
+                      1
+                      ? () => handleMoveWidget(index, 'DOWN')
+                      : undefined
+                  }
+                  onDuplicate={() => handleDuplicateWidget(index)}
+                  onDelete={() => handleDeleteWidget(index)}
+                  onTitleChange={(newTitle) =>
+                    handleUpdateWidget(index, {
+                      ...widget,
+                      displayName: newTitle,
+                    })
+                  }
+                  onSummarize={
+                    widgetType !== WidgetType.MARKDOWN
+                      ? () => {
+                          setSummarizeWidgetId(widget.id);
+                          setWidgetSummarizeOpen(true);
+                        }
+                      : undefined
+                  }
+                >
+                  {(() => {
+                    const widgetType = getWidgetType(widget);
+                    if (!WIDGET_RENDERERS[widgetType]) return null;
+                    return (
+                      <RecoverableErrorBoundary key={index}>
+                        {WIDGET_RENDERERS[widgetType](
+                          widget,
+                          {
+                            globalFilters:
+                              localDashboardState?.dashboardContent
+                                ?.globalFilters ?? [],
+                            filterColumns,
+                            isLoadingFilterColumns,
+                            dataSpecs:
+                              localDashboardState?.dashboardContent?.dataSpecs,
+                            dashboardId,
+                          },
+                          (updatedWidget) =>
+                            handleUpdateWidget(index, updatedWidget),
+                        )}
+                      </RecoverableErrorBoundary>
+                    );
+                  })()}
+                </WidgetContainer>
+                {widgetType !== WidgetType.MARKDOWN && (
+                  <SummarizeDialog
+                    key={`summarize-dialog-${widget.id}`}
+                    open={
+                      widgetSummarizeOpen && summarizeWidgetId === widget.id
+                    }
+                    onClose={() => setWidgetSummarizeOpen(false)}
+                    title={`Analyze Widget: ${widget.displayName ?? 'Widget'}`}
+                    onSummarize={(prompt) =>
+                      handleSummarizeWidget(widget.id, prompt)
+                    }
+                    mode="analyze"
+                  />
+                )}
+              </Fragment>
             );
           },
         )}
@@ -1349,6 +1453,13 @@ export function DashboardPage() {
         onSubmit={handleDuplicateSubmit}
         initialTitle={`[Copy] ${localDashboardState?.displayName ?? 'Dashboard'}`}
         showChoices={hasUnsavedChanges}
+      />
+      <SummarizeDialog
+        key="dashboard-dialog"
+        open={dashboardSummarizeOpen}
+        onClose={() => setDashboardSummarizeOpen(false)}
+        title={`Summarize Dashboard: ${localDashboardState?.displayName ?? ''}`}
+        onSummarize={handleSummarizeDashboard}
       />
     </Box>
   );

@@ -57,6 +57,14 @@ jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
     mutateAsync: jest.fn(),
     isPending: false,
   })),
+  useSummarizeDashboardState: jest.fn(() => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  })),
+  useSummarizeDashboardWidget: jest.fn(() => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  })),
   useUnstarDashboardState: jest.fn(() => ({
     mutateAsync: jest.fn(),
     isPending: false,
@@ -128,10 +136,11 @@ jest.mock('@/crystal_ball/components', () => {
   const actual = jest.requireActual('@/crystal_ball/components');
   return {
     ...actual,
-    WidgetContainer: jest.fn(({ children, onDuplicate }) => (
+    WidgetContainer: jest.fn(({ children, onDuplicate, onSummarize }) => (
       <div>
         {children}
         {onDuplicate && <button onClick={onDuplicate}>Duplicate Widget</button>}
+        {onSummarize && <button onClick={onSummarize}>Analyze Widget</button>}
       </div>
     )),
     AddWidgetModal: jest.fn(() => <>AddWidgetModal Mock</>),
@@ -165,6 +174,21 @@ jest.mock('@/crystal_ball/components', () => {
     DashboardTimeRangeSelector: () => <>DashboardTimeRangeSelector Mock</>,
     FilterEditor: () => <>FilterEditor Mock</>,
     ShareDashboardDialog: jest.fn(() => <>ShareDashboardDialog Mock</>),
+    SummarizeDialog: jest.fn(({ open, onClose, title, onSummarize, mode }) =>
+      open ? (
+        <div data-testid="summarize-dialog">
+          <span>{title}</span>
+          <button
+            onClick={() => onSummarize('custom prompt').then(() => onClose())}
+          >
+            {mode === 'analyze' ? 'Confirm Analyze' : 'Confirm Summarize'}
+          </button>
+          <button onClick={onClose}>
+            {mode === 'analyze' ? 'Close Analyze' : 'Close Summarize'}
+          </button>
+        </div>
+      ) : null,
+    ),
   };
 });
 
@@ -233,6 +257,29 @@ describe('<DashboardPage />', () => {
       expect.anything(),
       null,
     );
+  });
+
+  it('does not render Analyze Widget button for markdown widgets', () => {
+    const dashboardWithMarkdown = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        widgets: [
+          {
+            id: 'widget-markdown',
+            displayName: 'My Markdown',
+            markdown: { content: '# Hello' },
+          },
+        ],
+      },
+    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(dashboardWithMarkdown));
+    renderDashboard();
+
+    expect(
+      screen.queryByRole('button', { name: 'Analyze Widget' }),
+    ).not.toBeInTheDocument();
   });
 
   it('saves edits and shows success toast', async () => {
@@ -678,5 +725,206 @@ describe('<DashboardPage />', () => {
     expect(
       screen.getByLabelText('Duplicate original saved version'),
     ).toBeInTheDocument();
+  });
+
+  it('opens summarize dashboard dialog and handles api call successfully', async () => {
+    const mockSummarize = jest
+      .fn()
+      .mockResolvedValue({ summary: 'AI summary' });
+    jest
+      .mocked(useDashboardStateApi.useSummarizeDashboardState)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockSummarize }),
+      );
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(mockDashboard));
+
+    renderDashboard();
+
+    // The Summarize Dashboard button is in the TopBar actions, so we render them.
+    const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
+    render(<ToastProvider>{lastCall[0]}</ToastProvider>);
+
+    const summarizeIconBtn = screen.getByRole('button', {
+      name: 'Summarize Dashboard with AI',
+    });
+    fireEvent.click(summarizeIconBtn);
+
+    // Dialog should be open
+    expect(screen.getByTestId('summarize-dialog')).toBeInTheDocument();
+    expect(
+      screen.getByText(`Summarize Dashboard: ${mockDashboard.displayName}`),
+    ).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', {
+      name: 'Confirm Summarize',
+    });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(mockSummarize).toHaveBeenCalledWith({
+        name: mockDashboard.name,
+        prompt: 'custom prompt',
+        validateOnly: false,
+      });
+      expect(screen.queryByTestId('summarize-dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('opens summarize widget dialog and handles api call successfully', async () => {
+    const mockSummarizeWidget = jest
+      .fn()
+      .mockResolvedValue({ summary: 'Widget AI summary' });
+    jest
+      .mocked(useDashboardStateApi.useSummarizeDashboardWidget)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockSummarizeWidget }),
+      );
+
+    const dashboardWithWidget = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        widgets: [
+          {
+            id: 'widget-1',
+            displayName: 'Test Widget',
+            chart: { chartType: 1 },
+          },
+        ],
+      },
+    });
+
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(dashboardWithWidget));
+
+    renderDashboard();
+
+    const summarizeWidgetBtn = screen.getByRole('button', {
+      name: 'Analyze Widget',
+    });
+    fireEvent.click(summarizeWidgetBtn);
+
+    // Dialog should be open
+    expect(screen.getByTestId('summarize-dialog')).toBeInTheDocument();
+    expect(screen.getByText('Analyze Widget: Test Widget')).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', {
+      name: 'Confirm Analyze',
+    });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(mockSummarizeWidget).toHaveBeenCalledWith({
+        name: dashboardWithWidget.name,
+        widgetId: 'widget-1',
+        prompt: 'custom prompt',
+        validateOnly: false,
+      });
+      expect(screen.queryByTestId('summarize-dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('opens summarize dashboard dialog with unsaved edits and sends dashboardContent instead of name', async () => {
+    const mockSummarize = jest
+      .fn()
+      .mockResolvedValue({ summary: 'AI summary' });
+    jest
+      .mocked(useDashboardStateApi.useSummarizeDashboardState)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockSummarize }),
+      );
+
+    const dashboardWithWidget = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        widgets: [
+          { id: 'widget-1', displayName: 'Orig', chart: { chartType: 1 } },
+        ],
+      },
+    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(dashboardWithWidget));
+
+    renderDashboard();
+
+    // Trigger an unsaved edit
+    fireEvent.click(screen.getByRole('button', { name: 'Update Widget' }));
+
+    const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
+    render(<ToastProvider>{lastCall[0]}</ToastProvider>);
+
+    const summarizeIconBtn = screen.getByRole('button', {
+      name: 'Summarize Dashboard with AI',
+    });
+    fireEvent.click(summarizeIconBtn);
+
+    const confirmBtn = screen.getByRole('button', {
+      name: 'Confirm Summarize',
+    });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(mockSummarize).toHaveBeenCalledWith({
+        dashboardContent: expect.objectContaining({
+          widgets: expect.arrayContaining([
+            expect.objectContaining({ id: 'widget-1' }),
+          ]),
+        }),
+        prompt: 'custom prompt',
+        validateOnly: false,
+      });
+      expect(screen.queryByTestId('summarize-dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('opens summarize widget dialog with unsaved edits and sends dashboardContent instead of name', async () => {
+    const mockSummarizeWidget = jest
+      .fn()
+      .mockResolvedValue({ summary: 'Widget AI summary' });
+    jest
+      .mocked(useDashboardStateApi.useSummarizeDashboardWidget)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockSummarizeWidget }),
+      );
+
+    const dashboardWithWidget = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        widgets: [
+          { id: 'widget-1', displayName: 'Orig', chart: { chartType: 1 } },
+        ],
+      },
+    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(dashboardWithWidget));
+
+    renderDashboard();
+
+    // Trigger an unsaved edit
+    fireEvent.click(screen.getByRole('button', { name: 'Update Widget' }));
+
+    const summarizeWidgetBtn = screen.getByRole('button', {
+      name: 'Analyze Widget',
+    });
+    fireEvent.click(summarizeWidgetBtn);
+
+    const confirmBtn = screen.getByRole('button', {
+      name: 'Confirm Analyze',
+    });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(mockSummarizeWidget).toHaveBeenCalledWith({
+        dashboardContent: expect.any(Object),
+        widgetId: 'widget-1',
+        prompt: 'custom prompt',
+        validateOnly: false,
+      });
+      expect(screen.queryByTestId('summarize-dialog')).not.toBeInTheDocument();
+    });
   });
 });
