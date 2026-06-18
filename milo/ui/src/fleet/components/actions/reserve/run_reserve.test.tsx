@@ -38,6 +38,7 @@ jest.mock('../shared/use_admin_task_permission', () => ({
 describe('<RunReserve />', () => {
   const mockScheduleReserve = jest.fn();
   const mockTrackEvent = jest.fn();
+  const mockFetchPermissions = jest.fn();
   const selectedDuts = [
     { name: 'device-1', dutId: 'device-1-id', namespace: 'os' },
   ];
@@ -53,7 +54,14 @@ describe('<RunReserve />', () => {
       trackEvent: mockTrackEvent,
     });
 
-    (useAdminTaskPermission as jest.Mock).mockReturnValue(true);
+    mockFetchPermissions.mockReset();
+    mockFetchPermissions.mockResolvedValue({
+      hasPermission: true,
+    });
+    (useAdminTaskPermission as jest.Mock).mockReturnValue({
+      hasPermission: true,
+      fetchPermissions: mockFetchPermissions,
+    });
   });
 
   it('renders button, disabled when no DUTs selected', async () => {
@@ -69,7 +77,10 @@ describe('<RunReserve />', () => {
   });
 
   it('disables button when permissions are loading', async () => {
-    (useAdminTaskPermission as jest.Mock).mockReturnValue(null);
+    (useAdminTaskPermission as jest.Mock).mockReturnValue({
+      hasPermission: null,
+      fetchPermissions: mockFetchPermissions,
+    });
 
     render(
       <FakeContextProvider>
@@ -82,7 +93,13 @@ describe('<RunReserve />', () => {
   });
 
   it('opens AdminAccessRequiredDialog when user lacks permissions', async () => {
-    (useAdminTaskPermission as jest.Mock).mockReturnValue(false);
+    (useAdminTaskPermission as jest.Mock).mockReturnValue({
+      hasPermission: false,
+      fetchPermissions: mockFetchPermissions,
+    });
+    mockFetchPermissions.mockResolvedValue({
+      hasPermission: false,
+    });
 
     render(
       <FakeContextProvider>
@@ -95,7 +112,9 @@ describe('<RunReserve />', () => {
     fireEvent.click(button);
 
     // Verify Admin Access dialog is shown
-    expect(screen.getByText('Admin Access Required')).toBeVisible();
+    await waitFor(() => {
+      expect(screen.getByText('Admin Access Required')).toBeVisible();
+    });
     expect(screen.getByText('fleet-console-admin-tasks-policy')).toBeVisible();
     // Reserve Dialog confirmation screen should not be open
     expect(
@@ -115,11 +134,13 @@ describe('<RunReserve />', () => {
     fireEvent.click(button);
 
     // Reserve Dialog confirmation screen should open
-    expect(
-      screen.getByText(
-        'Please confirm that you want to reserve the following device:',
-      ),
-    ).toBeVisible();
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Please confirm that you want to reserve the following device:',
+        ),
+      ).toBeVisible();
+    });
     expect(screen.getByRole('link', { name: 'device-1' })).toBeVisible();
   });
 
@@ -144,7 +165,7 @@ describe('<RunReserve />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reserve' }));
 
     // Type a comment
-    const input = screen.getByLabelText(/Comment/i);
+    const input = await screen.findByLabelText(/Comment/i);
     fireEvent.change(input, { target: { value: 'My custom reason' } });
 
     // Click Confirm
@@ -172,6 +193,8 @@ describe('<RunReserve />', () => {
     expect(
       screen.getByRole('link', { name: 'View tasks in Swarming' }),
     ).toHaveAttribute('href', expect.stringContaining('test-session-id'));
+
+    expect(mockFetchPermissions).toHaveBeenCalledTimes(1);
   });
 
   it('handles API failure correctly and displays error message', async () => {
@@ -187,7 +210,8 @@ describe('<RunReserve />', () => {
 
     // Open and submit Dialog
     fireEvent.click(screen.getByRole('button', { name: 'Reserve' }));
-    fireEvent.change(screen.getByLabelText(/Comment/i), {
+    const input = await screen.findByLabelText(/Comment/i);
+    fireEvent.change(input, {
       target: { value: 'My reason' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
@@ -200,5 +224,52 @@ describe('<RunReserve />', () => {
         ),
       ).toBeVisible();
     });
+
+    expect(mockFetchPermissions).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls mockFetchPermissions when reserve button is clicked', async () => {
+    render(
+      <FakeContextProvider>
+        <RunReserve selectedDuts={selectedDuts} />
+      </FakeContextProvider>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Reserve' });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(mockFetchPermissions).toHaveBeenCalled();
+    });
+  });
+
+  it('shows error snackbar when permission check fails with query error', async () => {
+    (useAdminTaskPermission as jest.Mock).mockReturnValue({
+      hasPermission: true,
+      fetchPermissions: mockFetchPermissions,
+    });
+    mockFetchPermissions.mockRejectedValue(
+      new Error('Permission service connection reset'),
+    );
+
+    render(
+      <FakeContextProvider>
+        <RunReserve selectedDuts={selectedDuts} />
+      </FakeContextProvider>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Reserve' });
+    fireEvent.click(button);
+
+    // Verify error Snackbar is shown
+    await waitFor(() => {
+      expect(
+        screen.getByText('Permission service connection reset'),
+      ).toBeVisible();
+    });
+    // Reserve Dialog confirmation screen should not be open
+    expect(
+      screen.queryByText(/Please confirm that you want to reserve/),
+    ).toBeNull();
   });
 });

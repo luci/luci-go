@@ -65,7 +65,7 @@ const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export const ChromeOSSmartRepair = () => {
   const { id = '' } = useParams();
-  const hasAdminTaskPermission = useAdminTaskPermission();
+  const { hasPermission: hasAdminTaskPermission } = useAdminTaskPermission();
   const fleetConsoleClient = useFleetConsoleClient();
   const queryClient = useQueryClient();
   const { trackEvent } = useGoogleAnalytics();

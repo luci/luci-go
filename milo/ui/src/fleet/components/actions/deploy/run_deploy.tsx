@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
-import { Button } from '@mui/material';
+import { Button, Snackbar } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -40,26 +40,34 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [adminAccessRequiredDialogOpen, setAdminAccessRequiredDialogOpen] =
     useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const hasPermission = useAdminTaskPermission();
+  const { hasPermission, fetchPermissions } = useAdminTaskPermission();
+  const [checkingPermission, setCheckingPermission] = useState<boolean>(false);
 
   const dutNames = selectedDuts.map((d) => d.name);
   const namespaces = selectedDuts.map((d) => d.namespace || '');
 
-  const initializeDeploy = () => {
-    if (hasPermission === false) {
-      setAdminAccessRequiredDialogOpen(true);
-      return;
+  const initializeDeploy = async () => {
+    setCheckingPermission(true);
+    try {
+      const result = await fetchPermissions();
+      if (result.hasPermission === true) {
+        setSessionInfo({
+          dutNames: dutNames,
+          namespaces: namespaces,
+        });
+        setOpen(true);
+      } else {
+        setAdminAccessRequiredDialogOpen(true);
+      }
+    } catch (e) {
+      setErrorMessage(
+        e instanceof Error ? e.message : 'Failed to verify permissions.',
+      );
+    } finally {
+      setCheckingPermission(false);
     }
-    if (hasPermission === null) {
-      return;
-    }
-    setSessionInfo({
-      dutNames: dutNames,
-      namespaces: namespaces,
-    });
-    setOpen(true);
-    return;
   };
 
   const runDeploy = async () => {
@@ -69,18 +77,31 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
     });
     setLoading(true);
 
-    const resp = await fleetConsoleClient.ScheduleDeploy(
-      ScheduleDeployRequest.fromPartial({
-        unitNames: dutNames,
-      }),
-    );
+    try {
+      const resp = await fleetConsoleClient.ScheduleDeploy(
+        ScheduleDeployRequest.fromPartial({
+          unitNames: dutNames,
+        }),
+      );
 
-    setSessionInfo({
-      ...sessionInfo,
-      sessionId: resp.sessionId,
-      results: [...resp.results],
-    });
-    setLoading(false);
+      setSessionInfo({
+        ...sessionInfo,
+        sessionId: resp.sessionId,
+        results: [...resp.results],
+      });
+    } catch (e) {
+      setSessionInfo({
+        ...sessionInfo,
+        results: selectedDuts.map((dut) => ({
+          unitName: dut.name,
+          success: false,
+          errorMessage:
+            e instanceof Error ? e.message : 'Unknown connection error',
+        })),
+      });
+    } finally {
+      setLoading(false);
+    }
 
     return;
   };
@@ -88,7 +109,10 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
   const handleClose = () => {
     setOpen(false);
     if (sessionInfo.results) {
-      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      void queryClient.invalidateQueries({ queryKey: ['fleet-console'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['swarming-bots-current-tasks'],
+      });
     }
     setSessionInfo({});
   };
@@ -100,7 +124,9 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
         size="small"
         startIcon={<SystemUpdateAltIcon />}
         onClick={initializeDeploy}
-        disabled={dutNames.length === 0 || hasPermission === null}
+        disabled={
+          dutNames.length === 0 || hasPermission === null || checkingPermission
+        }
       >
         Deploy
       </Button>
@@ -114,6 +140,12 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
       <AdminAccessRequiredDialog
         open={adminAccessRequiredDialogOpen}
         onClose={() => setAdminAccessRequiredDialogOpen(false)}
+      />
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={6000}
+        onClose={() => setErrorMessage(null)}
+        message={errorMessage}
       />
     </>
   );

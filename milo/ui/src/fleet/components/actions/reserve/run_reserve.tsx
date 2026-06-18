@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import LockIcon from '@mui/icons-material/Lock';
-import { Button } from '@mui/material';
+import { Button, Snackbar } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -44,20 +44,29 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [adminAccessRequiredDialogOpen, setAdminAccessRequiredDialogOpen] =
     useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const hasPermission = useAdminTaskPermission();
+  const { hasPermission, fetchPermissions } = useAdminTaskPermission();
+  const [checkingPermission, setCheckingPermission] = useState<boolean>(false);
 
   const dutNames = selectedDuts.map((d) => d.name);
 
-  const initializeReserve = () => {
-    if (hasPermission === false) {
-      setAdminAccessRequiredDialogOpen(true);
-      return;
+  const initializeReserve = async () => {
+    setCheckingPermission(true);
+    try {
+      const result = await fetchPermissions();
+      if (result.hasPermission === true) {
+        setOpen(true);
+      } else {
+        setAdminAccessRequiredDialogOpen(true);
+      }
+    } catch (e) {
+      setErrorMessage(
+        e instanceof Error ? e.message : 'Failed to verify permissions.',
+      );
+    } finally {
+      setCheckingPermission(false);
     }
-    if (hasPermission === null) {
-      return;
-    }
-    setOpen(true);
   };
 
   const handleClose = () => {
@@ -117,7 +126,9 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
         size="small"
         startIcon={<LockIcon />}
         onClick={initializeReserve}
-        disabled={dutNames.length === 0 || hasPermission === null}
+        disabled={
+          dutNames.length === 0 || hasPermission === null || checkingPermission
+        }
       >
         Reserve
       </Button>
@@ -137,6 +148,12 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
       <AdminAccessRequiredDialog
         open={adminAccessRequiredDialogOpen}
         onClose={() => setAdminAccessRequiredDialogOpen(false)}
+      />
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={6000}
+        onClose={() => setErrorMessage(null)}
+        message={errorMessage}
       />
     </>
   );

@@ -25,10 +25,11 @@ export function usePermission(group: string) {
     group: group,
   });
 
-  const { data, isError, error } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     ...queryOptions,
     staleTime: 1 * 60 * 1000, // 1 minute
     retry: false,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -37,11 +38,23 @@ export function usePermission(group: string) {
     }
   }, [isError, error, group]);
 
-  if (isError) {
-    return false;
-  }
+  const hasPermission = isPending
+    ? null
+    : isError
+      ? false
+      : (data?.hasPermission ?? false);
 
-  return data?.hasPermission ?? null;
+  // Performs a direct check, bypassing React Query cache/state to avoid unmounting components on error.
+  const fetchPermissions = () => {
+    return fleetConsoleClient.CheckPermission({ group });
+  };
+
+  return {
+    hasPermission,
+    fetchPermissions,
+    isError,
+    error,
+  };
 }
 
 export function useAdminTaskPermission() {

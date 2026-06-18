@@ -80,7 +80,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders checking permissions by default', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(null);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: null });
     render(
       <QueryClientProvider client={queryClient}>
         <FakeContextProvider>
@@ -93,7 +93,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders admin required banner if unauthorized', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(false);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: false });
     render(
       <QueryClientProvider client={queryClient}>
         <FakeContextProvider>
@@ -106,7 +106,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders idle state when no cached or active run exists', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -134,7 +134,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders active processing run and handles Firestore updates', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -193,7 +193,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders and persists error result on failure, and hides idle banner', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
 
     // Initial check-only call during render
     mockGetSmartRepair.mockResolvedValueOnce({
@@ -286,7 +286,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('clears the error banner when Retrigger Analysis is clicked', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
 
     // Initial check-only call
     mockGetSmartRepair.mockResolvedValueOnce({
@@ -375,7 +375,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders the feedback widget when Smart Repair is completed and tracks thumbs up clicks', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -453,7 +453,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders the feedback widget and tracks thumbs down clicks', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -520,7 +520,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('tracks smart_repair_tab_viewed when rendered with admin permissions', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -548,7 +548,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('does not track smart_repair_tab_viewed when rendered without admin permissions', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(false);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: false });
     render(
       <QueryClientProvider client={queryClient}>
         <FakeContextProvider>
@@ -562,7 +562,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('tracks run_smart_repair when Retrigger Analysis is clicked', async () => {
-    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {

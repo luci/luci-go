@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import BuildIcon from '@mui/icons-material/Build';
-import { Button } from '@mui/material';
+import { Button, Snackbar } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -46,28 +46,35 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const [verifyOnly, setVerifyOnly] = useState<boolean>(false);
   const [adminAccessRequiredDialogOpen, setAdminAccessRequiredDialogOpen] =
     useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const hasPermission = useAdminTaskPermission();
+  const { hasPermission, fetchPermissions } = useAdminTaskPermission();
+  const [checkingPermission, setCheckingPermission] = useState<boolean>(false);
 
   const dutNames = selectedDuts.map((d) => d.name);
   const namespaces = selectedDuts.map((d) => d.namespace || '');
 
   // First, give users a modal to confirm if they want autorepair or not.
-  const initializeAutorepair = () => {
-    if (hasPermission === false) {
-      setAdminAccessRequiredDialogOpen(true);
-      return;
+  const initializeAutorepair = async () => {
+    setCheckingPermission(true);
+    try {
+      const result = await fetchPermissions();
+      if (result.hasPermission === true) {
+        setSessionInfo({
+          dutNames: dutNames,
+          namespaces: namespaces,
+        });
+        setOpen(true);
+      } else {
+        setAdminAccessRequiredDialogOpen(true);
+      }
+    } catch (e) {
+      setErrorMessage(
+        e instanceof Error ? e.message : 'Failed to verify permissions.',
+      );
+    } finally {
+      setCheckingPermission(false);
     }
-    if (hasPermission === null) {
-      return;
-    }
-    setSessionInfo({
-      dutNames: dutNames,
-      namespaces: namespaces,
-    });
-    setOpen(true);
-
-    return;
   };
 
   const runAutorepair = async () => {
@@ -87,19 +94,32 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
       flags.push(ScheduleAutorepairRequest_AutorepairFlag.VERIFY);
     }
 
-    const resp = await fleetConsoleClient.ScheduleAutorepair(
-      ScheduleAutorepairRequest.fromPartial({
-        unitNames: dutNames,
-        flags: flags,
-      }),
-    );
+    try {
+      const resp = await fleetConsoleClient.ScheduleAutorepair(
+        ScheduleAutorepairRequest.fromPartial({
+          unitNames: dutNames,
+          flags: flags,
+        }),
+      );
 
-    setSessionInfo({
-      ...sessionInfo,
-      sessionId: resp.sessionId,
-      results: [...resp.results],
-    });
-    setLoading(false);
+      setSessionInfo({
+        ...sessionInfo,
+        sessionId: resp.sessionId,
+        results: [...resp.results],
+      });
+    } catch (e) {
+      setSessionInfo({
+        ...sessionInfo,
+        results: selectedDuts.map((dut) => ({
+          unitName: dut.name,
+          success: false,
+          errorMessage:
+            e instanceof Error ? e.message : 'Unknown connection error',
+        })),
+      });
+    } finally {
+      setLoading(false);
+    }
 
     return;
   };
@@ -107,7 +127,10 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const handleClose = () => {
     setOpen(false);
     if (sessionInfo.results) {
-      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      void queryClient.invalidateQueries({ queryKey: ['fleet-console'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['swarming-bots-current-tasks'],
+      });
     }
     setSessionInfo({});
     setDeepRepair(false);
@@ -122,7 +145,9 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
         size="small"
         startIcon={<BuildIcon />}
         onClick={initializeAutorepair}
-        disabled={dutNames.length === 0 || hasPermission === null}
+        disabled={
+          dutNames.length === 0 || hasPermission === null || checkingPermission
+        }
       >
         Run autorepair
       </Button>
@@ -144,6 +169,12 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
       <AdminAccessRequiredDialog
         open={adminAccessRequiredDialogOpen}
         onClose={() => setAdminAccessRequiredDialogOpen(false)}
+      />
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={6000}
+        onClose={() => setErrorMessage(null)}
+        message={errorMessage}
       />
     </>
   );
