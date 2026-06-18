@@ -242,6 +242,22 @@ export interface ScheduleAutorepairResponse {
   readonly results: readonly ScheduleAutorepairResult[];
 }
 
+export interface ScheduleReserveRequest {
+  readonly unitNames: readonly string[];
+  readonly comment: string;
+}
+
+export interface ScheduleReserveResult {
+  readonly unitName: string;
+  readonly taskUrl?: string | undefined;
+  readonly errorMessage?: string | undefined;
+}
+
+export interface ScheduleReserveResponse {
+  readonly sessionId: string;
+  readonly results: readonly ScheduleReserveResult[];
+}
+
 export interface ScheduleDeployRequest {
   readonly unitNames: readonly string[];
   readonly deployOptions: DeployOptions | undefined;
@@ -2250,6 +2266,254 @@ export const ScheduleAutorepairResponse: MessageFns<ScheduleAutorepairResponse> 
     const message = createBaseScheduleAutorepairResponse() as any;
     message.sessionId = object.sessionId ?? "";
     message.results = object.results?.map((e) => ScheduleAutorepairResult.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseScheduleReserveRequest(): ScheduleReserveRequest {
+  return { unitNames: [], comment: "" };
+}
+
+export const ScheduleReserveRequest: MessageFns<ScheduleReserveRequest> = {
+  encode(message: ScheduleReserveRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.unitNames) {
+      writer.uint32(10).string(v!);
+    }
+    if (message.comment !== "") {
+      writer.uint32(18).string(message.comment);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ScheduleReserveRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleReserveRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.unitNames.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.comment = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleReserveRequest {
+    return {
+      unitNames: globalThis.Array.isArray(object?.unitNames)
+        ? object.unitNames.map((e: any) => globalThis.String(e))
+        : [],
+      comment: isSet(object.comment) ? globalThis.String(object.comment) : "",
+    };
+  },
+
+  toJSON(message: ScheduleReserveRequest): unknown {
+    const obj: any = {};
+    if (message.unitNames?.length) {
+      obj.unitNames = message.unitNames;
+    }
+    if (message.comment !== "") {
+      obj.comment = message.comment;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ScheduleReserveRequest>): ScheduleReserveRequest {
+    return ScheduleReserveRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ScheduleReserveRequest>): ScheduleReserveRequest {
+    const message = createBaseScheduleReserveRequest() as any;
+    message.unitNames = object.unitNames?.map((e) => e) || [];
+    message.comment = object.comment ?? "";
+    return message;
+  },
+};
+
+function createBaseScheduleReserveResult(): ScheduleReserveResult {
+  return { unitName: "", taskUrl: undefined, errorMessage: undefined };
+}
+
+export const ScheduleReserveResult: MessageFns<ScheduleReserveResult> = {
+  encode(message: ScheduleReserveResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.unitName !== "") {
+      writer.uint32(10).string(message.unitName);
+    }
+    if (message.taskUrl !== undefined) {
+      writer.uint32(18).string(message.taskUrl);
+    }
+    if (message.errorMessage !== undefined) {
+      writer.uint32(26).string(message.errorMessage);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ScheduleReserveResult {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleReserveResult() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.unitName = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.taskUrl = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.errorMessage = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleReserveResult {
+    return {
+      unitName: isSet(object.unitName) ? globalThis.String(object.unitName) : "",
+      taskUrl: isSet(object.taskUrl) ? globalThis.String(object.taskUrl) : undefined,
+      errorMessage: isSet(object.errorMessage) ? globalThis.String(object.errorMessage) : undefined,
+    };
+  },
+
+  toJSON(message: ScheduleReserveResult): unknown {
+    const obj: any = {};
+    if (message.unitName !== "") {
+      obj.unitName = message.unitName;
+    }
+    if (message.taskUrl !== undefined) {
+      obj.taskUrl = message.taskUrl;
+    }
+    if (message.errorMessage !== undefined) {
+      obj.errorMessage = message.errorMessage;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ScheduleReserveResult>): ScheduleReserveResult {
+    return ScheduleReserveResult.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ScheduleReserveResult>): ScheduleReserveResult {
+    const message = createBaseScheduleReserveResult() as any;
+    message.unitName = object.unitName ?? "";
+    message.taskUrl = object.taskUrl ?? undefined;
+    message.errorMessage = object.errorMessage ?? undefined;
+    return message;
+  },
+};
+
+function createBaseScheduleReserveResponse(): ScheduleReserveResponse {
+  return { sessionId: "", results: [] };
+}
+
+export const ScheduleReserveResponse: MessageFns<ScheduleReserveResponse> = {
+  encode(message: ScheduleReserveResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.sessionId !== "") {
+      writer.uint32(10).string(message.sessionId);
+    }
+    for (const v of message.results) {
+      ScheduleReserveResult.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ScheduleReserveResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleReserveResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.sessionId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.results.push(ScheduleReserveResult.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleReserveResponse {
+    return {
+      sessionId: isSet(object.sessionId) ? globalThis.String(object.sessionId) : "",
+      results: globalThis.Array.isArray(object?.results)
+        ? object.results.map((e: any) => ScheduleReserveResult.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ScheduleReserveResponse): unknown {
+    const obj: any = {};
+    if (message.sessionId !== "") {
+      obj.sessionId = message.sessionId;
+    }
+    if (message.results?.length) {
+      obj.results = message.results.map((e) => ScheduleReserveResult.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ScheduleReserveResponse>): ScheduleReserveResponse {
+    return ScheduleReserveResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ScheduleReserveResponse>): ScheduleReserveResponse {
+    const message = createBaseScheduleReserveResponse() as any;
+    message.sessionId = object.sessionId ?? "";
+    message.results = object.results?.map((e) => ScheduleReserveResult.fromPartial(e)) || [];
     return message;
   },
 };

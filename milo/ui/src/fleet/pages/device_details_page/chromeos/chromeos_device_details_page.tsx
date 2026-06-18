@@ -23,10 +23,12 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useFeatureFlag } from '@/common/feature_flags';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { LeaseTip } from '@/fleet/components/actions/lease/lease_tip';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
+import { RunReserve } from '@/fleet/components/actions/reserve/run_reserve';
 import { SshTip } from '@/fleet/components/actions/ssh/ssh_tip';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
@@ -37,6 +39,7 @@ import {
   generateDeviceListURL,
   CHROMEOS_PLATFORM,
 } from '@/fleet/constants/paths';
+import { enableReserveDuts } from '@/fleet/features';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import {
@@ -124,6 +127,7 @@ const useNavigatedFromLink = () => {
 
 // This page is only used in chrome os
 export const ChromeOSDeviceDetailsPage = () => {
+  const showReserve = useFeatureFlag(enableReserveDuts);
   const { id = '' } = useParams();
   const [deviceIdInputValue, setDeviceIdInputValue] = useState(id);
   const navigatedFromLink = useNavigatedFromLink();
@@ -198,7 +202,7 @@ export const ChromeOSDeviceDetailsPage = () => {
   }
 
   const dutId = extractDutId(device);
-  const toRepair = [
+  const selectedDuts = [
     {
       name: id,
       // Confusingly, dutID, which is the asset tag of the DUT is
@@ -288,12 +292,13 @@ export const ChromeOSDeviceDetailsPage = () => {
               gap: '8px',
             }}
           >
-            <RunAutorepair selectedDuts={toRepair} />
-            <RunDeploy selectedDuts={toRepair} />
+            <RunAutorepair selectedDuts={selectedDuts} />
+            <RunDeploy selectedDuts={selectedDuts} />
             <RequestRepair
-              selectedItems={toRepair}
+              selectedItems={selectedDuts}
               platform={Platform.CHROMEOS}
             />
+            {showReserve && <RunReserve selectedDuts={selectedDuts} />}
             <SshTip hostname={id} dutId={dutId} />
             <LeaseTip hostname={id} />
           </div>

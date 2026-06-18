@@ -59,6 +59,8 @@ import {
   ScheduleAutorepairResponse,
   ScheduleDeployRequest,
   ScheduleDeployResponse,
+  ScheduleReserveRequest,
+  ScheduleReserveResponse,
 } from "./chromeos.pb";
 import {
   CountResourceRequestsRequest,
@@ -308,6 +310,7 @@ export interface FleetConsole {
   CleanExit(request: CleanExitRequest): Promise<CleanExitResponse>;
   ExportDevicesToCSV(request: ExportDevicesToCSVRequest): Promise<ExportDevicesToCSVResponse>;
   ScheduleAutorepair(request: ScheduleAutorepairRequest): Promise<ScheduleAutorepairResponse>;
+  ScheduleReserve(request: ScheduleReserveRequest): Promise<ScheduleReserveResponse>;
   ScheduleDeploy(request: ScheduleDeployRequest): Promise<ScheduleDeployResponse>;
   UpdateAndroidMetrics(request: UpdateAndroidMetricsRequest): Promise<UpdateAndroidMetricsResponse>;
   CheckPermission(request: CheckPermissionRequest): Promise<CheckPermissionResponse>;
@@ -358,6 +361,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.CleanExit = this.CleanExit.bind(this);
     this.ExportDevicesToCSV = this.ExportDevicesToCSV.bind(this);
     this.ScheduleAutorepair = this.ScheduleAutorepair.bind(this);
+    this.ScheduleReserve = this.ScheduleReserve.bind(this);
     this.ScheduleDeploy = this.ScheduleDeploy.bind(this);
     this.UpdateAndroidMetrics = this.UpdateAndroidMetrics.bind(this);
     this.CheckPermission = this.CheckPermission.bind(this);
@@ -495,6 +499,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ScheduleAutorepairRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ScheduleAutorepair", data);
     return promise.then((data) => ScheduleAutorepairResponse.fromJSON(data));
+  }
+
+  ScheduleReserve(request: ScheduleReserveRequest): Promise<ScheduleReserveResponse> {
+    const data = ScheduleReserveRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ScheduleReserve", data);
+    return promise.then((data) => ScheduleReserveResponse.fromJSON(data));
   }
 
   ScheduleDeploy(request: ScheduleDeployRequest): Promise<ScheduleDeployResponse> {

@@ -15,6 +15,7 @@
 import { render, screen } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
+import { SettingsProvider } from '@/fleet/context/providers';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSDeviceDetailsPage } from './chromeos_device_details_page';
@@ -25,16 +26,69 @@ jest.mock('./use_chromeos_device_data');
 const mockUseChromeOSDeviceData = useChromeOSDeviceData as jest.Mock;
 
 describe('<ChromeOSDeviceDetailsPage />', () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it('renders loading by default', async () => {
     mockUseChromeOSDeviceData.mockReturnValue({ isLoading: true });
     render(
       <FakeContextProvider>
-        <ShortcutProvider>
-          <ChromeOSDeviceDetailsPage />
-        </ShortcutProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <ChromeOSDeviceDetailsPage />
+          </ShortcutProvider>
+        </SettingsProvider>
       </FakeContextProvider>,
     );
 
     expect(screen.getByTestId('loading-spinner')).toBeVisible();
+  });
+
+  describe('with loaded device', () => {
+    beforeEach(() => {
+      mockUseChromeOSDeviceData.mockReturnValue({
+        isLoading: false,
+        device: { id: 'device-1', dutId: 'device-1-id' },
+      });
+    });
+
+    it('shows reserve button when feature flag is enabled', async () => {
+      localStorage.setItem('featureFlag:fleet-console:reserve-duts', 'on');
+      render(
+        <FakeContextProvider>
+          <SettingsProvider>
+            <ShortcutProvider>
+              <ChromeOSDeviceDetailsPage />
+            </ShortcutProvider>
+          </SettingsProvider>
+        </FakeContextProvider>,
+      );
+
+      const reserveButton = await screen.findByRole('button', {
+        name: /reserve/i,
+      });
+      expect(reserveButton).toBeVisible();
+    });
+
+    it('hides reserve button when feature flag is disabled', async () => {
+      localStorage.setItem('featureFlag:fleet-console:reserve-duts', 'off');
+      render(
+        <FakeContextProvider>
+          <SettingsProvider>
+            <ShortcutProvider>
+              <ChromeOSDeviceDetailsPage />
+            </ShortcutProvider>
+          </SettingsProvider>
+        </FakeContextProvider>,
+      );
+
+      expect(await screen.findByText('Device details:')).toBeVisible();
+
+      const reserveButton = screen.queryByRole('button', {
+        name: /reserve/i,
+      });
+      expect(reserveButton).toBeNull();
+    });
   });
 });

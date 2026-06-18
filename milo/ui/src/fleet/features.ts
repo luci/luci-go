@@ -11,3 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+import { createFeatureFlag } from '@/common/feature_flags';
+
+export const enableReserveDuts = createFeatureFlag({
+  description: 'Enable Reserve DUTs button',
+  namespace: 'fleet-console',
+  name: 'reserve-duts',
+  percentage: 0,
+  trackingBug: '521543887',
+});
