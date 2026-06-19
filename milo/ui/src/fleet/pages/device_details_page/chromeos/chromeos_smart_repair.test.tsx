@@ -21,8 +21,39 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { ChromeOSSmartRepair } from './chromeos_smart_repair';
 
-jest.mock('@/fleet/components/actions/shared/use_admin_task_permission');
-const mockUseAdminTaskPermission = useAdminTaskPermission as jest.Mock;
+const mockFetchPermissions = jest.fn();
+jest.mock(
+  '@/fleet/components/actions/shared/use_admin_task_permission',
+  () => ({
+    useAdminTaskPermission: jest.fn(),
+  }),
+);
+const mockUseAdminTaskPermission = {
+  mockReturnValue: (val: boolean | null) => {
+    (useAdminTaskPermission as jest.Mock).mockReturnValue({
+      hasPermission: val,
+      fetchPermissions: mockFetchPermissions,
+      isError: false,
+      error: null,
+    });
+  },
+  mockReset: () => {
+    (useAdminTaskPermission as jest.Mock).mockReturnValue({
+      hasPermission: true,
+      fetchPermissions: mockFetchPermissions,
+      isError: false,
+      error: null,
+    });
+  },
+  mockError: (err: Error) => {
+    (useAdminTaskPermission as jest.Mock).mockReturnValue({
+      hasPermission: false,
+      fetchPermissions: mockFetchPermissions,
+      isError: true,
+      error: err,
+    });
+  },
+};
 
 const mockGetSmartRepair = jest.fn();
 jest.mock('@/fleet/hooks/prpc_clients', () => ({
@@ -68,6 +99,8 @@ describe('<ChromeOSSmartRepair />', () => {
     mockUseAdminTaskPermission.mockReset();
     mockOnSnapshot.mockReset();
     mockTrackEvent.mockReset();
+    mockFetchPermissions.mockReset();
+    mockFetchPermissions.mockResolvedValue({ hasPermission: true });
 
     mockOnSnapshot.mockImplementation((_ref, callback) => {
       firestoreCallback = callback;
@@ -80,7 +113,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders checking permissions by default', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: null });
+    mockUseAdminTaskPermission.mockReturnValue(null);
     render(
       <QueryClientProvider client={queryClient}>
         <FakeContextProvider>
@@ -93,7 +126,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders admin required banner if unauthorized', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: false });
+    mockUseAdminTaskPermission.mockReturnValue(false);
     render(
       <QueryClientProvider client={queryClient}>
         <FakeContextProvider>
@@ -106,7 +139,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders idle state when no cached or active run exists', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
+    mockUseAdminTaskPermission.mockReturnValue(true);
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -134,7 +167,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders active processing run and handles Firestore updates', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
+    mockUseAdminTaskPermission.mockReturnValue(true);
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -193,7 +226,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders and persists error result on failure, and hides idle banner', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
+    mockUseAdminTaskPermission.mockReturnValue(true);
 
     // Initial check-only call during render
     mockGetSmartRepair.mockResolvedValueOnce({
@@ -286,7 +319,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('clears the error banner when Retrigger Analysis is clicked', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
+    mockUseAdminTaskPermission.mockReturnValue(true);
 
     // Initial check-only call
     mockGetSmartRepair.mockResolvedValueOnce({
@@ -375,7 +408,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders the feedback widget when Smart Repair is completed and tracks thumbs up clicks', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
+    mockUseAdminTaskPermission.mockReturnValue(true);
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -453,7 +486,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('renders the feedback widget and tracks thumbs down clicks', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
+    mockUseAdminTaskPermission.mockReturnValue(true);
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -520,7 +553,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('tracks smart_repair_tab_viewed when rendered with admin permissions', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
+    mockUseAdminTaskPermission.mockReturnValue(true);
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -548,7 +581,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('does not track smart_repair_tab_viewed when rendered without admin permissions', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: false });
+    mockUseAdminTaskPermission.mockReturnValue(false);
     render(
       <QueryClientProvider client={queryClient}>
         <FakeContextProvider>
@@ -562,7 +595,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('tracks run_smart_repair when Retrigger Analysis is clicked', async () => {
-    mockUseAdminTaskPermission.mockReturnValue({ hasPermission: true });
+    mockUseAdminTaskPermission.mockReturnValue(true);
     mockGetSmartRepair.mockResolvedValue({
       results: [
         {
@@ -602,5 +635,211 @@ describe('<ChromeOSSmartRepair />', () => {
     expect(mockTrackEvent).toHaveBeenCalledWith('run_smart_repair', {
       componentName: 'retrigger_analysis_button',
     });
+  });
+
+  it('triggers permission check and executes mutation on success', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: '',
+          alreadyInProgress: false,
+          cachedResult: undefined,
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText(/No active or cached analysis found/i),
+    ).toBeInTheDocument();
+
+    const retriggerButton = screen.getByRole('button', {
+      name: /Retrigger Analysis/i,
+    });
+
+    mockGetSmartRepair.mockClear();
+
+    await act(async () => {
+      fireEvent.click(retriggerButton);
+    });
+
+    expect(mockFetchPermissions).toHaveBeenCalled();
+    expect(mockGetSmartRepair).toHaveBeenCalledWith({
+      deviceIds: ['test-device-1'],
+      forceRetrigger: true,
+      checkOnly: false,
+    });
+  });
+
+  it('shows error banner and does not mutate if permission check fails', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockFetchPermissions.mockResolvedValue({ hasPermission: false });
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: '',
+          alreadyInProgress: false,
+          cachedResult: undefined,
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText(/No active or cached analysis found/i),
+    ).toBeInTheDocument();
+
+    const retriggerButton = screen.getByRole('button', {
+      name: /Retrigger Analysis/i,
+    });
+
+    mockGetSmartRepair.mockClear();
+
+    await act(async () => {
+      fireEvent.click(retriggerButton);
+    });
+
+    expect(mockFetchPermissions).toHaveBeenCalled();
+    expect(mockGetSmartRepair).not.toHaveBeenCalledWith({
+      deviceIds: ['test-device-1'],
+      forceRetrigger: true,
+      checkOnly: false,
+    });
+
+    expect(
+      screen.getByText(
+        /Permission denied: You do not have the required permissions to trigger an analysis./i,
+      ),
+    ).toBeInTheDocument();
+
+    // Verify page didn't unmount
+    expect(screen.getByText('AI Analysis Results')).toBeInTheDocument();
+    expect(retriggerButton).toBeVisible();
+  });
+
+  it('shows error banner if the retrigger mutation fails', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockGetSmartRepair.mockResolvedValueOnce({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: '',
+          alreadyInProgress: false,
+          cachedResult: undefined,
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText(/No active or cached analysis found/i),
+    ).toBeInTheDocument();
+
+    const retriggerButton = screen.getByRole('button', {
+      name: /Retrigger Analysis/i,
+    });
+
+    // Mock mutation call to fail
+    mockGetSmartRepair.mockRejectedValue(new Error('Mutation backend failure'));
+
+    await act(async () => {
+      fireEvent.click(retriggerButton);
+    });
+
+    expect(
+      await screen.findByText(
+        /Failed to trigger analysis: Mutation backend failure/i,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('renders connection error if permission check fails on initial load', async () => {
+    mockUseAdminTaskPermission.mockError(
+      new Error('Auth service connection reset'),
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText(/Failed to verify permissions:/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Auth service connection reset/i),
+    ).toBeInTheDocument();
+  });
+
+  it('shows connection error banner if permission check RPC fails on click', async () => {
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: '',
+          alreadyInProgress: false,
+          cachedResult: undefined,
+        },
+      ],
+    });
+    mockFetchPermissions.mockRejectedValue(
+      new Error('Auth connection timeout'),
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText(/No active or cached analysis found/i),
+    ).toBeInTheDocument();
+
+    const retriggerButton = screen.getByRole('button', {
+      name: /Retrigger Analysis/i,
+    });
+
+    await act(async () => {
+      fireEvent.click(retriggerButton);
+    });
+
+    expect(mockFetchPermissions).toHaveBeenCalled();
+    expect(
+      await screen.findByText(/Auth connection timeout/i),
+    ).toBeInTheDocument();
+
+    // Verify page didn't unmount
+    expect(screen.getByText('AI Analysis Results')).toBeInTheDocument();
+    expect(retriggerButton).toBeVisible();
   });
 });

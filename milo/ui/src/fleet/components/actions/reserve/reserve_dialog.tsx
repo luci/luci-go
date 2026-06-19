@@ -137,7 +137,7 @@ export default function ReserveDialog({
                 }}
                 error={touched && comment.trim() === ''}
                 helperText={
-                  touched && comment.trim() === '' ? 'Comment is required' : ''
+                  touched && comment.trim() === '' ? 'Comment is required' : ' '
                 }
               />
             </Box>

@@ -56,6 +56,10 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
     try {
       const result = await fetchPermissions();
       if (result.hasPermission === true) {
+        setResults(undefined);
+        setComment('');
+        setSessionId(undefined);
+        setLoading(false);
         setOpen(true);
       } else {
         setAdminAccessRequiredDialogOpen(true);
@@ -77,10 +81,6 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
         queryKey: ['swarming-bots-current-tasks'],
       });
     }
-    setResults(undefined);
-    setComment('');
-    setSessionId(undefined);
-    setLoading(false);
   };
 
   const handleConfirm = async () => {

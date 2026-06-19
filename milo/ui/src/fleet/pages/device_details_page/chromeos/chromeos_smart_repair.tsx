@@ -65,7 +65,12 @@ const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export const ChromeOSSmartRepair = () => {
   const { id = '' } = useParams();
-  const { hasPermission: hasAdminTaskPermission } = useAdminTaskPermission();
+  const {
+    hasPermission: hasAdminTaskPermission,
+    fetchPermissions,
+    isError: isPermissionError,
+    error: permissionError,
+  } = useAdminTaskPermission();
   const fleetConsoleClient = useFleetConsoleClient();
   const queryClient = useQueryClient();
   const { trackEvent } = useGoogleAnalytics();
@@ -77,6 +82,8 @@ export const ChromeOSSmartRepair = () => {
   const [sessionError, setSessionError] = useState<{ message: string } | null>(
     null,
   );
+  const [checkingPermission, setCheckingPermission] = useState<boolean>(false);
+  const [triggerError, setTriggerError] = useState<string | null>(null);
 
   useEffect(() => {
     setSessionError(null);
@@ -138,6 +145,7 @@ export const ChromeOSSmartRepair = () => {
     onError: (error: Error) => {
       // eslint-disable-next-line no-console
       console.error('Failed to force retrigger:', error);
+      setTriggerError(`Failed to trigger analysis: ${error.message}`);
     },
   });
 
@@ -218,6 +226,15 @@ export const ChromeOSSmartRepair = () => {
     return () => unsubscribe();
   }, [eventId, id, queryClient, hasCachedResult, alreadyInProgress]);
 
+  if (isPermissionError) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        <strong>Failed to verify permissions:</strong>{' '}
+        {permissionError?.message || 'Unknown network error.'}
+      </Alert>
+    );
+  }
+
   if (hasAdminTaskPermission === false) {
     return (
       <Alert severity="error">
@@ -280,6 +297,31 @@ export const ChromeOSSmartRepair = () => {
   };
 
   const timeInfo = getTriggeredAndExpiredTimes();
+
+  const handleRetrigger = async () => {
+    trackEvent('run_smart_repair', {
+      componentName: 'retrigger_analysis_button',
+    });
+    setSessionError(null);
+    setTriggerError(null);
+    setCheckingPermission(true);
+    try {
+      const resp = await fetchPermissions();
+      if (resp.hasPermission) {
+        retriggerMutation.mutate();
+      } else {
+        setTriggerError(
+          'Permission denied: You do not have the required permissions to trigger an analysis.',
+        );
+      }
+    } catch (e) {
+      setTriggerError(
+        e instanceof Error ? e.message : 'Failed to verify permissions.',
+      );
+    } finally {
+      setCheckingPermission(false);
+    }
+  };
 
   return (
     <Box sx={{ mt: 3 }}>
@@ -399,16 +441,11 @@ export const ChromeOSSmartRepair = () => {
                 <RefreshIcon />
               )
             }
-            onClick={() => {
-              trackEvent('run_smart_repair', {
-                componentName: 'retrigger_analysis_button',
-              });
-              setSessionError(null);
-              retriggerMutation.mutate();
-            }}
+            onClick={handleRetrigger}
             disabled={
               isLoading ||
               retriggerMutation.isPending ||
+              checkingPermission ||
               currentStatus === 'pending' ||
               currentStatus === 'processing'
             }
@@ -442,6 +479,15 @@ export const ChromeOSSmartRepair = () => {
       {realtimeError && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Real-time Update Error: {realtimeError}
+        </Alert>
+      )}
+      {triggerError && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setTriggerError(null)}
+        >
+          {triggerError}
         </Alert>
       )}
 
