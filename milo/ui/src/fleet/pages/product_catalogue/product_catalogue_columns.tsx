@@ -14,6 +14,8 @@
 
 import { MRT_ColumnDef } from 'material-react-table';
 
+import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
+import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] &
@@ -45,7 +47,20 @@ export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] &
   {
     accessorKey: 'r11n',
     header: 'R11N',
-    Cell: ({ cell }) => (cell.getValue<string[]>() ?? []).join(', '),
+    Cell: renderCellWithLink<ProductCatalogEntry>({
+      linkGenerator: (value) => {
+        const trimmed = (value ?? '').trim();
+        if (!trimmed) {
+          return '';
+        }
+        return `http://go/ngp-npi/r11n/${trimmed.toLowerCase()}`;
+      },
+    }),
+    sortingFn: (rowA, rowB) => {
+      const valA = labelValuesToString(rowA.original.r11n ?? []);
+      const valB = labelValuesToString(rowB.original.r11n ?? []);
+      return valA.localeCompare(valB);
+    },
   },
   {
     accessorKey: 'numberOfDevicesPerRack',

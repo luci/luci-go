@@ -19,19 +19,27 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 jest.mock('@/generic_libs/hooks/synced_search_params');
 export const fakeUseSyncedSearchParams = () => {
   let searchParams = new URLSearchParams();
+  const listeners = new Set<(sp: URLSearchParams) => void>();
 
   const mockUseSyncedSearchParams = useSyncedSearchParams as jest.Mock;
   mockUseSyncedSearchParams.mockImplementation(() => {
     const [sp, ssp] = React.useState(searchParams);
+
+    React.useEffect(() => {
+      listeners.add(ssp);
+      return () => {
+        listeners.delete(ssp);
+      };
+    }, [ssp]);
+
     const set = React.useCallback(
       (
         updater: URLSearchParams | ((p: URLSearchParams) => URLSearchParams),
       ) => {
-        ssp((prev) => {
-          const newSp = updater instanceof Function ? updater(prev) : updater;
-          searchParams = newSp;
-          return newSp;
-        });
+        const nextSp =
+          updater instanceof Function ? updater(searchParams) : updater;
+        searchParams = nextSp;
+        listeners.forEach((l) => l(nextSp));
       },
       [],
     );

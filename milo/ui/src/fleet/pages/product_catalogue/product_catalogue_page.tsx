@@ -182,6 +182,7 @@ export const ProductCataloguePage = () => {
     enablePagination: true,
     manualPagination: false,
     manualFiltering: false,
+    manualSorting: false,
     error: query.error
       ? getErrorMessage(query.error, 'get product catalog')
       : undefined,
