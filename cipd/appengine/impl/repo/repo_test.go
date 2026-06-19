@@ -3761,8 +3761,8 @@ func TestParseDownloadPath(t *testing.T) {
 }
 
 type MockVSA struct {
-	resp   *vsapb.VerifySoftwareArtifactResponse
-	err    error
+	resp *vsapb.VerifySoftwareArtifactResponse
+	err  error
 }
 
 func (m *MockVSA) Register(f *flag.FlagSet)       {}
@@ -3813,63 +3813,6 @@ func TestVSA(t *testing.T) {
 				SignedUrl: fmt.Sprintf("http://example.com/%s?d=%s", r.Object.HexDigest, r.DownloadFilename),
 			}, nil
 		}
-
-		t.Run("AttachMetadata", func(t *ftt.Test) {
-			t.Run("Not Ready", func(t *ftt.Test) {
-				mvsa.err = fmt.Errorf("not possible")
-
-				_, err := impl.AttachMetadata(ctx, &repopb.AttachMetadataRequest{
-					Package:  "a/pkg/somethingelse",
-					Instance: inst.Proto().Instance,
-					Metadata: []*repopb.InstanceMetadata{
-						{Key: "policy-attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
-					},
-				})
-				assert.ErrIsLike(t, err, "no such package")
-			})
-
-			t.Run("OK", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(ctx, &repopb.AttachMetadataRequest{
-					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
-					Metadata: []*repopb.InstanceMetadata{
-						{Key: "policy-attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
-					},
-				})
-				assert.NoErr(t, err)
-
-				m, err := model.ListMetadata(ctx, inst)
-				assert.NoErr(t, err)
-				assert.Loosely(t, m, should.HaveLength(2))
-				assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
-				assert.Loosely(t, m[0].Value, should.Match([]uint8("vsa content")))
-				assert.Loosely(t, m[1].Key, should.Equal("policy-attestations"))
-				assert.Loosely(t, m[1].Value, should.Match([]uint8("attestation bundle")))
-				assert.Loosely(t, m[1].ContentType, should.Equal("application/vnd.in-toto.bundle"))
-
-			})
-
-			t.Run("Failed", func(t *ftt.Test) {
-				mvsa.err = fmt.Errorf("not possible")
-
-				_, err := impl.AttachMetadata(ctx, &repopb.AttachMetadataRequest{
-					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
-					Metadata: []*repopb.InstanceMetadata{
-						{Key: "policy-attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
-					},
-				})
-				assert.NoErr(t, err)
-
-				m, err := model.ListMetadata(ctx, inst)
-				assert.NoErr(t, err)
-				assert.Loosely(t, m, should.HaveLength(1))
-				assert.Loosely(t, m[0].Key, should.Equal("policy-attestations"))
-				assert.Loosely(t, m[0].Value, should.Match([]uint8("attestation bundle")))
-				assert.Loosely(t, m[0].ContentType, should.Equal("application/vnd.in-toto.bundle"))
-			})
-		})
-
 
 		t.Run("RegisterInstance", func(t *ftt.Test) {
 			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
@@ -3925,17 +3868,13 @@ func TestVSA(t *testing.T) {
 					VerificationSummary: "should be ignored",
 				}
 
-				resp, err := impl.RegisterInstance(ctx, &repopb.Instance{
+				_, err := impl.RegisterInstance(ctx, &repopb.Instance{
 					Package:      "a/pkg/new",
 					Instance:     inst.Proto().Instance,
 					Attestations: "bad bundle",
 				})
-				assert.NoErr(t, err)
-				assert.Loosely(t, resp.Status, should.Equal(repopb.RegistrationStatus_REGISTERED))
-
-				m, err := model.ListMetadata(ctx, (&model.Instance{}).FromProto(ctx, resp.Instance))
-				assert.NoErr(t, err)
-				assert.Loosely(t, m, should.HaveLength(0))
+				assert.ErrIsLike(t, err, "attestations verification rejected: rejected")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			})
 
 			t.Run("API error", func(t *ftt.Test) {

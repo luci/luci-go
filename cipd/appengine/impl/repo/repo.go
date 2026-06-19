@@ -671,12 +671,9 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 		}
 	}
 
-	// TODO(b/289373164): maybe enforce this when we move to M4 if we can get the
-	// attestation from spike.
 	if !vsaResp.Allowed {
 		logging.Warningf(ctx, "Verify attestations failed: %s: %s", r, vsaResp.RejectionMessage)
-		// Ignore rejection for monitor mode
-		// return nil, status.Errorf(codes.PermissionDenied, "attestations verification rejected: %s", vsaResp.RejectionMessage)
+		return nil, status.Errorf(codes.PermissionDenied, "attestations verification rejected: %s", vsaResp.RejectionMessage)
 	}
 
 	// Is such instance already registered?
@@ -1234,9 +1231,6 @@ func (impl *repoImpl) DetachTags(ctx context.Context, r *repopb.DetachTagsReques
 // Instance metadata support.
 
 const (
-	// vsaAttestationsKey is the key for metadata entries that contains
-	// attestations.
-	vsaAttestationsKey = "policy-attestations"
 	// vsaAttestationsContentType is the content type for attestation bundle.
 	vsaAttestationsContentType = "application/vnd.in-toto.bundle"
 	// slsaVSAKey is the key for metadata entries that contains SLSA Verification
@@ -1289,21 +1283,6 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *repopb.AttachMetada
 	if err := model.CheckInstanceReady(ctx, inst); err != nil {
 		return nil, err
 	}
-
-	// Call VerifySoftwareArtifact if an attestation bundle is attached to the package.
-	var extraMetadata []*repopb.InstanceMetadata
-	for _, m := range r.Metadata {
-		if m.Key == vsaAttestationsKey {
-			if resp, err := impl.vsa.VerifySoftwareArtifact(ctx, inst, string(m.Value)); err == nil && resp.VerificationSummary != "" {
-				extraMetadata = append(extraMetadata, &repopb.InstanceMetadata{
-					Key:         slsaVSAKey,
-					Value:       []byte(resp.VerificationSummary),
-					ContentType: vsaAttestationsContentType,
-				})
-			}
-		}
-	}
-	r.Metadata = append(r.Metadata, extraMetadata...)
 
 	// Actually attach the metadata. This will also transactionally check the
 	// instance exists and it has passed the processing successfully.

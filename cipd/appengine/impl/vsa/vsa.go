@@ -175,7 +175,7 @@ func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instanc
 		},
 		Context: &api.VerificationContext{
 			EnforcementPointName: "cipd",
-			VerificationPurpose:  api.VerificationContext_VERIFY_FOR_LOGGING,
+			VerificationPurpose:  api.VerificationContext_VERIFY_FOR_ENFORCEMENT,
 			OccurrenceStage:      api.VerificationContext_AS_VERIFIED,
 		},
 	}
@@ -185,13 +185,6 @@ func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instanc
 		logEntry.ErrorMessage = err.Error()
 		return nil, err
 	}
-
-	// Determine whether the package is allowed based on the existence of VSA
-	// since M2 seems like allowing packages unconditionally.
-	// Workaround for verifying packages can be potentially rejected if we switch
-	// to M4. Remove this when we are actually at M4.
-	resp.Allowed = (resp.VerificationSummary != "")
-
 	logEntry.Allowed = resp.Allowed
 	logEntry.RejectionMessage = resp.RejectionMessage
 

@@ -34,12 +34,24 @@ message VerificationContext {
   // response. They do NOT change response, i.e. non-compliant artifacts will
   // always get "disallowed" decision.
   enum VerificationPurpose {
+    option allow_alias = true;
     reserved 1, 2, 4;
 
     // The default value.
     // An alias of `VERIFY_FOR_ENFORCEMENT`, for backward compatibility of
     // client who does not set the field.
     DEFAULT = 0;
+
+    // The verification is requested by an enforced client.
+    // * This is production traffic, and may be used for future policy testing
+    // and automation;
+    // * Allowed verification will be reported to SCILo; Rejected verification
+    // will NOT be reported to SCILo, since the artifact will not be allowed to
+    // propagate in the software supply chain.
+    //
+    // NOTE: This implies fail-closed -- when unable to get a response from the
+    // BCID backend, consider it as a rejection.
+    VERIFY_FOR_ENFORCEMENT = 0;
 
     // The verification is requested by an unenforced client.
     // * This is production traffic, and may be used for future policy testing
