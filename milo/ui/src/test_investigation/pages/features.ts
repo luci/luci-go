@@ -36,7 +36,7 @@ export const USE_ROOT_INVOCATION_FLAG = createFeatureFlag({
   namespace: 'test_investigation',
   name: 'use_root_invocation',
   description: 'Use RootInvocation to fetch invocation details.',
-  percentage: 0,
+  percentage: 100,
   trackingBug: 'None',
 });
 
