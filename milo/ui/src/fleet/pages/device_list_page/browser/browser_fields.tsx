@@ -165,13 +165,15 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
 
       if (stateValue === '') return <></>;
 
-      return renderChipCell<BrowserDevice>(
-        getSwarmingStateDocLinkForLabel,
-        getStatusColor,
-        undefined,
-        true,
-        stateValue.toUpperCase() as StateUnion,
-      )(params);
+      return renderChipCell<BrowserDevice>({
+        getValueOrUrl: getSwarmingStateDocLinkForLabel,
+        getColor: getStatusColor,
+        overrideValue: stateValue.toUpperCase() as StateUnion,
+        getTrackingEvent: (value) => ({
+          eventName: 'state_doc_link_clicked',
+          payload: { componentName: 'browser_dut_state', activeTab: value },
+        }),
+      })(params);
     },
   },
   [`${BROWSER_SWARMING_SOURCE}.device`]: {
@@ -247,13 +249,18 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       return (
         <EllipsisTooltip tooltip={stateValues.join(', ')}>
           {stateValues.map((val, index) => {
-            const ChipComponent = renderChipCell<BrowserDevice>(
-              getBrowserSwarmingStateDocLinkForLabel,
-              getBrowserSwarmingStateColor,
-              undefined,
-              true,
-              val as StateUnion,
-            );
+            const ChipComponent = renderChipCell<BrowserDevice>({
+              getValueOrUrl: getBrowserSwarmingStateDocLinkForLabel,
+              getColor: getBrowserSwarmingStateColor,
+              overrideValue: val as StateUnion,
+              getTrackingEvent: (value) => ({
+                eventName: 'state_doc_link_clicked',
+                payload: {
+                  componentName: 'browser_device_state',
+                  activeTab: value,
+                },
+              }),
+            });
             return (
               <span key={val + String(index)} style={{ marginRight: '4px' }}>
                 {ChipComponent(params)}

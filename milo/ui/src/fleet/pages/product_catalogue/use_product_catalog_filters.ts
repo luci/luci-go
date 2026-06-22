@@ -20,6 +20,7 @@ import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/stri
 import { useFilters } from '@/fleet/components/filters/use_filters';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import {
   GetProductCatalogFilterValuesResponse,
   Int32Range,
@@ -67,6 +68,13 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
       >
     | undefined
   >(undefined);
+  const { trackEvent } = useGoogleAnalytics();
+
+  const onFilterChange = useCallback(() => {
+    trackEvent('product_catalogue_search', {
+      componentName: 'product_catalogue_filter',
+    });
+  }, [trackEvent]);
 
   // We use a ref to break the circular dependency between useFilters and useQuery.
   // useFilters needs to know if we are loading options to decide if missing keys are errors.
@@ -77,6 +85,7 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
 
   const { filterValues, aip160, warnings } = useFilters(filterOptions, {
     areFilterValuesLoading: queryIsLoadingRef.current,
+    onFilterChange,
   });
 
   const client = useFleetConsoleClient();

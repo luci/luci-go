@@ -132,14 +132,16 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
 
       if (stateValue === '') return <></>;
 
-      return renderChipCell<AndroidDevice>(
-        (_1, _2) =>
+      return renderChipCell<AndroidDevice>({
+        getValueOrUrl: (_1, _2) =>
           'https://g3doc.corp.google.com/company/teams/chrome/ops/fleet/flops/android/labtechs.md?cl=head#device-terminology',
-        getAndroidStatusColor,
-        undefined,
-        true,
-        stateValue.toUpperCase() as StateUnion,
-      )({
+        getColor: getAndroidStatusColor,
+        overrideValue: stateValue.toUpperCase() as StateUnion,
+        getTrackingEvent: (value) => ({
+          eventName: 'state_doc_link_clicked',
+          payload: { componentName: 'android_dut_state', activeTab: value },
+        }),
+      })({
         cell: { getValue: () => value },
         row: { original: device },
       } as FC_CellProps<AndroidDevice>);

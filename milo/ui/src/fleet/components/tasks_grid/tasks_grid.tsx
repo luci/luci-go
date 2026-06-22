@@ -109,6 +109,7 @@ const TaskCell = ({
   const taskId = row.original.id as string;
   const task = meta.taskMap.get(taskId);
   const taskName = cell.getValue<string>();
+  const { trackEvent } = useGoogleAnalytics();
 
   let url: string | undefined;
   if (meta.miloHost) {
@@ -124,6 +125,13 @@ const TaskCell = ({
         href={url ?? getSwarmingTaskURL(meta.swarmingHost, taskId)}
         target="_blank"
         rel="noreferrer"
+        onClick={() => {
+          if (url) {
+            trackEvent('task_milo_link_clicked', {
+              componentName: 'task_milo_link',
+            });
+          }
+        }}
       >
         {taskName}
       </a>

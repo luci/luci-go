@@ -65,19 +65,22 @@ export const useFilters = <
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const builders = useMemo(() => rawBuilders, [JSON.stringify(rawBuilders)]);
 
+  const filtersRef = useRef(filtersAIP160);
+  filtersRef.current = filtersAIP160;
+
   const updateUrl = useCallback(
     function onFilterUpdate(
       filterValues: Record<string, FilterCategory>,
       replaceHistory: boolean = false,
     ): void {
+      const filter = Object.values(filterValues)
+        .map((f) => f.toAIP160())
+        .filter((f) => f !== '')
+        .join(' AND ');
+
       setSearchParams(
         (prev: URLSearchParams) => {
-          const filter = Object.values(filterValues)
-            .map((f) => f.toAIP160())
-            .filter((f) => f !== '')
-            .join(' AND ');
-
-          if (filter === prev.get(FILTERS_PARAM_KEY)) {
+          if (filter === (prev.get(FILTERS_PARAM_KEY) ?? '')) {
             return prev;
           }
 
@@ -86,7 +89,10 @@ export const useFilters = <
         },
         { replace: replaceHistory },
       );
-      onFilterChangeRef.current();
+
+      if (filter !== (filtersRef.current ?? '')) {
+        onFilterChangeRef.current();
+      }
     },
     [setSearchParams],
   );

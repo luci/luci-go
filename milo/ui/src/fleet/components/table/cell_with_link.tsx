@@ -19,6 +19,10 @@ import { Link } from 'react-router';
 import { sortLabelValues } from '@/fleet/components/device_table/dimensions';
 import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
 import { FC_CellProps } from '@/fleet/types/table';
+import {
+  useGoogleAnalytics,
+  EventPayload,
+} from '@/generic_libs/components/google_analytics';
 
 import { CellWithTooltip } from './cell_with_tooltip';
 
@@ -38,51 +42,82 @@ export interface RenderCellWithLinkOptions<R extends MRT_RowData> {
   linkGenerator: (value: string, rowOrProps: R) => string;
   newTab?: boolean;
   valueGetter?: (rowOrProps: R) => string;
+  getTrackingEvent?: (
+    value: string,
+    url: string,
+    rowOrProps: R,
+  ) => { eventName: string; payload: EventPayload } | null;
 }
 
-export function renderCellWithLink<R extends MRT_RowData>({
-  linkGenerator,
-  newTab = true,
-  valueGetter,
-}: RenderCellWithLinkOptions<R>): (
-  props: FC_CellProps<R>,
-) => React.ReactElement {
-  const CellWithLink = (props: FC_CellProps<R>) => {
-    const paramsOrRow = props.row.original;
-    const rawValue = props.cell.getValue();
-    const values = valueGetter
-      ? [valueGetter(paramsOrRow)]
-      : Array.isArray(rawValue)
-        ? (rawValue as readonly string[])
-        : [String(rawValue ?? '')];
+interface LinkCellProps<R extends MRT_RowData>
+  extends RenderCellWithLinkOptions<R> {
+  cellProps: FC_CellProps<R>;
+}
 
-    const sortedValues = sortLabelValues(values);
-    const displayString = sortedValues.join(DIMENSION_SEPARATOR);
+// eslint-disable-next-line react-refresh/only-export-components
+const LinkCell = <R extends MRT_RowData>(props: LinkCellProps<R>) => {
+  const {
+    linkGenerator,
+    newTab = true,
+    valueGetter,
+    getTrackingEvent,
+    cellProps,
+  } = props;
 
-    return (
-      <CellWithTooltip
-        column={props.column}
-        value={sortedValues.map((item, index) => {
-          const url = linkGenerator(item, paramsOrRow);
-          return (
-            <React.Fragment key={`${item}-${index}`}>
-              {index > 0 && DIMENSION_SEPARATOR}
-              <Link
-                to={url}
-                state={{
-                  navigatedFromLink: getPathnameWithParams(),
-                }}
-                target={newTab ? '_blank' : '_self'}
-              >
-                {item}
-              </Link>
-            </React.Fragment>
-          );
-        })}
-        tooltipTitle={displayString}
-      />
-    );
-  };
-  CellWithLink.displayName = 'CellWithLink';
-  return CellWithLink;
+  const paramsOrRow = cellProps.row.original;
+  const rawValue = cellProps.cell.getValue();
+  const values = valueGetter
+    ? [valueGetter(paramsOrRow)]
+    : Array.isArray(rawValue)
+      ? (rawValue as readonly string[])
+      : [String(rawValue ?? '')];
+
+  const sortedValues = sortLabelValues(values);
+  const displayString = sortedValues.join(DIMENSION_SEPARATOR);
+  const { trackEvent } = useGoogleAnalytics();
+
+  return (
+    <CellWithTooltip
+      column={cellProps.column}
+      value={sortedValues.map((item, index) => {
+        const url = linkGenerator(item, paramsOrRow);
+        return (
+          <React.Fragment key={`${item}-${index}`}>
+            {index > 0 && DIMENSION_SEPARATOR}
+            <Link
+              to={url}
+              state={{
+                navigatedFromLink: getPathnameWithParams(),
+              }}
+              target={newTab ? '_blank' : '_self'}
+              onClick={
+                getTrackingEvent
+                  ? () => {
+                      const tracking = getTrackingEvent(item, url, paramsOrRow);
+                      if (tracking) {
+                        trackEvent(tracking.eventName, tracking.payload);
+                      }
+                    }
+                  : undefined
+              }
+            >
+              {item}
+            </Link>
+          </React.Fragment>
+        );
+      })}
+      tooltipTitle={displayString}
+    />
+  );
+};
+LinkCell.displayName = 'LinkCell';
+
+export function renderCellWithLink<R extends MRT_RowData>(
+  options: RenderCellWithLinkOptions<R>,
+): (props: FC_CellProps<R>) => React.ReactElement {
+  const Component = (props: FC_CellProps<R>) => (
+    <LinkCell<R> {...options} cellProps={props} />
+  );
+  Component.displayName = 'renderCellWithLink';
+  return Component;
 }

@@ -57,7 +57,38 @@ const ExploreInArsenalLink = ({
       rel="noopener noreferrer"
       onClick={() =>
         trackEvent('explore_in_arsenal_clicked', {
-          total_devices: totalDevices,
+          totalDevices: totalDevices,
+        })
+      }
+    >
+      <OpenInNewIcon />
+    </Link>
+  );
+};
+
+interface ExploreDevicesLinkProps {
+  to: string;
+  totalDevices: number;
+}
+
+const ExploreDevicesLink = ({ to, totalDevices }: ExploreDevicesLinkProps) => {
+  const { trackEvent } = useGoogleAnalytics();
+
+  return (
+    <Link
+      aria-label="Explore devices"
+      css={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100%',
+      }}
+      to={to}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() =>
+        trackEvent('explore_devices_clicked', {
+          totalDevices: totalDevices,
         })
       }
     >
@@ -357,20 +388,10 @@ export const COLUMNS = {
       const to = `${generateDeviceListURL(ANDROID_PLATFORM)}${getFilterQueryString(filters, params)}`;
 
       return (
-        <Link
-          aria-label="Explore devices"
-          css={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100%',
-          }}
+        <ExploreDevicesLink
           to={to}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <OpenInNewIcon />
-        </Link>
+          totalDevices={x.row.original.total_devices}
+        />
       );
     },
   },

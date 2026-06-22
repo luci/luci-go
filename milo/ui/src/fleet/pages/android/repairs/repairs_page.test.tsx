@@ -114,7 +114,20 @@ describe('RepairListPage', () => {
     fireEvent.click(link);
 
     expect(mockTrackEvent).toHaveBeenCalledWith('explore_in_arsenal_clicked', {
-      total_devices: 2,
+      totalDevices: 2,
+    });
+  });
+
+  it('tracks Explore devices clicks in google analytics', async () => {
+    const labRow = (await screen.findByText('lab1')).closest('tr')!;
+    const link = within(labRow).getByRole('link', {
+      name: /explore devices/i,
+    });
+
+    fireEvent.click(link);
+
+    expect(mockTrackEvent).toHaveBeenCalledWith('explore_devices_clicked', {
+      totalDevices: 2,
     });
   });
 });

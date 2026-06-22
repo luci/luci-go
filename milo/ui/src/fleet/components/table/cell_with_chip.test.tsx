@@ -33,12 +33,10 @@ describe('renderChipCell', () => {
 
   test('should render properly using MRT_Cell (Material React Table)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const CellComponent = renderChipCell<any>(
-      mockGetValueOrUrl,
-      mockGetColor,
-      undefined,
-      true,
-    );
+    const CellComponent = renderChipCell<any>({
+      getValueOrUrl: mockGetValueOrUrl,
+      getColor: mockGetColor,
+    });
 
     const mrtProps = {
       cell: {
@@ -65,13 +63,11 @@ describe('renderChipCell', () => {
 
   test('should prioritize overrideValue over cell or grid values', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const CellComponent = renderChipCell<any>(
-      mockGetValueOrUrl,
-      mockGetColor,
-      undefined,
-      true,
-      'needs_repair' as StateUnion,
-    );
+    const CellComponent = renderChipCell<any>({
+      getValueOrUrl: mockGetValueOrUrl,
+      getColor: mockGetColor,
+      overrideValue: 'needs_repair' as StateUnion,
+    });
 
     const mrtProps = {
       cell: {

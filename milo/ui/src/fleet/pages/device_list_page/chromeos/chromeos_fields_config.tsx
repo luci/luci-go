@@ -88,6 +88,15 @@ const renderCurrentTaskCell = renderCellWithLink<ChromeOSDevice>({
     }
     return task.taskName ? `${task.taskName} (${task.taskId})` : task.taskId;
   },
+  getTrackingEvent: (_value, url) => {
+    if (url.includes('ci.chromium.org') || url.includes('luci-milo')) {
+      return {
+        eventName: 'task_milo_link_clicked',
+        payload: { componentName: 'current_task_link' },
+      };
+    }
+    return null;
+  },
 });
 
 /**
@@ -221,13 +230,15 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
 
       if (stateValue === '') return <></>;
 
-      return renderChipCell<ChromeOSDevice>(
-        getSwarmingStateDocLinkForLabel,
-        getStatusColor,
-        undefined,
-        true,
-        stateValue.toUpperCase() as StateUnion,
-      )(params);
+      return renderChipCell<ChromeOSDevice>({
+        getValueOrUrl: getSwarmingStateDocLinkForLabel,
+        getColor: getStatusColor,
+        overrideValue: stateValue.toUpperCase() as StateUnion,
+        getTrackingEvent: (value) => ({
+          eventName: 'state_doc_link_clicked',
+          payload: { componentName: 'dut_state', activeTab: value },
+        }),
+      })(params);
     },
   },
   'label-servo_state': {
@@ -235,6 +246,10 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
     header: 'Servo State',
     renderCell: renderCellWithLink<ChromeOSDevice>({
       linkGenerator: getSwarmingStateDocLinkForLabel,
+      getTrackingEvent: (value) => ({
+        eventName: 'state_doc_link_clicked',
+        payload: { componentName: 'servo_state', activeTab: value },
+      }),
     }),
   },
   bluetooth_state: {
@@ -242,6 +257,10 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
     header: 'Bluetooth State',
     renderCell: renderCellWithLink<ChromeOSDevice>({
       linkGenerator: getSwarmingStateDocLinkForLabel,
+      getTrackingEvent: (value) => ({
+        eventName: 'state_doc_link_clicked',
+        payload: { componentName: 'bluetooth_state', activeTab: value },
+      }),
     }),
   },
   'label-pool': {
@@ -291,6 +310,10 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
     type: 'label',
     renderCell: renderCellWithLink<ChromeOSDevice>({
       linkGenerator: (value) => getSwarmingStateDocLinkForLabel(`${value}-2`),
+      getTrackingEvent: (value) => ({
+        eventName: 'state_doc_link_clicked',
+        payload: { componentName: 'servo_usb_state', activeTab: value },
+      }),
     }),
   },
   bot_id: {

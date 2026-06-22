@@ -86,7 +86,7 @@ export interface EventPayload {
   /**
    * The total number of devices present in the repair group.
    */
-  total_devices?: number;
+  totalDevices?: number;
 }
 
 /**

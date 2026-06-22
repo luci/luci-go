@@ -51,7 +51,14 @@ const MOCK_TASKS: TaskResultResponse[] = [
     state: TaskState.COMPLETED,
     startedTs: '2026-04-20T14:00:00Z',
     duration: 60,
-    tags: ['build:123', 'dut-name:dut-1', 'buildbucket_build_id:123'],
+    tags: [
+      'build:123',
+      'dut-name:dut-1',
+      'buildbucket_build_id:123',
+      'builder:my-builder',
+      'project:my-project',
+      'bucket:my-bucket',
+    ],
   }),
   TaskResultResponse.fromPartial({
     taskId: 'task-2',
@@ -194,6 +201,35 @@ describe('TasksGrid', () => {
     await act(() => jest.runAllTimersAsync());
 
     expect(await screen.findByText(/"key1": "value1"/)).toBeInTheDocument();
+  });
+
+  it('should track Milo task link clicks in Google Analytics', async () => {
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestWrapper tasks={MOCK_TASKS} />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    // Task 1 resolves to a Milo URL because of 'buildbucket_build_id:123' tag
+    const link1 = screen.getByRole('link', { name: 'Task 1' });
+    fireEvent.click(link1);
+    expect(mockTrackEvent).toHaveBeenCalledWith('task_milo_link_clicked', {
+      componentName: 'task_milo_link',
+    });
+
+    // Reset calls for the next assertion
+    mockTrackEvent.mockClear();
+
+    // Task 2 resolves to a Swarming URL (no buildbucket tag)
+    const link2 = screen.getByRole('link', { name: 'Task 2' });
+    fireEvent.click(link2);
+    expect(mockTrackEvent).not.toHaveBeenCalled();
   });
 
   describe('TasksDetailPanel', () => {

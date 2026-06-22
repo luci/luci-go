@@ -20,6 +20,10 @@ import { useSettings } from '@/fleet/hooks/use_settings';
 import { androidState } from '@/fleet/pages/device_list_page/android/android_state';
 import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
+import {
+  useGoogleAnalytics,
+  EventPayload,
+} from '@/generic_libs/components/google_analytics';
 
 import { swarmingState } from '../../pages/device_list_page/browser/swarming_state';
 import { dutState } from '../../pages/device_list_page/chromeos/dut_state';
@@ -33,8 +37,9 @@ function ChipComponent(props: {
   getColor: (value: StateUnion) => string;
   label?: string;
   openInNewTab?: boolean;
+  onClick?: () => void;
 }) {
-  const { value, url, getColor, label, openInNewTab } = props;
+  const { value, url, getColor, label, openInNewTab, onClick } = props;
 
   const [settings, _] = useSettings();
 
@@ -58,31 +63,73 @@ function ChipComponent(props: {
       rel={openInNewTab ? 'noopener noreferrer' : undefined}
       component="a"
       clickable
+      onClick={onClick}
     />
   );
 }
 
-export function renderChipCell<R extends MRT_RowData>(
-  getValueOrUrl: (value: string, rowOrProps: R) => string,
-  getColor: (value: StateUnion) => string,
-  label?: string,
-  openInNewTab: boolean = true,
-  overrideValue?: StateUnion,
-): (props: FC_CellProps<R>) => React.ReactElement {
-  const CellWithChip = (props: FC_CellProps<R>) => {
-    const valueStr = String(overrideValue ?? props.cell.getValue() ?? '');
-    const paramsOrRow = props.row.original;
-    const url = getValueOrUrl(valueStr, paramsOrRow);
+export interface RenderChipCellOptions<R extends MRT_RowData> {
+  getValueOrUrl: (value: string, rowOrProps: R) => string;
+  getColor: (value: StateUnion) => string;
+  label?: string;
+  openInNewTab?: boolean;
+  overrideValue?: StateUnion;
+  getTrackingEvent?: (
+    value: string,
+    url: string,
+    rowOrProps: R,
+  ) => { eventName: string; payload: EventPayload } | null;
+}
 
-    return (
-      <ChipComponent
-        value={label ?? valueStr}
-        url={url}
-        getColor={() => getColor(valueStr as Exclude<StateUnion, ''>)}
-        openInNewTab={openInNewTab}
-      />
-    );
-  };
-  CellWithChip.displayName = 'CellWithChip';
-  return CellWithChip;
+interface ChipCellProps<R extends MRT_RowData>
+  extends RenderChipCellOptions<R> {
+  cellProps: FC_CellProps<R>;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+const ChipCell = <R extends MRT_RowData>(props: ChipCellProps<R>) => {
+  const {
+    getValueOrUrl,
+    getColor,
+    label,
+    openInNewTab = true,
+    overrideValue,
+    getTrackingEvent,
+    cellProps,
+  } = props;
+
+  const valueStr = String(overrideValue ?? cellProps.cell.getValue() ?? '');
+  const paramsOrRow = cellProps.row.original;
+  const url = getValueOrUrl(valueStr, paramsOrRow);
+  const { trackEvent } = useGoogleAnalytics();
+
+  return (
+    <ChipComponent
+      value={label ?? valueStr}
+      url={url}
+      getColor={() => getColor(valueStr as Exclude<StateUnion, ''>)}
+      openInNewTab={openInNewTab}
+      onClick={
+        getTrackingEvent
+          ? () => {
+              const tracking = getTrackingEvent(valueStr, url, paramsOrRow);
+              if (tracking) {
+                trackEvent(tracking.eventName, tracking.payload);
+              }
+            }
+          : undefined
+      }
+    />
+  );
+};
+ChipCell.displayName = 'ChipCell';
+
+export function renderChipCell<R extends MRT_RowData>(
+  options: RenderChipCellOptions<R>,
+): (props: FC_CellProps<R>) => React.ReactElement {
+  const Component = (props: FC_CellProps<R>) => (
+    <ChipCell<R> {...options} cellProps={props} />
+  );
+  Component.displayName = 'renderChipCell';
+  return Component;
 }

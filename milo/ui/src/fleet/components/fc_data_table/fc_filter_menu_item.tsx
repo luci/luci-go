@@ -19,6 +19,7 @@ import { forwardRef, useRef, useState } from 'react';
 
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { OptionsDropdown } from '@/fleet/components/options_dropdown';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 export interface FCFilterMenuItemProps {
   filter: FilterCategory;
@@ -34,6 +35,7 @@ export const FCFilterMenuItem = forwardRef<
   const open = Boolean(anchorEl);
   const innerRef = useRef<HTMLLIElement>(null);
   const handleForkRef = useForkRef(ref, innerRef);
+  const { trackEvent } = useGoogleAnalytics();
 
   const handleOpen = (event: React.MouseEvent<HTMLLIElement>) => {
     setAnchorEl(event.currentTarget);
@@ -42,6 +44,13 @@ export const FCFilterMenuItem = forwardRef<
   const handleClose = () => {
     setAnchorEl(null);
     closeMenu();
+  };
+
+  const handleApply = () => {
+    trackEvent('column_filter_applied', {
+      componentName: filter.label,
+    });
+    handleClose();
   };
 
   return (
@@ -60,10 +69,10 @@ export const FCFilterMenuItem = forwardRef<
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           enableSearchInput={enableSearchInput}
           footerButtons={[]}
-          onApply={handleClose}
+          onApply={handleApply}
           closeOnScroll={true}
           renderChild={(searchQuery, onNavigateUp) =>
-            filter.render(searchQuery, onNavigateUp, handleClose, handleClose)
+            filter.render(searchQuery, onNavigateUp, handleApply, handleClose)
           }
         />
       )}
