@@ -127,6 +127,9 @@ func (e *Environment) WithWheels(wheels generators.Generator) generators.Generat
 		cipdPath = path
 	}
 	env.Set(common.EnvVpythonCipdPath, cipdPath)
+	if reportURL := os.Getenv(common.EnvVpythonReportMissingUrl); reportURL != "" {
+		env.Set(common.EnvVpythonReportMissingUrl, reportURL)
+	}
 	return &workflow.Generator{
 		Name: "python_venv",
 		Args: []string{
@@ -244,6 +247,9 @@ func (e *Environment) WithUV(uv generators.Generator, spec *standard.ProjectSpec
 		arURL = common.DefaultARURL
 	}
 	env.Set(common.EnvVpythonArUrl, arURL)
+	if reportURL := os.Getenv(common.EnvVpythonReportMissingUrl); reportURL != "" {
+		env.Set(common.EnvVpythonReportMissingUrl, reportURL)
+	}
 
 	reqGen := &SpecRequirementsGenerator{Spec: spec}
 
