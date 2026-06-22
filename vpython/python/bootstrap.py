@@ -15,6 +15,7 @@
 import glob
 import json
 import os
+import re
 try:
     from urllib.request import Request, urlopen
 except ImportError:
