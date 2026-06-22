@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
+import { useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
@@ -23,6 +24,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 
 import { ResourceRequestTable } from './resource_requests_table';
 import { RriSummaryHeader } from './rri_summary_header';
+import { useRriColumns } from './use_rri_columns';
 import { useRriFilters } from './use_rri_filters';
 import { useRriUrlMigration } from './use_rri_url_migration';
 
@@ -31,11 +33,22 @@ const Container = styled.div`
 `;
 
 export const ResourceRequestListPage = () => {
-  const { filterValues, isLoading, warnings } = useRriFilters();
+  const { filterValues, isLoading, warnings: filterWarnings } = useRriFilters();
+
+  const { mrtColumnManager, warnings: columnWarnings } = useRriColumns(
+    filterValues,
+    isLoading || filterValues === undefined,
+    false,
+  );
+
+  const combinedWarnings = useMemo(
+    () => [...(filterWarnings || []), ...(columnWarnings || [])],
+    [filterWarnings, columnWarnings],
+  );
 
   return (
     <Container>
-      <WarningNotifications warnings={warnings} />
+      <WarningNotifications warnings={combinedWarnings} />
       <RriSummaryHeader />
       <div
         css={{
@@ -50,11 +63,11 @@ export const ResourceRequestListPage = () => {
       >
         <FilterBar
           filterCategoryDatas={Object.values(filterValues || {})}
-          isLoading={isLoading}
+          isLoading={isLoading || filterValues === undefined}
           searchPlaceholder='Add a filter (e.g. "rr_id" or "status")'
         />
       </div>
-      <ResourceRequestTable />
+      <ResourceRequestTable mrtColumnManager={mrtColumnManager} />
     </Container>
   );
 };

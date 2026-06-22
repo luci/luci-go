@@ -20,6 +20,8 @@ import { SettingsProvider } from '@/fleet/context/providers';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ResourceRequestTable } from './resource_requests_table';
+import { useRriColumns } from './use_rri_columns';
+import { useRriFilters } from './use_rri_filters';
 
 // Mock dependencies
 jest.mock('@/fleet/hooks/prpc_clients', () => ({
@@ -43,6 +45,12 @@ jest.mock('@tanstack/react-query', () => {
     useQuery: jest.fn(),
   };
 });
+
+const TestWrapper = () => {
+  const { filterValues, isLoading } = useRriFilters();
+  const { mrtColumnManager } = useRriColumns(filterValues, isLoading, false);
+  return <ResourceRequestTable mrtColumnManager={mrtColumnManager} />;
+};
 
 describe('<ResourceRequestTable />', () => {
   const mockResourceRequests = [
@@ -155,7 +163,7 @@ describe('<ResourceRequestTable />', () => {
       <FakeContextProvider>
         <ShortcutProvider>
           <SettingsProvider>
-            <ResourceRequestTable />
+            <TestWrapper />
           </SettingsProvider>
         </ShortcutProvider>
       </FakeContextProvider>,
@@ -180,7 +188,7 @@ describe('<ResourceRequestTable />', () => {
       <FakeContextProvider>
         <ShortcutProvider>
           <SettingsProvider>
-            <ResourceRequestTable />
+            <TestWrapper />
           </SettingsProvider>
         </ShortcutProvider>
       </FakeContextProvider>,

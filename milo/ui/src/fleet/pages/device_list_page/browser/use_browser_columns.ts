@@ -17,22 +17,22 @@ import { useMemo, useEffect } from 'react';
 import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
 import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
-import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
-import { CHROMEOS_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import { BROWSER_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
+import { BROWSER_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useWarnings } from '@/fleet/utils/use_warnings';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
-import { getFieldDefinition } from './chromeos_fields';
-import { useChromeOSFields } from './use_chromeos_available_columns';
+import { getBrowserColumn, getBrowserColumnIds } from './browser_columns';
+import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
 
-export const useChromeOSColumns = (
+export const useBrowserColumns = (
   filterValues: Record<string, FilterCategory> | undefined,
   isLoadingFilters: boolean,
   isLoadingDevices: boolean,
 ) => {
-  const { availableFields } = useChromeOSFields();
+  const dimensionsQuery = useBrowserDeviceDimensions();
   const [searchParams] = useSyncedSearchParams();
 
   const urlCols = useMemo(() => {
@@ -41,17 +41,10 @@ export const useChromeOSColumns = (
   }, [searchParams]);
 
   const availableColumns = useMemo(() => {
-    const baseCols = availableFields.map((def) => def.columnDef);
-    const baseColIds = new Set(baseCols.map((col) => col.id));
-
-    const missingCols = urlCols.flatMap((id) => {
-      if (baseColIds.has(id)) return [];
-      const def = getFieldDefinition(id);
-      return def?.columnDef ? [def.columnDef] : [];
-    });
-
-    return [...baseCols, ...missingCols];
-  }, [availableFields, urlCols]);
+    const requiredCols = urlCols.length > 0 ? urlCols : BROWSER_DEFAULT_COLUMNS;
+    const columnIds = getBrowserColumnIds(dimensionsQuery.data, requiredCols);
+    return columnIds.map((id) => getBrowserColumn(id));
+  }, [dimensionsQuery.data, urlCols]);
 
   // TODO(b/524930584): This block (mapping filter keys to column IDs) is identical across
   // ChromeOS, Browser, and RRI column hooks, and is a strong candidate for a shared utility.
@@ -81,10 +74,10 @@ export const useChromeOSColumns = (
 
   const mrtColumnManager = useMRTColumnManagement({
     columns: availableColumns,
-    defaultColumnIds: CHROMEOS_DEFAULT_COLUMNS,
-    localStorageKey: CHROMEOS_DEVICES_LOCAL_STORAGE_KEY,
+    defaultColumnIds: BROWSER_DEFAULT_COLUMNS,
+    localStorageKey: BROWSER_DEVICES_LOCAL_STORAGE_KEY,
     highlightedColumnIds,
-    platform: Platform.CHROMEOS,
+    platform: Platform.CHROMIUM,
   });
 
   const [warnings, addWarning] = useWarnings();
@@ -95,7 +88,8 @@ export const useChromeOSColumns = (
   // This is purely for validation and UI alert purposes. Syncing of columns between
   // the URL and local state is handled entirely inside useMRTColumnManagement.
   useEffect(() => {
-    if (isLoadingFilters || isLoadingDevices) return;
+    if (dimensionsQuery.isPending || isLoadingFilters || isLoadingDevices)
+      return;
 
     const invalidCols = mrtColumnManager.visibleColumnIds.filter(
       (id) => !availableColumns.some((col) => col.id === id),
@@ -115,6 +109,7 @@ export const useChromeOSColumns = (
   }, [
     addWarning,
     availableColumns,
+    dimensionsQuery.isPending,
     isLoadingFilters,
     isLoadingDevices,
     mrtColumnManager,

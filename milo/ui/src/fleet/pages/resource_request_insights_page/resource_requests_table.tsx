@@ -19,86 +19,76 @@ import { MaterialReactTable, MRT_PaginationState } from 'material-react-table';
 import { useMemo } from 'react';
 
 import {
-  emptyPageTokenUpdater,
-  getCurrentPageIndex,
-  getPageSize,
-  getPageToken,
   nextPageTokenUpdater,
   pageSizeUpdater,
   prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
-import {
-  getColumnId,
-  useMRTColumnManagement,
-} from '@/fleet/components/columns/use_mrt_column_management';
+import { MrtColumnManager } from '@/fleet/components/columns/use_mrt_column_management';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import {
   FC_ColumnDef,
   useFCDataTable,
 } from '@/fleet/components/fc_data_table/use_fc_data_table';
-import { RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { PAGE_TOKEN_PARAM_KEY } from '@/fleet/constants/param_keys';
-import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { useMrtSorting } from '@/fleet/hooks/use_mrt_sorting';
+import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
+import { usePager } from '@/fleet/hooks/use_pager';
 import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-import {
-  COLUMNS,
-  DEFAULT_COLUMNS,
-  DEFAULT_SORT_COLUMN_ID,
-} from './rri_columns';
+import { DEFAULT_SORT_COLUMN_ID } from './rri_columns';
 import { getRow, type RriGridRow } from './rri_utils';
 import { useRriFilters } from './use_rri_filters';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
 
-const getOrderByDto = (sortingArr: { id: string; desc: boolean }[]) => {
-  if (sortingArr.length === 0) {
-    return `${DEFAULT_SORT_COLUMN_ID} desc`;
-  }
-  if (sortingArr.length !== 1) {
-    return '';
-  }
-  const sort = sortingArr[0];
-  return sort.desc ? `${sort.id} desc` : sort.id;
-};
+interface ResourceRequestTableProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mrtColumnManager: MrtColumnManager<FC_ColumnDef<RriGridRow, any>>;
+}
 
-export const ResourceRequestTable = () => {
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const [, updateOrderByParam] = useOrderByParam();
+export const ResourceRequestTable = ({
+  mrtColumnManager,
+}: ResourceRequestTableProps) => {
+  const [, setSearchParams] = useSyncedSearchParams();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
     pageTokenKey: PAGE_TOKEN_PARAM_KEY,
   });
 
+  const { pageSize, pageToken, pageIndex } = usePager(pagerCtx);
+
   const { filterValues, aipString } = useRriFilters();
 
   const client = useFleetConsoleClient();
 
-  const columns = useMemo(() => Object.values(COLUMNS), []);
-  const sorting = useMrtSorting();
+  const [sorting, onSortingChange, orderByParam] = useMrtSortingState(
+    mrtColumnManager.columns.map((c) => ({
+      id: c.id || (c.accessorKey as string) || '',
+    })),
+    pagerCtx,
+  );
+
   const pagination = useMemo<MRT_PaginationState>(
     () => ({
-      pageIndex: getCurrentPageIndex(pagerCtx),
-      pageSize: getPageSize(pagerCtx, searchParams),
+      pageIndex,
+      pageSize,
     }),
-    [pagerCtx, searchParams],
+    [pageIndex, pageSize],
   );
 
   const query = useQuery({
     ...client.ListResourceRequests.query({
       filter: aipString,
-      orderBy: getOrderByDto(sorting),
-      pageSize: getPageSize(pagerCtx, searchParams),
-      pageToken: getPageToken(pagerCtx, searchParams),
+      orderBy: orderByParam || `${DEFAULT_SORT_COLUMN_ID} desc`,
+      pageSize: pageSize,
+      pageToken: pageToken,
     }),
     placeholderData: keepPreviousData,
   });
@@ -107,31 +97,6 @@ export const ResourceRequestTable = () => {
     ...client.CountResourceRequests.query({
       filter: aipString,
     }),
-  });
-
-  const defaultColumnIds = useMemo(
-    () =>
-      columns
-        .filter((c) => DEFAULT_COLUMNS.includes(getColumnId(c)))
-        .map((c) => getColumnId(c)),
-    [columns],
-  );
-
-  const highlightedColumnIds = useMemo(
-    () =>
-      filterValues === undefined
-        ? []
-        : Object.entries(filterValues)
-            .filter(([_key, filter]) => filter.isActive())
-            .map(([key]) => key),
-    [filterValues],
-  );
-
-  const mrtColumnManager = useMRTColumnManagement({
-    columns,
-    defaultColumnIds,
-    localStorageKey: RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
-    highlightedColumnIds,
   });
 
   const table = useFCDataTable<RriGridRow, unknown>({
@@ -201,40 +166,19 @@ export const ResourceRequestTable = () => {
         },
       },
     },
-
     manualSorting: true,
-    onSortingChange: (updater) => {
-      const newSorting =
-        typeof updater === 'function' ? updater(sorting) : updater;
-
-      updateOrderByParam(
-        newSorting
-          .map((sort) => {
-            if (sort.desc) return `${sort.id} desc`;
-            return sort.id;
-          })
-          .join(', '),
-      );
-
-      setSearchParams(
-        (prev: URLSearchParams) => emptyPageTokenUpdater(pagerCtx)(prev),
-        {
-          replace: true,
-        },
-      );
-    },
+    onSortingChange,
     enablePagination: false,
     renderBottomToolbarCustomActions: () => (
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
         <TablePagination
           component="div"
           count={-1}
-          page={getCurrentPageIndex(pagerCtx)}
-          rowsPerPage={getPageSize(pagerCtx, searchParams)}
+          page={pageIndex}
+          rowsPerPage={pageSize}
           onPageChange={(_, page) => {
-            const currentPage = getCurrentPageIndex(pagerCtx);
-            const isPrevPage = page < currentPage;
-            const isNextPage = page > currentPage;
+            const isPrevPage = page < pageIndex;
+            const isNextPage = page > pageIndex;
 
             setSearchParams((prev: URLSearchParams) => {
               let next = new URLSearchParams(prev);
