@@ -250,6 +250,46 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
       }
     },
   },
+  'ufs.nlyte_update_time': {
+    orderByField: 'labels.ufs.nlyte_update_time',
+    meta: {
+      infoTooltip: 'Time when the Nlyte data last changed',
+    },
+    renderCell: ({ value }) => {
+      if (!value) {
+        return null;
+      }
+      try {
+        const dt = DateTime.fromISO(value as string);
+        if (!dt.isValid) {
+          return <>{value as string}</>;
+        }
+        return <SmartRelativeTimestamp date={dt} />;
+      } catch (_) {
+        return <>{value as string}</>;
+      }
+    },
+  },
+  'ufs.nlyte_last_sync': {
+    orderByField: 'labels.ufs.nlyte_last_sync',
+    meta: {
+      infoTooltip: 'Time that UFS ran the cron and checked for updates',
+    },
+    renderCell: ({ value }) => {
+      if (!value) {
+        return null;
+      }
+      try {
+        const dt = DateTime.fromISO(value as string);
+        if (!dt.isValid) {
+          return <>{value as string}</>;
+        }
+        return <SmartRelativeTimestamp date={dt} />;
+      } catch (_) {
+        return <>{value as string}</>;
+      }
+    },
+  },
   fc_offline_since: {
     //TODO (b/502485099): this will be filterable after is resolved
     header: 'Offline since',

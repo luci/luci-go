@@ -33,6 +33,15 @@ jest.mock('@/fleet/hooks/use_devices', () => ({
   }),
 }));
 
+jest.mock('./use_chromeos_current_tasks', () => ({
+  useChromeOSCurrentTasks: () => ({
+    tasks: {},
+    error: null,
+    isError: false,
+    isPending: false,
+  }),
+}));
+
 describe('<ChromeOSDevicesPage />', () => {
   it('should render', async () => {
     render(

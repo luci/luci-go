@@ -130,7 +130,14 @@ export const AndroidDeviceDetailsPage = () => {
     const l = Object.entries(device.omnilabSpec?.labels ?? {}).map(
       ([key, value]) => {
         const strVal = labelValuesToString(value.values);
-        if (key === 'ufs.last_sync' || key === 'mh.last_sync') {
+        if (
+          [
+            'ufs.last_sync',
+            'mh.last_sync',
+            'ufs.nlyte_update_time',
+            'ufs.nlyte_last_sync',
+          ].includes(key)
+        ) {
           try {
             const dt = DateTime.fromISO(strVal);
             if (dt.isValid) {
