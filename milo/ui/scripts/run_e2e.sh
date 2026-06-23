@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2024 The LUCI Authors.
+# Copyright 2026 The LUCI Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,4 +42,4 @@ for i in {1..30}; do
   sleep 1
 done
 
-CYPRESS_BASE_URL=http://localhost:$PORT npx cypress run
+CYPRESS_BASE_URL=http://localhost:$PORT npx cypress run "$@"

@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PluginOption } from 'vite';
+import { PluginOption, loadEnv } from 'vite';
 
+import { getLocalDevSettingsJs } from './settings_js_utils';
 import { getLocalUiVersionJs } from './ui_version_js_utils';
 
 export function previewServer(
@@ -23,6 +24,15 @@ export function previewServer(
   return {
     name: 'luci-ui-preview-server',
     configurePreviewServer: (server) => {
+      // Load development environment variables to populate settings.js
+      // during preview (e.g. in E2E tests).
+      const devEnv = loadEnv(
+        'development',
+        server.config.envDir,
+        server.config.envPrefix,
+      );
+      const settingsEnv = { ...devEnv, ...env };
+
       // Serve `/ui_version.js` during local preview. During local preview, we
       // are serving a local build. The UI's version is different from the
       // active staging UI version.
@@ -39,6 +49,20 @@ export function previewServer(
               : 'new-ui',
           ),
         );
+      });
+
+      // Serve `/settings.js` during local preview.
+      server.middlewares.use((req, res, next) => {
+        if (req.url !== '/settings.js') {
+          return next();
+        }
+        res.setHeader('content-type', 'text/javascript');
+        try {
+          res.end(getLocalDevSettingsJs(settingsEnv));
+        } catch (e) {
+          res.statusCode = 500;
+          res.end(`Failed to generate settings.js: ${String(e)}`);
+        }
       });
     },
   };
