@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { AndroidCount } from "./android.pb";
 import { Column, DeviceSpec, LabelValues, Platform, platformFromJSON, platformToJSON } from "./common_types.pb";
 
@@ -325,6 +326,8 @@ export interface SmartRepairResult {
   readonly conclusions: readonly RepairConclusion[];
   readonly manualRepairActions: readonly string[];
   readonly logsPath: string;
+  readonly requestedAt: string | undefined;
+  readonly completedAt: string | undefined;
 }
 
 export interface RepairConclusion {
@@ -3267,7 +3270,14 @@ export const GetSmartRepairResponse: MessageFns<GetSmartRepairResponse> = {
 };
 
 function createBaseSmartRepairResult(): SmartRepairResult {
-  return { summary: "", conclusions: [], manualRepairActions: [], logsPath: "" };
+  return {
+    summary: "",
+    conclusions: [],
+    manualRepairActions: [],
+    logsPath: "",
+    requestedAt: undefined,
+    completedAt: undefined,
+  };
 }
 
 export const SmartRepairResult: MessageFns<SmartRepairResult> = {
@@ -3283,6 +3293,12 @@ export const SmartRepairResult: MessageFns<SmartRepairResult> = {
     }
     if (message.logsPath !== "") {
       writer.uint32(34).string(message.logsPath);
+    }
+    if (message.requestedAt !== undefined) {
+      Timestamp.encode(toTimestamp(message.requestedAt), writer.uint32(42).fork()).join();
+    }
+    if (message.completedAt !== undefined) {
+      Timestamp.encode(toTimestamp(message.completedAt), writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -3326,6 +3342,22 @@ export const SmartRepairResult: MessageFns<SmartRepairResult> = {
           message.logsPath = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.requestedAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.completedAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3345,6 +3377,8 @@ export const SmartRepairResult: MessageFns<SmartRepairResult> = {
         ? object.manualRepairActions.map((e: any) => globalThis.String(e))
         : [],
       logsPath: isSet(object.logsPath) ? globalThis.String(object.logsPath) : "",
+      requestedAt: isSet(object.requestedAt) ? globalThis.String(object.requestedAt) : undefined,
+      completedAt: isSet(object.completedAt) ? globalThis.String(object.completedAt) : undefined,
     };
   },
 
@@ -3362,6 +3396,12 @@ export const SmartRepairResult: MessageFns<SmartRepairResult> = {
     if (message.logsPath !== "") {
       obj.logsPath = message.logsPath;
     }
+    if (message.requestedAt !== undefined) {
+      obj.requestedAt = message.requestedAt;
+    }
+    if (message.completedAt !== undefined) {
+      obj.completedAt = message.completedAt;
+    }
     return obj;
   },
 
@@ -3374,6 +3414,8 @@ export const SmartRepairResult: MessageFns<SmartRepairResult> = {
     message.conclusions = object.conclusions?.map((e) => RepairConclusion.fromPartial(e)) || [];
     message.manualRepairActions = object.manualRepairActions?.map((e) => e) || [];
     message.logsPath = object.logsPath ?? "";
+    message.requestedAt = object.requestedAt ?? undefined;
+    message.completedAt = object.completedAt ?? undefined;
     return message;
   },
 };
@@ -4443,6 +4485,19 @@ type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function toTimestamp(dateStr: string): Timestamp {
+  const date = new globalThis.Date(dateStr);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): string {
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis).toISOString();
+}
 
 function isObject(value: any): boolean {
   return typeof value === "object" && value !== null;

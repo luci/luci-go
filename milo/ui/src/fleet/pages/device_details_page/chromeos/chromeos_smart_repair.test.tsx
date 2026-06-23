@@ -166,6 +166,125 @@ describe('<ChromeOSSmartRepair />', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders Triggered and Expires times from pRPC cachedResult when realtimeData is null', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: 'event-cached',
+          alreadyInProgress: false,
+          cachedResult: {
+            summary: 'Cached analysis summary',
+            conclusions: [],
+            manualRepairActions: [],
+            logsPath: '',
+            requestedAt: '2026-05-01T12:00:00.000Z',
+          },
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText('Cached analysis summary'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Triggered:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Expires:/i)).toBeInTheDocument();
+  });
+
+  it('renders Triggered and Expires times when Firestore requestTimestamp is a Protobuf object with string seconds', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: 'event-123',
+          alreadyInProgress: true,
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText(/Analysis is currently processing/i),
+    ).toBeInTheDocument();
+
+    const mockDoc = {
+      exists: () => true,
+      data: () => ({
+        status: 'processing',
+        requestTimestamp: {
+          seconds: '1718000000',
+          nanos: 0,
+        },
+      }),
+    };
+
+    await act(async () => {
+      firestoreCallback(mockDoc as unknown as DocumentSnapshot);
+    });
+
+    expect(await screen.findByText(/Triggered:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Expires:/i)).toBeInTheDocument();
+  });
+
+  it('renders Triggered and Expires times when Firestore requestTimestamp is a Timestamp with toDate()', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: 'event-123',
+          alreadyInProgress: true,
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText(/Analysis is currently processing/i),
+    ).toBeInTheDocument();
+
+    const mockDoc = {
+      exists: () => true,
+      data: () => ({
+        status: 'processing',
+        requestTimestamp: {
+          toDate: () => new Date('2026-06-18T12:00:00.000Z'),
+        },
+      }),
+    };
+
+    await act(async () => {
+      firestoreCallback(mockDoc as unknown as DocumentSnapshot);
+    });
+
+    expect(await screen.findByText(/Triggered:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Expires:/i)).toBeInTheDocument();
+  });
+
   it('renders active processing run and handles Firestore updates', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
     mockGetSmartRepair.mockResolvedValue({

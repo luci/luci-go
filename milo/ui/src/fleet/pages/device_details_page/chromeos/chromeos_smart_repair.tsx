@@ -274,16 +274,28 @@ export const ChromeOSSmartRepair = () => {
   const logTimestamp = formatLogTimestamp(normalizedResult.logsPath);
 
   const getTriggeredAndExpiredTimes = () => {
-    const ts = realtimeData?.requestTimestamp;
+    const ts = realtimeData
+      ? realtimeData.requestTimestamp
+      : data?.cachedResult?.requestedAt;
     if (!ts) return null;
 
     let date: Date;
-    if (typeof ts.toDate === 'function') {
+    if (
+      typeof ts === 'object' &&
+      ts !== null &&
+      'toDate' in ts &&
+      typeof ts.toDate === 'function'
+    ) {
       date = ts.toDate();
-    } else if (ts.seconds) {
-      date = new Date(ts.seconds * 1000);
+    } else if (
+      typeof ts === 'object' &&
+      ts !== null &&
+      'seconds' in ts &&
+      (typeof ts.seconds === 'number' || typeof ts.seconds === 'string')
+    ) {
+      date = new Date(Number(ts.seconds) * 1000);
     } else {
-      date = new Date(ts as unknown as string | number | Date);
+      date = new Date(ts as string | number | Date);
     }
 
     if (isNaN(date.getTime())) return null;
