@@ -14,295 +14,88 @@
 
 import DoneIcon from '@mui/icons-material/Done';
 import ErrorIcon from '@mui/icons-material/Error';
-import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
-import { Alert, Button, Typography } from '@mui/material';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import _ from 'lodash';
-import { MaterialReactTable, MRT_PaginationState } from 'material-react-table';
-import { useMemo } from 'react';
+import { Alert, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
-  getCurrentPageIndex,
-  getPageSize,
-  getPageToken,
-  nextPageTokenUpdater,
   PagerContext,
-  pageSizeUpdater,
-  prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { ColumnsButton } from '@/fleet/components/columns/columns_button';
-import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
-import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
-import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import {
-  StringListFilterCategory,
-  StringListFilterCategoryBuilder,
-} from '@/fleet/components/filters/string_list_filter';
-import {
-  useFilters,
-  FilterCategory,
-} from '@/fleet/components/filters/use_filters';
+import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
+import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
-import { BLANK_VALUE } from '@/fleet/constants/filters';
 import {
   ANDROID_PLATFORM,
   generateDeviceListURL,
 } from '@/fleet/constants/paths';
-import {
-  ORDER_BY_PARAM_KEY,
-  OrderByDirection,
-  useOrderByParam,
-} from '@/fleet/hooks/order_by';
+import { ORDER_BY_PARAM_KEY } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import {
-  getFilterQueryString,
-  parseOrderByParam,
-} from '@/fleet/utils/search_param';
+import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
-import {
-  TrackLeafRoutePageView,
-  useGoogleAnalytics,
-} from '@/generic_libs/components/google_analytics';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Platform,
   RepairMetric_Priority,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { COLUMNS } from './repairs_columns';
-import { getPriorityIcon, getRow } from './repairs_columns.utils';
+import { getPriorityIcon } from './repairs_columns.utils';
+import { RepairsTable } from './repairs_table';
+import { useRepairsColumns } from './use_repairs_columns';
+import { useRepairsFilters } from './use_repairs_filters';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
 export const RepairListPage = () => {
-  const { trackEvent } = useGoogleAnalytics();
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const [orderByParam, updateOrderByParam] = useOrderByParam();
+  const [, setSearchParams] = useSyncedSearchParams();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const client = useFleetConsoleClient();
+  const handleFilterChange = useCallback(() => {
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
+  }, [pagerCtx, setSearchParams]);
 
-  const repairMetricsFilterValues = useQuery({
-    ...client.GetRepairMetricsDimensions.query({
-      platform: Platform.ANDROID,
-    }),
-  });
+  const {
+    filterValues,
+    aip160,
+    warnings: filterWarnings,
+    isLoading: isLoadingFilters,
+  } = useRepairsFilters(handleFilterChange);
 
-  const loadedFilterOptions = useMemo(() => {
-    if (!repairMetricsFilterValues.data) return {};
-
-    const filters: Record<string, StringListFilterCategoryBuilder> = {};
-    for (const [key, value] of Object.entries(
-      repairMetricsFilterValues.data.dimensions,
-    )) {
-      const mappedKey =
-        key === 'hostGroup'
-          ? 'host_group'
-          : key === 'labName'
-            ? 'lab_name'
-            : key;
-      filters[mappedKey] = new StringListFilterCategoryBuilder()
-        .setLabel(_.startCase(key))
-        .setOptions([
-          { label: BLANK_VALUE, value: BLANK_VALUE },
-          ...(value.values || [])
-            .filter((v) => v !== '' && v !== BLANK_VALUE)
-            .map((v) => ({ label: v, value: v })),
-        ]);
-    }
-    return filters;
-  }, [repairMetricsFilterValues.data]);
-
-  const filterCategoryDatas = useFilters(loadedFilterOptions, {
-    areFilterValuesLoading: !repairMetricsFilterValues.data,
-    onFilterChange: () => {
-      trackEvent('filter_changed', {
-        componentName: 'device_list_filter',
-      });
-
-      setSearchParams(emptyPageTokenUpdater(pagerCtx));
-    },
-  });
-
-  const repairMetricsList = useQuery({
-    ...client.ListRepairMetrics.query({
-      platform: Platform.ANDROID,
-      filter:
-        filterCategoryDatas.warnings.length > 0
-          ? ''
-          : filterCategoryDatas.aip160(),
-      pageSize: getPageSize(pagerCtx, searchParams),
-      pageToken: getPageToken(pagerCtx, searchParams),
-      orderBy: orderByParam,
-    }),
-    placeholderData: keepPreviousData,
-  });
-
-  const sorting = (searchParams.get(ORDER_BY_PARAM_KEY) ?? '')
-    .split(', ')
-    .map(parseOrderByParam)
-    .filter((orderBy) => !!orderBy)
-    .map((orderBy: { field: string; direction: OrderByDirection }) => ({
-      id: orderBy.field,
-      desc: orderBy.direction === OrderByDirection.DESC,
-    }));
-  const pagination = useMemo<MRT_PaginationState>(
-    () => ({
-      pageIndex: getCurrentPageIndex(pagerCtx),
-      pageSize: getPageSize(pagerCtx, searchParams),
-    }),
-    [pagerCtx, searchParams],
+  const { mrtColumnManager, warnings: columnWarnings } = useRepairsColumns(
+    filterValues,
+    isLoadingFilters || filterValues === undefined,
   );
 
-  const highlightedColumnIds = useMemo(
-    () =>
-      Object.entries(filterCategoryDatas.filterValues ?? {})
-        .filter(([_key, filter]) => filter.isActive())
-        .map(([key, _filter]) => key),
-    [filterCategoryDatas.filterValues],
+  const combinedWarnings = useMemo(
+    () => [...(filterWarnings || []), ...(columnWarnings || [])],
+    [filterWarnings, columnWarnings],
   );
-
-  const mrtColumnManager = useMRTColumnManagement({
-    columns: Object.values(COLUMNS),
-    defaultColumnIds: Object.keys(COLUMNS),
-    localStorageKey: 'fleet-console-repairs-columns',
-    highlightedColumnIds,
-  });
-
-  const table = useFCDataTable({
-    columns: mrtColumnManager.columns,
-    enableColumnActions: true,
-    enableColumnFilters: false,
-    manualFiltering: true,
-    filterValues: filterCategoryDatas.filterValues,
-    error: repairMetricsList.error
-      ? getErrorMessage(repairMetricsList.error, 'get repair metrics')
-      : undefined,
-    enableRowSelection: true,
-    renderTopToolbarCustomActions: ({ table }) => (
-      <div
-        css={{
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        <FCDataTableCopy table={table} />
-        <ColumnsButton
-          allColumns={mrtColumnManager.allColumns}
-          visibleColumns={mrtColumnManager.visibleColumnIds}
-          onToggleColumn={mrtColumnManager.onToggleColumn}
-          selectOnlyColumn={mrtColumnManager.selectOnlyColumn}
-          resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
-          renderTrigger={({ onClick }, ref) => (
-            <Button
-              ref={ref}
-              startIcon={<ViewColumnOutlined sx={{ fontSize: '26px' }} />}
-              onClick={onClick}
-              color="inherit"
-              sx={{ color: colors.grey[600], height: '40px' }}
-            >
-              Columns
-            </Button>
-          )}
-        />
-      </div>
-    ),
-    data: repairMetricsList.data?.repairMetrics.map(getRow) ?? [],
-    getRowId: (row) => row.lab_name + row.host_group + row.run_target,
-    state: {
-      sorting,
-      columnVisibility: mrtColumnManager.columnVisibility,
-      showProgressBars:
-        repairMetricsList.isPending || repairMetricsList.isPlaceholderData,
-      pagination: pagination,
-    },
-    onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
-    muiPaginationProps: {
-      rowsPerPageOptions: DEFAULT_PAGE_SIZE_OPTIONS,
-    },
-
-    // Sorting
-    manualSorting: true,
-    onSortingChange: (updater) => {
-      const newSorting =
-        typeof updater === 'function' ? updater(sorting) : updater;
-
-      updateOrderByParam(
-        newSorting
-          .map((sort) => {
-            if (sort.desc) return `${sort.id} desc`;
-            return sort.id;
-          })
-          .join(', '),
-      );
-
-      setSearchParams(
-        (prev: URLSearchParams) => emptyPageTokenUpdater(pagerCtx)(prev),
-        {
-          replace: true,
-        },
-      );
-    },
-
-    // Pagination
-    rowCount: repairMetricsList.data?.totalSize ?? 0,
-    manualPagination: true,
-    onPaginationChange: (updater) => {
-      const oldPagination = {
-        pageIndex: getCurrentPageIndex(pagerCtx),
-        pageSize: getPageSize(pagerCtx, searchParams),
-      };
-
-      const newPagination =
-        typeof updater === 'function' ? updater(oldPagination) : updater;
-
-      setSearchParams(pageSizeUpdater(pagerCtx, newPagination.pageSize));
-      const currentPage = getCurrentPageIndex(pagerCtx);
-      const isPrevPage = newPagination.pageIndex < currentPage;
-      const isNextPage = newPagination.pageIndex > currentPage;
-
-      setSearchParams((prev: URLSearchParams) => {
-        let next = pageSizeUpdater(pagerCtx, newPagination.pageSize)(prev);
-        if (isPrevPage) {
-          next = prevPageTokenUpdater(pagerCtx)(next);
-        } else if (isNextPage) {
-          next = nextPageTokenUpdater(
-            pagerCtx,
-            repairMetricsList.data?.nextPageToken ?? '',
-          )(next);
-        }
-        return next;
-      });
-    },
-  });
 
   return (
     <div
       css={{
         margin: '24px',
+        paddingBottom: '40px',
       }}
     >
-      <WarningNotifications warnings={filterCategoryDatas.warnings} />
+      <WarningNotifications warnings={combinedWarnings} />
       <Metrics
-        filters={filterCategoryDatas.aip160()}
+        filters={aip160()}
         pagerContext={pagerCtx}
-        filterValues={filterCategoryDatas.filterValues}
+        filterValues={filterValues}
       />
       <div
         css={{
@@ -316,13 +109,8 @@ export const RepairListPage = () => {
         }}
       >
         <FilterBar
-          filterCategoryDatas={Object.values(
-            filterCategoryDatas.filterValues || {},
-          )}
-          isLoading={
-            repairMetricsFilterValues.isPending ||
-            filterCategoryDatas.filterValues === undefined
-          }
+          filterCategoryDatas={Object.values(filterValues || {})}
+          isLoading={isLoadingFilters || filterValues === undefined}
           searchPlaceholder='Add a filter (e.g. "state:ready" or "priority:high")'
         />
       </div>
@@ -332,7 +120,7 @@ export const RepairListPage = () => {
           marginTop: 24,
         }}
       >
-        <MaterialReactTable table={table} />
+        <RepairsTable mrtColumnManager={mrtColumnManager} />
       </div>
     </div>
   );
@@ -348,7 +136,7 @@ function Metrics({
   filterValues: Record<string, FilterCategory> | undefined;
 }) {
   const client = useFleetConsoleClient();
-  const [searchParams, _] = useSyncedSearchParams();
+  const [searchParams] = useSyncedSearchParams();
   const countQuery = useQuery({
     ...client.CountRepairMetrics.query({
       platform: Platform.ANDROID,
@@ -599,11 +387,7 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-repairs">
       <FleetHelmet pageTitle="Repairs" />
-      <RecoverableErrorBoundary
-        // See the documentation for `<LoginPage />` for why we handle error
-        // this way.
-        key="fleet-repairs"
-      >
+      <RecoverableErrorBoundary key="fleet-repairs">
         <LoggedInBoundary>
           <RepairListPage />
         </LoggedInBoundary>
