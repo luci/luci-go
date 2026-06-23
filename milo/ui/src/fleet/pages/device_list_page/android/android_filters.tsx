@@ -20,6 +20,10 @@ export const ANDROID_EXTRA_FILTERS = {
   ['"fc_offline_since"']: new DateFilterCategoryDataBuilder().setLabel(
     `Offline Since`,
   ),
+  ['labels."ufs.nlyte_update_time"']:
+    new DateFilterCategoryDataBuilder().setLabel(`Nlyte Update Time`),
+  ['labels."ufs.nlyte_last_sync"']:
+    new DateFilterCategoryDataBuilder().setLabel(`Nlyte Last Sync`),
   ['"state"']: new StringListFilterCategoryBuilder()
     .setLabel('State')
     .setOptions([
