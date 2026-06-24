@@ -25,8 +25,7 @@ import (
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	"go.chromium.org/turboci/proto/go/utils/ids"
-
-	"go.chromium.org/luci/turboci/value"
+	"go.chromium.org/turboci/proto/go/utils/value"
 )
 
 func TestNodeBag(t *testing.T) {

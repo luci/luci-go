@@ -22,9 +22,9 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/value"
 
 	"go.chromium.org/luci/turboci/rpc/write"
-	"go.chromium.org/luci/turboci/value"
 )
 
 func TestCurrentAttempt(t *testing.T) {

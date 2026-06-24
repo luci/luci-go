@@ -20,8 +20,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/turboci/value"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
+	"go.chromium.org/turboci/proto/go/utils/value"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"

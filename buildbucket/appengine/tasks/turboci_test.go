@@ -24,9 +24,9 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/turboci/value"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/value"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"

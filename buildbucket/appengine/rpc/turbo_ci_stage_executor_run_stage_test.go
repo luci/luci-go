@@ -39,12 +39,12 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
-	"go.chromium.org/luci/turboci/value"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	"go.chromium.org/turboci/proto/go/utils/ids"
+	"go.chromium.org/turboci/proto/go/utils/value"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"

@@ -23,11 +23,11 @@ import (
 	"go.chromium.org/luci/common/proto/prototest"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	"go.chromium.org/turboci/proto/go/utils/ids"
+	"go.chromium.org/turboci/proto/go/utils/value"
 
 	"go.chromium.org/luci/turboci/check"
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/rpc/write/dep"
-	"go.chromium.org/luci/turboci/value"
 )
 
 func ExampleNewRequest() {
