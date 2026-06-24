@@ -100,6 +100,34 @@ func TestParseStatusAndResult(t *testing.T) {
 						},
 					}))
 				})
+				t.Run("Gitiles commit ingestion", func(t *ftt.Test) {
+					expectedCommit := &bbpb.GitilesCommit{
+						Host:     "chromium.googlesource.com",
+						Project:  "chromium/src",
+						Id:       "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+						Ref:      "refs/heads/main",
+						Position: 1646228,
+					}
+
+					t.Run("From Output", func(t *ftt.Test) {
+						b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_SUCCESS).Construct()
+						b.Output = &bbpb.Build_Output{
+							GitilesCommit: expectedCommit,
+						}
+						_, result, err := parseStatusAndResult(ctx, b)
+						assert.NoErr(t, err)
+						assert.That(t, result.GetBuildbucket().GetOutputGitilesCommit(), should.Match(expectedCommit))
+					})
+
+					t.Run("Missing", func(t *ftt.Test) {
+						b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_SUCCESS).Construct()
+						b.Input = nil
+						b.Output = nil
+						_, result, err := parseStatusAndResult(ctx, b)
+						assert.NoErr(t, err)
+						assert.Loosely(t, result.GetBuildbucket().GetOutputGitilesCommit(), should.BeNil)
+					})
+				})
 				t.Run("That timed out", func(t *ftt.Test) {
 					b = bbfake.NewConstructorFromBuild(b).
 						WithStatus(bbpb.Status_FAILURE).

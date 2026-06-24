@@ -39,6 +39,7 @@ var fieldsToParse = []string{
 	"summary_markdown",
 	"update_time",
 	"infra.resultdb",
+	"output.gitiles_commit",
 }
 
 func parseStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *tryjob.Result, error) {
@@ -48,10 +49,11 @@ func parseStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *t
 		UpdateTime: b.GetUpdateTime(),
 		Backend: &tryjob.Result_Buildbucket_{
 			Buildbucket: &tryjob.Result_Buildbucket{
-				Id:              b.GetId(),
-				Builder:         b.GetBuilder(),
-				Status:          b.GetStatus(),
-				SummaryMarkdown: b.GetSummaryMarkdown(),
+				Id:                  b.GetId(),
+				Builder:             b.GetBuilder(),
+				Status:              b.GetStatus(),
+				SummaryMarkdown:     b.GetSummaryMarkdown(),
+				OutputGitilesCommit: b.GetOutput().GetGitilesCommit(),
 			},
 		},
 	}
