@@ -24,9 +24,9 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/ids"
 
 	"go.chromium.org/luci/turboci/check"
-	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/value"
 )
@@ -86,13 +86,13 @@ func TestCheckAddNew(t *testing.T) {
 
 	req := write.NewRequest()
 
-	chk := req.AddNewCheck(id.Check("something"), check.KindBuild)
+	chk := req.AddNewCheck(ids.Check("something"), check.KindBuild)
 	chk.AddOptions(value.MustWrite(numData, "some/realm"))
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
 		Checks: []*orchestratorpb.WriteNodesRequest_CheckWrite{
 			orchestratorpb.WriteNodesRequest_CheckWrite_builder{
-				Identifier: id.Check("something"),
+				Identifier: ids.Check("something"),
 				Kind:       check.KindBuild.Enum(),
 				Options: []*orchestratorpb.ValueWrite{
 					orchestratorpb.ValueWrite_builder{

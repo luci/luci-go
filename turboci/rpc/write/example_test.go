@@ -22,9 +22,9 @@ import (
 
 	"go.chromium.org/luci/common/proto/prototest"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/ids"
 
 	"go.chromium.org/luci/turboci/check"
-	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/rpc/write/dep"
 	"go.chromium.org/luci/turboci/value"
@@ -32,23 +32,23 @@ import (
 
 func ExampleNewRequest() {
 	// cid and cid2 would normally be obtained from the result of a query.
-	cid := id.Check("existing check")
-	cid2 := id.Check("another existing check")
+	cid := ids.Check("existing check")
+	cid2 := ids.Check("another existing check")
 
 	req := write.NewRequest()
 
 	req.SetReason("stuff", value.MustWrite(numData))
 
-	chk := req.AddNewCheck(id.Check("fleeporp"), check.KindAnalysis)
+	chk := req.AddNewCheck(ids.Check("fleeporp"), check.KindAnalysis)
 	chk.AddOptions(value.MustWrite(numData), value.MustWrite(boolData))
 	chk.AddResultData(value.MustWrite(numData), value.MustWrite(boolData, "very/secret"))
 
 	chk = req.AddCheckUpdate(cid)
 	chk.Msg.SetDependencies(dep.MustGroup(
-		dep.ConditionalCheck(id.Check("plorp"), check.StatePlanned),
+		dep.ConditionalCheck(ids.Check("plorp"), check.StatePlanned),
 		dep.MustGroup(
-			id.Check("external"),
-			id.Check("fleeporp"),
+			ids.Check("external"),
+			ids.Check("fleeporp"),
 			dep.Threshold(1),
 		),
 	))
@@ -58,9 +58,9 @@ func ExampleNewRequest() {
 	chk.Msg.SetState(check.StateFinal)
 	chk.Msg.SetFinalizeResults(true)
 
-	stg := req.AddNewStage(id.Stage("neeple"), numData)
+	stg := req.AddNewStage(ids.Stage("neeple"), numData)
 	stg.Msg.SetDependencies(dep.MustGroup(
-		dep.ConditionalCheck(id.Check("fleeporp"), check.StatePlanned),
+		dep.ConditionalCheck(ids.Check("fleeporp"), check.StatePlanned),
 	))
 	sep := &orchestratorpb.StageExecutionPolicy{}
 	stg.Msg.SetRequestedStageExecutionPolicy(sep)
@@ -75,11 +75,11 @@ func ExampleNewRequest() {
 			PendingThrottled: durationpb.New(time.Hour),
 		}.Build(),
 	}.Build())
-	stg.AddCheckAssignment(id.Check("fleeporp"), check.StateFinal)
+	stg.AddCheckAssignment(ids.Check("fleeporp"), check.StateFinal)
 
-	req.AddNewStage(id.Stage("bleeple"), numData)
+	req.AddNewStage(ids.Stage("bleeple"), numData)
 
-	req.AddStageCancellation(id.StageWorkNode("bad one"))
+	req.AddStageCancellation(ids.StageWorkNode("bad one"))
 
 	curAttempt := req.GetCurrentAttempt()
 	curAttempt.GetStateTransition().SetRunning("my process UID", nil)
@@ -87,8 +87,8 @@ func ExampleNewRequest() {
 	curAttempt.AddDetails(value.MustWrite(numData))
 	req.GetCurrentStage().Msg.SetContinuationGroup(
 		dep.MustGroup(
-			id.Stage("neeple"),
-			id.Stage("bleeple"),
+			ids.Stage("neeple"),
+			ids.Stage("bleeple"),
 			dep.Threshold(1),
 		),
 	)

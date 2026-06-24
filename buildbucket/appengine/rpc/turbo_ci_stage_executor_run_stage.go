@@ -25,9 +25,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/turboci/id"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/ids"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -41,7 +41,7 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 	// should never really fail.
 	stage := req.GetStage()
 	attemptID := req.GetAttempt()
-	attemptIDStr := id.ToString(attemptID)
+	attemptIDStr := ids.ToString(attemptID)
 	var attempt *orchestratorpb.Stage_Attempt
 	for _, a := range stage.GetAttempts() {
 		if proto.Equal(a.GetIdentifier(), attemptID) {

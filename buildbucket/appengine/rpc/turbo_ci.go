@@ -44,9 +44,9 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/gerritauth"
-	"go.chromium.org/luci/turboci/id"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"go.chromium.org/turboci/proto/go/utils/ids"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -135,7 +135,7 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 		logging.Errorf(ctx, "turbo-ci: CreateWorkPlan call failed: %s", err)
 		return appstatus.FromStatusErr(turboci.AdjustTurboCIRPCError(err))
 	}
-	logging.Infof(ctx, "turbo-ci: workplan %s", id.ToString(plan.GetIdentifier()))
+	logging.Infof(ctx, "turbo-ci: workplan %s", ids.ToString(plan.GetIdentifier()))
 
 	// The initial stage has a predefined ID.
 	rootStageID := idspb.Stage_builder{
@@ -204,7 +204,7 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 		// Should never happen.
 		return commonErr(appstatus.Errorf(codes.FailedPrecondition, "parent %d has no stage attempt ID", parent.ID))
 	}
-	aID, err := id.FromString(parent.StageAttemptID)
+	aID, err := ids.FromString(parent.StageAttemptID)
 	if err != nil {
 		return commonErr(appstatus.Errorf(codes.FailedPrecondition, "parent %d has invalid stage attempt ID %q: %s", parent.ID, parent.StageAttemptID, err))
 	}
@@ -514,12 +514,12 @@ func pollStage(ctx context.Context, cl *turboci.Client, stageID *idspb.Stage) (i
 				return 0, contextErr()
 			}
 			if code := status.Code(err); grpcutil.IsTransientCode(code) || code == codes.DeadlineExceeded {
-				logging.Warningf(ctx, "turbo-ci: %s: transient error querying the stage: %s", id.ToString(cl.Plan), err)
+				logging.Warningf(ctx, "turbo-ci: %s: transient error querying the stage: %s", ids.ToString(cl.Plan), err)
 				errs++
 				lastTransientErr = err
 				continue
 			}
-			logging.Errorf(ctx, "turbo-ci: %s: fatal error querying the stage: %s", id.ToString(cl.Plan), err)
+			logging.Errorf(ctx, "turbo-ci: %s: fatal error querying the stage: %s", ids.ToString(cl.Plan), err)
 			return 0, err
 		}
 
