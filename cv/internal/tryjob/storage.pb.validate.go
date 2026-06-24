@@ -104,6 +104,35 @@ func (m *Definition) validate(all bool) error {
 
 	// no validation rules for ResultVisibility
 
+	if all {
+		switch v := interface{}(m.GetReuseWindow()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DefinitionValidationError{
+					field:  "ReuseWindow",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DefinitionValidationError{
+					field:  "ReuseWindow",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetReuseWindow()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DefinitionValidationError{
+				field:  "ReuseWindow",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	switch v := m.Backend.(type) {
 	case *Definition_Buildbucket_:
 		if v == nil {
@@ -1861,6 +1890,35 @@ func (m *Result_Buildbucket) validate(all bool) error {
 		if err := v.Validate(); err != nil {
 			return Result_BuildbucketValidationError{
 				field:  "Infra",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetOutputGitilesCommit()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, Result_BuildbucketValidationError{
+					field:  "OutputGitilesCommit",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, Result_BuildbucketValidationError{
+					field:  "OutputGitilesCommit",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetOutputGitilesCommit()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return Result_BuildbucketValidationError{
+				field:  "OutputGitilesCommit",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}

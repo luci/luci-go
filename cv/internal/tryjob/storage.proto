@@ -83,6 +83,9 @@ message Definition {
   // Commit message footers that, if changed in a later patchset, should disable
   // reuse of previous tryjobs.
   repeated string disable_reuse_footers = 10;
+
+  // Optional. The reuse window configuration set by this tryjob's builder.
+  cv.config.ReuseWindow reuse_window = 11;
 }
 
 // Requirement is what has to happen to verify a specific Run.
@@ -203,6 +206,9 @@ message Result {
     // NOTE: This ONLY supports ResultDB metadata and excludes the rest.
     // See go/src/go.chromium.org/luci/buildbucket/proto/build.proto.
     buildbucket.v2.BuildInfra infra = 5;
+
+    // The gitiles commit that the build ran on.
+    buildbucket.v2.GitilesCommit output_gitiles_commit = 6;
   }
 }
 

@@ -1435,6 +1435,116 @@ var _ interface {
 	ErrorName() string
 } = UserLimitValidationError{}
 
+// Validate checks the field values on ReuseWindow with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ReuseWindow) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ReuseWindow with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ReuseWindowMultiError, or
+// nil if none found.
+func (m *ReuseWindow) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ReuseWindow) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.GetMaxCommitDistance() <= 0 {
+		err := ReuseWindowValidationError{
+			field:  "MaxCommitDistance",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return ReuseWindowMultiError(errors)
+	}
+
+	return nil
+}
+
+// ReuseWindowMultiError is an error wrapping multiple validation errors
+// returned by ReuseWindow.ValidateAll() if the designated constraints aren't met.
+type ReuseWindowMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ReuseWindowMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ReuseWindowMultiError) AllErrors() []error { return m }
+
+// ReuseWindowValidationError is the validation error returned by
+// ReuseWindow.Validate if the designated constraints aren't met.
+type ReuseWindowValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ReuseWindowValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ReuseWindowValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ReuseWindowValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ReuseWindowValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ReuseWindowValidationError) ErrorName() string { return "ReuseWindowValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ReuseWindowValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sReuseWindow.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ReuseWindowValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ReuseWindowValidationError{}
+
 // Validate checks the field values on ConfigGroup_Gerrit with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -3304,6 +3414,35 @@ func (m *Verifiers_Tryjob_Builder) validate(all bool) error {
 			}
 		}
 
+	}
+
+	if all {
+		switch v := interface{}(m.GetReuseWindow()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, Verifiers_Tryjob_BuilderValidationError{
+					field:  "ReuseWindow",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, Verifiers_Tryjob_BuilderValidationError{
+					field:  "ReuseWindow",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetReuseWindow()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return Verifiers_Tryjob_BuilderValidationError{
+				field:  "ReuseWindow",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
 	}
 
 	if len(errors) > 0 {

@@ -775,6 +775,23 @@ message Verifiers {
       }
       // skip this builder if any footer in the commit message matches.
       repeated SkipFooter skip_footers = 17;
+
+      // Optional. The reuse window configuration for this builder.
+      //
+      // This allows reusing past successful builds based on "commit distance"
+      // (number of commits between the build's base revision and the branch tip)
+      // rather than just elapsed time. Only builds that completed successfully
+      // are eligible for reuse.
+      //
+      // Note: This feature requires the project to have monotonically
+      // increasing commit positions exposed in commit message footers (e.g.,
+      // `Cr-Commit-Position: refs/heads/main@{#123456}`, typically generated
+      // by the `git-numberer` Gerrit plugin). Validation and support are
+      // restricted to allowlisted projects satisfying this condition (e.g.,
+      // Chromium/Chrome).
+      //
+      // If unset, default 24h time-based reuse window is used.
+      ReuseWindow reuse_window = 19;
     }
 
     message EquivalentBuilder {
@@ -944,4 +961,20 @@ message UserLimit {
     Run run = 5;
     // Tryjob limits. Required
     Tryjob tryjob = 6;
+}
+
+// ReuseWindow specifies the conditions under which a tryjob can be reused.
+//
+// This configuration is only supported for projects that use monotonic
+// commit positions in their commit footers (e.g., via the `git-numberer`
+// plugin), since they are used to calculate commit distance.
+message ReuseWindow {
+  // Limit reuse by maximum commit distance.
+  //
+  // If the distance between the commit position of the base revision of a
+  // previous build and the current branch tip exceeds this value, the build
+  // cannot be reused.
+  //
+  // This requires the target branch to have monotonic commit positions.
+  uint32 max_commit_distance = 1 [(validate.rules).uint32.gt = 0];
 }
