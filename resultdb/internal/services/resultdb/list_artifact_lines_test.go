@@ -98,6 +98,27 @@ func TestListArtifactLines(t *testing.T) {
 		})
 		srv := newTestResultDBServiceWithArtifactContent(contentString)
 
+		t.Run("given an invalid parent, then should return invalid argument error", func(t *ftt.Test) {
+			req := &pb.ListArtifactLinesRequest{Parent: "x"}
+			_, err := srv.ListArtifactLines(ctx, req)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid artifact name"))
+		})
+
+		t.Run("given a negative page size, then should return invalid argument error", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv", "", "a", nil),
+			)
+			req := &pb.ListArtifactLinesRequest{
+				Parent:   "invocations/inv/artifacts/a",
+				PageSize: -1,
+			}
+			_, err := srv.ListArtifactLines(ctx, req)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("page_size: negative"))
+		})
+
 		t.Run("given invalid permissions, then should return permission denied error", func(t *ftt.Test) {
 			// Insert a Artifact.
 			testutil.MustApply(ctx, t,

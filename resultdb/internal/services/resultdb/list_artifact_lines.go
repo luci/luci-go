@@ -46,7 +46,7 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 	}
 
 	if err := validateListArtifactLinesRequest(in); err != nil {
-		return nil, appstatus.BadRequest(err)
+		return nil, err
 	}
 
 	invID, _, _, artifactID, err := pbutil.ParseLegacyArtifactName(in.Parent)
