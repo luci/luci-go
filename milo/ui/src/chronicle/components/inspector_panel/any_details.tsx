@@ -15,6 +15,14 @@
 import { Box, Typography, Alert } from '@mui/material';
 import { ComponentType, ReactNode, useMemo } from 'react';
 
+import { BuildCheckOptions } from '@/proto/turboci/data/build/v1/build_check_options.pb';
+import { BuildCheckResult } from '@/proto/turboci/data/build/v1/build_check_results.pb';
+import { GobSourceCheckOptions } from '@/proto/turboci/data/gerrit/v1/gob_source_check_options.pb';
+import { GobSourceCheckResults } from '@/proto/turboci/data/gerrit/v1/gob_source_check_results.pb';
+import { PiperSourceCheckOptions } from '@/proto/turboci/data/piper/v1/piper_source_check_options.pb';
+import { CommonStageAttemptDetails as CommonStageAttemptDetailsProto } from '@/proto/turboci/data/stage/v1/common_stage_attempt_details.pb';
+import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_check_description_option.pb';
+import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_summary_result.pb';
 import { OmitReason } from '@/proto/turboci/graph/orchestrator/v1/omit_reason.pb';
 import {
   DataConversionFailure,
@@ -42,25 +50,46 @@ import {
 // Data must be unknown in order to support multiple different protos.
 type GenericRenderer = ComponentType<{ data: unknown }>;
 
+interface TypeRenderer {
+  component: GenericRenderer;
+  fromJson?: (object: unknown) => unknown;
+}
+
 // Map known type URLs to their specialized renderer components.
 // Data type is unknown because it could be any of the known protos.
-const KNOWN_TYPE_RENDERERS: Record<string, GenericRenderer> = {
-  'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions':
-    BuildCheckOptionsDetails as unknown as GenericRenderer,
-  'type.googleapis.com/turboci.data.build.v1.BuildCheckResult':
-    BuildCheckResultDetails as unknown as GenericRenderer,
-  'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckOptions':
-    GobSourceCheckOptionsDetails as unknown as GenericRenderer,
-  'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckResults':
-    GobSourceCheckResultsDetails as unknown as GenericRenderer,
-  'type.googleapis.com/turboci.data.piper.v1.PiperSourceCheckOptions':
-    PiperSourceCheckOptionsDetails as unknown as GenericRenderer,
-  'type.googleapis.com/turboci.data.stage.v1.CommonStageAttemptDetails':
-    CommonStageAttemptDetails as unknown as GenericRenderer,
-  'type.googleapis.com/turboci.data.test.v1.TestCheckDescriptionOption':
-    TestCheckDescriptionOptionDetails as unknown as GenericRenderer,
-  'type.googleapis.com/turboci.data.test.v1.TestCheckSummaryResult':
-    TestCheckSummaryResultDetails as unknown as GenericRenderer,
+const KNOWN_TYPE_RENDERERS: Record<string, TypeRenderer> = {
+  'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions': {
+    component: BuildCheckOptionsDetails as unknown as GenericRenderer,
+    fromJson: BuildCheckOptions.fromJSON,
+  },
+  'type.googleapis.com/turboci.data.build.v1.BuildCheckResult': {
+    component: BuildCheckResultDetails as unknown as GenericRenderer,
+    fromJson: BuildCheckResult.fromJSON,
+  },
+  'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckOptions': {
+    component: GobSourceCheckOptionsDetails as unknown as GenericRenderer,
+    fromJson: GobSourceCheckOptions.fromJSON,
+  },
+  'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckResults': {
+    component: GobSourceCheckResultsDetails as unknown as GenericRenderer,
+    fromJson: GobSourceCheckResults.fromJSON,
+  },
+  'type.googleapis.com/turboci.data.piper.v1.PiperSourceCheckOptions': {
+    component: PiperSourceCheckOptionsDetails as unknown as GenericRenderer,
+    fromJson: PiperSourceCheckOptions.fromJSON,
+  },
+  'type.googleapis.com/turboci.data.stage.v1.CommonStageAttemptDetails': {
+    component: CommonStageAttemptDetails as unknown as GenericRenderer,
+    fromJson: CommonStageAttemptDetailsProto.fromJSON,
+  },
+  'type.googleapis.com/turboci.data.test.v1.TestCheckDescriptionOption': {
+    component: TestCheckDescriptionOptionDetails as unknown as GenericRenderer,
+    fromJson: TestCheckDescriptionOption.fromJSON,
+  },
+  'type.googleapis.com/turboci.data.test.v1.TestCheckSummaryResult': {
+    component: TestCheckSummaryResultDetails as unknown as GenericRenderer,
+    fromJson: TestCheckSummaryResult.fromJSON,
+  },
 };
 
 export interface AnyDetailsProps {
@@ -128,8 +157,10 @@ export function AnyDetails({
     return <ParseError />;
   }
 
-  const Renderer = typeUrl ? KNOWN_TYPE_RENDERERS[typeUrl] : undefined;
-  if (Renderer) {
+  const typeRenderer = typeUrl ? KNOWN_TYPE_RENDERERS[typeUrl] : undefined;
+  if (typeRenderer) {
+    const { component: Renderer, fromJson } = typeRenderer;
+    const typedData = fromJson ? fromJson(parsedData) : parsedData;
     return (
       <Box sx={{ mt: 1 }}>
         {typeUrl && (
@@ -139,7 +170,7 @@ export function AnyDetails({
           </Typography>
         )}
         <Box sx={{ p: 1, border: '1px solid #eee', borderRadius: 1, mt: 0.5 }}>
-          <Renderer data={parsedData} />
+          <Renderer data={typedData} />
         </Box>
       </Box>
     );
