@@ -571,6 +571,7 @@ func (dm *definitionMaker) make() *tryjob.Definition {
 	definition.ResultVisibility = dm.builder.GetResultVisibility()
 	definition.SkipStaleCheck = dm.skipStaleCheck
 	definition.Experiments = dm.experiments
+	definition.ReuseWindow = dm.builder.GetReuseWindow()
 	return definition
 }
 

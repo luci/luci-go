@@ -94,6 +94,9 @@ func TestDefinitionMaker(t *testing.T) {
 				b.ExperimentPercentage = 49.9
 				b.DisableReuse = true
 				b.DisableReuseFooters = []string{"Footer1", "Footer2"}
+				b.ReuseWindow = &cfgpb.ReuseWindow{
+					MaxCommitDistance: 1000,
+				}
 				def := (&definitionMaker{
 					builder:     b,
 					equivalence: mainOnly,
@@ -105,6 +108,9 @@ func TestDefinitionMaker(t *testing.T) {
 					Critical:            true,
 					Optional:            true,
 					ResultVisibility:    cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
+					ReuseWindow: &cfgpb.ReuseWindow{
+						MaxCommitDistance: 1000,
+					},
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
 							Host: "buildbucket.example.com",
@@ -363,6 +369,44 @@ func TestCompute(t *testing.T) {
 				}},
 			}))
 		})
+
+		t.Run("with reuse window", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{
+					Name: "test-proj/test/builder1",
+					ReuseWindow: &cfgpb.ReuseWindow{
+						MaxCommitDistance: 1000,
+					},
+				}.generate(),
+			})
+			res, err := Compute(ctx, *in)
+
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.ComputationFailure, should.BeNil)
+			assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
+				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+					SingleQuota: 2,
+					GlobalQuota: 8,
+				},
+				Definitions: []*tryjob.Definition{{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "test-proj",
+								Bucket:  "test",
+								Builder: "builder1",
+							},
+						},
+					},
+					Critical: true,
+					ReuseWindow: &cfgpb.ReuseWindow{
+						MaxCommitDistance: 1000,
+					},
+				}},
+			}))
+		})
+
 		t.Run("includes undefined builder", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:unlisted")
@@ -1248,6 +1292,7 @@ type builderConfigGenerator struct {
 	LocationFilters      []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter
 	CancelStale          cfgpb.Toggle
 	Modes                []string
+	ReuseWindow          *cfgpb.ReuseWindow
 }
 
 func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
@@ -1256,6 +1301,7 @@ func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
 		IncludableOnly:  bcg.IncludableOnly,
 		LocationFilters: bcg.LocationFilters,
 		CancelStale:     bcg.CancelStale,
+		ReuseWindow:     bcg.ReuseWindow,
 	}
 	if len(bcg.Modes) != 0 {
 		ret.ModeAllowlist = bcg.Modes
