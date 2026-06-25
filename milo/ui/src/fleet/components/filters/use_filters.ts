@@ -264,7 +264,7 @@ const constructFiltersFromAIP160 = (filtersAIP160: string): ParseResult => {
         const wrappedTerms = combineWrappedResults(node.terms.map(wrapper));
         if (wrappedTerms.isError) return wrappedTerms;
 
-        if (Object.keys(wrappedTerms.terms).length > 1)
+        if (node.terms.length > 1 && Object.keys(wrappedTerms.terms).length > 1)
           return {
             isError: true,
             error: 'OR between filters is not supported yet',

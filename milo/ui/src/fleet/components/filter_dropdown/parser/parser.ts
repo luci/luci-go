@@ -28,12 +28,13 @@ const findClosingParen = (str: string): number => {
     return -1;
   }
 
-  const inQuote = false;
+  let inQuote = false;
   let balance = 1;
   for (let i = 1; i < str.length; i++) {
     const char = str[i];
 
     if (char === '"' && str[i - 1] !== '\\') {
+      inQuote = !inQuote;
     } else if (char === '(' && !inQuote) {
       balance++;
     } else if (char === ')' && !inQuote) {
@@ -152,7 +153,7 @@ export const parseFilters = (
   str: string,
   filters: SelectedOptions = {},
 ): GetFiltersResult => {
-  let trimmedStr = str.trim();
+  const trimmedStr = str.trim();
   if (trimmedStr === '') {
     return { filters, error: undefined };
   }
@@ -206,16 +207,14 @@ export const parseFilters = (
   // Note: if there is no whitespace between OR and key
   // we will treat OR as part of the key
   else if (trimmedStr.startsWith('OR ')) {
-    // This works as later we combine newly found values
-    // for a particular key instead of overwriting them
-    trimmedStr = trimmedStr.replace('OR', '');
+    return parseFilters(trimmedStr.substring(3).trim(), filters);
   }
 
   // Case 4: AND key ...
   // Note: if there is no whitespace between AND and key
   // we will treat AND as part of the key
   else if (trimmedStr.startsWith('AND ')) {
-    trimmedStr = trimmedStr.replace('AND', '').trim();
+    return parseFilters(trimmedStr.substring(4).trim(), filters);
   }
 
   // Case 5: key >=, <=, >, < ...

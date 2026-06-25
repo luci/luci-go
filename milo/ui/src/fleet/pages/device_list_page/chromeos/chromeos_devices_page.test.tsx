@@ -16,9 +16,16 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
+import * as PrpcClients from '@/fleet/hooks/prpc_clients';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSDevicesPage } from './chromeos_devices_page';
+
+const mockTrackEvent = jest.fn();
+jest.mock('@/generic_libs/components/google_analytics', () => ({
+  ...jest.requireActual('@/generic_libs/components/google_analytics'),
+  useGoogleAnalytics: () => ({ trackEvent: mockTrackEvent }),
+}));
 
 jest.mock('@/fleet/hooks/use_devices', () => ({
   useDevices: () => ({
@@ -43,6 +50,15 @@ jest.mock('./use_chromeos_current_tasks', () => ({
 }));
 
 describe('<ChromeOSDevicesPage />', () => {
+  beforeAll(() => {
+    window.URL.createObjectURL = jest.fn(() => 'mock-url');
+    window.URL.revokeObjectURL = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('should render', async () => {
     render(
       <FakeContextProvider
@@ -185,5 +201,79 @@ describe('<ChromeOSDevicesPage />', () => {
       });
       expect(reserveButton).toBeNull();
     });
+  });
+
+  it('should call ExportDevicesToCSV with correct filters', async () => {
+    const mockExport = jest.fn().mockReturnValue({
+      queryKey: ['ExportDevicesToCSV'],
+      queryFn: jest.fn().mockResolvedValue({ csvData: 'id,dut_id\n1,dut-1\n' }),
+      data: { csvData: 'id,dut_id\n1,dut-1\n' },
+      isPending: false,
+    });
+
+    const mockGetDimensions = jest.fn().mockReturnValue({
+      queryKey: ['GetDeviceDimensions'],
+      queryFn: jest.fn().mockResolvedValue({ dimensions: {} }),
+      data: { dimensions: {} },
+      isPending: false,
+    });
+
+    const mockCountDevices = jest.fn().mockReturnValue({
+      queryKey: ['CountDevices'],
+      queryFn: jest.fn().mockResolvedValue({ totalHosts: 0, offlineHosts: 0 }),
+      data: { totalHosts: 0, offlineHosts: 0 },
+      isPending: false,
+    });
+
+    jest.spyOn(PrpcClients, 'useFleetConsoleClient').mockReturnValue({
+      ExportDevicesToCSV: {
+        query: mockExport,
+      },
+      GetDeviceDimensions: {
+        query: mockGetDimensions,
+      },
+      CountDevices: {
+        query: mockCountDevices,
+      },
+      CountBrowserDevices: {
+        query: mockCountDevices,
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    render(
+      <FakeContextProvider
+        mountedPath="/test/:platform"
+        routerOptions={{
+          initialEntries: [
+            '/test/chromeos?filters=' +
+              encodeURIComponent(
+                '(labels."label-pool" = "cellular") AND (labels."ufs_zone" = "ZONE_CHROMEOS7")',
+              ),
+          ],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <ChromeOSDevicesPage />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    // Find and click the Export button
+    const exportButton = await screen.findByRole('button', { name: /export/i });
+    fireEvent.click(exportButton);
+
+    // Find and click "Export all (CSV)" menu item
+    const exportAllItem = await screen.findByText('Export all (CSV)');
+    fireEvent.click(exportAllItem);
+
+    // Verify that the query was triggered with parsed and formatted filter keys
+    expect(mockExport).toHaveBeenCalled();
+    const callArgs = mockExport.mock.calls[0][0];
+    expect(callArgs.filter).toBe(
+      'labels."label-pool" = "cellular" labels."ufs_zone" = "ZONE_CHROMEOS7"',
+    );
   });
 });

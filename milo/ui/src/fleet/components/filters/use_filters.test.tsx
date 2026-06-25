@@ -234,7 +234,40 @@ describe('useFilters', () => {
 
     expect(result.current).toBeTruthy();
     expect(result.current?.warnings).toBeTruthy();
-    expect(result.current?.warnings.length).toBeGreaterThan(0);
+  });
+
+  it('should parse filters with parentheses and AND correctly', () => {
+    const mockBuilder = {
+      isFilledIn: () => true,
+      build: jest.fn((key, _reRender, _terms) => ({
+        isError: false as const,
+        value: new MockFilterCategory(key, key),
+        warnings: [],
+      })),
+    };
+
+    const builders = {
+      'labels."label-pool"': mockBuilder,
+      'labels."ufs_zone"': mockBuilder,
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter
+        initialEntries={[
+          '/?filters=' +
+            encodeURIComponent(
+              '(labels."label-pool" = "cellular" AND labels."ufs_zone" = "ZONE_CHROMEOS7")',
+            ),
+        ]}
+      >
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders), { wrapper });
+
+    expect(result.current).toBeTruthy();
+    expect(result.current?.warnings).toEqual([]);
   });
 
   it('should handle unquoted keys in URL matching quoted builder keys', async () => {

@@ -111,11 +111,52 @@ describe('parseFilters', () => {
     });
   });
 
+  it('should parse multiple filters with parentheses and AND correctly', () => {
+    const result = parseFilters(
+      '(labels."label-pool" = "celluar-repair" OR labels."label-pool" = "cellular") AND (labels."ufs_zone" = "ZONE_CHROMEOS3")',
+    );
+    expect(result.error).toBeUndefined();
+    expect(result.filters).toEqual({
+      'labels."label-pool"': ['celluar-repair', 'cellular'],
+      'labels."ufs_zone"': ['ZONE_CHROMEOS3'],
+    });
+  });
+
   it('should parse labels with weird characters', () => {
     const result = parseFilters('(NOT label OR label="this:\\"isNOT(weird)")');
     expect(result.error).toBeUndefined();
     expect(result.filters).toEqual({
       label: [BLANK_VALUE, 'this:\\"isNOT(weird)'],
+    });
+  });
+
+  it('should parse filters containing parentheses inside quotes correctly', () => {
+    const result = parseFilters('key = "value(with)parens"');
+    expect(result.error).toBeUndefined();
+    expect(result.filters).toEqual({
+      key: ['value(with)parens'],
+    });
+  });
+
+  it('should parse parenthesized filters containing parentheses inside quotes correctly', () => {
+    const result = parseFilters('(key = "value(with)parens")');
+    expect(result.error).toBeUndefined();
+    expect(result.filters).toEqual({
+      key: ['value(with)parens'],
+    });
+  });
+
+  it('should parse parenthesized filters containing unbalanced parentheses inside quotes correctly', () => {
+    const result1 = parseFilters('(key = "value(with_unbalanced_paren")');
+    expect(result1.error).toBeUndefined();
+    expect(result1.filters).toEqual({
+      key: ['value(with_unbalanced_paren'],
+    });
+
+    const result2 = parseFilters('(key = "value)with_unbalanced_paren")');
+    expect(result2.error).toBeUndefined();
+    expect(result2.filters).toEqual({
+      key: ['value)with_unbalanced_paren'],
     });
   });
 
