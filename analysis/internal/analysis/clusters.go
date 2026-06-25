@@ -377,12 +377,13 @@ func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulCluste
 			Value: opts.AlwaysIncludeBugClusters,
 		},
 	}
-	for _, metricThreshold := range opts.Thresholds {
+	for i, metricThreshold := range opts.Thresholds {
 		metricDefinition, err := metrics.ByID(metrics.ID(metricThreshold.MetricId))
 		if err != nil {
 			return nil, err
 		}
-		where, params := whereThresholdsMet(metricDefinition, metricThreshold.Threshold)
+		paramSuffix := fmt.Sprintf("_%d", i)
+		where, params := whereThresholdsMet(metricDefinition, metricThreshold.Threshold, paramSuffix)
 		whereClauses = append(whereClauses, `(`+where+`)`)
 		queryParams = append(queryParams, params...)
 	}
@@ -509,25 +510,29 @@ func valueOrDefault(value *int64, defaultValue int64) int64 {
 
 // whereThresholdsMet generates a SQL Where clause to query
 // where a particular metric meets a given threshold.
-func whereThresholdsMet(metric metrics.BaseDefinition, threshold *configpb.MetricThreshold) (string, []bigquery.QueryParameter) {
+func whereThresholdsMet(metric metrics.BaseDefinition, threshold *configpb.MetricThreshold, paramSuffix string) (string, []bigquery.QueryParameter) {
 	if threshold == nil {
 		threshold = &configpb.MetricThreshold{}
 	}
 
-	sql := fmt.Sprintf("%s >= @%s OR ", metricExpression(metric, metrics.OneDayResidualBasis), metric.ColumnName("1d")) +
-		fmt.Sprintf("%s >= @%s OR ", metricExpression(metric, metrics.ThreeDayResidualBasis), metric.ColumnName("3d")) +
-		fmt.Sprintf("%s >= @%s", metricExpression(metric, metrics.SevenDayResidualBasis), metric.ColumnName("7d"))
+	param1d := metric.ColumnName("1d") + paramSuffix
+	param3d := metric.ColumnName("3d") + paramSuffix
+	param7d := metric.ColumnName("7d") + paramSuffix
+
+	sql := fmt.Sprintf("%s >= @%s OR ", metricExpression(metric, metrics.OneDayResidualBasis), param1d) +
+		fmt.Sprintf("%s >= @%s OR ", metricExpression(metric, metrics.ThreeDayResidualBasis), param3d) +
+		fmt.Sprintf("%s >= @%s", metricExpression(metric, metrics.SevenDayResidualBasis), param7d)
 	parameters := []bigquery.QueryParameter{
 		{
-			Name:  metric.ColumnName("1d"),
+			Name:  param1d,
 			Value: valueOrDefault(threshold.OneDay, math.MaxInt64),
 		},
 		{
-			Name:  metric.ColumnName("3d"),
+			Name:  param3d,
 			Value: valueOrDefault(threshold.ThreeDay, math.MaxInt64),
 		},
 		{
-			Name:  metric.ColumnName("7d"),
+			Name:  param7d,
 			Value: valueOrDefault(threshold.SevenDay, math.MaxInt64),
 		},
 	}
