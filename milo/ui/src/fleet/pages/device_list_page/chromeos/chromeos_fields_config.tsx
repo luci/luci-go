@@ -18,15 +18,10 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
 import { CellWithTooltip } from '@/fleet/components/table';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
-import {
-  renderChipCell,
-  StateUnion,
-} from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
-import { getStatusColor } from '@/fleet/pages/device_list_page/chromeos/dut_state';
 import { FC_CellProps } from '@/fleet/types/table';
 import {
   DEVICE_TASKS_SWARMING_HOST,
@@ -40,6 +35,7 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { ChromeOSDevice, FieldDefinition } from './chromeos_types';
+import { DutStateCell } from './dut_state_cell';
 import { TaskResult } from './use_chromeos_current_tasks';
 
 /**
@@ -226,19 +222,7 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
     accessorFn: (device) =>
       getLabelValueInternal(device, 'dut_state').toUpperCase(),
     renderCell: (params: FC_CellProps<ChromeOSDevice>) => {
-      const stateValue = String(params.cell.getValue() ?? '');
-
-      if (stateValue === '') return <></>;
-
-      return renderChipCell<ChromeOSDevice>({
-        getValueOrUrl: getSwarmingStateDocLinkForLabel,
-        getColor: getStatusColor,
-        overrideValue: stateValue.toUpperCase() as StateUnion,
-        getTrackingEvent: (value) => ({
-          eventName: 'state_doc_link_clicked',
-          payload: { componentName: 'dut_state', activeTab: value },
-        }),
-      })(params);
+      return <DutStateCell params={params} />;
     },
   },
   'label-servo_state': {

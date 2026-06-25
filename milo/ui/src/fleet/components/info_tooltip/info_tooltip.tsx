@@ -17,6 +17,14 @@ import { InfoOutlined } from '@mui/icons-material';
 import { Tooltip, Typography } from '@mui/material';
 import React from 'react';
 
+export interface InfoTooltipProps
+  extends React.HTMLAttributes<HTMLSpanElement> {
+  infoCss?: CSSObject;
+  paperCss?: CSSObject;
+  color?: string;
+  fontSize?: string;
+}
+
 /**
  * Renders an interactive hovercard.
  * Uses MUI Tooltip with interactive prop to handle hover delays
@@ -28,12 +36,9 @@ export function InfoTooltip({
   paperCss = {},
   color = 'action.active',
   fontSize = '1rem',
-}: React.PropsWithChildren<{
-  infoCss?: CSSObject;
-  paperCss?: CSSObject;
-  color?: string;
-  fontSize?: string;
-}>) {
+  tabIndex = 0,
+  ...rest
+}: React.PropsWithChildren<InfoTooltipProps>) {
   return (
     <Tooltip
       title={
@@ -72,6 +77,7 @@ export function InfoTooltip({
     >
       <span
         className="fleet-info-icon"
+        tabIndex={tabIndex}
         css={[
           {
             cursor: 'pointer',
@@ -80,6 +86,7 @@ export function InfoTooltip({
           },
           infoCss,
         ]}
+        {...rest}
       >
         <InfoOutlined sx={{ fontSize, color }} />
       </span>
