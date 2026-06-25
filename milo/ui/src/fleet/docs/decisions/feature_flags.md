@@ -25,6 +25,7 @@ export const myNewFeatureFlag = createFeatureFlag({
 To prevent incomplete or experimental features from appearing in production during development, the toggling UI is restricted by environment.
 
 ### 1. Localhost and Dev Environments
+
 The experimental/flask icon button (`<AvailableFlags />`) in the [Header](../../layouts/header.tsx) app bar is **only rendered** if the current hostname is `localhost` or contains `-dev`:
 
 ```typescript
@@ -34,6 +35,7 @@ The experimental/flask icon button (`<AvailableFlags />`) in the [Header](../../
 ```
 
 ### 2. Production Environment
+
 In production, the flask icon button is **hidden** by default to prevent end users from toggling in-development features.
 
 ## Toggling Flags Manually in Production
@@ -52,3 +54,14 @@ Even though the header UI is hidden in production, the underlying `useFeatureFla
    localStorage.removeItem('featureFlag:fleet-console:[flag-name]');
    ```
 4. **Refresh the page** for the changes to take effect.
+
+## Launching Features and Removing Flags
+
+When a feature is fully tested and ready to be launched to all users, **do not** change the flag's rollout `percentage` to `100` (or `80`).
+
+Due to how `useFeatureFlag` calculates activation thresholds (`Math.min(userActivationThreshold, 80) <= percentage`), setting `percentage: 80` already makes the check evaluate to `true` for 100% of users (even those whose raw threshold was 81–100). Setting `percentage` to `100` is redundant, and keeping any flag set to `>= 80` triggers persistent runtime console warnings advising that the flag be removed.
+
+To permanently launch a feature:
+
+1. **Remove the flag definition** from [features.ts](../../features.ts).
+2. **Remove `useFeatureFlag` checks** from components and default the feature code path to always be active.
