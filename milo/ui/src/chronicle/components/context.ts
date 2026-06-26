@@ -19,10 +19,14 @@ import { WorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import { WorkflowType } from '../fake_turboci_graph';
 
+export const DEMO_WORKPLAN_ID = 'demo';
+
 export interface ChronicleContextType {
   workplanId: string;
   graph: WorkPlan | undefined;
   valueDataMap: Map<string, ValueData>;
+  activeEnvironment: string | undefined;
+  setActiveEnvironment: (environment: string | undefined) => void;
 
   // Workflow type for fake data generation only.
   workflowType: WorkflowType;
@@ -37,8 +41,10 @@ export const ChronicleContext = createContext<ChronicleContextType>({
   workplanId: '',
   graph: undefined,
   valueDataMap: new Map(),
+  activeEnvironment: undefined,
   workflowType: WorkflowType.ANDROID,
   setWorkflowType: () => {},
   selectedNodeId: undefined,
   setSelectedNodeId: () => {},
+  setActiveEnvironment: () => {},
 });

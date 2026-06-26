@@ -23,9 +23,7 @@ import { ValueMask } from '@/proto/turboci/graph/orchestrator/v1/value_mask.pb';
 
 import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
 
-const DEMO_WORKPLAN_ID = 'demo';
-
-import { ChronicleContext } from './context';
+import { ChronicleContext, DEMO_WORKPLAN_ID } from './context';
 
 /**
  * Hook to sync node selection with the URL query parameter `nodeId`.
@@ -37,7 +35,7 @@ function useNodeSelection() {
   const setSelectedNodeId = useCallback(
     (id: string | undefined) => {
       setSearchParams(
-        (prev) => {
+        (prev: URLSearchParams) => {
           const next = new URLSearchParams(prev);
           if (id) {
             next.set('nodeId', id);
@@ -76,6 +74,17 @@ export function ChronicleContextProvider({
       : workplanId;
 
   const useFakeData = normalizedWorkplanId === DEMO_WORKPLAN_ID;
+
+  const [activeEnvironment, setActiveEnvironmentState] = useState<
+    string | undefined
+  >(useFakeData ? DEMO_WORKPLAN_ID : undefined);
+
+  const setActiveEnvironment = useCallback(
+    (environment: string | undefined) => {
+      setActiveEnvironmentState(environment);
+    },
+    [],
+  );
 
   const result = useReadWorkPlan(
     {
@@ -138,6 +147,8 @@ export function ChronicleContextProvider({
       workplanId: normalizedWorkplanId,
       graph: workplanValueMap.workplan,
       valueDataMap: workplanValueMap.valueDataMap,
+      activeEnvironment,
+      setActiveEnvironment,
       workflowType,
       setWorkflowType,
       selectedNodeId,
@@ -147,6 +158,8 @@ export function ChronicleContextProvider({
       normalizedWorkplanId,
       workplanValueMap.workplan,
       workplanValueMap.valueDataMap,
+      activeEnvironment,
+      setActiveEnvironment,
       workflowType,
       setWorkflowType,
       selectedNodeId,

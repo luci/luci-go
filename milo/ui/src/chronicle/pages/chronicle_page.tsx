@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useParams } from 'react-router';
+
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -19,8 +21,9 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { ChronicleContextProvider } from '../components/provider';
 
 export function ChroniclePage() {
+  const { workplanId } = useParams<{ workplanId: string }>();
   return (
-    <ChronicleContextProvider>
+    <ChronicleContextProvider key={workplanId || ''}>
       <AppRoutedTabs>
         <AppRoutedTab label="Summary" value="summary" to="summary" />
         <AppRoutedTab label="Timeline" value="timeline" to="timeline" />
