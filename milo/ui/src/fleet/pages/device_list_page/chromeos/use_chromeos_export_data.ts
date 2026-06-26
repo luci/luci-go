@@ -13,13 +13,9 @@
 // limitations under the License.
 
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { useMemo } from 'react';
 
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
-import { getFilters } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Column,
   ExportDevicesToCSVRequest,
@@ -28,26 +24,17 @@ import {
 
 export const useChromeOSExportData = (
   columnsToExport: Column[],
+  filter: string,
   idsToExport?: string[],
 ) => {
-  const [searchParams] = useSyncedSearchParams();
   const client = useFleetConsoleClient();
   const [orderByParam] = useOrderByParam();
-
-  const selectedOptions = useMemo(
-    () => getFilters(searchParams),
-    [searchParams],
-  );
-
-  const stringifiedSelectedOptions = selectedOptions.error
-    ? ''
-    : stringifyFilters(selectedOptions.filters);
 
   const request = client.ExportDevicesToCSV.query(
     ExportDevicesToCSVRequest.fromPartial({
       columns: columnsToExport,
       orderBy: orderByParam,
-      filter: stringifiedSelectedOptions,
+      filter: filter,
       ids: idsToExport, // Export all if not provided
     }),
   );

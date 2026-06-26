@@ -34,6 +34,7 @@ export type ChromeOSCSVExportMenuItemProps = {
   onExportComplete?: () => void;
   fileName: string;
   showNotification: (message: string, severity: AlertColor) => void;
+  filter: string;
 };
 
 export function ChromeOSCSVExportMenuItem({
@@ -43,10 +44,12 @@ export function ChromeOSCSVExportMenuItem({
   onExportComplete,
   fileName,
   showNotification,
+  filter,
 }: ChromeOSCSVExportMenuItemProps) {
   const { trackEvent } = useGoogleAnalytics();
   const { isFetching, refetch } = useChromeOSExportData(
     columnsToExport,
+    filter,
     idsToExport,
   );
 

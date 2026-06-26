@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
@@ -213,8 +213,20 @@ describe('<ChromeOSDevicesPage />', () => {
 
     const mockGetDimensions = jest.fn().mockReturnValue({
       queryKey: ['GetDeviceDimensions'],
-      queryFn: jest.fn().mockResolvedValue({ dimensions: {} }),
-      data: { dimensions: {} },
+      queryFn: jest.fn().mockResolvedValue({
+        baseDimensions: {},
+        labels: {
+          'label-pool': { values: ['cellular'] },
+          ufs_zone: { values: ['ZONE_CHROMEOS7'] },
+        },
+      }),
+      data: {
+        baseDimensions: {},
+        labels: {
+          'label-pool': { values: ['cellular'] },
+          ufs_zone: { values: ['ZONE_CHROMEOS7'] },
+        },
+      },
       isPending: false,
     });
 
@@ -261,19 +273,24 @@ describe('<ChromeOSDevicesPage />', () => {
       </FakeContextProvider>,
     );
 
+    // Wait for filter chips to parse and load from GetDeviceDimensions query
+    await screen.findAllByTestId('filter-chip');
+
     // Find and click the Export button
     const exportButton = await screen.findByRole('button', { name: /export/i });
     fireEvent.click(exportButton);
 
     // Find and click "Export all (CSV)" menu item
     const exportAllItem = await screen.findByText('Export all (CSV)');
-    fireEvent.click(exportAllItem);
+    await act(async () => {
+      fireEvent.click(exportAllItem);
+    });
 
     // Verify that the query was triggered with parsed and formatted filter keys
     expect(mockExport).toHaveBeenCalled();
-    const callArgs = mockExport.mock.calls[0][0];
+    const callArgs = mockExport.mock.lastCall![0];
     expect(callArgs.filter).toBe(
-      'labels."label-pool" = "cellular" labels."ufs_zone" = "ZONE_CHROMEOS7"',
+      '(labels."label-pool" = "cellular") AND (labels."ufs_zone" = "ZONE_CHROMEOS7")',
     );
   });
 });

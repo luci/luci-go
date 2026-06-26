@@ -54,8 +54,10 @@ import { useChromeOSFilters } from './use_chromeos_filters';
 
 const ChromeOSActions = ({
   table,
+  filter,
 }: {
   table: MRT_TableInstance<ChromeOSDevice>;
+  filter: string;
 }) => {
   const showReserve = useFeatureFlag(enableReserveDuts);
   const selectedModelRows = table.getSelectedRowModel().rows;
@@ -72,7 +74,9 @@ const ChromeOSActions = ({
   }));
 
   if (selectedRows.length === 0) {
-    return <ChromeOSExportButton table={table} selectedRowIds={[]} />;
+    return (
+      <ChromeOSExportButton table={table} selectedRowIds={[]} filter={filter} />
+    );
   }
 
   return (
@@ -87,6 +91,7 @@ const ChromeOSActions = ({
       <ChromeOSExportButton
         table={table}
         selectedRowIds={Object.keys(table.getState().rowSelection)}
+        filter={filter}
       />
     </>
   );
@@ -198,7 +203,7 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
           resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
           resetColumnWidths={resetColumnWidths}
         >
-          <ChromeOSActions table={table} />
+          <ChromeOSActions table={table} filter={aip160Filter} />
         </FleetTopToolbar>
       ),
       renderBottomToolbarCustomActions: ({ table }) => (
@@ -248,6 +253,7 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
       pagerCtx,
       columnSizing,
       onColumnSizingChange,
+      aip160Filter,
     ],
   );
 

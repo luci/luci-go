@@ -26,6 +26,7 @@ const FILE_NAME = 'fleet_console_devices';
 interface ChromeOSExportButtonProps<TData extends MRT_RowData> {
   table: MRT_TableInstance<TData>;
   selectedRowIds: string[];
+  filter: string;
 }
 
 interface NotificationState {
@@ -37,6 +38,7 @@ interface NotificationState {
 export function ChromeOSExportButton<TData extends MRT_RowData>({
   table,
   selectedRowIds,
+  filter,
 }: ChromeOSExportButtonProps<TData>) {
   const columnsToExport = useMemo(
     () =>
@@ -95,6 +97,7 @@ export function ChromeOSExportButton<TData extends MRT_RowData>({
           onExportComplete={handleClose}
           fileName={FILE_NAME}
           showNotification={showNotification}
+          filter={filter}
         />
         <ChromeOSCSVExportMenuItem
           displayText={
@@ -112,6 +115,7 @@ export function ChromeOSExportButton<TData extends MRT_RowData>({
           onExportComplete={handleClose}
           fileName={FILE_NAME}
           showNotification={showNotification}
+          filter={filter}
         />
       </Menu>
       <Snackbar
