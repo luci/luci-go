@@ -1,3 +1,5 @@
+VITE_FLEET_CONSOLE_HOST ?= fleet-console-dev-1037063051440.us-central1.run.app
+
 default: help
 
 help:
@@ -62,5 +64,5 @@ up-dev:
 # It also overrides the Milo host so the UI does not talk to the demo version of
 # the Milo API service which may not exist.
 deploy-ui-demo:
-	export VITE_OVERRIDE_MILO_HOST=staging.milo.api.luci.app && npm run build
+	export VITE_OVERRIDE_MILO_HOST=staging.milo.api.luci.app && export VITE_FLEET_CONSOLE_HOST=$(VITE_FLEET_CONSOLE_HOST) && npm run build
 	gae.py upload -p ../ -A luci-milo-dev ui-new -f

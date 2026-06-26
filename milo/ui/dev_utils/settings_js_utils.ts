@@ -166,6 +166,8 @@ export function overrideMiloHostPlugin(
   env: Record<string, string | undefined>,
 ): Plugin {
   const miloHost = env['VITE_OVERRIDE_MILO_HOST'];
+  const fleetConsoleHost =
+    env['VITE_OVERRIDE_FLEET_CONSOLE_HOST'] ?? env['VITE_FLEET_CONSOLE_HOST'];
   return {
     name: 'override-milo-host',
     resolveId: (id) => {
@@ -180,17 +182,28 @@ export function overrideMiloHostPlugin(
         return null;
       }
 
-      if (!miloHost) {
+      if (!miloHost && !fleetConsoleHost) {
         return '';
       }
+
+      const miloHostStr = JSON.stringify(miloHost);
+      const fleetConsoleHostStr = JSON.stringify(fleetConsoleHost);
 
       return `
         self.SETTINGS = Object.freeze({
           ...self.SETTINGS,
-          milo: {
-            ...self.SETTINGS.milo,
-            host: ${JSON.stringify(miloHost)}
-          }
+          ...( ${miloHostStr} ? {
+            milo: {
+              ...self.SETTINGS.milo,
+              host: ${miloHostStr}
+            }
+          } : {}),
+          ...( ${fleetConsoleHostStr} ? {
+            fleetConsole: {
+              ...self.SETTINGS.fleetConsole,
+              host: ${fleetConsoleHostStr}
+            }
+          } : {})
         });
       `;
     },
