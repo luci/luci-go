@@ -15,6 +15,7 @@
 import { Box, Chip, Divider, Typography } from '@mui/material';
 
 import { toString } from '@/chronicle/utils/id';
+import { renderTimestamp } from '@/chronicle/utils/time_utils';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { stageAttemptStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import {
@@ -64,8 +65,11 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
           value={stage.state ? stageStateToJSON(stage.state) : 'UNKNOWN'}
         />
         <DetailRow label="Realm" value={stage.realm} />
-        <DetailRow label="Created" value={createTs?.ts} />
-        <DetailRow label="Last Updated" value={stage.version?.ts} />
+        <DetailRow label="Created" value={renderTimestamp(createTs?.ts)} />
+        <DetailRow
+          label="Last Updated"
+          value={renderTimestamp(stage.version?.ts)}
+        />
       </Box>
 
       {dependencyIds.length > 0 && (
@@ -136,7 +140,10 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
                       : 'UNKNOWN'
                   }
                 />
-                <DetailRow label="Version" value={attempt.version?.ts} />
+                <DetailRow
+                  label="Version"
+                  value={renderTimestamp(attempt.version?.ts)}
+                />
                 {attempt.details.map((detail, dIndex) => (
                   <AnyDetails
                     key={dIndex}

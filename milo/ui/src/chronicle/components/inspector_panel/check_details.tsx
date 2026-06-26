@@ -15,6 +15,7 @@
 import { Box, Chip, Divider, Typography } from '@mui/material';
 
 import { toString } from '@/chronicle/utils/id';
+import { renderTimestamp } from '@/chronicle/utils/time_utils';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { checkKindToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { checkStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
@@ -50,7 +51,10 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
           value={check.state ? checkStateToJSON(check.state) : 'UNKNOWN'}
         />
         <DetailRow label="Realm" value={check.realm} />
-        <DetailRow label="Last Updated" value={check.version?.ts} />
+        <DetailRow
+          label="Last Updated"
+          value={renderTimestamp(check.version?.ts)}
+        />
       </Box>
 
       {dependencyIds.length > 0 && (

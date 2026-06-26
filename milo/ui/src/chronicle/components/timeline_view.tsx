@@ -16,6 +16,7 @@ import { Box } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useMemo, useContext } from 'react';
 
+import { parseTimestamp } from '@/chronicle/utils/time_utils';
 import {
   Body,
   BottomAxis,
@@ -77,18 +78,16 @@ function TimelineView() {
           (s) => s.state === StageState.STAGE_STATE_FINAL,
         );
 
-        if (
-          !sv.identifier?.id ||
-          !attemptingStateHistory?.version?.ts ||
-          !finalStateHistory?.version?.ts
-        ) {
+        if (!sv.identifier?.id) {
           return undefined;
         }
 
-        const start = DateTime.fromISO(attemptingStateHistory.version.ts);
-        const end = DateTime.fromISO(finalStateHistory.version.ts);
+        const start = parseTimestamp(attemptingStateHistory?.version?.ts);
+        const end = parseTimestamp(finalStateHistory?.version?.ts);
 
-        if (!start.isValid || !end.isValid) return undefined;
+        if (!start || !end) {
+          return undefined;
+        }
 
         minMs = Math.min(minMs, start.toMillis());
         maxMs = Math.max(maxMs, end.toMillis());

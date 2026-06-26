@@ -14,6 +14,7 @@
 
 import { Box, Chip, Typography } from '@mui/material';
 
+import { renderTimestamp } from '@/chronicle/utils/time_utils';
 import {
   AccountInfo,
   ChangeMessageInfo,
@@ -177,10 +178,16 @@ function GerritChangeInfoDetails({ data }: { data: GerritChangeInfo }) {
           value={<AccountInfoDetails data={data.owner} />}
         />
       )}
-      <DetailRow label="Created" value={data.creationTime} />
-      <DetailRow label="Updated" value={data.lastModificationTime} />
+      <DetailRow label="Created" value={renderTimestamp(data.creationTime)} />
+      <DetailRow
+        label="Updated"
+        value={renderTimestamp(data.lastModificationTime)}
+      />
       {data.submittedTime && (
-        <DetailRow label="Submitted" value={data.submittedTime} />
+        <DetailRow
+          label="Submitted"
+          value={renderTimestamp(data.submittedTime)}
+        />
       )}
 
       {/* Just JSON.stringify deeply-nested fields until we have a reason
@@ -248,7 +255,7 @@ function ChangeMessageDetails({ data }: { data: ChangeMessageInfo }) {
           </Typography>
         )}
         <Typography variant="caption" color="text.secondary">
-          {data.date}
+          {renderTimestamp(data.date) || 'N/A'}
         </Typography>
         {data.patchset && (
           <Chip
