@@ -26,6 +26,7 @@ Progress:
 0. **Branch Safety Check**:
    - **Sync Before Branching**: Before creating a new task branch, you MUST run `git fetch origin` to update your local repository refs. Always create the branch off the updated remote main: `git checkout -b <branch-name> origin/main`. Creating branches from stale local representations of `origin/main` is a major cause of early merge conflicts on Gerrit.
    - **New Task Branching**: Generally start a new branch when starting a new task.
+   - **Check Active CL Tracking**: When resuming or editing an existing CL, you MUST run `git cl status` or `git branch -vv` to verify that the active local branch is tracking the correct Gerrit CL ID.
    - **Check for Unrelated Changes**: Double check that the branch you're currently on doesn't have unrelated changes before you upload a CL. Run `git log origin/main..HEAD` to see the commits on your branch relative to main, and ensure they are all related to the current task.
 
 1. **Verification**:
@@ -48,26 +49,39 @@ Progress:
      - Example: `git commit -m "[fleet console] Fix CSV export missing columns by preserving URL columns\n\n... details ...\n\nBug: b/515102813"`
 
 3. **Upload UI Demo**:
-   - For UI changes, consider uploading a demo to a dev environment.
-   - **Demo Link Requirement**: You **MUST** include a demo link in the CL for non-trivial frontend changes with user facing impact, unless deployment fails and cannot be resolved immediately.
-   - Run `make deploy-ui-demo` in the UI directory.
-   - *Note*: If this fails with auth errors (e.g., `Login first using 'gcloud auth login'`), notify the developer and ask them to run it on your behalf. Do not block the task on this failure. (Alternatively, the developer may choose to disable the sandbox to allow direct uploads).
-   - If successful, include the demo link in the CL description (typically printed in the output of the deploy command). **The demo link should ALWAYS be at the top of the commit message (right after the title line).** **Make sure the demo link goes directly to the affected pages for convenience.**
-   - Include testing instructions for the reviewer in the CL description, encouraging them to also test edge cases or related functionality that might break.
+   - For UI changes, you **MUST** upload a demo to the App Engine development environment and include the demo link in the CL description for reviewer verification, unless deployment is blocked by infrastructure/authentication issues.
+   - **Unified App Engine Deployment (Required)**:
+     - Do NOT deploy only the individual `ui-new` service (e.g., via `make deploy-ui-demo`). App Engine handles request routing via a central dispatcher service (`ui-dispatcher`). If you only deploy `ui-new` without updating `ui-dispatcher` under the same version ID, requests to static assets (like `/ui/immutable/...`) will fail with 404 console errors, resulting in a blank screen.
+     - Instead, always build the UI (`npm run build` with standard configurations) and upload **all services together** using a custom target version.
+     - Navigate to the `go.chromium.org/luci/milo` project root (one level up from the `ui` directory) and run:
+       `PATH=$PATH:~/depot_tools ../../../../env.py gae.py upload -p ./ -A luci-milo-dev -f --target-version=<short-name>`
+   - **Target Version SSL Length Limits**:
+     - App Engine has a strict 63-character length limit on subdomains for SSL certificates. If the version name (automatically generated from branch name, user, etc.) exceeds this limit, the SSL certificate negotiation will fail, resulting in a broken HTTPS link.
+     - You **MUST** override the target version with a short, clean, and unique name (e.g., `bh-summary` or `fc-export-csv`) using the `--target-version=<short-name>` flag as shown above.
+   - **Accessing the Demo**:
+     - Once deployed, the staging instance is accessible at the standard unified URL structure:
+       `https://<short-name>-dot-luci-milo-dev.appspot.com/ui/fleet/p/chromium/devices`
+     - Place this demo link at the top of the CL description (immediately after the title line). Make sure it points directly to the affected page(s).
+   - *Note*: If deployment fails with auth errors (e.g., `Login first using 'gcloud auth login'`), notify the developer and ask them to run it on your behalf. Do not block the task on this failure.
 
 4. **Optional Upload (WIP Workflows)**:
    - Read the existing CL description/metadata first if amending. Ensure you preserve existing metadata tags (like `Bug:`, `Reviewers:`, `Cc:`) in the description so you don't overwrite user configurations.
    - Attempt to run `git cl upload`.
-   - **Always upload new CLs in Work In Progress (WIP) mode** to suppress premature notifications to reviewers and watchlisted groups (such as `fleet-console-reviews`).
+   - **WIP Mode for New CLs Only**: Upload new CLs (initial upload) in Work In Progress (WIP) mode to suppress premature notifications to reviewers and watchlisted groups.
+   - **Maintain Review State for Existing CLs**: For existing CLs that are already under active review, do **NOT** pass WIP flags (like `-o wip` or `--wip`) during subsequent uploads. Pushing an active review CL back to WIP is highly disruptive because it hides the CL from reviewers' active dashboards.
    - *Note*: If this fails with an error like `chmod ~/.sso: operation not permitted` or a path-specific permission error, it is due to sandbox restrictions preventing the agent from modifying home directory files. In this case, do not block the task; notify the developer and ask them to run `git cl upload` on your behalf. (Alternatively, the developer may choose to disable the sandbox to allow direct uploads).
+   - **Updating CL Description Non-Interactively**: If you amend the commit message locally but no new code changes are detected, running `git cl upload` will not update the description on Gerrit. In this case, or to update the description directly and bypass editor blocks, write the new description to a temporary file (e.g. `.tmp/desc.txt`) and run:
+     `git cl description -n - < .tmp/desc.txt`
    - **Gerrit Verification**: After uploading, remote Gerrit Tryjobs/checks will run. NEVER mark a CL "ready" or ask for user submission consent until these remote Tryjobs/checks have fully passed. Polling remote checks can take time (5-15+ minutes); set a timer using the `schedule` tool to go idle and check back.
    > When uploading from background tasks, you can bypass all interactive prompts and text editor popups using these official non-interactive options:
    > - **For New CLs (Initial Upload)**: **Always use the `--wip` flag** along with `-f` and `--commit-description=+` to ensure the CL starts as WIP:
    >   `git cl upload -f --wip --commit-description=+`
-   > - **For Existing CLs (Subsequent Updates)**: Use `-t` to specify the patchset title directly from the command line (keep the CL in WIP state):
-   >   `git cl upload -t "My patchset title"`
-   >   *(Alternatively, use `-T` or `--skip-title` to automatically use the last commit message as the title)*
-   - **Transition to Review**: Do not mark the CL as "Ready" or send review emails. Leave it in the WIP state for the user to explicitly review and transition when ready.
+   > - **For Existing CLs (Subsequent Updates)**:
+   >   - If the CL is currently in WIP state: Use `-t` or `-T` to specify the patchset title and keep it in WIP:
+   >     `git cl upload -t "My patchset title"`
+   >   - If the CL is already in Active Review: Run the upload command without any WIP options to preserve its active status:
+   >     `git cl upload -t "Address review feedback"`
+   - **Transition to Review**: For new CLs, do not mark the CL as "Ready" or send review emails. Leave it in the WIP state for the user to explicitly review and transition when ready.
    >
    > (If you are encountering other interactive prompts, bypass them using the non-interactive option: `EDITOR=touch git cl upload -f --commit-description=+`)
    >
@@ -77,13 +91,13 @@ Progress:
 
 5. **Advanced Git Operations for Agents**:
 
-   ### Handling Multiple CLs
-   If a task involves independent changes (e.g., tests vs documentation, or core logic vs skill updates), consider splitting them into separate CLs to make review easier and safer.
-   - **Workflow**:
-     1. Create a new branch from `origin/main` for the independent changes.
-     2. Cherry-pick or manually apply the relevant changes to that branch.
-     3. Upload as a new CL using `git cl upload`.
-     4. Ensure the branches do not depend on each other unless strictly necessary.
+   ### Handling Multiple CLs (Standalone vs. Stacked)
+   - **Rule**: Stacks of CLs should ONLY be used for changes that are **actually dependent on each other** (e.g., Stage 2 depends on modifications or components introduced in Stage 1).
+   - **Rule**: If changes are independent (even if developed within the same coding session), they **MUST** be submitted as separate CLs tracking `origin/main` directly. Do not stack them just because they are part of the same session or task.
+   - **Workflow for Standalone CLs**:
+     1. Create a new branch from `origin/main` for the independent changes: `git checkout -b <branch-name> origin/main`.
+     2. Stage and commit only the files belonging to this change.
+     3. Upload using `git cl upload`.
 
    ### Cleaning Up Accumulating Commits (Unstacking & Decoupling Branches)
    When rebasing local branches that were previously stacked, a branch may carry over commits and file modifications from its old parent branches, causing `git cl upload` to pull in unrelated changes.
@@ -101,24 +115,26 @@ Progress:
    This guarantees the branch contains exactly one commit on top of `origin/main` with no unrelated tracking files.
 
    ### Creating Stacked/Chained CLs with Gerrit Dependencies
-   When you want to split a larger task into a series of dependent CLs (stacked changes):
+   - **Rule**: Use stacked chains ONLY when changes are sequentially dependent.
    - **Workflow**:
      1. **Start from the base branch/CL**: Ensure you are on the branch of the first CL (e.g., `branch-1` for `CL 1`).
-     2. **Create a dependent branch**: Run `git new-branch --upstream-current <new-branch-name>`. This creates a new branch (e.g., `branch-2`) tracking `branch-1` as its upstream.
+     2. **Create a dependent branch**: Run `git new-branch --upstream-current <new-branch-name>` or create a branch and configure its tracking manually: `git branch --set-upstream-to=branch-1`.
      3. **Apply and commit changes**: Apply your changes and commit them to `branch-2`.
-     4. **Upload to Gerrit**: Run `EDITOR=touch git cl upload -f --commit-description=+`. Because `branch-2` was created with `--upstream-current`, Gerrit will recognize the dependency structure, and the new CL will show as depending on the parent CL in the Gerrit UI.
+     4. **Upload to Gerrit**: Run `git cl upload -f --wip --commit-description=+`. Because `branch-2` was created with `--upstream-current` or tracks `branch-1` as upstream, Gerrit will recognize the dependency structure, and the new CL will show as depending on the parent CL in the Gerrit UI.
      5. **Uploading subsequent edits**:
         - To update the base CL (`CL 1`), switch back to `branch-1`, make changes, commit (amending if desired: `git commit --amend`), and upload.
-        - After updating `branch-1`, you must rebase `branch-2` onto the updated `branch-1`. Since `branch-1` was amended or rebased, a simple `git rebase branch-1` can cause git to incorrectly re-apply old commits, triggering merge conflicts. Instead, use one of these methods:
-           - **Recommended**: Run `git rebase-update` from any branch. This depot_tools command automatically and cleanly rebases all local stacked branches on their respective upstreams.
-           - **Manual Git**: Switch to `branch-2` and run `git rebase --onto branch-1 <old-branch-1-commit-hash> branch-2` (where `<old-branch-1-commit-hash>` is the commit hash of `branch-1` before it was amended/rebased).
+        - After updating `branch-1`, you must rebase `branch-2` onto the updated `branch-1`. Use `git rebase-update` to automatically and cleanly rebase all local stacked branches on their respective upstreams.
 
    ### Updating CL Description Non-Interactively
-   Agents cannot use interactive editors (like `vim`) that `git cl upload` or `git cl description` might open.
-   - **Workflow**:
-     1. Write the new description to a temporary file: `desc.txt`.
-     2. Set the description using standard input: `git cl description -n - < desc.txt`.
-     3. Remove the temporary file: `rm desc.txt`.
+   Agents cannot use interactive editors (like `vim`) that `git cl upload` or `git cl description` open by default.
+   - **Workflow (Amended Commit Message)**:
+     If you amended a local commit message and want to push it directly as the Gerrit CL description:
+     1. Run `git cl description -n +`.
+     2. **Crucial Rule**: The local commit *must* contain the exact `Change-Id` footer matching the target Gerrit CL issue (check association via `git cl status`). If they mismatch, Gerrit will reject the update with a `409 Conflict (wrong Change-Id footer)` error.
+   - **Workflow (Explicit Text/File)**:
+     Alternatively, to specify a description explicitly:
+     1. Write the new description to a temporary file: `.tmp/desc.txt`.
+     2. Set the description using standard input: `git cl description -n - < .tmp/desc.txt`.
 
    ### Avoiding Dirty Tree Traps
    Do not use `git add -A` or `git add .` blindly. If you created temporary directories or output files, they will pollute your branch unless they are channeled into the gitignored `.tmp/` folder (which is ignored at the `milo/ui` root). See [preventing-workspace-leakage](../preventing-workspace-leakage/SKILL.md) for detailed staging safety workflows.
