@@ -16,6 +16,7 @@ import { MRT_ColumnDef } from 'material-react-table';
 
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
+import { generateCatalogDetailsURL } from '@/fleet/constants/paths';
 import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] &
@@ -23,6 +24,10 @@ export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] &
   {
     accessorKey: 'productCatalogId',
     header: 'Product Catalog ID',
+    Cell: renderCellWithLink<ProductCatalogEntry>({
+      linkGenerator: (value) => generateCatalogDetailsURL(value ?? ''),
+      newTab: false,
+    }),
   },
   {
     accessorKey: 'productName',

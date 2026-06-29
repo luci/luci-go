@@ -30,6 +30,13 @@ export const REPAIRS_PATH = `${PLATFORM_PATH}/${REPAIRS_SUBROUTE}`;
 
 export const REQUESTS_PATH = `${FLEET_CONSOLE_BASE_URL}/${REQUESTS_SUBROUTE}`;
 
+export const CATALOG_PATH = `${FLEET_CONSOLE_BASE_URL}/catalog`;
+export const CATALOG_DETAILS_PATH = `${CATALOG_PATH}/:id`;
+
+export const generateCatalogDetailsURL = (id: string) => {
+  return `${CATALOG_PATH}/${id}`;
+};
+
 export const platformToURL = (p: Platform) => {
   return platformToJSON(p).toLowerCase();
 };
