@@ -130,6 +130,7 @@ func (e *Environment) WithWheels(wheels generators.Generator) generators.Generat
 	if reportURL := os.Getenv(common.EnvVpythonReportMissingUrl); reportURL != "" {
 		env.Set(common.EnvVpythonReportMissingUrl, reportURL)
 	}
+	passProxyEnv(env)
 	return &workflow.Generator{
 		Name: "python_venv",
 		Args: []string{
@@ -250,6 +251,7 @@ func (e *Environment) WithUV(uv generators.Generator, spec *standard.ProjectSpec
 	if reportURL := os.Getenv(common.EnvVpythonReportMissingUrl); reportURL != "" {
 		env.Set(common.EnvVpythonReportMissingUrl, reportURL)
 	}
+	passProxyEnv(env)
 
 	reqGen := &SpecRequirementsGenerator{Spec: spec}
 
@@ -275,5 +277,15 @@ func (e *Environment) WithUV(uv generators.Generator, spec *standard.ProjectSpec
 			{Type: generators.DepsHostTarget, Generator: reqGen},
 			{Type: generators.DepsHostTarget, Generator: bootstrapGen},
 		},
+	}
+}
+
+func passProxyEnv(dst environ.Env) {
+	for _, env := range os.Environ() {
+		key, value, _ := strings.Cut(env, "=")
+		switch strings.ToLower(key) {
+		case "http_proxy", "https_proxy", "all_proxy", "no_proxy":
+			dst.Set(key, value)
+		}
 	}
 }
