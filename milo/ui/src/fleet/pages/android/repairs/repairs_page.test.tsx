@@ -80,12 +80,12 @@ describe('RepairListPage', () => {
 
     // Check link for lab1 (uses lab_location)
     expect(hrefs).toContain(
-      'https://omnilab.corp.google.com/recovery?host=lab_location%3Ainclude%3Alab1&host=host_group%3Ainclude%3Agroup1&device=hardware%3Ainclude%3Atarget1',
+      'https://omnilab.corp.google.com/recovery?host=lab_location%3Ainclude%3Alab1&host=host_group%3Ainclude%3Agroup1',
     );
 
     // Check link for sjc-mdpt9-wear (uses lab)
     expect(hrefs).toContain(
-      'https://omnilab.corp.google.com/recovery?host=lab%3Ainclude%3Asjc-mdpt9-wear&host=host_group%3Ainclude%3Agroup3&device=hardware%3Ainclude%3Atarget3',
+      'https://omnilab.corp.google.com/recovery?host=lab%3Ainclude%3Asjc-mdpt9-wear&host=host_group%3Ainclude%3Agroup3',
     );
   });
 

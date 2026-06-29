@@ -339,23 +339,6 @@ export const COLUMNS = {
           'host',
           'host_group:include:' + encodeURIComponent(x.row.original.host_group),
         );
-      if (x.row.original.run_target)
-        if (
-          x.row
-            .getValue<Row['host_group']>('host_group')
-            ?.includes('crystalball')
-        )
-          // this team uses the run target label a bit differently so we are making an exeption for them
-          params.append(
-            'device',
-            'product_board:include:' +
-              encodeURIComponent(x.row.original.run_target),
-          );
-        else
-          params.append(
-            'device',
-            'hardware:include:' + encodeURIComponent(x.row.original.run_target),
-          );
 
       const to = `https://omnilab.corp.google.com/recovery?${params.toString()}`;
 
