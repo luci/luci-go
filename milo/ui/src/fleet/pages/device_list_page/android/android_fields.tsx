@@ -240,6 +240,7 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
     renderCell: renderTimestamp,
   },
   'ufs.nlyte_update_time': {
+    header: 'Nlyte Update Time',
     orderByField: 'labels.ufs.nlyte_update_time',
     meta: {
       infoTooltip: 'Time when the Nlyte data last changed',
@@ -247,6 +248,7 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
     renderCell: renderTimestamp,
   },
   'ufs.nlyte_last_sync': {
+    header: 'Nlyte Last Sync',
     orderByField: 'labels.ufs.nlyte_last_sync',
     meta: {
       infoTooltip: 'Time that UFS ran the cron and checked for updates',
