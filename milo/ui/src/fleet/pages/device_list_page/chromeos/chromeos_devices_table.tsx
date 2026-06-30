@@ -22,7 +22,6 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { usePagerContext } from '@/common/components/params_pager';
-import { useFeatureFlag } from '@/common/feature_flags';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
@@ -32,7 +31,6 @@ import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_botto
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { CHROMEOS_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
-import { enableReserveDuts } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
@@ -59,7 +57,6 @@ const ChromeOSActions = ({
   table: MRT_TableInstance<ChromeOSDevice>;
   filter: string;
 }) => {
-  const showReserve = useFeatureFlag(enableReserveDuts);
   const selectedModelRows = table.getSelectedRowModel().rows;
   const selectedRows = selectedModelRows.map((r) => r.original);
 
@@ -87,7 +84,7 @@ const ChromeOSActions = ({
         selectedItems={selectedDuts}
         platform={Platform.CHROMEOS}
       />
-      {showReserve && <RunReserve selectedDuts={selectedDuts} />}
+      <RunReserve selectedDuts={selectedDuts} />
       <ChromeOSExportButton
         table={table}
         selectedRowIds={Object.keys(table.getState().rowSelection)}

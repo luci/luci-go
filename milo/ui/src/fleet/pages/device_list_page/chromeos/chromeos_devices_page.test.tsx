@@ -140,69 +140,6 @@ describe('<ChromeOSDevicesPage />', () => {
     expect(checkboxes.length).toBeGreaterThan(1);
   });
 
-  describe('with Reserve DUTs feature flag', () => {
-    afterEach(() => {
-      localStorage.clear();
-    });
-
-    it('shows reserve button in toolbar when enabled and row is selected', async () => {
-      localStorage.setItem('featureFlag:fleet-console:reserve-duts', 'on');
-      render(
-        <FakeContextProvider
-          mountedPath="/test/:platform"
-          routerOptions={{
-            initialEntries: ['/test/chromeos'],
-          }}
-        >
-          <SettingsProvider>
-            <ShortcutProvider>
-              <ChromeOSDevicesPage />
-            </ShortcutProvider>
-          </SettingsProvider>
-        </FakeContextProvider>,
-      );
-
-      const checkboxes = await screen.findAllByRole('checkbox');
-      fireEvent.click(checkboxes[1]);
-
-      const reserveButton = await screen.findByRole('button', {
-        name: /reserve/i,
-      });
-      expect(reserveButton).toBeVisible();
-    });
-
-    it('hides reserve button in toolbar when disabled and row is selected', async () => {
-      localStorage.setItem('featureFlag:fleet-console:reserve-duts', 'off');
-      render(
-        <FakeContextProvider
-          mountedPath="/test/:platform"
-          routerOptions={{
-            initialEntries: ['/test/chromeos'],
-          }}
-        >
-          <SettingsProvider>
-            <ShortcutProvider>
-              <ChromeOSDevicesPage />
-            </ShortcutProvider>
-          </SettingsProvider>
-        </FakeContextProvider>,
-      );
-
-      const checkboxes = await screen.findAllByRole('checkbox');
-      fireEvent.click(checkboxes[1]);
-
-      const autorepairButton = await screen.findByRole('button', {
-        name: /run autorepair/i,
-      });
-      expect(autorepairButton).toBeVisible();
-
-      const reserveButton = screen.queryByRole('button', {
-        name: /reserve/i,
-      });
-      expect(reserveButton).toBeNull();
-    });
-  });
-
   it('should call ExportDevicesToCSV with correct filters', async () => {
     const mockExport = jest.fn().mockReturnValue({
       queryKey: ['ExportDevicesToCSV'],

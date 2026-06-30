@@ -23,7 +23,6 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useFeatureFlag } from '@/common/feature_flags';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { LeaseTip } from '@/fleet/components/actions/lease/lease_tip';
@@ -39,7 +38,6 @@ import {
   generateDeviceListURL,
   CHROMEOS_PLATFORM,
 } from '@/fleet/constants/paths';
-import { enableReserveDuts } from '@/fleet/features';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import {
@@ -127,7 +125,6 @@ const useNavigatedFromLink = () => {
 
 // This page is only used in chrome os
 export const ChromeOSDeviceDetailsPage = () => {
-  const showReserve = useFeatureFlag(enableReserveDuts);
   const { id = '' } = useParams();
   const [deviceIdInputValue, setDeviceIdInputValue] = useState(id);
   const navigatedFromLink = useNavigatedFromLink();
@@ -298,7 +295,7 @@ export const ChromeOSDeviceDetailsPage = () => {
               selectedItems={selectedDuts}
               platform={Platform.CHROMEOS}
             />
-            {showReserve && <RunReserve selectedDuts={selectedDuts} />}
+            <RunReserve selectedDuts={selectedDuts} />
             <SshTip hostname={id} dutId={dutId} />
             <LeaseTip hostname={id} />
           </div>
