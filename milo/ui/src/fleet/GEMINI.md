@@ -65,6 +65,7 @@ Available skills include:
 - [continuous-improvement](./.agents/skills/continuous-improvement/SKILL.md)
 - [coordinating-multiple-repositories](./.agents/skills/coordinating-multiple-repositories/SKILL.md)
 - [frontend-performance-optimization](./.agents/skills/frontend-performance-optimization/SKILL.md)
+- [gerrit-workflows](./.agents/skills/gerrit-workflows/SKILL.md)
 
 
 ## Confidentiality Guidelines
