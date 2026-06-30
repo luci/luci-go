@@ -45,8 +45,8 @@ import (
 var errNonSuccess = errors.New("build state != SUCCESS")
 
 // MainWithArgs is the same as Main, but accepts an argument list instead of reading from os.Args.
-func MainWithArgs(args []string, cb func(context.Context, []string, *State) error) {
-	ctx := gologger.StdConfig.Use(context.Background())
+func MainWithArgs(ctx context.Context, args []string, cb func(context.Context, []string, *State) error) {
+	ctx = gologger.StdConfig.Use(ctx)
 
 	switch err := main(ctx, args, os.Stdin, cb); err {
 	case nil:
@@ -114,7 +114,7 @@ func MainWithArgs(args []string, cb func(context.Context, []string, *State) erro
 // TODO(iannucci): LUCIEXE_FAKEBUILD does not support nested invocations.
 // It should set up bbagent and butler in order to aggregate logs.
 func Main(cb func(context.Context, []string, *State) error) {
-	MainWithArgs(os.Args, cb)
+	MainWithArgs(context.Background(), os.Args, cb)
 }
 
 func main(ctx context.Context, args []string, stdin io.Reader, cb func(context.Context, []string, *State) error) (err error) {
