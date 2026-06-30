@@ -141,12 +141,9 @@ describe('<ChromeOSDevicesPage />', () => {
   });
 
   it('should call ExportDevicesToCSV with correct filters', async () => {
-    const mockExport = jest.fn().mockReturnValue({
-      queryKey: ['ExportDevicesToCSV'],
-      queryFn: jest.fn().mockResolvedValue({ csvData: 'id,dut_id\n1,dut-1\n' }),
-      data: { csvData: 'id,dut_id\n1,dut-1\n' },
-      isPending: false,
-    });
+    const mockExport = jest
+      .fn()
+      .mockResolvedValue({ csvData: 'id,dut_id\n1,dut-1\n' });
 
     const mockGetDimensions = jest.fn().mockReturnValue({
       queryKey: ['GetDeviceDimensions'],
@@ -175,9 +172,7 @@ describe('<ChromeOSDevicesPage />', () => {
     });
 
     jest.spyOn(PrpcClients, 'useFleetConsoleClient').mockReturnValue({
-      ExportDevicesToCSV: {
-        query: mockExport,
-      },
+      ExportDevicesToCSV: mockExport,
       GetDeviceDimensions: {
         query: mockGetDimensions,
       },

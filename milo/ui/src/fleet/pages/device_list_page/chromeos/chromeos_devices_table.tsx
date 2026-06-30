@@ -27,6 +27,7 @@ import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import { RunReserve } from '@/fleet/components/actions/reserve/run_reserve';
 import { MrtColumnManager } from '@/fleet/components/columns/use_mrt_column_management';
+import { FleetCSVExportButton } from '@/fleet/components/export/fleet_csv_export_button';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
@@ -42,9 +43,9 @@ import {
   CountDevicesRequest,
   ListDevicesRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { ExportDevicesToCSVRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
-import { ChromeOSExportButton } from './chromeos_export_button';
 import { getLabelValue, getLabelValues } from './chromeos_fields_config';
 import { ChromeOSColumnDef, ChromeOSDevice } from './chromeos_types';
 import { useChromeOSCurrentTasks } from './use_chromeos_current_tasks';
@@ -53,10 +54,13 @@ import { useChromeOSFilters } from './use_chromeos_filters';
 const ChromeOSActions = ({
   table,
   filter,
+  orderBy,
 }: {
   table: MRT_TableInstance<ChromeOSDevice>;
   filter: string;
+  orderBy: string;
 }) => {
+  const client = useFleetConsoleClient();
   const selectedModelRows = table.getSelectedRowModel().rows;
   const selectedRows = selectedModelRows.map((r) => r.original);
 
@@ -70,11 +74,25 @@ const ChromeOSActions = ({
     namespace: getLabelValues(row, 'ufs_namespace'),
   }));
 
-  if (selectedRows.length === 0) {
-    return (
-      <ChromeOSExportButton table={table} selectedRowIds={[]} filter={filter} />
-    );
-  }
+  const exportBtn = (
+    <FleetCSVExportButton
+      table={table}
+      filter={filter}
+      fileName="fleet_console_chromeos_devices"
+      onExport={(cols, filterStr, ids) =>
+        client.ExportDevicesToCSV(
+          ExportDevicesToCSVRequest.fromPartial({
+            columns: cols,
+            orderBy,
+            filter: filterStr,
+            ids,
+          }),
+        )
+      }
+    />
+  );
+
+  if (selectedRows.length === 0) return exportBtn;
 
   return (
     <>
@@ -85,11 +103,7 @@ const ChromeOSActions = ({
         platform={Platform.CHROMEOS}
       />
       <RunReserve selectedDuts={selectedDuts} />
-      <ChromeOSExportButton
-        table={table}
-        selectedRowIds={Object.keys(table.getState().rowSelection)}
-        filter={filter}
-      />
+      {exportBtn}
     </>
   );
 };
@@ -200,7 +214,11 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
           resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
           resetColumnWidths={resetColumnWidths}
         >
-          <ChromeOSActions table={table} filter={aip160Filter} />
+          <ChromeOSActions
+            table={table}
+            filter={aip160Filter}
+            orderBy={orderByParam}
+          />
         </FleetTopToolbar>
       ),
       renderBottomToolbarCustomActions: ({ table }) => (
@@ -251,6 +269,7 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
       columnSizing,
       onColumnSizingChange,
       aip160Filter,
+      orderByParam,
     ],
   );
 

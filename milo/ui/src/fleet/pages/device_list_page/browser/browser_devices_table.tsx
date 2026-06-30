@@ -29,10 +29,12 @@ import {
   extractPool,
 } from '@/fleet/components/actions/request_repair/request_repair_utils';
 import { MrtColumnManager } from '@/fleet/components/columns/use_mrt_column_management';
+import { FleetCSVExportButton } from '@/fleet/components/export/fleet_csv_export_button';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { BROWSER_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
@@ -40,6 +42,7 @@ import { usePager } from '@/fleet/hooks/use_pager';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import {
   BrowserDevice,
+  ExportBrowserDevicesToCSVRequest,
   ListBrowserDevicesRequest,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -85,6 +88,7 @@ interface BrowserTableProps {
 export const BrowserDevicesTable = ({
   mrtColumnManager,
 }: BrowserTableProps) => {
+  const client = useFleetConsoleClient();
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100, 500, 1000],
     defaultPageSize: 100,
@@ -104,9 +108,7 @@ export const BrowserDevicesTable = ({
     filterValues,
     aip160,
     warnings: filterWarnings,
-  } = useBrowserFilters(() => {
-    // Dummy onApply, handled by the page component.
-  });
+  } = useBrowserFilters(() => {});
 
   const aip160Filter = filterWarnings.length > 0 ? '' : aip160();
 
@@ -173,6 +175,21 @@ export const BrowserDevicesTable = ({
           resetColumnWidths={resetColumnWidths}
         >
           <BrowserActions table={table} />
+          <FleetCSVExportButton
+            table={table}
+            filter={aip160Filter}
+            fileName="fleet_console_browser_devices"
+            onExport={(cols, filterStr, ids) =>
+              client.ExportBrowserDevicesToCSV(
+                ExportBrowserDevicesToCSVRequest.fromPartial({
+                  columns: cols,
+                  orderBy: orderByParam,
+                  filter: filterStr,
+                  ids,
+                }),
+              )
+            }
+          />
         </FleetTopToolbar>
       ),
       renderBottomToolbarCustomActions: ({ table }) => (
@@ -222,6 +239,9 @@ export const BrowserDevicesTable = ({
       devicesQuery.isFetching,
       columnSizing,
       onColumnSizingChange,
+      aip160Filter,
+      client,
+      orderByParam,
     ],
   );
 

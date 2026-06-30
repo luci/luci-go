@@ -17,7 +17,7 @@ import {
   MRT_RowSelectionState,
   MRT_TableOptions,
 } from 'material-react-table';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { usePagerContext } from '@/common/components/params_pager';
 import { useFeatureFlag } from '@/common/feature_flags';
@@ -25,10 +25,12 @@ import {
   getColumnId,
   MrtColumnManager,
 } from '@/fleet/components/columns/use_mrt_column_management';
+import { FleetCSVExportButton } from '@/fleet/components/export/fleet_csv_export_button';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
@@ -39,6 +41,7 @@ import {
   ListDevicesRequest,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { ExportAndroidDevicesToCSVRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AVG_UTILIZATION_FEATURE } from './android_devices_page';
 import { AndroidColumnDef } from './android_fields';
@@ -54,6 +57,7 @@ export const AndroidDevicesTable = ({
   availableColumns,
 }: AndroidTableProps) => {
   const showAvgUtilization = useFeatureFlag(AVG_UTILIZATION_FEATURE);
+  const client = useFleetConsoleClient();
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100, 500, 1000],
     defaultPageSize: 100,
@@ -69,11 +73,20 @@ export const AndroidDevicesTable = ({
     pagerCtx,
   );
 
-  const { filterValues, aip160 } = useAndroidFilters(() => {
-    // Clear row selection when filters change to prevent performing bulk actions
-    // on hidden/invisible rows.
+  const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
+
+  const { filterValues, aip160 } = useAndroidFilters(
+    () => {},
+    showAvgUtilization,
+  );
+
+  const aip160Filter = aip160();
+
+  // Clear row selection when filters change to prevent performing bulk actions
+  // on hidden/invisible rows.
+  useEffect(() => {
     setRowSelection({});
-  }, showAvgUtilization);
+  }, [filterValues]);
 
   const request = useMemo(
     () =>
@@ -81,17 +94,15 @@ export const AndroidDevicesTable = ({
         pageSize,
         pageToken,
         orderBy: orderByParam,
-        filter: aip160(),
+        filter: aip160Filter,
         platform: Platform.ANDROID,
       }),
-    [pageSize, pageToken, orderByParam, aip160],
+    [pageSize, pageToken, orderByParam, aip160Filter],
   );
 
   const devicesQuery = useAndroidDevices(request);
 
   const { devices = [] } = devicesQuery.data || {};
-
-  const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
   const { columnSizing, onColumnSizingChange, resetColumnWidths } =
     useMrtColumnSizing(ANDROID_DEVICES_LOCAL_STORAGE_KEY);
@@ -135,7 +146,23 @@ export const AndroidDevicesTable = ({
           selectOnlyColumn={mrtColumnManager.selectOnlyColumn}
           resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
           resetColumnWidths={resetColumnWidths}
-        />
+        >
+          <FleetCSVExportButton
+            table={table}
+            filter={aip160Filter}
+            fileName="fleet_console_android_devices"
+            onExport={(cols, filterStr, ids) =>
+              client.ExportAndroidDevicesToCSV(
+                ExportAndroidDevicesToCSVRequest.fromPartial({
+                  columns: cols,
+                  orderBy: orderByParam,
+                  filter: filterStr,
+                  ids,
+                }),
+              )
+            }
+          />
+        </FleetTopToolbar>
       ),
       renderBottomToolbarCustomActions: ({ table }) => (
         <FleetBottomToolbar
@@ -191,6 +218,9 @@ export const AndroidDevicesTable = ({
       devicesQuery.isFetching,
       columnSizing,
       onColumnSizingChange,
+      aip160Filter,
+      client,
+      orderByParam,
     ],
   );
 

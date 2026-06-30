@@ -269,14 +269,21 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
     //TODO (b/502485099): this will be filterable after is resolved
     header: '7 Day Average Utilization',
     orderByField: 'average_7d',
-    accessorFn: (device) => device.average7d,
+    accessorFn: (device) =>
+      device.average7d !== undefined && device.average7d !== null
+        ? device.average7d * 100
+        : undefined,
     filterVariant: 'range-slider',
     muiFilterSliderProps: {
       min: 0,
       max: 100,
     },
     renderCell: ({ value, device }) => {
-      const val = value ?? device?.average7d ?? null;
+      const val =
+        value ??
+        (device?.average7d !== undefined && device?.average7d !== null
+          ? device.average7d * 100
+          : null);
       if (typeof val !== 'number') return null;
       return <>{val.toFixed(2)}%</>;
     },
@@ -285,14 +292,21 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
     //TODO (b/502485099): this will be filterable after is resolved
     header: '30 Day Average Utilization',
     orderByField: 'average_30d',
-    accessorFn: (device) => device.average30d,
+    accessorFn: (device) =>
+      device.average30d !== undefined && device.average30d !== null
+        ? device.average30d * 100
+        : undefined,
     filterVariant: 'range-slider',
     muiFilterSliderProps: {
       min: 0,
       max: 100,
     },
     renderCell: ({ value, device }) => {
-      const val = value ?? device?.average30d ?? null;
+      const val =
+        value ??
+        (device?.average30d !== undefined && device?.average30d !== null
+          ? device.average30d * 100
+          : null);
       if (typeof val !== 'number') return null;
       return <>{val.toFixed(2)}%</>;
     },

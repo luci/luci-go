@@ -82,7 +82,7 @@ describe('Android Columns', () => {
 
     const mockCellParams7dValue = {
       cell: { getValue: () => 42.5 },
-      row: { original: { average7d: 42.5 } },
+      row: { original: { average7d: 0.425 } },
     } as unknown as Parameters<Required<AndroidColumnDef>['Cell']>[0];
 
     const mockCellParams7dNull = {
@@ -97,7 +97,7 @@ describe('Android Columns', () => {
 
     const mockCellParams30dValue = {
       cell: { getValue: () => 85.123 },
-      row: { original: { average30d: 85.123 } },
+      row: { original: { average30d: 0.85123 } },
     } as unknown as Parameters<Required<AndroidColumnDef>['Cell']>[0];
 
     expect(avg7dCol.Cell!(mockCellParams7dZero)).toEqual(
