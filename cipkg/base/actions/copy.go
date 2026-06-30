@@ -41,13 +41,22 @@ func ActionFilesCopyTransformer(a *core.ActionFilesCopy, deps []Package) (*core.
 		return nil, err
 	}
 
-	// Clone the action so we can remove path when regenerating the hash.
-	// If version is set, we don't need path to determine whether content
+	// Clone the action so we can remove path/ref when regenerating the hash.
+	// If version is set, we don't need path/ref to determine whether content
 	// changed. Recalculate the hash based on the assumption.
 	m := proto.Clone(a).(*core.ActionFilesCopy)
 	for _, f := range m.Files {
-		if l := f.GetLocal(); l != nil && f.GetVersion() != "" && fs.FileMode(f.Mode).Type() != fs.ModeSymlink {
-			l.Path = ""
+		if f.GetVersion() == "" {
+			continue
+		}
+
+		switch c := f.Content.(type) {
+		case *core.ActionFilesCopy_Source_Local_:
+			if fs.FileMode(f.Mode).Type() != fs.ModeSymlink {
+				c.Local.Path = ""
+			}
+		case *core.ActionFilesCopy_Source_Embed_:
+			c.Embed.Ref = ""
 		}
 	}
 	if drv.FixedOutput, err = sha256String(m); err != nil {
