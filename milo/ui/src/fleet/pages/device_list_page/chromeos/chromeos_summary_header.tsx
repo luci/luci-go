@@ -19,7 +19,6 @@ import { Alert, Box, Divider, Grid, Link, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
@@ -29,6 +28,7 @@ import { getMetricsGridStyles } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
+import { combineAipFilters, formatAipClause } from '@/fleet/utils/search_param';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 // Recommended filters for finding all CrOS labstations. See: b/398911822#comment4
@@ -98,9 +98,12 @@ export function ChromeOSSummaryHeader({
     }),
   );
 
-  const labstationsFilter = aip160
-    ? `${aip160} AND ${stringifyFilters(LABSTATION_FILTERS)}`
-    : stringifyFilters(LABSTATION_FILTERS);
+  const labstationClause = formatAipClause('labels."label-pool"', [
+    'labstation_tryjob',
+    'labstation_main',
+    'labstation_canary',
+  ]);
+  const labstationsFilter = combineAipFilters(aip160, labstationClause);
 
   const labstationsQuery = useQuery({
     ...client.CountDevices.query({
@@ -109,7 +112,8 @@ export function ChromeOSSummaryHeader({
     }),
   });
 
-  const availableReadyFilter = stringifyFilters(AVAILABLE_READY_FILTERS);
+  const availableReadyFilter =
+    'state = "DEVICE_STATE_AVAILABLE" AND labels."dut_state" = "ready"';
 
   const availableReadyQuery = useQuery({
     ...client.CountDevices.query({

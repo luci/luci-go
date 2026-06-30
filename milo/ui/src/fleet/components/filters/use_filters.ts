@@ -14,12 +14,11 @@
 
 import { useCallback, useMemo, useEffect, useRef } from 'react';
 
+import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { parseFilter } from '@/fleet/utils/aip160/parser/parser';
 import { useWarnings } from '@/fleet/utils/use_warnings';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-
-import { FILTERS_PARAM_KEY } from '../filter_dropdown/search_param_utils';
 
 import { LoadingFilterCategory } from './loading_filter';
 import { normalizeFilterKey } from './normalize_filter_key';
@@ -55,7 +54,9 @@ export const useFilters = <
   const { areFilterValuesLoading = false, onFilterChange = () => {} } = options;
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [warnings, addWarning] = useWarnings();
-  const filtersAIP160 = searchParams.get(FILTERS_PARAM_KEY);
+  const rawFilters = searchParams.get(FILTERS_PARAM_KEY);
+  const filtersAIP160 =
+    rawFilters && rawFilters.trim() !== '' ? rawFilters : null;
 
   //This is needed to prevent infinite loops in the filter builder
   const onFilterChangeRef = useRef(onFilterChange);

@@ -18,7 +18,6 @@ import { Alert, Box, Grid, Typography, Divider, Link } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
@@ -29,6 +28,7 @@ import {
 } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { combineAipFilters } from '@/fleet/utils/search_param';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { androidState } from './android_state';
@@ -77,12 +77,8 @@ export function AndroidSummaryHeader({
   const totalDevices = data?.totalDevices || 0;
   const totalHosts = data?.totalHosts || 0;
 
-  const onlineFilter = [aip160, stringifyFilters({ fc_is_offline: ['false'] })]
-    .filter(Boolean)
-    .join(' AND ');
-  const offlineFilter = [aip160, stringifyFilters({ fc_is_offline: ['true'] })]
-    .filter(Boolean)
-    .join(' AND ');
+  const onlineFilter = combineAipFilters(aip160, 'fc_is_offline = "false"');
+  const offlineFilter = combineAipFilters(aip160, 'fc_is_offline = "true"');
 
   // TODO(b/512174685): Optimize backend CountDevices to return online/offline breakdown in a single payload to reduce traffic.
   const onlineCountQuery = useQuery(

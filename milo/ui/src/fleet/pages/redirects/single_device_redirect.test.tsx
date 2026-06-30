@@ -97,4 +97,30 @@ describe('<SingleDeviceRedirect />', () => {
 
     expect(screen.getByText(/Redirection failed/)).toBeVisible();
   });
+
+  it('redirects when using legacy q parameter', async () => {
+    mockListDevices([MOCK_DEVICE_1], 'id = "test-device-1"');
+
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/fleet/redirects/singledevice"
+        routerOptions={{
+          initialEntries: ['/ui/fleet/redirects/singledevice?q=test-device-1'],
+        }}
+        siblingRoutes={[
+          {
+            path: DEVICE_DETAILS_PATH,
+            element: <FakeDeviceDetails />,
+          },
+        ]}
+      >
+        <SingleDeviceRedirect />
+      </FakeContextProvider>,
+    );
+
+    await screen.findByText('Fake Device details: test-device-1');
+    expect(
+      screen.getByText('Fake Device details: test-device-1'),
+    ).toBeVisible();
+  });
 });

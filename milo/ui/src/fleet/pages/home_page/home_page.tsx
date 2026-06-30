@@ -26,7 +26,6 @@ import { genFeedbackUrl } from '@/common/tools/utils';
 import androidLogo from '@/fleet/assets/logos/android.png';
 import browserLogo from '@/fleet/assets/logos/browser.png';
 import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
@@ -65,7 +64,7 @@ export const HomePage = () => {
 
   const androidOfflineQuery = useQuery({
     ...client.CountDevices.query({
-      filter: stringifyFilters({ fc_is_offline: ['true'] }),
+      filter: 'fc_is_offline = "true"',
       platform: Platform.ANDROID,
     }),
     enabled: !isAnonymous,

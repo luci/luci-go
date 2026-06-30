@@ -26,7 +26,9 @@ import {
   ListAndroidDevicesResponse,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-const useListAndroidDevicesQueryKey = (request?: ListAndroidDevicesRequest) => {
+export const useListAndroidDevicesQueryKey = (
+  request?: ListAndroidDevicesRequest,
+) => {
   const { identity } = useAuthState();
 
   let queryKey: QueryKey = ['fleet-console', identity, 'listDevices'];

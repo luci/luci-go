@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getFilterValue } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { generateBrowserDeviceDetailsURL } from '@/fleet/constants/paths';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import { BaseDeviceRedirect } from '@/fleet/pages/redirects/base_device_redirect';
+import { getLegacyFilterOrQuery } from '@/fleet/utils/search_param';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { ListBrowserDevicesRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -24,7 +24,7 @@ import { ListBrowserDevicesRequest } from '@/proto/go.chromium.org/infra/fleetco
 export function SingleBrowserDeviceRedirect() {
   const [searchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
-  const filter = getFilterValue(searchParams);
+  const filter = getLegacyFilterOrQuery(searchParams);
 
   const request = ListBrowserDevicesRequest.fromPartial({
     pageSize: 1,

@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { stringifyFilters } from '../components/filter_dropdown/parser/parser';
+import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
+import { escapeAipValue } from '@/fleet/utils/search_param';
 
 export const CHROMEOS_DEFAULT_COLUMNS = [
   'id',
@@ -82,5 +83,5 @@ export const COMMON_DEVICE_FILTERS: string[] = [
 // TODO: b/402410880 - Consider making it possible to directly use the id of a
 // device for a URL in the future.
 export const generateDutNameRedirectURL = (dutName: string): string => {
-  return `/ui/fleet/redirects/singledevice?filters=${stringifyFilters({ 'labels.dut_name': [dutName] })}`;
+  return `/ui/fleet/redirects/singledevice?${FILTERS_PARAM_KEY}=${encodeURIComponent(`labels."dut_name" = "${escapeAipValue(dutName)}"`)}`;
 };

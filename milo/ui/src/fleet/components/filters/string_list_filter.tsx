@@ -234,7 +234,7 @@ export class StringListFilterCategory implements FilterCategory {
         const val = o.optionValue.value;
         const isQuoted = val.startsWith('"') && val.endsWith('"');
         if (!isQuoted) {
-          // Always quote values to match stringifyFilters behavior and avoid parser issues
+          // Always quote values to match AIP-160 behavior and avoid parser issues
           return `"${val.replace(/"/g, '\\"')}"`;
         }
         return val;

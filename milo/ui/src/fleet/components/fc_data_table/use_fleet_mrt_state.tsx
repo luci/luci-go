@@ -29,9 +29,10 @@ import {
 } from '@/common/components/params_pager';
 import { PagerContext } from '@/common/components/params_pager/context';
 import { logging } from '@/common/tools/logging';
-import { filtersUpdater } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
+import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
+import { formatAipClause } from '@/fleet/utils/search_param';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useMRTColumnManagement } from '../columns/use_mrt_column_management';
@@ -274,10 +275,19 @@ export const useFleetMRTState = <
         if (onColumnFiltersChangeOverride) {
           onColumnFiltersChangeOverride(newFilterOptions);
         } else {
-          setSearchParams(filtersUpdater(newFilterOptions));
-          setSearchParams((prev: URLSearchParams) =>
-            emptyPageTokenUpdater(pagerCtx)(prev),
-          );
+          setSearchParams((params: URLSearchParams) => {
+            const next = new URLSearchParams(params);
+            const filterStr = Object.entries(newFilterOptions)
+              .filter(([, vals]) => vals && vals.length > 0)
+              .map(([k, vals]) => formatAipClause(k, vals))
+              .join(' AND ');
+            if (filterStr) {
+              next.set(FILTERS_PARAM_KEY, filterStr);
+            } else {
+              next.delete(FILTERS_PARAM_KEY);
+            }
+            return emptyPageTokenUpdater(pagerCtx)(next);
+          });
         }
       }
     },

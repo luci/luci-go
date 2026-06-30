@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
-import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
+import { useQueryClient } from '@tanstack/react-query';
+
+import {
+  useAndroidDevices,
+  useListAndroidDevicesQueryKey,
+} from '@/fleet/hooks/use_android_devices';
+import { escapeAipValue } from '@/fleet/utils/search_param';
 import {
   AndroidDevice,
   ListAndroidDevicesRequest,
+  ListAndroidDevicesResponse,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export type UseAndroidDeviceDataResult = {
@@ -29,16 +35,44 @@ export type UseAndroidDeviceDataResult = {
 export const useAndroidDeviceData = (
   deviceId: string,
 ): UseAndroidDeviceDataResult => {
+  const queryClient = useQueryClient();
+  const listDevicesQueryKey = useListAndroidDevicesQueryKey();
+
+  const queriesData = queryClient.getQueriesData<ListAndroidDevicesResponse>({
+    queryKey: listDevicesQueryKey,
+  });
+
   const request = ListAndroidDevicesRequest.fromPartial({
     pageSize: 1,
-    filter: stringifyFilters({ id: [deviceId] }),
+    filter: `id = "${escapeAipValue(deviceId)}"`,
   });
   const { data, error, isError, isLoading } = useAndroidDevices(request);
+
+  if (data) {
+    return {
+      error,
+      isError,
+      isLoading,
+      device: data.devices?.[0] ?? undefined,
+    };
+  }
+
+  if (isLoading) {
+    for (const query of queriesData) {
+      const cachedDevice = query[1]?.devices?.find((d) => d.id === deviceId);
+      if (cachedDevice) {
+        return {
+          isError: false,
+          isLoading: false,
+          device: cachedDevice,
+        };
+      }
+    }
+  }
 
   return {
     error,
     isError,
     isLoading,
-    device: data?.devices?.[0] ?? undefined,
   };
 };

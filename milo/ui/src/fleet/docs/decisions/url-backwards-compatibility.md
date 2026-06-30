@@ -36,5 +36,5 @@ This document defines the principles for pragmatically approaching URL backwards
 
 ## Existing Patterns and Code to Leverage
 
-*   **`rewriteLegacyKeys` in `search_param_utils.ts`:** We currently have a simple pattern for rewriting keys (e.g., mapping `swarming_labels.` to `sw.`). This should be formalized into the central URL migration function.
+*   **`useFilters` and AST Parser:** We use a centralized AST parser (`parseFilter`) and `useFilters` hook for managing filter state and URL synchronization.
 *   **Redirect Routes:** We use dedicated redirect components for handling legacy paths. This pattern should be continued for top-level URL guarantees.

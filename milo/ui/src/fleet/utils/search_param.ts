@@ -16,8 +16,8 @@ import {
   emptyPageTokenUpdater,
   PagerContext,
 } from '@/common/components/params_pager';
+import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 
-import { addNewFilterToParams } from '../components/filter_dropdown/search_param_utils';
 import { OrderBy, OrderByDirection } from '../hooks/order_by';
 
 /**
@@ -68,6 +68,52 @@ export function parseOrderByParam(orderByParam: string): OrderBy | null {
   };
 }
 
+export function escapeAipValue(val: string): string {
+  return val.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+export function quoteAipKey(key: string): string {
+  if (key.startsWith('"') && key.endsWith('"')) return key;
+  if (/^[a-zA-Z0-9_]+$/.test(key)) return key;
+  if (key.includes('.')) {
+    const [prefix, ...rest] = key.split('.');
+    const sub = rest.join('.').replace(/"/g, '');
+    return `${prefix}."${sub}"`;
+  }
+  return `"${key}"`;
+}
+
+export function formatAipClause(name: string, values: string[]): string {
+  if (!values?.length) return '';
+  const qName = quoteAipKey(name);
+  if (values.length === 1) return `${qName} = "${escapeAipValue(values[0])}"`;
+  return `(${values.map((v) => `${qName} = "${escapeAipValue(v)}"`).join(' OR ')})`;
+}
+
+export function combineAipFilters(base: string, clause: string): string {
+  if (!base) return clause;
+  if (!clause) return base;
+  return `${base} AND ${clause}`;
+}
+
+export function getLegacyFilterOrQuery(
+  searchParams: URLSearchParams | undefined,
+): string {
+  if (!searchParams) return '';
+  const raw =
+    searchParams.get(FILTERS_PARAM_KEY) ||
+    searchParams.get('filter') ||
+    searchParams.get('q') ||
+    searchParams.get('f') ||
+    searchParams.get('search') ||
+    '';
+  if (!raw) return '';
+  if (!raw.includes('=') && !raw.includes(':') && !raw.includes('(')) {
+    return `id = "${escapeAipValue(raw)}"`;
+  }
+  return raw;
+}
+
 export function getFilterQueryString(
   filters: Record<string, string[]>,
   searchParams: URLSearchParams | undefined,
@@ -77,8 +123,15 @@ export function getFilterQueryString(
   if (pagerContext) {
     newSearchParams = emptyPageTokenUpdater(pagerContext)(newSearchParams);
   }
+  let currentFilters = newSearchParams.get(FILTERS_PARAM_KEY) ?? '';
   for (const [name, values] of Object.entries(filters)) {
-    newSearchParams = addNewFilterToParams(newSearchParams, name, values);
+    const clause = formatAipClause(name, values);
+    currentFilters = combineAipFilters(currentFilters, clause);
+  }
+  if (currentFilters) {
+    newSearchParams.set(FILTERS_PARAM_KEY, currentFilters);
+  } else {
+    newSearchParams.delete(FILTERS_PARAM_KEY);
   }
   return '?' + newSearchParams.toString();
 }

@@ -67,7 +67,8 @@ describe('getRedirectAddress', () => {
           new URLSearchParams([
             [
               'filters',
-              `labels.dut_state = ("ready" OR "needs_replacement" OR "needs_repair") labels.label-bluetooth = "True" state = "ready"`,
+              '(labels."dut_state" = "ready" OR labels."dut_state" = "needs_replacement" OR labels."dut_state" = "needs_repair")' +
+                ' AND labels."label-bluetooth" = "True" AND state = "ready"',
             ],
           ]).toString(),
         pathname: prefix + 'devices',
@@ -85,7 +86,10 @@ describe('getRedirectAddress', () => {
         search:
           '?' +
           new URLSearchParams([
-            ['filters', `labels.label-model = ("lapis" OR "sapphire")`],
+            [
+              'filters',
+              '(labels."label-model" = "lapis" OR labels."label-model" = "sapphire")',
+            ],
           ]).toString(),
         pathname: prefix + 'devices',
       });
@@ -293,7 +297,7 @@ describe('getRedirectAddress', () => {
           new URLSearchParams([
             [
               'filters',
-              `sw."device_type" = "a23xq" sw."label-model" = "sapphire" id = "my-device-id"`,
+              `sw."device_type" = "a23xq" AND sw."label-model" = "sapphire" AND id = "my-device-id"`,
             ],
           ]).toString(),
         pathname: browserPrefix + 'devices',

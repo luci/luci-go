@@ -14,8 +14,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { formatAipClause } from '@/fleet/utils/search_param';
 import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export type UseProductCatalogDetailsDataResult = {
@@ -36,7 +36,7 @@ export const useProductCatalogDetailsData = (
 ): UseProductCatalogDetailsDataResult => {
   const client = useFleetConsoleClient();
 
-  const filter = stringifyFilters({ product_catalog_id: [id] });
+  const filter = formatAipClause('product_catalog_id', [id]);
 
   const { data, error, isError, isLoading } = useQuery({
     ...client.ListProductCatalogEntries.query({ filter }),

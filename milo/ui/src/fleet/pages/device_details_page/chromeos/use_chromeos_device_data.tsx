@@ -14,8 +14,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { useDevices, useListDevicesQueryKey } from '@/fleet/hooks/use_devices';
+import { escapeAipValue } from '@/fleet/utils/search_param';
 import {
   Device,
   ListDevicesRequest,
@@ -47,7 +47,7 @@ export const useChromeOSDeviceData = (
 
   const request = ListDevicesRequest.fromPartial({
     pageSize: 1,
-    filter: stringifyFilters({ id: [deviceId] }),
+    filter: `id = "${escapeAipValue(deviceId)}"`,
   });
   const { data, error, isError, isLoading } = useDevices(request);
 
@@ -56,18 +56,18 @@ export const useChromeOSDeviceData = (
       error,
       isError,
       isLoading,
-      device: data.devices[0] ?? undefined,
+      device: data.devices?.[0] ?? undefined,
     };
   }
 
-  for (const query of queriesData) {
-    if (!query[1]) continue;
-    for (const device of query[1].devices) {
-      if (device.id === deviceId) {
+  if (isLoading) {
+    for (const query of queriesData) {
+      const cachedDevice = query[1]?.devices?.find((d) => d.id === deviceId);
+      if (cachedDevice) {
         return {
           isError: false,
           isLoading: false,
-          device,
+          device: cachedDevice,
         };
       }
     }

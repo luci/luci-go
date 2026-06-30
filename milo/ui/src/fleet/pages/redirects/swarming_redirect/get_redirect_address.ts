@@ -15,11 +15,15 @@
 import { To } from 'react-router';
 
 import { DecoratedClient } from '@/common/hooks/prpc_query';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   BROWSER_SWARMING_SOURCE,
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
+import {
+  COLUMNS_PARAM_KEY,
+  FILTERS_PARAM_KEY,
+} from '@/fleet/constants/param_keys';
+import { formatAipClause } from '@/fleet/utils/search_param';
 import { getDutName } from '@/fleet/utils/swarming';
 import {
   FleetConsoleClientImpl,
@@ -155,12 +159,18 @@ const convertFilters = (
     filterObj[key].push(...vals);
   }
 
-  return [['filters', stringifyFilters(filterObj)]];
+  const filterStr = Object.entries(filterObj)
+    .filter(([, vals]) => vals && vals.length > 0)
+    .map(([k, vals]) => formatAipClause(k, vals))
+    .join(' AND ');
+
+  if (!filterStr) return [];
+  return [[FILTERS_PARAM_KEY, filterStr]];
 };
 
 const convertColumns = (searchParams: URLSearchParams, isBrowser: boolean) => {
-  const columns = searchParams.getAll('c');
-  return columns.map((col) => ['c', mapColumn(col, isBrowser)]);
+  const columns = searchParams.getAll(COLUMNS_PARAM_KEY);
+  return columns.map((col) => [COLUMNS_PARAM_KEY, mapColumn(col, isBrowser)]);
 };
 
 const convertOrderBy = (
