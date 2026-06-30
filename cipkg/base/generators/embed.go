@@ -69,6 +69,12 @@ func (e *EmbeddedFiles) Generate(ctx context.Context, plats Platforms) (*core.Ac
 		return nil, err
 	}
 
+	h := crypto.SHA256.New()
+	if err = getHashFromFS(efs, h); err != nil {
+		return nil, err
+	}
+	ver := string(fmt.Sprintf("%x", h.Sum(nil)))
+
 	files := make(map[string]*core.ActionFilesCopy_Source)
 	if err := fs.WalkDir(efs, ".", func(name string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -92,7 +98,8 @@ func (e *EmbeddedFiles) Generate(ctx context.Context, plats Platforms) (*core.Ac
 			Content: &core.ActionFilesCopy_Source_Embed_{
 				Embed: &core.ActionFilesCopy_Source_Embed{Ref: e.ref, Path: path.Join(e.dir, name)},
 			},
-			Mode: uint32(mode),
+			Mode:    uint32(mode),
+			Version: ver,
 		}
 		return nil
 	}); err != nil {

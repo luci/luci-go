@@ -51,24 +51,30 @@ func TestEmbeddedFiles(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			embedFiles := testutils.Assert[*core.Action_Copy](t, a.Spec)
+			ver := embedFiles.Copy.Files["embed.go"].Version
+			assert.Loosely(t, ver, should.NotBeEmpty)
+
 			assert.Loosely(t, embedFiles.Copy.Files, should.Match(map[string]*core.ActionFilesCopy_Source{
 				"embed.go": {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "embed.go"},
 					},
-					Mode: 0o444,
+					Mode:    0o444,
+					Version: ver,
 				},
 				"embed_test.go": {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "embed_test.go"},
 					},
-					Mode: 0o444,
+					Mode:    0o444,
+					Version: ver,
 				},
 				filepath.FromSlash("testdata/embed"): {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "testdata/embed"},
 					},
-					Mode: 0o777,
+					Mode:    0o777,
+					Version: ver,
 				},
 			}))
 		})
@@ -82,7 +88,8 @@ func TestEmbeddedFiles(t *testing.T) {
 					Content: &core.ActionFilesCopy_Source_Embed_{
 						Embed: &core.ActionFilesCopy_Source_Embed{Ref: embeddedFilesTestGen.ref, Path: "testdata/embed"},
 					},
-					Mode: 0o444,
+					Mode:    0o444,
+					Version: "e17646add289c985fb45b27361e953c0aa6f1f1386ffb4eb7a2951fd35199369",
 				},
 			}))
 		})

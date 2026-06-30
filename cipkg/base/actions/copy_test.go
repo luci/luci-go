@@ -111,6 +111,26 @@ func TestProcessCopy(t *testing.T) {
 			assert.Loosely(t, pkg1.Derivation.Args, should.NotMatch(pkg2.Derivation.Args))
 			assert.Loosely(t, pkg1.DerivationID, should.Equal(pkg2.DerivationID))
 		})
+
+		t.Run("version embedded", func(t *ftt.Test) {
+			copyEmbed := &core.ActionFilesCopy{
+				Files: map[string]*core.ActionFilesCopy_Source{
+					"test/file": {
+						Content: &core.ActionFilesCopy_Source_Embed_{
+							Embed: &core.ActionFilesCopy_Source_Embed{Ref: "ref1", Path: "something"},
+						},
+						Mode:    uint32(fs.ModeDir),
+						Version: "abc",
+					},
+				},
+			}
+
+			_, err := ap.Process("", pm, &core.Action{
+				Name: "copy",
+				Spec: &core.Action_Copy{Copy: copyEmbed},
+			})
+			assert.Loosely(t, err, should.BeNil)
+		})
 	})
 }
 

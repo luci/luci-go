@@ -46,7 +46,7 @@ func ActionFilesCopyTransformer(a *core.ActionFilesCopy, deps []Package) (*core.
 	// changed. Recalculate the hash based on the assumption.
 	m := proto.Clone(a).(*core.ActionFilesCopy)
 	for _, f := range m.Files {
-		if l := f.GetLocal(); f.GetVersion() != "" && fs.FileMode(f.Mode).Type() != fs.ModeSymlink {
+		if l := f.GetLocal(); l != nil && f.GetVersion() != "" && fs.FileMode(f.Mode).Type() != fs.ModeSymlink {
 			l.Path = ""
 		}
 	}
