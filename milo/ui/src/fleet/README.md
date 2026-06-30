@@ -100,6 +100,17 @@ ssh -L 8080:localhost:8080 ${cloudtop-name}.c.googlers.com
 ```
 This enables you to access the UI locally at <http://localhost:8080/ui/fleet/labs/p/chromeos/devices>.
 
+## Proto Generation
+
+When you make changes to the backend pRPC service protos for Fleet Console and need to update the TS bindings, **do not** run the global `npm run gen-proto`.
+
+Instead, run the Fleet Console specific script from the `ui/` root directory:
+```sh
+bash src/fleet/gen_ts_proto.sh
+```
+
+This ensures only the Fleet Console protos are compiled, keeping your workspace clean from unrelated LUCI service proto changes.
+
 ## Running Tests
 
 To run TS tests for just the Fleet Console (from the `ui/` root dir):

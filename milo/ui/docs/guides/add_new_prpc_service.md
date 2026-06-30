@@ -16,6 +16,14 @@ You will need to regenerate the proto bindings any time your UI code needs to us
 
 You can find the generated proto files in `ui/src/proto`.
 
+> [!NOTE]
+> **Fleet Console Specific Protos**:
+> For the LUCI Fleet Console subproject (`src/fleet`), do not use the global `npm run gen-proto` for routine updates. Instead, use the FCon-specific script:
+> ```sh
+> bash src/fleet/gen_ts_proto.sh
+> ```
+> This will only compile the fleetconsole service proto files, keeping your workspace clean from unrelated upstream proto changes.
+
 ## Trouble shooting
 
 ### Unable to find a dependency proto file (File not found)

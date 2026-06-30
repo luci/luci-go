@@ -40,7 +40,7 @@ if [[ "${GENERATE_TURBOCI}" == "1" ]]; then
   find ../src/proto -mindepth 1 -type d -empty -delete
 else
   find ../src/proto -name "*.pb.ts" -type f | grep -v 'src/proto/turboci' | xargs -r rm -f
-  find ../src/proto -mindepth 1 -type d -empty | grep -v 'src/proto/turboci' | xargs -r rmdir --ignore-fail-on-non-empty
+  find ../src/proto -mindepth 1 -type d -empty -delete
 fi
 
 cd ../../../../..
@@ -153,4 +153,7 @@ protoc \
   ./go.chromium.org/infra/appengine/cr-rev/frontend/api/v1/service.proto \
   ./go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.proto \
   ./go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.proto \
-  ${TURBOCI_PROTOS}
+  ${TURBOCI_PROTOS} || die 'Failed to generate global LUCI TS protos.'
+
+# Generate Fleet Console TS protos using the subproject's specific script.
+bash ./go.chromium.org/luci/milo/ui/src/fleet/gen_ts_proto.sh || die 'Failed to generate Fleet Console TS protos.'

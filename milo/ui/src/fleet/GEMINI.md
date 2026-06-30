@@ -40,6 +40,14 @@ To maximize productivity and prevent unnecessary manual permission prompts for t
 - **Leave transient files in `.tmp/`**: Since `.tmp/` is globally gitignored and excluded from all build tools, leaving files there is completely safe and causes no workspace pollution.
 - **Overwrite instead of delete**: If you need to clear a file's content or size to save disk space, use the `write_to_file` tool to overwrite the file with an empty string (`""`) rather than running `rm`.
 
+## 6. Proto Generation
+When updating proto definitions for Fleet Console, **DO NOT** run the global `npm run gen-proto` (which executes `scripts/gen_proto.sh`). That script compiles all LUCI service protos and will pollute your workspace with unrelated upstream changes.
+Instead, run the FCon-specific script from the `milo/ui` directory:
+```sh
+bash src/fleet/gen_ts_proto.sh
+```
+This will compile only the Fleet Console protos, keeping the CL diff minimal and clean.
+
 ## Architectural Principles & Design Documentation
 We maintain documentation of key architectural principles and design tradeoffs in `decisions/` directories.
 - Frontend-specific and cross-cutting docs live in `./docs/decisions/`

@@ -8,7 +8,7 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { MonitoredRecord } from "../../internal/infra/ext/omnilab/omnilab-pubsub.pb";
-import { DeviceSpec } from "./common_types.pb";
+import { Column, DeviceSpec } from "./common_types.pb";
 
 export interface AndroidDevice {
   readonly id: string;
@@ -80,6 +80,17 @@ export interface CleanupAndroidDevicesRequest {
 }
 
 export interface CleanupAndroidDevicesResponse {
+}
+
+export interface ExportAndroidDevicesToCSVRequest {
+  readonly columns: readonly Column[];
+  readonly orderBy: string;
+  readonly filter: string;
+  readonly ids: readonly string[];
+}
+
+export interface ExportAndroidDevicesToCSVResponse {
+  readonly csvData: string;
 }
 
 function createBaseAndroidDevice(): AndroidDevice {
@@ -1193,6 +1204,172 @@ export const CleanupAndroidDevicesResponse: MessageFns<CleanupAndroidDevicesResp
   },
   fromPartial(_: DeepPartial<CleanupAndroidDevicesResponse>): CleanupAndroidDevicesResponse {
     const message = createBaseCleanupAndroidDevicesResponse() as any;
+    return message;
+  },
+};
+
+function createBaseExportAndroidDevicesToCSVRequest(): ExportAndroidDevicesToCSVRequest {
+  return { columns: [], orderBy: "", filter: "", ids: [] };
+}
+
+export const ExportAndroidDevicesToCSVRequest: MessageFns<ExportAndroidDevicesToCSVRequest> = {
+  encode(message: ExportAndroidDevicesToCSVRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.columns) {
+      Column.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(18).string(message.orderBy);
+    }
+    if (message.filter !== "") {
+      writer.uint32(26).string(message.filter);
+    }
+    for (const v of message.ids) {
+      writer.uint32(34).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ExportAndroidDevicesToCSVRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseExportAndroidDevicesToCSVRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.columns.push(Column.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.ids.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ExportAndroidDevicesToCSVRequest {
+    return {
+      columns: globalThis.Array.isArray(object?.columns) ? object.columns.map((e: any) => Column.fromJSON(e)) : [],
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      ids: globalThis.Array.isArray(object?.ids) ? object.ids.map((e: any) => globalThis.String(e)) : [],
+    };
+  },
+
+  toJSON(message: ExportAndroidDevicesToCSVRequest): unknown {
+    const obj: any = {};
+    if (message.columns?.length) {
+      obj.columns = message.columns.map((e) => Column.toJSON(e));
+    }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    if (message.ids?.length) {
+      obj.ids = message.ids;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ExportAndroidDevicesToCSVRequest>): ExportAndroidDevicesToCSVRequest {
+    return ExportAndroidDevicesToCSVRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ExportAndroidDevicesToCSVRequest>): ExportAndroidDevicesToCSVRequest {
+    const message = createBaseExportAndroidDevicesToCSVRequest() as any;
+    message.columns = object.columns?.map((e) => Column.fromPartial(e)) || [];
+    message.orderBy = object.orderBy ?? "";
+    message.filter = object.filter ?? "";
+    message.ids = object.ids?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseExportAndroidDevicesToCSVResponse(): ExportAndroidDevicesToCSVResponse {
+  return { csvData: "" };
+}
+
+export const ExportAndroidDevicesToCSVResponse: MessageFns<ExportAndroidDevicesToCSVResponse> = {
+  encode(message: ExportAndroidDevicesToCSVResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.csvData !== "") {
+      writer.uint32(10).string(message.csvData);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ExportAndroidDevicesToCSVResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseExportAndroidDevicesToCSVResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.csvData = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ExportAndroidDevicesToCSVResponse {
+    return { csvData: isSet(object.csvData) ? globalThis.String(object.csvData) : "" };
+  },
+
+  toJSON(message: ExportAndroidDevicesToCSVResponse): unknown {
+    const obj: any = {};
+    if (message.csvData !== "") {
+      obj.csvData = message.csvData;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ExportAndroidDevicesToCSVResponse>): ExportAndroidDevicesToCSVResponse {
+    return ExportAndroidDevicesToCSVResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ExportAndroidDevicesToCSVResponse>): ExportAndroidDevicesToCSVResponse {
+    const message = createBaseExportAndroidDevicesToCSVResponse() as any;
+    message.csvData = object.csvData ?? "";
     return message;
   },
 };

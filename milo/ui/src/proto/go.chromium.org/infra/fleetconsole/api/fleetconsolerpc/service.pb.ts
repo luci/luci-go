@@ -15,6 +15,8 @@ import {
 import {
   CleanupAndroidDevicesRequest,
   CleanupAndroidDevicesResponse,
+  ExportAndroidDevicesToCSVRequest,
+  ExportAndroidDevicesToCSVResponse,
   ListAndroidDevicesRequest,
   ListAndroidDevicesResponse,
   RepopulateAndroidCacheRequest,
@@ -29,6 +31,8 @@ import {
 import {
   CountBrowserDevicesRequest,
   CountBrowserDevicesResponse,
+  ExportBrowserDevicesToCSVRequest,
+  ExportBrowserDevicesToCSVResponse,
   GetBrowserDeviceDimensionsRequest,
   GetBrowserDeviceDimensionsResponse,
   ListBrowserDevicesRequest,
@@ -309,6 +313,8 @@ export interface FleetConsole {
   PingDB(request: PingDBRequest): Promise<PingDBResponse>;
   CleanExit(request: CleanExitRequest): Promise<CleanExitResponse>;
   ExportDevicesToCSV(request: ExportDevicesToCSVRequest): Promise<ExportDevicesToCSVResponse>;
+  ExportAndroidDevicesToCSV(request: ExportAndroidDevicesToCSVRequest): Promise<ExportAndroidDevicesToCSVResponse>;
+  ExportBrowserDevicesToCSV(request: ExportBrowserDevicesToCSVRequest): Promise<ExportBrowserDevicesToCSVResponse>;
   ScheduleAutorepair(request: ScheduleAutorepairRequest): Promise<ScheduleAutorepairResponse>;
   ScheduleReserve(request: ScheduleReserveRequest): Promise<ScheduleReserveResponse>;
   ScheduleDeploy(request: ScheduleDeployRequest): Promise<ScheduleDeployResponse>;
@@ -360,6 +366,8 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.PingDB = this.PingDB.bind(this);
     this.CleanExit = this.CleanExit.bind(this);
     this.ExportDevicesToCSV = this.ExportDevicesToCSV.bind(this);
+    this.ExportAndroidDevicesToCSV = this.ExportAndroidDevicesToCSV.bind(this);
+    this.ExportBrowserDevicesToCSV = this.ExportBrowserDevicesToCSV.bind(this);
     this.ScheduleAutorepair = this.ScheduleAutorepair.bind(this);
     this.ScheduleReserve = this.ScheduleReserve.bind(this);
     this.ScheduleDeploy = this.ScheduleDeploy.bind(this);
@@ -493,6 +501,18 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ExportDevicesToCSVRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ExportDevicesToCSV", data);
     return promise.then((data) => ExportDevicesToCSVResponse.fromJSON(data));
+  }
+
+  ExportAndroidDevicesToCSV(request: ExportAndroidDevicesToCSVRequest): Promise<ExportAndroidDevicesToCSVResponse> {
+    const data = ExportAndroidDevicesToCSVRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ExportAndroidDevicesToCSV", data);
+    return promise.then((data) => ExportAndroidDevicesToCSVResponse.fromJSON(data));
+  }
+
+  ExportBrowserDevicesToCSV(request: ExportBrowserDevicesToCSVRequest): Promise<ExportBrowserDevicesToCSVResponse> {
+    const data = ExportBrowserDevicesToCSVRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ExportBrowserDevicesToCSV", data);
+    return promise.then((data) => ExportBrowserDevicesToCSVResponse.fromJSON(data));
   }
 
   ScheduleAutorepair(request: ScheduleAutorepairRequest): Promise<ScheduleAutorepairResponse> {
