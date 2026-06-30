@@ -44,6 +44,22 @@ import (
 
 var errNonSuccess = errors.New("build state != SUCCESS")
 
+// MainWithArgs is the same as Main, but accepts an argument list instead of reading from os.Args.
+func MainWithArgs(args []string, cb func(context.Context, []string, *State) error) {
+	ctx := gologger.StdConfig.Use(context.Background())
+
+	switch err := main(ctx, args, os.Stdin, cb); err {
+	case nil:
+		os.Exit(0)
+
+	case errNonSuccess:
+		os.Exit(1)
+	default:
+		errors.Log(ctx, err)
+		os.Exit(2)
+	}
+}
+
 // Main implements all the 'command-line' behaviors of the luciexe 'exe'
 // protocol, including:
 //
@@ -98,18 +114,7 @@ var errNonSuccess = errors.New("build state != SUCCESS")
 // TODO(iannucci): LUCIEXE_FAKEBUILD does not support nested invocations.
 // It should set up bbagent and butler in order to aggregate logs.
 func Main(cb func(context.Context, []string, *State) error) {
-	ctx := gologger.StdConfig.Use(context.Background())
-
-	switch err := main(ctx, os.Args, os.Stdin, cb); err {
-	case nil:
-		os.Exit(0)
-
-	case errNonSuccess:
-		os.Exit(1)
-	default:
-		errors.Log(ctx, err)
-		os.Exit(2)
-	}
+	MainWithArgs(os.Args, cb)
 }
 
 func main(ctx context.Context, args []string, stdin io.Reader, cb func(context.Context, []string, *State) error) (err error) {
