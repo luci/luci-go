@@ -89,6 +89,61 @@ print("OK")
 			assert.Loosely(t, res.Flow, should.Equal(FlowLegacy))
 			assert.Loosely(t, res.VpythonSpec.PythonVersion, should.Equal("3.11"))
 		})
+
+		t.Run("Resolves to companion spec of symlink before inline spec of target (Chromite pattern)", func(t *ftt.Test) {
+			if runtime.GOOS == "windows" {
+				t.Skip("Symlinks are not reliably supported on Windows tests")
+			}
+
+			targetPath := filepath.Join(tempDir, "vpython_wrapper.py")
+			targetContent := `
+# [VPYTHON:BEGIN]
+# python_version: "3.8"
+# [VPYTHON:END]
+print("OK")
+`
+			err := os.WriteFile(targetPath, []byte(strings.TrimSpace(targetContent)), 0755)
+			assert.NoErr(t, err)
+
+			symlinkPath := filepath.Join(tempDir, "run_tests")
+			err = os.Symlink(targetPath, symlinkPath)
+			assert.NoErr(t, err)
+
+			specPath := symlinkPath + ".vpython3"
+			specContent := `python_version: "3.11"`
+			err = os.WriteFile(specPath, []byte(strings.TrimSpace(specContent)), 0644)
+			assert.NoErr(t, err)
+
+			res, err := ResolveFlow(ctx, python.ScriptTarget{Path: symlinkPath}, "", "", ".vpython3", tempDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Flow, should.Equal(FlowLegacy))
+			assert.Loosely(t, res.VpythonSpec.PythonVersion, should.Equal("3.11"))
+		})
+
+		t.Run("Resolves to companion spec of target if symlink has no companion spec", func(t *ftt.Test) {
+			if runtime.GOOS == "windows" {
+				t.Skip("Symlinks are not reliably supported on Windows tests")
+			}
+
+			targetPath := filepath.Join(tempDir, "target.py")
+			targetContent := `print("OK")`
+			err := os.WriteFile(targetPath, []byte(strings.TrimSpace(targetContent)), 0755)
+			assert.NoErr(t, err)
+
+			targetSpecPath := targetPath + ".vpython3"
+			targetSpecContent := `python_version: "3.11"`
+			err = os.WriteFile(targetSpecPath, []byte(strings.TrimSpace(targetSpecContent)), 0644)
+			assert.NoErr(t, err)
+
+			symlinkPath := filepath.Join(tempDir, "symlink")
+			err = os.Symlink(targetPath, symlinkPath)
+			assert.NoErr(t, err)
+
+			res, err := ResolveFlow(ctx, python.ScriptTarget{Path: symlinkPath}, "", "", ".vpython3", tempDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Flow, should.Equal(FlowLegacy))
+			assert.Loosely(t, res.VpythonSpec.PythonVersion, should.Equal("3.11"))
+		})
 	})
 }
 

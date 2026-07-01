@@ -107,37 +107,7 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 		}, nil
 	}
 
-	// Parse inline specs from the script (PEP 723 or legacy comments).
-	if scriptPath != "" && !isModule {
-		// Parse PEP 723 shebang.
-		projectSpec, err := standard.ParseScriptMetadata(scriptPath)
-		if err != nil {
-			return nil, err
-		}
-		if projectSpec != nil {
-			return &DiscoveredFlow{
-				Flow:         FlowUV,
-				StandardSpec: projectSpec,
-				ProjectRoot:  filepath.Dir(scriptPath),
-				SpecPath:     scriptPath,
-			}, nil
-		}
-
-		// Parse inline legacy comments.
-		loader := &spec.Loader{
-			InlineBeginGuard: spec.DefaultInlineBeginGuard,
-			InlineEndGuard:   spec.DefaultInlineEndGuard,
-		}
-		legacySpec, err := loader.ParseFrom(scriptPath)
-		if err == nil && legacySpec != nil {
-			return &DiscoveredFlow{
-				Flow:        FlowLegacy,
-				VpythonSpec: legacySpec,
-			}, nil
-		}
-	}
-
-	// Check adjacent companion spec and determine start directory for parent climbing.
+	// Check adjacent companion spec (Partner file) first to support symlink wrappers.
 	specPattern := defaultSpecPattern
 	if specPattern == "" {
 		specPattern = ".vpython3"
@@ -180,6 +150,36 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 		}
 		if err := filesystem.AbsPath(&startDir); err != nil {
 			return nil, errors.Fmt("failed to get absolute working directory: %w", err)
+		}
+	}
+
+	// Parse inline specs from the script (PEP 723 or legacy comments) if no companion spec was found.
+	if scriptPath != "" && !isModule {
+		// Parse PEP 723 shebang.
+		projectSpec, err := standard.ParseScriptMetadata(scriptPath)
+		if err != nil {
+			return nil, err
+		}
+		if projectSpec != nil {
+			return &DiscoveredFlow{
+				Flow:         FlowUV,
+				StandardSpec: projectSpec,
+				ProjectRoot:  filepath.Dir(scriptPath),
+				SpecPath:     scriptPath,
+			}, nil
+		}
+
+		// Parse inline legacy comments.
+		loader := &spec.Loader{
+			InlineBeginGuard: spec.DefaultInlineBeginGuard,
+			InlineEndGuard:   spec.DefaultInlineEndGuard,
+		}
+		legacySpec, err := loader.ParseFrom(scriptPath)
+		if err == nil && legacySpec != nil {
+			return &DiscoveredFlow{
+				Flow:        FlowLegacy,
+				VpythonSpec: legacySpec,
+			}, nil
 		}
 	}
 
