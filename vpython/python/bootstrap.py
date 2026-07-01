@@ -104,6 +104,7 @@ if 'wheels' in os.environ:
   command = [
       pip, 'install',
       '--disable-pip-version-check', '--isolated',
+      '--no-cache-dir',
       '--compile',
       '--only-binary=:all:',
       '--index-url', ar_url,
