@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/turboci/proto/go/utils/ids"
 	"go.chromium.org/turboci/proto/go/utils/value"
 
-	"go.chromium.org/luci/turboci/check"
 	"go.chromium.org/luci/turboci/rpc/write"
 )
 
@@ -34,17 +33,17 @@ func TestStageWrite(t *testing.T) {
 
 	sw := write.StageWrite{Msg: &orchestratorpb.WriteNodesRequest_StageWrite{}}
 
-	assigned := sw.AddCheckAssignment(ids.Check("nerp"), check.StatePlanned)
+	assigned := sw.AddCheckAssignment(ids.Check("nerp"), orchestratorpb.CheckState_CHECK_STATE_PLANNED)
 	assert.That(t, assigned, should.Match(orchestratorpb.Stage_Assignment_builder{
 		Target:    ids.Check("nerp"),
-		GoalState: check.StatePlanned.Enum(),
+		GoalState: orchestratorpb.CheckState_CHECK_STATE_PLANNED.Enum(),
 	}.Build()))
 
 	assert.That(t, sw.Msg, should.Match(orchestratorpb.WriteNodesRequest_StageWrite_builder{
 		Assignments: []*orchestratorpb.Stage_Assignment{
 			orchestratorpb.Stage_Assignment_builder{
 				Target:    ids.Check("nerp"),
-				GoalState: check.StatePlanned.Enum(),
+				GoalState: orchestratorpb.CheckState_CHECK_STATE_PLANNED.Enum(),
 			}.Build(),
 		},
 	}.Build()))
@@ -56,7 +55,7 @@ func TestAddNewStage(t *testing.T) {
 	req := write.NewRequest()
 	stg := req.AddNewStage(ids.Stage("stg"), boolData)
 
-	stg.AddCheckAssignment(ids.Check("nerp"), check.StateWaiting)
+	stg.AddCheckAssignment(ids.Check("nerp"), orchestratorpb.CheckState_CHECK_STATE_WAITING)
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
 		Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
@@ -66,7 +65,7 @@ func TestAddNewStage(t *testing.T) {
 				Assignments: []*orchestratorpb.Stage_Assignment{
 					orchestratorpb.Stage_Assignment_builder{
 						Target:    ids.Check("nerp"),
-						GoalState: check.StateWaiting.Enum(),
+						GoalState: orchestratorpb.CheckState_CHECK_STATE_WAITING.Enum(),
 					}.Build(),
 				},
 			}.Build(),
