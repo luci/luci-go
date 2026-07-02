@@ -169,7 +169,7 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	rdbFactory := rdb.NewMockRecorderClientFactory(t.Test.GoMockCtl)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, tree.NewClientFactory(t.TreeFakeSrv.Host()), t.BQFake, rdbFactory, qm, t.Env)
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, t.GitilesFactory(), tree.NewClientFactory(t.TreeFakeSrv.Host()), t.BQFake, rdbFactory, qm, t.Env)
 	bbFacade := &bbfacade.Facade{
 		ClientFactory: bbFactory,
 	}

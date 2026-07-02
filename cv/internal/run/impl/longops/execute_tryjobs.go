@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/gitiles"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/tryjob/execute"
@@ -29,18 +30,20 @@ import (
 // ExecuteTryjobsOp executes the Tryjob Requirement for the given Run.
 type ExecuteTryjobsOp struct {
 	*Base
-	Env         *common.Env
-	RunNotifier *run.Notifier
-	Backend     execute.TryjobBackend
+	Env            *common.Env
+	RunNotifier    *run.Notifier
+	Backend        execute.TryjobBackend
+	GitilesFactory gitiles.Factory
 }
 
 // Do implements Operation interface.
 func (op *ExecuteTryjobsOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, error) {
 	executor := &execute.Executor{
-		Env:        op.Env,
-		Backend:    op.Backend,
-		RM:         op.RunNotifier,
-		ShouldStop: op.IsCancelRequested,
+		Env:            op.Env,
+		Backend:        op.Backend,
+		RM:             op.RunNotifier,
+		ShouldStop:     op.IsCancelRequested,
+		GitilesFactory: op.GitilesFactory,
 	}
 	switch err := executor.Do(ctx, op.Run, op.Op.GetExecuteTryjobs()); {
 	case err == nil:

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/gitiles"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -40,6 +41,7 @@ func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*
 	}
 	w := &worker{
 		backend:          e.Backend,
+		gitilesFactory:   e.GitilesFactory,
 		mutator:          tryjob.NewMutator(e.RM),
 		run:              r,
 		cls:              cls,
@@ -83,9 +85,10 @@ type worker struct {
 	knownTryjobIDs   common.TryjobIDSet
 	knownExternalIDs stringset.Set
 
-	clPatchsets tryjob.CLPatchsets
-	backend     TryjobBackend
-	mutator     *tryjob.Mutator
+	clPatchsets    tryjob.CLPatchsets
+	backend        TryjobBackend
+	gitilesFactory gitiles.Factory
+	mutator        *tryjob.Mutator
 
 	findReuseFns []findReuseFn
 	logEntries   []*tryjob.ExecutionLogEntry

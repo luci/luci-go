@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/refresher"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
+	"go.chromium.org/luci/cv/internal/gitiles"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
 	"go.chromium.org/luci/cv/internal/quota"
@@ -127,7 +128,7 @@ func main() {
 		}
 		rdbClientFactory := rdb.NewRecorderClientFactory()
 		qm := quota.NewManager(gFactory)
-		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, treeFactory, bqc, rdbClientFactory, qm, env)
+		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, gitiles.NewFactory(), treeFactory, bqc, rdbClientFactory, qm, env)
 
 		// Setup pRPC authentication.
 		srv.SetRPCAuthMethods([]auth.Method{

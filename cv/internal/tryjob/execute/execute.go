@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/gitiles"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -45,6 +46,8 @@ type Executor struct {
 	// Backend is the Tryjob backend that Executor will search reusable Tryjobs
 	// from and launch new Tryjobs.
 	Backend TryjobBackend
+	// GitilesFactory is used to resolve tip of branch commit positions.
+	GitilesFactory gitiles.Factory
 	// RM is used to notify Run about changes in Tryjob states.
 	RM rm
 	// ShouldStop returns whether Executor should stop the execution.

@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/gitiles"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/quota"
 	"go.chromium.org/luci/cv/internal/run"
@@ -65,15 +66,16 @@ const maxEventsPerBatch = 10000
 //
 // It decides starting, cancellation, submission etc. for Runs.
 type RunManager struct {
-	runNotifier  *run.Notifier
-	pmNotifier   *prjmanager.Notifier
-	clMutator    *changelist.Mutator
-	tqDispatcher *tq.Dispatcher
-	env          *common.Env
-	gFactory     gerrit.Factory
-	bbFactory    buildbucket.ClientFactory
-	qm           *quota.Manager
-	handler      handler.Handler
+	runNotifier    *run.Notifier
+	pmNotifier     *prjmanager.Notifier
+	clMutator      *changelist.Mutator
+	tqDispatcher   *tq.Dispatcher
+	env            *common.Env
+	gFactory       gerrit.Factory
+	bbFactory      buildbucket.ClientFactory
+	gitilesFactory gitiles.Factory
+	qm             *quota.Manager
+	handler        handler.Handler
 
 	testDoLongOperationWithDeadline func(context.Context, *longops.Base) (*eventpb.LongOpCompleted, error)
 }
@@ -87,6 +89,7 @@ func New(
 	clu *changelist.Updater,
 	g gerrit.Factory,
 	bb buildbucket.ClientFactory,
+	gitiles gitiles.Factory,
 	treeFactory tree.ClientFactory,
 	bqc bq.Client,
 	rdbf rdb.RecorderClientFactory,
@@ -94,14 +97,15 @@ func New(
 	env *common.Env,
 ) *RunManager {
 	rm := &RunManager{
-		runNotifier:  n,
-		pmNotifier:   pm,
-		clMutator:    clm,
-		tqDispatcher: n.TasksBinding.TQDispatcher,
-		env:          env,
-		gFactory:     g,
-		bbFactory:    bb,
-		qm:           qm,
+		runNotifier:    n,
+		pmNotifier:     pm,
+		clMutator:      clm,
+		tqDispatcher:   n.TasksBinding.TQDispatcher,
+		env:            env,
+		gFactory:       g,
+		bbFactory:      bb,
+		gitilesFactory: gitiles,
+		qm:             qm,
 		handler: &handler.Impl{
 			PM:          pm,
 			RM:          n,

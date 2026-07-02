@@ -162,6 +162,7 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 			Backend: &bbfacade.Facade{
 				ClientFactory: rm.bbFactory,
 			},
+			GitilesFactory: rm.gitilesFactory,
 		}
 	case *run.OngoingLongOps_Op_ExecutePostAction:
 		op = &longops.ExecutePostActionOp{

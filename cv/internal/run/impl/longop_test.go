@@ -102,7 +102,7 @@ func TestLongOps(t *testing.T) {
 		}))
 
 		t.Run("manager handles Long Operation TQ task", func(t *ftt.Test) {
-			manager := New(notifier, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, ct.Env)
+			manager := New(notifier, nil, nil, nil, nil, nil, nil, ct.GitilesFactory(), nil, nil, nil, nil, ct.Env)
 
 			t.Run("OK", func(t *ftt.Test) {
 				called := false

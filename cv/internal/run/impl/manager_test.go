@@ -78,7 +78,7 @@ func TestRunManager(t *testing.T) {
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		cf := rdb.NewMockRecorderClientFactory(ct.GoMockCtl)
 		qm := quota.NewManager(ct.GFactory())
-		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), tree.NewClientFactory(ct.TreeFakeSrv.Host()), ct.BQFake, cf, qm, ct.Env)
+		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.GitilesFactory(), tree.NewClientFactory(ct.TreeFakeSrv.Host()), ct.BQFake, cf, qm, ct.Env)
 
 		// sorted by the order of execution.
 		eventTestcases := []struct {
@@ -424,7 +424,7 @@ func TestRunManager(t *testing.T) {
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		cf := rdb.NewMockRecorderClientFactory(ct.GoMockCtl)
 		qm := quota.NewManager(ct.GFactory())
-		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), tree.NewClientFactory(ct.TreeFakeSrv.Host()), ct.BQFake, cf, qm, ct.Env)
+		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.GitilesFactory(), tree.NewClientFactory(ct.TreeFakeSrv.Host()), ct.BQFake, cf, qm, ct.Env)
 
 		t.Run("Recursive", func(t *ftt.Test) {
 			assert.NoErr(t, notifier.PokeNow(ctx, runID))

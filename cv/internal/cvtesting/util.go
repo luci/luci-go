@@ -68,6 +68,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gitiles"
 
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
@@ -91,6 +92,8 @@ type Test struct {
 	GFake *gf.Fake
 	// BuildbucketFake is a Buildbucket fake. Defaults to an empty one.
 	BuildbucketFake *bbfake.Fake
+	// GitilesFake is a Gitiles fake. Defaults to an empty one.
+	GitilesFake *gitiles.FakeFactory
 	// TreeFakeSrv is a fake Tree status server.
 	TreeFakeSrv *treetest.FakeServer
 	// BQFake is a fake BQ client.
@@ -202,6 +205,9 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	if t.BuildbucketFake == nil {
 		t.BuildbucketFake = &bbfake.Fake{}
 	}
+	if t.GitilesFake == nil {
+		t.GitilesFake = gitiles.NewFakeFactory()
+	}
 	if t.TreeFakeSrv == nil {
 		t.TreeFakeSrv = treetest.NewFakeServer(ctx)
 		t.TB.Cleanup(t.TreeFakeSrv.Shutdown)
@@ -230,6 +236,10 @@ func (t *Test) RoundTestClock(multiple time.Duration) {
 
 func (t *Test) GFactory() gerrit.Factory {
 	return gerrit.CachingFactory(16, gerrit.TimeLimitedFactory(gerrit.InstrumentedFactory(t.GFake)))
+}
+
+func (t *Test) GitilesFactory() gitiles.Factory {
+	return t.GitilesFake
 }
 
 // TSMonSentValue returns the latest value of the given metric.
