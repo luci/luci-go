@@ -37,6 +37,8 @@ queue:
 - name: sync-builds-with-backend-tasks
   target: default
   rate: 500/s
+  retry_parameters:
+    task_retry_limit: 0
 - name: cancel-backend-task
   target: default
   rate: 500/s

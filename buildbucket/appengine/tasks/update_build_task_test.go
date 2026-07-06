@@ -380,7 +380,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 			}
 			err := validateBuildTaskUpdate(req)
 			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err.Error(), should.ContainSubstring("task.details is greater than 10 kb"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("task.details is greater than 50 kb"))
 		})
 	})
 }

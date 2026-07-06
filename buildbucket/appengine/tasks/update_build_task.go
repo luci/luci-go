@@ -120,8 +120,8 @@ func validateTask(task *pb.Task, allowPending bool) error {
 		return errors.Fmt("task.Status: %w", err)
 	}
 	detailsInKb := float64(len(task.GetDetails().String()) / 1024)
-	if detailsInKb > 10 {
-		return errors.New("task.details is greater than 10 kb")
+	if detailsInKb > 50 {
+		return errors.New("task.details is greater than 50 kb")
 	}
 	return nil
 }
