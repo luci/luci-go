@@ -39,6 +39,37 @@ import (
 	"go.chromium.org/luci/vpython/standard"
 )
 
+// passthroughEnvVars is a list of environment variables forwarded from the
+// host environment to virtualenv generator subprocesses so network tools
+// (pip/uv) can authenticate SSL certs and navigate proxies.
+var passthroughEnvVars = []string{
+	// Proxy settings
+	"HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
+	"http_proxy", "https_proxy", "all_proxy", "no_proxy",
+	// TLS / CA certificate bundles
+	"SSL_CERT_FILE", "SSL_CERT_DIR",
+	"REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE",
+	"PIP_CERT", "UV_CERT", "UV_NATIVE_TLS",
+}
+
+func envWithPassthroughs() environ.Env {
+	env := environ.New(nil)
+	for _, k := range passthroughEnvVars {
+		if v := os.Getenv(k); v != "" {
+			env.Set(k, v)
+		}
+	}
+	arURL := os.Getenv(common.EnvVpythonArUrl)
+	if arURL == "" {
+		arURL = common.DefaultARURL
+	}
+	env.Set(common.EnvVpythonArUrl, arURL)
+	if reportURL := os.Getenv(common.EnvVpythonReportMissingUrl); reportURL != "" {
+		env.Set(common.EnvVpythonReportMissingUrl, reportURL)
+	}
+	return env
+}
+
 type Environment struct {
 	Executable string
 	CPython    generators.Generator
@@ -116,20 +147,12 @@ func (e *Environment) Pep425Tags() generators.Generator {
 }
 
 func (e *Environment) WithWheels(wheels generators.Generator) generators.Generator {
-	env := environ.New(nil)
-	arURL := os.Getenv(common.EnvVpythonArUrl)
-	if arURL == "" {
-		arURL = common.DefaultARURL
-	}
-	env.Set(common.EnvVpythonArUrl, arURL)
+	env := envWithPassthroughs()
 	cipdPath := "cipd"
 	if path, err := exec.LookPath("cipd"); err == nil {
 		cipdPath = path
 	}
 	env.Set(common.EnvVpythonCipdPath, cipdPath)
-	if reportURL := os.Getenv(common.EnvVpythonReportMissingUrl); reportURL != "" {
-		env.Set(common.EnvVpythonReportMissingUrl, reportURL)
-	}
 	return &workflow.Generator{
 		Name: "python_venv",
 		Args: []string{
@@ -241,15 +264,7 @@ func (s *SpecRequirementsGenerator) Generate(_ context.Context, plats generators
 
 // WithUV returns a workflow.Generator for the UV virtualenv.
 func (e *Environment) WithUV(uv generators.Generator, spec *standard.ProjectSpec) generators.Generator {
-	env := environ.New(nil)
-	arURL := os.Getenv(common.EnvVpythonArUrl)
-	if arURL == "" {
-		arURL = common.DefaultARURL
-	}
-	env.Set(common.EnvVpythonArUrl, arURL)
-	if reportURL := os.Getenv(common.EnvVpythonReportMissingUrl); reportURL != "" {
-		env.Set(common.EnvVpythonReportMissingUrl, reportURL)
-	}
+	env := envWithPassthroughs()
 
 	reqGen := &SpecRequirementsGenerator{Spec: spec}
 
