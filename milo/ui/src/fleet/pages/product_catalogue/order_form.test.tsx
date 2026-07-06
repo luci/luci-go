@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
 import { DateTime } from 'luxon';
 
 import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -119,7 +124,7 @@ describe('<OrderForm />', () => {
     expect(screen.getByLabelText(/Mobile Harness Owner/)).toBeVisible();
   });
 
-  it('opens Buganizer URL in a new tab when the form is submitted', () => {
+  it('opens Buganizer URL in a new tab when the form is submitted', async () => {
     const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
     render(<OrderForm entry={mockEntry} />);
 
@@ -194,6 +199,30 @@ describe('<OrderForm />', () => {
     ).toFormat('M/d/yyyy');
     expect(customFields).toContain(`1398937:${expectedDate}`); // Estimated Launch Date
 
+    // Verify modal is open
+    expect(screen.getByText('Order Submitted')).toBeInTheDocument();
+    expect(
+      screen.getByText(/A pre-populated Buganizer issue has been generated/),
+    ).toBeInTheDocument();
+
+    // Verify manual link
+    const manualLink = screen.getByText('click here to open it manually');
+    expect(manualLink).toBeInTheDocument();
+    expect(manualLink.getAttribute('href')).toBe(openedUrlStr);
+
+    // Verify RRI link
+    const rriLink = screen.getByText('Resource Request Insights (RRI)');
+    expect(rriLink).toBeInTheDocument();
+    expect(rriLink.getAttribute('href')).toBe('/ui/fleet/labs/requests');
+
+    // Click close button
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    // Verify modal is closed
+    await waitForElementToBeRemoved(() =>
+      screen.queryByText('Order Submitted'),
+    );
+
     openSpy.mockRestore();
   });
 
@@ -241,6 +270,30 @@ describe('<OrderForm />', () => {
       'MM/dd/yyyy',
     ).toFormat('M/d/yyyy');
     expect(customFields).toContain(`1398937:${expectedDate}`); // Estimated Launch Date
+
+    // Verify modal is open
+    expect(screen.getByText('Order Submitted')).toBeInTheDocument();
+    expect(
+      screen.getByText(/A pre-populated Buganizer issue has been generated/),
+    ).toBeInTheDocument();
+
+    // Verify manual link
+    const manualLink = screen.getByText('click here to open it manually');
+    expect(manualLink).toBeInTheDocument();
+    expect(manualLink.getAttribute('href')).toBe(openedUrlStr);
+
+    // Verify RRI link
+    const rriLink = screen.getByText('Resource Request Insights (RRI)');
+    expect(rriLink).toBeInTheDocument();
+    expect(rriLink.getAttribute('href')).toBe('/ui/fleet/labs/requests');
+
+    // Click close button
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    // Verify modal is closed
+    await waitForElementToBeRemoved(() =>
+      screen.queryByText('Order Submitted'),
+    );
 
     openSpy.mockRestore();
   });

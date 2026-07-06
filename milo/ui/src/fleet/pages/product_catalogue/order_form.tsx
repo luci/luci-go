@@ -23,6 +23,11 @@ import {
   Typography,
   Paper,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Link,
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
@@ -49,6 +54,8 @@ const TOOLTIP_CONTAINER_STYLE = {
 
 export const OrderForm = ({ entry }: OrderFormProps) => {
   const [platform, setPlatform] = useState<string>('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [buganizerUrl, setBuganizerUrl] = useState('');
   const [quantity, setQuantity] = useState<number>(1);
   const [resourceGroup, setResourceGroup] = useState<string>('');
   const [estimatedLaunchDate, setEstimatedLaunchDate] =
@@ -171,6 +178,8 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const url = buildBuganizerUrl();
+    setBuganizerUrl(url);
+    setModalOpen(true);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -476,6 +485,38 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
           )}
         </Box>
       </form>
+
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)}>
+        <DialogTitle>Order Submitted</DialogTitle>
+        <DialogContent>
+          <Typography gutterBottom>
+            A pre-populated Buganizer issue has been generated. Please review
+            and complete the submission in the newly opened tab by clicking the{' '}
+            <strong>Create</strong> button.
+          </Typography>
+          <Typography gutterBottom sx={{ mt: 2 }}>
+            If the Buganizer page did not open automatically (e.g., if it was
+            blocked by a popup blocker), you can{' '}
+            <Link href={buganizerUrl} target="_blank" rel="noopener noreferrer">
+              click here to open it manually
+            </Link>
+            .
+          </Typography>
+          <Typography gutterBottom sx={{ mt: 2 }}>
+            Once the request is created, you can monitor its fulfillment status
+            on the{' '}
+            <Link href="/ui/fleet/labs/requests" target="_blank">
+              Resource Request Insights (RRI)
+            </Link>{' '}
+            page.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalOpen(false)} variant="contained">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };
