@@ -217,6 +217,16 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *CA, 
 		return nil, fmt.Errorf("CRL is not signed by the CA - %s", err)
 	}
 
+	// Reject CRL rollback.
+	if crl.TBSCertList.ThisUpdate.Before(prev.LastUpdateTime) {
+		return nil, fmt.Errorf("CRL rollback rejected: ThisUpdate %s is older than stored %s", crl.TBSCertList.ThisUpdate, prev.LastUpdateTime)
+	}
+
+	// Reject expired CRL.
+	if !crl.TBSCertList.NextUpdate.IsZero() && clock.Now(c).After(crl.TBSCertList.NextUpdate) {
+		return nil, fmt.Errorf("CRL is expired: NextUpdate %s is in the past", crl.TBSCertList.NextUpdate)
+	}
+
 	// The CRL is peachy. Update a sharded set of all revoked certs.
 	logging.Infof(c, "CRL last updated %s", crl.TBSCertList.ThisUpdate)
 	logging.Infof(c, "Found %d entries in the CRL", len(crl.TBSCertList.RevokedCertificates))

@@ -16,13 +16,21 @@ package certconfig
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -36,6 +44,7 @@ import (
 func TestFetchCRLRPC(t *testing.T) {
 	ftt.Run("with mock context", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
+		ctx, _ = testclock.UseTime(ctx, time.Date(2016, 3, 16, 0, 0, 0, 0, time.UTC))
 		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
 				return http.DefaultTransport // mock URLFetch service
@@ -234,4 +243,83 @@ func serveCRL() *crlServer {
 		w.Write(blob)
 	}))
 	return s
+}
+
+func TestCRLRollback(t *testing.T) {
+	ftt.Run("CRL Rollback Protection", t, func(t *ftt.Test) {
+		ctx := gaetesting.TestingContext()
+		ctx, _ = testclock.UseTime(ctx, time.Date(2020, 6, 1, 12, 0, 0, 0, time.UTC))
+
+		// Generate CA
+		priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		assert.Loosely(t, err, should.BeNil)
+
+		template := x509.Certificate{
+			SerialNumber: big.NewInt(1),
+			Subject: pkix.Name{
+				CommonName: "Test CA",
+			},
+			NotBefore:             time.Now().Add(-1 * time.Hour),
+			NotAfter:              time.Now().Add(24 * time.Hour),
+			KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+			BasicConstraintsValid: true,
+			IsCA:                  true,
+		}
+
+		caBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+		assert.Loosely(t, err, should.BeNil)
+
+		caCert, err := x509.ParseCertificate(caBytes)
+		assert.Loosely(t, err, should.BeNil)
+
+		caEntity := &CA{
+			CN:   "Test CA",
+			Cert: caBytes,
+		}
+		err = ds.Put(ctx, caEntity)
+		assert.Loosely(t, err, should.BeNil)
+
+		// Helper to sign CRL
+		signCRL := func(thisUpdate, nextUpdate time.Time, revokedSerialNumbers []int64) []byte {
+			revoked := make([]pkix.RevokedCertificate, len(revokedSerialNumbers))
+			for i, sn := range revokedSerialNumbers {
+				revoked[i] = pkix.RevokedCertificate{
+					SerialNumber:   big.NewInt(sn),
+					RevocationTime: thisUpdate,
+				}
+			}
+
+			crlBytes, err := caCert.CreateCRL(rand.Reader, priv, revoked, thisUpdate, nextUpdate)
+			if err != nil {
+				panic(err)
+			}
+			return crlBytes
+		}
+
+		// 1. Store a "new" CRL (ThisUpdate = 2020-06-01)
+		t1 := time.Date(2020, 6, 1, 0, 0, 0, 0, time.UTC)
+		crlNew := signCRL(t1, t1.Add(24*time.Hour), []int64{42})
+
+		prev := &CRL{Parent: ds.KeyForObj(ctx, caEntity)}
+		crlEntity, err := validateAndStoreCRL(ctx, crlNew, "etag-new", caEntity, prev)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, crlEntity.RevokedCertsCount, should.Equal(1))
+		assert.Loosely(t, crlEntity.LastUpdateTime, should.Match(t1))
+
+		// Verify SN 42 is revoked in datastore shards
+		checker := NewCRLChecker("Test CA", CRLShardCount, time.Minute)
+		revoked, err := checker.IsRevokedSN(ctx, big.NewInt(42))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, revoked, should.BeTrue)
+
+		// 2. Try to store an "old" CRL (ThisUpdate = 2020-01-01)
+		t0 := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+		crlOld := signCRL(t0, t0.Add(24*time.Hour), []int64{}) // no revocations
+
+		_, err = validateAndStoreCRL(ctx, crlOld, "etag-old", caEntity, crlEntity)
+
+		// We expect this to fail.
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, err.Error(), should.ContainSubstring("CRL rollback rejected"))
+	})
 }
