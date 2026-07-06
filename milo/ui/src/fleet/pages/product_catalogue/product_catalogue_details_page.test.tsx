@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { getFeatureFlag } from '@/fleet/config/features';
 import { SettingsProvider } from '@/fleet/context/providers';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -21,9 +22,14 @@ import { ProductCatalogDetailsPage } from './product_catalogue_details_page';
 import { useProductCatalogDetailsData } from './use_product_catalog_details_data';
 
 jest.mock('./use_product_catalog_details_data');
+jest.mock('@/fleet/config/features', () => ({
+  getFeatureFlag: jest.fn(),
+  getEnabledFeatureFlags: jest.fn(() => []),
+}));
 
 const mockUseProductCatalogDetailsData =
   useProductCatalogDetailsData as jest.Mock;
+const mockGetFeatureFlag = getFeatureFlag as jest.Mock;
 
 const renderWithProviders = (ui: React.ReactNode) => {
   return render(
@@ -39,6 +45,10 @@ const renderWithProviders = (ui: React.ReactNode) => {
 };
 
 describe('<ProductCatalogDetailsPage />', () => {
+  beforeEach(() => {
+    mockGetFeatureFlag.mockReturnValue(true);
+  });
+
   it('renders loading by default', async () => {
     mockUseProductCatalogDetailsData.mockReturnValue({ isLoading: true });
     renderWithProviders(<ProductCatalogDetailsPage />);
@@ -90,7 +100,7 @@ describe('<ProductCatalogDetailsPage />', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'Product Catalog Entry:',
     );
-    expect(screen.getByRole('textbox')).toHaveValue('prod-12345');
+    expect(screen.getByDisplayValue('prod-12345')).toBeVisible();
 
     // Verify fields
     expect(screen.getByText('Product Catalog ID')).toBeVisible();
@@ -115,5 +125,30 @@ describe('<ProductCatalogDetailsPage />', () => {
       'href',
       'http://go/ngp-npi/r11n/r11n-us-east',
     );
+    // Verify Order Resources form is visible by default (since RequestFiling returns true)
+    expect(screen.getByText('Order Resources')).toBeVisible();
+  });
+
+  it('hides the order form when RequestFiling is disabled', async () => {
+    mockGetFeatureFlag.mockImplementation((flag) => flag !== 'RequestFiling');
+    mockUseProductCatalogDetailsData.mockReturnValue({
+      isLoading: false,
+      entry: {
+        productCatalogId: 'prod-12345',
+        productName: 'Google Pixel 9 Pro',
+        gpn: '123-4567-890',
+        descriptiveName: 'Pixel 9 Pro 128GB Obsidian',
+        resourceType: 'device',
+        fleetPlmStatus: 'GA',
+        r11n: [],
+        numberOfDevicesPerRack: 16,
+        unitCost: '$999.00',
+        productType: 'phone',
+      },
+    });
+    renderWithProviders(<ProductCatalogDetailsPage />);
+
+    expect(screen.getByText('Product Catalog ID')).toBeVisible();
+    expect(screen.queryByText('Order Resources')).toBeNull();
   });
 });

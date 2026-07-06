@@ -27,6 +27,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { getFeatureFlag } from '@/fleet/config/features';
 import {
   CATALOG_PATH,
   generateCatalogDetailsURL,
@@ -36,6 +37,7 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { OrderForm } from './order_form';
 import { COLUMNS } from './product_catalogue_columns';
 import { useProductCatalogDetailsData } from './use_product_catalog_details_data';
 
@@ -97,6 +99,7 @@ const DetailValueCell = ({ row, entry }: DetailValueCellProps) => {
 export const ProductCatalogDetailsPage = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const requestFilingEnabled = getFeatureFlag('RequestFiling');
 
   const navigateToCatalogIfChanged = (newId: string) => {
     if (id !== newId) {
@@ -224,8 +227,26 @@ export const ProductCatalogDetailsPage = () => {
             not found.
           </p>
         </AlertWithFeedback>
+      ) : requestFilingEnabled ? (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+            gap: 3,
+            alignItems: 'start',
+          }}
+        >
+          <Box sx={{ overflowX: 'auto', order: { xs: 2, lg: 1 } }}>
+            <MaterialReactTable table={table} />
+          </Box>
+          <Box sx={{ order: { xs: 1, lg: 2 } }}>
+            <OrderForm entry={entry} />
+          </Box>
+        </Box>
       ) : (
-        <MaterialReactTable table={table} />
+        <Box sx={{ overflowX: 'auto' }}>
+          <MaterialReactTable table={table} />
+        </Box>
       )}
     </Box>
   );
