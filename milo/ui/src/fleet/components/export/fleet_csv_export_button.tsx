@@ -27,9 +27,9 @@ import {
 import { MRT_RowData, MRT_TableInstance } from 'material-react-table';
 import { useMemo, useState, SyntheticEvent } from 'react';
 
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { exportAs } from '@/fleet/utils/export';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { Column } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export interface FleetCSVExportButtonProps<TData extends MRT_RowData> {
@@ -55,7 +55,7 @@ export function FleetCSVExportButton<TData extends MRT_RowData>({
   fileName,
   onExport,
 }: FleetCSVExportButtonProps<TData>) {
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const selectedRowIds = Object.keys(table.getState().rowSelection);
   const exportSelected = selectedRowIds.length > 0;
 
