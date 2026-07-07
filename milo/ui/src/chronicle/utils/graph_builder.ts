@@ -28,6 +28,7 @@ import {
   CheckResultStatus,
   getCheckLabel,
   getCheckResultStatus,
+  getStageLabel,
 } from './check_utils';
 
 const dagreGraph = new dagre.graphlib.Graph();
@@ -337,11 +338,14 @@ function createCheckNode(
   };
 }
 
-function createStageNode(stage: Stage): ChronicleNode {
+function createStageNode(
+  stage: Stage,
+  valueDataMap: Map<string, ValueData>,
+): ChronicleNode {
   return {
     id: stage.identifier!.id!,
     data: {
-      label: truncateLabel(`Stage: ${stage.identifier!.id}`),
+      label: truncateLabel(getStageLabel(stage, valueDataMap)),
       view: stage,
     },
     style: NODE_STYLES.stage(COLORS.stage),
@@ -520,7 +524,7 @@ export class TurboCIGraphBuilder {
       if (this.shouldHideStage(stage)) {
         return;
       }
-      this.nodes.push(createStageNode(stage));
+      this.nodes.push(createStageNode(stage, this.valueDataMap));
       this.allNodeIds.add(stageId);
     });
   }

@@ -20,8 +20,15 @@ import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_ch
 import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_summary_result.pb';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
+
+import {
+  LegacyWorkNode,
+  TYPE_URL_LEGACY_WORKNODE_STAGE,
+  extractLegacyWorkNodeLabel,
+} from './legacy_worknode';
 
 export enum CheckResultStatus {
   UNKNOWN = 'UNKNOWN',
@@ -160,4 +167,24 @@ export function getCheckLabel(
     default:
       return `Check: ${id}`;
   }
+}
+
+export function getStageLabel(
+  stage: Stage,
+  valueDataMap: Map<string, ValueData>,
+): string {
+  if (!stage) return 'Unknown Stage';
+  const id = stage.identifier?.id || 'Unknown';
+
+  if (stage.args?.typeUrl === TYPE_URL_LEGACY_WORKNODE_STAGE) {
+    const legacyData = parseValueRef<LegacyWorkNode>(
+      stage.args,
+      TYPE_URL_LEGACY_WORKNODE_STAGE,
+      valueDataMap,
+    );
+    const label = extractLegacyWorkNodeLabel(legacyData, id);
+    if (label) return label;
+  }
+
+  return `Stage: ${id}`;
 }

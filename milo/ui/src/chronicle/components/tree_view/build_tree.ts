@@ -22,6 +22,7 @@ import {
   CheckResultStatus,
   getCheckLabel,
   getCheckResultStatus,
+  getStageLabel,
 } from '../../utils/check_utils';
 
 // Note; this enum may be incomplete if stage state or check state gets updated with new values.
@@ -107,6 +108,7 @@ export function buildVisualGraph(
     const stageId = sv.identifier?.id;
     if (!stageId) return;
     const stageNode = getNode(stageId, 'STAGE');
+    stageNode.label = getStageLabel(sv, valueDataMap);
     stageNode.status = stageStateToStatus(sv.state);
     stageNode.raw = sv;
 

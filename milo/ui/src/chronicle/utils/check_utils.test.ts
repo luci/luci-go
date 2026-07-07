@@ -20,6 +20,7 @@ import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_ch
 import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_summary_result.pb';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 
@@ -27,6 +28,7 @@ import {
   CheckResultStatus,
   getCheckLabel,
   getCheckResultStatus,
+  getStageLabel,
   TYPE_URL_BUILD_OPTIONS,
   TYPE_URL_BUILD_RESULT,
   TYPE_URL_GOB_SOURCE_OPTIONS,
@@ -34,6 +36,7 @@ import {
   TYPE_URL_TEST_OPTIONS,
   TYPE_URL_TEST_RESULT,
 } from './check_utils';
+import { TYPE_URL_LEGACY_WORKNODE_STAGE } from './legacy_worknode';
 
 function createCheck(
   kind: CheckKind,
@@ -349,6 +352,48 @@ describe('check_utils', () => {
         const view = createCheck(tc.kind, tc.id, tc.valueDataMap, tc.options);
         expect(getCheckLabel(view, tc.valueDataMap)).toBe(tc.expected);
       });
+    });
+  });
+
+  describe('getStageLabel', () => {
+    it('returns legacy WorkNode label from stage.args', () => {
+      const valueDataMap = new Map<string, ValueData>([
+        [
+          'digest-1',
+          {
+            json: {
+              value: JSON.stringify({
+                workExecutorType: 'PENDING_CHANGE_BUILD',
+                workParameters: {
+                  submitQueue: {
+                    branch: 'master',
+                    target: 'aosp_arm64-userdebug',
+                  },
+                },
+              }),
+            },
+          },
+        ],
+      ]);
+
+      const stage: Stage = {
+        identifier: { id: 'stage-1' },
+        args: {
+          typeUrl: TYPE_URL_LEGACY_WORKNODE_STAGE,
+          digest: 'digest-1',
+        },
+      } as Stage;
+
+      expect(getStageLabel(stage, valueDataMap)).toBe(
+        'build master:aosp_arm64-userdebug',
+      );
+    });
+
+    it('returns default Stage label if no legacy data present', () => {
+      const stage: Stage = {
+        identifier: { id: 'stage-2' },
+      } as Stage;
+      expect(getStageLabel(stage, new Map())).toBe('Stage: stage-2');
     });
   });
 });
