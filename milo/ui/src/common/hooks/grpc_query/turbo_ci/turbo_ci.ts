@@ -15,40 +15,54 @@
 import { UseQueryResult } from '@tanstack/react-query';
 
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
-import { QueryNodesRequest } from '@/proto/turboci/graph/orchestrator/v1/query_nodes_request.pb';
-import { QueryNodesResponse } from '@/proto/turboci/graph/orchestrator/v1/query_nodes_response.pb';
 import { ReadWorkPlanRequest } from '@/proto/turboci/graph/orchestrator/v1/read_workplan_request.pb';
 import { ReadWorkPlanResponse } from '@/proto/turboci/graph/orchestrator/v1/read_workplan_response.pb';
 import { TurboCIOrchestratorServiceName } from '@/proto/turboci/graph/orchestrator/v1/turbo_ci_orchestrator_service.pb';
 
 import { useGrpcWebQuery } from '../grpc_query';
 
-const HOST = 'https://turboci.pa.googleapis.com';
+export interface TurboCIEnvironment {
+  environment: string;
+  urlParam: string;
+  host: string;
+}
 
-export const useQueryNodes = (
-  request: QueryNodesRequest,
-  queryOptions?: WrapperQueryOptions<QueryNodesResponse>,
-): UseQueryResult<QueryNodesResponse> => {
-  return useGrpcWebQuery<QueryNodesRequest, QueryNodesResponse>(
-    {
-      host: HOST,
-      service: TurboCIOrchestratorServiceName,
-      method: 'QueryNodes',
-      request,
-      requestMsg: QueryNodesRequest,
-      responseMsg: QueryNodesResponse,
-    },
-    queryOptions,
-  );
-};
+export const TURBO_CI_ENVIRONMENTS: TurboCIEnvironment[] = [
+  {
+    environment: 'prod',
+    urlParam: 'prod',
+    host: 'https://turboci.pa.googleapis.com',
+  },
+  {
+    environment: 'staging',
+    urlParam: 'staging',
+    host: 'https://staging-turboci.sandbox.googleapis.com',
+  },
+  {
+    environment: 'qual-qa',
+    urlParam: 'qual-qa',
+    host: 'https://qual-qa-turboci.sandbox.googleapis.com',
+  },
+  {
+    environment: 'qual-qa-atp',
+    urlParam: 'qual-qa-atp',
+    host: 'https://qual-qa-atp-turboci.sandbox.googleapis.com',
+  },
+  {
+    environment: 'qual-qa-treehugger',
+    urlParam: 'qual-qa-treehugger',
+    host: 'https://qual-qa-treehugger-turboci.sandbox.googleapis.com',
+  },
+];
 
 export const useReadWorkPlan = (
   request: ReadWorkPlanRequest,
+  host: string,
   queryOptions?: WrapperQueryOptions<ReadWorkPlanResponse>,
 ): UseQueryResult<ReadWorkPlanResponse> => {
   return useGrpcWebQuery<ReadWorkPlanRequest, ReadWorkPlanResponse>(
     {
-      host: HOST,
+      host: host,
       service: TurboCIOrchestratorServiceName,
       method: 'ReadWorkPlan',
       request,

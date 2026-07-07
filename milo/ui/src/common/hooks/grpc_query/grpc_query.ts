@@ -81,40 +81,63 @@ function createGrpcErrorFromResponse(
   }
 }
 
+export async function fetchGrpcWeb<Req, Res>(
+  args: GrpcWebQueryArgs<Req, Res> & {
+    accessToken: string;
+    signal?: AbortSignal;
+  },
+): Promise<Res> {
+  const {
+    host,
+    service,
+    method,
+    request,
+    requestMsg,
+    responseMsg,
+    accessToken,
+    signal,
+  } = args;
+
+  const reqMessage = requestMsg.create(request);
+  const requestBinary = requestMsg.encode(reqMessage).finish();
+
+  const url = `${host}/$rpc/${service}/${method}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/x-protobuf',
+    },
+    body: requestBinary as BodyInit,
+    signal,
+  });
+
+  if (!response.ok) {
+    const resText = await response.text();
+    throw createGrpcErrorFromResponse(response.status, resText);
+  }
+
+  const responseBuffer = await response.arrayBuffer();
+  return responseMsg.decode(new Uint8Array(responseBuffer));
+}
+
 export const useGrpcWebQuery = <Req, Res>(
   args: GrpcWebQueryArgs<Req, Res>,
   queryOptions?: WrapperQueryOptions<Res>,
 ): UseQueryResult<Res> => {
   const getAccessToken = useGetAuthToken(TokenType.Access);
-  const { host, service, method, request, requestMsg, responseMsg } = args;
+  const { host, service, method, request } = args;
 
   const options: UseQueryOptions<Res> = {
     ...queryOptions,
     queryKey: ['grpc-web', host, service, method, request],
     queryFn: async (): Promise<Res> => {
       const accessToken = await getAccessToken();
-
-      const reqMessage = requestMsg.create(request);
-      const requestBinary = requestMsg.encode(reqMessage).finish();
-
-      const url = `${host}/$rpc/${service}/${method}`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/x-protobuf',
-        },
-        body: requestBinary as BodyInit,
+      return fetchGrpcWeb({
+        ...args,
+        accessToken,
       });
-
-      if (!response.ok) {
-        const resText = await response.text();
-        throw createGrpcErrorFromResponse(response.status, resText);
-      }
-
-      const responseBuffer = await response.arrayBuffer();
-      return responseMsg.decode(new Uint8Array(responseBuffer));
     },
   };
 

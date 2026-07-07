@@ -14,19 +14,31 @@
 
 import { createContext } from 'react';
 
+import { TurboCIEnvironment } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { WorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import { WorkflowType } from '../fake_turboci_graph';
 
 export const DEMO_WORKPLAN_ID = 'demo';
+export const DEMO_ENVIRONMENT_NAME = 'demo';
+
+export enum DetectionErrorType {
+  Timeout = 'timeout',
+  Error = 'error',
+  NoAccess = 'no-access',
+}
+
+export interface FailedEnvironment {
+  env: TurboCIEnvironment;
+  errorType: DetectionErrorType;
+}
 
 export interface ChronicleContextType {
   workplanId: string;
   graph: WorkPlan | undefined;
   valueDataMap: Map<string, ValueData>;
   activeEnvironment: string | undefined;
-  setActiveEnvironment: (environment: string | undefined) => void;
 
   // Workflow type for fake data generation only.
   workflowType: WorkflowType;
@@ -35,6 +47,15 @@ export interface ChronicleContextType {
   // Selected node ID from URL query param
   selectedNodeId: string | undefined;
   setSelectedNodeId: (id: string | undefined) => void;
+
+  // Detection states
+  detecting: boolean;
+  setDetecting: (detecting: boolean) => void;
+  detectionFailed: boolean;
+  setDetectionFailed: (failed: boolean) => void;
+  detectedEnvironments: TurboCIEnvironment[];
+  setActiveEnvironment: (environment: string | undefined) => void;
+  failedEnvironments: FailedEnvironment[];
 }
 
 export const ChronicleContext = createContext<ChronicleContextType>({
@@ -46,5 +67,11 @@ export const ChronicleContext = createContext<ChronicleContextType>({
   setWorkflowType: () => {},
   selectedNodeId: undefined,
   setSelectedNodeId: () => {},
+  detecting: false,
+  setDetecting: () => {},
+  detectionFailed: false,
+  setDetectionFailed: () => {},
+  detectedEnvironments: [],
   setActiveEnvironment: () => {},
+  failedEnvironments: [],
 });
