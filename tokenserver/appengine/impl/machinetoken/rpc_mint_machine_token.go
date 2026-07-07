@@ -133,7 +133,7 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 	// transient errors.
 	if err != nil {
 		if certchecker.IsCertInvalidError(err) {
-			return r.mintingErrorResponse(c, minter.ErrorCode_UNTRUSTED_CERTIFICATE, "%s", err)
+			return r.mintingErrorResponse(c, minter.ErrorCode_UNTRUSTED_CERTIFICATE, "invalid or untrusted certificate")
 		}
 		return nil, status.Errorf(codes.Internal, "failed to check the certificate - %s", err)
 	}

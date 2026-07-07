@@ -34,6 +34,7 @@ import (
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/certchecker"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 )
 
@@ -119,5 +120,44 @@ func TestMintMachineTokenRPC(t *testing.T) {
 			ErrorCode:      minter.ErrorCode_BAD_TOKEN_ARGUMENTS,
 			ErrorMessage:   `the domain "fake.domain" is not listed in the config`,
 		}))
+	})
+
+	ftt.Run("Untrusted certificate error responses do not leak CA state", t, func(t *ftt.Test) {
+		ctx := auth.WithState(testingContext(testingCA), &authtest.FakeState{
+			PeerIPOverride: net.ParseIP("127.10.10.10"),
+		})
+
+		// 1. CheckCertificate returns NoSuchCA error
+		implNoSuchCA := MintMachineTokenRPC{
+			Signer: testingSigner(),
+			CheckCertificate: func(_ context.Context, cert *x509.Certificate) (*certconfig.CA, error) {
+				return nil, certchecker.Error{
+					Reason: certchecker.NoSuchCA,
+				}
+			},
+		}
+
+		respNoSuchCA, err := implNoSuchCA.MintMachineToken(ctx, testingMachineTokenRequest(ctx))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, respNoSuchCA.ErrorCode, should.Equal(minter.ErrorCode_UNTRUSTED_CERTIFICATE))
+
+		// 2. CheckCertificate returns SignatureCheckError
+		implSigError := MintMachineTokenRPC{
+			Signer: testingSigner(),
+			CheckCertificate: func(_ context.Context, cert *x509.Certificate) (*certconfig.CA, error) {
+				return nil, certchecker.Error{
+					Reason: certchecker.SignatureCheckError,
+				}
+			},
+		}
+
+		respSigError, err := implSigError.MintMachineToken(ctx, testingMachineTokenRequest(ctx))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, respSigError.ErrorCode, should.Equal(minter.ErrorCode_UNTRUSTED_CERTIFICATE))
+
+		// Both error responses must return the same generic error message.
+		assert.Loosely(t, respNoSuchCA.ErrorMessage, should.Equal("invalid or untrusted certificate"))
+		assert.Loosely(t, respSigError.ErrorMessage, should.Equal("invalid or untrusted certificate"))
+		assert.Loosely(t, respNoSuchCA.ErrorMessage, should.Equal(respSigError.ErrorMessage))
 	})
 }
