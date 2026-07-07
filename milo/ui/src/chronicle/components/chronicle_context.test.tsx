@@ -226,7 +226,9 @@ describe('ChronicleContextProvider', () => {
 
     const mockFetch = jest.mocked(global.fetch);
     mockFetch.mockImplementation(async (url: RequestInfo | URL) => {
-      if (url.toString().includes('staging-turboci.sandbox.googleapis.com')) {
+      if (
+        url.toString().includes('qual-staging-turboci.sandbox.googleapis.com')
+      ) {
         throw new DOMException('The user aborted a request.', 'AbortError');
       }
       if (url.toString().includes('qual-qa-turboci.sandbox.googleapis.com')) {
@@ -270,7 +272,7 @@ describe('ChronicleContextProvider', () => {
     expect(screen.getByTestId('active-env')).toHaveTextContent('prod');
 
     expect(screen.getByTestId('failed-envs')).toHaveTextContent(
-      'staging:timeout,qual-qa:error',
+      'qual-qa:error,qual-staging:timeout',
     );
   });
 });

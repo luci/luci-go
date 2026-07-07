@@ -34,11 +34,6 @@ export const TURBO_CI_ENVIRONMENTS: TurboCIEnvironment[] = [
     host: 'https://turboci.pa.googleapis.com',
   },
   {
-    environment: 'staging',
-    urlParam: 'staging',
-    host: 'https://staging-turboci.sandbox.googleapis.com',
-  },
-  {
     environment: 'qual-qa',
     urlParam: 'qual-qa',
     host: 'https://qual-qa-turboci.sandbox.googleapis.com',
@@ -52,6 +47,11 @@ export const TURBO_CI_ENVIRONMENTS: TurboCIEnvironment[] = [
     environment: 'qual-qa-treehugger',
     urlParam: 'qual-qa-treehugger',
     host: 'https://qual-qa-treehugger-turboci.sandbox.googleapis.com',
+  },
+  {
+    environment: 'qual-staging',
+    urlParam: 'qual-staging',
+    host: 'https://qual-staging-turboci.sandbox.googleapis.com',
   },
 ];
 

@@ -232,6 +232,15 @@ async function lookupWorkplanExists(
   return { exists: false, errorType: DetectionErrorType.Error };
 }
 
+function compareEnvironments(
+  a: TurboCIEnvironment,
+  b: TurboCIEnvironment,
+): number {
+  const idxA = TURBO_CI_ENVIRONMENTS.findIndex((e) => e.host === a.host);
+  const idxB = TURBO_CI_ENVIRONMENTS.findIndex((e) => e.host === b.host);
+  return idxA - idxB;
+}
+
 export function ChronicleContextProvider({
   children,
 }: {
@@ -356,20 +365,13 @@ export function ChronicleContextProvider({
           setDetectedEnvironments((prev) => {
             if (prev.some((e) => e.host === env.host)) return prev;
             const next = [...prev, env];
-            return next.sort((a, b) => {
-              const idxA = TURBO_CI_ENVIRONMENTS.findIndex(
-                (e) => e.host === a.host,
-              );
-              const idxB = TURBO_CI_ENVIRONMENTS.findIndex(
-                (e) => e.host === b.host,
-              );
-              return idxA - idxB;
-            });
+            return next.sort(compareEnvironments);
           });
         } else if (errorType) {
           setFailedEnvironments((prev) => {
             if (prev.some((f) => f.env.host === env.host)) return prev;
-            return [...prev, { env, errorType }];
+            const next = [...prev, { env, errorType }];
+            return next.sort((a, b) => compareEnvironments(a.env, b.env));
           });
         }
 
