@@ -15,14 +15,44 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 
+import { useBatchedClustersClient } from '@/common/hooks/prpc_clients';
 import { FailureReason } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { FailureReasonEntry } from './failure_reason_entry';
 
+jest.mock('@/common/hooks/prpc_clients', () => ({
+  useBatchedClustersClient: jest.fn(),
+}));
+
 describe('<FailureReasonEntry />', () => {
+  beforeEach(() => {
+    (useBatchedClustersClient as jest.Mock).mockReturnValue({
+      Cluster: {
+        query: jest.fn().mockImplementation((req) => ({
+          queryKey: ['clusters', 'Cluster', req],
+          queryFn: jest.fn().mockResolvedValue({
+            clusteredTestResults: [
+              {
+                clusters: [
+                  {
+                    clusterId: {
+                      algorithm: 'reason-v6',
+                      id: 'c0454a8c64748565c488ff1d7e06ade9',
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        })),
+      },
+    });
+  });
+
   afterEach(() => {
     cleanup();
+    jest.clearAllMocks();
   });
 
   it('should render fallback primaryErrorMessage when errors list is empty', () => {
@@ -152,5 +182,59 @@ describe('<FailureReasonEntry />', () => {
     expect(
       screen.getByText(/5 errors were truncated due to size limits/),
     ).toBeInTheDocument();
+  });
+
+  it('should render Similar failures link when inline={true} and project/testId are provided', async () => {
+    const failureReason = FailureReason.fromPartial({
+      primaryErrorMessage: 'some crash error',
+      errors: [{ message: 'some crash error' }],
+    });
+
+    render(
+      <FakeContextProvider>
+        <FailureReasonEntry
+          failureReason={failureReason}
+          inline={true}
+          project="chromium"
+          testId="://cc:cc_unittests!gtest::AnimationTest#PropertiesMutate"
+        />
+      </FakeContextProvider>,
+    );
+
+    const link = await screen.findByText('Similar failures');
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute(
+      'href',
+      expect.stringContaining(
+        '/p/chromium/clusters/reason-v6/c0454a8c64748565c488ff1d7e06ade9',
+      ),
+    );
+  });
+
+  it('should render (similar failures) link in header when inline={false} and project/testId are provided', async () => {
+    const failureReason = FailureReason.fromPartial({
+      primaryErrorMessage: 'some crash error',
+      errors: [{ message: 'some crash error' }],
+    });
+
+    render(
+      <FakeContextProvider>
+        <FailureReasonEntry
+          failureReason={failureReason}
+          inline={false}
+          project="chromium"
+          testId="://cc:cc_unittests!gtest::AnimationTest#PropertiesMutate"
+        />
+      </FakeContextProvider>,
+    );
+
+    const link = await screen.findByText('(similar failures)');
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute(
+      'href',
+      expect.stringContaining(
+        '/p/chromium/clusters/reason-v6/c0454a8c64748565c488ff1d7e06ade9',
+      ),
+    );
   });
 });

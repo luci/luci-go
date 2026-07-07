@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
+import { Box, Link, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { makeClusterLink } from '@/analysis/tools/utils';
+import { useBatchedClustersClient } from '@/common/hooks/prpc_clients';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
+import { ClusterRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import {
   FailureReason,
   FailureReason_Error,
@@ -28,6 +32,8 @@ import {
 export interface FailureReasonEntryProps {
   readonly failureReason: FailureReason;
   readonly inline?: boolean;
+  readonly project?: string;
+  readonly testId?: string;
 }
 
 interface ErrorDisplayProps {
@@ -87,9 +93,38 @@ function ErrorDisplay({ error, isPrimary = false }: ErrorDisplayProps) {
 export function FailureReasonEntry({
   failureReason,
   inline = false,
+  project,
+  testId,
 }: FailureReasonEntryProps) {
   const [expanded, setExpanded] = useState(true);
   const [additionalExpanded, setAdditionalExpanded] = useState(false);
+
+  const clustersClient = useBatchedClustersClient();
+  const { data: clusterResponse } = useQuery({
+    ...clustersClient.Cluster.query(
+      ClusterRequest.fromPartial({
+        project: project || '',
+        testResults: [
+          {
+            testId: testId || '',
+            failureReason: {
+              primaryErrorMessage: failureReason.primaryErrorMessage,
+            },
+          },
+        ],
+      }),
+    ),
+    enabled: Boolean(project && testId && failureReason.primaryErrorMessage),
+  });
+
+  const clusters = clusterResponse?.clusteredTestResults?.[0]?.clusters || [];
+  const reasonCluster = clusters.find((c) =>
+    c.clusterId?.algorithm.startsWith('reason-'),
+  );
+  const clusterLink =
+    project && reasonCluster?.clusterId
+      ? makeClusterLink(project, reasonCluster.clusterId)
+      : null;
 
   const errors = failureReason.errors || [];
   const primaryError = errors[0];
@@ -100,6 +135,18 @@ export function FailureReasonEntry({
 
   const body = (
     <>
+      {inline && clusterLink && (
+        <Box sx={{ mb: 1 }}>
+          <Link
+            href={clusterLink}
+            target="_blank"
+            rel="noreferrer"
+            sx={{ fontSize: '13px' }}
+          >
+            Similar failures
+          </Link>
+        </Box>
+      )}
       {/* Primary Error */}
       {primaryError ? (
         <ErrorDisplay error={primaryError} isPrimary={true} />
@@ -177,6 +224,17 @@ export function FailureReasonEntry({
     <ExpandableEntry expanded={expanded}>
       <ExpandableEntryHeader onToggle={(expanded) => setExpanded(expanded)}>
         Failure Reason:
+        {clusterLink && (
+          <Link
+            href={clusterLink}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            sx={{ ml: 1, fontSize: '13px', fontWeight: 'normal' }}
+          >
+            (similar failures)
+          </Link>
+        )}
       </ExpandableEntryHeader>
       <ExpandableEntryBody>{body}</ExpandableEntryBody>
     </ExpandableEntry>

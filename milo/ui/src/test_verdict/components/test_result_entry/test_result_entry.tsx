@@ -133,7 +133,11 @@ export function TestResultEntry({
       </ExpandableEntryHeader>
       <ExpandableEntryBody>
         {testResult.failureReason && (
-          <FailureReasonEntry failureReason={testResult.failureReason} />
+          <FailureReasonEntry
+            failureReason={testResult.failureReason}
+            project={project}
+            testId={testId || testResult.testId}
+          />
         )}
         <SummaryHtmlEntry testResult={testResult} />
         <ArtifactsEntry testResultName={testResult.name} />

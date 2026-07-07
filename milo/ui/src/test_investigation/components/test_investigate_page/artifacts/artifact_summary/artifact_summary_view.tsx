@@ -24,7 +24,11 @@ import {
 import { GetArtifactRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TextDiffArtifactView } from '@/test_investigation/components/common/artifacts/content/text_diff';
-import { useIsLegacyInvocation } from '@/test_investigation/context';
+import {
+  useIsLegacyInvocation,
+  useProject,
+  useTestVariant,
+} from '@/test_investigation/context';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 import { FailureReasonEntry } from '@/test_verdict/components/test_result_entry/failure_reason_entry';
 
@@ -60,6 +64,8 @@ export function ArtifactSummaryView({
     });
 
   const isLegacyInvocation = useIsLegacyInvocation();
+  const project = useProject();
+  const testVariant = useTestVariant();
 
   const [compactDuration] =
     (currentResult.duration &&
@@ -97,6 +103,8 @@ export function ArtifactSummaryView({
             <FailureReasonEntry
               failureReason={currentResult.failureReason}
               inline={true}
+              project={project}
+              testId={currentResult.testId || testVariant.testId}
             />
           </Box>
         </CollapsibleArtifactSummarySection>

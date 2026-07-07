@@ -38,6 +38,7 @@ import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test
 import { VariantDisplay } from '@/test_investigation/components/common/variant_display';
 import { NodeLabelPrefix } from '@/test_investigation/components/node_label_prefix';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
+import { useProject } from '@/test_investigation/context';
 import { StructuredTreeLevel } from '@/test_investigation/utils/drawer_tree_utils';
 import { getTestVariantURL } from '@/test_investigation/utils/test_info_utils';
 import { FailureReasonEntry } from '@/test_verdict/components/test_result_entry/failure_reason_entry';
@@ -68,6 +69,7 @@ export function FailureSummary({
   if (!invocationId) {
     throw new Error('Invocation ID is required');
   }
+  const project = useProject();
 
   const resultToDisplay: TestResult = useMemo(() => {
     const resultsBundle = testVariant.results;
@@ -212,6 +214,8 @@ export function FailureSummary({
             <FailureReasonEntry
               failureReason={resultToDisplay.failureReason}
               inline={true}
+              project={project}
+              testId={testVariant.testId}
             />
           ) : resultToDisplay.skippedReason ? (
             <Box sx={{ maxWidth: '82vw' }}>

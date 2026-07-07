@@ -34,6 +34,7 @@ jest.mock('@tanstack/react-query', () => ({
 
 jest.mock('@/test_investigation/context', () => ({
   useIsLegacyInvocation: jest.fn().mockReturnValue(false),
+  useProject: jest.fn().mockReturnValue('chromium'),
   useTestVariant: jest.fn().mockReturnValue({ variant: { def: {} } }),
 }));
 
