@@ -244,9 +244,15 @@ func MakePathUserWritable(path string, fi os.FileInfo) error {
 	}
 
 	// Make user-writable, if it's not already.
+	// For directories, also make them readable and executable so we can
+	// read their contents and recurse into them.
 	mode := fi.Mode()
-	if (mode & 0200) == 0 {
-		mode |= 0200
+	needed := os.FileMode(0200)
+	if fi.IsDir() {
+		needed |= 0500
+	}
+	if (mode & needed) != needed {
+		mode |= needed
 		if err := os.Chmod(path, mode); err != nil {
 			return errors.Fmt("could not Chmod path: mode=%#o: %q: %w", mode, path, err)
 		}

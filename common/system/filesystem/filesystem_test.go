@@ -246,6 +246,18 @@ func TestRemoveAll(t *testing.T) {
 				assert.Loosely(t, RemoveAll(subDir), should.BeNil)
 				assert.Loosely(t, isGone(subDir), should.BeTrue)
 			})
+
+			if runtime.GOOS != "windows" {
+				t.Run(`Can remove the directory when it is write-only`, func(t *ftt.Test) {
+					writeOnlyDir := filepath.Join(subDir, "writeonly")
+					assert.Loosely(t, os.MkdirAll(writeOnlyDir, 0755), should.BeNil)
+					assert.Loosely(t, os.WriteFile(filepath.Join(writeOnlyDir, "file"), []byte("junk"), 0644), should.BeNil)
+					assert.Loosely(t, os.Chmod(writeOnlyDir, 0200), should.BeNil)
+
+					assert.Loosely(t, RemoveAll(writeOnlyDir), should.BeNil)
+					assert.Loosely(t, isGone(writeOnlyDir), should.BeTrue)
+				})
+			}
 		})
 
 		t.Run(`Will return nil if the target does not exist`, func(t *ftt.Test) {
