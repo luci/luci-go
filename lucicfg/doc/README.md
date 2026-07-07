@@ -1664,7 +1664,7 @@ Buildbucket.
 * **executable**: an executable to run, e.g. a [luci.recipe(...)](#luci.recipe) or [luci.executable(...)](#luci.executable). Required.
 * **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the executable. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed properties.
 * **allowed_property_overrides**: a list of top-level property keys that can be overridden by users calling the buildbucket ScheduleBuild RPC. If this is set exactly to ['*'], ScheduleBuild is allowed to override any properties. Only property keys which are populated via the `properties` parameter here (or via the module-scoped defaults) are allowed.
-* **service_account**: an email of a service account to run the executable under: the executable (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI). Supports the module-scoped default.
+* **service_account**: an email of a service account to run the executable under: the executable (and various tools it calls, e.g. gcloud storage) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI). Supports the module-scoped default.
 * **caches**: a list of [swarming.cache(...)](#swarming.cache) objects describing Swarming named caches that should be present on the bot. See [swarming.cache(...)](#swarming.cache) doc for more details. Supports the module-scoped defaults. They are joined with the explicitly passed caches.
 * **execution_timeout**: how long to wait for a running build to finish before forcefully aborting it and marking the build as timed out. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **grace_period**: how long to wait after the expiration of `execution_timeout` or after a Cancel event, before the build is forcefully shut down. Your build can use this time as a 'last gasp' to do quick actions like killing child processes, cleaning resources, etc. Supports the module-scoped default.
@@ -2300,6 +2300,7 @@ luci.builder_health_notifier(
     disable = None,
     additional_emails = None,
     notify_all_healthy = None,
+    gardened_builders_only = None,
 )
 ```
 
@@ -2318,6 +2319,7 @@ builders in an email.
 * **disable**: Disable is a bool allowing owners to toggle notification settings
 * **additional_emails**: Additional_emails is a list of other emails that may want to receive the summary of builders' health. Optional.
 * **notify_all_healthy**: Notify_all_healthy is a bool which dictates whether to send an email summary stating that all builders are healthy. Default is false. Optional.
+* **gardened_builders_only**: Boolean which if set True, will only send a summary on builders that are currently being gardened. Default is False. Optional.
 
 
 
@@ -2503,6 +2505,7 @@ luci.cq_group(
     user_limit_default = None,
     post_actions = None,
     tryjob_experiments = None,
+    combine_cls_stabilization_delay = None,
 )
 ```
 
@@ -2540,6 +2543,7 @@ pub/sub integration is enabled for the Gerrit host.
 * **user_limit_default**: [cq.user_limit(...)](#cq.user-limit) or None. If none of limits in `user_limits` are applicable and `user_limit_default` is not specified, the user is granted unlimited runs. `user_limit_default` must not specify users and groups.
 * **post_actions**: a list of post actions or None. Please refer to cq.post_action_* for all the available post actions. e.g., [cq.post_action_gerrit_label_votes(...)](#cq.post-action-gerrit-label-votes)
 * **tryjob_experiments**: a list of [cq.tryjob_experiment(...)](#cq.tryjob-experiment) or None. The experiments will be enabled when launching Tryjobs if condition is met.
+* **combine_cls_stabilization_delay**: a duration of how long to wait for Gerrit to settle before combining CLs. This allows a Gerrit CL stack to be tried in the same CV Attempt. If omitted, then this feature is disabled (each CL would get its own CV Attempt). Incompatible with allow_submit_with_open_deps.
 
 
 
@@ -2866,7 +2870,7 @@ Defines a dynamic builder template for a dynamic bucket.
 * **executable**: an executable to run, e.g. a [luci.recipe(...)](#luci.recipe) or [luci.executable(...)](#luci.executable).
 * **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the executable.
 * **allowed_property_overrides**: a list of top-level property keys that can be overridden by users calling the buildbucket ScheduleBuild RPC. If this is set exactly to ['*'], ScheduleBuild is allowed to override any properties. Only property keys which are populated via the `properties` parameter here are allowed.
-* **service_account**: an email of a service account to run the executable under: the executable (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI).
+* **service_account**: an email of a service account to run the executable under: the executable (and various tools it calls, e.g. gcloud storage) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI).
 * **caches**: a list of [swarming.cache(...)](#swarming.cache) objects describing Swarming named caches that should be present on the bot. See [swarming.cache(...)](#swarming.cache) doc for more details.
 * **execution_timeout**: how long to wait for a running build to finish before forcefully aborting it and marking the build as timed out. If None, defer the decision to Buildbucket service.
 * **grace_period**: how long to wait after the expiration of `execution_timeout` or after a Cancel event, before the build is forcefully shut down. Your build can use this time as a 'last gasp' to do quick actions like killing child processes, cleaning resources, etc.

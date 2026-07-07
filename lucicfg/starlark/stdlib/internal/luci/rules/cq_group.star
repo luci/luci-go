@@ -41,7 +41,8 @@ def _cq_group(
         user_limits = None,
         user_limit_default = None,
         post_actions = None,
-        tryjob_experiments = None):
+        tryjob_experiments = None,
+        combine_cls_stabilization_delay = None):
     """Defines a set of refs to watch and a set of verifier to run.
 
     The CQ will run given verifiers whenever there's a pending approved CL for
@@ -133,6 +134,11 @@ def _cq_group(
         e.g., cq.post_action_gerrit_label_votes(...)
       tryjob_experiments: a list of cq.tryjob_experiment(...) or None. The
         experiments will be enabled when launching Tryjobs if condition is met.
+      combine_cls_stabilization_delay: a duration of how long to wait for Gerrit
+        to settle before combining CLs. This allows a Gerrit CL stack to be
+        tried in the same CV Attempt. If omitted, then this feature is disabled
+        (each CL would get its own CV Attempt). Incompatible with
+        allow_submit_with_open_deps.
     """
     key = keys.cq_group(validate.string("name", name))
 
@@ -197,6 +203,10 @@ def _cq_group(
     if tree_status_host and tree_status_name:
         fail("tree_status_host and tree_stats_name are both set. Please unset tree_status_host.")
 
+    validate.duration("combine_cls_stabilization_delay", combine_cls_stabilization_delay, required=False)
+    if combine_cls_stabilization_delay and allow_submit_with_open_deps:
+        fail("combine_cls_stabilization_delay and allow_submit_with_open_deps are both set.")
+
     # TODO(vadimsh): Convert `acls` to luci.binding(...). Need to figure out
     # what realm to use for them. This probably depends on a design of
     # Realms + CQ which doesn't exist yet.
@@ -238,6 +248,7 @@ def _cq_group(
         "user_limit_default": user_limit_default,
         "post_actions": post_actions,
         "tryjob_experiments": tryjob_experiments,
+        "combine_cls_stabilization_delay": combine_cls_stabilization_delay,
     })
     graph.add_edge(keys.project(), key)
 

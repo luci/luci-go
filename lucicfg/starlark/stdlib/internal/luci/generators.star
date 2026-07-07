@@ -1203,6 +1203,12 @@ def _cq_config_group(cq_group, project):
             for te in tryjob_experiments
         ]
 
+    combine_cls_stabilization_delay = cq_group.props.combine_cls_stabilization_delay
+    combine_cls = None
+    if combine_cls_stabilization_delay != None:
+      combine_cls = cq_pb.CombineCLs()
+      combine_cls.stabilization_delay = optional_duration_pb(combine_cls_stabilization_delay)
+
     return cq_pb.ConfigGroup(
         name = cq_group.key.id,
         gerrit = [
@@ -1232,6 +1238,7 @@ def _cq_config_group(cq_group, project):
         user_limit_default = user_limit_default,
         post_actions = post_actions,
         tryjob_experiments = tryjob_experiments,
+        combine_cls=combine_cls,
     )
 
 def _cq_retry_config(retry_config):

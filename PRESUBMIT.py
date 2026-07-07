@@ -75,6 +75,7 @@ def source_file_filter(input_api):
     r'.+.mock\.go$',
     r'.+_mux\.go$',
     r'.+_string\.go$',
+    r'lucicfg/testdata/.*\.star', # test files
     r'.+gae\.py$',  # symlinks from outside
     r'common/api/internal/gensupport/.*', # third party
     r'common/goroutine/goroutine_id.go',
