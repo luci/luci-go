@@ -98,6 +98,15 @@ func PipVersionFromPackageVersion(version string) string {
 	if len(v) == 0 {
 		return v
 	}
+
+	// Map known legacy non-PEP 440 version strings (such as 1.2x placeholders in numpy)
+	// directly to their PEP 440-compliant equivalents on Artifact Registry.
+	switch v {
+	case "1.2x.supported.1":
+		return "1.21.1+supported.1"
+	case "1.2x.supported.2":
+		return "1.21.1+supported.2"
+	}
 	if !unicode.IsDigit(rune(v[0])) && !(v[0] == 'v' && len(v) > 1 && unicode.IsDigit(rune(v[1]))) {
 		return v
 	}

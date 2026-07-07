@@ -132,6 +132,12 @@ func TestPipHelpers(t *testing.T) {
 				{"version:1.2.0.rc1", "1.2.0.rc1"},
 				{"version:2.5.6-5c85ed3d46137b17da04c59bcd805ee5", "2.5.6+5c85ed3d46137b17da04c59bcd805ee5"},
 				{"version:2.5.6-0a1b2c3d", "2.5.6+0a1b2c3d"},
+				{"version:1.2x.supported.1", "1.21.1+supported.1"},
+				{"version:1.2x.supported.2", "1.21.1+supported.2"},
+				{"version:1.2.0.compatible.1", "1.2.0+compatible.1"},
+				{"version:2.0.0-linux.1", "2.0.0+linux.1"},
+				{"version:2.5.6-0a1b2c3dx", "2.5.6+0a1b2c3dx"},
+				{"version:4.5.3.56.chromium.4", "4.5.3.56+chromium.4"},
 			}
 			for _, c := range cases {
 				assert.Loosely(t, pipname.PipVersionFromPackageVersion(c.in), should.Equal(c.out))
