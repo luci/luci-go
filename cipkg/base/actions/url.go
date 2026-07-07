@@ -58,7 +58,11 @@ func ActionURLFetchExecutor(ctx context.Context, a *core.ActionURLFetch, out str
 	if name == "" {
 		name = "file"
 	}
-	f, err := os.Create(filepath.Join(out, name))
+	dst := filepath.Join(out, name)
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return err
+	}
+	f, err := os.Create(dst)
 	if err != nil {
 		return
 	}
