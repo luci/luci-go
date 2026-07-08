@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
+import GridViewIcon from '@mui/icons-material/GridView';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Box, Link, Typography } from '@mui/material';
+import TableRowsIcon from '@mui/icons-material/TableRows';
+import { Box, IconButton, Link, Tooltip, Typography } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   MRT_PaginationState,
@@ -36,6 +38,7 @@ import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics/track_leaf_route_page_view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
+import { ProductCatalogueCardView } from './product_catalogue_card_view';
 import { COLUMNS } from './product_catalogue_columns';
 import {
   useProductCatalogFilters,
@@ -200,6 +203,16 @@ export const ProductCataloguePage = () => {
     },
   });
 
+  const view = searchParams.get('view') === 'card' ? 'card' : 'table';
+
+  const handleViewChange = (newView: string) => {
+    setSearchParams((prevParams) => {
+      const nextParams = new URLSearchParams(prevParams);
+      nextParams.set('view', newView);
+      return nextParams;
+    });
+  };
+
   return (
     <Container>
       <WarningNotifications warnings={warnings} />
@@ -221,8 +234,41 @@ export const ProductCataloguePage = () => {
           isLoading={isLoading}
           searchPlaceholder='Add a filter (e.g. "gpn:1234567")'
         />
+        <Tooltip
+          title={
+            view === 'card' ? 'Switch to Table View' : 'Switch to Card View'
+          }
+        >
+          <IconButton
+            onClick={() => handleViewChange(view === 'card' ? 'table' : 'card')}
+            sx={{
+              border: `1px solid ${colors.grey[300]}`,
+              borderRadius: '8px',
+              '&:hover': {
+                backgroundColor: colors.grey[50],
+                color: colors.blue[700],
+                borderColor: colors.blue[200],
+              },
+            }}
+          >
+            {view === 'card' ? <TableRowsIcon /> : <GridViewIcon />}
+          </IconButton>
+        </Tooltip>
       </div>
-      <MaterialReactTable table={table} />
+      {view === 'card' ? (
+        <ProductCatalogueCardView
+          entries={(query.data?.entries ?? []).slice(
+            pagination.pageIndex * pagination.pageSize,
+            (pagination.pageIndex + 1) * pagination.pageSize,
+          )}
+          isLoading={query.isLoading}
+          pagination={pagination}
+          onPaginationChange={onPaginationChange}
+          totalCount={query.data?.entries?.length ?? 0}
+        />
+      ) : (
+        <MaterialReactTable table={table} />
+      )}
     </Container>
   );
 };

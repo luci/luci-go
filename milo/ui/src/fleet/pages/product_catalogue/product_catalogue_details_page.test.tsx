@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { useLocation } from 'react-router';
 
 import { getFeatureFlag } from '@/fleet/config/features';
 import { SettingsProvider } from '@/fleet/context/providers';
@@ -150,5 +151,61 @@ describe('<ProductCatalogDetailsPage />', () => {
 
     expect(screen.getByText('Product Catalog ID')).toBeVisible();
     expect(screen.queryByText('Order Resources')).toBeNull();
+  });
+
+  it('navigates back to navigatedFromLink when clicking back arrow', async () => {
+    mockUseProductCatalogDetailsData.mockReturnValue({
+      isLoading: false,
+      entry: {
+        productCatalogId: 'prod-12345',
+        productName: 'Google Pixel 9 Pro',
+        gpn: '123-4567-890',
+        descriptiveName: 'Pixel 9 Pro 128GB Obsidian',
+        resourceType: 'device',
+        fleetPlmStatus: 'GA',
+        r11n: [],
+        numberOfDevicesPerRack: 16,
+        unitCost: '$999.00',
+        productType: 'phone',
+      },
+    });
+
+    const LocationDisplay = () => {
+      const loc = useLocation();
+      return (
+        <div data-testid="location-display">{loc.pathname + loc.search}</div>
+      );
+    };
+
+    render(
+      <FakeContextProvider
+        mountedPath="/catalog/:id"
+        routerOptions={{
+          initialEntries: [
+            {
+              pathname: '/catalog/prod-12345',
+              state: { navigatedFromLink: '/ui/fleet/catalog?view=card' },
+            },
+          ],
+        }}
+        siblingRoutes={[
+          {
+            path: '/ui/fleet/catalog',
+            element: <LocationDisplay />,
+          },
+        ]}
+      >
+        <SettingsProvider>
+          <ProductCatalogDetailsPage />
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    const backButton = screen.getByRole('button', { name: /go back/i });
+    fireEvent.click(backButton);
+
+    expect(await screen.findByTestId('location-display')).toHaveTextContent(
+      '/ui/fleet/catalog?view=card',
+    );
   });
 });

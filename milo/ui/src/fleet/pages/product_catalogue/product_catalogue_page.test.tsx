@@ -217,4 +217,61 @@ describe('ProductCataloguePage', () => {
       expect(sortedR11nLinks[1]).toHaveTextContent('B-val');
     });
   });
+
+  it('should render R11N in card view', async () => {
+    fakeUseSyncedSearchParams();
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      ListProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListProductCatalogEntries'],
+          queryFn: async () => ({
+            entries: [
+              {
+                productCatalogId: 'catalog-1',
+                productName: 'Product 1',
+                gpn: '12345',
+                descriptiveName: 'Desc 1',
+                resourceType: 'Type 1',
+                fleetPlmStatus: 'Status 1',
+                r11n: ['r11n-val', 'r11n-val-2'],
+                numberOfDevicesPerRack: 10,
+                unitCost: '100',
+                productType: 'Type A',
+              },
+            ],
+          }),
+        }),
+      },
+      GetProductCatalogFilterValues: {
+        query: () => ({
+          queryKey: ['GetProductCatalogFilterValues'],
+          queryFn: async () => ({ productCatalogId: [] }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <MemoryRouter>
+              <ProductCataloguePage />
+            </MemoryRouter>
+          </ShortcutProvider>
+        </SettingsProvider>
+      </QueryClientProvider>,
+    );
+
+    const switchBtn = await screen.findByRole('button', {
+      name: /switch to card view/i,
+    });
+    fireEvent.click(switchBtn);
+
+    expect(await screen.findByText('R11N')).toBeInTheDocument();
+    expect(await screen.findByText('r11n-val, r11n-val-2')).toBeInTheDocument();
+  });
 });

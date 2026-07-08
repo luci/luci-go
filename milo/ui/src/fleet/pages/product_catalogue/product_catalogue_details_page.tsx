@@ -19,8 +19,8 @@ import {
   MRT_ColumnDef,
   MRT_Row,
 } from 'material-react-table';
-import { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -96,14 +96,34 @@ const DetailValueCell = ({ row, entry }: DetailValueCellProps) => {
   return <>{String(rawValue ?? '')}</>;
 };
 
+const useNavigatedFromLink = () => {
+  const { state } = useLocation();
+
+  const [navigatedFromLink, setNavigatedFromLink] = useState<
+    string | undefined
+  >(undefined);
+
+  // state from useLocation is lost on rerenders so we need to save it in a react state
+  useEffect(() => {
+    if (state) {
+      setNavigatedFromLink(state.navigatedFromLink);
+    }
+  }, [state]);
+
+  return navigatedFromLink;
+};
+
 export const ProductCatalogDetailsPage = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const navigatedFromLink = useNavigatedFromLink();
   const requestFilingEnabled = getFeatureFlag('RequestFiling');
 
   const navigateToCatalogIfChanged = (newId: string) => {
     if (id !== newId) {
-      navigate(generateCatalogDetailsURL(newId));
+      navigate(generateCatalogDetailsURL(newId), {
+        state: { navigatedFromLink },
+      });
     }
   };
 
@@ -193,7 +213,17 @@ export const ProductCatalogDetailsPage = () => {
           mb: 3,
         }}
       >
-        <IconButton onClick={() => navigate(CATALOG_PATH)} sx={{ mr: 2 }}>
+        <IconButton
+          aria-label="go back"
+          onClick={() => {
+            if (navigatedFromLink) {
+              navigate(navigatedFromLink);
+            } else {
+              navigate(CATALOG_PATH);
+            }
+          }}
+          sx={{ mr: 2 }}
+        >
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" component="h1" sx={{ whiteSpace: 'nowrap' }}>
