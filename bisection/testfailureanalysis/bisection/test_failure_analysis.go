@@ -203,7 +203,7 @@ func IsEnabled(ctx context.Context, project string) (bool, error) {
 // GetProjectBisector returns the appropriate project-specific bisector.
 func GetProjectBisector(ctx context.Context, tfa *model.TestFailureAnalysis) (projectbisector.ProjectBisector, error) {
 	switch tfa.Project {
-	case "chromium":
+	case "chromium", "dawn":
 		return &chromium.Bisector{}, nil
 	case "turquoise":
 		return &fuchsia.Bisector{}, nil
