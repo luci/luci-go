@@ -26,33 +26,28 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 
 import { getAndroidColumns } from './android_columns';
 
+const EXTRA_COLUMN_IDS = [
+  'label-id',
+  'label-run_target',
+  'label-hostname',
+  'fc_offline_since',
+  'realm',
+  'average_7d',
+  'average_30d',
+];
+
 export const useAndroidColumns = (
   filterValues: Record<string, FilterCategory> | undefined,
   isLoadingFilters: boolean,
   isLoadingDevices: boolean,
-  showAvgUtilization: boolean,
 ) => {
   const dimensionsQuery = useDeviceDimensions({ platform: Platform.ANDROID });
-
-  const extraColumnIds = useMemo(() => {
-    const ids = [
-      'label-id',
-      'label-run_target',
-      'label-hostname',
-      'fc_offline_since',
-      'realm',
-    ];
-    if (showAvgUtilization) {
-      ids.push('average_7d', 'average_30d');
-    }
-    return ids;
-  }, [showAvgUtilization]);
 
   const availableColumns = useMemo(() => {
     const list: { id: string; label: string }[] = [];
 
     ANDROID_DEFAULT_COLUMNS.forEach((id) => list.push({ id, label: id }));
-    extraColumnIds.forEach((id) => {
+    EXTRA_COLUMN_IDS.forEach((id) => {
       let label = id;
       if (id === 'average_7d') label = '7 Day Average Utilization';
       if (id === 'average_30d') label = '30 Day Average Utilization';
@@ -69,7 +64,7 @@ export const useAndroidColumns = (
     }
 
     return _.uniqBy(list, 'id');
-  }, [extraColumnIds, dimensionsQuery.data]);
+  }, [dimensionsQuery.data]);
 
   const allColumns = useMemo(() => {
     return getAndroidColumns(availableColumns.map((c) => c.id));

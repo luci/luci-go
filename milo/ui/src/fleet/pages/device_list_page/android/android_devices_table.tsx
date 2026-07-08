@@ -20,7 +20,6 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { usePagerContext } from '@/common/components/params_pager';
-import { useFeatureFlag } from '@/common/feature_flags';
 import {
   getColumnId,
   MrtColumnManager,
@@ -43,7 +42,6 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { ExportAndroidDevicesToCSVRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { AVG_UTILIZATION_FEATURE } from './android_devices_page';
 import { AndroidColumnDef } from './android_fields';
 import { useAndroidFilters } from './use_android_filters';
 
@@ -56,7 +54,6 @@ export const AndroidDevicesTable = ({
   mrtColumnManager,
   availableColumns,
 }: AndroidTableProps) => {
-  const showAvgUtilization = useFeatureFlag(AVG_UTILIZATION_FEATURE);
   const client = useFleetConsoleClient();
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100, 500, 1000],
@@ -75,10 +72,7 @@ export const AndroidDevicesTable = ({
 
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
-  const { filterValues, aip160 } = useAndroidFilters(
-    () => {},
-    showAvgUtilization,
-  );
+  const { filterValues, aip160 } = useAndroidFilters(() => {});
 
   const aip160Filter = aip160();
 

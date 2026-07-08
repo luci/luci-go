@@ -36,7 +36,6 @@ import { androidState } from './android_state';
 export interface AndroidSummaryHeaderProps {
   aip160: string;
   setFiltersBatch: (updates: Record<string, string[]>) => void;
-  showAvgUtilization?: boolean;
 }
 
 // Centralized filter keys to avoid hardcoding quotes everywhere
@@ -49,7 +48,6 @@ const FILTER_KEYS = {
 export function AndroidSummaryHeader({
   aip160,
   setFiltersBatch,
-  showAvgUtilization,
 }: AndroidSummaryHeaderProps) {
   const client = useFleetConsoleClient();
   const theme = useTheme();
@@ -245,39 +243,37 @@ export function AndroidSummaryHeader({
                 })
               }
             />
-            {showAvgUtilization && (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                mt: 0.5,
+                px: 1,
+              }}
+            >
+              <Typography variant="body2">Utilization</Typography>
               <Box
                 sx={{
+                  mt: 1,
                   display: 'flex',
                   flexDirection: 'column',
-                  mt: 0.5,
-                  px: 1,
+                  gap: 0.5,
                 }}
               >
-                <Typography variant="body2">Utilization</Typography>
-                <Box
-                  sx={{
-                    mt: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 0.5,
-                  }}
-                >
-                  <SmallMetricItem
-                    label="7 days avg:"
-                    value={data?.average7d ?? 0}
-                    loading={isLoading}
-                    formatValue={(val) => `${val.toFixed(2)}%`}
-                  />
-                  <SmallMetricItem
-                    label="30 days avg:"
-                    value={data?.average30d ?? 0}
-                    loading={isLoading}
-                    formatValue={(val) => `${val.toFixed(2)}%`}
-                  />
-                </Box>
+                <SmallMetricItem
+                  label="7 days avg:"
+                  value={data?.average7d ?? 0}
+                  loading={isLoading}
+                  formatValue={(val) => `${val.toFixed(2)}%`}
+                />
+                <SmallMetricItem
+                  label="30 days avg:"
+                  value={data?.average30d ?? 0}
+                  loading={isLoading}
+                  formatValue={(val) => `${val.toFixed(2)}%`}
+                />
               </Box>
-            )}
+            </Box>
           </Grid>
 
           <Grid

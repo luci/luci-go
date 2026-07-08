@@ -29,10 +29,7 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 import { ANDROID_COLUMN_OVERRIDES } from './android_fields';
 import { ANDROID_EXTRA_FILTERS } from './android_filters';
 
-export const useAndroidFilters = (
-  onFilterChange: () => void,
-  showAvgUtilization: boolean,
-) => {
+export const useAndroidFilters = (onFilterChange: () => void) => {
   const { trackEvent } = useGoogleAnalytics();
   const dimensionsQuery = useDeviceDimensions({ platform: Platform.ANDROID });
 
@@ -55,16 +52,14 @@ export const useAndroidFilters = (
     > = {
       ...ANDROID_EXTRA_FILTERS,
     };
-    if (showAvgUtilization) {
-      extraFilters['"average_7d"'] = new RangeFilterCategoryBuilder()
-        .setLabel('7 Day Average Utilization')
-        .setMin(0)
-        .setMax(100);
-      extraFilters['"average_30d"'] = new RangeFilterCategoryBuilder()
-        .setLabel('30 Day Average Utilization')
-        .setMin(0)
-        .setMax(100);
-    }
+    extraFilters['"average_7d"'] = new RangeFilterCategoryBuilder()
+      .setLabel('7 Day Average Utilization')
+      .setMin(0)
+      .setMax(100);
+    extraFilters['"average_30d"'] = new RangeFilterCategoryBuilder()
+      .setLabel('30 Day Average Utilization')
+      .setMin(0)
+      .setMax(100);
     if (!isDimensionsQueryProperlyLoaded || !dimensionsQuery.data) {
       return extraFilters;
     }
@@ -96,11 +91,7 @@ export const useAndroidFilters = (
     }
 
     return filters;
-  }, [
-    isDimensionsQueryProperlyLoaded,
-    dimensionsQuery.data,
-    showAvgUtilization,
-  ]);
+  }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data]);
 
   const filterCategoryDatas = useFilters(filterOptions, {
     areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,

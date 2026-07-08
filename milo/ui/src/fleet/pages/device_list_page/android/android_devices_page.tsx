@@ -19,7 +19,6 @@ import {
   emptyPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { createFeatureFlag, useFeatureFlag } from '@/common/feature_flags';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
@@ -36,17 +35,7 @@ import { useAndroidFilters } from './use_android_filters';
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500, 1000];
 const DEFAULT_PAGE_SIZE = 100;
 
-export const AVG_UTILIZATION_FEATURE = createFeatureFlag({
-  name: 'avg-utilization-metrics',
-  namespace: 'fleet-console-android',
-  description:
-    'Displays average device utilization metrics, columns, and filters.',
-  percentage: 0,
-  trackingBug: '',
-});
-
 export const AndroidDevicesPage = () => {
-  const showAvgUtilization = useFeatureFlag(AVG_UTILIZATION_FEATURE);
   const [, setSearchParams] = useSyncedSearchParams();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
@@ -63,7 +52,7 @@ export const AndroidDevicesPage = () => {
     warnings: filterWarnings,
     setFiltersBatch,
     aip160,
-  } = useAndroidFilters(handleFilterChange, showAvgUtilization);
+  } = useAndroidFilters(handleFilterChange);
 
   const {
     mrtColumnManager,
@@ -73,7 +62,6 @@ export const AndroidDevicesPage = () => {
     filterValues,
     isLoading || filterValues === undefined,
     false,
-    showAvgUtilization,
   );
 
   const combinedWarnings = useMemo(
@@ -92,7 +80,6 @@ export const AndroidDevicesPage = () => {
       <AndroidSummaryHeader
         aip160={aip160()}
         setFiltersBatch={setFiltersBatch}
-        showAvgUtilization={showAvgUtilization}
       />
       <AdminTasksAlert />
       <div
