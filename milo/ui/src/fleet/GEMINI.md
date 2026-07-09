@@ -82,3 +82,13 @@ This project is open source. When writing code, documentation, or commit message
 - **DO NOT** include sensitive server names, non-public URLs, or internal credentials in code or docs.
 - `go/` links are allowed, but the link text itself (e.g., the short link name) **must not** contain confidential information.
 - Redact or use placeholders for sensitive details if necessary.
+
+## 7. Gerrit Upload & Branching Safety Rule
+To prevent accidental pushes, stacked chain conflicts, or overwriting unrelated Change Lists (CLs) in Gerrit:
+- **Mandatory Workflow**: Before creating any local branch or running `git cl upload`, the agent MUST view and follow the guidelines in the [gerrit-workflows](./.agents/skills/gerrit-workflows/SKILL.md) skill.
+- **Safety Checks**:
+  1. Always branch from remote `origin/main` (never from unpushed local commits unless explicitly stacking).
+  2. Before upload, verify that the local commits log matches the target CL: `git log origin/main..HEAD --oneline`
+  3. Verify the CL association using `git cl issue` and use `git cl issue 0` to prevent overwriting unrelated CLs.
+
+
