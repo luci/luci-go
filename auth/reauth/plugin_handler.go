@@ -279,11 +279,14 @@ func (h pluginHandler) sendRequest(ctx context.Context, req *webauthn.GetAsserti
 	logging.Debugf(ctx, "Sending signing plugin input: %q", ereq)
 	out, err := h.Send(ctx, bytes.NewReader(ereq))
 
-	// It's fine to continue on exec.ExitError, if the plugin produces a valid
-	// webauthn.GetAssertionResponse. Early return in other cases.
 	var exitErr *exec.ExitError
-	if err != nil && !errors.As(err, &exitErr) {
-		return nil, errors.Fmt("pluginHandler.sendRequest: failed to invoke the plugin: %w", err)
+	if err != nil {
+		if !errors.As(err, &exitErr) {
+			return nil, errors.Fmt("pluginHandler.sendRequest: failed to invoke the plugin: %w", err)
+		}
+		// It's fine to continue on exec.ExitError, if the plugin still produces a valid
+		// webauthn.GetAssertionResponse.
+		logging.Warningf(ctx, "signing plugin exited with %d (this may not be fatal, will try to continue)", exitErr.ExitCode())
 	}
 
 	if len(out) == 0 {
