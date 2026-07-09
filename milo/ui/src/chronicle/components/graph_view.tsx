@@ -51,8 +51,10 @@ import {
   useState,
 } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { useNavigate, useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
+import { TURBO_CI_ENVIRONMENTS } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { WorkflowType } from '../fake_turboci_graph';
@@ -62,7 +64,11 @@ import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 // eslint-disable-next-line import/default
 import graphWorkerUrl from '../utils/graph_worker?worker&url';
 
-import { ChronicleContext } from './context';
+import {
+  ChronicleContext,
+  DEMO_ENVIRONMENT_NAME,
+  DEMO_WORKPLAN_ID,
+} from './context';
 import { ContextMenu, ContextMenuState } from './context_menu';
 import { useCollapsibleGroups } from './hooks/use_collapsible_groups';
 import { InspectorPanel } from './inspector_panel/inspector_panel';
@@ -113,13 +119,19 @@ function getTrustedWorkerURL(url: string): TrustedScriptURL | URL | string {
 }
 
 function Graph() {
+  const navigate = useNavigate();
+  const { workplanId: urlWorkplanId } = useParams<{ workplanId: string }>();
   const {
+    workplanId,
     graph,
     valueDataMap,
     workflowType,
     setWorkflowType,
     selectedNodeId,
     setSelectedNodeId,
+    activeEnvironment,
+    setActiveEnvironment,
+    detectedEnvironments,
   } = useContext(ChronicleContext);
   const [nodes, setNodes, onNodesChange] = useNodesState<ChronicleNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -512,6 +524,48 @@ function Graph() {
                   }}
                 />
                 <FormControl fullWidth size="small" sx={{ mt: 2 }}>
+                  <InputLabel id="environment-select-label">
+                    Environment
+                  </InputLabel>
+                  <Select
+                    labelId="environment-select-label"
+                    id="environment-select"
+                    value={activeEnvironment || ''}
+                    label="Environment"
+                    onChange={(e) => {
+                      const environment = e.target.value;
+                      if (environment === DEMO_ENVIRONMENT_NAME) {
+                        const currentPath = window.location.pathname;
+                        const idToReplace = urlWorkplanId || workplanId;
+                        const newPath = currentPath.replace(
+                          new RegExp(`/chronicle/${idToReplace}(?=/|$)`),
+                          '/chronicle/' + DEMO_WORKPLAN_ID,
+                        );
+                        navigate(newPath);
+                      } else {
+                        setActiveEnvironment(environment);
+                      }
+                    }}
+                  >
+                    {[
+                      ...detectedEnvironments.filter(
+                        (env) => env.environment !== DEMO_ENVIRONMENT_NAME,
+                      ),
+                      TURBO_CI_ENVIRONMENTS.find(
+                        (env) => env.environment === DEMO_ENVIRONMENT_NAME,
+                      ),
+                    ]
+                      .filter((env): env is NonNullable<typeof env> =>
+                        Boolean(env),
+                      )
+                      .map((env) => (
+                        <MenuItem key={env.host} value={env.environment}>
+                          {env.environment}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth size="small" sx={{ mt: 2 }}>
                   <InputLabel id="workflow-type-select-label">
                     Workflow Type
                   </InputLabel>
@@ -520,6 +574,7 @@ function Graph() {
                     id="workflow-type-select"
                     value={workflowType}
                     label="Workflow Type"
+                    disabled={activeEnvironment !== DEMO_ENVIRONMENT_NAME}
                     onChange={(e) =>
                       setWorkflowType(e.target.value as WorkflowType)
                     }

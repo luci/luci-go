@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import { useContext } from 'react';
 import { useParams } from 'react-router';
 
@@ -22,14 +22,32 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 
 import {
   ChronicleContext,
-  DetectionErrorType,
-  FailedEnvironment,
+  formatFailedEnvironments,
 } from '../components/context';
+import { EnvironmentSelectorDialog } from '../components/environment_selector_dialog';
 import { ChronicleContextProvider } from '../components/provider';
 
 function ChroniclePageContent() {
-  const { workplanId, detecting, detectionFailed, failedEnvironments } =
-    useContext(ChronicleContext);
+  const {
+    workplanId,
+    detecting,
+    setDetecting,
+    detectionFailed,
+    showEnvDialog,
+    setShowEnvDialog,
+    detectedEnvironments,
+    setActiveEnvironment,
+    requestedEnvFailed,
+    failedEnvironments,
+    detectionCancelled,
+    setDetectionCancelled,
+  } = useContext(ChronicleContext);
+
+  const handleDialogClose = () => {
+    setDetectionCancelled(true);
+    setShowEnvDialog(false);
+    setDetecting(false);
+  };
 
   if (detecting) {
     return (
@@ -47,6 +65,51 @@ function ChroniclePageContent() {
         <Typography>
           Detecting the Turbo CI instance that contains workplan {workplanId}.
         </Typography>
+      </Box>
+    );
+  }
+
+  if (detectionCancelled) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          gap: 2,
+          p: 3,
+        }}
+      >
+        <Typography variant="h5" color="warning.main">
+          Selection Cancelled
+        </Typography>
+        <Typography color="text.secondary" align="center">
+          Environment selection was cancelled. To view the workplan, you must
+          select an environment.
+        </Typography>
+        {failedEnvironments.length > 0 && (
+          <Typography
+            color="warning.main"
+            align="center"
+            variant="body2"
+            sx={{ mb: 1 }}
+          >
+            Note: The following environments could not be checked:{' '}
+            {formatFailedEnvironments(failedEnvironments)}
+          </Typography>
+        )}
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            setShowEnvDialog(true);
+            setDetectionCancelled(false);
+          }}
+        >
+          Select Environment
+        </Button>
       </Box>
     );
   }
@@ -83,12 +146,6 @@ function ChroniclePageContent() {
 
   return (
     <>
-      {failedEnvironments.length > 0 && (
-        <Alert severity="warning" sx={{ m: 2, mb: 0 }}>
-          The following environments could not be checked due to
-          timeouts/errors: {formatFailedEnvironments(failedEnvironments)}
-        </Alert>
-      )}
       <AppRoutedTabs>
         <AppRoutedTab label="Summary" value="summary" to="summary" />
         <AppRoutedTab label="Timeline" value="timeline" to="timeline" />
@@ -96,6 +153,20 @@ function ChroniclePageContent() {
         <AppRoutedTab label="Tree" value="tree" to="tree" />
         <AppRoutedTab label="Ledger" value="ledger" to="ledger" />
       </AppRoutedTabs>
+      {showEnvDialog && (
+        <EnvironmentSelectorDialog
+          open={showEnvDialog}
+          detectedEnvironments={detectedEnvironments}
+          requestedEnvFailed={requestedEnvFailed}
+          failedEnvironments={failedEnvironments}
+          onSelect={(environment) => {
+            setActiveEnvironment(environment);
+            setShowEnvDialog(false);
+            setDetecting(false);
+          }}
+          onClose={handleDialogClose}
+        />
+      )}
     </>
   );
 }
@@ -117,26 +188,4 @@ export function Component() {
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
   );
-}
-
-function formatFailedEnvironments(
-  failedEnvironments: FailedEnvironment[],
-): string {
-  return failedEnvironments
-    .map((f) => {
-      let status: string;
-      switch (f.errorType) {
-        case DetectionErrorType.Timeout:
-          status = 'timed out';
-          break;
-        case DetectionErrorType.NoAccess:
-          status = 'no access';
-          break;
-        default:
-          status = 'failed';
-          break;
-      }
-      return `${f.env.environment} (${status})`;
-    })
-    .join(', ');
 }

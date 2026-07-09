@@ -44,34 +44,6 @@ import {
   FailedEnvironment,
 } from './context';
 
-/**
- * Hook to sync node selection with the URL query parameter `nodeId`.
- */
-function useNodeSelection() {
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const selectedNodeId = searchParams.get('nodeId') || undefined;
-
-  const setSelectedNodeId = useCallback(
-    (id: string | undefined) => {
-      setSearchParams(
-        (prev: URLSearchParams) => {
-          const next = new URLSearchParams(prev);
-          if (id) {
-            next.set('nodeId', id);
-          } else {
-            next.delete('nodeId');
-          }
-          return next;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
-
-  return { selectedNodeId, setSelectedNodeId };
-}
-
 interface LookupResult {
   exists?: boolean;
   errorType?: DetectionErrorType;
@@ -241,6 +213,34 @@ function compareEnvironments(
   return idxA - idxB;
 }
 
+/**
+ * Hook to sync node selection with the URL query parameter `nodeId`.
+ */
+function useNodeSelection() {
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const selectedNodeId = searchParams.get('nodeId') || undefined;
+
+  const setSelectedNodeId = useCallback(
+    (id: string | undefined) => {
+      setSearchParams(
+        (prev: URLSearchParams) => {
+          const next = new URLSearchParams(prev);
+          if (id) {
+            next.set('nodeId', id);
+          } else {
+            next.delete('nodeId');
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  return { selectedNodeId, setSelectedNodeId };
+}
+
 export function ChronicleContextProvider({
   children,
 }: {
@@ -268,6 +268,7 @@ export function ChronicleContextProvider({
   >(useFakeData ? DEMO_WORKPLAN_ID : undefined);
   const [detecting, setDetecting] = useState(!useFakeData);
   const [detectionFailed, setDetectionFailed] = useState(false);
+  const [showEnvDialog, setShowEnvDialog] = useState(false);
   const [detectedEnvironments, setDetectedEnvironments] = useState<
     TurboCIEnvironment[]
   >(
@@ -281,9 +282,13 @@ export function ChronicleContextProvider({
         ]
       : [],
   );
+  const [requestedEnvFailed, setRequestedEnvFailed] = useState<
+    string | undefined
+  >(undefined);
   const [failedEnvironments, setFailedEnvironments] = useState<
     FailedEnvironment[]
   >([]);
+  const [detectionCancelled, setDetectionCancelled] = useState(false);
 
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const requestedEnvParam = searchParams.get('env') || undefined;
@@ -333,6 +338,9 @@ export function ChronicleContextProvider({
     setDetectedEnvironments([]);
     setFailedEnvironments([]);
     setCompletedCount(0);
+    setRequestedEnvFailed(undefined);
+    setShowEnvDialog(false);
+    setDetectionCancelled(false);
 
     const controller = new AbortController();
     const signal = controller.signal;
@@ -389,6 +397,8 @@ export function ChronicleContextProvider({
 
   // Effect 2: Resolve active environment and status based on scan results and URL state.
   useEffect(() => {
+    if (detectionCancelled) return;
+
     if (useFakeData) {
       setActiveEnvironmentState(DEMO_ENVIRONMENT_NAME);
       setDetecting(false);
@@ -404,51 +414,66 @@ export function ChronicleContextProvider({
       (e) => e.environment === 'prod',
     )!;
 
-    if (detectedEnvironments.length > 0) {
-      if (requestedEnv) {
-        const isRequestedDetected = detectedEnvironments.some(
-          (e) => e.host === requestedEnv.host,
-        );
-        if (isRequestedDetected) {
-          setActiveEnvironmentState(requestedEnv.environment);
-          setDetecting(false);
-          setDetectionFailed(false);
-          return;
-        }
-
-        if (scanComplete) {
-          setActiveEnvironmentState(detectedEnvironments[0].environment);
-          setDetecting(false);
-          setDetectionFailed(false);
-        } else {
-          setDetecting(true);
-        }
-      } else {
-        const isProdDetected = detectedEnvironments.some(
-          (e) => e.host === prodEnv.host,
-        );
-        if (isProdDetected) {
-          setActiveEnvironmentState(prodEnv.environment);
-          setDetecting(false);
-          setDetectionFailed(false);
-        } else if (scanComplete) {
-          setActiveEnvironmentState(detectedEnvironments[0].environment);
-          setDetecting(false);
-          setDetectionFailed(false);
-        } else {
-          setDetecting(true);
-        }
-      }
-    } else {
-      if (scanComplete) {
-        setDetectionFailed(true);
+    if (requestedEnv) {
+      const isRequestedDetected = detectedEnvironments.some(
+        (e) => e.host === requestedEnv.host,
+      );
+      if (isRequestedDetected) {
+        setActiveEnvironmentState(requestedEnv.environment);
         setDetecting(false);
+        setDetectionFailed(false);
+        setShowEnvDialog(false);
+        return;
+      }
+
+      if (scanComplete) {
+        setRequestedEnvFailed(requestedEnv.environment);
+        if (detectedEnvironments.length > 0) {
+          setShowEnvDialog(true);
+          setDetecting(false);
+        } else {
+          setDetectionFailed(true);
+          setDetecting(false);
+        }
       } else {
         setDetecting(true);
+      }
+    } else {
+      const isProdDetected = detectedEnvironments.some(
+        (e) => e.host === prodEnv.host,
+      );
+      if (isProdDetected) {
+        setActiveEnvironmentState(prodEnv.environment);
+        setDetecting(false);
         setDetectionFailed(false);
+        setShowEnvDialog(false);
+        return;
+      }
+
+      if (scanComplete) {
+        if (detectedEnvironments.length === 1) {
+          setActiveEnvironmentState(detectedEnvironments[0].environment);
+          setDetecting(false);
+          setDetectionFailed(false);
+          setShowEnvDialog(false);
+        } else if (detectedEnvironments.length > 1) {
+          setShowEnvDialog(true);
+          setDetecting(false);
+        } else {
+          setDetectionFailed(true);
+          setDetecting(false);
+        }
+      } else {
+        setDetecting(true);
       }
     }
-  }, [useFakeData, completedCount, detectedEnvironments, requestedEnvParam]);
+  }, [
+    useFakeData,
+    completedCount,
+    detectedEnvironments,
+    requestedEnvParam,
+    detectionCancelled,
+  ]);
 
   const activeEnvObj = TURBO_CI_ENVIRONMENTS.find(
     (e) => e.environment === activeEnvironment,
@@ -517,8 +542,6 @@ export function ChronicleContextProvider({
       workplanId: normalizedWorkplanId,
       graph: workplanValueMap.workplan,
       valueDataMap: workplanValueMap.valueDataMap,
-      activeEnvironment,
-      setActiveEnvironment,
       workflowType,
       setWorkflowType,
       selectedNodeId,
@@ -527,15 +550,20 @@ export function ChronicleContextProvider({
       setDetecting,
       detectionFailed,
       setDetectionFailed,
+      showEnvDialog,
+      setShowEnvDialog,
       detectedEnvironments,
+      activeEnvironment,
+      setActiveEnvironment,
+      requestedEnvFailed,
       failedEnvironments,
+      detectionCancelled,
+      setDetectionCancelled,
     }),
     [
       normalizedWorkplanId,
       workplanValueMap.workplan,
       workplanValueMap.valueDataMap,
-      activeEnvironment,
-      setActiveEnvironment,
       workflowType,
       setWorkflowType,
       selectedNodeId,
@@ -544,8 +572,15 @@ export function ChronicleContextProvider({
       setDetecting,
       detectionFailed,
       setDetectionFailed,
+      showEnvDialog,
+      setShowEnvDialog,
       detectedEnvironments,
+      activeEnvironment,
+      setActiveEnvironment,
+      requestedEnvFailed,
       failedEnvironments,
+      detectionCancelled,
+      setDetectionCancelled,
     ],
   );
 

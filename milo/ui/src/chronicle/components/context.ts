@@ -33,12 +33,32 @@ export interface FailedEnvironment {
   env: TurboCIEnvironment;
   errorType: DetectionErrorType;
 }
+export function formatFailedEnvironments(failed: FailedEnvironment[]): string {
+  return failed
+    .map((f) => {
+      let status: string;
+      switch (f.errorType) {
+        case 'timeout':
+          status = 'timed out';
+          break;
+        case 'no-access':
+          status = 'no access';
+          break;
+        default:
+          status = 'failed';
+          break;
+      }
+      return `${f.env.environment} (${status})`;
+    })
+    .join(', ');
+}
 
 export interface ChronicleContextType {
   workplanId: string;
   graph: WorkPlan | undefined;
   valueDataMap: Map<string, ValueData>;
   activeEnvironment: string | undefined;
+  setActiveEnvironment: (environment: string | undefined) => void;
 
   // Workflow type for fake data generation only.
   workflowType: WorkflowType;
@@ -53,9 +73,13 @@ export interface ChronicleContextType {
   setDetecting: (detecting: boolean) => void;
   detectionFailed: boolean;
   setDetectionFailed: (failed: boolean) => void;
+  showEnvDialog: boolean;
+  setShowEnvDialog: (show: boolean) => void;
   detectedEnvironments: TurboCIEnvironment[];
-  setActiveEnvironment: (environment: string | undefined) => void;
+  requestedEnvFailed: string | undefined;
   failedEnvironments: FailedEnvironment[];
+  detectionCancelled: boolean;
+  setDetectionCancelled: (cancelled: boolean) => void;
 }
 
 export const ChronicleContext = createContext<ChronicleContextType>({
@@ -63,6 +87,7 @@ export const ChronicleContext = createContext<ChronicleContextType>({
   graph: undefined,
   valueDataMap: new Map(),
   activeEnvironment: undefined,
+  setActiveEnvironment: () => {},
   workflowType: WorkflowType.ANDROID,
   setWorkflowType: () => {},
   selectedNodeId: undefined,
@@ -71,7 +96,11 @@ export const ChronicleContext = createContext<ChronicleContextType>({
   setDetecting: () => {},
   detectionFailed: false,
   setDetectionFailed: () => {},
+  showEnvDialog: false,
+  setShowEnvDialog: () => {},
   detectedEnvironments: [],
-  setActiveEnvironment: () => {},
+  requestedEnvFailed: undefined,
   failedEnvironments: [],
+  detectionCancelled: false,
+  setDetectionCancelled: () => {},
 });
