@@ -16,14 +16,22 @@ import styled from '@emotion/styled';
 import GridViewIcon from '@mui/icons-material/GridView';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import TableRowsIcon from '@mui/icons-material/TableRows';
-import { Box, IconButton, Link, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  Link,
+  Tooltip,
+  Tab,
+  Tabs,
+  Typography,
+} from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
+  MaterialReactTable,
   MRT_PaginationState,
   MRT_Updater,
-  MaterialReactTable,
 } from 'material-react-table';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
@@ -37,6 +45,7 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics/track_leaf_route_page_view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { ProductCatalogueCardView } from './product_catalogue_card_view';
 import { COLUMNS } from './product_catalogue_columns';
@@ -44,13 +53,16 @@ import {
   useProductCatalogFilters,
   FILTERS,
 } from './use_product_catalog_filters';
+import {
+  ProductCatalogTab,
+  useProductCatalogTabs,
+} from './use_product_catalog_tabs';
 
 const Container = styled.div`
   margin: 24px;
 `;
 
-const DEFAULT_PAGE_SIZE = 25;
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const DEFAULT_PAGE_SIZE = 50;
 
 const ProductCatalogueHeader = () => {
   return (
@@ -115,20 +127,17 @@ const ProductCatalogueHeader = () => {
   );
 };
 
-export const ProductCataloguePage = () => {
+interface ProductCatalogueTabPageContentProps {
+  selectedTab: ProductCatalogTab;
+  columns: typeof COLUMNS;
+}
+
+const ProductCatalogueTabPageContent = ({
+  selectedTab,
+  columns,
+}: ProductCatalogueTabPageContentProps) => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-
   const client = useFleetConsoleClient();
-
-  const { filterValues, aip160, onApplyFilter, isLoading, warnings } =
-    useProductCatalogFilters(() => {
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    });
-
-  const query = useQuery({
-    ...client.ListProductCatalogEntries.query({ filter: aip160 }),
-    placeholderData: keepPreviousData,
-  });
 
   const pageSize =
     parseInt(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10) ||
@@ -148,59 +157,83 @@ export const ProductCataloguePage = () => {
 
   const [sorting, onSortingChange] = useMrtSortingState();
 
+  const { filterValues, aip160, onApplyFilter, isLoading, warnings } =
+    useProductCatalogFilters(selectedTab, () => {
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    });
+
+  const query = useQuery({
+    ...client.ListProductCatalogEntries.query({ filter: aip160 }),
+    placeholderData: keepPreviousData,
+  });
+
   const onPaginationChange = useCallback(
     (updater: MRT_Updater<MRT_PaginationState>) => {
       if (!query.data) {
         return;
       }
 
-      setPagination((prev) => {
-        const next = typeof updater === 'function' ? updater(prev) : updater;
-        if (next.pageSize !== prev.pageSize) {
-          setSearchParams((prevParams) => {
-            const nextParams = new URLSearchParams(prevParams);
-            nextParams.set('pageSize', String(next.pageSize));
-            return nextParams;
-          });
-        }
-        return next;
-      });
+      const next =
+        typeof updater === 'function' ? updater(pagination) : updater;
+      setPagination(next);
+      if (next.pageSize !== pagination.pageSize) {
+        setSearchParams((prevParams) => {
+          const nextParams = new URLSearchParams(prevParams);
+          nextParams.set('pageSize', String(next.pageSize));
+          return nextParams;
+        });
+      }
     },
-    [query.data, setSearchParams],
+    [query.data, pagination, setSearchParams],
   );
 
-  const mappedFilterValues = Object.fromEntries(
-    Object.entries(filterValues || {}).map(([key, value]) => {
-      const entry = Object.entries(FILTERS).find(
-        ([_, config]) => `"${config.filterKey}"` === key,
-      );
-      return [entry ? entry[0] : key, value];
-    }),
+  const data = (query.data?.entries ?? []) as ProductCatalogEntry[];
+
+  const mappedFilterValues = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(filterValues || {}).map(([key, value]) => {
+          const entry = Object.entries(FILTERS).find(
+            ([_, config]) => `"${config.filterKey}"` === key,
+          );
+          return [entry ? entry[0] : key, value];
+        }),
+      ),
+    [filterValues],
   );
 
   const table = useFCDataTable({
-    columns: COLUMNS,
-    data: [...(query.data?.entries ?? [])],
+    columns: columns,
+    data: data,
     filterValues: mappedFilterValues,
     enablePagination: true,
     manualPagination: false,
-    manualFiltering: false,
+    manualFiltering: true,
     manualSorting: false,
+    autoResetPageIndex: false,
     error: query.error
       ? getErrorMessage(query.error, 'get product catalog')
       : undefined,
-    onSortingChange: onSortingChange,
     onPaginationChange: onPaginationChange,
-    autoResetPageIndex: false,
-    muiPaginationProps: {
-      rowsPerPageOptions: DEFAULT_PAGE_SIZE_OPTIONS,
-    },
+    onSortingChange: onSortingChange,
     state: {
       pagination,
       sorting,
       isLoading: query.isLoading,
       showProgressBars: query.isFetching,
     },
+    renderEmptyRowsFallback: () => (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+        }}
+      >
+        <Typography color="text.secondary">No products found</Typography>
+      </Box>
+    ),
   });
 
   const view = searchParams.get('view') === 'card' ? 'card' : 'table';
@@ -209,14 +242,14 @@ export const ProductCataloguePage = () => {
     setSearchParams((prevParams) => {
       const nextParams = new URLSearchParams(prevParams);
       nextParams.set('view', newView);
+      nextParams.delete('pageSize');
       return nextParams;
     });
   };
 
   return (
-    <Container>
+    <>
       <WarningNotifications warnings={warnings} />
-      <ProductCatalogueHeader />
       <div
         css={{
           marginBottom: 24,
@@ -269,6 +302,115 @@ export const ProductCataloguePage = () => {
       ) : (
         <MaterialReactTable table={table} />
       )}
+    </>
+  );
+};
+
+const ALL_TAB_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'resourceType',
+  'fleetPlmStatus',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'unitCost',
+  'productType',
+];
+
+const ANDROID_TESTBED_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'resourceType',
+  'fleetPlmStatus',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'unitCost',
+];
+
+const HARDWARE_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'resourceType',
+  'fleetPlmStatus',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'unitCost',
+];
+
+const OS_TESTBED_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'resourceType',
+  'fleetPlmStatus',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'unitCost',
+];
+
+const PERIPHERALS_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'resourceType',
+  'fleetPlmStatus',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'unitCost',
+];
+
+const TAB_COLUMN_KEYS: Record<
+  ProductCatalogTab | string,
+  readonly (keyof ProductCatalogEntry)[]
+> = {
+  [ProductCatalogTab.ALL]: ALL_TAB_COLUMN_KEYS,
+  [ProductCatalogTab.ANDROID_TESTBED]: ANDROID_TESTBED_COLUMN_KEYS,
+  [ProductCatalogTab.HARDWARE]: HARDWARE_COLUMN_KEYS,
+  [ProductCatalogTab.OS_TESTBED]: OS_TESTBED_COLUMN_KEYS,
+  [ProductCatalogTab.PERIPHERALS]: PERIPHERALS_COLUMN_KEYS,
+};
+
+const getColumnsForTab = (tab: ProductCatalogTab | string) => {
+  const keys = TAB_COLUMN_KEYS[tab];
+  if (!keys) {
+    throw new Error(`Unknown product catalog tab: "${tab}"`);
+  }
+  return COLUMNS.filter(
+    (column) =>
+      column.accessorKey !== undefined &&
+      keys.includes(column.accessorKey as keyof ProductCatalogEntry),
+  ) as typeof COLUMNS;
+};
+
+export const ProductCataloguePage = () => {
+  const { tabs, selectedTab, handleTabChange } = useProductCatalogTabs();
+  const columns = useMemo(() => getColumnsForTab(selectedTab), [selectedTab]);
+
+  return (
+    <Container>
+      <ProductCatalogueHeader />
+      {tabs && tabs.length > 0 && selectedTab && (
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', marginBottom: 2 }}>
+          <Tabs value={selectedTab} onChange={handleTabChange}>
+            {tabs.map((tab) => (
+              <Tab key={tab.value} label={tab.value} value={tab.value} />
+            ))}
+          </Tabs>
+        </Box>
+      )}
+      <ProductCatalogueTabPageContent
+        key={selectedTab}
+        selectedTab={selectedTab}
+        columns={columns}
+      />
     </Container>
   );
 };

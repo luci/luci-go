@@ -13,13 +13,16 @@
 // limitations under the License.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { fakeUseSyncedSearchParams } from '@/fleet/testing_tools/mocks/fake_search_params';
+import {
+  SyncedSearchParamsProvider,
+  useSyncedSearchParams,
+} from '@/generic_libs/hooks/synced_search_params';
 
 import { ProductCataloguePage } from './product_catalogue_page';
 
@@ -28,9 +31,42 @@ jest.mock('@/generic_libs/components/google_analytics', () => ({
   useGoogleAnalytics: () => ({ trackEvent: jest.fn() }),
 }));
 
+const renderPage = (
+  queryClient = new QueryClient(),
+  initialEntries = ['/ui/fleet/catalog'],
+) => {
+  let searchParamsHook: ReturnType<typeof useSyncedSearchParams> | undefined;
+
+  const TestComponent = () => {
+    searchParamsHook = useSyncedSearchParams();
+    return <ProductCataloguePage />;
+  };
+
+  const utils = render(
+    <QueryClientProvider client={queryClient}>
+      <SettingsProvider>
+        <ShortcutProvider>
+          <MemoryRouter initialEntries={initialEntries}>
+            <SyncedSearchParamsProvider>
+              <TestComponent />
+            </SyncedSearchParamsProvider>
+          </MemoryRouter>
+        </ShortcutProvider>
+      </SettingsProvider>
+    </QueryClientProvider>,
+  );
+
+  return {
+    ...utils,
+    getSearchParams: () => searchParamsHook![0],
+    setSearchParams: (
+      sp: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams),
+    ) => searchParamsHook![1](sp),
+  };
+};
+
 describe('ProductCataloguePage', () => {
   it('should render successfully', async () => {
-    fakeUseSyncedSearchParams();
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
 
     mockUseFleetConsoleClient.mockReturnValue({
@@ -50,17 +86,7 @@ describe('ProductCataloguePage', () => {
 
     const queryClient = new QueryClient();
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <SettingsProvider>
-          <ShortcutProvider>
-            <MemoryRouter>
-              <ProductCataloguePage />
-            </MemoryRouter>
-          </ShortcutProvider>
-        </SettingsProvider>
-      </QueryClientProvider>,
-    );
+    renderPage(queryClient);
 
     // This test ensures the page can mount and render without throwing errors.
     // For example, it catches missing context providers, reference errors, and
@@ -69,7 +95,6 @@ describe('ProductCataloguePage', () => {
   });
 
   it('should render R11N links correctly', async () => {
-    fakeUseSyncedSearchParams();
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
 
     mockUseFleetConsoleClient.mockReturnValue({
@@ -104,17 +129,7 @@ describe('ProductCataloguePage', () => {
 
     const queryClient = new QueryClient();
 
-    const { findByText } = render(
-      <QueryClientProvider client={queryClient}>
-        <SettingsProvider>
-          <ShortcutProvider>
-            <MemoryRouter>
-              <ProductCataloguePage />
-            </MemoryRouter>
-          </ShortcutProvider>
-        </SettingsProvider>
-      </QueryClientProvider>,
-    );
+    const { findByText } = renderPage(queryClient);
 
     const link1 = await findByText('r11n-val');
     expect(link1).toBeInTheDocument();
@@ -128,7 +143,6 @@ describe('ProductCataloguePage', () => {
   });
 
   it('should sort client-side by R11N correctly', async () => {
-    fakeUseSyncedSearchParams();
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
 
     mockUseFleetConsoleClient.mockReturnValue({
@@ -175,17 +189,7 @@ describe('ProductCataloguePage', () => {
 
     const queryClient = new QueryClient();
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <SettingsProvider>
-          <ShortcutProvider>
-            <MemoryRouter>
-              <ProductCataloguePage />
-            </MemoryRouter>
-          </ShortcutProvider>
-        </SettingsProvider>
-      </QueryClientProvider>,
-    );
+    renderPage(queryClient);
 
     // Verify initial rendering order: B-val then A-val
     await screen.findByText('B-val');
@@ -219,7 +223,6 @@ describe('ProductCataloguePage', () => {
   });
 
   it('should render R11N in card view', async () => {
-    fakeUseSyncedSearchParams();
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
 
     mockUseFleetConsoleClient.mockReturnValue({
@@ -254,17 +257,7 @@ describe('ProductCataloguePage', () => {
 
     const queryClient = new QueryClient();
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <SettingsProvider>
-          <ShortcutProvider>
-            <MemoryRouter>
-              <ProductCataloguePage />
-            </MemoryRouter>
-          </ShortcutProvider>
-        </SettingsProvider>
-      </QueryClientProvider>,
-    );
+    renderPage(queryClient);
 
     const switchBtn = await screen.findByRole('button', {
       name: /switch to card view/i,
@@ -273,5 +266,278 @@ describe('ProductCataloguePage', () => {
 
     expect(await screen.findByText('R11N')).toBeInTheDocument();
     expect(await screen.findByText('r11n-val, r11n-val-2')).toBeInTheDocument();
+  });
+
+  it('should render tabs, filter data/columns, and disable out-of-scope tabs', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      ListProductCatalogEntries: {
+        query: (req?: { filter?: string }) => ({
+          queryKey: ['ListProductCatalogEntries', req],
+          queryFn: async () => {
+            const all = [
+              {
+                productCatalogId: 'pc1',
+                productName: 'Hardware Product',
+                productType: 'hardware',
+                numberOfDevicesPerRack: 0,
+              },
+              {
+                productCatalogId: 'pc2',
+                productName: 'Peripherals Product',
+                productType: 'peripherals',
+                numberOfDevicesPerRack: 10,
+              },
+            ];
+            const entries =
+              req?.filter && req.filter.includes('hardware')
+                ? all.filter((e) => e.productType === 'hardware')
+                : all;
+            return { entries };
+          },
+        }),
+      },
+      GetProductCatalogFilterValues: {
+        query: () => ({
+          queryKey: ['GetProductCatalogFilterValues'],
+          queryFn: async () => ({
+            scopedProductType: [
+              { value: 'hardware', inScope: true },
+              { value: 'peripherals', inScope: false },
+            ],
+          }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+
+    const { findByRole, findByText, queryByText } = renderPage(queryClient);
+
+    // Should render the tabs (including prepended 'All')
+    const allTab = await findByRole('tab', { name: 'All' });
+    const hardwareTab = await findByRole('tab', { name: 'hardware' });
+    const peripheralsTab = await findByRole('tab', { name: 'peripherals' });
+
+    expect(allTab).toBeInTheDocument();
+    expect(allTab).not.toBeDisabled();
+    expect(allTab).toHaveAttribute('aria-selected', 'true'); // 'All' selected by default
+
+    expect(hardwareTab).toBeInTheDocument();
+    expect(hardwareTab).not.toBeDisabled();
+
+    expect(peripheralsTab).toBeInTheDocument();
+    expect(peripheralsTab).not.toBeDisabled();
+
+    // Default 'All' view: both products and all columns should be displayed
+    expect(await findByText('Hardware Product')).toBeInTheDocument();
+    expect(await findByText('Peripherals Product')).toBeInTheDocument();
+    expect(await findByText('Number of Devices Per Rack')).toBeInTheDocument();
+
+    // Click on hardware tab
+    fireEvent.click(hardwareTab);
+    expect(hardwareTab).toHaveAttribute('aria-selected', 'true');
+
+    // hardware tab view: only Hardware Product, and number of devices per rack should be visible
+    expect(await findByText('Hardware Product')).toBeInTheDocument();
+    expect(queryByText('Peripherals Product')).not.toBeInTheDocument();
+    expect(queryByText('Number of Devices Per Rack')).toBeInTheDocument();
+  });
+
+  it('should render empty fallback message when there are no products', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      ListProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListProductCatalogEntries'],
+          queryFn: async () => ({
+            entries: [],
+          }),
+        }),
+      },
+      GetProductCatalogFilterValues: {
+        query: () => ({
+          queryKey: ['GetProductCatalogFilterValues'],
+          queryFn: async () => ({
+            scopedProductType: [
+              { value: 'hardware', inScope: false },
+              { value: 'peripherals', inScope: false },
+            ],
+          }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+
+    const { findByText } = renderPage(queryClient);
+
+    expect(await findByText('No products found')).toBeInTheDocument();
+  });
+
+  it('should remove product_type filter when switching from All tab to another tab', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+    mockUseFleetConsoleClient.mockReturnValue({
+      ListProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
+      GetProductCatalogFilterValues: {
+        query: () => ({
+          queryKey: ['GetProductCatalogFilterValues'],
+          queryFn: async () => ({
+            scopedProductType: [
+              { value: 'hardware', inScope: true },
+              { value: 'peripherals', inScope: true },
+            ],
+          }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+    const { findByRole, getSearchParams } = renderPage(queryClient, [
+      '/ui/fleet/catalog?filters=product_type+%3D+%28%22hardware%22%29',
+    ]);
+
+    expect(getSearchParams().get('filters')).toContain('product_type');
+
+    const hardwareTab = await findByRole('tab', { name: 'hardware' });
+    fireEvent.click(hardwareTab);
+
+    await waitFor(() => {
+      expect(getSearchParams().get('filters') || '').not.toContain(
+        'product_type',
+      );
+    });
+  });
+
+  it('should clear all filters when switching between tabs', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+    mockUseFleetConsoleClient.mockReturnValue({
+      ListProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
+      GetProductCatalogFilterValues: {
+        query: () => ({
+          queryKey: ['GetProductCatalogFilterValues'],
+          queryFn: async () => ({
+            scopedProductType: [
+              { value: 'hardware', inScope: true },
+              { value: 'peripherals', inScope: true },
+            ],
+          }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+    const { findByRole, getSearchParams } = renderPage(queryClient, [
+      '/ui/fleet/catalog?filters=gpn+%3D+%28%2212345%22%29',
+    ]);
+
+    expect(getSearchParams().get('filters')).toContain('gpn');
+
+    const hardwareTab = await findByRole('tab', { name: 'hardware' });
+    fireEvent.click(hardwareTab);
+
+    await waitFor(() => {
+      expect(getSearchParams().get('filters') || '').toBe('');
+    });
+  });
+
+  it('should sync selected tab with the url parameter', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+    mockUseFleetConsoleClient.mockReturnValue({
+      ListProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
+      GetProductCatalogFilterValues: {
+        query: () => ({
+          queryKey: ['GetProductCatalogFilterValues'],
+          queryFn: async () => ({
+            scopedProductType: [
+              { value: 'hardware', inScope: true },
+              { value: 'peripherals', inScope: true },
+            ],
+          }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+    const { findByRole, getSearchParams } = renderPage(queryClient);
+
+    const hardwareTab = await findByRole('tab', { name: 'hardware' });
+    fireEvent.click(hardwareTab);
+
+    await waitFor(() => {
+      expect(getSearchParams().get('tab')).toBe('hardware');
+    });
+
+    const allTab = await findByRole('tab', { name: 'All' });
+    fireEvent.click(allTab);
+
+    await waitFor(() => {
+      expect(getSearchParams().get('tab')).toBe('All');
+    });
+  });
+
+  it('should navigate to next page without freezing or resetting pageIndex', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    const entries = Array.from({ length: 60 }, (_, i) => ({
+      productCatalogId: `catalog-${i + 1}`,
+      productName: `Product ${i + 1}`,
+      gpn: `12345-${i + 1}`,
+      descriptiveName: `Desc ${i + 1}`,
+      resourceType: 'Type 1',
+      fleetPlmStatus: 'Status 1',
+      r11n: ['r11n-val'],
+      numberOfDevicesPerRack: 10,
+      unitCost: '100',
+      productType: 'hardware',
+    }));
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      ListProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListProductCatalogEntries'],
+          queryFn: async () => ({ entries }),
+        }),
+      },
+      GetProductCatalogFilterValues: {
+        query: () => ({
+          queryKey: ['GetProductCatalogFilterValues'],
+          queryFn: async () => ({
+            scopedProductType: [{ value: 'hardware', inScope: true }],
+          }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+    renderPage(queryClient);
+
+    expect(await screen.findByText('Product 1')).toBeInTheDocument();
+    expect(screen.queryByText('Product 56')).not.toBeInTheDocument();
+
+    const nextPageBtn = screen.getByRole('button', { name: /next page/i });
+    fireEvent.click(nextPageBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Product 56')).toBeInTheDocument();
+      expect(screen.queryByText('Product 1')).not.toBeInTheDocument();
+    });
   });
 });

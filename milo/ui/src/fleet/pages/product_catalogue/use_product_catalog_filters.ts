@@ -13,14 +13,17 @@
 // limitations under the License.
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { useFilters } from '@/fleet/components/filters/use_filters';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
+import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { combineAipFilters } from '@/fleet/utils/search_param';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   GetProductCatalogFilterValuesResponse,
   Int32Range,
@@ -28,6 +31,7 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { COLUMNS } from './product_catalogue_columns';
+import { ProductCatalogTab } from './use_product_catalog_tabs';
 
 export const FILTERS = {
   productCatalogId: { type: 'string_list', filterKey: 'product_catalog_id' },
@@ -60,7 +64,12 @@ export const DEFAULT_FILTER_VALUES: Partial<
   fleetPlmStatus: ['GA', 'LA', 'NPI'],
 };
 
-export const useProductCatalogFilters = (onApply?: () => void) => {
+export const useProductCatalogFilters = (
+  selectedTab: ProductCatalogTab,
+  onApply?: () => void,
+) => {
+  const [searchParams] = useSyncedSearchParams();
+  const hasUrlFiltersParam = searchParams.get(FILTERS_PARAM_KEY) !== null;
   const [filterOptions, setFilterOptions] = useState<
     | Record<
         string,
@@ -76,25 +85,26 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
     });
   }, [trackEvent]);
 
-  // We use a ref to break the circular dependency between useFilters and useQuery.
-  // useFilters needs to know if we are loading options to decide if missing keys are errors.
-  // useQuery needs the clean filter string from useFilters to fetch options.
-  // Since useQuery naturally triggers a re-render when it finishes loading,
-  // useFilters will see the updated ref value on the next render.
-  const queryIsLoadingRef = useRef(true);
+  const isAllTab = selectedTab === ProductCatalogTab.ALL;
+  const currentTab = isAllTab
+    ? ''
+    : `("${FILTERS.productType.filterKey}" = "${selectedTab}")`;
+  //Ideally we would want to use filterValues?.[productType] to set value
 
-  const { filterValues, aip160, warnings } = useFilters(filterOptions, {
-    areFilterValuesLoading: queryIsLoadingRef.current,
-    onFilterChange,
-  });
+  const { filterValues, aip160, warnings, setFiltersBatch } = useFilters(
+    filterOptions,
+    {
+      onFilterChange,
+    },
+  );
+
+  const combinedFilter = combineAipFilters(aip160(), currentTab);
 
   const client = useFleetConsoleClient();
   const filterOptionsQuery = useQuery({
-    ...client.GetProductCatalogFilterValues.query({ filter: aip160() }),
+    ...client.GetProductCatalogFilterValues.query({ filter: combinedFilter }),
     placeholderData: keepPreviousData,
   });
-
-  queryIsLoadingRef.current = filterOptionsQuery.isLoading;
 
   const nextFilterOptions = useMemo(() => {
     if (!filterOptionsQuery.data) return undefined;
@@ -104,7 +114,9 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
       StringListFilterCategoryBuilder | RangeFilterCategoryBuilder
     > = {};
     for (const column of COLUMNS) {
+      if (!('accessorKey' in column) || !column.accessorKey) continue;
       if (!(column.accessorKey in FILTERS)) continue;
+
       const accessorKey = column.accessorKey as keyof typeof FILTERS;
       const config = FILTERS[accessorKey];
 
@@ -116,8 +128,12 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
         | ProductCatalogFilterValue[]
         | undefined;
 
+      if (accessorKey === 'productType' && !isAllTab) continue;
+
       if (config.type === 'string_list') {
-        const defaultOptions = DEFAULT_FILTER_VALUES[accessorKey] ?? [];
+        const defaultOptions = hasUrlFiltersParam
+          ? []
+          : (DEFAULT_FILTER_VALUES[accessorKey] ?? []);
         options[filterKey] = new StringListFilterCategoryBuilder()
           .setLabel(column.header as string)
           .setOptions(
@@ -137,7 +153,7 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
       }
     }
     return options;
-  }, [filterOptionsQuery.data]);
+  }, [filterOptionsQuery.data, hasUrlFiltersParam, isAllTab]);
 
   useEffect(() => {
     setFilterOptions(nextFilterOptions);
@@ -149,9 +165,11 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
 
   return {
     filterValues,
-    aip160: aip160(),
+    aip160: combinedFilter,
     onApplyFilter,
     isLoading: filterOptionsQuery.isLoading,
     warnings,
+    scopedProductType: filterOptionsQuery.data?.scopedProductType,
+    setFiltersBatch,
   };
 };
