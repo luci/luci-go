@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box } from '@mui/material';
+import CodeIcon from '@mui/icons-material/Code';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import { Alert, Box, Grid, Link, Tab, Tabs, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { EditorConfiguration } from 'codemirror';
-import { useRef } from 'react';
+import { useMemo, useState } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
+import { useFeatureFlag } from '@/common/feature_flags';
 import CodeSnippet from '@/fleet/components/code_snippet/code_snippet';
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
+import { enableModernInventoryCards } from '@/fleet/features';
 import { useUfsClient } from '@/fleet/hooks/prpc_clients';
 import { extractDutLabel } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
@@ -27,10 +31,26 @@ import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { GetMachineLSERequest } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
-export const ChromeOSInventoryData = ({ device }: { device: Device }) => {
-  const editorOptions = useRef<EditorConfiguration>(DEFAULT_CODE_MIRROR_CONFIG);
-  const ufsNamespace = extractDutLabel('ufs_namespace', device);
+export interface ChromeOSInventoryDataProps {
+  device: Device;
+  editable?: boolean;
+}
 
+export const ChromeOSInventoryData = ({
+  device,
+  editable = false,
+}: ChromeOSInventoryDataProps) => {
+  const showModernCards = useFeatureFlag(enableModernInventoryCards);
+  const [viewMode, setViewMode] = useState<'json' | 'visual'>('json');
+  const editorOptions = useMemo<EditorConfiguration>(
+    () => ({
+      ...DEFAULT_CODE_MIRROR_CONFIG,
+      readOnly: !editable,
+    }),
+    [editable],
+  );
+
+  const ufsNamespace = extractDutLabel('ufs_namespace', device);
   const ufsClient = useUfsClient(ufsNamespace || 'os');
   const machineLse = useQuery({
     ...ufsClient.GetMachineLSE.query(
@@ -47,53 +67,109 @@ export const ChromeOSInventoryData = ({ device }: { device: Device }) => {
     ufsNamespace ? `-namespace ${ufsNamespace} ` : ''
   }${device.id}`;
 
-  let responseDisplay = <></>;
+  const renderVisualCards = () => {
+    if (machineLse.isLoading) {
+      return <CentralizedProgress />;
+    }
+    if (machineLse.isError) {
+      return (
+        <Alert severity="error">
+          {getErrorMessage(machineLse.error, 'get dut info from shivas')}
+        </Alert>
+      );
+    }
+    if (!machineLse.data) {
+      return <Alert severity="info">No inventory spec data available.</Alert>;
+    }
+    return <Grid container spacing={2} />;
+  };
 
-  if (machineLse.error) {
-    responseDisplay = (
-      <Alert severity="error">
-        {getErrorMessage(machineLse.error, 'get dut info from shivas')}{' '}
-      </Alert>
-    );
-  } else if (machineLse.isLoading) {
-    responseDisplay = <CentralizedProgress />;
-  } else if (!machineLse.data) {
-    responseDisplay = (
-      <Alert severity="error">{'MachineLSE data missing from shivas'}</Alert>
-    );
-  } else {
-    responseDisplay = (
-      <CodeMirrorEditor
-        value={JSON.stringify(machineLse.data ?? '', undefined, 2)}
-        initOptions={editorOptions.current}
-      />
-    );
-  }
-
-  return (
-    <Box>
-      <div
-        css={{
-          marginBottom: 16,
+  const renderJsonEditor = () => {
+    if (machineLse.isLoading) {
+      return <CentralizedProgress />;
+    }
+    if (machineLse.isError) {
+      return (
+        <Alert severity="error">
+          {getErrorMessage(machineLse.error, 'get dut info from shivas')}
+        </Alert>
+      );
+    }
+    if (!machineLse.data) {
+      return <Alert severity="info">No inventory spec data available.</Alert>;
+    }
+    return (
+      <Box
+        sx={{
+          border: (theme) => `1px solid ${theme.palette.divider}`,
+          borderRadius: (theme) => theme.shape.borderRadius,
+          overflow: 'hidden',
+          maxHeight: '70vh',
           display: 'flex',
           flexDirection: 'column',
-          gap: '16px',
         }}
       >
-        <span>
+        <Box sx={{ overflow: 'auto', flexGrow: 1 }}>
+          <CodeMirrorEditor
+            value={JSON.stringify(machineLse.data, null, 2)}
+            initOptions={editorOptions}
+          />
+        </Box>
+      </Box>
+    );
+  };
+
+  const activeViewMode = showModernCards ? viewMode : 'json';
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Typography variant="body2" color="text.secondary">
           Equivalent{' '}
-          <a href="http://go/shivas" target="_blank" rel="noreferrer">
+          <Link href="http://go/shivas" target="_blank" rel="noreferrer">
             shivas
-          </a>{' '}
+          </Link>{' '}
           command:{' '}
-        </span>
+        </Typography>
         <CodeSnippet
           displayText={command}
           copyText={command}
           copyKind="get_dut"
         />
-      </div>
-      {responseDisplay}
+      </Box>
+
+      {showModernCards && (
+        <Box
+          sx={{
+            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Tabs
+            value={viewMode}
+            onChange={(_, newMode) => {
+              if (newMode !== null) setViewMode(newMode);
+            }}
+            aria-label="view mode tabs"
+          >
+            <Tab
+              value="json"
+              label="JSON"
+              icon={<CodeIcon sx={{ fontSize: '1.2rem' }} />}
+              iconPosition="start"
+              aria-label="json view"
+            />
+            <Tab
+              value="visual"
+              label="Visual Dashboard"
+              icon={<ViewModuleIcon sx={{ fontSize: '1.2rem' }} />}
+              iconPosition="start"
+              aria-label="visual view"
+            />
+          </Tabs>
+        </Box>
+      )}
+
+      {activeViewMode === 'visual' ? renderVisualCards() : renderJsonEditor()}
     </Box>
   );
 };

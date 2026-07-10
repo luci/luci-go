@@ -12,12 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createFeatureFlag } from '@/common/feature_flags';
+import { Typography } from '@mui/material';
 
-export const enableModernInventoryCards = createFeatureFlag({
-  description: 'Enable modern ChromeOS inventory visual cards view',
-  namespace: 'fleet-console',
-  name: 'modern-inventory-cards',
-  percentage: 0,
-  trackingBug: '388907865',
-});
+export const CodeChip = ({ value }: { value: string | null | undefined }) => {
+  if (!value) return null;
+  return (
+    <Typography
+      variant="body2"
+      sx={{
+        fontFamily: 'monospace',
+        fontWeight: 600,
+        wordBreak: 'break-word',
+      }}
+    >
+      {value}
+    </Typography>
+  );
+};
