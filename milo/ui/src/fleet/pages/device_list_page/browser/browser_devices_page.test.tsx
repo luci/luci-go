@@ -59,7 +59,7 @@ describe('<BrowserDevicesPage />', () => {
       </FakeContextProvider>,
     );
 
-    expect(screen.getByText('Main metrics')).toBeVisible();
+    expect(screen.getByText('Device Health Summary')).toBeVisible();
   });
 
   it('should call ExportBrowserDevicesToCSV with correct filters', async () => {
