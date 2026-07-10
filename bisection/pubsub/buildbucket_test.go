@@ -60,7 +60,10 @@ func TestBuildBucketPubsub(t *testing.T) {
 		c := memory.Use(context.Background())
 		// Setup config.
 		projectCfg := config.CreatePlaceholderProjectConfig()
-		cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+		cfg := map[string]*configpb.ProjectConfig{
+			"chromium": projectCfg,
+			"dawn":     projectCfg,
+		}
 		assert.Loosely(t, config.SetTestProjectConfig(c, cfg), should.BeNil)
 
 		message := pubsub.Message{
@@ -95,6 +98,32 @@ func TestBuildBucketPubsub(t *testing.T) {
 			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
 		})
 
+		t.Run("Should create new task for dawn", func(t *ftt.Test) {
+			c, scheduler := tq.TestingContext(c, nil)
+			largeField, err := largeField("bg")
+			assert.Loosely(t, err, should.BeNil)
+
+			buildPubsub := &buildbucketpb.BuildsV2PubSub{
+				Build: &buildbucketpb.Build{
+					Id: 8001,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "dawn",
+						Bucket:  "ci",
+					},
+					Status: buildbucketpb.Status_FAILURE,
+				},
+				BuildLargeFields: largeField,
+			}
+			err = BuildbucketPubSubHandler(c, message, buildPubsub)
+			assert.Loosely(t, err, should.BeNil)
+			// Check that a task was created.
+			task := &taskpb.FailedBuildIngestionTask{
+				Bbid: 8001,
+			}
+			expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
+			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
+		})
+
 		t.Run("Unsupported project", func(t *ftt.Test) {
 			c, _ := tsmon.WithDummyInMemory(c)
 			buildPubsub := &buildbucketpb.BuildsV2PubSub{
@@ -109,6 +138,22 @@ func TestBuildBucketPubsub(t *testing.T) {
 			err := BuildbucketPubSubHandler(c, message, buildPubsub)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, bbCounter.Get(c, "v8", "unsupported"), should.Equal(1))
+		})
+
+		t.Run("Unsupported bucket for dawn", func(t *ftt.Test) {
+			c, _ := tsmon.WithDummyInMemory(c)
+			buildPubsub := &buildbucketpb.BuildsV2PubSub{
+				Build: &buildbucketpb.Build{
+					Builder: &buildbucketpb.BuilderID{
+						Project: "dawn",
+						Bucket:  "try",
+					},
+					Status: buildbucketpb.Status_FAILURE,
+				},
+			}
+			err := BuildbucketPubSubHandler(c, message, buildPubsub)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bbCounter.Get(c, "dawn", "unsupported"), should.Equal(1))
 		})
 
 		t.Run("Excluded builder group", func(t *ftt.Test) {
