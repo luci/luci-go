@@ -25,6 +25,7 @@ describe('parseChromeosDeviceMetrics', () => {
       needManualRepair: 1,
       needsDeploy: 1,
       needsReplacement: 1,
+      reserved: 1,
     };
     const result = parseChromeosDeviceMetrics(deviceState, 20);
     expect(result).toEqual({
@@ -38,8 +39,10 @@ describe('parseChromeosDeviceMetrics', () => {
       unhealthy: 1,
       needsDeploy: 1,
       needsReplacement: 1,
+      reserved: 1,
       other: 4,
       otherStates: 2,
+      otherStatesExcludingReserved: 1,
     });
   });
 
@@ -56,8 +59,10 @@ describe('parseChromeosDeviceMetrics', () => {
       unhealthy: 0,
       needsDeploy: 0,
       needsReplacement: 0,
+      reserved: 0,
       other: 10,
       otherStates: 10,
+      otherStatesExcludingReserved: 10,
     });
   });
 });

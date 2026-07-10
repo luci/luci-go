@@ -159,6 +159,7 @@ export interface DeviceStateCounts {
   readonly repairFailed: number;
   readonly needsDeploy: number;
   readonly needsReplacement: number;
+  readonly reserved: number;
 }
 
 export interface RepopulateCacheRequest {
@@ -1620,7 +1621,15 @@ export const TaskStateCounts: MessageFns<TaskStateCounts> = {
 };
 
 function createBaseDeviceStateCounts(): DeviceStateCounts {
-  return { ready: 0, needManualRepair: 0, needRepair: 0, repairFailed: 0, needsDeploy: 0, needsReplacement: 0 };
+  return {
+    ready: 0,
+    needManualRepair: 0,
+    needRepair: 0,
+    repairFailed: 0,
+    needsDeploy: 0,
+    needsReplacement: 0,
+    reserved: 0,
+  };
 }
 
 export const DeviceStateCounts: MessageFns<DeviceStateCounts> = {
@@ -1642,6 +1651,9 @@ export const DeviceStateCounts: MessageFns<DeviceStateCounts> = {
     }
     if (message.needsReplacement !== 0) {
       writer.uint32(48).int32(message.needsReplacement);
+    }
+    if (message.reserved !== 0) {
+      writer.uint32(56).int32(message.reserved);
     }
     return writer;
   },
@@ -1701,6 +1713,14 @@ export const DeviceStateCounts: MessageFns<DeviceStateCounts> = {
           message.needsReplacement = reader.int32();
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.reserved = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1718,6 +1738,7 @@ export const DeviceStateCounts: MessageFns<DeviceStateCounts> = {
       repairFailed: isSet(object.repairFailed) ? globalThis.Number(object.repairFailed) : 0,
       needsDeploy: isSet(object.needsDeploy) ? globalThis.Number(object.needsDeploy) : 0,
       needsReplacement: isSet(object.needsReplacement) ? globalThis.Number(object.needsReplacement) : 0,
+      reserved: isSet(object.reserved) ? globalThis.Number(object.reserved) : 0,
     };
   },
 
@@ -1741,6 +1762,9 @@ export const DeviceStateCounts: MessageFns<DeviceStateCounts> = {
     if (message.needsReplacement !== 0) {
       obj.needsReplacement = Math.round(message.needsReplacement);
     }
+    if (message.reserved !== 0) {
+      obj.reserved = Math.round(message.reserved);
+    }
     return obj;
   },
 
@@ -1755,6 +1779,7 @@ export const DeviceStateCounts: MessageFns<DeviceStateCounts> = {
     message.repairFailed = object.repairFailed ?? 0;
     message.needsDeploy = object.needsDeploy ?? 0;
     message.needsReplacement = object.needsReplacement ?? 0;
+    message.reserved = object.reserved ?? 0;
     return message;
   },
 };

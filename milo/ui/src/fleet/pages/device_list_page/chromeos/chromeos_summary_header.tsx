@@ -26,6 +26,7 @@ import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { getMetricsGridStyles } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { colors as fleetColors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
 import { combineAipFilters, formatAipClause } from '@/fleet/utils/search_param';
@@ -128,6 +129,7 @@ export function ChromeOSSummaryHeader({
     warning: theme.palette.warning.main,
     grey: theme.palette.grey[400],
     dark: theme.palette.text.primary,
+    reserved: fleetColors.purple[400],
   };
 
   const getContent = () => {
@@ -177,8 +179,9 @@ export function ChromeOSSummaryHeader({
       unhealthy: devicesUnhealthy,
       needsDeploy: devicesNeedsDeploy,
       needsReplacement: devicesNeedsReplacement,
+      reserved: devicesReserved,
       other: devicesOther,
-      otherStates: devicesOtherStates,
+      otherStatesExcludingReserved: devicesOtherStatesExcludingReserved,
     } = parseChromeosDeviceMetrics(
       countQuery.data?.deviceState,
       countQuery.data?.total || 0,
@@ -396,7 +399,12 @@ export function ChromeOSSummaryHeader({
         <Divider sx={{ my: 2, borderColor: 'rgba(0, 0, 0, 0.05)' }} />
 
         {/* Devices Row */}
-        <Grid container spacing={0} alignItems="stretch">
+        <Grid
+          container
+          spacing={0}
+          alignItems="stretch"
+          data-testid="devices-metrics-grid"
+        >
           <Grid item xs={12} sm={6} md={3} sx={gridStyles.col1}>
             <SingleMetric
               name="Total Devices"
@@ -652,14 +660,26 @@ export function ChromeOSSummaryHeader({
                 }
               />
               <SmallMetricItem
+                label="Reserved:"
+                value={devicesReserved}
+                total={totalDevices}
+                dotColor={colors.reserved}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    'labels."dut_state"': ['reserved'],
+                  })
+                }
+              />
+              <SmallMetricItem
                 label="Other states:"
-                value={devicesOtherStates}
+                value={devicesOtherStatesExcludingReserved}
                 total={totalDevices}
                 dotColor={colors.grey}
                 loading={isLoading}
                 onClick={() =>
                   handleMetricClick({
-                    'labels."dut_state"': ['unknown', 'registered', 'reserved'],
+                    'labels."dut_state"': ['unknown', 'registered'],
                   })
                 }
               />

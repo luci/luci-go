@@ -27,11 +27,14 @@ export const parseChromeosDeviceMetrics = (
   const unhealthy = needManualRepair;
   const needsDeploy = deviceState?.needsDeploy || 0;
   const needsReplacement = deviceState?.needsReplacement || 0;
+  const reserved = deviceState?.reserved || 0;
 
   // 'other' serves as the catch-all category for anything not healthy or unhealthy.
   const other = Math.max(0, total - healthy - unhealthy);
   // 'otherStates' represents the remaining 'other' states after excluding needsDeploy and needsReplacement.
   const otherStates = Math.max(0, other - needsDeploy - needsReplacement);
+  // 'otherStatesExcludingReserved' represents 'otherStates' minus reserved.
+  const otherStatesExcludingReserved = Math.max(0, otherStates - reserved);
 
   return {
     total,
@@ -44,7 +47,9 @@ export const parseChromeosDeviceMetrics = (
     unhealthy,
     needsDeploy,
     needsReplacement,
+    reserved,
     other,
     otherStates,
+    otherStatesExcludingReserved,
   };
 };
