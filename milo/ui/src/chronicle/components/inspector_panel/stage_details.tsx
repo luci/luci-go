@@ -26,13 +26,20 @@ import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
+import { GenericJsonDetails } from './generic_json_details';
+import { RenderMode } from './types';
 
 export interface StageDetailsProps {
   view: Stage;
   valueDataMap: Map<string, ValueData>;
+  renderMode?: RenderMode;
 }
 
-export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
+export function StageDetails({
+  view,
+  valueDataMap,
+  renderMode,
+}: StageDetailsProps) {
   const stage = view;
 
   const assignmentIds = (stage.assignments || [])
@@ -58,36 +65,42 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <DetailRow label="ID" value={toString(stage.identifier)} />
-        <DetailRow
-          label="State"
-          value={stage.state ? stageStateToJSON(stage.state) : 'UNKNOWN'}
-        />
-        <DetailRow label="Realm" value={stage.realm} />
-        <DetailRow label="Created" value={renderTimestamp(createTs?.ts)} />
-        <DetailRow
-          label="Last Updated"
-          value={renderTimestamp(stage.version?.ts)}
-        />
-      </Box>
+      {renderMode === RenderMode.Json ? (
+        <GenericJsonDetails json={JSON.stringify(stage)} maxHeight="none" />
+      ) : (
+        <>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <DetailRow label="ID" value={toString(stage.identifier)} />
+            <DetailRow
+              label="State"
+              value={stage.state ? stageStateToJSON(stage.state) : 'UNKNOWN'}
+            />
+            <DetailRow label="Realm" value={stage.realm} />
+            <DetailRow label="Created" value={renderTimestamp(createTs?.ts)} />
+            <DetailRow
+              label="Last Updated"
+              value={renderTimestamp(stage.version?.ts)}
+            />
+          </Box>
 
-      {dependencyIds.length > 0 && (
-        <DetailRow
-          label="Dependencies"
-          value={dependencyIds.map((id) => (
-            <Chip key={id} label={id} size="small" />
-          ))}
-        />
-      )}
+          {dependencyIds.length > 0 && (
+            <DetailRow
+              label="Dependencies"
+              value={dependencyIds.map((id) => (
+                <Chip key={id} label={id} size="small" />
+              ))}
+            />
+          )}
 
-      {assignmentIds.length > 0 && (
-        <DetailRow
-          label="Assignments"
-          value={assignmentIds.map((id) => (
-            <Chip key={id} label={id} size="small" />
-          ))}
-        />
+          {assignmentIds.length > 0 && (
+            <DetailRow
+              label="Assignments"
+              value={assignmentIds.map((id) => (
+                <Chip key={id} label={id} size="small" />
+              ))}
+            />
+          )}
+        </>
       )}
 
       {stage.args && (
@@ -107,6 +120,7 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
             }
             typeUrl={stage.args.typeUrl!}
             omitReason={stage.args.omitReason}
+            renderMode={renderMode}
           />
         </>
       )}
@@ -160,6 +174,7 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
                         : undefined
                     }
                     label="Details"
+                    renderMode={renderMode}
                   />
                 ))}
               </Box>

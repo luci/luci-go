@@ -13,8 +13,16 @@
 // limitations under the License.
 
 import CloseIcon from '@mui/icons-material/Close';
-import { Box, Divider, IconButton, Paper, Typography } from '@mui/material';
-import { ReactElement } from 'react';
+import {
+  Box,
+  Divider,
+  FormControlLabel,
+  IconButton,
+  Paper,
+  Switch,
+  Typography,
+} from '@mui/material';
+import { ReactElement, useState } from 'react';
 
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
@@ -22,6 +30,7 @@ import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 import { CheckDetails } from './check_details';
 import { StageDetails } from './stage_details';
+import { RenderMode } from './types';
 
 export interface InspectorPanelProps {
   nodeId: string;
@@ -46,6 +55,9 @@ export function InspectorPanel({
   valueDataMap,
   onClose,
 }: InspectorPanelProps) {
+  const [renderMode, setRenderMode] = useState<RenderMode>(
+    RenderMode.Structured,
+  );
   let title = '';
   let detailsComponent: ReactElement | undefined = undefined;
 
@@ -53,12 +65,20 @@ export function InspectorPanel({
     if (isCheckView(viewData)) {
       title = 'Check Details';
       detailsComponent = (
-        <CheckDetails check={viewData} valueDataMap={valueDataMap} />
+        <CheckDetails
+          check={viewData}
+          valueDataMap={valueDataMap}
+          renderMode={renderMode}
+        />
       );
     } else if (isStageView(viewData)) {
       title = 'Stage Details';
       detailsComponent = (
-        <StageDetails view={viewData} valueDataMap={valueDataMap} />
+        <StageDetails
+          view={viewData}
+          valueDataMap={valueDataMap}
+          renderMode={renderMode}
+        />
       );
     }
   }
@@ -85,9 +105,39 @@ export function InspectorPanel({
         <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
           {title}
         </Typography>
-        <IconButton onClick={onClose} size="small" aria-label="close inspector">
-          <CloseIcon />
-        </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {viewData && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={renderMode === RenderMode.Json}
+                  onChange={(e) =>
+                    setRenderMode(
+                      e.target.checked
+                        ? RenderMode.Json
+                        : RenderMode.Structured,
+                    )
+                  }
+                  color="primary"
+                  size="small"
+                />
+              }
+              label="Raw JSON"
+              labelPlacement="start"
+              sx={{
+                m: 0,
+                '& .MuiFormControlLabel-label': { fontSize: '0.85rem' },
+              }}
+            />
+          )}
+          <IconButton
+            onClick={onClose}
+            size="small"
+            aria-label="close inspector"
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
       </Box>
       <Divider />
       <Box sx={{ p: 2, overflowY: 'auto', flexGrow: 1 }}>

@@ -23,13 +23,20 @@ import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
+import { GenericJsonDetails } from './generic_json_details';
+import { RenderMode } from './types';
 
 export interface CheckDetailsProps {
   check: Check;
   valueDataMap: Map<string, ValueData>;
+  renderMode?: RenderMode;
 }
 
-export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
+export function CheckDetails({
+  check,
+  valueDataMap,
+  renderMode,
+}: CheckDetailsProps) {
   const dependencyIds = (check.dependencies?.edges || [])
     .map((edge) => {
       const idObj = edge.check?.identifier || edge.stage?.identifier;
@@ -40,30 +47,36 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <DetailRow label="ID" value={toString(check.identifier)} />
-        <DetailRow
-          label="Kind"
-          value={check.kind ? checkKindToJSON(check.kind) : 'UNKNOWN'}
-        />
-        <DetailRow
-          label="State"
-          value={check.state ? checkStateToJSON(check.state) : 'UNKNOWN'}
-        />
-        <DetailRow label="Realm" value={check.realm} />
-        <DetailRow
-          label="Last Updated"
-          value={renderTimestamp(check.version?.ts)}
-        />
-      </Box>
+      {renderMode === RenderMode.Json ? (
+        <GenericJsonDetails json={JSON.stringify(check)} maxHeight="none" />
+      ) : (
+        <>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <DetailRow label="ID" value={toString(check.identifier)} />
+            <DetailRow
+              label="Kind"
+              value={check.kind ? checkKindToJSON(check.kind) : 'UNKNOWN'}
+            />
+            <DetailRow
+              label="State"
+              value={check.state ? checkStateToJSON(check.state) : 'UNKNOWN'}
+            />
+            <DetailRow label="Realm" value={check.realm} />
+            <DetailRow
+              label="Last Updated"
+              value={renderTimestamp(check.version?.ts)}
+            />
+          </Box>
 
-      {dependencyIds.length > 0 && (
-        <DetailRow
-          label="Dependencies"
-          value={dependencyIds.map((id) => (
-            <Chip key={id} label={id} size="small" />
-          ))}
-        />
+          {dependencyIds.length > 0 && (
+            <DetailRow
+              label="Dependencies"
+              value={dependencyIds.map((id) => (
+                <Chip key={id} label={id} size="small" />
+              ))}
+            />
+          )}
+        </>
       )}
 
       {check.options?.length > 0 && (
@@ -85,6 +98,7 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
                   ? valueDataMap.get(value_ref.digest)?.json?.value
                   : undefined
               }
+              renderMode={renderMode}
             />
           ))}
         </>
@@ -112,6 +126,7 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
                     ? valueDataMap.get(value_ref.digest)?.json?.value
                     : undefined
                 }
+                renderMode={renderMode}
               />
             ));
           })}

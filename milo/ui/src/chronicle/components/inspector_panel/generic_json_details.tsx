@@ -18,19 +18,29 @@ export interface GenericJsonDetailsProps {
   json?: string;
   typeUrl?: string;
   label?: string;
+  maxHeight?: string | number;
 }
 
 export function GenericJsonDetails({
   json,
   typeUrl,
   label,
+  maxHeight,
 }: GenericJsonDetailsProps) {
   if (!json) return null;
 
   const prettyPrintedJson = JSON.stringify(JSON.parse(json), null, 2);
 
   return (
-    <Box sx={{ mt: 1 }}>
+    <Box
+      sx={{
+        mt: typeUrl ? 1 : 0,
+        display: 'flex',
+        flexDirection: 'column',
+        flexGrow: 1,
+        height: maxHeight === '100%' ? '100%' : 'auto',
+      }}
+    >
       {typeUrl && (
         <Typography variant="caption" color="text.secondary">
           {label ? `${label}: ` : ''}
@@ -42,10 +52,11 @@ export function GenericJsonDetails({
         sx={{
           p: 1,
           bgcolor: '#f5f5f5',
-          maxHeight: '200px',
+          maxHeight: maxHeight ?? '200px',
           overflow: 'auto',
           fontSize: '0.75rem',
           fontFamily: 'monospace',
+          flexGrow: 1,
         }}
       >
         <pre

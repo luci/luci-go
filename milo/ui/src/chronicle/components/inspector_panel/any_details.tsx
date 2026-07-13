@@ -45,6 +45,7 @@ import {
   TestCheckDescriptionOptionDetails,
   TestCheckSummaryResultDetails,
 } from './test_details';
+import { RenderMode } from './types';
 
 // Define a generic renderer type that accepts unknown data.
 // Data must be unknown in order to support multiple different protos.
@@ -103,6 +104,8 @@ export interface AnyDetailsProps {
   omitReason?: OmitReason;
   /** The actual ValueData object containing JSON or binary or conversionFailure. */
   valueData?: ValueData;
+  /** Rendering mode: structured UI or raw JSON. */
+  renderMode?: RenderMode;
 }
 
 /**
@@ -117,6 +120,7 @@ export function AnyDetails({
   label,
   omitReason,
   valueData,
+  renderMode,
 }: AnyDetailsProps) {
   const parsedData = useMemo(() => {
     if (!json) return null;
@@ -158,7 +162,7 @@ export function AnyDetails({
   }
 
   const typeRenderer = typeUrl ? KNOWN_TYPE_RENDERERS[typeUrl] : undefined;
-  if (typeRenderer) {
+  if (typeRenderer && renderMode !== RenderMode.Json) {
     const { component: Renderer, fromJson } = typeRenderer;
     const typedData = fromJson ? fromJson(parsedData) : parsedData;
     return (
@@ -176,7 +180,14 @@ export function AnyDetails({
     );
   }
 
-  return <GenericJsonDetails label={label} typeUrl={typeUrl} json={json} />;
+  return (
+    <GenericJsonDetails
+      label={label}
+      typeUrl={typeUrl}
+      json={json}
+      maxHeight={renderMode === RenderMode.Json ? 'none' : '200px'}
+    />
+  );
 }
 
 interface AlertNoticeProps {
