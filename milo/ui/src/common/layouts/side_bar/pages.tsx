@@ -98,7 +98,7 @@ function generateBuildsSection(project: string | undefined): SidebarSection {
       external: true,
     });
 
-    if (project === 'chromium' || project === 'chrome') {
+    if (project === 'chromium' || project === 'chrome' || project === 'dawn') {
       pages.push({
         page: UiPage.Bisection,
         url: `/ui/p/${project}/bisection`,

@@ -64,6 +64,7 @@ describe('Sidebar', () => {
     expect(screen.getByText('Builder search')).toBeInTheDocument();
     expect(screen.getByText('Builders')).toBeInTheDocument();
     expect(screen.getByText('Builder groups (Consoles)')).toBeInTheDocument();
+    expect(screen.getByText('Bisection')).toBeInTheDocument();
     expect(screen.getByText('Test history')).toBeInTheDocument();
     expect(screen.getByText('Test Analysis')).toBeInTheDocument();
     expect(screen.getByText('Clusters')).toBeInTheDocument();
@@ -165,5 +166,16 @@ describe('Sidebar', () => {
     expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
     expect(screen.queryByText('Tree status')).toBeNull();
     expect(screen.getByText('ChromiumDash')).toBeInTheDocument();
+  });
+
+  it('should display Bisection tab for dawn project', async () => {
+    render(
+      <FakeContextProvider>
+        <ProjectSetter project="dawn" />
+        <Sidebar open={true} />
+      </FakeContextProvider>,
+    );
+    await screen.findByRole('complementary');
+    expect(screen.getByText('Bisection')).toBeInTheDocument();
   });
 });
