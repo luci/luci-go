@@ -23,10 +23,7 @@ import { QuerySourceVerdictsV2Request } from '@/proto/go.chromium.org/luci/analy
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { useInvocation } from '@/test_investigation/context';
-import {
-  getFailureRateStatusTypeFromSegment,
-  getFormattedFailureRateFromSegment,
-} from '@/test_investigation/utils/test_history_utils';
+import { getFailureRateStatusTypeFromSegment } from '@/test_investigation/utils/test_history_utils';
 
 import { useTestVariantBranch } from '../context';
 
@@ -57,7 +54,14 @@ function SegmentBox({
     getFailureRateStatusTypeFromSegment(segment),
     'filled',
   );
-  const formattedRate = getFormattedFailureRateFromSegment(segment);
+  const formattedRate =
+    segment && segment.counts
+      ? Math.round(
+          (segment.counts.unexpectedResults / segment.counts.totalResults) *
+            100,
+        )
+      : undefined;
+
   const IconComponent = style.icon;
   const testVariantBranch = useTestVariantBranch();
   const thClient = useTestHistoryClient();
@@ -156,7 +160,7 @@ function SegmentBox({
         {segment.counts && (
           <>
             <Typography sx={{ color: 'text.primary' }} variant="caption">
-              {formattedRate}
+              {formattedRate}%
             </Typography>
             <Typography
               sx={{ color: 'text.primary', textTransform: 'none' }}
