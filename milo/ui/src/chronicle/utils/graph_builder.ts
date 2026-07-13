@@ -823,6 +823,13 @@ export class TurboCIGraphBuilder {
 
     const nodesByDagreId = new Map<string, string>();
 
+    // Sort assignment groups, nodes, and edges to ensure deterministic layout
+    this.assignmentGroups.sort((a, b) =>
+      a.checkId < b.checkId ? -1 : a.checkId > b.checkId ? 1 : 0,
+    );
+    this.nodes.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    this.edges.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
     // 1. Create Dagre nodes for assignment groups
     this.assignmentGroups.forEach((groupInfo) => {
       const { checkId, stageIds } = groupInfo;

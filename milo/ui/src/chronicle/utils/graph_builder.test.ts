@@ -27,6 +27,7 @@ import { WorkPlan as TurboCIGraphWorkPlan } from '@/proto/turboci/graph/orchestr
 
 import { TYPE_URL_BUILD_RESULT } from './check_utils';
 import {
+  ChronicleNode,
   GroupMode,
   TurboCIGraphBuilder,
   getTopologyGroups,
@@ -979,6 +980,68 @@ describe('TurboCIGraphBuilder', () => {
         (checks) => checks.length === 2,
       );
       expect(groupT).toBeDefined();
+    });
+  });
+
+  describe('Layout Determinism', () => {
+    it('should produce identical node coordinates regardless of input array order', () => {
+      const valueDataMap: Map<string, ValueData> = new Map();
+
+      // 1. Define identifiers for dependencies
+      const c1Ident = createCheckIdentifier('C1');
+      const c2Ident = createCheckIdentifier('C2');
+      const s1Ident = createStageIdentifier('S1');
+
+      // 2. Create mock checks and stages
+      const checkA = createCheck('C1', valueDataMap);
+      const checkB = createCheck(
+        'C2',
+        valueDataMap,
+        CheckKind.CHECK_KIND_BUILD,
+        [s1Ident],
+      );
+      const checkC = createCheck(
+        'C3',
+        valueDataMap,
+        CheckKind.CHECK_KIND_TEST,
+        [c1Ident],
+      );
+
+      const stageA = createStage('S1', ['C1']);
+      const stageB = createStage('S2', [], [c2Ident]);
+
+      const checks = [checkA, checkB, checkC];
+      const stages = [stageA, stageB];
+
+      // 3. Construct Graph 1 (Order A)
+      const graph1: TurboCIGraphWorkPlan = {
+        id: 'test-plan',
+        checks: [...checks],
+        stages: [...stages],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      // 4. Construct Graph 2 (Shuffled Order B)
+      const graph2: TurboCIGraphWorkPlan = {
+        id: 'test-plan',
+        checks: [checkB, checkC, checkA],
+        stages: [stageB, stageA],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      // 5. Build layouts
+      const layout1 = new TurboCIGraphBuilder(graph1, valueDataMap).build();
+      const layout2 = new TurboCIGraphBuilder(graph2, valueDataMap).build();
+
+      // Helper to extract coordinates and sort them by ID for comparison
+      const getPositions = (nodes: ChronicleNode[]) =>
+        nodes
+          .map((n) => ({ id: n.id, x: n.position.x, y: n.position.y }))
+          .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+      const pos1 = getPositions(layout1.nodes);
+      const pos2 = getPositions(layout2.nodes);
+
+      // 6. Assert that coordinates are identical
+      expect(pos1).toEqual(pos2);
     });
   });
 });
