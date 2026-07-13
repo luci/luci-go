@@ -31,6 +31,11 @@ import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { GetMachineLSERequest } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
+import {
+  DeviceDetailsCard,
+  DeviceDetailsInfo,
+} from './components/cards/DeviceDetailsCard';
+
 export interface ChromeOSInventoryDataProps {
   device: Device;
   editable?: boolean;
@@ -81,7 +86,16 @@ export const ChromeOSInventoryData = ({
     if (!machineLse.data) {
       return <Alert severity="info">No inventory spec data available.</Alert>;
     }
-    return <Grid container spacing={2} />;
+    return (
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
+          <DeviceDetailsCard
+            data={machineLse.data as DeviceDetailsInfo}
+            editable={editable}
+          />
+        </Grid>
+      </Grid>
+    );
   };
 
   const renderJsonEditor = () => {

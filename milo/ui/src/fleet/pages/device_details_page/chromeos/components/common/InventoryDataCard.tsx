@@ -73,7 +73,7 @@ export const InventoryDataCard = ({
         action={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {headerAction}
-            {editable && (
+            {Boolean(editable && onEdit) && (
               <Tooltip title={isEditing ? 'Cancel Editing' : 'Edit Section'}>
                 <IconButton
                   size="small"
