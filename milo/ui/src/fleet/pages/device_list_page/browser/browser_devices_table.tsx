@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Alert, AlertTitle } from '@mui/material';
 import {
   MaterialReactTable,
   MRT_ColumnDef,
@@ -251,6 +252,15 @@ export const BrowserDevicesTable = ({
       ? getErrorMessage(devicesQuery.error, 'fetch devices')
       : undefined,
   });
+
+  if (devicesQuery.isError) {
+    return (
+      <Alert severity="error">
+        <AlertTitle>Error Loading Chrome Browser Devices</AlertTitle>
+        {getErrorMessage(devicesQuery.error, 'fetch device list')}
+      </Alert>
+    );
+  }
 
   return (
     <>

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Alert, AlertTitle } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import {
   MaterialReactTable,
@@ -283,6 +284,15 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
           )
         : undefined,
   });
+
+  if (devicesQuery.isError) {
+    return (
+      <Alert severity="error">
+        <AlertTitle>Error Loading Chrome OS Devices</AlertTitle>
+        {getErrorMessage(devicesQuery.error, 'fetch device list')}
+      </Alert>
+    );
+  }
 
   return (
     <>
