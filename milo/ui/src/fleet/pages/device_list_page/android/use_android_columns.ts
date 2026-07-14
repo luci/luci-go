@@ -32,22 +32,29 @@ const EXTRA_COLUMN_IDS = [
   'label-hostname',
   'fc_offline_since',
   'realm',
-  'average_7d',
-  'average_30d',
 ];
 
 export const useAndroidColumns = (
   filterValues: Record<string, FilterCategory> | undefined,
   isLoadingFilters: boolean,
   isLoadingDevices: boolean,
+  showAvgUtilization = false,
 ) => {
   const dimensionsQuery = useDeviceDimensions({ platform: Platform.ANDROID });
+
+  const extraColumnIds = useMemo(() => {
+    const ids = [...EXTRA_COLUMN_IDS];
+    if (showAvgUtilization) {
+      ids.push('average_7d', 'average_30d');
+    }
+    return ids;
+  }, [showAvgUtilization]);
 
   const availableColumns = useMemo(() => {
     const list: { id: string; label: string }[] = [];
 
     ANDROID_DEFAULT_COLUMNS.forEach((id) => list.push({ id, label: id }));
-    EXTRA_COLUMN_IDS.forEach((id) => {
+    extraColumnIds.forEach((id) => {
       let label = id;
       if (id === 'average_7d') label = '7 Day Average Utilization';
       if (id === 'average_30d') label = '30 Day Average Utilization';
@@ -64,7 +71,7 @@ export const useAndroidColumns = (
     }
 
     return _.uniqBy(list, 'id');
-  }, [dimensionsQuery.data]);
+  }, [extraColumnIds, dimensionsQuery.data]);
 
   const allColumns = useMemo(() => {
     return getAndroidColumns(availableColumns.map((c) => c.id));

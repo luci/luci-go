@@ -21,6 +21,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { usePagerContext } from '@/common/components/params_pager';
+import { useFeatureFlag } from '@/common/feature_flags';
 import {
   getColumnId,
   MrtColumnManager,
@@ -30,6 +31,7 @@ import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_botto
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import { enableAndroidUtilizationMetrics } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
@@ -55,6 +57,7 @@ export const AndroidDevicesTable = ({
   mrtColumnManager,
   availableColumns,
 }: AndroidTableProps) => {
+  const showAvgUtilization = useFeatureFlag(enableAndroidUtilizationMetrics);
   const client = useFleetConsoleClient();
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100, 500, 1000],
@@ -73,7 +76,10 @@ export const AndroidDevicesTable = ({
 
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
-  const { filterValues, aip160 } = useAndroidFilters(() => {});
+  const { filterValues, aip160 } = useAndroidFilters(
+    () => {},
+    showAvgUtilization,
+  );
 
   const aip160Filter = aip160();
 

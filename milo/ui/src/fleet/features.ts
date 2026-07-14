@@ -21,3 +21,12 @@ export const enableModernInventoryCards = createFeatureFlag({
   percentage: 0,
   trackingBug: '388907865',
 });
+
+export const enableAndroidUtilizationMetrics = createFeatureFlag({
+  description:
+    'Displays average Android device utilization metrics, columns, and filters.',
+  namespace: 'fleet-console',
+  name: 'android-utilization-metrics',
+  percentage: 0,
+  trackingBug: '525089400',
+});
