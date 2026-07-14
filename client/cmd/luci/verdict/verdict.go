@@ -53,7 +53,7 @@ type verdictRun struct {
 func (r *verdictRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	app := &cli.Application{
 		Name:  "luci verdict",
-		Title: "Test verdict management",
+		Title: "Test verdicts management",
 		Commands: []*subcommands.Command{
 			GetCmd(r.af),
 			subcommands.CmdHelp,
