@@ -112,7 +112,7 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 
 		assert.That(t, orch.LastCreateCall, should.Match(orchestratorpb.CreateWorkPlanRequest_builder{
 			Realm:          proto.String("project:bucket"),
-			IdempotencyKey: proto.String("QHLI8/5YpFrfwDcIkQ4gFBZmltK8ttPTZS0tCdfdIrY="),
+			IdempotencyKey: proto.String("F9QFHxSJwhbGqv/ebRbYm/6AS3SMvkCq9EzoaABapqI="),
 		}.Build()))
 
 		assert.That(t, orch.LastWriteNodesCall, should.Match(orchestratorpb.WriteNodesRequest_builder{

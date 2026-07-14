@@ -116,16 +116,11 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	// We need some idempotency key to create workplans. If the caller didn't
 	// supply their own, generate some random one. Retries will not be idempotent,
 	// but there's nothing we can do about that. Note that Turbo CI idempotency
-	// key are already scoped to a concrete caller, so we don't need to prefix
-	// them with the user ID. We need to make sure they are long enough though,
-	// so hash them.
-	idempotencyKey := req.RequestId
-	if idempotencyKey == "" {
-		idempotencyKey = uuid.NewString()
-	} else {
-		digest := sha256.Sum256([]byte(idempotencyKey))
-		idempotencyKey = base64.StdEncoding.EncodeToString(digest[:])
-	}
+	// key are already scoped to a concrete caller, but since Buildbucket is using
+	// the project's credentials to create workplans, it's better to still apply
+	// the caller's credential here to avoid conflicts if two
+	// ScheduleBuildRequests in the same project happen to use the same RequestId.
+	idempotencyKey := idempotencyKeyHash(ctx, req.RequestId)
 
 	plan, err := turboci.CreateWorkPlan(ctx, orchestratorpb.CreateWorkPlanRequest_builder{
 		Realm:          proto.String(build.Realm()),
@@ -181,6 +176,19 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 		return appstatus.Errorf(codes.Internal, "failed to get a build associated with the submitted stage: %s", err)
 	}
 	return nil
+}
+
+// idempotencyKeyHash calculate the idempotency key to create workplans.
+func idempotencyKeyHash(ctx context.Context, key string) string {
+	if key == "" {
+		key = uuid.NewString()
+	}
+	h := sha256.New()
+	caller := auth.CurrentIdentity(ctx)
+	h.Write([]byte(caller.Value()))
+	h.Write([]byte{0})
+	h.Write([]byte(key))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
 // launchTurboCIChildren launches child builds by adding them to an existing
