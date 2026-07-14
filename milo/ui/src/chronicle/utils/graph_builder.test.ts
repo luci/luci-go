@@ -200,6 +200,23 @@ describe('TurboCIGraphBuilder', () => {
       expect(cNode?.data.isGrouped).toBe(false);
       expect(sNode?.data.isGrouped).toBe(false);
     });
+
+    it('should set default zIndex on nodes to 2', () => {
+      const valueDataMap: Map<string, ValueData> = new Map();
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: '',
+        checks: [createCheck('C_Node', valueDataMap)],
+        stages: [createStage('S_Node')],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const { nodes } = new TurboCIGraphBuilder(graph, valueDataMap).build();
+      const cNode = nodes.find((n) => n.id === 'C_Node')!;
+      const sNode = nodes.find((n) => n.id === 'S_Node')!;
+
+      expect(cNode.zIndex).toBe(2);
+      expect(sNode.zIndex).toBe(2);
+    });
   });
 
   describe('Edges', () => {

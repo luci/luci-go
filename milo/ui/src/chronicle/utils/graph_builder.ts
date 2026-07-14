@@ -73,6 +73,7 @@ const COMMON_NODE_PROPERTIES: Partial<ChronicleNode> &
   draggable: false,
   initialWidth: GRAPH_CONFIG.nodeWidth,
   initialHeight: GRAPH_CONFIG.nodeHeight,
+  zIndex: 2,
 };
 
 const DEPENDENCY_EDGE_STYLE: Partial<Edge> = {
