@@ -16,11 +16,13 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import {
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   Stack,
   TextField,
@@ -52,6 +54,8 @@ export interface ReserveDialogProps {
   loading: boolean;
   comment: string;
   handleCommentChange: (comment: string) => void;
+  latest: boolean;
+  handleLatestChange: (latest: boolean) => void;
 }
 
 const plurifyDevices = (count: number) => {
@@ -80,6 +84,8 @@ export default function ReserveDialog({
   loading,
   comment,
   handleCommentChange,
+  latest,
+  handleLatestChange,
 }: ReserveDialogProps) {
   const [touched, setTouched] = useState<boolean>(false);
 
@@ -90,7 +96,9 @@ export default function ReserveDialog({
   }, [open]);
 
   const escapedComment = comment.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  const shivasCommand = `shivas reserve-duts -comment "${escapedComment}" ${dutNames.join(' ')}`;
+  const shivasCommand = `shivas reserve-duts -comment "${escapedComment}"${
+    latest ? ' -latest' : ''
+  } ${dutNames.join(' ')}`;
 
   const loadingScreen = (
     <>
@@ -139,6 +147,19 @@ export default function ReserveDialog({
                 helperText={
                   touched && comment.trim() === '' ? 'Comment is required' : ' '
                 }
+              />
+            </Box>
+            <Box sx={{ mb: 2 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={latest}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      handleLatestChange(e.target.checked)
+                    }
+                  />
+                }
+                label="Use latest reserve version"
               />
             </Box>
 

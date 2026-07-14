@@ -65,6 +65,8 @@ import {
   ScheduleDeployResponse,
   ScheduleReserveRequest,
   ScheduleReserveResponse,
+  UpdateChromeOSDeviceRequest,
+  UpdateChromeOSDeviceResponse,
 } from "./chromeos.pb";
 import {
   CountResourceRequestsRequest,
@@ -337,6 +339,7 @@ export interface FleetConsole {
   ): Promise<GetProductCatalogFilterValuesResponse>;
   GetSmartRepair(request: GetSmartRepairRequest): Promise<GetSmartRepairResponse>;
   GetDeviceACLs(request: GetDeviceACLsRequest): Promise<GetDeviceACLsResponse>;
+  UpdateChromeOSDevice(request: UpdateChromeOSDeviceRequest): Promise<UpdateChromeOSDeviceResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -386,6 +389,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.GetProductCatalogFilterValues = this.GetProductCatalogFilterValues.bind(this);
     this.GetSmartRepair = this.GetSmartRepair.bind(this);
     this.GetDeviceACLs = this.GetDeviceACLs.bind(this);
+    this.UpdateChromeOSDevice = this.UpdateChromeOSDevice.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -625,6 +629,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = GetDeviceACLsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetDeviceACLs", data);
     return promise.then((data) => GetDeviceACLsResponse.fromJSON(data));
+  }
+
+  UpdateChromeOSDevice(request: UpdateChromeOSDeviceRequest): Promise<UpdateChromeOSDeviceResponse> {
+    const data = UpdateChromeOSDeviceRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdateChromeOSDevice", data);
+    return promise.then((data) => UpdateChromeOSDeviceResponse.fromJSON(data));
   }
 }
 

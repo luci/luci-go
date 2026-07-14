@@ -19,7 +19,10 @@ import { useState } from 'react';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
-import { ScheduleReserveRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  ScheduleReserveRequest,
+  ScheduleReserveRequest_ReserveFlag,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminAccessRequiredDialog } from '../shared/admin_access_required_dialog';
 import { DutToRepair } from '../shared/types';
@@ -41,6 +44,7 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
     undefined,
   );
   const [comment, setComment] = useState<string>('');
+  const [latest, setLatest] = useState<boolean>(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [adminAccessRequiredDialogOpen, setAdminAccessRequiredDialogOpen] =
     useState<boolean>(false);
@@ -58,6 +62,7 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
       if (result.hasPermission === true) {
         setResults(undefined);
         setComment('');
+        setLatest(false);
         setSessionId(undefined);
         setLoading(false);
         setOpen(true);
@@ -81,6 +86,7 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
         queryKey: ['swarming-bots-current-tasks'],
       });
     }
+    setLatest(false);
   };
 
   const handleConfirm = async () => {
@@ -89,11 +95,16 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
       dutCount: selectedDuts.length,
     });
     setLoading(true);
+    const flags = [];
+    if (latest) {
+      flags.push(ScheduleReserveRequest_ReserveFlag.LATEST);
+    }
     try {
       const resp = await fleetConsoleClient.ScheduleReserve(
         ScheduleReserveRequest.fromPartial({
           unitNames: dutNames,
           comment: comment,
+          flags: flags,
         }),
       );
 
@@ -144,6 +155,8 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
         loading={loading}
         comment={comment}
         handleCommentChange={setComment}
+        latest={latest}
+        handleLatestChange={setLatest}
       />
       <AdminAccessRequiredDialog
         open={adminAccessRequiredDialogOpen}

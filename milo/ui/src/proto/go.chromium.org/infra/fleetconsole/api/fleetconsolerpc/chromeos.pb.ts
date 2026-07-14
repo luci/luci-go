@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { AndroidCount } from "./android.pb";
 import { Column, DeviceSpec, LabelValues, Platform, platformFromJSON, platformToJSON } from "./common_types.pb";
@@ -247,6 +248,36 @@ export interface ScheduleAutorepairResponse {
 export interface ScheduleReserveRequest {
   readonly unitNames: readonly string[];
   readonly comment: string;
+  readonly flags: readonly ScheduleReserveRequest_ReserveFlag[];
+}
+
+export enum ScheduleReserveRequest_ReserveFlag {
+  FLAG_UNSPECIFIED = 0,
+  LATEST = 1,
+}
+
+export function scheduleReserveRequest_ReserveFlagFromJSON(object: any): ScheduleReserveRequest_ReserveFlag {
+  switch (object) {
+    case 0:
+    case "FLAG_UNSPECIFIED":
+      return ScheduleReserveRequest_ReserveFlag.FLAG_UNSPECIFIED;
+    case 1:
+    case "LATEST":
+      return ScheduleReserveRequest_ReserveFlag.LATEST;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ScheduleReserveRequest_ReserveFlag");
+  }
+}
+
+export function scheduleReserveRequest_ReserveFlagToJSON(object: ScheduleReserveRequest_ReserveFlag): string {
+  switch (object) {
+    case ScheduleReserveRequest_ReserveFlag.FLAG_UNSPECIFIED:
+      return "FLAG_UNSPECIFIED";
+    case ScheduleReserveRequest_ReserveFlag.LATEST:
+      return "LATEST";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ScheduleReserveRequest_ReserveFlag");
+  }
 }
 
 export interface ScheduleReserveResult {
@@ -445,6 +476,42 @@ export interface GetRepairMetricsDimensionsResponse_Values {
 export interface GetRepairMetricsDimensionsResponse_DimensionsEntry {
   readonly key: string;
   readonly value: GetRepairMetricsDimensionsResponse_Values | undefined;
+}
+
+/** Request message for UpdateChromeOSDevice. */
+export interface UpdateChromeOSDeviceRequest {
+  /** Device hostname / ID to update. */
+  readonly deviceId: string;
+  /** Configuration edits to apply to the device. */
+  readonly edits:
+    | DeviceConfigEdits
+    | undefined;
+  /** Field mask specifying which fields in edits to write to UFS. */
+  readonly updateMask:
+    | readonly string[]
+    | undefined;
+  /** Client-side UUID for AIP-155 request deduplication. */
+  readonly requestId: string;
+}
+
+/** Fleet Console domain model for device configuration modifications (Phase 1: Pools only). */
+export interface DeviceConfigEdits {
+  /**
+   * List of test pools assigned to the DUT.
+   * To clear all pools from a device, provide an empty pools list and ensure
+   * the update_mask contains the path "pools".
+   */
+  readonly pools: readonly string[];
+}
+
+/** Response message for UpdateChromeOSDevice. */
+export interface UpdateChromeOSDeviceResponse {
+  /** Updated device record after UFS write and cache refresh. */
+  readonly device:
+    | Device
+    | undefined;
+  /** Milo URL of the Buildbucket deployment task if redeploy was triggered. */
+  readonly deployTaskUrl: string;
 }
 
 function createBaseDevice(): Device {
@@ -2299,7 +2366,7 @@ export const ScheduleAutorepairResponse: MessageFns<ScheduleAutorepairResponse> 
 };
 
 function createBaseScheduleReserveRequest(): ScheduleReserveRequest {
-  return { unitNames: [], comment: "" };
+  return { unitNames: [], comment: "", flags: [] };
 }
 
 export const ScheduleReserveRequest: MessageFns<ScheduleReserveRequest> = {
@@ -2310,6 +2377,11 @@ export const ScheduleReserveRequest: MessageFns<ScheduleReserveRequest> = {
     if (message.comment !== "") {
       writer.uint32(18).string(message.comment);
     }
+    writer.uint32(26).fork();
+    for (const v of message.flags) {
+      writer.int32(v);
+    }
+    writer.join();
     return writer;
   },
 
@@ -2336,6 +2408,24 @@ export const ScheduleReserveRequest: MessageFns<ScheduleReserveRequest> = {
           message.comment = reader.string();
           continue;
         }
+        case 3: {
+          if (tag === 24) {
+            message.flags.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 26) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.flags.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2351,6 +2441,9 @@ export const ScheduleReserveRequest: MessageFns<ScheduleReserveRequest> = {
         ? object.unitNames.map((e: any) => globalThis.String(e))
         : [],
       comment: isSet(object.comment) ? globalThis.String(object.comment) : "",
+      flags: globalThis.Array.isArray(object?.flags)
+        ? object.flags.map((e: any) => scheduleReserveRequest_ReserveFlagFromJSON(e))
+        : [],
     };
   },
 
@@ -2362,6 +2455,9 @@ export const ScheduleReserveRequest: MessageFns<ScheduleReserveRequest> = {
     if (message.comment !== "") {
       obj.comment = message.comment;
     }
+    if (message.flags?.length) {
+      obj.flags = message.flags.map((e) => scheduleReserveRequest_ReserveFlagToJSON(e));
+    }
     return obj;
   },
 
@@ -2372,6 +2468,7 @@ export const ScheduleReserveRequest: MessageFns<ScheduleReserveRequest> = {
     const message = createBaseScheduleReserveRequest() as any;
     message.unitNames = object.unitNames?.map((e) => e) || [];
     message.comment = object.comment ?? "";
+    message.flags = object.flags?.map((e) => e) || [];
     return message;
   },
 };
@@ -4499,6 +4596,252 @@ export const GetRepairMetricsDimensionsResponse_DimensionsEntry: MessageFns<
     message.value = (object.value !== undefined && object.value !== null)
       ? GetRepairMetricsDimensionsResponse_Values.fromPartial(object.value)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseUpdateChromeOSDeviceRequest(): UpdateChromeOSDeviceRequest {
+  return { deviceId: "", edits: undefined, updateMask: undefined, requestId: "" };
+}
+
+export const UpdateChromeOSDeviceRequest: MessageFns<UpdateChromeOSDeviceRequest> = {
+  encode(message: UpdateChromeOSDeviceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.deviceId !== "") {
+      writer.uint32(10).string(message.deviceId);
+    }
+    if (message.edits !== undefined) {
+      DeviceConfigEdits.encode(message.edits, writer.uint32(18).fork()).join();
+    }
+    if (message.updateMask !== undefined) {
+      FieldMask.encode(FieldMask.wrap(message.updateMask), writer.uint32(26).fork()).join();
+    }
+    if (message.requestId !== "") {
+      writer.uint32(34).string(message.requestId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateChromeOSDeviceRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateChromeOSDeviceRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.deviceId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.edits = DeviceConfigEdits.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.updateMask = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.requestId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateChromeOSDeviceRequest {
+    return {
+      deviceId: isSet(object.deviceId) ? globalThis.String(object.deviceId) : "",
+      edits: isSet(object.edits) ? DeviceConfigEdits.fromJSON(object.edits) : undefined,
+      updateMask: isSet(object.updateMask) ? FieldMask.unwrap(FieldMask.fromJSON(object.updateMask)) : undefined,
+      requestId: isSet(object.requestId) ? globalThis.String(object.requestId) : "",
+    };
+  },
+
+  toJSON(message: UpdateChromeOSDeviceRequest): unknown {
+    const obj: any = {};
+    if (message.deviceId !== "") {
+      obj.deviceId = message.deviceId;
+    }
+    if (message.edits !== undefined) {
+      obj.edits = DeviceConfigEdits.toJSON(message.edits);
+    }
+    if (message.updateMask !== undefined) {
+      obj.updateMask = FieldMask.toJSON(FieldMask.wrap(message.updateMask));
+    }
+    if (message.requestId !== "") {
+      obj.requestId = message.requestId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateChromeOSDeviceRequest>): UpdateChromeOSDeviceRequest {
+    return UpdateChromeOSDeviceRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateChromeOSDeviceRequest>): UpdateChromeOSDeviceRequest {
+    const message = createBaseUpdateChromeOSDeviceRequest() as any;
+    message.deviceId = object.deviceId ?? "";
+    message.edits = (object.edits !== undefined && object.edits !== null)
+      ? DeviceConfigEdits.fromPartial(object.edits)
+      : undefined;
+    message.updateMask = object.updateMask ?? undefined;
+    message.requestId = object.requestId ?? "";
+    return message;
+  },
+};
+
+function createBaseDeviceConfigEdits(): DeviceConfigEdits {
+  return { pools: [] };
+}
+
+export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
+  encode(message: DeviceConfigEdits, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.pools) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeviceConfigEdits {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeviceConfigEdits() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.pools.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeviceConfigEdits {
+    return { pools: globalThis.Array.isArray(object?.pools) ? object.pools.map((e: any) => globalThis.String(e)) : [] };
+  },
+
+  toJSON(message: DeviceConfigEdits): unknown {
+    const obj: any = {};
+    if (message.pools?.length) {
+      obj.pools = message.pools;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeviceConfigEdits>): DeviceConfigEdits {
+    return DeviceConfigEdits.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeviceConfigEdits>): DeviceConfigEdits {
+    const message = createBaseDeviceConfigEdits() as any;
+    message.pools = object.pools?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseUpdateChromeOSDeviceResponse(): UpdateChromeOSDeviceResponse {
+  return { device: undefined, deployTaskUrl: "" };
+}
+
+export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceResponse> = {
+  encode(message: UpdateChromeOSDeviceResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.device !== undefined) {
+      Device.encode(message.device, writer.uint32(10).fork()).join();
+    }
+    if (message.deployTaskUrl !== "") {
+      writer.uint32(18).string(message.deployTaskUrl);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateChromeOSDeviceResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateChromeOSDeviceResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.device = Device.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.deployTaskUrl = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateChromeOSDeviceResponse {
+    return {
+      device: isSet(object.device) ? Device.fromJSON(object.device) : undefined,
+      deployTaskUrl: isSet(object.deployTaskUrl) ? globalThis.String(object.deployTaskUrl) : "",
+    };
+  },
+
+  toJSON(message: UpdateChromeOSDeviceResponse): unknown {
+    const obj: any = {};
+    if (message.device !== undefined) {
+      obj.device = Device.toJSON(message.device);
+    }
+    if (message.deployTaskUrl !== "") {
+      obj.deployTaskUrl = message.deployTaskUrl;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateChromeOSDeviceResponse>): UpdateChromeOSDeviceResponse {
+    return UpdateChromeOSDeviceResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateChromeOSDeviceResponse>): UpdateChromeOSDeviceResponse {
+    const message = createBaseUpdateChromeOSDeviceResponse() as any;
+    message.device = (object.device !== undefined && object.device !== null)
+      ? Device.fromPartial(object.device)
+      : undefined;
+    message.deployTaskUrl = object.deployTaskUrl ?? "";
     return message;
   },
 };

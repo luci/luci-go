@@ -16,6 +16,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { ScheduleReserveRequest_ReserveFlag } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { useAdminTaskPermission } from '../shared/use_admin_task_permission';
@@ -271,5 +272,56 @@ describe('<RunReserve />', () => {
     expect(
       screen.queryByText(/Please confirm that you want to reserve/),
     ).toBeNull();
+  });
+
+  it('triggers ScheduleReserve RPC with LATEST flag when latest is checked', async () => {
+    mockScheduleReserve.mockResolvedValue({
+      sessionId: 'test-session-id',
+      results: [
+        {
+          unitName: 'device-1',
+          taskUrl: 'https://milo/task-1',
+        },
+      ],
+    });
+
+    render(
+      <FakeContextProvider>
+        <RunReserve selectedDuts={selectedDuts} />
+      </FakeContextProvider>,
+    );
+
+    // Open Dialog
+    fireEvent.click(screen.getByRole('button', { name: 'Reserve' }));
+
+    // Type a comment
+    const input = await screen.findByLabelText(/Comment/i);
+    fireEvent.change(input, { target: { value: 'My custom reason' } });
+
+    // Check "Use latest reserve version"
+    const latestCheckbox = screen.getByRole('checkbox', {
+      name: 'Use latest reserve version',
+    });
+    fireEvent.click(latestCheckbox);
+
+    // Verify equivalent shivas command contains -latest
+    expect(
+      screen.getByText(
+        /shivas reserve-duts -comment "My custom reason" -latest device-1/,
+      ),
+    ).toBeVisible();
+
+    // Click Confirm
+    const confirmButton = screen.getByRole('button', { name: 'Confirm' });
+    fireEvent.click(confirmButton);
+
+    // Verify ScheduleReserve called with LATEST flag
+    await waitFor(() => {
+      expect(mockScheduleReserve).toHaveBeenCalledWith({
+        unitNames: ['device-1'],
+        comment: 'My custom reason',
+        flags: [ScheduleReserveRequest_ReserveFlag.LATEST],
+      });
+    });
   });
 });

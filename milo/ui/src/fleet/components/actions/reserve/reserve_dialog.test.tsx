@@ -38,6 +38,8 @@ describe('<ReserveDialog />', () => {
       comment: 'Testing',
       handleCommentChange: handleCommentChangeMock,
       sessionInfo: {},
+      latest: false,
+      handleLatestChange: jest.fn(),
     };
   });
 
