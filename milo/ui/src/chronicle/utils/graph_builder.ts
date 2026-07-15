@@ -81,7 +81,9 @@ const DEPENDENCY_EDGE_STYLE: Partial<Edge> = {
     type: MarkerType.ArrowClosed,
     color: '#B0BEC5',
   },
-  style: { strokeWidth: 1.5, stroke: '#B0BEC5' },
+  style: { strokeWidth: 1.5, stroke: '#B0BEC5', pointerEvents: 'none' },
+  interactionWidth: 0,
+  focusable: false,
 };
 
 const ASSIGNMENT_EDGE_STYLE: Partial<Edge> = {
@@ -89,12 +91,21 @@ const ASSIGNMENT_EDGE_STYLE: Partial<Edge> = {
     type: MarkerType.ArrowClosed,
     color: '#B0BEC5',
   },
-  style: { strokeWidth: 1, stroke: '#abd3e7ff', strokeDasharray: '5 3' },
+  style: {
+    strokeWidth: 1,
+    stroke: '#abd3e7ff',
+    strokeDasharray: '5 3',
+    pointerEvents: 'none',
+  },
+  interactionWidth: 0,
+  focusable: false,
   zIndex: 0,
 };
 
 const ASSIGNMENT_EDGE_STYLE_INVISIBLE: Partial<Edge> = {
   style: { strokeWidth: 0, pointerEvents: 'none' },
+  interactionWidth: 0,
+  focusable: false,
 };
 
 // Common base styles for all nodes

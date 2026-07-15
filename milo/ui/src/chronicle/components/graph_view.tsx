@@ -87,6 +87,7 @@ const HIGHLIGHTED_NODE_STYLE = {
 const HIGHLIGHTED_EDGE_STYLE = {
   stroke: '#007bff',
   strokeWidth: 3,
+  pointerEvents: 'none' as const,
 };
 
 let graphWorkerPolicy: TrustedTypePolicy;

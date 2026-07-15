@@ -241,6 +241,9 @@ describe('TurboCIGraphBuilder', () => {
       expect(edges[0].id).toBe('dep-C1-S1');
       expect(edges[0].source).toBe('C1'); // The dependency
       expect(edges[0].target).toBe('S1'); // The dependent
+      expect(edges[0].style?.pointerEvents).toBe('none');
+      expect(edges[0].interactionWidth).toBe(0);
+      expect(edges[0].focusable).toBe(false);
     });
 
     it('should handle stage-to-stage dependencies', () => {
@@ -400,9 +403,15 @@ describe('TurboCIGraphBuilder', () => {
       expect(edges[0].id).toBe('assignment-S_Multi-C1');
       expect(edges[0].data?.isAssignment).toBeTruthy();
       expect(edges[0].style?.strokeWidth).toBe(1);
+      expect(edges[0].style?.pointerEvents).toBe('none');
+      expect(edges[0].interactionWidth).toBe(0);
+      expect(edges[0].focusable).toBe(false);
       expect(edges[1].id).toBe('assignment-S_Multi-C2');
       expect(edges[1].data?.isAssignment).toBeTruthy();
       expect(edges[1].style?.strokeWidth).toBe(1);
+      expect(edges[1].style?.pointerEvents).toBe('none');
+      expect(edges[1].interactionWidth).toBe(0);
+      expect(edges[1].focusable).toBe(false);
     });
 
     it('draws invisible assignment edges when showAssignmentEdges is false', () => {
@@ -434,9 +443,15 @@ describe('TurboCIGraphBuilder', () => {
       expect(edges[0].id).toBe('assignment-S_Multi-C1');
       expect(edges[0].data?.isAssignment).toBeTruthy();
       expect(edges[0].style?.strokeWidth).toBe(0);
+      expect(edges[0].style?.pointerEvents).toBe('none');
+      expect(edges[0].interactionWidth).toBe(0);
+      expect(edges[0].focusable).toBe(false);
       expect(edges[1].id).toBe('assignment-S_Multi-C2');
       expect(edges[1].data?.isAssignment).toBeTruthy();
       expect(edges[1].style?.strokeWidth).toBe(0);
+      expect(edges[1].style?.pointerEvents).toBe('none');
+      expect(edges[1].interactionWidth).toBe(0);
+      expect(edges[1].focusable).toBe(false);
     });
 
     it('should treat stages assigned to zero checks as standalone', () => {
