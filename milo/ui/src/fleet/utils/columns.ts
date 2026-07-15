@@ -37,8 +37,8 @@ const sortingComparator = (
   platform: Platform,
   a: string,
   b: string,
-  visibleColumnIds: string[],
-  temporaryColumnIds: string[],
+  visibleColumnIds: readonly string[],
+  temporaryColumnIds: readonly string[],
 ) => {
   const aIsVisible = visibleColumnIds.includes(a) ? 1 : 0;
   const bIsVisible = visibleColumnIds.includes(b) ? 1 : 0;
@@ -71,8 +71,8 @@ const sortingComparator = (
 export const orderMRTColumns = <TData extends MRT_RowData>(
   platform: Platform,
   columnDefs: MRT_ColumnDef<TData>[],
-  visibleColumnIds: string[] = [],
-  temporaryColumnIds: string[] = [],
+  visibleColumnIds: readonly string[] = [],
+  temporaryColumnIds: readonly string[] = [],
 ): MRT_ColumnDef<TData>[] => {
   return [...columnDefs].sort((a, b) => {
     const aId = (a.id || a.accessorKey) as string;

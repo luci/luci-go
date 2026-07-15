@@ -247,4 +247,26 @@ describe('useChromeOSColumns', () => {
     // and merged into visibleColumnIds, and then added to availableColumns if missing.
     expect(availableColumnIds).toContain('label-pool');
   });
+
+  it('should not prune columns or warn while useChromeOSFields is loading', () => {
+    (useChromeOSFields as jest.Mock).mockReturnValue({
+      availableFields: [],
+      isLoading: true,
+    });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(
+      () => useChromeOSColumns(undefined, false, false),
+      {
+        wrapper,
+      },
+    );
+
+    expect(result.current.mrtColumnManager.warnings).toEqual([]);
+  });
 });

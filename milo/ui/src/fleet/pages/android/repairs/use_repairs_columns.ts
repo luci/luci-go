@@ -13,14 +13,10 @@
 // limitations under the License.
 
 import { MRT_ColumnDef } from 'material-react-table';
-import { useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 
-import {
-  useMRTColumnManagement,
-  getColumnId,
-} from '@/fleet/components/columns/use_mrt_column_management';
+import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
-import { useWarnings } from '@/fleet/utils/use_warnings';
 
 import { COLUMNS } from './repairs_columns';
 import { Row } from './repairs_columns.utils';
@@ -35,54 +31,16 @@ export const useRepairsColumns = (
   );
   const defaultColumnIds = useMemo(() => Object.keys(COLUMNS), []);
 
-  // TODO(b/524930584): This block (calculating highlighted column IDs based on active filters)
-  // is conceptually identical across ChromeOS, Browser, and RRI column hooks, and could be unified.
-  const highlightedColumnIds = useMemo(
-    () =>
-      filterValues === undefined
-        ? []
-        : Object.entries(filterValues)
-            .filter(([_key, filter]) => filter.isActive())
-            .map(([key]) => key),
-    [filterValues],
-  );
-
   const mrtColumnManager = useMRTColumnManagement({
     columns: availableColumns,
     defaultColumnIds,
     localStorageKey: 'fleet-console-repairs-columns',
-    highlightedColumnIds,
+    filterValues,
+    isLoadingFilters,
   });
-
-  const [warnings, addWarning] = useWarnings();
-
-  // TODO(b/524930584): This validation and warning synchronizer is identical across ChromeOS,
-  // Browser, and RRI column hooks, and could be moved to a shared hook or integrated into useMRTColumnManagement.
-  // Validates the column search parameters and alerts the user of any invalid columns.
-  // This is purely for validation and UI alert purposes. Syncing of columns between
-  // the URL and local state is handled entirely inside useMRTColumnManagement.
-  useEffect(() => {
-    if (isLoadingFilters) return;
-
-    const invalidCols = mrtColumnManager.visibleColumnIds.filter(
-      (id) => !availableColumns.some((col) => getColumnId(col) === id),
-    );
-
-    if (invalidCols.length === 0) return;
-
-    addWarning(
-      `The following columns are not available: ${invalidCols.join(', ')}`,
-    );
-
-    mrtColumnManager.setVisibleColumnIds(
-      mrtColumnManager.visibleColumnIds.filter(
-        (id) => !invalidCols.includes(id),
-      ),
-    );
-  }, [addWarning, availableColumns, isLoadingFilters, mrtColumnManager]);
 
   return {
     mrtColumnManager,
-    warnings,
+    warnings: mrtColumnManager.warnings,
   };
 };

@@ -20,8 +20,11 @@ import {
 } from 'material-react-table';
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 
+import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
+import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { orderMRTColumns } from '@/fleet/utils/columns';
+import { useWarnings } from '@/fleet/utils/use_warnings';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
@@ -42,6 +45,7 @@ export interface MrtColumnManager<TColumnDef> {
   selectOnlyColumn: (id: string) => void;
   allColumns: { id: string; label: string }[];
   resetDefaultColumns: () => void;
+  warnings: string[];
 }
 
 export const highlightedColumnClassName = 'column-highlight';
@@ -74,6 +78,7 @@ export interface UseMRTColumnManagementProps<
     header?: unknown;
     meta?: unknown;
     enableHiding?: boolean;
+    filterKey?: string;
   } = MRT_ColumnDef<_TData>,
 > {
   columns: TColumnDef[];
@@ -81,10 +86,17 @@ export interface UseMRTColumnManagementProps<
   defaultColumnIds: string[];
   // Key for local storage persistence
   localStorageKey: string;
-  // IDs of columns that are currently filtered and should be highlighted
+  // Active filter values to automatically highlight columns and sync warnings
+  filterValues?: Record<string, FilterCategory> | undefined;
+  isLoadingColumns?: boolean;
+  isLoadingFilters?: boolean;
+  isLoadingDevices?: boolean;
+  // IDs of columns that are currently filtered and should be highlighted (manual override)
   highlightedColumnIds?: readonly string[];
   platform?: Platform;
 }
+
+const EMPTY_ARRAY: readonly string[] = [];
 
 export function useMRTColumnManagement<
   _TData extends MRT_RowData,
@@ -94,12 +106,17 @@ export function useMRTColumnManagement<
     header?: unknown;
     meta?: unknown;
     enableHiding?: boolean;
+    filterKey?: string;
   } = MRT_ColumnDef<_TData>,
 >({
   columns: rawColumns,
   defaultColumnIds,
   localStorageKey,
-  highlightedColumnIds = [],
+  filterValues,
+  isLoadingColumns = false,
+  isLoadingFilters = false,
+  isLoadingDevices = false,
+  highlightedColumnIds: manualHighlightedColumnIds,
   platform,
 }: UseMRTColumnManagementProps<_TData, TColumnDef>) {
   const defaultColumnIdsRef = useRef(defaultColumnIds);
@@ -114,10 +131,39 @@ export function useMRTColumnManagement<
     sanitizeColumnIds,
   );
 
-  const temporaryColumnIds = useMemo(
-    () => highlightedColumnIds.filter((col) => !visibleColumnIds.includes(col)),
-    [highlightedColumnIds, visibleColumnIds],
-  );
+  const filterByFieldToId = useMemo(() => {
+    const fromFieldId = new Map<string, string>();
+    rawColumns.forEach((c) => {
+      const cId = getColumnId(c);
+      const filterKey = c.filterKey || cId;
+      if (filterKey && cId) {
+        fromFieldId.set(normalizeFilterKey(filterKey), cId);
+        fromFieldId.set(filterKey, cId);
+      }
+    });
+    return fromFieldId;
+  }, [rawColumns]);
+
+  const highlightedColumnIds = useMemo(() => {
+    if (manualHighlightedColumnIds) return manualHighlightedColumnIds;
+    if (!filterValues) return EMPTY_ARRAY;
+    const mapped = Object.entries(filterValues)
+      .filter(([, cat]) => cat.isActive())
+      .map(([key]) => {
+        const norm = normalizeFilterKey(key);
+        return (
+          filterByFieldToId.get(norm) || filterByFieldToId.get(key) || norm
+        );
+      });
+    return Array.from(new Set(mapped));
+  }, [filterValues, filterByFieldToId, manualHighlightedColumnIds]);
+
+  const temporaryColumnIds = useMemo(() => {
+    if (highlightedColumnIds.length === 0) return EMPTY_ARRAY;
+    return highlightedColumnIds.filter(
+      (col) => !visibleColumnIds.includes(col),
+    );
+  }, [highlightedColumnIds, visibleColumnIds]);
 
   const [internalVisibility, setInternalVisibility] =
     useState<MRT_VisibilityState>({});
@@ -255,6 +301,34 @@ export function useMRTColumnManagement<
     setVisibleColumnIds([...defaultColumnIdsRef.current]);
   }, [setVisibleColumnIds]);
 
+  const [warnings, addWarning] = useWarnings();
+
+  useEffect(() => {
+    if (isLoadingColumns || isLoadingFilters || isLoadingDevices) return;
+
+    const invalidCols = visibleColumnIds.filter(
+      (id) => !rawColumns.some((col) => getColumnId(col) === id),
+    );
+
+    if (invalidCols.length === 0) return;
+
+    addWarning(
+      `The following columns are not available: ${invalidCols.join(', ')}`,
+    );
+
+    setVisibleColumnIds((prev) =>
+      prev.filter((id) => !invalidCols.includes(id)),
+    );
+  }, [
+    addWarning,
+    rawColumns,
+    visibleColumnIds,
+    isLoadingColumns,
+    isLoadingFilters,
+    isLoadingDevices,
+    setVisibleColumnIds,
+  ]);
+
   return useMemo(
     () => ({
       columns,
@@ -266,6 +340,7 @@ export function useMRTColumnManagement<
       selectOnlyColumn,
       allColumns,
       resetDefaultColumns,
+      warnings,
     }),
     [
       columns,
@@ -277,6 +352,7 @@ export function useMRTColumnManagement<
       selectOnlyColumn,
       allColumns,
       resetDefaultColumns,
+      warnings,
     ],
   );
 }

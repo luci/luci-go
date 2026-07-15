@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Alert } from '@mui/material';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 export const useWarnings = () => {
   const [warnings, setWarnings] = useState<Record<string, NodeJS.Timeout>>({});
@@ -28,8 +28,8 @@ export const useWarnings = () => {
       const t = setTimeout(
         () =>
           setWarnings((warnings) => {
-            delete warnings[newWarning];
-            return { ...warnings };
+            const { [newWarning]: _, ...rest } = warnings;
+            return rest;
           }),
         5_000,
       );
@@ -37,7 +37,13 @@ export const useWarnings = () => {
     });
   }, []);
 
-  return [Object.keys(warnings), addWarning] as const;
+  const warningKeysStr = Object.keys(warnings).sort().join('\0');
+  const warningKeys = useMemo(
+    () => (warningKeysStr ? warningKeysStr.split('\0') : []),
+    [warningKeysStr],
+  );
+
+  return [warningKeys, addWarning] as const;
 };
 
 export const WarningNotifications = ({ warnings }: { warnings: string[] }) => (

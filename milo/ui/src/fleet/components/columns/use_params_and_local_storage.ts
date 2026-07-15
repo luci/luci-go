@@ -123,37 +123,51 @@ export const useParamsAndLocalStorage = (
     defaultValue,
   ]);
 
-  const setter = (update: string[] | ((prev: string[]) => string[])) => {
-    let newList: string[];
-    if (typeof update === 'function') {
-      newList = update(stateRef.current);
-    } else {
-      newList = update;
-    }
-    const sanitizedList = getSanitizedValue(newList);
+  const setter = useCallback(
+    (update: string[] | ((prev: string[]) => string[])) => {
+      let newList: string[];
+      if (typeof update === 'function') {
+        newList = update(stateRef.current);
+      } else {
+        newList = update;
+      }
+      const sanitizedList = getSanitizedValue(newList);
 
-    // Optimistic update
-    stateRef.current = sanitizedList;
-    setSyncedState(sanitizedList);
+      if (_.isEqual(sanitizedList, stateRef.current)) {
+        return;
+      }
 
-    setSearchParams(
-      (prevSearchParams) => {
-        const newState = getNewStates(
-          sanitizedList,
-          prevSearchParams,
-          searchParamsKey,
-          defaultValue,
-        );
-        if (newState.localStorage === undefined) {
-          clearLocalStorage();
-        } else {
-          setLocalStorageState(newState.localStorage);
-        }
-        return newState.searchParams;
-      },
-      { replace: true },
-    );
-  };
+      // Optimistic update
+      stateRef.current = sanitizedList;
+      setSyncedState(sanitizedList);
+
+      setSearchParams(
+        (prevSearchParams) => {
+          const newState = getNewStates(
+            sanitizedList,
+            prevSearchParams,
+            searchParamsKey,
+            defaultValue,
+          );
+          if (newState.localStorage === undefined) {
+            clearLocalStorage();
+          } else {
+            setLocalStorageState(newState.localStorage);
+          }
+          return newState.searchParams;
+        },
+        { replace: true },
+      );
+    },
+    [
+      getSanitizedValue,
+      setSearchParams,
+      searchParamsKey,
+      defaultValue,
+      clearLocalStorage,
+      setLocalStorageState,
+    ],
+  );
 
   return [syncedState, setter];
 };

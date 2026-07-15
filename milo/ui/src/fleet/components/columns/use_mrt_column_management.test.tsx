@@ -192,4 +192,158 @@ describe('useMRTColumnManagement', () => {
     )?.isTemporary;
     expect(isCol2Temp).toBe(true);
   });
+
+  it('derives highlighted columns automatically from active filter values', () => {
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1'],
+      jest.fn(),
+    ]);
+
+    const mockFilterValues = {
+      labels: {
+        isActive: () => true,
+      },
+      inactive_filter: {
+        isActive: () => false,
+      },
+    } as unknown as Record<
+      string,
+      import('@/fleet/components/filters/use_filters').FilterCategory
+    >;
+
+    const columnsWithFilterKey = [
+      ...mockColumns,
+      { id: 'labels_column', filterKey: 'labels' },
+    ];
+
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: columnsWithFilterKey,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        filterValues: mockFilterValues,
+      }),
+    );
+
+    // labels_column should become visible/temporary because its filter is active
+    expect(result.current.columnVisibility.labels_column).toBe(true);
+    const colDef = result.current.columns.find(
+      (c) => c.id === 'labels_column',
+    ) as { meta?: unknown } | undefined;
+    const meta = colDef?.meta as
+      | { isHighlighted?: boolean; isTemporary?: boolean }
+      | undefined;
+    expect(meta?.isHighlighted).toBe(true);
+    expect(meta?.isTemporary).toBe(true);
+  });
+
+  it('prunes invalid visible columns and adds warning when not loading', () => {
+    const setVisibleIds = jest.fn();
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1', 'nonexistent_col'],
+      setVisibleIds,
+    ]);
+
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+      }),
+    );
+
+    const updater = setVisibleIds.mock.calls[0][0];
+    expect(typeof updater).toBe('function');
+    let pruned: string[] = [];
+    act(() => {
+      pruned = updater(['col1', 'nonexistent_col']);
+    });
+    expect(pruned).toEqual(['col1']);
+    expect(result.current.warnings).toEqual([
+      'The following columns are not available: nonexistent_col',
+    ]);
+  });
+
+  it('suppresses invalid column pruning when isLoadingColumns is true', () => {
+    const setVisibleIds = jest.fn();
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1', 'nonexistent_col'],
+      setVisibleIds,
+    ]);
+
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        isLoadingColumns: true,
+      }),
+    );
+
+    expect(setVisibleIds).not.toHaveBeenCalled();
+    expect(result.current.warnings).toEqual([]);
+  });
+
+  it('suppresses invalid column pruning when isLoadingFilters or isLoadingDevices is true', () => {
+    const setVisibleIds = jest.fn();
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1', 'nonexistent_col'],
+      setVisibleIds,
+    ]);
+
+    const { result: resultFilters } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        isLoadingFilters: true,
+      }),
+    );
+    expect(setVisibleIds).not.toHaveBeenCalled();
+    expect(resultFilters.current.warnings).toEqual([]);
+
+    const { result: resultDevices } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        isLoadingDevices: true,
+      }),
+    );
+    expect(setVisibleIds).not.toHaveBeenCalled();
+    expect(resultDevices.current.warnings).toEqual([]);
+  });
+
+  it('prioritizes manual highlightedColumnIds over filterValues', () => {
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1'],
+      jest.fn(),
+    ]);
+
+    const mockFilterValues = {
+      labels: {
+        isActive: () => true,
+      },
+    } as unknown as Record<
+      string,
+      import('@/fleet/components/filters/use_filters').FilterCategory
+    >;
+
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        filterValues: mockFilterValues,
+        highlightedColumnIds: ['col2'],
+      }),
+    );
+
+    expect(result.current.columnVisibility.col2).toBe(true);
+    const col2Def = result.current.columns.find((c) => c.id === 'col2') as
+      | { meta?: unknown }
+      | undefined;
+    const col2Meta = col2Def?.meta as { isHighlighted?: boolean } | undefined;
+    expect(col2Meta?.isHighlighted).toBe(true);
+  });
 });
