@@ -213,6 +213,16 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 		}
 	}
 
+	allowedBgs, err := config.GetAllowedBuilderGroupsForCompile(c, project)
+	if err != nil {
+		return errors.Fmt("get allowed builder groups for compile: %w", err)
+	}
+	if len(allowedBgs) > 0 && !slices.Contains(allowedBgs, builderGroup) {
+		logging.Debugf(c, "Builder group %s is not in allowed builder groups list. Exiting early...", builderGroup)
+		bbCounter.Add(c, 1, project, string(OutcomeTypeUnsupported))
+		return nil
+	}
+
 	// Just ignore non-successful and non-failed builds
 	if status != buildbucketpb.Status_SUCCESS && status != buildbucketpb.Status_FAILURE {
 		logging.Debugf(c, "Build status = %s. Exiting early...", status)

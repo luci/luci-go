@@ -42,6 +42,14 @@ func GetAllowedBuildersForCompile(ctx context.Context, project string) ([]string
 	return cfg.CompileAnalysisConfig.GetFailureIngestionFilter().GetAllowedBuilders(), nil
 }
 
+func GetAllowedBuilderGroupsForCompile(ctx context.Context, project string) ([]string, error) {
+	cfg, err := Project(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.CompileAnalysisConfig.GetFailureIngestionFilter().GetAllowedBuilderGroups(), nil
+}
+
 func GetExcludedBuilderGroupsForTest(ctx context.Context, project string) ([]string, error) {
 	cfg, err := Project(ctx, project)
 	if err != nil {
@@ -64,4 +72,12 @@ func GetAllowedBuildersForTest(ctx context.Context, project string) ([]string, e
 		return nil, err
 	}
 	return cfg.TestAnalysisConfig.GetFailureIngestionFilter().GetAllowedBuilders(), nil
+}
+
+func GetAllowedBuilderGroupsForTest(ctx context.Context, project string) ([]string, error) {
+	cfg, err := Project(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.TestAnalysisConfig.GetFailureIngestionFilter().GetAllowedBuilderGroups(), nil
 }
