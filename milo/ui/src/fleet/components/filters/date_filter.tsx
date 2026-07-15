@@ -241,7 +241,7 @@ export class DateFilterCategoryDataBuilder
     return this;
   }
 
-  public isFilledIn() {
+  public isFilledIn(): boolean {
     return this.label !== undefined;
   }
 
@@ -250,7 +250,8 @@ export class DateFilterCategoryDataBuilder
     reRender: (newFilter: DateFilterCategoryData) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ): BuildResult<DateFilterCategoryData> {
-    if (!this.isFilledIn()) {
+    const { label, isDateOnly } = this;
+    if (label === undefined) {
       return {
         isError: true,
         error: 'DateFilterCategoryDataBuilder is not filled in',
@@ -258,11 +259,11 @@ export class DateFilterCategoryDataBuilder
     }
 
     return DateFilterCategoryData.create(
-      this.label!,
+      label,
       key,
       reRender,
       terms,
-      this.isDateOnly,
+      isDateOnly,
     );
   }
 }

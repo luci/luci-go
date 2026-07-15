@@ -711,7 +711,7 @@ export class StringListFilterCategoryBuilder
     return this;
   }
 
-  public isFilledIn() {
+  public isFilledIn(): boolean {
     return this.label !== undefined && this.options !== undefined;
   }
 
@@ -720,7 +720,8 @@ export class StringListFilterCategoryBuilder
     reRender: (newFilter: StringListFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ): BuildResult<StringListFilterCategory> {
-    if (!this.isFilledIn()) {
+    const { label, options, defaultOptions, comparator } = this;
+    if (label === undefined || options === undefined) {
       return {
         isError: true,
         error: 'StringListFilterCategoryBuilder is not filled in',
@@ -728,13 +729,13 @@ export class StringListFilterCategoryBuilder
     }
 
     return StringListFilterCategory.create(
-      this.label!,
+      label,
       key,
-      this.options!,
-      this.defaultOptions,
+      options,
+      defaultOptions,
       reRender,
       terms,
-      this.comparator,
+      comparator,
     );
   }
 }

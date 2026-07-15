@@ -241,7 +241,7 @@ export class RangeFilterCategoryBuilder
     return this;
   }
 
-  public isFilledIn() {
+  public isFilledIn(): boolean {
     return (
       this.label !== undefined &&
       this.min !== undefined &&
@@ -254,20 +254,14 @@ export class RangeFilterCategoryBuilder
     reRender: (newFilter: RangeFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ): BuildResult<RangeFilterCategory> {
-    if (!this.isFilledIn()) {
+    const { label, min, max } = this;
+    if (label === undefined || min === undefined || max === undefined) {
       return {
         isError: true,
-        error: `RangeFilterCategoryBuilder is not filled in: ${JSON.stringify(this)}`,
+        error: 'RangeFilterCategoryBuilder is not filled in',
       };
     }
 
-    return RangeFilterCategory.create(
-      this.label!,
-      key,
-      this.min!,
-      this.max!,
-      reRender,
-      terms,
-    );
+    return RangeFilterCategory.create(label, key, min, max, reRender, terms);
   }
 }
