@@ -37,6 +37,7 @@ import {
 } from './components/cards/DeviceDetailsCard';
 import { LogicalSchedulingCard } from './components/cards/LogicalSchedulingCard';
 import { PhysicalLocationCard } from './components/cards/PhysicalLocationCard';
+import { RPMCard, RPMInfo } from './components/cards/RPMCard';
 import {
   ServoHardwareCard,
   ServoInfo,
@@ -101,6 +102,10 @@ export const ChromeOSInventoryData = ({
       (machineLse.data.chromeosMachineLse?.deviceLse?.dut?.peripherals
         ?.servo as ServoInfo) || null;
 
+    const rpm =
+      (machineLse.data.chromeosMachineLse?.deviceLse?.dut?.peripherals
+        ?.rpm as RPMInfo) || null;
+
     const lseData =
       (machineLse.data as unknown as Record<string, unknown>) || {};
 
@@ -133,6 +138,9 @@ export const ChromeOSInventoryData = ({
         </Grid>
         <Grid item xs={12} md={6}>
           <ServoHardwareCard servo={servo} editable={editable} />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <RPMCard rpm={rpm} editable={editable} />
         </Grid>
       </Grid>
     );
