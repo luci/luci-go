@@ -121,6 +121,9 @@ func TestBlobs(t *testing.T) {
 			err = returnBlob(ctx, w, cl, &bd, "test.txt")
 
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, w.Header().Get("Content-Disposition"), should.Equal(`inline; filename=test.txt`))
+			assert.Loosely(t, w.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
+
 			body, err := io.ReadAll(w.Body)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, body, should.Match(b))

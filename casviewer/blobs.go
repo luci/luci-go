@@ -17,6 +17,7 @@ package casviewer
 import (
 	"context"
 	"fmt"
+	"mime"
 	"net/http"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
@@ -70,8 +71,12 @@ func returnBlob(ctx context.Context, w http.ResponseWriter, cl *client.Client, b
 
 	// Set the filename for download.
 	if filename != "" {
-		w.Header().Add("Content-Disposition", fmt.Sprintf("filename=%s", filename))
+		cd := mime.FormatMediaType("inline", map[string]string{"filename": filename})
+		w.Header().Set("Content-Disposition", cd)
 	}
+
+	// Add X-Content-Type-Options: nosniff for defense-in-depth.
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	_, err = w.Write(b)
 	if err != nil {
