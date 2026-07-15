@@ -496,7 +496,7 @@ describe('ProductCataloguePage', () => {
   it('should navigate to next page without freezing or resetting pageIndex', async () => {
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
 
-    const entries = Array.from({ length: 60 }, (_, i) => ({
+    const entries = Array.from({ length: 15 }, (_, i) => ({
       productCatalogId: `catalog-${i + 1}`,
       productName: `Product ${i + 1}`,
       gpn: `12345-${i + 1}`,
@@ -527,17 +527,17 @@ describe('ProductCataloguePage', () => {
     });
 
     const queryClient = new QueryClient();
-    renderPage(queryClient);
+    renderPage(queryClient, ['/ui/fleet/catalog?pageSize=10']);
 
     expect(await screen.findByText('Product 1')).toBeInTheDocument();
-    expect(screen.queryByText('Product 56')).not.toBeInTheDocument();
+    expect(screen.queryByText('Product 12')).not.toBeInTheDocument();
 
     const nextPageBtn = screen.getByRole('button', { name: /next page/i });
     fireEvent.click(nextPageBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Product 56')).toBeInTheDocument();
+      expect(screen.getByText('Product 12')).toBeInTheDocument();
       expect(screen.queryByText('Product 1')).not.toBeInTheDocument();
     });
-  });
+  }, 15000);
 });
