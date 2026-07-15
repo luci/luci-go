@@ -417,22 +417,22 @@ func TestNotify(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, tasks, should.HaveLength(4))
 
-			task := tasks["54-default-jane@example.com"]
+			task := tasks[`54-"default"-"jane@example.com"`]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"jane@example.com"}))
 			assert.Loosely(t, task.Subject, should.Equal("Build 54 completed"))
 			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Build 54 completed with status SUCCESS"))
 
-			task = tasks["54-default-john@example.com"]
+			task = tasks[`54-"default"-"john@example.com"`]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"john@example.com"}))
 			assert.Loosely(t, task.Subject, should.Equal("Build 54 completed"))
 			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Build 54 completed with status SUCCESS"))
 
-			task = tasks["54-non-default-don@example.com"]
+			task = tasks[`54-"non-default"-"don@example.com"`]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"don@example.com"}))
 			assert.Loosely(t, task.Subject, should.Equal("Build 54 completed from non-default template"))
 			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Build 54 completed with status SUCCESS from non-default template"))
 
-			task = tasks["54-with-steps-juan@example.com"]
+			task = tasks[`54-"with-steps"-"juan@example.com"`]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"juan@example.com"}))
 			assert.Loosely(t, task.Subject, should.Equal(`Subject "step name"`))
 			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Body &#34;step name&#34;"))
@@ -771,4 +771,67 @@ func decompress(t testing.TB, gzipped []byte) string {
 	buf, err := io.ReadAll(r)
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return string(buf)
+}
+
+func TestEmailKeyCollision(t *testing.T) {
+	ftt.Run("createEmailTasks handles hyphens in template and email without collision", t, func(c *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		ctx = caching.WithEmptyProcessCache(ctx)
+
+		project := &config.Project{Name: "chromium", Revision: "notify_rev"}
+		templates := []*config.EmailTemplate{
+			{
+				ProjectKey:          datastore.KeyForObj(ctx, project),
+				Name:                "default",
+				SubjectTextTemplate: "Subject",
+				BodyHTMLTemplate:    "Body",
+			},
+			{
+				ProjectKey:          datastore.KeyForObj(ctx, project),
+				Name:                "default-chrome",
+				SubjectTextTemplate: "Subject",
+				BodyHTMLTemplate:    "Body",
+			},
+		}
+		assert.Loosely(c, datastore.Put(ctx, project, templates), should.BeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		input := &notifypb.TemplateInput{
+			Build: &buildbucketpb.Build{
+				Id: 54,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "linux-rel",
+				},
+			},
+		}
+
+		recipients := []EmailNotify{
+			// Attempting key collision by splitting hyphenated target address
+			{Template: "default-chrome", Email: "sheriff@google.com"},
+			// Legitimate configured recipient
+			{Template: "default", Email: "chrome-sheriff@google.com"},
+		}
+
+		// createEmailTasks returns (map[string]*internal.EmailTask, error)
+		tasks, err := createEmailTasks(ctx, recipients, input)
+		assert.Loosely(c, err, should.BeNil)
+		// Verify two distinct tasks were generated
+		assert.Loosely(c, len(tasks), should.Equal(2))
+
+		// Construct expected quoted deduplication keys (map keys)
+		expectedKey1 := `54-"default-chrome"-"sheriff@google.com"`
+		expectedKey2 := `54-"default"-"chrome-sheriff@google.com"`
+
+		// Assert incorrect task is registered under key 1
+		task1, ok1 := tasks[expectedKey1]
+		assert.Loosely(c, ok1, should.BeTrue)
+		assert.Loosely(c, task1.Recipients, should.Resemble([]string{"sheriff@google.com"}))
+
+		// Assert legitimate task is registered under key 2 (not suppressed)
+		task2, ok2 := tasks[expectedKey2]
+		assert.Loosely(c, ok2, should.BeTrue)
+		assert.Loosely(c, task2.Recipients, should.Resemble([]string{"chrome-sheriff@google.com"}))
+	})
 }

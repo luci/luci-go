@@ -97,7 +97,7 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *notify
 			name = mailtmpl.DefaultTemplateName
 		}
 
-		emailKey := fmt.Sprintf("%d-%s-%s", input.Build.Id, name, r.Email)
+		emailKey := fmt.Sprintf("%d-%q-%q", input.Build.Id, name, r.Email)
 		if seen.Has(emailKey) {
 			continue
 		}
