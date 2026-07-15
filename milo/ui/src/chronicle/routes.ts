@@ -12,11 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { RouteObject } from 'react-router';
+import { redirect, RouteObject } from 'react-router';
 
 import { redirectToChildPath } from '@/generic_libs/tools/react_router_utils';
 
 export const chronicleRoutes: RouteObject[] = [
+  // Special redirects to support short links with workplan ID at the end.
+  ...['summary', 'timeline', 'graph', 'tree', 'ledger'].map(
+    (view): RouteObject => ({
+      path: `${view}/:workplanId`,
+      loader: ({ params, request }) => {
+        const url = new URL(request.url);
+        return redirect(
+          `/ui/chronicle/${params.workplanId}/${view}${url.search}${url.hash}`,
+        );
+      },
+    }),
+  ),
+
+  // Canonical routes
   {
     path: ':workplanId',
     lazy: () => import('./pages/chronicle_page'),
