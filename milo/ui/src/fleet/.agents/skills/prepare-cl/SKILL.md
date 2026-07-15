@@ -54,9 +54,10 @@ Progress:
    - Stage changes: `git add <files>`.
    - Commit changes with a descriptive message.
      - **Commit Message Guidelines**:
-       - Title: Short, descriptive summary.
-       - Body: Explain what changed and why. Include business or design context (e.g., "This is needed to support the new Android health layout..."). If it fixes a bug, explain the fix.
-       - Footer: If the change fixes a bug, include reference in the format `Bug: b/XXXXXXX` (note the `b/` prefix).
+       - Title: Short, descriptive summary (<72 chars).
+       - Body: Explain what changed and why (<72 chars per wrapped line). Include business or design context (e.g., "This is needed to support the new Android health layout..."). If it fixes a bug, explain the fix.
+       - Footer: If the change fixes a bug, include reference in the format `Bug: b/XXXXXXX` (note the `b/` prefix). Only include `Bypass-Check-License: <reason>` if touching third-party files where copyright statements cannot be modified; for first-party Chromium/LUCI code failing license checks, always update the header year (`2026`).
+       - `Change-Id`: When committing a brand new branch for the first time (`-F`), **omit `Change-Id:` from the message file entirely** so Gerrit's `commit-msg` hook generates a unique SHA-1 hash. Only include `Change-Id:` when amending (`--amend`) an existing uploaded CL.
      - Example: `git commit -m "[fleet console] Fix CSV export missing columns by preserving URL columns\n\n... details ...\n\nBug: b/515102813"`
 
 3. **Upload UI Demo**:

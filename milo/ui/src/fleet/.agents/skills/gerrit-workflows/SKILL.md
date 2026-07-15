@@ -94,10 +94,15 @@ Progress:
      ```
   This guarantees the branch contains exactly one commit on top of `origin/main` with no unrelated tracking files.
 
-## 3. Preserving Git Rename Tracking
+## 3. Preserving Git Rename Tracking & License Header Hygiene
 
-* When moving or renaming source or test files, keep the file's inner content as close to the original as possible (aim for >90% similarity index) in the renaming commit. This ensures Git's rename detection tracks the history correctly instead of treating it as a deletion and a new file, which simplifies code reviews.
-* Avoid introducing heavy structural refactoring in the same commit as the file move. Perform renames in a dedicated commit first, then apply clean refactoring in subsequent commits.
+* **Preserve Rename Tracking (`R` vs `A`)**: When moving or renaming source or test files, keep the file's inner content as close to the original as possible (aim for >90% similarity index) in the renaming commit. This ensures Git's rename detection tracks the history correctly as a Rename (`R`) rather than an Addition (`A`) and Deletion (`D`), which simplifies code reviews and prevents `PRESUBMIT.py` (`CheckLicense`) from enforcing new-file rules.
+* **Separate Renames from Refactoring**: Avoid introducing heavy structural refactoring in the same commit as the file move. Perform renames in a dedicated commit first, then apply clean refactoring in subsequent commits.
+* **Tiered Copyright Header / Presubmit Governance (`CheckLicense`)**:
+  When touching or renaming existing/legacy code files (`*_OLD.tsx`, `*_deprecated.go`), if `PRESUBMIT.py` (`CheckLicense`) fails on older copyright dates or header formatting, follow this strict tiered hierarchy:
+  1. **Tier 1 (Git Rename Tracking)**: Ensure the commit cleanly tracks the rename (`R`). If Git recognizes the rename or simple modification (`M`), standard Chromium/LUCI presubmits accept any historical year from 2011 to the current year (`2026`).
+  2. **Tier 2 (Update Copyright Header / Year)**: If a first-party file is flagged by `CheckLicense` (e.g., due to strict new-file checks on renames or malformed header syntax), **update the copyright header or bump the year to `2026`** (`// Copyright 2026 The Chromium Authors`). Bringing first-party code headers into compliance is standard, best-practice engineering hygiene.
+  3. **Tier 3 (Last Resort — `Bypass-Check-License`)**: Only append `Bypass-Check-License: <reason>` to the commit description footer if working with external third-party vendor code or imported files where modifying copyright statements is strictly restricted by licensing terms. Never use `Bypass-Check-License` as a default or shortcut on first-party Chromium/LUCI files.
 
 ## 4. Querying Gerrit API (CLI Efficiency)
 
@@ -127,3 +132,10 @@ At the start of any session involving git operations, request persistent prefix 
 * **Action**: `command`
 * **Target**: `git`
 This allows stack management and uploads to run without repeatedly prompting the user.
+
+## 6. Change-Id Lifecycle & Superproject Submodule Safety
+
+* **Change-Id Lifecycle on Initial Commits vs Amends (`invalid Change-Id` prevention)**:
+  When committing a brand new branch (`git checkout -b <branch> origin/main`), **never hardcode or copy a `Change-Id:` from a scratch file or earlier commit description**. Omit `Change-Id:` entirely from your initial commit message file (`-F`) so that Gerrit's `commit-msg` hook generates a unique SHA-1 hash (`Change-Id: I...`). Only include or preserve `Change-Id:` when amending (`--amend`) an already uploaded CL to maintain Patchset continuity.
+* **Preventing Accidental Submodule Staging in Superprojects (`infra/infra`)**:
+  When operating inside superprojects (`infra/infra`), **do NOT run `git commit -a` or `git add -A`**, as this automatically stages local commit pointers for git submodules (`luci`, `go/src/go.chromium.org/...`) and causes Gerrit upload rejections (`unexpected git links`). Always stage specific target file paths (`git add path/to/file.go`), verify with `git status --short`, and recover polluted submodules using `git reset HEAD <submodule_path>` (`git checkout HEAD -- <submodule_path>`) or running `gclient sync` before running `git cl upload`.
