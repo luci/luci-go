@@ -254,7 +254,18 @@ export function AndroidSummaryHeader({
                   px: 1,
                 }}
               >
-                <Typography variant="body2">Utilization</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="body2">Utilization</Typography>
+                  <InfoTooltip>
+                    <Typography variant="body2">
+                      Average or all the average utilizations matching the
+                      current search.
+                      <br />
+                      Devices with missing utilization data are excluded from
+                      this metric.
+                    </Typography>
+                  </InfoTooltip>
+                </Box>
                 <Box
                   sx={{
                     mt: 1,
@@ -265,15 +276,21 @@ export function AndroidSummaryHeader({
                 >
                   <SmallMetricItem
                     label="7 days avg:"
-                    value={data?.average7d ?? 0}
+                    value={data?.average7d}
                     loading={isLoading}
-                    formatValue={(val) => `${val.toFixed(2)}%`}
+                    formatValue={(val) =>
+                      data?.average7d === undefined ? '-' : `${val.toFixed(2)}%`
+                    }
                   />
                   <SmallMetricItem
                     label="30 days avg:"
-                    value={data?.average30d ?? 0}
+                    value={data?.average30d}
                     loading={isLoading}
-                    formatValue={(val) => `${val.toFixed(2)}%`}
+                    formatValue={(val) =>
+                      data?.average30d === undefined
+                        ? '-'
+                        : `${val.toFixed(2)}%`
+                    }
                   />
                 </Box>
               </Box>
