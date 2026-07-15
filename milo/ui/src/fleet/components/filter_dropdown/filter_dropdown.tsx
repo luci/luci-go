@@ -42,6 +42,7 @@ import {
   keyboardListNavigationHandler,
   keyboardFilterDropdownNavigationHandler,
 } from '@/fleet/utils';
+import { shouldIgnoreClickAway } from '@/fleet/utils/click_away';
 import { fuzzySubstring, SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { EllipsisTooltip } from '../ellipsis_tooltip';
@@ -115,6 +116,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const openCategoryRef = useRef<OptionComponentHandle>(null);
   const firstElementRef = useRef<HTMLLIElement>(null);
+  const mainPaperRef = useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -480,13 +482,27 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
       >
         <ClickAwayListener
           onClickAway={(e) => {
-            if (anchorEl && anchorEl.contains(e.target as Node)) {
+            const path =
+              'composedPath' in e && typeof e.composedPath === 'function'
+                ? e.composedPath()
+                : [];
+            // If the click occurred inside the open sub-category popper, do not close
+            if (
+              openCategory &&
+              path.some(
+                (node) =>
+                  node instanceof Element && node.matches('.MuiPopper-root'),
+              )
+            ) {
+              return;
+            }
+            if (shouldIgnoreClickAway(e, anchorEl, mainPaperRef.current)) {
               return;
             }
             closeMenu();
           }}
         >
-          <Paper elevation={2}>
+          <Paper ref={mainPaperRef} elevation={2}>
             <MenuList
               sx={{
                 minWidth: 300,

@@ -33,6 +33,7 @@ import {
 import { flushSync } from 'react-dom';
 
 import { hasAnyModifier, keyboardListNavigationHandler } from '../../utils';
+import { shouldIgnoreClickAway } from '../../utils/click_away';
 import { SearchInput } from '../search_input';
 
 import { Footer } from './footer';
@@ -115,6 +116,7 @@ export function OptionsDropdown({
 }: OptionsDropdownProps) {
   const searchInput = useRef<HTMLInputElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
+  const paperRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const placement = mapOriginToPlacement(anchorOrigin, transformOrigin);
@@ -204,18 +206,14 @@ export function OptionsDropdown({
     >
       <ClickAwayListener
         onClickAway={(e) => {
-          if (
-            anchorEl &&
-            'contains' in anchorEl &&
-            typeof (anchorEl as unknown as Node).contains === 'function' &&
-            (anchorEl as unknown as Node).contains(e.target as Node)
-          ) {
+          if (shouldIgnoreClickAway(e, anchorEl, paperRef.current)) {
             return;
           }
           if (onClose) onClose(e, 'backdropClick');
         }}
       >
         <Paper
+          ref={paperRef}
           elevation={2}
           className="fc-dropdown-container"
           onClick={(e) => e.stopPropagation()}

@@ -146,4 +146,96 @@ describe('OptionsDropdown', () => {
     fireEvent.scroll(window);
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('should close when a click event is triggered from an external detached target outside the dropdown hierarchy', async () => {
+    const onClose = jest.fn();
+    const anchorEl = document.createElement('div');
+    render(
+      <OptionsDropdown
+        open={true}
+        anchorEl={anchorEl}
+        onClose={onClose}
+        onApply={() => {}}
+        renderChild={() => <div>Child</div>}
+      />,
+    );
+
+    // Wait for ClickAwayListener's useEffect activation setTimeout to run
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const detachedButton = document.createElement('button');
+    const event = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+    });
+    Object.defineProperty(event, 'target', {
+      value: detachedButton,
+      enumerable: true,
+    });
+    // Mock composedPath to NOT include any Popper/Paper elements (external click like toast close button)
+    event.composedPath = () => [
+      detachedButton,
+      document.body,
+      document.documentElement,
+      document,
+      window,
+    ];
+
+    document.dispatchEvent(event);
+
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('should NOT close when clicking inside a nested dropdown that unmounts on click', async () => {
+    const onClose = jest.fn();
+    const anchorEl = document.createElement('div');
+
+    const NestedDropdowns = () => {
+      const [childAnchor, setChildAnchor] = useState<HTMLElement | null>(null);
+      return (
+        <OptionsDropdown
+          open={true}
+          anchorEl={anchorEl}
+          onClose={onClose}
+          onApply={() => {}}
+          renderChild={() => (
+            <div>
+              <button onClick={(e) => setChildAnchor(e.currentTarget)}>
+                Open Child
+              </button>
+              <OptionsDropdown
+                open={!!childAnchor}
+                anchorEl={childAnchor}
+                onClose={() => setChildAnchor(null)}
+                onApply={() => {}}
+                renderChild={() => (
+                  <button
+                    data-testid="child-button"
+                    onClick={() => setChildAnchor(null)}
+                  >
+                    Click and Unmount Child
+                  </button>
+                )}
+              />
+            </div>
+          )}
+        />
+      );
+    };
+
+    render(<NestedDropdowns />);
+
+    // Open child dropdown
+    fireEvent.click(screen.getByText('Open Child'));
+    expect(screen.getByTestId('child-button')).toBeInTheDocument();
+
+    // Click inside child dropdown which unmounts it
+    fireEvent.click(screen.getByTestId('child-button'));
+
+    // The child should be unmounted
+    expect(screen.queryByTestId('child-button')).toBeNull();
+
+    // The parent's onClose should NOT have been called!
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });
