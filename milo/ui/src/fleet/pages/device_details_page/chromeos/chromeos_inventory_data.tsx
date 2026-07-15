@@ -36,6 +36,7 @@ import {
   DeviceDetailsInfo,
 } from './components/cards/DeviceDetailsCard';
 import { LogicalSchedulingCard } from './components/cards/LogicalSchedulingCard';
+import { PhysicalLocationCard } from './components/cards/PhysicalLocationCard';
 
 export interface ChromeOSInventoryDataProps {
   device: Device;
@@ -87,7 +88,7 @@ export const ChromeOSInventoryData = ({
     if (!machineLse.data) {
       return <Alert severity="info">No inventory spec data available.</Alert>;
     }
-    const { logicalZone } = machineLse.data;
+    const { logicalZone, zone, rack } = machineLse.data;
 
     const dut = machineLse.data.chromeosMachineLse?.deviceLse?.dut;
     const dutRaw = dut as Record<string, unknown> | undefined;
@@ -118,6 +119,9 @@ export const ChromeOSInventoryData = ({
             hive={hive}
             editable={editable}
           />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <PhysicalLocationCard zone={zone} rack={rack} editable={editable} />
         </Grid>
       </Grid>
     );
