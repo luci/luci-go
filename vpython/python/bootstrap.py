@@ -76,7 +76,7 @@ def try_report_missing_pip(output, report_url):
 virtualenv = glob.glob(
     os.path.join(os.environ['virtualenv'], '*', 'virtualenv.py*'))[0]
 
-virtualenv_flags = ['--no-download', '--always-copy']
+virtualenv_flags = ['--no-download', '--always-copy', '--clear']
 if DISABLE_PERIODIC_UPDATE:
   virtualenv_flags.append('--no-periodic-update')
 
