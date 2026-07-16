@@ -81,6 +81,21 @@ const (
 	OutcomeTypeAnalyze              OutcomeType = "analyze"
 )
 
+// supportedProjectBuckets maps LUCI projects to their supported Buildbucket buckets
+// for compile failure analysis.
+var supportedProjectBuckets = map[string]map[string]bool{
+	"chromium": {
+		"ci": true,
+	},
+	"chrome": {
+		"ci":       true,
+		"official": true,
+	},
+	"dawn": {
+		"ci": true,
+	},
+}
+
 func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buildbucketpb.BuildsV2PubSub) error {
 	if v := msg.Attributes["version"]; v != "v2" {
 		return pubsub.Ignore.Apply(errors.Fmt("got version %q, expected v2", v))
@@ -147,9 +162,10 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 		}
 	}
 
-	// For now, we only handle chromium/ci, chrome/ci and dawn/ci builds
+	// For now, we only handle builds from supported project/bucket combinations.
 	// TODO (nqmtuan): Move this into config
-	if !(project == "chromium" && bucket == "ci") && !(project == "chrome" && bucket == "ci") && !(project == "dawn" && bucket == "ci") {
+	buckets, ok := supportedProjectBuckets[project]
+	if !ok || !buckets[bucket] {
 		logging.Debugf(c, "Unsupported build for bucket (%q, %q). Exiting early...", project, bucket)
 		bbCounter.Add(c, 1, project, string(OutcomeTypeUnsupported))
 		return nil

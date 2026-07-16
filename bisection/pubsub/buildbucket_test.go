@@ -63,6 +63,7 @@ func TestBuildBucketPubsub(t *testing.T) {
 		cfg := map[string]*configpb.ProjectConfig{
 			"chromium": projectCfg,
 			"dawn":     projectCfg,
+			"chrome":   projectCfg,
 		}
 		assert.Loosely(t, config.SetTestProjectConfig(c, cfg), should.BeNil)
 
@@ -122,6 +123,74 @@ func TestBuildBucketPubsub(t *testing.T) {
 			}
 			expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
 			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
+		})
+
+		t.Run("Should create new task for chrome official", func(t *ftt.Test) {
+			c, scheduler := tq.TestingContext(c, nil)
+			largeField, err := largeField("bg")
+			assert.Loosely(t, err, should.BeNil)
+
+			buildPubsub := &buildbucketpb.BuildsV2PubSub{
+				Build: &buildbucketpb.Build{
+					Id: 8002,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "chrome",
+						Bucket:  "official",
+					},
+					Status: buildbucketpb.Status_FAILURE,
+				},
+				BuildLargeFields: largeField,
+			}
+			err = BuildbucketPubSubHandler(c, message, buildPubsub)
+			assert.Loosely(t, err, should.BeNil)
+			// Check that a task was created.
+			task := &taskpb.FailedBuildIngestionTask{
+				Bbid: 8002,
+			}
+			expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
+			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
+		})
+
+		t.Run("Should create new task for chrome ci", func(t *ftt.Test) {
+			c, scheduler := tq.TestingContext(c, nil)
+			largeField, err := largeField("bg")
+			assert.Loosely(t, err, should.BeNil)
+
+			buildPubsub := &buildbucketpb.BuildsV2PubSub{
+				Build: &buildbucketpb.Build{
+					Id: 8003,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "chrome",
+						Bucket:  "ci",
+					},
+					Status: buildbucketpb.Status_FAILURE,
+				},
+				BuildLargeFields: largeField,
+			}
+			err = BuildbucketPubSubHandler(c, message, buildPubsub)
+			assert.Loosely(t, err, should.BeNil)
+			// Check that a task was created.
+			task := &taskpb.FailedBuildIngestionTask{
+				Bbid: 8003,
+			}
+			expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
+			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
+		})
+
+		t.Run("Unsupported bucket for chrome", func(t *ftt.Test) {
+			c, _ := tsmon.WithDummyInMemory(c)
+			buildPubsub := &buildbucketpb.BuildsV2PubSub{
+				Build: &buildbucketpb.Build{
+					Builder: &buildbucketpb.BuilderID{
+						Project: "chrome",
+						Bucket:  "try",
+					},
+					Status: buildbucketpb.Status_FAILURE,
+				},
+			}
+			err := BuildbucketPubSubHandler(c, message, buildPubsub)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bbCounter.Get(c, "chrome", "unsupported"), should.Equal(1))
 		})
 
 		t.Run("Unsupported project", func(t *ftt.Test) {
