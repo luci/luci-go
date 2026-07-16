@@ -177,7 +177,7 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 		if accs, exist := ci.Reviewers["REMOVED"]; exist {
 			ret.Reviewers.Removed = make([]*gerritpb.AccountInfo, len(accs))
 			for i, acc := range accs {
-				ret.Reviewers.Ccs[i] = acc.ToProto()
+				ret.Reviewers.Removed[i] = acc.ToProto()
 			}
 		}
 	}
