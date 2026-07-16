@@ -510,6 +510,7 @@ export function ChronicleContextProvider({
     activeHost || '',
     {
       enabled: !useFakeData && !!activeHost,
+      refetchOnWindowFocus: false,
     },
   );
 
