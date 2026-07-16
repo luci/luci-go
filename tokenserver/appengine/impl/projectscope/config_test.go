@@ -19,11 +19,14 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	configset "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
@@ -95,4 +98,33 @@ func prepareCfg(c context.Context, configFile string) context.Context {
 			"projects.cfg": configFile,
 		},
 	}))
+}
+
+func TestImportIdentities_DeletesRemovedProjects(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("Deletes removed projects", t, func(c *ftt.Test) {
+		ctx := gaetesting.TestingContext()
+		storage := projectidentity.ProjectIdentities(ctx)
+
+		// 1. Seed Datastore with a project before removal
+		err := storage.Update(ctx, &projectidentity.ProjectIdentity{
+			Project: "decom-project",
+			Email:   "decom-sa@example.com",
+		})
+		assert.Loosely(c, err, should.BeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		// 2. Re-sync with projects.cfg where "decom-project" is completely deleted
+		cfg := &config.ProjectsCfg{
+			Projects: []*config.Project{},
+		}
+
+		err = importIdentities(ctx, cfg, false)
+		assert.Loosely(c, err, should.BeNil)
+
+		// 3. Verify decom-project was deleted from Datastore
+		_, err = storage.LookupByProject(ctx, "decom-project")
+		assert.Loosely(c, err, should.Equal(projectidentity.ErrNotFound))
+	})
 }

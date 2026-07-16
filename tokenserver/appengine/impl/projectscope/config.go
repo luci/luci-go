@@ -25,6 +25,7 @@ import (
 	configset "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
@@ -49,9 +50,12 @@ func SetupConfigValidation(rules *validation.RuleSet, useStagingEmail bool) {
 func importIdentities(ctx context.Context, cfg *config.ProjectsCfg, useStagingEmail bool) error {
 	storage := projectidentity.ProjectIdentities(ctx)
 
-	// TODO: Remove entries for projects no longer listed in cfg.Projects.
+	// 1. Track active project IDs present in the incoming config.
+	activeProjects := make(map[string]bool, len(cfg.Projects))
 	var merr errors.MultiError
+
 	for _, project := range cfg.Projects {
+		activeProjects[project.Id] = true
 		var err error
 		if email := projectIdentityEmail(project.IdentityConfig, useStagingEmail); email != "" {
 			err = storage.Update(ctx, &projectidentity.ProjectIdentity{
@@ -66,6 +70,25 @@ func importIdentities(ctx context.Context, cfg *config.ProjectsCfg, useStagingEm
 			merr = append(merr, err)
 		}
 	}
+
+	// 2. Query all existing ScopedIdentity entities from Datastore.
+	var existing []*projectidentity.ProjectIdentity
+	if err := datastore.GetAll(ctx, datastore.NewQuery("ScopedIdentity"), &existing); err != nil {
+		logging.Errorf(ctx, "Fetching all project scoped identities failed: %v", err)
+		merr = append(merr, err)
+		return merr.AsError()
+	}
+
+	// 3. Delete any stored identity whose project is no longer in cfg.Projects.
+	for _, ident := range existing {
+		if !activeProjects[ident.Project] {
+			if err := storage.Delete(ctx, ident.Project); err != nil {
+				logging.Errorf(ctx, "Deleting stale project scoped identity for %q: %v", ident.Project, err)
+				merr = append(merr, err)
+			}
+		}
+	}
+
 	return merr.AsError()
 }
 
