@@ -62,17 +62,10 @@ Progress:
 
 3. **Upload UI Demo**:
    - For UI changes, you **MUST** upload a demo to the App Engine development environment and include the demo link in the CL description for reviewer verification, unless deployment is blocked by infrastructure/authentication issues.
-   - **Unified App Engine Deployment (Required)**:
-     - Do NOT deploy only the individual `ui-new` service (e.g., via `make deploy-ui-demo`). App Engine handles request routing via a central dispatcher service (`ui-dispatcher`). If you only deploy `ui-new` without updating `ui-dispatcher` under the same version ID, requests to static assets (like `/ui/immutable/...`) will fail with 404 console errors, resulting in a blank screen.
-     - Instead, always build the UI (`npm run build` with standard configurations) and upload **all services together** using a custom target version.
-     - Navigate to the `go.chromium.org/luci/milo` project root (one level up from the `ui` directory) and run:
-       `PATH=$PATH:~/depot_tools ../../../../env.py gae.py upload -p ./ -A luci-milo-dev -f --target-version=<short-name>`
-   - **Target Version SSL Length Limits**:
-     - App Engine has a strict 63-character length limit on subdomains for SSL certificates. If the version name (automatically generated from branch name, user, etc.) exceeds this limit, the SSL certificate negotiation will fail, resulting in a broken HTTPS link.
-     - You **MUST** override the target version with a short, clean, and unique name (e.g., `bh-summary` or `fc-export-csv`) using the `--target-version=<short-name>` flag as shown above.
+   - For detailed build and deployment procedures (including DNS limits, `.gcloudignore` setups, and VPC workarounds), run the [deploy-ui-demo](../deploy-ui-demo/SKILL.md) skill.
    - **Accessing the Demo**:
      - Once deployed, the staging instance is accessible at the standard unified URL structure:
-       `https://<short-name>-dot-luci-milo-dev.appspot.com/ui/fleet/p/chromium/devices`
+       `https://<short-name>-dot-luci-milo-dev.appspot.com/ui/fleet/devices`
      - Place this demo link at the top of the CL description (immediately after the title line). Make sure it points directly to the affected page(s).
    - *Note*: If deployment fails with auth errors (e.g., `Login first using 'gcloud auth login'`), notify the developer and ask them to run it on your behalf. Do not block the task on this failure.
 
