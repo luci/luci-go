@@ -158,16 +158,7 @@ export function PlatformSummaryCard({
           )}
         </Box>
 
-        {isLoading ? (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h3" component="div" sx={{ mb: 1 }}>
-              <Skeleton width="40%" />
-            </Typography>
-            <Typography color="text.secondary" gutterBottom>
-              <Skeleton width="30%" />
-            </Typography>
-          </Box>
-        ) : isError ? (
+        {isError ? (
           <Typography color="error" variant="body2" sx={{ mt: 2 }}>
             Error loading data
           </Typography>
@@ -205,8 +196,16 @@ export function PlatformSummaryCard({
                     alignItems: 'flex-start',
                   }}
                 >
-                  <Typography variant="h3" component="div" sx={{ mb: 0.5 }}>
-                    {total?.toLocaleString('en-US') ?? 0}
+                  <Typography
+                    variant="h3"
+                    component="div"
+                    sx={{ mb: 0.5, minWidth: 60 }}
+                  >
+                    {isLoading ? (
+                      <Skeleton variant="text" width="100%" />
+                    ) : (
+                      (total?.toLocaleString('en-US') ?? 0)
+                    )}
                   </Typography>
                   <Box
                     sx={{
@@ -220,7 +219,7 @@ export function PlatformSummaryCard({
                     </Typography>
                   </Box>
                 </Button>
-                {total === 0 && <PermissionWarningTooltip />}
+                {!isLoading && total === 0 && <PermissionWarningTooltip />}
               </Box>
               <Box
                 sx={{
@@ -277,8 +276,16 @@ export function PlatformSummaryCard({
                       borderRadius: 1,
                     }}
                   >
-                    <Typography variant="h3" component="div" sx={{ mb: 0.5 }}>
-                      {secondTotal?.toLocaleString('en-US') ?? 0}
+                    <Typography
+                      variant="h3"
+                      component="div"
+                      sx={{ mb: 0.5, minWidth: 60 }}
+                    >
+                      {isLoading ? (
+                        <Skeleton variant="text" width="100%" />
+                      ) : (
+                        (secondTotal?.toLocaleString('en-US') ?? 0)
+                      )}
                     </Typography>
                     <Box
                       sx={{
@@ -292,7 +299,9 @@ export function PlatformSummaryCard({
                       </Typography>
                     </Box>
                   </Button>
-                  {secondTotal === 0 && <PermissionWarningTooltip />}
+                  {!isLoading && secondTotal === 0 && (
+                    <PermissionWarningTooltip />
+                  )}
                 </Box>
                 <Box
                   sx={{
