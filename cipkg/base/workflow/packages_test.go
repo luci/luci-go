@@ -158,7 +158,9 @@ func TestRefRecursiveRuntime(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		b := NewBuilder(generators.Platforms{}, pm, actions.NewActionProcessor())
-		pe := NewPackageExecutor("", nil, nil, nil, func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
+		pe := NewPackageExecutor("", PackageExecutorConfig{
+			ExecFn: func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil },
+		})
 		first, err := b.Build(ctx, pe, &Generator{
 			Name: "first",
 			Dependencies: []generators.Dependency{

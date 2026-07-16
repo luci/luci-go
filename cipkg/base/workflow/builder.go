@@ -70,6 +70,19 @@ func Execute(ctx context.Context, cfg *ExecutionConfig, drv *core.Derivation) er
 	return cmd.Run()
 }
 
+// PackageExecutorConfig is the config for wPackageExecutor.
+// All hooks and execFn are optional.
+// - PreExpandFn can be provided to e.g. fetch package from remote cache.
+// - PreExecFn can be provided to e.g. setup execution environment.
+// - PostExecFn can be provided to e.g. cleanup execution environment.
+type PackageExecutorConfig struct {
+	PreExpandFn PreExpandHook
+	PreExecFn   PreExecuteHook
+	PostExecFn  PostExecuteHook
+
+	ExecFn Executor
+}
+
 // PackageExecutor is the executor for package to be built by running executor.
 // It will ensure all package's dependencies become available in storage when
 // the package is executed.
@@ -79,42 +92,30 @@ type PackageExecutor struct {
 	// Mapping derivation id to package.
 	refs map[string]actions.Package
 
-	preExpandFn PreExpandHook
-	preExecFn   PreExecuteHook
-	postExecFn  PostExecuteHook
-
-	execFn Executor
-
 	// tempDir is the temporary directory used as the working directory during
 	// execution. Since artifacts should be installed into output directory at the
 	// end of the execution, we can use the path of temporary directory to detect
 	// if any path burned into outputs may affect portability or being potential
 	// subjects for runtime rewrite.
 	tempDir string
+
+	PackageExecutorConfig
 }
 
 // NewPackageExecutor creates a package executor to make packages available.
-// All hooks and execFn are optional.
-// - preExpandFn can be provided to e.g. fetch package from remote cache.
-// - preExecFn can be provided to e.g. setup execution environment.
-// - postExecFn can be provided to e.g. cleanup execution environment.
-// - If execFn is nil, builder.Execute will be used.
+// If the ExecFn isn't configured, builder.Execute will be used.
 // tempDir will be used as the working directory during execution and can be
 // removed by caller after execution.
-func NewPackageExecutor(tempDir string, preExpandFn PreExpandHook, preExecFn PreExecuteHook, postExecFn PostExecuteHook, execFn Executor) *PackageExecutor {
-	if execFn == nil {
-		execFn = Execute
+func NewPackageExecutor(tempDir string, cfg PackageExecutorConfig) *PackageExecutor {
+	if cfg.ExecFn == nil {
+		cfg.ExecFn = Execute
 	}
+
 	return &PackageExecutor{
-		refs: make(map[string]actions.Package),
-
-		preExpandFn: preExpandFn,
-		preExecFn:   preExecFn,
-		postExecFn:  postExecFn,
-
-		execFn: execFn,
-
+		refs:    make(map[string]actions.Package),
 		tempDir: tempDir,
+
+		PackageExecutorConfig: cfg,
 	}
 }
 
@@ -130,8 +131,8 @@ func (p *PackageExecutor) Expand(ctx context.Context, pkg actions.Package) ([]ac
 
 	// PreExpandHook is promised to be executed on the package before all its
 	// dependencies.
-	if p.preExpandFn != nil {
-		if err := p.preExpandFn(ctx, pkg); err != nil {
+	if p.PreExpandFn != nil {
+		if err := p.PreExpandFn(ctx, pkg); err != nil {
 			return nil, fmt.Errorf("failed to run preExpand hook for the package: %s: %w", pkg.ActionID, err)
 		}
 	}
@@ -173,14 +174,14 @@ func (p *PackageExecutor) Expand(ctx context.Context, pkg actions.Package) ([]ac
 // but PostExecHook should be invoked with the error.
 func (p *PackageExecutor) Execute(ctx context.Context, pkg actions.Package) error {
 	var errs error
-	if p.preExecFn != nil {
-		ctx, errs = p.preExecFn(ctx, pkg)
+	if p.PreExecFn != nil {
+		ctx, errs = p.PreExecFn(ctx, pkg)
 	}
 	if errs == nil {
 		errs = errors.Join(errs, p.execute(ctx, pkg))
 	}
-	if p.postExecFn != nil {
-		errs = errors.Join(errs, p.postExecFn(ctx, pkg, errs))
+	if p.PostExecFn != nil {
+		errs = errors.Join(errs, p.PostExecFn(ctx, pkg, errs))
 	}
 	return errs
 }
@@ -219,7 +220,7 @@ func (p *PackageExecutor) execute(ctx context.Context, pkg actions.Package) erro
 			Stdout:     &out,
 			Stderr:     &out,
 		}
-		if err := p.execFn(ctx, cfg, pkg.Derivation); err != nil {
+		if err := p.ExecFn(ctx, cfg, pkg.Derivation); err != nil {
 			logging.Errorf(ctx, "\n%s\n", out.String())
 			return err
 		}

@@ -81,7 +81,9 @@ func TestBuilder(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		b := NewBuilder(generators.Platforms{}, pm, actions.NewActionProcessor())
-		pe := NewPackageExecutor("", nil, nil, nil, func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil })
+		pe := NewPackageExecutor("", PackageExecutorConfig{
+			ExecFn: func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil },
+		})
 
 		t.Run("ok", func(t *ftt.Test) {
 			pkg, err := b.Build(ctx, pe, &Generator{
@@ -100,14 +102,14 @@ func TestBuilder(t *testing.T) {
 
 		t.Run("prePrepare", func(t *ftt.Test) {
 			var res string
-			pe = NewPackageExecutor("",
-				func(ctx context.Context, pkg actions.Package) error {
+			pe = NewPackageExecutor("", PackageExecutorConfig{
+				PreExpandFn: func(ctx context.Context, pkg actions.Package) error {
 					return pkg.Handler.Build(func() error { return nil })
 				},
-				func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
-				func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return nil },
-				func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
-			)
+				PreExecFn:  func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+				PostExecFn: func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return nil },
+				ExecFn:     func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
+			})
 
 			_, err := b.Build(ctx, pe, &Generator{Name: "first"})
 			assert.Loosely(t, err, should.BeNil)
@@ -117,12 +119,11 @@ func TestBuilder(t *testing.T) {
 		t.Run("exec hooks", func(t *ftt.Test) {
 			t.Run("ok", func(t *ftt.Test) {
 				var res string
-				pe = NewPackageExecutor("",
-					nil,
-					func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
-					func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return nil },
-					func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
-				)
+				pe = NewPackageExecutor("", PackageExecutorConfig{
+					PreExecFn:  func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+					PostExecFn: func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return nil },
+					ExecFn:     func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
+				})
 
 				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
 				assert.Loosely(t, err, should.BeNil)
@@ -132,19 +133,18 @@ func TestBuilder(t *testing.T) {
 			t.Run("err - pre", func(t *ftt.Test) {
 				var res string
 				e := errors.New("err")
-				pe = NewPackageExecutor("",
-					nil,
-					func(ctx context.Context, pkg actions.Package) (context.Context, error) {
+				pe = NewPackageExecutor("", PackageExecutorConfig{
+					PreExecFn: func(ctx context.Context, pkg actions.Package) (context.Context, error) {
 						res += "Pre"
 						return ctx, e
 					},
-					func(ctx context.Context, pkg actions.Package, execErr error) error {
+					PostExecFn: func(ctx context.Context, pkg actions.Package, execErr error) error {
 						assert.Loosely(t, errors.Is(execErr, e), should.BeTrue)
 						res += "Post"
 						return nil
 					},
-					func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
-				)
+					ExecFn: func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
+				})
 
 				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
 				assert.Loosely(t, errors.Is(err, e), should.BeTrue)
@@ -154,16 +154,15 @@ func TestBuilder(t *testing.T) {
 			t.Run("err - exec", func(t *ftt.Test) {
 				var res string
 				e := errors.New("err")
-				pe = NewPackageExecutor("",
-					nil,
-					func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
-					func(ctx context.Context, pkg actions.Package, execErr error) error {
+				pe = NewPackageExecutor("", PackageExecutorConfig{
+					PreExecFn: func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+					PostExecFn: func(ctx context.Context, pkg actions.Package, execErr error) error {
 						assert.Loosely(t, errors.Is(execErr, e), should.BeTrue)
 						res += "Post"
 						return nil
 					},
-					func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return e },
-				)
+					ExecFn: func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return e },
+				})
 
 				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
 				assert.Loosely(t, errors.Is(err, e), should.BeTrue)
@@ -173,12 +172,11 @@ func TestBuilder(t *testing.T) {
 			t.Run("err - post", func(t *ftt.Test) {
 				var res string
 				e := errors.New("err")
-				pe = NewPackageExecutor("",
-					nil,
-					func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
-					func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return e },
-					func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
-				)
+				pe = NewPackageExecutor("", PackageExecutorConfig{
+					PreExecFn:  func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+					PostExecFn: func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return e },
+					ExecFn:     func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
+				})
 
 				_, err := b.Build(ctx, pe, &Generator{Name: "first"})
 				assert.Loosely(t, errors.Is(err, e), should.BeTrue)
@@ -187,14 +185,14 @@ func TestBuilder(t *testing.T) {
 		})
 
 		t.Run("dependency not available", func(t *ftt.Test) {
-			pe = NewPackageExecutor("", nil, nil, nil,
-				func(ctx context.Context, cfg *ExecutionConfig, drv *core.Derivation) error {
+			pe = NewPackageExecutor("", PackageExecutorConfig{
+				ExecFn: func(ctx context.Context, cfg *ExecutionConfig, drv *core.Derivation) error {
 					if drv.Name == "second" {
 						return fmt.Errorf("failed")
 					}
 					return nil
 				},
-			)
+			})
 
 			pkgs, err := b.GeneratePackages(ctx, []generators.Generator{&Generator{
 				Name: "first",

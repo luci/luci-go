@@ -15,8 +15,10 @@
 package workflow
 
 import (
+	"cmp"
 	"context"
 	"os"
+	"slices"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -73,10 +75,24 @@ func (g *Generator) Generate(ctx context.Context, plats generators.Platforms) (*
 		}
 		envDeps[d.Type.String()] = append(envDeps[d.Type.String()], actions.DepRef(a.Name))
 		env.Set(a.Name, actions.DepRef(a.Name))
+
+		// Propagate runtime dependencies (transitive).
+		if d.Type == generators.DepsBuildBuild || d.Type == generators.DepsBuildHost || d.Type == generators.DepsBuildTarget {
+			for _, rd := range propagateRuntimeDeps(a) {
+				deps = append(deps, rd)
+				envDeps[d.Type.String()] = append(envDeps[d.Type.String()], actions.DepRef(rd.Name))
+				env.Set(rd.Name, actions.DepRef(rd.Name))
+			}
+		}
 	}
+
+	deps = normalize(deps)
+	metadata.RuntimeDeps = normalize(metadata.RuntimeDeps)
 
 	// Add dependencies' environment variables.
 	for dType, deps := range envDeps {
+		slices.Sort(deps)
+		deps = slices.Compact(deps)
 		env.Set(dType, strings.Join(deps, string(os.PathListSeparator)))
 	}
 
@@ -91,4 +107,21 @@ func (g *Generator) Generate(ctx context.Context, plats generators.Platforms) (*
 			},
 		},
 	}, nil
+}
+
+func propagateRuntimeDeps(a *core.Action) []*core.Action {
+	as := []*core.Action{a}
+	for _, d := range a.Metadata.GetRuntimeDeps() {
+		as = append(as, propagateRuntimeDeps(d)...)
+	}
+	return as
+}
+
+func normalize(as []*core.Action) []*core.Action {
+	slices.SortFunc(as, func(a, b *core.Action) int {
+		return cmp.Compare(a.Name, b.Name)
+	})
+	return slices.CompactFunc(as, func(a, b *core.Action) bool {
+		return proto.Equal(a, b)
+	})
 }

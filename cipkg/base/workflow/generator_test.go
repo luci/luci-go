@@ -16,6 +16,7 @@ package workflow
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -35,7 +36,16 @@ func TestGenerator(t *testing.T) {
 		g := &Generator{
 			Name: "first",
 			Dependencies: []generators.Dependency{
-				{Generator: &Generator{Name: "second"}, Type: generators.DepsBuildHost, Runtime: true},
+				{
+					Generator: &Generator{
+						Name: "second",
+						Dependencies: []generators.Dependency{
+							{Generator: &Generator{Name: "third"}, Type: generators.DepsHostTarget, Runtime: true},
+						},
+					},
+					Type:    generators.DepsBuildHost,
+					Runtime: true,
+				},
 			},
 		}
 
@@ -43,14 +53,16 @@ func TestGenerator(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		assert.Loosely(t, a.Name, should.Equal("first"))
-		assert.Loosely(t, a.Deps, should.HaveLength(1))
+		assert.Loosely(t, a.Deps, should.HaveLength(2))
 		assert.Loosely(t, a.Deps[0].Name, should.Equal("second"))
+		assert.Loosely(t, a.Deps[1].Name, should.Equal("third"))
 		assert.Loosely(t, a.Metadata.RuntimeDeps, should.HaveLength(1))
 		assert.Loosely(t, a.Metadata.RuntimeDeps[0], should.Match(a.Deps[0]))
 		cmd := testutils.Assert[*core.Action_Command](t, a.Spec)
 		assert.Loosely(t, cmd.Command.Env, should.Match([]string{
-			"depsBuildHost=" + actions.DepRef("second"),
+			"depsBuildHost=" + actions.DepRef("second") + string(os.PathListSeparator) + actions.DepRef("third"),
 			"second=" + actions.DepRef("second"),
+			"third=" + actions.DepRef("third"),
 		}))
 	})
 }
