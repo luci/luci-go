@@ -49,6 +49,9 @@ type Fake struct {
 // Log retrieves commit log. Merge commits are supported, but it implements
 // simple logic and likely won't return results in the same order as Gitiles.
 func (f *Fake) Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*LogResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
 	f.addCallLog(in)
 	repository, ok := f.m[in.GetProject()]
 	if !ok {
@@ -109,6 +112,9 @@ func (f *Fake) Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption)
 
 // Refs retrieves repo refs.
 func (f *Fake) Refs(ctx context.Context, in *RefsRequest, opts ...grpc.CallOption) (*RefsResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
 	f.addCallLog(in)
 	p, ok := f.m[in.GetProject()]
 	if !ok {
@@ -145,6 +151,9 @@ func (f *Fake) DownloadDiff(ctx context.Context, in *DownloadDiffRequest, opts .
 
 // Projects retrieves list of available Gitiles projects
 func (f *Fake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.CallOption) (*ProjectsResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
 	f.addCallLog(in)
 	resp := &ProjectsResponse{
 		Projects: make([]string, len(f.m)),
@@ -159,6 +168,9 @@ func (f *Fake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.C
 
 // GetProject retrieves a project.
 func (f *Fake) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*Project, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
 	f.addCallLog(in)
 
 	_, ok := f.m[in.Name]

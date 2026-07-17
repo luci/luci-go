@@ -20,17 +20,25 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"net/url"
+	"regexp"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/git/footer"
 	"go.chromium.org/luci/common/logging"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/server/caching/layered"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/gitiles"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -152,4 +160,105 @@ func sortFooters(footers []*changelist.StringPair) {
 		}
 		return cmp.Compare(f1.Value, f2.Value)
 	})
+}
+
+// commitPositionPattern matches the Cr-Commit-Position footer format.
+// See https://chromium.googlesource.com/infra/gerrit-plugins/git-numberer/
+var commitPositionPattern = regexp.MustCompile(`^(.+)@{#(\d+)}$`)
+
+// gitilesTipCache caches resolved target branch tip commit positions.
+var gitilesTipCache = layered.RegisterCache(layered.Parameters[int64]{
+	ProcessCacheCapacity: 1000,
+	GlobalNamespace:      "gitiles_branch_tip_v1",
+	Marshal: func(pos int64) ([]byte, error) {
+		return []byte(strconv.FormatInt(pos, 10)), nil
+	},
+	Unmarshal: func(blob []byte) (int64, error) {
+		return strconv.ParseInt(string(blob), 10, 64)
+	},
+})
+
+const gitilesTipCacheTTL = 15 * time.Second
+
+// resolveBranchTip queries Gitiles to resolve the target branch tip commit
+// position.
+//
+// Results are cached in a process-level layered cache for a short duration.
+// Network queries against Gitiles are executed with a bounded 5-second timeout.
+//
+// Returns an error if the branch ref extracted from the Cr-Commit-Position
+// footer does not match the requested target ref. Note that when a new branch
+// is branched off main, its tip commit initially retains main's
+// Cr-Commit-Position footer. This ref mismatch causes resolveBranchTip to
+// return an error, safely falling back to the time-based window until the
+// first new commit lands on the branch.
+func resolveBranchTip(ctx context.Context, gf gitiles.Factory, host, project, ref, luciProject string) (int64, error) {
+	if gf == nil {
+		return 0, errors.New("gitiles factory is nil")
+	}
+
+	cacheKey := fmt.Sprintf("%s/%s/%s/%s", luciProject, host, url.PathEscape(project), url.PathEscape(ref))
+
+	pos, err := gitilesTipCache.GetOrCreate(ctx, cacheKey, func() (int64, time.Duration, error) {
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+
+		client, err := gf.MakeClient(ctx, host, luciProject)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to make Gitiles client: %w", err)
+		}
+		resp, err := client.Log(ctx, &gitilespb.LogRequest{
+			Project:    project,
+			Committish: ref,
+			PageSize:   1,
+		})
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to get Gitiles log: %w", err)
+		}
+
+		if len(resp.GetLog()) == 0 {
+			return 0, 0, errors.New("empty Gitiles log")
+		}
+
+		commit := resp.GetLog()[0]
+		message := commit.GetMessage()
+
+		footers := footer.ParseMessage(message)
+		cpFooters := footers[footer.NormalizeKey("Cr-Commit-Position")]
+		if len(cpFooters) == 0 {
+			return 0, 0, errors.New("missing Cr-Commit-Position footer")
+		}
+		if len(cpFooters) > 1 {
+			return 0, 0, fmt.Errorf("multiple Cr-Commit-Position footers found (%d)", len(cpFooters))
+		}
+		rawFooter := cpFooters[0]
+
+		match := commitPositionPattern.FindStringSubmatch(rawFooter)
+		if match == nil {
+			return 0, 0, fmt.Errorf("malformed Cr-Commit-Position: %q", rawFooter)
+		}
+
+		extractedRef := match[1]
+		posStr := match[2]
+
+		// Ensure the extracted branch ref matches the requested target branch
+		// ref. On newly cut branches prior to their first commit, extractedRef
+		// still points to the parent branch (e.g., refs/heads/main). Rejecting
+		// the mismatch causes CV to safely fall back to the time-based window
+		// until a commit lands on the branch.
+		if extractedRef != ref {
+			return 0, 0, fmt.Errorf("branch ref %q in Cr-Commit-Position footer does not match requested target ref %q", extractedRef, ref)
+		}
+
+		pos, err := strconv.ParseInt(posStr, 10, 64)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to parse commit position %q: %w", posStr, err)
+		}
+
+		return pos, gitilesTipCacheTTL, nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return pos, nil
 }
