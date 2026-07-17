@@ -209,7 +209,7 @@ func getLUCIProject(ctx context.Context, invID invocations.ID) (string, error) {
 }
 
 func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryExport) (*bigquery.Client, error) {
-	tr, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(bigquery.Scope))
+	tr, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProjectNoFallback(luciProject), auth.WithScopes(bigquery.Scope))
 	if err != nil {
 		return nil, err
 	}
