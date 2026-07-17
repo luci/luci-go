@@ -173,6 +173,21 @@ export function normalizeRequestFilters<
 export function isLowerIsBetter(metricField: string | undefined): boolean {
   if (!metricField) return false;
 
+  const normalized = metricField.toLowerCase();
+
+  // Exceptions where higher is better, even if they contain lowerIsBetter keywords.
+  const higherIsBetterKeywords = [
+    'uptime',
+    'up_time',
+    'free',
+    'available',
+    'efficiency',
+  ];
+
+  if (higherIsBetterKeywords.some((keyword) => normalized.includes(keyword))) {
+    return false;
+  }
+
   const lowerIsBetterKeywords = [
     'duration',
     'latency',
@@ -186,7 +201,7 @@ export function isLowerIsBetter(metricField: string | undefined): boolean {
   ];
 
   return lowerIsBetterKeywords.some((keyword) => {
-    return metricField.toLowerCase().includes(keyword);
+    return normalized.includes(keyword);
   });
 }
 

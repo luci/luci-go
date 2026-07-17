@@ -132,6 +132,13 @@ describe('isLowerIsBetter', () => {
     expect(isLowerIsBetter('score')).toBe(false);
     expect(isLowerIsBetter(undefined)).toBe(false);
   });
+
+  test('returns false for exceptions that contain keywords but where higher is better', () => {
+    expect(isLowerIsBetter('uptime')).toBe(false);
+    expect(isLowerIsBetter('uptime_s')).toBe(false);
+    expect(isLowerIsBetter('free_memory')).toBe(false);
+    expect(isLowerIsBetter('available_bytes')).toBe(false);
+  });
 });
 
 describe('calculateChange', () => {
