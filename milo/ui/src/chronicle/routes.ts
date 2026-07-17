@@ -37,7 +37,7 @@ export const chronicleRoutes: RouteObject[] = [
     children: [
       {
         index: true,
-        loader: redirectToChildPath('summary'),
+        loader: redirectToChildPath('graph'),
       },
       {
         path: 'summary',
