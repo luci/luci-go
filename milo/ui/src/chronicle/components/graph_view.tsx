@@ -566,30 +566,33 @@ function Graph() {
                       ))}
                   </Select>
                 </FormControl>
-                <FormControl fullWidth size="small" sx={{ mt: 2 }}>
-                  <InputLabel id="workflow-type-select-label">
-                    Workflow Type
-                  </InputLabel>
-                  <Select
-                    labelId="workflow-type-select-label"
-                    id="workflow-type-select"
-                    value={workflowType}
-                    label="Workflow Type"
-                    disabled={activeEnvironment !== DEMO_ENVIRONMENT_NAME}
-                    onChange={(e) =>
-                      setWorkflowType(e.target.value as WorkflowType)
-                    }
-                  >
-                    <MenuItem value={WorkflowType.ANDROID}>Android</MenuItem>
-                    <MenuItem value={WorkflowType.BROWSER}>Browser</MenuItem>
-                    <MenuItem value={WorkflowType.BROWSER_FUTURE}>
-                      Browser Future
-                    </MenuItem>
-                    <MenuItem value={WorkflowType.ANDROID_GIGANTIC_POSTSUBMIT}>
-                      Android Gigantic Postsubmit
-                    </MenuItem>
-                  </Select>
-                </FormControl>
+                {workplanId === DEMO_WORKPLAN_ID && (
+                  <FormControl fullWidth size="small" sx={{ mt: 2 }}>
+                    <InputLabel id="workflow-type-select-label">
+                      Workflow Type
+                    </InputLabel>
+                    <Select
+                      labelId="workflow-type-select-label"
+                      id="workflow-type-select"
+                      value={workflowType}
+                      label="Workflow Type"
+                      onChange={(e) =>
+                        setWorkflowType(e.target.value as WorkflowType)
+                      }
+                    >
+                      <MenuItem value={WorkflowType.ANDROID}>Android</MenuItem>
+                      <MenuItem value={WorkflowType.BROWSER}>Browser</MenuItem>
+                      <MenuItem value={WorkflowType.BROWSER_FUTURE}>
+                        Browser Future
+                      </MenuItem>
+                      <MenuItem
+                        value={WorkflowType.ANDROID_GIGANTIC_POSTSUBMIT}
+                      >
+                        Android Gigantic Postsubmit
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
                 <FormControlLabel
                   control={
                     <Checkbox
