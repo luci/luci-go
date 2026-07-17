@@ -24,6 +24,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
@@ -373,5 +374,5 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		c.Request = c.Request.WithContext(withVMsServer(c.Request.Context(), &rpc.Config{}))
 		next(c)
 	})
-	r.GET("/internal/cron/import-config", mw, importHandler)
+	r.GET("/internal/cron/import-config", mw.Extend(gaemiddleware.RequireCron), importHandler)
 }

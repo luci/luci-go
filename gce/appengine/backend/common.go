@@ -24,6 +24,7 @@ import (
 	computealpha "google.golang.org/api/compute/v0.alpha"
 	compute "google.golang.org/api/compute/v1"
 
+	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
@@ -220,14 +221,15 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		next(c)
 	})
 	dsp.InstallRoutes(r, mw)
-	r.GET("/internal/cron/count-tasks", mw, newHTTPHandler(countTasks))
-	r.GET("/internal/cron/count-vms", mw, newHTTPHandler(countVMsAsync))
-	r.GET("/internal/cron/create-instances", mw, newHTTPHandler(createInstancesAsync))
-	r.GET("/internal/cron/expand-configs", mw, newHTTPHandler(expandConfigsAsync))
-	r.GET("/internal/cron/manage-bots", mw, newHTTPHandler(manageBotsAsync))
-	r.GET("/internal/cron/report-quota", mw, newHTTPHandler(reportQuotasAsync))
-	r.GET("/internal/cron/audit-project", mw, newHTTPHandler(auditInstances))
-	r.GET("/internal/cron/drain-vms", mw, newHTTPHandler(drainVMsAsync))
-	r.GET("/internal/cron/inspect-swarming", mw, newHTTPHandler(inspectSwarmingAsync))
-	r.GET("/internal/cron/dump-datastore", mw, newHTTPHandler(dumpDatastoreSync))
+	cronMw := mw.Extend(gaemiddleware.RequireCron)
+	r.GET("/internal/cron/count-tasks", cronMw, newHTTPHandler(countTasks))
+	r.GET("/internal/cron/count-vms", cronMw, newHTTPHandler(countVMsAsync))
+	r.GET("/internal/cron/create-instances", cronMw, newHTTPHandler(createInstancesAsync))
+	r.GET("/internal/cron/expand-configs", cronMw, newHTTPHandler(expandConfigsAsync))
+	r.GET("/internal/cron/manage-bots", cronMw, newHTTPHandler(manageBotsAsync))
+	r.GET("/internal/cron/report-quota", cronMw, newHTTPHandler(reportQuotasAsync))
+	r.GET("/internal/cron/audit-project", cronMw, newHTTPHandler(auditInstances))
+	r.GET("/internal/cron/drain-vms", cronMw, newHTTPHandler(drainVMsAsync))
+	r.GET("/internal/cron/inspect-swarming", cronMw, newHTTPHandler(inspectSwarmingAsync))
+	r.GET("/internal/cron/dump-datastore", cronMw, newHTTPHandler(dumpDatastoreSync))
 }
