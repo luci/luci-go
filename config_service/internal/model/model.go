@@ -16,13 +16,9 @@
 package model
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"time"
-
-	"github.com/klauspost/compress/gzip"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -31,6 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/config_service/internal/clients"
+	"go.chromium.org/luci/config_service/internal/common/decompress"
 )
 
 const (
@@ -137,7 +134,7 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 	case f.rawContent != nil:
 		break // rawContent is fetched and cached before.
 	case len(f.Content) > 0:
-		rawContent, err := decompressData(f.Content)
+		rawContent, err := decompress.Gzip(f.Content)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +144,7 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 		if err != nil {
 			return nil, errors.Fmt("failed to read from %s: %w", f.GcsURI, err)
 		}
-		rawContent, err := decompressData(compressed)
+		rawContent, err := decompress.Gzip(compressed)
 		if err != nil {
 			return nil, err
 		}
@@ -156,22 +153,6 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 		return nil, errors.New("both content and gcs_uri are empty")
 	}
 	return f.rawContent, nil
-}
-
-func decompressData(data []byte) ([]byte, error) {
-	gr, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
-		return nil, errors.Fmt("failed to create gzip reader: %w", err)
-	}
-	ret, err := io.ReadAll(gr)
-	if err != nil {
-		_ = gr.Close()
-		return nil, errors.Fmt("failed to decompress the data: %w", err)
-	}
-	if err := gr.Close(); err != nil {
-		return nil, errors.Fmt("errors closing gzip reader: %w", err)
-	}
-	return ret, nil
 }
 
 // ImportAttempt describes what happened last time we tried to import a config

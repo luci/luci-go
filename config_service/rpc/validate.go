@@ -15,18 +15,15 @@
 package rpc
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"path"
 	"regexp"
 	"strings"
 
-	"github.com/klauspost/compress/gzip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -42,6 +39,7 @@ import (
 	"go.chromium.org/luci/config_service/internal/acl"
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
+	"go.chromium.org/luci/config_service/internal/common/decompress"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/validation"
 	configpb "go.chromium.org/luci/config_service/proto"
@@ -191,19 +189,7 @@ func (vf validationFile) GetRawContent(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	r, err := gzip.NewReader(bytes.NewBuffer(compressed))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
-	}
-	blob, err := io.ReadAll(r)
-	if err != nil {
-		_ = r.Close()
-		return nil, err
-	}
-	if err := r.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close gzip reader: %w", err)
-	}
-	return blob, nil
+	return decompress.Gzip(compressed)
 }
 
 // makeValidationFiles creates a `validationFile` for each file_hash in the
