@@ -28,6 +28,7 @@ import { FiltersClipboardProvider } from '@/crystal_ball/context';
 import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
 import {
   PerfChartSeries,
+  PerfChartSeries_MatchType,
   PerfFilter,
   PerfFilterDefault_FilterOperator,
   SuggestMeasurementFilterValuesRequest,
@@ -658,5 +659,23 @@ describe('ChartSeriesItem', () => {
 
     fireEvent.click(onlyButton);
     expect(onShowOnly).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows changing match type', async () => {
+    render(<ChartSeriesItem {...itemProps} />);
+    fireEvent.click(screen.getByText('Item 1'));
+    await screen.findByLabelText('Metric Field');
+
+    const selectEl = screen.getByLabelText('Match Type');
+    fireEvent.mouseDown(selectEl); // Open the select dropdown
+    const option = await screen.findByRole('option', { name: 'RegEx' });
+    fireEvent.click(option);
+
+    expect(itemProps.onUpdate).toHaveBeenCalledTimes(1);
+    expect(itemProps.onUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        matchType: PerfChartSeries_MatchType.REGEX,
+      }),
+    );
   });
 });

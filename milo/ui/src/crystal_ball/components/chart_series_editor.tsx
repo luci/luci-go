@@ -47,6 +47,8 @@ import {
   DialogTitle,
   Divider,
   IconButton,
+  MenuItem,
+  Select,
   TextField,
   Tooltip,
   Typography,
@@ -76,6 +78,7 @@ import {
 import {
   BackgroundAlpha,
   COMPACT_ICON_SX,
+  COMPACT_SELECT_SX,
   COMPACT_TEXTFIELD_SX,
 } from '@/crystal_ball/styles';
 import {
@@ -92,6 +95,7 @@ import {
   MeasurementFilterColumn,
   MeasurementFilterColumn_FilterScope,
   PerfChartSeries,
+  PerfChartSeries_MatchType,
   PerfFilter,
   PerfFilterDefault_FilterOperator,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
@@ -1149,64 +1153,123 @@ export function ChartSeriesItem({
             </Box>
           </Box>
 
-          <Box>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                mb: 0.5,
-              }}
-            >
-              <BarChartIcon sx={COMPACT_ICON_SX} />
-              <Typography
-                variant="caption"
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 140px',
+              gap: 1.5,
+              alignItems: 'flex-start',
+            }}
+          >
+            <Box>
+              <Box
                 sx={{
-                  color: 'text.secondary',
-                  fontWeight: (theme) => theme.typography.fontWeightBold,
-                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  mb: 0.5,
                 }}
               >
-                {COMMON_MESSAGES.METRIC_FIELD}
-              </Typography>
-            </Box>
-            <Autocomplete
-              freeSolo
-              size="small"
-              options={options}
-              filterOptions={(x) => x}
-              value={series.metricField ?? null}
-              inputValue={inputValue}
-              onInputChange={(_event, newInputValue) => {
-                setInputValue(newInputValue);
-              }}
-              onChange={(_event, newValue, reason) => {
-                if (reason === 'selectOption' || reason === 'createOption') {
-                  if (typeof newValue === 'string') {
-                    handleMetricFieldChange(newValue);
-                  }
-                }
-              }}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => {
-                setIsFocused(false);
-                if (inputValue !== series.metricField) {
-                  handleMetricFieldChange(inputValue);
-                }
-              }}
-              loading={isLoadingSuggestions && isFocused}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="e.g., MemAvailable_CacheProcDirty_bytes"
-                  inputProps={{
-                    ...params.inputProps,
-                    'aria-label': 'Metric Field',
+                <BarChartIcon sx={COMPACT_ICON_SX} />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'text.secondary',
+                    fontWeight: (theme) => theme.typography.fontWeightBold,
+                    textTransform: 'uppercase',
                   }}
-                  sx={COMPACT_TEXTFIELD_SX}
-                />
-              )}
-            />
+                >
+                  {COMMON_MESSAGES.METRIC_FIELD}
+                </Typography>
+              </Box>
+              <Autocomplete
+                freeSolo
+                size="small"
+                options={options}
+                filterOptions={(x) => x}
+                value={series.metricField ?? null}
+                inputValue={inputValue}
+                onInputChange={(_event, newInputValue) => {
+                  setInputValue(newInputValue);
+                }}
+                onChange={(_event, newValue, reason) => {
+                  if (reason === 'selectOption' || reason === 'createOption') {
+                    if (typeof newValue === 'string') {
+                      handleMetricFieldChange(newValue);
+                    }
+                  }
+                }}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => {
+                  setIsFocused(false);
+                  if (inputValue !== series.metricField) {
+                    handleMetricFieldChange(inputValue);
+                  }
+                }}
+                loading={isLoadingSuggestions && isFocused}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="e.g., MemAvailable_CacheProcDirty_bytes"
+                    inputProps={{
+                      ...params.inputProps,
+                      'aria-label': 'Metric Field',
+                    }}
+                    sx={COMPACT_TEXTFIELD_SX}
+                  />
+                )}
+              />
+            </Box>
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  mb: 0.5,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'text.secondary',
+                    fontWeight: (theme) => theme.typography.fontWeightBold,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Match Type
+                </Typography>
+              </Box>
+              <Select
+                size="small"
+                fullWidth
+                value={
+                  series.matchType === undefined ||
+                  series.matchType ===
+                    PerfChartSeries_MatchType.MATCH_TYPE_UNSPECIFIED
+                    ? PerfChartSeries_MatchType.EXACT
+                    : series.matchType
+                }
+                onChange={(e) => {
+                  const matchType = e.target.value as PerfChartSeries_MatchType;
+                  onUpdate({ ...series, matchType });
+                }}
+                inputProps={{
+                  'aria-label': 'Match Type',
+                }}
+                sx={COMPACT_SELECT_SX}
+              >
+                <MenuItem value={PerfChartSeries_MatchType.EXACT}>
+                  Exact
+                </MenuItem>
+                <MenuItem value={PerfChartSeries_MatchType.REGEX}>
+                  RegEx
+                </MenuItem>
+                <MenuItem value={PerfChartSeries_MatchType.WILDCARD}>
+                  Wildcard
+                </MenuItem>
+              </Select>
+            </Box>
           </Box>
 
           <FilterEditor

@@ -128,7 +128,9 @@ function getChartSeries(
         .map((group, index) => {
           const seriesIndex = widgetSeries?.findIndex(
             (s) =>
-              s.id === group.seriesId || s.displayName === group.legendLabel,
+              s.id === group.seriesId ||
+              (s.id && group.seriesId.startsWith(s.id + '_')) ||
+              s.displayName === group.legendLabel,
           );
           const seriesConfig =
             seriesIndex !== undefined && seriesIndex >= 0
@@ -186,12 +188,18 @@ function getChartSeries(
                 };
               },
             ),
-            stroke: seriesConfig?.color ?? generateColor(index),
+            stroke:
+              seriesConfig && group.seriesId === seriesConfig.id
+                ? seriesConfig.color
+                : generateColor(index),
           };
         })
         .filter((series) => {
           const seriesIndex = widgetSeries?.findIndex(
-            (s) => s.id === series.seriesId || s.displayName === series.name,
+            (s) =>
+              s.id === series.seriesId ||
+              (s.id && series.seriesId?.startsWith(s.id + '_')) ||
+              s.displayName === series.name,
           );
           const configuredSeries =
             seriesIndex !== undefined && seriesIndex >= 0
@@ -209,7 +217,10 @@ function getChartSeries(
       return widgetResponse.multiMetricChartData.lines
         .map((line, index) => {
           const seriesIndex = widgetSeries?.findIndex(
-            (s) => s.id === line.seriesId || s.displayName === line.legendLabel,
+            (s) =>
+              s.id === line.seriesId ||
+              (s.id && line.seriesId.startsWith(s.id + '_')) ||
+              s.displayName === line.legendLabel,
           );
           const seriesConfig =
             seriesIndex !== undefined && seriesIndex >= 0
@@ -231,12 +242,18 @@ function getChartSeries(
                   }),
                 )
               : [],
-            stroke: seriesConfig?.color ?? generateColor(index),
+            stroke:
+              seriesConfig && line.seriesId === seriesConfig.id
+                ? seriesConfig.color
+                : generateColor(index),
           };
         })
         .filter((series) => {
           const seriesIndex = widgetSeries?.findIndex(
-            (s) => s.id === series.seriesId || s.displayName === series.name,
+            (s) =>
+              s.id === series.seriesId ||
+              (s.id && series.seriesId?.startsWith(s.id + '_')) ||
+              s.displayName === series.name,
           );
           const configuredSeries =
             seriesIndex !== undefined && seriesIndex >= 0

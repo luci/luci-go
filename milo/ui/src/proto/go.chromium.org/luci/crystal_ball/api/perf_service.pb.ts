@@ -7,6 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Operation } from "../../../../google/longrunning/operations.pb";
+import { Empty } from "../../../../google/protobuf/empty.pb";
 import { FieldMask } from "../../../../google/protobuf/field_mask.pb";
 import { Struct, Value } from "../../../../google/protobuf/struct.pb";
 import { Timestamp } from "../../../../google/protobuf/timestamp.pb";
@@ -978,6 +979,10 @@ export interface PerfChartSeries {
    * Defaults to false (visible) if not specified.
    */
   readonly hidden: boolean;
+  /** The match type of this series. Defaults to EXACT if not specified. */
+  readonly matchType: PerfChartSeries_MatchType;
+  /** The ID of the parent PerfChartSeries for expanded wildcard/regex series. */
+  readonly expansionParentSeriesId: string;
 }
 
 /**
@@ -1128,6 +1133,52 @@ export function perfChartSeries_YAxisAssignmentToJSON(object: PerfChartSeries_YA
       return "RIGHT";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfChartSeries_YAxisAssignment");
+  }
+}
+
+/** Type of matching to use for the metric field. */
+export enum PerfChartSeries_MatchType {
+  /** MATCH_TYPE_UNSPECIFIED - Unspecified match type, defaults to EXACT. */
+  MATCH_TYPE_UNSPECIFIED = 0,
+  /** EXACT - Exact match. */
+  EXACT = 1,
+  /** REGEX - Regular expression match. */
+  REGEX = 2,
+  /** WILDCARD - Wildcard match. */
+  WILDCARD = 3,
+}
+
+export function perfChartSeries_MatchTypeFromJSON(object: any): PerfChartSeries_MatchType {
+  switch (object) {
+    case 0:
+    case "MATCH_TYPE_UNSPECIFIED":
+      return PerfChartSeries_MatchType.MATCH_TYPE_UNSPECIFIED;
+    case 1:
+    case "EXACT":
+      return PerfChartSeries_MatchType.EXACT;
+    case 2:
+    case "REGEX":
+      return PerfChartSeries_MatchType.REGEX;
+    case 3:
+    case "WILDCARD":
+      return PerfChartSeries_MatchType.WILDCARD;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfChartSeries_MatchType");
+  }
+}
+
+export function perfChartSeries_MatchTypeToJSON(object: PerfChartSeries_MatchType): string {
+  switch (object) {
+    case PerfChartSeries_MatchType.MATCH_TYPE_UNSPECIFIED:
+      return "MATCH_TYPE_UNSPECIFIED";
+    case PerfChartSeries_MatchType.EXACT:
+      return "EXACT";
+    case PerfChartSeries_MatchType.REGEX:
+      return "REGEX";
+    case PerfChartSeries_MatchType.WILDCARD:
+      return "WILDCARD";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfChartSeries_MatchType");
   }
 }
 
@@ -2174,6 +2225,266 @@ export interface RawSampleRow {
 export interface RawSampleRow_ValuesEntry {
   readonly key: string;
   readonly value: any | undefined;
+}
+
+/** Request message for listing announcements. */
+export interface ListAnnouncementsRequest {
+  /**
+   * Optional. The maximum number of announcements to return. The service may
+   * return fewer than this value. If unspecified, at most 50 announcements will
+   * be returned.
+   */
+  readonly pageSize: number;
+  /**
+   * Optional. A page token, received from a previous `ListAnnouncements` call.
+   * Provide this to retrieve the subsequent page.
+   */
+  readonly pageToken: string;
+  /**
+   * Optional. An AIP-160 filter string to restrict results (e.g.
+   * "visibility = 'internal'").
+   */
+  readonly filter: string;
+}
+
+/** Response message for listing announcements. */
+export interface ListAnnouncementsResponse {
+  /** The list of announcements. */
+  readonly announcements: readonly Announcement[];
+  /**
+   * Optional. A token, which can be sent as `page_token` to retrieve the next
+   * page. If this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+}
+
+/** Request message for getting a single announcement. */
+export interface GetAnnouncementRequest {
+  /**
+   * Required. The name of the announcement to retrieve.
+   * Format: announcements/{announcement}
+   */
+  readonly name: string;
+}
+
+/** Model representing an announcement banner. */
+export interface Announcement {
+  /**
+   * The resource name of the announcement.
+   * Format: announcements/{announcement}
+   */
+  readonly name: string;
+  /** The message content of the announcement. */
+  readonly message: string;
+  /** Optional. The severity level of the announcement. */
+  readonly severity: Announcement_Severity;
+  /** Optional. The start time when the announcement becomes active. */
+  readonly startTime:
+    | string
+    | undefined;
+  /** Optional. The end time when the announcement ceases to be active. */
+  readonly endTime:
+    | string
+    | undefined;
+  /** Output only. The lifecycle state of the announcement. */
+  readonly state: Announcement_State;
+  /** Output only. The time when the announcement was last updated. */
+  readonly updateTime:
+    | string
+    | undefined;
+  /** Optional. Generic metadata annotations/properties */
+  readonly annotations: { [key: string]: string };
+  /**
+   * Required. Target visibility of the announcement (internal, external, or
+   * both).
+   */
+  readonly visibility: Announcement_Visibility;
+}
+
+/** Severity levels for the announcement. */
+export enum Announcement_Severity {
+  /** SEVERITY_UNSPECIFIED - Unspecified severity. */
+  SEVERITY_UNSPECIFIED = 0,
+  /** INFO - Informational announcement. */
+  INFO = 1,
+  /** WARNING - Warning announcement. */
+  WARNING = 2,
+  /** ERROR - Error announcement. */
+  ERROR = 3,
+}
+
+export function announcement_SeverityFromJSON(object: any): Announcement_Severity {
+  switch (object) {
+    case 0:
+    case "SEVERITY_UNSPECIFIED":
+      return Announcement_Severity.SEVERITY_UNSPECIFIED;
+    case 1:
+    case "INFO":
+      return Announcement_Severity.INFO;
+    case 2:
+    case "WARNING":
+      return Announcement_Severity.WARNING;
+    case 3:
+    case "ERROR":
+      return Announcement_Severity.ERROR;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Announcement_Severity");
+  }
+}
+
+export function announcement_SeverityToJSON(object: Announcement_Severity): string {
+  switch (object) {
+    case Announcement_Severity.SEVERITY_UNSPECIFIED:
+      return "SEVERITY_UNSPECIFIED";
+    case Announcement_Severity.INFO:
+      return "INFO";
+    case Announcement_Severity.WARNING:
+      return "WARNING";
+    case Announcement_Severity.ERROR:
+      return "ERROR";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Announcement_Severity");
+  }
+}
+
+/** Lifecycle states for the announcement. */
+export enum Announcement_State {
+  /** STATE_UNSPECIFIED - Unspecified state. */
+  STATE_UNSPECIFIED = 0,
+  /** ACTIVE - The announcement is active and visible to users. */
+  ACTIVE = 1,
+  /** INACTIVE - The announcement is inactive and hidden. */
+  INACTIVE = 2,
+}
+
+export function announcement_StateFromJSON(object: any): Announcement_State {
+  switch (object) {
+    case 0:
+    case "STATE_UNSPECIFIED":
+      return Announcement_State.STATE_UNSPECIFIED;
+    case 1:
+    case "ACTIVE":
+      return Announcement_State.ACTIVE;
+    case 2:
+    case "INACTIVE":
+      return Announcement_State.INACTIVE;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Announcement_State");
+  }
+}
+
+export function announcement_StateToJSON(object: Announcement_State): string {
+  switch (object) {
+    case Announcement_State.STATE_UNSPECIFIED:
+      return "STATE_UNSPECIFIED";
+    case Announcement_State.ACTIVE:
+      return "ACTIVE";
+    case Announcement_State.INACTIVE:
+      return "INACTIVE";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Announcement_State");
+  }
+}
+
+/** Target visibility for the announcement. */
+export enum Announcement_Visibility {
+  /** VISIBILITY_UNSPECIFIED - Unspecified target visibility. */
+  VISIBILITY_UNSPECIFIED = 0,
+  /** INTERNAL - Visible internally only. */
+  INTERNAL = 1,
+  /** EXTERNAL - Visible externally only. */
+  EXTERNAL = 2,
+  /** BOTH - Visible both internally and externally. */
+  BOTH = 3,
+}
+
+export function announcement_VisibilityFromJSON(object: any): Announcement_Visibility {
+  switch (object) {
+    case 0:
+    case "VISIBILITY_UNSPECIFIED":
+      return Announcement_Visibility.VISIBILITY_UNSPECIFIED;
+    case 1:
+    case "INTERNAL":
+      return Announcement_Visibility.INTERNAL;
+    case 2:
+    case "EXTERNAL":
+      return Announcement_Visibility.EXTERNAL;
+    case 3:
+    case "BOTH":
+      return Announcement_Visibility.BOTH;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Announcement_Visibility");
+  }
+}
+
+export function announcement_VisibilityToJSON(object: Announcement_Visibility): string {
+  switch (object) {
+    case Announcement_Visibility.VISIBILITY_UNSPECIFIED:
+      return "VISIBILITY_UNSPECIFIED";
+    case Announcement_Visibility.INTERNAL:
+      return "INTERNAL";
+    case Announcement_Visibility.EXTERNAL:
+      return "EXTERNAL";
+    case Announcement_Visibility.BOTH:
+      return "BOTH";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Announcement_Visibility");
+  }
+}
+
+export interface Announcement_AnnotationsEntry {
+  readonly key: string;
+  readonly value: string;
+}
+
+/** Request message for updating an announcement. */
+export interface UpdateAnnouncementRequest {
+  /**
+   * Required. The announcement to update.
+   * The announcement's `name` field is used to identify the announcement to
+   * update.
+   */
+  readonly announcement:
+    | Announcement
+    | undefined;
+  /** Optional. The list of fields to update. */
+  readonly updateMask:
+    | readonly string[]
+    | undefined;
+  /**
+   * Optional. If set to true, and the announcement is not found, a new
+   * announcement will be created. In this case, the name specified in the
+   * announcement is used to create the new resource. If the name is empty,
+   * a server-assigned name will be generated.
+   */
+  readonly allowMissing: boolean;
+}
+
+/** Request message for deleting an announcement. */
+export interface DeleteAnnouncementRequest {
+  /**
+   * Required. The name of the announcement to delete.
+   * Format: announcements/{announcement}
+   */
+  readonly name: string;
+}
+
+/** Request message for activating an announcement. */
+export interface ActivateAnnouncementRequest {
+  /**
+   * Required. The name of the announcement to activate.
+   * Format: announcements/{announcement}
+   */
+  readonly name: string;
+}
+
+/** Request message for deactivating an announcement. */
+export interface DeactivateAnnouncementRequest {
+  /**
+   * Required. The name of the announcement to deactivate.
+   * Format: announcements/{announcement}
+   */
+  readonly name: string;
 }
 
 function createBaseListMeasurementFilterColumnsRequest(): ListMeasurementFilterColumnsRequest {
@@ -6341,6 +6652,8 @@ function createBasePerfChartSeries(): PerfChartSeries {
     id: "",
     parentSeriesId: "",
     hidden: false,
+    matchType: 0,
+    expansionParentSeriesId: "",
   };
 }
 
@@ -6384,6 +6697,12 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     }
     if (message.hidden !== false) {
       writer.uint32(104).bool(message.hidden);
+    }
+    if (message.matchType !== 0) {
+      writer.uint32(112).int32(message.matchType);
+    }
+    if (message.expansionParentSeriesId !== "") {
+      writer.uint32(122).string(message.expansionParentSeriesId);
     }
     return writer;
   },
@@ -6499,6 +6818,22 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
           message.hidden = reader.bool();
           continue;
         }
+        case 14: {
+          if (tag !== 112) {
+            break;
+          }
+
+          message.matchType = reader.int32() as any;
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.expansionParentSeriesId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6529,6 +6864,10 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
       parentSeriesId: isSet(object.parentSeriesId) ? globalThis.String(object.parentSeriesId) : "",
       hidden: isSet(object.hidden) ? globalThis.Boolean(object.hidden) : false,
+      matchType: isSet(object.matchType) ? perfChartSeries_MatchTypeFromJSON(object.matchType) : 0,
+      expansionParentSeriesId: isSet(object.expansionParentSeriesId)
+        ? globalThis.String(object.expansionParentSeriesId)
+        : "",
     };
   },
 
@@ -6573,6 +6912,12 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     if (message.hidden !== false) {
       obj.hidden = message.hidden;
     }
+    if (message.matchType !== 0) {
+      obj.matchType = perfChartSeries_MatchTypeToJSON(message.matchType);
+    }
+    if (message.expansionParentSeriesId !== "") {
+      obj.expansionParentSeriesId = message.expansionParentSeriesId;
+    }
     return obj;
   },
 
@@ -6594,6 +6939,8 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     message.id = object.id ?? "";
     message.parentSeriesId = object.parentSeriesId ?? "";
     message.hidden = object.hidden ?? false;
+    message.matchType = object.matchType ?? 0;
+    message.expansionParentSeriesId = object.expansionParentSeriesId ?? "";
     return message;
   },
 };
@@ -9838,6 +10185,798 @@ export const RawSampleRow_ValuesEntry: MessageFns<RawSampleRow_ValuesEntry> = {
   },
 };
 
+function createBaseListAnnouncementsRequest(): ListAnnouncementsRequest {
+  return { pageSize: 0, pageToken: "", filter: "" };
+}
+
+export const ListAnnouncementsRequest: MessageFns<ListAnnouncementsRequest> = {
+  encode(message: ListAnnouncementsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.pageSize !== 0) {
+      writer.uint32(8).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(18).string(message.pageToken);
+    }
+    if (message.filter !== "") {
+      writer.uint32(26).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListAnnouncementsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListAnnouncementsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListAnnouncementsRequest {
+    return {
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: ListAnnouncementsRequest): unknown {
+    const obj: any = {};
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListAnnouncementsRequest>): ListAnnouncementsRequest {
+    return ListAnnouncementsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListAnnouncementsRequest>): ListAnnouncementsRequest {
+    const message = createBaseListAnnouncementsRequest() as any;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseListAnnouncementsResponse(): ListAnnouncementsResponse {
+  return { announcements: [], nextPageToken: "" };
+}
+
+export const ListAnnouncementsResponse: MessageFns<ListAnnouncementsResponse> = {
+  encode(message: ListAnnouncementsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.announcements) {
+      Announcement.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListAnnouncementsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListAnnouncementsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.announcements.push(Announcement.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListAnnouncementsResponse {
+    return {
+      announcements: globalThis.Array.isArray(object?.announcements)
+        ? object.announcements.map((e: any) => Announcement.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: ListAnnouncementsResponse): unknown {
+    const obj: any = {};
+    if (message.announcements?.length) {
+      obj.announcements = message.announcements.map((e) => Announcement.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListAnnouncementsResponse>): ListAnnouncementsResponse {
+    return ListAnnouncementsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListAnnouncementsResponse>): ListAnnouncementsResponse {
+    const message = createBaseListAnnouncementsResponse() as any;
+    message.announcements = object.announcements?.map((e) => Announcement.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseGetAnnouncementRequest(): GetAnnouncementRequest {
+  return { name: "" };
+}
+
+export const GetAnnouncementRequest: MessageFns<GetAnnouncementRequest> = {
+  encode(message: GetAnnouncementRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetAnnouncementRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetAnnouncementRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetAnnouncementRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: GetAnnouncementRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetAnnouncementRequest>): GetAnnouncementRequest {
+    return GetAnnouncementRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetAnnouncementRequest>): GetAnnouncementRequest {
+    const message = createBaseGetAnnouncementRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseAnnouncement(): Announcement {
+  return {
+    name: "",
+    message: "",
+    severity: 0,
+    startTime: undefined,
+    endTime: undefined,
+    state: 0,
+    updateTime: undefined,
+    annotations: {},
+    visibility: 0,
+  };
+}
+
+export const Announcement: MessageFns<Announcement> = {
+  encode(message: Announcement, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.message !== "") {
+      writer.uint32(18).string(message.message);
+    }
+    if (message.severity !== 0) {
+      writer.uint32(24).int32(message.severity);
+    }
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(34).fork()).join();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(42).fork()).join();
+    }
+    if (message.state !== 0) {
+      writer.uint32(48).int32(message.state);
+    }
+    if (message.updateTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.updateTime), writer.uint32(58).fork()).join();
+    }
+    Object.entries(message.annotations).forEach(([key, value]) => {
+      Announcement_AnnotationsEntry.encode({ key: key as any, value }, writer.uint32(66).fork()).join();
+    });
+    if (message.visibility !== 0) {
+      writer.uint32(72).int32(message.visibility);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Announcement {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAnnouncement() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.severity = reader.int32() as any;
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.state = reader.int32() as any;
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.updateTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          const entry8 = Announcement_AnnotationsEntry.decode(reader, reader.uint32());
+          if (entry8.value !== undefined) {
+            message.annotations[entry8.key] = entry8.value;
+          }
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.visibility = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Announcement {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      severity: isSet(object.severity) ? announcement_SeverityFromJSON(object.severity) : 0,
+      startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
+      endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
+      state: isSet(object.state) ? announcement_StateFromJSON(object.state) : 0,
+      updateTime: isSet(object.updateTime) ? globalThis.String(object.updateTime) : undefined,
+      annotations: isObject(object.annotations)
+        ? Object.entries(object.annotations).reduce<{ [key: string]: string }>((acc, [key, value]) => {
+          acc[key] = String(value);
+          return acc;
+        }, {})
+        : {},
+      visibility: isSet(object.visibility) ? announcement_VisibilityFromJSON(object.visibility) : 0,
+    };
+  },
+
+  toJSON(message: Announcement): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.severity !== 0) {
+      obj.severity = announcement_SeverityToJSON(message.severity);
+    }
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime;
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime;
+    }
+    if (message.state !== 0) {
+      obj.state = announcement_StateToJSON(message.state);
+    }
+    if (message.updateTime !== undefined) {
+      obj.updateTime = message.updateTime;
+    }
+    if (message.annotations) {
+      const entries = Object.entries(message.annotations);
+      if (entries.length > 0) {
+        obj.annotations = {};
+        entries.forEach(([k, v]) => {
+          obj.annotations[k] = v;
+        });
+      }
+    }
+    if (message.visibility !== 0) {
+      obj.visibility = announcement_VisibilityToJSON(message.visibility);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Announcement>): Announcement {
+    return Announcement.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Announcement>): Announcement {
+    const message = createBaseAnnouncement() as any;
+    message.name = object.name ?? "";
+    message.message = object.message ?? "";
+    message.severity = object.severity ?? 0;
+    message.startTime = object.startTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    message.state = object.state ?? 0;
+    message.updateTime = object.updateTime ?? undefined;
+    message.annotations = Object.entries(object.annotations ?? {}).reduce<{ [key: string]: string }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = globalThis.String(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    message.visibility = object.visibility ?? 0;
+    return message;
+  },
+};
+
+function createBaseAnnouncement_AnnotationsEntry(): Announcement_AnnotationsEntry {
+  return { key: "", value: "" };
+}
+
+export const Announcement_AnnotationsEntry: MessageFns<Announcement_AnnotationsEntry> = {
+  encode(message: Announcement_AnnotationsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Announcement_AnnotationsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAnnouncement_AnnotationsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Announcement_AnnotationsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: Announcement_AnnotationsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Announcement_AnnotationsEntry>): Announcement_AnnotationsEntry {
+    return Announcement_AnnotationsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Announcement_AnnotationsEntry>): Announcement_AnnotationsEntry {
+    const message = createBaseAnnouncement_AnnotationsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
+    return message;
+  },
+};
+
+function createBaseUpdateAnnouncementRequest(): UpdateAnnouncementRequest {
+  return { announcement: undefined, updateMask: undefined, allowMissing: false };
+}
+
+export const UpdateAnnouncementRequest: MessageFns<UpdateAnnouncementRequest> = {
+  encode(message: UpdateAnnouncementRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.announcement !== undefined) {
+      Announcement.encode(message.announcement, writer.uint32(10).fork()).join();
+    }
+    if (message.updateMask !== undefined) {
+      FieldMask.encode(FieldMask.wrap(message.updateMask), writer.uint32(18).fork()).join();
+    }
+    if (message.allowMissing !== false) {
+      writer.uint32(24).bool(message.allowMissing);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateAnnouncementRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateAnnouncementRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.announcement = Announcement.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.updateMask = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.allowMissing = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateAnnouncementRequest {
+    return {
+      announcement: isSet(object.announcement) ? Announcement.fromJSON(object.announcement) : undefined,
+      updateMask: isSet(object.updateMask) ? FieldMask.unwrap(FieldMask.fromJSON(object.updateMask)) : undefined,
+      allowMissing: isSet(object.allowMissing) ? globalThis.Boolean(object.allowMissing) : false,
+    };
+  },
+
+  toJSON(message: UpdateAnnouncementRequest): unknown {
+    const obj: any = {};
+    if (message.announcement !== undefined) {
+      obj.announcement = Announcement.toJSON(message.announcement);
+    }
+    if (message.updateMask !== undefined) {
+      obj.updateMask = FieldMask.toJSON(FieldMask.wrap(message.updateMask));
+    }
+    if (message.allowMissing !== false) {
+      obj.allowMissing = message.allowMissing;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateAnnouncementRequest>): UpdateAnnouncementRequest {
+    return UpdateAnnouncementRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateAnnouncementRequest>): UpdateAnnouncementRequest {
+    const message = createBaseUpdateAnnouncementRequest() as any;
+    message.announcement = (object.announcement !== undefined && object.announcement !== null)
+      ? Announcement.fromPartial(object.announcement)
+      : undefined;
+    message.updateMask = object.updateMask ?? undefined;
+    message.allowMissing = object.allowMissing ?? false;
+    return message;
+  },
+};
+
+function createBaseDeleteAnnouncementRequest(): DeleteAnnouncementRequest {
+  return { name: "" };
+}
+
+export const DeleteAnnouncementRequest: MessageFns<DeleteAnnouncementRequest> = {
+  encode(message: DeleteAnnouncementRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteAnnouncementRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteAnnouncementRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteAnnouncementRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: DeleteAnnouncementRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeleteAnnouncementRequest>): DeleteAnnouncementRequest {
+    return DeleteAnnouncementRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeleteAnnouncementRequest>): DeleteAnnouncementRequest {
+    const message = createBaseDeleteAnnouncementRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseActivateAnnouncementRequest(): ActivateAnnouncementRequest {
+  return { name: "" };
+}
+
+export const ActivateAnnouncementRequest: MessageFns<ActivateAnnouncementRequest> = {
+  encode(message: ActivateAnnouncementRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ActivateAnnouncementRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseActivateAnnouncementRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ActivateAnnouncementRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: ActivateAnnouncementRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ActivateAnnouncementRequest>): ActivateAnnouncementRequest {
+    return ActivateAnnouncementRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ActivateAnnouncementRequest>): ActivateAnnouncementRequest {
+    const message = createBaseActivateAnnouncementRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseDeactivateAnnouncementRequest(): DeactivateAnnouncementRequest {
+  return { name: "" };
+}
+
+export const DeactivateAnnouncementRequest: MessageFns<DeactivateAnnouncementRequest> = {
+  encode(message: DeactivateAnnouncementRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeactivateAnnouncementRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeactivateAnnouncementRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeactivateAnnouncementRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: DeactivateAnnouncementRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeactivateAnnouncementRequest>): DeactivateAnnouncementRequest {
+    return DeactivateAnnouncementRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeactivateAnnouncementRequest>): DeactivateAnnouncementRequest {
+    const message = createBaseDeactivateAnnouncementRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
 /** Service for Android performance-related data. */
 export interface PerfService {
   /** RPC to discover filterable columns for measurements. */
@@ -9973,6 +11112,18 @@ export interface PerfService {
    * (Imperative only.)
    */
   SummarizeDashboardWidget(request: SummarizeDashboardWidgetRequest): Promise<SummarizeDashboardWidgetResponse>;
+  /** Gets a single announcement by resource name. */
+  GetAnnouncement(request: GetAnnouncementRequest): Promise<Announcement>;
+  /** Lists active and scheduled announcements. */
+  ListAnnouncements(request: ListAnnouncementsRequest): Promise<ListAnnouncementsResponse>;
+  /** Updates an announcement banner. */
+  UpdateAnnouncement(request: UpdateAnnouncementRequest): Promise<Announcement>;
+  /** Deletes an announcement banner. */
+  DeleteAnnouncement(request: DeleteAnnouncementRequest): Promise<Empty>;
+  /** Activates an announcement, making it visible to users. */
+  ActivateAnnouncement(request: ActivateAnnouncementRequest): Promise<Announcement>;
+  /** Deactivates an announcement, hiding it from users. */
+  DeactivateAnnouncement(request: DeactivateAnnouncementRequest): Promise<Announcement>;
 }
 
 export const PerfServiceServiceName = "google.android.perf.v1.PerfService";
@@ -10004,6 +11155,12 @@ export class PerfServiceClientImpl implements PerfService {
     this.GenerateDashboardState = this.GenerateDashboardState.bind(this);
     this.SummarizeDashboardState = this.SummarizeDashboardState.bind(this);
     this.SummarizeDashboardWidget = this.SummarizeDashboardWidget.bind(this);
+    this.GetAnnouncement = this.GetAnnouncement.bind(this);
+    this.ListAnnouncements = this.ListAnnouncements.bind(this);
+    this.UpdateAnnouncement = this.UpdateAnnouncement.bind(this);
+    this.DeleteAnnouncement = this.DeleteAnnouncement.bind(this);
+    this.ActivateAnnouncement = this.ActivateAnnouncement.bind(this);
+    this.DeactivateAnnouncement = this.DeactivateAnnouncement.bind(this);
   }
   ListMeasurementFilterColumns(
     request: ListMeasurementFilterColumnsRequest,
@@ -10135,6 +11292,42 @@ export class PerfServiceClientImpl implements PerfService {
     const data = SummarizeDashboardWidgetRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "SummarizeDashboardWidget", data);
     return promise.then((data) => SummarizeDashboardWidgetResponse.fromJSON(data));
+  }
+
+  GetAnnouncement(request: GetAnnouncementRequest): Promise<Announcement> {
+    const data = GetAnnouncementRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetAnnouncement", data);
+    return promise.then((data) => Announcement.fromJSON(data));
+  }
+
+  ListAnnouncements(request: ListAnnouncementsRequest): Promise<ListAnnouncementsResponse> {
+    const data = ListAnnouncementsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListAnnouncements", data);
+    return promise.then((data) => ListAnnouncementsResponse.fromJSON(data));
+  }
+
+  UpdateAnnouncement(request: UpdateAnnouncementRequest): Promise<Announcement> {
+    const data = UpdateAnnouncementRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdateAnnouncement", data);
+    return promise.then((data) => Announcement.fromJSON(data));
+  }
+
+  DeleteAnnouncement(request: DeleteAnnouncementRequest): Promise<Empty> {
+    const data = DeleteAnnouncementRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "DeleteAnnouncement", data);
+    return promise.then((data) => Empty.fromJSON(data));
+  }
+
+  ActivateAnnouncement(request: ActivateAnnouncementRequest): Promise<Announcement> {
+    const data = ActivateAnnouncementRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ActivateAnnouncement", data);
+    return promise.then((data) => Announcement.fromJSON(data));
+  }
+
+  DeactivateAnnouncement(request: DeactivateAnnouncementRequest): Promise<Announcement> {
+    const data = DeactivateAnnouncementRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "DeactivateAnnouncement", data);
+    return promise.then((data) => Announcement.fromJSON(data));
   }
 }
 
