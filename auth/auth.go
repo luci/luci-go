@@ -679,13 +679,6 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 		return GoogleADCMethod
 	}
 
-	// Asked to use ADC if it is available.
-	if opts.GoogleADCPolicy == GoogleADCAllow {
-		if _, err := google.FindDefaultCredentials(ctx); err == nil {
-			return GoogleADCMethod
-		}
-	}
-
 	// Asked to use a credential helper. If it is missing, we'll crash a bit later
 	// when actually invoking it. If ID tokens are requested we should not
 	// select this method as credential helpers currently don't support ID
@@ -698,6 +691,13 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 			logging.Debugf(ctx, "Skipping CredentialHelperMethod: ID tokens are requested but not supported by credential helpers")
 		default:
 			return CredentialHelperMethod
+		}
+	}
+
+	// Asked to use ADC if it is available.
+	if opts.GoogleADCPolicy == GoogleADCAllow {
+		if _, err := google.FindDefaultCredentials(ctx); err == nil {
+			return GoogleADCMethod
 		}
 	}
 
