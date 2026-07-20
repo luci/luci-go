@@ -58,6 +58,7 @@ export function toString(id: unknown): string {
   };
 
   const acc: string[] = [];
+  let hasWorkPlan = false;
 
   while (current) {
     const kind = kindOf(current);
@@ -66,6 +67,7 @@ export function toString(id: unknown): string {
         const x: WorkPlan | undefined = current.workPlan;
         if (x?.id) {
           acc.push('L' + x.id);
+          hasWorkPlan = true;
         }
         current = null;
         break;
@@ -76,7 +78,7 @@ export function toString(id: unknown): string {
           current = null;
           break;
         }
-        acc.push(x.id || '', ':C');
+        acc.push('C' + (x.id || ''));
         current = x.workPlan ? { workPlan: x.workPlan } : null;
         break;
       }
@@ -86,7 +88,7 @@ export function toString(id: unknown): string {
           current = null;
           break;
         }
-        acc.push(String(x.idx), ':R');
+        acc.push('R' + String(x.idx));
         current = x.check ? { check: x.check } : null;
         break;
       }
@@ -96,7 +98,7 @@ export function toString(id: unknown): string {
           current = null;
           break;
         }
-        acc.push(fmtVersion(x.version), ':V');
+        acc.push('V' + fmtVersion(x.version));
         current = x.check ? { check: x.check } : null;
         break;
       }
@@ -106,11 +108,11 @@ export function toString(id: unknown): string {
           current = null;
           break;
         }
-        let sep = ':?';
+        let prefix = '?';
         if (x.isWorknode !== undefined) {
-          sep = x.isWorknode ? ':N' : ':S';
+          prefix = x.isWorknode ? 'N' : 'S';
         }
-        acc.push(x.id || '', sep);
+        acc.push(prefix + (x.id || ''));
         current = x.workPlan ? { workPlan: x.workPlan } : null;
         break;
       }
@@ -120,7 +122,7 @@ export function toString(id: unknown): string {
           current = null;
           break;
         }
-        acc.push(String(x.idx), ':A');
+        acc.push('A' + String(x.idx));
         current = x.stage ? { stage: x.stage } : null;
         break;
       }
@@ -130,7 +132,7 @@ export function toString(id: unknown): string {
           current = null;
           break;
         }
-        acc.push(fmtVersion(x.version), ':V');
+        acc.push('V' + fmtVersion(x.version));
         current = x.stage ? { stage: x.stage } : null;
         break;
       }
@@ -140,6 +142,10 @@ export function toString(id: unknown): string {
     }
   }
 
+  if (acc.length > 0 && !hasWorkPlan) {
+    acc.push('');
+  }
+
   acc.reverse();
-  return acc.join('');
+  return acc.join(':');
 }
