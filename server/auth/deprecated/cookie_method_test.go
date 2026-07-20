@@ -325,6 +325,9 @@ func TestNormalizeURL(t *testing.T) {
 			"http://another/abc/def",
 			"abc/def",
 			"//host.example.com",
+			"//host.example.com/",
+			"//evil.com/x",
+			"//user@evil.com/x",
 		}
 		for _, c := range cases {
 			_, err := normalizeURL(c)
