@@ -16,3 +16,4 @@ export * from './ids';
 export * from './wrap';
 export * from './to_string';
 export * from './from_string';
+export * from './get_base_node_id';

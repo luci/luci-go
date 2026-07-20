@@ -28,10 +28,14 @@ import { kindOf, wrap } from './wrap';
 
 export const INVALID_IDENTIFIER = '<turboci invalid identifier>';
 
+export interface ToStringOptions {
+  readonly omitWorkPlan?: boolean;
+}
+
 /**
  * Converts any TurboCI identifier proto into its canonical string format.
  */
-export function toString(id: unknown): string {
+export function toString(id: unknown, options?: ToStringOptions): string {
   if (!id) {
     return INVALID_IDENTIFIER;
   }
@@ -66,7 +70,9 @@ export function toString(id: unknown): string {
       case IdentifierKind.IDENTIFIER_KIND_WORK_PLAN: {
         const x: WorkPlan | undefined = current.workPlan;
         if (x?.id) {
-          acc.push('L' + x.id);
+          if (!options?.omitWorkPlan) {
+            acc.push('L' + x.id);
+          }
           hasWorkPlan = true;
         }
         current = null;
@@ -142,7 +148,7 @@ export function toString(id: unknown): string {
     }
   }
 
-  if (acc.length > 0 && !hasWorkPlan) {
+  if (acc.length > 0 && !hasWorkPlan && !options?.omitWorkPlan) {
     acc.push('');
   }
 

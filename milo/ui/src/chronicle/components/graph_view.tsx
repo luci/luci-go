@@ -63,6 +63,7 @@ import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 // and retrieve the URL to the script.
 // eslint-disable-next-line import/default
 import graphWorkerUrl from '../utils/graph_worker?worker&url';
+import { getBaseNodeId } from '../utils/id';
 
 import {
   ChronicleContext,
@@ -247,15 +248,18 @@ function Graph() {
     }
 
     if (selectedNodeId) {
-      const relatedNodeIds = new Set<string>([selectedNodeId]);
+      const baseNodeId = getBaseNodeId(selectedNodeId, {
+        includePrefix: false,
+      })!;
+      const relatedNodeIds = new Set<string>([baseNodeId]);
       const relatedEdgeIds = new Set<string>();
 
       // Find immediate neighbors and connecting edges
       baseLayout.edges.forEach((edge) => {
-        if (edge.source === selectedNodeId) {
+        if (edge.source === baseNodeId) {
           relatedNodeIds.add(edge.target);
           relatedEdgeIds.add(edge.id);
-        } else if (edge.target === selectedNodeId) {
+        } else if (edge.target === baseNodeId) {
           relatedNodeIds.add(edge.source);
           relatedEdgeIds.add(edge.id);
         }
@@ -448,7 +452,8 @@ function Graph() {
 
   const selectedNode = useMemo(() => {
     if (!nodes || nodes.length === 0) return;
-    const n = nodes.find((n) => n.id === selectedNodeId);
+    const baseNodeId = getBaseNodeId(selectedNodeId, { includePrefix: false });
+    const n = nodes.find((n) => n.id === baseNodeId);
     if (!n && !!selectedNodeId) {
       setErrorMessage(`Node "${selectedNodeId}" not found.`);
     }
