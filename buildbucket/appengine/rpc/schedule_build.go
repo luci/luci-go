@@ -963,7 +963,7 @@ func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 	allowedOverrides := stringset.NewFromSlice(cfg.GetAllowedPropertyOverrides()...)
 	anyOverride := allowedOverrides.Has("*")
 	for k, v := range req.GetProperties().GetFields() {
-		if build.Input.Properties.Fields[k] != nil && !anyOverride && !allowedOverrides.Has(k) {
+		if build.Input.Properties.Fields[k] != nil && !proto.Equal(build.Input.Properties.Fields[k], v) && !anyOverride && !allowedOverrides.Has(k) {
 			logging.Warningf(ctx, "ScheduleBuild: Unpermitted Override for property %q for builder %q (ignored)", k, protoutil.FormatBuilderID(build.Builder))
 		}
 		build.Input.Properties.Fields[k] = v

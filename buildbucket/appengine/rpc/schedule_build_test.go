@@ -3602,6 +3602,11 @@ func TestScheduleBuild(t *testing.T) {
 								StringValue: "req value",
 							},
 						},
+						"same key": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "cfg value",
+							},
+						},
 						"req key": {
 							Kind: &structpb.Value_StringValue{
 								StringValue: "req value",
@@ -3611,7 +3616,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			cfg := &pb.BuilderConfig{
-				Properties:               "{\"override\": \"cfg value\", \"allowed\": \"stuff\", \"cfg key\": \"cfg value\"}",
+				Properties:               "{\"override\": \"cfg value\", \"allowed\": \"stuff\", \"same key\": \"cfg value\", \"cfg key\": \"cfg value\"}",
 				AllowedPropertyOverrides: []string{"allowed"},
 			}
 			b := &pb.Build{
@@ -3641,6 +3646,11 @@ func TestScheduleBuild(t *testing.T) {
 								StringValue: "req value",
 							},
 						},
+						"same key": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "cfg value",
+							},
+						},
 						"req key": {
 							Kind: &structpb.Value_StringValue{
 								StringValue: "req value",
@@ -3651,6 +3661,7 @@ func TestScheduleBuild(t *testing.T) {
 			}))
 			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"override\""))
 			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"allowed\""))
+			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"same key\""))
 			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"cfg key\""))
 			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"req key\""))
 		})
