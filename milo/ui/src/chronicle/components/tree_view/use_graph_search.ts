@@ -14,14 +14,9 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
-import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
-import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { getNodeSearchIndex } from '../../utils/check_utils';
 
 import { Graph, transitiveDescendants } from './build_tree';
-
-function isStage(view: Check | Stage): view is Stage {
-  return (view as Stage).assignments !== undefined;
-}
 
 /**
  * Hook for providing matched and filtered nodes for a typed query.
@@ -51,22 +46,11 @@ export function useGraphSearch(graph: Graph, searchQuery: string) {
       const nodes = Object.values(graph.nodes);
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i];
-        // Create a searchable string containing label and full raw JSON data.
-        // For stage nodes, we exclude the `assignments` field. This is
-        // because assignment IDs are not useful for search and can lead to
-        // a single search query matching many nodes.
-        searchIndexRef.current[node.id] = (
-          node.label +
-          ' ' +
-          (node.raw
-            ? node.type === 'STAGE' && isStage(node.raw)
-              ? JSON.stringify({
-                  ...node.raw,
-                  assignments: undefined,
-                })
-              : JSON.stringify(node.raw)
-            : '')
-        ).toLowerCase();
+        searchIndexRef.current[node.id] = getNodeSearchIndex(
+          node.id,
+          node.label,
+          node.raw,
+        );
       }
     }
 

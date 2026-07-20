@@ -24,6 +24,7 @@ import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 
+import { INVALID_IDENTIFIER, toString as idToString } from './id';
 import {
   LegacyWorkNode,
   TYPE_URL_LEGACY_WORKNODE_STAGE,
@@ -187,4 +188,52 @@ export function getStageLabel(
   }
 
   return `Stage: ${id}`;
+}
+
+function isStage(view: Check | Stage): view is Stage {
+  return (view as Stage).assignments !== undefined;
+}
+
+/**
+ * Prepares a Check or Stage object for search index serialization by creating a shallow copy
+ * with fields that could lead to false-positive matches removed.
+ */
+function createIndexableObject(view: Check | Stage): Partial<Check | Stage> {
+  const obj = {
+    ...view,
+    // Exclude dependencies so we don't match on dependency IDs
+    dependencies: undefined,
+  };
+  if (isStage(view)) {
+    return {
+      ...obj,
+      // Exclude assignments so we don't match on assigned check IDs.
+      assignments: undefined,
+    };
+  }
+  return obj;
+}
+
+/**
+ * Builds a normalized, lowercase full-text search string for a node by combining its
+ * ID, canonical identifier format, label, and serialized metadata, while excluding
+ * connection fields (assignments and dependencies) to prevent false-positive matches.
+ */
+export function getNodeSearchIndex(
+  id: string,
+  label: string,
+  view?: Check | Stage,
+): string {
+  const parts: string[] = [id, label];
+  if (view) {
+    if (view.identifier) {
+      const canonicalId = idToString(view.identifier);
+      if (canonicalId !== INVALID_IDENTIFIER) {
+        parts.push(canonicalId);
+      }
+    }
+    const objToSerialize = createIndexableObject(view);
+    parts.push(JSON.stringify(objToSerialize));
+  }
+  return parts.join(' ').toLowerCase();
 }

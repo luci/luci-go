@@ -58,6 +58,7 @@ import { TURBO_CI_ENVIRONMENTS } from '@/common/hooks/grpc_query/turbo_ci/turbo_
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { WorkflowType } from '../fake_turboci_graph';
+import { getNodeSearchIndex } from '../utils/check_utils';
 import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 // ?worker&url is special vite syntax to import a web worker script
 // and retrieve the URL to the script.
@@ -293,10 +294,11 @@ function Graph() {
         nodesToFit = Array.from(relatedNodeIds);
       }
     } else if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLocaleLowerCase();
       nextNodes = nextNodes.map((node) => {
-        const nodeMatch = node.data.label
-          ?.toLocaleLowerCase()
-          .includes(debouncedSearchQuery.toLocaleLowerCase());
+        const label = node.data.label || '';
+        const indexText = getNodeSearchIndex(node.id, label, node.data.view);
+        const nodeMatch = indexText.includes(query);
 
         if (nodeMatch) {
           nodesToFit.push(node.id);

@@ -28,6 +28,7 @@ import {
   CheckResultStatus,
   getCheckLabel,
   getCheckResultStatus,
+  getNodeSearchIndex,
   getStageLabel,
   TYPE_URL_BUILD_OPTIONS,
   TYPE_URL_BUILD_RESULT,
@@ -394,6 +395,48 @@ describe('check_utils', () => {
         identifier: { id: 'stage-2' },
       } as Stage;
       expect(getStageLabel(stage, new Map())).toBe('Stage: stage-2');
+    });
+  });
+
+  describe('getNodeSearchIndex', () => {
+    it('combines node id, label, and serialized check JSON in lowercase', () => {
+      const check: Check = {
+        identifier: { id: 'check-1' },
+        realm: 'ci-realm',
+      } as unknown as Check;
+      const index = getNodeSearchIndex('check-1', 'Build check-1', check);
+      expect(index).toContain('check-1 build check-1');
+      expect(index).toContain('"realm":"ci-realm"');
+    });
+
+    it('excludes assignments and dependencies fields when indexing nodes', () => {
+      const stage: Stage = {
+        identifier: { id: 'stage-1' },
+        assignments: [{ check: { id: 'check-1' } }],
+        dependencies: { edges: [{ check: { identifier: { id: 'dep-1' } } }] },
+        executor: { label: 'linux-runner' },
+      } as unknown as Stage;
+      const index = getNodeSearchIndex('stage-1', 'Stage runner', stage);
+      expect(index).toContain('stage-1 stage runner');
+      expect(index).toContain('"label":"linux-runner"');
+      expect(index).not.toContain('assignments');
+      expect(index).not.toContain('dependencies');
+    });
+
+    it('includes canonical string identifier with token prefix right in search index', () => {
+      const stage: Stage = {
+        identifier: {
+          workPlan: { id: 'test_plan' },
+          id: '52000030948763694',
+          isWorknode: true,
+        },
+      } as unknown as Stage;
+      const index = getNodeSearchIndex(
+        '52000030948763694',
+        'Stage: 52000030948763694',
+        stage,
+      );
+      expect(index).toContain('n52000030948763694');
     });
   });
 });
