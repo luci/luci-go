@@ -14,13 +14,18 @@
 
 import { Alert, Button } from '@mui/material';
 import { useMemo } from 'react';
+import { Link } from 'react-router';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
+import {
+  generateAdminTasksURL,
+  CHROMEOS_PLATFORM,
+} from '@/fleet/constants/paths';
 import { useTasks } from '@/fleet/hooks/swarming_hooks';
+import { useAdminTaskTags } from '@/fleet/hooks/use_pending_admin_tasks';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { useTasksClient } from '@/swarming/hooks/prpc_clients';
 
-const USER_TAG = 'client_user';
 const HOUR_SET_BACK = 24;
 
 export const AdminTasksAlert = () => {
@@ -33,17 +38,17 @@ export const AdminTasksAlert = () => {
     return d;
   }, []);
 
-  const adminTaskTags = useMemo(
-    () => (authState.email ? [`${USER_TAG}:${authState.email}`] : []),
-    [authState.email],
-  );
+  const adminTaskTags = useAdminTaskTags();
 
-  const { tasks, isLoading, isError } = useTasks({
-    client,
-    tags: adminTaskTags,
-    startTime: time_check.toISOString(),
-    limit: 101,
-  });
+  const { tasks, isLoading, isError } = useTasks(
+    {
+      client,
+      tags: adminTaskTags,
+      startTime: time_check.toISOString(),
+      limit: 101,
+    },
+    { enabled: adminTaskTags.length > 0 },
+  );
 
   const jobsCount = tasks?.length || 0;
 
@@ -61,8 +66,8 @@ export const AdminTasksAlert = () => {
       }}
       action={
         <Button
-          component="a"
-          href="admin-tasks"
+          component={Link}
+          to={generateAdminTasksURL(CHROMEOS_PLATFORM)}
           variant="text"
           color="primary"
           sx={{ flexShrink: 0, ml: 2 }}

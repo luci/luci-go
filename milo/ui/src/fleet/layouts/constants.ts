@@ -13,3 +13,4 @@
 // limitations under the License.
 
 export const DRAWER_WIDTH = 213;
+export const MAX_BADGE_COUNT = 99;

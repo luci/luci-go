@@ -19,6 +19,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
 import HomeIcon from '@mui/icons-material/Home';
 import LanIcon from '@mui/icons-material/Lan';
+import TaskIcon from '@mui/icons-material/Task';
 import TopicIcon from '@mui/icons-material/Topic';
 import WarningIcon from '@mui/icons-material/Warning';
 import React from 'react';
@@ -27,6 +28,7 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 
 import { getFeatureFlag } from '../config/features';
 import {
+  generateAdminTasksURL,
   generateDeviceListURL,
   generateRepairsURL,
   platformToURL,
@@ -39,6 +41,8 @@ export interface SidebarPage {
   readonly external?: boolean;
   readonly disabled?: boolean;
   readonly tooltip?: string;
+  readonly badgeCount?: number;
+  readonly badgeAriaLabel?: string;
 }
 
 export interface SidebarSection {
@@ -46,10 +50,13 @@ export interface SidebarSection {
   readonly pages: SidebarPage[];
 }
 
-export function generateSidebarSections(platform?: Platform): SidebarSection[] {
+export function generateSidebarSections(
+  platform?: Platform,
+  pendingAdminTasksCount?: number,
+): SidebarSection[] {
   return [
     generateHomeSection(),
-    generateLabHealthSection(platform),
+    generateLabHealthSection(platform, pendingAdminTasksCount),
     generateResourceRequestsSection(),
     generateOtherToolsSection(),
   ];
@@ -68,8 +75,12 @@ function generateHomeSection(): SidebarSection {
   };
 }
 
-function generateLabHealthSection(platform?: Platform): SidebarSection {
+function generateLabHealthSection(
+  platform?: Platform,
+  pendingAdminTasksCount?: number,
+): SidebarSection {
   const isRepairsEnabled = !platform || platform === Platform.ANDROID;
+  const isAdminTasksEnabled = !platform || platform === Platform.CHROMEOS;
   return {
     title: 'Lab Health',
     pages: [
@@ -94,6 +105,19 @@ function generateLabHealthSection(platform?: Platform): SidebarSection {
           ? `Repairs for ${getPlatformName(platform)} are not available yet`
           : undefined,
       },
+      ...(isAdminTasksEnabled
+        ? [
+            {
+              label: 'Admin tasks',
+              url: generateAdminTasksURL(
+                platformToURL(platform || Platform.CHROMEOS),
+              ),
+              icon: <TaskIcon />,
+              badgeCount: pendingAdminTasksCount,
+              badgeAriaLabel: `${pendingAdminTasksCount ?? 0} pending admin tasks`,
+            },
+          ]
+        : []),
     ],
   };
 }

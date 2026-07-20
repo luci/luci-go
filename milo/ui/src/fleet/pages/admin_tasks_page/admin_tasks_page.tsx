@@ -16,7 +16,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { IconButton, Typography } from '@mui/material';
 import { useNavigate } from 'react-router';
 
-import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import {
@@ -30,7 +29,6 @@ import { TasksTable } from './tasks_table';
 
 export const AdminTasksPage = () => {
   const navigate = useNavigate();
-  const authState = useAuthState();
   return (
     <div
       css={{
@@ -53,7 +51,7 @@ export const AdminTasksPage = () => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" sx={{ whiteSpace: 'nowrap' }}>
-          Tasks history: {authState.email}
+          ChromeOS Admin Tasks
         </Typography>
       </div>
       <div css={{ padding: '0 24px' }}>
@@ -67,7 +65,7 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-admin-tasks">
       <RecoverableErrorBoundary key="fleet-admin-tasks-page">
-        <FleetHelmet pageTitle="Admin tasks history" />
+        <FleetHelmet pageTitle="ChromeOS Admin Tasks" />
         <LoggedInBoundary>
           <AdminTasksPage />
         </LoggedInBoundary>

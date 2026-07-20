@@ -116,19 +116,24 @@ export const useBotTasks = ({
 };
 
 // TODO: b/436654106 look into cleaning up swarming hooks
-export const useTasks = ({
-  client,
-  tags,
-  limit,
-  pageToken,
-  startTime,
-}: {
-  client: DecoratedClient<TasksClientImpl>;
-  tags: string[];
-  limit: number;
-  pageToken?: string;
-  startTime?: string;
-}): {
+export const useTasks = (
+  {
+    client,
+    tags,
+    limit,
+    pageToken,
+    startTime,
+    state = StateQuery.QUERY_ALL,
+  }: {
+    client: DecoratedClient<TasksClientImpl>;
+    tags: string[];
+    limit: number;
+    pageToken?: string;
+    startTime?: string;
+    state?: StateQuery;
+  },
+  options?: { enabled?: boolean },
+): {
   tasks: readonly TaskResultResponse[] | undefined;
   nextPageToken: string;
   error: unknown;
@@ -141,12 +146,13 @@ export const useTasks = ({
         tags: tags,
         limit: limit,
         cursor: pageToken,
-        state: StateQuery.QUERY_ALL,
+        state: state,
         sort: SortQuery.QUERY_CREATED_TS,
         start: startTime,
       }),
     ),
     refetchInterval: 60000,
+    enabled: options?.enabled ?? true,
   });
 
   return {

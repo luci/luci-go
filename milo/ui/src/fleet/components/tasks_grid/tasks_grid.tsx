@@ -339,6 +339,7 @@ export const TasksGrid = ({
     enableColumnFilters: false,
     enableSorting: false,
     enableTopToolbar: true,
+    enableBottomToolbar: false,
     enableStickyHeader: true,
     renderDetailPanel: ({ row, table }) => (
       <TasksDetailPanel row={row} table={table} />
@@ -424,6 +425,9 @@ export const TasksGrid = ({
         }}
         rowsPerPageOptions={pagerCtx.options.pageSizeOptions}
         labelDisplayedRows={() => {
+          if (tasks.length === 0) {
+            return '0 of 0';
+          }
           const realFrom = getPrevFullRowCount(pagerCtx) + 1;
           const realTo = realFrom + tasks.length - 1;
           const hasNextPage = !!nextPageToken;

@@ -109,7 +109,11 @@ describe('Fleet Console Smoke Tests', () => {
   });
 
   it('should load Admin Tasks Page', () => {
+    mockPrpc('**/prpc/swarming.v2.Tasks/ListTasks', { items: [] }, 'listTasks');
+
     cy.visit('/ui/fleet/p/chromeos/admin-tasks');
-    cy.contains('Tasks history').should('be.visible');
+    cy.contains('ChromeOS Admin Tasks').should('be.visible');
+    cy.contains('Active Tasks').should('be.visible');
+    cy.contains('Task History').should('be.visible');
   });
 });

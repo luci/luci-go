@@ -14,7 +14,7 @@
 
 import LaunchIcon from '@mui/icons-material/Launch';
 import MenuIcon from '@mui/icons-material/Menu';
-import { styled, Tooltip, Typography } from '@mui/material';
+import { Chip, styled, Tooltip, Typography } from '@mui/material';
 import MuiDrawer from '@mui/material/Drawer';
 import MaterialLink from '@mui/material/Link';
 import List from '@mui/material/List';
@@ -28,10 +28,12 @@ import { Fragment, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
 
 import { colors } from '@/fleet/theme/colors';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useCurrentPlatform } from '../hooks/usePlatform';
+import { usePendingAdminTasksCount } from '../hooks/use_pending_admin_tasks';
 
-import { DRAWER_WIDTH } from './constants';
+import { DRAWER_WIDTH, MAX_BADGE_COUNT } from './constants';
 import { generateSidebarSections } from './sidebar_sections';
 
 const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
@@ -52,9 +54,13 @@ const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
 export const Sidebar = ({ open }: { open: boolean }) => {
   const location = useLocation();
   const platform = useCurrentPlatform();
+  const isAdminTasksEnabled = !platform || platform === Platform.CHROMEOS;
+  const pendingAdminTasksCount = usePendingAdminTasksCount({
+    enabled: isAdminTasksEnabled,
+  });
   const sidebarSections = useMemo(() => {
-    return generateSidebarSections(platform);
-  }, [platform]);
+    return generateSidebarSections(platform, pendingAdminTasksCount);
+  }, [platform, pendingAdminTasksCount]);
 
   return (
     <Drawer
@@ -96,6 +102,29 @@ export const Sidebar = ({ open }: { open: boolean }) => {
                   </ListItemIcon>
 
                   <ListItemText primary={sidebarPage.label} />
+
+                  {typeof sidebarPage.badgeCount === 'number' &&
+                    sidebarPage.badgeCount > 0 && (
+                      <Chip
+                        label={
+                          sidebarPage.badgeCount > MAX_BADGE_COUNT
+                            ? `${MAX_BADGE_COUNT}+`
+                            : sidebarPage.badgeCount
+                        }
+                        aria-label={
+                          sidebarPage.badgeAriaLabel ||
+                          `${sidebarPage.badgeCount} ${sidebarPage.label}`
+                        }
+                        size="small"
+                        color="primary"
+                        sx={{
+                          height: 20,
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          ml: 1,
+                        }}
+                      />
+                    )}
 
                   {sidebarPage.external && (
                     <ListItemIcon sx={{ minWidth: 0, mr: 1 }}>
