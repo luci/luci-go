@@ -19,7 +19,46 @@ import { OutputSegment } from '@/analysis/types';
 import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
 import { VERDICT_STATUS_COLOR_MAP } from '@/common/constants/verdict';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
+import { SpecifiedTestVerdictStatus } from '@/common/types/verdict';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
+
+interface SegmentStatRowProps {
+  readonly status: SpecifiedTestVerdictStatus;
+  readonly label: string;
+  readonly count: number;
+  readonly total: number;
+}
+
+function SegmentStatRow({ status, label, count, total }: SegmentStatRowProps) {
+  const percentText =
+    total === 0
+      ? ''
+      : ` (${(count / total).toLocaleString(undefined, {
+          style: 'percent',
+          maximumFractionDigits: 1,
+          minimumFractionDigits: 0,
+        })})`;
+
+  return (
+    <tr>
+      <td>
+        <VerdictStatusIcon statusV2={status} sx={{ verticalAlign: 'middle' }} />{' '}
+        {label}:
+      </td>
+      <td
+        css={{
+          color:
+            count > 0
+              ? VERDICT_STATUS_COLOR_MAP[status]
+              : 'var(--greyed-out-text-color)',
+        }}
+      >
+        {count}
+        {percentText}
+      </td>
+    </tr>
+  );
+}
 
 export interface SegmentInfoProps {
   readonly segment: OutputSegment;
@@ -35,6 +74,8 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
     segment.counts.unexpectedVerdicts -
     segment.counts.flakyVerdicts;
 
+  const expectedResults =
+    segment.counts.totalResults - segment.counts.unexpectedResults;
   const commitCount =
     parseInt(segment.endPosition) - parseInt(segment.startPosition) + 1;
 
@@ -56,63 +97,36 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
             {endHour.toFormat(SHORT_TIME_FORMAT)}
           </td>
         </tr>
-        <tr>
-          <td>
-            <VerdictStatusIcon
-              statusV2={TestVerdict_Status.FAILED}
-              sx={{ verticalAlign: 'middle' }}
-            />{' '}
-            Failed Source Verdicts:
-          </td>
-          <td
-            css={{
-              color:
-                segment.counts.unexpectedVerdicts > 0
-                  ? VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.FAILED]
-                  : 'var(--greyed-out-text-color)',
-            }}
-          >
-            {segment.counts.unexpectedVerdicts}
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <VerdictStatusIcon
-              statusV2={TestVerdict_Status.FLAKY}
-              sx={{ verticalAlign: 'middle' }}
-            />{' '}
-            Flaky Source Verdicts:
-          </td>
-          <td
-            css={{
-              color:
-                segment.counts.flakyVerdicts > 0
-                  ? VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.FLAKY]
-                  : 'var(--greyed-out-text-color)',
-            }}
-          >
-            {segment.counts.flakyVerdicts}
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <VerdictStatusIcon
-              statusV2={TestVerdict_Status.PASSED}
-              sx={{ verticalAlign: 'middle' }}
-            />{' '}
-            Passed Source Verdicts:
-          </td>
-          <td
-            css={{
-              color:
-                expectedVerdictCount > 0
-                  ? VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.PASSED]
-                  : 'var(--greyed-out-text-color)',
-            }}
-          >
-            {expectedVerdictCount}
-          </td>
-        </tr>
+        <SegmentStatRow
+          status={TestVerdict_Status.FAILED}
+          label="Failed Source Verdicts"
+          count={segment.counts.unexpectedVerdicts}
+          total={segment.counts.totalVerdicts}
+        />
+        <SegmentStatRow
+          status={TestVerdict_Status.FLAKY}
+          label="Flaky Source Verdicts"
+          count={segment.counts.flakyVerdicts}
+          total={segment.counts.totalVerdicts}
+        />
+        <SegmentStatRow
+          status={TestVerdict_Status.PASSED}
+          label="Passed Source Verdicts"
+          count={expectedVerdictCount}
+          total={segment.counts.totalVerdicts}
+        />
+        <SegmentStatRow
+          status={TestVerdict_Status.FAILED}
+          label="Failed Test Results"
+          count={segment.counts.unexpectedResults}
+          total={segment.counts.totalResults}
+        />
+        <SegmentStatRow
+          status={TestVerdict_Status.PASSED}
+          label="Passed Test Results"
+          count={expectedResults}
+          total={segment.counts.totalResults}
+        />
       </tbody>
     </table>
   );

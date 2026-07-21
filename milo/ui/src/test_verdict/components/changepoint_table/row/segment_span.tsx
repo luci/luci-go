@@ -16,10 +16,11 @@ import { Box, styled } from '@mui/material';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
 import { VERDICT_STATUS_COLOR_MAP } from '@/common/constants/verdict';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import { VerdictSetStatus } from '@/test_verdict/components//verdict_set_status';
 import { SegmentInfo } from '@/test_verdict/components/changepoint_analysis';
+import { VerdictSetStatus } from '@/test_verdict/components/verdict_set_status';
 import {
   getBackgroundColor,
   getBorderColor,
@@ -42,7 +43,8 @@ const Span = styled(Box)`
 
 const SpanLabel = styled(Box)`
   display: grid;
-  grid-template-columns: auto auto;
+  grid-auto-flow: column;
+  align-items: center;
   gap: 2px;
   background-color: rgb(255 255 255 / 80%);
   height: 100%;
@@ -54,7 +56,25 @@ const SpanLabel = styled(Box)`
 `;
 
 const Count = styled('span')`
-  padding-right: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 3px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  line-height: 24px;
+  font-weight: bold;
+`;
+
+const Rate = styled('span')`
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 2px;
+  padding-left: 4px;
+  padding-right: 4px;
+  border-left: solid 1px rgb(0 0 0 / 20%);
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -93,6 +113,21 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
   const unexpectedCount = counts.unexpectedVerdicts;
   const flakyCount = counts.flakyVerdicts;
   const expectedCount = counts.totalVerdicts - unexpectedCount - flakyCount;
+
+  let unexpectedResultRate;
+  if (counts.totalResults !== 0) {
+    unexpectedResultRate = (
+      counts.unexpectedResults / counts.totalResults
+    ).toLocaleString(undefined, {
+      style: 'percent',
+      maximumFractionDigits: 1,
+      minimumFractionDigits: 0,
+    });
+  }
+  const showUnexpectedResultRate =
+    counts.totalResults !== 0 &&
+    counts.unexpectedResults > 0 &&
+    counts.unexpectedResults < counts.totalResults;
 
   return (
     <foreignObject
@@ -155,7 +190,7 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
               >
                 {unexpectedCount}
               </span>
-              <span css={{ opacity: 0.2 }}> / </span>
+              <span css={{ opacity: 0.2 }}>/</span>
               <span
                 css={
                   flakyCount
@@ -170,7 +205,7 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
               >
                 {flakyCount}
               </span>
-              <span css={{ opacity: 0.2 }}> / </span>
+              <span css={{ opacity: 0.2 }}>/</span>
               <span
                 css={
                   expectedCount
@@ -186,6 +221,18 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
                 {expectedCount}
               </span>
             </Count>
+            {showUnexpectedResultRate && (
+              <Rate>
+                <VerdictStatusIcon statusV2={TestVerdict_Status.FAILED} />
+                <span
+                  css={{
+                    color: VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.FAILED],
+                  }}
+                >
+                  {unexpectedResultRate}
+                </span>
+              </Rate>
+            )}
           </SpanLabel>
           <Transition />
         </Span>
