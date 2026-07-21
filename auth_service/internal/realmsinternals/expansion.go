@@ -506,6 +506,23 @@ type principalBindings struct {
 //
 // Produces a lot of duplicates. It's the caller's job to skip them.
 func (rlme *RealmsExpander) perPrincipalBindings(realm string, bindings []principalBindings) ([]principalBindings, error) {
+	visited := stringset.New(len(rlme.realms))
+	var err error
+	bindings, err = rlme.addPerPrincipalBindings(realm, bindings, visited)
+	if err != nil {
+		return nil, err
+	}
+	return bindings, nil
+}
+
+// addPerPrincipalBindings is a recursive helper function; it checks if the
+// realm has been visited, and only appends the realm's bindings if not.
+func (rlme *RealmsExpander) addPerPrincipalBindings(realm string, bindings []principalBindings, visited stringset.Set) ([]principalBindings, error) {
+	if visited.Has(realm) {
+		// This realm's bindings have already been added - nothing to do.
+		return bindings, nil
+	}
+
 	r, ok := rlme.realms[realm]
 	if !ok {
 		return nil, fmt.Errorf("realm %s not found in RealmsExpander", realm)
@@ -538,11 +555,14 @@ func (rlme *RealmsExpander) perPrincipalBindings(realm string, bindings []princi
 	// Go through parents and get their bindings too.
 	for _, parent := range parents(r) {
 		var err error
-		bindings, err = rlme.perPrincipalBindings(parent, bindings)
+		bindings, err = rlme.addPerPrincipalBindings(parent, bindings, visited)
 		if err != nil {
 			return nil, fmt.Errorf("parent realm %q: %w", realm, err)
 		}
 	}
+
+	// Record that this realm's bindings were added.
+	visited.Add(realm)
 	return bindings, nil
 }
 

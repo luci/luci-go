@@ -348,5 +348,150 @@ func TestRealmsExpander(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("role does not exist in internal representation: builtinRole: role/test-role"))
 			})
 		})
+
+		t.Run("works", func(t *testing.T) {
+			permDB := testsupport.PermissionsDB(false)
+			rolesExp := &RolesExpander{
+				permissionsDB: permDB.Permissions,
+				builtinRoles:  permDB.Roles,
+				permissions:   map[string]permissionDetails{},
+				roles:         map[string]roleDetails{},
+			}
+			_, err := rolesExp.roleDetails("role/dev.a")
+			assert.NoErr(t, err)
+
+			t.Run("diamond inheritance deduplication", func(t *testing.T) {
+				condsSet := &ConditionsSet{
+					normalized: map[string]*conditionDetails{},
+					conditions: map[*realmsconf.Condition]*conditionDetails{},
+				}
+				condsSet.finalize()
+
+				r := &RealmsExpander{
+					rolesExpander: rolesExp,
+					condsSet:      condsSet,
+					realms: map[string]*realmsconf.Realm{
+
+						"@root": {
+							Name: "@root",
+							Bindings: []*realmsconf.Binding{
+								{
+									Role:       "role/dev.a",
+									Principals: []string{"user:root-user"},
+								},
+							},
+						},
+						"parentA": {
+							Name:    "parentA",
+							Extends: []string{"@root"},
+							Bindings: []*realmsconf.Binding{
+								{
+									Role:       "role/dev.a",
+									Principals: []string{"user:parentA-user"},
+								},
+							},
+						},
+						"parentB": {
+							Name:    "parentB",
+							Extends: []string{"@root"},
+							Bindings: []*realmsconf.Binding{
+								{
+									Role:       "role/dev.a",
+									Principals: []string{"user:parentB-user"},
+								},
+							},
+						},
+						"child": {
+							Name:    "child",
+							Extends: []string{"parentA", "parentB"},
+							Bindings: []*realmsconf.Binding{
+								{
+									Role:       "role/dev.a",
+									Principals: []string{"user:child-user"},
+								},
+							},
+						},
+					},
+				}
+
+				bindings, err := r.perPrincipalBindings("child", nil)
+				assert.NoErr(t, err)
+
+				var principals []string
+				for _, b := range bindings {
+					principals = append(principals, b.name)
+				}
+
+				// role/dev.a has 2 permission groups, so each binding creates 2
+				// principalBinding entries. Verify that user:root-user appears
+				// 2 times (processed once) instead of 6 times (if processed 3 times).
+				rootCount := 0
+				for _, p := range principals {
+					if p == "user:root-user" {
+						rootCount++
+					}
+				}
+				assert.That(t, rootCount, should.Equal(2))
+			})
+
+			t.Run("visited set skips already processed realms", func(t *testing.T) {
+				condsSet := &ConditionsSet{
+					normalized: map[string]*conditionDetails{},
+					conditions: map[*realmsconf.Condition]*conditionDetails{},
+				}
+				condsSet.finalize()
+
+				r := &RealmsExpander{
+					rolesExpander: rolesExp,
+					condsSet:      condsSet,
+					realms: map[string]*realmsconf.Realm{
+						"@root": {
+							Name: "@root",
+							Bindings: []*realmsconf.Binding{
+								{
+									Role:       "role/dev.a",
+									Principals: []string{"user:root-user"},
+								},
+							},
+						},
+						"parent": {
+							Name:    "parent",
+							Extends: []string{"@root"},
+							Bindings: []*realmsconf.Binding{
+								{
+									Role:       "role/dev.a",
+									Principals: []string{"user:parent-user"},
+								},
+							},
+						},
+						"child": {
+							Name:    "child",
+							Extends: []string{"parent"},
+							Bindings: []*realmsconf.Binding{
+								{
+									Role:       "role/dev.a",
+									Principals: []string{"user:child-user"},
+								},
+							},
+						},
+					},
+				}
+
+				// Pre-populate visited set with "@root" to verify
+				// addPerPrincipalBindings skips it.
+				visited := stringset.NewFromSlice("@root")
+
+				bindings, err := r.addPerPrincipalBindings("child", nil, visited)
+				assert.NoErr(t, err)
+
+				var principals []string
+				for _, b := range bindings {
+					principals = append(principals, b.name)
+				}
+
+				// @root realm should be skipped because "@root" is in visited.
+				assert.That(t, principals, should.NotContain("user:root-user"))
+			})
+		})
 	})
 }
