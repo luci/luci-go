@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export * from './announcement_banner';
 export * from './layout';
 export * from './top_bar';
 export * from './top_bar_context';

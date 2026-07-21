@@ -24,6 +24,7 @@ import {
 } from '@/crystal_ball/context';
 import { Sticky } from '@/generic_libs/components/queued_sticky';
 
+import { AnnouncementBanner } from './announcement_banner';
 import { TopBar } from './top_bar';
 import { TopBarProvider } from './top_bar_provider';
 
@@ -50,6 +51,7 @@ export function Layout() {
                 <Sticky top sx={{ zIndex: Z_INDEX.STICKY_HEADER }}>
                   <TopBar />
                 </Sticky>
+                <AnnouncementBanner />
                 <Box component="main" sx={{ flexGrow: 1 }}>
                   <Outlet />
                 </Box>

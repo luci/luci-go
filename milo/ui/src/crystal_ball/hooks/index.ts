@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export * from './use_announcements_api';
 export * from './use_dashboard_state_api';
 export * from './use_dashboard_workflows';
 export * from './use_editor_ui_state';

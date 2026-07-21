@@ -25,6 +25,7 @@ import { QueuedStickyScrollingBase } from '@/generic_libs/components/queued_stic
 import { Layout } from './layout';
 
 jest.mock('@/common/components/auth_state_provider', () => ({
+  ...jest.requireActual('@/common/components/auth_state_provider'),
   useAuthState: () => ({
     identity: 'test-identity',
   }),
@@ -38,6 +39,11 @@ jest.mock('@/crystal_ball/hooks', () => ({
   }),
   useUpdateUserSettings: () => ({
     mutateAsync: jest.fn(),
+  }),
+  useListAnnouncements: () => ({
+    data: undefined,
+    isLoading: false,
+    error: null,
   }),
 }));
 
