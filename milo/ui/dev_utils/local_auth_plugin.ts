@@ -21,7 +21,7 @@ import { PluginOption, PreviewServer, ViteDevServer } from 'vite';
 import { AuthState } from '../src/common/api/auth_state';
 
 const BASE_SCOPES = [
-  'profile',
+  'https://www.googleapis.com/auth/userinfo.profile',
   // This is required for `luci-auth token -use-id-token`.
   // `email` does not work.
   'https://www.googleapis.com/auth/userinfo.email',
@@ -54,11 +54,13 @@ export interface LocalAuthPluginOptions {
 }
 
 async function getAuthStateFromLUCIAuth(scopes: string): Promise<AuthState> {
-  const cmdTemplate = `luci-auth token -json-output - -scopes "${scopes}"`;
-
-  const { stdout: accessTokenJSON } = await execCLI(cmdTemplate);
+  const { stdout: accessTokenJSON } = await execCLI(
+    `luci-auth token -json-output - -scopes "${scopes}"`,
+  );
   const accessToken = JSON.parse(accessTokenJSON) as TokenJSON;
-  const { stdout: idTokenJSON } = await execCLI(cmdTemplate + ' -use-id-token');
+  const { stdout: idTokenJSON } = await execCLI(
+    'luci-auth token -json-output - -use-id-token',
+  );
   const idToken = JSON.parse(idTokenJSON) as TokenJSON;
   const profile = jwtDecode<ProfileJSON>(idToken.token);
   return {
@@ -141,7 +143,7 @@ export function localAuthPlugin(
     scopesList.push(...ANDROID_SCOPES);
   }
 
-  const scopes = scopesList.join(' ');
+  const scopes = scopesList.sort().join(' ');
   const configureMiddlewares = createConfigureMiddlewares(scopes);
 
   return {
