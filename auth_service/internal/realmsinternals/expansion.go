@@ -375,6 +375,19 @@ func (re *RolesExpander) permissionDetails(name string) permissionDetails {
 
 // rolePermissions adds all permissions in the role to the given set.
 func (re *RolesExpander) rolePermissions(roleName string, perms stringset.Set) error {
+	visited := stringset.New(0)
+	return re.addRolePermissions(roleName, perms, visited)
+}
+
+// addRolePermissions is a recursive helper function; it checks if the role's
+// permissions have been added, and only adds them if the role has yet to be
+// processed.
+func (re *RolesExpander) addRolePermissions(roleName string, perms, visited stringset.Set) error {
+	if visited.Has(roleName) {
+		// The role's permissions have already been added - nothing to do.
+		return nil
+	}
+
 	if strings.HasPrefix(roleName, constants.PrefixBuiltinRole) {
 		role, ok := re.builtinRoles[roleName]
 		if !ok {
@@ -383,6 +396,7 @@ func (re *RolesExpander) rolePermissions(roleName string, perms stringset.Set) e
 		for perm := range role.Permissions {
 			perms.Add(perm)
 		}
+		visited.Add(roleName)
 		return nil
 	}
 
@@ -395,10 +409,11 @@ func (re *RolesExpander) rolePermissions(roleName string, perms stringset.Set) e
 		perms.AddAll(customRole.Permissions)
 
 		for _, parent := range customRole.Extends {
-			if err := re.rolePermissions(parent, perms); err != nil {
+			if err := re.addRolePermissions(parent, perms, visited); err != nil {
 				return err
 			}
 		}
+		visited.Add(roleName)
 		return nil
 	}
 

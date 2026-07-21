@@ -281,6 +281,38 @@ func TestRolesExpander(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("visited set skips already processed roles", func(t *testing.T) {
+		r := &RolesExpander{
+			permissionsDB: permDB.Permissions,
+			builtinRoles:  permDB.Roles,
+			permissions:   map[string]permissionDetails{},
+			roles:         map[string]roleDetails{},
+			customRoles: map[string]*realmsconf.CustomRole{
+				"customRole/base": {
+					Name:        "customRole/base",
+					Permissions: []string{"luci.dev.p1"},
+				},
+				"customRole/top": {
+					Name:        "customRole/top",
+					Extends:     []string{"customRole/base"},
+					Permissions: []string{"luci.dev.p2"},
+				},
+			},
+		}
+
+		// Pre-populate visited with customRole/base to verify addRolePermissions
+		// skips it.
+		perms := stringset.New(0)
+		visited := stringset.NewFromSlice("customRole/base")
+
+		err := r.addRolePermissions("customRole/top", perms, visited)
+		assert.NoErr(t, err)
+
+		// luci.dev.p1 from customRole/base should be skipped because
+		// customRole/base is in visited.
+		assert.That(t, perms.ToSortedSlice(), should.Match([]string{"luci.dev.p2"}))
+	})
 }
 
 func TestRealmsExpander(t *testing.T) {
