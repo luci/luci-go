@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, CircularProgress, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Link, Typography } from '@mui/material';
 import { useContext } from 'react';
 import { useParams } from 'react-router';
 
@@ -26,6 +26,29 @@ import {
 } from '../components/context';
 import { EnvironmentSelectorDialog } from '../components/environment_selector_dialog';
 import { ChronicleContextProvider } from '../components/provider';
+import {
+  fromString,
+  root,
+  toString as idToString,
+  workplan,
+} from '../utils/id';
+
+function formatWorkplanUrlId(idStr: string): string {
+  try {
+    const parsed = fromString(idStr);
+    const wpId = root(parsed).wp?.id;
+    if (wpId) {
+      return idToString(workplan(wpId));
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    return idToString(workplan(idStr));
+  } catch {
+    return idStr;
+  }
+}
 
 function ChroniclePageContent() {
   const {
@@ -42,6 +65,8 @@ function ChroniclePageContent() {
     detectionCancelled,
     setDetectionCancelled,
   } = useContext(ChronicleContext);
+
+  const formattedWorkplanId = workplanId ? formatWorkplanUrlId(workplanId) : '';
 
   const handleDialogClose = () => {
     setDetectionCancelled(true);
@@ -145,7 +170,26 @@ function ChroniclePageContent() {
   }
 
   return (
-    <>
+    <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+      {workplanId && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '8px',
+            right: '16px',
+            zIndex: 10,
+          }}
+        >
+          <Link
+            href={`http://go/wp/${formattedWorkplanId}`}
+            target="_blank"
+            rel="noreferrer"
+            sx={{ fontSize: '0.875rem', fontWeight: 500 }}
+          >
+            Legacy Workplan Viewer
+          </Link>
+        </Box>
+      )}
       <AppRoutedTabs>
         <AppRoutedTab
           label="Summary"
@@ -177,7 +221,7 @@ function ChroniclePageContent() {
           onClose={handleDialogClose}
         />
       )}
-    </>
+    </Box>
   );
 }
 
