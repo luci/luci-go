@@ -349,12 +349,9 @@ func (b *Builder) GeneratePackages(ctx context.Context, gs []generators.Generato
 // packages just dereferenced and may be IncRef within seconds. And even if it's
 // happened, the caller can retry the process.
 func (b *Builder) BuildPackages(ctx context.Context, pe *PackageExecutor, pkgs []actions.Package, continueOnExecError bool) error {
-	var newPkgs []actions.Package
-
 	defer func() { _ = pe.Release() }()
 
-	var errs error
-
+	var newPkgs []actions.Package
 	added := stringset.New(len(pkgs))
 	for _, pkg := range pkgs {
 		expands, err := pe.Expand(ctx, pkg)
@@ -369,8 +366,8 @@ func (b *Builder) BuildPackages(ctx context.Context, pe *PackageExecutor, pkgs [
 		}
 	}
 
+	var errs []error
 	executed := stringset.New(len(newPkgs))
-
 	for _, pkg := range newPkgs {
 		if !executed.Add(pkg.DerivationID) {
 			continue
@@ -378,7 +375,7 @@ func (b *Builder) BuildPackages(ctx context.Context, pe *PackageExecutor, pkgs [
 
 		if err := pe.Execute(ctx, pkg); err != nil {
 			if continueOnExecError {
-				errs = errors.Join(errs, err)
+				errs = append(errs, err)
 				continue
 			} else {
 				return err
@@ -386,5 +383,5 @@ func (b *Builder) BuildPackages(ctx context.Context, pe *PackageExecutor, pkgs [
 		}
 	}
 
-	return errs
+	return errors.Join(errs...)
 }
