@@ -339,19 +339,16 @@ function Graph() {
   useEffect(() => {
     if (pendingFitViewOptions.current) {
       const options = pendingFitViewOptions.current;
+      pendingFitViewOptions.current = undefined;
       let attempts = 0;
       const maxAttempts = 50;
 
       const tryFitView = async () => {
         // fitView returns true if it successfully calculated the view
         const success = await fitView(options);
-        if (success) {
-          pendingFitViewOptions.current = undefined;
-        } else if (attempts < maxAttempts) {
+        if (!success && attempts < maxAttempts) {
           attempts++;
           window.requestAnimationFrame(tryFitView);
-        } else {
-          pendingFitViewOptions.current = undefined;
         }
       };
 
