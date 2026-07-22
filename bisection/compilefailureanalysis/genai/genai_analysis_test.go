@@ -191,6 +191,72 @@ func TestGenAiAnalysis(t *testing.T) {
 	})
 }
 
+func TestGenAiAnalysisNotInBlamelist(t *testing.T) {
+	t.Parallel()
+	ctx := gologger.StdConfig.Use(context.Background())
+	ctx = logging.SetLevel(ctx, logging.Info)
+	cl := testclock.New(testclock.TestTimeUTC)
+	ctx = clock.Set(ctx, cl)
+	ctx = memory.Use(ctx)
+
+	mockGitilesData := map[string]string{
+		"https://chromium.googlesource.com/chromium/src/+log/def456ghi789..abc123def456": `{
+  "log": [
+    {
+      "commit": "abc123def456",
+      "tree": "tree123",
+      "parents": ["parent123"],
+      "author": {
+        "name": "Test Author",
+        "email": "test@chromium.org",
+        "time": "Tue Jan 02 15:04:05 2024"
+      },
+      "committer": {
+        "name": "Commit Bot",
+        "email": "commit-bot@chromium.org",
+        "time": "Tue Jan 02 15:04:05 2024"
+      },
+      "message": "Fix undefined function in test.cc"
+    }
+  ]
+}`,
+	}
+	ctx = gitiles.MockedGitilesClientContext(ctx, mockGitilesData)
+
+	_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 124, "chromium", 457)
+
+	regressionRange := &pb.RegressionRange{
+		FirstFailed: &buildbucketpb.GitilesCommit{
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Ref:     "refs/heads/main",
+			Id:      "abc123def456",
+		},
+		LastPassed: &buildbucketpb.GitilesCommit{
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Ref:     "refs/heads/main",
+			Id:      "def456ghi789",
+		},
+	}
+
+	compileLogs := &model.CompileLogs{
+		FailureSummaryLog: "error: 'undefined_function' was not declared in this scope",
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockClient := llm.NewMockClient(ctrl)
+	mockResponse := "Commit ID: unknown_commit_id\nConfidence Score: 8\nJustification: Fix undefined function"
+	mockClient.EXPECT().GenerateContent(gomock.Any(), gomock.Any()).Return(mockResponse, nil)
+
+	result, err := Analyze(ctx, mockClient, cfa, regressionRange, compileLogs)
+	assert.Loosely(t, err, should.NotBeNil)
+	assert.Loosely(t, err.Error(), should.ContainSubstring("is not in the expanded change logs; refusing to create suspect"))
+	assert.Loosely(t, result.Status, should.Equal(pb.AnalysisStatus_ERROR))
+}
+
 func TestPrepareStackTrace(t *testing.T) {
 	t.Parallel()
 

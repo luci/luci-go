@@ -176,6 +176,26 @@ func Analyze(ctx context.Context, tfa *model.TestFailureAnalysis, client llm.Cli
 
 	logging.Infof(ctx, "GenAI analysis identified %d suspects", len(suspects))
 
+	// Make sure all suspects exist in the blamelist
+	validSuspects := []SuspectInfo{}
+	for _, suspect := range suspects {
+		suspectExistInChangeLogs := false
+		for _, cl := range changelogs {
+			if cl.Commit == suspect.CommitID {
+				suspectExistInChangeLogs = true
+				validSuspects = append(validSuspects, suspect)
+				break
+			}
+		}
+		if !suspectExistInChangeLogs {
+			logging.Errorf(ctx, "GenAI-identified commit %q is not in the change logs; refusing to create suspect", suspect.CommitID)
+		}
+	}
+	if len(validSuspects) == 0 {
+		return errors.New("no valid suspects found")
+	}
+	suspects = validSuspects
+
 	// Save the suspect entities and update GenAI analysis
 	suspectsModel, err := saveSuspectsAndUpdateGenAIAnalysis(ctx, genaiAnalysis, suspects, changelogs, gitiles)
 	if err != nil {

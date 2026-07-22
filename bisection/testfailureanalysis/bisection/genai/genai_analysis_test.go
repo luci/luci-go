@@ -499,4 +499,164 @@ func TestAnalyze(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.BeZero)
 	})
+
+	ftt.Run("Analyze filters out suspects not in blamelist and saves valid suspects", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		testutil.UpdateIndices(ctx)
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
+		ctx, skdr := tq.TestingContext(ctx, nil)
+
+		ctx = gitiles.MockedGitilesClientContext(ctx, mockGitilesData)
+
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockLLMClient := llm.NewMockClient(ctl)
+		mockResultDBClient := resultdb.NewMockClient(ctl)
+
+		tf := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
+			ID:        2003,
+			IsPrimary: true,
+			TestID:    "test_id",
+			Ref: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "refs/heads/main",
+					},
+				},
+			},
+		})
+
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+			ID:              1003,
+			TestFailureKey:  datastore.KeyForObj(ctx, tf),
+			StartCommitHash: "start123",
+			EndCommitHash:   "end456",
+		})
+
+		// Return 3 suspects where one is not in the blamelist
+		genaiResponse := `{
+  "suspects": [
+    {
+      "commit_id": "commit3",
+      "confidence_score": 9,
+      "justification": "Valid commit 3."
+    },
+    {
+      "commit_id": "commit_unknown",
+      "confidence_score": 8,
+      "justification": "Unknown commit not in blamelist."
+    },
+    {
+      "commit_id": "commit1",
+      "confidence_score": 5,
+      "justification": "Valid commit 1."
+    }
+  ]
+}`
+		mockLLMClient.EXPECT().GenerateContentWithSchema(gomock.Any(), gomock.Any(), gomock.Any()).Return(genaiResponse, nil).Times(1)
+
+		err := Analyze(ctx, tfa, mockLLMClient, mockResultDBClient)
+		assert.Loosely(t, err, should.BeNil)
+
+		datastore.GetTestable(ctx).CatchupIndexes()
+		var genaiAnalyses []*model.TestGenAIAnalysis
+		q := datastore.NewQuery("TestGenAIAnalysis")
+		err = datastore.GetAll(ctx, q, &genaiAnalyses)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(genaiAnalyses), should.Equal(1))
+		genaiAnalysis := genaiAnalyses[0]
+
+		assert.Loosely(t, genaiAnalysis.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+		assert.Loosely(t, genaiAnalysis.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+
+		suspects := []*model.Suspect{}
+		suspectQuery := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(ctx, genaiAnalysis))
+		err = datastore.GetAll(ctx, suspectQuery, &suspects)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(suspects), should.Equal(2))
+
+		assert.Loosely(t, suspects[0].GitilesCommit.Id, should.Equal("commit3"))
+		assert.Loosely(t, suspects[1].GitilesCommit.Id, should.Equal("commit1"))
+
+		tasks := skdr.Tasks().Payloads()
+		taskCount := 0
+		for _, task := range tasks {
+			if _, ok := task.(*tpb.TestFailureCulpritVerificationTask); ok {
+				taskCount++
+			}
+		}
+		assert.Loosely(t, taskCount, should.Equal(2))
+	})
+
+	ftt.Run("Analyze returns error when no suspects exist in blamelist", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		testutil.UpdateIndices(ctx)
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
+
+		ctx = gitiles.MockedGitilesClientContext(ctx, mockGitilesData)
+
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockLLMClient := llm.NewMockClient(ctl)
+		mockResultDBClient := resultdb.NewMockClient(ctl)
+
+		tf := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
+			ID:        2004,
+			IsPrimary: true,
+			TestID:    "test_id",
+			Ref: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "refs/heads/main",
+					},
+				},
+			},
+		})
+
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+			ID:              1004,
+			TestFailureKey:  datastore.KeyForObj(ctx, tf),
+			StartCommitHash: "start123",
+			EndCommitHash:   "end456",
+		})
+
+		genaiResponse := `{
+  "suspects": [
+    {
+      "commit_id": "commit_not_found_1",
+      "confidence_score": 9,
+      "justification": "Unknown commit 1."
+    },
+    {
+      "commit_id": "commit_not_found_2",
+      "confidence_score": 7,
+      "justification": "Unknown commit 2."
+    }
+  ]
+}`
+		mockLLMClient.EXPECT().GenerateContentWithSchema(gomock.Any(), gomock.Any(), gomock.Any()).Return(genaiResponse, nil).Times(1)
+
+		err := Analyze(ctx, tfa, mockLLMClient, mockResultDBClient)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, err.Error(), should.ContainSubstring("no valid suspects found"))
+
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		var genaiAnalyses []*model.TestGenAIAnalysis
+		q := datastore.NewQuery("TestGenAIAnalysis")
+		err = datastore.GetAll(ctx, q, &genaiAnalyses)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(genaiAnalyses), should.Equal(1))
+		savedAnalysis := genaiAnalyses[0]
+		assert.Loosely(t, savedAnalysis.Status, should.Equal(pb.AnalysisStatus_ERROR))
+		assert.Loosely(t, savedAnalysis.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+	})
 }

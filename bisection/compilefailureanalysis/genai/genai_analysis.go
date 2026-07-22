@@ -136,6 +136,7 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 	logging.Infof(c, "GenAI analysis identified culprit CL: %s with justification: %s and score: %d", suspectCommitID, justification, score)
 
 	// Find the changelog for the suspect commit to extract review info
+	suspectExistInChangeLogs := false
 	var reviewUrl, reviewTitle string
 	var suspectCommitTime *timestamppb.Timestamp
 	var mainCommit *changelogutil.ExpandedChangeLog
@@ -151,8 +152,15 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 				suspectCommitTime = commitTime
 			}
 			mainCommit = traceToMainCommit(cl, expandedChangelogs)
+			suspectExistInChangeLogs = true
 			break
 		}
+	}
+
+	// Make sure the suspect is in the blamelist
+	if !suspectExistInChangeLogs {
+		setStatusError(c, genaiAnalysis)
+		return genaiAnalysis, errors.Fmt("GenAI-identified commit %q is not in the expanded change logs; refusing to create suspect", suspectCommitID)
 	}
 
 	suspectCommitIDForVerification := suspectCommitID
