@@ -92,6 +92,8 @@ const HIGHLIGHTED_EDGE_STYLE = {
   pointerEvents: 'none' as const,
 };
 
+const SELECTION_FIT_MAX_ZOOM = 0.7;
+
 let graphWorkerPolicy: TrustedTypePolicy;
 
 /**
@@ -289,9 +291,11 @@ function Graph() {
         return edge;
       });
 
-      // Only autofit on selection if the option is enabled
+      // Only autofit on selection if the option is enabled.
+      // Focus/center directly on the selected node to avoid positioning the viewport
+      // in the empty space between nodes when neighbors are spaced far apart.
       if (autoFitSelection) {
-        nodesToFit = Array.from(relatedNodeIds);
+        nodesToFit = [baseNodeId];
       }
     } else if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLocaleLowerCase();
@@ -319,8 +323,13 @@ function Graph() {
       pendingFitViewOptions.current = {
         nodes: nodesToFit.map((id) => ({ id })),
         duration: 500,
+        maxZoom: SELECTION_FIT_MAX_ZOOM,
       };
-    } else {
+      if (baseLayout.nodes.length > 0) {
+        hasInitializedDefaults.current = true;
+      }
+    } else if (!hasInitializedDefaults.current && baseLayout.nodes.length > 0) {
+      hasInitializedDefaults.current = true;
       pendingFitViewOptions.current = {
         duration: 500,
       };
