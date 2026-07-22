@@ -106,9 +106,18 @@ describe('chromeos_smart_repair_utils', () => {
       );
     });
 
-    it('should return unchanged path if it does not start with gs://', () => {
-      const httpPath = 'https://example.com/log';
-      expect(convertGsToHttp(httpPath)).toBe(httpPath);
+    it('should allow trusted Google Cloud/Chromium HTTPS URLs', () => {
+      const trustedPath =
+        'https://console.cloud.google.com/storage/browser/logs';
+      expect(convertGsToHttp(trustedPath)).toBe(trustedPath);
+      expect(convertGsToHttp('https://storage.googleapis.com/bucket/log')).toBe(
+        'https://storage.googleapis.com/bucket/log',
+      );
+    });
+
+    it('should reject untrusted or external URLs', () => {
+      const httpPath = 'https://evil.example.com/log';
+      expect(convertGsToHttp(httpPath)).toBe('');
       expect(convertGsToHttp('')).toBe('');
     });
   });

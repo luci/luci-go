@@ -282,5 +282,14 @@ export const convertGsToHttp = (gsPath: string): string => {
       'https://console.cloud.google.com/storage/browser/' + gsPath.substring(5)
     );
   }
-  return gsPath;
+  if (
+    gsPath.startsWith('https://console.cloud.google.com/') ||
+    gsPath.startsWith('https://storage.cloud.google.com/') ||
+    gsPath.startsWith('https://storage.googleapis.com/') ||
+    gsPath.startsWith('https://pantheon.corp.google.com/') ||
+    gsPath.startsWith('https://ci.chromium.org/')
+  ) {
+    return gsPath;
+  }
+  return '';
 };
