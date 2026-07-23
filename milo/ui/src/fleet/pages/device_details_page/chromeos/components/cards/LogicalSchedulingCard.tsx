@@ -12,31 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Chip, Grid } from '@mui/material';
+import { Grid } from '@mui/material';
 
 import { logicalZoneToJSON } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 
 import { formatEnum } from '../../utils/formatters';
-import { InventoryDataCard } from '../common/InventoryDataCard';
+import {
+  getNestedValue,
+  LOGICAL_SCHEDULING_PATHS,
+} from '../../utils/inventory_editing_utils';
 import { PropertyField } from '../common/PropertyField';
+import { CardForm } from '../form/CardForm';
+import { FormTextField } from '../form/FormTextField';
+import { useInventoryForm } from '../form/InventoryFormContext';
 
-export interface LogicalSchedulingCardProps {
-  pools?: string[];
-  logicalZone?: number | string | null;
-  hive?: string | null;
-  editable?: boolean;
-  isEditing?: boolean;
-  onEdit?: () => void;
-}
+export const LogicalSchedulingCard = () => {
+  const { draftLse } = useInventoryForm();
 
-export const LogicalSchedulingCard = ({
-  pools = [],
-  logicalZone,
-  hive,
-  editable = false,
-  isEditing = false,
-  onEdit,
-}: LogicalSchedulingCardProps) => {
+  const isLabstation = Boolean(
+    draftLse?.chromeosMachineLse?.deviceLse?.labstation,
+  );
+  const poolsPath = isLabstation
+    ? LOGICAL_SCHEDULING_PATHS.labstationPools
+    : LOGICAL_SCHEDULING_PATHS.dutPools;
+
+  const pools = (getNestedValue(draftLse, poolsPath) as string[]) || [];
+
+  const logicalZone = draftLse?.logicalZone;
+  const hive =
+    draftLse?.chromeosMachineLse?.deviceLse?.dut?.hive ||
+    draftLse?.chromeosMachineLse?.deviceLse?.labstation?.hive;
+
   const logicalZoneLabel = formatEnum(
     logicalZone,
     logicalZoneToJSON,
@@ -51,40 +57,25 @@ export const LogicalSchedulingCard = ({
   const hasData = Boolean(pools.length || hasLogicalZone || hive);
 
   return (
-    <InventoryDataCard
+    <CardForm
+      cardId="logical"
       title="Pools & Task Routing"
-      emptyMessage={
-        !hasData ? 'No scheduling tags or pool labels assigned.' : undefined
-      }
-      editable={editable}
-      isEditing={isEditing}
-      onEdit={onEdit}
+      isEmpty={!hasData}
+      emptyMessage="No scheduling tags or pool labels assigned."
     >
       <Grid container spacing={2}>
-        {pools.length > 0 && (
-          <PropertyField label="Pools" gridSm={12}>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-              {pools.map((pool, index) => (
-                <Chip
-                  key={`${pool}-${index}`}
-                  label={pool}
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  sx={{ fontWeight: 600 }}
-                />
-              ))}
-            </Box>
-          </PropertyField>
-        )}
-
+        <FormTextField
+          label="Pools"
+          path={poolsPath}
+          type="array"
+          gridSm={12}
+        />
         <PropertyField
           label="Logical Zone"
           value={hasLogicalZone ? logicalZoneLabel : null}
         />
-
         <PropertyField label="Hive" value={hive} />
       </Grid>
-    </InventoryDataCard>
+    </CardForm>
   );
 };

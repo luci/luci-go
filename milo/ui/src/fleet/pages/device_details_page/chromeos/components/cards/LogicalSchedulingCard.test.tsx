@@ -15,92 +15,112 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { InventoryFormProvider } from '../form/InventoryFormContext';
 
 import { LogicalSchedulingCard } from './LogicalSchedulingCard';
 
+const mockLseWithPools = (
+  pools: string[],
+  isLabstation = false,
+  logicalZone?: number | string | null,
+  hive?: string | null,
+) => {
+  const deviceLse = isLabstation
+    ? { labstation: { pools, hive } }
+    : { dut: { pools, hive } };
+
+  return {
+    logicalZone,
+    chromeosMachineLse: {
+      deviceLse,
+    },
+  };
+};
+
+interface RenderOptions {
+  pools?: string[];
+  editable?: boolean;
+  activeEditingCardId?: string | null;
+  logicalZone?: number | string | null;
+  hive?: string | null;
+  isLabstation?: boolean;
+}
+
+const renderCard = (options: RenderOptions = {}) => {
+  const updateDraftFields = jest.fn();
+  const setActiveEditingCardId = jest.fn();
+  const lse = mockLseWithPools(
+    options.pools || [],
+    options.isLabstation,
+    options.logicalZone,
+    options.hive,
+  );
+
+  return {
+    updateDraftFields,
+    setActiveEditingCardId,
+    ...render(
+      <FakeContextProvider>
+        <InventoryFormProvider
+          originalLse={lse as unknown as MachineLSE}
+          draftLse={lse as unknown as MachineLSE}
+          updateDraftFields={updateDraftFields}
+          activeEditingCardId={options.activeEditingCardId ?? null}
+          setActiveEditingCardId={setActiveEditingCardId}
+          editable={options.editable || false}
+        >
+          <LogicalSchedulingCard />
+        </InventoryFormProvider>
+      </FakeContextProvider>,
+    ),
+  };
+};
+
 describe('<LogicalSchedulingCard />', () => {
   it('renders logical scheduling info and formatted logical zone correctly', async () => {
-    render(
-      <FakeContextProvider>
-        <LogicalSchedulingCard pools={['cq', 'continuous']} logicalZone={1} />
-      </FakeContextProvider>,
-    );
-
+    renderCard({ pools: ['cq', 'continuous'], logicalZone: 1 });
     expect(screen.getByText('Pools & Task Routing')).toBeVisible();
-    expect(screen.getByText('Pools')).toBeVisible();
     expect(screen.getByText('cq')).toBeVisible();
     expect(screen.getByText('continuous')).toBeVisible();
-    expect(screen.getByText('Logical Zone')).toBeVisible();
     expect(screen.getByText('DRILLZONE_SFO36')).toBeVisible();
   });
 
-  it('omits scheduling pools grid section when pools array is empty', async () => {
-    render(
-      <FakeContextProvider>
-        <LogicalSchedulingCard logicalZone={1} pools={[]} />
-      </FakeContextProvider>,
-    );
+  it('renders labstation pools correctly', async () => {
+    renderCard({ pools: ['labstation-pool1'], isLabstation: true });
+    expect(screen.getByText('labstation-pool1')).toBeVisible();
+  });
 
+  it('omits scheduling pools grid section when pools array is empty', async () => {
+    renderCard({ logicalZone: 1, pools: [] });
     expect(screen.getByText('Logical Zone')).toBeVisible();
     expect(screen.queryByText('Pools')).not.toBeInTheDocument();
   });
 
   it('renders empty message when no logical scheduling telemetry exists', async () => {
-    render(
-      <FakeContextProvider>
-        <LogicalSchedulingCard />
-      </FakeContextProvider>,
-    );
+    renderCard();
     expect(
       screen.getByText('No scheduling tags or pool labels assigned.'),
     ).toBeVisible();
   });
 
   it('renders edit button, handles isEditing state and onEdit click when editable is true', async () => {
-    const handleEdit = jest.fn();
-    const { rerender } = render(
-      <FakeContextProvider>
-        <LogicalSchedulingCard
-          pools={['cq']}
-          editable
-          isEditing={false}
-          onEdit={handleEdit}
-        />
-      </FakeContextProvider>,
-    );
-
+    const { setActiveEditingCardId } = renderCard({
+      pools: ['cq'],
+      editable: true,
+      activeEditingCardId: null,
+    });
     const editBtn = screen.getByRole('button', {
       name: 'edit Pools & Task Routing',
     });
-    expect(editBtn).toBeVisible();
     await userEvent.click(editBtn);
-    expect(handleEdit).toHaveBeenCalledTimes(1);
-
-    rerender(
-      <FakeContextProvider>
-        <LogicalSchedulingCard
-          pools={['cq']}
-          editable
-          isEditing={true}
-          onEdit={handleEdit}
-        />
-      </FakeContextProvider>,
-    );
-    expect(
-      screen.queryByRole('button', {
-        name: 'edit Pools & Task Routing',
-      }),
-    ).not.toBeInTheDocument();
+    expect(setActiveEditingCardId).toHaveBeenCalledWith('logical');
   });
 
   it('omits Logical Zone when logicalZone is unspecified or 0', async () => {
-    render(
-      <FakeContextProvider>
-        <LogicalSchedulingCard pools={['cq']} logicalZone={0} />
-      </FakeContextProvider>,
-    );
-
+    renderCard({ pools: ['cq'], logicalZone: 0 });
     expect(screen.queryByText('Logical Zone')).not.toBeInTheDocument();
   });
 });

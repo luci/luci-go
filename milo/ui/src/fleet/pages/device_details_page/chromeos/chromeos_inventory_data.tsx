@@ -14,21 +14,38 @@
 
 import CodeIcon from '@mui/icons-material/Code';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import { Alert, Box, Grid, Link, Tab, Tabs, Typography } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import {
+  Alert,
+  Box,
+  Button,
+  Grid,
+  Link,
+  Tab,
+  Tabs,
+  Typography,
+} from '@mui/material';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { EditorConfiguration } from 'codemirror';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { useFeatureFlag } from '@/common/feature_flags';
 import CodeSnippet from '@/fleet/components/code_snippet/code_snippet';
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
-import { enableModernInventoryCards } from '@/fleet/features';
-import { useUfsClient } from '@/fleet/hooks/prpc_clients';
+import {
+  enableModernInventoryCards,
+  enableInventoryEditing,
+} from '@/fleet/features';
+import {
+  useUfsClient,
+  useFleetConsoleClient,
+} from '@/fleet/hooks/prpc_clients';
 import { extractDutLabel } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { UpdateChromeOSDeviceRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/chromeos.pb';
+import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 import { GetMachineLSERequest } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
 import {
@@ -42,28 +59,44 @@ import {
   ServoHardwareCard,
   ServoInfo,
 } from './components/cards/ServoHardwareCard';
+import { SaveDiffDialog } from './components/common/SaveDiffDialog';
+import { InventoryFormProvider } from './components/form/InventoryFormContext';
+import {
+  calculateDiff,
+  translateDiffToEdits,
+  updateNestedValues,
+} from './utils/inventory_editing_utils';
 
 export interface ChromeOSInventoryDataProps {
   device: Device;
-  editable?: boolean;
 }
 
 export const ChromeOSInventoryData = ({
   device,
-  editable = false,
 }: ChromeOSInventoryDataProps) => {
   const showModernCards = useFeatureFlag(enableModernInventoryCards);
-  const [viewMode, setViewMode] = useState<'json' | 'visual'>('json');
-  const editorOptions = useMemo<EditorConfiguration>(
-    () => ({
-      ...DEFAULT_CODE_MIRROR_CONFIG,
-      readOnly: !editable,
-    }),
-    [editable],
+  const isEditingEnabled = useFeatureFlag(enableInventoryEditing);
+
+  const [viewMode, setViewMode] = useState<'json' | 'visual'>(
+    showModernCards ? 'visual' : 'json',
+  );
+  const [editedLse, setEditedLse] = useState<MachineLSE | null>(null);
+  const [originalLseSnapshot, setOriginalLseSnapshot] =
+    useState<MachineLSE | null>(null);
+  const [activeEditingCardId, setActiveEditingCardId] = useState<string | null>(
+    null,
   );
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saveState, setSaveState] = useState<
+    'review' | 'saving' | 'success' | 'error'
+  >('review');
+
+  const queryClient = useQueryClient();
   const ufsNamespace = extractDutLabel('ufs_namespace', device);
   const ufsClient = useUfsClient(ufsNamespace || 'os');
+  const fleetConsoleClient = useFleetConsoleClient();
+
   const machineLse = useQuery({
     ...ufsClient.GetMachineLSE.query(
       GetMachineLSERequest.fromPartial({
@@ -75,113 +108,110 @@ export const ChromeOSInventoryData = ({
     refetchInterval: 60000,
   });
 
-  const command = `shivas get dut -json ${
+  const updateMutation = useMutation({
+    mutationFn: (req: UpdateChromeOSDeviceRequest) =>
+      fleetConsoleClient.UpdateChromeOSDevice(req),
+    onSuccess: () => {
+      setSaveState('success');
+      queryClient.invalidateQueries({
+        queryKey: ufsClient.GetMachineLSE.query(
+          GetMachineLSERequest.fromPartial({
+            name: `machineLSEs/${device.id}`,
+          }),
+        ).queryKey,
+      });
+      setEditedLse(null);
+      setOriginalLseSnapshot(null);
+    },
+    onError: () => {
+      setSaveState('error');
+    },
+  });
+
+  const currentLse = editedLse || machineLse.data;
+
+  const currentServo = useMemo<ServoInfo | null>(() => {
+    if (!currentLse) return null;
+    return (
+      (currentLse.chromeosMachineLse?.deviceLse?.dut?.peripherals
+        ?.servo as ServoInfo) || null
+    );
+  }, [currentLse]);
+
+  const hasGlobalChanges = useMemo(() => {
+    const base = originalLseSnapshot || machineLse.data;
+    if (!base || !editedLse) return false;
+    return calculateDiff(base, editedLse).length > 0;
+  }, [machineLse.data, originalLseSnapshot, editedLse]);
+
+  const handleUpdateFields = useCallback(
+    (updates: Array<{ path: string | string[]; value: unknown }>) => {
+      setOriginalLseSnapshot((prevSnapshot) => {
+        if (!prevSnapshot && machineLse.data) {
+          return JSON.parse(JSON.stringify(machineLse.data));
+        }
+        return prevSnapshot;
+      });
+
+      setEditedLse((prev: MachineLSE | null) => {
+        const base = prev || machineLse.data;
+        if (!base) return null;
+        return updateNestedValues(
+          base as unknown as Record<string, unknown>,
+          updates,
+        ) as unknown as MachineLSE;
+      });
+    },
+    [machineLse.data],
+  );
+
+  const handleGlobalDiscard = () => {
+    setEditedLse(null);
+    setOriginalLseSnapshot(null);
+    setActiveEditingCardId(null);
+  };
+
+  const handleGlobalSave = () => {
+    setSaveState('review');
+    setDialogOpen(true);
+  };
+
+  const executeSaveRequest = () => {
+    const base = originalLseSnapshot || machineLse.data;
+    if (!base || !editedLse) return;
+    const { edits, paths } = translateDiffToEdits(base, editedLse);
+    if (paths.length === 0) return;
+
+    setSaveState('saving');
+    updateMutation.mutate(
+      UpdateChromeOSDeviceRequest.fromPartial({
+        deviceId: device.id,
+        edits,
+        updateMask: paths,
+        requestId: crypto.randomUUID(),
+      }),
+    );
+  };
+
+  const editorOptions = useMemo<EditorConfiguration>(
+    () => ({
+      ...DEFAULT_CODE_MIRROR_CONFIG,
+      readOnly: true,
+    }),
+    [],
+  );
+
+  const lse = currentLse;
+  const dut = lse?.chromeosMachineLse?.deviceLse?.dut;
+  const labstation = lse?.chromeosMachineLse?.deviceLse?.labstation;
+  const zone = lse?.zone;
+  const rack = lse?.rack;
+  const rpm = (dut?.peripherals?.rpm as RPMInfo) || null;
+
+  const isLabstation = Boolean(labstation);
+  const command = `shivas get ${isLabstation ? 'labstation' : 'dut'} -json ${
     ufsNamespace ? `-namespace ${ufsNamespace} ` : ''
   }${device.id}`;
-
-  const renderVisualCards = () => {
-    if (machineLse.isLoading) {
-      return <CentralizedProgress />;
-    }
-    if (machineLse.isError) {
-      return (
-        <Alert severity="error">
-          {getErrorMessage(machineLse.error, 'get dut info from shivas')}
-        </Alert>
-      );
-    }
-    if (!machineLse.data) {
-      return <Alert severity="info">No inventory spec data available.</Alert>;
-    }
-    const { logicalZone, zone, rack } = machineLse.data;
-
-    const dut = machineLse.data.chromeosMachineLse?.deviceLse?.dut;
-    const dutRaw = dut as Record<string, unknown> | undefined;
-
-    const servo =
-      (machineLse.data.chromeosMachineLse?.deviceLse?.dut?.peripherals
-        ?.servo as ServoInfo) || null;
-
-    const rpm =
-      (machineLse.data.chromeosMachineLse?.deviceLse?.dut?.peripherals
-        ?.rpm as RPMInfo) || null;
-
-    const lseData =
-      (machineLse.data as unknown as Record<string, unknown>) || {};
-
-    const pools =
-      (dut?.pools as string[]) ||
-      (dutRaw?.poolsList as string[]) ||
-      (lseData.pools as string[]) ||
-      (lseData.poolsList as string[]) ||
-      [];
-
-    const hive = (dut?.hive as string) || (lseData.hive as string) || null;
-    return (
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <DeviceDetailsCard
-            data={machineLse.data as DeviceDetailsInfo}
-            editable={editable}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <LogicalSchedulingCard
-            pools={pools}
-            logicalZone={logicalZone}
-            hive={hive}
-            editable={editable}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <PhysicalLocationCard zone={zone} rack={rack} editable={editable} />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <ServoHardwareCard servo={servo} editable={editable} />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <RPMCard rpm={rpm} editable={editable} />
-        </Grid>
-      </Grid>
-    );
-  };
-
-  const renderJsonEditor = () => {
-    if (machineLse.isLoading) {
-      return <CentralizedProgress />;
-    }
-    if (machineLse.isError) {
-      return (
-        <Alert severity="error">
-          {getErrorMessage(machineLse.error, 'get dut info from shivas')}
-        </Alert>
-      );
-    }
-    if (!machineLse.data) {
-      return <Alert severity="info">No inventory spec data available.</Alert>;
-    }
-    return (
-      <Box
-        sx={{
-          border: (theme) => `1px solid ${theme.palette.divider}`,
-          borderRadius: (theme) => theme.shape.borderRadius,
-          overflow: 'hidden',
-          maxHeight: '70vh',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <Box sx={{ overflow: 'auto', flexGrow: 1 }}>
-          <CodeMirrorEditor
-            value={JSON.stringify(machineLse.data, null, 2)}
-            initOptions={editorOptions}
-          />
-        </Box>
-      </Box>
-    );
-  };
-
-  const activeViewMode = showModernCards ? viewMode : 'json';
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
@@ -200,38 +230,138 @@ export const ChromeOSInventoryData = ({
         />
       </Box>
 
-      {showModernCards && (
-        <Box
-          sx={{
-            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <Tabs
-            value={viewMode}
-            onChange={(_, newMode) => {
-              if (newMode !== null) setViewMode(newMode);
-            }}
-            aria-label="view mode tabs"
-          >
-            <Tab
-              value="json"
-              label="JSON"
-              icon={<CodeIcon sx={{ fontSize: '1.2rem' }} />}
-              iconPosition="start"
-              aria-label="json view"
-            />
-            <Tab
-              value="visual"
-              label="Visual Dashboard"
-              icon={<ViewModuleIcon sx={{ fontSize: '1.2rem' }} />}
-              iconPosition="start"
-              aria-label="visual view"
-            />
-          </Tabs>
-        </Box>
+      {machineLse.isLoading ? (
+        <CentralizedProgress />
+      ) : machineLse.isError ? (
+        <Alert severity="error">
+          Failed to load machine LSE configuration:{' '}
+          {getErrorMessage(machineLse.error, 'load machine LSE')}
+        </Alert>
+      ) : (
+        <>
+          {showModernCards && (
+            <Box
+              sx={{
+                borderBottom: 1,
+                borderColor: 'divider',
+                mb: 2,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Tabs value={viewMode} onChange={(_, val) => setViewMode(val)}>
+                <Tab
+                  icon={<ViewModuleIcon />}
+                  iconPosition="start"
+                  label="Visual Dashboard"
+                  value="visual"
+                />
+                <Tab
+                  icon={<CodeIcon />}
+                  iconPosition="start"
+                  label="JSON"
+                  value="json"
+                />
+              </Tabs>
+              {isEditingEnabled && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1.5,
+                    pb: 1,
+                    visibility: hasGlobalChanges ? 'visible' : 'hidden',
+                  }}
+                >
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="inherit"
+                    onClick={handleGlobalDiscard}
+                    disabled={activeEditingCardId !== null}
+                  >
+                    Discard Changes
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="primary"
+                    onClick={handleGlobalSave}
+                    disabled={activeEditingCardId !== null}
+                  >
+                    Save All Changes
+                  </Button>
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {viewMode === 'visual' && showModernCards && (
+            <InventoryFormProvider
+              originalLse={machineLse.data || null}
+              draftLse={currentLse || null}
+              updateDraftFields={handleUpdateFields}
+              activeEditingCardId={activeEditingCardId}
+              setActiveEditingCardId={setActiveEditingCardId}
+              editable={isEditingEnabled}
+            >
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <DeviceDetailsCard
+                    data={currentLse as DeviceDetailsInfo}
+                    editable={false}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <LogicalSchedulingCard />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <PhysicalLocationCard
+                    zone={zone}
+                    rack={rack}
+                    editable={false}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <ServoHardwareCard servo={currentServo} editable={false} />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <RPMCard rpm={rpm} editable={false} />
+                </Grid>
+              </Grid>
+            </InventoryFormProvider>
+          )}
+
+          {viewMode === 'json' && (
+            <Box
+              sx={{
+                border: '1px solid #ddd',
+                borderRadius: 1,
+                overflow: 'hidden',
+              }}
+            >
+              <CodeMirrorEditor
+                value={JSON.stringify(currentLse || {}, null, 2)}
+                initOptions={editorOptions}
+              />
+            </Box>
+          )}
+        </>
       )}
 
-      {activeViewMode === 'visual' ? renderVisualCards() : renderJsonEditor()}
+      <SaveDiffDialog
+        open={dialogOpen}
+        saveState={saveState}
+        diffs={calculateDiff(originalLseSnapshot || machineLse.data, editedLse)}
+        onConfirm={executeSaveRequest}
+        onCancel={() => setDialogOpen(false)}
+        onClose={() => setDialogOpen(false)}
+        errorMessage={
+          updateMutation.error
+            ? getErrorMessage(updateMutation.error, 'save')
+            : null
+        }
+      />
     </Box>
   );
 };
