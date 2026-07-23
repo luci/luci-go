@@ -234,6 +234,7 @@ message QueryTestVariantStabilityRequest {
     string project = 1;
 
     // The test variant positions to query.
+    // At most 100 test variant positions may be queried in one request.
     repeated TestVariantPosition test_variants = 2;
 
     // Represents a test variant at a particular source position.

@@ -297,6 +297,7 @@ type QueryTestVariantStabilityRequest struct {
 	// The LUCI Project for which test variants should be looked up.
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The test variant positions to query.
+	// At most 100 test variant positions may be queried in one request.
 	TestVariants  []*QueryTestVariantStabilityRequest_TestVariantPosition `protobuf:"bytes,2,rep,name=test_variants,json=testVariants,proto3" json:"test_variants,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
