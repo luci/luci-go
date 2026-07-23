@@ -27,7 +27,9 @@ export const getErrorMessage = (error: unknown, operation: string): string => {
       case 1: // CANCELLED
         return `The operation for ${operation} was cancelled.`;
       case 3: // INVALID_ARGUMENT
-        return `The information provided for ${operation} is invalid. Please check your input and try again.`;
+        return error.description
+          ? `The information provided for ${operation} is invalid: ${error.description}`
+          : `The information provided for ${operation} is invalid. Please check your input and try again.`;
       case 4: // DEADLINE_EXCEEDED
         return `The operation for ${operation} took too long to complete. Please try again.`;
       case 5: // NOT_FOUND

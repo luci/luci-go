@@ -30,3 +30,11 @@ export const enableAndroidUtilizationMetrics = createFeatureFlag({
   percentage: 0,
   trackingBug: '525089400',
 });
+
+export const enableInventoryEditing = createFeatureFlag({
+  description: 'Enable ChromeOS inventory visual details card inline editing',
+  namespace: 'fleet-console',
+  name: 'inventory-editing',
+  percentage: 0,
+  trackingBug: '388907865',
+});
