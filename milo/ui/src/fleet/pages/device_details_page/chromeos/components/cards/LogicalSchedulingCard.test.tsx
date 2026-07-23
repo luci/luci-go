@@ -88,10 +88,10 @@ describe('<LogicalSchedulingCard />', () => {
       </FakeContextProvider>,
     );
     expect(
-      screen.getByRole('button', {
+      screen.queryByRole('button', {
         name: 'edit Pools & Task Routing',
       }),
-    ).toBeVisible();
+    ).not.toBeInTheDocument();
   });
 
   it('omits Logical Zone when logicalZone is unspecified or 0', async () => {

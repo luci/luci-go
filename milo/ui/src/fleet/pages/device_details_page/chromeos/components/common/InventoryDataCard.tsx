@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import EditIcon from '@mui/icons-material/Edit';
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   CardHeader,
   Divider,
-  IconButton,
   SxProps,
   Theme,
-  Tooltip,
 } from '@mui/material';
 import { ReactNode } from 'react';
 
@@ -36,6 +34,8 @@ export interface InventoryDataCardProps {
   editable?: boolean;
   isEditing?: boolean;
   onEdit?: () => void;
+  onConfirm?: () => void;
+  onDiscard?: () => void;
   headerAction?: ReactNode;
   children?: ReactNode;
   loading?: boolean;
@@ -50,6 +50,8 @@ export const InventoryDataCard = ({
   editable = false,
   isEditing = false,
   onEdit,
+  onConfirm,
+  onDiscard,
   headerAction,
   children,
   loading = false,
@@ -73,17 +75,39 @@ export const InventoryDataCard = ({
         action={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {headerAction}
-            {Boolean(editable && onEdit) && (
-              <Tooltip title={isEditing ? 'Cancel Editing' : 'Edit Section'}>
-                <IconButton
-                  size="small"
-                  color={isEditing ? 'primary' : 'default'}
-                  onClick={onEdit}
-                  aria-label={`edit ${title}`}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+            {editable && (
+              <>
+                {isEditing ? (
+                  <>
+                    {onDiscard && (
+                      <Button size="small" onClick={onDiscard} color="inherit">
+                        Cancel
+                      </Button>
+                    )}
+                    {onConfirm && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        onClick={onConfirm}
+                      >
+                        Confirm
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  onEdit && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={onEdit}
+                      aria-label={`edit ${title}`}
+                    >
+                      Edit
+                    </Button>
+                  )
+                )}
+              </>
             )}
           </Box>
         }

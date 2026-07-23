@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Grid, Typography } from '@mui/material';
+import { Grid, TextField, Typography } from '@mui/material';
 import { ReactNode } from 'react';
 
 import { CodeChip } from './CodeChip';
@@ -24,6 +24,11 @@ export interface PropertyFieldProps {
   gridSm?: number;
   gridMd?: number;
   children?: ReactNode;
+  editable?: boolean;
+  isEditing?: boolean;
+  onChange?: (newValue: string) => void;
+  onConfirm?: () => void;
+  inputType?: 'text' | 'number';
 }
 
 export const PropertyField = ({
@@ -33,7 +38,40 @@ export const PropertyField = ({
   gridSm = 6,
   gridMd,
   children,
+  editable = false,
+  isEditing = false,
+  onChange,
+  onConfirm,
+  inputType = 'text',
 }: PropertyFieldProps) => {
+  if (editable && isEditing) {
+    return (
+      <Grid item xs={12} sm={gridSm} md={gridMd}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: 'block', mb: 0.5 }}
+        >
+          {label}
+        </Typography>
+        <TextField
+          type={inputType}
+          value={value !== null && value !== undefined ? String(value) : ''}
+          onChange={(e) => onChange?.(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              onConfirm?.();
+            }
+          }}
+          size="small"
+          variant="outlined"
+          fullWidth
+        />
+      </Grid>
+    );
+  }
+
   const hasValue = value !== undefined && value !== null && value !== '';
   if (!hasValue && !children) return null;
 
