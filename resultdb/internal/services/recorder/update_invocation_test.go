@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -564,29 +565,37 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 			Realm: "testproject:testrealm",
 		}
 
+		validatePermissions := func(request *pb.UpdateInvocationRequest) error {
+			updateMask, err := mask.FromFieldMask(request.UpdateMask, request.Invocation, mask.AdvancedSemantics(), mask.ForUpdate())
+			if err != nil {
+				return err
+			}
+			return validateUpdateInvocationPermissions(ctx, existing, request, updateMask)
+		}
+
 		t.Run(`realm`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"realm"}
 			request.Invocation.Realm = "testproject:newrealm"
 
 			t.Run(`valid`, func(t *ftt.Test) {
-				err := validateUpdateInvocationPermissions(ctx, existing, request)
+				err := validatePermissions(request)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`no create access`, func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
-				err := validateUpdateInvocationPermissions(ctx, existing, request)
+				err := validatePermissions(request)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike(`caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
 			t.Run(`no include access`, func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeInvocation)
-				err := validateUpdateInvocationPermissions(ctx, existing, request)
+				err := validatePermissions(request)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike(`caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
 			t.Run(`change of project`, func(t *ftt.Test) {
 				request.Invocation.Realm = "newproject:testrealm"
-				err := validateUpdateInvocationPermissions(ctx, existing, request)
+				err := validatePermissions(request)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike(`cannot change invocation realm to outside project "testproject"`))
 			})
@@ -597,17 +606,17 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 
 			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.BaselineId = ""
-				err := validateUpdateInvocationPermissions(ctx, existing, request)
+				err := validatePermissions(request)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`no concurrent change to realm`, func(t *ftt.Test) {
 				t.Run(`valid`, func(t *ftt.Test) {
-					err := validateUpdateInvocationPermissions(ctx, existing, request)
+					err := validatePermissions(request)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run(`no access`, func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
-					err := validateUpdateInvocationPermissions(ctx, existing, request)
+					err := validatePermissions(request)
 					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
 					assert.Loosely(t, err, should.BeNil)
 				})
@@ -617,12 +626,12 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 				request.Invocation.Realm = "testproject:newrealm"
 
 				t.Run(`valid`, func(t *ftt.Test) {
-					err := validateUpdateInvocationPermissions(ctx, existing, request)
+					err := validatePermissions(request)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run(`no access`, func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
-					err := validateUpdateInvocationPermissions(ctx, existing, request)
+					err := validatePermissions(request)
 					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
 					assert.Loosely(t, err, should.BeNil)
 				})
@@ -638,7 +647,7 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permExportToBigQuery)
 
 				t.Run(`with change`, func(t *ftt.Test) {
-					err := validateUpdateInvocationPermissions(ctx, existing, request)
+					err := validatePermissions(request)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					assert.Loosely(t, err, should.ErrLike(`updater does not have permission to set bigquery exports in realm "testproject:@root"`))
 				})
@@ -648,12 +657,12 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 						createTestBigQueryExportConfig(),
 					}
 
-					err := validateUpdateInvocationPermissions(ctx, existing, request)
+					err := validatePermissions(request)
 					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 			t.Run(`valid`, func(t *ftt.Test) {
-				err := validateUpdateInvocationPermissions(ctx, existing, request)
+				err := validatePermissions(request)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -788,6 +797,22 @@ func TestUpdateInvocation(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, inv.BaselineId, should.Equal("try:linux-rel"))
 			})
+			t.Run("backtick quoted without permission", func(t *ftt.Test) {
+				reqWithBackticks := &pb.UpdateInvocationRequest{
+					Invocation: &pb.Invocation{
+						Name:       "invocations/inv",
+						BaselineId: "try:linux-rel",
+					},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{"`baseline_id`"}},
+				}
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
+
+				inv, err := recorder.UpdateInvocation(ctx, reqWithBackticks)
+				assert.Loosely(t, err, should.BeNil)
+				// the caller does not have permissions, so baseline should
+				// be silently reset.
+				assert.Loosely(t, inv.BaselineId, should.BeEmpty)
+			})
 		})
 
 		t.Run("module_id", func(t *ftt.Test) {
@@ -869,6 +894,22 @@ func TestUpdateInvocation(t *testing.T) {
 					createTestBigQueryExportConfig(),
 				}))
 			})
+			t.Run("backtick quoted without permission", func(t *ftt.Test) {
+				reqWithBackticks := &pb.UpdateInvocationRequest{
+					Invocation: &pb.Invocation{
+						Name: "invocations/inv",
+						BigqueryExports: []*pb.BigQueryExport{
+							createTestBigQueryExportConfig(),
+						},
+					},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{"`bigquery_exports`"}},
+				}
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permExportToBigQuery)
+
+				_, err := recorder.UpdateInvocation(ctx, reqWithBackticks)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`updater does not have permission to set bigquery exports in realm "testproject:@root"`))
+			})
 		})
 
 		t.Run("realm", func(t *ftt.Test) {
@@ -918,6 +959,20 @@ func TestUpdateInvocation(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, inv.Realm, should.Equal("testproject:newrealm"))
 				assert.Loosely(t, inv.BaselineId, should.Equal("existing-baseline"))
+			})
+			t.Run(`backtick quoted without permission`, func(t *ftt.Test) {
+				reqWithBackticks := &pb.UpdateInvocationRequest{
+					Invocation: &pb.Invocation{
+						Name:  "invocations/inv",
+						Realm: "testproject:newrealm",
+					},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{"`realm`"}},
+				}
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
+
+				_, err := recorder.UpdateInvocation(ctx, reqWithBackticks)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission to create invocations in realm "testproject:newrealm"`))
 			})
 		})
 

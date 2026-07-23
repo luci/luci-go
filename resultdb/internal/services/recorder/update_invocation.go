@@ -17,7 +17,6 @@ package recorder
 import (
 	"context"
 	"fmt"
-	"slices"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -170,7 +169,7 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, cfg *confi
 	return nil
 }
 
-func validateUpdateInvocationPermissions(ctx context.Context, existing *pb.Invocation, req *pb.UpdateInvocationRequest) error {
+func validateUpdateInvocationPermissions(ctx context.Context, existing *pb.Invocation, req *pb.UpdateInvocationRequest, updateMask *mask.Mask) error {
 	// Note: Permission to update the invocation itself is verified by
 	// checking the update-token, which occurs in mutateInvocation(...).
 
@@ -179,7 +178,7 @@ func validateUpdateInvocationPermissions(ctx context.Context, existing *pb.Invoc
 
 	// If there is a change of realm being attempted, verify it first, as
 	// further fields must be validated against this new realm, not the old one.
-	if slices.Contains(req.UpdateMask.GetPaths(), "realm") {
+	if _, ok := updateMask.Children()["realm"]; ok {
 		realm = req.Invocation.GetRealm()
 		newProject, _ := realms.Split(realm)
 		if project != newProject {
@@ -195,7 +194,7 @@ func validateUpdateInvocationPermissions(ctx context.Context, existing *pb.Invoc
 		}
 	}
 
-	for _, path := range req.UpdateMask.GetPaths() {
+	for path := range updateMask.Children() {
 		switch path {
 		case "baseline_id":
 			if req.Invocation.BaselineId != "" {
@@ -303,10 +302,15 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 		if ret, err = invocations.Read(ctx, invID, invocations.AllFields); err != nil {
 			return err
 		}
+		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.Invocation, mask.AdvancedSemantics(), mask.ForUpdate())
+		if err != nil {
+			return errors.Fmt("update_mask: %w", err)
+		}
+
 		// Perform validation and permission checks in the same transaction
 		// as the update, to prevent the possibility of permission check bypass
 		// (TOC/TOU bug) in the event of an update-update race.
-		if err := validateUpdateInvocationPermissions(ctx, ret, in); err != nil {
+		if err := validateUpdateInvocationPermissions(ctx, ret, in, updateMask); err != nil {
 			return err
 		}
 
@@ -319,11 +323,6 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 		// sources final in the same request, regardless of the order
 		// the fields are mentioned in the update mask.
 		wasSourcesFinal := ret.IsSourceSpecFinal
-
-		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.Invocation, mask.AdvancedSemantics(), mask.ForUpdate())
-		if err != nil {
-			return errors.Fmt("update_mask: %w", err)
-		}
 		for path, submask := range updateMask.Children() {
 			switch path {
 			// The cases in this switch statement must be synchronized with a
