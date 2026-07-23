@@ -40,6 +40,7 @@ import {
   useUfsClient,
   useFleetConsoleClient,
 } from '@/fleet/hooks/prpc_clients';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { extractDutLabel } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
@@ -93,6 +94,7 @@ export const ChromeOSInventoryData = ({
   >('review');
 
   const queryClient = useQueryClient();
+  const { trackEvent } = useFleetAnalytics();
   const ufsNamespace = extractDutLabel('ufs_namespace', device);
   const ufsClient = useUfsClient(ufsNamespace || 'os');
   const fleetConsoleClient = useFleetConsoleClient();
@@ -181,6 +183,11 @@ export const ChromeOSInventoryData = ({
     if (!base || !editedLse) return;
     const { edits, paths } = translateDiffToEdits(base, editedLse);
     if (paths.length === 0) return;
+
+    trackEvent('inventory_edit_submitted', {
+      editedFields: paths.join(','),
+      fieldCount: paths.length,
+    });
 
     setSaveState('saving');
     updateMutation.mutate(

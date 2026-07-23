@@ -87,6 +87,16 @@ export interface EventPayload {
    * The total number of devices present in the repair group.
    */
   totalDevices?: number;
+
+  /**
+   * Comma-separated list of field paths modified in an edit.
+   */
+  editedFields?: string;
+
+  /**
+   * The number of fields modified in an edit.
+   */
+  fieldCount?: number;
 }
 
 /**

@@ -23,6 +23,7 @@ import { ChromeOSInventoryData } from './chromeos_inventory_data';
 
 // Mock react-query queries and mutations
 const mockMutate = jest.fn();
+const mockTrackEvent = jest.fn();
 let mutationOptions: {
   onSuccess?: () => void;
   onError?: () => void;
@@ -53,6 +54,13 @@ jest.mock('@/common/feature_flags', () => {
     useFeatureFlag: jest.fn(() => true),
   };
 });
+
+// Mock analytics
+jest.mock('@/fleet/hooks/use_fleet_analytics', () => ({
+  useFleetAnalytics: () => ({
+    trackEvent: mockTrackEvent,
+  }),
+}));
 
 // Mock pRPC clients
 jest.mock('@/fleet/hooks/prpc_clients', () => ({
@@ -233,6 +241,12 @@ describe('<ChromeOSInventoryData />', () => {
     expect(mutationArg.requestId).toBeDefined(); // Client-side UUID should be present
     expect(typeof mutationArg.requestId).toBe('string');
     expect(mutationArg.requestId.length).toBeGreaterThan(0);
+
+    // Verify Google Analytics event tracking
+    expect(mockTrackEvent).toHaveBeenCalledWith('inventory_edit_submitted', {
+      editedFields: 'pools',
+      fieldCount: 1,
+    });
 
     // Verify success UI state shown and dialog closed
     expect(screen.getByText('Changes Saved Successfully')).toBeInTheDocument();
