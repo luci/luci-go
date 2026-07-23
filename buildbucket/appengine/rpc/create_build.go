@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
@@ -160,14 +161,22 @@ func validateCipdPackage(pkg string, mustWithSuffix bool) error {
 	return cipdCommon.ValidatePackageName(strings.TrimSuffix(pkg, pkgSuffix))
 }
 
-func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
-	for path, ref := range in.GetData() {
-		for i, spec := range ref.GetCipd().GetSpecs() {
-			if err := validateCipdPackage(spec.GetPackage(), false); err != nil {
-				return errors.Fmt("[%s]: [%d]: cipd.package: %w", path, i, err)
+func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input, globalCfg *pb.SettingsCfg) error {
+	expectedServer := globalCfg.GetCipd().GetServer()
+	validateRef := func(path string, ref *pb.InputDataRef, prefix string) error {
+		if cipd := ref.GetCipd(); cipd != nil {
+			for i, spec := range cipd.GetSpecs() {
+				if err := validateCipdPackage(spec.GetPackage(), false); err != nil {
+					return errors.Fmt("%s[%s]: [%d]: cipd.package: %w", prefix, path, i, err)
+				}
+				if err := cipdCommon.ValidateInstanceVersion(spec.GetVersion()); err != nil {
+					return errors.Fmt("%s[%s]: [%d]: cipd.version: %w", prefix, path, i, err)
+				}
 			}
-			if err := cipdCommon.ValidateInstanceVersion(spec.GetVersion()); err != nil {
-				return errors.Fmt("[%s]: [%d]: cipd.version: %w", path, i, err)
+			if cipd.GetServer() == "" {
+				cipd.Server = expectedServer
+			} else if cipd.GetServer() != expectedServer {
+				return errors.Fmt("%s[%s]: cipd.server: incorrect server, want: %s, got: %s", prefix, path, expectedServer, cipd.GetServer())
 			}
 		}
 
@@ -175,24 +184,42 @@ func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
 		if cas != nil {
 			switch {
 			case !casInstanceRe.MatchString(cas.GetCasInstance()):
-				return errors.Fmt("[%s]: cas.cas_instance: does not match %s", path, casInstanceRe)
+				return errors.Fmt("%s[%s]: cas.cas_instance: does not match %s", prefix, path, casInstanceRe)
 			case cas.GetDigest() == nil:
-				return errors.Fmt("[%s]: cas.digest: not specified", path)
+				return errors.Fmt("%s[%s]: cas.digest: not specified", prefix, path)
 			case cas.Digest.GetSizeBytes() < 0:
-				return errors.Fmt("[%s]: cas.digest.size_bytes: must be greater or equal to 0", path)
+				return errors.Fmt("%s[%s]: cas.digest.size_bytes: must be greater or equal to 0", prefix, path)
 			}
+		}
+		return nil
+	}
+
+	for path, ref := range in.GetData() {
+		if err := validateRef(path, ref, ""); err != nil {
+			return err
+		}
+	}
+	for path, ref := range in.GetCipdSource() {
+		if err := validateRef(path, ref, "cipd_source: "); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func validateAgentSource(src *pb.BuildInfra_Buildbucket_Agent_Source) error {
+func validateAgentSource(src *pb.BuildInfra_Buildbucket_Agent_Source, globalCfg *pb.SettingsCfg) error {
 	cipd := src.GetCipd()
 	if err := validateCipdPackage(cipd.GetPackage(), true); err != nil {
 		return errors.Fmt("cipd.package:: %w", err)
 	}
 	if err := cipdCommon.ValidateInstanceVersion(cipd.GetVersion()); err != nil {
 		return errors.Fmt("cipd.version: %w", err)
+	}
+	expected := globalCfg.GetCipd().GetServer()
+	if cipd.GetServer() == "" {
+		cipd.Server = expected
+	} else if cipd.GetServer() != expected {
+		return errors.Fmt("cipd.server: incorrect server, want: %s, got: %s", expected, cipd.GetServer())
 	}
 	return nil
 }
@@ -210,12 +237,12 @@ func validateAgentPurposes(purposes map[string]pb.BuildInfra_Buildbucket_Agent_P
 	return nil
 }
 
-func validateAgent(agent *pb.BuildInfra_Buildbucket_Agent) error {
+func validateAgent(agent *pb.BuildInfra_Buildbucket_Agent, globalCfg *pb.SettingsCfg) error {
 	var err error
 	switch {
-	case teeErr(validateAgentInput(agent.GetInput()), &err) != nil:
+	case teeErr(validateAgentInput(agent.GetInput(), globalCfg), &err) != nil:
 		return errors.Fmt("input: %w", err)
-	case teeErr(validateAgentSource(agent.GetSource()), &err) != nil:
+	case teeErr(validateAgentSource(agent.GetSource(), globalCfg), &err) != nil:
 		return errors.Fmt("source: %w", err)
 	case teeErr(validateAgentPurposes(agent.GetPurposes(), agent.GetInput()), &err) != nil:
 		return errors.Fmt("purposes: %w", err)
@@ -224,26 +251,33 @@ func validateAgent(agent *pb.BuildInfra_Buildbucket_Agent) error {
 	}
 }
 
-func validateInfraBuildbucket(ctx context.Context, ib *pb.BuildInfra_Buildbucket) error {
+func validateInfraBuildbucket(ctx context.Context, globalCfg *pb.SettingsCfg, ib *pb.BuildInfra_Buildbucket) error {
+	if ib == nil {
+		return nil
+	}
 	var err error
 	bbHost := fmt.Sprintf("%s.appspot.com", info.AppID(ctx))
-	switch {
-	case teeErr(validateHostName(ib.GetHostname()), &err) != nil:
-		return errors.Fmt("hostname: %w", err)
-	case ib.GetHostname() != "" && ib.Hostname != bbHost:
+	if ib.GetHostname() == "" {
+		ib.Hostname = bbHost
+	} else if ib.Hostname != bbHost {
 		return errors.Fmt("incorrect hostname, want: %s, got: %s", bbHost, ib.Hostname)
-	case teeErr(validateAgent(ib.GetAgent()), &err) != nil:
+	}
+	switch {
+	case teeErr(validateAgent(ib.GetAgent(), globalCfg), &err) != nil:
 		return errors.Fmt("agent: %w", err)
 	case teeErr(validateRequestedDimensions(ib.RequestedDimensions), &err) != nil:
 		return errors.Fmt("requested_dimensions: %w", err)
 	case teeErr(validateProperties(ib.RequestedProperties), &err) != nil:
 		return errors.Fmt("requested_properties: %w", err)
 	}
+	hosts := stringset.NewFromSlice(globalCfg.GetKnownPublicGerritHosts()...)
 	for _, host := range ib.GetKnownPublicGerritHosts() {
 		if err = validateHostName(host); err != nil {
 			return errors.Fmt("known_public_gerrit_hosts: %w", err)
 		}
+		hosts.Add(host)
 	}
+	ib.KnownPublicGerritHosts = hosts.ToSortedSlice()
 	return nil
 }
 
@@ -351,19 +385,24 @@ func validateBackendConfig(config *structpb.Struct) error {
 	return nil
 }
 
-func validateInfraBackend(ctx context.Context, ib *pb.BuildInfra_Backend) error {
+func validateInfraBackend(globalCfg *pb.SettingsCfg, ib *pb.BuildInfra_Backend) error {
 	if ib == nil {
 		return nil
 	}
 
-	globalCfg, err := config.GetSettingsCfg(ctx)
+	var err error
+	target := ib.GetTask().GetId().GetTarget()
+	expectedHost, err := clients.GetBackendHost(target, globalCfg)
 	if err != nil {
-		return errors.Fmt("error fetching service config: %w", err)
+		return err
+	}
+	if ib.GetHostname() == "" {
+		ib.Hostname = expectedHost
+	} else if ib.GetHostname() != expectedHost {
+		return errors.Fmt("hostname: incorrect hostname, want: %s, got: %s", expectedHost, ib.GetHostname())
 	}
 
 	switch {
-	case teeErr(config.ValidateTaskBackendTarget(globalCfg, ib.GetTask().GetId().GetTarget()), &err) != nil:
-		return err
 	case teeErr(validateBackendConfig(ib.GetConfig()), &err) != nil:
 		return errors.Fmt("config: %w", err)
 	case teeErr(validateDimensions(ib.GetTaskDimensions()), &err) != nil:
@@ -394,44 +433,48 @@ func validateInfraSwarming(is *pb.BuildInfra_Swarming) error {
 	}
 }
 
-func validateInfraLogDog(il *pb.BuildInfra_LogDog) error {
-	var err error
-	switch {
-	case teeErr(validateHostName(il.GetHostname()), &err) != nil:
-		return errors.Fmt("hostname: %w", err)
-	default:
+func validateInfraLogDog(globalCfg *pb.SettingsCfg, il *pb.BuildInfra_LogDog) error {
+	if il == nil {
 		return nil
 	}
+	expected := globalCfg.GetLogdog().GetHostname()
+	if il.GetHostname() == "" {
+		il.Hostname = expected
+	} else if il.GetHostname() != expected {
+		return errors.Fmt("hostname: incorrect hostname, want: %s, got: %s", expected, il.GetHostname())
+	}
+	return nil
 }
 
-func validateInfraResultDB(irdb *pb.BuildInfra_ResultDB) error {
-	var err error
-	switch {
-	case irdb == nil:
-		return nil
-	case teeErr(validateHostName(irdb.GetHostname()), &err) != nil:
-		return errors.Fmt("hostname: %w", err)
-	default:
+func validateInfraResultDB(globalCfg *pb.SettingsCfg, irdb *pb.BuildInfra_ResultDB) error {
+	if irdb == nil {
 		return nil
 	}
+	expected := globalCfg.GetResultdb().GetHostname()
+	if irdb.GetHostname() == "" {
+		irdb.Hostname = expected
+	} else if irdb.GetHostname() != expected {
+		return errors.Fmt("hostname: incorrect hostname, want: %s, got: %s", expected, irdb.GetHostname())
+	}
+	return nil
 }
 
-func validateInfra(ctx context.Context, infra *pb.BuildInfra) error {
+func validateInfra(ctx context.Context, globalCfg *pb.SettingsCfg, infra *pb.BuildInfra) error {
 	var err error
 	switch {
 	case infra.GetBackend() == nil && infra.GetSwarming() == nil:
 		return errors.New("backend or swarming is needed in build infra")
 	case infra.GetBackend() != nil && infra.GetSwarming() != nil:
 		return errors.New("can only have one of backend or swarming in build infra. both were provided")
-	case teeErr(validateInfraBackend(ctx, infra.GetBackend()), &err) != nil:
+	case teeErr(validateInfraBackend(globalCfg, infra.GetBackend()), &err) != nil:
 		return errors.Fmt("backend: %w", err)
 	case teeErr(validateInfraSwarming(infra.GetSwarming()), &err) != nil:
 		return errors.Fmt("swarming: %w", err)
-	case teeErr(validateInfraBuildbucket(ctx, infra.GetBuildbucket()), &err) != nil:
+	case teeErr(validateInfraBuildbucket(ctx, globalCfg, infra.GetBuildbucket()), &err) != nil:
 		return errors.Fmt("buildbucket: %w", err)
-	case teeErr(validateInfraLogDog(infra.GetLogdog()), &err) != nil:
+	case teeErr(validateInfraLogDog(globalCfg, infra.GetLogdog()), &err) != nil:
 		return errors.Fmt("logdog: %w", err)
-	case teeErr(validateInfraResultDB(infra.GetResultdb()), &err) != nil:
+	case teeErr(validateInfraResultDB(globalCfg, infra.GetResultdb()), &err) != nil:
 		return errors.Fmt("resultdb: %w", err)
 	default:
 		return nil
@@ -503,7 +546,7 @@ func validateExe(exe *pb.Executable, agent *pb.BuildInfra_Buildbucket_Agent) err
 	return nil
 }
 
-func validateBuild(ctx context.Context, wellKnownExperiments stringset.Set, b *pb.Build) error {
+func validateBuild(ctx context.Context, globalCfg *pb.SettingsCfg, wellKnownExperiments stringset.Set, b *pb.Build) error {
 	var err error
 	switch {
 	case teeErr(protoutil.ValidateRequiredBuilderID(b.Builder), &err) != nil:
@@ -512,7 +555,7 @@ func validateBuild(ctx context.Context, wellKnownExperiments stringset.Set, b *p
 		return errors.Fmt("exe: %w", err)
 	case teeErr(validateInput(wellKnownExperiments, b.Input), &err) != nil:
 		return errors.Fmt("input: %w", err)
-	case teeErr(validateInfra(ctx, b.Infra), &err) != nil:
+	case teeErr(validateInfra(ctx, globalCfg, b.Infra), &err) != nil:
 		return errors.Fmt("infra: %w", err)
 	case teeErr(validateBucketConstraints(ctx, b), &err) != nil:
 		return err
@@ -540,7 +583,12 @@ func validateCreateBuildRequest(ctx context.Context, wellKnownExperiments string
 		}
 	}
 
-	if err := validateBuild(ctx, wellKnownExperiments, req.GetBuild()); err != nil {
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return nil, errors.Fmt("error fetching service config: %w", err)
+	}
+
+	if err := validateBuild(ctx, globalCfg, wellKnownExperiments, req.GetBuild()); err != nil {
 		return nil, errors.Fmt("build: %w", err)
 	}
 	if err := validateRequestID(req.GetRequestId(), false); err != nil {

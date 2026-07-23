@@ -191,6 +191,16 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 					},
 				},
 			},
+			Logdog: &pb.LogDogSettings{
+				Hostname: "host",
+			},
+			Resultdb: &pb.ResultDBSettings{
+				Hostname: "host",
+			},
+			Cipd: &pb.CipdSettings{
+				Server: "cipd server",
+			},
+			KnownPublicGerritHosts: []string{"global.example.com"},
 		}), should.BeNil)
 
 		t.Run("works", func(t *ftt.Test) {
@@ -561,6 +571,17 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 								assert.Loosely(t, err, should.ErrLike(`build: infra: buildbucket: agent: input: [path_a]: cas.digest.size_bytes`))
 							})
+							t.Run("data cipd server incorrect", func(t *ftt.Test) {
+								req.Build.Infra.Buildbucket.Agent.Input.Data["path_a"].GetCipd().Server = "wrong_server"
+								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+								assert.Loosely(t, err, should.ErrLike(`build: infra: buildbucket: agent: input: [path_a]: cipd.server: incorrect server, want: cipd server, got: wrong_server`))
+							})
+							t.Run("data cipd server defaulted", func(t *ftt.Test) {
+								req.Build.Infra.Buildbucket.Agent.Input.Data["path_a"].GetCipd().Server = ""
+								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+								assert.Loosely(t, err, should.BeNil)
+								assert.Loosely(t, req.Build.Infra.Buildbucket.Agent.Input.Data["path_a"].GetCipd().Server, should.Equal("cipd server"))
+							})
 						})
 						t.Run("source", func(t *ftt.Test) {
 							t.Run("package", func(t *ftt.Test) {
@@ -572,6 +593,17 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 								req.Build.Infra.Buildbucket.Agent.Source.GetCipd().Version = "+100"
 								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 								assert.Loosely(t, err, should.ErrLike(`build: infra: buildbucket: agent: source: cipd.version`))
+							})
+							t.Run("server incorrect", func(t *ftt.Test) {
+								req.Build.Infra.Buildbucket.Agent.Source.GetCipd().Server = "wrong_server"
+								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+								assert.Loosely(t, err, should.ErrLike(`build: infra: buildbucket: agent: source: cipd.server: incorrect server, want: cipd server, got: wrong_server`))
+							})
+							t.Run("server defaulted", func(t *ftt.Test) {
+								req.Build.Infra.Buildbucket.Agent.Source.GetCipd().Server = ""
+								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+								assert.Loosely(t, err, should.BeNil)
+								assert.Loosely(t, req.Build.Infra.Buildbucket.Agent.Source.GetCipd().Server, should.Equal("cipd server"))
 							})
 						})
 						t.Run("purposes", func(t *ftt.Test) {
@@ -592,6 +624,19 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 							}
 							_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 							assert.Loosely(t, err, should.ErrLike(`build: infra: buildbucket: agent: purposes`))
+						})
+					})
+					t.Run("known_public_gerrit_hosts", func(t *ftt.Test) {
+						t.Run("syntax", func(t *ftt.Test) {
+							req.Build.Infra.Buildbucket.KnownPublicGerritHosts = []string{"https://host"}
+							_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+							assert.Loosely(t, err, should.ErrLike(`build: infra: buildbucket: known_public_gerrit_hosts: must not contain "://"`))
+						})
+						t.Run("merging", func(t *ftt.Test) {
+							req.Build.Infra.Buildbucket.KnownPublicGerritHosts = []string{"custom.example.com"}
+							_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, req.Build.Infra.Buildbucket.KnownPublicGerritHosts, should.Match([]string{"custom.example.com", "global.example.com"}))
 						})
 					})
 				})
@@ -644,18 +689,28 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 				})
 
 				t.Run("logdog", func(t *ftt.Test) {
-					t.Run("hostname", func(t *ftt.Test) {
-						req.Build.Infra.Logdog.Hostname = "https://host"
+					t.Run("hostname incorrect", func(t *ftt.Test) {
+						req.Build.Infra.Logdog.Hostname = "wrong_host"
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						assert.Loosely(t, err, should.ErrLike(`build: infra: logdog: hostname: must not contain "://"`))
+						assert.Loosely(t, err, should.ErrLike(`build: infra: logdog: hostname: incorrect hostname, want: host, got: wrong_host`))
+					})
+					t.Run("hostname required", func(t *ftt.Test) {
+						req.Build.Infra.Logdog.Hostname = ""
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						assert.Loosely(t, err, should.ErrLike(`.build.infra.logdog.hostname: required`))
 					})
 				})
 
 				t.Run("resultdb", func(t *ftt.Test) {
-					t.Run("hostname", func(t *ftt.Test) {
-						req.Build.Infra.Resultdb.Hostname = "https://host"
+					t.Run("hostname incorrect", func(t *ftt.Test) {
+						req.Build.Infra.Resultdb.Hostname = "wrong_host"
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						assert.Loosely(t, err, should.ErrLike(`build: infra: resultdb: hostname: must not contain "://"`))
+						assert.Loosely(t, err, should.ErrLike(`build: infra: resultdb: hostname: incorrect hostname, want: host, got: wrong_host`))
+					})
+					t.Run("hostname required", func(t *ftt.Test) {
+						req.Build.Infra.Resultdb.Hostname = ""
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						assert.Loosely(t, err, should.ErrLike(`.build.infra.resultdb.hostname: required`))
 					})
 				})
 				t.Run("backend", func(t *ftt.Test) {
@@ -680,7 +735,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 							},
 						}
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						assert.Loosely(t, err, should.ErrLike(`build: infra: backend: provided backend target was not in global config`))
+						assert.Loosely(t, err, should.ErrLike(`build: infra: backend: could not find target in global config settings`))
 					})
 					t.Run("task_dimensions", func(t *ftt.Test) {
 						req.Build.Infra.Swarming = nil
@@ -756,6 +811,45 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 						}
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 						assert.Loosely(t, err, should.ErrLike(`build: infra: backend: config: priority must be a number`))
+					})
+					t.Run("hostname incorrect", func(t *ftt.Test) {
+						req.Build.Infra.Swarming = nil
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://chromium-swarm",
+								},
+							},
+							Hostname: "wrong_host",
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						assert.Loosely(t, err, should.ErrLike(`build: infra: backend: hostname: incorrect hostname, want: chromium-swarm.appspot.com, got: wrong_host`))
+					})
+					t.Run("hostname defaulted", func(t *ftt.Test) {
+						req.Build.Infra.Swarming = nil
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://chromium-swarm",
+								},
+							},
+							TaskDimensions: []*pb.RequestedDimension{
+								{
+									Key:   "pool",
+									Value: "example.pool",
+								},
+							},
+							Config: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"service_account": {
+										Kind: &structpb.Value_StringValue{StringValue: "example@account.com"},
+									},
+								},
+							},
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, req.Build.Infra.Backend.Hostname, should.Equal("chromium-swarm.appspot.com"))
 					})
 				})
 			})
@@ -908,13 +1002,34 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 			})
 
 			t.Run("sub fields are required if their upper level is non nil", func(t *ftt.Test) {
-				req.Build.Infra.Resultdb = nil
+				req.Build.Infra.Swarming = nil
+				req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm",
+						},
+					},
+					TaskDimensions: []*pb.RequestedDimension{
+						{
+							Key:   "pool",
+							Value: "example.pool",
+						},
+					},
+					Config: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"service_account": {
+								Kind: &structpb.Value_StringValue{StringValue: "example@account.com"},
+							},
+						},
+					},
+				}
 				_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				req.Build.Infra.Resultdb = &pb.BuildInfra_ResultDB{}
+				req.Build.Infra.Backend = nil
+				req.Build.Infra.Swarming = &pb.BuildInfra_Swarming{}
 				_, err = validateCreateBuildRequest(ctx, wellknownExps, req)
-				assert.Loosely(t, err, should.ErrLike(".build.infra.resultdb.hostname: required"))
+				assert.Loosely(t, err, should.ErrLike(".build.infra.swarming.hostname: required"))
 			})
 		})
 	})
@@ -956,6 +1071,16 @@ func TestCreateBuild(t *testing.T) {
 					},
 				},
 			},
+			Logdog: &pb.LogDogSettings{
+				Hostname: "host",
+			},
+			Resultdb: &pb.ResultDBSettings{
+				Hostname: "host",
+			},
+			Cipd: &pb.CipdSettings{
+				Server: "cipd server",
+			},
+			KnownPublicGerritHosts: []string{"global.example.com"},
 		}), should.BeNil)
 
 		req := validCreateBuildRequest()
