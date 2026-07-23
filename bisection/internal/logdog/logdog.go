@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/bisection/util"
@@ -29,6 +30,10 @@ import (
 var MockedLogdogClientKey = "mocked logdog client"
 
 var logdogPathRegex = regexp.MustCompile(`^/logs/([^/]+)/`)
+
+var allowedLogdogHosts = map[string]bool{
+	"logs.chromium.org": true,
+}
 
 // GetLogFromViewUrl gets the log from the log's viewURL
 func GetLogFromViewUrl(c context.Context, viewUrl string) (string, error) {
@@ -42,6 +47,14 @@ func (cl *LogdogClient) GetLog(c context.Context, viewUrl string) (string, error
 	req, err := http.NewRequest("GET", viewUrl, nil)
 	if err != nil {
 		return "", err
+	}
+
+	if req.URL.Scheme != "https" {
+		return "", errors.Reason("invalid logdog url scheme %q: only https is allowed", req.URL.Scheme)
+	}
+
+	if !allowedLogdogHosts[req.URL.Host] {
+		return "", errors.Reason("untrusted logdog host %q", req.URL.Host)
 	}
 
 	q := req.URL.Query()
