@@ -66,12 +66,22 @@ export function SshTip({ hostname, dutId }: SshTipProps) {
 
   const droneServer = getDimensionValue(botInfo, 'drone_server');
 
-  const command =
-    isSatlab && droneServer
-      ? `ssh -o ProxyJump=moblab@${droneServer} root@${hostname}`
-      : `ssh ${hostname}`;
+  const isValidHostname = (host?: string): boolean =>
+    !!host && /^[a-zA-Z0-9.-]+$/.test(host);
 
-  const showWarning = isSatlab && !droneServer;
+  const validDroneServer = isValidHostname(droneServer)
+    ? droneServer
+    : undefined;
+  const validHostname = isValidHostname(hostname) ? hostname : '';
+
+  const command =
+    isSatlab && validDroneServer && validHostname
+      ? `ssh -o ProxyJump=moblab@${validDroneServer} root@${validHostname}`
+      : validHostname
+        ? `ssh ${validHostname}`
+        : '';
+
+  const showWarning = isSatlab && !validDroneServer;
 
   return (
     <>

