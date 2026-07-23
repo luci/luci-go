@@ -198,12 +198,14 @@ func main() {
 		// Middleware chain for legacy APIs available with basic service access.
 		// These are callers that have read access to groups.
 		authServiceAccessMW := makeAPIMW(srvauthdb.AuthServiceAccessGroup, model.AdminGroup)
+		// Middleware chain for legacy APIs which bypass privacy filtering.
+		unfilteredAccessMW := makeAPIMW(model.UnfilteredAccessGroup, model.AdminGroup)
 		// Support legacy endpoint to get an AuthGroup.
 		srv.Routes.GET("/auth/api/v1/groups/*groupName",
-			authServiceAccessMW, adaptGrpcErr(groupsServer.GetLegacyAuthGroup))
+			unfilteredAccessMW, adaptGrpcErr(groupsServer.GetLegacyAuthGroup))
 		// Support legacy endpoint to get the expanded listing of an AuthGroup.
 		srv.Routes.GET("/auth/api/v1/listing/groups/*groupName",
-			authServiceAccessMW, adaptGrpcErr(groupsServer.GetLegacyListing))
+			unfilteredAccessMW, adaptGrpcErr(groupsServer.GetLegacyListing))
 		// Support legacy endpoint to check group membership.
 		srv.Routes.GET("/auth/api/v1/memberships/check",
 			authServiceAccessMW, adaptGrpcErr(authdbServer.CheckLegacyMembership))

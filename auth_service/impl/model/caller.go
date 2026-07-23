@@ -45,5 +45,5 @@ func CanCallerViewMembers(ctx context.Context, name string) (bool, error) {
 		return true, nil
 	}
 
-	return auth.IsMember(ctx, AdminGroup)
+	return auth.IsMember(ctx, AdminGroup, UnfilteredAccessGroup)
 }

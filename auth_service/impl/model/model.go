@@ -66,6 +66,10 @@ const (
 	// once.
 	TrustedServicesGroup = "auth-trusted-services"
 
+	// UnfilteredAccessGroup defines a group whose members are allowed to
+	// access legacy endpoints that bypass privacy filtering.
+	UnfilteredAccessGroup = "auth-group-unfiltered-access"
+
 	// Max size of AuthDBShard.Blob.
 	MaxDBShardSize = 900 * 1024 // 900 kB.
 
