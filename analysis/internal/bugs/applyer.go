@@ -144,6 +144,15 @@ type BugOptions struct {
 // NeedsPriorityOrVerifiedUpdate returns whether a bug needs to have its
 // priority or verified status updated, based on the current active policies.
 func (p PolicyApplyer) NeedsPriorityOrVerifiedUpdate(opts BugOptions) bool {
+	// If policy state is completely empty, it means this rule has never
+	// been evaluated against cluster metrics (e.g. reclustering is still
+	// pending for a newly created or split rule, or the project has not
+	// defined any bug management policies). It is unsafe to make bug
+	// management decisions (like verifying the bug) in this state.
+	if len(opts.State.PolicyState) == 0 {
+		return false
+	}
+
 	recommendedPriority, recommendedVerified := p.RecommendedPriorityAndVerified(ActivePolicies(opts.State))
 
 	// Priority updates are only considered if:

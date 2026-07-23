@@ -1200,7 +1200,7 @@ func TestUpdate(t *testing.T) {
 								assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
 							})
 						})
-						t.Run("if all policies are removed, bug is auto-closed", func(t *ftt.Test) {
+						t.Run("if all policies are removed, bug is left unaffected", func(t *ftt.Test) {
 							projectCfg.BugManagement.Policies = nil
 							err := config.SetTestProjectConfig(ctx, projectsCfg)
 							assert.Loosely(t, err, should.BeNil)
@@ -1215,8 +1215,8 @@ func TestUpdate(t *testing.T) {
 							// Verify
 							assert.Loosely(t, err, should.BeNil)
 							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
-							assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
-							assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P2))
+							assert.Loosely(t, issue.Issue.IssueState.Status, should.Equal(originalStatus))
+							assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(originalPriority))
 						})
 					})
 				})
