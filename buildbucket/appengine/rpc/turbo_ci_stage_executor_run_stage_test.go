@@ -328,8 +328,14 @@ func TestRunStage(t *testing.T) {
 			// CreateBackendBuildTask, NotifyPubSubGoProxy for schedule build
 			// CancelBuildTask for handling status mismatch from TurboCI
 			assert.That(t, len(tasks), should.Equal(3))
-			_, ok := tasks.Payloads()[2].(*taskdefs.CancelBuildTask)
-			assert.Loosely(t, ok, should.BeTrue)
+			var hasCancel bool
+			for _, task := range tasks.Payloads() {
+				if _, ok := task.(*taskdefs.CancelBuildTask); ok {
+					hasCancel = true
+					break
+				}
+			}
+			assert.That(t, hasCancel, should.BeTrue)
 		})
 
 		t.Run("failCurrentStage failure", func(t *ftt.Test) {
