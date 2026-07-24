@@ -236,7 +236,7 @@ const ProductCatalogueTabPageContent = ({
     ),
   });
 
-  const view = searchParams.get('view') === 'card' ? 'card' : 'table';
+  const view = searchParams.get('view') === 'table' ? 'table' : 'card';
 
   const handleViewChange = (newView: string) => {
     setSearchParams((prevParams) => {

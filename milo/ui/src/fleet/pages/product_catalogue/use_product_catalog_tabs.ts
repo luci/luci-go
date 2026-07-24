@@ -55,9 +55,7 @@ export function useProductCatalogTabs() {
   //Ideally we would prefer UseState so UseTabs wouldn't have any logic in View and filters
   const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
     const currentView = searchParams.get('view');
-    navigate(
-      `/ui/fleet/catalog?tab=${newValue}&view=${currentView || 'table'}`,
-    );
+    navigate(`/ui/fleet/catalog?tab=${newValue}&view=${currentView || 'card'}`);
   };
 
   return {

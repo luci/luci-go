@@ -35,6 +35,14 @@ const renderPage = (
   queryClient = new QueryClient(),
   initialEntries = ['/ui/fleet/catalog'],
 ) => {
+  const entries = initialEntries.map((entry) => {
+    const url = new URL(entry, 'http://localhost');
+    if (!url.searchParams.has('view')) {
+      url.searchParams.set('view', 'table');
+    }
+    return url.pathname + url.search + url.hash;
+  });
+
   let searchParamsHook: ReturnType<typeof useSyncedSearchParams> | undefined;
 
   const TestComponent = () => {
@@ -46,7 +54,7 @@ const renderPage = (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
         <ShortcutProvider>
-          <MemoryRouter initialEntries={initialEntries}>
+          <MemoryRouter initialEntries={entries}>
             <SyncedSearchParamsProvider>
               <TestComponent />
             </SyncedSearchParamsProvider>
