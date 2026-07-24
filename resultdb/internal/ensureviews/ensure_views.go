@@ -36,7 +36,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 	"text_artifacts": func(luciProject string) *bigquery.TableMetadata {
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.text_artifacts WHERE ` + projectWhereClause(luciProject),
-			Labels:    map[string]string{bq.MetadataVersionKey: "3"},
+			Labels:    map[string]string{bq.MetadataVersionKey: "4"},
 		}
 	},
 	"invocations": func(luciProject string) *bigquery.TableMetadata {
@@ -46,7 +46,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		}
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.invocations WHERE ` + projectWhereClause(luciProject),
-			Labels:    map[string]string{bq.MetadataVersionKey: "3"},
+			Labels:    map[string]string{bq.MetadataVersionKey: "4"},
 		}
 	},
 }
@@ -71,9 +71,9 @@ func projectWhereClause(luciProject string) string {
 		// Enclose in brackets to ensure expression is evaluated to
 		// a boolean wherever it is injected. I.E. So that
 		// `WHERE something = a AND ` + projectWhereClause(luciProject) is safe.
-		return `(project = "chromium" OR STARTS_WITH(project, "chromium-m"))`
+		return `(project = "chromium" OR REGEXP_CONTAINS(project, r"^chromium-m[0-9]+$"))`
 	} else if luciProject == "chrome" {
-		return `(project IN ("chromium", "chrome") OR STARTS_WITH(project, "chromium-m") OR STARTS_WITH(project, "chrome-m"))`
+		return `(project IN ("chromium", "chrome") OR REGEXP_CONTAINS(project, r"^chromium-m[0-9]+$") OR REGEXP_CONTAINS(project, r"^chrome-m[0-9]+$"))`
 	} else if luciProject == "fuchsia" {
 		return `(project IN ("fuchsia", "turquoise"))`
 	}
