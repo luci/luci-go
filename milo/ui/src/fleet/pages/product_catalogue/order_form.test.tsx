@@ -51,7 +51,7 @@ describe('<OrderForm />', () => {
     expect(screen.queryByLabelText(/Resource Group/)).toBeNull();
   });
 
-  it('renders OS specific fields when OS platform is selected', async () => {
+  it('renders common fields when OS platform is selected', async () => {
     render(<OrderForm entry={mockEntry} />);
 
     // Select OS Platform
@@ -66,12 +66,6 @@ describe('<OrderForm />', () => {
     expect(screen.getByLabelText(/Quantity/)).toBeVisible();
     expect(screen.getByLabelText(/Resource Group/)).toBeVisible();
     expect(screen.getByLabelText(/Criticality/)).toBeVisible();
-
-    // Verify OS-specific fields are visible
-    expect(screen.getByLabelText(/Swarming Server/)).toBeVisible();
-    expect(screen.getByLabelText(/Swarming Pool/)).toBeVisible();
-    expect(screen.getByLabelText(/NPI Approval/)).toBeVisible();
-    expect(screen.getByLabelText(/NPI Type/)).toBeVisible();
 
     // Verify Android-specific fields are NOT visible
     expect(screen.queryByLabelText(/Host Group/)).toBeNull();
@@ -92,10 +86,6 @@ describe('<OrderForm />', () => {
     // Verify Android-specific fields are visible
     expect(screen.getByLabelText(/Host Group/)).toBeVisible();
     expect(screen.getByLabelText(/Mobile Harness/)).toBeVisible();
-
-    // Verify OS-specific fields are NOT visible
-    expect(screen.queryByLabelText(/NPI Approval/)).toBeNull();
-    expect(screen.queryByLabelText(/NPI Type/)).toBeNull();
   });
 
   it('renders Mobile Harness sub-fields when Android is selected and Mobile Harness is Yes', () => {

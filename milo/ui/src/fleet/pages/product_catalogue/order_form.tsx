@@ -31,7 +31,7 @@ import {
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
@@ -67,14 +67,6 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
   // TODO: Re-visit this once we add GCE VMs to the catalog.
   const gceVm = 'No';
 
-  // OS / Browser specific
-  const [swarmingServer, setSwarmingServer] = useState<string>('');
-  const [swarmingPool, setSwarmingPool] = useState<string>('');
-
-  // OS specific
-  const [npiApproval, setNpiApproval] = useState<string>('');
-  const [npiType, setNpiType] = useState<string>('');
-
   // Android specific
   const [hostGroup, setHostGroup] = useState<string>('');
   const [mobileHarness, setMobileHarness] = useState<string>('');
@@ -82,16 +74,6 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
     useState<string>('');
   const [mobileHarnessWifi, setMobileHarnessWifi] = useState<string>('');
   const [mobileHarnessOwner, setMobileHarnessOwner] = useState<string>('');
-
-  useEffect(() => {
-    if (platform === 'OS') {
-      setSwarmingServer('chromeos-swarming.appspot.com');
-    } else if (platform === 'Browser') {
-      setSwarmingServer('chromium-swarm.appspot.com');
-    } else {
-      setSwarmingServer('');
-    }
-  }, [platform]);
 
   const buildBuganizerUrl = () => {
     let componentId = '';
@@ -147,13 +129,6 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
     // Platform-Specific Custom Fields
     if (platform === 'OS') {
       addCustomField('1374341', resourceName); // Resource Name (OS)
-      if (swarmingServer) {
-        const mappedServer = swarmingServer.replace('.appspot.com', '');
-        addCustomField('1398912', mappedServer); // Swarming Server
-      }
-      addCustomField('1398913', swarmingPool); // Swarming Pool
-      addCustomField('1482165', npiApproval); // NPI Approval
-      addCustomField('1482166', npiType); // NPI Type
     } else if (platform === 'Android') {
       addCustomField('1374342', resourceName); // Resource Name (Android)
       addCustomField('1399528', hostGroup); // Host Group
@@ -165,11 +140,6 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
       }
     } else if (platform === 'Browser') {
       addCustomField('1374418', resourceName); // Resource Name (Browser)
-      if (swarmingServer) {
-        const mappedServer = swarmingServer.replace('.appspot.com', '');
-        addCustomField('1398912', mappedServer); // Swarming Server
-      }
-      addCustomField('1398913', swarmingPool); // Swarming Pool
     }
 
     return `https://b.corp.google.com/issues/new?${params.toString()}`;
@@ -297,83 +267,6 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
                   InputLabelProps={{ required: false }}
                 />
               </Box>
-              {/* Platform-Specific Sections */}
-              {(platform === 'OS' || platform === 'Browser') && (
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                  <FormControl sx={{ minWidth: 250 }}>
-                    <InputLabel id="swarming-server-label">
-                      Swarming Server (optional)
-                    </InputLabel>
-                    <Select
-                      labelId="swarming-server-label"
-                      value={swarmingServer}
-                      label="Swarming Server (optional)"
-                      onChange={(e) => setSwarmingServer(e.target.value)}
-                    >
-                      <MenuItem value="chromeos-swarming.appspot.com">
-                        chromeos-swarming.appspot.com
-                      </MenuItem>
-                      <MenuItem value="chromium-swarm.appspot.com">
-                        chromium-swarm.appspot.com
-                      </MenuItem>
-                      <MenuItem value="other">Other</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <Box
-                    sx={{ position: 'relative', flexGrow: 1, minWidth: 200 }}
-                  >
-                    <TextField
-                      label="Swarming Pool (optional)"
-                      value={swarmingPool}
-                      onChange={(e) => setSwarmingPool(e.target.value)}
-                      fullWidth
-                    />
-                    <Box sx={TOOLTIP_CONTAINER_STYLE}>
-                      <InfoTooltip fontSize="0.875rem">
-                        Specify the swarming server this resource will be added
-                        to.
-                      </InfoTooltip>
-                    </Box>
-                  </Box>
-                </Box>
-              )}
-
-              {platform === 'OS' && (
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                  <FormControl sx={{ minWidth: 240 }}>
-                    <InputLabel id="npi-approval-label">
-                      NPI Approval (optional)
-                    </InputLabel>
-                    <Select
-                      labelId="npi-approval-label"
-                      value={npiApproval}
-                      label="NPI Approval (optional)"
-                      onChange={(e) => setNpiApproval(e.target.value)}
-                    >
-                      <MenuItem value="Yes">Yes</MenuItem>
-                      <MenuItem value="No">No</MenuItem>
-                      <MenuItem value="Pending">Pending</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <FormControl sx={{ minWidth: 220 }}>
-                    <InputLabel id="npi-type-label">
-                      NPI Type (optional)
-                    </InputLabel>
-                    <Select
-                      labelId="npi-type-label"
-                      value={npiType}
-                      label="NPI Type (optional)"
-                      onChange={(e) => setNpiType(e.target.value)}
-                    >
-                      <MenuItem value="Hardware">Hardware</MenuItem>
-                      <MenuItem value="Software">Software</MenuItem>
-                      <MenuItem value="Other">Other</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
-              )}
 
               {platform === 'Android' && (
                 <>
