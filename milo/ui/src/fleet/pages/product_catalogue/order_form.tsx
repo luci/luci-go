@@ -69,7 +69,7 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
 
   // Android specific
   const [hostGroup, setHostGroup] = useState<string>('');
-  const [mobileHarness, setMobileHarness] = useState<string>('');
+  const isMobileHarness = entry.productType === 'android-testbed';
   const [mobileHarnessDimension, setMobileHarnessDimension] =
     useState<string>('');
   const [mobileHarnessWifi, setMobileHarnessWifi] = useState<string>('');
@@ -132,8 +132,8 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
     } else if (platform === 'Android') {
       addCustomField('1374342', resourceName); // Resource Name (Android)
       addCustomField('1399528', hostGroup); // Host Group
-      addCustomField('1399763', mobileHarness); // Mobile Harness
-      if (mobileHarness === 'Yes') {
+      addCustomField('1399763', isMobileHarness ? 'Yes' : 'No'); // Mobile Harness
+      if (isMobileHarness) {
         addCustomField('1399551', mobileHarnessDimension); // Dimension
         addCustomField('1399552', mobileHarnessWifi); // WiFi
         addCustomField('1399553', mobileHarnessOwner); // Owner (MDB)
@@ -271,40 +271,18 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
               {platform === 'Android' && (
                 <>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <TextField
-                      label="Host Group"
-                      value={hostGroup}
-                      onChange={(e) => setHostGroup(e.target.value)}
-                      required
-                      sx={{ minWidth: 200 }}
-                      InputLabelProps={{ required: false }}
-                    />
-
-                    <Box sx={{ position: 'relative', minWidth: 200 }}>
-                      <FormControl fullWidth required>
-                        <InputLabel id="mobile-harness-label" required={false}>
-                          Mobile Harness
-                        </InputLabel>
-                        <Select
-                          labelId="mobile-harness-label"
-                          value={mobileHarness}
-                          label="Mobile Harness"
-                          onChange={(e) => setMobileHarness(e.target.value)}
-                        >
-                          <MenuItem value="Yes">Yes</MenuItem>
-                          <MenuItem value="No">No</MenuItem>
-                        </Select>
-                      </FormControl>
-                      <Box sx={TOOLTIP_CONTAINER_STYLE}>
-                        <InfoTooltip fontSize="0.875rem">
-                          Is it a mobile harness resource?
-                        </InfoTooltip>
-                      </Box>
+                    <Box sx={{ position: 'relative', flex: 1, minWidth: 200 }}>
+                      <TextField
+                        label="Host Group"
+                        value={hostGroup}
+                        onChange={(e) => setHostGroup(e.target.value)}
+                        required
+                        fullWidth
+                        InputLabelProps={{ required: false }}
+                      />
                     </Box>
-                  </Box>
 
-                  {mobileHarness === 'Yes' && (
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    {isMobileHarness && (
                       <Box
                         sx={{ position: 'relative', flex: 1, minWidth: 200 }}
                       >
@@ -322,8 +300,14 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
                           </InfoTooltip>
                         </Box>
                       </Box>
+                    )}
+                  </Box>
 
-                      <Box sx={{ position: 'relative', minWidth: 270 }}>
+                  {isMobileHarness && (
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                      <Box
+                        sx={{ position: 'relative', flex: 1, minWidth: 200 }}
+                      >
                         <FormControl fullWidth>
                           <InputLabel id="mobile-harness-wifi-label">
                             Mobile Harness WiFi (optional)

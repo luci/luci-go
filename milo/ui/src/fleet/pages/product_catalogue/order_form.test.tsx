@@ -85,11 +85,12 @@ describe('<OrderForm />', () => {
 
     // Verify Android-specific fields are visible
     expect(screen.getByLabelText(/Host Group/)).toBeVisible();
-    expect(screen.getByLabelText(/Mobile Harness/)).toBeVisible();
+    expect(screen.queryByLabelText(/Mobile Harness/)).toBeNull();
   });
 
-  it('renders Mobile Harness sub-fields when Android is selected and Mobile Harness is Yes', () => {
-    render(<OrderForm entry={mockEntry} />);
+  it('renders Mobile Harness sub-fields automatically when Android platform is selected and entry productType is android-testbed', () => {
+    const testbedEntry = { ...mockEntry, productType: 'android-testbed' };
+    render(<OrderForm entry={testbedEntry} />);
 
     // Select Android Platform
     const platformSelect = screen.getByLabelText(
@@ -99,19 +100,11 @@ describe('<OrderForm />', () => {
     const androidOption = screen.getByText('Android');
     fireEvent.click(androidOption);
 
-    // Mobile Harness fields shouldn't be visible by default
-    expect(screen.queryByLabelText(/Mobile Harness Dimension/)).toBeNull();
-
-    // Set Mobile Harness to Yes
-    const mobileHarnessSelect = screen.getByLabelText(/Mobile Harness/);
-    fireEvent.mouseDown(mobileHarnessSelect);
-    const yesOption = screen.getByText('Yes');
-    fireEvent.click(yesOption);
-
-    // Verify Mobile Harness sub-fields are now visible
+    // Verify Mobile Harness sub-fields are visible by default
     expect(screen.getByLabelText(/Mobile Harness Dimension/)).toBeVisible();
     expect(screen.getByLabelText(/Mobile Harness WiFi/)).toBeVisible();
     expect(screen.getByLabelText(/Mobile Harness Owner/)).toBeVisible();
+    expect(screen.queryByLabelText(/^Mobile Harness$/)).toBeNull();
   });
 
   it('opens Buganizer URL in a new tab when the form is submitted', async () => {
@@ -142,12 +135,6 @@ describe('<OrderForm />', () => {
     fireEvent.change(screen.getByLabelText(/Estimated Launch Date/), {
       target: { value: '10/12/2026' },
     });
-
-    // Select Mobile Harness No
-    const mobileHarnessSelect = screen.getByLabelText(/Mobile Harness/);
-    fireEvent.mouseDown(mobileHarnessSelect);
-    const noOption = screen.getByText('No');
-    fireEvent.click(noOption);
 
     // Submit form
     const submitButton = screen.getByRole('button', { name: 'Submit Order' });
