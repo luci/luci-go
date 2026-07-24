@@ -65,19 +65,27 @@ export const SaveDiffDialog = ({
       {saveState === 'review' && (
         <>
           <DialogTitle sx={{ fontWeight: 'bold' }}>Review Changes</DialogTitle>
-          <DialogContent dividers>
+          <DialogContent dividers sx={{ p: 2.5, overflowX: 'hidden' }}>
             <Typography variant="body2" sx={{ mb: 2 }} color="text.secondary">
               Please review the modifications before saving:
             </Typography>
             <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
-              <Table size="small" aria-label="changes diff table">
+              <Table
+                size="small"
+                aria-label="changes diff table"
+                sx={{ tableLayout: 'fixed', width: '100%' }}
+              >
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold', width: '150px' }}>
+                    <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>
                       Field
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Original</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Updated</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', width: '37.5%' }}>
+                      Original
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', width: '37.5%' }}>
+                      Updated
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -88,19 +96,23 @@ export const SaveDiffDialog = ({
                           fontFamily: 'monospace',
                           color: 'text.secondary',
                           verticalAlign: 'top',
+                          overflowWrap: 'break-word',
                         }}
                       >
                         {diff.path}
                       </TableCell>
                       <TableCell
-                        sx={{ wordBreak: 'break-all', verticalAlign: 'top' }}
+                        sx={{
+                          overflowWrap: 'break-word',
+                          verticalAlign: 'top',
+                        }}
                       >
                         {diff.original}
                       </TableCell>
                       <TableCell
                         sx={{
                           fontWeight: 'bold',
-                          wordBreak: 'break-all',
+                          overflowWrap: 'break-word',
                           verticalAlign: 'top',
                         }}
                       >
