@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	pb "cloud.google.com/go/datastore/apiv1/datastorepb"
 	"google.golang.org/api/iterator"
-	pb "google.golang.org/genproto/googleapis/datastore/v1"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
