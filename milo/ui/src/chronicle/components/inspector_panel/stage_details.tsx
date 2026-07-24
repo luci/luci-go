@@ -13,8 +13,13 @@
 // limitations under the License.
 
 import { Box, Chip, Divider, Typography } from '@mui/material';
+import { useMemo } from 'react';
 
 import { toString } from '@/chronicle/utils/id';
+import {
+  TYPE_URL_LEGACY_WORKPRODUCT,
+  extractLegacyWorkNode,
+} from '@/chronicle/utils/legacy_worknode';
 import { renderTimestamp } from '@/chronicle/utils/time_utils';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { stageAttemptStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
@@ -62,6 +67,24 @@ export function StageDetails({
   // Attempts are in ascending order by created time.
   // Reverse that so we show the latest attempt first.
   const attempts = stage.attempts?.slice().reverse() || [];
+
+  const legacyWorkNodeRef = stage.legacy?.worknode;
+  const legacyWorkNodeValueData = legacyWorkNodeRef?.digest
+    ? valueDataMap.get(legacyWorkNodeRef.digest)
+    : undefined;
+
+  const legacyWorkNode = useMemo(
+    () => extractLegacyWorkNode(stage, valueDataMap),
+    [stage, valueDataMap],
+  );
+
+  const workOutputJson = useMemo(() => {
+    const workOutput = legacyWorkNode?.workOutput;
+    if (workOutput === undefined || workOutput === null) return undefined;
+    return typeof workOutput === 'string'
+      ? workOutput
+      : JSON.stringify(workOutput);
+  }, [legacyWorkNode?.workOutput]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -120,6 +143,22 @@ export function StageDetails({
             }
             typeUrl={stage.args.typeUrl!}
             omitReason={stage.args.omitReason}
+            renderMode={renderMode}
+          />
+        </>
+      )}
+
+      {(workOutputJson ||
+        legacyWorkNodeRef?.omitReason ||
+        legacyWorkNodeValueData?.conversionFailure) && (
+        <>
+          <Divider />
+          <Typography variant="subtitle2">Work Output</Typography>
+          <AnyDetails
+            typeUrl={TYPE_URL_LEGACY_WORKPRODUCT}
+            json={workOutputJson}
+            valueData={legacyWorkNodeValueData}
+            omitReason={legacyWorkNodeRef?.omitReason}
             renderMode={renderMode}
           />
         </>

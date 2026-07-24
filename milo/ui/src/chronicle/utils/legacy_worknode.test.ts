@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { extractLegacyWorkNodeLabel } from './legacy_worknode';
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
+import {
+  extractLegacyWorkNode,
+  extractLegacyWorkNodeLabel,
+} from './legacy_worknode';
 
 describe('extractLegacyWorkNodeLabel with ported google3 logic', () => {
   it('handles ATP_TEST workExecutorType and testName', () => {
@@ -118,5 +124,98 @@ describe('extractLegacyWorkNodeLabel with ported google3 logic', () => {
         'my-stage-id',
       ),
     ).toBe('build WorkNode: my-stage-id');
+  });
+});
+
+describe('extractLegacyWorkNode', () => {
+  it('returns undefined if stage has no legacy worknode', () => {
+    const stage = Stage.fromPartial({});
+    const valueDataMap = new Map<string, ValueData>();
+    expect(extractLegacyWorkNode(stage, valueDataMap)).toBeUndefined();
+  });
+
+  it('returns undefined if legacy worknode digest is not in the map', () => {
+    const stage = Stage.fromPartial({
+      legacy: {
+        worknode: {
+          digest: 'some-digest',
+        },
+      },
+    });
+    const valueDataMap = new Map<string, ValueData>();
+    expect(extractLegacyWorkNode(stage, valueDataMap)).toBeUndefined();
+  });
+
+  it('returns undefined if valueData has no json value', () => {
+    const stage = Stage.fromPartial({
+      legacy: {
+        worknode: {
+          digest: 'some-digest',
+        },
+      },
+    });
+    const valueDataMap = new Map<string, ValueData>([
+      ['some-digest', ValueData.fromPartial({})],
+    ]);
+    expect(extractLegacyWorkNode(stage, valueDataMap)).toBeUndefined();
+  });
+
+  it('returns undefined if json value is invalid JSON', () => {
+    const stage = Stage.fromPartial({
+      legacy: {
+        worknode: {
+          digest: 'some-digest',
+        },
+      },
+    });
+    const valueDataMap = new Map<string, ValueData>([
+      [
+        'some-digest',
+        ValueData.fromPartial({
+          json: {
+            value: '{invalid-json',
+          },
+        }),
+      ],
+    ]);
+    expect(extractLegacyWorkNode(stage, valueDataMap)).toBeUndefined();
+  });
+
+  it('parses and returns LegacyWorkNode on success', () => {
+    const stage = Stage.fromPartial({
+      legacy: {
+        worknode: {
+          digest: 'some-digest',
+        },
+      },
+    });
+    const legacyWorkNodeJson = JSON.stringify({
+      workExecutorType: 'ATP_TEST',
+      workParameters: {
+        atpTestParameters: { testName: 'CtsOsTestCases' },
+      },
+      workOutput: {
+        status: 'SUCCESS',
+        resultUrl: 'http://test-url',
+      },
+    });
+    const valueDataMap = new Map<string, ValueData>([
+      [
+        'some-digest',
+        ValueData.fromPartial({
+          json: {
+            value: legacyWorkNodeJson,
+          },
+        }),
+      ],
+    ]);
+
+    const result = extractLegacyWorkNode(stage, valueDataMap);
+    expect(result).toBeDefined();
+    expect(result?.workExecutorType).toBe('ATP_TEST');
+    expect(result?.workOutput).toEqual({
+      status: 'SUCCESS',
+      resultUrl: 'http://test-url',
+    });
   });
 });

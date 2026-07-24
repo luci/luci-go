@@ -24,7 +24,7 @@ import { fetchGrpcWeb } from '@/common/hooks/grpc_query/grpc_query';
 import {
   TURBO_CI_ENVIRONMENTS,
   TurboCIEnvironment,
-  useReadWorkPlan,
+  usePaginatedReadWorkPlan,
 } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { IdentifierKind } from '@/proto/turboci/graph/ids/v1/identifier_kind.pb';
@@ -480,7 +480,7 @@ export function ChronicleContextProvider({
   );
   const activeHost = activeEnvObj?.host || '';
 
-  const result = useReadWorkPlan(
+  const result = usePaginatedReadWorkPlan(
     {
       workplanId: { id: normalizedWorkplanId },
       includedNodeTypes: [
@@ -505,6 +505,7 @@ export function ChronicleContextProvider({
         stageAttemptProgressDetails: ValueMask.VALUE_MASK_TYPE,
         stageEditAttemptDetails: ValueMask.VALUE_MASK_VALUE_TYPE,
         stageEditAttemptProgressDetails: ValueMask.VALUE_MASK_TYPE,
+        stageLegacyWorknode: ValueMask.VALUE_MASK_VALUE_TYPE,
       },
     },
     activeHost || '',

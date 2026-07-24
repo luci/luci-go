@@ -18,8 +18,15 @@
  * at http://shortn/_T8wYkFezwF.
  */
 
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
 export const TYPE_URL_LEGACY_WORKNODE_STAGE =
   'type.googleapis.com/wireless.android.launchcontrol.WorkNodeStage';
+export const TYPE_URL_LEGACY_WORKNODE =
+  'type.googleapis.com/wireless.android.launchcontrol.WorkNode';
+export const TYPE_URL_LEGACY_WORKPRODUCT =
+  'type.googleapis.com/wireless.android.launchcontrol.WorkProduct';
 
 const ARROW = '\u{2192}'; // →
 
@@ -119,6 +126,9 @@ export interface LegacyWorkParameters {
 export interface LegacyWorkNode {
   readonly workExecutorType?: string | number;
   readonly workParameters?: LegacyWorkParameters;
+  // We use unknown here as we don't have access to the proto definitions. We also
+  // just show the output as raw JSON and don't access any inner fields directly.
+  readonly workOutput?: unknown;
 }
 
 function toCamelCase(str: string): string {
@@ -285,4 +295,24 @@ export function extractLegacyWorkNodeLabel(
   }
 
   return undefined;
+}
+
+export function extractLegacyWorkNode(
+  stage: Stage,
+  valueDataMap: Map<string, ValueData> | ReadonlyMap<string, ValueData>,
+): LegacyWorkNode | undefined {
+  const legacyWorkNodeRef = stage.legacy?.worknode;
+  if (!legacyWorkNodeRef?.digest) {
+    return undefined;
+  }
+  const valueData = valueDataMap.get(legacyWorkNodeRef.digest);
+  const jsonStr = valueData?.json?.value;
+  if (!jsonStr) {
+    return undefined;
+  }
+  try {
+    return JSON.parse(jsonStr) as LegacyWorkNode;
+  } catch {
+    return undefined;
+  }
 }
