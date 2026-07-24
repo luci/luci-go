@@ -25,6 +25,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -185,6 +186,11 @@ func expandChangeLogRecursive(c context.Context, cl *ExpandedChangeLog, currentP
 
 	host, project, start, end, ok := ParseRollURL(cl.Message)
 	if !ok {
+		return nil, nil
+	}
+
+	if !gerrit.IsAllowedHost(host) {
+		logging.Warningf(c, "Refusing to expand roll for commit %s: host %q is not an allowed Gitiles host", cl.Commit, host)
 		return nil, nil
 	}
 

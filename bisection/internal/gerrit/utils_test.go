@@ -51,6 +51,12 @@ func TestGetHost(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, host, should.Equal("chromium-test-review.googlesource.com"))
 	})
+
+	ftt.Run("Only returns allowed hosts", t, func(t *ftt.Test) {
+		host, err := GetHost(ctx, " https://random-host.com/c/proj/+/1200003\n")
+		assert.Loosely(t, err, should.ErrLike("unsupported Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
+	})
 }
 
 func TestGetProject(t *testing.T) {
@@ -79,6 +85,12 @@ func TestGetProject(t *testing.T) {
 		project, err := GetProject(ctx, "https://skia-review.googlesource.com/c/skia/+/12345")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, project, should.Equal("skia"))
+	})
+
+	ftt.Run("Only returns project for allowed hosts", t, func(t *ftt.Test) {
+		project, err := GetProject(ctx, " https://random-host.com/c/proj/+/1200003\n")
+		assert.Loosely(t, err, should.ErrLike("unsupported Gerrit host"))
+		assert.Loosely(t, project, should.BeEmpty)
 	})
 }
 

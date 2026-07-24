@@ -191,48 +191,48 @@ func TestExpandChangeLogs(t *testing.T) {
 
 		t.Run("Exceeds recursion depth limit, stops expanding", func(t *ftt.Test) {
 			gitilesData := map[string]string{
-				"https://repo0/proj0/+log/0000000..1111111": `)]}'
+				"https://repo0.googlesource.com/proj0/+log/0000000..1111111": `)]}'
 {
 	"log": [
 		{
 			"commit": "roll1",
-			"message": "Roll repo1 1111111..2222222\n\nhttps://repo1/proj1/+log/1111111..2222222"
+			"message": "Roll repo1 1111111..2222222\n\nhttps://repo1.googlesource.com/proj1/+log/1111111..2222222"
 		}
 	]
 }`,
-				"https://repo1/proj1/+log/1111111..2222222": `)]}'
+				"https://repo1.googlesource.com/proj1/+log/1111111..2222222": `)]}'
 {
 	"log": [
 		{
 			"commit": "roll2",
-			"message": "Roll repo2 2222222..3333333\n\nhttps://repo2/proj2/+log/2222222..3333333"
+			"message": "Roll repo2 2222222..3333333\n\nhttps://repo2.googlesource.com/proj2/+log/2222222..3333333"
 		}
 	]
 }`,
-				"https://repo2/proj2/+log/2222222..3333333": `)]}'
+				"https://repo2.googlesource.com/proj2/+log/2222222..3333333": `)]}'
 {
 	"log": [
 		{
 			"commit": "roll3",
-			"message": "Roll repo3 3333333..4444444\n\nhttps://repo3/proj3/+log/3333333..4444444"
+			"message": "Roll repo3 3333333..4444444\n\nhttps://repo3.googlesource.com/proj3/+log/3333333..4444444"
 		}
 	]
 }`,
-				"https://repo3/proj3/+log/3333333..4444444": `)]}'
+				"https://repo3.googlesource.com/proj3/+log/3333333..4444444": `)]}'
 {
 	"log": [
 		{
 			"commit": "roll4",
-			"message": "Roll repo4 4444444..5555555\n\nhttps://repo4/proj4/+log/4444444..5555555"
+			"message": "Roll repo4 4444444..5555555\n\nhttps://repo4.googlesource.com/proj4/+log/4444444..5555555"
 		}
 	]
 }`,
-				"https://repo4/proj4/+log/4444444..5555555": `)]}'
+				"https://repo4.googlesource.com/proj4/+log/4444444..5555555": `)]}'
 {
 	"log": [
 		{
 			"commit": "roll5",
-			"message": "Roll repo5 5555555..6666666\n\nhttps://repo5/proj5/+log/5555555..6666666"
+			"message": "Roll repo5 5555555..6666666\n\nhttps://repo5.googlesource.com/proj5/+log/5555555..6666666"
 		}
 	]
 }`,
@@ -242,7 +242,7 @@ func TestExpandChangeLogs(t *testing.T) {
 			changelogs := []*model.ChangeLog{
 				{
 					Commit:  "roll0",
-					Message: "Roll repo0 0000000..1111111\n\nhttps://repo0/proj0/+log/0000000..1111111",
+					Message: "Roll repo0 0000000..1111111\n\nhttps://repo0.googlesource.com/proj0/+log/0000000..1111111",
 				},
 			}
 
