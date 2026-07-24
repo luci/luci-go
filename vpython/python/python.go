@@ -67,6 +67,9 @@ func envWithPassthroughs() environ.Env {
 	if reportURL := os.Getenv(common.EnvVpythonReportMissingUrl); reportURL != "" {
 		env.Set(common.EnvVpythonReportMissingUrl, reportURL)
 	}
+	if timeout := os.Getenv(common.EnvVpythonNetworkRetryTimeout); timeout != "" {
+		env.Set(common.EnvVpythonNetworkRetryTimeout, timeout)
+	}
 	return env
 }
 

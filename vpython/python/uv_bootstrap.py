@@ -20,9 +20,67 @@ import os
 import subprocess
 import sys
 import shutil
+import time
 import urllib.request
 import json
 import re
+
+
+DEFAULT_NETWORK_RETRY_TIMEOUT = 300  # Default to 5 minutes timeout
+
+
+def get_network_retry_timeout():
+    val = os.getenv("VPYTHON_NETWORK_RETRY_TIMEOUT")
+    if val:
+        try:
+            return float(val)
+        except ValueError:
+            pass
+    return DEFAULT_NETWORK_RETRY_TIMEOUT
+
+
+NETWORK_ERROR_PATTERNS = [
+    re.compile(p, re.IGNORECASE) for p in [
+        r"Failed to establish a new connection",
+        r"getaddrinfo failed",
+        r"NewConnectionError",
+        r"Max retries exceeded with url",
+        r"NameResolutionError",
+        r"Name or service not known",
+        r"nodename nor servname provided",
+        r"Temporary failure in name resolution",
+        r"ConnectionRefusedError",
+        r"Connection reset by peer",
+        r"ConnectionResetError",
+        r"ConnectTimeoutError",
+        r"ReadTimeoutError",
+        r"HTTPSConnectionPool",
+        r"HTTPConnectionPool",
+        r"Network is unreachable",
+        r"No route to host",
+        r"connection broken by",
+        r"Retrying \(Retry\(total=",
+        r"Failed to fetch",
+        r"Failed to download",
+        r"failed to lookup address",
+        r"gai error",
+        r"dns error",
+        r"operation timed out",
+        r"connection timed out",
+        r"connection refused",
+        r"connection reset",
+        r"error sending request",
+        r"error connecting to",
+        r"http connection error",
+        r"network error",
+    ]
+]
+
+
+def is_network_error(output_str):
+    if not output_str:
+        return False
+    return any(p.search(output_str) for p in NETWORK_ERROR_PATTERNS)
 
 
 def report_to_endpoint(package, version, context, report_url):
@@ -133,19 +191,47 @@ def main():
     ]
 
     print("Installing spec requirements via UV...")
-    try:
-        res = subprocess.run(sync_cmd, env=env, capture_output=True, text=True, check=True)
-        if res.stdout:
-            print(res.stdout)
-    except subprocess.CalledProcessError as e:
-        if e.stdout:
-            print(e.stdout)
-        if e.stderr:
-            print(e.stderr, file=sys.stderr)
-        report_url = os.getenv("VPYTHON_REPORT_MISSING_URL")
-        if report_url:
-            try_report_missing_uv(e.stderr, report_url)
-        sys.exit(e.returncode)
+    attempt = 0
+    start_time = time.time()
+    max_timeout = get_network_retry_timeout()
+    while True:
+        try:
+            res = subprocess.run(sync_cmd, env=env, capture_output=True, text=True, check=True)
+            if res.stdout:
+                print(res.stdout)
+            break
+        except subprocess.CalledProcessError as e:
+            output_str = (e.stderr or "") + "\n" + (e.stdout or "")
+            if is_network_error(output_str):
+                elapsed = time.time() - start_time
+                if elapsed >= max_timeout:
+                    print(
+                        f"\nvpython UV INSTALL failed due to network error and exceeded maximum retry timeout ({elapsed:.1f}s >= {max_timeout:.1f}s). Giving up.",
+                        file=sys.stderr,
+                        flush=True
+                    )
+                else:
+                    attempt += 1
+                    print(
+                        f"\nvpython UV INSTALL failed due to network error (attempt {attempt}, elapsed {elapsed:.1f}s / {max_timeout:.1f}s). Retrying in 5 seconds...",
+                        file=sys.stderr,
+                        flush=True
+                    )
+                    if e.stdout:
+                        print(e.stdout, flush=True)
+                    if e.stderr:
+                        print(e.stderr, file=sys.stderr, flush=True)
+                    time.sleep(5)
+                    continue
+
+            if e.stdout:
+                print(e.stdout)
+            if e.stderr:
+                print(e.stderr, file=sys.stderr)
+            report_url = os.getenv("VPYTHON_REPORT_MISSING_URL")
+            if report_url:
+                try_report_missing_uv(e.stderr, report_url)
+            sys.exit(e.returncode)
 
     # Replicate python.exe to python3.exe in the venv from current executable.
     # Replace venv launchers with actual physical copies of host CPython binary and
