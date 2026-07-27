@@ -161,6 +161,9 @@ func getRerunProperties(c context.Context, build *buildbucketpb.Build, props map
 		if bootstrapProperties, ok := m["$bootstrap/properties"]; ok {
 			fields["$bootstrap/properties"] = bootstrapProperties
 		}
+		if builderConfig, ok := m["$build/chromium_tests_builder_config"]; ok {
+			fields["$build/chromium_tests_builder_config"] = builderConfig
+		}
 	}
 
 	for k, v := range props {

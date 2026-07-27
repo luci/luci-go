@@ -58,6 +58,12 @@ func TestRerun(t *testing.T) {
 			},
 		}
 
+		builderConfig := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"some_config": structpb.NewStringValue("some_value"),
+			},
+		}
+
 		targetBuilder := &structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"builder": structpb.NewStringValue("linux-test"),
@@ -74,9 +80,10 @@ func TestRerun(t *testing.T) {
 			Input: &bbpb.Build_Input{
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"builder_group":         structpb.NewStringValue("buildergroup1"),
-						"$bootstrap/properties": structpb.NewStructValue(bootstrapProperties),
-						"another_prop":          structpb.NewStringValue("another_val"),
+						"builder_group":                        structpb.NewStringValue("buildergroup1"),
+						"$bootstrap/properties":                structpb.NewStructValue(bootstrapProperties),
+						"$build/chromium_tests_builder_config": structpb.NewStructValue(builderConfig),
+						"another_prop":                         structpb.NewStringValue("another_val"),
 					},
 				},
 			},
@@ -121,9 +128,10 @@ func TestRerun(t *testing.T) {
 							"bs_key_1": structpb.NewStringValue("bs_val_1"),
 						},
 					}),
-					"analysis_id":     structpb.NewNumberValue(4646418413256704),
-					"compile_targets": structpb.NewListValue(&structpb.ListValue{Values: []*structpb.Value{structpb.NewStringValue("target")}}),
-					"bisection_host":  structpb.NewStringValue("luci-bisection.appspot.com"),
+					"$build/chromium_tests_builder_config": structpb.NewStructValue(builderConfig),
+					"analysis_id":                          structpb.NewNumberValue(4646418413256704),
+					"compile_targets":                      structpb.NewListValue(&structpb.ListValue{Values: []*structpb.Value{structpb.NewStringValue("target")}}),
+					"bisection_host":                       structpb.NewStringValue("luci-bisection.appspot.com"),
 				},
 			}))
 			assert.Loosely(t, dimens, should.Match([]*bbpb.RequestedDimension{
