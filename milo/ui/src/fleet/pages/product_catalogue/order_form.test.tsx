@@ -68,23 +68,6 @@ describe('<OrderForm />', () => {
     expect(screen.getByLabelText(/Criticality/)).toBeVisible();
 
     // Verify Android-specific fields are NOT visible
-    expect(screen.queryByLabelText(/Host Group/)).toBeNull();
-    expect(screen.queryByLabelText(/Mobile Harness/)).toBeNull();
-  });
-
-  it('renders Android specific fields when Android platform is selected', () => {
-    render(<OrderForm entry={mockEntry} />);
-
-    // Select Android Platform
-    const platformSelect = screen.getByLabelText(
-      /Platform \(Fulfillment Channel\)/,
-    );
-    fireEvent.mouseDown(platformSelect);
-    const androidOption = screen.getByText('Android');
-    fireEvent.click(androidOption);
-
-    // Verify Android-specific fields are visible
-    expect(screen.getByLabelText(/Host Group/)).toBeVisible();
     expect(screen.queryByLabelText(/Mobile Harness/)).toBeNull();
   });
 
@@ -129,9 +112,6 @@ describe('<OrderForm />', () => {
     fireEvent.change(screen.getByLabelText(/Business Justification/), {
       target: { value: 'We need these devices for testing custom kernels.' },
     });
-    fireEvent.change(screen.getByLabelText(/Host Group/), {
-      target: { value: 'atc:ate-main' },
-    });
     fireEvent.change(screen.getByLabelText(/Estimated Launch Date/), {
       target: { value: '10/12/2026' },
     });
@@ -167,7 +147,6 @@ describe('<OrderForm />', () => {
     expect(customFields).toContain('1398911:prod-12345'); // Catalog ID
     expect(customFields).toContain('1399654:5'); // Quantity
     expect(customFields).toContain('1473369:CrOS TryJob'); // Resource Group
-    expect(customFields).toContain('1399528:atc:ate-main'); // Host Group
     expect(customFields).toContain('1399763:No'); // Mobile Harness
     expect(customFields).toContain('1374342:Pixel 9 Pro 128GB Obsidian'); // Resource Name (Android)
     const expectedDate = DateTime.fromFormat(

@@ -68,7 +68,6 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
   const gceVm = 'No';
 
   // Android specific
-  const [hostGroup, setHostGroup] = useState<string>('');
   const isMobileHarness = entry.productType === 'android-testbed';
   const [mobileHarnessDimension, setMobileHarnessDimension] =
     useState<string>('');
@@ -131,7 +130,6 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
       addCustomField('1374341', resourceName); // Resource Name (OS)
     } else if (platform === 'Android') {
       addCustomField('1374342', resourceName); // Resource Name (Android)
-      addCustomField('1399528', hostGroup); // Host Group
       addCustomField('1399763', isMobileHarness ? 'Yes' : 'No'); // Mobile Harness
       if (isMobileHarness) {
         addCustomField('1399551', mobileHarnessDimension); // Dimension
@@ -268,88 +266,63 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
                 />
               </Box>
 
-              {platform === 'Android' && (
+              {platform === 'Android' && isMobileHarness && (
                 <>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     <Box sx={{ position: 'relative', flex: 1, minWidth: 200 }}>
                       <TextField
-                        label="Host Group"
-                        value={hostGroup}
-                        onChange={(e) => setHostGroup(e.target.value)}
-                        required
+                        label="Mobile Harness Dimension (optional)"
+                        value={mobileHarnessDimension}
+                        onChange={(e) =>
+                          setMobileHarnessDimension(e.target.value)
+                        }
                         fullWidth
-                        InputLabelProps={{ required: false }}
                       />
-                    </Box>
-
-                    {isMobileHarness && (
-                      <Box
-                        sx={{ position: 'relative', flex: 1, minWidth: 200 }}
-                      >
-                        <TextField
-                          label="Mobile Harness Dimension (optional)"
-                          value={mobileHarnessDimension}
-                          onChange={(e) =>
-                            setMobileHarnessDimension(e.target.value)
-                          }
-                          fullWidth
-                        />
-                        <Box sx={TOOLTIP_CONTAINER_STYLE}>
-                          <InfoTooltip fontSize="0.875rem">
-                            If Mobile Harness, specify dimensions.
-                          </InfoTooltip>
-                        </Box>
+                      <Box sx={TOOLTIP_CONTAINER_STYLE}>
+                        <InfoTooltip fontSize="0.875rem">
+                          If Mobile Harness, specify dimensions.
+                        </InfoTooltip>
                       </Box>
-                    )}
+                    </Box>
                   </Box>
 
-                  {isMobileHarness && (
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      <Box
-                        sx={{ position: 'relative', flex: 1, minWidth: 200 }}
-                      >
-                        <FormControl fullWidth>
-                          <InputLabel id="mobile-harness-wifi-label">
-                            Mobile Harness WiFi (optional)
-                          </InputLabel>
-                          <Select
-                            labelId="mobile-harness-wifi-label"
-                            value={mobileHarnessWifi}
-                            label="Mobile Harness WiFi (optional)"
-                            onChange={(e) =>
-                              setMobileHarnessWifi(e.target.value)
-                            }
-                          >
-                            <MenuItem value="Yes">Yes</MenuItem>
-                            <MenuItem value="No">No</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <Box sx={TOOLTIP_CONTAINER_STYLE}>
-                          <InfoTooltip fontSize="0.875rem">
-                            If Mobile Harness, is WiFi required?
-                          </InfoTooltip>
-                        </Box>
-                      </Box>
-
-                      <Box
-                        sx={{ position: 'relative', flex: 1, minWidth: 200 }}
-                      >
-                        <TextField
-                          label="Mobile Harness Owner (optional)"
-                          value={mobileHarnessOwner}
-                          onChange={(e) =>
-                            setMobileHarnessOwner(e.target.value)
-                          }
-                          fullWidth
-                        />
-                        <Box sx={TOOLTIP_CONTAINER_STYLE}>
-                          <InfoTooltip fontSize="0.875rem">
-                            MDB group owner of the harness.
-                          </InfoTooltip>
-                        </Box>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <Box sx={{ position: 'relative', flex: 1, minWidth: 200 }}>
+                      <FormControl fullWidth>
+                        <InputLabel id="mobile-harness-wifi-label">
+                          Mobile Harness WiFi (optional)
+                        </InputLabel>
+                        <Select
+                          labelId="mobile-harness-wifi-label"
+                          value={mobileHarnessWifi}
+                          label="Mobile Harness WiFi (optional)"
+                          onChange={(e) => setMobileHarnessWifi(e.target.value)}
+                        >
+                          <MenuItem value="Yes">Yes</MenuItem>
+                          <MenuItem value="No">No</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <Box sx={TOOLTIP_CONTAINER_STYLE}>
+                        <InfoTooltip fontSize="0.875rem">
+                          If Mobile Harness, is WiFi required?
+                        </InfoTooltip>
                       </Box>
                     </Box>
-                  )}
+
+                    <Box sx={{ position: 'relative', flex: 1, minWidth: 200 }}>
+                      <TextField
+                        label="Mobile Harness Owner (optional)"
+                        value={mobileHarnessOwner}
+                        onChange={(e) => setMobileHarnessOwner(e.target.value)}
+                        fullWidth
+                      />
+                      <Box sx={TOOLTIP_CONTAINER_STYLE}>
+                        <InfoTooltip fontSize="0.875rem">
+                          MDB group owner of the harness.
+                        </InfoTooltip>
+                      </Box>
+                    </Box>
+                  </Box>
                 </>
               )}
 
