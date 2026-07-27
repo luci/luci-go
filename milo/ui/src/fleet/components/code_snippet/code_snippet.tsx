@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,15 +49,24 @@ export default function CodeSnippet({
       css={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         flexDirection: 'row',
+        width: '100%',
       }}
     >
-      <Box sx={{ p: '20px' }}>
-        <code>{displayText ?? copyText}</code>
+      <Box
+        sx={{
+          p: '20px',
+          minWidth: 0,
+          flexShrink: 1,
+          overflowWrap: 'break-word',
+        }}
+      >
+        <code style={{ whiteSpace: 'pre-wrap' }}>
+          {displayText ?? copyText}
+        </code>
       </Box>
-      <Box sx={{ flexGrow: 1 }} />
-      <Box css={{ marginRight: '8px' }}>
+      <Box css={{ marginRight: '8px', flexShrink: 0 }}>
         <Tooltip title="Copy to clipboard">
           <Button
             onClick={handleCopy}

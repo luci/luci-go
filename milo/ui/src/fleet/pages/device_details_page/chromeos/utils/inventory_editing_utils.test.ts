@@ -21,6 +21,8 @@ import {
   mutateNestedValue,
   translateDiffToEdits,
   updateNestedValues,
+  generateShivasCommands,
+  generateChangelogMarkdown,
 } from './inventory_editing_utils';
 
 describe('inventory_editing_utils', () => {
@@ -213,6 +215,100 @@ describe('inventory_editing_utils', () => {
         pools: ['pool1', 'pool3'],
       });
       expect(result.paths).toEqual(['pools']);
+    });
+  });
+
+  describe('generateShivasCommands', () => {
+    const hostname = 'test-host';
+    const ufsNamespace = 'os';
+
+    describe('DUT', () => {
+      const original = {
+        name: 'machineLSEs/test-host',
+        chromeosMachineLse: {
+          deviceLse: {
+            dut: {
+              pools: ['pool1', 'pool2'],
+            },
+          },
+        },
+      } as unknown as MachineLSE;
+
+      it('returns empty array if no changes', () => {
+        const updated = JSON.parse(JSON.stringify(original));
+        expect(
+          generateShivasCommands(original, updated, hostname, ufsNamespace),
+        ).toEqual([]);
+      });
+
+      it('generates update command when pools change', () => {
+        const updated = JSON.parse(JSON.stringify(original));
+        updated.chromeosMachineLse!.deviceLse!.dut!.pools = ['pool1', 'pool3'];
+
+        expect(
+          generateShivasCommands(original, updated, hostname, ufsNamespace),
+        ).toEqual([
+          'shivas update dut -name test-host -namespace os -pools-replace pool1,pool3',
+        ]);
+      });
+
+      it('generates update command when pools are cleared', () => {
+        const updated = JSON.parse(JSON.stringify(original));
+        updated.chromeosMachineLse!.deviceLse!.dut!.pools = [];
+
+        expect(
+          generateShivasCommands(original, updated, hostname, ufsNamespace),
+        ).toEqual([
+          'shivas update dut -name test-host -namespace os -pools-replace -',
+        ]);
+      });
+    });
+
+    describe('Labstation', () => {
+      const original = {
+        name: 'machineLSEs/test-host',
+        chromeosMachineLse: {
+          deviceLse: {
+            labstation: {
+              pools: ['pool1', 'pool2'],
+            },
+          },
+        },
+      } as unknown as MachineLSE;
+
+      it('generates update command for labstation pools', () => {
+        const updated = JSON.parse(JSON.stringify(original));
+        updated.chromeosMachineLse!.deviceLse!.labstation!.pools = [
+          'pool1',
+          'pool3',
+        ];
+
+        expect(
+          generateShivasCommands(original, updated, hostname, ufsNamespace),
+        ).toEqual([
+          'shivas update labstation -name test-host -namespace os -pools-replace pool1,pool3',
+        ]);
+      });
+    });
+  });
+
+  describe('generateChangelogMarkdown', () => {
+    it('returns empty string if no diffs', () => {
+      expect(generateChangelogMarkdown([], 'device-1')).toBe('');
+    });
+
+    it('generates markdown for diffs', () => {
+      const diffs = [
+        { path: 'Pools', original: 'pool1', updated: 'pool2' },
+        { path: 'Hostname', original: 'old-host', updated: 'new-host' },
+      ];
+      const expected = [
+        '**Inventory updates for device-1:**',
+        '*   **Pools**: `pool1` ➔ `pool2`',
+        '*   **Hostname**: `old-host` ➔ `new-host`',
+      ].join('\n');
+
+      expect(generateChangelogMarkdown(diffs, 'device-1')).toBe(expected);
     });
   });
 });

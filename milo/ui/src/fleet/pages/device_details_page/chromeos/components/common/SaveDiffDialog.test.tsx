@@ -14,6 +14,8 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
 import { FieldDiff } from '../../utils/inventory_editing_utils';
 
 import { SaveDiffDialog } from './SaveDiffDialog';
@@ -21,25 +23,50 @@ import { SaveDiffDialog } from './SaveDiffDialog';
 describe('SaveDiffDialog', () => {
   const defaultProps = {
     open: true,
-    saveState: 'review' as const,
+    saveState: 'review' as 'review' | 'saving' | 'success' | 'error',
     diffs: [
       { path: 'Pools', original: 'poolA', updated: 'poolB' },
     ] as FieldDiff[],
+    shivasCommands: [
+      'shivas update dut -name test-device -pools-replace poolB',
+    ],
+    deviceId: 'test-device',
     onConfirm: jest.fn(),
     onCancel: jest.fn(),
     onClose: jest.fn(),
+    errorMessage: undefined as string | null | undefined,
+  };
+
+  const renderDialog = (props = defaultProps) => {
+    return render(
+      <FakeContextProvider>
+        <SaveDiffDialog {...props} />
+      </FakeContextProvider>,
+    );
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: jest.fn().mockImplementation(() => Promise.resolve()),
+      },
+    });
   });
 
   it('renders review state with diff table and triggers confirm/cancel callbacks', () => {
-    render(<SaveDiffDialog {...defaultProps} />);
+    renderDialog();
     expect(screen.getByText('Review Changes')).toBeInTheDocument();
     expect(screen.getByText('Pools')).toBeInTheDocument();
     expect(screen.getByText('poolA')).toBeInTheDocument();
     expect(screen.getByText('poolB')).toBeInTheDocument();
+
+    // Verify shivas command is rendered
+    expect(
+      screen.getByText(
+        'shivas update dut -name test-device -pools-replace poolB',
+      ),
+    ).toBeInTheDocument();
 
     const saveButton = screen.getByRole('button', { name: /confirm & save/i });
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
@@ -52,7 +79,7 @@ describe('SaveDiffDialog', () => {
   });
 
   it('renders saving state with circular progress', () => {
-    render(<SaveDiffDialog {...defaultProps} saveState="saving" />);
+    renderDialog({ ...defaultProps, saveState: 'saving' });
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     expect(
       screen.getByText(/saving changes to UFS service/i),
@@ -60,8 +87,24 @@ describe('SaveDiffDialog', () => {
   });
 
   it('renders success state and triggers close callback', () => {
-    render(<SaveDiffDialog {...defaultProps} saveState="success" />);
+    renderDialog({ ...defaultProps, saveState: 'success' });
     expect(screen.getByText('Changes Saved Successfully')).toBeInTheDocument();
+
+    // Verify changelog is rendered
+    expect(screen.getByText(/Changelog/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Inventory updates for test-device/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Pools.*poolA.*poolB/)).toBeInTheDocument();
+
+    // Verify copy button works
+    const copyButton = screen.getByRole('button', {
+      name: /copy to clipboard/i,
+    });
+    fireEvent.click(copyButton);
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      '**Inventory updates for test-device:**\n*   **Pools**: `poolA` ➔ `poolB`',
+    );
 
     const closeButton = screen.getByRole('button', { name: /close/i });
     fireEvent.click(closeButton);
@@ -69,13 +112,11 @@ describe('SaveDiffDialog', () => {
   });
 
   it('renders error state with Alert and triggers close callback', () => {
-    render(
-      <SaveDiffDialog
-        {...defaultProps}
-        saveState="error"
-        errorMessage="UFS database write timeout"
-      />,
-    );
+    renderDialog({
+      ...defaultProps,
+      saveState: 'error',
+      errorMessage: 'UFS database write timeout',
+    });
     expect(screen.getByText('Error Saving Changes')).toBeInTheDocument();
     expect(
       screen.getByText('Failed to write updates to UFS'),

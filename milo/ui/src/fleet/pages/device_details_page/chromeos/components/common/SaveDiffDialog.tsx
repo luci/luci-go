@@ -33,12 +33,19 @@ import {
   Typography,
 } from '@mui/material';
 
-import { FieldDiff } from '../../utils/inventory_editing_utils';
+import CodeSnippet from '@/fleet/components/code_snippet/code_snippet';
+
+import {
+  FieldDiff,
+  generateChangelogMarkdown,
+} from '../../utils/inventory_editing_utils';
 
 interface SaveDiffDialogProps {
   open: boolean;
   saveState: 'review' | 'saving' | 'success' | 'error';
   diffs: FieldDiff[];
+  shivasCommands: string[];
+  deviceId: string;
   onConfirm: () => void;
   onCancel: () => void;
   onClose: () => void;
@@ -49,11 +56,15 @@ export const SaveDiffDialog = ({
   open,
   saveState,
   diffs,
+  shivasCommands,
+  deviceId,
   onConfirm,
   onCancel,
   onClose,
   errorMessage,
 }: SaveDiffDialogProps) => {
+  const changelogMarkdown = generateChangelogMarkdown(diffs, deviceId);
+
   return (
     <Dialog
       open={open}
@@ -123,6 +134,27 @@ export const SaveDiffDialog = ({
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {shivasCommands.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ mb: 1 }}
+                  color="text.secondary"
+                >
+                  Equivalent shivas command(s):
+                </Typography>
+                {shivasCommands.map((cmd, idx) => (
+                  <Box key={idx} sx={{ mb: 1 }}>
+                    <CodeSnippet
+                      displayText={cmd}
+                      copyText={cmd}
+                      copyKind="shivas_command"
+                    />
+                  </Box>
+                ))}
+              </Box>
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={onCancel} color="inherit">
@@ -169,6 +201,28 @@ export const SaveDiffDialog = ({
           <Typography variant="body2" color="text.secondary" align="center">
             Your inventory modifications have been pushed to UFS.
           </Typography>
+
+          {changelogMarkdown && (
+            <Box
+              sx={{
+                mt: 2,
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                Changelog (Markdown for Buganizer):
+              </Typography>
+              <CodeSnippet
+                displayText={changelogMarkdown}
+                copyText={changelogMarkdown}
+                copyKind="changelog"
+              />
+            </Box>
+          )}
+
           <Box sx={{ mt: 2 }}>
             <Button onClick={onClose} variant="contained" color="primary">
               Close

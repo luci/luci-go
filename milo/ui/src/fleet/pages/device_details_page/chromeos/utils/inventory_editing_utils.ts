@@ -183,3 +183,77 @@ export const translateDiffToEdits = (
 
   return { edits: edits as Partial<DeviceConfigEdits>, paths };
 };
+
+export const generateShivasCommands = (
+  original: MachineLSE | null | undefined,
+  updated: MachineLSE | null | undefined,
+  hostname: string,
+  ufsNamespace: string,
+): string[] => {
+  if (!original || !updated) return [];
+
+  const commands: string[] = [];
+  const isLabstation = isLabstationConfig(original);
+
+  // DUT/Labstation updates
+  const dutFlags: string[] = [];
+  const labstationFlags: string[] = [];
+
+  // Pools
+  const origPools =
+    (getNestedValue(
+      original,
+      isLabstation
+        ? LOGICAL_SCHEDULING_PATHS.labstationPools
+        : LOGICAL_SCHEDULING_PATHS.dutPools,
+    ) as string[]) || [];
+  const updatedPools =
+    (getNestedValue(
+      updated,
+      isLabstation
+        ? LOGICAL_SCHEDULING_PATHS.labstationPools
+        : LOGICAL_SCHEDULING_PATHS.dutPools,
+    ) as string[]) || [];
+
+  if (!areArraysEqual(origPools, updatedPools)) {
+    const poolsVal = updatedPools.length === 0 ? '-' : updatedPools.join(',');
+    if (isLabstation) {
+      labstationFlags.push('-pools-replace', poolsVal);
+    } else {
+      dutFlags.push('-pools-replace', poolsVal);
+    }
+  }
+
+  // Combine DUT/Labstation flags into commands
+  if (isLabstation && labstationFlags.length > 0) {
+    const cmdParts = ['shivas', 'update', 'labstation', '-name', hostname];
+    if (ufsNamespace) {
+      cmdParts.push('-namespace', ufsNamespace);
+    }
+    cmdParts.push(...labstationFlags);
+    commands.push(cmdParts.join(' '));
+  } else if (!isLabstation && dutFlags.length > 0) {
+    const cmdParts = ['shivas', 'update', 'dut', '-name', hostname];
+    if (ufsNamespace) {
+      cmdParts.push('-namespace', ufsNamespace);
+    }
+    cmdParts.push(...dutFlags);
+    commands.push(cmdParts.join(' '));
+  }
+
+  return commands;
+};
+
+export const generateChangelogMarkdown = (
+  diffs: FieldDiff[],
+  deviceId: string,
+): string => {
+  if (diffs.length === 0) return '';
+  const lines = [`**Inventory updates for ${deviceId}:**`];
+  diffs.forEach((diff) => {
+    lines.push(
+      `*   **${diff.path}**: \`${diff.original}\` ➔ \`${diff.updated}\``,
+    );
+  });
+  return lines.join('\n');
+};

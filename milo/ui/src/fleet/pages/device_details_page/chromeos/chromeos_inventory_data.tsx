@@ -64,6 +64,7 @@ import { SaveDiffDialog } from './components/common/SaveDiffDialog';
 import { InventoryFormProvider } from './components/form/InventoryFormContext';
 import {
   calculateDiff,
+  generateShivasCommands,
   translateDiffToEdits,
   updateNestedValues,
 } from './utils/inventory_editing_utils';
@@ -122,8 +123,6 @@ export const ChromeOSInventoryData = ({
           }),
         ).queryKey,
       });
-      setEditedLse(null);
-      setOriginalLseSnapshot(null);
     },
     onError: () => {
       setSaveState('error');
@@ -140,11 +139,29 @@ export const ChromeOSInventoryData = ({
     );
   }, [currentLse]);
 
-  const hasGlobalChanges = useMemo(() => {
+  const diffs = useMemo(() => {
     const base = originalLseSnapshot || machineLse.data;
-    if (!base || !editedLse) return false;
-    return calculateDiff(base, editedLse).length > 0;
+    return calculateDiff(base, editedLse);
   }, [machineLse.data, originalLseSnapshot, editedLse]);
+
+  const hasGlobalChanges = diffs.length > 0;
+
+  const shivasCommands = useMemo(() => {
+    const base = originalLseSnapshot || machineLse.data;
+    if (!base || !editedLse) return [];
+    return generateShivasCommands(
+      base,
+      editedLse,
+      device.id,
+      ufsNamespace || '',
+    );
+  }, [
+    originalLseSnapshot,
+    machineLse.data,
+    editedLse,
+    device.id,
+    ufsNamespace,
+  ]);
 
   const handleUpdateFields = useCallback(
     (updates: Array<{ path: string | string[]; value: unknown }>) => {
@@ -177,6 +194,15 @@ export const ChromeOSInventoryData = ({
     setSaveState('review');
     setDialogOpen(true);
   };
+
+  const handleCloseDialog = useCallback(() => {
+    setDialogOpen(false);
+    if (saveState === 'success') {
+      setEditedLse(null);
+      setOriginalLseSnapshot(null);
+      setActiveEditingCardId(null);
+    }
+  }, [saveState]);
 
   const executeSaveRequest = () => {
     const base = originalLseSnapshot || machineLse.data;
@@ -359,10 +385,12 @@ export const ChromeOSInventoryData = ({
       <SaveDiffDialog
         open={dialogOpen}
         saveState={saveState}
-        diffs={calculateDiff(originalLseSnapshot || machineLse.data, editedLse)}
+        diffs={diffs}
+        shivasCommands={shivasCommands}
+        deviceId={device.id}
         onConfirm={executeSaveRequest}
         onCancel={() => setDialogOpen(false)}
-        onClose={() => setDialogOpen(false)}
+        onClose={handleCloseDialog}
         errorMessage={
           updateMutation.error
             ? getErrorMessage(updateMutation.error, 'save')
