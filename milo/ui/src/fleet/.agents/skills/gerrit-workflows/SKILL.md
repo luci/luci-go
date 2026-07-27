@@ -1,6 +1,6 @@
 ---
 name: gerrit-workflows
-description: Guidelines and commands for managing stacked CLs, preserving review votes, and querying Gerrit API.
+description: Guidelines and commands for managing stacked CLs, preserving review votes, and querying Gerrit API. Use when preparing to submit a CL, configuring branch tracking, rebasing stacked CLs, or querying Gerrit metadata. Do NOT use for local file editing or non-git tasks.
 ---
 
 # Gerrit Workflows Skill

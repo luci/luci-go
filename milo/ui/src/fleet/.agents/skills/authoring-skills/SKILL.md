@@ -1,6 +1,6 @@
 ---
 name: authoring-skills
-description: Guides the creation, editing, formatting, and structural best practices for agentic skills. Use this skill when writing or reviewing skill markdown files.
+description: Guides the creation, editing, formatting, and structural best practices for agentic skills. Use when writing, updating, or reviewing skill markdown files in the repository. Do NOT use for standard application feature development or bug fixes.
 ---
 
 # Authoring Skills

@@ -1,6 +1,6 @@
 ---
 name: high-density-ui
-description: Guidelines for building high-density enterprise UIs in Fleet Console.
+description: Guidelines for building high-density enterprise UIs in Fleet Console. Use when designing, styling, or modifying React components, tables, filters, and dashboard layouts in Fleet Console. Do NOT use for Go backend code or non-visual utility functions.
 ---
 
 # High-Density UI Skill
