@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth/scopes"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -1023,6 +1024,9 @@ func renderAudHost(req *http.Request) string {
 // the context used to create the RPC transport or credentials provider to get
 // a full-featured LUCI context that at the same time has the same deadline and
 // cancellation as `ctx`.
+//
+// This will refuse to return RPC headers if Config.RestrictToHosts is populated
+// and`req` is destined for a host not in that list.
 func getRPCHeaders(ctx, transportCtx context.Context, opts *rpcOptions, req *http.Request) (*oauth2.Token, map[string]string, error) {
 	merged := &internal.MergedContext{
 		Root:     ctx,
@@ -1037,6 +1041,23 @@ func getRPCHeaders(ctx, transportCtx context.Context, opts *rpcOptions, req *htt
 			if tstate != rstate {
 				return nil, nil, errors.New("a transport or credentials provider created within a context of one user request is used within another user request, this is dangerous")
 			}
+		}
+	}
+
+	if req != nil {
+		hostname := req.URL.Hostname()
+		if config := getConfig(merged); config != nil && len(config.RestrictToHosts) > 0 {
+			if !stringset.NewFromSlice(config.RestrictToHosts...).Has(hostname) {
+				logging.Warningf(merged, "luci/server/auth: skipping authentication for %q", hostname)
+				return nil, nil, nil
+			}
+		} else {
+			if req.Response != nil && req.Response.Request.URL.Hostname() != hostname {
+				logging.Warningf(merged, "luci/server/auth: skipping authentication for redirect to %q", hostname)
+				return nil, nil, nil
+			}
+
+			logging.Debugf(merged, "luci/server/auth: authenticating request for %q", hostname)
 		}
 	}
 

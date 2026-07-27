@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net"
@@ -825,6 +826,19 @@ func TestOptions(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, yes, should.BeTrue)
 			})
+		})
+
+		t.Run("AuthRestrictToHosts flag works", func(t *ftt.Test) {
+			var fs flag.FlagSet
+			opts := Options{}
+			opts.Register(&fs)
+
+			err := fs.Parse([]string{
+				"-auth-restrict-to-host", "a.example.com",
+				"-auth-restrict-to-host", "b.example.com",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, opts.AuthRestrictToHosts, should.Match([]string{"a.example.com", "b.example.com"}))
 		})
 	})
 }

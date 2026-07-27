@@ -324,7 +324,6 @@ func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 		fmt.Fprintf(os.Stderr, "got unexpected positional command line arguments: %v\n", args)
 		os.Exit(3)
 	}
-
 	// Construct the base server and initialize all modules.
 	srv, err := New(context.Background(), *opts, mods)
 	if err != nil {
@@ -375,6 +374,7 @@ type Options struct {
 	AuthServiceHost     string              // hostname of an Auth Service to use
 	AuthDBDump          string              // Google Storage path to fetch AuthDB dumps from
 	AuthDBSigner        string              // service account that signs AuthDB dumps
+	AuthRestrictToHosts stringlistflag.Flag // Restrict outgoing auth to these hosts.
 	FrontendClientID    string              // OAuth2 ClientID for frontend (e.g. user sign in)
 	FrontendOAuthScopes stringlistflag.Flag // OAuth2 Scopes for frontend (e.g. user sign in)
 
@@ -537,6 +537,11 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"auth-db-signer",
 		o.AuthDBSigner,
 		"Service account that signs AuthDB dumps. Default is derived from -auth-service-host if it is *.appspot.com",
+	)
+	f.Var(
+		&o.AuthRestrictToHosts,
+		"auth-restrict-to-host",
+		"Allow auth to this hostname. If unset, will auth to any host.",
 	)
 	f.StringVar(
 		&o.FrontendClientID,
@@ -2430,6 +2435,9 @@ func (s *Server) initAuthStart() error {
 
 	// Initialize the token generator based on s.Options.ClientAuth.
 	opts := s.Options.ClientAuth
+	if len(opts.RestrictToHosts) == 0 && len(s.Options.AuthRestrictToHosts) > 0 {
+		opts.RestrictToHosts = s.Options.AuthRestrictToHosts
+	}
 
 	// Use `rootTransport` for calls made by the token generator (e.g. when
 	// refreshing tokens).
@@ -2499,6 +2507,7 @@ func (s *Server) initAuthStart() error {
 		FrontendOAuthScopes: func(context.Context) ([]string, error) { return s.Options.FrontendOAuthScopes, nil },
 		EndUserIP:           endUserIP,
 		IsDevMode:           !s.Options.Prod,
+		RestrictToHosts:     opts.RestrictToHosts,
 	})
 
 	// Make pRPC clients use the instrumented HTTP client by default.

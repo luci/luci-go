@@ -144,6 +144,11 @@ type Config struct {
 	// server is known to be very slow and deadlines tuned for production
 	// environment are too limiting.
 	IsDevMode bool
+
+	// RestrictToHosts is a list of hostnames for which we will attach
+	// authentication headers when using GetRPCTransport or GetPerRPCCredentials.
+	// If empty, auth headers are sent to any host.
+	RestrictToHosts []string
 }
 
 // Initialize inserts authentication configuration into the context.

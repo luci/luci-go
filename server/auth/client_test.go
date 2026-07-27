@@ -17,8 +17,10 @@ package auth
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -29,6 +31,8 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -646,4 +650,157 @@ func (m *clientRPCTransportMock) RoundTrip(req *http.Request) (*http.Response, e
 		StatusCode: code,
 		Body:       io.NopCloser(bytes.NewReader([]byte(resp))),
 	}, nil
+}
+
+func TestRPCTransportHostRestriction(t *testing.T) {
+	t.Parallel()
+
+	mock := &clientRPCTransportMock{}
+	setupCtx := func() context.Context {
+		ctx := memlogger.Use(context.Background())
+		return ModifyConfig(ctx, func(cfg Config) Config {
+			cfg.AccessTokenProvider = mock.getAccessToken
+			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
+				return http.DefaultTransport
+			}
+			return cfg
+		})
+	}
+
+	t.Run("Allowed host gets auth header", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.That(t, r.Header.Get("Authorization"), should.Equal("Bearer as-self-token:"+scopes.Email))
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer ts.Close()
+
+		u, err := url.Parse(ts.URL)
+		assert.NoErr(t, err)
+
+		ctx := setupCtx()
+		ctx = ModifyConfig(ctx, func(cfg Config) Config {
+			cfg.RestrictToHosts = []string{u.Hostname()}
+			return cfg
+		})
+		transp, err := GetRPCTransport(ctx, AsSelf)
+		assert.NoErr(t, err)
+
+		client := &http.Client{Transport: transp}
+		resp, err := client.Get(ts.URL)
+		assert.NoErr(t, err)
+		defer resp.Body.Close()
+
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
+		assert.Loosely(t, ml.Get(logging.Warning, fmt.Sprintf("luci/server/auth: skipping authentication for %q", u.Hostname()), nil), should.BeNil)
+	})
+
+	t.Run("Unlisted host skips auth header and logs warning", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.That(t, r.Header.Get("Authorization"), should.Equal(""))
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer ts.Close()
+
+		u, err := url.Parse(ts.URL)
+		assert.NoErr(t, err)
+
+		ctx := setupCtx()
+		ctx = ModifyConfig(ctx, func(cfg Config) Config {
+			cfg.RestrictToHosts = []string{"other.example.com"}
+			return cfg
+		})
+		transp, err := GetRPCTransport(ctx, AsSelf)
+		assert.NoErr(t, err)
+
+		client := &http.Client{Transport: transp}
+		resp, err := client.Get(ts.URL)
+		assert.NoErr(t, err)
+		defer resp.Body.Close()
+
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
+		assert.Loosely(t, ml.Get(logging.Warning, fmt.Sprintf("luci/server/auth: skipping authentication for %q", u.Hostname()), nil), should.NotBeNil)
+	})
+}
+
+func TestRPCTransportRedirectStickyHosts(t *testing.T) {
+	t.Parallel()
+
+	mock := &clientRPCTransportMock{}
+	setupCtx := func() context.Context {
+		ctx := memlogger.Use(context.Background())
+		return ModifyConfig(ctx, func(cfg Config) Config {
+			cfg.AccessTokenProvider = mock.getAccessToken
+			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
+				return http.DefaultTransport
+			}
+			return cfg
+		})
+	}
+
+	t.Run("Redirect to same host preserves auth header and logs debug", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/initial":
+				assert.That(t, r.Header.Get("Authorization"), should.Equal("Bearer as-self-token:"+scopes.Email))
+				http.Redirect(w, r, "/redirected", http.StatusFound)
+			case "/redirected":
+				assert.That(t, r.Header.Get("Authorization"), should.Equal("Bearer as-self-token:"+scopes.Email))
+				w.WriteHeader(http.StatusOK)
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer ts.Close()
+
+		u, err := url.Parse(ts.URL)
+		assert.NoErr(t, err)
+
+		ctx := setupCtx()
+		transp, err := GetRPCTransport(ctx, AsSelf)
+		assert.NoErr(t, err)
+
+		client := &http.Client{Transport: transp}
+		resp, err := client.Get(ts.URL + "/initial")
+		assert.NoErr(t, err)
+		defer resp.Body.Close()
+
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
+		debugLogs := 0
+		for _, entry := range ml.Messages() {
+			if entry.Level == logging.Debug && entry.Msg == fmt.Sprintf("luci/server/auth: authenticating request for %q", u.Hostname()) {
+				debugLogs++
+			}
+		}
+		assert.That(t, debugLogs, should.Equal(2))
+	})
+
+	t.Run("Redirect to different host strips auth header", func(t *testing.T) {
+		targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.That(t, r.Header.Get("Authorization"), should.Equal(""))
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer targetServer.Close()
+
+		targetRedirectURL := strings.Replace(targetServer.URL, "127.0.0.1", "localhost", 1)
+		targetURL, err := url.Parse(targetRedirectURL)
+		assert.NoErr(t, err)
+
+		initialServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.That(t, r.Header.Get("Authorization"), should.Equal("Bearer as-self-token:"+scopes.Email))
+			http.Redirect(w, r, targetRedirectURL+"/redirected", http.StatusFound)
+		}))
+		defer initialServer.Close()
+
+		ctx := setupCtx()
+		transp, err := GetRPCTransport(ctx, AsSelf)
+		assert.NoErr(t, err)
+
+		client := &http.Client{Transport: transp}
+		resp, err := client.Get(initialServer.URL + "/initial")
+		assert.NoErr(t, err)
+		defer resp.Body.Close()
+
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
+		assert.Loosely(t, ml.Get(logging.Debug, fmt.Sprintf("luci/server/auth: authenticating request for %q", targetURL.Hostname()), nil), should.BeNil)
+	})
 }
