@@ -21,6 +21,7 @@ For every task that involves code changes, the agent MUST explicitly add tasks t
 ## 2. Definition of Done (Standard Workflow)
 A task or frontend CL is not considered complete until:
 - **Self-Review**: The [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md) workflow has been run and no critical feedback remains.
+- **UX & PM Review**: For any visual, layout, or feature workflow change, the [ux-pm-review](./.agents/skills/ux-pm-review/SKILL.md) workflow has been run to audit Product Manager alignment, Laws of UX, Orwell writing rules, and QA boundary cases.
 - **Verification**: All tests, lints (`npm run lint`), and type-checks (`npm run type-check`) pass successfully.
 - **UI Demo**: A demo has been uploaded (required for any change that adds, removes, or structurally alters visual components, pages, or user flows) and testing steps are included in the commit message.
 - **Commit Message**: The commit message clearly explains the change. If the change fixes a bug, it should reference it in the proper format (see [prepare-cl](./.agents/skills/prepare-cl/SKILL.md) skill for details).
@@ -28,8 +29,10 @@ A task or frontend CL is not considered complete until:
 
 **Failure to follow this workflow results in unnecessary round trips. Following this process is part of the task.**
 
-## 3. Mandatory Self-Review via Subagent
-For every task that involves code changes, the agent MUST use the [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md) skill to perform a self-review of the diff and address all feedback before declaring the task complete or uploading a CL.
+## 3. Mandatory Self-Review & UX/PM Subagent Audits
+- For every task that involves code changes, the agent MUST use the [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md) skill to perform a self-review of the diff and address all feedback before declaring the task complete or uploading a CL.
+- For major UI features or open-ended design problems, host a multi-persona [design-tournament](./.agents/skills/design-tournament/SKILL.md) between competing design subagents (M3, Enterprise, Ergonomics) judged by a PM panel.
+- Audit all copy and layout hierarchy against [writing-and-ux-principles](./.agents/skills/writing-and-ux-principles/SKILL.md) (Orwell's writing rules, Material writing spec, and Laws of UX).
 
 ## 4. Coding Conventions & Best Practices
 - **Avoid type casting unless strictly necessary.** Try to rely on TypeScript's type inference and narrowing instead of using `as Type`.
@@ -61,6 +64,9 @@ To avoid context bloat, detailed procedural knowledge and domain-specific instru
 Available skills include:
 - [prepare-cl](./.agents/skills/prepare-cl/SKILL.md)
 - [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md)
+- [ux-pm-review](./.agents/skills/ux-pm-review/SKILL.md)
+- [design-tournament](./.agents/skills/design-tournament/SKILL.md)
+- [writing-and-ux-principles](./.agents/skills/writing-and-ux-principles/SKILL.md)
 - [manual-testing](./.agents/skills/manual-testing/SKILL.md)
 - [aip160-filtering](./.agents/skills/aip160-filtering/SKILL.md)
 - [high-density-ui](./.agents/skills/high-density-ui/SKILL.md)
@@ -90,5 +96,3 @@ To prevent accidental pushes, stacked chain conflicts, or overwriting unrelated 
   1. Always branch from remote `origin/main` (never from unpushed local commits unless explicitly stacking).
   2. Before upload, verify that the local commits log matches the target CL: `git log origin/main..HEAD --oneline`
   3. Verify the CL association using `git cl issue` and use `git cl issue 0` to prevent overwriting unrelated CLs.
-
-
