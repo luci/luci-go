@@ -148,7 +148,7 @@ describe('<OrderForm />', () => {
     expect(customFields).toContain('1399654:5'); // Quantity
     expect(customFields).toContain('1473369:CrOS TryJob'); // Resource Group
     expect(customFields).toContain('1399763:No'); // Mobile Harness
-    expect(customFields).toContain('1374342:Pixel 9 Pro 128GB Obsidian'); // Resource Name (Android)
+    expect(customFields).toContain('1374342:Google Pixel 9 Pro'); // Resource Name (Android)
     const expectedDate = DateTime.fromFormat(
       '10/12/2026',
       'MM/dd/yyyy',
@@ -182,7 +182,7 @@ describe('<OrderForm />', () => {
     openSpy.mockRestore();
   });
 
-  it('falls back to productName if descriptiveName is empty', async () => {
+  it('uses productName for Resource Name', async () => {
     const entryWithoutDesc = { ...mockEntry, descriptiveName: '' };
     render(<OrderForm entry={entryWithoutDesc} />);
 
@@ -220,7 +220,7 @@ describe('<OrderForm />', () => {
     const openedUrlStr = openSpy.mock.calls[0][0] as string;
     const url = new URL(openedUrlStr);
     const customFields = url.searchParams.getAll('customFields');
-    expect(customFields).toContain('1374341:Google Pixel 9 Pro'); // Resource Name (OS) fallback to productName
+    expect(customFields).toContain('1374341:Google Pixel 9 Pro'); // Resource Name (OS) uses productName
     const expectedDate = DateTime.fromFormat(
       '10/12/2026',
       'MM/dd/yyyy',

@@ -93,17 +93,16 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
     params.append('component', componentId);
     params.append('template', templateId);
 
-    const trimmedProductName = entry.productName.trim();
-    const resourceName = (entry.descriptiveName || entry.productName).trim();
+    const resourceName = entry.productName.trim();
 
     // Set Title
-    const title = `[Resource Request] ${quantity} x ${trimmedProductName} for ${resourceGroup}`;
+    const title = `[Resource Request] ${quantity} x ${resourceName} for ${resourceGroup}`;
     params.append('title', title);
 
     // Set Description (initial comment)
     const description =
       `Business Justification: ${businessJustification}\n\n` +
-      `Product Catalog Name: ${trimmedProductName}\n` +
+      `Product Catalog Name: ${resourceName}\n` +
       `Catalog ID: ${entry.productCatalogId}`;
     params.append('description', description);
 
