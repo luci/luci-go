@@ -323,6 +323,13 @@ type Options struct {
 	// Defaults: the value of ClientID to mimic UserCredentialsMethod.
 	Audience string
 
+	// RestrictToHosts is a list of hostnames for which we will authenticate
+	// requests.
+	//
+	// If this is empty, then we will authenticate any non-redirect request, or
+	// any redirects to the same host as the original request.
+	RestrictToHosts []string
+
 	// ActAsServiceAccount is used to act as a specified service account email.
 	//
 	// When this option is set, there are two identities involved:
@@ -711,9 +718,10 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 // Authenticator also knows how to run interactive login flow, if required.
 type Authenticator struct {
 	// Immutable members.
-	loginMode LoginMode
-	transport http.RoundTripper
-	ctx       context.Context
+	loginMode       LoginMode
+	transport       http.RoundTripper
+	ctx             context.Context
+	restrictToHosts stringset.Set
 
 	// Mutable members.
 	lock sync.RWMutex
@@ -768,6 +776,9 @@ func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *A
 		ctx:       ctx,
 		loginMode: loginMode,
 		opts:      &opts,
+	}
+	if len(opts.RestrictToHosts) > 0 {
+		auth.restrictToHosts = stringset.NewFromSlice(opts.RestrictToHosts...)
 	}
 	auth.transport = NewModifyingTransport(opts.Transport, auth.authTokenInjector)
 
@@ -1594,12 +1605,25 @@ func (a *Authenticator) authTokenInjector(req *http.Request) error {
 	switch tok, err := a.GetAccessToken(a.opts.MinTokenLifetime); {
 	case err == ErrLoginRequired && a.effectiveLoginMode() == OptionalLogin:
 		return nil // skip auth, no need for modifications
+
 	case err != nil:
 		return err
-	default:
+
+	case a.restrictToHosts != nil:
+		if a.restrictToHosts.Has(req.URL.Hostname()) {
+			tok.SetAuthHeader(req)
+		} else {
+			logging.Warningf(a.ctx, "luci/auth: skipping authentication for %q",
+				req.URL.Hostname())
+		}
+
+	case req.Response == nil || req.Response.Request.URL.Hostname() == req.URL.Hostname():
+		logging.Debugf(a.ctx, "luci/auth: authenticating request for %q",
+			req.URL.Hostname())
+
 		tok.SetAuthHeader(req)
-		return nil
 	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

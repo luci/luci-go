@@ -21,7 +21,9 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,6 +37,8 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -1167,4 +1171,157 @@ func (p *fakeTokenProvider) RefreshToken(ctx context.Context, prev, base *intern
 		IDToken: idTok,
 		Email:   "some-email-refreshtoken@example.com",
 	}, nil
+}
+
+func TestRestrictToHosts(t *testing.T) {
+	t.Parallel()
+
+	tokenProvider := &fakeTokenProvider{
+		interactive: false,
+		tokenToMint: &internal.Token{
+			Token: oauth2.Token{AccessToken: "minted", Expiry: time.Now().Add(time.Hour)},
+		},
+	}
+
+	t.Run("Allowed host gets auth header", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.That(t, r.Header.Get("Authorization"), should.Equal("Bearer minted"))
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer ts.Close()
+
+		u, err := url.Parse(ts.URL)
+		assert.NoErr(t, err)
+
+		ctx := memlogger.Use(context.Background())
+		auth := NewAuthenticator(ctx, SilentLogin, Options{
+			RestrictToHosts:          []string{u.Hostname()},
+			testingCache:             &internal.MemoryTokenCache{},
+			testingBaseTokenProvider: tokenProvider,
+		})
+
+		client, err := auth.Client()
+		assert.NoErr(t, err)
+
+		resp, err := client.Get(ts.URL)
+		assert.NoErr(t, err)
+		defer resp.Body.Close()
+
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
+		assert.Loosely(t, ml.Get(logging.Warning, fmt.Sprintf("luci/auth: skipping authentication for %q", u.Hostname()), nil), should.BeNil)
+	})
+
+	t.Run("Unlisted host skips auth header and logs warning", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.That(t, r.Header.Get("Authorization"), should.Equal(""))
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer ts.Close()
+
+		u, err := url.Parse(ts.URL)
+		assert.NoErr(t, err)
+
+		ctx := memlogger.Use(context.Background())
+		auth := NewAuthenticator(ctx, SilentLogin, Options{
+			RestrictToHosts:          []string{"other.example.com"},
+			testingCache:             &internal.MemoryTokenCache{},
+			testingBaseTokenProvider: tokenProvider,
+		})
+
+		client, err := auth.Client()
+		assert.NoErr(t, err)
+
+		resp, err := client.Get(ts.URL)
+		assert.NoErr(t, err)
+		defer resp.Body.Close()
+
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
+		assert.Loosely(t, ml.Get(logging.Warning, fmt.Sprintf("luci/auth: skipping authentication for %q", u.Hostname()), nil), should.NotBeNil)
+	})
+}
+
+func TestRedirectStickyHosts(t *testing.T) {
+	t.Parallel()
+
+	tokenProvider := &fakeTokenProvider{
+		interactive: false,
+		tokenToMint: &internal.Token{
+			Token: oauth2.Token{AccessToken: "minted", Expiry: time.Now().Add(time.Hour)},
+		},
+	}
+
+	t.Run("Redirect to same host preserves auth header and logs debug", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/initial":
+				assert.That(t, r.Header.Get("Authorization"), should.Equal("Bearer minted"))
+				http.Redirect(w, r, "/redirected", http.StatusFound)
+			case "/redirected":
+				assert.That(t, r.Header.Get("Authorization"), should.Equal("Bearer minted"))
+				w.WriteHeader(http.StatusOK)
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer ts.Close()
+
+		u, err := url.Parse(ts.URL)
+		assert.NoErr(t, err)
+
+		ctx := memlogger.Use(context.Background())
+		auth := NewAuthenticator(ctx, SilentLogin, Options{
+			testingCache:             &internal.MemoryTokenCache{},
+			testingBaseTokenProvider: tokenProvider,
+		})
+
+		client, err := auth.Client()
+		assert.NoErr(t, err)
+
+		resp, err := client.Get(ts.URL + "/initial")
+		assert.NoErr(t, err)
+		defer resp.Body.Close()
+
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
+		debugLogs := 0
+		for _, entry := range ml.Messages() {
+			if entry.Level == logging.Debug && entry.Msg == fmt.Sprintf("luci/auth: authenticating request for %q", u.Hostname()) {
+				debugLogs++
+			}
+		}
+		assert.That(t, debugLogs, should.Equal(2))
+	})
+
+	t.Run("Redirect to different host strips auth header", func(t *testing.T) {
+		targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.That(t, r.Header.Get("Authorization"), should.Equal(""))
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer targetServer.Close()
+
+		targetRedirectURL := strings.Replace(targetServer.URL, "127.0.0.1", "localhost", 1)
+		targetURL, err := url.Parse(targetRedirectURL)
+		assert.NoErr(t, err)
+
+		initialServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.That(t, r.Header.Get("Authorization"), should.Equal("Bearer minted"))
+			http.Redirect(w, r, targetRedirectURL+"/redirected", http.StatusFound)
+		}))
+		defer initialServer.Close()
+
+		ctx := memlogger.Use(context.Background())
+		auth := NewAuthenticator(ctx, SilentLogin, Options{
+			testingCache:             &internal.MemoryTokenCache{},
+			testingBaseTokenProvider: tokenProvider,
+		})
+
+		client, err := auth.Client()
+		assert.NoErr(t, err)
+
+		resp, err := client.Get(initialServer.URL + "/initial")
+		assert.NoErr(t, err)
+		defer resp.Body.Close()
+
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
+		assert.Loosely(t, ml.Get(logging.Debug, fmt.Sprintf("luci/auth: authenticating request for %q", targetURL.Hostname()), nil), should.BeNil)
+	})
 }
