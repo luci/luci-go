@@ -20,17 +20,20 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -248,6 +251,45 @@ func TestFindReuseInBackend(t *testing.T) {
 			result, err = w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.BeEmpty)
+		})
+
+		t.Run("Found reuse older than 24h with commit-distance window", func(t *ftt.Test) {
+			ct.Clock.Add(26 * time.Hour)
+			// Without commit distance window, it should return empty due to 24h cutoff.
+			result, err := w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
+			assert.NoErr(t, err)
+			assert.Loosely(t, result, should.BeEmpty)
+
+			// With commit distance window and matching output commit, it should find and reuse the build.
+			host := "chromium.googlesource.com"
+			project := "chromium/src"
+			ref := "refs/heads/main"
+			ct.GitilesFake.SetRepository(host, project, map[string]string{
+				ref: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+			}, []*git.Commit{
+				{
+					Id:      "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+					Message: "Commit message\n\nCr-Commit-Position: refs/heads/main@{#1000}",
+				},
+			})
+			w.gitilesFactory = ct.GitilesFactory()
+			build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), func(build *bbpb.Build) {
+				build.Output = &bbpb.Build_Output{
+					GitilesCommit: &bbpb.GitilesCommit{
+						Host:     host,
+						Project:  project,
+						Ref:      ref,
+						Position: 950,
+					},
+				}
+			})
+			defDist := proto.CloneOf(defFoo)
+			defDist.ReuseWindow = &cfgpb.ReuseWindow{MaxCommitDistance: 100}
+
+			result, err = w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defDist})
+			assert.NoErr(t, err)
+			assert.Loosely(t, result, should.HaveLength(1))
+			assert.Loosely(t, result, should.ContainKey(defDist))
 		})
 
 		t.Run("Tryjob already exists", func(t *ftt.Test) {

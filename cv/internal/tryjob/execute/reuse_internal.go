@@ -73,7 +73,7 @@ func (w *worker) queryForCandidates(ctx context.Context, reuseKey string, defini
 			// unlikely for a Run from Project A to reuse a Tryjob triggered by
 			// a Run from Project B. Project A and Project B should watch a
 			// disjoint set of Gerrit refs.
-		case canReuseTryjob(ctx, tj, mode) == reuseDenied:
+		case w.canReuseTryjob(ctx, tj, mode, def) == reuseDenied:
 		case tj.EntityCreateTime.IsZero():
 			panic(fmt.Errorf("tryjob %d has zero entity create time", tj.ID))
 		default:

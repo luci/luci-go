@@ -39,25 +39,34 @@ func (w *worker) findReuseInBackend(ctx context.Context, reuseKey string, defini
 	candidates := make(map[*tryjob.Definition]*tryjob.Tryjob, len(definitions))
 	cutOffTime := clock.Now(ctx).Add(-staleTryjobAge)
 	err := w.backend.Search(ctx, w.cls, definitions, w.run.ID.LUCIProject(), func(tj *tryjob.Tryjob) bool {
-		// backend.Search returns matching Tryjob from newest to oldest, if backend
-		// starts to return stale Tryjob (Tryjob created before cutoff time), then
-		// there's no point resuming the search as none of the returning Tryjobs
-		// will be reusable anyway.
+		// backend.Search returns matching Tryjob from newest to oldest. If the build is
+		// older than the 24-hour time cutoff, we only continue searching if there is at least
+		// one unsatisfied definition that allows commit-distance reuse beyond 24 hours.
 		if createTime := tj.Result.GetCreateTime(); createTime != nil && createTime.AsTime().Before(cutOffTime) {
-			return false
+			hasUnsatisfiedCommitDist := false
+			for _, d := range definitions {
+				if _, ok := candidates[d]; !ok && d.GetReuseWindow().GetMaxCommitDistance() > 0 {
+					hasUnsatisfiedCommitDist = true
+					break
+				}
+			}
+			if !hasUnsatisfiedCommitDist {
+				return false
+			}
 		}
 
-		switch candidate, ok := candidates[tj.Definition]; {
+		def := tj.Definition
+		switch candidate, ok := candidates[def]; {
 		case ok:
 			// Matching Tryjob already found.
 			if tj.Result.GetCreateTime().AsTime().After(candidate.Result.GetCreateTime().AsTime()) {
 				logging.Errorf(ctx, "FIXME(crbug/1369200): backend.Search is expected to return tryjob from newest to oldest; However, got %s before %s.", candidate.Result, tj.Result)
 			}
 		case w.knownExternalIDs.Has(string(tj.ExternalID)):
-		case canReuseTryjob(ctx, tj, w.run.Mode) == reuseDenied:
+		case w.canReuseTryjob(ctx, tj, w.run.Mode, def) == reuseDenied:
 		case w.disableReuseFootersChanged(ctx, tj):
 		default:
-			candidates[tj.Definition] = tj
+			candidates[def] = tj
 		}
 		return len(candidates) < len(definitions)
 	})

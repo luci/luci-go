@@ -23,13 +23,16 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	recipe "go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gitiles"
 	"go.chromium.org/luci/cv/internal/run"
@@ -42,6 +45,11 @@ func TestCanReuse(t *testing.T) {
 	ftt.Run("canReuseTryjob works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
+		runID := common.MakeRunID("chromium", ct.Clock.Now().Add(-1*time.Hour), 1, []byte("abcd"))
+		w := &worker{
+			run:            &run.Run{ID: runID},
+			gitilesFactory: ct.GitilesFactory(),
+		}
 
 		t.Run("reuse allowed", func(t *ftt.Test) {
 			t.Run("empty mode allowlist", func(t *ftt.Test) {
@@ -52,7 +60,7 @@ func TestCanReuse(t *testing.T) {
 						Status:     tryjob.Result_SUCCEEDED,
 					},
 				}
-				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseAllowed))
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseAllowed))
 			})
 
 			t.Run("explicitly allowed in mode allowlist", func(t *ftt.Test) {
@@ -68,7 +76,7 @@ func TestCanReuse(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseAllowed))
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseAllowed))
 			})
 		})
 
@@ -80,14 +88,14 @@ func TestCanReuse(t *testing.T) {
 						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge / 2)),
 					},
 				}
-				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseMaybe))
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseMaybe))
 			})
 
 			t.Run("pending tryjob", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_PENDING,
 				}
-				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseMaybe))
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseMaybe))
 			})
 		})
 
@@ -99,7 +107,7 @@ func TestCanReuse(t *testing.T) {
 						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge * 2)),
 					},
 				}
-				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseDenied))
 			})
 
 			t.Run("successfully ended tryjob but stale", func(t *ftt.Test) {
@@ -110,7 +118,7 @@ func TestCanReuse(t *testing.T) {
 						Status:     tryjob.Result_SUCCEEDED,
 					},
 				}
-				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseDenied))
 			})
 
 			t.Run("failed tryjob", func(t *ftt.Test) {
@@ -121,7 +129,7 @@ func TestCanReuse(t *testing.T) {
 						Status:     tryjob.Result_FAILED_PERMANENTLY,
 					},
 				}
-				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseDenied))
 			})
 
 			t.Run("not in the mode allowlist", func(t *ftt.Test) {
@@ -137,15 +145,158 @@ func TestCanReuse(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseDenied))
 			})
 
 			for _, st := range []tryjob.Status{tryjob.Status_CANCELLED, tryjob.Status_UNTRIGGERED} {
 				t.Run(fmt.Sprintf("status is %s", st), func(t *ftt.Test) {
 					tj := &tryjob.Tryjob{Status: st}
-					assert.Loosely(t, canReuseTryjob(ctx, tj, run.FullRun), should.Equal(reuseDenied))
+					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseDenied))
 				})
 			}
+		})
+
+		t.Run("commit-distance-based evaluation and fallbacks", func(t *ftt.Test) {
+			host := "chromium.googlesource.com"
+			project := "chromium/src"
+			ref := "refs/heads/main"
+			ct.GitilesFake.SetRepository(host, project, map[string]string{
+				ref: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+			}, []*git.Commit{
+				{
+					Id:      "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+					Message: "Commit message\n\nCr-Commit-Position: refs/heads/main@{#1000}",
+				},
+			})
+			def := &tryjob.Definition{
+				ReuseWindow: &cfgpb.ReuseWindow{
+					MaxCommitDistance: 100,
+				},
+			}
+			makeGitilesTryjob := func(pos uint32, age time.Duration) *tryjob.Tryjob {
+				return &tryjob.Tryjob{
+					Status: tryjob.Status_ENDED,
+					Result: &tryjob.Result{
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-age)),
+						Status:     tryjob.Result_SUCCEEDED,
+						Backend: &tryjob.Result_Buildbucket_{
+							Buildbucket: &tryjob.Result_Buildbucket{
+								OutputGitilesCommit: &bbpb.GitilesCommit{
+									Host:     host,
+									Project:  project,
+									Ref:      ref,
+									Position: pos,
+								},
+							},
+						},
+					},
+				}
+			}
+
+			t.Run("within commit-distance reuse window (older than 24h)", func(t *ftt.Test) {
+				tj := makeGitilesTryjob(950, 26*time.Hour)
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+			})
+
+			t.Run("exceeds commit-distance reuse window (fresher than 24h)", func(t *ftt.Test) {
+				tj := makeGitilesTryjob(850, 12*time.Hour)
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+			})
+
+			t.Run("ref mismatch falls back to time-based window", func(t *ftt.Test) {
+				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(950, 12*time.Hour)
+					tj.Result.GetBuildbucket().OutputGitilesCommit.Ref = "refs/branch-heads/7922"
+					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+				})
+
+				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(950, 26*time.Hour)
+					tj.Result.GetBuildbucket().OutputGitilesCommit.Ref = "refs/branch-heads/7922"
+					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+				})
+			})
+
+			t.Run("missing commit metadata falls back to time-based window", func(t *ftt.Test) {
+				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
+					tj := &tryjob.Tryjob{
+						Status: tryjob.Status_ENDED,
+						Result: &tryjob.Result{
+							CreateTime: timestamppb.New(ct.Clock.Now().Add(-12 * time.Hour)),
+							Status:     tryjob.Result_SUCCEEDED,
+						},
+					}
+					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+				})
+
+				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
+					tj := &tryjob.Tryjob{
+						Status: tryjob.Status_ENDED,
+						Result: &tryjob.Result{
+							CreateTime: timestamppb.New(ct.Clock.Now().Add(-26 * time.Hour)),
+							Status:     tryjob.Result_SUCCEEDED,
+						},
+					}
+					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+				})
+			})
+
+			t.Run("gitiles error falls back to time-based window", func(t *ftt.Test) {
+				wFail := &worker{
+					run:            &run.Run{ID: runID},
+					gitilesFactory: failFactory{},
+				}
+				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(950, 12*time.Hour)
+					assert.Loosely(t, wFail.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+				})
+
+				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(950, 26*time.Hour)
+					assert.Loosely(t, wFail.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+				})
+			})
+
+			t.Run("no reuse window config falls back to time-based window", func(t *ftt.Test) {
+				defNoConfig := &tryjob.Definition{}
+				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(950, 12*time.Hour)
+					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, defNoConfig), should.Equal(reuseAllowed))
+				})
+
+				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(950, 26*time.Hour)
+					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, defNoConfig), should.Equal(reuseDenied))
+				})
+			})
+
+			t.Run("negative commit distance (branch tip behind build) falls back to time-based window", func(t *ftt.Test) {
+				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(1005, 12*time.Hour)
+					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+				})
+
+				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(1005, 26*time.Hour)
+					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+				})
+			})
+
+			t.Run("nil gitilesFactory falls back to time-based window", func(t *ftt.Test) {
+				wNil := &worker{
+					run:            &run.Run{ID: runID},
+					gitilesFactory: nil,
+				}
+				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(950, 12*time.Hour)
+					assert.Loosely(t, wNil.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+				})
+
+				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
+					tj := makeGitilesTryjob(950, 26*time.Hour)
+					assert.Loosely(t, wNil.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+				})
+			})
 		})
 	})
 }

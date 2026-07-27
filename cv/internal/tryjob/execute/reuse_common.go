@@ -54,22 +54,25 @@ const (
 	reuseDenied
 )
 
-// canReuseTryjob checks if a given Tryjob can be reused.
+// canReuseTryjob checks if candidate Tryjob tj can be reused to satisfy target requirement def.
 //
 // Tryjob *can* be reused iff the Tryjob ends successfully and is fresh enough
-// (i.e created within `staleTryjobAge`). Tryjob *may* be reused if the Tryjob
-// is fresh enough and still running or hasn't started yet.
-func canReuseTryjob(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode) reusability {
+// against target requirement def (i.e created within `staleTryjobAge` or within the commit distance limit).
+// Tryjob *may* be reused if the Tryjob is fresh enough and still running or
+// hasn't started yet.
+// Note: Freshness is evaluated against target requirement def rather than historical snapshot tj.Definition
+// to ensure live project configuration updates take immediate effect.
+func (w *worker) canReuseTryjob(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode, def *tryjob.Definition) reusability {
 	switch status := tj.Status; {
 	case status == tryjob.Status_STATUS_UNSPECIFIED:
 		panic(fmt.Errorf("unspecified status for tryjob %d", tj.ID))
 	case status == tryjob.Status_PENDING:
 		return reuseMaybe
-	case status == tryjob.Status_TRIGGERED && isTryjobStale(ctx, tj):
+	case status == tryjob.Status_TRIGGERED && !w.evaluateReuseWindow(ctx, tj, def):
 		return reuseDenied
 	case status == tryjob.Status_TRIGGERED:
 		return reuseMaybe
-	case status == tryjob.Status_ENDED && canReuseResult(ctx, tj, mode):
+	case status == tryjob.Status_ENDED && w.canReuseResult(ctx, tj, mode, def):
 		return reuseAllowed
 	case status == tryjob.Status_ENDED:
 		return reuseDenied
@@ -83,14 +86,14 @@ func canReuseTryjob(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode) reusa
 }
 
 // canReuseResult checks if the result of the Tryjob can be reused.
-func canReuseResult(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode) bool {
+func (w *worker) canReuseResult(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode, def *tryjob.Definition) bool {
 	switch result := tj.Result; {
 	case tj.Status != tryjob.Status_ENDED:
 		panic(fmt.Errorf("canReuseResult must be called when tryjob status is ended. got %s", tj.Status))
 	case result == nil:
 		logging.Errorf(ctx, "tryjob %d has nil result but it has ended already", tj.ID)
 		return false
-	case isTryjobStale(ctx, tj):
+	case !w.evaluateReuseWindow(ctx, tj, def):
 		return false
 	case result.GetStatus() != tryjob.Result_SUCCEEDED:
 		return false // Only a succeeded Tryjob can be reused.
@@ -108,6 +111,69 @@ func isTryjobStale(ctx context.Context, tj *tryjob.Tryjob) bool {
 		return true // Be defensive. Consider Tryjob stale.
 	}
 	return clock.Now(ctx).Sub(createTime.AsTime()) >= staleTryjobAge
+}
+
+// evaluateReuseWindow checks whether candidate Tryjob tj is fresh enough to
+// satisfy target requirement def.
+//
+// Freshness is evaluated against target requirement def rather than historical
+// snapshot tj.Definition to ensure live project configuration updates take
+// immediate effect.
+//
+// Reuse window refers to both the commit-distance-based window and the
+// time-based window. If max_commit_distance is configured on def, we first check
+// whether the distance between the target branch tip and tj's base commit position
+// is within the configured limit. If max_commit_distance is not set, or if commit
+// distance calculation fails unexpectedly (e.g., due to Gitiles errors or missing
+// metadata), we gracefully fall back to the time-based window.
+//
+// Returns true if the Tryjob satisfies the applicable reuse window, and false
+// otherwise.
+func (w *worker) evaluateReuseWindow(ctx context.Context, tj *tryjob.Tryjob, def *tryjob.Definition) bool {
+	if maxDist := def.GetReuseWindow().GetMaxCommitDistance(); maxDist > 0 {
+		reusable, err := w.verifyCommitDistance(ctx, tj, maxDist)
+		if err == nil {
+			return reusable
+		}
+		logging.Warningf(ctx, "Commit distance verification failed for tryjob %d: %s; falling back to time-based reuse window", tj.ID, err)
+	}
+	return !isTryjobStale(ctx, tj)
+}
+
+func (w *worker) verifyCommitDistance(ctx context.Context, tj *tryjob.Tryjob, maxDist uint32) (bool, error) {
+	gc := tj.Result.GetBuildbucket().GetOutputGitilesCommit()
+	if gc == nil || gc.GetHost() == "" || gc.GetProject() == "" || gc.GetRef() == "" || gc.GetPosition() == 0 {
+		if tj.Status == tryjob.Status_ENDED {
+			logging.Warningf(ctx, "tryjob %d lacks complete OutputGitilesCommit metadata", tj.ID)
+		} else {
+			logging.Debugf(ctx, "tryjob %d lacks complete OutputGitilesCommit metadata", tj.ID)
+		}
+		return false, errors.New("missing complete OutputGitilesCommit metadata")
+	}
+
+	if w == nil || w.gitilesFactory == nil || w.run == nil {
+		logging.Warningf(ctx, "branch tip resolver is nil for tryjob %d", tj.ID)
+		return false, errors.New("branch tip resolver is nil")
+	}
+
+	luciProject := w.run.ID.LUCIProject()
+	tipPos, err := resolveBranchTip(ctx, w.gitilesFactory, gc.GetHost(), gc.GetProject(), gc.GetRef(), luciProject)
+	if err != nil {
+		logging.Infof(ctx, "failed to resolve branch tip for tryjob %d (%s/%s/%s): %s", tj.ID, gc.GetHost(), gc.GetProject(), gc.GetRef(), err)
+		return false, fmt.Errorf("failed to resolve branch tip: %w", err)
+	}
+
+	buildPos := int64(gc.GetPosition())
+	if tipPos < buildPos {
+		logging.Infof(ctx, "resolved branch tip commit position (%d) is behind tryjob %d commit position (%d)", tipPos, tj.ID, buildPos)
+		return false, fmt.Errorf("resolved branch tip commit position (%d) is behind build commit position (%d)", tipPos, buildPos)
+	}
+
+	dist := tipPos - buildPos
+	if dist > int64(maxDist) {
+		return false, nil
+	}
+	return true, nil
 }
 
 // isModeAllowed checks whether the Run Mode is in the given allowlist.
