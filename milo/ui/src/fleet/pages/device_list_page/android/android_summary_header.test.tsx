@@ -346,4 +346,70 @@ describe('AndroidSummaryHeader', () => {
       [FILTER_KEYS.MACHINE_TYPE]: ['device'],
     });
   });
+
+  it('should render 7 days avg and 30 days avg formatted as percentages when showAvgUtilization is true', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      CountDevices: {
+        query: () => ({
+          queryKey: ['CountDevices'],
+          queryFn: async () => ({
+            androidCount: {
+              totalDevices: 100,
+              average7d: 0.17,
+              average30d: 0.16,
+            },
+          }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AndroidSummaryHeader
+          aip160=""
+          setFiltersBatch={jest.fn()}
+          showAvgUtilization={true}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText('17.00%')).toBeInTheDocument();
+    expect(screen.getByText('16.00%')).toBeInTheDocument();
+  });
+
+  it('should render "-" for 7 days avg and 30 days avg when utilization metrics are missing', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      CountDevices: {
+        query: () => ({
+          queryKey: ['CountDevices'],
+          queryFn: async () => ({
+            androidCount: {
+              totalDevices: 100,
+            },
+          }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AndroidSummaryHeader
+          aip160=""
+          setFiltersBatch={jest.fn()}
+          showAvgUtilization={true}
+        />
+      </QueryClientProvider>,
+    );
+
+    const dashElements = await screen.findAllByText('-');
+    expect(dashElements.length).toBeGreaterThanOrEqual(2);
+  });
 });

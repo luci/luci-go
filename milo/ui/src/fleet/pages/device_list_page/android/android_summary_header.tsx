@@ -279,7 +279,9 @@ export function AndroidSummaryHeader({
                     value={data?.average7d}
                     loading={isLoading}
                     formatValue={(val) =>
-                      data?.average7d === undefined ? '-' : `${val.toFixed(2)}%`
+                      data?.average7d === undefined || data?.average7d === null
+                        ? '-'
+                        : `${(val * 100).toFixed(2)}%`
                     }
                   />
                   <SmallMetricItem
@@ -287,9 +289,10 @@ export function AndroidSummaryHeader({
                     value={data?.average30d}
                     loading={isLoading}
                     formatValue={(val) =>
-                      data?.average30d === undefined
+                      data?.average30d === undefined ||
+                      data?.average30d === null
                         ? '-'
-                        : `${val.toFixed(2)}%`
+                        : `${(val * 100).toFixed(2)}%`
                     }
                   />
                 </Box>
