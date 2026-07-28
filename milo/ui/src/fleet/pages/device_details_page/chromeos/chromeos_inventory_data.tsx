@@ -131,6 +131,24 @@ export const ChromeOSInventoryData = ({
 
   const currentLse = editedLse || machineLse.data;
 
+  const board = extractDutLabel('label-board', device) || null;
+  const model = extractDutLabel('label-model', device) || null;
+
+  const deviceDetailsInfo = useMemo<DeviceDetailsInfo | null>(() => {
+    if (!currentLse) return null;
+    return {
+      hostname: currentLse.hostname,
+      description: currentLse.description,
+      resourceState: currentLse.resourceState,
+      machineLsePrototype: currentLse.machineLsePrototype,
+      realm: currentLse.realm,
+      deploymentTicket: currentLse.deploymentTicket,
+      updateTime: currentLse.updateTime,
+      board,
+      model,
+    };
+  }, [currentLse, board, model]);
+
   const currentServo = useMemo<ServoInfo | null>(() => {
     if (!currentLse) return null;
     return (
@@ -341,7 +359,7 @@ export const ChromeOSInventoryData = ({
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <DeviceDetailsCard
-                    data={currentLse as DeviceDetailsInfo}
+                    data={deviceDetailsInfo}
                     editable={false}
                   />
                 </Grid>

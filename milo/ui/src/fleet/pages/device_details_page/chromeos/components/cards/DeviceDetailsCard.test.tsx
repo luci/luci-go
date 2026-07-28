@@ -27,9 +27,9 @@ describe('<DeviceDetailsCard />', () => {
         <DeviceDetailsCard
           data={{
             hostname: 'chromeos15-row1-host1',
-            name: 'machineLSEs/chromeos15-row1-host1',
             realm: '@internal:ufs/os-acs',
-            machines: ['ASSET-1234'],
+            board: 'eve-board',
+            model: 'eve-model',
           }}
         />
       </FakeContextProvider>,
@@ -37,9 +37,21 @@ describe('<DeviceDetailsCard />', () => {
 
     expect(screen.getByText('Device Details')).toBeVisible();
     expect(screen.getByText('chromeos15-row1-host1')).toBeVisible();
-    expect(screen.getByText('machineLSEs/chromeos15-row1-host1')).toBeVisible();
     expect(screen.getByText('@internal:ufs/os-acs')).toBeVisible();
-    expect(screen.getByText('ASSET-1234')).toBeVisible();
+
+    // Verify Board link
+    const boardLink = screen.getByRole('link', { name: 'eve-board' });
+    expect(boardLink).toBeVisible();
+    expect(boardLink).toHaveAttribute('href', 'https://go/dlm-board/eve-board');
+
+    // Verify Model link
+    const modelLink = screen.getByRole('link', { name: 'eve-model' });
+    expect(modelLink).toBeVisible();
+    expect(modelLink).toHaveAttribute('href', 'https://go/dlm-model/eve-model');
+
+    // Verify old fields are not rendered
+    expect(screen.queryByText('UFS Resource Name')).toBeNull();
+    expect(screen.queryByText('Associated Asset IDs')).toBeNull();
   });
 
   it('renders optional fields and formatted resourceState/timestamps correctly', async () => {
@@ -63,6 +75,7 @@ describe('<DeviceDetailsCard />', () => {
     expect(screen.getByText('b/1234567')).toBeVisible();
     expect(screen.getByText('machineLSEPrototypes/labstation')).toBeVisible();
     expect(screen.getByText('Last Modified in UFS')).toBeVisible();
+    expect(screen.getAllByText('N/A')).toHaveLength(2);
   });
 
   it('renders edit button and handles onEdit click when editable is true', async () => {

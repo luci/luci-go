@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Grid, Typography } from '@mui/material';
+import { Grid, Link, Typography } from '@mui/material';
 
 import { ResourceStateChip } from '@/fleet/components/chips/ResourceStateChip';
 
@@ -23,14 +23,14 @@ import { PropertyField } from '../common/PropertyField';
 
 export interface DeviceDetailsInfo {
   hostname?: string | null;
-  name?: string | null;
   description?: string | null;
-  machines?: readonly string[] | string[];
   resourceState?: number | string | null;
   machineLsePrototype?: string | null;
   realm?: string | null;
   deploymentTicket?: string | null;
   updateTime?: string | null;
+  board?: string | null;
+  model?: string | null;
 }
 
 export interface DeviceDetailsCardProps {
@@ -47,24 +47,24 @@ export const DeviceDetailsCard = ({
   onEdit,
 }: DeviceDetailsCardProps) => {
   const hostname = data?.hostname;
-  const name = data?.name;
   const description = data?.description;
-  const machines = data?.machines || [];
   const resourceState = data?.resourceState;
   const machineLsePrototype = data?.machineLsePrototype;
   const realm = data?.realm;
   const deploymentTicket = data?.deploymentTicket;
   const updateTime = data?.updateTime;
+  const board = data?.board;
+  const model = data?.model;
   const hasData = Boolean(
     hostname ||
-      name ||
       description ||
-      machines.length > 0 ||
       resourceState ||
       machineLsePrototype ||
       realm ||
       deploymentTicket ||
-      updateTime,
+      updateTime ||
+      board ||
+      model,
   );
 
   return (
@@ -84,21 +84,39 @@ export const DeviceDetailsCard = ({
           )}
         </PropertyField>
 
-        <PropertyField label="UFS Resource Name" value={name} />
+        <PropertyField label="Board" value={board}>
+          {board ? (
+            <Link
+              href={`https://go/dlm-board/${encodeURIComponent(board)}`}
+              target="_blank"
+              rel="noreferrer"
+              sx={{ textDecoration: 'none' }}
+            >
+              <CodeChip value={board} />
+            </Link>
+          ) : (
+            <Typography variant="body2">N/A</Typography>
+          )}
+        </PropertyField>
 
         <PropertyField label="Resource State" value={resourceState}>
           <ResourceStateChip state={resourceState} />
         </PropertyField>
 
-        {machines.length > 0 && (
-          <PropertyField label="Associated Asset IDs" value="yes">
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-              {machines.map((m) => (
-                <CodeChip key={m} value={m} />
-              ))}
-            </Box>
-          </PropertyField>
-        )}
+        <PropertyField label="Model" value={model}>
+          {model ? (
+            <Link
+              href={`https://go/dlm-model/${encodeURIComponent(model)}`}
+              target="_blank"
+              rel="noreferrer"
+              sx={{ textDecoration: 'none' }}
+            >
+              <CodeChip value={model} />
+            </Link>
+          ) : (
+            <Typography variant="body2">N/A</Typography>
+          )}
+        </PropertyField>
 
         <PropertyField label="Security Realm" value={realm} variant="text" />
 
