@@ -1285,17 +1285,7 @@ func (a *Authenticator) ensureInitialized() error {
 	}
 
 	if a.opts.CredentialHelper == nil {
-		// LUCI_AUTH_CREDENTIAL_HELPER binary must satisfy the RECLIENT
-		// protocol and accept "-scopes" flag with a comma separated list of
-		// requested scopes.
-		if exe := environ.FromCtx(a.ctx).Get("LUCI_AUTH_CREDENTIAL_HELPER"); exe != "" {
-			a.opts.CredentialHelper = &credhelperpb.Config{
-				Exec:                   exe,
-				Protocol:               credhelperpb.Protocol_RECLIENT,
-				DynamicOauthScopesFlag: "-scopes",
-				CacheTokensOnDisk:      true,
-			}
-		}
+		a.opts.CredentialHelper = CredentialHelperFromEnv(a.ctx)
 	}
 
 	// SelectBestMethod may do heavy calls like talking to GCE metadata server,

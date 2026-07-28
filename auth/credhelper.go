@@ -35,7 +35,33 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
 )
+
+// LuciAuthCredentialHelperEnvvar is the envvar for a LUCI credential helper.
+//
+// Such a helper must adhere to the RECLIENT protocol, must
+// accept `-scopes` for dynamic scopes, and is not expected
+// to cache its own tokens.
+const LuciAuthCredentialHelperEnvvar = "LUCI_AUTH_CREDENTIAL_HELPER"
+
+// CredentialHelperFromEnv returns the helper config from the environment.
+//
+// If no credential helper is configured, returns nil.
+func CredentialHelperFromEnv(ctx context.Context) *credhelperpb.Config {
+	// LUCI_AUTH_CREDENTIAL_HELPER binary must satisfy the RECLIENT
+	// protocol and accept "-scopes" flag with a comma separated list of
+	// requested scopes.
+	if exe := environ.FromCtx(ctx).Get(LuciAuthCredentialHelperEnvvar); exe != "" {
+		return &credhelperpb.Config{
+			Exec:                   exe,
+			Protocol:               credhelperpb.Protocol_RECLIENT,
+			DynamicOauthScopesFlag: "-scopes",
+			CacheTokensOnDisk:      true,
+		}
+	}
+	return nil
+}
 
 // CheckCredentialHelperConfig checks the config has all necessary fields set.
 func CheckCredentialHelperConfig(cfg *credhelperpb.Config) error {

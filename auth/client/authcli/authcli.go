@@ -90,6 +90,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -497,6 +498,35 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 		return ExitCodeInvalidInput
 	}
 	ctx := cli.GetContext(a, c, env)
+	var autoMethod string
+	if opts.Method == auth.AutoSelectMethod {
+		autoMethod = " (selected automatically)"
+		opts.Method = auth.SelectBestMethod(ctx, opts)
+	}
+	var credHelperEnv string
+	if opts.CredentialHelper == nil {
+		opts.CredentialHelper = auth.CredentialHelperFromEnv(ctx)
+		if opts.CredentialHelper != nil {
+			credHelperEnv = fmt.Sprintf(" (via $%s)", auth.LuciAuthCredentialHelperEnvvar)
+		}
+	}
+
+	fmt.Printf("Using %s%s\n", opts.Method, autoMethod)
+	if opts.Method == auth.CredentialHelperMethod {
+		path := opts.CredentialHelper.GetExec()
+		var pathErr string
+		if !filepath.IsAbs(path) {
+			fullPath, err := exec.LookPath(path)
+			if err != nil {
+				pathErr = fmt.Sprintf(" (%s)", err)
+			} else {
+				path = fullPath
+			}
+		}
+		fmt.Printf("  with credential helper%s: %q%s\n", credHelperEnv, path, pathErr)
+	}
+	fmt.Println()
+
 	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	switch _, err := authenticator.Client(); {
 	case err == auth.ErrLoginRequired:

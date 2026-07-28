@@ -132,6 +132,7 @@ func GetApplication(params Parameters) *cli.Application {
 				Advanced:                 true,
 				AuthOptions:              params.DefaultAuthOptions,
 				UseCredentialHelperFlags: true,
+				UseADCFlags:              true,
 			}),
 			authcli.SubcommandLogin(params.DefaultAuthOptions, "auth-login", false),
 			authcli.SubcommandLogout(params.DefaultAuthOptions, "auth-logout", false),
