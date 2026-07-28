@@ -33,7 +33,8 @@ func cmdCheckACL(params Parameters) *subcommands.Command {
 		Advanced:  true,
 		UsageLine: "acl-check <package subpath> [options]",
 		ShortDesc: "checks whether the caller has given roles in a package",
-		LongDesc:  "Checks whether the caller has given roles in a package.",
+		LongDesc: ("Checks whether the caller has given roles in a package. " +
+			"Exits with `2` if the caller doesn't have the desired permissions."),
 		CommandRun: func() subcommands.CommandRun {
 			c := &checkACLRun{}
 			c.registerBaseFlags()
@@ -82,7 +83,12 @@ func (c *checkACLRun) Run(a subcommands.Application, args []string, env subcomma
 	}
 
 	ctx := cli.GetContext(a, c, env)
-	return c.done(checkACL(ctx, pkg, roles, c.clientOptions))
+	hasAccess, err := checkACL(ctx, pkg, roles, c.clientOptions)
+	ret := c.done(hasAccess, err)
+	if !hasAccess && err == nil {
+		ret = 2
+	}
+	return ret
 }
 
 func checkACL(ctx context.Context, packagePath string, roles []string, clientOpts clientOptions) (bool, error) {
