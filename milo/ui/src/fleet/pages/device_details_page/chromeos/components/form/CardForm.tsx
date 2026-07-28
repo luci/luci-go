@@ -18,7 +18,9 @@ import {
   useContext,
   useState,
   ReactNode,
+  useCallback,
   useEffect,
+  useMemo,
 } from 'react';
 
 import { getNestedValue } from '../../utils/inventory_editing_utils';
@@ -30,6 +32,7 @@ interface CardFormContextType {
   isEditing: boolean;
   getFieldValue: (path: string | string[]) => unknown;
   setFieldValue: (path: string | string[], value: unknown) => void;
+  setFieldError: (path: string | string[], hasError: boolean) => void;
   confirm: () => void;
 }
 
@@ -70,32 +73,52 @@ export const CardForm = ({
   const [stagedUpdates, setStagedUpdates] = useState<Record<string, unknown>>(
     {},
   );
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!isEditing) {
       setStagedUpdates({});
+      setFieldErrors({});
     }
   }, [isEditing]);
 
-  const getFieldValue = (path: string | string[]) => {
-    const key = typeof path === 'string' ? path : path.join('.');
-    if (isEditing && key in stagedUpdates) {
-      return stagedUpdates[key];
-    }
-    return getNestedValue(draftLse, path);
-  };
+  const getFieldValue = useCallback(
+    (path: string | string[]) => {
+      const key = typeof path === 'string' ? path : path.join('.');
+      if (isEditing && key in stagedUpdates) {
+        return stagedUpdates[key];
+      }
+      return getNestedValue(draftLse, path);
+    },
+    [isEditing, stagedUpdates, draftLse],
+  );
 
-  const setFieldValue = (path: string | string[], value: unknown) => {
-    const key = typeof path === 'string' ? path : path.join('.');
-    setStagedUpdates((prev) => ({ ...prev, [key]: value }));
-  };
+  const setFieldValue = useCallback(
+    (path: string | string[], value: unknown) => {
+      const key = typeof path === 'string' ? path : path.join('.');
+      setStagedUpdates((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
+
+  const setFieldError = useCallback(
+    (path: string | string[], hasError: boolean) => {
+      const key = typeof path === 'string' ? path : path.join('.');
+      setFieldErrors((prev) => {
+        if (prev[key] === hasError) return prev;
+        return { ...prev, [key]: hasError };
+      });
+    },
+    [],
+  );
 
   const handleEdit = () => {
     setStagedUpdates({});
+    setFieldErrors({});
     setActiveEditingCardId(cardId);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     const updates = Object.entries(stagedUpdates).map(([key, value]) => ({
       path: key,
       value,
@@ -104,23 +127,29 @@ export const CardForm = ({
       updateDraftFields(updates);
     }
     setStagedUpdates({});
+    setFieldErrors({});
     setActiveEditingCardId(null);
-  };
+  }, [stagedUpdates, updateDraftFields, setActiveEditingCardId]);
 
   const handleCancel = () => {
     setStagedUpdates({});
+    setFieldErrors({});
     setActiveEditingCardId(null);
   };
 
+  const contextValue = useMemo(
+    () => ({
+      isEditing,
+      getFieldValue,
+      setFieldValue,
+      setFieldError,
+      confirm: handleConfirm,
+    }),
+    [isEditing, getFieldValue, setFieldValue, setFieldError, handleConfirm],
+  );
+
   return (
-    <CardFormContext.Provider
-      value={{
-        isEditing,
-        getFieldValue,
-        setFieldValue,
-        confirm: handleConfirm,
-      }}
-    >
+    <CardFormContext.Provider value={contextValue}>
       <InventoryDataCard
         title={title}
         emptyMessage={isEmpty && !isEditing ? emptyMessage : undefined}
@@ -131,6 +160,7 @@ export const CardForm = ({
         isEditing={isEditing}
         onEdit={handleEdit}
         onConfirm={handleConfirm}
+        confirmDisabled={Object.values(fieldErrors).some(Boolean)}
         onDiscard={handleCancel}
       >
         {children}

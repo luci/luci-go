@@ -14,6 +14,8 @@
 
 import { Grid } from '@mui/material';
 
+import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { logicalZoneToJSON } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 
 import { formatEnum } from '../../utils/formatters';
@@ -23,7 +25,7 @@ import {
 } from '../../utils/inventory_editing_utils';
 import { PropertyField } from '../common/PropertyField';
 import { CardForm } from '../form/CardForm';
-import { FormTextField } from '../form/FormTextField';
+import { FormAutocompleteField } from '../form/FormAutocompleteField';
 import { useInventoryForm } from '../form/InventoryFormContext';
 
 export const LogicalSchedulingCard = () => {
@@ -42,6 +44,10 @@ export const LogicalSchedulingCard = () => {
   const hive =
     draftLse?.chromeosMachineLse?.deviceLse?.dut?.hive ||
     draftLse?.chromeosMachineLse?.deviceLse?.labstation?.hive;
+
+  const dimensionsQuery = useDeviceDimensions({ platform: Platform.CHROMEOS });
+  const poolOptions =
+    dimensionsQuery.data?.labels?.['label-pool']?.values || [];
 
   const logicalZoneLabel = formatEnum(
     logicalZone,
@@ -64,10 +70,10 @@ export const LogicalSchedulingCard = () => {
       emptyMessage="No scheduling tags or pool labels assigned."
     >
       <Grid container spacing={2}>
-        <FormTextField
+        <FormAutocompleteField
           label="Pools"
           path={poolsPath}
-          type="array"
+          options={poolOptions as string[]}
           gridSm={12}
         />
         <PropertyField

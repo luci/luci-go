@@ -35,6 +35,7 @@ export interface InventoryDataCardProps {
   isEditing?: boolean;
   onEdit?: () => void;
   onConfirm?: () => void;
+  confirmDisabled?: boolean;
   onDiscard?: () => void;
   headerAction?: ReactNode;
   children?: ReactNode;
@@ -51,6 +52,7 @@ export const InventoryDataCard = ({
   isEditing = false,
   onEdit,
   onConfirm,
+  confirmDisabled = false,
   onDiscard,
   headerAction,
   children,
@@ -90,6 +92,7 @@ export const InventoryDataCard = ({
                         variant="contained"
                         color="primary"
                         onClick={onConfirm}
+                        disabled={confirmDisabled}
                       >
                         Confirm
                       </Button>

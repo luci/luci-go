@@ -74,6 +74,12 @@ jest.mock('@/fleet/hooks/prpc_clients', () => ({
   })),
   useFleetConsoleClient: jest.fn(() => ({
     UpdateChromeOSDevice: jest.fn(),
+    GetDeviceDimensions: {
+      query: jest.fn(() => ({
+        queryKey: ['mock-dims'],
+        queryFn: jest.fn(),
+      })),
+    },
   })),
 }));
 
@@ -193,11 +199,10 @@ describe('<ChromeOSInventoryData />', () => {
     await userEvent.click(editBtn);
 
     // 3. Update field: add new pool
-    const input = screen.getByRole('textbox');
-    expect(input).toHaveValue('pool1');
-    await userEvent.clear(input);
-    await userEvent.type(input, 'pool1,pool-new');
-    expect(input).toHaveValue('pool1,pool-new');
+    const input = screen.getByRole('combobox');
+
+    // Add new pool via Autocomplete Enter key
+    await userEvent.type(input, 'pool-new{Enter}');
 
     // Confirm card changes (closes card-level editing, stages updates globally)
     const confirmBtn = screen.getByRole('button', { name: /confirm/i });
