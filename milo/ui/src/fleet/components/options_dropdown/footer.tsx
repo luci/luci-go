@@ -64,12 +64,12 @@ export function Footer({
       >
         {footerButtons.includes('reset') && (
           <Button disableElevation onClick={onResetClick}>
-            Reset to default
+            Reset defaults
           </Button>
         )}
         {footerButtons.includes('reset-widths') && (
           <Button disableElevation onClick={onResetWidthsClick}>
-            Reset widths to default
+            Reset column widths
           </Button>
         )}
         {footerButtons.includes('cancel') && (

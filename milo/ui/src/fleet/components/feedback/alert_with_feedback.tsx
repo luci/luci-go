@@ -43,11 +43,10 @@ export default function AlertWithFeedback({
 }: AlertWithFeedbackProps) {
   return (
     <Alert severity={severity || 'error'} data-testid={testId} sx={sx}>
-      <AlertTitle>{title || 'Oops! An error occured.'}</AlertTitle>
-      {children || <p>Oh no! Something didn&apos;t go as planned.</p>}
+      <AlertTitle>{title || 'An error occurred'}</AlertTitle>
+      {children || <p>Something went wrong.</p>}
       <p>
-        If you think that shouldn&apos;t happen, let us know, we will try our
-        best to fix that! Just send us your{' '}
+        Send us your{' '}
         <Link
           href={genFeedbackUrl({
             bugComponent: FEEDBACK_BUGANIZER_BUG_ID,
@@ -56,8 +55,8 @@ export default function AlertWithFeedback({
           target="_blank"
         >
           feedback
-        </Link>
-        !
+        </Link>{' '}
+        to help us fix the issue.
       </p>
     </Alert>
   );

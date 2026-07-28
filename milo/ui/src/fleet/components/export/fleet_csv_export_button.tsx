@@ -116,7 +116,7 @@ export function FleetCSVExportButton<TData extends MRT_RowData>({
     try {
       const result = await onExport(columnsToExport, filterStr, ids);
       if (!result?.csvData) {
-        showNotification('CSV export returned empty data', 'error');
+        showNotification('No CSV data returned', 'error');
       } else {
         const blob = new Blob([result.csvData], { type: 'text/csv' });
         exportAs(blob, 'csv', fileName);
@@ -124,7 +124,7 @@ export function FleetCSVExportButton<TData extends MRT_RowData>({
       }
     } catch (error) {
       showNotification(
-        `An error occurred during CSV export: ${getErrorMessage(error, 'csv export')}`,
+        `Export failed: ${getErrorMessage(error, 'csv export')}`,
         'error',
       );
     } finally {

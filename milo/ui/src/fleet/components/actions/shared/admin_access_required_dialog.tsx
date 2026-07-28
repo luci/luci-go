@@ -31,12 +31,11 @@ export function AdminAccessRequiredDialog({
 }: AdminAccessRequiredDialogProps) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Admin Access Required</DialogTitle>
+      <DialogTitle>Admin access required</DialogTitle>
       <DialogContent>
         <p>
-          The action you are trying to perform requires additional permissions.
-          To run Admin Tasks from the Fleet Console, please request membership
-          in the following group:
+          This action requires admin permissions. Request access by joining the
+          policy group:
         </p>
         <p>
           <a
@@ -48,9 +47,9 @@ export function AdminAccessRequiredDialog({
           </a>
         </p>
         <p>
-          If you think this is a bug, please file it to{' '}
+          Report issues to the{' '}
           <a href="http://go/fcon-bug" target="_blank" rel="noreferrer">
-            Fleet Console UI
+            Fleet Console team
           </a>
           .
         </p>

@@ -148,9 +148,7 @@ describe('FleetCSVExportButton', () => {
     const allBtn = await screen.findByText('Export all (CSV)');
     await userEvent.click(allBtn);
 
-    const errorAlert = await screen.findByText(
-      /An error occurred during CSV export:.*API Error/i,
-    );
+    const errorAlert = await screen.findByText(/Export failed:.*API Error/i);
     expect(errorAlert).toBeVisible();
 
     consoleErrorSpy.mockRestore();

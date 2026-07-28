@@ -114,7 +114,7 @@ describe('<RunReserve />', () => {
 
     // Verify Admin Access dialog is shown
     await waitFor(() => {
-      expect(screen.getByText('Admin Access Required')).toBeVisible();
+      expect(screen.getByText('Admin access required')).toBeVisible();
     });
     expect(screen.getByText('fleet-console-admin-tasks-policy')).toBeVisible();
     // Reserve Dialog confirmation screen should not be open

@@ -112,7 +112,7 @@ export const Header = ({
         }}
       >
         <IconButton onClick={() => window.open('http://go/fleet-console')}>
-          <Tooltip title="Fleet Console Documentation">
+          <Tooltip title="Fleet Console documentation">
             <HelpOutlineOutlinedIcon sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
@@ -123,12 +123,12 @@ export const Header = ({
             )
           }
         >
-          <Tooltip title="File a bug">
+          <Tooltip title="Report a bug">
             <FeedbackOutlined sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
         <IconButton onClick={() => window.open('http://go/fcon-feature')}>
-          <Tooltip title="Feature Requests">
+          <Tooltip title="Request a feature">
             <ExtensionOutlined sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
@@ -142,7 +142,7 @@ export const Header = ({
               location.pathname + location.search + location.hash,
             )}
           >
-            Login
+            Sign in
           </Button>
         ) : (
           <LoggedInAvatar email={authState.email} picture={authState.picture} />
@@ -171,10 +171,10 @@ function LoggedInAvatar({
         src={picture}
         aria-label="avatar"
       />
-      <Tooltip title="Logout">
+      <Tooltip title="Sign out">
         <IconButton
           className="logout"
-          aria-label="Logout button"
+          aria-label="Sign out"
           color="inherit"
           href={getLogoutUrl(
             location.pathname + location.search + location.hash,

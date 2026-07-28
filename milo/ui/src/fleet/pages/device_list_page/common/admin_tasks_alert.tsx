@@ -72,11 +72,11 @@ export const AdminTasksAlert = () => {
           color="primary"
           sx={{ flexShrink: 0, ml: 2 }}
         >
-          View Details
+          View details
         </Button>
       }
     >
-      You have {countText} admin tasks scheduled in the last 24 hours.
+      You scheduled {countText} admin tasks in the last 24 hours.
     </Alert>
   );
 };

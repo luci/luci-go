@@ -31,7 +31,7 @@ export const PlatformNotAvailable = ({
   const platform = usePlatform();
   return (
     <>
-      <FleetHelmet pageTitle="Platform not yet available" />
+      <FleetHelmet pageTitle="Platform not available" />
       <div
         css={{
           display: 'flex',
@@ -51,7 +51,7 @@ export const PlatformNotAvailable = ({
           }}
         />
         <Typography variant="h1" sx={{ fontSize: 50, textAlign: 'center' }}>
-          Platform not yet available
+          Platform not available
         </Typography>
 
         {availablePlatforms && availablePlatforms.length > 0 && (
@@ -63,7 +63,7 @@ export const PlatformNotAvailable = ({
               alignItems: 'center',
             }}
           >
-            <Typography variant="body1">Try</Typography>
+            <Typography variant="body1">Select a platform:</Typography>
             {availablePlatforms.map((p) => (
               <Chip
                 key={p}

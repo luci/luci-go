@@ -28,16 +28,15 @@ export const LoggedInBoundary = ({
   if (auth.identity === ANONYMOUS_IDENTITY)
     return (
       <div css={{ margin: '8px 16px' }}>
-        You must{' '}
         <Link
           href={getLoginUrl(
             location.pathname + location.search + location.hash,
           )}
           css={{ textDecoration: 'underline' }}
         >
-          login
+          Sign in
         </Link>{' '}
-        to see anything useful.
+        to view fleet details.
       </div>
     );
   return children;

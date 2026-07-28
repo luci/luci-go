@@ -36,7 +36,7 @@ describe('Header', () => {
       </ShortcutProvider>,
     );
 
-    expect(screen.getByText('Login')).toBeInTheDocument();
+    expect(screen.getByText('Sign in')).toBeInTheDocument();
 
     (useAuthState as jest.Mock).mockReturnValue({
       identity: ANONYMOUS_IDENTITY,
@@ -48,7 +48,7 @@ describe('Header', () => {
         </FakeContextProvider>
       </ShortcutProvider>,
     );
-    expect(screen.getByText('Login')).toBeInTheDocument();
+    expect(screen.getByText('Sign in')).toBeInTheDocument();
   });
 
   it('When logged in should display the avatar', async () => {
