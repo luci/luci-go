@@ -19,5 +19,5 @@ export const features = {
   ColumnFilter: false,
   BrowserListDevices: true,
   ProductCatalogListPage: true,
-  RequestFiling: false,
+  RequestFiling: true,
 } satisfies FeaturesSchema;
