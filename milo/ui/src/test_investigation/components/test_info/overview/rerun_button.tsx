@@ -78,6 +78,12 @@ interface AndroidBuild {
   branch?: string;
 }
 
+function escapeShellArg(arg: string | undefined): string {
+  if (!arg || arg.length === 0) return "''";
+  // Wraps in single quotes and escapes any internal single quotes
+  return "'" + arg.replace(/'/g, "'\\''") + "'";
+}
+
 function getAtestCommand(
   testVariant: OutputTestVerdict,
   params?: {
@@ -87,24 +93,29 @@ function getAtestCommand(
     acloudBuild?: AndroidBuild;
   },
 ): string | null {
-  const moduleName = testVariant?.testIdStructured?.moduleName || undefined;
+  const moduleName = testVariant?.testIdStructured?.moduleName;
   const testIdStructured = testVariant?.testIdStructured || undefined;
-  if (moduleName === undefined) {
+  if (!moduleName) {
     return null;
   }
-  let command = `${(params?.omitAtest ?? false) ? '' : 'atest '}${moduleName}`;
+
+  let testIdentifier = moduleName;
   if (!params?.moduleOnly) {
     const testClass = `${testIdStructured?.coarseName ?? ''}.${testIdStructured?.fineName ?? ''}`;
     const testMethod = testIdStructured?.caseName ?? '';
     if (testClass !== '' || testMethod !== '') {
       if (testClass !== '') {
-        command = `${command}:${testClass}`;
+        testIdentifier += `:${testClass}`;
       }
       if (testMethod !== '') {
-        command = `${command}#${testMethod}`;
+        testIdentifier += `#${testMethod}`;
       }
     }
   }
+  const escapedIdentifier = escapeShellArg(testIdentifier);
+
+  let command = `${(params?.omitAtest ?? false) ? '' : 'atest '}${escapedIdentifier}`;
+
   const build = params?.acloudBuild;
   if (build) {
     if (
@@ -117,15 +128,16 @@ function getAtestCommand(
     }
     command =
       `${command} --acloud-create "` +
-      `--branch ${build.branch} ` +
-      `--build-target ${build.buildTarget} ` +
-      `--build-id ${build.buildId}"`;
+      `--branch ${escapeShellArg(build.branch)} ` +
+      `--build-target ${escapeShellArg(build.buildTarget)} ` +
+      `--build-id ${escapeShellArg(build.buildId)}"`;
   }
+
   if (!params?.omitExtraArgs) {
     const extraArgs: string[] = [];
     const moduleAbi = testVariant.variant?.def['module_abi'];
     if (moduleAbi) {
-      extraArgs.push(`--abi ${moduleAbi}`);
+      extraArgs.push(`--abi ${escapeShellArg(moduleAbi)}`);
     }
     if (testVariant.variant?.def['module_param'] === 'instant') {
       extraArgs.push('--instant');
