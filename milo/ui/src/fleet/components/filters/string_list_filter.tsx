@@ -28,6 +28,7 @@ import { colors } from '@/fleet/theme/colors';
 import { OptionValue } from '@/fleet/types/option';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { fuzzySort, fuzzyMaxScore } from '@/fleet/utils/fuzzy_sort';
+import { escapeAipValue } from '@/fleet/utils/search_param';
 
 import {
   OptionsMenu,
@@ -235,7 +236,7 @@ export class StringListFilterCategory implements FilterCategory {
         const isQuoted = val.startsWith('"') && val.endsWith('"');
         if (!isQuoted) {
           // Always quote values to match AIP-160 behavior and avoid parser issues
-          return `"${val.replace(/"/g, '\\"')}"`;
+          return `"${escapeAipValue(val)}"`;
         }
         return val;
       });

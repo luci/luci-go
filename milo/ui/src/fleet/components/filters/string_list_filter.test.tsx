@@ -313,6 +313,32 @@ describe('StringListFilterCategory', () => {
     expect(category.toAIP160()).toEqual('(model = "pixel(gen1)")');
   });
 
+  it('should escape newlines and tabs in values when generating AIP-160', () => {
+    const result = StringListFilterCategory.create(
+      'Product Name',
+      'product_name',
+      [
+        {
+          value: 'Cable Matters \t\nUSB-C to Ethernet Adapter',
+          label: 'Cable Matters',
+        },
+      ],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    category.setSelectedOptions([
+      'Cable Matters \t\nUSB-C to Ethernet Adapter',
+    ]);
+    expect(category.toAIP160()).toEqual(
+      '(product_name = "Cable Matters \\t\\nUSB-C to Ethernet Adapter")',
+    );
+  });
+
   it('should ignore unknown values', () => {
     const mockTerm = {
       kind: 'Term',

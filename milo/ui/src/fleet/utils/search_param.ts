@@ -69,7 +69,12 @@ export function parseOrderByParam(orderByParam: string): OrderBy | null {
 }
 
 export function escapeAipValue(val: string): string {
-  return val.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return val
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
 }
 
 export function quoteAipKey(key: string): string {
