@@ -1,22 +1,22 @@
-# Android Health Filter Column Design Decisions
+# Android Health Filter Column
 
 ## Context
-FLOPs reported a discrepancy between the number of unhealthy devices in Fleet Console and MH. The check was based on device status only, whereas Omnilab documentation suggested checking device type as well. The structure of the check included operators like `AND`, `NOT IN`, which were impossible to replicate on the frontend side with current filters implementation.
+FLOPS identified a mismatch in unhealthy device counts between Fleet Console and Mobile Harness. Checking health required combining device status and device type using complex operators (`AND`, `NOT IN`), which frontend URL filters could not evaluate natively.
 
-## Current Architecture
-We implemented a new column `fc_is_offline` to store calculated information about the device. This allowed the frontend to filter correctly without a complex refactor.
+## Architecture
+We added a calculated column (`fc_is_offline`) in the database. This allows the UI to filter health states directly using standard equality filters.
 
-## Design Tradeoffs Considered
+## Tradeoffs
 
-### 1. Implement a new column (`fc_is_offline`)
-- **Pros:** Fast to implement, solves the immediate urgency, allows frontend to use existing filter mechanisms.
-- **Cons:** Adds a specialized column that might need maintenance if the logic changes.
-- **Decision:** Chosen due to the urgency of the situation.
+### 1. Database Calculated Column (`fc_is_offline`)
+- **Pros:** Fast implementation, resolves urgent count discrepancies, uses existing frontend filter hooks.
+- **Cons:** Requires schema maintenance if offline logic changes.
+- **Decision:** Chosen to address the immediate P0 discrepancy.
 
-### 2. Refactor filters mechanism
-- **Pros:** Proper solution, handles complex queries on the frontend natively.
-- **Cons:** Requires significant investment in refactoring and testing.
-- **Decision:** Left open as a future improvement.
+### 2. Frontend Filter Engine Refactor
+- **Pros:** Handles complex boolean queries natively in the UI.
+- **Cons:** High development cost and complex refactoring.
+- **Decision:** Deferred as a future enhancement.
 
 ## Links
 - Bug: `b/467077586`

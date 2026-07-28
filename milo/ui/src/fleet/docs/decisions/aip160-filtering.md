@@ -1,75 +1,39 @@
-# Decision: AIP-160 Filtering Architecture in Fleet Console
+# AIP-160 Filtering Architecture
 
 ## Context
-To support complex, rich search capabilities in the Fleet Console UI, we made the decision to port an existing backend Go parser for AIP-160 (API Filtering) into TypeScript. This allows us to parse raw logical expressions directly on the frontend and map them directly to our Material-React-Table (MRT) and custom hook states.
+Fleet Console uses a TypeScript port of our backend Go AIP-160 parser (`parser.ts`) to parse raw search expressions directly on the frontend.
 
-While the parser provides a massive step forward, the overall migration path involves handling dual standards between legacy URL systems and the strict AST-based rules of the new parser.
+## Architecture
 
-## Our Approach to AIP-160
+### 1. Ported AST Parser
+The parser in `utils/aip160/parser/parser.ts` mirrors the Go backend implementation to ensure exact parity:
+- Follows the EBNF grammar for AIP-160.
+- Converts search strings into Abstract Syntax Tree (AST) nodes instead of running fragile regexes.
 
-### 1. Ported Parser Architecture
-The new parser in [parser.ts](../../utils/aip160/parser/parser.ts) was ported directly from our Go backend implementation to ensure exact parity between what the UI sees and what the backend expects.
-*   It follows the strict EBNF grammar for AIP-160 (omitting custom function call support for simplicity in this initial version).
-*   It operates on full Abstract Syntax Tree (AST) representations, breaking strings like `key = v1 OR key = v2` into nodes rather than handling strings via fragile regexes.
+### 2. Reading & Writing
+- **Parser**: Reads filter strings and validates syntax, supporting operators like `:` and `!=`.
+- **Serializer**: `serializer.ts` writes AST nodes back to URL strings using parenthesized OR groups for backward compatibility.
 
-### 2. Reading vs Writing Split
-The migration strategy in Fleet Console prioritized the **reading side** (string to AST) to ensure we could understand complex queries first.
-*   **Parser:** Strictly reads strings and validates correctness on load, supporting advanced operators like `:` and `!=`.
-*   **Serializer Status:** A serializer exists in `serializer.ts` to handle the writing side. It currently generates parenthesized OR groups and uses legacy blank checks to maintain backward compatibility during this transition phase.
+## Transition Rules
 
-## Planned Transition to AIP-160
-
-The migration is structured as a phased transition to full AIP-160 compliance. The current implementation represents an intentional intermediate state to ensure safety and compatibility while extending capabilities:
-
-*   **Multiple Values:**
-    *   *Target Intent:* Use `key = value1 OR key = value2`. This is the preferred syntax moving forward.
-    *   *Current Transition State:* The grouped syntax `key = (value1 OR value2)` is kept for backwards compatibility reasons.
-*   **Exclude Options:**
-    *   *Target Intent:* Use `label != A AND label != B` (Option B).
-    *   *Current Transition State:* The serializer does not generate compound boolean excludes yet.
-*   **Blank Searches:**
-    *   *Target Intent:* Use `NOT key:*` for blank searches (Option A).
-    *   *Current Transition State:* Code generates `NOT key`, maintaining the legacy format.
-
-The parser is capable of understanding the target formats, but the UI components and serializer remain in this intermediate phase for safety during the transition.
+- **Multiple Values**: Use `key = v1 OR key = v2` as the primary format. Grouped syntax `key = (v1 OR v2)` is supported for backward compatibility.
+- **Exclusions**: Use `label != A AND label != B`.
+- **Blank Searches**: Use `NOT key:*`. Code generates `NOT key` during the transition phase.
 
 ### Backwards Compatibility
-Backwards compatibility for legacy URL formats is supported on a **best-effort basis** rather than as a strict guarantee. Supporting all past versions and their bugs indefinitely impacts development velocity.
-In the future, a versioned URL system will be used with a dedicated migration function to translate old URLs. This avoids the need for parsers to support all historical formats. In rare occasions where a break occurs, users can re-add their filters.
+URL compatibility is best-effort. In the future, versioned URL translation functions will map legacy query strings to modern formats.
 
-For a detailed set of principles guiding our approach to URL backwards compatibility, see [url-backwards-compatibility.md](./url-backwards-compatibility.md).
-
-### Future of useFilters
-In the future, we want `useFilters` to be solely responsible for handling reading and writing to the `"filters"` URL param.
-
-## Specific Caveats for Fleet Console
+## Specific Caveats & Edge Cases
 
 ### Mismatched Parentheses
-AIP-160 allows choices to be written as either `key = v1 OR key = v2` or `key = (v1 OR v2)`. The legacy system in Fleet Console used the parenthesized grouped format. To avoid missing options wrapped inside parens, consumers of our AST should recursively analyze arguments.
+AIP-160 allows choices written as `key = v1 OR key = v2` or `key = (v1 OR v2)`. Legacy Fleet Console systems used parenthesized grouping. Consumers of our AST MUST analyze arguments recursively to avoid missing options wrapped inside parens.
 
 ### Deep Loop Trap in React Hooks
-MRT state hooks and `useFilters` hook both try to synchronize URL search states. Because of the sensitive shape difference between a raw array of string filters and custom types, standard equality checks like `_.isEqual` can sometimes throw false-positive update states, which may lead to infinite React depth loops.
+Updating filter state inside `onColumnFiltersChange` can trigger infinite re-render loops if state references mutate directly. Always use a `useRef` intercept to stabilize callbacks.
 
-## Filter Architecture in Child Components
+## Child Component Guidelines
 
-When building components that need to interact with filters (like metrics headers or custom filter bars), follow these guidelines to ensure consistency and avoid bugs:
-
-### 1. Centralized State in Parent
-The parent page (e.g., `AndroidDevicesPage`, `ChromeOSDevicesPage`) should be the single source of truth for the filter state. It should call the `useFilters` hook (or a wrapper like `useChromeOSFilters`) to manage the state and synchronize with the URL.
-
-### 2. Pass Props to Child Components
-Child components that display metrics or need to apply filters should NOT read from the URL directly (via `useSyncedSearchParams` or `getFilters`). Instead, they should receive the following props from the parent:
-- `aip160: string` - The current filter string in AIP-160 format, ready to be used in RPC queries.
-- `setFiltersBatch: (updates: Record<string, string[]>) => void` - A function to apply batch updates to the filters.
-
-### 3. Fetching Data
-Child components should use the `aip160` prop directly in their query hooks (like `client.CountDevices.query`) to ensure they are always in sync with the filter bar.
-
-### 4. Applying Filters on Click
-When a user clicks a metric or action that applies a filter, call `setFiltersBatch` with the desired updates. This will update the hook state in the parent, which will in turn update the URL and trigger a refetch of all queries using the `aip160` prop.
-
-To clear a filter, pass an empty array: `setFiltersBatch({ 'labels."dut_state"': [] })`.
-
-***
-
-**This document represents the active design guidelines for our AIP-160 migration stack. Please refer to this file when writing or debugging filter interactions.**
+1. **Parent Manages State**: Parent pages (`AndroidDevicesPage`, `ChromeOSDevicesPage`) own filter state via `useFilters`.
+2. **Prop Passing**: Pass `aip160: string` and `setFiltersBatch` to child components. Child components do not read the URL directly.
+3. **Data Queries**: Query hooks use the `aip160` string directly to stay in sync with filter bars.
+4. **Click Actions**: Call `setFiltersBatch` with target updates (or empty arrays to clear filters).

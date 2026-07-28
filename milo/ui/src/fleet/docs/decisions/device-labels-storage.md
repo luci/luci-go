@@ -1,25 +1,22 @@
-# Device Labels Storage Design Decisions
+# Device Labels Storage Architecture
 
 ## Context
-We fetch a bunch of static and dynamic labels from various sources that describe a particular device. We needed to decide how to persist that information in the database.
+Fleet Console ingests static and dynamic labels from multiple upstream sources. We needed a database storage model for device metadata.
 
-## Current Architecture
-We use a **hybrid approach**: we have a separate `jsonb` column per each source (e.g., `swarming_labels`, `ufs_labels`), and add separate columns for any customized or calculated columns.
+## Architecture
+We use a **hybrid storage model**: dedicated `jsonb` columns per source (`swarming_labels`, `ufs_labels`) combined with explicit typed columns for custom calculated fields.
 
-## Design Tradeoffs Considered
+## Tradeoffs
 
-### 1. Dump everything into one labels `jsonb` column
-- **Pros:** No DB migrations needed when adding new labels.
-- **Cons:** Lack of strict typing, harder to isolate data sources physically.
+### 1. Single Universal `jsonb` Column
+- **Pros:** No database migrations needed when adding new labels.
+- **Cons:** Weak typing, mixes data sources into one blob.
 
-### 2. Have a separate column for each label
-- **Pros:** Strict typing, data isolation.
-- **Cons:** Migration fatigue (every minor change requires a migration), redundant memory usage for empty fields (NULL values).
+### 2. Dedicated Column Per Label
+- **Pros:** Strict typing and isolated columns.
+- **Cons:** Migration friction for every new label and wasted storage for NULL values.
 
-### 3. Hybrid approach
-- **Pros:** Data isolation at storage level, specific columns for custom labels (benefiting from strict typing where needed), partial updates (if one scraper fails, other data is untouched).
-- **Cons:** Backend needs to handle multiple fields instead of just one.
-- **Decision:** Chosen as it combines the pros of both options without adding too much complication.
-
-## Links
-None.
+### 3. Hybrid Storage (Chosen)
+- **Pros:** Isolates data sources by column, provides strict typing for custom fields, and supports partial updates when individual scrapers fail.
+- **Cons:** Handlers query multiple database fields.
+- **Decision:** Selected because it balances strict typing with schema flexibility.

@@ -1,34 +1,26 @@
-# Unified Device Health Metrics Design Decisions
+# Unified Device Health Metrics Design
 
 ## Context
-The Fleet Console provides a unified, actionable view of device health metrics across Android, ChromeOS, and Browser platforms. By reconciling administrative intent (UFS) with operational reality (Swarming), it ensures that health metrics are exhaustive and that 100% of the fleet capacity is accounted for in the dashboard.
+Fleet Console provides an actionable view of device health across Android, ChromeOS, and Browser platforms by reconciling inventory intent (UFS) with operational reality (Swarming).
 
-## UX Principles & Gestalt Theory
-The design applies Gestalt principles of visual perception to make dense metrics data scannable and intuitive:
-1. **Principle of Proximity**: Related metrics are grouped together in cards (e.g., all Unhealthy states in one card, all Recovering states in a sub-list). This helps users perceive them as a single functional unit and quickly locate what they need.
-2. **Principle of Similarity**: Consistent color coding (emerald for healthy, rose for unhealthy, amber for other, grey for recovering) creates a visual language that allows users to assess fleet health at a glance without reading every label.
-3. **Mutually Exclusive Bucketing**: States are grouped into Healthy, Unhealthy, and Other columns to ensure that the sum of parts equals the total (100% sum). This avoids confusing users with overlapping counts (e.g., when a bot is both Alive and Quarantined in Swarming).
+## UX & Gestalt Principles
+1. **Proximity**: Card layouts group related metrics together (e.g., Unhealthy states in one card, Recovering states in a sub-list).
+2. **Similarity**: Standard colors indicate state: Green (Healthy), Red (Unhealthy), Yellow (Other), Grey (Recovering).
+3. **Mutually Exclusive Buckets**: Grouping states into Healthy, Unhealthy, and Other columns ensures card sums equal 100% of physical devices.
 
-## Platform-Specific Implementations & Plans
+## Platform Implementations
 
 ### Android
-- **Layout**: Uses rows for **Hosts** and **Devices** to separate infrastructure issues from instance issues.
-- **State Accounting**: Categorizes devices into **Online** (`fc_is_offline = false`) and **Offline** (`fc_is_offline = true`) to align with the repairs page and resolve tension between availability and actionability.
-  - **Online**: Includes `IDLE`, `BUSY`, and `LAMEDUCK` (with a grey dot to indicate transitory state).
-  - **Offline**: Split into two sub-columns in the layout:
-    - **Needs Action**: `Missing`, `Failed`, `Dying`, and **Failed device_type** (devices that are Idle/Busy but marked offline due to type).
-    - **Recovering**: `Init`, `Dirty`, `Prepping` (nested under a "Recovering" parent item).
-- **100% Accounting**: Achieved by using `fc_is_offline` boolean flag for top-level Online/Offline counts, ensuring they add up to 100% of total devices.
-- **Scope-Switching Logic**: Automatically clears `state` filters when switching between Host and Device scopes, and applies `fc_is_offline` filters when clicking specific summary cards.
+- **Layout**: Uses rows for **Hosts** and **Devices** to separate infrastructure issues from device issues.
+- **State Accounting**: Categorizes devices into **Online** (`fc_is_offline = false`) and **Offline** (`fc_is_offline = true`).
+  - **Online**: `IDLE`, `BUSY`, and `LAMEDUCK`.
+  - **Offline**: `Missing`, `Failed`, `Dying`, `Init`, `Dirty`, `Prepping`.
+- **Scope Switching**: Clears `state` filters when toggling between Host and Device views, and applies `fc_is_offline` filters on card clicks.
 
-### ChromeOS (Plan)
-- **Layout**: Plan to extend the grid layout to **Labstations** in the top row, accounting for all states (`Need Repair`, `Repair Failed`, etc.).
-- **Recovering States**: States like `Need repair` and `Repair failed` can be grouped as "Recovering" or "Transient" if automation handles them.
+### ChromeOS
+- **Layout**: Extends grid layout to **Labstations** in the top row.
+- **Recovering States**: Groups `Need repair` and `Repair failed` under "Recovering" when automation handles repair workflows.
 
-### Browser (Plan)
-- **Layout**: Plan to use a dedicated left column for **Total Devices** to ground the layout, with stacked rows for **Bots** and **Devices without Bots** on the right.
-- **Missing Definition**: Addresses the "Missing Bot data" challenge by reconciling UFS and Swarming states (Devices marked `SERVING` in UFS but lacking bot data in Swarming are classified as "Missing").
-
-## Implementation Details & Future Work
-- **API Limitations**: Current API support for negative filters on counts is limited, which makes exact counts for "Missing" bots hard to fetch in a single call for Browser.
-- **Parser Support**: Future work includes improving the URL parser to support complex or blank filter queries without triggering invalid state warnings.
+### Browser
+- **Layout**: Uses a left column for **Total Devices**, with stacked rows for **Bots** and **Devices without Bots**.
+- **Missing Bots**: Classifies devices marked `SERVING` in UFS but lacking Swarming registrations as "Missing".

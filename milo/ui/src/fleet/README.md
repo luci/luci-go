@@ -8,18 +8,18 @@ For architectural decisions regarding Material-React-Table usage, see: [mrt-tabl
 
 ## Project Overview
 
-The `fleet` project is a Single Page Application (SPA) that provides a user interface for monitoring and managing the LUCI fleet of bots and drones. It is a subproject of the larger LUCI UI.
+The `fleet` project provides a web interface for monitoring and managing LUCI devices, bots, and drones.
 
 - **Live URL:** [go/fleet-console-prod](https://ci.chromium.org/ui/fleet/labs/p/chromeos/devices)
 
-The primary users are:
-- **Fleet Operations:** For monitoring and managing the overall health of the fleet.
-- **Developers:** For inspecting and debugging the state of devices they are using for tests.
+Target Users:
+- **Fleet Operations:** Monitor and maintain overall fleet health.
+- **Developers:** Inspect and debug test devices.
 
-Key functionalities include:
-- Viewing and filtering lists of devices.
-- Inspecting detailed information for a single device, including its status, properties (dimensions), and current task.
-- Performing management actions like running autorepair on devices.
+Core Features:
+- Filter and search device lists.
+- Inspect device status, properties, and active tasks.
+- Run management tasks like autorepair.
 
 ## Architecture
 

@@ -1,98 +1,73 @@
-# Gemini Code Assist - LUCI Fleet UI Rules
+# LUCI Fleet UI Rules
 
-This document provides the active design guidelines and rules for AI code assistants like Gemini working on the LUCI Fleet Console UI subproject.
+This document provides design guidelines and rules for AI assistants working on the LUCI Fleet Console UI.
 
-For general project overview, architecture, and local setup instructions, see the [README.md](./README.md).
+For a general project overview and local setup, see [README.md](./README.md).
 
-# Style guide
+## Style Guide
 
-## Avoid any
-Do not ever use `any` in typescript code without permission. You should try very hard to avoid it all together but if you truly think that it is necessary get explicit permission before using it. This includes usage of any inside generics IE: `MyType<any>`.
+### Avoid `any`
+Do not use `any` in TypeScript without explicit permission. Use strong types or generics instead (e.g., avoid `MyType<any>`).
 
-# AI Agent Workflow Rules
+## AI Agent Workflow Rules
 
-## 1. Mandatory Verification
-For every task that involves code changes, the agent MUST explicitly add tasks to its `task.md` checklist for running lints, tests, and type-checks. Before declaring any task as "done," you MUST run the following verification suite and complete those tasks. If any step fails, you must fix the error and re-run the suite until it passes.
+### 1. Mandatory Verification
+For code changes, add verification steps to your `task.md` checklist. Before declaring a task done, run:
+- **Linting**: `npm run lint` (or `npm run lint-inc` to lint files changed against `origin/main`). Use `npm run lint -- --fix <path>` to auto-fix styling.
+- **Testing**: `npm test -- <path_to_test_file>` (or `npm test -- ./src/fleet` for all Fleet tests).
+- **Type Checking**: `npm run type-check`.
 
-- **Linting:** Run `npm run lint` to verify linting across the project, or `npm run lint-inc` to quickly lint only files changed against `origin/main`. Use `npm run lint -- --fix <path>` if you need to auto-fix a specific file.
-- **Testing:** Run tests related to your changes using `npm test -- <path_to_test_file>`. To run all Fleet tests, use `npm test -- ./src/fleet`.
-- **Type Checking:** Run `npm run type-check` to ensure no typing regressions were introduced.
+### 2. Definition of Done
+A task or frontend CL is complete when:
+- **Self-Review**: You run [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md) and resolve all critical feedback.
+- **UX & PM Review**: For visual or flow changes, you run [ux-pm-review](./.agents/skills/ux-pm-review/SKILL.md) to check PM alignment, Orwell writing rules, and UX principles.
+- **Verification**: Tests, lints (`npm run lint`), and type checks (`npm run type-check`) pass cleanly.
+- **UI Demo**: You upload a demo for visual or structural UI changes and include testing steps in the commit message.
+- **Commit Message**: Explains the change and references relevant bugs (see [prepare-cl](./.agents/skills/prepare-cl/SKILL.md)).
+- **Direct Upload**: Upload the CL to Gerrit directly via `git cl upload`.
 
-## 2. Definition of Done (Standard Workflow)
-A task or frontend CL is not considered complete until:
-- **Self-Review**: The [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md) workflow has been run and no critical feedback remains.
-- **UX & PM Review**: For any visual, layout, or feature workflow change, the [ux-pm-review](./.agents/skills/ux-pm-review/SKILL.md) workflow has been run to audit Product Manager alignment, Laws of UX, Orwell writing rules, and QA boundary cases.
-- **Verification**: All tests, lints (`npm run lint`), and type-checks (`npm run type-check`) pass successfully.
-- **UI Demo**: A demo has been uploaded (required for any change that adds, removes, or structurally alters visual components, pages, or user flows) and testing steps are included in the commit message.
-- **Commit Message**: The commit message clearly explains the change. If the change fixes a bug, it should reference it in the proper format (see [prepare-cl](./.agents/skills/prepare-cl/SKILL.md) skill for details).
-- **Direct Upload**: The agent should attempt to directly upload the CL and handle presubmits when possible (respecting sandbox limits as detailed in the [prepare-cl](./.agents/skills/prepare-cl/SKILL.md) skill documentation).
+### 3. Self-Review & UX/PM Audits
+- Run [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md) to review diffs before uploading CLs.
+- For major UI features, run [design-tournament](./.agents/skills/design-tournament/SKILL.md) to compare layout options.
+- Audit copy and layouts against [writing-and-ux-principles](./.agents/skills/writing-and-ux-principles/SKILL.md) (Orwell writing rules, Material writing spec, and Laws of UX).
 
-**Failure to follow this workflow results in unnecessary round trips. Following this process is part of the task.**
+### 4. Coding Conventions
+- Rely on TypeScript type inference and narrowing instead of type casting (`as Type`).
 
-## 3. Mandatory Self-Review & UX/PM Subagent Audits
-- For every task that involves code changes, the agent MUST use the [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md) skill to perform a self-review of the diff and address all feedback before declaring the task complete or uploading a CL.
-- For major UI features or open-ended design problems, host a multi-persona [design-tournament](./.agents/skills/design-tournament/SKILL.md) between competing design subagents (M3, Enterprise, Ergonomics) judged by a PM panel.
-- Audit all copy and layout hierarchy against [writing-and-ux-principles](./.agents/skills/writing-and-ux-principles/SKILL.md) (Orwell's writing rules, Material writing spec, and Laws of UX).
+### 5. Temporary File Hygiene
+- Do not run `rm` commands to delete temporary files.
+- Store transient test outputs in the gitignored `.tmp/` directory.
+- Overwrite existing files with empty strings (`""`) to clear disk space without permission prompts.
 
-## 4. Coding Conventions & Best Practices
-- **Avoid type casting unless strictly necessary.** Try to rely on TypeScript's type inference and narrowing instead of using `as Type`.
-
-## 5. Sandbox & Temp File Hygiene (No terminal deletion prompts)
-To maximize productivity and prevent unnecessary manual permission prompts for the user:
-- **Do NOT run `rm` or other terminal deletion commands** to clean up temporary/sandbox files, patches, or log dumps.
-- **Leave transient files in `.tmp/`**: Since `.tmp/` is globally gitignored and excluded from all build tools, leaving files there is completely safe and causes no workspace pollution.
-- **Overwrite instead of delete**: If you need to clear a file's content or size to save disk space, use the `write_to_file` tool to overwrite the file with an empty string (`""`) rather than running `rm`.
-
-## 6. Proto Generation
-When updating proto definitions for Fleet Console, **DO NOT** run the global `npm run gen-proto` (which executes `scripts/gen_proto.sh`). That script compiles all LUCI service protos and will pollute your workspace with unrelated upstream changes.
-Instead, run the FCon-specific script from the `milo/ui` directory:
+### 6. Proto Generation
+Do not run root `npm run gen-proto`. Run the Fleet-specific script from `milo/ui/`:
 ```sh
 bash src/fleet/gen_ts_proto.sh
 ```
-This will compile only the Fleet Console protos, keeping the CL diff minimal and clean.
 
-## Architectural Principles & Design Documentation
-We maintain documentation of key architectural principles and design tradeoffs in `decisions/` directories.
-- Frontend-specific and cross-cutting docs live in `./docs/decisions/`
-- Backend-specific docs live in `../../../../../../infra/fleetconsole/decisions/`
-- **Keep migration status current:** As you make progress on migrations (like the AIP-160 transition), please update the relevant decision documents to reflect the current technical status quo and future intent to avoid confusion / regressions when migrations are in transition states.
+## Architectural Principles & Decisions
+Architecture decision records live in `docs/decisions/`:
+- **Keep Status Current**: Update decision docs as migrations progress to reflect current technical status.
 
 ## Available Skills
-To avoid context bloat, detailed procedural knowledge and domain-specific instructions are extracted into **Skills**. The harness loads these skills on-demand based on your task. Skills follow the open standard defined at [agentskills.io](https://agentskills.io/home). You can find available skills in:
-- `src/fleet/.agents/skills/`
-
-Available skills include:
+Detailed procedural workflows live in [.agents/skills/](./.agents/skills/):
 - [prepare-cl](./.agents/skills/prepare-cl/SKILL.md)
 - [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md)
 - [ux-pm-review](./.agents/skills/ux-pm-review/SKILL.md)
 - [design-tournament](./.agents/skills/design-tournament/SKILL.md)
 - [writing-and-ux-principles](./.agents/skills/writing-and-ux-principles/SKILL.md)
-- [manual-testing](./.agents/skills/manual-testing/SKILL.md)
-- [aip160-filtering](./.agents/skills/aip160-filtering/SKILL.md)
-- [high-density-ui](./.agents/skills/high-density-ui/SKILL.md)
-- [project-verification](./.agents/skills/project-verification/SKILL.md)
-- [ux-prototyping](./.agents/skills/ux-prototyping/SKILL.md)
-- [preventing-workspace-leakage](./.agents/skills/preventing-workspace-leakage/SKILL.md)
-- [managing-parallel-workspaces](./.agents/skills/managing-parallel-workspaces/SKILL.md)
-- [bypassing-interactive-prompts](./.agents/skills/bypassing-interactive-prompts/SKILL.md)
-- [authoring-skills](./.agents/skills/authoring-skills/SKILL.md)
-- [continuous-improvement](./.agents/skills/continuous-improvement/SKILL.md)
-- [coordinating-multiple-repositories](./.agents/skills/coordinating-multiple-repositories/SKILL.md)
-- [frontend-performance-optimization](./.agents/skills/frontend-performance-optimization/SKILL.md)
 - [gerrit-workflows](./.agents/skills/gerrit-workflows/SKILL.md)
+- [high-density-ui](./.agents/skills/high-density-ui/SKILL.md)
 
+Shared repository skills live in [../../../../.agents/skills](../../../../.agents/skills).
 
-## Confidentiality Guidelines
-This project is open source. When writing code, documentation, or commit messages:
-- **DO NOT** leak internal confidential information.
-- **DO NOT** include sensitive server names, non-public URLs, or internal credentials in code or docs.
-- `go/` links are allowed, but the link text itself (e.g., the short link name) **must not** contain confidential information.
-- Redact or use placeholders for sensitive details if necessary.
+## Confidentiality
+This project is open source:
+- Do not leak internal confidential details, private URLs, or credentials.
+- Ensure `go/` link titles do not expose sensitive project names.
 
-## 7. Gerrit Upload & Branching Safety Rule
-To prevent accidental pushes, stacked chain conflicts, or overwriting unrelated Change Lists (CLs) in Gerrit:
-- **Mandatory Workflow**: Before creating any local branch or running `git cl upload`, the agent MUST view and follow the guidelines in the [gerrit-workflows](./.agents/skills/gerrit-workflows/SKILL.md) skill.
-- **Safety Checks**:
-  1. Always branch from remote `origin/main` (never from unpushed local commits unless explicitly stacking).
-  2. Before upload, verify that the local commits log matches the target CL: `git log origin/main..HEAD --oneline`
-  3. Verify the CL association using `git cl issue` and use `git cl issue 0` to prevent overwriting unrelated CLs.
+## 7. Gerrit Upload Safety
+Follow [gerrit-workflows](./.agents/skills/gerrit-workflows/SKILL.md) before creating branches or running `git cl upload`:
+1. Branch from `origin/main`.
+2. Verify local commits before upload: `git log origin/main..HEAD --oneline`.
+3. Check CL issue association with `git cl issue`.
