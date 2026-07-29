@@ -26,11 +26,13 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { StyledIconButton } from '@/common/components/gm3_styled_components';
 import {
   FeatureFlag,
+  getCurrentEnvironment,
+  isFlagAvailableInEnvironment,
   useAvailableFlags,
   useGetFlagStatus,
 } from '@/common/feature_flags/';
@@ -39,7 +41,19 @@ export function AvailableFlags() {
   const availableFlags = useAvailableFlags();
   const getFlagStatus = useGetFlagStatus();
   const [open, setOpen] = useState(false);
-  const flagValues = [...availableFlags.values()];
+
+  const currentEnv = getCurrentEnvironment();
+  const flagValues = useMemo(
+    () =>
+      [...availableFlags.values()].filter((f) =>
+        isFlagAvailableInEnvironment(f.status.flag, currentEnv),
+      ),
+    [availableFlags, currentEnv],
+  );
+
+  if (flagValues.length === 0) {
+    return null;
+  }
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -66,11 +80,11 @@ export function AvailableFlags() {
         role="button"
         aria-label="Toggle feature flags"
         title={
-          availableFlags.size === 0
+          flagValues.length === 0
             ? 'No available flags'
             : 'Toggle feature flags'
         }
-        disabled={availableFlags.size === 0}
+        disabled={flagValues.length === 0}
       >
         <ScienceIcon />
       </StyledIconButton>

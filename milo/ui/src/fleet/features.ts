@@ -20,6 +20,7 @@ export const enableModernInventoryCards = createFeatureFlag({
   name: 'modern-inventory-cards',
   percentage: 0,
   trackingBug: '388907865',
+  allowedEnvironments: ['dev'],
 });
 
 export const enableAndroidUtilizationMetrics = createFeatureFlag({
@@ -29,6 +30,7 @@ export const enableAndroidUtilizationMetrics = createFeatureFlag({
   name: 'android-utilization-metrics',
   percentage: 0,
   trackingBug: '525089400',
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const enableInventoryEditing = createFeatureFlag({
@@ -37,4 +39,5 @@ export const enableInventoryEditing = createFeatureFlag({
   name: 'inventory-editing',
   percentage: 0,
   trackingBug: '388907865',
+  allowedEnvironments: ['dev'],
 });

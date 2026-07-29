@@ -21,6 +21,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 import {
   createFeatureFlag,
   FeatureFlag,
+  isFlagAvailableInEnvironment,
   useAvailableFlags,
   useFeatureFlag,
 } from './context';
@@ -124,5 +125,28 @@ describe('Feature flags', () => {
       expect(screen.getByText('available flags 1')).toBeInTheDocument();
       expect(screen.getByText('available observers 1')).toBeInTheDocument();
     });
+  });
+
+  it('should determine environment availability based on allowedEnvironments', () => {
+    const devOnlyFlag = createFeatureFlag({
+      description: 'Dev flag',
+      namespace: 'test',
+      name: 'dev-flag',
+      percentage: 0,
+      trackingBug: '123',
+    });
+    const prodFlag = createFeatureFlag({
+      description: 'Prod flag',
+      namespace: 'test',
+      name: 'prod-flag',
+      percentage: 0,
+      trackingBug: '123',
+      allowedEnvironments: ['dev', 'prod'],
+    });
+
+    expect(isFlagAvailableInEnvironment(devOnlyFlag, 'dev')).toBe(true);
+    expect(isFlagAvailableInEnvironment(devOnlyFlag, 'prod')).toBe(false);
+    expect(isFlagAvailableInEnvironment(prodFlag, 'dev')).toBe(true);
+    expect(isFlagAvailableInEnvironment(prodFlag, 'prod')).toBe(true);
   });
 });

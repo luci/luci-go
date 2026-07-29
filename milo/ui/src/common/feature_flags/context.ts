@@ -29,6 +29,8 @@ import { hashStringToNum } from '../../generic_libs/tools/string_utils';
 import { ANONYMOUS_IDENTITY } from '../api/auth_state';
 import { logging } from '../tools/logging';
 
+export type FeatureEnvironment = 'dev' | 'prod';
+
 export interface FeatureFlagConfig {
   /**
    * The namespace that the flag belongs to, used in calculating flag status.
@@ -64,6 +66,37 @@ export interface FeatureFlagConfig {
    * The bug tracking this flags rollout.
    */
   readonly trackingBug: string;
+
+  /**
+   * Target environments where this feature flag can be toggled/available.
+   * If omitted, defaults to `['dev']` (only available in localhost and dev environments).
+   */
+  readonly allowedEnvironments?: readonly FeatureEnvironment[];
+}
+
+export function getCurrentEnvironment(): FeatureEnvironment {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname === '::1' ||
+      hostname.endsWith('.localhost') ||
+      hostname.includes('-dev')
+    ) {
+      return 'dev';
+    }
+  }
+  return 'prod';
+}
+
+export function isFlagAvailableInEnvironment(
+  flag: FeatureFlag,
+  env: FeatureEnvironment = getCurrentEnvironment(),
+): boolean {
+  const allowedEnvs = flag.config.allowedEnvironments ?? ['dev'];
+  return allowedEnvs.includes(env);
 }
 
 // DO NOT export this symbol as it is used to seal
@@ -195,6 +228,8 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
   const addFlagToAvailableFlags = useAddFlagToAvailableFlags();
   const removeFlagFromAvailableFlags = useRemoveFlagFromAvailableFlags();
 
+  const isAvailableInEnv = isFlagAvailableInEnvironment(featureFlag);
+
   // Check the local storage to see if the user has overriden the feature flag value.
   const [overrideValue, flagObserver] = useLocalStorage(
     `featureFlag:${featureFlagConfig.namespace}:${featureFlagConfig.name}`,
@@ -202,6 +237,9 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
     { raw: true },
   );
   const flagStatus = useMemo(() => {
+    if (!isAvailableInEnv) {
+      return false;
+    }
     if (overrideValue) {
       // Values other than on or off are ignored.
       if (overrideValue === 'on') {
@@ -231,6 +269,7 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
       Math.min(userActivationThreshold, 80) <= featureFlagConfig.percentage
     );
   }, [
+    isAvailableInEnv,
     overrideValue,
     featureFlagConfig.namespace,
     featureFlagConfig.name,
@@ -253,8 +292,8 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
     featureFlag,
   ]);
 
-  // we always return false if the user is not logged in.
-  if (identity === ANONYMOUS_IDENTITY) {
+  // we always return false if the user is not logged in or flag is not available in environment.
+  if (identity === ANONYMOUS_IDENTITY || !isAvailableInEnv) {
     return false;
   }
   return flagStatus;

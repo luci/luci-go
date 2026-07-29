@@ -14,6 +14,8 @@
 
 export {
   createFeatureFlag,
+  getCurrentEnvironment,
+  isFlagAvailableInEnvironment,
   useAddFlagToAvailableFlags,
   useAvailableFlags,
   useFeatureFlag,
@@ -24,6 +26,7 @@ export {
 
 export type {
   ActiveFlag,
+  FeatureEnvironment,
   FeatureFlag,
   FeatureFlagConfig,
   FeatureFlagStatus,

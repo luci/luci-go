@@ -43,10 +43,6 @@ export const Header = ({
   const authState = useAuthState();
   const isInPlatformScope = useIsInPlatformScope();
 
-  const showAvailableFlags =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname.includes('-dev');
-
   return (
     <header
       css={{
@@ -132,7 +128,7 @@ export const Header = ({
             <ExtensionOutlined sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
-        {showAvailableFlags && <AvailableFlags />}
+        <AvailableFlags />
         <SettingsMenu />
         {!authState.identity || authState.identity === ANONYMOUS_IDENTITY ? (
           <Button

@@ -14,12 +14,15 @@ export const myNewFeatureFlag = createFeatureFlag({
   name: 'my-new-feature',
   percentage: 0,
   trackingBug: '123456789',
+  allowedEnvironments: ['dev'], // Defaults to ['dev']. Set to ['dev', 'prod'] to allow in production.
 });
 ```
 
-## Environment Access
-- **Localhost and Dev**: The feature flag toggle button (`<AvailableFlags />`) in the header renders only when `hostname` is `localhost` or includes `-dev`.
-- **Production**: The header button is hidden to prevent end users from toggling active rollout features.
+## Environment Filtering & UI Visibility
+The feature flag toggle button (`<AvailableFlags />`) in the header automatically filters flags by the current environment (e.g. `dev` vs `prod`).
+- Flags with `allowedEnvironments: ['dev']` (the default) will only be available in `localhost` and `-dev` environments.
+- Flags configured with `allowedEnvironments: ['dev', 'prod']` will also be available for toggling in production.
+- If no flags are allowed in the current environment, the `<AvailableFlags />` icon is hidden automatically.
 
 ## Manual Overrides in Production
 You can toggle flags in production using DevTools Console:
