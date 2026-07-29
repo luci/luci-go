@@ -292,19 +292,26 @@ func (r *requirement) ToProto() (*gerritpb.Requirement, error) {
 }
 
 type fileInfo struct {
-	LinesInserted int32 `json:"lines_inserted"`
-	LinesDeleted  int32 `json:"lines_deleted"`
-	SizeDelta     int64 `json:"size_delta"`
-	Size          int64 `json:"size"`
+	Status        string `json:"status"`
+	OldPath       string `json:"old_path"`
+	LinesInserted int32  `json:"lines_inserted"`
+	LinesDeleted  int32  `json:"lines_deleted"`
+	SizeDelta     int64  `json:"size_delta"`
+	Size          int64  `json:"size"`
 }
 
 func (fi *fileInfo) ToProto() *gerritpb.FileInfo {
-	return &gerritpb.FileInfo{
+	ret := &gerritpb.FileInfo{
+		OldPath:       fi.OldPath,
 		LinesInserted: fi.LinesInserted,
 		LinesDeleted:  fi.LinesDeleted,
 		SizeDelta:     fi.SizeDelta,
 		Size:          fi.Size,
 	}
+	if v, ok := gerritpb.FileInfo_Status_value[fi.Status]; ok {
+		ret.Status = gerritpb.FileInfo_Status(v)
+	}
+	return ret
 }
 
 type revisionInfo struct {

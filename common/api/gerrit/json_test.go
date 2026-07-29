@@ -261,6 +261,8 @@ func TestFileInfoToProto(t *testing.T) {
 	t.Parallel()
 
 	fi := &fileInfo{
+		Status:        "R",
+		OldPath:       "DEPS",
 		LinesInserted: 10,
 		LinesDeleted:  5,
 		SizeDelta:     120,
@@ -268,6 +270,8 @@ func TestFileInfoToProto(t *testing.T) {
 	}
 	got := fi.ToProto()
 	want := &gerritpb.FileInfo{
+		Status:        gerritpb.FileInfo_R,
+		OldPath:       "DEPS",
 		LinesInserted: 10,
 		LinesDeleted:  5,
 		SizeDelta:     120,
