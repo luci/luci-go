@@ -87,7 +87,7 @@ export const DeviceDetailsCard = ({
         <PropertyField label="Board" value={board}>
           {board ? (
             <Link
-              href={`https://go/dlm-board/${encodeURIComponent(board)}`}
+              href={`http://go/dlm-board/${encodeURIComponent(board)}`}
               target="_blank"
               rel="noreferrer"
               sx={{ textDecoration: 'none' }}
@@ -106,7 +106,7 @@ export const DeviceDetailsCard = ({
         <PropertyField label="Model" value={model}>
           {model ? (
             <Link
-              href={`https://go/dlm-model/${encodeURIComponent(model)}`}
+              href={`http://go/dlm-model/${encodeURIComponent(model)}`}
               target="_blank"
               rel="noreferrer"
               sx={{ textDecoration: 'none' }}

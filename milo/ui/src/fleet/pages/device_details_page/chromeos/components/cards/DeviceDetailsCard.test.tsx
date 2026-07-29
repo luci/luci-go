@@ -42,12 +42,12 @@ describe('<DeviceDetailsCard />', () => {
     // Verify Board link
     const boardLink = screen.getByRole('link', { name: 'eve-board' });
     expect(boardLink).toBeVisible();
-    expect(boardLink).toHaveAttribute('href', 'https://go/dlm-board/eve-board');
+    expect(boardLink).toHaveAttribute('href', 'http://go/dlm-board/eve-board');
 
     // Verify Model link
     const modelLink = screen.getByRole('link', { name: 'eve-model' });
     expect(modelLink).toBeVisible();
-    expect(modelLink).toHaveAttribute('href', 'https://go/dlm-model/eve-model');
+    expect(modelLink).toHaveAttribute('href', 'http://go/dlm-model/eve-model');
 
     // Verify old fields are not rendered
     expect(screen.queryByText('UFS Resource Name')).toBeNull();
