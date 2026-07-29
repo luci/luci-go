@@ -20,7 +20,7 @@ Progress:
 - [ ] Step 1: Audit Copy against Orwell's 6 Writing Rules & Material Writing Spec
 - [ ] Step 2: Audit UI Hierarchy against Laws of UX (Hick's, Fitts's, Miller's, Jakob's)
 - [ ] Step 3: Audit Spacing & Grouping against Gestalt Laws of Proximity & Common Region
-- [ ] Step 4: Verify Zero AIP-160 Backend Jargon in User-Facing Labels
+- [ ] Step 4: Verify Zero Backend Jargon or Implementation Details in User-Facing Labels
 
 ---
 
@@ -31,49 +31,57 @@ Progress:
 
 ---
 
-## 1. George Orwell's 6 Rules for Software Interfaces
+## 1. George Orwell's 6 Rules for Software & Documentation
 
-Apply Orwell's rules universally across all Fleet Console domain pages:
+Apply Orwell's rules universally across all Fleet Console interfaces, documentation markdown files (`docs/`), decision records, inline code comments, backend logs, and commit messages:
 
 1. **Never use a metaphor, simile, or other figure of speech which you are used to seeing in print**:
    - Keep software messaging literal, objective, and clear across all catalog specs, inventory logs, and resource insights.
 2. **Never use a long word where a short one will do**:
-   - Bad: "Utilize the filtering functionality below"
-   - Good: "Filter devices"
-   - Bad: "Execute resource allocation request"
-   - Good: "Request capacity"
+   - Bad: "Utilize the filtering functionality below" / "Facilitate device allocation"
+   - Good: "Filter devices" / "Help allocate devices"
 3. **If it is possible to cut a word out, always cut it out**:
+   - Eliminate filler phrases, wordiness, and redundant adverbs to improve human readability and optimize prompt token efficiency for AI coding assistants.
    - Bad: "Preset filter scoping is currently active. Select another option below to switch:"
    - Good: "Select an option to switch scope:"
-   - Bad: "Displaying total count of 24,180 total devices"
-   - Good: "24,180 devices"
 4. **Never use the passive where you can use the active**:
    - Bad: "15 devices are required to be triaged by technicians"
-   - Good: "Triage 15 offline devices →"
-   - Bad: "Resource request was approved by admin"
-   - Good: "Admin approved request"
+   - Good: "Triage 15 offline devices ->"
 5. **Never use a foreign phrase, a scientific word, or a jargon word if you can think of an everyday English equivalent**:
-   - Bad: `fc_is_offline = true` (Repairs) / `device_model_name` (Catalog) / `requested_qps_quota` (Requests) / `widget_refresh_ms` (Dashboards)
-   - Good: "Offline devices" / "Model name" / "Requested quota" / "Refresh interval"
+   - Bad: `fc_is_offline = true` (Repairs) / `device_model_name` (Catalog)
+   - Good: "Offline devices" / "Model name"
 6. **Break any of these rules sooner than say anything outright barbarous**:
    - Avoid alarmist security/error warnings for simple software scoping concepts or non-destructive user actions.
 
+### Text Formatting & Syntax Rules
+- **Plain Text Arrows**: Use standard text arrows (`->`, `<-`) instead of LaTeX math syntax (`$\rightarrow$`, `$\leftarrow$`).
+- **Prompt Token Efficiency**: Streamlined docs and comments keep AI agent context windows clean and focused.
+
 ---
 
-## 2. Material Design Writing & Communication Spec
+## 2. Material Design 3 Content Design Spec
 
-Follow the official Google Material Design Writing Guide:
-- **User-Centric & Objective-First**: Lead with the action or benefit to the user.
-  - *Catalog*: "Browse product catalog (48) →"
-  - *Repairs*: "Triage offline devices (15) →"
-  - *Requests*: "Create resource request →"
-- **Direct User Address**: Use "you" and "your" when talking to the user.
-  - *Example*: "Save as your default view" / "Your active resource requests"
+Follow the official [Material 3 Content Design Guide](https://m3.material.io/foundations/content-design/overview):
+
+### A. Core Content Design Pillars
+- **Clear**: Write in plain, everyday language. Lead with user goals and avoid backend implementation details, raw database fields, or internal protocol syntax in user-facing labels.
+- **Concise**: Keep copy direct and scannable. Use short sentences, cut filler words, and avoid long dense text blocks.
+- **Useful**: Provide actionable next steps and clearly state what happens when users perform an action.
+
+### B. UI Copy Rules
+- **Sentence Case**: Use sentence case for all UI elements including page titles, section headers, dialog titles, table column headers, form labels, tooltips, and button text (e.g., *Device details*, *Admin access required*, *Resource name*). Reserve uppercase exclusively for small overline category tags.
+- **Imperative Action Verbs**: Use direct imperative action verbs for interactive buttons and menu items:
+  - *Sign in* (not *User Login*)
+  - *Sign out* (not *Logout*)
+  - *Report a bug* (not *Bug Reporting*)
+  - *Request a feature* (not *Feature Request*)
+  - *Reset defaults* (not *Default Values*)
+  - *Save changes* (not *Submit*)
+- **Active Voice & Present Tense**: Write notification banners, toasts, and alert components in present tense active voice without passive constructions (*"Failed to save filters. Try again."*).
+- **Direct User Address**: Use "you" and "your" when referring to user-owned views or settings (*"Save as your default view"*).
 - **Clean Numeral & Percentage Formatting**:
   - Format large numbers with locale separators (`29,087 devices`, `70,893 total`).
   - Format percentages cleanly with 1 decimal place (`94.2%`), avoiding raw float representation (`94.238472%`).
-- **Sentence Case**: Use sentence case for UI labels, section titles, table column headers, and action buttons (except proper nouns).
-  - *Example*: "Total fleet capacity" (Sentence case) vs "TOTAL FLEET CAPACITY" (Uppercase reserved for small overline category tags only).
 
 ---
 

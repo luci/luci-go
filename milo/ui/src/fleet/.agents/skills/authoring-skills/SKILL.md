@@ -32,6 +32,11 @@ Follow these standards when creating or updating agentic skills in this reposito
 6. **Skill Registry Search & Deduplication**:
     - Before authoring a new skill, you MUST list and search the existing skills directory (`src/fleet/.agents/skills/`) to check if a skill with similar functionality or description already exists. Propose to expand or merge into the existing skill manual rather than creating a duplicate.
 
+7. **Anti-Overfitting & Generalization Guardrails**:
+    - **Avoid Context Leakage**: Never hardcode temporary task artifacts, specific ticket/protocol codenames, or transient migration names into general skill guidelines or writing rules unless the skill is specifically scoped to that exact protocol.
+    - **The Replaceability Test**: Ask: *"If another team copied this skill to a completely different project next year, would every rule still make 100% sense?"* If a rule relies on transient project context, abstract it into a universal principle (e.g., *"avoid raw database fields, backend implementation details, or internal protocol syntax in user-facing labels"*).
+    - **Separate Abstraction from Illustration**: State abstract principles first. Use illustrative examples only to clarify the principle, and label them clearly under generic domains (*devices*, *users*, *settings*).
+
 ## Skill Validation Process
 
 Before checking in a new or modified skill, you MUST validate that it works as expected by running it through a subagent:
