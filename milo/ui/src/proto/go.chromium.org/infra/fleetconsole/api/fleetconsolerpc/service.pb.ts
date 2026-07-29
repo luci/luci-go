@@ -71,10 +71,14 @@ import {
 import {
   CountResourceRequestsRequest,
   CountResourceRequestsResponse,
+  GetGceProductCatalogFilterValuesRequest,
+  GetGceProductCatalogFilterValuesResponse,
   GetProductCatalogFilterValuesRequest,
   GetProductCatalogFilterValuesResponse,
   GetResourceRequestsMultiselectFilterValuesRequest,
   GetResourceRequestsMultiselectFilterValuesResponse,
+  ListGceProductCatalogEntriesRequest,
+  ListGceProductCatalogEntriesResponse,
   ListProductCatalogEntriesRequest,
   ListProductCatalogEntriesResponse,
   ListResourceRequestsRequest,
@@ -337,6 +341,12 @@ export interface FleetConsole {
   GetProductCatalogFilterValues(
     request: GetProductCatalogFilterValuesRequest,
   ): Promise<GetProductCatalogFilterValuesResponse>;
+  ListGceProductCatalogEntries(
+    request: ListGceProductCatalogEntriesRequest,
+  ): Promise<ListGceProductCatalogEntriesResponse>;
+  GetGceProductCatalogFilterValues(
+    request: GetGceProductCatalogFilterValuesRequest,
+  ): Promise<GetGceProductCatalogFilterValuesResponse>;
   GetSmartRepair(request: GetSmartRepairRequest): Promise<GetSmartRepairResponse>;
   GetDeviceACLs(request: GetDeviceACLsRequest): Promise<GetDeviceACLsResponse>;
   UpdateChromeOSDevice(request: UpdateChromeOSDeviceRequest): Promise<UpdateChromeOSDeviceResponse>;
@@ -387,6 +397,8 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ScheduleBuild = this.ScheduleBuild.bind(this);
     this.ListProductCatalogEntries = this.ListProductCatalogEntries.bind(this);
     this.GetProductCatalogFilterValues = this.GetProductCatalogFilterValues.bind(this);
+    this.ListGceProductCatalogEntries = this.ListGceProductCatalogEntries.bind(this);
+    this.GetGceProductCatalogFilterValues = this.GetGceProductCatalogFilterValues.bind(this);
     this.GetSmartRepair = this.GetSmartRepair.bind(this);
     this.GetDeviceACLs = this.GetDeviceACLs.bind(this);
     this.UpdateChromeOSDevice = this.UpdateChromeOSDevice.bind(this);
@@ -617,6 +629,22 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = GetProductCatalogFilterValuesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetProductCatalogFilterValues", data);
     return promise.then((data) => GetProductCatalogFilterValuesResponse.fromJSON(data));
+  }
+
+  ListGceProductCatalogEntries(
+    request: ListGceProductCatalogEntriesRequest,
+  ): Promise<ListGceProductCatalogEntriesResponse> {
+    const data = ListGceProductCatalogEntriesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListGceProductCatalogEntries", data);
+    return promise.then((data) => ListGceProductCatalogEntriesResponse.fromJSON(data));
+  }
+
+  GetGceProductCatalogFilterValues(
+    request: GetGceProductCatalogFilterValuesRequest,
+  ): Promise<GetGceProductCatalogFilterValuesResponse> {
+    const data = GetGceProductCatalogFilterValuesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetGceProductCatalogFilterValues", data);
+    return promise.then((data) => GetGceProductCatalogFilterValuesResponse.fromJSON(data));
   }
 
   GetSmartRepair(request: GetSmartRepairRequest): Promise<GetSmartRepairResponse> {

@@ -187,6 +187,42 @@ export interface GetProductCatalogFilterValuesResponse {
   readonly scopedProductType: readonly ProductCatalogFilterValue[];
 }
 
+export interface ListGceProductCatalogEntriesRequest {
+  readonly filter: string;
+}
+
+export interface ListGceProductCatalogEntriesResponse {
+  readonly entries: readonly GceProductCatalogEntry[];
+}
+
+export interface GceProductCatalogEntry {
+  readonly productCatalogId: string;
+  readonly productName: string;
+  readonly descriptiveName: string;
+  readonly cpuType: string;
+  readonly cpuNumPerVm: number;
+  readonly memoryGbPerVm: number;
+  readonly fleetPlmStatus: string;
+  readonly productType: string;
+}
+
+export interface GetGceProductCatalogFilterValuesRequest {
+  readonly filter: string;
+}
+
+export interface GetGceProductCatalogFilterValuesResponse {
+  readonly productCatalogId: readonly string[];
+  readonly productName: readonly string[];
+  readonly cpuType: readonly string[];
+  readonly fleetPlmStatus: readonly string[];
+  readonly productType: readonly string[];
+  readonly scopedProductCatalogId: readonly ProductCatalogFilterValue[];
+  readonly scopedProductName: readonly ProductCatalogFilterValue[];
+  readonly scopedCpuType: readonly ProductCatalogFilterValue[];
+  readonly scopedFleetPlmStatus: readonly ProductCatalogFilterValue[];
+  readonly scopedProductType: readonly ProductCatalogFilterValue[];
+}
+
 function createBaseListResourceRequestsRequest(): ListResourceRequestsRequest {
   return { pageSize: 0, pageToken: "", orderBy: "", filter: "" };
 }
@@ -2697,6 +2733,600 @@ export const GetProductCatalogFilterValuesResponse: MessageFns<GetProductCatalog
     message.scopedFleetPlmStatus = object.scopedFleetPlmStatus?.map((e) => ProductCatalogFilterValue.fromPartial(e)) ||
       [];
     message.scopedR11n = object.scopedR11n?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    message.scopedProductType = object.scopedProductType?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseListGceProductCatalogEntriesRequest(): ListGceProductCatalogEntriesRequest {
+  return { filter: "" };
+}
+
+export const ListGceProductCatalogEntriesRequest: MessageFns<ListGceProductCatalogEntriesRequest> = {
+  encode(message: ListGceProductCatalogEntriesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.filter !== "") {
+      writer.uint32(10).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListGceProductCatalogEntriesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListGceProductCatalogEntriesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListGceProductCatalogEntriesRequest {
+    return { filter: isSet(object.filter) ? globalThis.String(object.filter) : "" };
+  },
+
+  toJSON(message: ListGceProductCatalogEntriesRequest): unknown {
+    const obj: any = {};
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListGceProductCatalogEntriesRequest>): ListGceProductCatalogEntriesRequest {
+    return ListGceProductCatalogEntriesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListGceProductCatalogEntriesRequest>): ListGceProductCatalogEntriesRequest {
+    const message = createBaseListGceProductCatalogEntriesRequest() as any;
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseListGceProductCatalogEntriesResponse(): ListGceProductCatalogEntriesResponse {
+  return { entries: [] };
+}
+
+export const ListGceProductCatalogEntriesResponse: MessageFns<ListGceProductCatalogEntriesResponse> = {
+  encode(message: ListGceProductCatalogEntriesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.entries) {
+      GceProductCatalogEntry.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListGceProductCatalogEntriesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListGceProductCatalogEntriesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.entries.push(GceProductCatalogEntry.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListGceProductCatalogEntriesResponse {
+    return {
+      entries: globalThis.Array.isArray(object?.entries)
+        ? object.entries.map((e: any) => GceProductCatalogEntry.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ListGceProductCatalogEntriesResponse): unknown {
+    const obj: any = {};
+    if (message.entries?.length) {
+      obj.entries = message.entries.map((e) => GceProductCatalogEntry.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListGceProductCatalogEntriesResponse>): ListGceProductCatalogEntriesResponse {
+    return ListGceProductCatalogEntriesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListGceProductCatalogEntriesResponse>): ListGceProductCatalogEntriesResponse {
+    const message = createBaseListGceProductCatalogEntriesResponse() as any;
+    message.entries = object.entries?.map((e) => GceProductCatalogEntry.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGceProductCatalogEntry(): GceProductCatalogEntry {
+  return {
+    productCatalogId: "",
+    productName: "",
+    descriptiveName: "",
+    cpuType: "",
+    cpuNumPerVm: 0,
+    memoryGbPerVm: 0,
+    fleetPlmStatus: "",
+    productType: "",
+  };
+}
+
+export const GceProductCatalogEntry: MessageFns<GceProductCatalogEntry> = {
+  encode(message: GceProductCatalogEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.productCatalogId !== "") {
+      writer.uint32(10).string(message.productCatalogId);
+    }
+    if (message.productName !== "") {
+      writer.uint32(18).string(message.productName);
+    }
+    if (message.descriptiveName !== "") {
+      writer.uint32(26).string(message.descriptiveName);
+    }
+    if (message.cpuType !== "") {
+      writer.uint32(34).string(message.cpuType);
+    }
+    if (message.cpuNumPerVm !== 0) {
+      writer.uint32(45).float(message.cpuNumPerVm);
+    }
+    if (message.memoryGbPerVm !== 0) {
+      writer.uint32(53).float(message.memoryGbPerVm);
+    }
+    if (message.fleetPlmStatus !== "") {
+      writer.uint32(58).string(message.fleetPlmStatus);
+    }
+    if (message.productType !== "") {
+      writer.uint32(66).string(message.productType);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GceProductCatalogEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGceProductCatalogEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.productCatalogId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.productName = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.descriptiveName = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.cpuType = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 45) {
+            break;
+          }
+
+          message.cpuNumPerVm = reader.float();
+          continue;
+        }
+        case 6: {
+          if (tag !== 53) {
+            break;
+          }
+
+          message.memoryGbPerVm = reader.float();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.fleetPlmStatus = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.productType = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GceProductCatalogEntry {
+    return {
+      productCatalogId: isSet(object.productCatalogId) ? globalThis.String(object.productCatalogId) : "",
+      productName: isSet(object.productName) ? globalThis.String(object.productName) : "",
+      descriptiveName: isSet(object.descriptiveName) ? globalThis.String(object.descriptiveName) : "",
+      cpuType: isSet(object.cpuType) ? globalThis.String(object.cpuType) : "",
+      cpuNumPerVm: isSet(object.cpuNumPerVm) ? globalThis.Number(object.cpuNumPerVm) : 0,
+      memoryGbPerVm: isSet(object.memoryGbPerVm) ? globalThis.Number(object.memoryGbPerVm) : 0,
+      fleetPlmStatus: isSet(object.fleetPlmStatus) ? globalThis.String(object.fleetPlmStatus) : "",
+      productType: isSet(object.productType) ? globalThis.String(object.productType) : "",
+    };
+  },
+
+  toJSON(message: GceProductCatalogEntry): unknown {
+    const obj: any = {};
+    if (message.productCatalogId !== "") {
+      obj.productCatalogId = message.productCatalogId;
+    }
+    if (message.productName !== "") {
+      obj.productName = message.productName;
+    }
+    if (message.descriptiveName !== "") {
+      obj.descriptiveName = message.descriptiveName;
+    }
+    if (message.cpuType !== "") {
+      obj.cpuType = message.cpuType;
+    }
+    if (message.cpuNumPerVm !== 0) {
+      obj.cpuNumPerVm = message.cpuNumPerVm;
+    }
+    if (message.memoryGbPerVm !== 0) {
+      obj.memoryGbPerVm = message.memoryGbPerVm;
+    }
+    if (message.fleetPlmStatus !== "") {
+      obj.fleetPlmStatus = message.fleetPlmStatus;
+    }
+    if (message.productType !== "") {
+      obj.productType = message.productType;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GceProductCatalogEntry>): GceProductCatalogEntry {
+    return GceProductCatalogEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GceProductCatalogEntry>): GceProductCatalogEntry {
+    const message = createBaseGceProductCatalogEntry() as any;
+    message.productCatalogId = object.productCatalogId ?? "";
+    message.productName = object.productName ?? "";
+    message.descriptiveName = object.descriptiveName ?? "";
+    message.cpuType = object.cpuType ?? "";
+    message.cpuNumPerVm = object.cpuNumPerVm ?? 0;
+    message.memoryGbPerVm = object.memoryGbPerVm ?? 0;
+    message.fleetPlmStatus = object.fleetPlmStatus ?? "";
+    message.productType = object.productType ?? "";
+    return message;
+  },
+};
+
+function createBaseGetGceProductCatalogFilterValuesRequest(): GetGceProductCatalogFilterValuesRequest {
+  return { filter: "" };
+}
+
+export const GetGceProductCatalogFilterValuesRequest: MessageFns<GetGceProductCatalogFilterValuesRequest> = {
+  encode(message: GetGceProductCatalogFilterValuesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.filter !== "") {
+      writer.uint32(10).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetGceProductCatalogFilterValuesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetGceProductCatalogFilterValuesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetGceProductCatalogFilterValuesRequest {
+    return { filter: isSet(object.filter) ? globalThis.String(object.filter) : "" };
+  },
+
+  toJSON(message: GetGceProductCatalogFilterValuesRequest): unknown {
+    const obj: any = {};
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetGceProductCatalogFilterValuesRequest>): GetGceProductCatalogFilterValuesRequest {
+    return GetGceProductCatalogFilterValuesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetGceProductCatalogFilterValuesRequest>): GetGceProductCatalogFilterValuesRequest {
+    const message = createBaseGetGceProductCatalogFilterValuesRequest() as any;
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseGetGceProductCatalogFilterValuesResponse(): GetGceProductCatalogFilterValuesResponse {
+  return {
+    productCatalogId: [],
+    productName: [],
+    cpuType: [],
+    fleetPlmStatus: [],
+    productType: [],
+    scopedProductCatalogId: [],
+    scopedProductName: [],
+    scopedCpuType: [],
+    scopedFleetPlmStatus: [],
+    scopedProductType: [],
+  };
+}
+
+export const GetGceProductCatalogFilterValuesResponse: MessageFns<GetGceProductCatalogFilterValuesResponse> = {
+  encode(message: GetGceProductCatalogFilterValuesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.productCatalogId) {
+      writer.uint32(10).string(v!);
+    }
+    for (const v of message.productName) {
+      writer.uint32(18).string(v!);
+    }
+    for (const v of message.cpuType) {
+      writer.uint32(26).string(v!);
+    }
+    for (const v of message.fleetPlmStatus) {
+      writer.uint32(34).string(v!);
+    }
+    for (const v of message.productType) {
+      writer.uint32(74).string(v!);
+    }
+    for (const v of message.scopedProductCatalogId) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(42).fork()).join();
+    }
+    for (const v of message.scopedProductName) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(50).fork()).join();
+    }
+    for (const v of message.scopedCpuType) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(58).fork()).join();
+    }
+    for (const v of message.scopedFleetPlmStatus) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(66).fork()).join();
+    }
+    for (const v of message.scopedProductType) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(82).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetGceProductCatalogFilterValuesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetGceProductCatalogFilterValuesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.productCatalogId.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.productName.push(reader.string());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.cpuType.push(reader.string());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.fleetPlmStatus.push(reader.string());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.productType.push(reader.string());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.scopedProductCatalogId.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.scopedProductName.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.scopedCpuType.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.scopedFleetPlmStatus.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.scopedProductType.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetGceProductCatalogFilterValuesResponse {
+    return {
+      productCatalogId: globalThis.Array.isArray(object?.productCatalogId)
+        ? object.productCatalogId.map((e: any) => globalThis.String(e))
+        : [],
+      productName: globalThis.Array.isArray(object?.productName)
+        ? object.productName.map((e: any) => globalThis.String(e))
+        : [],
+      cpuType: globalThis.Array.isArray(object?.cpuType) ? object.cpuType.map((e: any) => globalThis.String(e)) : [],
+      fleetPlmStatus: globalThis.Array.isArray(object?.fleetPlmStatus)
+        ? object.fleetPlmStatus.map((e: any) => globalThis.String(e))
+        : [],
+      productType: globalThis.Array.isArray(object?.productType)
+        ? object.productType.map((e: any) => globalThis.String(e))
+        : [],
+      scopedProductCatalogId: globalThis.Array.isArray(object?.scopedProductCatalogId)
+        ? object.scopedProductCatalogId.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedProductName: globalThis.Array.isArray(object?.scopedProductName)
+        ? object.scopedProductName.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedCpuType: globalThis.Array.isArray(object?.scopedCpuType)
+        ? object.scopedCpuType.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedFleetPlmStatus: globalThis.Array.isArray(object?.scopedFleetPlmStatus)
+        ? object.scopedFleetPlmStatus.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedProductType: globalThis.Array.isArray(object?.scopedProductType)
+        ? object.scopedProductType.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetGceProductCatalogFilterValuesResponse): unknown {
+    const obj: any = {};
+    if (message.productCatalogId?.length) {
+      obj.productCatalogId = message.productCatalogId;
+    }
+    if (message.productName?.length) {
+      obj.productName = message.productName;
+    }
+    if (message.cpuType?.length) {
+      obj.cpuType = message.cpuType;
+    }
+    if (message.fleetPlmStatus?.length) {
+      obj.fleetPlmStatus = message.fleetPlmStatus;
+    }
+    if (message.productType?.length) {
+      obj.productType = message.productType;
+    }
+    if (message.scopedProductCatalogId?.length) {
+      obj.scopedProductCatalogId = message.scopedProductCatalogId.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedProductName?.length) {
+      obj.scopedProductName = message.scopedProductName.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedCpuType?.length) {
+      obj.scopedCpuType = message.scopedCpuType.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedFleetPlmStatus?.length) {
+      obj.scopedFleetPlmStatus = message.scopedFleetPlmStatus.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedProductType?.length) {
+      obj.scopedProductType = message.scopedProductType.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetGceProductCatalogFilterValuesResponse>): GetGceProductCatalogFilterValuesResponse {
+    return GetGceProductCatalogFilterValuesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetGceProductCatalogFilterValuesResponse>): GetGceProductCatalogFilterValuesResponse {
+    const message = createBaseGetGceProductCatalogFilterValuesResponse() as any;
+    message.productCatalogId = object.productCatalogId?.map((e) => e) || [];
+    message.productName = object.productName?.map((e) => e) || [];
+    message.cpuType = object.cpuType?.map((e) => e) || [];
+    message.fleetPlmStatus = object.fleetPlmStatus?.map((e) => e) || [];
+    message.productType = object.productType?.map((e) => e) || [];
+    message.scopedProductCatalogId =
+      object.scopedProductCatalogId?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    message.scopedProductName = object.scopedProductName?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    message.scopedCpuType = object.scopedCpuType?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    message.scopedFleetPlmStatus = object.scopedFleetPlmStatus?.map((e) => ProductCatalogFilterValue.fromPartial(e)) ||
+      [];
     message.scopedProductType = object.scopedProductType?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
     return message;
   },

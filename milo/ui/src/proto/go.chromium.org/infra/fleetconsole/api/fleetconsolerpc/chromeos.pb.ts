@@ -8,6 +8,7 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
+import { Status } from "../../../../../google/rpc/status.pb";
 import { AndroidCount } from "./android.pb";
 import { Column, DeviceSpec, LabelValues, Platform, platformFromJSON, platformToJSON } from "./common_types.pb";
 
@@ -341,7 +342,17 @@ export interface GetSmartRepairResult {
   /** True if an analysis for this device was already pending or processing. */
   readonly alreadyInProgress: boolean;
   /** The cached result, if a non-expired entry was found. */
-  readonly cachedResult: SmartRepairResult | undefined;
+  readonly cachedResult:
+    | SmartRepairResult
+    | undefined;
+  /** Error message if smart repair failed for specific device */
+  readonly errorMessage: string;
+  /**
+   * Structured error code if smart repair failed for specific device.
+   * Standard values: AGENT_TIMEOUT, QUOTA_EXCEEDED, JSON_VALIDATION_FAILED,
+   * INTERNAL_AGENT_ERROR, ERROR_CODE_UNSPECIFIED.
+   */
+  readonly errorCode: string;
 }
 
 export interface GetSmartRepairResponse {
@@ -494,7 +505,7 @@ export interface UpdateChromeOSDeviceRequest {
   readonly requestId: string;
 }
 
-/** Fleet Console domain model for device configuration modifications (Phase 1: Pools only). */
+/** Fleet Console domain model for device configuration modifications. */
 export interface DeviceConfigEdits {
   /**
    * List of test pools assigned to the DUT.
@@ -502,6 +513,14 @@ export interface DeviceConfigEdits {
    * the update_mask contains the path "pools".
    */
   readonly pools: readonly string[];
+  /** Servo configurations. */
+  readonly servo: ServoEdit | undefined;
+}
+
+export interface ServoEdit {
+  readonly hostname: string;
+  readonly port: number;
+  readonly serial: string;
 }
 
 /** Response message for UpdateChromeOSDevice. */
@@ -512,6 +531,11 @@ export interface UpdateChromeOSDeviceResponse {
     | undefined;
   /** Milo URL of the Buildbucket deployment task if redeploy was triggered. */
   readonly deployTaskUrl: string;
+  /**
+   * Outcome of the deployment task scheduling.
+   * If scheduling fails, this contains the detailed error status.
+   */
+  readonly deployTaskStatus: Status | undefined;
 }
 
 function createBaseDevice(): Device {
@@ -3220,7 +3244,14 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
 };
 
 function createBaseGetSmartRepairResult(): GetSmartRepairResult {
-  return { deviceId: "", eventId: "", alreadyInProgress: false, cachedResult: undefined };
+  return {
+    deviceId: "",
+    eventId: "",
+    alreadyInProgress: false,
+    cachedResult: undefined,
+    errorMessage: "",
+    errorCode: "",
+  };
 }
 
 export const GetSmartRepairResult: MessageFns<GetSmartRepairResult> = {
@@ -3236,6 +3267,12 @@ export const GetSmartRepairResult: MessageFns<GetSmartRepairResult> = {
     }
     if (message.cachedResult !== undefined) {
       SmartRepairResult.encode(message.cachedResult, writer.uint32(34).fork()).join();
+    }
+    if (message.errorMessage !== "") {
+      writer.uint32(42).string(message.errorMessage);
+    }
+    if (message.errorCode !== "") {
+      writer.uint32(50).string(message.errorCode);
     }
     return writer;
   },
@@ -3279,6 +3316,22 @@ export const GetSmartRepairResult: MessageFns<GetSmartRepairResult> = {
           message.cachedResult = SmartRepairResult.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.errorMessage = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.errorCode = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3294,6 +3347,8 @@ export const GetSmartRepairResult: MessageFns<GetSmartRepairResult> = {
       eventId: isSet(object.eventId) ? globalThis.String(object.eventId) : "",
       alreadyInProgress: isSet(object.alreadyInProgress) ? globalThis.Boolean(object.alreadyInProgress) : false,
       cachedResult: isSet(object.cachedResult) ? SmartRepairResult.fromJSON(object.cachedResult) : undefined,
+      errorMessage: isSet(object.errorMessage) ? globalThis.String(object.errorMessage) : "",
+      errorCode: isSet(object.errorCode) ? globalThis.String(object.errorCode) : "",
     };
   },
 
@@ -3311,6 +3366,12 @@ export const GetSmartRepairResult: MessageFns<GetSmartRepairResult> = {
     if (message.cachedResult !== undefined) {
       obj.cachedResult = SmartRepairResult.toJSON(message.cachedResult);
     }
+    if (message.errorMessage !== "") {
+      obj.errorMessage = message.errorMessage;
+    }
+    if (message.errorCode !== "") {
+      obj.errorCode = message.errorCode;
+    }
     return obj;
   },
 
@@ -3325,6 +3386,8 @@ export const GetSmartRepairResult: MessageFns<GetSmartRepairResult> = {
     message.cachedResult = (object.cachedResult !== undefined && object.cachedResult !== null)
       ? SmartRepairResult.fromPartial(object.cachedResult)
       : undefined;
+    message.errorMessage = object.errorMessage ?? "";
+    message.errorCode = object.errorCode ?? "";
     return message;
   },
 };
@@ -4711,13 +4774,16 @@ export const UpdateChromeOSDeviceRequest: MessageFns<UpdateChromeOSDeviceRequest
 };
 
 function createBaseDeviceConfigEdits(): DeviceConfigEdits {
-  return { pools: [] };
+  return { pools: [], servo: undefined };
 }
 
 export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
   encode(message: DeviceConfigEdits, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.pools) {
       writer.uint32(10).string(v!);
+    }
+    if (message.servo !== undefined) {
+      ServoEdit.encode(message.servo, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -4737,6 +4803,14 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
           message.pools.push(reader.string());
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.servo = ServoEdit.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4747,13 +4821,19 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
   },
 
   fromJSON(object: any): DeviceConfigEdits {
-    return { pools: globalThis.Array.isArray(object?.pools) ? object.pools.map((e: any) => globalThis.String(e)) : [] };
+    return {
+      pools: globalThis.Array.isArray(object?.pools) ? object.pools.map((e: any) => globalThis.String(e)) : [],
+      servo: isSet(object.servo) ? ServoEdit.fromJSON(object.servo) : undefined,
+    };
   },
 
   toJSON(message: DeviceConfigEdits): unknown {
     const obj: any = {};
     if (message.pools?.length) {
       obj.pools = message.pools;
+    }
+    if (message.servo !== undefined) {
+      obj.servo = ServoEdit.toJSON(message.servo);
     }
     return obj;
   },
@@ -4764,12 +4844,107 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
   fromPartial(object: DeepPartial<DeviceConfigEdits>): DeviceConfigEdits {
     const message = createBaseDeviceConfigEdits() as any;
     message.pools = object.pools?.map((e) => e) || [];
+    message.servo = (object.servo !== undefined && object.servo !== null)
+      ? ServoEdit.fromPartial(object.servo)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseServoEdit(): ServoEdit {
+  return { hostname: "", port: 0, serial: "" };
+}
+
+export const ServoEdit: MessageFns<ServoEdit> = {
+  encode(message: ServoEdit, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.hostname !== "") {
+      writer.uint32(10).string(message.hostname);
+    }
+    if (message.port !== 0) {
+      writer.uint32(16).int32(message.port);
+    }
+    if (message.serial !== "") {
+      writer.uint32(26).string(message.serial);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ServoEdit {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseServoEdit() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.hostname = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.port = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.serial = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ServoEdit {
+    return {
+      hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "",
+      port: isSet(object.port) ? globalThis.Number(object.port) : 0,
+      serial: isSet(object.serial) ? globalThis.String(object.serial) : "",
+    };
+  },
+
+  toJSON(message: ServoEdit): unknown {
+    const obj: any = {};
+    if (message.hostname !== "") {
+      obj.hostname = message.hostname;
+    }
+    if (message.port !== 0) {
+      obj.port = Math.round(message.port);
+    }
+    if (message.serial !== "") {
+      obj.serial = message.serial;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ServoEdit>): ServoEdit {
+    return ServoEdit.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ServoEdit>): ServoEdit {
+    const message = createBaseServoEdit() as any;
+    message.hostname = object.hostname ?? "";
+    message.port = object.port ?? 0;
+    message.serial = object.serial ?? "";
     return message;
   },
 };
 
 function createBaseUpdateChromeOSDeviceResponse(): UpdateChromeOSDeviceResponse {
-  return { device: undefined, deployTaskUrl: "" };
+  return { device: undefined, deployTaskUrl: "", deployTaskStatus: undefined };
 }
 
 export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceResponse> = {
@@ -4779,6 +4954,9 @@ export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceRespon
     }
     if (message.deployTaskUrl !== "") {
       writer.uint32(18).string(message.deployTaskUrl);
+    }
+    if (message.deployTaskStatus !== undefined) {
+      Status.encode(message.deployTaskStatus, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -4806,6 +4984,14 @@ export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceRespon
           message.deployTaskUrl = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.deployTaskStatus = Status.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4819,6 +5005,7 @@ export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceRespon
     return {
       device: isSet(object.device) ? Device.fromJSON(object.device) : undefined,
       deployTaskUrl: isSet(object.deployTaskUrl) ? globalThis.String(object.deployTaskUrl) : "",
+      deployTaskStatus: isSet(object.deployTaskStatus) ? Status.fromJSON(object.deployTaskStatus) : undefined,
     };
   },
 
@@ -4829,6 +5016,9 @@ export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceRespon
     }
     if (message.deployTaskUrl !== "") {
       obj.deployTaskUrl = message.deployTaskUrl;
+    }
+    if (message.deployTaskStatus !== undefined) {
+      obj.deployTaskStatus = Status.toJSON(message.deployTaskStatus);
     }
     return obj;
   },
@@ -4842,6 +5032,9 @@ export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceRespon
       ? Device.fromPartial(object.device)
       : undefined;
     message.deployTaskUrl = object.deployTaskUrl ?? "";
+    message.deployTaskStatus = (object.deployTaskStatus !== undefined && object.deployTaskStatus !== null)
+      ? Status.fromPartial(object.deployTaskStatus)
+      : undefined;
     return message;
   },
 };
