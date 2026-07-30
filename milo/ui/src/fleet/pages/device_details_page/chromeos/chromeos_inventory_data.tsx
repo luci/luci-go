@@ -56,15 +56,14 @@ import {
 import { LogicalSchedulingCard } from './components/cards/LogicalSchedulingCard';
 import { PhysicalLocationCard } from './components/cards/PhysicalLocationCard';
 import { RPMCard, RPMInfo } from './components/cards/RPMCard';
-import {
-  ServoHardwareCard,
-  ServoInfo,
-} from './components/cards/ServoHardwareCard';
+import { ServoHardwareCard } from './components/cards/ServoHardwareCard';
 import { SaveDiffDialog } from './components/common/SaveDiffDialog';
 import { InventoryFormProvider } from './components/form/InventoryFormContext';
 import {
   calculateDiff,
   generateShivasCommands,
+  hasDeployableEdits,
+  isLabstationConfig,
   translateDiffToEdits,
   updateNestedValues,
 } from './utils/inventory_editing_utils';
@@ -149,18 +148,20 @@ export const ChromeOSInventoryData = ({
     };
   }, [currentLse, board, model]);
 
-  const currentServo = useMemo<ServoInfo | null>(() => {
-    if (!currentLse) return null;
-    return (
-      (currentLse.chromeosMachineLse?.deviceLse?.dut?.peripherals
-        ?.servo as ServoInfo) || null
-    );
-  }, [currentLse]);
-
   const diffs = useMemo(() => {
     const base = originalLseSnapshot || machineLse.data;
     return calculateDiff(base, editedLse);
   }, [machineLse.data, originalLseSnapshot, editedLse]);
+
+  const isLabstationDevice = useMemo(() => {
+    const base = originalLseSnapshot || machineLse.data;
+    return isLabstationConfig(base);
+  }, [machineLse.data, originalLseSnapshot]);
+
+  const isDeployable = useMemo(
+    () => hasDeployableEdits(diffs, isLabstationDevice),
+    [diffs, isLabstationDevice],
+  );
 
   const hasGlobalChanges = diffs.length > 0;
 
@@ -209,18 +210,22 @@ export const ChromeOSInventoryData = ({
   };
 
   const handleGlobalSave = () => {
+    updateMutation.reset?.();
     setSaveState('review');
     setDialogOpen(true);
   };
 
-  const handleCloseDialog = useCallback(() => {
-    setDialogOpen(false);
+  const handleDialogExited = useCallback(() => {
     if (saveState === 'success') {
       setEditedLse(null);
       setOriginalLseSnapshot(null);
       setActiveEditingCardId(null);
     }
   }, [saveState]);
+
+  const handleCloseDialog = useCallback(() => {
+    setDialogOpen(false);
+  }, []);
 
   const executeSaveRequest = () => {
     const base = originalLseSnapshot || machineLse.data;
@@ -373,9 +378,11 @@ export const ChromeOSInventoryData = ({
                     editable={false}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <ServoHardwareCard servo={currentServo} editable={false} />
-                </Grid>
+                {!isLabstationDevice && (
+                  <Grid item xs={12} md={6}>
+                    <ServoHardwareCard />
+                  </Grid>
+                )}
                 <Grid item xs={12} md={6}>
                   <RPMCard rpm={rpm} editable={false} />
                 </Grid>
@@ -406,9 +413,13 @@ export const ChromeOSInventoryData = ({
         diffs={diffs}
         shivasCommands={shivasCommands}
         deviceId={device.id}
+        hasDeployableEdits={isDeployable}
+        deployTaskUrl={updateMutation.data?.deployTaskUrl}
+        deployTaskStatus={updateMutation.data?.deployTaskStatus}
         onConfirm={executeSaveRequest}
         onCancel={() => setDialogOpen(false)}
         onClose={handleCloseDialog}
+        onExited={handleDialogExited}
         errorMessage={
           updateMutation.error
             ? getErrorMessage(updateMutation.error, 'save')

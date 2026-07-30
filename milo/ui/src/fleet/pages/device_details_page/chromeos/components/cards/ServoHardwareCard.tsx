@@ -13,9 +13,16 @@
 // limitations under the License.
 
 import { Grid } from '@mui/material';
+import { useMemo } from 'react';
 
-import { InventoryDataCard } from '../common/InventoryDataCard';
-import { PropertyField } from '../common/PropertyField';
+import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import { SERVO_PATHS } from '../../utils/inventory_editing_utils';
+import { CardForm } from '../form/CardForm';
+import { FormAutocompleteField } from '../form/FormAutocompleteField';
+import { FormTextField } from '../form/FormTextField';
+import { useInventoryForm } from '../form/InventoryFormContext';
 
 export interface ServoInfo {
   servoHostname?: string | null;
@@ -23,19 +30,12 @@ export interface ServoInfo {
   servoSerial?: string | null;
 }
 
-export interface ServoHardwareCardProps {
-  servo?: ServoInfo | null;
-  editable?: boolean;
-  isEditing?: boolean;
-  onEdit?: () => void;
-}
+export const ServoHardwareCard = () => {
+  const { draftLse } = useInventoryForm();
 
-export const ServoHardwareCard = ({
-  servo,
-  editable = false,
-  isEditing = false,
-  onEdit,
-}: ServoHardwareCardProps) => {
+  const servo =
+    draftLse?.chromeosMachineLse?.deviceLse?.dut?.peripherals?.servo;
+
   const hasServoData = Boolean(
     servo &&
       (servo.servoHostname ||
@@ -45,31 +45,43 @@ export const ServoHardwareCard = ({
           Number(servo.servoPort) > 0)),
   );
 
+  const dimensionsQuery = useDeviceDimensions({ platform: Platform.CHROMEOS });
+  const hostnameOptions = useMemo(() => {
+    if (!dimensionsQuery.data) return [];
+    const names: string[] = [];
+    const baseDutName = dimensionsQuery.data.baseDimensions?.['dut_name'];
+    const labelDutName = dimensionsQuery.data.labels?.['dut_name'];
+    const labelAssoc =
+      dimensionsQuery.data.labels?.['label-associated_hostname'];
+    if (baseDutName?.values) names.push(...baseDutName.values);
+    if (labelDutName?.values) names.push(...labelDutName.values);
+    if (labelAssoc?.values) names.push(...labelAssoc.values);
+    return Array.from(new Set(names)).sort();
+  }, [dimensionsQuery.data]);
+
   return (
-    <InventoryDataCard
+    <CardForm
+      cardId="servo"
       title="Servo"
-      emptyMessage={
-        !hasServoData ? 'No Servo debugging hardware attached.' : undefined
-      }
-      editable={editable}
-      isEditing={isEditing}
-      onEdit={onEdit}
+      isEmpty={!hasServoData}
+      emptyMessage="No Servo debugging hardware attached."
     >
       <Grid container spacing={2}>
-        <PropertyField label="Hostname" value={servo?.servoHostname} />
-        <PropertyField label="Serial" value={servo?.servoSerial} />
-        <PropertyField
+        <FormAutocompleteField
+          label="Hostname"
+          path={SERVO_PATHS.hostname}
+          options={hostnameOptions}
+          multiple={false}
+          gridSm={6}
+        />
+        <FormTextField label="Serial" path={SERVO_PATHS.serial} gridSm={6} />
+        <FormTextField
           label="Port"
-          value={
-            servo?.servoPort !== undefined &&
-            servo?.servoPort !== null &&
-            Number(servo.servoPort) > 0
-              ? String(servo.servoPort)
-              : null
-          }
-          variant="text"
+          path={SERVO_PATHS.port}
+          type="number"
+          gridSm={6}
         />
       </Grid>
-    </InventoryDataCard>
+    </CardForm>
   );
 };

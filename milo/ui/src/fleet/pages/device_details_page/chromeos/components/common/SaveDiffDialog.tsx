@@ -23,6 +23,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Link,
   Paper,
   Table,
   TableBody,
@@ -34,6 +35,7 @@ import {
 } from '@mui/material';
 
 import CodeSnippet from '@/fleet/components/code_snippet/code_snippet';
+import { Status } from '@/proto/google/rpc/status.pb';
 
 import {
   FieldDiff,
@@ -49,7 +51,11 @@ interface SaveDiffDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   onClose: () => void;
+  onExited?: () => void;
   errorMessage?: string | null;
+  hasDeployableEdits?: boolean;
+  deployTaskUrl?: string;
+  deployTaskStatus?: Status | null;
 }
 
 export const SaveDiffDialog = ({
@@ -61,15 +67,26 @@ export const SaveDiffDialog = ({
   onConfirm,
   onCancel,
   onClose,
+  onExited,
   errorMessage,
+  hasDeployableEdits = false,
+  deployTaskUrl,
+  deployTaskStatus,
 }: SaveDiffDialogProps) => {
   const changelogMarkdown = generateChangelogMarkdown(diffs, deviceId);
+
+  const hasDeployError = Boolean(
+    deployTaskStatus &&
+      deployTaskStatus.code !== undefined &&
+      deployTaskStatus.code !== 0,
+  );
 
   return (
     <Dialog
       open={open}
       onClose={saveState === 'saving' ? undefined : onClose}
       disableEscapeKeyDown={saveState === 'saving'}
+      TransitionProps={{ onExited }}
       fullWidth
       maxWidth="sm"
     >
@@ -77,6 +94,13 @@ export const SaveDiffDialog = ({
         <>
           <DialogTitle sx={{ fontWeight: 'bold' }}>Review Changes</DialogTitle>
           <DialogContent dividers sx={{ p: 2.5, overflowX: 'hidden' }}>
+            {hasDeployableEdits && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <AlertTitle>Redeployment Required</AlertTitle>
+                Device will be locked and a deploy task will be run. No other
+                tasks will be scheduled until deployment completes.
+              </Alert>
+            )}
             <Typography variant="body2" sx={{ mb: 2 }} color="text.secondary">
               Please review the modifications before saving:
             </Typography>
@@ -201,6 +225,51 @@ export const SaveDiffDialog = ({
           <Typography variant="body2" color="text.secondary" align="center">
             Your inventory modifications have been pushed to UFS.
           </Typography>
+
+          {hasDeployError && (
+            <Alert severity="warning" sx={{ mt: 2, width: '100%' }}>
+              <AlertTitle>Deploy Task Scheduling Failed</AlertTitle>
+              {deployTaskStatus?.message ||
+                'Failed to automatically schedule deployment task.'}{' '}
+              Please re-run the deploy task manually.
+              {deployTaskUrl && (
+                <>
+                  {' '}
+                  <Link
+                    href={deployTaskUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="always"
+                  >
+                    View deploy task
+                  </Link>
+                </>
+              )}
+            </Alert>
+          )}
+
+          {!hasDeployError && deployTaskUrl && (
+            <Alert severity="info" sx={{ mt: 2, width: '100%' }}>
+              <AlertTitle>Deploy Task Scheduled</AlertTitle>A deploy task has
+              been scheduled to verify hardware changes.{' '}
+              <Link
+                href={deployTaskUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="always"
+              >
+                View deploy task
+              </Link>
+            </Alert>
+          )}
+
+          {!hasDeployError && !deployTaskUrl && hasDeployableEdits && (
+            <Alert severity="info" sx={{ mt: 2, width: '100%' }}>
+              <AlertTitle>Redeployment Required</AlertTitle>
+              Your changes were saved. A deploy task may be required to verify
+              hardware changes.
+            </Alert>
+          )}
 
           {changelogMarkdown && (
             <Box

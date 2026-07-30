@@ -37,7 +37,9 @@ describe('SaveDiffDialog', () => {
     errorMessage: undefined as string | null | undefined,
   };
 
-  const renderDialog = (props = defaultProps) => {
+  const renderDialog = (
+    props: React.ComponentProps<typeof SaveDiffDialog> = defaultProps,
+  ) => {
     return render(
       <FakeContextProvider>
         <SaveDiffDialog {...props} />
@@ -126,5 +128,70 @@ describe('SaveDiffDialog', () => {
     const closeButton = screen.getByRole('button', { name: /close/i });
     fireEvent.click(closeButton);
     expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders redeployment required warning alert when hasDeployableEdits is true', () => {
+    renderDialog({
+      ...defaultProps,
+      hasDeployableEdits: true,
+    });
+    expect(screen.getByText(/redeployment required/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Device will be locked and a deploy task will be run. No other tasks will be scheduled until deployment completes.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('renders deploy task scheduled info alert when deployTaskUrl is provided on success', () => {
+    renderDialog({
+      ...defaultProps,
+      saveState: 'success',
+      deployTaskUrl: 'https://ci.chromium.org/p/chromeos/builders/deploy/123',
+      deployTaskStatus: { code: 0, message: '', details: [] },
+    });
+    expect(screen.getByText('Deploy Task Scheduled')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /view deploy task/i }),
+    ).toHaveAttribute(
+      'href',
+      'https://ci.chromium.org/p/chromeos/builders/deploy/123',
+    );
+  });
+
+  it('renders deploy task scheduling failed warning alert when deployTaskStatus indicates error', () => {
+    renderDialog({
+      ...defaultProps,
+      saveState: 'success',
+      deployTaskUrl: 'https://ci.chromium.org/p/chromeos/builders/deploy/123',
+      deployTaskStatus: {
+        code: 2,
+        message: 'Swarming service unavailable',
+        details: [],
+      },
+    });
+    expect(
+      screen.getByText('Deploy Task Scheduling Failed'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/swarming service unavailable/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/please re-run the deploy task manually/i),
+    ).toBeInTheDocument();
+  });
+
+  it('renders fallback redeployment required info alert on success when hasDeployableEdits is true and deployTaskUrl is omitted', () => {
+    renderDialog({
+      ...defaultProps,
+      saveState: 'success',
+      hasDeployableEdits: true,
+    });
+    expect(screen.getByText('Redeployment Required')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /a deploy task may be required to verify hardware changes/i,
+      ),
+    ).toBeInTheDocument();
   });
 });

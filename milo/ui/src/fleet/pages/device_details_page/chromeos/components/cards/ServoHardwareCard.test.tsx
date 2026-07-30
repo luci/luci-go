@@ -15,23 +15,78 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { InventoryFormProvider } from '../form/InventoryFormContext';
 
 import { ServoHardwareCard } from './ServoHardwareCard';
 
+const mockLseWithServo = (
+  servo?: {
+    servoHostname?: string | null;
+    servoSerial?: string | null;
+    servoPort?: number | null;
+  } | null,
+  isLabstation = false,
+) => {
+  const peripherals = servo ? { servo } : undefined;
+  const deviceLse = isLabstation
+    ? { labstation: {} }
+    : { dut: { peripherals } };
+
+  return {
+    chromeosMachineLse: {
+      deviceLse,
+    },
+  };
+};
+
+interface RenderOptions {
+  servo?: {
+    servoHostname?: string | null;
+    servoSerial?: string | null;
+    servoPort?: number | null;
+  } | null;
+  editable?: boolean;
+  activeEditingCardId?: string | null;
+  isLabstation?: boolean;
+}
+
+const renderCard = (options: RenderOptions = {}) => {
+  const updateDraftFields = jest.fn();
+  const setActiveEditingCardId = jest.fn();
+  const lse = mockLseWithServo(options.servo, options.isLabstation);
+
+  return {
+    updateDraftFields,
+    setActiveEditingCardId,
+    ...render(
+      <FakeContextProvider>
+        <InventoryFormProvider
+          originalLse={lse as unknown as MachineLSE}
+          draftLse={lse as unknown as MachineLSE}
+          updateDraftFields={updateDraftFields}
+          activeEditingCardId={options.activeEditingCardId ?? null}
+          setActiveEditingCardId={setActiveEditingCardId}
+          editable={options.editable || false}
+        >
+          <ServoHardwareCard />
+        </InventoryFormProvider>
+      </FakeContextProvider>,
+    ),
+  };
+};
+
 describe('<ServoHardwareCard />', () => {
   it('renders servo hardware telemetry correctly', async () => {
-    render(
-      <FakeContextProvider>
-        <ServoHardwareCard
-          servo={{
-            servoHostname: 'chromeos15-row1-labstation1',
-            servoSerial: 'SERVO-SN-9988',
-            servoPort: 9999,
-          }}
-        />
-      </FakeContextProvider>,
-    );
+    renderCard({
+      servo: {
+        servoHostname: 'chromeos15-row1-labstation1',
+        servoSerial: 'SERVO-SN-9988',
+        servoPort: 9999,
+      },
+    });
 
     expect(screen.getByText('Servo')).toBeVisible();
     expect(screen.getByText('Hostname')).toBeVisible();
@@ -43,15 +98,11 @@ describe('<ServoHardwareCard />', () => {
   });
 
   it('hides omitted fields and does not show N/A fallbacks', async () => {
-    render(
-      <FakeContextProvider>
-        <ServoHardwareCard
-          servo={{
-            servoHostname: 'labstation-host-2',
-          }}
-        />
-      </FakeContextProvider>,
-    );
+    renderCard({
+      servo: {
+        servoHostname: 'labstation-host-2',
+      },
+    });
 
     expect(screen.getByText('Servo')).toBeVisible();
     expect(screen.getByText('Hostname')).toBeVisible();
@@ -63,35 +114,61 @@ describe('<ServoHardwareCard />', () => {
   });
 
   it('renders empty message when no servo telemetry exists', async () => {
-    render(
-      <FakeContextProvider>
-        <ServoHardwareCard />
-      </FakeContextProvider>,
-    );
+    renderCard({});
     expect(
       screen.getByText('No Servo debugging hardware attached.'),
     ).toBeVisible();
   });
 
-  it('renders edit button and handles onEdit click when editable is true', async () => {
-    const handleEdit = jest.fn();
-    render(
-      <FakeContextProvider>
-        <ServoHardwareCard
-          servo={{
-            servoHostname: 'chromeos15-row1-labstation1',
-          }}
-          editable
-          onEdit={handleEdit}
-        />
-      </FakeContextProvider>,
-    );
+  it('renders edit button and handles onEdit click when editable is true on a DUT', async () => {
+    const { setActiveEditingCardId } = renderCard({
+      servo: {
+        servoHostname: 'chromeos15-row1-labstation1',
+      },
+      editable: true,
+    });
 
     const editBtn = screen.getByRole('button', {
       name: 'edit Servo',
     });
     expect(editBtn).toBeVisible();
     await userEvent.click(editBtn);
-    expect(handleEdit).toHaveBeenCalledTimes(1);
+    expect(setActiveEditingCardId).toHaveBeenCalledWith('servo');
+  });
+
+  it('renders input fields for Hostname, Serial, and Port when in edit mode', async () => {
+    renderCard({
+      servo: {
+        servoHostname: 'chromeos15-row1-labstation1',
+        servoSerial: 'SERVO-SN-1234',
+        servoPort: 9999,
+      },
+      editable: true,
+      activeEditingCardId: 'servo',
+    });
+
+    expect(screen.getByLabelText('Hostname')).toHaveValue(
+      'chromeos15-row1-labstation1',
+    );
+    expect(screen.getByLabelText('Serial')).toHaveValue('SERVO-SN-1234');
+    expect(screen.getByLabelText('Port')).toHaveValue(9999);
+  });
+
+  it('enforces Servo Port range limits (9000-9999) automatically from FieldConfig', async () => {
+    renderCard({
+      servo: {
+        servoPort: 9999,
+      },
+      editable: true,
+      activeEditingCardId: 'servo',
+    });
+
+    const portInput = screen.getByLabelText('Port');
+    await userEvent.clear(portInput);
+    await userEvent.type(portInput, '8888');
+
+    expect(
+      screen.getByText('Must be 0 or between 9000 and 9999'),
+    ).toBeInTheDocument();
   });
 });

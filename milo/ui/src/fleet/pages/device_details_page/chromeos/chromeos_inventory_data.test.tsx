@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -163,6 +163,9 @@ describe('<ChromeOSInventoryData />', () => {
     expect(
       screen.getByText('shivas get labstation -json test-host-name'),
     ).toBeVisible();
+    expect(
+      screen.queryByRole('heading', { name: /^Servo$/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('walks through the visual edit-save lifecycle successfully', async () => {
@@ -195,7 +198,9 @@ describe('<ChromeOSInventoryData />', () => {
     expect(screen.getByText('pool1')).toBeVisible();
 
     // 2. Click Edit on the Logical Scheduling card
-    const editBtn = screen.getByRole('button', { name: /edit/i });
+    const editBtn = screen.getByRole('button', {
+      name: /edit pools & task routing/i,
+    });
     await userEvent.click(editBtn);
 
     // 3. Update field: add new pool
@@ -259,7 +264,70 @@ describe('<ChromeOSInventoryData />', () => {
     await userEvent.click(closeBtn);
 
     // After success, save state resets and changes buttons become hidden
-    expect(discardBtn).not.toBeVisible();
-    expect(saveBtn).not.toBeVisible();
+    await waitFor(() => {
+      expect(discardBtn).not.toBeVisible();
+      expect(saveBtn).not.toBeVisible();
+    });
+  });
+
+  it('shows redeployment required warning alert when editing Servo fields on a DUT', async () => {
+    mockMutate.mockReset();
+
+    const lseData = {
+      chromeosMachineLse: {
+        deviceLse: {
+          dut: {
+            hostname: 'test-host-name',
+            pools: ['pool1'],
+            peripherals: {
+              servo: {
+                servoHostname: 'servo-old',
+                servoPort: 9999,
+                servoSerial: 'SERVO-SN-1234',
+              },
+            },
+          },
+        },
+      },
+    };
+    jest.mocked(useQuery).mockReturnValue({
+      data: lseData,
+      isLoading: false,
+      isError: false,
+    } as unknown as UseQueryResult<unknown, Error>);
+
+    render(
+      <FakeContextProvider>
+        <ChromeOSInventoryData device={mockDeviceOs} />
+      </FakeContextProvider>,
+    );
+
+    const editServoBtn = screen.getByRole('button', {
+      name: /edit servo/i,
+    });
+    await userEvent.click(editServoBtn);
+
+    const serialInput = screen.getByLabelText('Serial');
+    await userEvent.clear(serialInput);
+    await userEvent.type(serialInput, 'SERVO-NEW-999');
+
+    const confirmBtn = screen.getByRole('button', { name: /confirm/i });
+    await userEvent.click(confirmBtn);
+
+    const saveBtn = screen.getByRole('button', { name: /save all changes/i });
+    await userEvent.click(saveBtn);
+
+    expect(screen.getByText(/redeployment required/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Device will be locked and a deploy task will be run. No other tasks will be scheduled until deployment completes.',
+      ),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(
+        /shivas update dut -name test-host-name -servo-serial SERVO-NEW-999/i,
+      ),
+    ).toBeInTheDocument();
   });
 });
