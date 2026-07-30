@@ -19,8 +19,8 @@ export const enableModernInventoryCards = createFeatureFlag({
   namespace: 'fleet-console',
   name: 'modern-inventory-cards',
   percentage: 0,
-  trackingBug: '388907865',
-  allowedEnvironments: ['dev'],
+  trackingBug: '434697091',
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const enableAndroidUtilizationMetrics = createFeatureFlag({
@@ -38,6 +38,6 @@ export const enableInventoryEditing = createFeatureFlag({
   namespace: 'fleet-console',
   name: 'inventory-editing',
   percentage: 0,
-  trackingBug: '388907865',
-  allowedEnvironments: ['dev'],
+  trackingBug: '434697091',
+  allowedEnvironments: ['dev', 'prod'],
 });
