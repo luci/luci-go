@@ -26,23 +26,62 @@ export const LOGICAL_SCHEDULING_PATHS = {
   labstationPools: 'chromeosMachineLse.deviceLse.labstation.pools',
 };
 
+export const SERVO_PATHS = {
+  hostname: 'chromeosMachineLse.deviceLse.dut.peripherals.servo.servoHostname',
+  port: 'chromeosMachineLse.deviceLse.dut.peripherals.servo.servoPort',
+  serial: 'chromeosMachineLse.deviceLse.dut.peripherals.servo.servoSerial',
+};
+
 export interface FieldConfig {
   label: string;
   path: string;
   editPath: string;
   type: 'string' | 'number' | 'array';
+  requiresRedeploy?: boolean;
+  min?: number;
+  max?: number;
 }
 
-export const getEditableFields = (isLabstation: boolean): FieldConfig[] => [
-  {
-    label: 'Pools',
-    path: isLabstation
-      ? LOGICAL_SCHEDULING_PATHS.labstationPools
-      : LOGICAL_SCHEDULING_PATHS.dutPools,
-    editPath: 'pools',
-    type: 'array',
-  },
-];
+export const getEditableFields = (isLabstation: boolean): FieldConfig[] => {
+  const fields: FieldConfig[] = [
+    {
+      label: 'Pools',
+      path: isLabstation
+        ? LOGICAL_SCHEDULING_PATHS.labstationPools
+        : LOGICAL_SCHEDULING_PATHS.dutPools,
+      editPath: 'pools',
+      type: 'array',
+    },
+  ];
+  if (!isLabstation) {
+    fields.push(
+      {
+        label: 'Servo Hostname',
+        path: SERVO_PATHS.hostname,
+        editPath: 'servo.hostname',
+        type: 'string',
+        requiresRedeploy: true,
+      },
+      {
+        label: 'Servo Port',
+        path: SERVO_PATHS.port,
+        editPath: 'servo.port',
+        type: 'number',
+        requiresRedeploy: true,
+        min: 9000,
+        max: 9999,
+      },
+      {
+        label: 'Servo Serial',
+        path: SERVO_PATHS.serial,
+        editPath: 'servo.serial',
+        type: 'string',
+        requiresRedeploy: true,
+      },
+    );
+  }
+  return fields;
+};
 
 export const getSegments = (path: string | string[]): string[] => {
   return typeof path === 'string' ? path.split('.') : path;
@@ -134,10 +173,14 @@ export const calculateDiff = (
         });
       }
     } else {
-      const origStr =
+      let origStr =
         origVal !== undefined && origVal !== null ? String(origVal) : '';
-      const draftStr =
+      let draftStr =
         draftVal !== undefined && draftVal !== null ? String(draftVal) : '';
+      if (type === 'number') {
+        if (origStr === '0') origStr = '';
+        if (draftStr === '0') draftStr = '';
+      }
       if (origStr !== draftStr) {
         diffs.push({
           path: label,
@@ -171,15 +214,35 @@ export const translateDiffToEdits = (
       const origArr = Array.isArray(origVal) ? (origVal as string[]) : [];
       const draftArr = Array.isArray(draftVal) ? (draftVal as string[]) : [];
       hasChanged = !areArraysEqual(origArr, draftArr);
+    } else if (type === 'number') {
+      const origNum = !origVal || Number(origVal) === 0 ? 0 : Number(origVal);
+      const draftNum =
+        !draftVal || Number(draftVal) === 0 ? 0 : Number(draftVal);
+      hasChanged = origNum !== draftNum;
     } else {
       hasChanged = origVal !== draftVal;
     }
 
     if (hasChanged) {
-      edits[editPath] = type === 'array' ? (draftVal ?? []) : draftVal;
+      let val: unknown = type === 'array' ? (draftVal ?? []) : draftVal;
+      if (type === 'number' && (!val || Number(val) === 0)) {
+        val = 0;
+      } else if (type === 'number') {
+        val = Number(val);
+      } else if (type === 'string' && (val === null || val === undefined)) {
+        val = '';
+      }
+      mutateNestedValue(edits, editPath, val);
       paths.push(editPath);
     }
   });
+
+  if (edits.servo && (edits.servo as Record<string, unknown>).hostname === '') {
+    (edits.servo as Record<string, unknown>).port = 0;
+    if (!paths.includes('servo.port')) {
+      paths.push('servo.port');
+    }
+  }
 
   return { edits: edits as Partial<DeviceConfigEdits>, paths };
 };
@@ -224,6 +287,50 @@ export const generateShivasCommands = (
     }
   }
 
+  if (!isLabstation) {
+    const origServoHost = String(
+      getNestedValue(original, SERVO_PATHS.hostname) || '',
+    );
+    const updatedServoHost = String(
+      getNestedValue(updated, SERVO_PATHS.hostname) || '',
+    );
+    const origServoPortVal = getNestedValue(original, SERVO_PATHS.port);
+    const updatedServoPortVal = getNestedValue(updated, SERVO_PATHS.port);
+    const origServoPort =
+      origServoPortVal && Number(origServoPortVal) > 0
+        ? String(origServoPortVal)
+        : '';
+    const updatedServoPort =
+      updatedServoPortVal && Number(updatedServoPortVal) > 0
+        ? String(updatedServoPortVal)
+        : '';
+
+    const servoHostChanged = origServoHost !== updatedServoHost;
+    const servoPortChanged = origServoPort !== updatedServoPort;
+
+    if (servoHostChanged || servoPortChanged) {
+      if (!updatedServoHost) {
+        dutFlags.push('-servo', '-');
+      } else {
+        const portSuffix = updatedServoPort ? `:${updatedServoPort}` : '';
+        dutFlags.push('-servo', `${updatedServoHost}${portSuffix}`);
+      }
+    }
+
+    const origServoSerial = String(
+      getNestedValue(original, SERVO_PATHS.serial) || '',
+    );
+    const updatedServoSerial = String(
+      getNestedValue(updated, SERVO_PATHS.serial) || '',
+    );
+    if (origServoSerial !== updatedServoSerial) {
+      dutFlags.push(
+        '-servo-serial',
+        updatedServoSerial ? updatedServoSerial : '-',
+      );
+    }
+  }
+
   // Combine DUT/Labstation flags into commands
   if (isLabstation && labstationFlags.length > 0) {
     const cmdParts = ['shivas', 'update', 'labstation', '-name', hostname];
@@ -256,4 +363,16 @@ export const generateChangelogMarkdown = (
     );
   });
   return lines.join('\n');
+};
+
+export const hasDeployableEdits = (
+  diffs: FieldDiff[],
+  isLabstation: boolean,
+): boolean => {
+  if (isLabstation) return false;
+  const fields = getEditableFields(isLabstation);
+  const deployableLabels = new Set(
+    fields.filter((f) => f.requiresRedeploy).map((f) => f.label),
+  );
+  return diffs.some((d) => deployableLabels.has(d.path));
 };

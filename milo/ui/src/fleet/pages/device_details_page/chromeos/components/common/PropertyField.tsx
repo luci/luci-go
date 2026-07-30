@@ -29,6 +29,8 @@ export interface PropertyFieldProps {
   onChange?: (newValue: string) => void;
   onConfirm?: () => void;
   inputType?: 'text' | 'number';
+  error?: boolean;
+  helperText?: string;
 }
 
 export const PropertyField = ({
@@ -43,18 +45,14 @@ export const PropertyField = ({
   onChange,
   onConfirm,
   inputType = 'text',
+  error,
+  helperText,
 }: PropertyFieldProps) => {
   if (editable && isEditing) {
     return (
       <Grid item xs={12} sm={gridSm} md={gridMd}>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: 'block', mb: 0.5 }}
-        >
-          {label}
-        </Typography>
         <TextField
+          label={label}
           type={inputType}
           value={value !== null && value !== undefined ? String(value) : ''}
           onChange={(e) => onChange?.(e.target.value)}
@@ -67,6 +65,8 @@ export const PropertyField = ({
           size="small"
           variant="outlined"
           fullWidth
+          error={error}
+          helperText={helperText}
         />
       </Grid>
     );

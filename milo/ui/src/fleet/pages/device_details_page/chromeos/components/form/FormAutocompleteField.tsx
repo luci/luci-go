@@ -19,8 +19,11 @@ import {
   Grid,
   TextField,
   Typography,
+  createFilterOptions,
 } from '@mui/material';
 import { useEffect } from 'react';
+
+import { CodeChip } from '../common/CodeChip';
 
 import { useCardForm } from './CardForm';
 import { useInventoryForm } from './InventoryFormContext';
@@ -33,7 +36,12 @@ interface FormAutocompleteFieldProps {
   gridSm?: number;
   regexValidation?: RegExp;
   maxLength?: number;
+  multiple?: boolean;
 }
+
+const filterOptionsLimit = createFilterOptions<string>({
+  limit: 100,
+});
 
 export const FormAutocompleteField = ({
   label,
@@ -43,6 +51,7 @@ export const FormAutocompleteField = ({
   gridSm = 6,
   regexValidation = /^[a-zA-Z0-9-_.]+$/,
   maxLength = 100,
+  multiple = true,
 }: FormAutocompleteFieldProps) => {
   const { isEditing, getFieldValue, setFieldValue, setFieldError } =
     useCardForm();
@@ -52,8 +61,10 @@ export const FormAutocompleteField = ({
   const isEditable = isPathEditable(pathStr);
   const value = getFieldValue(path);
   const arrValue = Array.isArray(value) ? value.map(String) : [];
+  const strValue = value !== undefined && value !== null ? String(value) : '';
 
-  const invalidTokens = arrValue.filter(
+  const tokensToValidate = multiple ? arrValue : strValue ? [strValue] : [];
+  const invalidTokens = tokensToValidate.filter(
     (val) =>
       (regexValidation && !regexValidation.test(val)) || val.length > maxLength,
   );
@@ -69,7 +80,40 @@ export const FormAutocompleteField = ({
   }, [hasError, pathStr, isEditing, isEditable, setFieldError]);
 
   if (!isEditing || !isEditable) {
-    if (arrValue.length === 0) return null;
+    if (multiple) {
+      if (arrValue.length === 0) return null;
+      return (
+        <Grid item xs={12} sm={gridSm}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: 'block', mb: 0.5 }}
+          >
+            {label}
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 0.5,
+            }}
+          >
+            {arrValue.map((val, idx) => (
+              <Chip
+                key={idx}
+                label={val}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{ fontWeight: 600 }}
+              />
+            ))}
+          </Box>
+        </Grid>
+      );
+    }
+
+    if (!strValue) return null;
     return (
       <Grid item xs={12} sm={gridSm}>
         <Typography
@@ -79,24 +123,7 @@ export const FormAutocompleteField = ({
         >
           {label}
         </Typography>
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 0.5,
-          }}
-        >
-          {arrValue.map((val, idx) => (
-            <Chip
-              key={idx}
-              label={val}
-              size="small"
-              color="primary"
-              variant="outlined"
-              sx={{ fontWeight: 600 }}
-            />
-          ))}
-        </Box>
+        <CodeChip value={strValue} />
       </Grid>
     );
   }
@@ -104,6 +131,42 @@ export const FormAutocompleteField = ({
   const helperText = hasError
     ? `Invalid format or length: ${invalidTokens.join(', ')}`
     : undefined;
+
+  if (!multiple) {
+    return (
+      <Grid item xs={12} sm={gridSm}>
+        <Autocomplete
+          freeSolo
+          size="small"
+          options={options}
+          filterOptions={filterOptionsLimit}
+          value={strValue || null}
+          onChange={(_, newValue) => {
+            setFieldValue(
+              path,
+              typeof newValue === 'string' ? newValue : (newValue ?? ''),
+            );
+          }}
+          onInputChange={(_, newInputValue, reason) => {
+            if (reason === 'input' || reason === 'clear') {
+              setFieldValue(path, newInputValue ?? '');
+            }
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={label}
+              size="small"
+              variant="outlined"
+              fullWidth
+              error={hasError}
+              helperText={helperText}
+            />
+          )}
+        />
+      </Grid>
+    );
+  }
 
   return (
     <Grid item xs={12} sm={gridSm}>
@@ -113,6 +176,7 @@ export const FormAutocompleteField = ({
         size="small"
         limitTags={limitTags}
         options={options}
+        filterOptions={filterOptionsLimit}
         value={arrValue}
         onChange={(_, newValue) => {
           setFieldValue(path, newValue);

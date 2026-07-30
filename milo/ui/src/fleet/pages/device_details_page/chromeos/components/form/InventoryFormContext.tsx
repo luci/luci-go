@@ -24,6 +24,7 @@ import {
 import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 
 import {
+  FieldConfig,
   getEditableFields,
   isLabstationConfig,
 } from '../../utils/inventory_editing_utils';
@@ -38,6 +39,7 @@ interface InventoryFormContextType {
   setActiveEditingCardId: (id: string | null) => void;
   editable: boolean;
   isPathEditable: (path: string) => boolean;
+  getFieldConfig: (path: string) => FieldConfig | undefined;
 }
 
 const InventoryFormContext = createContext<InventoryFormContextType | null>(
@@ -88,6 +90,13 @@ export const InventoryFormProvider = ({
     [editableFields],
   );
 
+  const getFieldConfig = useCallback(
+    (path: string) => {
+      return editableFields.find((field) => field.path === path);
+    },
+    [editableFields],
+  );
+
   const value = useMemo(
     () => ({
       originalLse,
@@ -97,6 +106,7 @@ export const InventoryFormProvider = ({
       setActiveEditingCardId,
       editable,
       isPathEditable,
+      getFieldConfig,
     }),
     [
       originalLse,
@@ -106,6 +116,7 @@ export const InventoryFormProvider = ({
       setActiveEditingCardId,
       editable,
       isPathEditable,
+      getFieldConfig,
     ],
   );
 

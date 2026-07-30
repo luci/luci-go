@@ -26,6 +26,8 @@ interface FormTextFieldProps {
   type?: 'string' | 'number' | 'array';
   gridSm?: number;
   gridMd?: number;
+  min?: number;
+  max?: number;
 }
 
 export const FormTextField = ({
@@ -34,16 +36,22 @@ export const FormTextField = ({
   type,
   gridSm = 6,
   gridMd,
+  min,
+  max,
 }: FormTextFieldProps) => {
   const resolvedLabel = label ?? '';
   const resolvedType = type ?? 'string';
 
-  const { isEditing, getFieldValue, setFieldValue, confirm } = useCardForm();
-  const { isPathEditable } = useInventoryForm();
+  const { isEditing, getFieldValue, setFieldValue, setFieldError, confirm } =
+    useCardForm();
+  const { isPathEditable, getFieldConfig } = useInventoryForm();
   const value = getFieldValue(path);
 
   const pathStr = typeof path === 'string' ? path : path.join('.');
   const isEditable = isPathEditable(pathStr);
+  const fieldConfig = getFieldConfig(pathStr);
+  const minVal = min ?? fieldConfig?.min;
+  const maxVal = max ?? fieldConfig?.max;
   const shouldRenderEditMode = isEditing && isEditable;
 
   const [localVal, setLocalVal] = useState('');
@@ -58,11 +66,33 @@ export const FormTextField = ({
       const displayValue =
         resolvedType === 'array' && Array.isArray(value)
           ? value.join(',')
-          : String(value ?? '');
+          : resolvedType === 'number' && (!value || Number(value) === 0)
+            ? ''
+            : String(value ?? '');
       setLocalVal(displayValue);
     }
     setWasEditing(shouldRenderEditMode);
   }, [shouldRenderEditMode, wasEditing, value, resolvedType]);
+
+  const numVal =
+    localVal !== '' && !isNaN(Number(localVal)) ? Number(localVal) : null;
+  const isOutOfRange =
+    resolvedType === 'number' &&
+    numVal !== null &&
+    numVal !== 0 &&
+    ((minVal !== undefined && numVal < minVal) ||
+      (maxVal !== undefined && numVal > maxVal));
+  const helperText = isOutOfRange
+    ? `Must be 0 or between ${minVal} and ${maxVal}`
+    : undefined;
+
+  useEffect(() => {
+    if (shouldRenderEditMode) {
+      setFieldError(pathStr, isOutOfRange);
+    } else {
+      setFieldError(pathStr, false);
+    }
+  }, [shouldRenderEditMode, isOutOfRange, pathStr, setFieldError]);
 
   if (!shouldRenderEditMode) {
     if (resolvedType === 'array') {
@@ -85,7 +115,11 @@ export const FormTextField = ({
         </PropertyField>
       );
     }
-    const hasValue = value !== undefined && value !== null && value !== '';
+    const hasValue =
+      value !== undefined &&
+      value !== null &&
+      value !== '' &&
+      (resolvedType !== 'number' || Number(value) !== 0);
     if (!hasValue) return null;
 
     return (
@@ -130,6 +164,8 @@ export const FormTextField = ({
       gridSm={gridSm}
       gridMd={gridMd}
       inputType={resolvedType === 'number' ? 'number' : 'text'}
+      error={isOutOfRange}
+      helperText={helperText}
     />
   );
 };

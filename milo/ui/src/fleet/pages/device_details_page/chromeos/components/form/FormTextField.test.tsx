@@ -37,6 +37,14 @@ jest.mock('../../utils/inventory_editing_utils', () => {
         editPath: 'hive',
         type: 'string',
       },
+      {
+        label: 'Servo Port',
+        path: 'chromeosMachineLse.deviceLse.dut.peripherals.servo.servoPort',
+        editPath: 'servo.port',
+        type: 'number',
+        min: 9000,
+        max: 9999,
+      },
     ]),
   };
 });
@@ -234,5 +242,93 @@ describe('<FormTextField />', () => {
     // Let's verify we can type a valid negative number:
     await userEvent.type(input, '45');
     expect(input).toHaveValue(-45);
+  });
+
+  it('validates min and max range for numeric inputs and disables confirm button when out of range', async () => {
+    const localLse = {
+      chromeosMachineLse: {
+        deviceLse: {
+          dut: {
+            peripherals: {
+              servo: {
+                servoPort: 9999,
+              },
+            },
+          },
+        },
+      },
+    } as unknown as MachineLSE;
+
+    render(
+      <TestWrapper initialLse={localLse}>
+        <FormTextField
+          label="Servo Port"
+          path="chromeosMachineLse.deviceLse.dut.peripherals.servo.servoPort"
+          type="number"
+          min={9000}
+          max={9999}
+        />
+      </TestWrapper>,
+    );
+
+    const editBtn = screen.getByRole('button', { name: /edit/i });
+    await userEvent.click(editBtn);
+
+    const input = screen.getByRole('spinbutton');
+    expect(input).toHaveValue(9999);
+
+    await userEvent.clear(input);
+    await userEvent.type(input, '1234');
+
+    expect(
+      screen.getByText('Must be 0 or between 9000 and 9999'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+
+    await userEvent.clear(input);
+    await userEvent.type(input, '0');
+
+    expect(
+      screen.queryByText('Must be 0 or between 9000 and 9999'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeEnabled();
+  });
+
+  it('automatically applies min and max range from schema getFieldConfig when min and max props are omitted', async () => {
+    const localLse = {
+      chromeosMachineLse: {
+        deviceLse: {
+          dut: {
+            peripherals: {
+              servo: {
+                servoPort: 9999,
+              },
+            },
+          },
+        },
+      },
+    } as unknown as MachineLSE;
+
+    render(
+      <TestWrapper initialLse={localLse}>
+        <FormTextField
+          label="Servo Port"
+          path="chromeosMachineLse.deviceLse.dut.peripherals.servo.servoPort"
+          type="number"
+        />
+      </TestWrapper>,
+    );
+
+    const editBtn = screen.getByRole('button', { name: /edit/i });
+    await userEvent.click(editBtn);
+
+    const input = screen.getByRole('spinbutton');
+    await userEvent.clear(input);
+    await userEvent.type(input, '8888');
+
+    expect(
+      screen.getByText('Must be 0 or between 9000 and 9999'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
   });
 });

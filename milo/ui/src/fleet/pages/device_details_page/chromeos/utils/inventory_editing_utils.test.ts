@@ -23,6 +23,8 @@ import {
   updateNestedValues,
   generateShivasCommands,
   generateChangelogMarkdown,
+  hasDeployableEdits,
+  getEditableFields,
 } from './inventory_editing_utils';
 
 describe('inventory_editing_utils', () => {
@@ -309,6 +311,145 @@ describe('inventory_editing_utils', () => {
       ].join('\n');
 
       expect(generateChangelogMarkdown(diffs, 'device-1')).toBe(expected);
+    });
+  });
+
+  describe('Servo editing', () => {
+    const original = {
+      name: 'machineLSEs/test-host',
+      chromeosMachineLse: {
+        deviceLse: {
+          dut: {
+            pools: ['pool1'],
+            peripherals: {
+              servo: {
+                servoHostname: 'servo-old',
+                servoPort: 9999,
+                servoSerial: 'serial-old',
+              },
+            },
+          },
+        },
+      },
+    } as unknown as MachineLSE;
+
+    const updated = JSON.parse(JSON.stringify(original));
+    updated.chromeosMachineLse!.deviceLse!.dut!.peripherals!.servo = {
+      servoHostname: 'servo-new',
+      servoPort: 8888,
+      servoSerial: 'serial-new',
+    };
+
+    it('calculates diffs for servo fields', () => {
+      const diffs = calculateDiff(original, updated);
+      expect(diffs).toContainEqual({
+        path: 'Servo Hostname',
+        original: 'servo-old',
+        updated: 'servo-new',
+      });
+      expect(diffs).toContainEqual({
+        path: 'Servo Port',
+        original: '9999',
+        updated: '8888',
+      });
+      expect(diffs).toContainEqual({
+        path: 'Servo Serial',
+        original: 'serial-old',
+        updated: 'serial-new',
+      });
+    });
+
+    it('translates diffs to DeviceConfigEdits format', () => {
+      const { edits, paths } = translateDiffToEdits(original, updated);
+      expect(edits.servo).toEqual({
+        hostname: 'servo-new',
+        port: 8888,
+        serial: 'serial-new',
+      });
+      expect(paths).toEqual(['servo.hostname', 'servo.port', 'servo.serial']);
+    });
+
+    it('generates shivas update command for servo fields on a DUT', () => {
+      const commands = generateShivasCommands(
+        original,
+        updated,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update dut -name test-host -namespace os -servo servo-new:8888 -servo-serial serial-new',
+      ]);
+    });
+  });
+
+  describe('hasDeployableEdits', () => {
+    it('returns true if servo fields are edited on a DUT', () => {
+      const diffs = [
+        { path: 'Servo Hostname', original: 'old', updated: 'new' },
+      ];
+      expect(hasDeployableEdits(diffs, false)).toBe(true);
+    });
+
+    it('returns false if only pools are edited on a DUT', () => {
+      const diffs = [{ path: 'Pools', original: 'p1', updated: 'p2' }];
+      expect(hasDeployableEdits(diffs, false)).toBe(false);
+    });
+
+    it('returns false if servo fields are edited on a Labstation', () => {
+      const diffs = [
+        { path: 'Servo Hostname', original: 'old', updated: 'new' },
+      ];
+      expect(hasDeployableEdits(diffs, true)).toBe(false);
+    });
+  });
+
+  describe('translateDiffToEdits deterministic zero-clearing', () => {
+    it('explicitly clears servo.port to 0 and includes it in paths when servo.hostname is cleared to empty string', () => {
+      const original = {
+        chromeosMachineLse: {
+          deviceLse: {
+            dut: {
+              peripherals: {
+                servo: {
+                  servoHostname: 'old-servo',
+                  servoPort: 9999,
+                },
+              },
+            },
+          },
+        },
+      } as unknown as MachineLSE;
+      const updated = {
+        chromeosMachineLse: {
+          deviceLse: {
+            dut: {
+              peripherals: {
+                servo: {
+                  servoHostname: '',
+                  servoPort: 9999,
+                },
+              },
+            },
+          },
+        },
+      } as unknown as MachineLSE;
+      const { edits, paths } = translateDiffToEdits(original, updated);
+      expect(edits.servo).toEqual({
+        hostname: '',
+        port: 0,
+      });
+      expect(paths).toContain('servo.hostname');
+      expect(paths).toContain('servo.port');
+    });
+  });
+
+  describe('getEditableFields', () => {
+    it('includes numeric range validation properties for Servo Port on DUTs', () => {
+      const fields = getEditableFields(false);
+      const portField = fields.find((f) => f.editPath === 'servo.port');
+      expect(portField).toBeDefined();
+      expect(portField?.min).toBe(9000);
+      expect(portField?.max).toBe(9999);
     });
   });
 });
