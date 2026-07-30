@@ -95,8 +95,9 @@ type changeInfo struct {
 	IsPrivate   bool      `json:"is_private,omitempty"`
 	MetaRevID   string    `json:"meta_rev_id,omitempty"`
 
-	RevertOf           int64 `json:"revert_of,omitempty"`
-	CherryPickOfChange int64 `json:"cherry_pick_of_change,omitempty"`
+	RevertOf             int64 `json:"revert_of,omitempty"`
+	CherryPickOfChange   int64 `json:"cherry_pick_of_change,omitempty"`
+	CherryPickOfPatchSet int64 `json:"cherry_pick_of_patch_set,omitempty"`
 
 	// MoreChanges may be set on the last change in a response to a query for
 	// changes, but this is not a property of the change itself and is not
@@ -106,23 +107,24 @@ type changeInfo struct {
 
 func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 	ret := &gerritpb.ChangeInfo{
-		Number:             ci.Number,
-		Owner:              ci.Owner.ToProto(),
-		Project:            ci.Project,
-		Ref:                branchToRef(ci.Branch),
-		Subject:            ci.Subject,
-		Status:             gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[ci.Status]),
-		Hashtags:           ci.Hashtags,
-		CurrentRevision:    ci.CurrentRevision,
-		Submittable:        ci.Submittable,
-		IsPrivate:          ci.IsPrivate,
-		MetaRevId:          ci.MetaRevID,
-		Created:            timestamppb.New(ci.Created.Time),
-		Updated:            timestamppb.New(ci.Updated.Time),
-		Submitted:          timestamppb.New(ci.Submitted.Time),
-		RevertOf:           ci.RevertOf,
-		CherryPickOfChange: ci.CherryPickOfChange,
-		Branch:             ci.Branch,
+		Number:               ci.Number,
+		Owner:                ci.Owner.ToProto(),
+		Project:              ci.Project,
+		Ref:                  branchToRef(ci.Branch),
+		Subject:              ci.Subject,
+		Status:               gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[ci.Status]),
+		Hashtags:             ci.Hashtags,
+		CurrentRevision:      ci.CurrentRevision,
+		Submittable:          ci.Submittable,
+		IsPrivate:            ci.IsPrivate,
+		MetaRevId:            ci.MetaRevID,
+		Created:              timestamppb.New(ci.Created.Time),
+		Updated:              timestamppb.New(ci.Updated.Time),
+		Submitted:            timestamppb.New(ci.Submitted.Time),
+		RevertOf:             ci.RevertOf,
+		CherryPickOfChange:   ci.CherryPickOfChange,
+		CherryPickOfPatchSet: ci.CherryPickOfPatchSet,
+		Branch:               ci.Branch,
 	}
 	if ci.Revisions != nil {
 		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))

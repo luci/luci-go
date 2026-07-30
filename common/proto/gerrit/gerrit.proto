@@ -447,7 +447,7 @@ message GitPersonInfo {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 //
-// Next tag: 24.
+// Next tag: 25.
 message ChangeInfo {
   // The change number.
   int64 number = 1;
@@ -521,6 +521,9 @@ message ChangeInfo {
 
   // The numeric Change-Id of the change that this change was cherry-picked from.
   int64 cherry_pick_of_change = 16;
+
+  // The 1-based patch set number of the change that this change was cherry-picked from.
+  int64 cherry_pick_of_patch_set = 24;
 
   // The users who have been added in and removed from the change.
   ReviewerStatusMap reviewers = 17;

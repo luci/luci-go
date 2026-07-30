@@ -92,14 +92,15 @@ func TestChangeInfoToProto(t *testing.T) {
 			SubmitRequirements: []*submitRequirementResultInfo{
 				{Name: "Code-Review", Status: "SATISFIED"},
 			},
-			Created:            Timestamp{Time: now},
-			Updated:            Timestamp{Time: now},
-			Submitted:          Timestamp{Time: now},
-			Submittable:        true,
-			IsPrivate:          false,
-			MetaRevID:          "meta1",
-			RevertOf:           999,
-			CherryPickOfChange: 888,
+			Created:              Timestamp{Time: now},
+			Updated:              Timestamp{Time: now},
+			Submitted:            Timestamp{Time: now},
+			Submittable:          true,
+			IsPrivate:            false,
+			MetaRevID:            "meta1",
+			RevertOf:             999,
+			CherryPickOfChange:   888,
+			CherryPickOfPatchSet: 7,
 		}
 
 		got, err := ci.ToProto()
@@ -107,7 +108,7 @@ func TestChangeInfoToProto(t *testing.T) {
 			t.Fatalf("ToProto() failed: %v", err)
 		}
 
-		if got.Number != 12345 || got.Project != "my/project" || got.Branch != "main" || got.Ref != "refs/heads/main" {
+		if got.Number != 12345 || got.Project != "my/project" || got.Branch != "main" || got.Ref != "refs/heads/main" || got.CherryPickOfPatchSet != 7 {
 			t.Errorf("ToProto basic fields mismatch: %v", got)
 		}
 		if got.Status != gerritpb.ChangeStatus_NEW {
