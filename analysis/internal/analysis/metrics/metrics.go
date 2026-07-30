@@ -101,6 +101,19 @@ var (
 		CountSQL:  `f.test_run_id`,
 	}.Build()
 
+	// The number of postsubmit test runs that failed.
+	TestRunsFailedInPostsubmit = metricBuilder{
+		ID:                "test-run-failed-in-postsubmit",
+		HumanReadableName: "Test Runs Failed in Postsubmit",
+		Description:       "The number of distinct postsubmit test runs (i.e. swarming tasks or builds) failed due to failures in a cluster.",
+		DefaultConfig: Configuration{
+			SortPriority:          220,
+			ShowInMetricsSelector: false,
+		},
+		FilterSQL: `f.is_test_run_blocked AND (f.sources.changelists IS NULL OR (ARRAY_LENGTH(f.sources.changelists) = 0 AND NOT f.sources.is_dirty))`,
+		CountSQL:  `f.test_run_id`,
+	}.Build()
+
 	// The total number of test results in this cluster. LUCI Analysis only
 	// clusters test results which are failed. (We also exclude unexpectedly
 	// passed web tests).
@@ -198,6 +211,7 @@ var (
 		HumanClsFailedPresubmit,
 		CriticalFailuresExonerated,
 		TestRunsFailed,
+		TestRunsFailedInPostsubmit,
 		Failures,
 		BuildsWithTestRunsFailedDueToFlakyTests,
 		FailuresWithAttributedFilteredTestRuns,
