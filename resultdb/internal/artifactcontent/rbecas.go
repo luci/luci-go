@@ -54,7 +54,7 @@ func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
 // RBEConnWithProject creates a gRPC connection to RBE authenticated by a
 // project scoped account.
 func RBEConnWithProject(ctx context.Context, project string) (*grpc.ClientConn, error) {
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsProject, auth.WithProject(project), auth.WithScopes(scopes.CloudScopeSet()...))
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsProject, auth.WithProjectNoFallback(project), auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, err
 	}
