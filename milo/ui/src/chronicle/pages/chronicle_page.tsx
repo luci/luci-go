@@ -14,7 +14,7 @@
 
 import { Box, Button, CircularProgress, Link, Typography } from '@mui/material';
 import { useContext } from 'react';
-import { useParams } from 'react-router';
+import { useParams, useLocation } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
@@ -65,6 +65,8 @@ function ChroniclePageContent() {
     detectionCancelled,
     setDetectionCancelled,
   } = useContext(ChronicleContext);
+
+  const location = useLocation();
 
   const formattedWorkplanId = workplanId ? formatWorkplanUrlId(workplanId) : '';
 
@@ -194,16 +196,24 @@ function ChroniclePageContent() {
         <AppRoutedTab
           label="Summary"
           value="summary"
-          to="summary"
+          to={`summary${location.search}`}
           hideWhenInactive
         />
-        <AppRoutedTab label="Stages & Checks Graph" value="graph" to="graph" />
-        <AppRoutedTab label="Tree" value="tree" to="tree" />
-        <AppRoutedTab label="Timeline" value="timeline" to="timeline" />
+        <AppRoutedTab
+          label="Stages & Checks Graph"
+          value="graph"
+          to={`graph${location.search}`}
+        />
+        <AppRoutedTab label="Tree" value="tree" to={`tree${location.search}`} />
+        <AppRoutedTab
+          label="Timeline"
+          value="timeline"
+          to={`timeline${location.search}`}
+        />
         <AppRoutedTab
           label="Ledger"
           value="ledger"
-          to="ledger"
+          to={`ledger${location.search}`}
           hideWhenInactive
         />
       </AppRoutedTabs>

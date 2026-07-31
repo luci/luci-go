@@ -74,7 +74,7 @@ export const chronicleRoutes: RouteObject[] = [
       },
       {
         path: 'timeline',
-        lazy: () => import('./components/timeline_view'),
+        lazy: () => import('./components/timeline/timeline_view'),
       },
       {
         path: 'graph',
