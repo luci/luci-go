@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/errors"
@@ -31,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/pagination"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -401,6 +403,33 @@ func (opts ReadTestHistoryOptions) statement(tmpl string, paginationParams []str
 // ReadTestHistory reads verdicts from the spanner database.
 // Must be called in a spanner transactional context.
 func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts []*pb.TestVerdict, nextPageToken string, err error) {
+	attrs := []attribute.KeyValue{
+		attribute.String("project", opts.Project),
+		attribute.String("test_id", opts.TestID),
+		attribute.StringSlice("sub_realms", opts.SubRealms),
+		attribute.String("submitted_filter", opts.SubmittedFilter.String()),
+		attribute.Bool("exclude_bisection_results", opts.ExcludeBisectionResults),
+		attribute.Int("page_size", opts.PageSize),
+		attribute.String("page_token", opts.PageToken),
+	}
+	if opts.PreviousTestID != "" {
+		attrs = append(attrs, attribute.String("previous_test_id", opts.PreviousTestID))
+	}
+	if opts.VariantPredicate != nil {
+		attrs = append(attrs, attribute.String("variant_predicate", opts.VariantPredicate.String()))
+	}
+	if opts.TimeRange != nil {
+		if opts.TimeRange.Earliest != nil {
+			attrs = append(attrs, attribute.String("time_range_earliest", opts.TimeRange.Earliest.AsTime().Format(time.RFC3339)))
+		}
+		if opts.TimeRange.Latest != nil {
+			attrs = append(attrs, attribute.String("time_range_latest", opts.TimeRange.Latest.AsTime().Format(time.RFC3339)))
+		}
+	}
+
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/testresults.ReadTestHistory", attrs...)
+	defer func() { tracing.End(s, err) }()
+
 	stmt, err := opts.statement("testHistoryQuery", []string{"paginationTime", "paginationVariantHash", "paginationInvId"}, TimeRangeFromProto(opts.TimeRange))
 	if err != nil {
 		return nil, "", err
@@ -490,7 +519,7 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 		return nil
 	})
 	if err != nil {
-		return nil, "", errors.Fmt("query test history: %w", err)
+		return nil, "", errors.Fmt("query test history for %q in %q: %w", opts.TestID, opts.Project, err)
 	}
 
 	if opts.PageSize != 0 && len(verdicts) == opts.PageSize {
