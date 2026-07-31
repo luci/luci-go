@@ -340,10 +340,15 @@ func UpdateCompileRerunStatus(c context.Context, bbid int64) error {
 		buildEnded := build.Status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK
 		if buildEnded && !lastRerun.HasEnded() {
 			// Edge case: when the build ends but the rerun isn't ended,
-			// this suggests that there is a infra failure in the rerun build
-			// which prevent it from sending back the update via the UpdateAnalysisProgress RPC.
+			// this suggests that either the build was canceled, or there was an infra failure
+			// in the rerun build which prevented it from sending back the update via the
+			// UpdateAnalysisProgress RPC.
 			// TODO (nqmtuan): Perhaps we need to update Analysis and NthSection analysis status too?
-			lastRerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
+			if build.Status == buildbucketpb.Status_CANCELED {
+				lastRerun.Status = pb.RerunStatus_RERUN_STATUS_CANCELED
+			} else {
+				lastRerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
+			}
 			lastRerun.EndTime = endTime
 		}
 		lastRerun.StartTime = startTime
@@ -386,9 +391,14 @@ func UpdateTestRerunStatus(ctx context.Context, build *buildbucketpb.Build) erro
 
 		if buildEnded && !singleRerun.HasEnded() {
 			// Edge case: when the build ends but the rerun isn't ended,
-			// this suggests that there is a infra failure in the rerun build
-			// which prevent it from sending back the update via the UpdateTestAnalysisProgress RPC.
-			singleRerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
+			// this suggests that either the build was canceled, or there was an infra failure
+			// in the rerun build which prevented it from sending back the update via the
+			// UpdateTestAnalysisProgress RPC.
+			if build.Status == buildbucketpb.Status_CANCELED {
+				singleRerun.Status = pb.RerunStatus_RERUN_STATUS_CANCELED
+			} else {
+				singleRerun.Status = pb.RerunStatus_RERUN_STATUS_INFRA_FAILED
+			}
 			rerunFailed = true
 		}
 

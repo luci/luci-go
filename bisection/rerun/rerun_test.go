@@ -461,6 +461,30 @@ func TestUpdateRerunStatus(t *testing.T) {
 				assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_PASSED))
 			})
 		})
+		t.Run("build canceled", func(t *ftt.Test) {
+			res.Status = bbpb.Status_CANCELED
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+			rerunBuild := &model.CompileRerunBuild{
+				Id: 1234,
+			}
+			assert.Loosely(t, datastore.Put(c, rerunBuild), should.BeNil)
+			singleRerun := &model.SingleRerun{
+				RerunBuild: datastore.KeyForObj(c, rerunBuild),
+				Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			}
+			assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			assert.Loosely(t, UpdateCompileRerunStatus(c, 1234), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+			// Checking the end time and status.
+			assert.Loosely(t, datastore.Get(c, rerunBuild), should.BeNil)
+			assert.Loosely(t, rerunBuild.EndTime.Unix(), should.Equal(200))
+			assert.Loosely(t, rerunBuild.Status, should.Equal(bbpb.Status_CANCELED))
+			assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
+			assert.Loosely(t, singleRerun.EndTime.Unix(), should.Equal(200))
+			assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_CANCELED))
+		})
 	})
 }
 
@@ -764,6 +788,39 @@ func TestUpdateTestRerunStatus(t *testing.T) {
 				assert.Loosely(t, singleRerun.LUCIBuild.Status, should.Equal(bbpb.Status_SUCCESS))
 				assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_PASSED))
 			})
+		})
+		t.Run("build canceled", func(t *ftt.Test) {
+			build.Status = bbpb.Status_CANCELED
+			tfa := testutil.CreateTestFailureAnalysis(c, t, &testutil.TestFailureAnalysisCreationOption{
+				ID: 100,
+			})
+			nsa := testutil.CreateTestNthSectionAnalysis(c, t, &testutil.TestNthSectionAnalysisCreationOption{
+				ID:                1000,
+				ParentAnalysisKey: datastore.KeyForObj(c, tfa),
+			})
+			singleRerun := testutil.CreateTestSingleRerun(c, t, &testutil.TestSingleRerunCreationOption{
+				AnalysisKey: datastore.KeyForObj(c, tfa),
+				ID:          1234,
+			})
+			assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			assert.Loosely(t, UpdateTestRerunStatus(c, build), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// Checking the end time and status.
+			assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
+			assert.Loosely(t, singleRerun.LUCIBuild.EndTime.Unix(), should.Equal(200))
+			assert.Loosely(t, singleRerun.LUCIBuild.Status, should.Equal(bbpb.Status_CANCELED))
+			assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_CANCELED))
+
+			assert.Loosely(t, datastore.Get(c, nsa), should.BeNil)
+			assert.Loosely(t, nsa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+			assert.Loosely(t, nsa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+
+			assert.Loosely(t, datastore.Get(c, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_ERROR))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		})
 	})
 }
