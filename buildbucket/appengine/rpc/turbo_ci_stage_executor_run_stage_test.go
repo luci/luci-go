@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -248,9 +249,8 @@ func TestRunStage(t *testing.T) {
 			}.Build())
 
 			// Inject a datastore filter to simulate a transient error.
-			ctx = datastore.AddRawFilters(ctx, func(ctx context.Context, rds datastore.RawInterface) datastore.RawInterface {
-				return transientErrFilter{rds}
-			})
+			ctx, fb := featureBreaker.FilterRDS(ctx, nil)
+			fb.BreakFeatures(appstatus.Error(codes.Internal, "transient internal error"), "Run")
 
 			_, err = se.RunStage(ctx, req)
 			assert.That(t, err, should.ErrLike("failed to query builds by stage_attempt_id"))
@@ -380,10 +380,4 @@ func TestRunStage(t *testing.T) {
 			assert.That(t, bldDetails.GetId(), should.Equal(bld.ID))
 		})
 	})
-}
-
-type transientErrFilter struct{ datastore.RawInterface }
-
-func (f transientErrFilter) Run(q *datastore.FinalizedQuery, cb datastore.RawRunCB) error {
-	return appstatus.Error(codes.Internal, "transient internal error")
 }
