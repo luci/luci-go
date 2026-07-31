@@ -115,6 +115,9 @@ func (bf *batchFilter) batchParallel(count, batch int, cb func(offset, count int
 // that it performs the query in batches, using a cursor to continue the query
 // in between batches.
 //
+// NOTE: `cb` does NOT support cursor callbacks when using batched processing
+// mode.
+//
 // See Run for more information about the parameters.
 //
 // Batching processes the supplied query in batches, buffering the full batch
@@ -137,7 +140,7 @@ func (bf *batchFilter) batchParallel(count, batch int, cb func(offset, count int
 //
 // If the specified `batchSize` is <= 0, no batching will be performed.
 func RunBatch(c context.Context, batchSize int32, q *Query, cb any) error {
-	return Run(withQueryBatching(c, batchSize), q, cb)
+	return runImpl(withQueryBatching(c, batchSize), q, false, cb)
 }
 
 // CountBatch is a batching version of Count. See RunBatch for more information
@@ -181,9 +184,8 @@ func (f *queryBatchingFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
 
 	// Buffer for each batch.
 	type batchEntry struct {
-		key       *Key
-		val       PropertyMap
-		getCursor CursorCB
+		key *Key
+		val PropertyMap
 	}
 	buffer := make([]batchEntry, 0, int(f.batchSize))
 
@@ -228,17 +230,12 @@ func (f *queryBatchingFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
 				if err != nil {
 					return fmt.Errorf("failed to get cursor: %v", err)
 				}
-
-				// If the caller wants to get the cursor, we can avoid an extra RPC
-				// by just supplying it.
-				getCursor = func() (Cursor, error) { return cursor, nil }
 				nextCursor = cursor
 			}
 
 			buffer = append(buffer, batchEntry{
-				key:       key,
-				val:       val,
-				getCursor: getCursor,
+				key: key,
+				val: val,
 			})
 			return nil
 		})
@@ -249,7 +246,7 @@ func (f *queryBatchingFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
 		// Invoke our callback for each buffered entry.
 		for i := range buffer {
 			ent := &buffer[i]
-			if err := cb(ent.key, ent.val, ent.getCursor); err != nil {
+			if err := cb(ent.key, ent.val, nil); err != nil {
 				return err
 			}
 		}

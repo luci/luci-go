@@ -151,61 +151,10 @@ func TestQueryBatch(t *testing.T) {
 			}
 		}
 
-		t.Run(`Test iterative Run with cursors.`, func(t *ftt.Test) {
-			// This test will have a naive outer loop that fetches pages in large
-			// increments using cursors. The outer loop will use the Batcher
-			// internally, which will fetch smaller page sizes.
-			testIterativeRun := func(rounds, outerFetchSize, batchSize int32) error {
-				// Clear state and configure.
-				cf.run = 0
-				fds.entities = rounds * outerFetchSize
-
-				var (
-					outerCount int32
-					cursor     Cursor
-				)
-				for range rounds {
-					// Fetch "outerFetchSize" items from our Batcher.
-					q := NewQuery("").Limit(outerFetchSize)
-					if cursor != nil {
-						q = q.Start(cursor)
-					}
-
-					err := RunBatch(c, batchSize, q, func(v CommonStruct, getCursor CursorCB) (err error) {
-						if v.Value != int64(outerCount) {
-							return fmt.Errorf("query value doesn't match count (%d != %d)", v.Value, outerCount)
-						}
-						outerCount++
-
-						// Retain our cursor from this round.
-						cursor, err = getCursor()
-						return
-					})
-					if err != nil {
-						return err
-					}
-				}
-
-				// Make sure we iterated through everything.
-				if outerCount != fds.entities {
-					return fmt.Errorf("query returned incomplete results (%d != %d)", outerCount, fds.entities)
-				}
-
-				// Make sure the appropriate number of real queries was executed.
-				expectedRunCount := expectedBatchRunCalls(batchSize, outerFetchSize) * rounds
-				if cf.run != expectedRunCount {
-					return fmt.Errorf("unexpected number of raw Run calls (%d != %d)", cf.run, expectedRunCount)
-				}
-				return nil
-			}
-
-			assert.Loosely(t, testIterativeRun(3, 2, 1), should.BeNil)
-			assert.Loosely(t, testIterativeRun(3, 5, 2), should.BeNil)
-			assert.Loosely(t, testIterativeRun(3, 1000, 250), should.BeNil)
-
-			// We'll use fetch/batch sizes that are not direct multiples of each other
-			// so we can test some incongruent boundaries.
-			assert.Loosely(t, testIterativeRun(3, 900, 250), should.BeNil)
+		t.Run(`RunBatch panics if cursor is requested`, func(t *ftt.Test) {
+			assert.Loosely(t, func() {
+				RunBatch(c, 10, NewQuery(""), func(v CommonStruct, getCursor CursorCB) error { return nil })
+			}, should.Panic)
 		})
 	})
 }

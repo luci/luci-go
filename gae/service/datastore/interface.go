@@ -154,7 +154,7 @@ func parseRunCallback(cbIface any) (rcb resolvedRunCallback, isKey bool, mat *mu
 // If an ent argument is a slice, its error type will be a MultiError. Note
 // that in the scenario where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
-func AllocateIDs(c context.Context, ent ...any) error {
+func AllocateIDs(ctx context.Context, ent ...any) error {
 	if len(ent) == 0 {
 		return nil
 	}
@@ -164,7 +164,7 @@ func AllocateIDs(c context.Context, ent ...any) error {
 		panic(err)
 	}
 
-	keys, _, et := mma.getKeysPMs(GetKeyContext(c), false)
+	keys, _, et := mma.getKeysPMs(GetKeyContext(ctx), false)
 	if len(keys) == 0 {
 		return nil
 	}
@@ -179,7 +179,7 @@ func AllocateIDs(c context.Context, ent ...any) error {
 		keys[compressedIdx] = key.Incomplete()
 	}
 
-	err = Raw(c).AllocateIDs(keys, func(compressedIdx int, key *Key, err error) {
+	err = Raw(ctx).AllocateIDs(keys, func(compressedIdx int, key *Key, err error) {
 		idx := dal.OriginalIndex(compressedIdx)
 
 		index := mma.index(idx)
@@ -206,8 +206,8 @@ func AllocateIDs(c context.Context, ent ...any) error {
 // It is the same as KeyForObjErr, except that if KeyForObjErr would have
 // returned an error, this method panics. It's safe to use if you know that
 // src statically meets the metadata constraints described by KeyForObjErr.
-func KeyForObj(c context.Context, src any) *Key {
-	ret, err := KeyForObjErr(c, src)
+func KeyForObj(ctx context.Context, src any) *Key {
+	ret, err := KeyForObjErr(ctx, src)
 	if err != nil {
 		panic(err)
 	}
@@ -238,8 +238,8 @@ func KeyForObj(c context.Context, src any) *Key {
 //
 // If a required metadata item is missing or of the wrong type, then this will
 // return an error.
-func KeyForObjErr(c context.Context, src any) (*Key, error) {
-	return GetKeyContext(c).NewKeyFromMeta(getMGS(src))
+func KeyForObjErr(ctx context.Context, src any) (*Key, error) {
+	return GetKeyContext(ctx).NewKeyFromMeta(getMGS(src))
 }
 
 // MakeKey is a convenience method for manufacturing a *Key. It should only be
@@ -256,22 +256,22 @@ func KeyForObjErr(c context.Context, src any) (*Key, error) {
 //
 // If elems is not parsable (e.g. wrong length, wrong types, etc.) this method
 // will panic.
-func MakeKey(c context.Context, elems ...any) *Key {
-	kc := GetKeyContext(c)
+func MakeKey(ctx context.Context, elems ...any) *Key {
+	kc := GetKeyContext(ctx)
 	return kc.MakeKey(elems...)
 }
 
 // NewKey constructs a new key in the current appID/Namespace, using the
 // specified parameters.
-func NewKey(c context.Context, kind, stringID string, intID int64, parent *Key) *Key {
-	kc := GetKeyContext(c)
+func NewKey(ctx context.Context, kind, stringID string, intID int64, parent *Key) *Key {
+	kc := GetKeyContext(ctx)
 	return kc.NewKey(kind, stringID, intID, parent)
 }
 
 // NewIncompleteKeys allocates count incomplete keys sharing the same kind and
 // parent. It is useful as input to AllocateIDs.
-func NewIncompleteKeys(c context.Context, count int, kind string, parent *Key) (keys []*Key) {
-	kc := GetKeyContext(c)
+func NewIncompleteKeys(ctx context.Context, count int, kind string, parent *Key) (keys []*Key) {
+	kc := GetKeyContext(ctx)
 	if count > 0 {
 		keys = make([]*Key, count)
 		for i := range keys {
@@ -283,8 +283,8 @@ func NewIncompleteKeys(c context.Context, count int, kind string, parent *Key) (
 
 // NewKeyToks constructs a new key in the current appID/Namespace, using the
 // specified key tokens.
-func NewKeyToks(c context.Context, toks []KeyTok) *Key {
-	kc := GetKeyContext(c)
+func NewKeyToks(ctx context.Context, toks []KeyTok) *Key {
+	kc := GetKeyContext(ctx)
 	return kc.NewKeyToks(toks)
 }
 
@@ -323,8 +323,8 @@ func populateKeyMGS(mgs MetaGetterSetter, key *Key) bool {
 // Note that the behavior of transactions may change depending on what filters
 // have been installed. It's possible that we'll end up implementing things
 // like nested/buffered transactions as filters.
-func RunInTransaction(c context.Context, f func(c context.Context) error, opts *TransactionOptions) error {
-	return Raw(c).RunInTransaction(f, opts)
+func RunInTransaction(ctx context.Context, f func(ctx context.Context) error, opts *TransactionOptions) error {
+	return Raw(ctx).RunInTransaction(f, opts)
 }
 
 // Run executes the given query, and calls `cb` for each successfully
@@ -354,8 +354,17 @@ func RunInTransaction(c context.Context, f func(c context.Context) error, opts *
 // Run may also stop on the first datastore error encountered, which can occur
 // due to flakiness, timeout, etc. If it encounters such an error, it will
 // be returned.
-func Run(c context.Context, q *Query, cb any) error {
-	rcb, isKey, mat, _ := parseRunCallback(cb)
+func Run(ctx context.Context, q *Query, cb any) error {
+	return runImpl(ctx, q, true, cb)
+}
+
+func runImpl(ctx context.Context, q *Query, allowCursor bool, cb any) error {
+	rcb, isKey, mat, hasCursor := parseRunCallback(cb)
+	if hasCursor && !allowCursor {
+		panic(fmt.Errorf(
+			"cb does not match the required callback signature: `%T` != `func(TYPE) [error]`",
+			cb))
+	}
 
 	if isKey {
 		q = q.KeysOnly(true)
@@ -365,7 +374,7 @@ func Run(c context.Context, q *Query, cb any) error {
 		return err
 	}
 
-	raw := Raw(c)
+	raw := Raw(ctx)
 
 	if isKey {
 		err = raw.Run(fq, func(k *Key, _ PropertyMap, gc CursorCB) error {
@@ -407,7 +416,7 @@ func Run(c context.Context, q *Query, cb any) error {
 // Paginated queries skip entities sitting on page boundaries. This doesn't
 // happen when using `impl/memory` and thus hard to spot in unit tests. See
 // queryIterator doc for more details.
-func RunMulti(c context.Context, queries []*Query, cb any) error {
+func RunMulti(ctx context.Context, queries []*Query, cb any) error {
 	rcb, isKey, mat, hasCursorCB := parseRunCallback(cb)
 
 	// A helper that passes an entity to the user callback.
@@ -474,7 +483,7 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 	if len(finalized) == 1 {
 		var err error
 		if hasCursorCB {
-			err = Raw(c).Run(finalized[0], func(key *Key, pm PropertyMap, cursorCB CursorCB) error {
+			err = Raw(ctx).Run(finalized[0], func(key *Key, pm PropertyMap, cursorCB CursorCB) error {
 				return dispatchEntity(key, pm, func() (Cursor, error) {
 					cur, err := cursorCB()
 					if err != nil {
@@ -494,7 +503,7 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 				})
 			})
 		} else {
-			err = Raw(c).Run(finalized[0], func(key *Key, pm PropertyMap, _ CursorCB) error {
+			err = Raw(ctx).Run(finalized[0], func(key *Key, pm PropertyMap, _ CursorCB) error {
 				return dispatchEntity(key, pm, nil)
 			})
 		}
@@ -504,8 +513,8 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 	// All iterators (active and exhausted) in some arbitrary order.
 	iterators := make([]*queryIterator, 0, len(finalized))
 
-	c, cancel := context.WithCancel(c)
-	eg, ectx := errgroup.WithContext(c)
+	ctx, cancel := context.WithCancel(ctx)
+	eg, ectx := errgroup.WithContext(ctx)
 
 	// Make sure all spawned goroutines have fully stopped before returning.
 	defer func() {
@@ -628,12 +637,12 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 //
 // If the query is strongly consistent, will essentially do a full keys-only
 // query and count the number of matches locally.
-func Count(c context.Context, q *Query) (int64, error) {
+func Count(ctx context.Context, q *Query) (int64, error) {
 	fq, err := q.Finalize()
 	if err != nil {
 		return 0, err
 	}
-	v, err := Raw(c).Count(fq)
+	v, err := Raw(ctx).Count(fq)
 	return v, filterStop(err)
 }
 
@@ -645,9 +654,9 @@ func Count(c context.Context, q *Query) (int64, error) {
 // strong consistency, use `Count(c, q.EventualConsistency(true))`: it will use
 // the server-side aggregation which is orders of magnitude faster than the
 // local counting.
-func CountMulti(c context.Context, queries []*Query) (int64, error) {
+func CountMulti(ctx context.Context, queries []*Query) (int64, error) {
 	var count int64
-	err := RunMulti(c, queries,
+	err := RunMulti(ctx, queries,
 		func(_ *Key) error {
 			// RunMulti already does deduplication, we just need to count unique hits.
 			count++
@@ -663,8 +672,8 @@ func CountMulti(c context.Context, queries []*Query) (int64, error) {
 // DecodeCursor converts a string returned by a Cursor into a Cursor instance.
 // It will return an error if the supplied string is not valid, or could not
 // be decoded by the implementation.
-func DecodeCursor(c context.Context, s string) (Cursor, error) {
-	return Raw(c).DecodeCursor(s)
+func DecodeCursor(ctx context.Context, s string) (Cursor, error) {
+	return Raw(ctx).DecodeCursor(s)
 }
 
 type getAllOptions struct {
@@ -702,8 +711,8 @@ func limit(n int) getAllOption {
 // returning, leading to an OOM error. If you use GetAllWithLimit you can pick
 // an 'impossible' limit, which will still be safer by default than GetAll, and
 // easier to debug, too.
-func GetAll(c context.Context, q *Query, dst any) error {
-	return getAllRaw(Raw(c), q, dst)
+func GetAll(ctx context.Context, q *Query, dst any) error {
+	return getAllRaw(Raw(ctx), q, dst)
 }
 
 // GetAllWithLimit retrieves all of the Query results into dst up to a limit.
@@ -826,7 +835,7 @@ func getAllRaw(raw RawInterface, q *Query, dst any, o ...getAllOption) error {
 // If an ent argument is a slice, its error type will be a MultiError. Note
 // that in the scenario, where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
-func Exists(c context.Context, ent ...any) (*ExistsResult, error) {
+func Exists(ctx context.Context, ent ...any) (*ExistsResult, error) {
 	if len(ent) == 0 {
 		return nil, nil
 	}
@@ -836,7 +845,7 @@ func Exists(c context.Context, ent ...any) (*ExistsResult, error) {
 		panic(err)
 	}
 
-	keys, _, et := mma.getKeysPMs(GetKeyContext(c), false)
+	keys, _, et := mma.getKeysPMs(GetKeyContext(ctx), false)
 	if len(keys) == 0 {
 		return nil, nil
 	}
@@ -846,7 +855,7 @@ func Exists(c context.Context, ent ...any) (*ExistsResult, error) {
 	keys, dal := dat.DropKeys(keys)
 
 	bt := newBoolTracker(mma, et)
-	err = Raw(c).GetMulti(keys, nil, func(compressedIdx int, _ PropertyMap, err error) {
+	err = Raw(ctx).GetMulti(keys, nil, func(compressedIdx int, _ PropertyMap, err error) {
 		idx := dal.OriginalIndex(compressedIdx)
 		bt.trackExistsResult(mma.index(idx), err)
 	})
@@ -884,7 +893,7 @@ func Exists(c context.Context, ent ...any) (*ExistsResult, error) {
 // not be affected. This means that you can populate an object for dst with some
 // values, do a Get, and on an ErrNoSuchEntity, do a Put (inside a transaction,
 // of course :)).
-func Get(c context.Context, dst ...any) error {
+func Get(ctx context.Context, dst ...any) error {
 	if len(dst) == 0 {
 		return nil
 	}
@@ -894,7 +903,7 @@ func Get(c context.Context, dst ...any) error {
 		panic(err)
 	}
 
-	keys, pms, et := mma.getKeysPMs(GetKeyContext(c), true)
+	keys, pms, et := mma.getKeysPMs(GetKeyContext(ctx), true)
 	if len(keys) == 0 {
 		return nil
 	}
@@ -904,7 +913,7 @@ func Get(c context.Context, dst ...any) error {
 	keys, pms, dal := dat.DropKeysAndVals(keys, pms)
 
 	meta := NewMultiMetaGetter(pms)
-	err = Raw(c).GetMulti(keys, meta, func(compressedIdx int, pm PropertyMap, err error) {
+	err = Raw(ctx).GetMulti(keys, meta, func(compressedIdx int, pm PropertyMap, err error) {
 		idx := dal.OriginalIndex(compressedIdx)
 		index := mma.index(idx)
 		if err != nil {
@@ -957,8 +966,8 @@ func Get(c context.Context, dst ...any) error {
 // If a src argument is a slice, its error type will be a MultiError. Note
 // that in the scenario where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
-func Put(c context.Context, src ...any) error {
-	return putRaw(Raw(c), GetKeyContext(c), src)
+func Put(ctx context.Context, src ...any) error {
+	return putRaw(Raw(ctx), GetKeyContext(ctx), src)
 }
 
 func putRaw(raw RawInterface, kctx KeyContext, src []any) error {
@@ -1024,7 +1033,7 @@ func putRaw(raw RawInterface, kctx KeyContext, src []any) error {
 // If an ent argument is a slice, its error type will be a MultiError. Note
 // that in the scenario where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
-func Delete(c context.Context, ent ...any) error {
+func Delete(ctx context.Context, ent ...any) error {
 	if len(ent) == 0 {
 		return nil
 	}
@@ -1034,7 +1043,7 @@ func Delete(c context.Context, ent ...any) error {
 		panic(err)
 	}
 
-	keys, _, et := mma.getKeysPMs(GetKeyContext(c), false)
+	keys, _, et := mma.getKeysPMs(GetKeyContext(ctx), false)
 	if len(keys) == 0 {
 		return nil
 	}
@@ -1043,7 +1052,7 @@ func Delete(c context.Context, ent ...any) error {
 	dat.MarkNilKeys(keys)
 	keys, dal := dat.DropKeys(keys)
 
-	err = Raw(c).DeleteMulti(keys, func(compressedIdx int, err error) {
+	err = Raw(ctx).DeleteMulti(keys, func(compressedIdx int, err error) {
 		idx := dal.OriginalIndex(compressedIdx)
 
 		if err != nil {
@@ -1060,8 +1069,8 @@ func Delete(c context.Context, ent ...any) error {
 
 // GetTestable returns the Testable interface for the implementation, or nil if
 // there is none.
-func GetTestable(c context.Context) Testable {
-	return Raw(c).GetTestable()
+func GetTestable(ctx context.Context) Testable {
+	return Raw(ctx).GetTestable()
 }
 
 // maybeSingleError normalizes the error experience between single- and
