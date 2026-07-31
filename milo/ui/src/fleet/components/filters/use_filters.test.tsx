@@ -221,11 +221,14 @@ describe('useFilters', () => {
     expect(generated).toEqual('(host_group = "v1") AND (lab_name = "v2")');
   });
 
-  it('should return syntax error as warning', () => {
-    const builders = {};
+  it('should return syntax error as warning, populate filterValues, and return empty aip160 string', () => {
+    const builder = new StringListFilterCategoryBuilder()
+      .setLabel('Model')
+      .setOptions([{ label: 'v1', value: 'v1' }]);
+    const builders = { model: builder };
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <MemoryRouter initialEntries={['/?filters=invalid%20aip160']}>
+      <MemoryRouter initialEntries={['/?filters=sw.pool+%3D+%28%22default%22']}>
         <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
       </MemoryRouter>
     );
@@ -233,7 +236,14 @@ describe('useFilters', () => {
     const { result } = renderHook(() => useFilters(builders), { wrapper });
 
     expect(result.current).toBeTruthy();
-    expect(result.current?.warnings).toBeTruthy();
+    expect(result.current.filterValues).toBeDefined();
+    expect(result.current.filterValues?.model).toBeInstanceOf(
+      StringListFilterCategory,
+    );
+    expect(result.current?.warnings).toEqual([
+      'There was an error parsing your filters: Expected RPAREN but got END',
+    ]);
+    expect(result.current.aip160()).toBe('');
   });
 
   it('should parse filters with parentheses and AND correctly', () => {

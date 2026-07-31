@@ -98,20 +98,21 @@ export const useFilters = <
     [setSearchParams],
   );
 
-  const [filterValues, warningsFromBuilder]: [
+  const [filterValues, warningsFromBuilder, hasParseError]: [
     FilterValuesFromBuilders<T> | undefined,
     string[],
+    boolean,
   ] = useMemo(() => {
-    if (builders === undefined) return [undefined, []];
+    if (builders === undefined) return [undefined, [], false];
 
-    const { filters, warnings } = buildFilters(
+    const { filters, warnings, hasParseError } = buildFilters(
       builders,
       updateUrl,
       filtersAIP160,
       areFilterValuesLoading || false,
     );
 
-    return [filters, warnings];
+    return [filters, warnings, hasParseError];
   }, [builders, filtersAIP160, areFilterValuesLoading, updateUrl]);
 
   useEffect(() => {
@@ -133,13 +134,14 @@ export const useFilters = <
   // Sometimes values inside filterValues change but the object reference stays same,
   // we evaluate the most up-to-date values.
   const aip160 = useCallback(() => {
+    if (hasParseError) return '';
     if (!filterValues) return filtersAIP160 || '';
     return Object.values(filterValues)
       .filter((f) => f.isActive())
       .map((f) => f.toAIP160())
       .filter((f) => f !== '')
       .join(' AND ');
-  }, [filterValues, filtersAIP160]);
+  }, [filterValues, filtersAIP160, hasParseError]);
 
   const setFiltersBatch = useCallback(
     (updates: Record<string, string[]>) => {
@@ -343,24 +345,29 @@ function buildFilters<
 ): {
   filters: FilterValuesFromBuilders<T> | undefined;
   warnings: string[];
+  hasParseError: boolean;
 } {
   const parseResult =
     filtersAIP160 === null ? null : constructFiltersFromAIP160(filtersAIP160);
 
-  if (parseResult?.isError) {
-    return { filters: undefined, warnings: [parseResult.error] };
-  }
-
   const filters: Record<string, FilterCategory> = {};
   const warnings: string[] = [];
+  let hasParseError = false;
+
+  if (parseResult?.isError) {
+    warnings.push(
+      `There was an error parsing your filters: ${parseResult.error}`,
+    );
+    hasParseError = true;
+  }
 
   for (const [key, bob] of Object.entries(builders)) {
     if (!bob.isFilledIn()) {
       throw new Error(`Builder ${key} is not filled in: ${bob}`);
     }
 
-    let terms = parseResult === null ? null : (parseResult.terms[key] ?? []);
-    if (parseResult !== null) {
+    let terms = null;
+    if (parseResult !== null && !parseResult.isError) {
       const matchKey = normalizeFilterKey(key).toLowerCase();
       const matches = Object.entries(parseResult.terms).filter(
         ([k]) => normalizeFilterKey(k).toLowerCase() === matchKey,
@@ -384,7 +391,7 @@ function buildFilters<
     }
   }
 
-  if (parseResult !== null) {
+  if (parseResult !== null && !parseResult.isError) {
     for (const [key, _terms] of Object.entries(parseResult.terms)) {
       const matchKey = normalizeFilterKey(key).toLowerCase();
       const hasMatch = Object.keys(filters).some((k) => {
@@ -408,6 +415,7 @@ function buildFilters<
   return {
     filters: filters as FilterValuesFromBuilders<T>,
     warnings,
+    hasParseError,
   };
 }
 
