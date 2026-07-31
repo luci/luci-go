@@ -64,17 +64,13 @@ export const EllipsisTooltip = ({
   );
 };
 
-// Checks if the element (or his only child) is overflowing
-const checkIsOverflowing = (element: HTMLDivElement) => {
+// Checks if the element (or any of its descendants) is overflowing
+const checkIsOverflowing = (element: HTMLElement): boolean => {
   if (element.scrollWidth > element.clientWidth) return true;
 
-  if (element.childNodes.length === 1) {
-    if (!element.firstElementChild) return false;
-
-    return (
-      element.firstElementChild?.scrollWidth >
-      element.firstElementChild?.clientWidth
-    );
+  for (let i = 0; i < element.children.length; i++) {
+    const child = element.children[i] as HTMLElement;
+    if (child && checkIsOverflowing(child)) return true;
   }
 
   return false;

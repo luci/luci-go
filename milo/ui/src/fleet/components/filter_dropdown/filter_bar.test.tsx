@@ -195,7 +195,7 @@ describe('FilterBar', () => {
     await user.click(searchInput);
 
     await user.click(screen.getByText('Option 1'));
-    await user.click(screen.getByText('Value 1'));
+    await user.click(queryByBrokenUpText('Value 1')!);
     await user.click(screen.getByText('Apply'));
 
     expect(screen.getByText('1 | Option 1 IN Value 1')).toBeInTheDocument();
@@ -214,13 +214,13 @@ describe('FilterBar', () => {
     await user.click(searchInput);
 
     await user.click(screen.getByText('Option 1'));
-    await user.click(screen.getByText('Value 1'));
+    await user.click(queryByBrokenUpText('Value 1')!);
     await user.click(screen.getByText('Apply'));
 
     await user.click(searchInput);
 
     await user.click(screen.getByText('Option 2'));
-    await user.click(screen.getAllByText('Value 1')[0]);
+    await user.click(queryByBrokenUpText('Value 1')!);
     await user.click(screen.getByText('Apply'));
 
     const chip1 = screen.getByText('1 | Option 1 IN Value 1');
@@ -257,7 +257,7 @@ describe('FilterBar', () => {
     await user.click(searchInput);
 
     await user.click(screen.getByText('Option 1'));
-    await user.click(screen.getByText('Value 1'));
+    await user.click(queryByBrokenUpText('Value 1')!);
     await user.click(screen.getByText('Apply'));
 
     await user.click(searchInput);
@@ -447,7 +447,7 @@ describe('FilterBar', () => {
       expect(searchInput).toHaveValue('zzzz');
     });
     await waitFor(() => {
-      expect(screen.queryByText('Value 1')).not.toBeInTheDocument();
+      expect(queryByBrokenUpText('Value 1')).toBeUndefined();
     });
     expect(queryByBrokenUpText('Option 1')).toBeUndefined();
   });
@@ -465,7 +465,7 @@ describe('FilterBar', () => {
 
     // Add a filter to get a chip.
     await user.click(screen.getByText('Option 1'));
-    await user.click(screen.getByText('Value 1'));
+    await user.click(queryByBrokenUpText('Value 1')!);
     await user.click(screen.getByText('Apply'));
 
     const chip = screen.getByText('1 | Option 1 IN Value 1');
@@ -496,20 +496,20 @@ describe('FilterBar', () => {
     // arrow up is dependant on the OptionComponent passed, so we have to manually click on the search input
     await user.click(searchInput);
 
-    expect(screen.queryByText('Value 1')).toBeInTheDocument();
+    expect(queryByBrokenUpText('Value 1')).toBeInTheDocument();
     expect(searchInput).toHaveFocus();
 
     // close dropdown
     await user.keyboard('{Escape}');
 
     expect(screen.queryByText('Option 1')).not.toBeInTheDocument();
-    expect(screen.queryByText('Value 1')).not.toBeInTheDocument();
+    expect(queryByBrokenUpText('Value 1')).toBeUndefined();
 
     await user.keyboard('v');
 
     // after dropdown was closed when we reopen it secondary menu should be closed
     expect(screen.queryByText('Option 1')).toBeInTheDocument();
-    expect(screen.queryByText('Value 1')).not.toBeInTheDocument();
+    expect(queryByBrokenUpText('Value 1')).toBeUndefined();
   });
 
   it('should delete a focused chip with backspace', async () => {
@@ -525,7 +525,7 @@ describe('FilterBar', () => {
 
     // Add a filter to get a chip.
     await user.click(screen.getByText('Option 1'));
-    await user.click(screen.getByText('Value 1'));
+    await user.click(queryByBrokenUpText('Value 1')!);
     await user.click(screen.getByText('Apply'));
 
     const chip1 = screen.getByText('1 | Option 1 IN Value 1');
@@ -533,7 +533,7 @@ describe('FilterBar', () => {
 
     // Add a filter to get a chip.
     await user.click(screen.getByText('Option 2'));
-    await user.click(screen.getAllByText('Value 1')[0]);
+    await user.click(queryByBrokenUpText('Value 1')!);
     await user.click(screen.getByText('Apply'));
 
     const chip2 = screen.getByText('1 | Option 2 IN Value 1');
@@ -563,7 +563,7 @@ describe('FilterBar', () => {
 
     await user.click(searchInput);
     await user.click(screen.getByText('Option 1'));
-    await user.click(screen.getByText('Value 1'));
+    await user.click(queryByBrokenUpText('Value 1')!);
     await user.click(screen.getByText('Apply'));
 
     const chip = screen.getByText('1 | Option 1 IN Value 1');
@@ -708,7 +708,7 @@ describe('FilterBar', () => {
 
     // Add a filter to get a chip.
     await user.click(screen.getByText('Option 1'));
-    await user.click(screen.getByText('Value 1'));
+    await user.click(queryByBrokenUpText('Value 1')!);
     await user.click(screen.getByText('Apply'));
 
     const chip = screen.getByText('1 | Option 1 IN Value 1');

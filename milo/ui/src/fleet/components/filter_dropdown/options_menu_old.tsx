@@ -168,10 +168,10 @@ export const OptionsMenuOld = forwardRef(function OptionsMenuOld(
                 <EllipsisTooltip tooltip={item.el.label}>
                   <HighlightCharacter
                     variant="body2"
+                    truncate="middle"
                     highlightIndexes={item.matches}
-                    css={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
+                    sx={{
+                      flexGrow: 1,
                     }}
                   >
                     {item.el.label}

@@ -20,6 +20,7 @@ import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { OptionValue } from '@/fleet/types/option';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
+import { EllipsisTooltip } from '../ellipsis_tooltip';
 import { HighlightCharacter } from '../highlight_character';
 
 interface OptionsMenuProps {
@@ -215,21 +216,20 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
                     }}
                     checkedIcon={checkedIcon}
                   />
-                  <HighlightCharacter
-                    variant="body2"
-                    highlightIndexes={
-                      item.el.isSignificant === false ? [] : item.matches
-                    }
-                    sx={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: 'block',
-                      flexGrow: 1,
-                    }}
-                  >
-                    {item.el.label}
-                  </HighlightCharacter>
+                  <EllipsisTooltip tooltip={item.el.label}>
+                    <HighlightCharacter
+                      variant="body2"
+                      truncate="middle"
+                      highlightIndexes={
+                        item.el.isSignificant === false ? [] : item.matches
+                      }
+                      sx={{
+                        flexGrow: 1,
+                      }}
+                    >
+                      {item.el.label}
+                    </HighlightCharacter>
+                  </EllipsisTooltip>
                   {selectOnly && (
                     <Button
                       className="only-button"
