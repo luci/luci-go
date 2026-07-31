@@ -41,9 +41,9 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import {
   AndroidDevice,
   ListDevicesRequest,
+  ExportAndroidDevicesToCSVRequest,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
-import { ExportAndroidDevicesToCSVRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AndroidColumnDef } from './android_fields';
 import { useAndroidFilters } from './use_android_filters';

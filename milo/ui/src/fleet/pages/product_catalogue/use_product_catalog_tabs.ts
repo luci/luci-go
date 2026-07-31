@@ -22,6 +22,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 export enum ProductCatalogTab {
   ALL = 'All',
   ANDROID_TESTBED = 'android-testbed',
+  GCE = 'gce',
   HARDWARE = 'hardware',
   OS_TESTBED = 'os-testbed',
   PERIPHERALS = 'peripherals',

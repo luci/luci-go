@@ -17,14 +17,15 @@ import { MRT_ColumnDef } from 'material-react-table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { generateCatalogDetailsURL } from '@/fleet/constants/paths';
-import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] &
-  { accessorKey: keyof ProductCatalogEntry }[] = [
+import { UnifiedProductCatalogEntry } from './types';
+
+export const COLUMNS: MRT_ColumnDef<UnifiedProductCatalogEntry>[] &
+  { accessorKey: keyof UnifiedProductCatalogEntry }[] = [
   {
     accessorKey: 'productCatalogId',
     header: 'Product Catalog ID',
-    Cell: renderCellWithLink<ProductCatalogEntry>({
+    Cell: renderCellWithLink<UnifiedProductCatalogEntry>({
       linkGenerator: (value) => generateCatalogDetailsURL(value ?? ''),
       newTab: false,
     }),
@@ -52,7 +53,7 @@ export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] &
   {
     accessorKey: 'r11n',
     header: 'R11N',
-    Cell: renderCellWithLink<ProductCatalogEntry>({
+    Cell: renderCellWithLink<UnifiedProductCatalogEntry>({
       linkGenerator: (value) => {
         const trimmed = (value ?? '').trim();
         if (!trimmed) {
@@ -78,5 +79,17 @@ export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] &
   {
     accessorKey: 'productType',
     header: 'Product Type',
+  },
+  {
+    accessorKey: 'cpuType',
+    header: 'CPU Type',
+  },
+  {
+    accessorKey: 'cpuNumPerVm',
+    header: 'CPU Count Per VM',
+  },
+  {
+    accessorKey: 'memoryGbPerVm',
+    header: 'Memory (GB) Per VM',
   },
 ];

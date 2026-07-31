@@ -25,7 +25,6 @@ import { combineAipFilters } from '@/fleet/utils/search_param';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
-  GetProductCatalogFilterValuesResponse,
   Int32Range,
   ProductCatalogFilterValue,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -48,14 +47,13 @@ export const FILTERS = {
     filterKey: 'number_of_devices_per_rack',
   },
   productType: { type: 'string_list', filterKey: 'product_type' },
-} satisfies Partial<
-  Record<
-    keyof GetProductCatalogFilterValuesResponse,
-    {
-      type: 'string_list' | 'range';
-      filterKey: string;
-    }
-  >
+  cpuType: { type: 'string_list', filterKey: 'cpu_type' },
+} satisfies Record<
+  string,
+  {
+    type: 'string_list' | 'range';
+    filterKey: string;
+  }
 >;
 
 export const DEFAULT_FILTER_VALUES: Partial<
@@ -120,11 +118,13 @@ export const useProductCatalogFilters = (
       const accessorKey = column.accessorKey as keyof typeof FILTERS;
       const config = FILTERS[accessorKey];
 
-      const data = filterOptionsQuery.data?.[accessorKey];
+      const rawData = filterOptionsQuery.data as unknown as
+        | Record<string, unknown>
+        | undefined;
+      const data = rawData?.[accessorKey];
       const filterKey = `"${config.filterKey}"`;
-      const scopedKey =
-        `scoped${accessorKey.charAt(0).toUpperCase()}${accessorKey.slice(1)}` as keyof GetProductCatalogFilterValuesResponse;
-      const scopedData = filterOptionsQuery.data?.[scopedKey] as
+      const scopedKey = `scoped${accessorKey.charAt(0).toUpperCase()}${accessorKey.slice(1)}`;
+      const scopedData = rawData?.[scopedKey] as
         | ProductCatalogFilterValue[]
         | undefined;
 

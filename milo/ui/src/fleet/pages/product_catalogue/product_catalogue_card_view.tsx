@@ -31,7 +31,8 @@ import { MRT_PaginationState, MRT_Updater } from 'material-react-table';
 import { Link } from 'react-router';
 
 import { colors } from '@/fleet/theme/colors';
-import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import { UnifiedProductCatalogEntry } from './types';
 
 enum PlmStatus {
   GA = 'GA',
@@ -44,6 +45,7 @@ enum ProductType {
   OS_TESTBED = 'os-testbed',
   HARDWARE = 'hardware',
   PERIPHERALS = 'peripherals',
+  GCE = 'gce',
 }
 
 const getPlmStatusColor = (status?: string) => {
@@ -75,7 +77,7 @@ const getPlmStatusColor = (status?: string) => {
   }
 };
 
-const getProductIcon = (entry: ProductCatalogEntry) => {
+const getProductIcon = (entry: UnifiedProductCatalogEntry) => {
   const prodType = (entry.productType || '').trim().toLowerCase();
 
   switch (prodType) {
@@ -84,6 +86,7 @@ const getProductIcon = (entry: ProductCatalogEntry) => {
         <PhoneAndroidIcon sx={{ fontSize: 40, color: colors.blue[700] }} />
       );
     case ProductType.OS_TESTBED:
+    case ProductType.GCE:
       return <DnsIcon sx={{ fontSize: 40, color: colors.blue[700] }} />;
     case ProductType.HARDWARE:
       return <LaptopIcon sx={{ fontSize: 40, color: colors.blue[700] }} />;
@@ -144,7 +147,7 @@ const ContentSection = styled(CardContent)`
 `;
 
 interface ProductCatalogueCardViewProps {
-  entries: ProductCatalogEntry[];
+  entries: UnifiedProductCatalogEntry[];
   isLoading: boolean;
   pagination: MRT_PaginationState;
   onPaginationChange: (updater: MRT_Updater<MRT_PaginationState>) => void;
@@ -429,6 +432,68 @@ export const ProductCatalogueCardView = ({
                             }}
                           >
                             {entry.numberOfDevicesPerRack}
+                          </Typography>
+                        </Box>
+                      )}
+                    {entry.cpuType && (
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: colors.grey[500], display: 'block' }}
+                        >
+                          CPU Type
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 500,
+                            color: colors.grey[800],
+                            fontSize: '0.8125rem',
+                          }}
+                        >
+                          {entry.cpuType}
+                        </Typography>
+                      </Box>
+                    )}
+                    {entry.cpuNumPerVm !== undefined &&
+                      entry.cpuNumPerVm !== 0 && (
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: colors.grey[500], display: 'block' }}
+                          >
+                            CPU / VM
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 500,
+                              color: colors.grey[800],
+                              fontSize: '0.8125rem',
+                            }}
+                          >
+                            {entry.cpuNumPerVm}
+                          </Typography>
+                        </Box>
+                      )}
+                    {entry.memoryGbPerVm !== undefined &&
+                      entry.memoryGbPerVm !== 0 && (
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: colors.grey[500], display: 'block' }}
+                          >
+                            Memory / VM
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 500,
+                              color: colors.grey[800],
+                              fontSize: '0.8125rem',
+                            }}
+                          >
+                            {entry.memoryGbPerVm} GB
                           </Typography>
                         </Box>
                       )}

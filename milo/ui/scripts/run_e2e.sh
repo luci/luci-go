@@ -42,4 +42,5 @@ for i in {1..30}; do
   sleep 1
 done
 
+unset ELECTRON_RUN_AS_NODE
 CYPRESS_BASE_URL=http://localhost:$PORT npx cypress run "$@"

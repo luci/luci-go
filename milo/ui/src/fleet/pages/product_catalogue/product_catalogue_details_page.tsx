@@ -35,10 +35,10 @@ import {
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { OrderForm } from './order_form';
 import { COLUMNS } from './product_catalogue_columns';
+import { UnifiedProductCatalogEntry } from './types';
 import { useProductCatalogDetailsData } from './use_product_catalog_details_data';
 
 interface DetailRow {
@@ -48,7 +48,7 @@ interface DetailRow {
 
 interface DetailValueCellProps {
   readonly row: MRT_Row<DetailRow>;
-  readonly entry: ProductCatalogEntry | undefined;
+  readonly entry: UnifiedProductCatalogEntry | undefined;
 }
 
 const DetailValueCell = ({ row, entry }: DetailValueCellProps) => {
@@ -58,7 +58,7 @@ const DetailValueCell = ({ row, entry }: DetailValueCellProps) => {
   const col = COLUMNS.find((c) => c.header === fieldKey);
   if (!col) return <>{String(rawValue ?? '')}</>;
 
-  const accessor = col.accessorKey as keyof ProductCatalogEntry;
+  const accessor = col.accessorKey as keyof UnifiedProductCatalogEntry;
 
   if (accessor === 'productCatalogId') {
     return <>{String(rawValue ?? '')}</>;
@@ -70,7 +70,7 @@ const DetailValueCell = ({ row, entry }: DetailValueCellProps) => {
     // cell.getValue() and row.original, which we mock here with compatible shapes.
     const CellRenderer = col.Cell as unknown as React.ComponentType<{
       cell: { getValue: () => unknown };
-      row: { original: ProductCatalogEntry };
+      row: { original: UnifiedProductCatalogEntry };
       column: typeof col;
       table: Record<string, never>;
     }>;
@@ -157,7 +157,7 @@ export const ProductCatalogDetailsPage = () => {
   const data = useMemo<DetailRow[]>(() => {
     if (!entry) return [];
     return COLUMNS.map((col) => {
-      const accessor = col.accessorKey as keyof ProductCatalogEntry;
+      const accessor = col.accessorKey as keyof UnifiedProductCatalogEntry;
       return {
         key: col.header as string,
         rawValue: entry[accessor],

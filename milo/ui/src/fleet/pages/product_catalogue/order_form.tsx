@@ -35,10 +35,11 @@ import { useState } from 'react';
 
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
-import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import { UnifiedProductCatalogEntry } from './types';
 
 export interface OrderFormProps {
-  entry: ProductCatalogEntry;
+  entry: UnifiedProductCatalogEntry;
 }
 
 const TOOLTIP_CONTAINER_STYLE = {

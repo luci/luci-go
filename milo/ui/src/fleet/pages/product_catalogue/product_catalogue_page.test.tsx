@@ -84,6 +84,12 @@ describe('ProductCataloguePage', () => {
           queryFn: async () => ({ entries: [] }),
         }),
       },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
       GetProductCatalogFilterValues: {
         query: () => ({
           queryKey: ['GetProductCatalogFilterValues'],
@@ -97,8 +103,6 @@ describe('ProductCataloguePage', () => {
     renderPage(queryClient);
 
     // This test ensures the page can mount and render without throwing errors.
-    // For example, it catches missing context providers, reference errors, and
-    // infinite render loops (which was one example of a previous regression).
     expect(true).toBe(true);
   });
 
@@ -125,6 +129,12 @@ describe('ProductCataloguePage', () => {
               },
             ],
           }),
+        }),
+      },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
         }),
       },
       GetProductCatalogFilterValues: {
@@ -185,6 +195,12 @@ describe('ProductCataloguePage', () => {
               },
             ],
           }),
+        }),
+      },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
         }),
       },
       GetProductCatalogFilterValues: {
@@ -255,6 +271,12 @@ describe('ProductCataloguePage', () => {
           }),
         }),
       },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
       GetProductCatalogFilterValues: {
         query: () => ({
           queryKey: ['GetProductCatalogFilterValues'],
@@ -304,6 +326,12 @@ describe('ProductCataloguePage', () => {
                 : all;
             return { entries };
           },
+        }),
+      },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
         }),
       },
       GetProductCatalogFilterValues: {
@@ -365,6 +393,12 @@ describe('ProductCataloguePage', () => {
           }),
         }),
       },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
       GetProductCatalogFilterValues: {
         query: () => ({
           queryKey: ['GetProductCatalogFilterValues'],
@@ -391,6 +425,12 @@ describe('ProductCataloguePage', () => {
       ListProductCatalogEntries: {
         query: () => ({
           queryKey: ['ListProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
           queryFn: async () => ({ entries: [] }),
         }),
       },
@@ -433,6 +473,12 @@ describe('ProductCataloguePage', () => {
           queryFn: async () => ({ entries: [] }),
         }),
       },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
       GetProductCatalogFilterValues: {
         query: () => ({
           queryKey: ['GetProductCatalogFilterValues'],
@@ -467,6 +513,12 @@ describe('ProductCataloguePage', () => {
       ListProductCatalogEntries: {
         query: () => ({
           queryKey: ['ListProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
           queryFn: async () => ({ entries: [] }),
         }),
       },
@@ -524,6 +576,12 @@ describe('ProductCataloguePage', () => {
           queryFn: async () => ({ entries }),
         }),
       },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
       GetProductCatalogFilterValues: {
         query: () => ({
           queryKey: ['GetProductCatalogFilterValues'],
@@ -548,4 +606,65 @@ describe('ProductCataloguePage', () => {
       expect(screen.queryByText('Product 1')).not.toBeInTheDocument();
     });
   }, 15000);
+
+  it('should render both standard and GCE entries in unified table on All tab', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      ListProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListProductCatalogEntries'],
+          queryFn: async () => ({
+            entries: [
+              {
+                productCatalogId: 'std-catalog-1',
+                productName: 'Standard Pixel Device',
+                gpn: '12345',
+                descriptiveName: 'Desc 1',
+                resourceType: 'Type 1',
+                fleetPlmStatus: 'GA',
+                r11n: [],
+                numberOfDevicesPerRack: 10,
+                unitCost: '100',
+                productType: 'hardware',
+              },
+            ],
+          }),
+        }),
+      },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({
+            entries: [
+              {
+                productCatalogId: 'gce-catalog-1',
+                productName: 'GCE n2-standard-4',
+                descriptiveName: 'GCE N2 Instance',
+                cpuType: 'x86_64',
+                cpuNumPerVm: 4,
+                memoryGbPerVm: 16,
+                plmStatus: 'GA',
+              },
+            ],
+          }),
+        }),
+      },
+      GetProductCatalogFilterValues: {
+        query: () => ({
+          queryKey: ['GetProductCatalogFilterValues'],
+          queryFn: async () => ({ productCatalogId: [] }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+    renderPage(queryClient);
+
+    expect(
+      await screen.findByText('Standard Pixel Device'),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('GCE n2-standard-4')).toBeInTheDocument();
+    expect(screen.getByText('x86_64')).toBeInTheDocument();
+  });
 });

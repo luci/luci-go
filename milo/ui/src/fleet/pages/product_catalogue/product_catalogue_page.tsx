@@ -45,10 +45,15 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics/track_leaf_route_page_view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { ProductCatalogueCardView } from './product_catalogue_card_view';
 import { COLUMNS } from './product_catalogue_columns';
+import {
+  UnifiedProductCatalogEntry,
+  CatalogColumnKey,
+  fromStandardCatalogEntry,
+  fromGceCatalogEntry,
+} from './types';
 import {
   useProductCatalogFilters,
   FILTERS,
@@ -167,9 +172,14 @@ const ProductCatalogueTabPageContent = ({
     placeholderData: keepPreviousData,
   });
 
+  const gceQuery = useQuery({
+    ...client.ListGceProductCatalogEntries.query({ filter: aip160 }),
+    placeholderData: keepPreviousData,
+  });
+
   const onPaginationChange = useCallback(
     (updater: MRT_Updater<MRT_PaginationState>) => {
-      if (!query.data) {
+      if (!query.data && !gceQuery.data) {
         return;
       }
 
@@ -184,10 +194,16 @@ const ProductCatalogueTabPageContent = ({
         });
       }
     },
-    [query.data, pagination, setSearchParams],
+    [query.data, gceQuery.data, pagination, setSearchParams],
   );
 
-  const data = (query.data?.entries ?? []) as ProductCatalogEntry[];
+  const data = useMemo<UnifiedProductCatalogEntry[]>(() => {
+    const stdEntries = (query.data?.entries ?? []).map(
+      fromStandardCatalogEntry,
+    );
+    const gceEntries = (gceQuery.data?.entries ?? []).map(fromGceCatalogEntry);
+    return [...stdEntries, ...gceEntries];
+  }, [query.data?.entries, gceQuery.data?.entries]);
 
   const mappedFilterValues = useMemo(
     () =>
@@ -202,6 +218,10 @@ const ProductCatalogueTabPageContent = ({
     [filterValues],
   );
 
+  const activeQueryError = query.error || gceQuery.error;
+  const isQueryLoading = query.isLoading || gceQuery.isLoading;
+  const isQueryFetching = query.isFetching || gceQuery.isFetching;
+
   const table = useFCDataTable({
     columns: columns,
     data: data,
@@ -211,16 +231,16 @@ const ProductCatalogueTabPageContent = ({
     manualFiltering: true,
     manualSorting: false,
     autoResetPageIndex: false,
-    error: query.error
-      ? getErrorMessage(query.error, 'get product catalog')
+    error: activeQueryError
+      ? getErrorMessage(activeQueryError, 'get product catalog')
       : undefined,
     onPaginationChange: onPaginationChange,
     onSortingChange: onSortingChange,
     state: {
       pagination,
       sorting,
-      isLoading: query.isLoading,
-      showProgressBars: query.isFetching,
+      isLoading: isQueryLoading,
+      showProgressBars: isQueryFetching,
     },
     renderEmptyRowsFallback: () => (
       <Box
@@ -290,14 +310,14 @@ const ProductCatalogueTabPageContent = ({
       </div>
       {view === 'card' ? (
         <ProductCatalogueCardView
-          entries={(query.data?.entries ?? []).slice(
+          entries={data.slice(
             pagination.pageIndex * pagination.pageSize,
             (pagination.pageIndex + 1) * pagination.pageSize,
           )}
-          isLoading={query.isLoading}
+          isLoading={isQueryLoading}
           pagination={pagination}
           onPaginationChange={onPaginationChange}
-          totalCount={query.data?.entries?.length ?? 0}
+          totalCount={data.length}
         />
       ) : (
         <MaterialReactTable table={table} />
@@ -306,7 +326,7 @@ const ProductCatalogueTabPageContent = ({
   );
 };
 
-const ALL_TAB_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+const ALL_TAB_COLUMN_KEYS: readonly CatalogColumnKey[] = [
   'productCatalogId',
   'productName',
   'gpn',
@@ -317,9 +337,23 @@ const ALL_TAB_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
   'numberOfDevicesPerRack',
   'unitCost',
   'productType',
+  'cpuType',
+  'cpuNumPerVm',
+  'memoryGbPerVm',
 ];
 
-const ANDROID_TESTBED_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+const GCE_COLUMN_KEYS: readonly CatalogColumnKey[] = [
+  'productCatalogId',
+  'productName',
+  'descriptiveName',
+  'fleetPlmStatus',
+  'cpuType',
+  'cpuNumPerVm',
+  'memoryGbPerVm',
+  'productType',
+];
+
+const ANDROID_TESTBED_COLUMN_KEYS: readonly CatalogColumnKey[] = [
   'productCatalogId',
   'productName',
   'gpn',
@@ -331,7 +365,7 @@ const ANDROID_TESTBED_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
   'unitCost',
 ];
 
-const HARDWARE_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+const HARDWARE_COLUMN_KEYS: readonly CatalogColumnKey[] = [
   'productCatalogId',
   'productName',
   'gpn',
@@ -343,7 +377,7 @@ const HARDWARE_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
   'unitCost',
 ];
 
-const OS_TESTBED_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+const OS_TESTBED_COLUMN_KEYS: readonly CatalogColumnKey[] = [
   'productCatalogId',
   'productName',
   'gpn',
@@ -355,7 +389,7 @@ const OS_TESTBED_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
   'unitCost',
 ];
 
-const PERIPHERALS_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
+const PERIPHERALS_COLUMN_KEYS: readonly CatalogColumnKey[] = [
   'productCatalogId',
   'productName',
   'gpn',
@@ -369,9 +403,10 @@ const PERIPHERALS_COLUMN_KEYS: readonly (keyof ProductCatalogEntry)[] = [
 
 const TAB_COLUMN_KEYS: Record<
   ProductCatalogTab | string,
-  readonly (keyof ProductCatalogEntry)[]
+  readonly CatalogColumnKey[]
 > = {
   [ProductCatalogTab.ALL]: ALL_TAB_COLUMN_KEYS,
+  [ProductCatalogTab.GCE]: GCE_COLUMN_KEYS,
   [ProductCatalogTab.ANDROID_TESTBED]: ANDROID_TESTBED_COLUMN_KEYS,
   [ProductCatalogTab.HARDWARE]: HARDWARE_COLUMN_KEYS,
   [ProductCatalogTab.OS_TESTBED]: OS_TESTBED_COLUMN_KEYS,
@@ -379,14 +414,11 @@ const TAB_COLUMN_KEYS: Record<
 };
 
 const getColumnsForTab = (tab: ProductCatalogTab | string) => {
-  const keys = TAB_COLUMN_KEYS[tab];
-  if (!keys) {
-    throw new Error(`Unknown product catalog tab: "${tab}"`);
-  }
+  const keys = TAB_COLUMN_KEYS[tab] || ALL_TAB_COLUMN_KEYS;
   return COLUMNS.filter(
     (column) =>
       column.accessorKey !== undefined &&
-      keys.includes(column.accessorKey as keyof ProductCatalogEntry),
+      keys.includes(column.accessorKey as keyof UnifiedProductCatalogEntry),
   ) as typeof COLUMNS;
 };
 

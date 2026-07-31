@@ -87,8 +87,14 @@ describe('Fleet Console Smoke Tests', () => {
       'getCatalogFilters',
     );
 
+    mockPrpc(
+      '**/prpc/fleetconsole.FleetConsole/ListGceProductCatalogEntries',
+      { entries: [] },
+      'listGceCatalog',
+    );
+
     cy.visit('/ui/fleet/catalog');
-    cy.wait(['@listCatalog', '@getCatalogFilters']);
+    cy.wait(['@listCatalog', '@getCatalogFilters', '@listGceCatalog']);
     cy.get('input[placeholder*="Add a filter"]').should('be.visible');
     cy.contains('Product 1').should('be.visible');
   });
