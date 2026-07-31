@@ -60,11 +60,6 @@ type dataStoreData struct {
 	// and then continue instead of failing.
 	autoIndex bool
 
-	// true means that all of the __...__ keys which are normally automatically
-	// maintained will be omitted. This also means that Put with an incomplete
-	// key will become an error.
-	disableSpecialEntities bool
-
 	// true means __scatter__ and other internal special properties won't be
 	// stripped off from getMutli results. Note that in real datastore there's
 	// no way to expose them.
@@ -134,18 +129,6 @@ func (d *dataStoreData) maybeAutoIndex(err error) bool {
 
 	d.addIndexes([]*ds.IndexDefinition{mi.Missing})
 	return true
-}
-
-func (d *dataStoreData) setDisableSpecialEntities(disabled bool) {
-	d.rwlock.Lock()
-	defer d.rwlock.Unlock()
-	d.disableSpecialEntities = disabled
-}
-
-func (d *dataStoreData) getDisableSpecialEntities() bool {
-	d.rwlock.RLock()
-	defer d.rwlock.RUnlock()
-	return d.disableSpecialEntities
 }
 
 func (d *dataStoreData) setShowSpecialProperties(show bool) {
@@ -299,13 +282,8 @@ func (d *dataStoreData) allocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
 
 			ents := d.head.GetOrCreateCollection("ents:" + baseKey.Namespace())
 
-			// Allocate IDs. The only possible error is when disableSpecialEntities is
-			// true, in which case we will return a full method error instead of
-			// individual callback errors.
-			start, err := d.allocateIDsLocked(ents, baseKey, len(idxs))
-			if err != nil {
-				return err
-			}
+			// Allocate IDs.
+			start := d.allocateIDsLocked(ents, baseKey, len(idxs))
 
 			for i, idx := range idxs {
 				keys[idx] = baseKey.WithID("", start+int64(i))
@@ -324,39 +302,32 @@ func (d *dataStoreData) allocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
 	return nil
 }
 
-func (d *dataStoreData) allocateIDsLocked(ents memCollection, incomplete *ds.Key, n int) (int64, error) {
-	if d.disableSpecialEntities {
-		return 0, errors.New("disableSpecialEntities is true so allocateIDs is disabled")
-	}
-
+func (d *dataStoreData) allocateIDsLocked(ents memCollection, incomplete *ds.Key, n int) int64 {
 	idKey := []byte(nil)
 	if incomplete.Parent() == nil {
 		idKey = rootIDsKey(incomplete.Kind())
 	} else {
 		idKey = groupIDsKey(incomplete)
 	}
-	return incrementLocked(ents, idKey, n), nil
+	return incrementLocked(ents, idKey, n)
 }
 
-func (d *dataStoreData) fixKeyLocked(ents memCollection, key *ds.Key) (*ds.Key, error) {
+func (d *dataStoreData) fixKeyLocked(ents memCollection, key *ds.Key) *ds.Key {
 	if key.IsIncomplete() {
-		id, err := d.allocateIDsLocked(ents, key, 1)
-		if err != nil {
-			return key, err
-		}
+		id := d.allocateIDsLocked(ents, key, 1)
 		key = key.KeyContext().NewKey(key.Kind(), "", id, key.Parent())
 	}
-	return key, nil
+	return key
 }
 
-func (d *dataStoreData) fixKey(key *ds.Key) (*ds.Key, error) {
+func (d *dataStoreData) fixKey(key *ds.Key) *ds.Key {
 	if key.IsIncomplete() {
 		d.rwlock.Lock()
 		defer d.rwlock.Unlock()
 		ents := d.head.GetOrCreateCollection("ents:" + key.Namespace())
 		return d.fixKeyLocked(ents, key)
 	}
-	return key, nil
+	return key
 }
 
 func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB, lockedAlready bool) error {
@@ -373,13 +344,8 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 
 			ents := d.head.GetOrCreateCollection("ents:" + ns)
 
-			key, err = d.fixKeyLocked(ents, k)
-			if err != nil {
-				return
-			}
-			if !d.disableSpecialEntities {
-				incrementLocked(ents, groupMetaKey(key), 1)
-			}
+			key = d.fixKeyLocked(ents, k)
+			incrementLocked(ents, groupMetaKey(key), 1)
 			keyBlob := keyBytes(key)
 
 			// Now that we have the complete key, we can use it to generate special
@@ -457,9 +423,7 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB, lockedAlre
 
 				ents := d.head.GetOrCreateCollection("ents:" + ns)
 
-				if !d.disableSpecialEntities {
-					incrementLocked(ents, groupMetaKey(k), 1)
-				}
+				incrementLocked(ents, groupMetaKey(k), 1)
 				if old := ents.Get(kb); old != nil {
 					oldPM, err := readPropMap(old)
 					if err != nil {
@@ -649,10 +613,8 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.Pro
 
 func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) {
 	for i, k := range keys {
-		fixed, err := td.parent.fixKey(k)
-		if err == nil {
-			err = td.writeMutation(false, fixed, vals[i])
-		}
+		fixed := td.parent.fixKey(k)
+		err := td.writeMutation(false, fixed, vals[i])
 		if cb != nil {
 			if td.allocIDsOnCommit {
 				// Give back the original incomplete key, since we "don't know" the

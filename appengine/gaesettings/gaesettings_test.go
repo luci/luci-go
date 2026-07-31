@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/filter/dscache"
-	"go.chromium.org/luci/gae/filter/txnBuf"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
@@ -186,51 +185,6 @@ func TestWorks(t *testing.T) {
 		// Works when fetching from inside of a transaction.
 		namespaced := info.MustNamespace(ctx, "blah")
 		ds.RunInTransaction(namespaced, func(ctx context.Context) error {
-			bundle, _, err := s.FetchAllSettings(ctx)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, len(bundle.Values), should.Match(1))
-			return nil
-		}, nil)
-	})
-
-	ftt.Run("Ignores transactions and txnBuf", t, func(t *ftt.Test) {
-		ctx := memory.Use(context.Background())
-		s := Storage{}
-		assert.
-
-			// Put something.
-			Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), should.BeNil)
-
-		// Works when fetching outside of a transaction.
-		bundle, _, err := s.FetchAllSettings(ctx)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(bundle.Values), should.Match(1))
-
-		// Works when fetching from inside of a transaction.
-		ds.RunInTransaction(txnBuf.FilterRDS(ctx), func(ctx context.Context) error {
-			bundle, _, err := s.FetchAllSettings(ctx)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, len(bundle.Values), should.Match(1))
-			return nil
-		}, nil)
-	})
-
-	ftt.Run("Ignores transactions and namespaces and txnBuf", t, func(t *ftt.Test) {
-		ctx := memory.Use(context.Background())
-		s := Storage{}
-		assert.
-
-			// Put something.
-			Loosely(t, s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`)), should.BeNil)
-
-		// Works when fetching outside of a transaction.
-		bundle, _, err := s.FetchAllSettings(ctx)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(bundle.Values), should.Match(1))
-
-		// Works when fetching from inside of a transaction.
-		namespaced := info.MustNamespace(ctx, "blah")
-		ds.RunInTransaction(txnBuf.FilterRDS(namespaced), func(ctx context.Context) error {
 			bundle, _, err := s.FetchAllSettings(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(bundle.Values), should.Match(1))

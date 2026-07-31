@@ -639,20 +639,6 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			})
 		})
 
-		t.Run("Testable.DisableSpecialEntities", func(t *ftt.Test) {
-			ds.GetTestable(c).DisableSpecialEntities(true)
-
-			assert.Loosely(t, ds.Put(c, &Foo{}), should.ErrLike("allocateIDs is disabled"))
-
-			assert.Loosely(t, ds.Put(c, &Foo{ID: 1}), should.BeNil)
-
-			ds.GetTestable(c).CatchupIndexes()
-
-			count, err := ds.Count(c, ds.NewQuery(""))
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, count, should.Equal(1)) // normally this would include __entity_group__
-		})
-
 		t.Run("Datastore namespace interaction", func(t *ftt.Test) {
 			run := func(rc context.Context, txn bool) (putErr, getErr, queryErr, countErr error) {
 				var foo Foo
@@ -831,35 +817,6 @@ func TestDefaultTimeField(t *testing.T) {
 		m.Time = time.Now().UTC()
 		assert.Loosely(t, ds.Get(c, &m), should.BeNil)
 		assert.Loosely(t, m.Time.IsZero(), should.BeTrue)
-	})
-}
-
-func TestNewDatastore(t *testing.T) {
-	t.Parallel()
-
-	ftt.Run("Can get and use a NewDatastore", t, func(t *ftt.Test) {
-		c := UseWithAppID(context.Background(), "dev~aid")
-		c = infoS.MustNamespace(c, "ns")
-
-		dsInst := NewDatastore(c, infoS.Raw(c))
-		c = ds.SetRaw(c, dsInst)
-
-		k := ds.MakeKey(c, "Something", 1)
-		assert.Loosely(t, k.AppID(), should.Equal("dev~aid"))
-		assert.Loosely(t, k.Namespace(), should.Equal("ns"))
-
-		type Model struct {
-			ID    int64 `gae:"$id"`
-			Value []int64
-		}
-		assert.Loosely(t, ds.Put(c, &Model{ID: 1, Value: []int64{20, 30}}), should.BeNil)
-
-		vals := []ds.PropertyMap{}
-		assert.Loosely(t, ds.GetAll(c, ds.NewQuery("Model").Project("Value"), &vals), should.BeNil)
-		assert.Loosely(t, len(vals), should.Equal(2))
-
-		assert.Loosely(t, vals[0].Slice("Value")[0].Value(), should.Equal(20))
-		assert.Loosely(t, vals[1].Slice("Value")[0].Value(), should.Equal(30))
 	})
 }
 

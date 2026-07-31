@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 )
 
 //////////////////////////////////// public ////////////////////////////////////
@@ -37,32 +36,6 @@ func useRDS(c context.Context) context.Context {
 		}
 		return &dsImpl{ic, dsd.(*dataStoreData), kc}
 	})
-}
-
-// NewDatastore creates a new standalone memory implementation of the datastore,
-// suitable for embedding for doing in-memory data organization.
-//
-// It's configured by default with the following settings:
-//   - AutoIndex(true)
-//   - Consistent(true)
-//   - DisableSpecialEntities(true)
-//
-// These settings can of course be changed by using the Testable interface.
-func NewDatastore(c context.Context, inf info.RawInterface) ds.RawInterface {
-	kc := ds.GetKeyContext(c)
-
-	memctx := newMemContext(kc.AppID)
-
-	dsCtx := info.Set(context.Background(), inf)
-	rds := &dsImpl{dsCtx, memctx.Get(memContextDSIdx).(*dataStoreData), kc}
-
-	ret := ds.Raw(ds.SetRaw(dsCtx, rds))
-	t := ret.GetTestable()
-	t.AutoIndex(true)
-	t.Consistent(true)
-	t.DisableSpecialEntities(true)
-
-	return ret
 }
 
 //////////////////////////////////// dsImpl ////////////////////////////////////
@@ -165,10 +138,6 @@ func (d *dsImpl) Consistent(always bool) {
 
 func (d *dsImpl) AutoIndex(enable bool) {
 	d.data.setAutoIndex(enable)
-}
-
-func (d *dsImpl) DisableSpecialEntities(disabled bool) {
-	d.data.setDisableSpecialEntities(disabled)
 }
 
 func (d *dsImpl) ShowSpecialProperties(show bool) {

@@ -47,9 +47,6 @@ func TestDeletePackage(t *testing.T) {
 			assert.Loosely(t, datastore.Run(ctx, q, func(k *datastore.Key) {
 				switch {
 				// Skip magical __entity_group__ entities created by the datastore.
-				// This is roughly same as using GetTestable(ctx).DisableSpecialEntities
-				// except we can't disable them, since we need them for transactions to
-				// work.
 				case strings.HasPrefix(k.Kind(), "__"):
 					return
 				// Event log is never deleted. Its entities reside in same entity group
