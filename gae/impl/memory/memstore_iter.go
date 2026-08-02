@@ -16,6 +16,7 @@ package memory
 
 import (
 	"bytes"
+	"iter"
 
 	"go.chromium.org/luci/common/data/cmpbin"
 )
@@ -45,56 +46,58 @@ type iterDefinition struct {
 	end []byte
 }
 
-func multiIterate(defs []*iterDefinition, cb func(suffix []byte) error) error {
+func multiIterate(defs []*iterDefinition) iter.Seq[[]byte] {
 	if len(defs) == 0 {
-		return nil
+		return func(yield func([]byte) bool) {}
 	}
 
-	ts := make([]*iterator, len(defs))
-	prefixLens := make([]int, len(defs))
-	for i, def := range defs {
-		// bind i so that the defer below doesn't get goofed by the loop variable
-		ts[i] = def.mkIter()
-		prefixLens[i] = def.prefixLen
-	}
+	return func(yield func([]byte) bool) {
+		ts := make([]*iterator, len(defs))
+		prefixLens := make([]int, len(defs))
+		for i, def := range defs {
+			// bind i so that the defer below doesn't get goofed by the loop variable
+			ts[i] = def.mkIter()
+			prefixLens[i] = def.prefixLen
+		}
 
-	suffix := []byte(nil)
-	skip := -1
+		suffix := []byte(nil)
+		skip := -1
 
-MainLoop:
-	for {
-		for idx, it := range ts {
-			if skip >= 0 && skip == idx {
-				continue
-			}
+	MainLoop:
+		for {
+			for idx, it := range ts {
+				if skip >= 0 && skip == idx {
+					continue
+				}
 
-			pfxLen := prefixLens[idx]
-			it.skip(cmpbin.ConcatBytes(it.def.prefix[:pfxLen], suffix))
-			ent := it.next()
-			if ent == nil {
-				// we hit the end of an iterator, we're now done with the whole
-				// query.
-				return nil
-			}
-			sfxRO := ent.key[pfxLen:]
+				pfxLen := prefixLens[idx]
+				it.skip(cmpbin.ConcatBytes(it.def.prefix[:pfxLen], suffix))
+				ent := it.next()
+				if ent == nil {
+					// we hit the end of an iterator, we're now done with the whole
+					// query.
+					return
+				}
+				sfxRO := ent.key[pfxLen:]
 
-			if bytes.Compare(sfxRO, suffix) > 0 {
-				// this row has a higher suffix than anything we've seen before. Set
-				// ourself to be the skip, and resart this loop from the top.
-				suffix = append(suffix[:0], sfxRO...)
-				skip = idx
-				if idx != 0 {
-					// no point to restarting on the 0th index
-					continue MainLoop
+				if bytes.Compare(sfxRO, suffix) > 0 {
+					// this row has a higher suffix than anything we've seen before. Set
+					// ourself to be the skip, and restart this loop from the top.
+					suffix = append(suffix[:0], sfxRO...)
+					skip = idx
+					if idx != 0 {
+						// no point to restarting on the 0th index
+						continue MainLoop
+					}
 				}
 			}
-		}
 
-		if err := cb(suffix); err != nil {
-			return err
+			if !yield(suffix) {
+				return
+			}
+			suffix = nil
+			skip = -1
 		}
-		suffix = nil
-		skip = -1
 	}
 }
 

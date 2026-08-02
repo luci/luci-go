@@ -289,7 +289,7 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head
 		}
 	}
 
-	return multiIterate(idxs, func(suffix []byte) error {
+	for suffix := range multiIterate(idxs) {
 		rawData, decodedProps := parseSuffix(kc.AppID, kc.Namespace, rq.suffixFormat, suffix, -1)
 
 		keyProp := decodedProps[len(decodedProps)-1]
@@ -302,12 +302,12 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head
 			// These are internal entities and so shouldn't count to user-observable
 			// offset/limit. Real datastore doesn't include these in query output
 			// (they are 'synthetic' entities), but we store them in the main table.
-			return nil
+			continue
 		}
 
 		if offset > 0 {
 			offset--
-			return nil
+			continue
 		}
 		if hasLimit {
 			if limit <= 0 {
@@ -316,6 +316,9 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head
 			limit--
 		}
 
-		return strategy.handle(rawData, decodedProps, key, getCursorFn(suffix))
-	})
+		if err := strategy.handle(rawData, decodedProps, key, getCursorFn(suffix)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -60,7 +60,7 @@ type queryIterator struct {
 	itemCh                chan *rawQueryResult
 	done                  bool
 	currentItemOrderCache string   // lazy loading (loaded when `CurrentItemOrder()` is called).
-	cursorCB              CursorCB // for the *current* item
+	cursor                CursorCB // for the *current* item
 }
 
 // startQueryIterator starts to run the given query and return the iterator for
@@ -73,7 +73,7 @@ func startQueryIterator(ctx context.Context, eg *errgroup.Group, fq *FinalizedQu
 		// This will be used as CurrentCursor after the first Next() call. To get
 		// the first query result, we just need to restart the query from its
 		// initial starting cursor.
-		cursorCB: func() (Cursor, error) {
+		cursor: func() (Cursor, error) {
 			start, _ := fq.Bounds()
 			return start, nil
 		},
@@ -81,7 +81,7 @@ func startQueryIterator(ctx context.Context, eg *errgroup.Group, fq *FinalizedQu
 
 	eg.Go(func() (err error) {
 		defer func() { qi.itemCh <- &rawQueryResult{err: err} }()
-		return Raw(ctx).Run(fq, func(k *Key, pm PropertyMap, cursorCB CursorCB) error {
+		return Raw(ctx).Run(fq, func(k *Key, pm PropertyMap, cursor CursorCB) error {
 			if k == nil { // we use `key == nil` as an indicator of the last message
 				panic("impossible per Run contract")
 			}
@@ -96,9 +96,9 @@ func startQueryIterator(ctx context.Context, eg *errgroup.Group, fq *FinalizedQu
 			case <-ctx.Done():
 				return ctx.Err()
 			case qi.itemCh <- &rawQueryResult{
-				key:      k,
-				data:     pm,
-				cursorCB: cursorCB,
+				key:    k,
+				data:   pm,
+				cursor: cursor,
 			}:
 				return nil
 			}
@@ -152,7 +152,7 @@ func (qi *queryIterator) CurrentItemKey() string {
 // scratch when restarting the iteration and this is precisely what `nil` cursor
 // does.
 func (qi *queryIterator) CurrentCursor() (Cursor, error) {
-	return qi.cursorCB()
+	return qi.cursor()
 }
 
 // CurrentItemOrder returns a serialized representation of properties used for
@@ -201,19 +201,19 @@ func (qi *queryIterator) Next() (done bool, err error) {
 	}
 	if !qi.done {
 		// Let's assume currentQueryResult index among the full list of query
-		// results is `T`. It means `currentQueryResult.cursorCB` is pointing to
+		// results is `T`. It means `currentQueryResult.cursor` is pointing to
 		// `T+1`. Also `<-qi.itemCh` will return the next result, i.e. `T+1` as
 		// well. This new `T+1` result will become the CurrentItem(). We need to
 		// make CurrentCursor() return `T+1` cursor as well. And this is precisely
-		// what `currentQueryResult.cursorCB` does.
+		// what `currentQueryResult.cursor` does.
 		//
 		// The nil check is for the very first Next() call. We already populated
-		// cursorCB correctly for this situation in `startQueryIterator`.
+		// cursor correctly for this situation in `startQueryIterator`.
 		//
 		// See also DANGER warning in queryIterator doc. This is not how cursors
 		// actually behave.
 		if qi.currentQueryResult != nil {
-			qi.cursorCB = qi.currentQueryResult.cursorCB
+			qi.cursor = qi.currentQueryResult.cursor
 		}
 		qi.currentQueryResult = <-qi.itemCh
 		qi.currentItemOrderCache = ""
@@ -224,8 +224,8 @@ func (qi *queryIterator) Next() (done bool, err error) {
 
 // rawQueryResult captures the result from raw datastore query snapshot.
 type rawQueryResult struct {
-	key      *Key
-	data     PropertyMap
-	err      error
-	cursorCB CursorCB // points to the entry right after `key`
+	key    *Key
+	data   PropertyMap
+	err    error
+	cursor CursorCB // points to the entry right after `key`
 }

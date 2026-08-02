@@ -22,8 +22,6 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func mkNum(n int64) []byte {
@@ -220,11 +218,10 @@ func TestMultiIteratorSimple(iter *testing.T) {
 			}
 
 			i := 1
-			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
+			for suffix := range multiIterate(defs) {
 				assert.Loosely(t, readNum(suffix), should.Equal(vals[i][1]))
 				i++
-				return nil
-			}), shouldBeSuccessful)
+			}
 
 			assert.Loosely(t, i, should.Equal(3))
 		})
@@ -237,9 +234,9 @@ func TestMultiIteratorSimple(iter *testing.T) {
 			}
 
 			i := 0
-			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
+			for range multiIterate(defs) {
 				panic("never")
-			}), shouldBeSuccessful)
+			}
 
 			assert.Loosely(t, i, should.BeZero)
 		})
@@ -255,11 +252,10 @@ func TestMultiIteratorSimple(iter *testing.T) {
 
 			expect := []int64{2, 4}
 			i := 0
-			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
+			for suffix := range multiIterate(defs) {
 				assert.Loosely(t, readNum(suffix), should.Equal(expect[i]))
 				i++
-				return nil
-			}), shouldBeSuccessful)
+			}
 		})
 
 		t.Run("Can stop early", func(t *ftt.Test) {
@@ -269,19 +265,18 @@ func TestMultiIteratorSimple(iter *testing.T) {
 			}
 
 			i := 0
-			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
+			for suffix := range multiIterate(defs) {
 				assert.Loosely(t, readNum(suffix), should.Equal(vals[i][1]))
 				i++
-				return nil
-			}), shouldBeSuccessful)
+			}
 			assert.Loosely(t, i, should.Equal(5))
 
 			i = 0
-			assert.Loosely(t, multiIterate(defs, func(suffix []byte) error {
+			for suffix := range multiIterate(defs) {
 				assert.Loosely(t, readNum(suffix), should.Equal(vals[i][1]))
 				i++
-				return datastore.Stop
-			}), shouldBeSuccessful)
+				break
+			}
 			assert.Loosely(t, i, should.Equal(1))
 		})
 	})
