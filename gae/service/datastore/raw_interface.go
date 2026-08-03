@@ -48,6 +48,9 @@ type RawQueryIter struct {
 	// Returns a cursor to the *next* item which will be yielded by Results.
 	//
 	// Safe to call before pulling anything from Results.
+	//
+	// Must be defined and return ErrCursorNotImplemented if cursors are not
+	// implemented.
 	Cursor CursorCB
 
 	// Yields query results in order.
@@ -56,6 +59,15 @@ type RawQueryIter struct {
 	//
 	// If an error is encountered, it is yielded and iteration stops.
 	Results iter.Seq2[PropertyMap, error]
+}
+
+func mustGetKeyFromPM(pm PropertyMap) *Key {
+	if val, ok := pm.GetMeta("key"); ok {
+		if k, ok := val.(*Key); ok {
+			return k
+		}
+	}
+	panic("impossible per RunQuery contract")
 }
 
 // RawQueryIterStub returns a RawQueryIter whose CursorCB and Results yield err
@@ -230,8 +242,6 @@ type RawInterface interface {
 
 	// RunQuery executes the given query, returning a callback to get the cursor for
 	// the next result, and an iterator to yield the results.
-	//
-	// May return CursorCB == nil if cursors are not supported.
 	RunQuery(q *FinalizedQuery) RawQueryIter
 
 	// Count executes the given query and returns the number of entries which

@@ -376,21 +376,34 @@ func runImpl(ctx context.Context, q *Query, allowCursor bool, cb any) error {
 
 	raw := Raw(ctx)
 
-	if isKey {
-		err = raw.Run(fq, func(k *Key, _ PropertyMap, gc CursorCB) error {
-			return rcb(reflect.ValueOf(k), gc)
-		})
-	} else {
-		err = raw.Run(fq, func(k *Key, pm PropertyMap, gc CursorCB) error {
-			itm := mat.newElem()
-			if err := mat.setPM(itm, pm); err != nil {
-				return err
+	it := raw.RunQuery(fq)
+	for pm, err := range it.Results {
+		if err != nil {
+			return filterStop(err)
+		}
+		key := mustGetKeyFromPM(pm)
+		var itm reflect.Value
+		if isKey {
+			itm = reflect.ValueOf(key)
+		} else {
+			itm = mat.newElem()
+			cleanPM := pm
+			if key != nil && len(pm) > 0 {
+				cleanPM = pm.Clone()
+				delete(cleanPM, "$key")
 			}
-			mat.setKey(itm, k)
-			return rcb(itm, gc)
-		})
+			if err := mat.setPM(itm, cleanPM); err != nil {
+				return filterStop(err)
+			}
+			if key != nil {
+				mat.setKey(itm, key)
+			}
+		}
+		if err := rcb(itm, it.Cursor); err != nil {
+			return filterStop(err)
+		}
 	}
-	return filterStop(err)
+	return nil
 }
 
 // RunMulti executes the logical OR of multiple queries, calling `cb` for each
@@ -428,7 +441,12 @@ func RunMulti(ctx context.Context, queries []*Query, cb any) error {
 	} else {
 		dispatchEntity = func(key *Key, pm PropertyMap, ccb CursorCB) error {
 			itm := mat.newElem()
-			if err := mat.setPM(itm, pm); err != nil {
+			cleanPM := pm
+			if key != nil && len(pm) > 0 {
+				cleanPM = pm.Clone()
+				delete(cleanPM, "$key")
+			}
+			if err := mat.setPM(itm, cleanPM); err != nil {
 				return err
 			}
 			mat.setKey(itm, key)

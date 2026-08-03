@@ -81,6 +81,7 @@ func Errors(params Params) featureBreaker.BreakFeatureCallback {
 		case
 			"AllocateIDs",
 			"Run",
+			"RunQuery",
 			"Count",
 			"BeginTransaction",
 			"CommitTransaction",

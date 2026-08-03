@@ -81,28 +81,27 @@ func startQueryIterator(ctx context.Context, eg *errgroup.Group, fq *FinalizedQu
 
 	eg.Go(func() (err error) {
 		defer func() { qi.itemCh <- &rawQueryResult{err: err} }()
-		return Raw(ctx).Run(fq, func(k *Key, pm PropertyMap, cursor CursorCB) error {
-			if k == nil { // we use `key == nil` as an indicator of the last message
-				panic("impossible per Run contract")
+		it := Raw(ctx).RunQuery(fq)
+		for pm, err := range it.Results {
+			if err != nil {
+				return err
 			}
-			// Do not even attempt to write to `qi.itemCh` if the context is already
-			// done. Note that if multiple cases of select {...} are ready at the same
-			// time, Go chooses one randomly to proceed. We don't want that if the
-			// context is already done.
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
+			key := mustGetKeyFromPM(pm)
+			delete(pm, "$key")
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			case qi.itemCh <- &rawQueryResult{
-				key:    k,
+				key:    key,
 				data:   pm,
-				cursor: cursor,
+				cursor: it.Cursor,
 			}:
-				return nil
 			}
-		})
+		}
+		return nil
 	})
 
 	return qi

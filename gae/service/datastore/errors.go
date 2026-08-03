@@ -43,6 +43,10 @@ var (
 
 	// ErrLimitExceeded is used to indicate the iteration limit has been exceeded.
 	ErrLimitExceeded = limitExceeded{}
+
+	// ErrCursorNotImplemented is used to indicate that something in the RunQuery
+	// filter/implementation stack does not support cursors.
+	ErrCursorNotImplemented = errors.New("cursor not implemented")
 )
 
 // IsErrNoSuchEntity tests if an error is ErrNoSuchEntity,

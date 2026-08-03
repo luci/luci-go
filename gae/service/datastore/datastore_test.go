@@ -73,6 +73,39 @@ func (f *fakeDatastore) AllocateIDs(keys []*Key, cb NewKeyCB) error {
 	return nil
 }
 
+func (f *fakeDatastore) RunQuery(fq *FinalizedQuery) RawQueryIter {
+	var lastCursor Cursor
+	return RawQueryIter{
+		Cursor: func() (Cursor, error) {
+			if lastCursor != nil {
+				return lastCursor, nil
+			}
+			return fakeCursor(0), nil
+		},
+		Results: func(yield func(PropertyMap, error) bool) {
+			err := f.Run(fq, func(key *Key, val PropertyMap, getCursor CursorCB) error {
+				pm := val.Clone()
+				if pm == nil {
+					pm = make(PropertyMap, 1)
+				}
+				if key != nil {
+					pm["$key"] = MkPropertyNI(key)
+				}
+				if cur, err := getCursor(); err == nil {
+					lastCursor = cur
+				}
+				if !yield(pm, nil) {
+					return Stop
+				}
+				return nil
+			})
+			if err != nil && !errors.Is(err, Stop) {
+				yield(nil, err)
+			}
+		},
+	}
+}
+
 func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	cur := int32(0)
 
@@ -2102,6 +2135,39 @@ var (
 func (f *fakeDatastore2) DecodeCursor(s string) (Cursor, error) {
 	v, err := strconv.Atoi(s)
 	return fakeCursor(v), err
+}
+
+func (f *fakeDatastore2) RunQuery(fq *FinalizedQuery) RawQueryIter {
+	var lastCursor Cursor
+	return RawQueryIter{
+		Cursor: func() (Cursor, error) {
+			if lastCursor != nil {
+				return lastCursor, nil
+			}
+			return fakeCursor(0), nil
+		},
+		Results: func(yield func(PropertyMap, error) bool) {
+			err := f.Run(fq, func(key *Key, val PropertyMap, getCursor CursorCB) error {
+				pm := val.Clone()
+				if pm == nil {
+					pm = make(PropertyMap, 1)
+				}
+				if key != nil {
+					pm["$key"] = MkPropertyNI(key)
+				}
+				if cur, err := getCursor(); err == nil {
+					lastCursor = cur
+				}
+				if !yield(pm, nil) {
+					return Stop
+				}
+				return nil
+			})
+			if err != nil && !errors.Is(err, Stop) {
+				yield(nil, err)
+			}
+		},
+	}
 }
 
 func (f *fakeDatastore2) Run(fq *FinalizedQuery, cb RawRunCB) error {

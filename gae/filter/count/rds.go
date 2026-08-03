@@ -60,7 +60,7 @@ func (r *dsCounter) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 		Results: func(yield func(ds.PropertyMap, error) bool) {
 			var err error
 			defer func() {
-				r.c.Run.up(err)
+				r.c.Run.upFilterStop(err)
 			}()
 			var pm ds.PropertyMap
 			for pm, err = range it.Results {

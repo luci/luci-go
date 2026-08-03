@@ -49,6 +49,11 @@ type counterFilterInst struct {
 	*counterFilter
 }
 
+func (rc *counterFilterInst) RunQuery(fq *FinalizedQuery) RawQueryIter {
+	atomic.AddInt32(&rc.run, 1)
+	return rc.RawInterface.RunQuery(fq)
+}
+
 func (rc *counterFilterInst) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	atomic.AddInt32(&rc.run, 1)
 	return rc.RawInterface.Run(fq, cb)

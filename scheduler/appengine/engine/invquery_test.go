@@ -231,7 +231,7 @@ func TestInvDatastoreIter(t *testing.T) {
 			dsErr := fmt.Errorf("boo")
 
 			brokenC, breaker := featureBreaker.FilterRDS(c, nil)
-			breaker.BreakFeatures(dsErr, "Run")
+			breaker.BreakFeatures(dsErr, "RunQuery")
 
 			q := datastore.NewQuery("Invocation").Order("__key__")
 			invs, err := run(brokenC, q, 100)

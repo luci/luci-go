@@ -298,7 +298,7 @@ func TestQuery(t *testing.T) {
 
 		t.Run(`A datastore query error will return InternalServer error.`, func(t *ftt.Test) {
 			req.Path = "testing/+/**"
-			fb.BreakFeatures(errors.New("testing error"), "Run")
+			fb.BreakFeatures(errors.New("testing error"), "RunQuery")
 
 			_, err := svr.Query(c, &req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))

@@ -250,7 +250,7 @@ func TestRunStage(t *testing.T) {
 
 			// Inject a datastore filter to simulate a transient error.
 			ctx, fb := featureBreaker.FilterRDS(ctx, nil)
-			fb.BreakFeatures(appstatus.Error(codes.Internal, "transient internal error"), "Run")
+			fb.BreakFeatures(appstatus.Error(codes.Internal, "transient internal error"), "Run", "RunQuery")
 
 			_, err = se.RunStage(ctx, req)
 			assert.That(t, err, should.ErrLike("failed to query builds by stage_attempt_id"))

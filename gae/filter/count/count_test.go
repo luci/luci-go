@@ -105,7 +105,7 @@ func TestCount(t *testing.T) {
 		})
 
 		t.Run(`datastore.Stop does not count as an error for queries`, func(t *ftt.Test) {
-			fb.BreakFeatures(ds.Stop, "Run")
+			fb.BreakFeatures(ds.Stop, "RunQuery")
 
 			assert.Loosely(t, ds.Run(c, ds.NewQuery("foof"), func(_ ds.PropertyMap) error {
 				return nil

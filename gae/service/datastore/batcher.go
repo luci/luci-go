@@ -180,92 +180,87 @@ type queryBatchingFilter struct {
 }
 
 func (f *queryBatchingFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
+	return RunCallbackAdapter(f.RunQuery(fq), cb)
+}
+
+func (f *queryBatchingFilter) RunQuery(fq *FinalizedQuery) RawQueryIter {
 	limit, hasLimit := fq.Limit()
 
-	// Buffer for each batch.
-	type batchEntry struct {
-		key *Key
-		val PropertyMap
-	}
-	buffer := make([]batchEntry, 0, int(f.batchSize))
+	return RawQueryIter{
+		Cursor: func() (Cursor, error) {
+			return nil, errors.Fmt("queryBatchingFilter: %w", ErrCursorNotImplemented)
+		},
+		Results: func(yield func(PropertyMap, error) bool) {
+			var buffer []PropertyMap
+			var nextCursor Cursor
 
-	// Install an intermediate callback so we can iteratively batch.
-	var nextCursor Cursor
-	for {
-		// Has our Context been cancelled?
-		select {
-		case <-f.ic.Done():
-			return f.ic.Err()
-		default:
-		}
-
-		iterQuery := fq.Original()
-		if nextCursor != nil {
-			iterQuery = iterQuery.Start(nextCursor)
-			nextCursor = nil
-		}
-		iterLimit := f.batchSize
-		if hasLimit && limit < iterLimit {
-			iterLimit = limit
-		}
-		iterQuery = iterQuery.Limit(iterLimit)
-
-		iterFinalizedQuery, err := iterQuery.Finalize()
-		if err != nil {
-			panic(fmt.Errorf("failed to finalize internal query: %v", err))
-		}
-
-		err = f.RawInterface.Run(iterFinalizedQuery, func(key *Key, val PropertyMap, getCursor CursorCB) error {
-			if nextCursor != nil {
-				// We're iterating past our batch size, which should never happen, since
-				// we set a limit. This will only happen when our inner RawInterface
-				// fails to honor the limit that we set.
-				panic(fmt.Errorf("iterating past batch size"))
-			}
-
-			// If this entry would complete the batch,  get the cursor for the next
-			// batch.
-			if len(buffer)+1 >= int(f.batchSize) {
-				cursor, err := getCursor()
-				if err != nil {
-					return fmt.Errorf("failed to get cursor: %v", err)
+			for {
+				select {
+				case <-f.ic.Done():
+					yield(nil, f.ic.Err())
+					return
+				default:
 				}
-				nextCursor = cursor
+
+				iterQuery := fq.Original()
+				if nextCursor != nil {
+					iterQuery = iterQuery.Start(nextCursor)
+					nextCursor = nil
+				}
+				iterLimit := f.batchSize
+				if hasLimit && limit < iterLimit {
+					iterLimit = limit
+				}
+				iterQuery = iterQuery.Limit(iterLimit)
+
+				iterFinalizedQuery, err := iterQuery.Finalize()
+				if err != nil {
+					panic(fmt.Errorf("failed to finalize internal query: %v", err))
+				}
+
+				it := f.RawInterface.RunQuery(iterFinalizedQuery)
+				for pm, err := range it.Results {
+					if err != nil {
+						yield(nil, err)
+						return
+					}
+					buffer = append(buffer, pm)
+					if len(buffer) >= int(f.batchSize) {
+						cursor, err := it.Cursor()
+						if err != nil {
+							yield(nil, fmt.Errorf("failed to get cursor: %v", err))
+							return
+						}
+						nextCursor = cursor
+						break
+					}
+				}
+
+				if len(buffer) == 0 {
+					return
+				}
+
+				for _, pm := range buffer {
+					if hasLimit {
+						if limit <= 0 {
+							return
+						}
+						limit--
+					}
+					if !yield(pm, nil) {
+						return
+					}
+				}
+
+				if hasLimit && limit <= 0 {
+					return
+				}
+
+				if nextCursor == nil || int64(len(buffer)) < int64(f.batchSize) {
+					return
+				}
+				buffer = buffer[:0]
 			}
-
-			buffer = append(buffer, batchEntry{
-				key: key,
-				val: val,
-			})
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-
-		// Invoke our callback for each buffered entry.
-		for i := range buffer {
-			ent := &buffer[i]
-			if err := cb(ent.key, ent.val, nil); err != nil {
-				return err
-			}
-		}
-
-		// If we have no next cursor, we're done.
-		if nextCursor == nil {
-			break
-		}
-
-		// Reduce our limit for the next round.
-		if hasLimit {
-			limit -= int32(len(buffer))
-			if limit <= 0 {
-				break
-			}
-		}
-
-		// Reset our buffer for the next round.
-		buffer = buffer[:0]
+		},
 	}
-	return nil
 }
