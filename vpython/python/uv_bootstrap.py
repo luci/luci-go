@@ -20,6 +20,7 @@ import os
 import subprocess
 import sys
 import shutil
+import tempfile
 import time
 import urllib.request
 import json
@@ -164,6 +165,12 @@ def main():
     env["UV_NO_BUILD"] = "true"
     env["UV_KEYRING_PROVIDER"] = "disabled"
     env["UV_NO_CACHE"] = "true"
+
+    temp_dir = tempfile.gettempdir()
+    env.setdefault("TMP", temp_dir)
+    env.setdefault("TEMP", temp_dir)
+    env.setdefault("TMPDIR", temp_dir)
+    env.setdefault("UV_TEMP_DIR", temp_dir)
 
     # Configure package registry mirror.
     ar_url = os.getenv("VPYTHON_AR_URL")
