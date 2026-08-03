@@ -703,8 +703,15 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 
 	// Asked to use ADC if it is available.
 	if opts.GoogleADCPolicy == GoogleADCAllow {
-		if _, err := google.FindDefaultCredentials(ctx); err == nil {
-			return GoogleADCMethod
+		if creds, err := google.FindDefaultCredentials(ctx); err == nil {
+			_, err := creds.TokenSource.Token()
+			if err == nil {
+				return GoogleADCMethod
+			}
+			var nde metadata.NotDefinedError
+			if !errors.As(err, &nde) {
+				logging.Debugf(ctx, "Skipping GoogleADCMethod: unknown error minting token: %s", err)
+			}
 		}
 	}
 
