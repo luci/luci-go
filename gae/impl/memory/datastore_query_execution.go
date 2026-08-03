@@ -182,7 +182,7 @@ func countQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head m
 			return
 		}
 	}
-	err = executeQuery(fq, kc, isTxn, idx, head, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) error {
+	err = executeQuery(fq, kc, nil, isTxn, idx, head, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) error {
 		ret++
 		return nil
 	})
@@ -238,7 +238,7 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, head memStor
 	return nil
 }
 
-func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head memStore, cb ds.RawRunCB) error {
+func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, data *dataStoreData, isTxn bool, idx, head memStore, cb ds.RawRunCB) error {
 	rq, err := reduce(fq, kc, isTxn)
 	if err == ds.ErrNullQuery {
 		return nil
@@ -252,6 +252,10 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head
 	}
 
 	idxs, err := getIndexes(rq, idx)
+	if err != nil && err != ds.ErrNullQuery && data != nil && data.maybeAutoIndex(err) {
+		idx, head = data.getQuerySnaps(!fq.EventuallyConsistent())
+		idxs, err = getIndexes(rq, idx)
+	}
 	if err == ds.ErrNullQuery {
 		return nil
 	}

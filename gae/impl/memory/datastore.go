@@ -75,12 +75,7 @@ func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	cb = d.data.stripSpecialPropsRunCB(cb)
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
-	err := executeQuery(fq, d.kc, false, idx, head, cb)
-	if d.data.maybeAutoIndex(err) {
-		idx, head = d.data.getQuerySnaps(!fq.EventuallyConsistent())
-		err = executeQuery(fq, d.kc, false, idx, head, cb)
-	}
-	return err
+	return executeQuery(fq, d.kc, d.data, false, idx, head, cb)
 }
 
 func (d *dsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
@@ -201,7 +196,7 @@ func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	// that this would make sense... but at that point you should probably just
 	// add the index up front.
 	cb = d.data.parent.stripSpecialPropsRunCB(cb)
-	return executeQuery(q, d.kc, true, d.data.snap, d.data.snap, cb)
+	return executeQuery(q, d.kc, nil, true, d.data.snap, d.data.snap, cb)
 }
 
 func (d *txnDsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
