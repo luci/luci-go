@@ -118,13 +118,16 @@ func (cfg Config) Query(c context.Context, q *ds.Query) (n int, err error) {
 		return prnt("\n  ]\n")
 	}
 
-	err = ds.Run(c, q, func(pm ds.PropertyMap) error {
+	for pm, err := range ds.RunQuery[ds.PropertyMap](c, q).Results {
+		if err != nil {
+			return n, err
+		}
 		key := ds.GetMetaDefault(pm, "key", nil).(*ds.Key)
 		if !cfg.WithSpecial && strings.HasPrefix(key.Kind(), "__") && strings.HasSuffix(key.Kind(), "__") {
-			return nil
+			continue
 		}
 		if err := prnt("\n%s:\n", key); err != nil {
-			return err
+			return n, err
 		}
 		pm, _ = pm.Save(false)
 
@@ -133,10 +136,10 @@ func (cfg Config) Query(c context.Context, q *ds.Query) (n int, err error) {
 			if kindOut := flt(key, pm); kindOut != "" {
 				for _, l := range strings.Split(kindOut, "\n") {
 					if err := prnt("  %s\n", l); err != nil {
-						return err
+						return n, err
 					}
 				}
-				return nil
+				continue
 			}
 		}
 
@@ -147,11 +150,10 @@ func (cfg Config) Query(c context.Context, q *ds.Query) (n int, err error) {
 		sort.Strings(keys)
 		for _, k := range keys {
 			if err := prop(key.Kind(), k, pm[k]); err != nil {
-				return err
+				return n, err
 			}
 		}
-		return nil
-	})
+	}
 	return
 }
 

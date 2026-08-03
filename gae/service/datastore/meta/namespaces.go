@@ -16,6 +16,7 @@ package meta
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -41,16 +42,27 @@ func Namespaces(c context.Context, cb NamespacesCallback) error {
 	q := ds.NewQuery("__namespace__").KeysOnly(true)
 
 	// Query our datastore for the full set of namespaces.
-	return ds.Run(c, q, func(k *ds.Key) error {
+	for k, err := range ds.RunQuery[*ds.Key](c, q).Results {
+		if err != nil {
+			return err
+		}
+		var err2 error
 		switch {
 		case k.IntID() == 1:
-			return cb("")
+			err2 = cb("")
 		case k.IntID() != 0:
 			return fmt.Errorf("unexpected namepsace integer key (%d)", k.IntID())
 		default:
-			return cb(k.StringID())
+			err2 = cb(k.StringID())
 		}
-	})
+		if err2 != nil {
+			if errors.Is(err2, ds.Stop) {
+				break
+			}
+			return err2
+		}
+	}
+	return nil
 }
 
 // NamespacesWithPrefix runs Namespaces, returning only namespaces beginning

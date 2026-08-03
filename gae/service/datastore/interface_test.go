@@ -93,3 +93,95 @@ func TestGetAll_Doubleton(t *testing.T) {
 	assert.Loosely(t, err, should.BeNil)
 	assert.Loosely(t, len(records), should.Equal(2))
 }
+
+type TestIterRecord struct {
+	Kind  string `gae:"$kind,TestIterRecord"`
+	ID    string `gae:"$id"`
+	Value string `gae:"value"`
+}
+
+func TestRunQuery(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	ctx = memory.Use(ctx)
+	datastore.GetTestable(ctx).Consistent(true)
+
+	err := datastore.Put(ctx, &TestIterRecord{ID: "a", Value: "val_a"})
+	assert.Loosely(t, err, should.BeNil)
+	err = datastore.Put(ctx, &TestIterRecord{ID: "b", Value: "val_b"})
+	assert.Loosely(t, err, should.BeNil)
+
+	t.Run("PointerToStruct", func(t *testing.T) {
+		q := datastore.NewQuery("TestIterRecord")
+		it := datastore.RunQuery[*TestIterRecord](ctx, q)
+		var got []*TestIterRecord
+		for r, err := range it.Results {
+			assert.Loosely(t, err, should.BeNil)
+			got = append(got, r)
+		}
+		assert.Loosely(t, len(got), should.Equal(2))
+		assert.Loosely(t, got[0].Value, should.Equal("val_a"))
+		assert.Loosely(t, got[1].Value, should.Equal("val_b"))
+	})
+
+	t.Run("StructValue", func(t *testing.T) {
+		q := datastore.NewQuery("TestIterRecord")
+		it := datastore.RunQuery[TestIterRecord](ctx, q)
+		var got []TestIterRecord
+		for r, err := range it.Results {
+			assert.Loosely(t, err, should.BeNil)
+			got = append(got, r)
+		}
+		assert.Loosely(t, len(got), should.Equal(2))
+		assert.Loosely(t, got[0].Value, should.Equal("val_a"))
+		assert.Loosely(t, got[1].Value, should.Equal("val_b"))
+	})
+
+	t.Run("KeysOnly", func(t *testing.T) {
+		q := datastore.NewQuery("TestIterRecord")
+		it := datastore.RunQuery[*datastore.Key](ctx, q)
+		var got []*datastore.Key
+		for k, err := range it.Results {
+			assert.Loosely(t, err, should.BeNil)
+			got = append(got, k)
+		}
+		assert.Loosely(t, len(got), should.Equal(2))
+		assert.Loosely(t, got[0].StringID(), should.Equal("a"))
+		assert.Loosely(t, got[1].StringID(), should.Equal("b"))
+	})
+
+	t.Run("Cursor", func(t *testing.T) {
+		q := datastore.NewQuery("TestIterRecord").Limit(1)
+		it := datastore.RunQuery[*TestIterRecord](ctx, q)
+		var got []*TestIterRecord
+		for r, err := range it.Results {
+			assert.Loosely(t, err, should.BeNil)
+			got = append(got, r)
+		}
+		assert.Loosely(t, len(got), should.Equal(1))
+		assert.Loosely(t, got[0].Value, should.Equal("val_a"))
+
+		cur, err := it.Cursor()
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cur, should.NotBeNil)
+
+		q2 := datastore.NewQuery("TestIterRecord").Start(cur)
+		it2 := datastore.RunQuery[*TestIterRecord](ctx, q2)
+		var got2 []*TestIterRecord
+		for r, err := range it2.Results {
+			assert.Loosely(t, err, should.BeNil)
+			got2 = append(got2, r)
+		}
+		assert.Loosely(t, len(got2), should.Equal(1))
+		assert.Loosely(t, got2[0].Value, should.Equal("val_b"))
+	})
+
+	t.Run("InvalidQuery", func(t *testing.T) {
+		q := datastore.NewQuery("").Lt("invalid", nil)
+		it := datastore.RunQuery[*TestIterRecord](ctx, q)
+		for _, err := range it.Results {
+			assert.Loosely(t, err, should.NotBeNil)
+		}
+	})
+}

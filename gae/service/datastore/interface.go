@@ -18,6 +18,7 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"iter"
 	"reflect"
 	"sort"
 
@@ -404,6 +405,119 @@ func runImpl(ctx context.Context, q *Query, allowCursor bool, cb any) error {
 		}
 	}
 	return nil
+}
+
+// QueryIter holds the cursor callback and result iterator for `RunQuery`ing a
+// Query.
+//
+// `V` must be one of:
+//   - S or *S, where S is a struct
+//   - P or *P, where *P is a concrete type implementing PropertyLoadSaver
+//   - *Key (implies a keys-only query)
+type QueryIter[V any] struct {
+	// Returns a cursor to the *next* item which will be yielded by Results.
+	//
+	// Safe to call before pulling anything from Results.
+	Cursor CursorCB
+
+	// Yields query results in order.
+	//
+	// If an error is encountered, it is yielded and iteration stops.
+	Results iter.Seq2[V, error]
+}
+
+// QueryIterStub returns a QueryIter whose CursorCB and Results yield err
+// (or behave as an empty iterator if err is nil).
+func QueryIterStub[V any](err error) QueryIter[V] {
+	return QueryIter[V]{
+		Cursor: func() (Cursor, error) { return nil, err },
+		Results: func(yield func(V, error) bool) {
+			if err != nil {
+				var zero V
+				yield(zero, err)
+			}
+		},
+	}
+}
+
+// RunQuery starts the given query, and returns the `QueryIter[V]` which will
+// yield the results.
+//
+// By default, datastore applies a short (~5s) timeout to queries. This can be
+// increased, usually to around several minutes, by explicitly setting a
+// deadline on the supplied Context.
+//
+// `V` must be one of:
+//   - S or *S, where S is a struct
+//   - P or *P, where *P is a concrete type implementing PropertyLoadSaver
+//   - *Key (implies a keys-only query)
+//
+// Run will stop on the first datastore error encountered, which can occur due
+// to flakiness, timeout, etc. If it encounters such an error, it will be
+// yielded and the iterator stopped.
+func RunQuery[V any](ctx context.Context, q *Query) QueryIter[V] {
+	var zero V
+
+	t := reflect.TypeFor[V]()
+	isKey := t == typeOfKey || t == typeOfKeyElem
+
+	var mat *multiArgType
+	if isKey {
+		q = q.KeysOnly(true)
+	} else {
+		mat = mustParseArg(t, false)
+		if mat.newElem == nil {
+			panic(fmt.Errorf("RunQuery[%T]: `V` is not a concrete type: %s", zero, t.Kind()))
+		}
+	}
+
+	fq, err := q.Finalize()
+	if err != nil {
+		return QueryIterStub[V](err)
+	}
+
+	it := Raw(ctx).RunQuery(fq)
+
+	return QueryIter[V]{
+		Cursor: it.Cursor,
+		Results: func(yield func(V, error) bool) {
+			for pm, err := range it.Results {
+				if err != nil {
+					yield(zero, err)
+					return
+				}
+
+				key := mustGetKeyFromPM(pm)
+				var val V
+				if isKey {
+					if t == typeOfKey {
+						val = any(key).(V)
+					} else {
+						val = any(*key).(V)
+					}
+				} else {
+					itm := mat.newElem()
+					cleanPM := pm
+					if key != nil && len(pm) > 0 {
+						cleanPM = pm.Clone()
+						delete(cleanPM, "$key")
+					}
+					if err := mat.setPM(itm, cleanPM); err != nil {
+						yield(zero, err)
+						return
+					}
+					if key != nil {
+						mat.setKey(itm, key)
+					}
+					val = itm.Interface().(V)
+				}
+
+				if !yield(val, nil) {
+					return
+				}
+			}
+		},
+	}
 }
 
 // RunMulti executes the logical OR of multiple queries, calling `cb` for each

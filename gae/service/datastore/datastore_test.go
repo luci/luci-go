@@ -1340,107 +1340,54 @@ func TestRun(t *testing.T) {
 		fds.entities = 5
 		q := NewQuery("kind")
 
-		t.Run("bad", func(t *ftt.Test) {
-			assertBadTypePanics := func(cb any) {
-				assert.Loosely(t, func() { Run(c, q, cb) }, should.PanicLike(
-					"cb does not match the required callback signature"))
-			}
-
-			t.Run("not a function", func(t *ftt.Test) {
-				assertBadTypePanics("I am a potato")
-			})
-
-			t.Run("nil", func(t *ftt.Test) {
-				assertBadTypePanics(nil)
-			})
-
-			t.Run("interface", func(t *ftt.Test) {
-				assertBadTypePanics(func(pls PropertyLoadSaver) {})
-			})
-
-			t.Run("bad proto type", func(t *ftt.Test) {
-				cb := func(v int) {
-					panic("never here!")
-				}
-				assert.Loosely(t, func() { Run(c, q, cb) }, should.PanicLike(
-					"invalid argument type: int is not a PLS or pointer-to-struct"))
-			})
-
-			t.Run("wrong # args", func(t *ftt.Test) {
-				assertBadTypePanics(func(v CommonStruct, _ CursorCB, _ int) {
-					panic("never here!")
-				})
-			})
-
-			t.Run("wrong ret type", func(t *ftt.Test) {
-				assertBadTypePanics(func(v CommonStruct) bool {
-					panic("never here!")
-				})
-			})
-
-			t.Run("wrong # rets", func(t *ftt.Test) {
-				assertBadTypePanics(func(v CommonStruct) (int, error) {
-					panic("never here!")
-				})
-			})
-
-			t.Run("bad 2nd arg", func(t *ftt.Test) {
-				assertBadTypePanics(func(v CommonStruct, _ Cursor) error {
-					panic("never here!")
-				})
-			})
-
+		t.Run("ok", func(t *ftt.Test) {
 			t.Run("early abort on error", func(t *ftt.Test) {
 				q = q.Eq("@err_single", "Query fail").Eq("@err_single_idx", 3)
 				i := 0
-				assert.Loosely(t, Run(c, q, func(c CommonStruct) {
+				var errResult error
+				for _, err := range RunQuery[CommonStruct](c, q).Results {
+					if err != nil {
+						errResult = err
+						break
+					}
 					i++
-				}), should.ErrLike("Query fail"))
+				}
+				assert.Loosely(t, errResult, should.ErrLike("Query fail"))
 				assert.Loosely(t, i, should.Equal(3))
 			})
 
 			t.Run("return error on serialization failure", func(t *ftt.Test) {
-				assert.Loosely(t, Run(c, q, func(_ permaBad) {
-					panic("never here")
-				}).Error(), should.Equal("permaBad"))
-			})
-		})
-
-		t.Run("ok", func(t *ftt.Test) {
-			t.Run("can return error to stop", func(t *ftt.Test) {
-				i := 0
-				assert.Loosely(t, Run(c, q, func(c CommonStruct) error {
-					i++
-					return Stop
-				}), should.BeNil)
-				assert.Loosely(t, i, should.Equal(1))
-
-				i = 0
-				assert.Loosely(t, Run(c, q, func(c CommonStruct, _ CursorCB) error {
-					i++
-					return fmt.Errorf("my error")
-				}), should.ErrLike("my error"))
-				assert.Loosely(t, i, should.Equal(1))
+				var errResult error
+				for _, err := range RunQuery[permaBad](c, q).Results {
+					if err != nil {
+						errResult = err
+						break
+					}
+				}
+				assert.Loosely(t, errResult.Error(), should.Equal("permaBad"))
 			})
 
 			t.Run("Can optionally get cursor function", func(t *ftt.Test) {
 				i := 0
-				assert.Loosely(t, Run(c, q, func(c CommonStruct, ccb CursorCB) {
+				it := RunQuery[CommonStruct](c, q)
+				for _, err := range it.Results {
+					assert.Loosely(t, err, should.BeNil)
 					i++
-					curs, err := ccb()
+					curs, err := it.Cursor()
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, curs.String(), should.Equal(fakeCursor(i).String()))
-				}), should.BeNil)
+				}
 				assert.Loosely(t, i, should.Equal(5))
 			})
 
 			t.Run("*S", func(t *ftt.Test) {
 				i := 0
-				assert.Loosely(t, Run(c, q, func(cs *CommonStruct) {
+				for cs, err := range RunQuery[*CommonStruct](c, q).Results {
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, cs.ID, should.Equal(i+1))
 					assert.Loosely(t, cs.Value, should.Equal(i))
 					i++
-				}), should.BeNil)
+				}
 			})
 
 			t.Run("*P", func(t *ftt.Test) {
@@ -1452,7 +1399,8 @@ func TestRun(t *testing.T) {
 				}
 
 				i := 0
-				assert.Loosely(t, Run(c, q.Limit(12), func(fpls *FakePLS) {
+				for fpls, err := range RunQuery[*FakePLS](c, q.Limit(12)).Results {
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, fpls.gotLoaded, should.BeTrue)
 					if i == 10 {
 						assert.Loosely(t, fpls.StringID, should.Equal("eleven"))
@@ -1461,68 +1409,75 @@ func TestRun(t *testing.T) {
 					}
 					assert.Loosely(t, fpls.Value, should.Equal(i))
 					i++
-				}), should.BeNil)
+				}
 			})
 
 			t.Run("*P (map)", func(t *ftt.Test) {
 				i := 0
-				assert.Loosely(t, Run(c, q, func(pm *PropertyMap) {
+				for pm, err := range RunQuery[*PropertyMap](c, q).Results {
+					assert.Loosely(t, err, should.BeNil)
 					k, ok := pm.GetMeta("key")
 					assert.Loosely(t, ok, should.BeTrue)
 					assert.Loosely(t, k.(*Key).IntID(), should.Equal(i+1))
 					assert.Loosely(t, (*pm).Slice("Value")[0].Value(), should.Equal(i))
 					i++
-				}), should.BeNil)
+				}
 			})
 
 			t.Run("*P (chan)", func(t *ftt.Test) {
-				assert.Loosely(t, Run(c, q, func(ch *plsChan) {
+				for ch, err := range RunQuery[*plsChan](c, q).Results {
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, KeyForObj(c, ch).StringID(), should.Equal("whyDoIExist"))
-				}), should.BeNil)
+				}
 			})
 
 			t.Run("S", func(t *ftt.Test) {
 				i := 0
-				assert.Loosely(t, Run(c, q, func(cs CommonStruct) {
+				for cs, err := range RunQuery[CommonStruct](c, q).Results {
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, cs.ID, should.Equal(i+1))
 					assert.Loosely(t, cs.Value, should.Equal(i))
 					i++
-				}), should.BeNil)
+				}
 			})
 
 			t.Run("P", func(t *ftt.Test) {
 				i := 0
-				assert.Loosely(t, Run(c, q, func(fpls FakePLS) {
+				for fpls, err := range RunQuery[FakePLS](c, q).Results {
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, fpls.gotLoaded, should.BeTrue)
 					assert.Loosely(t, fpls.IntID, should.Equal(i+1))
 					assert.Loosely(t, fpls.Value, should.Equal(i))
 					i++
-				}), should.BeNil)
+				}
 			})
 
 			t.Run("P (map)", func(t *ftt.Test) {
 				i := 0
-				assert.Loosely(t, Run(c, q, func(pm PropertyMap) {
+				for pm, err := range RunQuery[PropertyMap](c, q).Results {
+					assert.Loosely(t, err, should.BeNil)
 					k, ok := pm.GetMeta("key")
 					assert.Loosely(t, ok, should.BeTrue)
 					assert.Loosely(t, k.(*Key).IntID(), should.Equal(i+1))
 					assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(i))
 					i++
-				}), should.BeNil)
+				}
 			})
 
 			t.Run("P (chan)", func(t *ftt.Test) {
-				assert.Loosely(t, Run(c, q, func(ch plsChan) {
+				for ch, err := range RunQuery[plsChan](c, q).Results {
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, KeyForObj(c, ch).StringID(), should.Equal("whyDoIExist"))
-				}), should.BeNil)
+				}
 			})
 
 			t.Run("Key", func(t *ftt.Test) {
 				i := 0
-				assert.Loosely(t, Run(c, q, func(k *Key) {
+				for k, err := range RunQuery[*Key](c, q).Results {
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, k.IntID(), should.Equal(i+1))
 					i++
-				}), should.BeNil)
+				}
 			})
 		})
 	})
