@@ -14,6 +14,7 @@
 
 import React from 'react';
 
+import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 
 import { getAndroidColumns } from './android_columns';
@@ -114,6 +115,29 @@ describe('Android Columns', () => {
     expect(avg30dCol.Cell!(mockCellParams30dValue)).toEqual(
       <React.Fragment>{'85.12'}%</React.Fragment>,
     );
+  });
+
+  it('should render celsius indicator for battery temperature column', () => {
+    const columns = getAndroidColumns(['battery_temperature']);
+
+    const tempCol = columns.find(
+      (c) => (c.accessorKey || c.id) === 'battery_temperature',
+    ) as AndroidColumnDef;
+
+    const mockCellParams = {
+      cell: { getValue: () => '32.5' },
+      row: { original: {} },
+    } as unknown as Parameters<Required<AndroidColumnDef>['Cell']>[0];
+
+    const mockCellParamsNull = {
+      cell: { getValue: () => null },
+      row: { original: {} },
+    } as unknown as Parameters<Required<AndroidColumnDef>['Cell']>[0];
+
+    expect(tempCol.Cell!(mockCellParams)).toEqual(
+      <EllipsisTooltip>32.5 °C</EllipsisTooltip>,
+    );
+    expect(tempCol.Cell!(mockCellParamsNull)).toBeNull();
   });
 
   describe('normalizeFilterKey', () => {

@@ -21,6 +21,7 @@ import { MRT_ColumnDef } from 'material-react-table';
 import React from 'react';
 import { Link } from 'react-router';
 
+import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import {
@@ -309,6 +310,18 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
           : null);
       if (typeof val !== 'number') return null;
       return <>{val.toFixed(2)}%</>;
+    },
+  },
+  battery_temperature: {
+    header: 'Battery Temperature',
+    orderByField: 'labels.battery_temperature',
+    renderCell: ({ value }) => {
+      if (value === undefined || value === null || value === '') {
+        return null;
+      }
+      const strVal = String(value);
+      const formatted = strVal.endsWith('°C') ? strVal : `${strVal} °C`;
+      return <EllipsisTooltip>{formatted}</EllipsisTooltip>;
     },
   },
 };
