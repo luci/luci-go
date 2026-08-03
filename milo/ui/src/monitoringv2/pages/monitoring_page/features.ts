@@ -21,4 +21,5 @@ export const SHOW_GEN_AI_SUSPECTS = createFeatureFlag({
   description:
     'Show suspected culprits found by AI analysis on the monitoring UI.',
   trackingBug: 'b/438554390',
+  allowedEnvironments: ['dev', 'prod'],
 });

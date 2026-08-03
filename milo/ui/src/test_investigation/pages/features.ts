@@ -21,6 +21,7 @@ export const NEW_TEST_INVESTIGATION_PAGE_FLAG = createFeatureFlag({
   description:
     'Redirects all accesses of the legacy build page test results tab to the new test investigation UI.',
   trackingBug: 'b:422604579',
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const SHOW_TEST_INVESTIGATION_PAGE_OPT_IN_BANNER_FLAG =
@@ -31,6 +32,7 @@ export const SHOW_TEST_INVESTIGATION_PAGE_OPT_IN_BANNER_FLAG =
     description:
       'Shows an opt in banner to users to allow them to opt in to the new test investigation UI.',
     trackingBug: 'b:422604579',
+    allowedEnvironments: ['dev', 'prod'],
   });
 export const USE_ROOT_INVOCATION_FLAG = createFeatureFlag({
   namespace: 'test_investigation',
@@ -38,6 +40,7 @@ export const USE_ROOT_INVOCATION_FLAG = createFeatureFlag({
   description: 'Use RootInvocation to fetch invocation details.',
   percentage: 100,
   trackingBug: 'None',
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const TEST_AGGREGATION_DRAWER_FLAG = createFeatureFlag({
@@ -47,6 +50,7 @@ export const TEST_AGGREGATION_DRAWER_FLAG = createFeatureFlag({
     'Enable the new Test Aggregation Drawer backed by ResultDB Aggregations.',
   percentage: 0,
   trackingBug: 'None',
+  allowedEnvironments: ['dev', 'prod'],
 });
 export const TEST_AGGREGATION_IN_INVOCATION_FLAG = createFeatureFlag({
   namespace: 'test_investigation',
@@ -55,4 +59,5 @@ export const TEST_AGGREGATION_IN_INVOCATION_FLAG = createFeatureFlag({
   description:
     'Enable the new Test Aggregation Viewer in the Invocation Page Test Results tab.',
   trackingBug: 'b/321111604',
+  allowedEnvironments: ['dev', 'prod'],
 });
