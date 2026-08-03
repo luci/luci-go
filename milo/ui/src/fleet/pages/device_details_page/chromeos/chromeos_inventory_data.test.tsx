@@ -16,6 +16,7 @@ import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -74,6 +75,18 @@ jest.mock('@/fleet/hooks/prpc_clients', () => ({
   })),
 }));
 
+jest.mock(
+  '@/fleet/components/actions/shared/use_admin_task_permission',
+  () => ({
+    useAdminTaskPermission: jest.fn(() => ({
+      hasPermission: true,
+      isError: false,
+      error: null,
+      fetchPermissions: jest.fn(),
+    })),
+  }),
+);
+
 describe('<ChromeOSInventoryData />', () => {
   const mockDeviceOs = {
     id: 'test-host-name',
@@ -101,6 +114,13 @@ describe('<ChromeOSInventoryData />', () => {
       isLoading: true,
       isError: false,
     } as unknown as UseQueryResult<unknown, Error>);
+
+    jest.mocked(useAdminTaskPermission).mockReturnValue({
+      hasPermission: true,
+      isError: false,
+      error: null,
+      fetchPermissions: jest.fn(),
+    });
   });
 
   it('renders CLI command for default namespace', async () => {
@@ -320,5 +340,45 @@ describe('<ChromeOSInventoryData />', () => {
         /shivas update dut -name test-host-name -servo-serial SERVO-NEW-999/i,
       ),
     ).toBeInTheDocument();
+  });
+
+  it('hides edit controls when user lacks admin task policy membership', async () => {
+    const lseData = {
+      chromeosMachineLse: {
+        deviceLse: {
+          dut: {
+            peripherals: {
+              servo: {
+                servoHostname: 'servo-host',
+                servoPort: 9999,
+                servoSerial: 'SERVO-123',
+              },
+            },
+          },
+        },
+      },
+    };
+    jest.mocked(useQuery).mockReturnValue({
+      data: lseData,
+      isLoading: false,
+      isError: false,
+    } as unknown as UseQueryResult<unknown, Error>);
+
+    jest.mocked(useAdminTaskPermission).mockReturnValue({
+      hasPermission: false,
+      isError: false,
+      error: null,
+      fetchPermissions: jest.fn(),
+    });
+
+    render(
+      <FakeContextProvider>
+        <ChromeOSInventoryData device={mockDeviceOs} />
+      </FakeContextProvider>,
+    );
+
+    expect(screen.queryAllByRole('button', { name: /^edit /i })).toHaveLength(
+      0,
+    );
   });
 });

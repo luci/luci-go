@@ -29,6 +29,7 @@ import { EditorConfiguration } from 'codemirror';
 import { useCallback, useMemo, useState } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
+import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import CodeSnippet from '@/fleet/components/code_snippet/code_snippet';
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
 import {
@@ -88,6 +89,8 @@ export const ChromeOSInventoryData = ({
   const ufsNamespace = extractDutLabel('ufs_namespace', device);
   const ufsClient = useUfsClient(ufsNamespace || 'os');
   const fleetConsoleClient = useFleetConsoleClient();
+  const { hasPermission: hasAdminTaskPermission } = useAdminTaskPermission();
+  const canEdit = Boolean(hasAdminTaskPermission);
 
   const machineLse = useQuery({
     ...ufsClient.GetMachineLSE.query(
@@ -276,7 +279,7 @@ export const ChromeOSInventoryData = ({
         />
       </Box>
 
-      {machineLse.isLoading ? (
+      {machineLse.isLoading || hasAdminTaskPermission === null ? (
         <CentralizedProgress />
       ) : machineLse.isError ? (
         <Alert severity="error">
@@ -314,7 +317,7 @@ export const ChromeOSInventoryData = ({
                 display: 'flex',
                 gap: 1.5,
                 pb: 1,
-                visibility: hasGlobalChanges ? 'visible' : 'hidden',
+                visibility: hasGlobalChanges && canEdit ? 'visible' : 'hidden',
               }}
             >
               <Button
@@ -345,7 +348,7 @@ export const ChromeOSInventoryData = ({
               updateDraftFields={handleUpdateFields}
               activeEditingCardId={activeEditingCardId}
               setActiveEditingCardId={setActiveEditingCardId}
-              editable
+              editable={canEdit}
             >
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
