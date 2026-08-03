@@ -14,15 +14,6 @@
 
 import { createFeatureFlag } from '@/common/feature_flags';
 
-export const enableModernInventoryCards = createFeatureFlag({
-  description: 'Enable modern ChromeOS inventory visual cards view',
-  namespace: 'fleet-console',
-  name: 'modern-inventory-cards',
-  percentage: 0,
-  trackingBug: '434697091',
-  allowedEnvironments: ['dev', 'prod'],
-});
-
 export const enableAndroidUtilizationMetrics = createFeatureFlag({
   description:
     'Displays average Android device utilization metrics, columns, and filters.',
@@ -30,14 +21,5 @@ export const enableAndroidUtilizationMetrics = createFeatureFlag({
   name: 'android-utilization-metrics',
   percentage: 0,
   trackingBug: '525089400',
-  allowedEnvironments: ['dev', 'prod'],
-});
-
-export const enableInventoryEditing = createFeatureFlag({
-  description: 'Enable ChromeOS inventory visual details card inline editing',
-  namespace: 'fleet-console',
-  name: 'inventory-editing',
-  percentage: 0,
-  trackingBug: '434697091',
   allowedEnvironments: ['dev', 'prod'],
 });

@@ -29,13 +29,8 @@ import { EditorConfiguration } from 'codemirror';
 import { useCallback, useMemo, useState } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
-import { useFeatureFlag } from '@/common/feature_flags';
 import CodeSnippet from '@/fleet/components/code_snippet/code_snippet';
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
-import {
-  enableModernInventoryCards,
-  enableInventoryEditing,
-} from '@/fleet/features';
 import {
   useUfsClient,
   useFleetConsoleClient,
@@ -75,12 +70,7 @@ export interface ChromeOSInventoryDataProps {
 export const ChromeOSInventoryData = ({
   device,
 }: ChromeOSInventoryDataProps) => {
-  const showModernCards = useFeatureFlag(enableModernInventoryCards);
-  const isEditingEnabled = useFeatureFlag(enableInventoryEditing);
-
-  const [viewMode, setViewMode] = useState<'json' | 'visual'>(
-    showModernCards ? 'visual' : 'json',
-  );
+  const [viewMode, setViewMode] = useState<'json' | 'visual'>('visual');
   const [editedLse, setEditedLse] = useState<MachineLSE | null>(null);
   const [originalLseSnapshot, setOriginalLseSnapshot] =
     useState<MachineLSE | null>(null);
@@ -295,71 +285,67 @@ export const ChromeOSInventoryData = ({
         </Alert>
       ) : (
         <>
-          {showModernCards && (
+          <Box
+            sx={{
+              borderBottom: 1,
+              borderColor: 'divider',
+              mb: 2,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Tabs value={viewMode} onChange={(_, val) => setViewMode(val)}>
+              <Tab
+                icon={<ViewModuleIcon />}
+                iconPosition="start"
+                label="Visual Dashboard"
+                value="visual"
+              />
+              <Tab
+                icon={<CodeIcon />}
+                iconPosition="start"
+                label="JSON"
+                value="json"
+              />
+            </Tabs>
             <Box
               sx={{
-                borderBottom: 1,
-                borderColor: 'divider',
-                mb: 2,
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                gap: 1.5,
+                pb: 1,
+                visibility: hasGlobalChanges ? 'visible' : 'hidden',
               }}
             >
-              <Tabs value={viewMode} onChange={(_, val) => setViewMode(val)}>
-                <Tab
-                  icon={<ViewModuleIcon />}
-                  iconPosition="start"
-                  label="Visual Dashboard"
-                  value="visual"
-                />
-                <Tab
-                  icon={<CodeIcon />}
-                  iconPosition="start"
-                  label="JSON"
-                  value="json"
-                />
-              </Tabs>
-              {isEditingEnabled && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    gap: 1.5,
-                    pb: 1,
-                    visibility: hasGlobalChanges ? 'visible' : 'hidden',
-                  }}
-                >
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="inherit"
-                    onClick={handleGlobalDiscard}
-                    disabled={activeEditingCardId !== null}
-                  >
-                    Discard Changes
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    color="primary"
-                    onClick={handleGlobalSave}
-                    disabled={activeEditingCardId !== null}
-                  >
-                    Save All Changes
-                  </Button>
-                </Box>
-              )}
+              <Button
+                size="small"
+                variant="outlined"
+                color="inherit"
+                onClick={handleGlobalDiscard}
+                disabled={activeEditingCardId !== null}
+              >
+                Discard Changes
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="primary"
+                onClick={handleGlobalSave}
+                disabled={activeEditingCardId !== null}
+              >
+                Save All Changes
+              </Button>
             </Box>
-          )}
+          </Box>
 
-          {viewMode === 'visual' && showModernCards && (
+          {viewMode === 'visual' && (
             <InventoryFormProvider
               originalLse={machineLse.data || null}
               draftLse={currentLse || null}
               updateDraftFields={handleUpdateFields}
               activeEditingCardId={activeEditingCardId}
               setActiveEditingCardId={setActiveEditingCardId}
-              editable={isEditingEnabled}
+              editable
             >
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>

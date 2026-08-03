@@ -46,15 +46,6 @@ jest.mock('@tanstack/react-query', () => {
   };
 });
 
-// Mock feature flags
-jest.mock('@/common/feature_flags', () => {
-  const original = jest.requireActual('@/common/feature_flags');
-  return {
-    ...original,
-    useFeatureFlag: jest.fn(() => true),
-  };
-});
-
 // Mock analytics
 jest.mock('@/fleet/hooks/use_fleet_analytics', () => ({
   useFleetAnalytics: () => ({
