@@ -53,6 +53,10 @@ func (r *dsCounter) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	return r.c.Run.upFilterStop(r.ds.Run(q, cb))
 }
 
+func (r *dsCounter) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
+	return r.ds.RunQuery(q)
+}
+
 func (r *dsCounter) Count(q *ds.FinalizedQuery) (int64, error) {
 	count, err := r.ds.Count(q)
 	return count, r.c.Count.up(err)

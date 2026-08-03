@@ -104,34 +104,42 @@ func (bds *boundDatastore) DecodeCursor(s string) (ds.Cursor, error) {
 }
 
 func (bds *boundDatastore) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
+	return ds.RunCallbackAdapter(bds.RunQuery(q), cb)
+}
+
+func (bds *boundDatastore) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 	it := bds.client.Run(bds, bds.prepareNativeQuery(q))
-	cursorFn := func() (ds.Cursor, error) {
-		return it.Cursor()
-	}
+	return ds.RawQueryIter{
+		Cursor: func() (ds.Cursor, error) {
+			return it.Cursor()
+		},
+		Results: func(yield func(ds.PropertyMap, error) bool) {
+			for {
+				var npl *nativePropertyLoader
+				if !q.KeysOnly() {
+					npl = &nativePropertyLoader{kc: bds.kc}
+				}
+				nativeKey, err := it.Next(npl)
+				if err != nil {
+					if err == iterator.Done {
+						return
+					}
+					yield(nil, normalizeError(err))
+					return
+				}
 
-	for {
-		var npl *nativePropertyLoader
-		if !q.KeysOnly() {
-			npl = &nativePropertyLoader{kc: bds.kc}
-		}
-		nativeKey, err := it.Next(npl)
-		if err != nil {
-			if err == iterator.Done {
-				return nil
+				var pmap ds.PropertyMap
+				if npl != nil {
+					pmap = npl.pmap
+				} else {
+					pmap = make(ds.PropertyMap, 1)
+				}
+				pmap["$key"] = ds.MkProperty(nativeKeyToGAE(bds.kc, nativeKey))
+				if !yield(pmap, nil) {
+					return
+				}
 			}
-			return normalizeError(err)
-		}
-
-		var pmap ds.PropertyMap
-		if npl != nil {
-			pmap = npl.pmap
-		}
-		if err := cb(nativeKeyToGAE(bds.kc, nativeKey), pmap, cursorFn); err != nil {
-			if err == ds.Stop {
-				return nil
-			}
-			return normalizeError(err)
-		}
+		},
 	}
 }
 

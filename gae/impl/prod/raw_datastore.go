@@ -262,28 +262,42 @@ func (d *rdsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 }
 
 func (d *rdsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
+	return ds.RunCallbackAdapter(d.RunQuery(fq), cb)
+}
+
+func (d *rdsImpl) RunQuery(fq *ds.FinalizedQuery) ds.RawQueryIter {
 	q, err := d.fixQuery(fq)
 	if err != nil {
-		return err
+		return ds.RawQueryIterStub(err)
 	}
 
 	t := q.Run(d.aeCtx)
 
-	cfunc := func() (ds.Cursor, error) {
-		return t.Cursor()
-	}
-	tf := typeFilter{}
-	for {
-		k, err := t.Next(&tf)
-		if err == datastore.Done {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		if err := cb(dsR2F(k), tf.pm, cfunc); err != nil {
-			return err
-		}
+	return ds.RawQueryIter{
+		Cursor: func() (ds.Cursor, error) {
+			return t.Cursor()
+		},
+		Results: func(yield func(ds.PropertyMap, error) bool) {
+			tf := typeFilter{}
+			for {
+				k, err := t.Next(&tf)
+				if err == datastore.Done {
+					return
+				}
+				if err != nil {
+					yield(nil, err)
+					return
+				}
+				pm := tf.pm
+				if pm == nil {
+					pm = make(ds.PropertyMap, 1)
+				}
+				pm["$key"] = ds.MkProperty(dsR2F(k))
+				if !yield(pm, nil) {
+					return
+				}
+			}
+		},
 	}
 }
 

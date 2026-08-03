@@ -64,6 +64,10 @@ func (r *dsState) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	})
 }
 
+func (r *dsState) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
+	return r.rds.RunQuery(q)
+}
+
 func (r *dsState) Count(q *ds.FinalizedQuery) (int64, error) {
 	count := int64(0)
 	err := r.run(r.c, func() (err error) {

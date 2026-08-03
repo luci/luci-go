@@ -72,18 +72,21 @@ func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 	return newCursor(s)
 }
 
-func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	cb = d.data.stripSpecialPropsRunCB(cb)
+func (d *dsImpl) RunQuery(fq *ds.FinalizedQuery) ds.RawQueryIter {
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
-	return executeQuery(fq, d.kc, d.data, false, idx, head, cb)
+	return d.data.stripSpecialPropsIter(executeQuery(fq, d.kc, d.data, false, idx, head))
+}
+
+func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
+	return ds.RunCallbackAdapter(d.RunQuery(fq), cb)
 }
 
 func (d *dsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
-	ret, err = countQuery(fq, d.kc, false, idx, head)
+	ret, err = countQuery(fq, d.kc, d.data, false, idx, head)
 	if d.data.maybeAutoIndex(err) {
 		idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
-		ret, err = countQuery(fq, d.kc, false, idx, head)
+		ret, err = countQuery(fq, d.kc, d.data, false, idx, head)
 	}
 	return
 }
@@ -185,22 +188,16 @@ func (d *txnDsImpl) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 
 func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) { return newCursor(s) }
 
+func (d *txnDsImpl) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
+	return d.data.parent.stripSpecialPropsIter(executeQuery(q, d.kc, nil, true, d.data.snap, d.data.snap))
+}
+
 func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	// note that autoIndex has no effect inside transactions. This is because
-	// the transaction guarantees a consistent view of head at the time that the
-	// transaction opens. At best, we could add the index on head, but then return
-	// the error anyway, but adding the index then re-snapping at head would
-	// potentially reveal other entities not in the original transaction snapshot.
-	//
-	// It's possible that if you have full-consistency and also auto index enabled
-	// that this would make sense... but at that point you should probably just
-	// add the index up front.
-	cb = d.data.parent.stripSpecialPropsRunCB(cb)
-	return executeQuery(q, d.kc, nil, true, d.data.snap, d.data.snap, cb)
+	return ds.RunCallbackAdapter(d.RunQuery(q), cb)
 }
 
 func (d *txnDsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
-	return countQuery(fq, d.kc, true, d.data.snap, d.data.snap)
+	return countQuery(fq, d.kc, nil, true, d.data.snap, d.data.snap)
 }
 
 func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.TransactionOptions) error {

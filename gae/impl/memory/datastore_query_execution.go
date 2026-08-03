@@ -26,14 +26,13 @@ import (
 )
 
 type queryStrategy interface {
-	// handle applies the strategy to the embedded user callback.
+	// handle applies the strategy.
 	//   - rawData is the slice of encoded Properties from the index row
 	//     (correctly de-inverted).
 	//   - decodedProps is the slice of decoded Properties from the index row
 	//   - key is the decoded Key from the index row (the last item in rawData and
 	//     decodedProps)
-	//   - gc is the getCursor function to be passed to the user's callback
-	handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) error
+	handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key) ds.PropertyMap
 }
 
 type projectionLookup struct {
@@ -42,13 +41,11 @@ type projectionLookup struct {
 }
 
 type projectionStrategy struct {
-	cb ds.RawRunCB
-
 	project  []projectionLookup
 	distinct stringset.Set
 }
 
-func newProjectionStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRunCB) queryStrategy {
+func newProjectionStrategy(fq *ds.FinalizedQuery, rq *reducedQuery) queryStrategy {
 	proj := fq.Project()
 
 	projectionLookups := make([]projectionLookup, len(proj))
@@ -64,19 +61,19 @@ func newProjectionStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRun
 		}
 		impossible(lookupErr)
 	}
-	ret := &projectionStrategy{cb: cb, project: projectionLookups}
+	ret := &projectionStrategy{project: projectionLookups}
 	if fq.Distinct() {
 		ret.distinct = stringset.New(0)
 	}
 	return ret
 }
 
-func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) error {
+func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key) ds.PropertyMap {
 	projectedRaw := [][]byte(nil)
 	if s.distinct != nil {
 		projectedRaw = make([][]byte, len(decodedProps))
 	}
-	pmap := make(ds.PropertyMap, len(s.project))
+	pmap := make(ds.PropertyMap, len(s.project)+1)
 	for i, p := range s.project {
 		if s.distinct != nil {
 			projectedRaw[i] = rawData[p.suffixIndex]
@@ -88,39 +85,36 @@ func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property
 			return nil
 		}
 	}
-	return s.cb(key, pmap, gc)
+	pmap["$key"] = ds.MkPropertyNI(key)
+	return pmap
 }
 
 type keysOnlyStrategy struct {
-	cb ds.RawRunCB
-
 	dedup stringset.Set
 }
 
-func (s *keysOnlyStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) error {
+func (s *keysOnlyStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key) ds.PropertyMap {
 	if !s.dedup.Add(string(rawData[len(rawData)-1])) {
 		return nil
 	}
-	return s.cb(key, nil, gc)
+	return ds.PropertyMap{"$key": ds.MkPropertyNI(key)}
 }
 
 type normalStrategy struct {
-	cb ds.RawRunCB
-
 	kc    ds.KeyContext
 	head  memCollection
 	dedup stringset.Set
 }
 
-func newNormalStrategy(kc ds.KeyContext, cb ds.RawRunCB, head memStore) queryStrategy {
+func newNormalStrategy(kc ds.KeyContext, head memStore) queryStrategy {
 	coll := head.GetCollection("ents:" + kc.Namespace)
 	if coll == nil {
 		return nil
 	}
-	return &normalStrategy{cb, kc, coll, stringset.New(0)}
+	return &normalStrategy{kc, coll, stringset.New(0)}
 }
 
-func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) error {
+func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key) ds.PropertyMap {
 	rawKey := rawData[len(rawData)-1]
 	if !s.dedup.Add(string(rawKey)) {
 		return nil
@@ -133,18 +127,18 @@ func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, 
 	}
 	pm, err := ds.Deserializer{KeyContext: s.kc}.PropertyMap(bytes.NewBuffer(rawEnt))
 	memoryCorruption(err)
-
-	return s.cb(key, pm, gc)
+	pm["$key"] = ds.MkPropertyNI(key)
+	return pm
 }
 
-func pickQueryStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRunCB, head memStore) queryStrategy {
+func pickQueryStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, head memStore) queryStrategy {
 	if fq.KeysOnly() {
-		return &keysOnlyStrategy{cb, stringset.New(0)}
+		return &keysOnlyStrategy{stringset.New(0)}
 	}
 	if len(fq.Project()) > 0 {
-		return newProjectionStrategy(fq, rq, cb)
+		return newProjectionStrategy(fq, rq)
 	}
-	return newNormalStrategy(rq.kc, cb, head)
+	return newNormalStrategy(rq.kc, head)
 }
 
 func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, count int) (raw [][]byte, decoded []ds.Property) {
@@ -175,80 +169,86 @@ func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, c
 	return
 }
 
-func countQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head memStore) (ret int64, err error) {
+func countQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, data *dataStoreData, isTxn bool, idx, head memStore) (ret int64, err error) {
 	if len(fq.Project()) == 0 && !fq.KeysOnly() {
 		fq, err = fq.Original().KeysOnly(true).Finalize()
 		if err != nil {
 			return
 		}
 	}
-	err = executeQuery(fq, kc, nil, isTxn, idx, head, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) error {
+	for _, err := range executeQuery(fq, kc, nil, isTxn, idx, head).Results {
+		if err != nil {
+			return 0, err
+		}
 		ret++
-		return nil
-	})
+	}
 	return
 }
 
-func executeNamespaceQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, head memStore, cb ds.RawRunCB) error {
+func executeNamespaceQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, head memStore) ds.RawQueryIter {
 	// these objects have no properties, so any filters on properties cause an
 	// empty result.
 	if len(fq.EqFilters()) > 0 ||
 		len(fq.InFilters()) > 0 ||
 		len(fq.Project()) > 0 ||
 		len(fq.Orders()) > 1 {
-		return nil
+		return ds.RawQueryIterStub(nil)
 	}
 	if !(fq.IneqFilterProp() == "" || fq.IneqFilterProp() == "__key__") {
-		return nil
+		return ds.RawQueryIterStub(nil)
 	}
 	limit, hasLimit := fq.Limit()
 	offset, hasOffset := fq.Offset()
 	start, end := fq.Bounds()
 
 	cursErr := errors.New("cursors not supported for __namespace__ query")
-	cursFn := func() (ds.Cursor, error) { return nil, cursErr }
 	if !(start == nil && end == nil) {
-		return cursErr
+		return ds.RawQueryIterStub(cursErr)
 	}
 
 	kc.Namespace = ""
-	for _, ns := range namespaces(head) {
-		if hasOffset && offset > 0 {
-			offset--
-			continue
-		}
-		if hasLimit {
-			if limit <= 0 {
-				return nil
+	return ds.RawQueryIter{
+		Cursor: func() (ds.Cursor, error) { return nil, cursErr },
+		Results: func(yield func(ds.PropertyMap, error) bool) {
+			for _, ns := range namespaces(head) {
+				if hasOffset && offset > 0 {
+					offset--
+					continue
+				}
+				if hasLimit {
+					if limit <= 0 {
+						return
+					}
+					limit--
+				}
+				k := (*ds.Key)(nil)
+				if ns == "" {
+					// Datastore uses an id of 1 to indicate the default namespace in its
+					// metadata API.
+					k = kc.MakeKey("__namespace__", 1)
+				} else {
+					k = kc.MakeKey("__namespace__", ns)
+				}
+				pm := ds.PropertyMap{"$key": ds.MkPropertyNI(k)}
+				if !yield(pm, nil) {
+					return
+				}
 			}
-			limit--
-		}
-		k := (*ds.Key)(nil)
-		if ns == "" {
-			// Datastore uses an id of 1 to indicate the default namespace in its
-			// metadata API.
-			k = kc.MakeKey("__namespace__", 1)
-		} else {
-			k = kc.MakeKey("__namespace__", ns)
-		}
-		if err := cb(k, nil, cursFn); err != nil {
-			return err
-		}
+		},
 	}
-	return nil
 }
 
-func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, data *dataStoreData, isTxn bool, idx, head memStore, cb ds.RawRunCB) error {
+func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, data *dataStoreData, isTxn bool, idx, head memStore) ds.RawQueryIter {
 	rq, err := reduce(fq, kc, isTxn)
 	if err == ds.ErrNullQuery {
-		return nil
+		return ds.RawQueryIterStub(nil)
 	}
 	if err != nil {
-		return err
+		return ds.RawQueryIterStub(err)
 	}
 
 	if rq.kind == "__namespace__" {
-		return executeNamespaceQuery(fq, kc, head, cb)
+		return executeNamespaceQuery(fq, kc, head)
 	}
 
 	idxs, err := getIndexes(rq, idx)
@@ -257,72 +257,76 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, data *dataStoreData, 
 		idxs, err = getIndexes(rq, idx)
 	}
 	if err == ds.ErrNullQuery {
-		return nil
+		return ds.RawQueryIterStub(nil)
 	}
 	if err != nil {
-		return err
+		return ds.RawQueryIterStub(err)
 	}
 
-	strategy := pickQueryStrategy(fq, rq, cb, head)
+	strategy := pickQueryStrategy(fq, rq, head)
 	if strategy == nil {
 		// e.g. the normalStrategy found that there were NO entities in the current
 		// namespace.
-		return nil
+		return ds.RawQueryIterStub(nil)
 	}
 
 	offset, _ := fq.Offset()
 	limit, hasLimit := fq.Limit()
 
-	cursorPrefix := []byte(nil)
-	getCursorFn := func(suffix []byte) func() (ds.Cursor, error) {
-		return func() (ds.Cursor, error) {
-			if cursorPrefix == nil {
-				buf := &bytes.Buffer{}
-				_, err := cmpbin.WriteUint(buf, uint64(len(rq.suffixFormat)))
-				memoryCorruption(err)
+	buf := &bytes.Buffer{}
+	_, err = cmpbin.WriteUint(buf, uint64(len(rq.suffixFormat)))
+	memoryCorruption(err)
 
-				for _, col := range rq.suffixFormat {
-					err := ds.Serialize.IndexColumn(buf, col)
-					memoryCorruption(err)
+	for _, col := range rq.suffixFormat {
+		err := ds.Serialize.IndexColumn(buf, col)
+		memoryCorruption(err)
+	}
+	cursorPrefix := buf.Bytes()
+
+	var lastSuffix []byte
+	return ds.RawQueryIter{
+		Cursor: func() (ds.Cursor, error) {
+			return queryCursor(cmpbin.ConcatBytes(cursorPrefix, increment(bytes.Clone(lastSuffix)))), nil
+		},
+		Results: func(yield func(ds.PropertyMap, error) bool) {
+			for curSuffix := range multiIterate(idxs) {
+				rawData, decodedProps := parseSuffix(kc.AppID, kc.Namespace, rq.suffixFormat, curSuffix, -1)
+
+				keyProp := decodedProps[len(decodedProps)-1]
+				if keyProp.Type() != ds.PTKey {
+					impossible(fmt.Errorf("decoded index row doesn't end with a Key: %#v", keyProp))
 				}
-				cursorPrefix = buf.Bytes()
+
+				key := keyProp.Value().(*ds.Key)
+				if key.LastTok().Kind == "__entity_group__" {
+					// These are internal entities and so shouldn't count to user-observable
+					// offset/limit. Real datastore doesn't include these in query output
+					// (they are 'synthetic' entities), but we store them in the main table.
+					continue
+				}
+
+				pm := strategy.handle(rawData, decodedProps, key)
+				if pm == nil {
+					continue
+				}
+
+				if offset > 0 {
+					offset--
+					continue
+				}
+				if hasLimit {
+					if limit <= 0 {
+						return
+					}
+					limit--
+				}
+
+				lastSuffix = curSuffix
+
+				if !yield(pm, nil) {
+					return
+				}
 			}
-			// TODO(riannucci): Do we need to decrement suffix instead of increment
-			// if we're sorting by __key__ DESCENDING?
-			return queryCursor(cmpbin.ConcatBytes(cursorPrefix, increment(suffix))), nil
-		}
+		},
 	}
-
-	for suffix := range multiIterate(idxs) {
-		rawData, decodedProps := parseSuffix(kc.AppID, kc.Namespace, rq.suffixFormat, suffix, -1)
-
-		keyProp := decodedProps[len(decodedProps)-1]
-		if keyProp.Type() != ds.PTKey {
-			impossible(fmt.Errorf("decoded index row doesn't end with a Key: %#v", keyProp))
-		}
-
-		key := keyProp.Value().(*ds.Key)
-		if key.LastTok().Kind == "__entity_group__" {
-			// These are internal entities and so shouldn't count to user-observable
-			// offset/limit. Real datastore doesn't include these in query output
-			// (they are 'synthetic' entities), but we store them in the main table.
-			continue
-		}
-
-		if offset > 0 {
-			offset--
-			continue
-		}
-		if hasLimit {
-			if limit <= 0 {
-				return nil
-			}
-			limit--
-		}
-
-		if err := strategy.handle(rawData, decodedProps, key, getCursorFn(suffix)); err != nil {
-			return err
-		}
-	}
-	return nil
 }

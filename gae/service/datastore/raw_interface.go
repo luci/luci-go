@@ -16,7 +16,9 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"iter"
 )
 
 // Cursor wraps datastore.Cursor.
@@ -39,6 +41,56 @@ type CursorCB func() (Cursor, error)
 // stop. If you return the error `Stop`, then Run will stop the query and
 // return nil.
 type RawRunCB func(key *Key, val PropertyMap, getCursor CursorCB) error
+
+// RawQueryIter holds the cursor callback and result iterator for `RunQuery`ing
+// a Query via RawInterface.
+type RawQueryIter struct {
+	// Returns a cursor to the *next* item which will be yielded by Results.
+	//
+	// Safe to call before pulling anything from Results.
+	Cursor CursorCB
+
+	// Yields query results in order.
+	//
+	// Each PropertyMap will always contain the "key" metadata as a *Key.
+	//
+	// If an error is encountered, it is yielded and iteration stops.
+	Results iter.Seq2[PropertyMap, error]
+}
+
+// RawQueryIterStub returns a RawQueryIter whose CursorCB and Results yield err
+// (or behave as an empty iterator if err is nil).
+func RawQueryIterStub(err error) RawQueryIter {
+	return RawQueryIter{
+		Cursor: func() (Cursor, error) { return nil, err },
+		Results: func(yield func(PropertyMap, error) bool) {
+			if err != nil {
+				yield(nil, err)
+			}
+		},
+	}
+}
+
+// RunCallbackAdapter runs it yielding to cb until completion, error, or Stop.
+func RunCallbackAdapter(it RawQueryIter, cb RawRunCB) error {
+	for pm, err := range it.Results {
+		if err != nil {
+			return err
+		}
+		var key *Key
+		if val, ok := pm.GetMeta("key"); ok {
+			key, _ = val.(*Key)
+		}
+		delete(pm, "$key")
+		if err := cb(key, pm, it.Cursor); err != nil {
+			if errors.Is(err, Stop) {
+				return nil
+			}
+			return err
+		}
+	}
+	return nil
+}
 
 // GetMultiCB is the callback signature provided to RawInterface.GetMulti
 //
@@ -175,6 +227,12 @@ type RawInterface interface {
 	//   - query is not nil
 	//   - cb is not nil
 	Run(q *FinalizedQuery, cb RawRunCB) error
+
+	// RunQuery executes the given query, returning a callback to get the cursor for
+	// the next result, and an iterator to yield the results.
+	//
+	// May return CursorCB == nil if cursors are not supported.
+	RunQuery(q *FinalizedQuery) RawQueryIter
 
 	// Count executes the given query and returns the number of entries which
 	// match it.

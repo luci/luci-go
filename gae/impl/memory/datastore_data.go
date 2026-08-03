@@ -151,17 +151,27 @@ func (d *dataStoreData) stripSpecialPropsGetCB(cb ds.GetMultiCB) ds.GetMultiCB {
 	}
 }
 
-func (d *dataStoreData) stripSpecialPropsRunCB(cb ds.RawRunCB) ds.RawRunCB {
+func (d *dataStoreData) stripSpecialPropsIter(it ds.RawQueryIter) ds.RawQueryIter {
 	d.rwlock.RLock()
-	defer d.rwlock.RUnlock()
+	show := d.showSpecialProps
+	d.rwlock.RUnlock()
 
-	if d.showSpecialProps {
-		return cb
+	if show {
+		return it
 	}
 
-	return func(key *ds.Key, val ds.PropertyMap, getCursor ds.CursorCB) error {
-		stripSpecialProps(val)
-		return cb(key, val, getCursor)
+	return ds.RawQueryIter{
+		Cursor: it.Cursor,
+		Results: func(yield func(ds.PropertyMap, error) bool) {
+			for pm, err := range it.Results {
+				if err == nil {
+					stripSpecialProps(pm)
+				}
+				if !yield(pm, err) {
+					return
+				}
+			}
+		},
 	}
 }
 

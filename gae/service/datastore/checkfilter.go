@@ -51,6 +51,16 @@ func (tcf *checkFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
 		}))
 }
 
+func (tcf *checkFilter) RunQuery(fq *FinalizedQuery) RawQueryIter {
+	if fq == nil {
+		return RawQueryIterStub(fmt.Errorf("datastore: RunQuery query is nil"))
+	}
+	if err := tcf.checkCtxDone(nil); err != nil {
+		return RawQueryIterStub(err)
+	}
+	return tcf.RawInterface.RunQuery(fq)
+}
+
 func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiCB) error {
 	if cb == nil {
 		return fmt.Errorf("datastore: GetMulti callback is nil")
