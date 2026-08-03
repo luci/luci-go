@@ -58,7 +58,21 @@ func (tcf *checkFilter) RunQuery(fq *FinalizedQuery) RawQueryIter {
 	if err := tcf.checkCtxDone(nil); err != nil {
 		return RawQueryIterStub(err)
 	}
-	return tcf.RawInterface.RunQuery(fq)
+	it := tcf.RawInterface.RunQuery(fq)
+	return RawQueryIter{
+		Cursor: it.Cursor,
+		Results: func(yield func(PropertyMap, error) bool) {
+			for pm, err := range it.Results {
+				if err := tcf.checkCtxDone(err); err != nil {
+					yield(nil, err)
+					return
+				}
+				if !yield(pm, nil) {
+					return
+				}
+			}
+		},
+	}
 }
 
 func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiCB) error {

@@ -25,6 +25,7 @@ var DatastoreFeatures = []string{
 	"AllocateIDs",
 	"DecodeCursor",
 	"Run",
+	"RunQuery",
 	"Count",
 	"BeginTransaction",
 	"CommitTransaction",
@@ -65,6 +66,9 @@ func (r *dsState) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 }
 
 func (r *dsState) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
+	if err := r.run(r.c, func() error { return nil }); err != nil {
+		return ds.RawQueryIterStub(err)
+	}
 	return r.rds.RunQuery(q)
 }
 

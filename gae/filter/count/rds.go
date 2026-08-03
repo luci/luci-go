@@ -54,7 +54,26 @@ func (r *dsCounter) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 }
 
 func (r *dsCounter) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
-	return r.ds.RunQuery(q)
+	it := r.ds.RunQuery(q)
+	return ds.RawQueryIter{
+		Cursor: it.Cursor,
+		Results: func(yield func(ds.PropertyMap, error) bool) {
+			var err error
+			defer func() {
+				r.c.Run.up(err)
+			}()
+			var pm ds.PropertyMap
+			for pm, err = range it.Results {
+				if err != nil {
+					yield(nil, err)
+					return
+				}
+				if !yield(pm, nil) {
+					return
+				}
+			}
+		},
+	}
 }
 
 func (r *dsCounter) Count(q *ds.FinalizedQuery) (int64, error) {
