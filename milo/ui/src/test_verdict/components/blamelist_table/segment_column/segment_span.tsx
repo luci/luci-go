@@ -15,13 +15,13 @@
 import { Box, styled } from '@mui/material';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import { SegmentInfo } from '@/test_verdict/components/changepoint_analysis';
+import { SegmentTooltip } from '@/common/components/segment_tooltip';
 import {
   getBackgroundColor,
   getBorderColor,
 } from '@/test_verdict/tools/segment_color';
 
-import { useSegmentWithCommit } from '../context';
+import { useBlamelistBaseUrl, useSegmentWithCommit } from '../context';
 
 import { SEGMENT_SPAN_WIDTH } from './constants';
 
@@ -57,6 +57,7 @@ export interface SegmentSpanProps {
 
 export function SegmentSpan({ position }: SegmentSpanProps) {
   const segment = useSegmentWithCommit(position);
+  const blamelistBaseUrl = useBlamelistBaseUrl();
 
   if (!segment) {
     return <></>;
@@ -74,7 +75,11 @@ export function SegmentSpan({ position }: SegmentSpanProps) {
   }
 
   return (
-    <HtmlTooltip disableInteractive title={<SegmentInfo segment={segment} />}>
+    <HtmlTooltip
+      title={
+        <SegmentTooltip segment={segment} blamelistBaseUrl={blamelistBaseUrl} />
+      }
+    >
       <Span
         className={classNames.join(' ')}
         sx={{

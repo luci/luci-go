@@ -16,9 +16,8 @@ import { Box, Link, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { memo } from 'react';
 
+import { formatSegmentTimestamp } from '@/common/components/segment_tooltip';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-
-import { formatSegmentTimestamp } from './util';
 
 interface TestAddedInfoProps {
   segment: Segment;

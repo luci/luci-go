@@ -16,10 +16,10 @@ import { Box, styled } from '@mui/material';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { SegmentTooltip } from '@/common/components/segment_tooltip';
 import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
 import { VERDICT_STATUS_COLOR_MAP } from '@/common/constants/verdict';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import { SegmentInfo } from '@/test_verdict/components/changepoint_analysis';
 import { VerdictSetStatus } from '@/test_verdict/components/verdict_set_status';
 import {
   getBackgroundColor,
@@ -129,6 +129,13 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
     counts.unexpectedResults > 0 &&
     counts.unexpectedResults < counts.totalResults;
 
+  const blamelistBaseUrl =
+    `/ui/labs/p/${encodeURIComponent(testVariantBranch.project)}` +
+    `/tests/${encodeURIComponent(testVariantBranch.testId)}` +
+    `/variants/${testVariantBranch.variantHash}` +
+    `/refs/${testVariantBranch.refHash}` +
+    `/blamelist`;
+
   return (
     <foreignObject
       x={x}
@@ -145,19 +152,10 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
       }
     >
       <HtmlTooltip
-        disableInteractive
         title={
-          <SegmentInfo
+          <SegmentTooltip
             segment={segment}
-            instructionRow={
-              <tr>
-                <td colSpan={100}>
-                  <Box sx={{ marginBottom: '5px', fontWeight: 'bold' }}>
-                    Click to view blamelist with test results.
-                  </Box>
-                </td>
-              </tr>
-            }
+            blamelistBaseUrl={blamelistBaseUrl}
           />
         }
       >

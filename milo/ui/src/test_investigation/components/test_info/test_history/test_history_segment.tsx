@@ -20,7 +20,6 @@ import { TestHistorySegmentSummary } from './test_history_segment_summary';
 import { TestHistorySourceVerdicts } from './test_history_source_verdicts';
 interface TestHistorySegmentProps {
   segment: Segment;
-  nextSegment: Segment;
   isStartSegment: boolean;
   isEndSegment: boolean;
   setExpandedTestHistory: (expand: boolean) => void;
@@ -29,7 +28,6 @@ interface TestHistorySegmentProps {
 
 export function TestHistorySegment({
   segment,
-  nextSegment,
   isStartSegment,
   isEndSegment,
   setExpandedTestHistory,
@@ -57,7 +55,6 @@ export function TestHistorySegment({
       ></TestHistorySourceVerdicts>
       <TestHistorySegmentSummary
         segment={segment}
-        nextSegment={nextSegment}
         isStartSegment={isStartSegment}
         isEndSegment={isEndSegment}
         numShownVerdicts={numShownVerdicts}

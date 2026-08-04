@@ -12,167 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { memo } from 'react';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
+import {
+  SegmentTooltip,
+  getFailureRateStatusTypeFromSegmentCount,
+  getFormattedFailureRateFromSegmentCount,
+} from '@/common/components/segment_tooltip';
 import { getStatusStyle } from '@/common/styles/status_styles';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import {
-  getFailureRateStatusTypeFromSegment,
-  getFormattedFailureRateFromSegment,
-} from '@/test_investigation/utils/test_history_utils';
-
-import { formatSegmentTimestamp } from './util';
-
-interface HistorySegmentTooltip {
-  segment: Segment;
-  segmentContextType: 'invocation' | 'beforeInvocation' | 'afterInvocation';
-  nowDtForFormatting?: DateTime;
-  blamelistBaseUrl: string | undefined;
-}
-
-/**
- * An informative tooltip giving the user more details about a segment in the history display.
- */
-function HistorySegmentTooltip({
-  segment,
-  segmentContextType,
-  nowDtForFormatting,
-  blamelistBaseUrl,
-}: HistorySegmentTooltip) {
-  const formattedRate = getFormattedFailureRateFromSegment(segment);
-  const startHourDisplay = formatSegmentTimestamp(
-    segment.startHour,
-    nowDtForFormatting,
-  );
-  const endHourDisplay = formatSegmentTimestamp(
-    segment.endHour,
-    nowDtForFormatting,
-  );
-
-  const style = getStatusStyle(getFailureRateStatusTypeFromSegment(segment));
-
-  const createBlamelistLink = (position: string) => {
-    return `${blamelistBaseUrl}?expand=${`CP-${position}`}#CP-${position}`;
-  };
-
-  return (
-    <Box sx={{ p: 1 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          width: '100%',
-          mb: 3,
-        }}
-      >
-        <Box
-          sx={{
-            width: '100%',
-            borderRadius: '4px',
-            backgroundColor: style.backgroundColor,
-            border: `1px solid ${style.borderColor}`,
-            my: 1,
-            p: 1,
-            textAlign: 'center',
-          }}
-        >
-          <Typography variant="body2">
-            Failure Rate: {formattedRate}
-            {segment.counts &&
-              ` (${segment.counts.unexpectedVerdicts} / ${segment.counts.totalVerdicts} failed)`}
-          </Typography>
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            width: '100%',
-          }}
-        >
-          <Box sx={{ textAlign: 'left' }}>
-            <Typography variant="caption" display="block">
-              End:{' '}
-              {blamelistBaseUrl ? (
-                <Link
-                  href={createBlamelistLink(segment.endPosition)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  underline="hover"
-                >
-                  {Number(segment.endPosition)}
-                </Link>
-              ) : (
-                Number(segment.endPosition)
-              )}
-            </Typography>
-            {segment.endHour && (
-              <Typography
-                variant="caption"
-                display="block"
-                color="text.secondary"
-              >
-                ({endHourDisplay})
-              </Typography>
-            )}
-          </Box>
-          <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="caption" display="block">
-              Start:{' '}
-              {blamelistBaseUrl ? (
-                <Link
-                  href={createBlamelistLink(segment.startPosition)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  underline="hover"
-                >
-                  {Number(segment.startPosition)}
-                </Link>
-              ) : (
-                Number(segment.startPosition)
-              )}
-            </Typography>
-            {segment.startHour && (
-              <Typography
-                variant="caption"
-                display="block"
-                color="text.secondary"
-              >
-                ({startHourDisplay})
-              </Typography>
-            )}
-          </Box>
-        </Box>
-      </Box>
-
-      {segmentContextType === 'invocation' && (
-        <Typography variant="subtitle2" gutterBottom>
-          This segment contains the current test result
-        </Typography>
-      )}
-      {segmentContextType === 'afterInvocation' && (
-        <Typography variant="subtitle2" gutterBottom>
-          This segment is newer than the current test result
-        </Typography>
-      )}
-      {segmentContextType === 'beforeInvocation' && (
-        <Typography variant="subtitle2" gutterBottom>
-          This segment is older than the current test result
-        </Typography>
-      )}
-      {segment.counts && (
-        <Typography variant="caption" color="text.secondary" component="div">
-          Contains {segment.counts.totalRuns} verdicts across{' '}
-          {segment.counts.totalVerdicts} distinct commits.
-        </Typography>
-      )}
-    </Box>
-  );
-}
 
 interface HistorySegmentProps {
   segment: Segment;
@@ -193,9 +44,9 @@ export const HistorySegment = memo(function HistorySegment({
   isMostRecentSegment,
   blamelistBaseUrl,
 }: HistorySegmentProps) {
-  const formattedRate = getFormattedFailureRateFromSegment(segment);
+  const formattedRate = getFormattedFailureRateFromSegmentCount(segment.counts);
   const style = getStatusStyle(
-    getFailureRateStatusTypeFromSegment(segment),
+    getFailureRateStatusTypeFromSegmentCount(segment.counts),
     'outlined',
   );
   const IconComponent = style.icon;
@@ -216,7 +67,7 @@ export const HistorySegment = memo(function HistorySegment({
   return (
     <HtmlTooltip
       title={
-        <HistorySegmentTooltip
+        <SegmentTooltip
           segment={segment}
           segmentContextType={segmentContextType}
           nowDtForFormatting={nowDtForFormatting}

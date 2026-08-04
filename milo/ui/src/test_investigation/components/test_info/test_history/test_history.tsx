@@ -112,7 +112,6 @@ export function TestHistory() {
               setExpandedTestHistory={expandOneSegment}
               testHistoryHasExpandedSegment={hasExpandedSegment}
               segment={segment}
-              nextSegment={testVariantBranch?.segments[index + 1] ?? null}
               key={index}
               isStartSegment={index === 0 ? true : false}
               isEndSegment={

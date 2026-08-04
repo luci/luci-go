@@ -54,6 +54,8 @@ const createMockSegment = (
     startPosition: startPos,
     endPosition: endPos,
     counts: Segment_Counts.fromPartial({
+      unexpectedResults: unexpected,
+      totalResults: total,
       unexpectedVerdicts: unexpected,
       totalVerdicts: total,
     }),
@@ -178,7 +180,7 @@ describe('<HistoryRateDisplaySection />', () => {
     fireEvent.mouseOver(failureRateView);
     const tooltip = await screen.findByRole('tooltip');
     expect(
-      within(tooltip).getByText('Failure Rate: 10% (10 / 100 failed)'),
+      within(tooltip).getByText('10% of 100 test results failed'),
     ).toBeInTheDocument();
     expect(within(tooltip).getByText('Start:')).toBeInTheDocument();
     expect(within(tooltip).getByText('(2 hours ago)')).toBeInTheDocument();
@@ -216,7 +218,7 @@ describe('<HistoryRateDisplaySection />', () => {
     fireEvent.mouseOver(failureRateView);
     const tooltip = await screen.findByRole('tooltip');
     expect(
-      within(tooltip).getByText('Failure Rate: 10% (10 / 100 failed)'),
+      within(tooltip).getByText('10% of 100 test results failed'),
     ).toBeInTheDocument();
     expect(within(tooltip).getByText('Start:')).toBeInTheDocument();
     expect(within(tooltip).getByText('(2 hours ago)')).toBeInTheDocument();
@@ -336,7 +338,7 @@ describe('<HistoryRateDisplaySection />', () => {
     fireEvent.mouseOver(failureRateView);
     const tooltip = await screen.findByRole('tooltip');
     expect(
-      within(tooltip).getByText('Failure Rate: 10% (10 / 100 failed)'),
+      within(tooltip).getByText('10% of 100 test results failed'),
     ).toBeInTheDocument();
     expect(within(tooltip).getByText('(4 hours ago)')).toBeInTheDocument();
     expect(

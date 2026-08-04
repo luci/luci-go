@@ -18,6 +18,7 @@ import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 
 interface BlamelistContext {
   readonly project: string;
+  readonly blamelistBaseUrl?: string;
   /**
    * Segments sorted by their end commit position in descending order.
    */
@@ -58,8 +59,16 @@ export function BlamelistContextProvider({
           parseInt(seg1.startPositionUpperBound99th),
       );
 
+    const blamelistBaseUrl =
+      `/ui/labs/p/${encodeURIComponent(testVariantBranch.project)}` +
+      `/tests/${encodeURIComponent(testVariantBranch.testId)}` +
+      `/variants/${testVariantBranch.variantHash}` +
+      `/refs/${testVariantBranch.refHash}` +
+      `/blamelist`;
+
     return {
       project: testVariantBranch.project,
+      blamelistBaseUrl,
       segmentsSortedByEnd,
       segmentsSortedByStartUpperBound,
     };

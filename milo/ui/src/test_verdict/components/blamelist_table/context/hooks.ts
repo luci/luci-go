@@ -29,6 +29,11 @@ export function useProject() {
   return ctx.project;
 }
 
+export function useBlamelistBaseUrl() {
+  const ctx = useContext(BlamelistCtx);
+  return ctx?.blamelistBaseUrl;
+}
+
 /**
  * Find the segment where the commit position is in range
  * [segment.endPosition, segment.startPosition].

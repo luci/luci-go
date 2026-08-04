@@ -13,25 +13,27 @@
 // limitations under the License.
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import { Box, Tooltip, Typography } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import { useTestHistoryClient } from '@/common/hooks/prpc_clients';
+import {
+  SegmentTooltip,
+  getFailureRateStatusTypeFromSegmentCount,
+  getFormattedFailureRateFromSegmentCount,
+} from '@/common/components/segment_tooltip';
 import { getStatusStyle } from '@/common/styles/status_styles';
-import { QuerySourceVerdictsV2Request } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { useInvocation } from '@/test_investigation/context';
-import { getFailureRateStatusTypeFromSegment } from '@/test_investigation/utils/test_history_utils';
+import {
+  useInvocation,
+  useProject,
+  useTestVariant,
+} from '@/test_investigation/context';
 
 import { useTestVariantBranch } from '../context';
 
-import { SegmentTooltipSection } from './segment_tooltip_section';
-
 interface TestHistorySegmentProps {
   segment: Segment;
-  nextSegment: Segment;
   isStartSegment: boolean;
   isEndSegment: boolean;
   numShownVerdicts: number;
@@ -39,51 +41,33 @@ interface TestHistorySegmentProps {
 
 interface SegmentBoxProps {
   segment: Segment;
-  nextSegment: Segment;
   isStartSegment: boolean;
   isEndSegment: boolean;
 }
 
 function SegmentBox({
   segment,
-  nextSegment,
   isStartSegment,
   isEndSegment,
 }: SegmentBoxProps) {
-  const style = getStatusStyle(
-    getFailureRateStatusTypeFromSegment(segment),
-    'filled',
-  );
-  const formattedRate =
-    segment && segment.counts
-      ? Math.round(
-          (segment.counts.unexpectedResults / segment.counts.totalResults) *
-            100,
-        )
+  const testVariantBranch = useTestVariantBranch();
+  const testVariant = useTestVariant();
+  const project = useProject();
+  const testId = testVariant?.testId;
+  const variantHash = testVariant?.variantHash;
+  const refHash = testVariantBranch?.refHash;
+  const blamelistBaseUrl =
+    refHash && project && testId && variantHash
+      ? `/ui/labs/p/${project}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/refs/${refHash}/blamelist`
       : undefined;
 
-  const IconComponent = style.icon;
-  const testVariantBranch = useTestVariantBranch();
-  const thClient = useTestHistoryClient();
+  const style = getStatusStyle(
+    getFailureRateStatusTypeFromSegmentCount(segment.counts),
+    'filled',
+  );
+  const formattedRate = getFormattedFailureRateFromSegmentCount(segment.counts);
 
-  const { data: response } = useQuery({
-    ...thClient.QuerySourceVerdicts.query(
-      QuerySourceVerdictsV2Request.fromPartial({
-        project: testVariantBranch?.project,
-        testIdFlat: {
-          testId: testVariantBranch?.testId,
-          variantHash: testVariantBranch?.variantHash,
-        },
-        sourceRefHash: testVariantBranch?.refHash,
-        filter:
-          'position <= ' +
-          (Number(segment?.startPosition) - 1).toString() +
-          ' AND position > ' +
-          nextSegment?.endPosition,
-      }),
-    ),
-    enabled: !!nextSegment && !!testVariantBranch,
-  });
+  const IconComponent = style.icon;
 
   return (
     <HtmlTooltip
@@ -96,30 +80,7 @@ function SegmentBox({
         },
       }}
       title={
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0, m: 0 }}>
-          <SegmentTooltipSection segment={segment}></SegmentTooltipSection>
-          {nextSegment && response && response.sourceVerdicts.length > 0 && (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                width: '80px',
-                backgroundColor: 'grey.100',
-                clipPath:
-                  'polygon(15px 0%, 100% 0%, calc(100% - 15px) 50%, 100% 100%, 15px 100%, 0% 50%)',
-              }}
-            >
-              <Typography sx={{ color: 'primary.main' }} variant="caption">
-                {response?.sourceVerdicts.length} CLs
-              </Typography>
-            </Box>
-          )}
-          <SegmentTooltipSection
-            segment={nextSegment}
-            nextSegment
-          ></SegmentTooltipSection>
-        </Box>
+        <SegmentTooltip segment={segment} blamelistBaseUrl={blamelistBaseUrl} />
       }
     >
       <Box
@@ -158,26 +119,9 @@ function SegmentBox({
           />
         )}
         {segment.counts && (
-          <>
-            <Typography sx={{ color: 'text.primary' }} variant="caption">
-              {formattedRate}%
-            </Typography>
-            <Typography
-              sx={{ color: 'text.primary', textTransform: 'none' }}
-              variant="caption"
-            >
-              <Typography
-                sx={{
-                  color: 'text.secondary',
-                  fontStyle: 'italic',
-                }}
-                variant="caption"
-              >
-                ({segment?.counts.unexpectedResults}/
-                {segment?.counts.totalResults} failed)
-              </Typography>
-            </Typography>
-          </>
+          <Typography variant="caption" sx={{ color: 'text.primary' }}>
+            {`${formattedRate} of ${segment.counts.totalResults} failed`}
+          </Typography>
         )}
       </Box>
     </HtmlTooltip>
@@ -186,7 +130,6 @@ function SegmentBox({
 
 export function TestHistorySegmentSummary({
   segment,
-  nextSegment,
   isStartSegment,
   isEndSegment,
   numShownVerdicts,
@@ -264,7 +207,6 @@ export function TestHistorySegmentSummary({
           >
             <SegmentBox
               segment={segment}
-              nextSegment={nextSegment}
               isStartSegment={isStartSegment}
               isEndSegment={isEndSegment}
             ></SegmentBox>
@@ -280,7 +222,6 @@ export function TestHistorySegmentSummary({
         >
           <SegmentBox
             segment={segment}
-            nextSegment={nextSegment}
             isStartSegment={isStartSegment}
             isEndSegment={isEndSegment}
           ></SegmentBox>
