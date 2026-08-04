@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   render,
   screen,
   fireEvent,
+  waitFor,
   waitForElementToBeRemoved,
 } from '@testing-library/react';
 import { DateTime } from 'luxon';
 
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { OrderForm } from './order_form';
+
+jest.mock('@/fleet/hooks/prpc_clients');
 
 const mockEntry: ProductCatalogEntry = {
   productCatalogId: 'prod-12345',
@@ -37,67 +42,133 @@ const mockEntry: ProductCatalogEntry = {
   productType: 'phone',
 };
 
+const renderOrderForm = (
+  entry: ProductCatalogEntry = mockEntry,
+  resourceGroups: string[] = ['CrOS TryJob', 'Group A', 'Group B'],
+) => {
+  const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+  mockUseFleetConsoleClient.mockReturnValue({
+    GetResourceRequestsMultiselectFilterValues: {
+      query: () => ({
+        queryKey: ['GetResourceRequestsMultiselectFilterValues'],
+        queryFn: async () => ({
+          resourceGroups,
+        }),
+      }),
+    },
+  });
+
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <OrderForm entry={entry} />
+    </QueryClientProvider>,
+  );
+};
+
 describe('<OrderForm />', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('renders only the platform selector by default', () => {
-    render(<OrderForm entry={mockEntry} />);
+    renderOrderForm();
 
     expect(screen.getByText('Order Resources')).toBeVisible();
     expect(
-      screen.getByLabelText(/Platform \(Fulfillment Channel\)/),
+      screen.getByRole('combobox', {
+        name: /Platform \(Fulfillment Channel\)/,
+      }),
     ).toBeVisible();
 
     // Core fields should not be visible before platform is selected
     expect(screen.queryByLabelText(/Quantity/)).toBeNull();
-    expect(screen.queryByLabelText(/Resource Group/)).toBeNull();
+    expect(
+      screen.queryByRole('combobox', { name: /Resource Group/ }),
+    ).toBeNull();
   });
 
   it('renders common fields when OS platform is selected', async () => {
-    render(<OrderForm entry={mockEntry} />);
+    renderOrderForm();
 
     // Select OS Platform
-    const platformSelect = screen.getByLabelText(
-      /Platform \(Fulfillment Channel\)/,
-    );
+    const platformSelect = screen.getByRole('combobox', {
+      name: /Platform \(Fulfillment Channel\)/,
+    });
     fireEvent.mouseDown(platformSelect);
     const osOption = screen.getByText('Chrome OS');
     fireEvent.click(osOption);
 
     // Verify common fields are now visible
     expect(screen.getByLabelText(/Quantity/)).toBeVisible();
-    expect(screen.getByLabelText(/Resource Group/)).toBeVisible();
-    expect(screen.getByLabelText(/Criticality/)).toBeVisible();
+    expect(
+      await screen.findByRole('combobox', { name: /Resource Group/ }),
+    ).toBeVisible();
+    expect(screen.getByRole('combobox', { name: /Criticality/ })).toBeVisible();
 
     // Verify Android-specific fields are NOT visible
     expect(screen.queryByLabelText(/Mobile Harness/)).toBeNull();
   });
 
+  it('populates Resource Group dropdown from backend data', async () => {
+    renderOrderForm(mockEntry, ['Alpha Group', 'Beta Group']);
+
+    // Select OS Platform
+    const platformSelect = screen.getByRole('combobox', {
+      name: /Platform \(Fulfillment Channel\)/,
+    });
+    fireEvent.mouseDown(platformSelect);
+    fireEvent.click(screen.getByText('Chrome OS'));
+
+    // Open Resource Group dropdown
+    const resourceGroupSelect = await screen.findByRole('combobox', {
+      name: /Resource Group/,
+    });
+    await waitFor(() => {
+      expect(resourceGroupSelect).not.toHaveAttribute('aria-disabled', 'true');
+    });
+    fireEvent.mouseDown(resourceGroupSelect);
+
+    expect(await screen.findByText('Alpha Group')).toBeInTheDocument();
+    expect(await screen.findByText('Beta Group')).toBeInTheDocument();
+  });
+
   it('renders Mobile Harness sub-fields automatically when Android platform is selected and entry productType is android-testbed', () => {
     const testbedEntry = { ...mockEntry, productType: 'android-testbed' };
-    render(<OrderForm entry={testbedEntry} />);
+    renderOrderForm(testbedEntry);
 
     // Select Android Platform
-    const platformSelect = screen.getByLabelText(
-      /Platform \(Fulfillment Channel\)/,
-    );
+    const platformSelect = screen.getByRole('combobox', {
+      name: /Platform \(Fulfillment Channel\)/,
+    });
     fireEvent.mouseDown(platformSelect);
     const androidOption = screen.getByText('Android');
     fireEvent.click(androidOption);
 
     // Verify Mobile Harness sub-fields are visible by default
     expect(screen.getByLabelText(/Mobile Harness Dimension/)).toBeVisible();
-    expect(screen.getByLabelText(/Mobile Harness WiFi/)).toBeVisible();
+    expect(
+      screen.getByRole('combobox', { name: /Mobile Harness WiFi/ }),
+    ).toBeVisible();
     expect(screen.getByLabelText(/Mobile Harness Owner/)).toBeVisible();
     expect(screen.queryByLabelText(/^Mobile Harness$/)).toBeNull();
   });
 
   it('opens Buganizer URL in a new tab when the form is submitted', async () => {
     const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
-    render(<OrderForm entry={mockEntry} />);
+    renderOrderForm();
 
     // Select Android Platform
-    const platformSelect = screen.getByLabelText(
-      /Platform \(Fulfillment Channel\)/,
-    );
+    const platformSelect = screen.getByRole('combobox', {
+      name: /Platform \(Fulfillment Channel\)/,
+    });
     fireEvent.mouseDown(platformSelect);
     const androidOption = screen.getByText('Android');
     fireEvent.click(androidOption);
@@ -106,9 +177,18 @@ describe('<OrderForm />', () => {
     fireEvent.change(screen.getByLabelText(/Quantity/), {
       target: { value: '5' },
     });
-    fireEvent.change(screen.getByLabelText(/Resource Group/), {
-      target: { value: 'CrOS TryJob' },
+
+    // Select Resource Group
+    const resourceGroupSelect = await screen.findByRole('combobox', {
+      name: /Resource Group/,
     });
+    await waitFor(() => {
+      expect(resourceGroupSelect).not.toHaveAttribute('aria-disabled', 'true');
+    });
+    fireEvent.mouseDown(resourceGroupSelect);
+    const groupOption = await screen.findByText('CrOS TryJob');
+    fireEvent.click(groupOption);
+
     fireEvent.change(screen.getByLabelText(/Business Justification/), {
       target: { value: 'We need these devices for testing custom kernels.' },
     });
@@ -184,12 +264,12 @@ describe('<OrderForm />', () => {
 
   it('uses productName for Resource Name', async () => {
     const entryWithoutDesc = { ...mockEntry, descriptiveName: '' };
-    render(<OrderForm entry={entryWithoutDesc} />);
+    renderOrderForm(entryWithoutDesc);
 
     // Select OS Platform
-    const platformSelect = screen.getByLabelText(
-      /Platform \(Fulfillment Channel\)/,
-    );
+    const platformSelect = screen.getByRole('combobox', {
+      name: /Platform \(Fulfillment Channel\)/,
+    });
     fireEvent.mouseDown(platformSelect);
     const osOption = screen.getByText('Chrome OS');
     fireEvent.click(osOption);
@@ -198,10 +278,18 @@ describe('<OrderForm />', () => {
     fireEvent.change(screen.getByLabelText(/Business Justification/), {
       target: { value: 'Required validation value.' },
     });
-    // Enter Resource Group
-    fireEvent.change(screen.getByLabelText(/Resource Group/), {
-      target: { value: 'CrOS TryJob' },
+
+    // Select Resource Group
+    const resourceGroupSelect = await screen.findByRole('combobox', {
+      name: /Resource Group/,
     });
+    await waitFor(() => {
+      expect(resourceGroupSelect).not.toHaveAttribute('aria-disabled', 'true');
+    });
+    fireEvent.mouseDown(resourceGroupSelect);
+    const groupOption = await screen.findByText('CrOS TryJob');
+    fireEvent.click(groupOption);
+
     // Enter Launch Date
     fireEvent.change(screen.getByLabelText(/Estimated Launch Date/), {
       target: { value: '10/12/2026' },

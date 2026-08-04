@@ -30,11 +30,13 @@ import {
   Link,
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
 import { UnifiedProductCatalogEntry } from './types';
 
@@ -54,6 +56,11 @@ const TOOLTIP_CONTAINER_STYLE = {
 };
 
 export const OrderForm = ({ entry }: OrderFormProps) => {
+  const client = useFleetConsoleClient();
+  const { data: filterValuesData, isLoading: isFilterValuesLoading } = useQuery(
+    client.GetResourceRequestsMultiselectFilterValues.query({}),
+  );
+
   const [platform, setPlatform] = useState<string>('');
   const [modalOpen, setModalOpen] = useState(false);
   const [buganizerUrl, setBuganizerUrl] = useState('');
@@ -64,6 +71,18 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
   const [criticality, setCriticality] = useState<string>('C3');
   const [businessJustification, setBusinessJustification] =
     useState<string>('');
+
+  const resourceGroupOptions = useMemo(() => {
+    const groups = new Set(
+      (filterValuesData?.resourceGroups ?? []).filter(
+        (g) => g && g.trim() !== '',
+      ),
+    );
+    if (resourceGroup && resourceGroup.trim() !== '') {
+      groups.add(resourceGroup);
+    }
+    return Array.from(groups).sort();
+  }, [filterValuesData?.resourceGroups, resourceGroup]);
 
   // TODO: Re-visit this once we add GCE VMs to the catalog.
   const gceVm = 'No';
@@ -203,14 +222,27 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
                 />
 
                 <Box sx={{ position: 'relative', flex: 1, minWidth: 200 }}>
-                  <TextField
-                    label="Resource Group"
-                    value={resourceGroup}
-                    onChange={(e) => setResourceGroup(e.target.value)}
-                    required
+                  <FormControl
                     fullWidth
-                    InputLabelProps={{ required: false }}
-                  />
+                    required
+                    disabled={isFilterValuesLoading}
+                  >
+                    <InputLabel id="resource-group-label" required={false}>
+                      Resource Group
+                    </InputLabel>
+                    <Select
+                      labelId="resource-group-label"
+                      value={resourceGroup}
+                      label="Resource Group"
+                      onChange={(e) => setResourceGroup(e.target.value)}
+                    >
+                      {resourceGroupOptions.map((group) => (
+                        <MenuItem key={group} value={group}>
+                          {group}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                   <Box sx={TOOLTIP_CONTAINER_STYLE}>
                     <InfoTooltip fontSize="0.875rem">
                       {"The request's target user/testing group."}
