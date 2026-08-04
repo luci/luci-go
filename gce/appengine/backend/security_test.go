@@ -20,6 +20,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	legacytq "go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -27,10 +29,10 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/gce/appengine/model"
 )
@@ -59,15 +61,13 @@ func TestCronSecurity(t *testing.T) {
 			return &nonDevInfo{parent}
 		})
 
-		tqTestable := taskqueue.GetTestable(baseCtx)
-		for _, q := range []string{
-			countVMsQueue, createInstanceQueue, createVMQueue, deleteBotQueue,
-			destroyInstanceQueue, expandConfigQueue, manageBotQueue, reportQuotaQueue,
-			terminateBotQueue, auditInstancesQueue, drainVMQueue, inspectSwarmingQueue,
-			deleteStaleSwarmingBotsQueue,
-		} {
-			tqTestable.CreateQueue(q)
-		}
+		legacyDsp := &legacytq.Dispatcher{}
+		registerTasks(legacyDsp)
+		baseCtx = withDispatcher(baseCtx, legacyDsp)
+		tqt := tqtesting.GetTestable(baseCtx, legacyDsp)
+		tqt.CreateQueues()
+
+		baseCtx, _ = tq.TestingContext(baseCtx, nil)
 
 		if err := datastore.Put(baseCtx, &model.Config{ID: "victim-config"}); err != nil {
 			t.Fatalf("seed datastore: %v", err)
@@ -87,7 +87,7 @@ func TestCronSecurity(t *testing.T) {
 			r.ServeHTTP(rec, req)
 
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusForbidden))
-			assert.Loosely(t, tqTestable.GetScheduledTasks()[expandConfigQueue], should.BeEmpty)
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 		})
 
 		t.Run("Request with X-Appengine-Cron header succeeds", func(t *ftt.Test) {
@@ -97,7 +97,7 @@ func TestCronSecurity(t *testing.T) {
 			r.ServeHTTP(rec, req)
 
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
-			assert.Loosely(t, tqTestable.GetScheduledTasks()[expandConfigQueue], should.HaveLength(1))
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 		})
 	})
 }

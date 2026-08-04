@@ -23,3 +23,5 @@ cron:
   schedule: every 2 minutes
 - url: /internal/cron/dump-datastore
   schedule: every 2 minutes
+- url: /internal/tasks/c/sweep
+  schedule: every 1 minutes

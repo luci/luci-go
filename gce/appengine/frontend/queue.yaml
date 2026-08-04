@@ -34,6 +34,14 @@ queue:
   retry_parameters:
     task_retry_limit: 0
 
+- name: manage-bot-2
+  rate: 500/s
+  retry_parameters:
+    task_retry_limit: 0
+
+- name: tq-sweep
+  rate: 500/s
+
 - name: report-quota
   rate: 100/s
   retry_parameters:

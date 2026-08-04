@@ -19,23 +19,34 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"google.golang.org/appengine"
 
-	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/appengine/gaeauth/client"
+	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	gaetsmon "go.chromium.org/luci/appengine/tsmon"
 	"go.chromium.org/luci/auth/scopes"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/impl/prod"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/middleware"
+	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tsmon"
 	"go.chromium.org/luci/web/rpcexplorer"
 
 	server "go.chromium.org/luci/gce/api/config/v1"
@@ -47,12 +58,70 @@ import (
 	"go.chromium.org/luci/gce/vmtoken"
 )
 
+type contextAwareURLFetch struct{ ctx context.Context }
+
+func (f *contextAwareURLFetch) RoundTrip(req *http.Request) (*http.Response, error) {
+	if ctx := req.Context(); ctx == nil || ctx == context.Background() {
+		req = req.WithContext(f.ctx)
+	}
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+var (
+	authConfig = auth.Config{
+		DBProvider:          authdb.NewDBCache(gaeauth.GetAuthDB),
+		Signer:              gaesigner.Signer{},
+		AccessTokenProvider: client.GetAccessToken,
+		AnonymousTransport: func(ctx context.Context) http.RoundTripper {
+			return &contextAwareURLFetch{ctx}
+		},
+		FrontendClientID: gaeauth.FetchFrontendClientID,
+		IsDevMode:        appengine.IsDevAppServer(),
+	}
+
+	tsMonState = &tsmon.State{
+		Target: func(ctx context.Context) target.Task {
+			return target.Task{
+				DataCenter:  "appengine",
+				ServiceName: info.AppID(ctx),
+				JobName:     info.ModuleName(ctx),
+				HostName:    strings.SplitN(info.VersionID(ctx), ".", 2)[0],
+			}
+		},
+		InstanceID:        info.InstanceID,
+		TaskNumAllocator:  gaetsmon.DatastoreTaskNumAllocator{},
+		FlushInMiddleware: true,
+	}
+
+	appEnv = gaemiddleware.Environment{
+		MemcacheAvailable:  true,
+		WithInitialRequest: prod.Use,
+		WithConfig:         gaeconfig.Use,
+		WithAuth: func(ctx context.Context) context.Context {
+			return auth.Initialize(ctx, &authConfig)
+		},
+		ExtraMiddleware: func() router.MiddlewareChain {
+			mw := make([]router.Middleware, 0, 2)
+			if !appengine.IsDevAppServer() {
+				mw = append(mw, middleware.WithPanicCatcher)
+			}
+			mw = append(mw, tsMonState.Middleware)
+			return router.NewMiddlewareChain(mw...)
+		}(),
+		ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
+			gaeauth.InstallHandlers(r, base)
+			gaetsmon.InstallHandlers(r, base)
+			portal.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
+		},
+	}
+)
+
 func main() {
 	api := prpc.Server{
 		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
 			grpcmon.UnaryServerInterceptor,
 			auth.AuthenticatingInterceptor([]auth.Method{
-				&gaeserver.OAuth2Method{Scopes: []string{scopes.Email}},
+				&gaeauth.OAuth2Method{Scopes: []string{scopes.Email}},
 			}).Unary(),
 		),
 		// TODO(crbug/1082369): Remove this workaround once non-standard field masks
@@ -83,10 +152,10 @@ func main() {
 
 	r := router.New()
 
-	standard.InstallHandlers(r)
+	appEnv.InstallHandlers(r)
 	rpcexplorer.Install(r, nil)
 
-	mw := standard.Base()
+	mw := appEnv.Base()
 	api.InstallHandlers(r, mw.Extend(vmtoken.Middleware))
 	backend.InstallHandlers(r, mw)
 	config.InstallHandlers(r, mw)

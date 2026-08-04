@@ -17,18 +17,27 @@ package backend
 
 import (
 	"context"
+	"hash/fnv"
 	"net/http"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	computealpha "google.golang.org/api/compute/v0.alpha"
 	compute "google.golang.org/api/compute/v1"
+	"google.golang.org/protobuf/proto"
 
+	legacytq "go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/auth/scopes"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
@@ -109,21 +118,53 @@ func (c ComputeService) InsertInstance(ctx context.Context, project string, zone
 	}
 }
 
-// dspKey is the key to a *tq.Dispatcher in the context.
+// dspKey is the key to a *legacytq.Dispatcher in the context.
 var dspKey = "dsp"
 
-// withDispatcher returns a new context with the given *tq.Dispatcher installed.
-func withDispatcher(c context.Context, dsp *tq.Dispatcher) context.Context {
+// tqDspKey is the key to a *tq.Dispatcher in the context.
+var tqDspKey = "tqDsp"
+
+// withDispatcher returns a new context with the given *legacytq.Dispatcher installed.
+func withDispatcher(c context.Context, dsp *legacytq.Dispatcher) context.Context {
 	return context.WithValue(c, &dspKey, dsp)
 }
 
-// getDispatcher returns the *tq.Dispatcher installed in the current context.
-func getDispatcher(c context.Context) *tq.Dispatcher {
-	return c.Value(&dspKey).(*tq.Dispatcher)
+// getDispatcher returns the *legacytq.Dispatcher installed in the current context.
+func getDispatcher(c context.Context) *legacytq.Dispatcher {
+	return c.Value(&dspKey).(*legacytq.Dispatcher)
 }
 
-// registerTasks registers task handlers with the given *tq.Dispatcher.
-func registerTasks(dsp *tq.Dispatcher) {
+// withTQDispatcher returns a new context with the given *tq.Dispatcher installed.
+func withTQDispatcher(c context.Context, dsp *tq.Dispatcher) context.Context {
+	return context.WithValue(c, &tqDspKey, dsp)
+}
+
+// getTQDispatcher returns the *tq.Dispatcher installed in the current context.
+func getTQDispatcher(c context.Context) *tq.Dispatcher {
+	return c.Value(&tqDspKey).(*tq.Dispatcher)
+}
+
+// ManageBotQueues is the list of queues to distribute manage-bot tasks across for load balancing purposes.
+var ManageBotQueues = []string{
+	"manage-bot",
+	"manage-bot-2",
+}
+
+func getManageBotQueue(id string) string {
+	switch len(ManageBotQueues) {
+	case 0:
+		return ""
+	case 1:
+		return ManageBotQueues[0]
+	default:
+		h := fnv.New32a()
+		h.Write([]byte(id))
+		return ManageBotQueues[int(h.Sum32()%uint32(len(ManageBotQueues)))]
+	}
+}
+
+// registerTasks registers task handlers with the given *legacytq.Dispatcher.
+func registerTasks(dsp *legacytq.Dispatcher) {
 	dsp.RegisterTask(&tasks.CountVMs{}, countVMs, countVMsQueue, nil)
 	dsp.RegisterTask(&tasks.CreateInstance{}, createInstance, createInstanceQueue, nil)
 	dsp.RegisterTask(&tasks.CreateVM{}, createVM, createVMQueue, nil)
@@ -137,6 +178,133 @@ func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.DrainVM{}, drainVMQueueHandler, drainVMQueue, nil)
 	dsp.RegisterTask(&tasks.InspectSwarming{}, inspectSwarming, inspectSwarmingQueue, nil)
 	dsp.RegisterTask(&tasks.DeleteStaleSwarmingBots{}, deleteStaleSwarmingBots, deleteStaleSwarmingBotsQueue, nil)
+}
+
+// registerTQTasks registers task handlers with the given *tq.Dispatcher.
+func registerTQTasks(dsp *tq.Dispatcher) {
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "count-vms",
+		Prototype: &tasks.CountVMs{},
+		Queue:     countVMsQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return countVMs(c, payload.(*tasks.CountVMs))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "create-instance",
+		Prototype: &tasks.CreateInstance{},
+		Queue:     createInstanceQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return createInstance(c, payload.(*tasks.CreateInstance))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "create-vm",
+		Prototype: &tasks.CreateVM{},
+		Queue:     createVMQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return createVM(c, payload.(*tasks.CreateVM))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "delete-bot",
+		Prototype: &tasks.DeleteBot{},
+		Queue:     deleteBotQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return deleteBot(c, payload.(*tasks.DeleteBot))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "destroy-instance",
+		Prototype: &tasks.DestroyInstance{},
+		Queue:     destroyInstanceQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return destroyInstance(c, payload.(*tasks.DestroyInstance))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "expand-config",
+		Prototype: &tasks.ExpandConfig{},
+		Queue:     expandConfigQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return expandConfig(c, payload.(*tasks.ExpandConfig))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "manage-bot",
+		Prototype: &tasks.ManageBot{},
+		QueuePicker: func(c context.Context, t *tq.Task) (string, error) {
+			msg, ok := t.Payload.(*tasks.ManageBot)
+			if !ok || msg.GetId() == "" {
+				return manageBotQueue, nil
+			}
+			return getManageBotQueue(msg.GetId()), nil
+		},
+		Kind: tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return manageBot(c, payload.(*tasks.ManageBot))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "report-quota",
+		Prototype: &tasks.ReportQuota{},
+		Queue:     reportQuotaQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return reportQuota(c, payload.(*tasks.ReportQuota))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "terminate-bot",
+		Prototype: &tasks.TerminateBot{},
+		Queue:     terminateBotQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return terminateBot(c, payload.(*tasks.TerminateBot))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "audit-instances",
+		Prototype: &tasks.AuditProject{},
+		Queue:     auditInstancesQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return auditInstanceInZone(c, payload.(*tasks.AuditProject))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "drain-vm",
+		Prototype: &tasks.DrainVM{},
+		Queue:     drainVMQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return drainVMQueueHandler(c, payload.(*tasks.DrainVM))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "inspect-swarming",
+		Prototype: &tasks.InspectSwarming{},
+		Queue:     inspectSwarmingQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return inspectSwarming(c, payload.(*tasks.InspectSwarming))
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "delete-stale-swarming-bots",
+		Prototype: &tasks.DeleteStaleSwarmingBots{},
+		Queue:     deleteStaleSwarmingBotsQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return deleteStaleSwarmingBots(c, payload.(*tasks.DeleteStaleSwarmingBots))
+		},
+	})
 }
 
 // gceKey is the key to a *compute.Service in the context.
@@ -209,18 +377,73 @@ func newSwarming(c context.Context, url string) swarminggrpcpb.BotsClient {
 
 // InstallHandlers installs HTTP request handlers into the given router.
 func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
-	dsp := &tq.Dispatcher{}
-	registerTasks(dsp)
+	region := os.Getenv("GOOGLE_CLOUD_REGION")
+	if region == "" {
+		region = "us-central1"
+	}
+	dsp := &tq.Dispatcher{
+		GAE:          true,
+		CloudProject: os.Getenv("GOOGLE_CLOUD_PROJECT"),
+		CloudRegion:  region,
+	}
+	dsp.Sweeper = tq.NewDistributedSweeper(dsp, tq.DistributedSweeperOptions{
+		TaskQueue: "tq-sweep",
+	})
+	registerTQTasks(dsp)
+	var (
+		subMu sync.RWMutex
+		sub   tq.Submitter
+	)
+	getSubmitter := func(ctx context.Context) tq.Submitter {
+		subMu.RLock()
+		s := sub
+		subMu.RUnlock()
+		if s != nil {
+			return s
+		}
+
+		subMu.Lock()
+		defer subMu.Unlock()
+		if sub != nil {
+			return sub
+		}
+		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
+		if err != nil {
+			logging.Errorf(ctx, "failed to get RPC credentials for TQ submitter: %s", err)
+			return nil
+		}
+		s, err = tq.NewCloudSubmitter(context.Background(), creds)
+		if err != nil {
+			logging.Errorf(ctx, "failed to create TQ CloudSubmitter: %s", err)
+			return nil
+		}
+		sub = s
+		return sub
+	}
+
+	legacyDsp := &legacytq.Dispatcher{}
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 		defer cancel()
-		ctx = withDispatcher(ctx, dsp)
+		appID := info.AppID(ctx)
+		if !info.IsDevAppServer(ctx) && appID != "" && appID != "app" && appID != "none" && appID != "testbed-test" {
+			if s := getSubmitter(ctx); s != nil {
+				ctx = tq.UseSubmitter(ctx, s)
+			}
+		}
+		if d := c.Request.Context().Value(&dspKey); d == nil {
+			ctx = withDispatcher(ctx, legacyDsp)
+		}
+		ctx = withTQDispatcher(ctx, dsp)
 		ctx = withCompute(ctx, newCompute(ctx))
 		ctx = withSwarming(ctx, newSwarming)
 		c.Request = c.Request.WithContext(ctx)
 		next(c)
 	})
-	dsp.InstallRoutes(r, mw)
+	subR := r.Subrouter("/")
+	subR.Use(mw)
+	dsp.InstallTasksRoutes(subR, "/internal/tasks")
+	dsp.InstallSweepRoute(subR, "/internal/tasks/c/sweep")
 	cronMw := mw.Extend(gaemiddleware.RequireCron)
 	r.GET("/internal/cron/count-tasks", cronMw, newHTTPHandler(countTasks))
 	r.GET("/internal/cron/count-vms", cronMw, newHTTPHandler(countVMsAsync))
