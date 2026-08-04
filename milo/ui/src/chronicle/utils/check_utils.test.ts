@@ -30,6 +30,7 @@ import {
   getCheckResultStatus,
   getNodeSearchIndex,
   getStageLabel,
+  isWorknodeStage,
   TYPE_URL_BUILD_OPTIONS,
   TYPE_URL_BUILD_RESULT,
   TYPE_URL_GOB_SOURCE_OPTIONS,
@@ -395,6 +396,37 @@ describe('check_utils', () => {
         identifier: { id: 'stage-2' },
       } as Stage;
       expect(getStageLabel(stage, new Map())).toBe('Stage: stage-2');
+    });
+  });
+
+  describe('isWorknodeStage', () => {
+    it('returns true when stage.identifier.isWorknode is true', () => {
+      const stage: Stage = {
+        identifier: { id: 's1', isWorknode: true },
+      } as Stage;
+      expect(isWorknodeStage(stage)).toBe(true);
+    });
+
+    it('returns false when stage.identifier.isWorknode is false', () => {
+      const stage: Stage = {
+        identifier: { id: 's1', isWorknode: false },
+      } as Stage;
+      expect(isWorknodeStage(stage)).toBe(false);
+    });
+
+    it('returns true when stage.args.typeUrl matches TYPE_URL_LEGACY_WORKNODE_STAGE', () => {
+      const stage: Stage = {
+        identifier: { id: 's1' },
+        args: { typeUrl: TYPE_URL_LEGACY_WORKNODE_STAGE },
+      } as Stage;
+      expect(isWorknodeStage(stage)).toBe(true);
+    });
+
+    it('returns false when no worknode indicator is present', () => {
+      const stage: Stage = {
+        identifier: { id: 's1' },
+      } as Stage;
+      expect(isWorknodeStage(stage)).toBe(false);
     });
   });
 

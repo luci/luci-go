@@ -15,6 +15,7 @@
 import { Box, Chip, Divider, Typography } from '@mui/material';
 import { useMemo } from 'react';
 
+import { getStageLabel, isWorknodeStage } from '@/chronicle/utils/check_utils';
 import { toString } from '@/chronicle/utils/id';
 import {
   TYPE_URL_LEGACY_WORKPRODUCT,
@@ -46,6 +47,13 @@ export function StageDetails({
   renderMode,
 }: StageDetailsProps) {
   const stage = view;
+
+  const isWorknode = useMemo(() => isWorknodeStage(stage), [stage]);
+
+  const stageLabel = useMemo(
+    () => (isWorknode ? getStageLabel(stage, valueDataMap) : undefined),
+    [isWorknode, stage, valueDataMap],
+  );
 
   const assignmentIds = (stage.assignments || [])
     .map((a) => (a.target ? toString(a.target) : ''))
@@ -94,6 +102,7 @@ export function StageDetails({
         <>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <DetailRow label="ID" value={toString(stage.identifier)} />
+            {stageLabel && <DetailRow label="Label" value={stageLabel} />}
             <DetailRow
               label="State"
               value={stage.state ? stageStateToJSON(stage.state) : 'UNKNOWN'}

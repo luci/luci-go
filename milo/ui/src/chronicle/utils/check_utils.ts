@@ -170,6 +170,17 @@ export function getCheckLabel(
   }
 }
 
+export function isWorknodeStage(stage: Stage): boolean {
+  if (!stage) return false;
+  if (stage.identifier?.isWorknode !== undefined) {
+    return stage.identifier.isWorknode;
+  }
+  if (stage.args?.typeUrl === TYPE_URL_LEGACY_WORKNODE_STAGE) {
+    return true;
+  }
+  return false;
+}
+
 export function getStageLabel(
   stage: Stage,
   valueDataMap: Map<string, ValueData>,

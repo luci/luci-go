@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { TYPE_URL_LEGACY_WORKNODE_STAGE } from '@/chronicle/utils/legacy_worknode';
 import { OmitReason } from '@/proto/turboci/graph/orchestrator/v1/omit_reason.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { StageAttemptState } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
@@ -24,9 +25,9 @@ import { StageDetails } from './stage_details';
 import { RenderMode } from './types';
 
 describe('StageDetails', () => {
-  it('renders stage metadata correctly', () => {
+  it('renders stage metadata correctly for S-stages', () => {
     const stage = Stage.fromPartial({
-      identifier: { id: 'build-stage-1' },
+      identifier: { id: 'build-stage-1', isWorknode: false },
       state: StageState.STAGE_STATE_FINAL,
       realm: 'android:ci',
     });
@@ -35,14 +36,28 @@ describe('StageDetails', () => {
     render(<StageDetails view={stage} valueDataMap={valueDataMap} />);
 
     expect(screen.getByText('ID')).toBeInTheDocument();
-    expect(screen.getByText(':?build-stage-1')).toBeInTheDocument();
+    expect(screen.getByText(':Sbuild-stage-1')).toBeInTheDocument();
+    expect(screen.queryByText('Label')).not.toBeInTheDocument();
     expect(screen.getByText('State')).toBeInTheDocument();
     expect(screen.getByText('STAGE_STATE_FINAL')).toBeInTheDocument();
     expect(screen.getByText('Realm')).toBeInTheDocument();
     expect(screen.getByText('android:ci')).toBeInTheDocument();
   });
 
-  it('renders Work Output section for legacy worknode with workOutput', () => {
+  it('renders Label for N-stages', () => {
+    const stage = Stage.fromPartial({
+      identifier: { id: 'worknode-stage-1', isWorknode: true },
+      state: StageState.STAGE_STATE_FINAL,
+    });
+    const valueDataMap = new Map<string, ValueData>();
+
+    render(<StageDetails view={stage} valueDataMap={valueDataMap} />);
+
+    expect(screen.getByText('Label')).toBeInTheDocument();
+    expect(screen.getByText('Stage: worknode-stage-1')).toBeInTheDocument();
+  });
+
+  it('renders Work Output section for legacy worknode with workOutput and displays worknode label', () => {
     const legacyJson = JSON.stringify({
       workExecutorType: 'ATP_TEST',
       workParameters: {
@@ -55,8 +70,12 @@ describe('StageDetails', () => {
     });
 
     const stage = Stage.fromPartial({
-      identifier: { id: 'test-stage-1' },
+      identifier: { id: 'test-stage-1', isWorknode: true },
       state: StageState.STAGE_STATE_FINAL,
+      args: {
+        typeUrl: TYPE_URL_LEGACY_WORKNODE_STAGE,
+        digest: 'wn-digest-1',
+      },
       legacy: {
         worknode: {
           digest: 'wn-digest-1',
@@ -81,10 +100,14 @@ describe('StageDetails', () => {
 
     render(<StageDetails view={stage} valueDataMap={valueDataMap} />);
 
+    expect(screen.getByText('Label')).toBeInTheDocument();
+    expect(screen.getByText('test CtsOsTestCases')).toBeInTheDocument();
     expect(screen.getByText('Work Output')).toBeInTheDocument();
-    expect(screen.getByText(/status/)).toBeInTheDocument();
-    expect(screen.getByText(/PASSED/)).toBeInTheDocument();
-    expect(screen.getByText(/passedCount/)).toBeInTheDocument();
+    // Work output fields appear in both the "Args" section and the dedicated
+    // "Work Output" section.
+    expect(screen.getAllByText(/status/)).toHaveLength(2);
+    expect(screen.getAllByText(/PASSED/)).toHaveLength(2);
+    expect(screen.getAllByText(/passedCount/)).toHaveLength(2);
   });
 
   it('renders Work Output section with omitReason when legacy worknode was omitted', () => {
