@@ -127,6 +127,10 @@ Useful commands:
 - **Run lint:** `PATH=$PATH:~/depot_tools ../../../../../env.py npm run lint`
 - **Run type check:** `PATH=$PATH:~/depot_tools ../../../../../env.py npm run type-check`
 
+### Mandatory Post-Change Verification
+- After making any code changes, you MUST run lint on the changed files and
+  resolve any reported errors before finishing your response.
+
 ## Coding Conventions & Best Practices
 
 ### Making pRPC Queries
