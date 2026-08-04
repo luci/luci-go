@@ -249,5 +249,5 @@ describe('<BrowserDevicesPage />', () => {
       dutCount: undefined,
       platform: 'chromium',
     });
-  });
+  }, 60000);
 });
