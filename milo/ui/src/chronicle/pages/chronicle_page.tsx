@@ -12,16 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, CircularProgress, Link, Typography } from '@mui/material';
+import {
+  Alert,
+  AlertTitle,
+  Box,
+  Button,
+  CircularProgress,
+  Link,
+  Typography,
+} from '@mui/material';
 import { useContext } from 'react';
 import { useParams, useLocation } from 'react-router';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
+import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
+import { getLoginUrl } from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import {
   ChronicleContext,
+  DetectionErrorType,
   formatFailedEnvironments,
 } from '../components/context';
 import { EnvironmentSelectorDialog } from '../components/environment_selector_dialog';
@@ -67,6 +79,15 @@ function ChroniclePageContent() {
   } = useContext(ChronicleContext);
 
   const location = useLocation();
+  const authState = useAuthState();
+
+  const isAnonymous =
+    !authState.identity || authState.identity === ANONYMOUS_IDENTITY;
+  const hasAccessDenied =
+    failedEnvironments.length > 0 &&
+    failedEnvironments.every(
+      (f) => f.errorType === DetectionErrorType.NoAccess,
+    );
 
   const formattedWorkplanId = workplanId ? formatWorkplanUrlId(workplanId) : '';
 
@@ -161,6 +182,21 @@ function ChroniclePageContent() {
           Workplan {workplanId} could not be found in any of the Turbo CI
           environments.
         </Typography>
+        {hasAccessDenied && isAnonymous && (
+          <Alert severity="warning" sx={{ mt: 1, maxWidth: 600 }}>
+            <AlertTitle>Authentication Required</AlertTitle>
+            Access was denied for this workplan, and you are not currently
+            logged in, which may be why access was denied. Consider{' '}
+            <Link
+              href={getLoginUrl(
+                location.pathname + location.search + location.hash,
+              )}
+            >
+              logging in
+            </Link>{' '}
+            and try again.
+          </Alert>
+        )}
         {failedEnvironments.length > 0 && (
           <Typography color="warning.main" align="center" sx={{ mt: 1 }}>
             Note: The following environments could not be checked due to
