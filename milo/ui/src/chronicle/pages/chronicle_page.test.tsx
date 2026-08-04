@@ -71,7 +71,7 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText(
-        /Note: The following environments could not be checked/,
+        /Warning: The following environments could not be checked due to timeouts\/errors/,
       ),
     ).not.toBeInTheDocument();
   });
@@ -118,7 +118,7 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText(
-        /Note: The following environments could not be checked/,
+        /Warning: The following environments could not be checked due to timeouts\/errors/,
       ),
     ).not.toBeInTheDocument();
   });
@@ -157,9 +157,11 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
       screen.queryByText('Authentication Required'),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText(/Note: The following environments could not be checked/),
+      screen.getByText(
+        /Warning: The following environments could not be checked due to timeouts\/errors/,
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByText(/no access/)).toBeInTheDocument();
+    expect(screen.getAllByText(/no access/).length).toBeGreaterThan(0);
   });
 
   it('displays Workplan Not Found when all backends return 404 (not found)', async () => {

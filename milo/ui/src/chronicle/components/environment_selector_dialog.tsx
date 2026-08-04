@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -27,7 +28,8 @@ import {
 
 import { TurboCIEnvironment } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 
-import { FailedEnvironment, formatFailedEnvironments } from './context';
+import { FailedEnvironment } from './context';
+import { FailedEnvironmentsList } from './failed_environments_list';
 
 export interface EnvironmentSelectorDialogProps {
   open: boolean;
@@ -57,13 +59,16 @@ export function EnvironmentSelectorDialog({
           </DialogContentText>
         )}
         {failedEnvironments && failedEnvironments.length > 0 && (
-          <DialogContentText
-            color="warning.main"
-            sx={{ mb: 2, fontSize: '0.875rem', fontWeight: 'medium' }}
-          >
-            Warning: The following environments could not be checked due to
-            timeouts/errors: {formatFailedEnvironments(failedEnvironments)}
-          </DialogContentText>
+          <Box sx={{ mb: 2 }}>
+            <DialogContentText
+              color="warning.main"
+              sx={{ fontSize: '0.875rem', fontWeight: 'medium', mb: 0.5 }}
+            >
+              Warning: The following environments could not be checked due to
+              timeouts/errors:
+            </DialogContentText>
+            <FailedEnvironmentsList failedEnvironments={failedEnvironments} />
+          </Box>
         )}
         <DialogContentText>
           This workplan was found in multiple environments. Please select which

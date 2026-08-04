@@ -34,9 +34,10 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import {
   ChronicleContext,
   DetectionErrorType,
-  formatFailedEnvironments,
+  FailedEnvironment,
 } from '../components/context';
 import { EnvironmentSelectorDialog } from '../components/environment_selector_dialog';
+import { FailedEnvironmentsList } from '../components/failed_environments_list';
 import { ChronicleContextProvider } from '../components/provider';
 import {
   fromString,
@@ -60,6 +61,57 @@ function formatWorkplanUrlId(idStr: string): string {
   } catch {
     return idStr;
   }
+}
+
+function CenteredContainer({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        gap: 2,
+        p: 3,
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+function FailedEnvironmentsSection({
+  failedEnvironments,
+}: {
+  failedEnvironments: readonly FailedEnvironment[];
+}) {
+  if (failedEnvironments.length === 0) {
+    return null;
+  }
+  return (
+    <Box
+      sx={{
+        mt: 2,
+        maxWidth: 600,
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+      }}
+    >
+      <Typography
+        variant="body2"
+        color="warning.main"
+        align="left"
+        sx={{ fontWeight: 'medium', mb: 0.5 }}
+      >
+        Warning: The following environments could not be checked due to
+        timeouts/errors:
+      </Typography>
+      <FailedEnvironmentsList failedEnvironments={failedEnvironments} />
+    </Box>
+  );
 }
 
 function ChroniclePageContent() {
@@ -97,37 +149,18 @@ function ChroniclePageContent() {
 
   if (detecting) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          gap: 2,
-        }}
-      >
+      <CenteredContainer>
         <CircularProgress />
         <Typography>
           Detecting the Turbo CI instance that contains workplan {workplanId}.
         </Typography>
-      </Box>
+      </CenteredContainer>
     );
   }
 
   if (detectionCancelled) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          gap: 2,
-          p: 3,
-        }}
-      >
+      <CenteredContainer>
         <Typography variant="h5" color="warning.main">
           Selection Cancelled
         </Typography>
@@ -135,17 +168,7 @@ function ChroniclePageContent() {
           Environment selection was cancelled. To view the workplan, you must
           select an environment.
         </Typography>
-        {failedEnvironments.length > 0 && (
-          <Typography
-            color="warning.main"
-            align="center"
-            variant="body2"
-            sx={{ mb: 1 }}
-          >
-            Note: The following environments could not be checked:{' '}
-            {formatFailedEnvironments(failedEnvironments)}
-          </Typography>
-        )}
+        <FailedEnvironmentsSection failedEnvironments={failedEnvironments} />
         <Button
           variant="contained"
           color="primary"
@@ -156,23 +179,13 @@ function ChroniclePageContent() {
         >
           Select Environment
         </Button>
-      </Box>
+      </CenteredContainer>
     );
   }
 
   if (detectionFailed) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          gap: 2,
-          p: 3,
-        }}
-      >
+      <CenteredContainer>
         {hasAccessDenied && isAnonymous ? (
           <Alert severity="warning" sx={{ maxWidth: 600 }}>
             <AlertTitle>Authentication Required</AlertTitle>
@@ -196,15 +209,12 @@ function ChroniclePageContent() {
                 ? `Access was denied to one or more Turbo CI environments when searching for workplan ${workplanId}.`
                 : `Workplan ${workplanId} could not be found in any of the Turbo CI environments.`}
             </Typography>
-            {failedEnvironments.length > 0 && (
-              <Typography color="warning.main" align="center" sx={{ mt: 1 }}>
-                Note: The following environments could not be checked due to
-                timeouts/errors: {formatFailedEnvironments(failedEnvironments)}
-              </Typography>
-            )}
+            <FailedEnvironmentsSection
+              failedEnvironments={failedEnvironments}
+            />
           </>
         )}
-      </Box>
+      </CenteredContainer>
     );
   }
 

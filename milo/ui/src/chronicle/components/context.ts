@@ -33,25 +33,6 @@ export interface FailedEnvironment {
   env: TurboCIEnvironment;
   errorType: DetectionErrorType;
 }
-export function formatFailedEnvironments(failed: FailedEnvironment[]): string {
-  return failed
-    .map((f) => {
-      let status: string;
-      switch (f.errorType) {
-        case 'timeout':
-          status = 'timed out';
-          break;
-        case 'no-access':
-          status = 'no access';
-          break;
-        default:
-          status = 'failed';
-          break;
-      }
-      return `${f.env.environment} (${status})`;
-    })
-    .join(', ');
-}
 
 export interface ChronicleContextType {
   workplanId: string;
