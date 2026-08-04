@@ -56,21 +56,24 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Workplan Not Found')).toBeInTheDocument();
+      expect(screen.getByText('Authentication Required')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Authentication Required')).toBeInTheDocument();
     expect(
-      screen.getByText(
-        /Access was denied for this workplan, and you are not currently logged in/,
+      screen.getByText(/You are not logged in\. Please/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'log in' })).toBeInTheDocument();
+    expect(screen.queryByText('Access Denied')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /Access was denied to one or more Turbo CI environments when searching for workplan/,
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'logging in' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Note: The following environments could not be checked/),
-    ).toBeInTheDocument();
+      screen.queryByText(
+        /Note: The following environments could not be checked/,
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it('displays warning encouraging login when user is anonymous and backends return a mix of access denied and not found', async () => {
@@ -100,21 +103,24 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Workplan Not Found')).toBeInTheDocument();
+      expect(screen.getByText('Authentication Required')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Authentication Required')).toBeInTheDocument();
     expect(
-      screen.getByText(
-        /Access was denied for this workplan, and you are not currently logged in/,
+      screen.getByText(/You are not logged in\. Please/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'log in' })).toBeInTheDocument();
+    expect(screen.queryByText('Access Denied')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /Access was denied to one or more Turbo CI environments when searching for workplan/,
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'logging in' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Note: The following environments could not be checked/),
-    ).toBeInTheDocument();
+      screen.queryByText(
+        /Note: The following environments could not be checked/,
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it('displays standard error note without login warning alert when user is logged in and all backends return access denied', async () => {
@@ -139,9 +145,14 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Workplan Not Found')).toBeInTheDocument();
+      expect(screen.getByText('Access Denied')).toBeInTheDocument();
     });
 
+    expect(
+      screen.getByText(
+        /Access was denied to one or more Turbo CI environments when searching for workplan wp-access-denied./,
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.queryByText('Authentication Required'),
     ).not.toBeInTheDocument();
@@ -149,5 +160,45 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
       screen.getByText(/Note: The following environments could not be checked/),
     ).toBeInTheDocument();
     expect(screen.getByText(/no access/)).toBeInTheDocument();
+  });
+
+  it('displays Workplan Not Found when all backends return 404 (not found)', async () => {
+    const mockFetch = jest.mocked(global.fetch);
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => 'Not Found',
+    } as unknown as Response);
+
+    render(
+      <FakeContextProvider>
+        <FakeAuthStateProvider
+          value={{
+            identity: 'user:loggedInUser@example.com',
+            email: 'loggedInUser@example.com',
+          }}
+        >
+          <ChroniclePage />
+        </FakeAuthStateProvider>
+      </FakeContextProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Workplan Not Found')).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText(
+        'Workplan wp-access-denied could not be found in any of the Turbo CI environments.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Authentication Required'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /Warning: The following environments could not be checked due to timeouts\/errors/,
+      ),
+    ).not.toBeInTheDocument();
   });
 });

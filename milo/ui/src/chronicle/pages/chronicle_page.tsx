@@ -85,9 +85,7 @@ function ChroniclePageContent() {
     !authState.identity || authState.identity === ANONYMOUS_IDENTITY;
   const hasAccessDenied =
     failedEnvironments.length > 0 &&
-    failedEnvironments.every(
-      (f) => f.errorType === DetectionErrorType.NoAccess,
-    );
+    failedEnvironments.some((f) => f.errorType === DetectionErrorType.NoAccess);
 
   const formattedWorkplanId = workplanId ? formatWorkplanUrlId(workplanId) : '';
 
@@ -175,33 +173,36 @@ function ChroniclePageContent() {
           p: 3,
         }}
       >
-        <Typography variant="h5" color="error">
-          Workplan Not Found
-        </Typography>
-        <Typography color="text.secondary" align="center">
-          Workplan {workplanId} could not be found in any of the Turbo CI
-          environments.
-        </Typography>
-        {hasAccessDenied && isAnonymous && (
-          <Alert severity="warning" sx={{ mt: 1, maxWidth: 600 }}>
+        {hasAccessDenied && isAnonymous ? (
+          <Alert severity="warning" sx={{ maxWidth: 600 }}>
             <AlertTitle>Authentication Required</AlertTitle>
-            Access was denied for this workplan, and you are not currently
-            logged in, which may be why access was denied. Consider{' '}
+            You are not logged in. Please{' '}
             <Link
               href={getLoginUrl(
                 location.pathname + location.search + location.hash,
               )}
             >
-              logging in
+              log in
             </Link>{' '}
             and try again.
           </Alert>
-        )}
-        {failedEnvironments.length > 0 && (
-          <Typography color="warning.main" align="center" sx={{ mt: 1 }}>
-            Note: The following environments could not be checked due to
-            timeouts/errors: {formatFailedEnvironments(failedEnvironments)}
-          </Typography>
+        ) : (
+          <>
+            <Typography variant="h5" color="error">
+              {hasAccessDenied ? 'Access Denied' : 'Workplan Not Found'}
+            </Typography>
+            <Typography color="text.secondary" align="center">
+              {hasAccessDenied
+                ? `Access was denied to one or more Turbo CI environments when searching for workplan ${workplanId}.`
+                : `Workplan ${workplanId} could not be found in any of the Turbo CI environments.`}
+            </Typography>
+            {failedEnvironments.length > 0 && (
+              <Typography color="warning.main" align="center" sx={{ mt: 1 }}>
+                Note: The following environments could not be checked due to
+                timeouts/errors: {formatFailedEnvironments(failedEnvironments)}
+              </Typography>
+            )}
+          </>
         )}
       </Box>
     );
