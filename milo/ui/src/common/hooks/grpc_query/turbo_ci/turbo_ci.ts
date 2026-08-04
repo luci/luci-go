@@ -34,6 +34,7 @@ export interface TurboCIEnvironment {
   environment: string;
   urlParam: string;
   host: string;
+  huckleStack?: string;
 }
 
 export const TURBO_CI_ENVIRONMENTS: TurboCIEnvironment[] = [
@@ -41,28 +42,44 @@ export const TURBO_CI_ENVIRONMENTS: TurboCIEnvironment[] = [
     environment: 'prod',
     urlParam: 'prod',
     host: 'https://turboci.pa.googleapis.com',
+    huckleStack: '',
   },
   {
     environment: 'qual-qa',
     urlParam: 'qual-qa',
     host: 'https://qual-qa-turboci.sandbox.googleapis.com',
+    huckleStack: 'qa',
   },
   {
     environment: 'qual-qa-atp',
     urlParam: 'qual-qa-atp',
     host: 'https://qual-qa-atp-turboci.sandbox.googleapis.com',
+    huckleStack: 'atp',
   },
   {
     environment: 'qual-qa-treehugger',
     urlParam: 'qual-qa-treehugger',
     host: 'https://qual-qa-treehugger-turboci.sandbox.googleapis.com',
+    huckleStack: 'treehugger',
   },
   {
     environment: 'qual-staging',
     urlParam: 'qual-staging',
     host: 'https://qual-staging-turboci.sandbox.googleapis.com',
+    huckleStack: 'build',
   },
 ];
+
+/**
+ * Computes the Legacy Workplan Viewer URL for a given workplan ID and environment.
+ */
+export function getWorkplanViewerUrl(
+  formattedWorkplanId: string,
+  env?: TurboCIEnvironment,
+): string {
+  const stack = env?.huckleStack;
+  return `http://go/wp/${formattedWorkplanId}${stack ? `?api-stack=${stack}` : ''}`;
+}
 
 export const useQueryNodes = (
   request: QueryNodesRequest,

@@ -25,7 +25,11 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { fetchGrpcWeb } from '../grpc_query';
 
-import { usePaginatedReadWorkPlan } from './turbo_ci';
+import {
+  TURBO_CI_ENVIRONMENTS,
+  getWorkplanViewerUrl,
+  usePaginatedReadWorkPlan,
+} from './turbo_ci';
 
 // Mock fetchGrpcWeb
 jest.mock('../grpc_query', () => {
@@ -149,5 +153,38 @@ describe('usePaginatedReadWorkPlan', () => {
     });
 
     expect(data?.version?.ts).toBe('2026-07-21T01:00:00Z');
+  });
+});
+
+describe('getWorkplanViewerUrl', () => {
+  it('computes correct Workplan Viewer URL for workplan ID across environments', () => {
+    const prodEnv = TURBO_CI_ENVIRONMENTS.find((e) => e.environment === 'prod');
+    const qaEnv = TURBO_CI_ENVIRONMENTS.find(
+      (e) => e.environment === 'qual-qa',
+    );
+    const atpEnv = TURBO_CI_ENVIRONMENTS.find(
+      (e) => e.environment === 'qual-qa-atp',
+    );
+    const treehuggerEnv = TURBO_CI_ENVIRONMENTS.find(
+      (e) => e.environment === 'qual-qa-treehugger',
+    );
+    const stagingEnv = TURBO_CI_ENVIRONMENTS.find(
+      (e) => e.environment === 'qual-staging',
+    );
+
+    expect(getWorkplanViewerUrl('wp-123', prodEnv)).toBe('http://go/wp/wp-123');
+    expect(getWorkplanViewerUrl('wp-123', qaEnv)).toBe(
+      'http://go/wp/wp-123?api-stack=qa',
+    );
+    expect(getWorkplanViewerUrl('wp-123', atpEnv)).toBe(
+      'http://go/wp/wp-123?api-stack=atp',
+    );
+    expect(getWorkplanViewerUrl('wp-123', treehuggerEnv)).toBe(
+      'http://go/wp/wp-123?api-stack=treehugger',
+    );
+    expect(getWorkplanViewerUrl('wp-123', stagingEnv)).toBe(
+      'http://go/wp/wp-123?api-stack=build',
+    );
+    expect(getWorkplanViewerUrl('wp-123')).toBe('http://go/wp/wp-123');
   });
 });

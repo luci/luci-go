@@ -28,6 +28,10 @@ import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
+import {
+  TURBO_CI_ENVIRONMENTS,
+  getWorkplanViewerUrl,
+} from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { getLoginUrl } from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -123,6 +127,7 @@ function ChroniclePageContent() {
     showEnvDialog,
     setShowEnvDialog,
     detectedEnvironments,
+    activeEnvironment,
     setActiveEnvironment,
     requestedEnvFailed,
     failedEnvironments,
@@ -140,6 +145,13 @@ function ChroniclePageContent() {
     failedEnvironments.some((f) => f.errorType === DetectionErrorType.NoAccess);
 
   const formattedWorkplanId = workplanId ? formatWorkplanUrlId(workplanId) : '';
+  const activeEnvObj = TURBO_CI_ENVIRONMENTS.find(
+    (e) => e.environment === activeEnvironment,
+  );
+  const workplanViewerUrl = getWorkplanViewerUrl(
+    formattedWorkplanId,
+    activeEnvObj,
+  );
 
   const handleDialogClose = () => {
     setDetectionCancelled(true);
@@ -230,7 +242,7 @@ function ChroniclePageContent() {
           }}
         >
           <Link
-            href={`http://go/wp/${formattedWorkplanId}`}
+            href={workplanViewerUrl}
             target="_blank"
             rel="noreferrer"
             sx={{ fontSize: '0.875rem', fontWeight: 500 }}
