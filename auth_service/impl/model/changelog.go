@@ -341,8 +341,11 @@ func GetAllAuthDBChange(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (
 		query = query.Start(cursor)
 	}
 
-	var nextCur datastore.Cursor
-	err = datastore.Run(ctx, query, func(change *AuthDBChange, cb datastore.CursorCB) error {
+	it := datastore.RunQuery[*AuthDBChange](ctx, query)
+	for change, err := range it.Results {
+		if err != nil {
+			return nil, "", errors.Fmt("error getting all AuthDBChange entities: %w", err)
+		}
 		if sErr := change.restoreMembers(ctx); sErr != nil {
 			// Log the error but still return the change; a problematic change shouldn't
 			// prevent other changes from being fetched.
@@ -359,18 +362,15 @@ func GetAllAuthDBChange(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (
 
 		changes = append(changes, change)
 		if len(changes) >= int(req.PageSize) {
-			if nextCur, err = cb(); err != nil {
-				return err
+			nextCur, err := it.Cursor()
+			if err != nil {
+				return nil, "", errors.Fmt("error getting all AuthDBChange entities: %w", err)
 			}
-			return datastore.Stop
+			if nextCur != nil {
+				nextPageToken = nextCur.String()
+			}
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, "", errors.Fmt("error getting all AuthDBChange entities: %w", err)
-	}
-	if nextCur != nil {
-		nextPageToken = nextCur.String()
 	}
 	return
 }
@@ -578,6 +578,24 @@ func getAuthDBLogRev(ctx context.Context, authDBRev int64) (*AuthDBLogRev, error
 	}
 }
 
+var changeHistoryObjectsRE *regexp.Regexp
+
+func init() {
+	// A list of all datastore 'kinds' which have a XXXHistory variant.
+	datastoreKinds := []string{
+		"Group",
+		"GroupShard",
+		"IPWhitelist",
+		"IPWhitelistAssignments",
+		"GlobalConfig",
+		"RealmsGlobals",
+		"ProjectRealms",
+	}
+
+	changeHistoryObjectsRE = regexp.MustCompile(
+		fmt.Sprintf("((Auth(%s))History)", strings.Join(datastoreKinds, "|")))
+}
+
 // generateChanges generates the changelog for the given AuthDB
 // revision, and records it in the datastore. Returns the generated
 // AuthDBChange's.
@@ -615,16 +633,19 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 		return target, oldpm, pm, nil
 	}
 
-	err = datastore.Run(ctx, query, func(pm datastore.PropertyMap) error {
+	itGen := datastore.RunQuery[datastore.PropertyMap](ctx, query)
+	for pm, err := range itGen.Results {
+		if err != nil {
+			return nil, err
+		}
 		key := getDatastoreKey(pm)
 		if key == nil {
-			return errors.New("key not found for pm")
+			return nil, errors.New("key not found for pm")
 		}
 
-		re := regexp.MustCompile("((Auth(Group|GroupShard|IPWhitelist|IPWhitelistAssignments|GlobalConfig|RealmsGlobals|ProjectRealms))History)")
-		heKeys := re.FindStringSubmatch(key.String())
+		heKeys := changeHistoryObjectsRE.FindStringSubmatch(key.String())
 		if len(heKeys) != 4 {
-			return errors.New("entity not found in key")
+			return nil, errors.New("entity not found in key")
 		}
 
 		//  match map will look like, (Entity name will change)
@@ -635,12 +656,12 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 		if df, ok := knownHistoricalEntities[heKeys[0]]; ok {
 			target, oldpm, pm, err := getPms(key, heKeys[2], pm)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			diffChanges, err := df(ctx, target, oldpm, pm)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			// Set the fields common to all of the changes for this entity.
@@ -664,7 +685,7 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 
 				changeShards, err := createAuthDBChangeShards(ctx, c, MaxChangeShardSize)
 				if err != nil {
-					return errors.Fmt("error sharding AuthDBChange: %w", err)
+					return nil, errors.Fmt("error sharding AuthDBChange: %w", err)
 				}
 				if len(changeShards) != 0 {
 					c.setShardIDs(ctx, changeShards)
@@ -674,13 +695,8 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 
 			changes = append(changes, diffChanges...)
 		} else {
-			return fmt.Errorf("history entity not supported %s", key.String())
+			return nil, fmt.Errorf("history entity not supported %s", key.String())
 		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
 	}
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
