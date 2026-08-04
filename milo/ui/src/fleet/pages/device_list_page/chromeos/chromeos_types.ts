@@ -55,10 +55,8 @@ export interface SpecialFieldDefinition {
   renderCell?: (props: FC_CellProps<ChromeOSDevice>) => React.ReactNode;
 }
 
-export type FieldDefinition =
-  | BaseFieldDefinition
-  | LabelFieldDefinition
-  | SpecialFieldDefinition;
+export type FieldDefinition = Partial<ChromeOSColumnDef> &
+  (BaseFieldDefinition | LabelFieldDefinition | SpecialFieldDefinition);
 
 export type ChromeOSDevice = Device & { current_task?: TaskResult };
 

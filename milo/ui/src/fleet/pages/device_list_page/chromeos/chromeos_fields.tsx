@@ -60,8 +60,7 @@ const createColumnDef = (
     id: id,
     header: header,
     orderByField:
-      def?.orderByField ??
-      (def === undefined || def.type === 'label' ? `labels.${id}` : id),
+      def === undefined || def.type === 'label' ? `labels.${id}` : id,
     filterKey: filterKey,
     enableEditing: false,
     minSize: 70,
@@ -81,6 +80,7 @@ const createColumnDef = (
             return <EllipsisTooltip>{strVal}</EllipsisTooltip>;
           },
         }),
+    ...def,
   };
 };
 

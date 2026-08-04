@@ -203,6 +203,7 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
   current_task: {
     type: 'special',
     header: 'Current Task',
+    enableSorting: false,
     accessorFn: (row) => row.current_task,
     renderCell: (props: FC_CellProps<ChromeOSDevice>) => {
       const val = props.cell.getValue<TaskResult>();
