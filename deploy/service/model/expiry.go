@@ -39,7 +39,12 @@ func ExpireActuations(ctx context.Context) error {
 		KeysOnly(true)
 
 	err := parallel.WorkPool(16, func(work chan<- func() error) {
-		err := datastore.Run(ctx, q, func(key *datastore.Key) {
+		for key, err := range datastore.RunQuery[*datastore.Key](ctx, q).Results {
+			if err != nil {
+				logging.Errorf(ctx, "Datastore query failed: %s", err)
+				work <- func() error { return err }
+				break
+			}
 			work <- func() error {
 				ctx := logging.SetField(ctx, "actuation", key.StringID())
 				logging.Infof(ctx, "Expiring")
@@ -48,10 +53,6 @@ func ExpireActuations(ctx context.Context) error {
 				}
 				return nil
 			}
-		})
-		if err != nil {
-			logging.Errorf(ctx, "Datastore query failed: %s", err)
-			work <- func() error { return err }
 		}
 	})
 	return transient.Tag.Apply(err)
