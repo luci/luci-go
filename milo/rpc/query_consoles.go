@@ -109,7 +109,11 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 	// Query consoles.
 	consoles := make([]*projectconfigpb.Console, 0, pageSize)
 	var nextCursor datastore.Cursor
-	err = datastore.Run(ctx, q, func(con *projectconfig.Console, getCursor datastore.CursorCB) error {
+	it := datastore.RunQuery[*projectconfig.Console](ctx, q)
+	for con, err := range it.Results {
+		if err != nil {
+			return nil, err
+		}
 		proj := con.ProjectID()
 
 		isAllowed, ok := isProjectAllowed[proj]
@@ -117,12 +121,12 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 			var err error
 			isAllowed, err = projectconfig.IsAllowed(ctx, proj)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			isProjectAllowed[proj] = isAllowed
 		}
 		if !isAllowed {
-			return nil
+			continue
 		}
 
 		// Use the project:@root as realm if the realm is not yet defined for the
@@ -141,17 +145,11 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 		})
 
 		if len(consoles) == pageSize {
-			nextCursor, err = getCursor()
-			if err != nil {
-				return err
+			if nextCursor, err = it.Cursor(); err != nil {
+				return nil, err
 			}
-
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	// Construct the next page token.

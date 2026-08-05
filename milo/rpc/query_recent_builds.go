@@ -88,9 +88,13 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 	// Query recent builds.
 	recentBuilds := make([]*buildbucketpb.Build, 0, pageSize)
 	var nextCursor datastore.Cursor
-	err = datastore.Run(ctx, q, func(b *model.BuildSummary, getCursor datastore.CursorCB) error {
+	it := datastore.RunQuery[*model.BuildSummary](ctx, q)
+	for b, err := range it.Results {
+		if err != nil {
+			return nil, err
+		}
 		if !b.Summary.Status.Terminal() {
-			return nil
+			continue
 		}
 
 		var buildID int64 = 0
@@ -100,7 +104,7 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 			// the new build ID.
 			buildID, err = utils.ParseBuildbucketBuildID(b.BuildID)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 
@@ -113,17 +117,11 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 		})
 
 		if len(recentBuilds) == pageSize {
-			nextCursor, err = getCursor()
-			if err != nil {
-				return err
+			if nextCursor, err = it.Cursor(); err != nil {
+				return nil, err
 			}
-
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	// Construct the next page token.

@@ -570,7 +570,11 @@ func UpdateProjects(c context.Context) error {
 
 	// Find all the consoles that no longer exist or are part of deleted projects.
 	logging.Debugf(c, "searching for stale consoles")
-	err = datastore.Run(c, datastore.NewQuery("Console"), func(key *datastore.Key) error {
+	for key, err := range datastore.RunQuery[*datastore.Key](c, datastore.NewQuery("Console")).Results {
+		if err != nil {
+			merr = append(merr, err)
+			break
+		}
 		proj := key.Parent().StringID()
 		id := key.StringID()
 		// If this console is either:
@@ -581,36 +585,32 @@ func UpdateProjects(c context.Context) error {
 			logging.Infof(
 				c, "deleting %s/%s because the project no longer exists", proj, id)
 			toDelete = append(toDelete, key)
-			return nil
+			continue
 		}
 		if knownConsoles == nil {
 			// The project exists but we couldn't check it this time.  Skip it and
 			// try again the next cron cycle.
-			return nil
+			continue
 		}
 		if _, ok := knownConsoles[id]; !ok {
 			logging.Infof(
 				c, "deleting %s/%s because the console no longer exists", proj, id)
 			toDelete = append(toDelete, key)
 		}
-		return nil
-	})
-	if err != nil {
-		merr = append(merr, err)
 	}
 
 	// Find entities of no longer existing projects.
 	logging.Debugf(c, "searching for stale projects")
-	err = datastore.Run(c, datastore.NewQuery("Project"), func(key *datastore.Key) error {
+	for key, err := range datastore.RunQuery[*datastore.Key](c, datastore.NewQuery("Project")).Results {
+		if err != nil {
+			merr = append(merr, err)
+			break
+		}
 		proj := key.StringID()
 		if _, ok := knownProjects[proj]; !ok {
 			logging.Infof(c, "deleting Project entity for %s", proj)
 			toDelete = append(toDelete, key)
 		}
-		return nil
-	})
-	if err != nil {
-		merr = append(merr, err)
 	}
 
 	// Actually delete all stale entities.

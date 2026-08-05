@@ -80,9 +80,12 @@ func GetConsoleRows(c context.Context, project string, console *projectconfigpb.
 			ret[i] = r
 			ch <- func() error {
 				fullQ := q.Eq("ManifestKeys", partialKey.AddRevision(rawCommits[i]))
-				return datastore.Run(c, fullQ, func(bs *model.BuildSummary) {
+				for bs, err := range datastore.RunQuery[*model.BuildSummary](c, fullQ).Results {
+					if err != nil {
+						return err
+					}
 					if bs.Experimental && !console.IncludeExperimentalBuilds {
-						return
+						continue
 					}
 					if columnIdxs, ok := columnMap[bs.BuilderID]; ok {
 						if r.Builds == nil {
@@ -92,7 +95,8 @@ func GetConsoleRows(c context.Context, project string, console *projectconfigpb.
 							r.Builds[columnIdx] = append(r.Builds[columnIdx], bs)
 						}
 					}
-				})
+				}
+				return nil
 			}
 		}
 	})

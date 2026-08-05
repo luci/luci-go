@@ -127,26 +127,38 @@ func (s *MiloInternalService) QueryConsoleSnapshots(ctx context.Context, req *mi
 	// Query consoles.
 	consoles := make([]*projectconfigpb.Console, 0, pageSize)
 	var nextCursor datastore.Cursor
-	err = datastore.Run(ctx, q, func(con *projectconfig.Console, getCursor datastore.CursorCB) error {
+	it := datastore.RunQuery[*projectconfig.Console](ctx, q)
+	for con, err := range it.Results {
+		if err != nil {
+			return nil, err
+		}
 		// Resolve external console.
 		if con.Def.ExternalId != "" {
 			// If the user doesn't have access to the original project, skip the
 			// external console.
 			sourceProj := con.ProjectID()
-			if allowed, err := checkProjectIsAllowed(sourceProj); err != nil || !allowed {
-				return err
+			allowed, err := checkProjectIsAllowed(sourceProj)
+			if err != nil {
+				return nil, err
+			}
+			if !allowed {
+				continue
 			}
 
 			con.Parent = datastore.MakeKey(ctx, "Project", con.Def.ExternalProject)
 			con.ID = con.Def.ExternalId
 			if err = datastore.Get(ctx, con); err != nil {
-				return errors.Fmt("failed to resolve external console: %w", err)
+				return nil, errors.Fmt("failed to resolve external console: %w", err)
 			}
 		}
 
 		proj := con.ProjectID()
-		if allowed, err := checkProjectIsAllowed(proj); err != nil || !allowed {
-			return err
+		allowed, err := checkProjectIsAllowed(proj)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			continue
 		}
 
 		// Use the project:@root as realm if the realm is not yet defined for the
@@ -168,17 +180,11 @@ func (s *MiloInternalService) QueryConsoleSnapshots(ctx context.Context, req *mi
 		})
 
 		if len(consoles) == pageSize {
-			nextCursor, err = getCursor()
-			if err != nil {
-				return err
+			if nextCursor, err = it.Cursor(); err != nil {
+				return nil, err
 			}
-
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	// Construct the next page token.

@@ -116,17 +116,19 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 			c <- func() error {
 				// Check whether this commit has an associated build.
 				hasAssociatedBuild := false
-				err := datastore.Run(ctx, q.Eq("BlamelistPins", protoutil.GitilesBuildSet(curGC)), func(build *model.BuildSummary) error {
+				for build, err := range datastore.RunQuery[*model.BuildSummary](ctx, q.Eq("BlamelistPins", protoutil.GitilesBuildSet(curGC))).Results {
+					if err != nil {
+						return err
+					}
 					switch build.Summary.Status {
 					case milostatus.InfraFailure, milostatus.Expired, milostatus.Canceled:
-						return nil
 					default:
 						hasAssociatedBuild = true
-						return datastore.Stop
+						break
 					}
-				})
-				if err != nil {
-					return err
+					if hasAssociatedBuild {
+						break
+					}
 				}
 
 				if hasAssociatedBuild {
