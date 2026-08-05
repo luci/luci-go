@@ -61,16 +61,21 @@ func (c Configs) ListConfigSets(ctx context.Context, req *pb.ListConfigSetsReque
 			Lt("__key__", datastore.MakeKey(ctx, model.ConfigSetKind, string(config.ProjectDomain)+"0"))
 	}
 	var cfgSets []*model.ConfigSet
-	err = datastore.Run(ctx, query, func(cs *model.ConfigSet) error {
-		switch hasPerm, err := acl.CanReadConfigSet(ctx, cs.ID); {
-		case err != nil:
+	for cs, qErr := range datastore.RunQuery[*model.ConfigSet](ctx, query).Results {
+		if qErr != nil {
+			err = qErr
+			break
+		}
+		hasPerm, permErr := acl.CanReadConfigSet(ctx, cs.ID)
+		if permErr != nil {
 			logging.Errorf(ctx, "cannot check %q read access for %q: %s", cs.ID, auth.CurrentIdentity(ctx), err)
-			return err
-		case hasPerm:
+			err = permErr
+			break
+		}
+		if hasPerm {
 			cfgSets = append(cfgSets, cs)
 		}
-		return nil
-	})
+	}
 	if err != nil {
 		logging.Errorf(ctx, "error when querying %s config sets: %s", req.Domain.String(), err)
 		return nil, status.Errorf(codes.Internal, "error while fetching config sets")

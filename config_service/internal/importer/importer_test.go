@@ -551,9 +551,10 @@ func TestImportConfigSet(t *testing.T) {
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
 				assert.Loosely(t, datastore.Get(ctx, cfgSet, attempt), should.BeNil)
 				var files []*model.File
-				assert.Loosely(t, datastore.Run(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), func(f *model.File) {
+				for f, err := range datastore.RunQuery[*model.File](ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey)).Results {
+					assert.Loosely(t, err, should.BeNil)
 					files = append(files, f)
-				}), should.BeNil)
+				}
 				assert.Loosely(t, files, should.HaveLength(0))
 
 				assert.Loosely(t, cfgSet.Location, should.Resemble(&cfgcommonpb.Location{

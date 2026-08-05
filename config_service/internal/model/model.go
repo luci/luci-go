@@ -286,17 +286,16 @@ func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath str
 // storage.
 func GetConfigFileByHash(ctx context.Context, configSet config.Set, contentSha256 string) (*File, error) {
 	var latestFile *File
-	err := datastore.Run(ctx, datastore.NewQuery(FileKind).Eq("content_sha256", contentSha256), func(file *File) error {
+	for file, err := range datastore.RunQuery[*File](ctx, datastore.NewQuery(FileKind).Eq("content_sha256", contentSha256)).Results {
+		if err != nil {
+			return nil, errors.Fmt("failed to query file by sha256 hash %q: %w", contentSha256, err)
+		}
 		if file.Revision.Root().StringID() == string(configSet) &&
 			(latestFile == nil || file.CreateTime.After(latestFile.CreateTime)) {
 			latestFile = file
 		}
-		return nil
-	})
-	switch {
-	case err != nil:
-		return nil, errors.Fmt("failed to query file by sha256 hash %q: %w", contentSha256, err)
-	case latestFile == nil:
+	}
+	if latestFile == nil {
 		return nil, &NoSuchConfigError{
 			unknownConfigFile: struct {
 				configSet, revision, file, hash string

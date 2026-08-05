@@ -69,19 +69,25 @@ func (c Configs) GetProjectConfigs(ctx context.Context, req *pb.GetProjectConfig
 		Project("latest_revision.id").
 		Gt("__key__", datastore.MakeKey(ctx, model.ConfigSetKind, string(config.ProjectDomain)+"/")).
 		Lt("__key__", datastore.MakeKey(ctx, model.ConfigSetKind, string(config.ProjectDomain)+"0"))
-	err = datastore.Run(ctx, query, func(cs *model.ConfigSet) error {
-		switch hasPerm, err := acl.CanReadConfigSet(ctx, cs.ID); {
-		case err != nil:
-			logging.Errorf(ctx, "cannot check %q read access for %q: %s", cs.ID, auth.CurrentIdentity(ctx), err)
-			return err
-		case hasPerm:
+	for cs, qErr := range datastore.RunQuery[*model.ConfigSet](ctx, query).Results {
+		if qErr != nil {
+			err = qErr
+			break
+		}
+		hasPerm, permErr := acl.CanReadConfigSet(ctx, cs.ID)
+		if permErr != nil {
+			logging.Errorf(ctx, "cannot check %q read access for %q: %s", cs.ID, auth.CurrentIdentity(ctx), permErr)
+			err = permErr
+			break
+		}
+
+		if hasPerm {
 			files = append(files, &model.File{
 				Path:     req.Path,
 				Revision: datastore.MakeKey(ctx, model.ConfigSetKind, string(cs.ID), model.RevisionKind, cs.LatestRevision.ID),
 			})
 		}
-		return nil
-	})
+	}
 	if err != nil {
 		logging.Errorf(ctx, "error when querying project config sets: %s", err)
 		return nil, status.Errorf(codes.Internal, "error while fetching project configs")
