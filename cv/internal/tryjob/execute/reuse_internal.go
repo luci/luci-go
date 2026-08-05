@@ -62,7 +62,10 @@ func (w *worker) queryForCandidates(ctx context.Context, reuseKey string, defini
 	luciProject := w.run.ID.LUCIProject()
 	mode := w.run.Mode
 	candidates := make(map[*tryjob.Definition]*tryjob.Tryjob)
-	err := datastore.Run(ctx, q, func(tj *tryjob.Tryjob) error {
+	for tj, err := range datastore.RunQuery[*tryjob.Tryjob](ctx, q).Results {
+		if err != nil {
+			return nil, transient.Tag.Apply(errors.Fmt("failed to query for reusable tryjobs: %w", err))
+		}
 		switch def := matchDefinitions(tj, definitions); {
 		case def == nil:
 		case w.knownTryjobIDs.Has(tj.ID):
@@ -82,10 +85,6 @@ func (w *worker) queryForCandidates(ctx context.Context, reuseKey string, defini
 				candidates[def] = tj
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, transient.Tag.Apply(errors.Fmt("failed to query for reusable tryjobs: %w", err))
 	}
 	return candidates, nil
 }

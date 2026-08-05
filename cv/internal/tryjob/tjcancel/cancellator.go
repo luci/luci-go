@@ -123,7 +123,10 @@ func (c *Cancellator) fetchCandidates(ctx context.Context, clid common.CLID, pre
 		Gte("CLPatchsets", tryjob.MakeCLPatchset(clid, prevMinEquiPS)).
 		Lt("CLPatchsets", tryjob.MakeCLPatchset(clid, curMinEquiPS))
 	var candidates []*tryjob.Tryjob
-	err := datastore.Run(ctx, q, func(tj *tryjob.Tryjob) error {
+	for tj, err := range datastore.RunQuery[*tryjob.Tryjob](ctx, q).Results {
+		if err != nil {
+			return nil, transient.Tag.Apply(errors.Fmt("failed to run the query to fetch candidate tryjobs for cancellation: %w", err))
+		}
 		switch {
 		case tj.ExternalID == "":
 			// Most likely Tryjob hasn't been triggered in the backend yet.
@@ -134,12 +137,8 @@ func (c *Cancellator) fetchCandidates(ctx context.Context, clid common.CLID, pre
 		default:
 			candidates = append(candidates, tj)
 		}
-		return nil
-	})
-	switch {
-	case err != nil:
-		return nil, transient.Tag.Apply(errors.Fmt("failed to run the query to fetch candidate tryjobs for cancellation: %w", err))
-	case len(candidates) == 0:
+	}
+	if len(candidates) == 0 {
 		return nil, nil
 	}
 
