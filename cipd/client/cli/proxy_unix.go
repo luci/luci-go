@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
 
-func runProxyImpl(ctx context.Context, unixSocket string, policy *proxypb.Policy, authClient *http.Client) (*proxyserver.ProxyStats, error) {
+func runProxyImpl(ctx context.Context, unixSocket string, policy *proxypb.Policy, httpClient *http.Client) (*proxyserver.ProxyStats, error) {
 	stats := &proxyserver.ProxyStats{}
 	defer stats.Report(ctx)
 
@@ -42,7 +42,7 @@ func runProxyImpl(ctx context.Context, unixSocket string, policy *proxypb.Policy
 	return stats, proxyserver.Run(ctx, proxyserver.ProxyParams{
 		UnixSocket:           unixSocket,
 		Policy:               policy,
-		AuthenticatingClient: authClient,
+		AuthenticatingClient: httpClient,
 		UserAgent:            ua,
 		Started: func(proxyURL string) {
 			logging.Infof(ctx, "Launching %s", ua)

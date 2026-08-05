@@ -17,6 +17,7 @@ package cli
 import (
 	"context"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -93,11 +94,13 @@ func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPol
 	if err != nil {
 		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad auth options: %w", err))
 	}
-	authClient, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+	httpClient, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
 	if err != nil {
-		return nil, cipderr.Auth.Apply(errors.Fmt("initializing auth client: %w", err))
+		logging.Warningf(ctx, "Failed to initialize authenticated client: %s", err)
+		logging.Warningf(ctx, "Starting proxy in anonymous mode. Package fetches requiring authentication will fail.")
+		httpClient = http.DefaultClient
 	}
-	return runProxyImpl(ctx, unixSocket, policy, authClient)
+	return runProxyImpl(ctx, unixSocket, policy, httpClient)
 }
 
 func readProxyPolicy(ctx context.Context, path string) (*proxypb.Policy, error) {
