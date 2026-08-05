@@ -72,20 +72,20 @@ func (*BotsServer) ListBotEvents(ctx context.Context, req *apipb.BotEventsReques
 	out := &apipb.BotEventsResponse{}
 
 	dscursor = nil
-	err = datastore.Run(ctx, q, func(ev *model.BotEvent, cb datastore.CursorCB) error {
+	it := datastore.RunQuery[*model.BotEvent](ctx, q)
+	for ev, qErr := range it.Results {
+		if qErr != nil {
+			logging.Errorf(ctx, "Error querying BotEvent for %q: %s", req.BotId, qErr)
+			return nil, status.Errorf(codes.Internal, "datastore error fetching events")
+		}
 		out.Items = append(out.Items, ev.ToProto())
 		if len(out.Items) == int(req.Limit) {
-			var err error
-			if dscursor, err = cb(); err != nil {
-				return err
+			if dscursor, err = it.Cursor(); err != nil {
+				logging.Errorf(ctx, "Error querying BotEvent for %q: %s", req.BotId, err)
+				return nil, status.Errorf(codes.Internal, "datastore error fetching events")
 			}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		logging.Errorf(ctx, "Error querying BotEvent for %q: %s", req.BotId, err)
-		return nil, status.Errorf(codes.Internal, "datastore error fetching events")
 	}
 
 	if dscursor != nil {

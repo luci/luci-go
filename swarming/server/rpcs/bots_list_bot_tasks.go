@@ -138,7 +138,12 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 	out := &apipb.TaskListResponse{}
 
 	dscursor = nil
-	err = datastore.Run(ctx, q, func(task *model.TaskRunResult, cb datastore.CursorCB) error {
+	it := datastore.RunQuery[*model.TaskRunResult](ctx, q)
+	for task, qErr := range it.Results {
+		if qErr != nil {
+			logging.Errorf(ctx, "Error querying TaskRunResult for %q: %s", req.BotId, qErr)
+			return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
+		}
 		taskpb := task.ToProto()
 		if stats != nil {
 			stats.Fetch(ctx, taskpb, task)
@@ -149,17 +154,12 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		}
 		out.Items = append(out.Items, taskpb)
 		if len(out.Items) == int(req.Limit) {
-			var err error
-			if dscursor, err = cb(); err != nil {
-				return err
+			if dscursor, err = it.Cursor(); err != nil {
+				logging.Errorf(ctx, "Error querying TaskRunResult for %q: %s", req.BotId, err)
+				return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
 			}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		logging.Errorf(ctx, "Error querying TaskRunResult for %q: %s", req.BotId, err)
-		return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
 	}
 	if dscursor != nil {
 		out.Cursor, err = cursor.EncodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_TASKS, dscursor)

@@ -142,34 +142,27 @@ func TestCursor(t *testing.T) {
 
 			var cur datastore.Cursor
 			var fetched []int64
-			err := datastore.Run(ctx,
-				datastore.NewQuery("Entity"),
-				func(e *Entity, cb datastore.CursorCB) error {
-					fetched = append(fetched, e.ID)
-					if len(fetched) == 5 {
-						var err error
-						cur, err = cb()
-						assert.NoErr(t, err)
-						return datastore.Stop
-					}
-					return nil
-				},
-			)
-			assert.NoErr(t, err)
+			it1 := datastore.RunQuery[*Entity](ctx, datastore.NewQuery("Entity"))
+			for e, err := range it1.Results {
+				assert.NoErr(t, err)
+				fetched = append(fetched, e.ID)
+				if len(fetched) == 5 {
+					var err error
+					cur, err = it1.Cursor()
+					assert.NoErr(t, err)
+					break
+				}
+			}
 
 			enc, err := EncodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_EVENTS, cur)
 			assert.NoErr(t, err)
 			dec, err := DecodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_EVENTS, enc)
 			assert.NoErr(t, err)
 
-			err = datastore.Run(ctx,
-				datastore.NewQuery("Entity").Start(dec),
-				func(e *Entity, cb datastore.CursorCB) error {
-					fetched = append(fetched, e.ID)
-					return nil
-				},
-			)
-			assert.NoErr(t, err)
+			for e, err := range datastore.RunQuery[*Entity](ctx, datastore.NewQuery("Entity").Start(dec)).Results {
+				assert.NoErr(t, err)
+				fetched = append(fetched, e.ID)
+			}
 
 			// Resumed from the cursor correctly and finished fetching entities.
 			assert.Loosely(t, fetched, should.Match([]int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))

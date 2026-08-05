@@ -130,13 +130,19 @@ func (tc *tasksCleaner) triggerCleanupTasks(ctx context.Context) error {
 
 	// Note this visits tasks in order of oldest to newest. We abort on the first
 	// error to avoid "gaps" in the unprocessed part of the backlog.
-	err := datastore.Run(qctx, q, func(key *datastore.Key) error {
+	var err error
+	for key, qErr := range datastore.RunQuery[*datastore.Key](qctx, q).Results {
+		if qErr != nil {
+			err = qErr
+			break
+		}
 		batch = append(batch, model.RequestKeyToTaskID(key, model.AsRequest))
 		if len(batch) == tc.cleanupTaskBatchSize {
-			return flushBatch()
+			if err = flushBatch(); err != nil {
+				break
+			}
 		}
-		return nil
-	})
+	}
 
 	// Timing out is semi-expected.
 	if qctx.Err() != nil {
@@ -221,7 +227,13 @@ func cleanupEntityGroup(ctx context.Context, reqKey *datastore.Key, batchSize in
 		}
 	}
 
-	err := datastore.Run(ctx, q, func(key *datastore.Key) error {
+	var err error
+	for key, qErr := range datastore.RunQuery[*datastore.Key](ctx, q).Results {
+		if qErr != nil {
+			err = qErr
+			logging.Errorf(ctx, "Failed to fully scan the entity group: %s", err)
+			break
+		}
 		// The TaskRequest entity itself will be deleted separately last. Its
 		// presence in the datastore is an indicator that there's some entities
 		// under its entity group. For that reason we must delete it last, after
@@ -232,10 +244,6 @@ func cleanupEntityGroup(ctx context.Context, reqKey *datastore.Key, batchSize in
 				flushBatch()
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		logging.Errorf(ctx, "Failed to fully scan the entity group: %s", err)
 	}
 
 	flushBatch()

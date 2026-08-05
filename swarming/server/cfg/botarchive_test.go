@@ -73,11 +73,10 @@ func TestEnsureBotArchiveBuilt(t *testing.T) {
 
 		allChunks := func() (chunks []string) {
 			q := datastore.NewQuery("BotArchiveChunk").Ancestor(botArchiverStateKey(ctx))
-			err := datastore.Run(ctx, q, func(ent *botArchiveChunk) error {
+			for ent, err := range datastore.RunQuery[*botArchiveChunk](ctx, q).Results {
+				assert.NoErr(t, err)
 				chunks = append(chunks, ent.Key.StringID())
-				return nil
-			})
-			assert.NoErr(t, err)
+			}
 			return
 		}
 

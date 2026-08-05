@@ -1021,15 +1021,14 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			}
 			assert.NoErr(t, err)
 			var out []int64
-			err = datastore.Run(ctx, q, func(e *TaskResultSummary) error {
+			for e, err := range datastore.RunQuery[*TaskResultSummary](ctx, q).Results {
+				assert.NoErr(t, err)
 				assert.Loosely(t, e.Created.Equal(testTime), should.BeTrue)
 				out = append(out, e.TaskRequestKey().IntID())
 				if len(out) == limit {
-					return datastore.Stop
+					break
 				}
-				return nil
-			})
-			assert.NoErr(t, err)
+			}
 			return out
 		}
 

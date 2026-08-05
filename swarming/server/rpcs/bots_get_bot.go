@@ -56,15 +56,15 @@ func (*BotsServer) GetBot(ctx context.Context, req *apipb.BotRequest) (*apipb.Bo
 	// means the bot existed at some point, but has been deleted.
 	var ev *model.BotEvent
 	q := model.BotEventsQuery(ctx, req.BotId).Limit(1)
-	err := datastore.Run(ctx, q, func(ent *model.BotEvent) error {
+	for ent, err := range datastore.RunQuery[*model.BotEvent](ctx, q).Results {
+		if err != nil {
+			logging.Errorf(ctx, "Error querying BotEvent for %q: %s", req.BotId, err)
+			return nil, status.Errorf(codes.Internal, "datastore error fetching the bot")
+		}
 		ev = ent
-		return datastore.Stop
-	})
-	switch {
-	case err != nil:
-		logging.Errorf(ctx, "Error querying BotEvent for %q: %s", req.BotId, err)
-		return nil, status.Errorf(codes.Internal, "datastore error fetching the bot")
-	case ev == nil:
+		break
+	}
+	if ev == nil {
 		return nil, status.Errorf(codes.NotFound, "no such bot: %s", req.BotId)
 	}
 
