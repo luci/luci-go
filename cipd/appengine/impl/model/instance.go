@@ -198,18 +198,18 @@ func ListInstances(ctx context.Context, pkg string, pageSize int32, cursor datas
 		q = q.Start(cursor)
 	}
 
-	err = datastore.Run(ctx, q, func(ent *Instance, cb datastore.CursorCB) error {
+	it := datastore.RunQuery[*Instance](ctx, q)
+	for ent, qErr := range it.Results {
+		if qErr != nil {
+			return nil, nil, transient.Tag.Apply(qErr)
+		}
 		out = append(out, ent)
 		if len(out) >= int(pageSize) {
-			if nextCur, err = cb(); err != nil {
-				return err
+			if nextCur, err = it.Cursor(); err != nil {
+				return nil, nil, transient.Tag.Apply(err)
 			}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, nil, transient.Tag.Apply(err)
 	}
 	return
 }

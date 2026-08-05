@@ -44,19 +44,20 @@ func TestDeletePackage(t *testing.T) {
 		// Returns number of entities in an entity group, skipping unimportant ones.
 		entitiesCount := func(root *datastore.Key) (count int64) {
 			q := datastore.NewQuery("").Ancestor(root).KeysOnly(true)
-			assert.Loosely(t, datastore.Run(ctx, q, func(k *datastore.Key) {
+			for k, err := range datastore.RunQuery[*datastore.Key](ctx, q).Results {
+				assert.NoErr(t, err)
 				switch {
 				// Skip magical __entity_group__ entities created by the datastore.
 				case strings.HasPrefix(k.Kind(), "__"):
-					return
+					continue
 				// Event log is never deleted. Its entities reside in same entity group
 				// as the rest of CIPD model.
 				case k.Kind() == "Event":
-					return
+					continue
 				default:
 					count++
 				}
-			}), should.BeNil)
+			}
 			return
 		}
 

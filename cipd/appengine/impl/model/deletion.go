@@ -105,19 +105,19 @@ func deleteEntityKinds(ctx context.Context, pkg string, kindsToDelete []string) 
 					KeysOnly(true)
 
 				count := 0
-				err := datastore.Run(ctx, q, func(k *datastore.Key, _ datastore.CursorCB) error {
+				for k, err := range datastore.RunQuery[*datastore.Key](ctx, q).Results {
+					if err != nil {
+						keys <- nil // put "we are done" signal
+						logging.WithError(err).Errorf(ctx, "Found %d %q entities and then failed", count, kind)
+						return err
+					}
 					count++
 					keys <- k
-					return nil
-				})
+				}
 
 				keys <- nil // put "we are done" signal
-				if err == nil {
-					logging.Infof(ctx, "Found %d %q entities to be deleted", count, kind)
-				} else {
-					logging.WithError(err).Errorf(ctx, "Found %d %q entities and then failed", count, kind)
-				}
-				return err
+				logging.Infof(ctx, "Found %d %q entities to be deleted", count, kind)
+				return nil
 			}
 		}
 

@@ -147,18 +147,18 @@ func queryByTag(ctx context.Context, pkg, tag string, cursor datastore.Cursor, p
 		q = q.Start(cursor)
 	}
 
-	err = datastore.Run(ctx, q, func(k *datastore.Key, cb datastore.CursorCB) error {
+	it := datastore.RunQuery[*datastore.Key](ctx, q)
+	for k, qErr := range it.Results {
+		if qErr != nil {
+			return nil, nil, transient.Tag.Apply(errors.Fmt("failed to query by tag %q: %w", tag, qErr))
+		}
 		out = append(out, k.Parent())
 		if len(out) >= int(pageSize) {
-			if next, err = cb(); err != nil {
-				return err
+			if next, err = it.Cursor(); err != nil {
+				return nil, nil, transient.Tag.Apply(errors.Fmt("failed to query by tag %q: %w", tag, err))
 			}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, nil, transient.Tag.Apply(errors.Fmt("failed to query by tag %q: %w", tag, err))
 	}
 	return
 }

@@ -79,17 +79,16 @@ func ListPackages(ctx context.Context, prefix string, includeHidden bool) (out [
 		q = q.Lt("__key__", PackageKey(ctx, prefix+"/~"))
 	}
 
-	err = datastore.Run(ctx, q, func(p *Package) error {
+	for p, qErr := range datastore.RunQuery[*Package](ctx, q).Results {
+		if qErr != nil {
+			return nil, transient.Tag.Apply(errors.Fmt("failed to query the list of packages: %w", qErr))
+		}
 		// We filter by Hidden manually since not all entities in the datastore have
 		// it set, so filtering using Eq("Hidden", false) actually skips all
 		// entities that don't have Hidden field at all.
 		if !p.Hidden || includeHidden {
 			out = append(out, p.Name)
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, transient.Tag.Apply(errors.Fmt("failed to query the list of packages: %w", err))
 	}
 	return out, nil
 }
