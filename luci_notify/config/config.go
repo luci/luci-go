@@ -348,12 +348,11 @@ func updateProjects(c context.Context) error {
 
 	// Load revisions of the existing projects from Datastore.
 	projectRevisions := map[string]string{} // project id -> revision
-	err = datastore.Run(c, datastore.NewQuery("Project"), func(p *Project) error {
+	for p, err := range datastore.RunQuery[*Project](c, datastore.NewQuery("Project")).Results {
+		if err != nil {
+			return err
+		}
 		projectRevisions[p.Name] = p.Revision
-		return nil
-	})
-	if err != nil {
-		return err
 	}
 
 	// Update each project concurrently.
@@ -435,16 +434,15 @@ func UpdateHandler(ctx context.Context) error {
 func removeDescendants(c context.Context, kind string, ancestor *datastore.Key, preserve func(*datastore.Key) bool) error {
 	var toDelete []*datastore.Key
 	q := datastore.NewQuery(kind).Ancestor(ancestor).KeysOnly(true)
-	err := datastore.Run(c, q, func(key *datastore.Key) error {
+	for key, err := range datastore.RunQuery[*datastore.Key](c, q).Results {
+		if err != nil {
+			return err
+		}
 		if preserve != nil && preserve(key) {
-			return nil
+			continue
 		}
 		logging.Infof(c, "deleting entity %s", key.String())
 		toDelete = append(toDelete, key)
-		return nil
-	})
-	if err != nil {
-		return err
 	}
 	return datastore.Delete(c, toDelete)
 }

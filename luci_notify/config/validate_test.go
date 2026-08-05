@@ -146,7 +146,7 @@ func TestValidation(t *testing.T) {
 					bucket: "test.bucket2"
 				}
 			}`,
-			"", "")
+			"")
 
 		testValidation(`bad failed_step_regexp in notification`, `
 			notifiers {
@@ -263,7 +263,7 @@ func TestValidation(t *testing.T) {
 					tree_name: "tree1"
 				}
 			}`,
-			"", "")
+			"")
 	})
 
 	ftt.Run(`Test Environment for validateSettings`, t, func(t *ftt.Test) {
