@@ -554,7 +554,9 @@ func (bp *BuildPage) Timeline() string {
 		groupID := strconv.Itoa(i)
 		logURL := ""
 		if len(step.Logs) > 0 {
-			logURL = html.EscapeString(step.Logs[0].ViewUrl)
+			if u, err := url.Parse(step.Logs[0].ViewUrl); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+				logURL = html.EscapeString(step.Logs[0].ViewUrl)
+			}
 		}
 		statusClassName := fmt.Sprintf("status-%s", step.Status)
 		data := stepData{

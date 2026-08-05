@@ -107,7 +107,10 @@ $(document).ready(function() {
         return;
       }
       if (item.data && item.data.logUrl) {
-        window.open(item.data.logUrl, '_blank');
+        const parsedUrl = URL.parse(item.data.logUrl);
+        if (parsedUrl && (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:')) {
+          window.open(parsedUrl.href, '_blank');
+        }
       }
     });
 
