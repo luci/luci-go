@@ -27,6 +27,23 @@ Progress:
 > - If a reviewer has already granted `Code-Review+1` and requests non-trivial changes, do not upload a new patchset to that CL unless you want to discard the +1 vote.
 > - Instead, address the feedback in a new downstream CL parented on the original CL to maintain review velocity.
 
+## 0. Creating Independent Branches & Commit Message Hygiene
+
+> [!CAUTION]
+> **Avoid Unintended Stacked CLs**: Running `git checkout -b <branch>` without specifying `origin/main` automatically branches off `HEAD` (the current branch). If the current branch has unmerged commits, your new branch will inherit those commits and upload unrelated changes to Gerrit.
+>
+> **Mandatory Rule for Independent CLs**:
+> Always specify `origin/main` explicitly when creating a standalone feature or fix branch:
+> ```bash
+> git checkout -b <new-branch-name> origin/main
+> ```
+
+> [!TIP]
+> **Commit Message Line Length Guidelines (80-Char Hard Limit)**:
+> Standard presubmits enforce a **max 80-character line length limit**.
+> - **Subject Line**: Keep under 70–72 characters for clear scanning in Gerrit and Git log titles: `[fleet] Short action summary`
+> - **Body Paragraphs**: Wrap text lines at 72–78 characters (strictly under 80 characters). Wrapping around 72 characters ensures text fits comfortably when `git log` indents lines by 4 spaces (`4 spaces + 72 chars = 76 columns`).
+
 ## 2. Managing & Uploading CL Stacks
 
 * When working with stacked CLs (e.g., CL B depends on CL A), configure git upstream branch tracking:
