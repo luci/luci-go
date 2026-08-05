@@ -161,17 +161,18 @@ func CancelChildren(ctx context.Context, bID int64, details *CancellationDetails
 // the parent.
 func childrenToCancel(ctx context.Context, bID int64) (children []*model.Build, err error) {
 	q := datastore.NewQuery(model.BuildKind).Eq("parent_id", bID)
-	err = datastore.Run(ctx, q, func(bld *model.Build) error {
+	for bld, qErr := range datastore.RunQuery[*model.Build](ctx, q).Results {
+		if qErr != nil {
+			err = qErr
+			return
+		}
 		switch {
 		case protoutil.IsEnded(bld.Proto.Status):
-			return nil
 		case bld.Proto.CanOutliveParent:
-			return nil
 		default:
 			children = append(children, bld)
-			return nil
 		}
-	})
+	}
 	return
 }
 

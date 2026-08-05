@@ -63,10 +63,13 @@ func (*Builds) GetBuildStatus(ctx context.Context, req *pb.GetBuildStatusRequest
 		// Get BuildStatus by builder + build_number.
 		bldAddr := fmt.Sprintf("%s/%s/%s/%d", bldr.Project, bldr.Bucket, bldr.Builder, req.BuildNumber)
 		q := datastore.NewQuery(model.BuildStatusKind).Eq("build_address", bldAddr)
-		err = datastore.Run(ctx, q, func(bse *model.BuildStatus) error {
+		for bse, qErr := range datastore.RunQuery[*model.BuildStatus](ctx, q).Results {
+			if qErr != nil {
+				err = qErr
+				break
+			}
 			bs = bse
-			return nil
-		})
+		}
 	}
 	if err != nil && err != datastore.ErrNoSuchEntity {
 		return nil, err

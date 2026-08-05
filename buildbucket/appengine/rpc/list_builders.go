@@ -122,10 +122,6 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 //
 // buckets in allowedBuckets should use project/bucket format.
 func fetchBuilders(ctx context.Context, q *datastore.Query, allowedBuckets []string, pageSize int32) (builders []*model.Builder, nextCursor datastore.Cursor, err error) {
-	// Note: this function is fairly generic, but the only reason it is currently
-	// Builder-specific is because datastore.Run does not accept callback
-	// signature func(any, CursorCB).
-
 	if pageSize <= 0 {
 		pageSize = 100
 	}
@@ -134,26 +130,28 @@ func fetchBuilders(ctx context.Context, q *datastore.Query, allowedBuckets []str
 	allowedBucketSet := stringset.NewFromSlice(allowedBuckets...)
 
 	// Fetch entities and the cursor if needed.
-	err = datastore.Run(ctx, q, func(builder *model.Builder, getCursor datastore.CursorCB) error {
+	it := datastore.RunQuery[*model.Builder](ctx, q)
+	for builder, qErr := range it.Results {
+		if qErr != nil {
+			err = qErr
+			return
+		}
 		// Check if the bucket is allowed. Use the fully qualified bucket ID
 		// instead of the bucket name so we don't have to assume that the query
 		// only returns builders from a single project.
 		bucketID := protoutil.FormatBucketID(builder.Parent.Parent().StringID(), builder.Parent.StringID())
 		if !allowedBucketSet.Has(bucketID) {
-			return nil
+			continue
 		}
 
 		builders = append(builders, builder)
 		if len(builders) == int(pageSize) {
-			var err error
-			if nextCursor, err = getCursor(); err != nil {
-				return err
+			if nextCursor, err = it.Cursor(); err != nil {
+				return
 			}
-			return datastore.Stop
+			break
 		}
-
-		return nil
-	})
+	}
 
 	return
 }
