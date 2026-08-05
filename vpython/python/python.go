@@ -41,7 +41,7 @@ import (
 
 // passthroughEnvVars is a list of environment variables forwarded from the
 // host environment to virtualenv generator subprocesses so network tools
-// (pip/uv) can authenticate SSL certs, navigate proxies, and locate temp directories.
+// (pip/uv) can authenticate SSL certs and navigate proxies.
 var passthroughEnvVars = []string{
 	// Proxy settings
 	"HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
@@ -50,9 +50,6 @@ var passthroughEnvVars = []string{
 	"SSL_CERT_FILE", "SSL_CERT_DIR",
 	"REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE",
 	"PIP_CERT", "UV_CERT", "UV_NATIVE_TLS",
-	// Temporary directory & Windows system/user profile paths
-	"TMP", "TEMP", "TMPDIR",
-	"SystemRoot", "SystemDrive", "LOCALAPPDATA", "USERPROFILE",
 }
 
 func envWithPassthroughs() environ.Env {
