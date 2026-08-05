@@ -17,11 +17,7 @@ import { Box, Button, Divider, Typography } from '@mui/material';
 import { PageSummaryLine } from '@/common/components/page_summary_line';
 import { PageTitle } from '@/common/components/page_title';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
-import {
-  useInvocation,
-  useProject,
-  useTestVariant,
-} from '@/test_investigation/context';
+import { useInvocation, useTestVariant } from '@/test_investigation/context';
 import { getFullMethodName } from '@/test_investigation/utils/test_info_utils';
 
 import { VariantDisplay } from '../common/variant_display';
@@ -33,7 +29,6 @@ import { TestInfoMarkers } from './test_info_markers';
 export function TestInfoHeader() {
   const testVariant = useTestVariant();
   const invocation = useInvocation();
-  const project = useProject();
   const testVariantBranch = useTestVariantBranch();
   const { onToggleDrawer } = useDrawerWrapper();
 
@@ -84,8 +79,6 @@ export function TestInfoHeader() {
       <PageSummaryLine>
         <TestInfoMarkers
           invocation={invocation}
-          project={project}
-          testVariant={testVariant}
           testVariantBranch={testVariantBranch}
         />
         <VariantDisplay variantDef={testVariant.variant?.def} />

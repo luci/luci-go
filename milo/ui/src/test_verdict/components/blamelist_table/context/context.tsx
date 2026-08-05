@@ -15,6 +15,7 @@
 import { createContext, ReactNode, useMemo } from 'react';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
+import { getBlamelistUrl } from '@/test_verdict/tools/url_utils';
 
 interface BlamelistContext {
   readonly project: string;
@@ -59,12 +60,7 @@ export function BlamelistContextProvider({
           parseInt(seg1.startPositionUpperBound99th),
       );
 
-    const blamelistBaseUrl =
-      `/ui/labs/p/${encodeURIComponent(testVariantBranch.project)}` +
-      `/tests/${encodeURIComponent(testVariantBranch.testId)}` +
-      `/variants/${testVariantBranch.variantHash}` +
-      `/refs/${testVariantBranch.refHash}` +
-      `/blamelist`;
+    const blamelistBaseUrl = getBlamelistUrl(testVariantBranch);
 
     return {
       project: testVariantBranch.project,

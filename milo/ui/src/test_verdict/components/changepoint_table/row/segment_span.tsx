@@ -25,6 +25,7 @@ import {
   getBackgroundColor,
   getBorderColor,
 } from '@/test_verdict/tools/segment_color';
+import { getBlamelistUrl } from '@/test_verdict/tools/url_utils';
 
 import { SEGMENT_SPAN_HEIGHT, SPAN_MARGIN } from '../constants';
 import { useBlamelistDispatch, useConfig } from '../context';
@@ -129,12 +130,7 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
     counts.unexpectedResults > 0 &&
     counts.unexpectedResults < counts.totalResults;
 
-  const blamelistBaseUrl =
-    `/ui/labs/p/${encodeURIComponent(testVariantBranch.project)}` +
-    `/tests/${encodeURIComponent(testVariantBranch.testId)}` +
-    `/variants/${testVariantBranch.variantHash}` +
-    `/refs/${testVariantBranch.refHash}` +
-    `/blamelist`;
+  const blamelistBaseUrl = getBlamelistUrl(testVariantBranch);
 
   return (
     <foreignObject

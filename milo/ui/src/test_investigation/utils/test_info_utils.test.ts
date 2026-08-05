@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
-import { getTestVariantURL } from './test_info_utils';
+import {
+  constructBlamelistCommitLink,
+  getTestVariantURL,
+} from './test_info_utils';
 
 describe('getTestVariantURL', () => {
   const invocationId = 'inv-123';
@@ -64,5 +69,35 @@ describe('getTestVariantURL', () => {
     expect(url).toBe(
       '/ui/test-investigate/invocations/inv-123/modules/legacy/schemes/legacy/variants/legacy-hash/cases/legacy-test-id',
     );
+  });
+});
+
+describe('constructBlamelistCommitLink', () => {
+  const branch = TestVariantBranch.fromPartial({
+    project: 'chromium',
+    testId: 'test.id',
+    variantHash: 'v1234',
+    refHash: 'r5678',
+  });
+
+  it('returns blamelist link when commit position and valid branch exist', () => {
+    const invocation = Invocation.fromPartial({
+      sourceSpec: { sources: { gitilesCommit: { position: '100' } } },
+    });
+    expect(constructBlamelistCommitLink(branch, invocation)).toBe(
+      '/ui/labs/p/chromium/tests/test.id/variants/v1234/refs/r5678/blamelist?expand=CP-100#CP-100',
+    );
+  });
+
+  it('returns undefined when commit position is missing', () => {
+    const invocation = Invocation.fromPartial({});
+    expect(constructBlamelistCommitLink(branch, invocation)).toBeUndefined();
+  });
+
+  it('returns undefined when branch is missing', () => {
+    const invocation = Invocation.fromPartial({
+      sourceSpec: { sources: { gitilesCommit: { position: '100' } } },
+    });
+    expect(constructBlamelistCommitLink(null, invocation)).toBeUndefined();
   });
 });

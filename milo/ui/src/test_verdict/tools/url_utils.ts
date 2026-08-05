@@ -17,6 +17,7 @@ import {
   Changepoint,
   ChangepointPredicate,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
+import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 
 export interface GetRegressionDetailsUrlPathOpts {
   readonly canonicalChangepoint: Changepoint;
@@ -53,4 +54,34 @@ export function getBlamelistUrl(
   const hash = commitPosition ? `#CP-${commitPosition}` : '';
 
   return urlBase + hash;
+}
+
+/**
+ * Converts a TestVariantBranch into a ParsedTestVariantBranchName.
+ * Returns undefined if tvb is missing or lacks required fields (refHash, project, testId).
+ */
+export function toParsedTestVariantBranchName(
+  tvb?: TestVariantBranch | null,
+): ParsedTestVariantBranchName | undefined {
+  if (!tvb?.refHash || !tvb.project || !tvb.testId) {
+    return undefined;
+  }
+  return {
+    project: tvb.project,
+    testId: tvb.testId,
+    variantHash: tvb.variantHash || '',
+    refHash: tvb.refHash,
+  };
+}
+
+/**
+ * Returns a blamelist URL given a TestVariantBranch and an optional commit position.
+ * Returns undefined if tvb is missing or lacks required fields (refHash, project, testId).
+ */
+export function getBlamelistUrlFromVariantBranch(
+  tvb?: TestVariantBranch | null,
+  commitPosition?: string,
+): string | undefined {
+  const parsed = toParsedTestVariantBranchName(tvb);
+  return parsed ? getBlamelistUrl(parsed, commitPosition) : undefined;
 }

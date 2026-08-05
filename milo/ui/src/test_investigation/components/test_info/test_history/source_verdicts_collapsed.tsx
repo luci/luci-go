@@ -14,7 +14,7 @@
 import { Button, ButtonGroup, Link, Typography } from '@mui/material';
 
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import { useProject, useTestVariant } from '@/test_investigation/context';
+import { getBlamelistUrlFromVariantBranch } from '@/test_verdict/tools/url_utils';
 
 import { useTestVariantBranch } from '../context';
 interface SourceVerdictsCollapsedProps {
@@ -26,16 +26,8 @@ export function SourceVerdictsCollapsed({
   segment,
   expandSegment,
 }: SourceVerdictsCollapsedProps) {
-  const testVariant = useTestVariant();
-  const project = useProject();
   const testVariantBranch = useTestVariantBranch();
-
-  const testId = testVariant.testId;
-  const variantHash = testVariant.variantHash;
-  const refHash = testVariantBranch?.refHash;
-  const blamelistBaseUrl = refHash
-    ? `/ui/labs/p/${project}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/refs/${refHash}/blamelist`
-    : undefined;
+  const blamelistBaseUrl = getBlamelistUrlFromVariantBranch(testVariantBranch);
 
   const createBlamelistLink = (position: string) => {
     return `${blamelistBaseUrl}?expand=${`CP-${position}`}#CP-${position}`;

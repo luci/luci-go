@@ -63,6 +63,18 @@ const createMockSegment = (
     hasStartChangepoint: true,
   });
 
+const createMockTestVariantBranch = (
+  segments: Segment[] = [],
+  refHash = 'test-ref-hash',
+): TestVariantBranch =>
+  TestVariantBranch.fromPartial({
+    project: MOCK_PROJECT_ID,
+    testId: MOCK_TEST_ID,
+    variantHash: 'test-variant-hash',
+    refHash,
+    segments,
+  });
+
 describe('<HistoryRateDisplaySection />', () => {
   let mockInvocation: Invocation;
   let mockRootInvocation: RootInvocation;
@@ -86,7 +98,7 @@ describe('<HistoryRateDisplaySection />', () => {
       variant: MOCK_VARIANT_DEF, // Pass the inner 'def' object
     });
     defaultTestInfoContextValue = {
-      testVariantBranch: TestVariantBranch.fromPartial({ segments: [] }),
+      testVariantBranch: createMockTestVariantBranch([]),
       formattedCls: [] as FormattedCLInfo[],
       associatedBugs: [] as AssociatedBug[],
       isLoadingAssociatedBugs: false,
@@ -132,7 +144,7 @@ describe('<HistoryRateDisplaySection />', () => {
 
   it('should display no history data text when segments are empty', () => {
     renderComponent(undefined, undefined, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({ segments: [] }),
+      testVariantBranch: createMockTestVariantBranch([]),
     });
     expect(screen.getByText(NO_HISTORY_DATA_TEXT)).toBeInTheDocument();
   });
@@ -154,10 +166,7 @@ describe('<HistoryRateDisplaySection />', () => {
   it('should render the title', () => {
     const segments = [createMockSegment('s1', '100', '110', 10, 100)];
     renderComponent(undefined, undefined, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({
-        segments,
-        refHash: 'test-ref-hash',
-      }),
+      testVariantBranch: createMockTestVariantBranch(segments),
     });
     expect(screen.getByText('Postsubmit history')).toBeInTheDocument();
   });
@@ -169,10 +178,7 @@ describe('<HistoryRateDisplaySection />', () => {
     // Use legacy Invocation (default mock)
     const currentInv = mockInvocation;
     renderComponent(new Date('2024-01-10T12:00:00Z'), currentInv, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({
-        segments: segmentsData,
-        refHash: 'test-ref-hash',
-      }),
+      testVariantBranch: createMockTestVariantBranch(segmentsData),
     });
     const failureRateView = screen.getByText('10% now failing');
     expect(failureRateView).toBeInTheDocument();
@@ -207,10 +213,7 @@ describe('<HistoryRateDisplaySection />', () => {
     // Use RootInvocation
     const currentInv = mockRootInvocation;
     renderComponent(new Date('2024-01-10T12:00:00Z'), currentInv, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({
-        segments: segmentsData,
-        refHash: 'test-ref-hash',
-      }),
+      testVariantBranch: createMockTestVariantBranch(segmentsData),
     });
     const failureRateView = screen.getByText('10% now failing');
     expect(failureRateView).toBeInTheDocument();
@@ -244,10 +247,7 @@ describe('<HistoryRateDisplaySection />', () => {
       sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
     });
     renderComponent(undefined, currentInv, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({
-        segments: segmentsData,
-        refHash: 'test-ref-hash',
-      }),
+      testVariantBranch: createMockTestVariantBranch(segmentsData),
     });
     expect(screen.getByText('5% failing')).toBeInTheDocument(); // Newer segment
     expect(screen.getByText('50% failing at invocation')).toBeInTheDocument(); // Invocation segment
@@ -270,10 +270,7 @@ describe('<HistoryRateDisplaySection />', () => {
       sources: { gitilesCommit: { position: '105' } },
     });
     renderComponent(undefined, currentInv, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({
-        segments: segmentsData,
-        refHash: 'test-ref-hash',
-      }),
+      testVariantBranch: createMockTestVariantBranch(segmentsData),
     });
     expect(screen.getByText('5% failing')).toBeInTheDocument(); // Newer segment
     expect(screen.getByText('50% failing at invocation')).toBeInTheDocument(); // Invocation segment
@@ -297,10 +294,7 @@ describe('<HistoryRateDisplaySection />', () => {
       sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
     });
     renderComponent(undefined, currentInv, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({
-        segments: segmentsData,
-        refHash: 'test-ref-hash',
-      }),
+      testVariantBranch: createMockTestVariantBranch(segmentsData),
     });
     // sN2 (1%) should not be rendered
     expect(screen.queryByText('1% failing')).not.toBeInTheDocument();
@@ -329,10 +323,7 @@ describe('<HistoryRateDisplaySection />', () => {
       sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
     });
     renderComponent(fixedCurrentTime, currentInv, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({
-        segments: segmentsData,
-        refHash: 'test-ref-hash',
-      }),
+      testVariantBranch: createMockTestVariantBranch(segmentsData),
     });
     const failureRateView = screen.getByText('10% now failing');
     fireEvent.mouseOver(failureRateView);

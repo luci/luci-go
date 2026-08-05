@@ -31,6 +31,7 @@ import {
   constructTestHistoryUrl,
   getSourcesFromInvocation,
 } from '@/test_investigation/utils/test_info_utils';
+import { getBlamelistUrlFromVariantBranch } from '@/test_verdict/tools/url_utils';
 
 import { useTestVariantBranch } from '../../context';
 import { TestHistory } from '../../test_history/test_history';
@@ -124,12 +125,7 @@ function DefaultHistoryRateDisplay({
     [segments, invocation],
   );
 
-  const testId = testVariant.testId;
-  const variantHash = testVariant.variantHash;
-  const refHash = testVariantBranch?.refHash;
-  const blamelistBaseUrl = refHash
-    ? `/ui/labs/p/${project}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/refs/${refHash}/blamelist`
-    : undefined;
+  const blamelistBaseUrl = getBlamelistUrlFromVariantBranch(testVariantBranch);
 
   const toggleHistoryDrawer = (open: boolean) => () => {
     setOpenHistoryDrawer(open);

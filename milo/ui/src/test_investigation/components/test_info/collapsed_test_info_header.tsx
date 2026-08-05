@@ -20,11 +20,7 @@ import { PageSummaryLine } from '@/common/components/page_summary_line';
 import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
 import { useSchemaClient } from '@/common/hooks/prpc_clients';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
-import {
-  useInvocation,
-  useTestVariant,
-  useProject,
-} from '@/test_investigation/context';
+import { useInvocation, useTestVariant } from '@/test_investigation/context';
 import { getDisplayInvocationId } from '@/test_investigation/utils/invocation_utils';
 import { getFullMethodName } from '@/test_investigation/utils/test_info_utils';
 
@@ -175,7 +171,6 @@ function TestNameTooltip() {
 export function CollapsedTestInfoHeader() {
   const testVariant = useTestVariant();
   const invocation = useInvocation();
-  const project = useProject();
   const testVariantBranch = useTestVariantBranch();
 
   const testDisplayName =
@@ -234,8 +229,6 @@ export function CollapsedTestInfoHeader() {
 
         <TestInfoMarkers
           invocation={invocation}
-          project={project}
-          testVariant={testVariant}
           testVariantBranch={testVariantBranch}
         />
         <VariantDisplay variantDef={testVariant.variant?.def} responsive />

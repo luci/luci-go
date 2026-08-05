@@ -36,12 +36,9 @@ import {
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import {
-  useInvocation,
-  useProject,
-  useTestVariant,
-} from '@/test_investigation/context';
+import { useInvocation } from '@/test_investigation/context';
 import { getSourcesFromInvocation } from '@/test_investigation/utils/test_info_utils';
+import { getBlamelistUrlFromVariantBranch } from '@/test_verdict/tools/url_utils';
 
 import { useTestVariantBranch } from '../context';
 
@@ -297,19 +294,12 @@ export function SourceVerdictsExpanded({
   const testVariantBranch = useTestVariantBranch();
   const thClient = useTestHistoryClient();
   const invocation = useInvocation() as Invocation;
-  const testVariant = useTestVariant();
-  const project = useProject();
   const sources = getSourcesFromInvocation(invocation);
   // How many source verdicts shown (from both start and end position) when component is expanded.
   const [sourceVerdictCount, setSourceVerdictCount] = useState(15);
-  const testId = testVariant.testId;
-  const variantHash = testVariant.variantHash;
-  const refHash = testVariantBranch?.refHash;
   const currentTestResultPosition = sources?.gitilesCommit?.position;
 
-  const blamelistBaseUrl = refHash
-    ? `/ui/labs/p/${project}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/refs/${refHash}/blamelist`
-    : undefined;
+  const blamelistBaseUrl = getBlamelistUrlFromVariantBranch(testVariantBranch);
 
   const createBlamelistLink = (position: string) => {
     return `${blamelistBaseUrl}?expand=${`CP-${position}`}#CP-${position}`;

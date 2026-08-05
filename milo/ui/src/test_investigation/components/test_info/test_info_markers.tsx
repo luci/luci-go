@@ -22,7 +22,6 @@ import {
   SummaryLineDivider,
 } from '@/common/components/page_summary_line';
 import { displayApproxDuration } from '@/common/tools/time_utils/time_utils';
-import { OutputTestVerdict } from '@/common/types/verdict';
 import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { BuildDescriptor } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import {
@@ -42,15 +41,11 @@ import { BuildInfoTooltip } from './build_info_tooltip';
 
 export interface TestInfoMarkersProps {
   invocation: AnyInvocation;
-  project?: string;
-  testVariant: OutputTestVerdict;
   testVariantBranch?: TestVariantBranch | null;
 }
 
 export function TestInfoMarkers({
   invocation,
-  project,
-  testVariant,
   testVariantBranch,
 }: TestInfoMarkersProps) {
   const elements = useMemo(() => {
@@ -80,8 +75,6 @@ export function TestInfoMarkers({
     if (commitInfo) {
       const originalCommitLink = getCommitGitilesUrlFromInvocation(invocation);
       const blamelistCommitLink = constructBlamelistCommitLink(
-        project,
-        testVariant,
         testVariantBranch,
         invocation,
       );
@@ -222,7 +215,7 @@ export function TestInfoMarkers({
       interleaved.push(res);
     });
     return interleaved;
-  }, [invocation, project, testVariant, testVariantBranch]);
+  }, [invocation, testVariantBranch]);
 
   if (elements.length === 0) {
     return null;

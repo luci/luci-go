@@ -24,11 +24,8 @@ import {
 import { getStatusStyle } from '@/common/styles/status_styles';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import {
-  useInvocation,
-  useProject,
-  useTestVariant,
-} from '@/test_investigation/context';
+import { useInvocation } from '@/test_investigation/context';
+import { getBlamelistUrlFromVariantBranch } from '@/test_verdict/tools/url_utils';
 
 import { useTestVariantBranch } from '../context';
 
@@ -51,15 +48,7 @@ function SegmentBox({
   isEndSegment,
 }: SegmentBoxProps) {
   const testVariantBranch = useTestVariantBranch();
-  const testVariant = useTestVariant();
-  const project = useProject();
-  const testId = testVariant?.testId;
-  const variantHash = testVariant?.variantHash;
-  const refHash = testVariantBranch?.refHash;
-  const blamelistBaseUrl =
-    refHash && project && testId && variantHash
-      ? `/ui/labs/p/${project}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/refs/${refHash}/blamelist`
-      : undefined;
+  const blamelistBaseUrl = getBlamelistUrlFromVariantBranch(testVariantBranch);
 
   const style = getStatusStyle(
     getFailureRateStatusTypeFromSegmentCount(segment.counts),
