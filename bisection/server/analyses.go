@@ -270,22 +270,23 @@ func (server *AnalysesServer) ListTestAnalyses(c context.Context, req *pb.ListTe
 	q := datastore.NewQuery("TestFailureAnalysis").Eq("project", req.Project).Order("-create_time").Start(cursor)
 	tfas := make([]*model.TestFailureAnalysis, 0, pageSize)
 	var nextCursor datastore.Cursor
-	err = datastore.Run(c, q, func(tfa *model.TestFailureAnalysis, getCursor datastore.CursorCB) error {
+	it := datastore.RunQuery[*model.TestFailureAnalysis](c, q)
+	for tfa, err := range it.Results {
+		if err != nil {
+			logging.Errorf(c, "%s", err.Error())
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 		tfas = append(tfas, tfa)
 
 		// Check whether the page size limit has been reached
 		if len(tfas) == pageSize {
-			nextCursor, err = getCursor()
+			nextCursor, err = it.Cursor()
 			if err != nil {
-				return err
+				logging.Errorf(c, "%s", err.Error())
+				return nil, status.Error(codes.Internal, err.Error())
 			}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		logging.Errorf(c, err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Construct the next page token.
@@ -907,25 +908,25 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 	// Query datastore for compile failure analyses
 	compileFailureAnalyses := make([]*model.CompileFailureAnalysis, 0, pageSize)
 	var nextCursor datastore.Cursor
-	err = datastore.Run(c, q, func(compileFailureAnalysis *model.CompileFailureAnalysis, getCursor datastore.CursorCB) error {
+	itCompile := datastore.RunQuery[*model.CompileFailureAnalysis](c, q)
+	for compileFailureAnalysis, err := range itCompile.Results {
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 		// TODO(2026-07-11): remove this in-memory filter.
 		if isQueryForChromium && compileFailureAnalysis.Project != "" && compileFailureAnalysis.Project != "chromium" {
-			return nil
+			continue
 		}
 		compileFailureAnalyses = append(compileFailureAnalyses, compileFailureAnalysis)
 
 		// Check whether the page size limit has been reached
 		if len(compileFailureAnalyses) == pageSize {
-			nextCursor, err = getCursor()
+			nextCursor, err = itCompile.Cursor()
 			if err != nil {
-				return err
+				return nil, status.Error(codes.Internal, err.Error())
 			}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Construct the next page token
