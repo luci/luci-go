@@ -78,9 +78,10 @@ func TestQueue(t *testing.T) {
 		// Verify all expected entities have been created, and when expected.
 		numbers := map[int64]time.Duration{}
 		datastore.GetTestable(ctx).CatchupIndexes()
-		datastore.Run(ctx, datastore.NewQuery("ExampleEntity"), func(e *ExampleEntity) {
+		for e, err := range datastore.RunQuery[*ExampleEntity](ctx, datastore.NewQuery("ExampleEntity")).Results {
+			assert.Loosely(t, err, should.BeNil)
 			numbers[e.ID] = e.LastUpdate.Sub(epoch)
-		})
+		}
 		assert.Loosely(t, numbers, should.Match(map[int64]time.Duration{
 			5: 100 * time.Millisecond,
 			4: 200 * time.Millisecond,
