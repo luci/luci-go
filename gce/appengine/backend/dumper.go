@@ -118,7 +118,10 @@ func dumpInstanceCount(c context.Context) ([]proto.Message, error) {
 	rows := []proto.Message{}
 	now := timestamppb.New(time.Now())
 	q := datastore.NewQuery("InstanceCount")
-	if err := datastore.Run(c, q, func(ic *metrics.InstanceCount) {
+	for ic, err := range datastore.RunQuery[*metrics.InstanceCount](c, q).Results {
+		if err != nil {
+			return nil, errors.Fmt("dump InstanceCount: %w", err)
+		}
 		configured := []*schema.ConfiguredCount{}
 		for _, c := range ic.Configured {
 			configured = append(configured, &schema.ConfiguredCount{Project: c.Project, Count: int64(c.Count)})
@@ -143,8 +146,6 @@ func dumpInstanceCount(c context.Context) ([]proto.Message, error) {
 			ConnectedCount:  connected,
 		}
 		rows = append(rows, r)
-	}); err != nil {
-		return nil, errors.Fmt("dump InstanceCount: %w", err)
 	}
 	return rows, nil
 }
@@ -155,14 +156,15 @@ func dumpConfig(c context.Context) ([]proto.Message, error) {
 	rows := make([]proto.Message, 0)
 	kind := model.ConfigKind
 	q := datastore.NewQuery(kind)
-	if err := datastore.Run(c, q, func(cfg *model.Config) {
+	for cfg, err := range datastore.RunQuery[*model.Config](c, q).Results {
+		if err != nil {
+			return nil, errors.Fmt("dump Config: %w", err)
+		}
 		r := &schema.ConfigRow{
 			SnapshotTime: now,
 			Config:       cfg.Config,
 		}
 		rows = append(rows, r)
-	}); err != nil {
-		return nil, errors.Fmt("dump Config: %w", err)
 	}
 	return rows, nil
 }

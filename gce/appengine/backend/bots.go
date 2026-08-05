@@ -164,10 +164,11 @@ func inspectSwarmingAsync(c context.Context) error {
 	// Collect all the swarming instances
 	swarmings := stringset.New(10)
 	qC := datastore.NewQuery("Config")
-	if err := datastore.Run(c, qC, func(cfg *model.Config) {
+	for cfg, err := range datastore.RunQuery[*model.Config](c, qC).Results {
+		if err != nil {
+			return errors.Fmt("inspectSwarmingAsync: Failed to query configs: %w", err)
+		}
 		swarmings.Add(cfg.Config.Swarming)
-	}); err != nil {
-		return errors.Fmt("inspectSwarmingAsync: Failed to query configs: %w", err)
 	}
 	// Generate all the inspectSwarmingTasks
 	var inspectSwarmingTasks []*tq.Task
@@ -219,7 +220,11 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 	batchPayload := &tasks.DeleteStaleSwarmingBots{}
 	for _, bot := range listRPCResp.Items {
 		qV := datastore.NewQuery("VM").Eq("hostname", bot.BotId)
-		if err := datastore.Run(c, qV, func(vm *model.VM) {
+		for vm, err := range datastore.RunQuery[*model.VM](c, qV).Results {
+			if err != nil {
+				logging.Debugf(c, "bot %s query error: %s", bot.BotId, err)
+				continue
+			}
 			if isDestroyable(c, bot, vm) {
 				inpectSwarmingSubtasks = append(inpectSwarmingSubtasks, &tq.Task{
 					Payload: &tasks.DestroyInstance{
@@ -240,8 +245,6 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 					batchPayload = &tasks.DeleteStaleSwarmingBots{}
 				}
 			}
-		}); err != nil {
-			logging.Debugf(c, "bot %s does not exist in datastore?", bot.BotId)
 		}
 	}
 	if len(batchPayload.GetBots()) > 0 {

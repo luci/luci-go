@@ -196,13 +196,17 @@ func (ic *InstanceCount) Update(c context.Context, prefix, resourceGroup, scalin
 func updateInstances(c context.Context) {
 	now := clock.Now(c)
 	q := datastore.NewQuery("InstanceCount").Order("computed")
-	if err := datastore.Run(c, q, func(ic *InstanceCount) {
+	for ic, err := range datastore.RunQuery[*InstanceCount](c, q).Results {
+		if err != nil {
+			errors.Log(c, errors.Fmt("failed to fetch counts: %w", err))
+			break
+		}
 		if now.Sub(ic.Computed) > 10*time.Minute {
 			logging.Debugf(c, "deleting outdated count %q", ic.Prefix)
 			if err := datastore.Delete(c, ic); err != nil {
 				logging.Errorf(c, "%s", err)
 			}
-			return
+			continue
 		}
 		for _, conf := range ic.Configured {
 			configuredInstances.Set(c, int64(conf.Count), ic.Prefix, conf.Project, ic.ResourceGroup, ic.ScalingType)
@@ -213,8 +217,6 @@ func updateInstances(c context.Context) {
 		for _, conn := range ic.Connected {
 			connectedInstances.Set(c, int64(conn.Count), ic.Prefix, conn.Project, ic.ScalingType, ic.ResourceGroup, conn.Server, conn.Zone)
 		}
-	}); err != nil {
-		errors.Log(c, errors.Fmt("failed to fetch counts: %w", err))
 	}
 }
 

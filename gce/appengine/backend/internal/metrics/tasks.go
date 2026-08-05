@@ -87,19 +87,21 @@ func (tc *TaskCount) Update(c context.Context, queue string, exec, tot int) erro
 func updateTasks(c context.Context) {
 	now := clock.Now(c)
 	q := datastore.NewQuery("TaskCount").Order("computed")
-	if err := datastore.Run(c, q, func(tc *TaskCount) {
+	for tc, err := range datastore.RunQuery[*TaskCount](c, q).Results {
+		if err != nil {
+			errors.Log(c, errors.Fmt("failed to fetch counts: %w", err))
+			break
+		}
 		if now.Sub(tc.Computed) > 5*time.Minute {
 			logging.Debugf(c, "deleting outdated count %q", tc.Queue)
 			if err := datastore.Delete(c, tc); err != nil {
 				logging.Errorf(c, "%s", err)
 			}
-			return
+			continue
 		}
 		tasksExecuting.Set(c, int64(tc.Executing), tc.Queue)
 		tasksPending.Set(c, int64(tc.Total-tc.Executing), tc.Queue)
 		tasksTotal.Set(c, int64(tc.Total), tc.Queue)
-	}); err != nil {
-		errors.Log(c, errors.Fmt("failed to fetch counts: %w", err))
 	}
 }
 

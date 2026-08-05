@@ -418,30 +418,26 @@ func isLeakHuerestic(ctx context.Context, hostname, proj, zone string) bool {
 	q = q.Eq("prefix", prefix)
 	// Update the leak var based on the VM records that we find
 	leak := false
-	cb := func(vm *model.VM) error {
-		switch {
-		case vm.Hostname == hostname:
+	for vm, err := range datastore.RunQuery[*model.VM](ctx, q).Results {
+		if err != nil {
+			logging.Errorf(ctx, "isLeakHuerestic -- [%s]Error querying DB %v", hostname, err)
+			leak = false
+			break
+		}
+		if vm.Hostname == hostname {
 			logging.Debugf(ctx, "%s record exists. Not a leak", hostname)
 			leak = false
-			// Stop searing as this is not a leak
-			return datastore.Stop
-		case vm.ID == id:
+			break
+		}
+		if vm.ID == id {
 			logging.Debugf(ctx, "%s is a leaked instance replaced by %s", hostname, vm.Hostname)
 			leak = true
-			// Stop searching as this is a leak
-			return datastore.Stop
-		default:
-			// Prefix matches but we cannot find the id that matches. Maybe the pool
-			// was resized. Might be a leak unless above conditions are true for
-			// other matches
-			leak = true
+			break
 		}
-		return nil
-	}
-	err := datastore.Run(ctx, q, cb)
-	if err != nil {
-		logging.Errorf(ctx, "isLeakHuerestic -- [%s]Error querying DB %v", hostname, err)
-		leak = false
+		// Prefix matches but we cannot find the id that matches. Maybe the pool
+		// was resized. Might be a leak unless above conditions are true for
+		// other matches
+		leak = true
 	}
 	if leak {
 		logging.Debugf(ctx, "%s is probably a leak in %s and %s", hostname, proj, zone)

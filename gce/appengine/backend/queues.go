@@ -68,27 +68,17 @@ func countVMs(c context.Context, payload proto.Message) error {
 	}
 
 	// Get the actual (connected, created) counts.
-	vm := &model.VM{}
 	q := datastore.NewQuery(model.VMKind).Eq("config", task.Id)
-	if err := datastore.Run(c, q, func(k *datastore.Key) error {
-		id := k.StringID()
-		vm.ID = id
-		switch err := datastore.Get(c, vm); {
-		case errors.Is(err, datastore.ErrNoSuchEntity):
-			return nil
-		case err != nil:
-			return errors.Fmt("failed to fetch VM with id: %q: %w", task.GetId(), err)
-		default:
-			if vm.Created > 0 {
-				vms.AddCreated(1, vm.Attributes.Project, vm.Attributes.Zone)
-			}
-			if vm.Connected > 0 {
-				vms.AddConnected(1, vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
-			}
-			return nil
+	for vm, err := range datastore.RunQuery[*model.VM](c, q).Results {
+		if err != nil {
+			return errors.Fmt("failed to fetch VM for config %q: %w", task.GetId(), err)
 		}
-	}); err != nil {
-		return errors.Fmt("failed to fetch VMs: %w", err)
+		if vm.Created > 0 {
+			vms.AddCreated(1, vm.Attributes.Project, vm.Attributes.Zone)
+		}
+		if vm.Connected > 0 {
+			vms.AddConnected(1, vm.Attributes.Project, vm.Swarming, vm.Attributes.Zone)
+		}
 	}
 	resourceGroup := cfg.Config.GetAttributes().GetLabel()["resource_group"]
 	if err := vms.Update(c, task.Id, resourceGroup, getScalingType(cfg.Config)); err != nil {
@@ -308,11 +298,12 @@ func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, err e
 // getCurrentVMsByPrefix returns all the VMs in the datastore by prefix
 func getCurrentVMsByPrefix(ctx context.Context, prefix string) ([]*model.VM, error) {
 	q := datastore.NewQuery(model.VMKind).Eq("prefix", prefix)
-	vms := make([]*model.VM, 0)
-	if err := datastore.Run(ctx, q, func(vm *model.VM) {
+	var vms []*model.VM
+	for vm, err := range datastore.RunQuery[*model.VM](ctx, q).Results {
+		if err != nil {
+			return nil, errors.Fmt("failed to fetch vms for %s: %w", prefix, err)
+		}
 		vms = append(vms, vm)
-	}); err != nil {
-		return nil, errors.Fmt("failed to fetch vms for %s: %w", prefix, err)
 	}
 	return vms, nil
 }

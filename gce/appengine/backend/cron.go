@@ -75,13 +75,13 @@ func payloadFactory(t tasks.Task) payloadFn {
 func trigger(c context.Context, t tasks.Task, q *datastore.Query) error {
 	tasks := make([]*tq.Task, 0)
 	newPayload := payloadFactory(t)
-	addTask := func(k *datastore.Key) {
+	for k, err := range datastore.RunQuery[*datastore.Key](c, q).Results {
+		if err != nil {
+			return errors.Fmt("failed to fetch keys: %w", err)
+		}
 		tasks = append(tasks, &tq.Task{
 			Payload: newPayload(k.StringID()),
 		})
-	}
-	if err := datastore.Run(c, q, addTask); err != nil {
-		return errors.Fmt("failed to fetch keys: %w", err)
 	}
 	logging.Debugf(c, "scheduling %d tasks", len(tasks))
 	if err := getDispatcher(c).AddTask(c, tasks...); err != nil {
@@ -116,18 +116,20 @@ func drainVMsAsync(c context.Context) error {
 	configMap := make(map[string]*config.Config)
 	// Get all the configs in datastore
 	qC := datastore.NewQuery("Config")
-	if err := datastore.Run(c, qC, func(cfg *model.Config) {
+	for cfg, err := range datastore.RunQuery[*model.Config](c, qC).Results {
+		if err != nil {
+			return errors.Fmt("drain vms: failed to list Config: %w", err)
+		}
 		configMap[cfg.ID] = cfg.Config
-	}); err != nil {
-		return errors.Fmt("drain vms: failed to list Config: %w", err)
 	}
 	logging.Debugf(c, "Drain vms: staring...")
 	vmMap := make(map[string]*model.VM)
 	qV := datastore.NewQuery("VM")
-	if err := datastore.Run(c, qV, func(vm *model.VM) {
+	for vm, err := range datastore.RunQuery[*model.VM](c, qV).Results {
+		if err != nil {
+			return errors.Fmt("drain vms: failed to list VMs: %w", err)
+		}
 		vmMap[vm.ID] = vm
-	}); err != nil {
-		return errors.Fmt("drain vms: failed to list VMs: %w", err)
 	}
 	/* Config dictate how many VMs can be online for any given prefix. Check if there are
 	 * more bots assigned than required by the config and drain them.
@@ -163,12 +165,12 @@ func drainVMsAsync(c context.Context) error {
 // auditInstances schedules an audit task for every project:zone combination
 func auditInstances(c context.Context) error {
 	proj := stringset.New(10)
-	addProject := func(cfg *model.Config) {
-		proj.Add(cfg.Config.GetAttributes().GetProject())
-	}
 	q := datastore.NewQuery(model.ConfigKind)
-	if err := datastore.Run(c, q, addProject); err != nil {
-		return errors.Fmt("failed to schedule audits: %w", err)
+	for cfg, err := range datastore.RunQuery[*model.Config](c, q).Results {
+		if err != nil {
+			return errors.Fmt("failed to schedule audits: %w", err)
+		}
+		proj.Add(cfg.Config.GetAttributes().GetProject())
 	}
 	projects := proj.ToSlice()
 	jobs := make([]*tq.Task, 0)
