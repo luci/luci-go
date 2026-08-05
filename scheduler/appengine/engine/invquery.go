@@ -212,17 +212,17 @@ func (it *invDatastoreIter) start(c context.Context, query *datastore.Query) {
 	it.done = make(chan struct{})
 	go func() {
 		defer close(it.results)
-		err := datastore.Run(c, query, func(obj *Invocation, cb datastore.CursorCB) error {
+		for obj, err := range datastore.RunQuery[*Invocation](c, query).Results {
+			if err != nil {
+				it.err = err
+				return
+			}
 			select {
 			case it.results <- obj:
-				return nil
 			case <-it.done:
-				return datastore.Stop
+				return
 			}
-		})
-		// Let 'next' and 'stop' know about the error. They look here if they
-		// receive 'nil' from the results channel (which happens if it is closed).
-		it.err = err
+		}
 	}()
 }
 
