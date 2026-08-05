@@ -439,7 +439,7 @@ describe('FilterBar', () => {
 
     // Select all text and replace with new text
     // Focus search bar first to type in it
-    searchInput.focus();
+    await user.click(searchInput);
     await user.keyboard('{Backspace}{Backspace}{Backspace}'); // can't get ctrl + a work in tests
     await user.keyboard('zzzz');
 
@@ -961,7 +961,7 @@ describe('FilterBar', () => {
 
     // close dropdown with Escape and focus search input
     await user.keyboard('{Escape}');
-    searchInput.focus();
+    await user.click(searchInput);
 
     expect(searchInput).toHaveFocus();
     await waitFor(() => {
@@ -1144,24 +1144,39 @@ describe('FilterBar', () => {
   });
 
   it('should throw a specific conflict error when duplicate shortcuts are detected', async () => {
+    // eslint-disable-next-line no-console
+    const originalError = console.error;
     const consoleSpy = jest
       .spyOn(console, 'error')
-      .mockImplementation(() => {});
+      .mockImplementation((msg: unknown, ...args: unknown[]) => {
+        if (
+          typeof msg === 'string' &&
+          (msg.includes('Shortcut conflict detected') ||
+            msg.includes('RenderErrorBoundary') ||
+            msg.includes('React Router caught') ||
+            msg.includes('The above error occurred'))
+        ) {
+          return;
+        }
+        originalError(msg, ...args);
+      });
 
-    render(
-      <FakeContextProvider>
-        <TestComponent renderDuplicate={true} />
-      </FakeContextProvider>,
-    );
+    try {
+      render(
+        <FakeContextProvider>
+          <TestComponent renderDuplicate={true} />
+        </FakeContextProvider>,
+      );
 
-    const errorMessages = await screen.findAllByText(
-      /Shortcut conflict detected/i,
-    );
-    expect(errorMessages.length).toBeGreaterThan(0);
+      const errorMessages = await screen.findAllByText(
+        /Shortcut conflict detected/i,
+      );
+      expect(errorMessages.length).toBeGreaterThan(0);
 
-    expect(errorMessages[0]).toHaveTextContent(/Exact conflict/);
-    expect(errorMessages[0]).toHaveTextContent(/Focus search bar/);
-
-    consoleSpy.mockRestore();
+      expect(errorMessages[0]).toHaveTextContent(/Exact conflict/);
+      expect(errorMessages[0]).toHaveTextContent(/Focus search bar/);
+    } finally {
+      consoleSpy.mockRestore();
+    }
   });
 });
