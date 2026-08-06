@@ -80,7 +80,11 @@ const FleetLayoutContent = () => {
     () => navigate(generateRepairsURL(platformStr || ANDROID_PLATFORM)),
     {
       category: 'Navigation',
-      enabled: !currentPlatform || platformStr === ANDROID_PLATFORM,
+      enabled:
+        !currentPlatform ||
+        platformStr === ANDROID_PLATFORM ||
+        (getFeatureFlag('ChromeOsRepairsDashboard') &&
+          platformStr === CHROMEOS_PLATFORM),
     },
   );
   useShortcut(

@@ -14,9 +14,24 @@
 
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { getFeatureFlag } from '../config/features';
+
 import { generateSidebarSections } from './sidebar_sections';
 
+jest.mock('../config/features', () => ({
+  getFeatureFlag: jest.fn(),
+}));
+
+const mockGetFeatureFlag = getFeatureFlag as jest.Mock;
+
 describe('generateSidebarSections', () => {
+  beforeEach(() => {
+    mockGetFeatureFlag.mockReset();
+    mockGetFeatureFlag.mockImplementation((flag) => {
+      if (flag === 'ProductCatalogListPage') return true;
+      return false;
+    });
+  });
   it('enables Admin tasks for ChromeOS platform', () => {
     const sections = generateSidebarSections(Platform.CHROMEOS);
     const labHealth = sections.find((s) => s.title === 'Lab Health');
@@ -93,5 +108,37 @@ describe('generateSidebarSections', () => {
         external: true,
       },
     ]);
+  });
+
+  describe('Repairs link', () => {
+    it('is enabled for Android by default', () => {
+      const sections = generateSidebarSections(Platform.ANDROID);
+      const labHealth = sections.find((s) => s.title === 'Lab Health');
+      const repairsPage = labHealth?.pages.find((p) => p.label === 'Repairs');
+      expect(repairsPage).toBeDefined();
+      expect(repairsPage?.disabled).toBeFalsy();
+    });
+
+    it('is disabled for ChromeOS by default (feature flag off)', () => {
+      mockGetFeatureFlag.mockReturnValue(false);
+      const sections = generateSidebarSections(Platform.CHROMEOS);
+      const labHealth = sections.find((s) => s.title === 'Lab Health');
+      const repairsPage = labHealth?.pages.find((p) => p.label === 'Repairs');
+      expect(repairsPage).toBeDefined();
+      expect(repairsPage?.disabled).toBeTruthy();
+    });
+
+    it('is enabled for ChromeOS when feature flag is on', () => {
+      mockGetFeatureFlag.mockImplementation((flag) => {
+        if (flag === 'ChromeOsRepairsDashboard') return true;
+        return false;
+      });
+      const sections = generateSidebarSections(Platform.CHROMEOS);
+      const labHealth = sections.find((s) => s.title === 'Lab Health');
+      const repairsPage = labHealth?.pages.find((p) => p.label === 'Repairs');
+      expect(repairsPage).toBeDefined();
+      expect(repairsPage?.disabled).toBeFalsy();
+      expect(repairsPage?.url).toBe('/ui/fleet/p/chromeos/repairs');
+    });
   });
 });

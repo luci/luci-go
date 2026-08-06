@@ -20,6 +20,7 @@ export const features = {
   BrowserListDevices: true,
   ProductCatalogListPage: true,
   RequestFiling: true,
+  ChromeOsRepairsDashboard: true,
 } satisfies Record<string, FeaturesValueType>;
 
 export type FeaturesSchema = Record<keyof typeof features, FeaturesValueType>; // makes sure prod flags follow the same schema as dev ones

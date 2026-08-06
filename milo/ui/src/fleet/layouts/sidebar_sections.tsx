@@ -79,7 +79,11 @@ function generateLabHealthSection(
   platform?: Platform,
   pendingAdminTasksCount?: number,
 ): SidebarSection {
-  const isRepairsEnabled = !platform || platform === Platform.ANDROID;
+  const showChromeOsRepairs = getFeatureFlag('ChromeOsRepairsDashboard');
+  const isRepairsEnabled =
+    !platform ||
+    platform === Platform.ANDROID ||
+    (platform === Platform.CHROMEOS && showChromeOsRepairs);
   const isAdminTasksEnabled = !platform || platform === Platform.CHROMEOS;
   return {
     title: 'Lab Health',

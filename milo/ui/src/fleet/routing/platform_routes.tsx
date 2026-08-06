@@ -17,6 +17,7 @@ import { Navigate, RouteObject } from 'react-router';
 
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { getFeatureFlag } from '../config/features';
 import { initiateSurvey } from '../utils/survey';
 
 import { PlatformDependentPage } from './platform_dependent_page';
@@ -45,6 +46,13 @@ export const platformRoutes: RouteObject[] = [
           [Platform.ANDROID]: lazy(
             () => import('@/fleet/pages/android/repairs'),
           ),
+          ...(getFeatureFlag('ChromeOsRepairsDashboard')
+            ? {
+                [Platform.CHROMEOS]: lazy(
+                  () => import('@/fleet/pages/chromeos/repairs'),
+                ),
+              }
+            : {}),
         }}
       />
     ),
