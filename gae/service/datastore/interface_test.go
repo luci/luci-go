@@ -185,3 +185,48 @@ func TestRunQuery(t *testing.T) {
 		}
 	})
 }
+
+func TestRunMultiQuery(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	ctx = memory.Use(ctx)
+	datastore.GetTestable(ctx).Consistent(true)
+
+	err := datastore.Put(ctx, &TestIterRecord{ID: "a", Value: "val_a"})
+	assert.Loosely(t, err, should.BeNil)
+	err = datastore.Put(ctx, &TestIterRecord{ID: "b", Value: "val_b"})
+	assert.Loosely(t, err, should.BeNil)
+
+	t.Run("PointerToStruct", func(t *testing.T) {
+		queries := []*datastore.Query{
+			datastore.NewQuery("TestIterRecord").Eq("value", "val_a"),
+			datastore.NewQuery("TestIterRecord").Eq("value", "val_b"),
+		}
+		it := datastore.RunMultiQuery[*TestIterRecord](ctx, queries)
+		var got []*TestIterRecord
+		for r, err := range it.Results {
+			assert.Loosely(t, err, should.BeNil)
+			got = append(got, r)
+		}
+		assert.Loosely(t, len(got), should.Equal(2))
+		assert.Loosely(t, got[0].Value, should.Equal("val_a"))
+		assert.Loosely(t, got[1].Value, should.Equal("val_b"))
+	})
+
+	t.Run("KeysOnly", func(t *testing.T) {
+		queries := []*datastore.Query{
+			datastore.NewQuery("TestIterRecord").Eq("value", "val_a"),
+			datastore.NewQuery("TestIterRecord").Eq("value", "val_b"),
+		}
+		it := datastore.RunMultiQuery[*datastore.Key](ctx, queries)
+		var got []*datastore.Key
+		for k, err := range it.Results {
+			assert.Loosely(t, err, should.BeNil)
+			got = append(got, k)
+		}
+		assert.Loosely(t, len(got), should.Equal(2))
+		assert.Loosely(t, got[0].StringID(), should.Equal("a"))
+		assert.Loosely(t, got[1].StringID(), should.Equal("b"))
+	})
+}

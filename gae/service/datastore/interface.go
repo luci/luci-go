@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"iter"
 	"reflect"
+	"slices"
 	"sort"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 
@@ -528,6 +530,272 @@ func RunQuery[V any](ctx context.Context, q *Query) *QueryIter[V] {
 	}
 
 	return QueryIterFromRaw[V](Raw(ctx).RunQuery(fq))
+}
+
+// RunMultiQuery executes the logical OR of multiple queries, returning a QueryIter[V]
+// containing a Cursor function and an iter.Seq2[V, error] of results typed as V.
+// Results will be returned in the order of the provided queries; All queries must
+// have matching Orders.
+//
+// The cursor returned by Cursor() cannot be used on a single query by doing
+// `query.Start(cursor)` (in some cases it may not even complain when you try to
+// do this, but the results are undefined). Apply the cursor to the same list of
+// queries using ApplyCursors.
+//
+// Note: projection queries are not supported, as they are non-trivial in
+// complexity and haven't been needed yet.
+//
+// DANGER: Cursors are buggy when using Cloud Datastore production backend.
+// Paginated queries skip entities sitting on page boundaries. This doesn't
+// happen when using `impl/memory` and thus hard to spot in unit tests. See
+// queryIterator doc for more details.
+func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
+	t := reflect.TypeFor[V]()
+	isKey := t == typeOfKey
+
+	var mat *multiArgType
+	if !isKey {
+		mat = mustParseArg(t, false)
+		if mat.newElem == nil {
+			var zero V
+			panic(fmt.Errorf("RunMultiQuery[%T]: `V` is not a concrete type: %s", zero, t.Kind()))
+		}
+	}
+
+	// Finalize queries and do some basic validation. At very least queries must
+	// use the same kind and ordering, otherwise putting their results in a single
+	// sorted heap makes no sense.
+	finalized := make([]*FinalizedQuery, len(queries))
+	overallKind := ""
+	overallOrder := ""
+	for i, q := range queries {
+		if isKey {
+			q = q.KeysOnly(true)
+		}
+		fq, err := q.Finalize()
+		if err != nil {
+			return QueryIterStub[V](err)
+		}
+		finalized[i] = fq
+		// Build a string identifying ordering of this query, e.g.
+		// "-field1,field2,__key__".
+		order := ""
+		for j, col := range fq.orders {
+			if j != 0 {
+				order += ","
+			}
+			order += col.String()
+		}
+		switch {
+		case i == 0:
+			overallKind = fq.kind
+			overallOrder = order
+		case fq.kind != overallKind:
+			return QueryIterStub[V](fmt.Errorf("all RunMultiQuery queries should query the same kind, but got %q and %q", fq.kind, overallKind))
+		case order != overallOrder:
+			return QueryIterStub[V](fmt.Errorf("all RunMultiQuery queries should use the same order, but got %q and %q", order, overallOrder))
+		}
+	}
+
+	// No queries to run => no results to return. This is an edge case.
+	if len(finalized) == 0 {
+		return QueryIterStub[V](nil)
+	}
+
+	decodeValue := func(key *Key, pm PropertyMap) (V, error) {
+		if isKey {
+			if t == typeOfKey {
+				return any(key).(V), nil
+			}
+			return any(*key).(V), nil
+		}
+		itm := mat.newElem()
+		cleanPM := pm
+		if key != nil && len(pm) > 0 {
+			cleanPM = pm.Clone()
+			delete(cleanPM, "$key")
+		}
+		if err := mat.setPM(itm, cleanPM); err != nil {
+			var zero V
+			return zero, err
+		}
+		if key != nil {
+			mat.setKey(itm, key)
+		}
+		return itm.Interface().(V), nil
+	}
+
+	// If we have only one query, just run it directly without any extra
+	// synchronization overhead. Just make sure to use the correct cursor format.
+	// This is worth optimizing since running only one query is a very very
+	// common case.
+	if len(finalized) == 1 {
+		it := QueryIterFromRaw[V](Raw(ctx).RunQuery(finalized[0]))
+		ogCursor := it.Cursor
+		it.Cursor = func() (Cursor, error) {
+			cur, err := ogCursor()
+			if err != nil {
+				return nil, err
+			}
+			cursorStr := ""
+			if cur != nil {
+				cursorStr = cur.String()
+			}
+			return multiCursor{
+				curs: &multicursor.Cursors{
+					Version:     multiCursorVersion,
+					MagicNumber: multiCursorMagic,
+					Cursors:     []string{cursorStr},
+				},
+			}, nil
+		}
+		return it
+	}
+
+	var iterators []*queryIterator
+	var iteratorsMu sync.Mutex
+
+	cursorCB := func() (Cursor, error) {
+		iteratorsMu.Lock()
+		iters := slices.Clone(iterators)
+		iteratorsMu.Unlock()
+		if len(iters) == 0 {
+			return nil, errors.New("no cursor available")
+		}
+
+		// Sort the list of queries. It is OK to update `iterators` in-place here.
+		// It is only used in the defer, the order doesn't matter there.
+		sort.Slice(iters, func(i, j int) bool {
+			queryI := iters[i].Query()
+			queryJ := iters[j].Query()
+			return queryI.Less(queryJ)
+		})
+
+		// Create the cursor. It points to all items currently sitting in heap.
+		// We'll need to refetch them all again to repopulate the heap when
+		// resuming the query.
+		var curs multicursor.Cursors
+		curs.MagicNumber = multiCursorMagic
+		curs.Version = multiCursorVersion
+		for _, iter := range iters {
+			switch cur, err := iter.CurrentCursor(); {
+			case err != nil:
+				return nil, err
+			case cur != nil:
+				curs.Cursors = append(curs.Cursors, cur.String())
+			default:
+				curs.Cursors = append(curs.Cursors, "")
+			}
+		}
+		return multiCursor{curs: &curs}, nil
+	}
+
+	results := func(yield func(V, error) bool) {
+		// All iterators (active and exhausted) in some arbitrary order.
+		iters := make([]*queryIterator, 0, len(finalized))
+		cCtx, cancel := context.WithCancel(ctx)
+		eg, ectx := errgroup.WithContext(cCtx)
+
+		// Make sure all spawned goroutines have fully stopped before returning.
+		defer func() {
+			// Signal all iterators to stop ASAP.
+			cancel()
+			// Wait for all of them to stop. Calling Next makes sure internal goroutines
+			// are not getting stuck trying to write to a channel that nothing is
+			// reading from (this blocks forever).
+			for _, iter := range iters {
+				for done := false; !done; done, _ = iter.Next() {
+				}
+			}
+			// All goroutines should be stopping now. Wait until they are fully stopped.
+			_ = eg.Wait()
+		}()
+
+		// Launch all queries in parallel. Do it before ordering them as a heap, since
+		// to build a heap we need to have the first result from each query. We want
+		// all such first results to be fetched *in parallel*.
+		for _, fq := range finalized {
+			iters = append(iters, startQueryIterator(ectx, eg, fq))
+		}
+
+		iteratorsMu.Lock()
+		iterators = iters
+		iteratorsMu.Unlock()
+
+		// Wait for first items from all iterators. Gather all non-exhausted iterators
+		// to make a sorted heap out of them.
+		iHeap := make(iteratorHeap, 0, len(iters))
+		for _, iter := range iters {
+			switch done, err := iter.Next(); {
+			case err != nil:
+				var zero V
+				yield(zero, err)
+				return
+			case !done:
+				iHeap = append(iHeap, iter)
+			}
+		}
+		heap.Init(&iHeap)
+
+		// If queries are ordered only by key, all duplicates will be returned from
+		// the heap one after another and we can use a simple check to skip them. This
+		// is important for CountMulti(...) that can be visiting tens of thousands
+		// of entities: storing them all in a hash map for deduplication is a waste of
+		// memory.
+		//
+		// Use a hash map for any other ordering. There may be weird results if this
+		// is running non-transactionally and two different subqueries see two
+		// different versions of the same entity (with different values of fields
+		// affecting the order). Such entity will appear twice in the output, with
+		// some other entities in between these appearances. A simple check will not
+		// detect such deduplication.
+		var seenKey func(keyStr string) bool
+		if overallOrder == "__key__" || overallOrder == "-__key__" {
+			lastSeen := ""
+			seenKey = func(keyStr string) bool {
+				if lastSeen == keyStr {
+					return true
+				}
+				lastSeen = keyStr
+				return false
+			}
+		} else {
+			seenKeys := stringset.New(128)
+			seenKey = func(keyStr string) bool {
+				return !seenKeys.Add(keyStr)
+			}
+		}
+
+		// Merge query results.
+		for iHeap.Len() > 0 {
+			pm, key, keyStr, err := iHeap.nextData()
+			if err != nil {
+				var zero V
+				if !yield(zero, err) {
+					return
+				}
+				continue
+			}
+			if !seenKey(keyStr) {
+				val, err := decodeValue(key, pm)
+				if err != nil {
+					var zero V
+					if !yield(zero, err) {
+						return
+					}
+					continue
+				}
+				if !yield(val, nil) {
+					return
+				}
+			}
+		}
+	}
+
+	return &QueryIter[V]{
+		Cursor:  cursorCB,
+		Results: results,
+	}
 }
 
 // RunMulti executes the logical OR of multiple queries, calling `cb` for each
