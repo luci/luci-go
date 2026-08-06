@@ -316,7 +316,10 @@ def _generate_builder(
         for override in props["allowed_property_overrides"]:
             if "*" in override:
                 fail("allowed_property_overrides does not support wildcards: %r" % override)
-            elif override not in props["properties"]:
+            # We are explictly adding a carve-out for "recipe" because this
+            # should be ubiquitous in the recipe engine. This might need to be
+            # factored out in the future.
+            elif override not in props["properties"] and override != "recipe":
                 fail("%r listed in allowed_property_overrides but not in properties" % override)
 
     test_presentation = props.pop("test_presentation")
