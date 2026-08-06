@@ -66,30 +66,29 @@ func TestPagination(t *testing.T) {
 
 			var nextPageToken string
 			counter := 0
-			err := datastore.Run(ctx, q, func(e *TestEntity, cursorCB datastore.CursorCB) error {
+			it1 := datastore.RunQuery[*TestEntity](ctx, q)
+			for e, err := range it1.Results {
+				assert.Loosely(t, err, should.BeNil)
 				counter++
 				assert.Loosely(t, e.ID, should.Equal(counter))
 				if counter == 5 {
-					cursor, err := cursorCB()
+					cursor, err := it1.Cursor()
 					assert.Loosely(t, err, should.BeNil)
 					nextPageToken, err = vault.PageToken(ctx, cursor)
 					assert.Loosely(t, err, should.BeNil)
-					return datastore.Stop
+					break
 				}
-				return nil
-			})
-			assert.Loosely(t, err, should.BeNil)
+			}
 			assert.Loosely(t, counter, should.Equal(5))
 
 			cursor, err := vault.Cursor(ctx, nextPageToken)
 			assert.Loosely(t, err, should.BeNil)
 			q = datastore.NewQuery("TestEntity").Start(cursor)
-			err = datastore.Run(ctx, q, func(e *TestEntity) error {
+			for e, err := range datastore.RunQuery[*TestEntity](ctx, q).Results {
+				assert.Loosely(t, err, should.BeNil)
 				counter++
 				assert.Loosely(t, e.ID, should.Equal(counter))
-				return nil
-			})
-			assert.Loosely(t, err, should.BeNil)
+			}
 		})
 
 		t.Run("Cursor() with a page token created by PageToken() from a different vault", func(t *ftt.Test) {
@@ -98,19 +97,19 @@ func TestPagination(t *testing.T) {
 
 			var nextPageToken string
 			counter := 0
-			err := datastore.Run(ctx, q, func(e *TestEntity, cursorCB datastore.CursorCB) error {
+			it2 := datastore.RunQuery[*TestEntity](ctx, q)
+			for e, err := range it2.Results {
+				assert.Loosely(t, err, should.BeNil)
 				counter++
 				assert.Loosely(t, e.ID, should.Equal(counter))
 				if counter == 5 {
-					cursor, err := cursorCB()
+					cursor, err := it2.Cursor()
 					assert.Loosely(t, err, should.BeNil)
 					nextPageToken, err = anotherVault.PageToken(ctx, cursor)
 					assert.Loosely(t, err, should.BeNil)
-					return datastore.Stop
+					break
 				}
-				return nil
-			})
-			assert.Loosely(t, err, should.BeNil)
+			}
 			assert.Loosely(t, counter, should.Equal(5))
 
 			cursor, err := vault.Cursor(ctx, nextPageToken)

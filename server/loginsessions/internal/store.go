@@ -220,14 +220,18 @@ func (s *DatastoreSessionStore) Cleanup(ctx context.Context) error {
 		}
 	}
 
-	err := datastore.Run(ctx, q, func(key *datastore.Key) {
+	for key, err := range datastore.RunQuery[*datastore.Key](ctx, q).Results {
+		if err != nil {
+			deleteBatch()
+			return err
+		}
 		logging.Infof(ctx, "Cleaning up session %s", key.StringID())
 		batch = append(batch, key)
 		if len(batch) >= 50 {
 			deleteBatch()
 		}
-	})
+	}
 
 	deleteBatch()
-	return err
+	return nil
 }

@@ -104,9 +104,13 @@ func (dsDB) FetchRemindersMeta(ctx context.Context, low string, high string, lim
 	q = q.Gte("__key__", ds.NewKey(ctx, reminderKind, low, 0, nil))
 	q = q.Lt("__key__", ds.NewKey(ctx, reminderKind, high, 0, nil))
 	q = q.Limit(int32(limit)).KeysOnly(true)
-	err = ds.Run(ctx, q, func(k *ds.Key) {
+	for k, err2 := range ds.RunQuery[*ds.Key](ctx, q).Results {
+		if err2 != nil {
+			err = err2
+			break
+		}
 		items = append(items, dsReminder{ID: k.StringID()}.toReminder(nil))
-	})
+	}
 	if err != nil && err != context.DeadlineExceeded {
 		err = transient.Tag.Apply(errors.Fmt("failed to fetch Reminder keys: %w", err))
 	}
