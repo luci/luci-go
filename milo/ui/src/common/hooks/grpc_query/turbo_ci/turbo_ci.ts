@@ -71,14 +71,23 @@ export const TURBO_CI_ENVIRONMENTS: TurboCIEnvironment[] = [
 ];
 
 /**
- * Computes the Legacy Workplan Viewer URL for a given workplan ID and environment.
+ * Computes the Legacy Workplan Viewer URL for a given workplan ID, environment, and optional active worknode ID.
  */
 export function getWorkplanViewerUrl(
   formattedWorkplanId: string,
   env?: TurboCIEnvironment,
+  activeWorknodeId?: string,
 ): string {
   const stack = env?.huckleStack;
-  return `http://go/wp/${formattedWorkplanId}${stack ? `?api-stack=${stack}` : ''}`;
+  const queryParts: string[] = [];
+  if (stack) {
+    queryParts.push(`api-stack=${encodeURIComponent(stack)}`);
+  }
+  if (activeWorknodeId) {
+    queryParts.push(`activeNode=${encodeURIComponent(activeWorknodeId)}`);
+  }
+  const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+  return `http://go/wp/${formattedWorkplanId}${queryString}`;
 }
 
 export const useQueryNodes = (

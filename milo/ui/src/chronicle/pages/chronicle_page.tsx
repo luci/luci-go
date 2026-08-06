@@ -21,7 +21,7 @@ import {
   Link,
   Typography,
 } from '@mui/material';
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
@@ -43,8 +43,10 @@ import {
 import { EnvironmentSelectorDialog } from '../components/environment_selector_dialog';
 import { FailedEnvironmentsList } from '../components/failed_environments_list';
 import { ChronicleContextProvider } from '../components/provider';
+import { isWorknodeStage } from '../utils/check_utils';
 import {
   fromString,
+  getBaseNodeId,
   root,
   toString as idToString,
   workplan,
@@ -121,6 +123,8 @@ function FailedEnvironmentsSection({
 function ChroniclePageContent() {
   const {
     workplanId,
+    graph,
+    selectedNodeId,
     detecting,
     setDetecting,
     detectionFailed,
@@ -148,9 +152,35 @@ function ChroniclePageContent() {
   const activeEnvObj = TURBO_CI_ENVIRONMENTS.find(
     (e) => e.environment === activeEnvironment,
   );
+
+  const selectedStage = useMemo(() => {
+    if (!graph?.stages || !selectedNodeId) return undefined;
+    const baseSelectedNodeId = getBaseNodeId(selectedNodeId, {
+      includePrefix: false,
+    });
+    return graph.stages.find(
+      (s) =>
+        s.identifier?.id === baseSelectedNodeId ||
+        idToString(s.identifier) === selectedNodeId,
+    );
+  }, [graph, selectedNodeId]);
+
+  // Workplan Viewer can only select N-stages (worknodes).
+  const activeWorknodeId = useMemo(() => {
+    if (
+      !selectedStage ||
+      !isWorknodeStage(selectedStage) ||
+      !selectedStage.identifier
+    ) {
+      return undefined;
+    }
+    return idToString(selectedStage.identifier);
+  }, [selectedStage]);
+
   const workplanViewerUrl = getWorkplanViewerUrl(
     formattedWorkplanId,
     activeEnvObj,
+    activeWorknodeId,
   );
 
   const handleDialogClose = () => {

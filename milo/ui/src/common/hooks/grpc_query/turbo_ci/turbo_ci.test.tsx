@@ -186,5 +186,14 @@ describe('getWorkplanViewerUrl', () => {
       'http://go/wp/wp-123?api-stack=build',
     );
     expect(getWorkplanViewerUrl('wp-123')).toBe('http://go/wp/wp-123');
+
+    // With activeWorknodeId
+    const worknodeId = 'L16400030161679212:N20600031008104365';
+    expect(getWorkplanViewerUrl('wp-123', prodEnv, worknodeId)).toBe(
+      'http://go/wp/wp-123?activeNode=L16400030161679212%3AN20600031008104365',
+    );
+    expect(getWorkplanViewerUrl('wp-123', qaEnv, worknodeId)).toBe(
+      'http://go/wp/wp-123?api-stack=qa&activeNode=L16400030161679212%3AN20600031008104365',
+    );
   });
 });
