@@ -122,6 +122,19 @@ func TestValidation(t *testing.T) {
 			},
 		},
 
+		// Uppercase service account names are not OK.
+		{
+			Cfg: `
+				mapping {
+					project: "proj"
+					service_account: "Abc@example.com"
+				}
+			`,
+			Errors: []string{
+				`bad service_account "Abc@example.com": must be lowercase`,
+			},
+		},
+
 		// Multiple mappings with the same account.
 		{
 			Cfg: `

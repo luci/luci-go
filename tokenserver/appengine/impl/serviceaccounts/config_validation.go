@@ -15,6 +15,8 @@
 package serviceaccounts
 
 import (
+	"strings"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
@@ -64,6 +66,8 @@ func validateMappingCfg(ctx *validation.Context, cfg *admin.ServiceAccountsProje
 		for _, account := range m.ServiceAccount {
 			if _, err := identity.MakeIdentity("user:" + account); err != nil {
 				ctx.Errorf("bad service_account %q: %s", account, err)
+			} else if strings.ToLower(account) != account {
+				ctx.Errorf("bad service_account %q: must be lowercase", account)
 			} else if !seenAccounts.Add(account) {
 				ctx.Errorf("service_account %q appears in more that one mapping", account)
 			}
