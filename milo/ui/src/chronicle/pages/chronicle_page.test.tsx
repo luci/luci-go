@@ -123,7 +123,7 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('displays standard error note without login warning alert when user is logged in and all backends return access denied', async () => {
+  it('displays standard error note without logout prompt when user is logged in and backends return general access denied', async () => {
     const mockFetch = jest.mocked(global.fetch);
     mockFetch.mockResolvedValue({
       ok: false,
@@ -150,11 +150,19 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
 
     expect(
       screen.getByText(
-        /Access was denied to one or more Turbo CI environments when searching for workplan wp-access-denied./,
+        /Access was denied to one or more Turbo CI environments when searching for workplan wp-access-denied\./,
       ),
     ).toBeInTheDocument();
     expect(
       screen.queryByText('Authentication Required'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /This may be because your authentication scopes are invalid or outdated\./,
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'log out' }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByText(
@@ -162,6 +170,46 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getAllByText(/no access/).length).toBeGreaterThan(0);
+  });
+
+  it('displays "You Must Re-Login" alert encouraging logout when user is logged in and backends return scope error', async () => {
+    const mockFetch = jest.mocked(global.fetch);
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 403,
+      text: async () => 'Request had insufficient authentication scopes.',
+    } as unknown as Response);
+
+    render(
+      <FakeContextProvider>
+        <FakeAuthStateProvider
+          value={{
+            identity: 'user:loggedInUser@example.com',
+            email: 'loggedInUser@example.com',
+          }}
+        >
+          <ChroniclePage />
+        </FakeAuthStateProvider>
+      </FakeContextProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('You Must Re-Login')).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText(/Your authentication scopes are invalid or outdated\./),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'log out' })).toBeInTheDocument();
+    expect(
+      screen.queryByText('Authentication Required'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /Warning: The following environments could not be checked due to timeouts\/errors/,
+      ),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/invalid scopes/)).not.toBeInTheDocument();
   });
 
   it('displays Workplan Not Found when all backends return 404 (not found)', async () => {

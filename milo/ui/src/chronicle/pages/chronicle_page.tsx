@@ -32,7 +32,7 @@ import {
   TURBO_CI_ENVIRONMENTS,
   getWorkplanViewerUrl,
 } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
-import { getLoginUrl } from '@/common/tools/url_utils';
+import { getLoginUrl, getLogoutUrl } from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import {
@@ -144,6 +144,11 @@ function ChroniclePageContent() {
 
   const isAnonymous =
     !authState.identity || authState.identity === ANONYMOUS_IDENTITY;
+  const hasInvalidScopes =
+    failedEnvironments.length > 0 &&
+    failedEnvironments.some(
+      (f) => f.errorType === DetectionErrorType.InvalidScopes,
+    );
   const hasAccessDenied =
     failedEnvironments.length > 0 &&
     failedEnvironments.some((f) => f.errorType === DetectionErrorType.NoAccess);
@@ -228,7 +233,7 @@ function ChroniclePageContent() {
   if (detectionFailed) {
     return (
       <CenteredContainer>
-        {hasAccessDenied && isAnonymous ? (
+        {isAnonymous && (hasAccessDenied || hasInvalidScopes) ? (
           <Alert severity="warning" sx={{ maxWidth: 600 }}>
             <AlertTitle>Authentication Required</AlertTitle>
             You are not logged in. Please{' '}
@@ -241,15 +246,40 @@ function ChroniclePageContent() {
             </Link>{' '}
             and try again.
           </Alert>
+        ) : hasInvalidScopes ? (
+          <Alert severity="warning" sx={{ maxWidth: 600 }}>
+            <AlertTitle>You Must Re-Login</AlertTitle>
+            Your authentication scopes are invalid or outdated. Please{' '}
+            <Link
+              href={getLogoutUrl(
+                location.pathname + location.search + location.hash,
+              )}
+            >
+              log out
+            </Link>{' '}
+            and log back in to refresh them.
+          </Alert>
+        ) : hasAccessDenied ? (
+          <>
+            <Typography variant="h5" color="error">
+              Access Denied
+            </Typography>
+            <Typography color="text.secondary" align="center">
+              Access was denied to one or more Turbo CI environments when
+              searching for workplan {workplanId}.
+            </Typography>
+            <FailedEnvironmentsSection
+              failedEnvironments={failedEnvironments}
+            />
+          </>
         ) : (
           <>
             <Typography variant="h5" color="error">
-              {hasAccessDenied ? 'Access Denied' : 'Workplan Not Found'}
+              Workplan Not Found
             </Typography>
             <Typography color="text.secondary" align="center">
-              {hasAccessDenied
-                ? `Access was denied to one or more Turbo CI environments when searching for workplan ${workplanId}.`
-                : `Workplan ${workplanId} could not be found in any of the Turbo CI environments.`}
+              Workplan {workplanId} could not be found in any of the Turbo CI
+              environments.
             </Typography>
             <FailedEnvironmentsSection
               failedEnvironments={failedEnvironments}

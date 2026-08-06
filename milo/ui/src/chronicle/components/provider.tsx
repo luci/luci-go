@@ -90,10 +90,16 @@ async function performLookupAttempt(
         err.code === RpcCode.UNAUTHENTICATED ||
         err.code === RpcCode.PERMISSION_DENIED
       ) {
+        const msg = (err.description || err.message || '').toLowerCase();
+        const isScopeErr = msg.includes(
+          'request had insufficient authentication scopes',
+        );
         return {
           success: true,
           exists: false,
-          errorType: DetectionErrorType.NoAccess,
+          errorType: isScopeErr
+            ? DetectionErrorType.InvalidScopes
+            : DetectionErrorType.NoAccess,
         };
       }
 

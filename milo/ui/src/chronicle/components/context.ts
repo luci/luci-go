@@ -27,6 +27,7 @@ export enum DetectionErrorType {
   Timeout = 'timeout',
   Error = 'error',
   NoAccess = 'no-access',
+  InvalidScopes = 'invalid-scopes',
 }
 
 export interface FailedEnvironment {

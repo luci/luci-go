@@ -47,6 +47,9 @@ export function FailedEnvironmentsList({
           case DetectionErrorType.NoAccess:
             statusText = 'no access';
             break;
+          case DetectionErrorType.InvalidScopes:
+            statusText = 'invalid scopes';
+            break;
           case DetectionErrorType.Timeout:
             statusText = 'timed out';
             break;
