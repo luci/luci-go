@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Feedback as FeedbackIcon } from '@mui/icons-material';
-import { Box, Button, Link } from '@mui/material';
+import { Box, Link } from '@mui/material';
 import Alert, { AlertProps } from '@mui/material/Alert';
 import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router';
 
 import { useFeatureFlag } from '@/common/feature_flags';
-import { genFeedbackUrl } from '@/common/tools/utils';
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useProject } from '@/test_investigation/context';
@@ -29,6 +27,8 @@ import {
   isPresubmitRun,
   getBuildBucketBuildId,
 } from '@/test_investigation/utils/test_info_utils';
+
+import { FileUIBugButton } from './file_ui_bug_button';
 
 export interface RedirectBackBannerProps extends AlertProps {
   invocation: AnyInvocation;
@@ -89,32 +89,12 @@ export function RedirectBackBanner({
     return null;
   }
 
-  const feedbackBugtemplateComment = `You can use this entry to log an issue or provide a recommendation for the new Test Results Page.
-
-Please include a short description of the issue or suggestion and, if applicable, describe steps to reproduce and attach a screenshot.
-
-From Link: ${self.location.href}`;
-
   return (
     <Alert
       severity="info"
       action={
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            component={Link}
-            target="_blank"
-            href={genFeedbackUrl({
-              bugComponent: '1838234',
-              customComment: feedbackBugtemplateComment,
-            })}
-            color="primary"
-            size="small"
-            variant="contained"
-            startIcon={<FeedbackIcon />}
-            sx={{ textTransform: 'none' }}
-          >
-            File UI bug
-          </Button>
+          <FileUIBugButton></FileUIBugButton>
           <Link
             component={RouterLink}
             to={legacyUrl}
