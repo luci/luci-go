@@ -203,4 +203,27 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
       ),
     ).not.toBeInTheDocument();
   });
+
+  it('displays File a bug/FR link', async () => {
+    mockUseParams.mockReturnValue({ workplanId: 'demo' });
+
+    render(
+      <FakeContextProvider>
+        <FakeAuthStateProvider
+          value={{
+            identity: 'user:loggedInUser@example.com',
+            email: 'loggedInUser@example.com',
+          }}
+        >
+          <ChroniclePage />
+        </FakeAuthStateProvider>
+      </FakeContextProvider>,
+    );
+
+    await waitFor(() => {
+      const link = screen.getByRole('link', { name: 'File a bug/FR' });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute('href', 'http://go/turbo-ci-bug');
+    });
+  });
 });

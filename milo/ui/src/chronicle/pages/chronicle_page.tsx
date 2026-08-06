@@ -262,15 +262,17 @@ function ChroniclePageContent() {
 
   return (
     <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-      {workplanId && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '8px',
-            right: '16px',
-            zIndex: 10,
-          }}
-        >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '8px',
+          right: '16px',
+          zIndex: 10,
+          display: 'flex',
+          gap: 2,
+        }}
+      >
+        {workplanId && (
           <Link
             href={workplanViewerUrl}
             target="_blank"
@@ -279,8 +281,16 @@ function ChroniclePageContent() {
           >
             Legacy Workplan Viewer
           </Link>
-        </Box>
-      )}
+        )}
+        <Link
+          href="http://go/turbo-ci-bug"
+          target="_blank"
+          rel="noreferrer"
+          sx={{ fontSize: '0.875rem', fontWeight: 500 }}
+        >
+          File a bug/FR
+        </Link>
+      </Box>
       <AppRoutedTabs>
         <AppRoutedTab
           label="Summary"
