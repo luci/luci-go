@@ -145,7 +145,7 @@ func RunBatch(c context.Context, batchSize int32, q *Query, cb any) error {
 
 // RunBatchQuery is a batching version of RunQuery. See RunQuery and RunBatch
 // for more information.
-func RunBatchQuery[V any](c context.Context, batchSize int32, q *Query) QueryIter[V] {
+func RunBatchQuery[V any](c context.Context, batchSize int32, q *Query) *QueryIter[V] {
 	return RunQuery[V](withQueryBatching(c, batchSize), q)
 }
 

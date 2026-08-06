@@ -413,6 +413,8 @@ func runImpl(ctx context.Context, q *Query, allowCursor bool, cb any) error {
 // `V` must be one of:
 //   - S or *S, where S is a struct
 //   - P or *P, where *P is a concrete type implementing PropertyLoadSaver
+//   - PropertyMap (effectively passes-through from the underlying
+//     raw query, but will apply other QueryIter level features).
 //   - *Key (implies a keys-only query)
 type QueryIter[V any] struct {
 	// Returns a cursor to the *next* item which will be yielded by Results.
@@ -428,8 +430,8 @@ type QueryIter[V any] struct {
 
 // QueryIterStub returns a QueryIter whose CursorCB and Results yield err
 // (or behave as an empty iterator if err is nil).
-func QueryIterStub[V any](err error) QueryIter[V] {
-	return QueryIter[V]{
+func QueryIterStub[V any](err error) *QueryIter[V] {
+	return &QueryIter[V]{
 		Cursor: func() (Cursor, error) { return nil, err },
 		Results: func(yield func(V, error) bool) {
 			if err != nil {
@@ -440,48 +442,26 @@ func QueryIterStub[V any](err error) QueryIter[V] {
 	}
 }
 
-// RunQuery starts the given query, and returns the `QueryIter[V]` which will
-// yield the results.
-//
-// By default, datastore applies a short (~5s) timeout to queries. This can be
-// increased, usually to around several minutes, by explicitly setting a
-// deadline on the supplied Context.
-//
-// `V` must be one of:
-//   - S or *S, where S is a struct
-//   - P or *P, where *P is a concrete type implementing PropertyLoadSaver
-//   - *Key (implies a keys-only query)
-//
-// Run will stop on the first datastore error encountered, which can occur due
-// to flakiness, timeout, etc. If it encounters such an error, it will be
-// yielded and the iterator stopped.
-func RunQuery[V any](ctx context.Context, q *Query) QueryIter[V] {
+// QueryIterFromRaw converts a RawQueryIter to a typed QueryIter.
+func QueryIterFromRaw[V any](raw RawQueryIter) *QueryIter[V] {
 	var zero V
 
 	t := reflect.TypeFor[V]()
-	isKey := t == typeOfKey || t == typeOfKeyElem
+	isKey := t == typeOfKey
+	isPropertyMap := t == typeOfPropertyMap
 
 	var mat *multiArgType
-	if isKey {
-		q = q.KeysOnly(true)
-	} else {
+	if !isKey && !isPropertyMap {
 		mat = mustParseArg(t, false)
 		if mat.newElem == nil {
 			panic(fmt.Errorf("RunQuery[%T]: `V` is not a concrete type: %s", zero, t.Kind()))
 		}
 	}
 
-	fq, err := q.Finalize()
-	if err != nil {
-		return QueryIterStub[V](err)
-	}
-
-	it := Raw(ctx).RunQuery(fq)
-
-	return QueryIter[V]{
-		Cursor: it.Cursor,
+	return &QueryIter[V]{
+		Cursor: raw.Cursor,
 		Results: func(yield func(V, error) bool) {
-			for pm, err := range it.Results {
+			for pm, err := range raw.Results {
 				if err != nil {
 					yield(zero, err)
 					return
@@ -490,11 +470,10 @@ func RunQuery[V any](ctx context.Context, q *Query) QueryIter[V] {
 				key := mustGetKeyFromPM(pm)
 				var val V
 				if isKey {
-					if t == typeOfKey {
-						val = any(key).(V)
-					} else {
-						val = any(*key).(V)
-					}
+					val = any(key).(V)
+				} else if isPropertyMap {
+					val = any(pm).(V)
+					PopulateKey(pm, key)
 				} else {
 					itm := mat.newElem()
 					cleanPM := pm
@@ -518,6 +497,37 @@ func RunQuery[V any](ctx context.Context, q *Query) QueryIter[V] {
 			}
 		},
 	}
+}
+
+// RunQuery starts the given query, and returns the [*QueryIter[V]] which will
+// yield the results.
+//
+// By default, datastore applies a short (~5s) timeout to queries. This can be
+// increased, usually to around several minutes, by explicitly setting a
+// deadline on the supplied Context.
+//
+// `V` must be one of:
+//   - S or *S, where S is a struct
+//   - P or *P, where *P is a concrete type implementing PropertyLoadSaver
+//   - PropertyMap (effectively passes-through from the underlying
+//     raw query, but will apply other QueryIter level features).
+//   - *Key (implies a keys-only query)
+//
+// Run will stop on the first datastore error encountered, which can occur due
+// to flakiness, timeout, etc. If it encounters such an error, it will be
+// yielded and the iterator stopped.
+func RunQuery[V any](ctx context.Context, q *Query) *QueryIter[V] {
+	var zero V
+	if _, isKey := any(zero).(*Key); isKey {
+		q = q.KeysOnly(true)
+	}
+
+	fq, err := q.Finalize()
+	if err != nil {
+		return QueryIterStub[V](err)
+	}
+
+	return QueryIterFromRaw[V](Raw(ctx).RunQuery(fq))
 }
 
 // RunMulti executes the logical OR of multiple queries, calling `cb` for each

@@ -28,7 +28,6 @@ var (
 	typeOfCursorCB          = reflect.TypeOf(CursorCB(nil))
 	typeOfGeoPoint          = reflect.TypeOf(GeoPoint{})
 	typeOfKey               = reflect.TypeOf((*Key)(nil))
-	typeOfKeyElem           = reflect.TypeOf(Key{})
 	typeOfPropertyConverter = reflect.TypeOf((*PropertyConverter)(nil)).Elem()
 	typeOfPropertyLoadSaver = reflect.TypeOf((*PropertyLoadSaver)(nil)).Elem()
 	typeofProtoMessage      = reflect.TypeOf((*proto.Message)(nil)).Elem()
