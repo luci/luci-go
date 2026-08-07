@@ -57,6 +57,8 @@ import {
   ListDevicesResponse,
   ListRepairMetricsRequest,
   ListRepairMetricsResponse,
+  ListRepairQueueRequest,
+  ListRepairQueueResponse,
   RepopulateCacheRequest,
   RepopulateCacheResponse,
   ScheduleAutorepairRequest,
@@ -350,6 +352,7 @@ export interface FleetConsole {
   GetSmartRepair(request: GetSmartRepairRequest): Promise<GetSmartRepairResponse>;
   GetDeviceACLs(request: GetDeviceACLsRequest): Promise<GetDeviceACLsResponse>;
   UpdateChromeOSDevice(request: UpdateChromeOSDeviceRequest): Promise<UpdateChromeOSDeviceResponse>;
+  ListRepairQueue(request: ListRepairQueueRequest): Promise<ListRepairQueueResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -402,6 +405,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.GetSmartRepair = this.GetSmartRepair.bind(this);
     this.GetDeviceACLs = this.GetDeviceACLs.bind(this);
     this.UpdateChromeOSDevice = this.UpdateChromeOSDevice.bind(this);
+    this.ListRepairQueue = this.ListRepairQueue.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -663,6 +667,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = UpdateChromeOSDeviceRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "UpdateChromeOSDevice", data);
     return promise.then((data) => UpdateChromeOSDeviceResponse.fromJSON(data));
+  }
+
+  ListRepairQueue(request: ListRepairQueueRequest): Promise<ListRepairQueueResponse> {
+    const data = ListRepairQueueRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListRepairQueue", data);
+    return promise.then((data) => ListRepairQueueResponse.fromJSON(data));
   }
 }
 

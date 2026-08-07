@@ -91,6 +91,22 @@ export function createMockUseFleetConsoleClient(
           ...listRepairMetrics,
         }),
       },
+      ListRepairQueue: {
+        query: jest.fn().mockReturnValue({
+          queryKey: ['ListRepairQueue'],
+          queryFn: jest.fn().mockResolvedValue({
+            repairQueueItems: [],
+            totalSize: 0,
+            nextPageToken: '',
+          }),
+          data: {
+            repairQueueItems: [],
+            totalSize: 0,
+            nextPageToken: '',
+          },
+          isPending: false,
+        }),
+      },
       CountRepairMetrics: {
         query: jest.fn().mockReturnValue({
           queryKey: ['CountRepairMetrics'],

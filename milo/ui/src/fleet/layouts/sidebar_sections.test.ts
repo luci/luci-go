@@ -55,6 +55,19 @@ describe('generateSidebarSections', () => {
     expect(adminTasksPage).toBeUndefined();
   });
 
+  it('disables Repairs for Chromium platform with tooltip', () => {
+    const sections = generateSidebarSections(Platform.CHROMIUM);
+    const labHealth = sections.find((s) => s.title === 'Lab Health');
+    expect(labHealth).toBeDefined();
+
+    const repairsPage = labHealth?.pages.find((p) => p.label === 'Repairs');
+    expect(repairsPage).toBeDefined();
+    expect(repairsPage?.disabled).toBeTruthy();
+    expect(repairsPage?.tooltip).toBe(
+      'Repairs for Chrome Browser are not available yet',
+    );
+  });
+
   it('hides Admin tasks for Chromium platform', () => {
     const sections = generateSidebarSections(Platform.CHROMIUM);
     const labHealth = sections.find((s) => s.title === 'Lab Health');

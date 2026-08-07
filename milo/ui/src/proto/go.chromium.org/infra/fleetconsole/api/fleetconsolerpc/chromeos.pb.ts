@@ -515,6 +515,8 @@ export interface DeviceConfigEdits {
   readonly pools: readonly string[];
   /** Servo configurations. */
   readonly servo: ServoEdit | undefined;
+  readonly zone: string;
+  readonly rack: string;
 }
 
 export interface ServoEdit {
@@ -536,6 +538,26 @@ export interface UpdateChromeOSDeviceResponse {
    * If scheduling fails, this contains the detailed error status.
    */
   readonly deployTaskStatus: Status | undefined;
+}
+
+export interface ListRepairQueueRequest {
+  readonly pageSize: number;
+  readonly pageToken: string;
+  readonly orderBy: string;
+  readonly filter: string;
+}
+
+export interface RepairQueueItem {
+  readonly dutId: string;
+  readonly pool: string;
+  readonly model: string;
+  readonly state: string;
+}
+
+export interface ListRepairQueueResponse {
+  readonly repairQueueItems: readonly RepairQueueItem[];
+  readonly nextPageToken: string;
+  readonly totalSize: number;
 }
 
 function createBaseDevice(): Device {
@@ -4774,7 +4796,7 @@ export const UpdateChromeOSDeviceRequest: MessageFns<UpdateChromeOSDeviceRequest
 };
 
 function createBaseDeviceConfigEdits(): DeviceConfigEdits {
-  return { pools: [], servo: undefined };
+  return { pools: [], servo: undefined, zone: "", rack: "" };
 }
 
 export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
@@ -4784,6 +4806,12 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
     }
     if (message.servo !== undefined) {
       ServoEdit.encode(message.servo, writer.uint32(18).fork()).join();
+    }
+    if (message.zone !== "") {
+      writer.uint32(26).string(message.zone);
+    }
+    if (message.rack !== "") {
+      writer.uint32(34).string(message.rack);
     }
     return writer;
   },
@@ -4811,6 +4839,22 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
           message.servo = ServoEdit.decode(reader, reader.uint32());
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.zone = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.rack = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4824,6 +4868,8 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
     return {
       pools: globalThis.Array.isArray(object?.pools) ? object.pools.map((e: any) => globalThis.String(e)) : [],
       servo: isSet(object.servo) ? ServoEdit.fromJSON(object.servo) : undefined,
+      zone: isSet(object.zone) ? globalThis.String(object.zone) : "",
+      rack: isSet(object.rack) ? globalThis.String(object.rack) : "",
     };
   },
 
@@ -4834,6 +4880,12 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
     }
     if (message.servo !== undefined) {
       obj.servo = ServoEdit.toJSON(message.servo);
+    }
+    if (message.zone !== "") {
+      obj.zone = message.zone;
+    }
+    if (message.rack !== "") {
+      obj.rack = message.rack;
     }
     return obj;
   },
@@ -4847,6 +4899,8 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
     message.servo = (object.servo !== undefined && object.servo !== null)
       ? ServoEdit.fromPartial(object.servo)
       : undefined;
+    message.zone = object.zone ?? "";
+    message.rack = object.rack ?? "";
     return message;
   },
 };
@@ -5035,6 +5089,316 @@ export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceRespon
     message.deployTaskStatus = (object.deployTaskStatus !== undefined && object.deployTaskStatus !== null)
       ? Status.fromPartial(object.deployTaskStatus)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseListRepairQueueRequest(): ListRepairQueueRequest {
+  return { pageSize: 0, pageToken: "", orderBy: "", filter: "" };
+}
+
+export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
+  encode(message: ListRepairQueueRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.pageSize !== 0) {
+      writer.uint32(8).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(18).string(message.pageToken);
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(26).string(message.orderBy);
+    }
+    if (message.filter !== "") {
+      writer.uint32(34).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListRepairQueueRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListRepairQueueRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListRepairQueueRequest {
+    return {
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: ListRepairQueueRequest): unknown {
+    const obj: any = {};
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListRepairQueueRequest>): ListRepairQueueRequest {
+    return ListRepairQueueRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListRepairQueueRequest>): ListRepairQueueRequest {
+    const message = createBaseListRepairQueueRequest() as any;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    message.orderBy = object.orderBy ?? "";
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseRepairQueueItem(): RepairQueueItem {
+  return { dutId: "", pool: "", model: "", state: "" };
+}
+
+export const RepairQueueItem: MessageFns<RepairQueueItem> = {
+  encode(message: RepairQueueItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.dutId !== "") {
+      writer.uint32(10).string(message.dutId);
+    }
+    if (message.pool !== "") {
+      writer.uint32(18).string(message.pool);
+    }
+    if (message.model !== "") {
+      writer.uint32(26).string(message.model);
+    }
+    if (message.state !== "") {
+      writer.uint32(34).string(message.state);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RepairQueueItem {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRepairQueueItem() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dutId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pool = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.model = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.state = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RepairQueueItem {
+    return {
+      dutId: isSet(object.dutId) ? globalThis.String(object.dutId) : "",
+      pool: isSet(object.pool) ? globalThis.String(object.pool) : "",
+      model: isSet(object.model) ? globalThis.String(object.model) : "",
+      state: isSet(object.state) ? globalThis.String(object.state) : "",
+    };
+  },
+
+  toJSON(message: RepairQueueItem): unknown {
+    const obj: any = {};
+    if (message.dutId !== "") {
+      obj.dutId = message.dutId;
+    }
+    if (message.pool !== "") {
+      obj.pool = message.pool;
+    }
+    if (message.model !== "") {
+      obj.model = message.model;
+    }
+    if (message.state !== "") {
+      obj.state = message.state;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RepairQueueItem>): RepairQueueItem {
+    return RepairQueueItem.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RepairQueueItem>): RepairQueueItem {
+    const message = createBaseRepairQueueItem() as any;
+    message.dutId = object.dutId ?? "";
+    message.pool = object.pool ?? "";
+    message.model = object.model ?? "";
+    message.state = object.state ?? "";
+    return message;
+  },
+};
+
+function createBaseListRepairQueueResponse(): ListRepairQueueResponse {
+  return { repairQueueItems: [], nextPageToken: "", totalSize: 0 };
+}
+
+export const ListRepairQueueResponse: MessageFns<ListRepairQueueResponse> = {
+  encode(message: ListRepairQueueResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.repairQueueItems) {
+      RepairQueueItem.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    if (message.totalSize !== 0) {
+      writer.uint32(24).int32(message.totalSize);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListRepairQueueResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListRepairQueueResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.repairQueueItems.push(RepairQueueItem.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.totalSize = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListRepairQueueResponse {
+    return {
+      repairQueueItems: globalThis.Array.isArray(object?.repairQueueItems)
+        ? object.repairQueueItems.map((e: any) => RepairQueueItem.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+      totalSize: isSet(object.totalSize) ? globalThis.Number(object.totalSize) : 0,
+    };
+  },
+
+  toJSON(message: ListRepairQueueResponse): unknown {
+    const obj: any = {};
+    if (message.repairQueueItems?.length) {
+      obj.repairQueueItems = message.repairQueueItems.map((e) => RepairQueueItem.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    if (message.totalSize !== 0) {
+      obj.totalSize = Math.round(message.totalSize);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListRepairQueueResponse>): ListRepairQueueResponse {
+    return ListRepairQueueResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListRepairQueueResponse>): ListRepairQueueResponse {
+    const message = createBaseListRepairQueueResponse() as any;
+    message.repairQueueItems = object.repairQueueItems?.map((e) => RepairQueueItem.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    message.totalSize = object.totalSize ?? 0;
     return message;
   },
 };
