@@ -178,17 +178,16 @@ func (b ProjectQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Ke
 		cpy.Status = s
 		queries[i] = cpy.BuildKeysOnly(ctx)
 	}
-	err := datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
+	for k, err := range datastore.RunMultiQuery[*datastore.Key](ctx, queries).Results {
+		if err != nil {
+			return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Runs IDs: %w", err))
+		}
 		keys = append(keys, k)
 		if b.Limit > 0 && len(keys) == int(b.Limit) {
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Runs IDs: %w", err))
 	}
-	return keys, err
+	return keys, nil
 }
 
 // LoadRuns returns matched Runs and the page token to continue search later.
