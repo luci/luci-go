@@ -298,11 +298,11 @@ func ListMetadataWithKeys(ctx context.Context, inst *Instance, keys []string) ([
 	}
 
 	var out []*InstanceMetadata
-	err := datastore.RunMulti(ctx, qs, func(md *InstanceMetadata) {
-		out = append(out, md)
-	})
-	if err != nil {
-		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
+	for im, err := range datastore.RunMultiQuery[*InstanceMetadata](ctx, qs).Results {
+		if err != nil {
+			return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
+		}
+		out = append(out, im)
 	}
 	orderByTsAndKey(out)
 
