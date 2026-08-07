@@ -21,6 +21,9 @@ import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { StageAttemptState } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
+import { StageConcludedReason } from '@/proto/turboci/graph/orchestrator/v1/stage_concluded_reason.pb';
+import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 
@@ -30,7 +33,9 @@ import {
   getCheckResultStatus,
   getNodeSearchIndex,
   getStageLabel,
+  getStageResultStatus,
   isWorknodeStage,
+  StageResultStatus,
   TYPE_URL_BUILD_OPTIONS,
   TYPE_URL_BUILD_RESULT,
   TYPE_URL_GOB_SOURCE_OPTIONS,
@@ -379,10 +384,13 @@ describe('check_utils', () => {
       ]);
 
       const stage: Stage = {
-        identifier: { id: 'stage-1' },
-        args: {
-          typeUrl: TYPE_URL_LEGACY_WORKNODE_STAGE,
-          digest: 'digest-1',
+        identifier: { id: 'stage-1', isWorknode: true },
+        legacy: {
+          worknode: {
+            typeUrl:
+              'type.googleapis.com/wireless.android.launchcontrol.WorkNode',
+            digest: 'digest-1',
+          },
         },
       } as Stage;
 
@@ -469,6 +477,147 @@ describe('check_utils', () => {
         stage,
       );
       expect(index).toContain('n52000030948763694');
+    });
+  });
+
+  describe('getStageResultStatus', () => {
+    it('returns UNKNOWN for undefined stage', () => {
+      expect(getStageResultStatus(undefined as unknown as Stage)).toBe(
+        StageResultStatus.UNKNOWN,
+      );
+    });
+
+    it('maps STAGE_STATE_PLANNED to PENDING', () => {
+      const stage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_PLANNED,
+      });
+      expect(getStageResultStatus(stage)).toBe(StageResultStatus.PENDING);
+    });
+
+    it('maps STAGE_STATE_ATTEMPTING states based on latest attempt', () => {
+      const runningStage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_ATTEMPTING,
+        attempts: [{ state: StageAttemptState.STAGE_ATTEMPT_STATE_RUNNING }],
+      });
+      expect(getStageResultStatus(runningStage)).toBe(
+        StageResultStatus.RUNNING,
+      );
+
+      const cancellingStage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_ATTEMPTING,
+        attempts: [{ state: StageAttemptState.STAGE_ATTEMPT_STATE_CANCELLING }],
+      });
+      expect(getStageResultStatus(cancellingStage)).toBe(
+        StageResultStatus.CANCELLED,
+      );
+
+      const pendingAttemptStage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_ATTEMPTING,
+        attempts: [{ state: StageAttemptState.STAGE_ATTEMPT_STATE_PENDING }],
+      });
+      expect(getStageResultStatus(pendingAttemptStage)).toBe(
+        StageResultStatus.PENDING,
+      );
+    });
+
+    it('maps STAGE_STATE_FINAL based on concludedReason and legacy work output', () => {
+      const successStage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_FINAL,
+        concludedReason:
+          StageConcludedReason.STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE,
+      });
+      expect(getStageResultStatus(successStage)).toBe(
+        StageResultStatus.SUCCESS,
+      );
+
+      const cancelledStage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_FINAL,
+        concludedReason: StageConcludedReason.STAGE_CONCLUDED_REASON_CANCELLED,
+      });
+      expect(getStageResultStatus(cancelledStage)).toBe(
+        StageResultStatus.CANCELLED,
+      );
+
+      const failedStage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_FINAL,
+        concludedReason:
+          StageConcludedReason.STAGE_CONCLUDED_REASON_NO_RETRIES_LEFT,
+      });
+      expect(getStageResultStatus(failedStage)).toBe(StageResultStatus.FAILURE);
+
+      // Legacy worknode with workOutput.success = false
+      const legacyFailedStage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_FINAL,
+        concludedReason:
+          StageConcludedReason.STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE,
+        legacy: {
+          worknode: {
+            digest: 'digest-legacy-fail',
+          },
+        },
+      });
+      const valueDataMap = new Map<string, ValueData>([
+        [
+          'digest-legacy-fail',
+          ValueData.fromPartial({
+            json: {
+              value: JSON.stringify({
+                workExecutorType: 'PENDING_CHANGE_BUILD',
+                workParameters: {},
+                workOutput: {
+                  success: false,
+                  displayMessage: 'Skipped by PresubmitResultWatcher',
+                },
+              }),
+            },
+          }),
+        ],
+      ]);
+      expect(getStageResultStatus(legacyFailedStage, valueDataMap)).toBe(
+        StageResultStatus.FAILURE,
+      );
+
+      // Legacy worknode with workOutput.success = true
+      const legacySuccessStage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_FINAL,
+        concludedReason:
+          StageConcludedReason.STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE,
+        legacy: {
+          worknode: {
+            digest: 'digest-legacy-success',
+          },
+        },
+      });
+      const successValueDataMap = new Map<string, ValueData>([
+        [
+          'digest-legacy-success',
+          ValueData.fromPartial({
+            json: {
+              value: JSON.stringify({
+                workExecutorType: 'PENDING_CHANGE_BUILD',
+                workParameters: {},
+                workOutput: {
+                  success: true,
+                },
+              }),
+            },
+          }),
+        ],
+      ]);
+      expect(
+        getStageResultStatus(legacySuccessStage, successValueDataMap),
+      ).toBe(StageResultStatus.SUCCESS);
+
+      // Incomplete attempt without explicit work output
+      const incompleteAttemptStage = Stage.fromPartial({
+        state: StageState.STAGE_STATE_FINAL,
+        concludedReason:
+          StageConcludedReason.STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE,
+        attempts: [{ state: StageAttemptState.STAGE_ATTEMPT_STATE_INCOMPLETE }],
+      });
+      expect(getStageResultStatus(incompleteAttemptStage)).toBe(
+        StageResultStatus.FAILURE,
+      );
     });
   });
 });

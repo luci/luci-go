@@ -20,12 +20,16 @@ import {
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { Dependencies } from '@/proto/turboci/graph/orchestrator/v1/dependencies.pb';
-import { Stage_Assignment } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
-import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import {
+  Stage,
+  Stage_Assignment,
+} from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { StageConcludedReason } from '@/proto/turboci/graph/orchestrator/v1/stage_concluded_reason.pb';
+import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { WorkPlan as TurboCIGraphWorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
-import { TYPE_URL_BUILD_RESULT } from './check_utils';
+import { StageResultStatus, TYPE_URL_BUILD_RESULT } from './check_utils';
 import {
   ChronicleNode,
   GroupMode,
@@ -1074,6 +1078,96 @@ describe('TurboCIGraphBuilder', () => {
 
       // 6. Assert that coordinates are identical
       expect(pos1).toEqual(pos2);
+    });
+  });
+
+  describe('Stage color styling', () => {
+    it('applies success/failure colors to stages based on resolved status', () => {
+      const valueDataMap: Map<string, ValueData> = new Map();
+
+      const stage1: Stage = {
+        identifier: { id: 'S1' },
+        state: StageState.STAGE_STATE_FINAL,
+        concludedReason:
+          StageConcludedReason.STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE,
+        assignments: [],
+        dependencies: { edges: [] },
+      } as unknown as Stage;
+
+      const stage2: Stage = {
+        identifier: { id: 'S2' },
+        state: StageState.STAGE_STATE_FINAL,
+        concludedReason:
+          StageConcludedReason.STAGE_CONCLUDED_REASON_NO_RETRIES_LEFT,
+        assignments: [],
+        dependencies: { edges: [] },
+      } as unknown as Stage;
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: 'test-plan',
+        checks: [],
+        stages: [stage1, stage2],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const layout = new TurboCIGraphBuilder(graph, valueDataMap).build();
+      const s1Node = layout.nodes.find((n) => n.id === 'S1');
+      const s2Node = layout.nodes.find((n) => n.id === 'S2');
+
+      expect(s1Node?.data.resultStatus).toBe(StageResultStatus.SUCCESS);
+      expect(s1Node?.style?.background).toBe('var(--success-bg-color)');
+
+      expect(s2Node?.data.resultStatus).toBe(StageResultStatus.FAILURE);
+      expect(s2Node?.style?.background).toBe('var(--failure-bg-color)');
+    });
+
+    it('correctly styles legacy worknode stages with non-S IDs and workOutput failure', () => {
+      const stage: Stage = {
+        identifier: {
+          id: '54800030922427515',
+          isWorknode: true,
+        },
+        state: StageState.STAGE_STATE_FINAL,
+        concludedReason:
+          StageConcludedReason.STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE,
+        legacy: {
+          worknode: {
+            digest: 'digest-fail',
+          },
+        },
+        assignments: [],
+        dependencies: { edges: [] },
+      } as unknown as Stage;
+
+      const valueDataMap = new Map<string, ValueData>([
+        [
+          'digest-fail',
+          ValueData.fromPartial({
+            json: {
+              value: JSON.stringify({
+                workExecutorType: 'PENDING_CHANGE_BUILD',
+                workParameters: {},
+                workOutput: {
+                  success: false,
+                  displayMessage: 'Skipped by PresubmitResultWatcher',
+                },
+              }),
+            },
+          }),
+        ],
+      ]);
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: 'test-plan',
+        checks: [],
+        stages: [stage],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const layout = new TurboCIGraphBuilder(graph, valueDataMap).build();
+      const node = layout.nodes.find((n) => n.id === '54800030922427515');
+
+      expect(node?.data.resultStatus).toBe(StageResultStatus.FAILURE);
+      expect(node?.style?.background).toBe('var(--failure-bg-color)');
+      expect(node?.style?.borderTop).toBe('1px solid var(--failure-color)');
     });
   });
 });

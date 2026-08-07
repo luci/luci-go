@@ -123,12 +123,15 @@ export interface LegacyWorkParameters {
   readonly klefkiProxyRequest?: LegacyKlefkiProxyRequest;
 }
 
+export interface LegacyWorkOutput {
+  readonly success?: boolean;
+  readonly displayMessage?: string;
+}
+
 export interface LegacyWorkNode {
-  readonly workExecutorType?: string | number;
+  readonly workExecutorType?: string;
   readonly workParameters?: LegacyWorkParameters;
-  // We use unknown here as we don't have access to the proto definitions. We also
-  // just show the output as raw JSON and don't access any inner fields directly.
-  readonly workOutput?: unknown;
+  readonly workOutput?: LegacyWorkOutput;
 }
 
 function toCamelCase(str: string): string {
@@ -137,11 +140,11 @@ function toCamelCase(str: string): string {
     .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 }
 
-function getWorkExecutorTypeName(executorType?: string | number): string {
+function getWorkExecutorTypeName(executorType?: string): string {
   if (!executorType) {
     return 'unknown';
   }
-  const typeStr = String(executorType).trim().toUpperCase();
+  const typeStr = executorType.trim().toUpperCase();
   if (typeStr === 'PENDING_CHANGE_BUILD') {
     return 'build';
   }

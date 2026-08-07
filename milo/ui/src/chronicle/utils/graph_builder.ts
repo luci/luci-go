@@ -29,6 +29,9 @@ import {
   getCheckLabel,
   getCheckResultStatus,
   getStageLabel,
+  getStageResultStatus,
+  isStage,
+  StageResultStatus,
 } from './check_utils';
 
 const dagreGraph = new dagre.graphlib.Graph();
@@ -38,7 +41,7 @@ export type ChronicleNodeData = {
   label: string;
   view?: Check | Stage;
   groupId?: number;
-  resultStatus?: CheckResultStatus;
+  resultStatus?: CheckResultStatus | StageResultStatus;
   isCollapsed?: boolean;
   isGrouped?: boolean;
 };
@@ -146,6 +149,26 @@ const COLORS = {
   stage: {
     bg: 'var(--scheduled-bg-color)',
     border: 'var(--scheduled-color)',
+    text: 'var(--default-text-color)',
+  },
+  stageSuccess: {
+    bg: 'var(--success-bg-color)',
+    border: 'var(--success-color)',
+    text: 'var(--default-text-color)',
+  },
+  stageFailure: {
+    bg: 'var(--failure-bg-color)',
+    border: 'var(--failure-color)',
+    text: 'var(--default-text-color)',
+  },
+  stageRunning: {
+    bg: 'var(--started-bg-color)',
+    border: 'var(--started-color)',
+    text: 'var(--default-text-color)',
+  },
+  stageCanceled: {
+    bg: 'var(--canceled-bg-color)',
+    border: 'var(--canceled-color)',
     text: 'var(--default-text-color)',
   },
   collapsedGroup: {
@@ -300,16 +323,33 @@ function createCssBorder(color: string) {
 }
 
 function getCheckColors(status: CheckResultStatus | undefined) {
-  if (status === CheckResultStatus.SUCCESS) {
-    return COLORS.checkSuccess;
+  switch (status) {
+    case CheckResultStatus.SUCCESS:
+      return COLORS.checkSuccess;
+    case CheckResultStatus.FAILURE:
+      return COLORS.checkFailure;
+    case CheckResultStatus.MIXED:
+      return COLORS.checkMixed;
+    default:
+      return COLORS.check;
   }
-  if (status === CheckResultStatus.FAILURE) {
-    return COLORS.checkFailure;
+}
+
+function getStageColors(status: StageResultStatus | undefined) {
+  switch (status) {
+    case StageResultStatus.SUCCESS:
+      return COLORS.stageSuccess;
+    case StageResultStatus.FAILURE:
+      return COLORS.stageFailure;
+    case StageResultStatus.RUNNING:
+      return COLORS.stageRunning;
+    case StageResultStatus.CANCELLED:
+      return COLORS.stageCanceled;
+    case StageResultStatus.PENDING:
+    case StageResultStatus.UNKNOWN:
+    default:
+      return COLORS.stage;
   }
-  if (status === CheckResultStatus.MIXED) {
-    return COLORS.checkMixed;
-  }
-  return COLORS.check;
 }
 
 function hashString(str: string): number {
@@ -354,13 +394,16 @@ function createStageNode(
   stage: Stage,
   valueDataMap: Map<string, ValueData>,
 ): ChronicleNode {
+  const resultStatus = getStageResultStatus(stage, valueDataMap);
+  const colors = getStageColors(resultStatus);
   return {
     id: stage.identifier!.id!,
     data: {
       label: truncateLabel(getStageLabel(stage, valueDataMap)),
       view: stage,
+      resultStatus,
     },
-    style: NODE_STYLES.stage(COLORS.stage),
+    style: NODE_STYLES.stage(colors),
     ...COMMON_NODE_PROPERTIES,
   };
 }
@@ -926,12 +969,15 @@ export class TurboCIGraphBuilder {
       return;
     }
 
-    // Assuming ID conventions from FakeGraphGenerator: S_* are stages.
-    // TODO - Make stage/check detection more robust
-    if (node.id.startsWith('S')) {
-      node.style = NODE_STYLES.stage(COLORS.stage);
+    if (isStage(node.data.view)) {
+      const colors = getStageColors(
+        node.data.resultStatus as StageResultStatus,
+      );
+      node.style = NODE_STYLES.stage(colors);
     } else {
-      const colors = getCheckColors(node.data.resultStatus);
+      const colors = getCheckColors(
+        node.data.resultStatus as CheckResultStatus,
+      );
       node.style = NODE_STYLES.check(colors);
     }
   }
@@ -949,7 +995,9 @@ export class TurboCIGraphBuilder {
     if (node.id === checkId) {
       // Check goes at the bottom of the stack
       // Y offset is N * EFFECTIVE_HEIGHT
-      const colors = getCheckColors(node.data.resultStatus);
+      const colors = getCheckColors(
+        node.data.resultStatus as CheckResultStatus,
+      );
       node.position = {
         x: baseX,
         y: baseY + numStages * EFFECTIVE_HEIGHT,
@@ -963,20 +1011,27 @@ export class TurboCIGraphBuilder {
           x: baseX,
           y: baseY + stageIndex * EFFECTIVE_HEIGHT,
         };
-        node.style = this.getGroupedStageStyle(stageIndex, numStages);
+        const colors = getStageColors(
+          node.data.resultStatus as StageResultStatus,
+        );
+        node.style = this.getGroupedStageStyle(stageIndex, numStages, colors);
       }
     }
   }
 
-  private getGroupedStageStyle(index: number, totalStages: number) {
+  private getGroupedStageStyle(
+    index: number,
+    totalStages: number,
+    colors: NodeColors = COLORS.stage,
+  ) {
     if (totalStages === 1) {
-      return NODE_STYLES.stageGrouped(COLORS.stage);
+      return NODE_STYLES.stageGrouped(colors);
     } else if (index === 0) {
-      return NODE_STYLES.stageGroupedTop(COLORS.stage);
+      return NODE_STYLES.stageGroupedTop(colors);
     } else if (index === totalStages - 1) {
-      return NODE_STYLES.stageGroupedBottom(COLORS.stage);
+      return NODE_STYLES.stageGroupedBottom(colors);
     } else {
-      return NODE_STYLES.stageGroupedMiddle(COLORS.stage);
+      return NODE_STYLES.stageGroupedMiddle(colors);
     }
   }
 }

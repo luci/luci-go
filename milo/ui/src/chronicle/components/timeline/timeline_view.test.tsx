@@ -68,11 +68,11 @@ const mockContext: ChronicleContextType = {
 
 function createTestStage(): Stage {
   return Stage.create({
-    identifier: { id: 'stage-uuid-1234' },
-    args: {
-      typeUrl:
-        'type.googleapis.com/wireless.android.launchcontrol.WorkNodeStage',
-      digest: 'digest-1',
+    identifier: { id: 'stage-uuid-1234', isWorknode: true },
+    legacy: {
+      worknode: {
+        digest: 'digest-1',
+      },
     },
     stateHistory: [
       {

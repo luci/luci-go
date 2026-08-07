@@ -21,14 +21,17 @@ import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { StageAttemptState } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
+import { StageConcludedReason } from '@/proto/turboci/graph/orchestrator/v1/stage_concluded_reason.pb';
+import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 
 import { INVALID_IDENTIFIER, toString as idToString } from './id';
 import {
-  LegacyWorkNode,
-  TYPE_URL_LEGACY_WORKNODE_STAGE,
+  extractLegacyWorkNode,
   extractLegacyWorkNodeLabel,
+  TYPE_URL_LEGACY_WORKNODE_STAGE,
 } from './legacy_worknode';
 
 export enum CheckResultStatus {
@@ -36,6 +39,15 @@ export enum CheckResultStatus {
   SUCCESS = 'SUCCESS',
   FAILURE = 'FAILURE',
   MIXED = 'MIXED',
+}
+
+export enum StageResultStatus {
+  UNKNOWN = 'UNKNOWN',
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
+  RUNNING = 'RUNNING',
+  CANCELLED = 'CANCELLED',
+  PENDING = 'PENDING',
 }
 
 export const TYPE_URL_BUILD_OPTIONS =
@@ -181,6 +193,107 @@ export function isWorknodeStage(stage: Stage): boolean {
   return false;
 }
 
+/**
+ * Determines the visual result status (SUCCESS, FAILURE, RUNNING, CANCELLED, PENDING)
+ * for a Stage node.
+ *
+ * Status resolution flow:
+ * 1. PLANNED stages map to PENDING.
+ * 2. ATTEMPTING stages map to PENDING or CANCELLED if their latest attempt matches
+ *    those states, otherwise RUNNING.
+ * 3. FINAL stages:
+ *    a. Mapped to CANCELLED if concludedReason indicates cancellation.
+ *    b. Mapped to FAILURE if all attempts finished without running to completion
+ *       (e.g. NO_RETRIES_LEFT, TIMEOUT, FINAL_ATTEMPT_BLOCKED_RETRY, or latest attempt INCOMPLETE).
+ *    c. Otherwise, an attempt ran to completion:
+ *       - For N-stages (legacy WorkNodes), status is evaluated from `workOutput.success`
+ *         (when available via valueDataMap).
+ *       - For S-stages (native TurboCI stages), successful attempt completion maps to SUCCESS
+ *         (with specific test/build verdicts residing on attached Checks).
+ */
+export function getStageResultStatus(
+  stage: Stage,
+  valueDataMap?: Map<string, ValueData>,
+): StageResultStatus {
+  if (!stage) return StageResultStatus.UNKNOWN;
+
+  switch (stage.state) {
+    case StageState.STAGE_STATE_PLANNED:
+      return StageResultStatus.PENDING;
+    case StageState.STAGE_STATE_ATTEMPTING: {
+      const latestAttempt =
+        stage.attempts && stage.attempts.length > 0
+          ? stage.attempts[stage.attempts.length - 1]
+          : undefined;
+      switch (latestAttempt?.state) {
+        case StageAttemptState.STAGE_ATTEMPT_STATE_PENDING:
+          return StageResultStatus.PENDING;
+        case StageAttemptState.STAGE_ATTEMPT_STATE_CANCELLING:
+          return StageResultStatus.CANCELLED;
+        default:
+          return StageResultStatus.RUNNING;
+      }
+    }
+
+    case StageState.STAGE_STATE_FINAL: {
+      // 1. Check for cancellation
+      if (
+        stage.concludedReason ===
+        StageConcludedReason.STAGE_CONCLUDED_REASON_CANCELLED
+      ) {
+        return StageResultStatus.CANCELLED;
+      }
+
+      // 2. Check if all attempts finished without running to completion (infra / orchestrator failures)
+      const latestAttempt =
+        stage.attempts && stage.attempts.length > 0
+          ? stage.attempts[stage.attempts.length - 1]
+          : undefined;
+      const isAttemptIncomplete =
+        latestAttempt?.state ===
+        StageAttemptState.STAGE_ATTEMPT_STATE_INCOMPLETE;
+
+      if (
+        stage.concludedReason ===
+          StageConcludedReason.STAGE_CONCLUDED_REASON_NO_RETRIES_LEFT ||
+        stage.concludedReason ===
+          StageConcludedReason.STAGE_CONCLUDED_REASON_FINAL_ATTEMPT_BLOCKED_RETRY ||
+        stage.concludedReason ===
+          StageConcludedReason.STAGE_CONCLUDED_REASON_TIMEOUT ||
+        isAttemptIncomplete
+      ) {
+        return StageResultStatus.FAILURE;
+      }
+
+      // 3. The stage ran to completion:
+      // Note: We currently merge non-completion and task failure into FAILURE.
+      // For N-stages, the task outcome is embedded in `workOutput.success`. For
+      // S-stages, the task outcome lives on attached Checks, while the Stage itself
+      // succeeds if its attempt completed.
+      if (valueDataMap) {
+        const legacyWorkNode = extractLegacyWorkNode(stage, valueDataMap);
+        if (legacyWorkNode?.workOutput?.success === false) {
+          return StageResultStatus.FAILURE;
+        } else if (legacyWorkNode?.workOutput?.success === true) {
+          return StageResultStatus.SUCCESS;
+        }
+      }
+
+      // For S-stages (and N-stages without explicit work output failures), map to SUCCESS
+      if (
+        stage.concludedReason ===
+        StageConcludedReason.STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE
+      ) {
+        return StageResultStatus.SUCCESS;
+      }
+
+      return StageResultStatus.UNKNOWN;
+    }
+    default:
+      return StageResultStatus.UNKNOWN;
+  }
+}
+
 export function getStageLabel(
   stage: Stage,
   valueDataMap: Map<string, ValueData>,
@@ -188,12 +301,8 @@ export function getStageLabel(
   if (!stage) return 'Unknown Stage';
   const id = stage.identifier?.id || 'Unknown';
 
-  if (stage.args?.typeUrl === TYPE_URL_LEGACY_WORKNODE_STAGE) {
-    const legacyData = parseValueRef<LegacyWorkNode>(
-      stage.args,
-      TYPE_URL_LEGACY_WORKNODE_STAGE,
-      valueDataMap,
-    );
+  if (isWorknodeStage(stage)) {
+    const legacyData = extractLegacyWorkNode(stage, valueDataMap);
     const label = extractLegacyWorkNodeLabel(legacyData, id);
     if (label) return label;
   }
@@ -201,8 +310,8 @@ export function getStageLabel(
   return `Stage: ${id}`;
 }
 
-function isStage(view: Check | Stage): view is Stage {
-  return (view as Stage).assignments !== undefined;
+export function isStage(view?: Check | Stage): view is Stage {
+  return (view as Stage)?.assignments !== undefined;
 }
 
 /**
