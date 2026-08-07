@@ -68,7 +68,11 @@ func (srv *TasksServer) ListTasks(ctx context.Context, req *apipb.TasksWithPerfR
 	out := &apipb.TaskListResponse{}
 
 	var dscursor *cursorpb.TasksCursor
-	err = datastore.RunMulti(ctx, queries, func(task *model.TaskResultSummary) error {
+	for task, err := range datastore.RunMultiQuery[*model.TaskResultSummary](ctx, queries).Results {
+		if err != nil {
+			logging.Errorf(ctx, "Error querying TaskResultSummary: %s", err)
+			return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
+		}
 		taskpb := task.ToProto()
 		if stats != nil {
 			stats.Fetch(ctx, taskpb, task)
@@ -76,13 +80,8 @@ func (srv *TasksServer) ListTasks(ctx context.Context, req *apipb.TasksWithPerfR
 		out.Items = append(out.Items, taskpb)
 		if len(out.Items) == int(req.Limit) {
 			dscursor = &cursorpb.TasksCursor{LastTaskRequestEntityId: task.TaskRequestKey().IntID()}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		logging.Errorf(ctx, "Error querying TaskResultSummary: %s", err)
-		return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
 	}
 	if dscursor != nil {
 		out.Cursor, err = cursor.Encode(ctx, cursorpb.RequestKind_LIST_TASKS, dscursor)

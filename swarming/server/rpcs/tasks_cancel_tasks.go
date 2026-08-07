@@ -72,19 +72,18 @@ func (srv *TasksServer) CancelTasks(ctx context.Context, req *apipb.TasksCancelR
 	var toCancel []string
 
 	var dscursor *cursorpb.TasksCursor
-	err = datastore.RunMulti(ctx, queries, func(task *model.TaskResultSummary) error {
+	for task, err := range datastore.RunMultiQuery[*model.TaskResultSummary](ctx, queries).Results {
+		if err != nil {
+			logging.Errorf(ctx, "Error querying TaskResultSummary: %s", err)
+			return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
+		}
 		out.Matched++
 		toCancel = append(toCancel, model.RequestKeyToTaskID(task.TaskRequestKey(), model.AsRequest))
 
 		if out.Matched == req.Limit {
 			dscursor = &cursorpb.TasksCursor{LastTaskRequestEntityId: task.TaskRequestKey().IntID()}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		logging.Errorf(ctx, "Error querying TaskResultSummary: %s", err)
-		return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
 	}
 
 	if len(toCancel) > 0 {

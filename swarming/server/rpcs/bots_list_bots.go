@@ -77,17 +77,16 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 	out := &apipb.BotInfoListResponse{
 		DeathTimeout: State(ctx).Config.Settings().BotDeathTimeoutSecs,
 	}
-	err = datastore.RunMulti(ctx, multi, func(bot *model.BotInfo, cb datastore.CursorCB) error {
+	for bot, err := range datastore.RunMultiQuery[*model.BotInfo](ctx, multi).Results {
+		if err != nil {
+			logging.Errorf(ctx, "Error querying BotInfo: %s", err)
+			return nil, status.Errorf(codes.Internal, "datastore error fetching bots")
+		}
 		out.Items = append(out.Items, bot.ToProto())
 		if len(out.Items) == int(req.Limit) {
 			dscursor = &cursorpb.BotsCursor{LastBotId: out.Items[len(out.Items)-1].BotId}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		logging.Errorf(ctx, "Error querying BotInfo: %s", err)
-		return nil, status.Errorf(codes.Internal, "datastore error fetching bots")
 	}
 
 	if dscursor != nil {

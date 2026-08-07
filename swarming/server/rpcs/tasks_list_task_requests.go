@@ -69,7 +69,11 @@ func (srv *TasksServer) ListTaskRequests(ctx context.Context, req *apipb.TasksRe
 	// TaskRequest and put it into the output.
 	var keys []*datastore.Key
 	var dscursor *cursorpb.TasksCursor
-	err = datastore.RunMulti(ctx, queries, func(summaryKey *datastore.Key) error {
+	for summaryKey, err := range datastore.RunMultiQuery[*datastore.Key](ctx, queries).Results {
+		if err != nil {
+			logging.Errorf(ctx, "Error querying TaskResultSummary: %s", err)
+			return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
+		}
 		taskReq := summaryKey.Parent()
 		if taskReq == nil || taskReq.Kind() != "TaskRequest" {
 			panic(fmt.Sprintf("invalid TaskResultSummary key %q", summaryKey))
@@ -78,13 +82,8 @@ func (srv *TasksServer) ListTaskRequests(ctx context.Context, req *apipb.TasksRe
 		fetcher.Fetch(taskReq, &model.TaskRequest{Key: taskReq})
 		if len(keys) == int(req.Limit) {
 			dscursor = &cursorpb.TasksCursor{LastTaskRequestEntityId: taskReq.IntID()}
-			return datastore.Stop
+			break
 		}
-		return nil
-	})
-	if err != nil {
-		logging.Errorf(ctx, "Error querying TaskResultSummary: %s", err)
-		return nil, status.Errorf(codes.Internal, "datastore error fetching tasks")
 	}
 	if dscursor != nil {
 		out.Cursor, err = cursor.Encode(ctx, cursorpb.RequestKind_LIST_TASK_REQUESTS, dscursor)
