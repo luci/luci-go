@@ -220,18 +220,9 @@ describe('<ChromeOSInventoryData />', () => {
     // Add new pool via Autocomplete Enter key
     await userEvent.type(input, 'pool-new{Enter}');
 
-    // Confirm card changes (closes card-level editing, stages updates globally)
+    // Confirm card changes -> immediately opens SaveDiffDialog
     const confirmBtn = screen.getByRole('button', { name: /confirm/i });
     await userEvent.click(confirmBtn);
-
-    // 4. Global Action Buttons appear
-    const discardBtn = screen.getByRole('button', { name: /discard changes/i });
-    const saveBtn = screen.getByRole('button', { name: /save all changes/i });
-    expect(discardBtn).toBeVisible();
-    expect(saveBtn).toBeVisible();
-
-    // 5. Click Save All Changes -> Opens SaveDiffDialog
-    await userEvent.click(saveBtn);
 
     const dialog = screen.getByRole('dialog');
     const withinDialog = within(dialog);
@@ -274,10 +265,65 @@ describe('<ChromeOSInventoryData />', () => {
     const closeBtn = screen.getByRole('button', { name: /close/i });
     await userEvent.click(closeBtn);
 
-    // After success, save state resets and changes buttons become hidden
+    // After success, dialog is closed
     await waitFor(() => {
-      expect(discardBtn).not.toBeVisible();
-      expect(saveBtn).not.toBeVisible();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('preserves draft changes when cancelling out of SaveDiffDialog and allows discarding via card Cancel button', async () => {
+    const lseData = {
+      chromeosMachineLse: {
+        deviceLse: {
+          dut: {
+            hostname: 'test-host-name',
+            pools: ['pool1'],
+          },
+        },
+      },
+    };
+
+    jest.mocked(useQuery).mockReturnValue({
+      data: lseData,
+      isLoading: false,
+      isError: false,
+    } as unknown as UseQueryResult<unknown, Error>);
+
+    render(
+      <FakeContextProvider>
+        <ChromeOSInventoryData device={mockDeviceOs} />
+      </FakeContextProvider>,
+    );
+
+    const editBtn = screen.getByRole('button', {
+      name: /edit pools & task routing/i,
+    });
+    await userEvent.click(editBtn);
+
+    const input = screen.getByRole('combobox');
+    await userEvent.type(input, 'pool-new{Enter}');
+
+    const confirmBtn = screen.getByRole('button', { name: /confirm/i });
+    await userEvent.click(confirmBtn);
+
+    const dialog = screen.getByRole('dialog');
+    const cancelDialogBtn = within(dialog).getByRole('button', {
+      name: /cancel/i,
+    });
+    await userEvent.click(cancelDialogBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeVisible();
+
+    const cancelCardBtn = screen.getByRole('button', { name: /cancel/i });
+    await userEvent.click(cancelCardBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: /confirm/i }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -324,9 +370,6 @@ describe('<ChromeOSInventoryData />', () => {
 
     const confirmBtn = screen.getByRole('button', { name: /confirm/i });
     await userEvent.click(confirmBtn);
-
-    const saveBtn = screen.getByRole('button', { name: /save all changes/i });
-    await userEvent.click(saveBtn);
 
     expect(screen.getByText(/redeployment required/i)).toBeInTheDocument();
     expect(

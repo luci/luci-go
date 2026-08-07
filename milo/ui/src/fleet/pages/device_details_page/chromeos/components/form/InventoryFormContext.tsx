@@ -35,6 +35,7 @@ interface InventoryFormContextType {
   updateDraftFields: (
     updates: Array<{ path: string | string[]; value: unknown }>,
   ) => void;
+  discardDraft: () => void;
   activeEditingCardId: string | null;
   setActiveEditingCardId: (id: string | null) => void;
   editable: boolean;
@@ -66,6 +67,7 @@ interface InventoryFormProviderProps {
   updateDraftFields: (
     updates: Array<{ path: string | string[]; value: unknown }>,
   ) => void;
+  discardDraft?: () => void;
   activeEditingCardId: string | null;
   setActiveEditingCardId: (id: string | null) => void;
   editable?: boolean;
@@ -76,6 +78,7 @@ export const InventoryFormProvider = ({
   originalLse,
   draftLse,
   updateDraftFields,
+  discardDraft = () => {},
   activeEditingCardId,
   setActiveEditingCardId,
   editable = false,
@@ -106,6 +109,7 @@ export const InventoryFormProvider = ({
       originalLse,
       draftLse,
       updateDraftFields,
+      discardDraft,
       activeEditingCardId,
       setActiveEditingCardId,
       editable,
@@ -116,6 +120,7 @@ export const InventoryFormProvider = ({
       originalLse,
       draftLse,
       updateDraftFields,
+      discardDraft,
       activeEditingCardId,
       setActiveEditingCardId,
       editable,

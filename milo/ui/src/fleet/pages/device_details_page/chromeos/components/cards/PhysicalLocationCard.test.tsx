@@ -110,8 +110,6 @@ describe('<PhysicalLocationCard />', () => {
 
     const rackInput = screen.getByRole('textbox', { name: /rack/i });
     expect(rackInput).toBeInTheDocument();
-    expect(rackInput).toHaveValue('rack-1');
-
     await userEvent.clear(rackInput);
     await userEvent.type(rackInput, 'rack-2');
     expect(rackInput).toHaveValue('rack-2');
@@ -120,6 +118,8 @@ describe('<PhysicalLocationCard />', () => {
     expect(confirmBtn).toBeVisible();
     await userEvent.click(confirmBtn);
 
-    expect(setActiveEditingCardId).toHaveBeenCalledWith(null);
+    expect(updateDraftFields).toHaveBeenCalledWith([
+      { path: 'rack', value: 'rack-2' },
+    ]);
   });
 });

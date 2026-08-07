@@ -64,6 +64,7 @@ export const CardForm = ({
   const {
     draftLse,
     updateDraftFields,
+    discardDraft,
     activeEditingCardId,
     setActiveEditingCardId,
     editable,
@@ -123,18 +124,16 @@ export const CardForm = ({
       path: key,
       value,
     }));
-    if (updates.length > 0) {
-      updateDraftFields(updates);
-    }
+    updateDraftFields(updates);
     setStagedUpdates({});
     setFieldErrors({});
-    setActiveEditingCardId(null);
-  }, [stagedUpdates, updateDraftFields, setActiveEditingCardId]);
+  }, [stagedUpdates, updateDraftFields]);
 
   const handleCancel = () => {
     setStagedUpdates({});
     setFieldErrors({});
     setActiveEditingCardId(null);
+    discardDraft();
   };
 
   const contextValue = useMemo(

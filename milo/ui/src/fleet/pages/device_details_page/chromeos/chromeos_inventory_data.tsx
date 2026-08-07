@@ -14,16 +14,7 @@
 
 import CodeIcon from '@mui/icons-material/Code';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import {
-  Alert,
-  Box,
-  Button,
-  Grid,
-  Link,
-  Tab,
-  Tabs,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Grid, Link, Tab, Tabs, Typography } from '@mui/material';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { EditorConfiguration } from 'codemirror';
 import { useCallback, useMemo, useState } from 'react';
@@ -156,8 +147,6 @@ export const ChromeOSInventoryData = ({
     [diffs, isLabstationDevice],
   );
 
-  const hasGlobalChanges = diffs.length > 0;
-
   const shivasCommands = useMemo(() => {
     const base = originalLseSnapshot || machineLse.data;
     if (!base || !editedLse) return [];
@@ -177,36 +166,38 @@ export const ChromeOSInventoryData = ({
 
   const handleUpdateFields = useCallback(
     (updates: Array<{ path: string | string[]; value: unknown }>) => {
-      setOriginalLseSnapshot((prevSnapshot) => {
-        if (!prevSnapshot && machineLse.data) {
-          return JSON.parse(JSON.stringify(machineLse.data));
-        }
-        return prevSnapshot;
-      });
+      const base = originalLseSnapshot || machineLse.data;
+      if (!base) return;
 
-      setEditedLse((prev: MachineLSE | null) => {
-        const base = prev || machineLse.data;
-        if (!base) return null;
-        return updateNestedValues(
-          base as unknown as Record<string, unknown>,
-          updates,
-        ) as unknown as MachineLSE;
-      });
+      const nextSnapshot =
+        originalLseSnapshot || JSON.parse(JSON.stringify(machineLse.data));
+      const nextEdited = updateNestedValues(
+        (editedLse || machineLse.data) as unknown as Record<string, unknown>,
+        updates,
+      ) as unknown as MachineLSE;
+
+      const currentDiffs = calculateDiff(nextSnapshot, nextEdited);
+      if (currentDiffs.length === 0) {
+        setEditedLse(null);
+        setOriginalLseSnapshot(null);
+        setActiveEditingCardId(null);
+        return;
+      }
+
+      setOriginalLseSnapshot(nextSnapshot);
+      setEditedLse(nextEdited);
+      updateMutation.reset?.();
+      setSaveState('review');
+      setDialogOpen(true);
     },
-    [machineLse.data],
+    [machineLse.data, originalLseSnapshot, editedLse, updateMutation],
   );
 
-  const handleGlobalDiscard = () => {
+  const handleDiscardDraft = useCallback(() => {
     setEditedLse(null);
     setOriginalLseSnapshot(null);
     setActiveEditingCardId(null);
-  };
-
-  const handleGlobalSave = () => {
-    updateMutation.reset?.();
-    setSaveState('review');
-    setDialogOpen(true);
-  };
+  }, []);
 
   const handleDialogExited = useCallback(() => {
     if (saveState === 'success') {
@@ -312,33 +303,6 @@ export const ChromeOSInventoryData = ({
                 value="json"
               />
             </Tabs>
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 1.5,
-                pb: 1,
-                visibility: hasGlobalChanges && canEdit ? 'visible' : 'hidden',
-              }}
-            >
-              <Button
-                size="small"
-                variant="outlined"
-                color="inherit"
-                onClick={handleGlobalDiscard}
-                disabled={activeEditingCardId !== null}
-              >
-                Discard Changes
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="primary"
-                onClick={handleGlobalSave}
-                disabled={activeEditingCardId !== null}
-              >
-                Save All Changes
-              </Button>
-            </Box>
           </Box>
 
           {viewMode === 'visual' && (
@@ -346,6 +310,7 @@ export const ChromeOSInventoryData = ({
               originalLse={machineLse.data || null}
               draftLse={currentLse || null}
               updateDraftFields={handleUpdateFields}
+              discardDraft={handleDiscardDraft}
               activeEditingCardId={activeEditingCardId}
               setActiveEditingCardId={setActiveEditingCardId}
               editable={canEdit}
