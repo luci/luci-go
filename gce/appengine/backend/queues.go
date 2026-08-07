@@ -20,17 +20,17 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
@@ -346,8 +346,10 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	}
 
 	logging.Debugf(c, "for config %s, creating %d VMs", cfg.Config.Prefix, len(t))
-	if err := getDispatcher(c).AddTask(c, t...); err != nil {
-		return errors.Fmt("expend config: failed to schedule tasks: %w", err)
+	for _, task := range t {
+		if err := getDispatcher(c).AddTask(c, task); err != nil {
+			return errors.Fmt("expend config: failed to schedule task: %w", err)
+		}
 	}
 	return nil
 }

@@ -20,8 +20,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	legacytq "go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -61,13 +59,7 @@ func TestCronSecurity(t *testing.T) {
 			return &nonDevInfo{parent}
 		})
 
-		legacyDsp := &legacytq.Dispatcher{}
-		registerTasks(legacyDsp)
-		baseCtx = withDispatcher(baseCtx, legacyDsp)
-		tqt := tqtesting.GetTestable(baseCtx, legacyDsp)
-		tqt.CreateQueues()
-
-		baseCtx, _ = tq.TestingContext(baseCtx, nil)
+		baseCtx, sched := tq.TestingContext(baseCtx, nil)
 
 		if err := datastore.Put(baseCtx, &model.Config{ID: "victim-config"}); err != nil {
 			t.Fatalf("seed datastore: %v", err)
@@ -87,7 +79,7 @@ func TestCronSecurity(t *testing.T) {
 			r.ServeHTTP(rec, req)
 
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusForbidden))
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+			assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 		})
 
 		t.Run("Request with X-Appengine-Cron header succeeds", func(t *ftt.Test) {
@@ -97,7 +89,7 @@ func TestCronSecurity(t *testing.T) {
 			r.ServeHTTP(rec, req)
 
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 		})
 	})
 }

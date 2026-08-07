@@ -23,14 +23,13 @@ import (
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 
-	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
@@ -48,9 +47,8 @@ func TestCreate(t *testing.T) {
 		gce, err := compute.New(&http.Client{Transport: rt})
 		assert.Loosely(t, err, should.BeNil)
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
+		c, _ = tq.TestingContext(c, dsp)
 		c = withCompute(withDispatcher(c, dsp), ComputeService{Stable: gce})
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
 		s := tsmon.Store(c)
 
 		t.Run("invalid", func(t *ftt.Test) {
@@ -291,21 +289,20 @@ func TestDestroyInstance(t *testing.T) {
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
 		assert.Loosely(t, err, should.BeNil)
-		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), ComputeService{Stable: gce})
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
+		c, sched := tq.TestingContext(memory.Use(context.Background()), dsp)
+		c = withCompute(withDispatcher(c, dsp), ComputeService{Stable: gce})
 
 		t.Run("invalid", func(t *ftt.Test) {
 			t.Run("nil", func(t *ftt.Test) {
 				err := destroyInstance(c, nil)
 				assert.Loosely(t, err, should.ErrLike("unexpected payload"))
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("empty", func(t *ftt.Test) {
 				err := destroyInstance(c, &tasks.DestroyInstance{})
 				assert.Loosely(t, err, should.ErrLike("ID is required"))
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("url", func(t *ftt.Test) {
@@ -313,7 +310,7 @@ func TestDestroyInstance(t *testing.T) {
 					Id: "id",
 				})
 				assert.Loosely(t, err, should.ErrLike("URL is required"))
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 		})
 
@@ -324,7 +321,7 @@ func TestDestroyInstance(t *testing.T) {
 					Url: "url",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("replaced", func(t *ftt.Test) {
@@ -364,7 +361,7 @@ func TestDestroyInstance(t *testing.T) {
 					}
 					datastore.Get(c, v)
 					assert.Loosely(t, v.URL, should.Equal("url"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 
 				t.Run("operation", func(t *ftt.Test) {
@@ -392,7 +389,7 @@ func TestDestroyInstance(t *testing.T) {
 					}
 					datastore.Get(c, v)
 					assert.Loosely(t, v.URL, should.Equal("url"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 			})
 
@@ -419,7 +416,7 @@ func TestDestroyInstance(t *testing.T) {
 					assert.Loosely(t, v.Created, should.Equal(1))
 					assert.Loosely(t, v.Hostname, should.Equal("name"))
 					assert.Loosely(t, v.URL, should.Equal("url"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 
 				t.Run("done", func(t *ftt.Test) {
@@ -447,7 +444,7 @@ func TestDestroyInstance(t *testing.T) {
 					assert.Loosely(t, v.Created, should.Equal(1))
 					assert.Loosely(t, v.Hostname, should.Equal("name"))
 					assert.Loosely(t, v.URL, should.Equal("url"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 				})
 			})
 		})
@@ -461,25 +458,23 @@ func TestAuditInstanceInZone(t *testing.T) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		rt := &roundtripper.JSONRoundTripper{}
-		c := context.Background()
+		c, sched := tq.TestingContext(memory.Use(context.Background()), dsp)
 		gce, err := compute.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
 		assert.Loosely(t, err, should.BeNil)
-		c = withCompute(withDispatcher(memory.Use(c), dsp), ComputeService{Stable: gce})
+		c = withCompute(withDispatcher(c, dsp), ComputeService{Stable: gce})
 		datastore.GetTestable(c).Consistent(true)
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
 
 		t.Run("invalid", func(t *ftt.Test) {
 			t.Run("nil", func(t *ftt.Test) {
 				err := auditInstanceInZone(c, nil)
 				assert.Loosely(t, err, should.ErrLike("Unexpected payload"))
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("empty", func(t *ftt.Test) {
 				err := auditInstanceInZone(c, &tasks.AuditProject{})
 				assert.Loosely(t, err, should.ErrLike("Project is required"))
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("empty region", func(t *ftt.Test) {
@@ -487,7 +482,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Project: "libreboot",
 				})
 				assert.Loosely(t, err, should.ErrLike("Zone is required"))
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 		})
 
@@ -522,7 +517,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, count, should.Equal(1))
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("VM entry exists double, page token", func(t *ftt.Test) {
@@ -563,7 +558,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, count, should.Equal(1))
 				// The next token should schedule a job
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 			})
 
 			t.Run("VM leaked (single)", func(t *ftt.Test) {
@@ -597,7 +592,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, count, should.Equal(2))
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("VM leaked (double)", func(t *ftt.Test) {
@@ -642,7 +637,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				})
 				assert.Loosely(t, count, should.Equal(3))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("VM leaked (mix)", func(t *ftt.Test) {
@@ -680,7 +675,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				})
 				assert.Loosely(t, count, should.Equal(2))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 		})
 
@@ -694,7 +689,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Zone:    "us-mex-1",
 				})
 				assert.Loosely(t, err, should.ErrLike("failed to list"))
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 			t.Run("VM delete failure", func(t *ftt.Test) {
 				count := 0
@@ -733,7 +728,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				})
 				assert.Loosely(t, count, should.Equal(2))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 		})
 	})

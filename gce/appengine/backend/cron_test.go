@@ -23,13 +23,12 @@ import (
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 
-	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
@@ -45,13 +44,11 @@ func TestCron(t *testing.T) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		rt := &roundtripper.JSONRoundTripper{}
-		c := context.Background()
+		c, sched := tq.TestingContext(memory.Use(context.Background()), dsp)
 		gce, err := compute.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
 		assert.Loosely(t, err, should.BeNil)
-		c = withCompute(withDispatcher(memory.Use(c), dsp), ComputeService{Stable: gce})
+		c = withCompute(withDispatcher(c, dsp), ComputeService{Stable: gce})
 		datastore.GetTestable(c).Consistent(true)
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
 
 		t.Run("countTasks", func(t *ftt.Test) {
 			dsp := &tq.Dispatcher{}
@@ -66,19 +63,18 @@ func TestCron(t *testing.T) {
 			})
 
 			t.Run("many", func(t *ftt.Test) {
-				dsp.RegisterTask(&tasks.CountVMs{}, countVMs, countVMsQueue, nil)
-				dsp.RegisterTask(&tasks.ManageBot{}, manageBot, manageBotQueue, nil)
+				registerTasks(dsp)
 				assert.Loosely(t, countTasks(c), should.BeNil)
 				var k []*datastore.Key
 				assert.Loosely(t, datastore.GetAll(c, q, &k), should.BeNil)
-				assert.Loosely(t, k, should.HaveLength(2))
+				assert.Loosely(t, k, should.BeEmpty)
 			})
 		})
 
 		t.Run("countVMsAsync", func(t *ftt.Test) {
 			t.Run("none", func(t *ftt.Test) {
 				assert.Loosely(t, countVMsAsync(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("one", func(t *ftt.Test) {
@@ -86,7 +82,7 @@ func TestCron(t *testing.T) {
 					ID: "id",
 				})
 				assert.Loosely(t, countVMsAsync(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 			})
 		})
 
@@ -94,7 +90,7 @@ func TestCron(t *testing.T) {
 			t.Run("none", func(t *ftt.Test) {
 				t.Run("zero", func(t *ftt.Test) {
 					assert.Loosely(t, createInstancesAsync(c), should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 
 				t.Run("exists", func(t *ftt.Test) {
@@ -103,7 +99,7 @@ func TestCron(t *testing.T) {
 						URL: "url",
 					})
 					assert.Loosely(t, createInstancesAsync(c), should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 			})
 
@@ -115,14 +111,14 @@ func TestCron(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, createInstancesAsync(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 			})
 		})
 
 		t.Run("expandConfigsAsync", func(t *ftt.Test) {
 			t.Run("none", func(t *ftt.Test) {
 				assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("one", func(t *ftt.Test) {
@@ -130,7 +126,7 @@ func TestCron(t *testing.T) {
 					ID: "id",
 				})
 				assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
-				ts := tqt.GetScheduledTasks()
+				ts := sched.Tasks()
 				assert.Loosely(t, ts, should.HaveLength(1))
 				cfg, ok := ts[0].Payload.(*tasks.ExpandConfig)
 				assert.Loosely(t, ok, should.BeTrue)
@@ -145,7 +141,7 @@ func TestCron(t *testing.T) {
 					})
 				}
 				assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(100))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(100))
 			})
 		})
 
@@ -153,7 +149,7 @@ func TestCron(t *testing.T) {
 			t.Run("none", func(t *ftt.Test) {
 				t.Run("missing", func(t *ftt.Test) {
 					assert.Loosely(t, manageBotsAsync(c), should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 
 				t.Run("url", func(t *ftt.Test) {
@@ -161,7 +157,7 @@ func TestCron(t *testing.T) {
 						ID: "id",
 					})
 					assert.Loosely(t, manageBotsAsync(c), should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 			})
 
@@ -171,7 +167,7 @@ func TestCron(t *testing.T) {
 					URL: "url",
 				})
 				assert.Loosely(t, manageBotsAsync(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 			})
 		})
 
@@ -197,7 +193,7 @@ func TestCron(t *testing.T) {
 				}), should.BeNil)
 				t.Run("missing", func(t *ftt.Test) {
 					assert.Loosely(t, drainVMsAsync(c), should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 			})
 
@@ -222,7 +218,7 @@ func TestCron(t *testing.T) {
 				}), should.BeNil)
 				t.Run("missing", func(t *ftt.Test) {
 					assert.Loosely(t, drainVMsAsync(c), should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 				})
 			})
 
@@ -247,7 +243,7 @@ func TestCron(t *testing.T) {
 				}), should.BeNil)
 				t.Run("missing", func(t *ftt.Test) {
 					assert.Loosely(t, drainVMsAsync(c), should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 				})
 			})
 		})
@@ -263,7 +259,7 @@ func TestCron(t *testing.T) {
 		t.Run("reportQuotasAsync", func(t *ftt.Test) {
 			t.Run("none", func(t *ftt.Test) {
 				assert.Loosely(t, reportQuotasAsync(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("one", func(t *ftt.Test) {
@@ -271,14 +267,14 @@ func TestCron(t *testing.T) {
 					ID: "id",
 				})
 				assert.Loosely(t, reportQuotasAsync(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 			})
 		})
 
 		t.Run("auditInstances", func(t *ftt.Test) {
 			t.Run("none", func(t *ftt.Test) {
 				assert.Loosely(t, auditInstances(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("zero", func(t *ftt.Test) {
@@ -303,7 +299,7 @@ func TestCron(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, auditInstances(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 			})
 
 			t.Run("one", func(t *ftt.Test) {
@@ -334,7 +330,7 @@ func TestCron(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, auditInstances(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 			})
 
 			t.Run("two", func(t *ftt.Test) {
@@ -381,14 +377,14 @@ func TestCron(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, auditInstances(c), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(3))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(3))
 			})
 		})
 
 		t.Run("trigger", func(t *ftt.Test) {
 			t.Run("none", func(t *ftt.Test) {
 				assert.Loosely(t, trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 			})
 
 			t.Run("one", func(t *ftt.Test) {
@@ -396,8 +392,8 @@ func TestCron(t *testing.T) {
 					ID: "id",
 				})
 				assert.Loosely(t, trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
-				assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.Match(&tasks.ManageBot{
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks()[0].Payload, should.Match(&tasks.ManageBot{
 					Id: "id",
 				}))
 			})

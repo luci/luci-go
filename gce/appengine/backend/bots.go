@@ -19,17 +19,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/memcache"
+	"go.chromium.org/luci/server/tq"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
@@ -181,8 +181,8 @@ func inspectSwarmingAsync(c context.Context) error {
 		return true
 	})
 	// schedule all the inspect swarming tasks
-	if len(inspectSwarmingTasks) > 0 {
-		if err := getDispatcher(c).AddTask(c, inspectSwarmingTasks...); err != nil {
+	for _, task := range inspectSwarmingTasks {
+		if err := getDispatcher(c).AddTask(c, task); err != nil {
 			return errors.Fmt("inspectSwarmingAsync: failed to schedule task: %w", err)
 		}
 	}
@@ -254,8 +254,8 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 		})
 	}
 	// Dispatch all the tasks
-	if len(inpectSwarmingSubtasks) > 0 {
-		if err := getDispatcher(c).AddTask(c, inpectSwarmingSubtasks...); err != nil {
+	for _, subtask := range inpectSwarmingSubtasks {
+		if err := getDispatcher(c).AddTask(c, subtask); err != nil {
 			return errors.Fmt("InspectSwarming: failed to schedule sub task(s): %w", err)
 		}
 	}

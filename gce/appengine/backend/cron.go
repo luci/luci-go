@@ -20,19 +20,17 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
-	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
@@ -84,8 +82,10 @@ func trigger(c context.Context, t tasks.Task, q *datastore.Query) error {
 		})
 	}
 	logging.Debugf(c, "scheduling %d tasks", len(tasks))
-	if err := getDispatcher(c).AddTask(c, tasks...); err != nil {
-		return errors.Fmt("failed to schedule tasks: %w", err)
+	for _, task := range tasks {
+		if err := getDispatcher(c).AddTask(c, task); err != nil {
+			return errors.Fmt("failed to schedule tasks: %w", err)
+		}
 	}
 	return nil
 }
@@ -154,8 +154,8 @@ func drainVMsAsync(c context.Context) error {
 			},
 		})
 	}
-	if len(taskList) > 0 {
-		if err := getDispatcher(c).AddTask(c, taskList...); err != nil {
+	for _, task := range taskList {
+		if err := getDispatcher(c).AddTask(c, task); err != nil {
 			return errors.Fmt("drain vms: failed to schedule tasks: %w", err)
 		}
 	}
@@ -190,8 +190,10 @@ func auditInstances(c context.Context) error {
 			})
 		}
 	}
-	if err := getDispatcher(c).AddTask(c, jobs...); err != nil {
-		return errors.Fmt("audit instances: failed to schedule tasks: %w", err)
+	for _, job := range jobs {
+		if err := getDispatcher(c).AddTask(c, job); err != nil {
+			return errors.Fmt("audit instances: failed to schedule tasks: %w", err)
+		}
 	}
 	return nil
 }
@@ -203,21 +205,7 @@ func reportQuotasAsync(c context.Context) error {
 
 // countTasks counts tasks for each queue.
 func countTasks(c context.Context) error {
-	qs := getDispatcher(c).GetQueues()
-	logging.Debugf(c, "found %d task queues", len(qs))
-	for _, q := range qs {
-		s, err := taskqueue.Stats(c, q)
-		switch {
-		case err != nil:
-			return errors.Fmt("failed to get %q task queue stats: %w", q, err)
-		case len(s) < 1:
-			return errors.Fmt("failed to get %q task queue stats", q)
-		}
-		t := &metrics.TaskCount{}
-		if err := t.Update(c, q, s[0].InFlight, s[0].Tasks); err != nil {
-			return errors.Fmt("failed to update %q task queue count: %w", q, err)
-		}
-	}
+	getDispatcher(c).ReportMetrics(c)
 	return nil
 }
 

@@ -25,14 +25,13 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 
@@ -52,11 +51,9 @@ func TestDeleteBot(t *testing.T) {
 
 		swr := &mockSwarmingBotsClient{}
 
-		c := withDispatcher(memory.Use(context.Background()), dsp)
+		c, _ := tq.TestingContext(memory.Use(context.Background()), dsp)
+		c = withDispatcher(c, dsp)
 		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
-
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
 
 		t.Run("invalid", func(t *ftt.Test) {
 			t.Run("nil", func(t *ftt.Test) {
@@ -198,11 +195,9 @@ func TestManageBot(t *testing.T) {
 
 		swr := &mockSwarmingBotsClient{}
 
-		c := withDispatcher(memory.Use(context.Background()), dsp)
+		c, sched := tq.TestingContext(memory.Use(context.Background()), dsp)
+		c = withDispatcher(c, dsp)
 		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
-
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
 
 		t.Run("invalid", func(t *ftt.Test) {
 			t.Run("nil", func(t *ftt.Test) {
@@ -270,8 +265,8 @@ func TestManageBot(t *testing.T) {
 						Id: "id",
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
-					assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+					assert.Loosely(t, sched.Tasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
 					v := &model.VM{
 						ID: "id",
 					}
@@ -294,7 +289,7 @@ func TestManageBot(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 					// For now, won't destroy a instance if it's set to drained or newly created but
 					// hasn't connected to swarming yet
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 				})
 
 				t.Run("timeout", func(t *ftt.Test) {
@@ -311,8 +306,8 @@ func TestManageBot(t *testing.T) {
 						Id: "id",
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
-					assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+					assert.Loosely(t, sched.Tasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
 				})
 
 				t.Run("wait", func(t *ftt.Test) {
@@ -348,8 +343,8 @@ func TestManageBot(t *testing.T) {
 						Id: "id",
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
-					assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+					assert.Loosely(t, sched.Tasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
 					v := &model.VM{
 						ID: "id",
 					}
@@ -372,7 +367,7 @@ func TestManageBot(t *testing.T) {
 					})
 					assert.Loosely(t, err, should.BeNil)
 					// Won't destroy the instance if it's a newly created VM
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 				})
 
 				t.Run("dead", func(t *ftt.Test) {
@@ -393,8 +388,8 @@ func TestManageBot(t *testing.T) {
 						Id: "id",
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
-					assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+					assert.Loosely(t, sched.Tasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
 					v := &model.VM{
 						ID: "id",
 					}
@@ -419,7 +414,7 @@ func TestManageBot(t *testing.T) {
 					})
 					assert.Loosely(t, err, should.BeNil)
 					// won't destroy the instance if it's a newly created VM
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 				})
 			})
 		})
@@ -435,11 +430,9 @@ func TestTerminateBot(t *testing.T) {
 
 		swr := &mockSwarmingBotsClient{}
 
-		c := withDispatcher(memory.Use(context.Background()), dsp)
+		c, _ := tq.TestingContext(memory.Use(context.Background()), dsp)
+		c = withDispatcher(c, dsp)
 		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
-
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
 
 		t.Run("invalid", func(t *ftt.Test) {
 			t.Run("nil", func(t *ftt.Test) {
@@ -538,15 +531,14 @@ func TestInspectSwarming(t *testing.T) {
 	ftt.Run("inspectSwarmingAsync", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		c := withDispatcher(memory.Use(context.Background()), dsp)
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
+		c, sched := tq.TestingContext(memory.Use(context.Background()), dsp)
+		c = withDispatcher(c, dsp)
 		datastore.GetTestable(c).Consistent(true)
 
 		t.Run("none", func(t *ftt.Test) {
 			err := inspectSwarmingAsync(c)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 		})
 
 		t.Run("one", func(t *ftt.Test) {
@@ -558,7 +550,7 @@ func TestInspectSwarming(t *testing.T) {
 			}), should.BeNil)
 			err := inspectSwarmingAsync(c)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 		})
 
 		t.Run("two", func(t *ftt.Test) {
@@ -576,7 +568,7 @@ func TestInspectSwarming(t *testing.T) {
 			}), should.BeNil)
 			err := inspectSwarmingAsync(c)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 		})
 	})
 
@@ -586,11 +578,9 @@ func TestInspectSwarming(t *testing.T) {
 
 		swr := &mockSwarmingBotsClient{}
 
-		c := withDispatcher(memory.Use(context.Background()), dsp)
+		c, sched := tq.TestingContext(memory.Use(context.Background()), dsp)
+		c = withDispatcher(c, dsp)
 		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
-
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
 		datastore.GetTestable(c).Consistent(true)
 
 		t.Run("BadInputs", func(t *ftt.Test) {
@@ -645,7 +635,7 @@ func TestInspectSwarming(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			// ignoring vm-3-abcd as we didn't see it in datastore
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 		})
 		t.Run("Delete dead or deleted bots", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(c, &model.VM{
@@ -677,7 +667,7 @@ func TestInspectSwarming(t *testing.T) {
 				Swarming: "https://gce-swarming.appspot.com",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 		})
 		t.Run("HappyPath-1", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(c, &model.VM{
@@ -712,7 +702,7 @@ func TestInspectSwarming(t *testing.T) {
 				Swarming: "https://gce-swarming.appspot.com",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 		})
 		t.Run("HappyPath-2", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(c, &model.VM{
@@ -743,7 +733,7 @@ func TestInspectSwarming(t *testing.T) {
 				Swarming: "https://vmleaser-swarming.appspot.com",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 		})
 		t.Run("HappyPath-3-pagination", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(c, &model.VM{
@@ -779,7 +769,7 @@ func TestInspectSwarming(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			// One DeleteStaleSwarmingBots tasks and one inspectSwarming task with cursor
-			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 		})
 	})
 }
@@ -793,11 +783,9 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 
 		swr := &mockSwarmingBotsClient{}
 
-		c := withDispatcher(memory.Use(context.Background()), dsp)
+		c, sched := tq.TestingContext(memory.Use(context.Background()), dsp)
+		c = withDispatcher(c, dsp)
 		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
-
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
 		datastore.GetTestable(c).Consistent(true)
 
 		t.Run("BadInputs", func(t *ftt.Test) {
@@ -877,7 +865,7 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					FirstSeenTs: "2019-03-13T00:12:29.882948",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 			})
 			t.Run("Bot retirement", func(t *ftt.Test) {
 				assert.Loosely(t, datastore.Put(c, &model.VM{
@@ -900,7 +888,7 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					FirstSeenTs: "2019-03-13T00:12:29.882948",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 			})
 			t.Run("Bot drained", func(t *ftt.Test) {
 				assert.Loosely(t, datastore.Put(c, &model.VM{
@@ -924,7 +912,7 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					FirstSeenTs: "2019-03-13T00:12:29.882948",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 			})
 		})
 	})

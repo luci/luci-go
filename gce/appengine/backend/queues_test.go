@@ -29,8 +29,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -38,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
@@ -55,11 +54,10 @@ func TestQueues(t *testing.T) {
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
 		assert.Loosely(t, err, should.BeNil)
-		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), ComputeService{Stable: gce})
+		c, sched := tq.TestingContext(memory.Use(context.Background()), dsp)
+		c = withCompute(withDispatcher(c, dsp), ComputeService{Stable: gce})
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
-		tqt := tqtesting.GetTestable(c, dsp)
-		tqt.CreateQueues()
 
 		t.Run("countVMs", func(t *ftt.Test) {
 			t.Run("invalid", func(t *ftt.Test) {
@@ -428,13 +426,13 @@ func TestQueues(t *testing.T) {
 				t.Run("nil", func(t *ftt.Test) {
 					err := expandConfig(c, nil)
 					assert.Loosely(t, err, should.ErrLike("unexpected payload"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 
 				t.Run("empty", func(t *ftt.Test) {
 					err := expandConfig(c, &tasks.ExpandConfig{})
 					assert.Loosely(t, err, should.ErrLike("ID is required"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 
 				t.Run("missing", func(t *ftt.Test) {
@@ -442,7 +440,7 @@ func TestQueues(t *testing.T) {
 						Id: "id",
 					})
 					assert.Loosely(t, err, should.ErrLike("failed to fetch config"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 					cfg := &model.Config{
 						ID: "id",
 					}
@@ -465,7 +463,7 @@ func TestQueues(t *testing.T) {
 						Id: "id",
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 					cfg := &model.Config{
 						ID: "id",
 					}
@@ -496,7 +494,7 @@ func TestQueues(t *testing.T) {
 						Id: "id",
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(3))
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(3))
 					cfg := &model.Config{
 						ID: "id",
 					}
@@ -546,7 +544,7 @@ func TestQueues(t *testing.T) {
 							Id: "id",
 						})
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
+						assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 						cfg := &model.Config{
 							ID: "id",
 						}
@@ -563,7 +561,7 @@ func TestQueues(t *testing.T) {
 							Id: "id",
 						})
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(5))
+						assert.Loosely(t, sched.Tasks(), should.HaveLength(5))
 						cfg := &model.Config{
 							ID: "id",
 						}
@@ -766,13 +764,13 @@ func TestQueues(t *testing.T) {
 				t.Run("nil", func(t *ftt.Test) {
 					err := reportQuota(c, nil)
 					assert.Loosely(t, err, should.ErrLike("unexpected payload"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 
 				t.Run("empty", func(t *ftt.Test) {
 					err := reportQuota(c, &tasks.ReportQuota{})
 					assert.Loosely(t, err, should.ErrLike("ID is required"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 
 				t.Run("missing", func(t *ftt.Test) {
@@ -780,7 +778,7 @@ func TestQueues(t *testing.T) {
 						Id: "id",
 					})
 					assert.Loosely(t, err, should.ErrLike("failed to fetch project"))
-					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
+					assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 				})
 			})
 

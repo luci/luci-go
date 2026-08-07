@@ -28,7 +28,6 @@ import (
 	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/protobuf/proto"
 
-	legacytq "go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/logging"
@@ -118,30 +117,17 @@ func (c ComputeService) InsertInstance(ctx context.Context, project string, zone
 	}
 }
 
-// dspKey is the key to a *legacytq.Dispatcher in the context.
+// dspKey is the key to a *tq.Dispatcher in the context.
 var dspKey = "dsp"
 
-// tqDspKey is the key to a *tq.Dispatcher in the context.
-var tqDspKey = "tqDsp"
-
-// withDispatcher returns a new context with the given *legacytq.Dispatcher installed.
-func withDispatcher(c context.Context, dsp *legacytq.Dispatcher) context.Context {
+// withDispatcher returns a new context with the given *tq.Dispatcher installed.
+func withDispatcher(c context.Context, dsp *tq.Dispatcher) context.Context {
 	return context.WithValue(c, &dspKey, dsp)
 }
 
-// getDispatcher returns the *legacytq.Dispatcher installed in the current context.
-func getDispatcher(c context.Context) *legacytq.Dispatcher {
-	return c.Value(&dspKey).(*legacytq.Dispatcher)
-}
-
-// withTQDispatcher returns a new context with the given *tq.Dispatcher installed.
-func withTQDispatcher(c context.Context, dsp *tq.Dispatcher) context.Context {
-	return context.WithValue(c, &tqDspKey, dsp)
-}
-
-// getTQDispatcher returns the *tq.Dispatcher installed in the current context.
-func getTQDispatcher(c context.Context) *tq.Dispatcher {
-	return c.Value(&tqDspKey).(*tq.Dispatcher)
+// getDispatcher returns the *tq.Dispatcher installed in the current context.
+func getDispatcher(c context.Context) *tq.Dispatcher {
+	return c.Value(&dspKey).(*tq.Dispatcher)
 }
 
 // ManageBotQueues is the list of queues to distribute manage-bot tasks across for load balancing purposes.
@@ -163,32 +149,15 @@ func getManageBotQueue(id string) string {
 	}
 }
 
-// registerTasks registers task handlers with the given *legacytq.Dispatcher.
-func registerTasks(dsp *legacytq.Dispatcher) {
-	dsp.RegisterTask(&tasks.CountVMs{}, countVMs, countVMsQueue, nil)
-	dsp.RegisterTask(&tasks.CreateInstance{}, createInstance, createInstanceQueue, nil)
-	dsp.RegisterTask(&tasks.CreateVM{}, createVM, createVMQueue, nil)
-	dsp.RegisterTask(&tasks.DeleteBot{}, deleteBot, deleteBotQueue, nil)
-	dsp.RegisterTask(&tasks.DestroyInstance{}, destroyInstance, destroyInstanceQueue, nil)
-	dsp.RegisterTask(&tasks.ExpandConfig{}, expandConfig, expandConfigQueue, nil)
-	dsp.RegisterTask(&tasks.ManageBot{}, manageBot, manageBotQueue, nil)
-	dsp.RegisterTask(&tasks.ReportQuota{}, reportQuota, reportQuotaQueue, nil)
-	dsp.RegisterTask(&tasks.TerminateBot{}, terminateBot, terminateBotQueue, nil)
-	dsp.RegisterTask(&tasks.AuditProject{}, auditInstanceInZone, auditInstancesQueue, nil)
-	dsp.RegisterTask(&tasks.DrainVM{}, drainVMQueueHandler, drainVMQueue, nil)
-	dsp.RegisterTask(&tasks.InspectSwarming{}, inspectSwarming, inspectSwarmingQueue, nil)
-	dsp.RegisterTask(&tasks.DeleteStaleSwarmingBots{}, deleteStaleSwarmingBots, deleteStaleSwarmingBotsQueue, nil)
-}
-
-// registerTQTasks registers task handlers with the given *tq.Dispatcher.
-func registerTQTasks(dsp *tq.Dispatcher) {
+// registerTasks registers task handlers with the given *tq.Dispatcher.
+func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTaskClass(tq.TaskClass{
 		ID:        "count-vms",
 		Prototype: &tasks.CountVMs{},
 		Queue:     countVMsQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return countVMs(c, payload.(*tasks.CountVMs))
+			return countVMs(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -197,7 +166,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     createInstanceQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return createInstance(c, payload.(*tasks.CreateInstance))
+			return createInstance(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -206,7 +175,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     createVMQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return createVM(c, payload.(*tasks.CreateVM))
+			return createVM(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -215,7 +184,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     deleteBotQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return deleteBot(c, payload.(*tasks.DeleteBot))
+			return deleteBot(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -224,7 +193,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     destroyInstanceQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return destroyInstance(c, payload.(*tasks.DestroyInstance))
+			return destroyInstance(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -233,7 +202,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     expandConfigQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return expandConfig(c, payload.(*tasks.ExpandConfig))
+			return expandConfig(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -248,7 +217,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		},
 		Kind: tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return manageBot(c, payload.(*tasks.ManageBot))
+			return manageBot(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -257,7 +226,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     reportQuotaQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return reportQuota(c, payload.(*tasks.ReportQuota))
+			return reportQuota(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -266,7 +235,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     terminateBotQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return terminateBot(c, payload.(*tasks.TerminateBot))
+			return terminateBot(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -275,7 +244,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     auditInstancesQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return auditInstanceInZone(c, payload.(*tasks.AuditProject))
+			return auditInstanceInZone(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -284,7 +253,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     drainVMQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return drainVMQueueHandler(c, payload.(*tasks.DrainVM))
+			return drainVMQueueHandler(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -293,7 +262,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     inspectSwarmingQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return inspectSwarming(c, payload.(*tasks.InspectSwarming))
+			return inspectSwarming(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -302,7 +271,7 @@ func registerTQTasks(dsp *tq.Dispatcher) {
 		Queue:     deleteStaleSwarmingBotsQueue,
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
-			return deleteStaleSwarmingBots(c, payload.(*tasks.DeleteStaleSwarmingBots))
+			return deleteStaleSwarmingBots(c, payload)
 		},
 	})
 }
@@ -389,7 +358,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	dsp.Sweeper = tq.NewDistributedSweeper(dsp, tq.DistributedSweeperOptions{
 		TaskQueue: "tq-sweep",
 	})
-	registerTQTasks(dsp)
+	registerTasks(dsp)
 	var (
 		subMu sync.RWMutex
 		sub   tq.Submitter
@@ -421,7 +390,6 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		return sub
 	}
 
-	legacyDsp := &legacytq.Dispatcher{}
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 		defer cancel()
@@ -431,10 +399,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 				ctx = tq.UseSubmitter(ctx, s)
 			}
 		}
-		if d := c.Request.Context().Value(&dspKey); d == nil {
-			ctx = withDispatcher(ctx, legacyDsp)
-		}
-		ctx = withTQDispatcher(ctx, dsp)
+		ctx = withDispatcher(ctx, dsp)
 		ctx = withCompute(ctx, newCompute(ctx))
 		ctx = withSwarming(ctx, newSwarming)
 		c.Request = c.Request.WithContext(ctx)
