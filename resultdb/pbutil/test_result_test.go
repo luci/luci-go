@@ -532,6 +532,10 @@ func TestValidateTestResult(t *testing.T) {
 					assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: line: must not be negative"))
 				})
 				t.Run("repo", func(t *ftt.Test) {
+					t.Run("no https prefix", func(t *ftt.Test) {
+						msg.TestMetadata.Location.Repo = "http://chromium.googlesource.com/chromium/src"
+						assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: repo: must start with https://"))
+					})
 					t.Run("invalid", func(t *ftt.Test) {
 						msg.TestMetadata.Location.Repo = "https://chromium.googlesource.com/chromium/src.git"
 						assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: repo: must not end with .git"))
@@ -541,7 +545,7 @@ func TestValidateTestResult(t *testing.T) {
 						assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: repo: required"))
 					})
 					t.Run("too long", func(t *ftt.Test) {
-						msg.TestMetadata.Location.Repo = strings.Repeat("a", maxLenRepoName+1)
+						msg.TestMetadata.Location.Repo = "https://" + strings.Repeat("a", maxLenRepoName+1)
 						assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: repo: exceeds the maximum size"))
 					})
 				})

@@ -386,6 +386,8 @@ func ValidateTestLocation(loc *pb.TestLocation) error {
 	switch {
 	case loc.GetRepo() == "":
 		return errors.New("repo: required")
+	case !strings.HasPrefix(loc.Repo, "https://"):
+		return errors.New("repo: must start with https://")
 	case strings.HasSuffix(loc.Repo, ".git"):
 		return errors.New("repo: must not end with .git")
 	case len(loc.Repo) > maxLenRepoName:
