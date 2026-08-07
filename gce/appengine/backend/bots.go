@@ -119,6 +119,9 @@ func manageMissingBot(c context.Context, vm *model.VM) error {
 // manageBotQueue is the name of the manage bot task handler queue.
 const manageBotQueue = "manage-bot"
 
+// manageBot2Queue is the secondary manage bot task handler queue.
+const manageBot2Queue = "manage-bot-2"
+
 // manageBot manages a Swarming bot.
 func manageBot(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.ManageBot)

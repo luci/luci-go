@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
@@ -71,23 +72,27 @@ func payloadFactory(t tasks.Task) payloadFn {
 
 // trigger triggers a task queue task for each key returned by the given query.
 func trigger(c context.Context, t tasks.Task, q *datastore.Query) error {
-	tasks := make([]*tq.Task, 0)
+	var taskList []*tq.Task
 	newPayload := payloadFactory(t)
 	for k, err := range datastore.RunQuery[*datastore.Key](c, q).Results {
 		if err != nil {
 			return errors.Fmt("failed to fetch keys: %w", err)
 		}
-		tasks = append(tasks, &tq.Task{
+		taskList = append(taskList, &tq.Task{
 			Payload: newPayload(k.StringID()),
 		})
 	}
-	logging.Debugf(c, "scheduling %d tasks", len(tasks))
-	for _, task := range tasks {
-		if err := getDispatcher(c).AddTask(c, task); err != nil {
-			return errors.Fmt("failed to schedule tasks: %w", err)
+	logging.Debugf(c, "scheduling %d tasks", len(taskList))
+	return parallel.WorkPool(16, func(tasksChan chan<- func() error) {
+		for _, task := range taskList {
+			tasksChan <- func() error {
+				if err := getDispatcher(c).AddTask(c, task); err != nil {
+					return errors.Fmt("failed to schedule task: %w", err)
+				}
+				return nil
+			}
 		}
-	}
-	return nil
+	})
 }
 
 // countVMsAsync schedules task queue tasks to count VMs for each config.
@@ -154,12 +159,16 @@ func drainVMsAsync(c context.Context) error {
 			},
 		})
 	}
-	for _, task := range taskList {
-		if err := getDispatcher(c).AddTask(c, task); err != nil {
-			return errors.Fmt("drain vms: failed to schedule tasks: %w", err)
+	return parallel.WorkPool(16, func(tasksChan chan<- func() error) {
+		for _, task := range taskList {
+			tasksChan <- func() error {
+				if err := getDispatcher(c).AddTask(c, task); err != nil {
+					return errors.Fmt("drain vms: failed to schedule task: %w", err)
+				}
+				return nil
+			}
 		}
-	}
-	return nil
+	})
 }
 
 // auditInstances schedules an audit task for every project:zone combination
@@ -173,7 +182,7 @@ func auditInstances(c context.Context) error {
 		proj.Add(cfg.Config.GetAttributes().GetProject())
 	}
 	projects := proj.ToSlice()
-	jobs := make([]*tq.Task, 0)
+	var jobs []*tq.Task
 	srv := getCompute(c).Stable.Zones
 	for _, proj := range projects {
 		zoneList, err := srv.List(proj).Context(c).Do()
@@ -190,12 +199,16 @@ func auditInstances(c context.Context) error {
 			})
 		}
 	}
-	for _, job := range jobs {
-		if err := getDispatcher(c).AddTask(c, job); err != nil {
-			return errors.Fmt("audit instances: failed to schedule tasks: %w", err)
+	return parallel.WorkPool(16, func(tasksChan chan<- func() error) {
+		for _, job := range jobs {
+			tasksChan <- func() error {
+				if err := getDispatcher(c).AddTask(c, job); err != nil {
+					return errors.Fmt("audit instances: failed to schedule task: %w", err)
+				}
+				return nil
+			}
 		}
-	}
-	return nil
+	})
 }
 
 // reportQuotasAsync schedules task queue tasks to report quota in each project.

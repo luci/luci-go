@@ -43,16 +43,15 @@ func TestCron(t *testing.T) {
 	ftt.Run("cron", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		rt := &roundtripper.JSONRoundTripper{}
 		c, sched := tq.TestingContext(memory.Use(context.Background()), dsp)
+		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
 		assert.Loosely(t, err, should.BeNil)
 		c = withCompute(withDispatcher(c, dsp), ComputeService{Stable: gce})
 		datastore.GetTestable(c).Consistent(true)
 
 		t.Run("countTasks", func(t *ftt.Test) {
-			dsp := &tq.Dispatcher{}
-			c = withDispatcher(c, dsp)
+			assert.Loosely(t, countTasks(c), should.BeNil)
 			q := datastore.NewQuery("TaskCount")
 
 			t.Run("none", func(t *ftt.Test) {
@@ -63,7 +62,6 @@ func TestCron(t *testing.T) {
 			})
 
 			t.Run("many", func(t *ftt.Test) {
-				registerTasks(dsp)
 				assert.Loosely(t, countTasks(c), should.BeNil)
 				var k []*datastore.Key
 				assert.Loosely(t, datastore.GetAll(c, q, &k), should.BeNil)
@@ -128,7 +126,7 @@ func TestCron(t *testing.T) {
 				assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
 				ts := sched.Tasks()
 				assert.Loosely(t, ts, should.HaveLength(1))
-				cfg, ok := ts[0].Payload.(*tasks.ExpandConfig)
+				cfg, ok := ts.Payloads()[0].(*tasks.ExpandConfig)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, cfg.GetId(), should.NotBeEmpty)
 				assert.Loosely(t, cfg.GetTriggeredUnixTime(), should.BeGreaterThan(1704096000)) // 2024-01-01
@@ -393,7 +391,7 @@ func TestCron(t *testing.T) {
 				})
 				assert.Loosely(t, trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), should.BeNil)
 				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
-				assert.Loosely(t, sched.Tasks()[0].Payload, should.Match(&tasks.ManageBot{
+				assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(&tasks.ManageBot{
 					Id: "id",
 				}))
 			})
