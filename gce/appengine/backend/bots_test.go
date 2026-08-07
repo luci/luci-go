@@ -35,8 +35,8 @@ import (
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 
-	"go.chromium.org/luci/gce/api/config/v1"
-	"go.chromium.org/luci/gce/api/tasks/v1"
+	config "go.chromium.org/luci/gce/api/config/v1"
+	tasks "go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
@@ -266,7 +266,7 @@ func TestManageBot(t *testing.T) {
 					})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
-					assert.Loosely(t, sched.Tasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
+					assert.Loosely(t, sched.Tasks().Payloads()[0], should.HaveType[*tasks.DestroyInstance])
 					v := &model.VM{
 						ID: "id",
 					}
@@ -307,7 +307,7 @@ func TestManageBot(t *testing.T) {
 					})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
-					assert.Loosely(t, sched.Tasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
+					assert.Loosely(t, sched.Tasks().Payloads()[0], should.HaveType[*tasks.DestroyInstance])
 				})
 
 				t.Run("wait", func(t *ftt.Test) {
@@ -344,7 +344,7 @@ func TestManageBot(t *testing.T) {
 					})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
-					assert.Loosely(t, sched.Tasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
+					assert.Loosely(t, sched.Tasks().Payloads()[0], should.HaveType[*tasks.DestroyInstance])
 					v := &model.VM{
 						ID: "id",
 					}
@@ -389,7 +389,7 @@ func TestManageBot(t *testing.T) {
 					})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
-					assert.Loosely(t, sched.Tasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
+					assert.Loosely(t, sched.Tasks().Payloads()[0], should.HaveType[*tasks.DestroyInstance])
 					v := &model.VM{
 						ID: "id",
 					}

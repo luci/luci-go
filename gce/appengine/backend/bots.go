@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
-	"go.chromium.org/luci/gce/api/tasks/v1"
+	tasks "go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 )
@@ -170,21 +170,20 @@ func inspectSwarmingAsync(c context.Context) error {
 		}
 		swarmings.Add(cfg.Config.Swarming)
 	}
-	// Generate all the inspectSwarmingTasks
-	var inspectSwarmingTasks []*tq.Task
+	// Schedule inspectSwarmingTasks
+	var errs []error
 	swarmings.Iter(func(sw string) bool {
-		inspectSwarmingTasks = append(inspectSwarmingTasks, &tq.Task{
+		if err := getDispatcher(c).AddTask(c, &tq.Task{
 			Payload: &tasks.InspectSwarming{
 				Swarming: sw,
 			},
-		})
+		}); err != nil {
+			errs = append(errs, err)
+		}
 		return true
 	})
-	// schedule all the inspect swarming tasks
-	for _, task := range inspectSwarmingTasks {
-		if err := getDispatcher(c).AddTask(c, task); err != nil {
-			return errors.Fmt("inspectSwarmingAsync: failed to schedule task: %w", err)
-		}
+	if len(errs) > 0 {
+		return errors.Fmt("inspectSwarmingAsync: failed to schedule task: %w", errors.NewMultiError(errs...).AsError())
 	}
 	return nil
 }
@@ -201,7 +200,6 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 	case task.GetSwarming() == "":
 		return errors.New("InspectSwarming: swarming is required")
 	}
-	var inpectSwarmingSubtasks []*tq.Task
 	listRPCResp, err := getSwarming(c, task.GetSwarming()).ListBots(c, &swarmingpb.BotsRequest{
 		Limit:  botListLimit,
 		Cursor: task.Cursor,
@@ -218,6 +216,7 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 		}
 	}
 	batchPayload := &tasks.DeleteStaleSwarmingBots{}
+	var subtaskErrs []error
 	for _, bot := range listRPCResp.Items {
 		qV := datastore.NewQuery("VM").Eq("hostname", bot.BotId)
 		for vm, err := range datastore.RunQuery[*model.VM](c, qV).Results {
@@ -226,12 +225,14 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 				continue
 			}
 			if isDestroyable(c, bot, vm) {
-				inpectSwarmingSubtasks = append(inpectSwarmingSubtasks, &tq.Task{
+				if err := getDispatcher(c).AddTask(c, &tq.Task{
 					Payload: &tasks.DestroyInstance{
 						Id:  vm.ID,
 						Url: vm.URL,
 					},
-				})
+				}); err != nil {
+					subtaskErrs = append(subtaskErrs, err)
+				}
 			} else {
 				batchPayload.Bots = append(batchPayload.Bots, &tasks.DeleteStaleSwarmingBot{
 					Id:          vm.ID,
@@ -239,9 +240,11 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 				})
 				if len(batchPayload.GetBots()) == deleteStaleSwarmingBotBatchSize {
 					// Schedule a task to check and delete the bot if needed
-					inpectSwarmingSubtasks = append(inpectSwarmingSubtasks, &tq.Task{
+					if err := getDispatcher(c).AddTask(c, &tq.Task{
 						Payload: batchPayload,
-					})
+					}); err != nil {
+						subtaskErrs = append(subtaskErrs, err)
+					}
 					batchPayload = &tasks.DeleteStaleSwarmingBots{}
 				}
 			}
@@ -249,15 +252,14 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 	}
 	if len(batchPayload.GetBots()) > 0 {
 		// Schedule a task to check and delete the bot if needed
-		inpectSwarmingSubtasks = append(inpectSwarmingSubtasks, &tq.Task{
+		if err := getDispatcher(c).AddTask(c, &tq.Task{
 			Payload: batchPayload,
-		})
-	}
-	// Dispatch all the tasks
-	for _, subtask := range inpectSwarmingSubtasks {
-		if err := getDispatcher(c).AddTask(c, subtask); err != nil {
-			return errors.Fmt("InspectSwarming: failed to schedule sub task(s): %w", err)
+		}); err != nil {
+			subtaskErrs = append(subtaskErrs, err)
 		}
+	}
+	if len(subtaskErrs) > 0 {
+		return errors.Fmt("InspectSwarming: failed to schedule sub task(s): %w", errors.NewMultiError(subtaskErrs...).AsError())
 	}
 	return nil
 }
