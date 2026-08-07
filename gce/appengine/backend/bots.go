@@ -423,6 +423,9 @@ func deleteVM(c context.Context, id, hostname string) error {
 // deleteStaleSwarmingBotsQueue is the name of the queue that deletes stale swarming bots in batches
 const deleteStaleSwarmingBotsQueue = "delete-stale-swarming-bots"
 
+// deleteStaleSwarmingBots2Queue is the secondary queue that deletes stale swarming bots in batches
+const deleteStaleSwarmingBots2Queue = "delete-stale-swarming-bots-2"
+
 func deleteStaleSwarmingBots(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.DeleteStaleSwarmingBots)
 	switch {

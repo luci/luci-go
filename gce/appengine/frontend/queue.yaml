@@ -71,3 +71,8 @@ queue:
   rate: 500/s
   retry_parameters:
     task_retry_limit: 0
+
+- name: delete-stale-swarming-bots-2
+  rate: 500/s
+  retry_parameters:
+    task_retry_limit: 0
