@@ -149,6 +149,25 @@ func getManageBotQueue(id string) string {
 	}
 }
 
+// DeleteStaleSwarmingBotsQueues is the list of queues to distribute delete-stale-swarming-bots tasks across.
+var DeleteStaleSwarmingBotsQueues = []string{
+	deleteStaleSwarmingBotsQueue,
+	deleteStaleSwarmingBots2Queue,
+}
+
+func getDeleteStaleSwarmingBotsQueue(id string) string {
+	switch len(DeleteStaleSwarmingBotsQueues) {
+	case 0:
+		return ""
+	case 1:
+		return DeleteStaleSwarmingBotsQueues[0]
+	default:
+		h := fnv.New32a()
+		h.Write([]byte(id))
+		return DeleteStaleSwarmingBotsQueues[int(h.Sum32()%uint32(len(DeleteStaleSwarmingBotsQueues)))]
+	}
+}
+
 // registerTasks registers task handlers with the given *tq.Dispatcher.
 func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTaskClass(tq.TaskClass{
@@ -268,8 +287,14 @@ func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTaskClass(tq.TaskClass{
 		ID:        "delete-stale-swarming-bots",
 		Prototype: &tasks.DeleteStaleSwarmingBots{},
-		Queue:     deleteStaleSwarmingBotsQueue,
-		Kind:      tq.FollowsContext,
+		QueuePicker: func(c context.Context, t *tq.Task) (string, error) {
+			msg, ok := t.Payload.(*tasks.DeleteStaleSwarmingBots)
+			if !ok || len(msg.GetBots()) == 0 || msg.GetBots()[0].GetId() == "" {
+				return deleteStaleSwarmingBotsQueue, nil
+			}
+			return getDeleteStaleSwarmingBotsQueue(msg.GetBots()[0].GetId()), nil
+		},
+		Kind: tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
 			return deleteStaleSwarmingBots(c, payload)
 		},
