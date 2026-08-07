@@ -358,14 +358,13 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 		// queries
 		queries = append(queries, query.Eq("hostname", hostname))
 	}
-	mapVMs := func(vm *model.VM) {
-		hostToVM[vm.Hostname] = vm
-	}
 	// Get all the VM records corresponding to the listed instances
-	err = datastore.RunMulti(c, queries, mapVMs)
-	if err != nil {
-		logging.Errorf(c, "Audit instance: failed to query for the VMS. %v", err)
-		return err
+	for vm, err := range datastore.RunMultiQuery[*model.VM](c, queries).Results {
+		if err != nil {
+			logging.Errorf(c, "Audit instance: failed to query for the VMS. %v", err)
+			return err
+		}
+		hostToVM[vm.Hostname] = vm
 	}
 	var countLeaks int64
 	// Delete the ones we don't know of

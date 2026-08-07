@@ -629,6 +629,11 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 	// synchronization overhead. Just make sure to use the correct cursor format.
 	// This is worth optimizing since running only one query is a very very
 	// common case.
+	//
+	// TODO: This is silly - we should just make cursor encode/decode *always*
+	// in the multi-cursor form, and we should see if `len(queries)` at the top
+	// is 1 and then return `RunQuery(ctx, finalized[0])` without any of this
+	// other noise.
 	if len(finalized) == 1 {
 		it := QueryIterFromRaw[V](Raw(ctx).RunQuery(finalized[0]))
 		ogCursor := it.Cursor
