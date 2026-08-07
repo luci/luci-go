@@ -451,5 +451,185 @@ describe('inventory_editing_utils', () => {
       expect(portField?.min).toBe(9000);
       expect(portField?.max).toBe(9999);
     });
+
+    it('includes zone in editable fields', () => {
+      const fields = getEditableFields(false);
+      const zoneField = fields.find((f) => f.editPath === 'zone');
+      expect(zoneField).toBeDefined();
+      expect(zoneField?.path).toBe('zone');
+    });
+
+    it('includes rack in editable fields', () => {
+      const fields = getEditableFields(false);
+      const rackField = fields.find((f) => f.editPath === 'rack');
+      expect(rackField).toBeDefined();
+      expect(rackField?.path).toBe('rack');
+    });
+  });
+
+  describe('Zone editing', () => {
+    const original = {
+      name: 'machineLSEs/test-host',
+      zone: 'ZONE_CHROMEOS1',
+      rack: 'chromeos1-row1-rack1',
+      machines: ['chromeos-machine-1'],
+    } as unknown as MachineLSE;
+
+    const updated = {
+      name: 'machineLSEs/test-host',
+      zone: 'ZONE_ATLANTA',
+      rack: 'chromeos1-row1-rack1',
+      machines: ['chromeos-machine-1'],
+    } as unknown as MachineLSE;
+
+    it('translates diff to DeviceConfigEdits format and automatically includes rack when zone changes', () => {
+      const { edits, paths } = translateDiffToEdits(original, updated);
+      expect(edits.zone).toBe('ZONE_ATLANTA');
+      expect(edits.rack).toBe('chromeos1-row1-rack1');
+      expect(paths).toEqual(['zone', 'rack']);
+    });
+
+    it('generates shivas update machine command with -zone and -rack flags and machine name', () => {
+      const commands = generateShivasCommands(
+        original,
+        updated,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update machine -name chromeos-machine-1 -namespace os -zone ZONE_ATLANTA -rack chromeos1-row1-rack1',
+      ]);
+    });
+
+    it('generates shivas update machine command with -zone - when cleared and falls back to hostname when machines array is empty', () => {
+      const origNoMachine = {
+        name: 'machineLSEs/test-host',
+        zone: 'ZONE_CHROMEOS1',
+        rack: 'chromeos1-row1-rack1',
+      } as unknown as MachineLSE;
+      const cleared = {
+        name: 'machineLSEs/test-host',
+        zone: '',
+        rack: 'chromeos1-row1-rack1',
+      } as unknown as MachineLSE;
+      const commands = generateShivasCommands(
+        origNoMachine,
+        cleared,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update machine -name test-host -namespace os -zone - -rack chromeos1-row1-rack1',
+      ]);
+    });
+
+    it('generates both shivas update dut and shivas update machine commands when both dut fields and zone are updated', () => {
+      const origMulti = {
+        name: 'machineLSEs/test-host',
+        zone: 'ZONE_CHROMEOS1',
+        rack: 'chromeos1-row1-rack1',
+        machines: ['chromeos-machine-1'],
+        chromeosMachineLse: {
+          deviceLse: {
+            dut: {
+              pools: ['pool1'],
+            },
+          },
+        },
+      } as unknown as MachineLSE;
+      const updatedMulti = {
+        name: 'machineLSEs/test-host',
+        zone: 'ZONE_ATLANTA',
+        rack: 'chromeos1-row1-rack1',
+        machines: ['chromeos-machine-1'],
+        chromeosMachineLse: {
+          deviceLse: {
+            dut: {
+              pools: ['pool2'],
+            },
+          },
+        },
+      } as unknown as MachineLSE;
+      const commands = generateShivasCommands(
+        origMulti,
+        updatedMulti,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update dut -name test-host -namespace os -pools-replace pool2',
+        'shivas update machine -name chromeos-machine-1 -namespace os -zone ZONE_ATLANTA -rack chromeos1-row1-rack1',
+      ]);
+    });
+  });
+
+  describe('Rack editing', () => {
+    const original = {
+      name: 'machineLSEs/test-host',
+      zone: 'ZONE_CHROMEOS1',
+      rack: 'chromeos1-row1-rack1',
+      machines: ['chromeos-machine-1'],
+    } as unknown as MachineLSE;
+
+    const updated = {
+      name: 'machineLSEs/test-host',
+      zone: 'ZONE_CHROMEOS1',
+      rack: 'chromeos1-row1-rack2',
+      machines: ['chromeos-machine-1'],
+    } as unknown as MachineLSE;
+
+    it('translates diff to DeviceConfigEdits format', () => {
+      const { edits, paths } = translateDiffToEdits(original, updated);
+      expect(edits.rack).toBe('chromeos1-row1-rack2');
+      expect(paths).toEqual(['rack']);
+    });
+
+    it('generates shivas update machine command with -rack flag when only rack is updated', () => {
+      const commands = generateShivasCommands(
+        original,
+        updated,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update machine -name chromeos-machine-1 -namespace os -rack chromeos1-row1-rack2',
+      ]);
+    });
+
+    it('generates shivas update machine command with -rack - when rack is cleared', () => {
+      const cleared = {
+        name: 'machineLSEs/test-host',
+        zone: 'ZONE_CHROMEOS1',
+        rack: '',
+        machines: ['chromeos-machine-1'],
+      } as unknown as MachineLSE;
+      const commands = generateShivasCommands(
+        original,
+        cleared,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update machine -name chromeos-machine-1 -namespace os -rack -',
+      ]);
+    });
+
+    it('generates shivas update machine command with both updated -zone and -rack flags when both change', () => {
+      const updatedBoth = {
+        name: 'machineLSEs/test-host',
+        zone: 'ZONE_ATLANTA',
+        rack: 'chromeos1-row1-rack2',
+        machines: ['chromeos-machine-1'],
+      } as unknown as MachineLSE;
+      const commands = generateShivasCommands(
+        original,
+        updatedBoth,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update machine -name chromeos-machine-1 -namespace os -zone ZONE_ATLANTA -rack chromeos1-row1-rack2',
+      ]);
+    });
   });
 });

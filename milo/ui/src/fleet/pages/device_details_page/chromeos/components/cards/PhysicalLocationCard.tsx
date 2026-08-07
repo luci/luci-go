@@ -14,8 +14,16 @@
 
 import { Grid } from '@mui/material';
 
+import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import { LOCATION_PATHS } from '../../utils/inventory_editing_utils';
 import { InventoryDataCard } from '../common/InventoryDataCard';
 import { PropertyField } from '../common/PropertyField';
+import { CardForm } from '../form/CardForm';
+import { FormAutocompleteField } from '../form/FormAutocompleteField';
+import { FormTextField } from '../form/FormTextField';
+import { useOptionalInventoryForm } from '../form/InventoryFormContext';
 
 export interface PhysicalLocationCardProps {
   zone?: string | null;
@@ -32,7 +40,39 @@ export const PhysicalLocationCard = ({
   isEditing = false,
   onEdit,
 }: PhysicalLocationCardProps) => {
-  const hasData = Boolean(zone || rack);
+  const form = useOptionalInventoryForm();
+  const dimensionsQuery = useDeviceDimensions({
+    platform: Platform.CHROMEOS,
+    enabled: Boolean(form),
+  });
+
+  const zoneOptions = dimensionsQuery.data?.labels?.['ufs_zone']?.values || [];
+
+  const currentZone = form?.draftLse?.zone ?? zone;
+  const currentRack = form?.draftLse?.rack ?? rack;
+  const hasData = Boolean(currentZone || currentRack);
+
+  if (form) {
+    return (
+      <CardForm
+        cardId="location"
+        title="Physical Location & Infrastructure"
+        isEmpty={!hasData}
+        emptyMessage="No physical location metadata recorded."
+      >
+        <Grid container spacing={2}>
+          <FormAutocompleteField
+            label="Zone"
+            path={LOCATION_PATHS.zone}
+            options={zoneOptions as string[]}
+            multiple={false}
+            gridSm={6}
+          />
+          <FormTextField label="Rack" path={LOCATION_PATHS.rack} gridSm={6} />
+        </Grid>
+      </CardForm>
+    );
+  }
 
   return (
     <InventoryDataCard

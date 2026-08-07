@@ -194,4 +194,27 @@ describe('SaveDiffDialog', () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it('joins multiple equivalent shivas commands into a single copied snippet with double ampersand and backslash line continuation', () => {
+    renderDialog({
+      ...defaultProps,
+      shivasCommands: [
+        'shivas update dut -name test-device -pools-replace poolB',
+        'shivas update machine -name chromeos-machine-1 -zone ZONE_ATLANTA -rack rack-1',
+      ],
+    });
+    expect(
+      screen.getByText((content, element) => {
+        return (
+          element?.tagName.toLowerCase() === 'code' &&
+          content.includes(
+            'shivas update dut -name test-device -pools-replace poolB && \\',
+          ) &&
+          content.includes(
+            'shivas update machine -name chromeos-machine-1 -zone ZONE_ATLANTA -rack rack-1',
+          )
+        );
+      }),
+    ).toBeInTheDocument();
+  });
 });

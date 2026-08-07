@@ -15,7 +15,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { InventoryFormProvider } from '../form/InventoryFormContext';
 
 import { PhysicalLocationCard } from './PhysicalLocationCard';
 
@@ -71,5 +74,52 @@ describe('<PhysicalLocationCard />', () => {
     expect(editBtn).toBeVisible();
     await userEvent.click(editBtn);
     expect(handleEdit).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders FormAutocompleteField for Zone and FormTextField for Rack when editing is enabled and both are editable', async () => {
+    const updateDraftFields = jest.fn();
+    const setActiveEditingCardId = jest.fn();
+    const lse = {
+      name: 'machineLSEs/test-host',
+      zone: 'ZONE_CHROMEOS1',
+      rack: 'rack-1',
+    } as unknown as MachineLSE;
+
+    render(
+      <FakeContextProvider>
+        <InventoryFormProvider
+          originalLse={lse}
+          draftLse={lse}
+          updateDraftFields={updateDraftFields}
+          activeEditingCardId="location"
+          setActiveEditingCardId={setActiveEditingCardId}
+          editable={true}
+        >
+          <PhysicalLocationCard
+            zone="ZONE_CHROMEOS1"
+            rack="rack-1"
+            editable={true}
+          />
+        </InventoryFormProvider>
+      </FakeContextProvider>,
+    );
+
+    const combobox = screen.getByRole('combobox', { name: /zone/i });
+    expect(combobox).toBeInTheDocument();
+    expect(combobox).toHaveValue('ZONE_CHROMEOS1');
+
+    const rackInput = screen.getByRole('textbox', { name: /rack/i });
+    expect(rackInput).toBeInTheDocument();
+    expect(rackInput).toHaveValue('rack-1');
+
+    await userEvent.clear(rackInput);
+    await userEvent.type(rackInput, 'rack-2');
+    expect(rackInput).toHaveValue('rack-2');
+
+    const confirmBtn = screen.getByRole('button', { name: 'Confirm' });
+    expect(confirmBtn).toBeVisible();
+    await userEvent.click(confirmBtn);
+
+    expect(setActiveEditingCardId).toHaveBeenCalledWith(null);
   });
 });

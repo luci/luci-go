@@ -56,6 +56,10 @@ export const useInventoryForm = () => {
   return context;
 };
 
+export const useOptionalInventoryForm = () => {
+  return useContext(InventoryFormContext);
+};
+
 interface InventoryFormProviderProps {
   originalLse: MachineLSE | null;
   draftLse: MachineLSE | null;

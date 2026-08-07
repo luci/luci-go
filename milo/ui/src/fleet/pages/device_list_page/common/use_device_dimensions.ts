@@ -22,7 +22,13 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-export const useDeviceDimensions = ({ platform }: { platform: Platform }) => {
+export const useDeviceDimensions = ({
+  platform,
+  enabled = true,
+}: {
+  platform: Platform;
+  enabled?: boolean;
+}) => {
   const { identity } = useAuthState();
   const client = useFleetConsoleClient();
 
@@ -41,6 +47,7 @@ export const useDeviceDimensions = ({ platform }: { platform: Platform }) => {
         platform,
       }),
     ).queryFn,
+    enabled,
     // GetDeviceDimensions updates infrequently and is somewhat
     // expensive to call, so it's okay to refresh less often.
     staleTime: 1000 * 60 * 5, // 5 minutes

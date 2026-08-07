@@ -166,17 +166,15 @@ export const SaveDiffDialog = ({
                   sx={{ mb: 1 }}
                   color="text.secondary"
                 >
-                  Equivalent shivas command(s):
+                  {`Equivalent shivas command${shivasCommands.length > 1 ? 's' : ''}:`}
                 </Typography>
-                {shivasCommands.map((cmd, idx) => (
-                  <Box key={idx} sx={{ mb: 1 }}>
-                    <CodeSnippet
-                      displayText={cmd}
-                      copyText={cmd}
-                      copyKind="shivas_command"
-                    />
-                  </Box>
-                ))}
+                <Box sx={{ mb: 1 }}>
+                  <CodeSnippet
+                    displayText={shivasCommands.join(' && \\\n')}
+                    copyText={shivasCommands.join(' && \\\n')}
+                    copyKind="shivas_command"
+                  />
+                </Box>
               </Box>
             )}
           </DialogContent>

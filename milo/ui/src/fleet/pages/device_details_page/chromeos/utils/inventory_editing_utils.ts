@@ -32,6 +32,11 @@ export const SERVO_PATHS = {
   serial: 'chromeosMachineLse.deviceLse.dut.peripherals.servo.servoSerial',
 };
 
+export const LOCATION_PATHS = {
+  zone: 'zone',
+  rack: 'rack',
+};
+
 export interface FieldConfig {
   label: string;
   path: string;
@@ -51,6 +56,20 @@ export const getEditableFields = (isLabstation: boolean): FieldConfig[] => {
         : LOGICAL_SCHEDULING_PATHS.dutPools,
       editPath: 'pools',
       type: 'array',
+    },
+    {
+      label: 'Zone',
+      path: LOCATION_PATHS.zone,
+      editPath: 'zone',
+      type: 'string',
+      requiresRedeploy: false,
+    },
+    {
+      label: 'Rack',
+      path: LOCATION_PATHS.rack,
+      editPath: 'rack',
+      type: 'string',
+      requiresRedeploy: false,
     },
   ];
   if (!isLabstation) {
@@ -244,6 +263,18 @@ export const translateDiffToEdits = (
     }
   }
 
+  // UFS requires updating rack whenever zone is updated ("Cannot update zone without updating rack").
+  // Automatically include existing rack in edits if zone was modified.
+  if (paths.includes('zone') && !paths.includes('rack')) {
+    const rackVal = String(
+      getNestedValue(updated, LOCATION_PATHS.rack) ||
+        getNestedValue(original, LOCATION_PATHS.rack) ||
+        '',
+    );
+    edits.rack = rackVal;
+    paths.push('rack');
+  }
+
   return { edits: edits as Partial<DeviceConfigEdits>, paths };
 };
 
@@ -258,9 +289,10 @@ export const generateShivasCommands = (
   const commands: string[] = [];
   const isLabstation = isLabstationConfig(original);
 
-  // DUT/Labstation updates
+  // DUT/Labstation/Machine updates
   const dutFlags: string[] = [];
   const labstationFlags: string[] = [];
+  const machineFlags: string[] = [];
 
   // Pools
   const origPools =
@@ -285,6 +317,20 @@ export const generateShivasCommands = (
     } else {
       dutFlags.push('-pools-replace', poolsVal);
     }
+  }
+
+  const origZone = String(getNestedValue(original, LOCATION_PATHS.zone) || '');
+  const updatedZone = String(
+    getNestedValue(updated, LOCATION_PATHS.zone) || '',
+  );
+  const origRack = String(getNestedValue(original, LOCATION_PATHS.rack) || '');
+  const updatedRack = String(
+    getNestedValue(updated, LOCATION_PATHS.rack) || '',
+  );
+  if (origZone !== updatedZone) {
+    machineFlags.push('-zone', updatedZone || '-', '-rack', updatedRack || '-');
+  } else if (origRack !== updatedRack) {
+    machineFlags.push('-rack', updatedRack || '-');
   }
 
   if (!isLabstation) {
@@ -345,6 +391,19 @@ export const generateShivasCommands = (
       cmdParts.push('-namespace', ufsNamespace);
     }
     cmdParts.push(...dutFlags);
+    commands.push(cmdParts.join(' '));
+  }
+
+  if (machineFlags.length > 0) {
+    const machineName =
+      (original.machines && original.machines.length > 0
+        ? original.machines[0]
+        : undefined) || hostname;
+    const cmdParts = ['shivas', 'update', 'machine', '-name', machineName];
+    if (ufsNamespace) {
+      cmdParts.push('-namespace', ufsNamespace);
+    }
+    cmdParts.push(...machineFlags);
     commands.push(cmdParts.join(' '));
   }
 
