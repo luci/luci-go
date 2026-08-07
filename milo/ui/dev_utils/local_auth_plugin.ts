@@ -59,7 +59,7 @@ async function getAuthStateFromLUCIAuth(scopes: string): Promise<AuthState> {
   );
   const accessToken = JSON.parse(accessTokenJSON) as TokenJSON;
   const { stdout: idTokenJSON } = await execCLI(
-    'luci-auth token -json-output - -use-id-token',
+    `luci-auth token -json-output - -use-id-token -scopes "${scopes}"`,
   );
   const idToken = JSON.parse(idTokenJSON) as TokenJSON;
   const profile = jwtDecode<ProfileJSON>(idToken.token);
