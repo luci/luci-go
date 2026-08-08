@@ -24,8 +24,9 @@ const _ObjectKind_name = "UnknownKindCommitKindBlobKindTreeKindGitLinkKindSymlin
 var _ObjectKind_index = [...]uint8{0, 11, 21, 29, 37, 48, 59, 78, 96, 113}
 
 func (i ObjectKind) String() string {
-	if i < 0 || i >= ObjectKind(len(_ObjectKind_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_ObjectKind_index)-1 {
 		return "ObjectKind(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _ObjectKind_name[_ObjectKind_index[i]:_ObjectKind_index[i+1]]
+	return _ObjectKind_name[_ObjectKind_index[idx]:_ObjectKind_index[idx+1]]
 }

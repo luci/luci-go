@@ -68,8 +68,7 @@ def _dynamic_builder_template(
       allowed_property_overrides: a list of top-level property keys that can
         be overridden by users calling the buildbucket ScheduleBuild RPC. If
         this is set exactly to ['*'], ScheduleBuild is allowed to override
-        any properties. Only property keys which are populated via the `properties`
-        parameter here are allowed.
+        any properties.
       service_account: an email of a service account to run the executable
         under: the executable (and various tools it calls, e.g. gcloud storage) will be
         able to make outbound HTTP calls that have an OAuth access token

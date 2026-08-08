@@ -104,8 +104,7 @@ def _generate_builder(
       allowed_property_overrides: a list of top-level property keys that can
         be overridden by users calling the buildbucket ScheduleBuild RPC. If
         this is set exactly to ['*'], ScheduleBuild is allowed to override
-        any properties. Only property keys which are populated via the `properties`
-        parameter here (or via the module-scoped defaults) are allowed.
+        any properties.
       service_account: an email of a service account to run the executable
         under: the executable (and various tools it calls, e.g. gcloud storage) will be
         able to make outbound HTTP calls that have an OAuth access token
@@ -316,11 +315,6 @@ def _generate_builder(
         for override in props["allowed_property_overrides"]:
             if "*" in override:
                 fail("allowed_property_overrides does not support wildcards: %r" % override)
-            # We are explictly adding a carve-out for "recipe" because this
-            # should be ubiquitous in the recipe engine. This might need to be
-            # factored out in the future.
-            elif override not in props["properties"] and override != "recipe":
-                fail("%r listed in allowed_property_overrides but not in properties" % override)
 
     test_presentation = props.pop("test_presentation")
 
@@ -508,8 +502,7 @@ def _builder(
       allowed_property_overrides: a list of top-level property keys that can
         be overridden by users calling the buildbucket ScheduleBuild RPC. If
         this is set exactly to ['*'], ScheduleBuild is allowed to override
-        any properties. Only property keys which are populated via the `properties`
-        parameter here (or via the module-scoped defaults) are allowed.
+        any properties.
       service_account: an email of a service account to run the executable
         under: the executable (and various tools it calls, e.g. gcloud storage) will be
         able to make outbound HTTP calls that have an OAuth access token
