@@ -67,9 +67,15 @@ func Map[E any](ctx context.Context, q *datastore.Query, shards, batchSize int, 
 	for idx, r := range ranges {
 		rangedQ := r.Apply(q)
 		eg.Go(func() error {
-			return datastore.RunBatch(ctx, int32(batchSize), rangedQ, func(e E) error {
-				return cb(ctx, idx, e)
-			})
+			for e, err := range datastore.RunBatchQuery[E](ctx, int32(batchSize), rangedQ).Results {
+				if err != nil {
+					return err
+				}
+				if err := cb(ctx, idx, e); err != nil {
+					return errors.Filter(err, datastore.Stop)
+				}
+			}
+			return nil
 		})
 	}
 	return eg.Wait()
