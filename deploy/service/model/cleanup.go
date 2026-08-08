@@ -63,18 +63,18 @@ func cleanupOld(ctx context.Context, kind string, cutoff time.Time) error {
 		}
 	}
 
-	err := datastore.RunBatch(ctx, batchSize, q, func(key *datastore.Key) {
+	for key, err := range datastore.RunBatchQuery[*datastore.Key](ctx, batchSize, q).Results {
+		if err != nil {
+			logging.Errorf(ctx, "Query to fetch old %s entities failed: %s", kind, err)
+			errs = append(errs, err)
+			break
+		}
 		batch = append(batch, key)
 		if len(batch) == batchSize {
 			flushBatch()
 		}
-	})
-	flushBatch()
-
-	if err != nil {
-		logging.Errorf(ctx, "Query to fetch old %s entities failed: %s", kind, err)
-		errs = append(errs, err)
 	}
+	flushBatch()
 
 	return errs.AsError()
 }
