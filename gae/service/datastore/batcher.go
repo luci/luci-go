@@ -110,15 +110,13 @@ func (bf *batchFilter) batchParallel(count, batch int, cb func(offset, count int
 	}
 }
 
-// RunBatch is a batching version of Run. Like Run, executes a query and invokes
-// the supplied callback for each returned result. RunBatch differs from Run in
-// that it performs the query in batches, using a cursor to continue the query
-// in between batches.
+// RunBatchQuery is a batching version of RunQuery. Like RunQuery, executes a query
+// and returns a QueryIter[V]. RunBatchQuery differs from RunQuery in that it performs
+// the query in batches, using a cursor to continue the query in between batches.
 //
-// NOTE: `cb` does NOT support cursor callbacks when using batched processing
-// mode.
+// NOTE: QueryIter[V].Cursor is NOT supported when using batched processing mode.
 //
-// See Run for more information about the parameters.
+// See RunQuery for more information about the parameters.
 //
 // Batching processes the supplied query in batches, buffering the full batch
 // set locally before sending its results to the user. It will then proceed to
@@ -127,30 +125,32 @@ func (bf *batchFilter) batchParallel(count, batch int, cb func(offset, count int
 //     underlying datastore operation.
 //   - For very long-running queries, where the duration of the query would
 //     normally exceed datastore's maximum query timeout.
-//   - The caller may count return callbacks and perform processing at each
+//   - The caller may count returned items and perform processing at each
 //     `batchSize` interval with confidence that the underlying query will not
 //     timeout during that processing.
 //
-// If the Context supplied to RunBatch is cancelled or reaches its deadline,
-// RunBatch will terminate with the Context's error.
+// If the Context supplied to RunBatchQuery is cancelled or reaches its deadline,
+// RunBatchQuery will terminate with the Context's error.
 //
 // By default, datastore applies a short (~5s) timeout to queries. This can be
 // increased, usually to around several minutes, by explicitly setting a
 // deadline on the supplied Context.
 //
 // If the specified `batchSize` is <= 0, no batching will be performed.
-func RunBatch(c context.Context, batchSize int32, q *Query, cb any) error {
-	return runImpl(withQueryBatching(c, batchSize), q, false, cb)
-}
-
-// RunBatchQuery is a batching version of RunQuery. See RunQuery and RunBatch
-// for more information.
 func RunBatchQuery[V any](c context.Context, batchSize int32, q *Query) *QueryIter[V] {
 	return RunQuery[V](withQueryBatching(c, batchSize), q)
 }
 
-// CountBatch is a batching version of Count. See RunBatch for more information
-// about batching, and CountBatch for more information about the parameters.
+// RunBatch is a batching version of Run.
+//
+// Deprecated: Use RunBatchQuery instead.
+func RunBatch(c context.Context, batchSize int32, q *Query, cb any) error {
+	return runImpl(withQueryBatching(c, batchSize), q, false, cb)
+}
+
+// CountBatch is a batching version of Count. See [RunBatchQuery] for more
+// information about batching, and CountBatch for more information about the
+// parameters.
 //
 // If the Context supplied to CountBatch is cancelled or reaches its deadline,
 // CountBatch will terminate with the Context's error.

@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -81,11 +80,10 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Gte("__key__", datastore.KeyForObj(ctx, &Foo{ID: 1})),
 				}
 				var res []*Foo
-				err := datastore.RunMulti(ctx, queries, func(foo *Foo) error {
+				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
+					assert.Loosely(t, err, should.BeNil)
 					res = append(res, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				assert.Loosely(t, res, should.Resemble(foos))
 			})
 
@@ -95,11 +93,10 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
 				}
 				var keys []*datastore.Key
-				err := datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
+				for k, err := range datastore.RunMultiQuery[*datastore.Key](ctx, queries).Results {
+					assert.Loosely(t, err, should.BeNil)
 					keys = append(keys, k)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				assert.Loosely(t, keys, should.Resemble([]*datastore.Key{
 					datastore.KeyForObj(ctx, foos[0]),
 					datastore.KeyForObj(ctx, foos[1]),
@@ -113,28 +110,26 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Eq("multi_vals", "m3").Order("-single_val", "status"),
 				}
 				var res []*Foo
-				err := datastore.RunMulti(ctx, queries, func(foo *Foo) error {
+				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
+					assert.Loosely(t, err, should.BeNil)
 					res = append(res, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				assert.Loosely(t, res, should.Resemble([]*Foo{foos[2], foos[1], foos[0]}))
 			})
 
-			t.Run("send Stop in cb", func(t *ftt.Test) {
+			t.Run("break in loop", func(t *ftt.Test) {
 				queries := []*datastore.Query{
 					datastore.NewQuery("Foo").Eq("multi_vals", "m2"),
 					datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
 				}
 				var res []*Foo
-				err := datastore.RunMulti(ctx, queries, func(foo *Foo) error {
-					if len(res) == 2 {
-						return datastore.Stop
-					}
+				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
+					assert.Loosely(t, err, should.BeNil)
 					res = append(res, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+					if len(res) == 2 {
+						break
+					}
+				}
 				assert.Loosely(t, res, should.Resemble([]*Foo{foos[0], foos[1]}))
 			})
 
@@ -143,14 +138,13 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Eq("single_val", "non-existent"),
 				}
 				var res []*Foo
-				err := datastore.RunMulti(ctx, queries, func(foo *Foo) error {
+				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
+					assert.Loosely(t, err, should.BeNil)
 					res = append(res, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				assert.Loosely(t, res, should.BeNil)
 			})
-			t.Run("cb with cursorCB", func(t *ftt.Test) {
+			t.Run("with Cursor", func(t *ftt.Test) {
 				queries := []*datastore.Query{
 					datastore.NewQuery("Foo").Eq("single_val", "s1"),
 					datastore.NewQuery("Foo").Eq("single_val", "s2"),
@@ -158,51 +152,46 @@ func TestRunMulti(t *testing.T) {
 				var cur datastore.Cursor
 				var err error
 				var fooses []*Foo
-				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+				it := datastore.RunMultiQuery[*Foo](ctx, queries)
+				for foo, err := range it.Results {
+					assert.Loosely(t, err, should.BeNil)
 					fooses = append(fooses, foo)
 					if len(fooses) == 1 {
-						cur, err = c()
-						if err != nil {
-							return err
-						}
-						return datastore.Stop
+						cur, err = it.Cursor()
+						assert.Loosely(t, err, should.BeNil)
+						break
 					}
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				assert.Loosely(t, fooses, should.NotBeNil)
 				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0]}))
 				// Apply the cursor to the queries
 				queries, err = datastore.ApplyCursors(ctx, queries, cur)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, queries, should.NotBeNil)
-				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+				it = datastore.RunMultiQuery[*Foo](ctx, queries)
+				for foo, err := range it.Results {
+					assert.Loosely(t, err, should.BeNil)
 					fooses = append(fooses, foo)
 					if len(fooses) == 3 {
-						cur, err = c()
-						if err != nil {
-							return err
-						}
-						return datastore.Stop
+						cur, err = it.Cursor()
+						assert.Loosely(t, err, should.BeNil)
+						break
 					}
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				assert.Loosely(t, fooses, should.NotBeNil)
 				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[2], foos[3]}))
 				// Apply the cursor to the queries
 				queries, err = datastore.ApplyCursors(ctx, queries, cur)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, queries, should.NotBeNil)
-				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
+					assert.Loosely(t, err, should.BeNil)
 					fooses = append(fooses, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				assert.Loosely(t, fooses, should.NotBeNil)
 				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[2], foos[3]}))
 			})
-			t.Run("cb with cursorCB, repeat entities", func(t *ftt.Test) {
+			t.Run("with Cursor, repeat entities", func(t *ftt.Test) {
 				queries := []*datastore.Query{
 					datastore.NewQuery("Foo").Eq("multi_vals", "m2"),
 					datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
@@ -211,36 +200,36 @@ func TestRunMulti(t *testing.T) {
 				var cur datastore.Cursor
 				var err error
 				var fooses []*Foo
-				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+				it := datastore.RunMultiQuery[*Foo](ctx, queries)
+				for foo, err := range it.Results {
+					assert.Loosely(t, err, should.BeNil)
 					fooses = append(fooses, foo)
 					if len(fooses) == 2 {
-						cur, err = c()
-						if err != nil {
-							return err
-						}
-						return datastore.Stop
+						cur, err = it.Cursor()
+						assert.Loosely(t, err, should.BeNil)
+						break
 					}
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				assert.Loosely(t, fooses, should.NotBeNil)
 				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[1]}))
 				// Apply the cursor to the queries
 				queries, err = datastore.ApplyCursors(ctx, queries, cur)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, queries, should.NotBeNil)
-				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
+					assert.Loosely(t, err, should.BeNil)
 					fooses = append(fooses, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				assert.Loosely(t, fooses, should.NotBeNil)
-				// RunMulti returns only the unique entities for that run. If there q1 and q2 are in q,
-				// which is a slice of query. And if x is a valid response to both. If the callback reads
-				// one of the x and then stops and retrieves the cursor. It is possible to repeat the same
-				// set of queries with the cursor applied and get x again. This happens because RunMulti
-				// doesn't have any knowledge of the previous call and it doesn't see that x has already
-				// been returned in a previous run.
+				// Multi-queries return only the unique entities for that run. If there
+				// q1 and q2 are in q, which is a slice of query, and if x is a valid
+				// response to both, then if the iterator yields one of the x and then
+				// stops and retrieves the cursor it is possible to repeat the same
+				// set of queries with the cursor applied and get x again.
+				//
+				// This happens because RunMulti doesn't have any knowledge of the
+				// previous call and it doesn't see that x has already been returned in
+				// a previous run.
 				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[1], foos[1], foos[2], foos[3]}))
 			})
 		})
@@ -252,10 +241,9 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo1"),
 				}
 
-				err := datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
-					return nil
-				})
-				assert.Loosely(t, err, should.ErrLike("should query the same kind"))
+				for _, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
+					assert.Loosely(t, err, should.ErrLike("should query the same kind"))
+				}
 			})
 
 			t.Run("Queries with different order", func(t *ftt.Test) {
@@ -264,10 +252,9 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Order("-field1"),
 				}
 
-				err := datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
-					return nil
-				})
-				assert.Loosely(t, err, should.ErrLike("should use the same order"))
+				for _, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
+					assert.Loosely(t, err, should.ErrLike("should use the same order"))
+				}
 			})
 		})
 
@@ -279,29 +266,16 @@ func TestRunMulti(t *testing.T) {
 				datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
 			}
 
-			err := datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
+			var gotErr error
+			for _, err := range datastore.RunMultiQuery[*datastore.Key](ctx, queries).Results {
+				if err != nil {
+					gotErr = err
+					break
+				}
 				cancel()
-				<-ctx.Done() // make sure it "propagates" everywhere
-				return nil
-			})
-			assert.Loosely(t, err, should.Equal(context.Canceled))
-		})
-
-		t.Run("callback error", func(t *ftt.Test) {
-			customErr := errors.New("boo")
-
-			queries := []*datastore.Query{
-				datastore.NewQuery("Foo").Eq("multi_vals", "m2"),
-				datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
+				<-ctx.Done()
 			}
-
-			var keys []*datastore.Key
-			err := datastore.RunMulti(ctx, queries, func(k *datastore.Key) error {
-				keys = append(keys, k)
-				return customErr
-			})
-			assert.Loosely(t, err, should.Equal(customErr))
-			assert.Loosely(t, keys, should.HaveLength(1))
+			assert.Loosely(t, gotErr, should.Equal(context.Canceled))
 		})
 	})
 }

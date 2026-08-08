@@ -123,10 +123,13 @@ func TestQueryBatch(t *testing.T) {
 
 				getAllBatch := func(c context.Context, batchSize int32, query *Query) ([]*CommonStruct, error) {
 					var out []*CommonStruct
-					err := RunBatch(c, batchSize, query, func(cs *CommonStruct) {
+					for cs, err := range RunBatchQuery[*CommonStruct](c, batchSize, query).Results {
+						if err != nil {
+							return nil, err
+						}
 						out = append(out, cs)
-					})
-					return out, err
+					}
+					return out, nil
 				}
 
 				t.Run(fmt.Sprintf(`Batching with size %d installed`, batchSize), func(t *ftt.Test) {
@@ -140,6 +143,13 @@ func TestQueryBatch(t *testing.T) {
 						// One call for every sub-query, plus one to hit Stop.
 						runCalls := (int32(len(all)) / batchSize) + 1
 						assert.Loosely(t, cf.run, should.Equal(runCalls))
+
+						var gotIter []*CommonStruct
+						for cs, err := range RunBatchQuery[*CommonStruct](c, batchSize, q).Results {
+							assert.Loosely(t, err, should.BeNil)
+							gotIter = append(gotIter, cs)
+						}
+						assert.Loosely(t, gotIter, should.Match(all))
 					})
 
 					t.Run(`With a limit of 128, will retrieve 128 items.`, func(t *ftt.Test) {
