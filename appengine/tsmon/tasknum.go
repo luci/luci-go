@@ -92,7 +92,10 @@ func AssignTaskNumbers(ctx context.Context) error {
 	// assigned a number yet. Group by 'Target' (can be "" for old entities, this
 	// is fine).
 	q := datastore.NewQuery("Instance")
-	err := datastore.RunBatch(ctx, int32(taskQueryBatchSize), q, func(entity *instance) error {
+	for entity, err := range datastore.RunBatchQuery[*instance](ctx, int32(taskQueryBatchSize), q).Results {
+		if err != nil {
+			return errors.Fmt("failed to enumerate or expire entries: %w", err)
+		}
 		set := perTarget[entity.Target]
 		if set == nil {
 			set = newWorkingSet(cutoff)
@@ -104,10 +107,6 @@ func AssignTaskNumbers(ctx context.Context) error {
 				return err
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		return errors.Fmt("failed to enumerate or expire entries: %w", err)
 	}
 
 	return parallel.FanOutIn(func(tasks chan<- func() error) {
