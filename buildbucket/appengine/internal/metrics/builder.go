@@ -53,7 +53,11 @@ func ReportBuilderMetrics(ctx context.Context) error {
 
 	return parallel.WorkPool(256, func(taskC chan<- func() error) {
 		q := datastore.NewQuery(model.BuilderStatKind)
-		err := datastore.RunBatch(ctx, 64, q, func(k *datastore.Key) error {
+		for k, err := range datastore.RunBatchQuery[*datastore.Key](ctx, 64, q).Results {
+			if err != nil {
+				taskC <- func() error { return errors.Fmt("datastore.RunBatchQuery: %w", err) }
+				break
+			}
 			project, bucket, builder := mustParseBuilderStatID(k.StringID())
 			tctx := WithBuilder(ctx, project, bucket, builder)
 			legacyBucket := bucket
@@ -84,10 +88,6 @@ func ReportBuilderMetrics(ctx context.Context) error {
 					"reportConsecutiveFailures",
 				)
 			}
-			return nil
-		})
-		if err != nil {
-			taskC <- func() error { return errors.Fmt("datastore.RunBatch: %w", err) }
 		}
 	})
 }
@@ -105,16 +105,17 @@ func mustParseBuilderStatID(id string) (project, bucket, builder string) {
 // w/ swarming config.
 func fetchLUCIBuckets(ctx context.Context) (stringset.Set, error) {
 	ret := stringset.Set{}
-	err := datastore.RunBatch(
+	for bucket, err := range datastore.RunBatchQuery[*model.Bucket](
 		ctx, 128, datastore.NewQuery(model.BucketKind),
-		func(bucket *model.Bucket) error {
-			if bucket.Proto.GetSwarming() != nil {
-				ret.Add(protoutil.FormatBucketID(bucket.Parent.StringID(), bucket.ID))
-			}
-			return nil
-		},
-	)
-	return ret, err
+	).Results {
+		if err != nil {
+			return nil, err
+		}
+		if bucket.Proto.GetSwarming() != nil {
+			ret.Add(protoutil.FormatBucketID(bucket.Parent.StringID(), bucket.ID))
+		}
+	}
+	return ret, nil
 }
 
 // reportMaxAge computes and reports the age of the oldest builds with SCHEDULED.
@@ -219,21 +220,22 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 		Eq("tags", "builder:"+builder)
 	eg, eCtx := errgroup.WithContext(ctx)
 
-	eg.Go(func() (err error) {
+	eg.Go(func() error {
 		now := clock.Now(ctx)
-		err = datastore.RunBatch(
+		for build, err := range datastore.RunBatchQuery[*model.Build](
 			eCtx, 64, q.Eq("status_v2", pb.Status_SCHEDULED),
-			func(build *model.Build) error {
-				// Process scheduled time of pending builds
-				// and add to V2.Age metric
-				age := now.Sub(build.Proto.CreateTime.AsTime()).Seconds()
-				agesScheduled.Add(age)
+		).Results {
+			if err != nil {
+				return err
+			}
+			// Process scheduled time of pending builds
+			// and add to V2.Age metric
+			age := now.Sub(build.Proto.CreateTime.AsTime()).Seconds()
+			agesScheduled.Add(age)
 
-				nScheduled++
-				return nil
-			},
-		)
-		return
+			nScheduled++
+		}
+		return nil
 	})
 
 	eg.Go(func() (err error) {

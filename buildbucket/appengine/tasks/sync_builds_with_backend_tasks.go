@@ -54,20 +54,20 @@ func queryBuildsToSync(ctx context.Context, mr parallel.MultiRunner, backend, pr
 				left := model.ConstructNextSyncTime(backend, project, i, time.Time{})
 				right := model.ConstructNextSyncTime(backend, project, i, now)
 				q := baseQ.Lt("next_backend_sync_time", right).Gt("next_backend_sync_time", left)
-				err := datastore.RunBatch(ctx, int32(fetchBatchSize), q.KeysOnly(true),
-					func(bk *datastore.Key) error {
-						bks = append(bks, bk)
-						if len(bks) == fetchBatchSize {
-							bkC <- bks
-							bks = make([]*datastore.Key, 0, fetchBatchSize)
-						}
-						return nil
-					},
-				)
+				for bk, err := range datastore.RunBatchQuery[*datastore.Key](ctx, int32(fetchBatchSize), q.KeysOnly(true)).Results {
+					if err != nil {
+						return err
+					}
+					bks = append(bks, bk)
+					if len(bks) == fetchBatchSize {
+						bkC <- bks
+						bks = make([]*datastore.Key, 0, fetchBatchSize)
+					}
+				}
 				if len(bks) > 0 {
 					bkC <- bks
 				}
-				return err
+				return nil
 			}
 		}
 	})

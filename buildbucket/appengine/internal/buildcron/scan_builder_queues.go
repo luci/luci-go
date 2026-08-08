@@ -41,14 +41,15 @@ func ScanBuilderQueues(ctx context.Context) error {
 
 	eg, _ := errgroup.WithContext(ctx)
 	eg.SetLimit(64)
-	_ = datastore.RunBatch(ctx, 1000, q,
-		func(bldrQ *model.BuilderQueue) error {
-			eg.Go(func() error {
-				checkBuilderQueue(ctx, bldrQ)
-				return nil
-			})
+	for bldrQ, err := range datastore.RunBatchQuery[*model.BuilderQueue](ctx, 1000, q).Results {
+		if err != nil {
+			break
+		}
+		eg.Go(func() error {
+			checkBuilderQueue(ctx, bldrQ)
 			return nil
 		})
+	}
 
 	_ = eg.Wait()
 

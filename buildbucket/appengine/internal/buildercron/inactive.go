@@ -33,14 +33,17 @@ import (
 func RemoveInactiveBuilderStats(ctx context.Context) error {
 	var toDelete []*datastore.Key
 	q := datastore.NewQuery(model.BuilderStatKind)
-	err := datastore.RunBatch(ctx, 128, q, func(stat *model.BuilderStat) error {
+	for stat, err := range datastore.RunBatchQuery[*model.BuilderStat](ctx, 128, q).Results {
+		if err != nil {
+			return err
+		}
 		bk := stat.BuilderKey(ctx)
 		if clock.Since(ctx, stat.LastScheduled) > model.BuilderExpirationDuration {
 			// Inactive for too long.
 			logging.Infof(ctx, "%s: BuilderStat.LastScheduled(%s) is too old; removing BuilderStat",
 				stat.ID, stat.LastScheduled)
 			toDelete = append(toDelete, datastore.KeyForObj(ctx, stat))
-			return nil
+			continue
 		}
 
 		if clock.Since(ctx, stat.LastScheduled) > model.BuilderStatZombieDuration {
@@ -54,10 +57,6 @@ func RemoveInactiveBuilderStats(ctx context.Context) error {
 				toDelete = append(toDelete, datastore.KeyForObj(ctx, stat))
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		return err
 	}
 	return datastore.Delete(ctx, toDelete)
 }

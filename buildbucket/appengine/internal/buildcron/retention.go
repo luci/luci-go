@@ -80,18 +80,20 @@ func DeleteOldBuilds(ctx context.Context) error {
 			defer close(ch)
 
 			bks := make([]*datastore.Key, 0, batchSize)
-			err := datastore.RunBatch(ctx, int32(batchSize), q, func(bk *datastore.Key) error {
+			for bk, err := range datastore.RunBatchQuery[*datastore.Key](ctx, int32(batchSize), q).Results {
+				if err != nil {
+					return err
+				}
 				bks = append(bks, bk)
 				if len(bks) == batchSize {
 					ch <- bks
 					bks = make([]*datastore.Key, 0, batchSize)
 				}
-				return nil
-			})
+			}
 			if len(bks) > 0 {
 				ch <- bks
 			}
-			return err
+			return nil
 		}
 
 		for bks := range ch {

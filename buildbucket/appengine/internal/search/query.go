@@ -286,30 +286,30 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 
 	rsp := &pb.SearchBuildsResponse{}
 	logging.Debugf(ctx, "datastore query for FetchOnBuild: %v", queries)
-	err = datastore.RunMulti(ctx, queries, func(b *model.Build) error {
+	it := datastore.RunMultiQuery[*model.Build](ctx, queries)
+	for b, err := range it.Results {
+		if err != nil {
+			return nil, errors.Fmt("failed to fetch builds: %w", err)
+		}
 		if len(rsp.Builds) >= int(q.PageSize) {
-			return datastore.Stop
+			break
 		}
 
 		// Check the build status again, as the index might be stale.
 		if q.Status != pb.Status_STATUS_UNSPECIFIED &&
 			q.Status != pb.Status_ENDED_MASK &&
 			q.Status != b.Status {
-			return nil
+			continue
 		}
 
 		// Filter non-production builds here instead of at the datastore level to
 		// reduce the zigzag merge in index scans as the majority of builds are
 		// production.
 		if dropExperimental && b.ExperimentStatus(bb.ExperimentNonProduction) == pb.Trinary_YES {
-			return nil
+			continue
 		}
 
 		rsp.Builds = append(rsp.Builds, b.ToSimpleBuildProto(ctx))
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	if len(rsp.Builds) == int(q.PageSize) {

@@ -125,21 +125,18 @@ func TimeoutExpiredBuilds(ctx context.Context) error {
 				// and then update them in a transaction.
 				for _, st := range []pb.Status{pb.Status_SCHEDULED, pb.Status_STARTED} {
 					bs := make([]*model.Build, 0, batchSize)
-					err := datastore.RunBatch(ctx, int32(batchSize), q.Eq("status_v2", st),
-						func(b *model.Build) error {
-							bs = append(bs, b)
-							if len(bs) == batchSize {
-								ch <- bs
-								bs = make([]*model.Build, 0, batchSize)
-							}
-							return nil
-						},
-					)
+					for b, err := range datastore.RunBatchQuery[*model.Build](ctx, int32(batchSize), q.Eq("status_v2", st)).Results {
+						if err != nil {
+							return err
+						}
+						bs = append(bs, b)
+						if len(bs) == batchSize {
+							ch <- bs
+							bs = make([]*model.Build, 0, batchSize)
+						}
+					}
 					if len(bs) > 0 {
 						ch <- bs
-					}
-					if err != nil {
-						return errors.Fmt("querying expired %s builds: %w", st, err)
 					}
 				}
 				return nil
