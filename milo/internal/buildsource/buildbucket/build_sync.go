@@ -122,16 +122,15 @@ func DeleteOldBuilds(c context.Context) error {
 			defer close(buildsC)
 
 			bsKeys := make([]*datastore.Key, 0, batchSize)
-			err := datastore.RunBatch(c, batchSize, q, func(key *datastore.Key) error {
+			for key, err := range datastore.RunBatchQuery[*datastore.Key](c, batchSize, q).Results {
+				if err != nil {
+					return err
+				}
 				bsKeys = append(bsKeys, key)
 				if len(bsKeys) == batchSize {
 					buildsC <- bsKeys
 					bsKeys = make([]*datastore.Key, 0, batchSize)
 				}
-				return nil
-			})
-			if err != nil {
-				return err
 			}
 
 			if len(bsKeys) > 0 {
@@ -473,14 +472,17 @@ func syncBuildsImpl(c context.Context) error {
 
 			batch := make([]*model.BuildSummary, 0, batchSize)
 			findBuilds := func(q *datastore.Query) error {
-				return datastore.RunBatch(c, batchSize, q, func(bs *model.BuildSummary) error {
+				for bs, err := range datastore.RunBatchQuery[*model.BuildSummary](c, batchSize, q).Results {
+					if err != nil {
+						return err
+					}
 					batch = append(batch, bs)
 					if len(batch) == batchSize {
 						buildsC <- batch
 						batch = make([]*model.BuildSummary, 0, batchSize)
 					}
-					return nil
-				})
+				}
+				return nil
 			}
 
 			pendingBuildsQuery := datastore.NewQuery("BuildSummary").
