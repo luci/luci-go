@@ -206,6 +206,38 @@ func TestAuthorizeBot(t *testing.T) {
 			}
 		})
 
+		t.Run("LUCI machine token secure auth", func(t *ftt.Test) {
+			cases := []struct {
+				botID, fqdn string
+				ca          int64
+				caIDs       []int64
+				metric      string
+				err         any
+			}{
+				{"bot-id", "bot-id.domain", 123, []int64{123}, "luci_token:-", nil},
+				{"bot-id", "bot-id.domain", 123, []int64{123, 456}, "luci_token:-", nil},
+				{"bot-id", "bot-id.domain", 123, nil, "luci_token:-", nil},
+				{"bot-id", "bot-id.domain", 123, []int64{}, "luci_token:-", nil},
+				{"bot-id", "bot-id", 123, []int64{123}, "luci_token:-", nil},
+				{"bot-id--device123", "bot-id.domain", 123, []int64{123}, "luci_token:-", nil},
+				{"bot1", "bot2", 123, []int64{123}, "", `host ID "bot1" doesn't match the LUCI token with FQDN "bot2"`},
+				{"bot-id", "bot-id.domain", 456, []int64{123}, "", `LUCI token CA 456 is not in the expected CA list for host "bot-id"`},
+				{"bot-id", "bot-id.domain", 456, []int64{123, 789}, "", `LUCI token CA 456 is not in the expected CA list for host "bot-id"`},
+			}
+			for _, cs := range cases {
+				ctx := auth.WithState(ctx, &authtest.FakeState{
+					FakeDB:    authDB,
+					Identity:  "bot:unused",
+					UserExtra: &machine.MachineTokenInfo{FQDN: cs.fqdn, CA: cs.ca},
+				})
+				err := AuthorizeBot(ctx, cs.botID, []*configpb.BotAuth{
+					{RequireLuciMachineTokenSecure: &configpb.BotAuth_LuciMachineToken{CaId: cs.caIDs}},
+				})
+				assert.Loosely(t, err, should.ErrLike(cs.err))
+				assert.That(t, popMetric(), should.Equal(cs.metric))
+			}
+		})
+
 		t.Run("GCE VM token auth", func(t *ftt.Test) {
 			cases := []struct {
 				botID, expectedProj string

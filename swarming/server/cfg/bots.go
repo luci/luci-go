@@ -313,6 +313,9 @@ func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
 		if cfg.RequireLuciMachineToken {
 			fields = append(fields, "require_luci_machine_token")
 		}
+		if cfg.RequireLuciMachineTokenSecure != nil {
+			fields = append(fields, "require_luci_machine_token_secure")
+		}
 		if len(cfg.RequireServiceAccount) != 0 {
 			fields = append(fields, "require_service_account")
 		}

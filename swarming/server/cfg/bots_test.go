@@ -309,13 +309,14 @@ func TestValidateBotsCfg(t *testing.T) {
 				cfg: groups(&configpb.BotGroup{
 					Auth: []*configpb.BotAuth{
 						{
-							RequireLuciMachineToken: true,
-							RequireServiceAccount:   []string{"some@example.com"},
-							RequireGceVmToken:       &configpb.BotAuth_GCE{Project: "some-project"},
+							RequireLuciMachineToken:       true,
+							RequireLuciMachineTokenSecure: &configpb.BotAuth_LuciMachineToken{},
+							RequireServiceAccount:         []string{"some@example.com"},
+							RequireGceVmToken:             &configpb.BotAuth_GCE{Project: "some-project"},
 						},
 					},
 				}),
-				err: `(bot_group #0 / auth #0): require_luci_machine_token and require_service_account and require_gce_vm_token can't be used at the same time`,
+				err: `(bot_group #0 / auth #0): require_luci_machine_token and require_luci_machine_token_secure and require_service_account and require_gce_vm_token can't be used at the same time`,
 			},
 			{
 				cfg: groups(&configpb.BotGroup{

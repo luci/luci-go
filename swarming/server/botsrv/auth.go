@@ -69,18 +69,40 @@ func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth
 		authMethodForMon := ""
 		authConditionForMon := ""
 
-		switch {
-		case ba.RequireLuciMachineToken:
+		// While moving to a more secure machine token variant, share the
+		// basic method across both cases.
+		// TODO(dlf): Deprecate the bool variant and inline this func again.
+		luciMachineTokenBasic := func() (*machine.MachineTokenInfo, error) {
 			tok := machine.GetMachineTokenInfo(ctx)
 			if tok == nil {
-				return logs, errors.New("no LUCI machine token in the request")
+				return nil, errors.New("no LUCI machine token in the request")
 			}
-			// TODO(vadimsh): We should probably check tok.CA as well. This will require
-			// updating configs to have it there in the first place.
 			if tok.FQDN != hostID && !strings.HasPrefix(tok.FQDN, hostID+".") {
 				log("Machine token CA: %d", tok.CA)
 				log("Machine token SN: %s", hex.EncodeToString(tok.CertSN))
-				return logs, errors.Fmt("host ID %q doesn't match the LUCI token with FQDN %q", hostID, tok.FQDN)
+				return nil, errors.Fmt("host ID %q doesn't match the LUCI token with FQDN %q", hostID, tok.FQDN)
+			}
+			return tok, nil
+		}
+
+		switch {
+		case ba.RequireLuciMachineToken:
+			if _, err := luciMachineTokenBasic(); err != nil {
+				return logs, err
+			}
+			authMethodForMon, authConditionForMon = "luci_token", "-"
+
+		case ba.RequireLuciMachineTokenSecure != nil:
+			tok, err := luciMachineTokenBasic()
+			if err != nil {
+				return logs, err
+			}
+			if caIDs := ba.RequireLuciMachineTokenSecure.GetCaId(); len(caIDs) > 0 {
+				if !slices.Contains(caIDs, tok.CA) {
+					log("Machine token CA: %d", tok.CA)
+					log("Machine token SN: %s", hex.EncodeToString(tok.CertSN))
+					return logs, errors.Fmt("LUCI token CA %d is not in the expected CA list for host %q", tok.CA, hostID)
+				}
 			}
 			authMethodForMon, authConditionForMon = "luci_token", "-"
 
