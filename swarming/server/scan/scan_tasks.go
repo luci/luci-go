@@ -66,13 +66,17 @@ func ActiveTasks(ctx context.Context, visitors []TaskVisitor) error {
 		v.Prepare(ctx)
 	}
 
-	scanErr := datastore.RunBatch(ctx, 1200, q, func(trs *model.TaskResultSummary) error {
+	var scanErr error
+	for trs, err := range datastore.RunBatchQuery[*model.TaskResultSummary](ctx, 1200, q).Results {
+		if err != nil {
+			scanErr = err
+			break
+		}
 		for _, v := range visitors {
 			v.Visit(ctx, trs)
 		}
 		total++
-		return nil
-	})
+	}
 	if scanErr != nil {
 		logging.Errorf(ctx, "Scan failed after %s. Visited tasks: %d", clock.Since(ctx, startTS), total)
 		scanErr = errors.Fmt("scanning TaskResultSummary: %w", scanErr)

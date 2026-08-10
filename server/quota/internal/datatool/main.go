@@ -152,7 +152,7 @@ func prettyPrintMsgpack(w io.Writer, indent string, obj any) {
 		ws("[\n")
 		newIndent := indent + "  "
 		for _, itm := range x {
-			ws(newIndent)
+			ws("%s", newIndent)
 			prettyPrintMsgpack(w, newIndent, itm)
 			ws(",\n")
 		}
@@ -161,7 +161,7 @@ func prettyPrintMsgpack(w io.Writer, indent string, obj any) {
 		ws("{\n")
 		newIndent := indent + "  "
 		for key, itm := range x {
-			ws(newIndent)
+			ws("%s", newIndent)
 			prettyPrintMsgpack(w, newIndent, key)
 			ws(": ")
 			prettyPrintMsgpack(w, newIndent, itm)
