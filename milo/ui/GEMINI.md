@@ -133,6 +133,29 @@ Useful commands:
 
 ## Coding Conventions & Best Practices
 
+### Shared Infrastructure & Cross-Domain Safety Rules
+
+LUCI Milo UI is a shared monorepo frontend serving multiple business domains (`src/fleet`, `src/build`, `src/test_investigation`, `src/bisection`, `src/resultdb`, etc.). AI agents and developers MUST strictly enforce the following safety rules to prevent unexpected breakages across shared infrastructure:
+
+1. **No Layout-Level Environment Bypass**:
+   - **Rule**: Never remove or bypass environment guards in shared layout components, app shells, or headers (e.g., `src/common/layouts/`, `src/fleet/layouts/header.tsx`, `AppInit`).
+   - **Negative Constraint**: Do NOT hardcode `window.location.hostname` checks or remove layout-level gates to force feature rendering in production.
+   - **Correct Approach**: Declare feature availability via per-flag metadata (`allowedEnvironments: ['dev', 'prod']`) on individual feature flags.
+
+2. **Blast-Radius Assessment for Shared Code (`src/common/`, `src/generic_libs/`)**:
+   - **Rule**: Before modifying any file under `src/common/` or `src/generic_libs/`, perform a search to audit usages across all domain sub-apps (`src/fleet`, `src/build`, `src/bisection`, `src/test_investigation`, `src/resultdb`).
+   - **Verification**: When editing shared code, run the full repository test suite (`npm run test`), not just domain-scoped test paths.
+
+3. **Feature Flag Environment Scoping & Standardization**:
+   - **Rule**: All feature flags created via `createFeatureFlag` MUST specify `allowedEnvironments`.
+   - **Default Safety**: Default to `allowedEnvironments: ['dev']` for all unreleased, internal, or experimental features.
+   - **Production Promotion**: Do NOT add `'prod'` to `allowedEnvironments` unless the feature is production-ready AND explicitly requested by the user.
+   - **No Ad-Hoc Flagging**: Never bypass the central feature flag system using ad-hoc global variables, custom local storage keys, or raw `window.location` checks. Always use `createFeatureFlag` and `useFeatureFlag` from `@/common/feature_flags`.
+
+4. **Hermetic Verification & Workspace Hygiene**:
+   - **Rule**: Run type checks (`npm run type-check`) and unit tests (`npm run test`) before creating or uploading CLs.
+   - **Temp Files**: Write transient test outputs strictly to `milo/ui/.tmp/`. Never run destructive commands like `git clean -fd` or `rm` in inherited workspaces.
+
 ### Making pRPC Queries
 
 This is a core pattern in the codebase. Adhere to the guide in

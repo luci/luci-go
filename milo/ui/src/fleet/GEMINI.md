@@ -71,3 +71,11 @@ Follow [gerrit-workflows](./.agents/skills/gerrit-workflows/SKILL.md) before cre
 1. Branch from `origin/main`.
 2. Verify local commits before upload: `git log origin/main..HEAD --oneline`.
 3. Check CL issue association with `git cl issue`.
+
+## 8. Shared Infrastructure Protection
+When working on Fleet Console code:
+- **Do not modify shared layout guards**: Never remove environment checks in `src/common/` or shared app shells (`Header.tsx`, `fleet_layout.tsx`).
+- **Use `allowedEnvironments` for feature flags**: Ensure feature flags registered in `src/fleet/features.ts` specify `allowedEnvironments: ['dev']` or `['dev', 'prod']`. Default to `['dev']` for unreleased features. See [Shared Infrastructure & Cross-Domain Safety Rules](../../GEMINI.md#shared-infrastructure--cross-domain-safety-rules).
+- **No ad-hoc `window.location` checks**: Do not create custom `window.location.hostname` checks or static boolean maps to toggle features. Always use `createFeatureFlag` and `useFeatureFlag` from `@/common/feature_flags`.
+
+
