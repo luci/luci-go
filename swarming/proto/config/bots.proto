@@ -204,14 +204,23 @@ message BotGroup {
 //   * Either one of require_* alone.
 //   * IP whitelist alone.
 //   * IP + require_luci_machine_token: requires both to pass.
+//   * IP + require_luci_machine_token_secure: requires both to pass.
 //   * IP + require_service_account: requires both to pass.
 //   * IP + require_gce_vm_token: requires both to pass.
 //
-// Next ID: 6.
+// Next ID: 7.
 message BotAuth {
   // See require_gce_vm_token below.
   message GCE {
     string project = 1;
+  }
+
+  // See require_luci_machine_token_secure below.
+  message LuciMachineToken {
+    // List of allowed CA IDs (as configured in Token Server).
+    //
+    // If non-empty, the token's CA ID must match one of these values.
+    repeated int64 ca_id = 1;
   }
 
   // If true, log an error (but proceed) if this method didn't succeed.
@@ -233,6 +242,16 @@ message BotAuth {
   // The machine FQDN embedded in the token should have hostname equal to the
   // bot_id.
   bool require_luci_machine_token = 1;
+
+  // If set, the bot should provide valid X-Luci-Machine-Token header.
+  //
+  // This is a variant of `require_luci_machine_token` with additional
+  // validation:
+  //   * The machine FQDN embedded in the token should have hostname equal to
+  //     the bot_id.
+  //   * If ca_id is specified, the CA ID integer in the token must match one of
+  //     the configured values.
+  LuciMachineToken require_luci_machine_token_secure = 6;
 
   // If set, the bot should use OAuth access token belonging to any of these
   // service accounts.
