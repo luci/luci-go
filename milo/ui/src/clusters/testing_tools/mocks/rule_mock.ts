@@ -19,7 +19,7 @@ import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export const createDefaultMockRule = (): DeepMutable<Rule> => {
-  const now = DateTime.now();
+  const past = DateTime.now().minus({ seconds: 5 }).toISO()!;
   return {
     name: 'projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818',
     project: 'chromium',
@@ -55,11 +55,11 @@ export const createDefaultMockRule = (): DeepMutable<Rule> => {
         },
       ],
     },
-    createTime: now.toISO(),
+    createTime: past,
     createUser: 'system',
-    lastAuditableUpdateTime: now.toISO(),
+    lastAuditableUpdateTime: past,
     lastAuditableUpdateUser: 'user@example.com',
-    lastUpdateTime: now.toISO(),
+    lastUpdateTime: past,
     predicateLastUpdateTime: '2022-01-31T03:36:14.896430Z',
     etag: 'W/"2022-01-31T03:36:14.89643Z"',
   };

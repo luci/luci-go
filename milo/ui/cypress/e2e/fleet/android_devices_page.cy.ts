@@ -18,6 +18,18 @@ import { mockPrpc } from './common/utils';
 
 describe('Android Devices Page', () => {
   beforeEach(() => {
+    cy.clearLocalStorage();
+    cy.window().then((win) => {
+      win.indexedDB.deleteDatabase('keyval-store');
+    });
+
+    // Mock auth state to be a Googler so that protected routes are accessible.
+    cy.intercept('GET', '**/auth/openid/state', {
+      body: {
+        identity: 'user:user@google.com',
+        email: 'user@google.com',
+      },
+    });
     cy.intercept('**', (req) => {
       req.continue((res) => {
         if (res.statusCode >= 400) {

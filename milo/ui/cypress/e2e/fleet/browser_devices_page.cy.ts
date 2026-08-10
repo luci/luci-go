@@ -19,6 +19,17 @@ import { mockPrpc } from './common/utils';
 describe('Browser Devices Page', () => {
   beforeEach(() => {
     cy.clearLocalStorage();
+    cy.window().then((win) => {
+      win.indexedDB.deleteDatabase('keyval-store');
+    });
+
+    // Mock auth state to be a Googler so that feature-flagged routes evaluate to active.
+    cy.intercept('GET', '**/auth/openid/state', {
+      body: {
+        identity: 'user:user@google.com',
+        email: 'user@google.com',
+      },
+    });
 
     const dimensionsData = {
       baseDimensions: { machine: { values: ['machine1'] } },
