@@ -102,8 +102,11 @@ To start a [Vite](https://vitejs.dev) local dev server, run
 
 ```sh
 $ cd "${UI_DIR}"
-$ npm run dev
+$ LUCI_AUTH_CREDENTIAL_HELPER="" npm run dev
 ```
+
+> **Note:** The `LUCI_AUTH_CREDENTIAL_HELPER=""` prefix is required for
+> login/logout to work properly during local development.
 
 The local development server only serves the SPA (Single Page Application)
 assets. It sends pRPC and HTTP REST requests to staging servers hosted on GCP

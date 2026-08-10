@@ -55,7 +55,7 @@ you need to ensure your local environment requests the correct OAuth scopes:
 3.  **Start the Development Server:**
     *   Start the LUCI UI dev server:
         ```bash
-        npm run dev
+        LUCI_AUTH_CREDENTIAL_HELPER="" npm run dev
         ```
 
 After these steps, your local LUCI UI instance should be able to authenticate

@@ -90,7 +90,7 @@ This codebase is hosted as part of Milo UI. To run the frontend, see the overall
 - Initialize Infra Go environment: `eval ../../../../../env.py`.
 - Copy `.env.development` to `.env.development.local` and set `VITE_FLEET_CONSOLE_HOST="localhost:8800"`.
 - Run `npm ci` in the `ui` directory.
-- Run the dev server: `npm run dev`.
+- Run the dev server: `LUCI_AUTH_CREDENTIAL_HELPER="" npm run dev`.
 - The UI is available at `http://localhost:8080/ui/fleet/labs/p/chromeos/devices`.
 
 ### Set up SSH tunnel to Cloudtop

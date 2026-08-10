@@ -63,13 +63,16 @@ export function LocalLoginInstructionPage() {
     navigate(redirectTo);
   }, [isLoggedIn, navigate, redirectTo]);
 
-  const command = `luci-auth login -scopes "${scopes}"`;
+  const command = `LUCI_AUTH_CREDENTIAL_HELPER="" luci-auth login -scopes "${scopes}"`;
 
   return (
     <div css={{ margin: '8px 16px', fontSize: '16px' }}>
       <p>
         When developing locally, please run the following command in your
-        terminal to obtain a session.
+        terminal to obtain a session. Note: For login/logout to work properly,
+        ensure your Vite dev server was started with the{' '}
+        <code>LUCI_AUTH_CREDENTIAL_HELPER=&quot;&quot;</code> environment
+        variable.
       </p>
       <Alert severity="info">
         <Box
