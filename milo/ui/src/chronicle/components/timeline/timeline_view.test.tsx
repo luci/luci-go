@@ -59,7 +59,7 @@ const mockContext: ChronicleContextType = {
   setDetectionFailed: jest.fn(),
   showEnvDialog: false,
   setShowEnvDialog: jest.fn(),
-  detectedEnvironments: [],
+  foundEnvironments: [],
   requestedEnvFailed: undefined,
   failedEnvironments: [],
   detectionCancelled: false,

@@ -33,7 +33,7 @@ import { FailedEnvironmentsList } from './failed_environments_list';
 
 export interface EnvironmentSelectorDialogProps {
   open: boolean;
-  detectedEnvironments: TurboCIEnvironment[];
+  foundEnvironments: TurboCIEnvironment[];
   onSelect: (environment: string) => void;
   onClose: () => void;
   requestedEnvFailed?: string;
@@ -42,7 +42,7 @@ export interface EnvironmentSelectorDialogProps {
 
 export function EnvironmentSelectorDialog({
   open,
-  detectedEnvironments,
+  foundEnvironments,
   onSelect,
   onClose,
   requestedEnvFailed,
@@ -75,7 +75,7 @@ export function EnvironmentSelectorDialog({
           one to load:
         </DialogContentText>
         <List sx={{ pt: 1 }}>
-          {detectedEnvironments.map((env) => (
+          {foundEnvironments.map((env) => (
             <ListItem disableGutters key={env.host}>
               <ListItemButton onClick={() => onSelect(env.environment)}>
                 <ListItemText primary={env.environment} secondary={env.host} />

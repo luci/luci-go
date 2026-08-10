@@ -41,14 +41,25 @@ import {
   DEMO_ENVIRONMENT_NAME,
   DEMO_WORKPLAN_ID,
   DetectionErrorType,
-  FailedEnvironment,
 } from './context';
+
+const DEMO_ENVIRONMENT: TurboCIEnvironment = {
+  environment: DEMO_ENVIRONMENT_NAME,
+  urlParam: DEMO_WORKPLAN_ID,
+  host: DEMO_WORKPLAN_ID,
+};
 
 interface LookupResult {
   exists?: boolean;
   errorType?: DetectionErrorType;
   success?: boolean;
   retryable?: boolean;
+}
+
+interface EnvironmentQueryResult {
+  env: TurboCIEnvironment;
+  exists?: boolean;
+  errorType?: DetectionErrorType;
 }
 
 async function performLookupAttempt(
@@ -275,26 +286,31 @@ export function ChronicleContextProvider({
   const [detecting, setDetecting] = useState(!useFakeData);
   const [detectionFailed, setDetectionFailed] = useState(false);
   const [showEnvDialog, setShowEnvDialog] = useState(false);
-  const [detectedEnvironments, setDetectedEnvironments] = useState<
-    TurboCIEnvironment[]
-  >(
-    useFakeData
-      ? [
-          {
-            environment: DEMO_WORKPLAN_ID,
-            urlParam: DEMO_WORKPLAN_ID,
-            host: DEMO_WORKPLAN_ID,
-          },
-        ]
-      : [],
-  );
+  const [environmentQueryResults, setEnvironmentQueryResults] = useState<
+    EnvironmentQueryResult[]
+  >(useFakeData ? [{ env: DEMO_ENVIRONMENT, exists: true }] : []);
   const [requestedEnvFailed, setRequestedEnvFailed] = useState<
     string | undefined
   >(undefined);
-  const [failedEnvironments, setFailedEnvironments] = useState<
-    FailedEnvironment[]
-  >([]);
   const [detectionCancelled, setDetectionCancelled] = useState(false);
+
+  const foundEnvironments = useMemo(
+    () =>
+      environmentQueryResults
+        .filter((r) => r.exists)
+        .map((r) => r.env)
+        .sort(compareEnvironments),
+    [environmentQueryResults],
+  );
+
+  const failedEnvironments = useMemo(
+    () =>
+      environmentQueryResults
+        .filter((r) => r.errorType)
+        .map((r) => ({ env: r.env, errorType: r.errorType! }))
+        .sort((a, b) => compareEnvironments(a.env, b.env)),
+    [environmentQueryResults],
+  );
 
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const requestedEnvParam = searchParams.get('env') || undefined;
@@ -328,21 +344,18 @@ export function ChronicleContextProvider({
   // Effect 1: Trigger parallel network scans only when the workplanId changes.
   useEffect(() => {
     if (useFakeData) {
-      setDetectedEnvironments([
+      setEnvironmentQueryResults([
         {
-          environment: DEMO_ENVIRONMENT_NAME,
-          urlParam: DEMO_WORKPLAN_ID,
-          host: DEMO_WORKPLAN_ID,
+          env: DEMO_ENVIRONMENT,
+          exists: true,
         },
       ]);
-      setFailedEnvironments([]);
       setCompletedCount(TURBO_CI_ENVIRONMENTS.length);
       return;
     }
 
     // Reset states for a new scan
-    setDetectedEnvironments([]);
-    setFailedEnvironments([]);
+    setEnvironmentQueryResults([]);
     setCompletedCount(0);
     setRequestedEnvFailed(undefined);
     setShowEnvDialog(false);
@@ -375,19 +388,10 @@ export function ChronicleContextProvider({
 
         if (!active) return;
 
-        if (exists) {
-          setDetectedEnvironments((prev) => {
-            if (prev.some((e) => e.host === env.host)) return prev;
-            const next = [...prev, env];
-            return next.sort(compareEnvironments);
-          });
-        } else if (errorType) {
-          setFailedEnvironments((prev) => {
-            if (prev.some((f) => f.env.host === env.host)) return prev;
-            const next = [...prev, { env, errorType }];
-            return next.sort((a, b) => compareEnvironments(a.env, b.env));
-          });
-        }
+        setEnvironmentQueryResults((prev) => {
+          if (prev.some((r) => r.env.host === env.host)) return prev;
+          return [...prev, { env, exists, errorType }];
+        });
 
         setCompletedCount((c) => c + 1);
       });
@@ -421,7 +425,7 @@ export function ChronicleContextProvider({
     )!;
 
     if (requestedEnv) {
-      const isRequestedDetected = detectedEnvironments.some(
+      const isRequestedDetected = foundEnvironments.some(
         (e) => e.host === requestedEnv.host,
       );
       if (isRequestedDetected) {
@@ -434,7 +438,7 @@ export function ChronicleContextProvider({
 
       if (scanComplete) {
         setRequestedEnvFailed(requestedEnv.environment);
-        if (detectedEnvironments.length > 0) {
+        if (foundEnvironments.length > 0) {
           setShowEnvDialog(true);
           setDetecting(false);
         } else {
@@ -445,7 +449,7 @@ export function ChronicleContextProvider({
         setDetecting(true);
       }
     } else {
-      const isProdDetected = detectedEnvironments.some(
+      const isProdDetected = foundEnvironments.some(
         (e) => e.host === prodEnv.host,
       );
       if (isProdDetected) {
@@ -457,12 +461,12 @@ export function ChronicleContextProvider({
       }
 
       if (scanComplete) {
-        if (detectedEnvironments.length === 1) {
-          setActiveEnvironmentState(detectedEnvironments[0].environment);
+        if (foundEnvironments.length === 1) {
+          setActiveEnvironmentState(foundEnvironments[0].environment);
           setDetecting(false);
           setDetectionFailed(false);
           setShowEnvDialog(false);
-        } else if (detectedEnvironments.length > 1) {
+        } else if (foundEnvironments.length > 1) {
           setShowEnvDialog(true);
           setDetecting(false);
         } else {
@@ -476,7 +480,7 @@ export function ChronicleContextProvider({
   }, [
     useFakeData,
     completedCount,
-    detectedEnvironments,
+    foundEnvironments,
     requestedEnvParam,
     detectionCancelled,
   ]);
@@ -560,7 +564,7 @@ export function ChronicleContextProvider({
       setDetectionFailed,
       showEnvDialog,
       setShowEnvDialog,
-      detectedEnvironments,
+      foundEnvironments,
       activeEnvironment,
       setActiveEnvironment,
       requestedEnvFailed,
@@ -582,7 +586,7 @@ export function ChronicleContextProvider({
       setDetectionFailed,
       showEnvDialog,
       setShowEnvDialog,
-      detectedEnvironments,
+      foundEnvironments,
       activeEnvironment,
       setActiveEnvironment,
       requestedEnvFailed,

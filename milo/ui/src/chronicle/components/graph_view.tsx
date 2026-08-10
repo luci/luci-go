@@ -136,7 +136,7 @@ function Graph() {
     setSelectedNodeId,
     activeEnvironment,
     setActiveEnvironment,
-    detectedEnvironments,
+    foundEnvironments,
   } = useContext(ChronicleContext);
   const [nodes, setNodes, onNodesChange] = useNodesState<ChronicleNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -562,7 +562,7 @@ function Graph() {
                     }}
                   >
                     {[
-                      ...detectedEnvironments.filter(
+                      ...foundEnvironments.filter(
                         (env) => env.environment !== DEMO_ENVIRONMENT_NAME,
                       ),
                       TURBO_CI_ENVIRONMENTS.find(

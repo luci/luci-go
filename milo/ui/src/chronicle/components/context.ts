@@ -57,7 +57,7 @@ export interface ChronicleContextType {
   setDetectionFailed: (failed: boolean) => void;
   showEnvDialog: boolean;
   setShowEnvDialog: (show: boolean) => void;
-  detectedEnvironments: TurboCIEnvironment[];
+  foundEnvironments: TurboCIEnvironment[];
   requestedEnvFailed: string | undefined;
   failedEnvironments: FailedEnvironment[];
   detectionCancelled: boolean;
@@ -80,7 +80,7 @@ export const ChronicleContext = createContext<ChronicleContextType>({
   setDetectionFailed: () => {},
   showEnvDialog: false,
   setShowEnvDialog: () => {},
-  detectedEnvironments: [],
+  foundEnvironments: [],
   requestedEnvFailed: undefined,
   failedEnvironments: [],
   detectionCancelled: false,

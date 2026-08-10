@@ -52,7 +52,7 @@ describe('ChronicleContextProvider', () => {
       detectionFailed,
       showEnvDialog,
       setShowEnvDialog,
-      detectedEnvironments,
+      foundEnvironments,
       setActiveEnvironment,
       requestedEnvFailed,
       failedEnvironments,
@@ -109,7 +109,7 @@ describe('ChronicleContextProvider', () => {
         {showEnvDialog && (
           <EnvironmentSelectorDialog
             open={showEnvDialog}
-            detectedEnvironments={detectedEnvironments}
+            foundEnvironments={foundEnvironments}
             requestedEnvFailed={requestedEnvFailed}
             failedEnvironments={failedEnvironments}
             onSelect={(environment) => {

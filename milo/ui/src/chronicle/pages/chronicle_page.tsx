@@ -130,7 +130,7 @@ function ChroniclePageContent() {
     detectionFailed,
     showEnvDialog,
     setShowEnvDialog,
-    detectedEnvironments,
+    foundEnvironments,
     activeEnvironment,
     setActiveEnvironment,
     requestedEnvFailed,
@@ -349,7 +349,7 @@ function ChroniclePageContent() {
       {showEnvDialog && (
         <EnvironmentSelectorDialog
           open={showEnvDialog}
-          detectedEnvironments={detectedEnvironments}
+          foundEnvironments={foundEnvironments}
           requestedEnvFailed={requestedEnvFailed}
           failedEnvironments={failedEnvironments}
           onSelect={(environment) => {
