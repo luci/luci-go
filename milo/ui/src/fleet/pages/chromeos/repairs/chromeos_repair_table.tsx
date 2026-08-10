@@ -119,6 +119,7 @@ export const ChromeOSRepairTable = ({
       getRowId: (row: ChromeOSDevice) => row.id || row.dutId,
       onSortingChange,
       enablePagination: false,
+      enableTopToolbar: false,
       enableColumnVirtualization: process.env.NODE_ENV !== 'test',
       state: {
         sorting,

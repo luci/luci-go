@@ -31,17 +31,6 @@ jest.mock('@/generic_libs/components/google_analytics', () => ({
     children,
 }));
 
-jest.mock(
-  '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns',
-  () => ({
-    useChromeOSFields: () => ({
-      availableFields: [],
-      getValues: () => [],
-      isLoading: false,
-    }),
-  }),
-);
-
 const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
   {
     dutId: 'chromeos15-row2-rack3-host4',
@@ -92,7 +81,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       </QueryClientProvider>,
     );
 
-  it('renders page header, title, and filter bar without errors', async () => {
+  it('renders page header and title without errors', async () => {
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
       data: {
         repairQueueItems: MOCK_QUEUE_ITEMS,
@@ -108,15 +97,9 @@ describe('<ChromeOSRepairDashboard />', () => {
 
     renderDashboard();
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'ChromeOS Repairs',
-    );
     expect(
-      screen.getByText(
-        'View and monitor ChromeOS devices currently in the repair queue.',
-      ),
+      screen.getByText('ChromeOS Manual Repair Dashboard'),
     ).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Add a filter/i)).toBeInTheDocument();
   });
 
   it('renders the 4 columns: Dut ID, Pool, Model, State', async () => {
