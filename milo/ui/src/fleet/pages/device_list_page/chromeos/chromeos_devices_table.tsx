@@ -22,7 +22,10 @@ import {
 } from 'material-react-table';
 import { useEffect, useMemo, useState } from 'react';
 
-import { usePagerContext } from '@/common/components/params_pager';
+import {
+  emptyPageTokenUpdater,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
@@ -40,6 +43,11 @@ import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { usePager } from '@/fleet/hooks/use_pager';
 import { extractDutId, extractDutState } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import {
+  InvalidPageTokenAlert,
+  isInvalidPageTokenError,
+} from '@/fleet/utils/invalid-page-token-alert';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   CountDevicesRequest,
   ListDevicesRequest,
@@ -127,9 +135,10 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
   );
 
   const client = useFleetConsoleClient();
-  const filterCategoryDatas = useChromeOSFilters(() => {
-    // Dummy onApply for now, URL updates are handled by the page component or useFilters.
-  });
+  const [_, setSearchParams] = useSyncedSearchParams();
+  const filterCategoryDatas = useChromeOSFilters((searchParams) =>
+    emptyPageTokenUpdater(pagerCtx)(searchParams),
+  );
 
   const countQuery = useQuery({
     ...client.CountDevices.query(
@@ -286,6 +295,14 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
   });
 
   if (devicesQuery.isError) {
+    if (isInvalidPageTokenError(devicesQuery.error)) {
+      return (
+        <InvalidPageTokenAlert
+          pagerCtx={pagerCtx}
+          setSearchParams={setSearchParams}
+        />
+      );
+    }
     return (
       <Alert severity="error">
         <AlertTitle>Error Loading Chrome OS Devices</AlertTitle>

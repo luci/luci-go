@@ -28,7 +28,6 @@ import { AndroidSummaryHeader } from '@/fleet/pages/device_list_page/android/and
 import { AdminTasksAlert } from '@/fleet/pages/device_list_page/common/admin_tasks_alert';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { AndroidDevicesTable } from './android_devices_table';
 import { useAndroidColumns } from './use_android_columns';
@@ -39,15 +38,16 @@ const DEFAULT_PAGE_SIZE = 100;
 
 export const AndroidDevicesPage = () => {
   const showAvgUtilization = useFeatureFlag(enableAndroidUtilizationMetrics);
-  const [, setSearchParams] = useSyncedSearchParams();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const handleFilterChange = useCallback(() => {
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  }, [pagerCtx, setSearchParams]);
+  const handleFilterChange = useCallback(
+    (searchParams: URLSearchParams) =>
+      emptyPageTokenUpdater(pagerCtx)(searchParams),
+    [pagerCtx],
+  );
 
   const {
     filterValues,

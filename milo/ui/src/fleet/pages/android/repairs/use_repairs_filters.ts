@@ -23,7 +23,9 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-export const useRepairsFilters = (onFilterChange: () => void) => {
+export const useRepairsFilters = (
+  onFilterChange?: (searchParams: URLSearchParams) => URLSearchParams | void,
+) => {
   const { trackEvent } = useGoogleAnalytics();
   const client = useFleetConsoleClient();
 
@@ -58,12 +60,15 @@ export const useRepairsFilters = (onFilterChange: () => void) => {
     return filters;
   }, [repairMetricsFilterValues.data]);
 
-  const onApplyFilter = useCallback(() => {
-    trackEvent('filter_changed', {
-      componentName: 'device_list_filter',
-    });
-    onFilterChange();
-  }, [onFilterChange, trackEvent]);
+  const onApplyFilter = useCallback(
+    (searchParams: URLSearchParams) => {
+      trackEvent('filter_changed', {
+        componentName: 'device_list_filter',
+      });
+      return onFilterChange?.(searchParams) ?? searchParams;
+    },
+    [onFilterChange, trackEvent],
+  );
 
   const filterCategoryDatas = useFilters(loadedFilterOptions, {
     areFilterValuesLoading: !repairMetricsFilterValues.data,

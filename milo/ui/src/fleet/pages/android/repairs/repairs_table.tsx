@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Alert, AlertTitle } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   MaterialReactTable,
@@ -32,16 +33,24 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { usePager } from '@/fleet/hooks/use_pager';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import {
+  InvalidPageTokenAlert,
+  isInvalidPageTokenError,
+} from '@/fleet/utils/invalid-page-token-alert';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getRow, Row } from './repairs_columns.utils';
-import { useRepairsFilters } from './use_repairs_filters';
 
 interface RepairsTableProps {
   mrtColumnManager: MrtColumnManager<MRT_ColumnDef<Row>>;
+  filter: string;
 }
 
-export const RepairsTable = ({ mrtColumnManager }: RepairsTableProps) => {
+export const RepairsTable = ({
+  mrtColumnManager,
+  filter,
+}: RepairsTableProps) => {
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100],
     defaultPageSize: 100,
@@ -56,18 +65,14 @@ export const RepairsTable = ({ mrtColumnManager }: RepairsTableProps) => {
     pagerCtx,
   );
 
-  const {
-    filterValues,
-    aip160,
-    warnings: filterWarnings,
-  } = useRepairsFilters(() => {});
+  const [_, setSearchParams] = useSyncedSearchParams();
 
   const client = useFleetConsoleClient();
 
   const repairMetricsList = useQuery({
     ...client.ListRepairMetrics.query({
       platform: Platform.ANDROID,
-      filter: filterWarnings.length > 0 ? '' : aip160(),
+      filter,
       pageSize,
       pageToken,
       orderBy: orderByParam,
@@ -87,7 +92,6 @@ export const RepairsTable = ({ mrtColumnManager }: RepairsTableProps) => {
       enableColumnActions: true,
       enableColumnFilters: false,
       manualFiltering: true,
-      filterValues,
       error: repairMetricsList.error
         ? getErrorMessage(repairMetricsList.error, 'get repair metrics')
         : undefined,
@@ -140,7 +144,6 @@ export const RepairsTable = ({ mrtColumnManager }: RepairsTableProps) => {
     [
       mrtColumnManager,
       data,
-      filterValues,
       repairMetricsList.error,
       repairMetricsList.isPending,
       repairMetricsList.isPlaceholderData,
@@ -153,6 +156,23 @@ export const RepairsTable = ({ mrtColumnManager }: RepairsTableProps) => {
   );
 
   const table = useFCDataTable(tableOptions);
+
+  if (repairMetricsList.isError) {
+    if (isInvalidPageTokenError(repairMetricsList.error)) {
+      return (
+        <InvalidPageTokenAlert
+          pagerCtx={pagerCtx}
+          setSearchParams={setSearchParams}
+        />
+      );
+    }
+    return (
+      <Alert severity="error">
+        <AlertTitle>Error Loading Repair Metrics</AlertTitle>
+        {getErrorMessage(repairMetricsList.error, 'fetch repair metrics')}
+      </Alert>
+    );
+  }
 
   return (
     <>

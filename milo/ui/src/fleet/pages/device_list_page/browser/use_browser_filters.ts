@@ -34,7 +34,7 @@ import { getBrowserColumn, getBrowserColumnIds } from './browser_columns';
 import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
 
 export const useBrowserFilters = (
-  onApply?: () => void,
+  onApply?: (searchParams: URLSearchParams) => URLSearchParams | void,
 ): {
   filterValues: Record<string, FilterCategory> | undefined;
   aip160: () => string;
@@ -45,12 +45,15 @@ export const useBrowserFilters = (
   const [searchParams] = useSyncedSearchParams();
   const dimensionsQuery = useBrowserDeviceDimensions();
 
-  const onApplyFilter = useCallback(() => {
-    trackEvent('filter_changed', {
-      componentName: 'device_list_filter',
-    });
-    onApply?.();
-  }, [onApply, trackEvent]);
+  const onApplyFilter = useCallback(
+    (searchParams: URLSearchParams) => {
+      trackEvent('filter_changed', {
+        componentName: 'device_list_filter',
+      });
+      return onApply?.(searchParams) ?? searchParams;
+    },
+    [onApply, trackEvent],
+  );
 
   const isDimensionsQueryProperlyLoaded =
     dimensionsQuery.data &&

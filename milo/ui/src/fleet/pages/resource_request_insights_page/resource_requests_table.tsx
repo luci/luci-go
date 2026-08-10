@@ -37,7 +37,10 @@ import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { usePager } from '@/fleet/hooks/use_pager';
 import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
+import {
+  InvalidPageTokenAlert,
+  isInvalidPageTokenError,
+} from '@/fleet/utils/invalid-page-token-alert';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { DEFAULT_SORT_COLUMN_ID } from './rri_columns';
@@ -224,7 +227,7 @@ export const ResourceRequestTable = ({
     ),
   });
 
-  if (query.isError && query.error?.message.includes('invalid_page_token')) {
+  if (isInvalidPageTokenError(query.error)) {
     return (
       <InvalidPageTokenAlert
         pagerCtx={pagerCtx}

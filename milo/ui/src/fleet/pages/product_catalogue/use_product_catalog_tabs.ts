@@ -14,7 +14,6 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -29,7 +28,7 @@ export enum ProductCatalogTab {
 }
 
 export function useProductCatalogTabs() {
-  const [searchParams] = useSyncedSearchParams();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
   const client = useFleetConsoleClient();
   const urlTab =
     (searchParams.get('tab') as ProductCatalogTab) || ProductCatalogTab.ALL;
@@ -51,12 +50,19 @@ export function useProductCatalogTabs() {
     return [];
   }, [filterOptionsQuery.data?.scopedProductType]);
 
-  const navigate = useNavigate();
-
   //Ideally we would prefer UseState so UseTabs wouldn't have any logic in View and filters
   const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
     const currentView = searchParams.get('view');
-    navigate(`/ui/fleet/catalog?tab=${newValue}&view=${currentView || 'card'}`);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams();
+        next.set('tab', newValue);
+        const view = prev.get('view') || currentView || 'card';
+        next.set('view', view);
+        return next;
+      },
+      { replace: false },
+    );
   };
 
   return {

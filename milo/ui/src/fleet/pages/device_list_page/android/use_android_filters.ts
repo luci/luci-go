@@ -30,7 +30,7 @@ import { ANDROID_COLUMN_OVERRIDES } from './android_fields';
 import { ANDROID_EXTRA_FILTERS } from './android_filters';
 
 export const useAndroidFilters = (
-  onFilterChange: () => void,
+  onFilterChange?: (searchParams: URLSearchParams) => URLSearchParams | void,
   showAvgUtilization = false,
 ) => {
   const { trackEvent } = useGoogleAnalytics();
@@ -41,12 +41,15 @@ export const useAndroidFilters = (
     dimensionsQuery.data.baseDimensions &&
     dimensionsQuery.data.labels;
 
-  const onFilterChangeCallback = useCallback(() => {
-    trackEvent('filter_changed', {
-      componentName: 'device_list_filter',
-    });
-    onFilterChange();
-  }, [onFilterChange, trackEvent]);
+  const onFilterChangeCallback = useCallback(
+    (searchParams: URLSearchParams) => {
+      trackEvent('filter_changed', {
+        componentName: 'device_list_filter',
+      });
+      return onFilterChange?.(searchParams) ?? searchParams;
+    },
+    [onFilterChange, trackEvent],
+  );
 
   const filterOptions = useMemo(() => {
     const extraFilters: Record<

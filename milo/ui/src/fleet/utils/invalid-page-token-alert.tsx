@@ -20,6 +20,16 @@ import {
 } from '@/common/components/params_pager';
 import { SetURLSearchParams } from '@/generic_libs/hooks/synced_search_params/context';
 
+export const isInvalidPageTokenError = (
+  error: Error | null | undefined,
+): boolean => {
+  if (!error) return false;
+  const msg = error.message.toLowerCase();
+  return (
+    msg.includes('invalid_page_token') || msg.includes('invalid page token')
+  );
+};
+
 export const InvalidPageTokenAlert = ({
   pagerCtx,
   setSearchParams,

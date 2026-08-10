@@ -381,6 +381,189 @@ describe('useFilters', () => {
     expect(onFilterChangeMock).toHaveBeenCalled();
   });
 
+  it('should allow onFilterChange to mutate draft searchParams atomically (e.g. deleting cursor)', async () => {
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('model')
+        .setOptions([{ label: 'v1', value: 'v1' }]),
+    };
+
+    const onFilterChange = (params: URLSearchParams) => {
+      const updated = new URLSearchParams(params);
+      updated.delete('cursor');
+      return updated;
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/?cursor=token123']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(
+      () => useFilters(builders, { onFilterChange }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+
+    act(() => {
+      result.current.setFiltersBatch({ model: ['v1'] });
+    });
+
+    await waitFor(() => {
+      expect(result.current.aip160()).toBe('(model = "v1")');
+    });
+  });
+
+  it('should set filters="" parameter when all filters are cleared rather than deleting filters key', async () => {
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('model')
+        .setOptions([{ label: 'v1', value: 'v1' }]),
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/?filters=%22model%22+%3D+%22v1%22']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders), { wrapper });
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+
+    act(() => {
+      result.current.setFiltersBatch({ model: [] });
+    });
+
+    await waitFor(() => {
+      expect(result.current.aip160()).toBe('');
+    });
+  });
+
+  it('should support onFilterChange returning void for pure side-effects', async () => {
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('model')
+        .setOptions([{ label: 'v1', value: 'v1' }]),
+    };
+
+    let sideEffectCalled = false;
+    const onFilterChange = () => {
+      sideEffectCalled = true;
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(
+      () => useFilters(builders, { onFilterChange }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+
+    act(() => {
+      result.current.setFiltersBatch({ model: ['v1'] });
+    });
+
+    await waitFor(() => {
+      expect(sideEffectCalled).toBe(true);
+      expect(result.current.aip160()).toBe('(model = "v1")');
+    });
+  });
+
+  it('should preserve empty filter selection when initial URL contains empty ?filters= parameter', async () => {
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('model')
+        .setOptions([{ label: 'v1', value: 'v1' }])
+        .setDefaultOptions(['v1']),
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/?filters=']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders), { wrapper });
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+
+    expect(result.current.aip160()).toBe('');
+  });
+
+  it('should load defaultOptions when initial URL does NOT contain filters parameter', async () => {
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('model')
+        .setOptions([{ label: 'v1', value: 'v1' }])
+        .setDefaultOptions(['v1']),
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders), { wrapper });
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+
+    expect(result.current.aip160()).toBe('(model = "v1")');
+  });
+
+  it('should keep default filters cleared when builders update after clearing', async () => {
+    const getBuilders = () => ({
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('model')
+        .setOptions([
+          { label: 'v1', value: 'v1' },
+          { label: 'v2', value: 'v2' },
+        ])
+        .setDefaultOptions(['v1']),
+    });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result, rerender } = renderHook(
+      ({ builders }) => useFilters(builders),
+      {
+        initialProps: { builders: getBuilders() },
+        wrapper,
+      },
+    );
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+    expect(result.current.aip160()).toBe('(model = "v1")');
+
+    // Clear the filter
+    act(() => {
+      result.current.filterValues?.model.clear();
+    });
+
+    await waitFor(() => {
+      expect(result.current.aip160()).toBe('');
+    });
+
+    // Re-render with new builder instances containing the same defaultOptions (simulating query refetch)
+    rerender({ builders: getBuilders() });
+
+    await waitFor(() => {
+      expect(result.current.aip160()).toBe('');
+    });
+  });
+
   const testFilterParsing = async (
     filterString: string,
     expectedFilters: Record<string, string[]>,

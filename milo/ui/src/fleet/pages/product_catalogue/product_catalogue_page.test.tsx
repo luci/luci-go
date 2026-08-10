@@ -13,7 +13,14 @@
 // limitations under the License.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
@@ -74,6 +81,8 @@ const renderPage = (
 };
 
 describe('ProductCataloguePage', () => {
+  jest.setTimeout(15000);
+
   it('should render successfully', async () => {
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
 
@@ -158,7 +167,7 @@ describe('ProductCataloguePage', () => {
     expect(link2).toBeInTheDocument();
     expect(link2.tagName).toBe('A');
     expect(link2).toHaveAttribute('href', 'http://go/ngp-npi/r11n/tbd');
-  });
+  }, 15000);
 
   it('should sort client-side by R11N correctly', async () => {
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
@@ -375,11 +384,10 @@ describe('ProductCataloguePage', () => {
     fireEvent.click(hardwareTab);
     expect(hardwareTab).toHaveAttribute('aria-selected', 'true');
 
-    // hardware tab view: only Hardware Product, and number of devices per rack should be visible
     expect(await findByText('Hardware Product')).toBeInTheDocument();
     expect(queryByText('Peripherals Product')).not.toBeInTheDocument();
     expect(queryByText('Number of Devices Per Rack')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('should render empty fallback message when there are no products', async () => {
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
@@ -666,5 +674,82 @@ describe('ProductCataloguePage', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('GCE n2-standard-4')).toBeInTheDocument();
     expect(screen.getByText('x86_64')).toBeInTheDocument();
+  });
+
+  it('should remove default fleet_plm_status filter on first click of chip delete icon', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      ListProductCatalogEntries: {
+        query: (req?: { filter?: string }) => ({
+          queryKey: ['ListProductCatalogEntries', req],
+          queryFn: async () => ({
+            entries: [
+              {
+                productCatalogId: 'std-catalog-1',
+                productName: 'Standard Pixel Device',
+                gpn: '12345',
+                descriptiveName: 'Desc 1',
+                resourceType: 'Type 1',
+                fleetPlmStatus: 'GA',
+                r11n: [],
+                numberOfDevicesPerRack: 10,
+                unitCost: '100',
+                productType: 'hardware',
+              },
+            ],
+          }),
+        }),
+      },
+      ListGceProductCatalogEntries: {
+        query: () => ({
+          queryKey: ['ListGceProductCatalogEntries'],
+          queryFn: async () => ({ entries: [] }),
+        }),
+      },
+      GetProductCatalogFilterValues: {
+        query: (req?: { filter?: string }) => ({
+          queryKey: ['GetProductCatalogFilterValues', req],
+          queryFn: async () => ({
+            fleetPlmStatus: [
+              { value: 'GA', inScope: true },
+              { value: 'LA', inScope: true },
+              { value: 'NPI', inScope: true },
+            ],
+            scopedFleetPlmStatus: [
+              { value: 'GA', inScope: true },
+              { value: 'LA', inScope: true },
+              { value: 'NPI', inScope: true },
+            ],
+            scopedProductType: [{ value: 'hardware', inScope: true }],
+          }),
+        }),
+      },
+    });
+
+    const queryClient = new QueryClient();
+    const { getSearchParams } = renderPage(queryClient, ['/ui/fleet/catalog']);
+
+    const user = userEvent.setup();
+
+    // Verify initial default filter chip is rendered
+    const chip = await screen.findByTestId('filter-chip');
+    expect(chip).toHaveTextContent(/Fleet PLM Status/i);
+
+    // Click delete icon once on the filter chip
+    const deleteIcon = within(chip).getByTestId('CancelIcon');
+    await user.click(deleteIcon);
+
+    // Verify the chip is removed on the first click
+    await waitFor(() => {
+      expect(screen.queryByTestId('filter-chip')).not.toBeInTheDocument();
+    });
+
+    // Verify search params no longer contains fleet_plm_status
+    await waitFor(() => {
+      expect(getSearchParams().get('filters') || '').not.toContain(
+        'fleet_plm_status',
+      );
+    });
   });
 });

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
@@ -67,36 +67,25 @@ export const useProductCatalogFilters = (
   onApply?: () => void,
 ) => {
   const [searchParams] = useSyncedSearchParams();
-  const hasUrlFiltersParam = searchParams.get(FILTERS_PARAM_KEY) !== null;
-  const [filterOptions, setFilterOptions] = useState<
-    | Record<
-        string,
-        StringListFilterCategoryBuilder | RangeFilterCategoryBuilder
-      >
-    | undefined
-  >(undefined);
+  const filtersParam = searchParams.get(FILTERS_PARAM_KEY);
   const { trackEvent } = useGoogleAnalytics();
 
-  const onFilterChange = useCallback(() => {
-    trackEvent('product_catalogue_search', {
-      componentName: 'product_catalogue_filter',
-    });
-  }, [trackEvent]);
+  const onFilterChange = useCallback(
+    (searchParams: URLSearchParams) => {
+      trackEvent('product_catalogue_search', {
+        componentName: 'product_catalogue_filter',
+      });
+      return searchParams;
+    },
+    [trackEvent],
+  );
 
   const isAllTab = selectedTab === ProductCatalogTab.ALL;
   const currentTab = isAllTab
     ? ''
     : `("${FILTERS.productType.filterKey}" = "${selectedTab}")`;
-  //Ideally we would want to use filterValues?.[productType] to set value
 
-  const { filterValues, aip160, warnings, setFiltersBatch } = useFilters(
-    filterOptions,
-    {
-      onFilterChange,
-    },
-  );
-
-  const combinedFilter = combineAipFilters(aip160(), currentTab);
+  const combinedFilter = combineAipFilters(filtersParam || '', currentTab);
 
   const client = useFleetConsoleClient();
   const filterOptionsQuery = useQuery({
@@ -104,7 +93,7 @@ export const useProductCatalogFilters = (
     placeholderData: keepPreviousData,
   });
 
-  const nextFilterOptions = useMemo(() => {
+  const filterOptions = useMemo(() => {
     if (!filterOptionsQuery.data) return undefined;
 
     const options: Record<
@@ -131,9 +120,7 @@ export const useProductCatalogFilters = (
       if (accessorKey === 'productType' && !isAllTab) continue;
 
       if (config.type === 'string_list') {
-        const defaultOptions = hasUrlFiltersParam
-          ? []
-          : (DEFAULT_FILTER_VALUES[accessorKey] ?? []);
+        const defaultOptions = DEFAULT_FILTER_VALUES[accessorKey] ?? [];
         options[filterKey] = new StringListFilterCategoryBuilder()
           .setLabel(column.header as string)
           .setOptions(
@@ -153,11 +140,15 @@ export const useProductCatalogFilters = (
       }
     }
     return options;
-  }, [filterOptionsQuery.data, hasUrlFiltersParam, isAllTab]);
+  }, [filterOptionsQuery.data, isAllTab]);
 
-  useEffect(() => {
-    setFilterOptions(nextFilterOptions);
-  }, [nextFilterOptions]);
+  const { filterValues, aip160, warnings, setFiltersBatch } = useFilters(
+    filterOptions,
+    {
+      areFilterValuesLoading: filterOptionsQuery.isLoading,
+      onFilterChange,
+    },
+  );
 
   const onApplyFilter = useCallback(() => {
     onApply?.();
@@ -165,7 +156,7 @@ export const useProductCatalogFilters = (
 
   return {
     filterValues,
-    aip160: combinedFilter,
+    aip160: combineAipFilters(aip160(), currentTab),
     onApplyFilter,
     isLoading: filterOptionsQuery.isLoading,
     warnings,

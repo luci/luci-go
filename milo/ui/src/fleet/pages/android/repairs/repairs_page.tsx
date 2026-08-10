@@ -57,15 +57,16 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
 export const RepairListPage = () => {
-  const [, setSearchParams] = useSyncedSearchParams();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const handleFilterChange = useCallback(() => {
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  }, [pagerCtx, setSearchParams]);
+  const handleFilterChange = useCallback(
+    (searchParams: URLSearchParams) =>
+      emptyPageTokenUpdater(pagerCtx)(searchParams),
+    [pagerCtx],
+  );
 
   const {
     filterValues,
@@ -120,7 +121,10 @@ export const RepairListPage = () => {
           marginTop: 24,
         }}
       >
-        <RepairsTable mrtColumnManager={mrtColumnManager} />
+        <RepairsTable
+          mrtColumnManager={mrtColumnManager}
+          filter={filterWarnings.length > 0 ? '' : aip160()}
+        />
       </div>
     </div>
   );

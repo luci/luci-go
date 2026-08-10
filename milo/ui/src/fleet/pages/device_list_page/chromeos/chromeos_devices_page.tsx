@@ -24,7 +24,6 @@ import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
 
@@ -37,15 +36,16 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500, 1000];
 const DEFAULT_PAGE_SIZE = 100;
 
 export const ChromeOSDevicesPage = () => {
-  const [, setSearchParams] = useSyncedSearchParams();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const handleFilterChange = useCallback(() => {
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  }, [pagerCtx, setSearchParams]);
+  const handleFilterChange = useCallback(
+    (searchParams: URLSearchParams) =>
+      emptyPageTokenUpdater(pagerCtx)(searchParams),
+    [pagerCtx],
+  );
 
   const {
     filterValues,

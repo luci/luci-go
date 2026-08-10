@@ -27,7 +27,7 @@ import { ChromeOSFilterKey } from './chromeos_fields';
 import { useChromeOSFields } from './use_chromeos_available_columns';
 
 export const useChromeOSFilters = (
-  onApply?: () => void,
+  onApply?: (searchParams: URLSearchParams) => URLSearchParams | void,
 ): {
   filterValues: Record<ChromeOSFilterKey, FilterCategory> | undefined;
   aip160: () => string;
@@ -38,12 +38,15 @@ export const useChromeOSFilters = (
   const { availableFields, getValues, isLoading } = useChromeOSFields();
   const { trackEvent } = useGoogleAnalytics();
 
-  const onApplyFilter = useCallback(() => {
-    trackEvent('filter_changed', {
-      componentName: 'device_list_filter',
-    });
-    onApply?.();
-  }, [onApply, trackEvent]);
+  const onApplyFilter = useCallback(
+    (searchParams: URLSearchParams) => {
+      trackEvent('filter_changed', {
+        componentName: 'device_list_filter',
+      });
+      return onApply?.(searchParams) ?? searchParams;
+    },
+    [onApply, trackEvent],
+  );
 
   const filterOptions = useMemo(() => {
     const filters = {} as Record<

@@ -22,7 +22,10 @@ import {
 } from 'material-react-table';
 import { useEffect, useMemo, useState } from 'react';
 
-import { usePagerContext } from '@/common/components/params_pager';
+import {
+  emptyPageTokenUpdater,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import { BrowserDeviceToRepair } from '@/fleet/components/actions/request_repair/request_repair_browser_config';
 import {
@@ -41,6 +44,11 @@ import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { usePager } from '@/fleet/hooks/use_pager';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import {
+  InvalidPageTokenAlert,
+  isInvalidPageTokenError,
+} from '@/fleet/utils/invalid-page-token-alert';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   BrowserDevice,
   ExportBrowserDevicesToCSVRequest,
@@ -105,11 +113,15 @@ export const BrowserDevicesTable = ({
     pagerCtx,
   );
 
+  const [_, setSearchParams] = useSyncedSearchParams();
+
   const {
     filterValues,
     aip160,
     warnings: filterWarnings,
-  } = useBrowserFilters(() => {});
+  } = useBrowserFilters((searchParams) =>
+    emptyPageTokenUpdater(pagerCtx)(searchParams),
+  );
 
   const aip160Filter = filterWarnings.length > 0 ? '' : aip160();
 
@@ -254,6 +266,14 @@ export const BrowserDevicesTable = ({
   });
 
   if (devicesQuery.isError) {
+    if (isInvalidPageTokenError(devicesQuery.error)) {
+      return (
+        <InvalidPageTokenAlert
+          pagerCtx={pagerCtx}
+          setSearchParams={setSearchParams}
+        />
+      );
+    }
     return (
       <Alert severity="error">
         <AlertTitle>Error Loading Chrome Browser Devices</AlertTitle>

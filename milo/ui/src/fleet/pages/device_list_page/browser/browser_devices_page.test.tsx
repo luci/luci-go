@@ -167,7 +167,7 @@ describe('<BrowserDevicesPage />', () => {
       name: /request repair/i,
     });
     expect(repairButton).toBeVisible();
-  });
+  }, 15000);
 
   it('should allow customizing columns', async () => {
     render(

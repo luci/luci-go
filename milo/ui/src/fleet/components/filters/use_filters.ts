@@ -43,7 +43,7 @@ export const useFilters = <
   rawBuilders: T | undefined,
   options: {
     areFilterValuesLoading?: boolean;
-    onFilterChange?: () => void;
+    onFilterChange?: (searchParams: URLSearchParams) => URLSearchParams | void;
   } = {},
 ): {
   filterValues: FilterValuesFromBuilders<T> | undefined;
@@ -51,12 +51,10 @@ export const useFilters = <
   warnings: string[];
   setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
-  const { areFilterValuesLoading = false, onFilterChange = () => {} } = options;
+  const { areFilterValuesLoading = false, onFilterChange } = options;
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [warnings, addWarning] = useWarnings();
-  const rawFilters = searchParams.get(FILTERS_PARAM_KEY);
-  const filtersAIP160 =
-    rawFilters && rawFilters.trim() !== '' ? rawFilters : null;
+  const filtersAIP160 = searchParams.get(FILTERS_PARAM_KEY);
 
   //This is needed to prevent infinite loops in the filter builder
   const onFilterChangeRef = useRef(onFilterChange);
@@ -81,19 +79,24 @@ export const useFilters = <
 
       setSearchParams(
         (prev: URLSearchParams) => {
-          if (filter === (prev.get(FILTERS_PARAM_KEY) ?? '')) {
+          const isFilterUnchanged =
+            filter === (prev.get(FILTERS_PARAM_KEY) ?? '') &&
+            filter === (filtersRef.current ?? '');
+          if (isFilterUnchanged) {
             return prev;
           }
 
-          prev.set(FILTERS_PARAM_KEY, filter);
-          return prev;
+          let next = new URLSearchParams(prev);
+          next.set(FILTERS_PARAM_KEY, filter);
+
+          if (filter !== (filtersRef.current ?? '')) {
+            next = onFilterChangeRef.current?.(next) ?? next;
+          }
+
+          return next;
         },
         { replace: replaceHistory },
       );
-
-      if (filter !== (filtersRef.current ?? '')) {
-        onFilterChangeRef.current();
-      }
     },
     [setSearchParams],
   );

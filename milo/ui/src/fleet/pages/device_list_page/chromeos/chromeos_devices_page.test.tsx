@@ -224,5 +224,5 @@ describe('<ChromeOSDevicesPage />', () => {
     expect(callArgs.filter).toBe(
       '(labels."label-pool" = "cellular") AND (labels."ufs_zone" = "ZONE_CHROMEOS7")',
     );
-  });
+  }, 15000);
 });

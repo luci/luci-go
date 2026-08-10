@@ -20,7 +20,10 @@ import {
 } from 'material-react-table';
 import { useEffect, useMemo, useState } from 'react';
 
-import { usePagerContext } from '@/common/components/params_pager';
+import {
+  emptyPageTokenUpdater,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { useFeatureFlag } from '@/common/feature_flags';
 import {
   getColumnId,
@@ -38,6 +41,11 @@ import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { usePager } from '@/fleet/hooks/use_pager';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import {
+  InvalidPageTokenAlert,
+  isInvalidPageTokenError,
+} from '@/fleet/utils/invalid-page-token-alert';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   AndroidDevice,
   ListDevicesRequest,
@@ -76,8 +84,10 @@ export const AndroidDevicesTable = ({
 
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
+  const [_, setSearchParams] = useSyncedSearchParams();
+
   const { filterValues, aip160 } = useAndroidFilters(
-    () => {},
+    (searchParams) => emptyPageTokenUpdater(pagerCtx)(searchParams),
     showAvgUtilization,
   );
 
@@ -233,6 +243,14 @@ export const AndroidDevicesTable = ({
   });
 
   if (devicesQuery.isError) {
+    if (isInvalidPageTokenError(devicesQuery.error)) {
+      return (
+        <InvalidPageTokenAlert
+          pagerCtx={pagerCtx}
+          setSearchParams={setSearchParams}
+        />
+      );
+    }
     return (
       <Alert severity="error">
         <AlertTitle>Error Loading Android Devices</AlertTitle>
