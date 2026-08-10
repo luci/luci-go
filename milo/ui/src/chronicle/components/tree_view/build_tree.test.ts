@@ -163,6 +163,97 @@ describe('BuildVisualGraph', () => {
     // because they also have no parents. The order is alphabetical.
     expect(graph.roots).toEqual(['build-check', 'source-check', 'test-check']);
   });
+
+  it('should handle stage-to-stage dependencies for standalone N-stages', () => {
+    const stages: Stage[] = [
+      stageView({
+        identifier: { id: 'stage-source' },
+        assignments: [],
+        dependencies: { edges: [], resolutionEvents: {} },
+      }),
+      stageView({
+        identifier: { id: 'stage-build' },
+        assignments: [],
+        dependencies: {
+          edges: [{ stage: { identifier: { id: 'stage-source' } } }],
+          resolutionEvents: {},
+        },
+      }),
+      stageView({
+        identifier: { id: 'stage-test' },
+        assignments: [],
+        dependencies: {
+          edges: [{ stage: { identifier: { id: 'stage-build' } } }],
+          resolutionEvents: {},
+        },
+      }),
+    ];
+
+    const graph = buildVisualGraph(stages, [], new Map());
+
+    expect(graph.nodes['stage-source'].children).toContain('stage-build');
+    expect(graph.nodes['stage-build'].parents).toContain('stage-source');
+    expect(graph.nodes['stage-build'].children).toContain('stage-test');
+    expect(graph.nodes['stage-test'].parents).toContain('stage-build');
+    expect(graph.roots).toEqual(['stage-source']);
+  });
+
+  it('should handle standalone N-stages depending on checks and checks depending on N-stages', () => {
+    const stages: Stage[] = [
+      stageView({
+        identifier: { id: 'stage-worknode' },
+        assignments: [],
+        dependencies: {
+          edges: [{ check: { identifier: { id: 'source-check' } } }],
+          resolutionEvents: {},
+        },
+      }),
+    ];
+    const checks: Check[] = [
+      checkView({
+        identifier: { id: 'source-check' },
+        dependencies: { edges: [], resolutionEvents: {} },
+      }),
+      checkView({
+        identifier: { id: 'downstream-check' },
+        dependencies: {
+          edges: [{ stage: { identifier: { id: 'stage-worknode' } } }],
+          resolutionEvents: {},
+        },
+      }),
+    ];
+
+    const graph = buildVisualGraph(stages, checks, new Map());
+
+    expect(graph.nodes['source-check'].children).toContain('stage-worknode');
+    expect(graph.nodes['stage-worknode'].parents).toContain('source-check');
+    expect(graph.nodes['stage-worknode'].children).toContain(
+      'downstream-check',
+    );
+    expect(graph.nodes['downstream-check'].parents).toContain('stage-worknode');
+    expect(graph.roots).toEqual(['source-check']);
+  });
+
+  it('should handle direct check-to-check dependencies', () => {
+    const checks: Check[] = [
+      checkView({
+        identifier: { id: 'check1' },
+      }),
+      checkView({
+        identifier: { id: 'check2' },
+        dependencies: {
+          edges: [{ check: { identifier: { id: 'check1' } } }],
+          resolutionEvents: {},
+        },
+      }),
+    ];
+
+    const graph = buildVisualGraph([], checks, new Map());
+
+    expect(graph.nodes['check1'].children).toContain('check2');
+    expect(graph.nodes['check2'].parents).toContain('check1');
+    expect(graph.roots).toEqual(['check1']);
+  });
 });
 
 describe('SubtreeSize', () => {

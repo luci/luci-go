@@ -102,6 +102,16 @@ export function buildVisualGraph(
     checkNode.label = getCheckLabel(cv, valueDataMap);
     checkNode.raw = cv;
     checkNode.resultStatus = getCheckResultStatus(cv, valueDataMap);
+
+    cv.dependencies?.edges?.forEach((edge) => {
+      const depId = edge?.check?.identifier?.id || edge?.stage?.identifier?.id;
+      if (depId) {
+        const depNode = getNode(depId, edge?.check ? 'CHECK' : 'STAGE');
+        depNode.children.add(checkId);
+        checkNode.parents.add(depId);
+        nonRootNodes.add(checkId);
+      }
+    });
   });
 
   stages.forEach((sv) => {
@@ -119,31 +129,36 @@ export function buildVisualGraph(
       if (checkId) {
         const checkNode = getNode(checkId, 'CHECK', 'UNKNOWN');
         checkNode.children.add(stageId);
-        getNode(stageId, 'STAGE').parents.add(checkId);
+        stageNode.parents.add(checkId);
         nonRootNodes.add(stageId);
       }
     });
 
-    // Add dependencies between checks.
     const assignedCheckIds =
       sv.assignments
         ?.map((a) => a.target?.id)
         .filter((id): id is string => !!id) || [];
-    if (assignedCheckIds.length > 0) {
-      sv.dependencies?.edges?.forEach((edge) => {
-        const dependencyCheckId = edge?.check?.identifier?.id;
-        if (dependencyCheckId) {
-          getNode(dependencyCheckId, 'CHECK');
-          assignedCheckIds.forEach((assignedCheckId) => {
-            if (dependencyCheckId !== assignedCheckId) {
-              getNode(dependencyCheckId, 'CHECK').children.add(assignedCheckId);
-              getNode(assignedCheckId, 'CHECK').parents.add(dependencyCheckId);
-              nonRootNodes.add(assignedCheckId);
-            }
-          });
-        }
-      });
-    }
+
+    sv.dependencies?.edges?.forEach((edge) => {
+      const depId = edge?.check?.identifier?.id || edge?.stage?.identifier?.id;
+      if (!depId) return;
+
+      const depNode = getNode(depId, edge?.check ? 'CHECK' : 'STAGE');
+
+      if (assignedCheckIds.length > 0) {
+        // Add dependencies to assigned checks.
+        assignedCheckIds.forEach((assignedCheckId) => {
+          depNode.children.add(assignedCheckId);
+          getNode(assignedCheckId, 'CHECK').parents.add(depId);
+          nonRootNodes.add(assignedCheckId);
+        });
+      } else {
+        // Stage dependencies (e.g. N-stages).
+        depNode.children.add(stageId);
+        stageNode.parents.add(depId);
+        nonRootNodes.add(stageId);
+      }
+    });
   });
 
   // Roots are shown at the top level.
