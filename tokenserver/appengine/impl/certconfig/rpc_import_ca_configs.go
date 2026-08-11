@@ -124,13 +124,13 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *emptypb.Empty
 	// Find CAs that were removed from the config.
 	var toRemove []string
 	q := ds.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
-	err = ds.Run(c, q, func(k *ds.Key) {
+	for k, err := range ds.RunQuery[*ds.Key](c, q).Results {
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "datastore error - %s", err)
+		}
 		if !seenCAs.Has(k.StringID()) {
 			toRemove = append(toRemove, k.StringID())
 		}
-	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
 	// Mark them as inactive in the datastore.
