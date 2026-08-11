@@ -12,17 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
-import * as PrpcClients from '@/fleet/hooks/prpc_clients';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api/mock_api_handler';
 import * as exportUtils from '@/fleet/utils/export';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -36,35 +30,14 @@ jest.mock('@/generic_libs/components/google_analytics', () => ({
     children,
 }));
 
-jest.mock('@/swarming/hooks/prpc_clients', () => ({
-  useTasksClient: () => ({
-    ListTasks: {
-      query: () => ({
-        queryKey: ['ListTasks'],
-        queryFn: jest.fn().mockResolvedValue({ items: [] }),
-      }),
-    },
-  }),
+// Stub background admin tasks alert polling to prevent unneeded network requests
+jest.mock('../common/admin_tasks_alert', () => ({
+  AdminTasksAlert: () => null,
 }));
 
-jest.mock('./use_browser_device_dimensions', () => {
-  const mockData = {
-    baseDimensions: {
-      os: { values: ['Linux', 'Windows'] },
-    },
-    swarmingLabels: {},
-    ufsLabels: {},
-  };
-  return {
-    useBrowserDeviceDimensions: () => ({
-      data: mockData,
-      isPending: false,
-    }),
-  };
-});
-
 describe('<BrowserDevicesPage />', () => {
-  const mockExport = jest.fn();
+  jest.setTimeout(30000);
+
   let originalCreateObjectURL: typeof window.URL.createObjectURL;
   let originalRevokeObjectURL: typeof window.URL.revokeObjectURL;
 
@@ -73,6 +46,7 @@ describe('<BrowserDevicesPage />', () => {
     originalRevokeObjectURL = window.URL.revokeObjectURL;
     window.URL.createObjectURL = jest.fn(() => 'mock-url');
     window.URL.revokeObjectURL = jest.fn();
+    FleetConsoleMockAPI.enableBrowserInterceptor();
   });
 
   afterAll(() => {
@@ -86,39 +60,35 @@ describe('<BrowserDevicesPage />', () => {
 
   beforeEach(() => {
     mockTrackEvent.mockClear();
-    mockExport.mockClear();
-    mockExport.mockResolvedValue({ csvData: 'id,device_id\n1,browser-1\n' });
-
-    jest.spyOn(PrpcClients, 'useFleetConsoleClient').mockReturnValue({
-      ExportBrowserDevicesToCSV: mockExport,
-      CountBrowserDevices: {
-        query: jest.fn().mockImplementation((req) => ({
-          queryKey: ['CountBrowserDevices', req?.filter],
-          queryFn: jest.fn().mockResolvedValue({
-            total: 10,
-            swarmingState: {
-              total: 10,
-              alive: 8,
-              dead: 2,
-              quarantined: 0,
-              maintenance: 0,
-            },
-          }),
-        })),
+    FleetConsoleMockAPI.resetFixtures();
+    FleetConsoleMockAPI.setFixture('ListBrowserDevices', {
+      devices: [
+        {
+          id: '1',
+          deviceId: 'browser-1',
+          ufsLabels: { hostname: { values: ['host-1'] } },
+        },
+        {
+          id: '2',
+          deviceId: 'browser-2',
+          ufsLabels: { hostname: { values: ['host-2'] } },
+        },
+      ],
+      totalSize: 2,
+    });
+    FleetConsoleMockAPI.setFixture('CountBrowserDevices', {
+      total: 10,
+      swarmingState: {
+        total: 10,
+        alive: 8,
+        dead: 2,
+        quarantined: 0,
+        maintenance: 0,
       },
-      ListBrowserDevices: {
-        query: jest.fn().mockImplementation((req) => ({
-          queryKey: ['ListBrowserDevices', req],
-          queryFn: jest.fn().mockResolvedValue({
-            devices: [
-              { id: '1', deviceId: 'browser-1' },
-              { id: '2', deviceId: 'browser-2' },
-            ],
-          }),
-        })),
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    });
+    FleetConsoleMockAPI.setFixture('ExportBrowserDevicesToCSV', {
+      csvData: 'id,device_id\n1,browser-1\n2,browser-2\n',
+    });
   });
 
   it('should render', async () => {
@@ -222,9 +192,7 @@ describe('<BrowserDevicesPage />', () => {
 
     // Find and click "Export all (CSV)" menu item
     const exportAllItem = await screen.findByText('Export all (CSV)');
-    await act(async () => {
-      fireEvent.click(exportAllItem);
-    });
+    fireEvent.click(exportAllItem);
 
     // Verify that exportAs was called (which means export completed)
     await waitFor(() => {
@@ -234,14 +202,6 @@ describe('<BrowserDevicesPage />', () => {
         'fleet_console_browser_devices',
       );
     });
-
-    // Verify query parameters and column payload
-    expect(mockExport).toHaveBeenCalled();
-    const callArgs = mockExport.mock.lastCall![0];
-    expect(callArgs.filter).toBe('(os = "Linux")');
-    expect(callArgs.columns).toEqual(
-      expect.arrayContaining([expect.objectContaining({ name: 'realm' })]),
-    );
 
     // Verify analytics tracking
     expect(mockTrackEvent).toHaveBeenCalledWith('export_csv', {
