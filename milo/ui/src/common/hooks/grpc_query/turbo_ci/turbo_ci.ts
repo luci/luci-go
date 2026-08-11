@@ -70,6 +70,14 @@ export const TURBO_CI_ENVIRONMENTS: TurboCIEnvironment[] = [
   },
 ];
 
+export function isDevEnvironment(env: TurboCIEnvironment): boolean {
+  return env.environment === 'qual-staging';
+}
+
+export function isProdEnvironment(env: TurboCIEnvironment): boolean {
+  return !isDevEnvironment(env);
+}
+
 /**
  * Computes the Legacy Workplan Viewer URL for a given workplan ID, environment, and optional active worknode ID.
  */

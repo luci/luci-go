@@ -76,21 +76,14 @@ describe('ChroniclePage login warning when failing to retrieve content', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('displays warning encouraging login when user is anonymous and backends return a mix of access denied and not found', async () => {
+  it('displays warning encouraging login when user is anonymous and all backends return access denied', async () => {
     const mockFetch = jest.mocked(global.fetch);
-    // Prod returns 403, all other backends return 404
-    mockFetch.mockImplementation(async (url: RequestInfo | URL) => {
-      if (url.toString().includes('turboci.pa.googleapis.com')) {
-        return {
-          ok: false,
-          status: 403,
-          text: async () => 'Permission Denied',
-        } as unknown as Response;
-      }
+    // All backends return 403
+    mockFetch.mockImplementation(async () => {
       return {
         ok: false,
-        status: 404,
-        text: async () => 'Not Found',
+        status: 403,
+        text: async () => 'Permission Denied',
       } as unknown as Response;
     });
 

@@ -579,4 +579,74 @@ describe('ChronicleContextProvider', () => {
       'qual-qa:error,qual-staging:timeout',
     );
   });
+
+  it('ignores access denial for dev environment when prod environments are accessible', async () => {
+    mockUseParams.mockReturnValue({ workplanId: 'wp-prod-notfound' });
+
+    // Mock fetch: Prod environments return 404 (NOT_FOUND), Dev (qual-staging) returns 403 (PERMISSION_DENIED)
+    const mockFetch = jest.mocked(global.fetch);
+    mockFetch.mockImplementation(async (url: RequestInfo | URL) => {
+      if (
+        url.toString().includes('qual-staging-turboci.sandbox.googleapis.com')
+      ) {
+        return {
+          ok: false,
+          status: 403,
+          text: async () => 'permission denied',
+        } as unknown as Response;
+      }
+      return {
+        ok: false,
+        status: 404,
+        text: async () => 'not found',
+      } as unknown as Response;
+    });
+
+    render(
+      <FakeContextProvider>
+        <ChronicleContextProvider>
+          <TestComponent />
+        </ChronicleContextProvider>
+      </FakeContextProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('failed-envs')).toHaveTextContent('');
+    });
+  });
+
+  it('ignores access denial for prod environments when dev environment is accessible', async () => {
+    mockUseParams.mockReturnValue({ workplanId: 'wp-dev-notfound' });
+
+    // Mock fetch: Dev environment (qual-staging) returns 404 (NOT_FOUND), Prod environments return 403 (PERMISSION_DENIED)
+    const mockFetch = jest.mocked(global.fetch);
+    mockFetch.mockImplementation(async (url: RequestInfo | URL) => {
+      if (
+        url.toString().includes('qual-staging-turboci.sandbox.googleapis.com')
+      ) {
+        return {
+          ok: false,
+          status: 404,
+          text: async () => 'not found',
+        } as unknown as Response;
+      }
+      return {
+        ok: false,
+        status: 403,
+        text: async () => 'permission denied',
+      } as unknown as Response;
+    });
+
+    render(
+      <FakeContextProvider>
+        <ChronicleContextProvider>
+          <TestComponent />
+        </ChronicleContextProvider>
+      </FakeContextProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('failed-envs')).toHaveTextContent('');
+    });
+  });
 });

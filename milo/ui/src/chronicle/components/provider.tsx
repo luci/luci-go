@@ -24,6 +24,8 @@ import { fetchGrpcWeb } from '@/common/hooks/grpc_query/grpc_query';
 import {
   TURBO_CI_ENVIRONMENTS,
   TurboCIEnvironment,
+  isDevEnvironment,
+  isProdEnvironment,
   usePaginatedReadWorkPlan,
 } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -60,6 +62,13 @@ interface EnvironmentQueryResult {
   env: TurboCIEnvironment;
   exists?: boolean;
   errorType?: DetectionErrorType;
+}
+
+function isAccessDeniedError(errorType?: DetectionErrorType): boolean {
+  return (
+    errorType === DetectionErrorType.NoAccess ||
+    errorType === DetectionErrorType.InvalidScopes
+  );
 }
 
 async function performLookupAttempt(
@@ -303,14 +312,26 @@ export function ChronicleContextProvider({
     [environmentQueryResults],
   );
 
-  const failedEnvironments = useMemo(
-    () =>
-      environmentQueryResults
-        .filter((r) => r.errorType)
-        .map((r) => ({ env: r.env, errorType: r.errorType! }))
-        .sort((a, b) => compareEnvironments(a.env, b.env)),
-    [environmentQueryResults],
-  );
+  const failedEnvironments = useMemo(() => {
+    const hasAccessibleProd = environmentQueryResults.some(
+      (r) => isProdEnvironment(r.env) && (r.exists || !r.errorType),
+    );
+    const hasAccessibleDev = environmentQueryResults.some(
+      (r) => isDevEnvironment(r.env) && (r.exists || !r.errorType),
+    );
+
+    return environmentQueryResults
+      .filter((r) => {
+        if (!r.errorType) return false;
+        if (isAccessDeniedError(r.errorType)) {
+          if (isDevEnvironment(r.env) && hasAccessibleProd) return false;
+          if (isProdEnvironment(r.env) && hasAccessibleDev) return false;
+        }
+        return true;
+      })
+      .map((r) => ({ env: r.env, errorType: r.errorType! }))
+      .sort((a, b) => compareEnvironments(a.env, b.env));
+  }, [environmentQueryResults]);
 
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const requestedEnvParam = searchParams.get('env') || undefined;
