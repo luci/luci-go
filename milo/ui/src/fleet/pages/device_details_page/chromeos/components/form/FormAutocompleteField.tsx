@@ -21,9 +21,13 @@ import {
   Typography,
   createFilterOptions,
 } from '@mui/material';
-import { useMemo } from 'react';
-import { useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 
+import {
+  checkLengthLimit,
+  MAX_FIELD_LENGTH,
+  MAX_ARRAY_TOTAL_LENGTH,
+} from '../../utils/inventory_editing_utils';
 import { CodeChip } from '../common/CodeChip';
 
 import { useCardForm } from './CardForm';
@@ -36,7 +40,6 @@ interface FormAutocompleteFieldProps {
   limitTags?: number;
   gridSm?: number;
   regexValidation?: RegExp;
-  maxLength?: number;
   multiple?: boolean;
   freeSolo?: boolean;
   valueMapping?: {
@@ -56,7 +59,6 @@ export const FormAutocompleteField = ({
   limitTags = 5,
   gridSm = 6,
   regexValidation = /^[a-zA-Z0-9-_.]+$/,
-  maxLength = 100,
   multiple = true,
   freeSolo = true,
   valueMapping,
@@ -84,12 +86,60 @@ export const FormAutocompleteField = ({
     return '';
   }, [value, valueMapping]);
 
-  const tokensToValidate = multiple ? arrValue : strValue ? [strValue] : [];
-  const invalidTokens = tokensToValidate.filter(
-    (val) =>
-      (regexValidation && !regexValidation.test(val)) || val.length > maxLength,
-  );
-  const hasError = invalidTokens.length > 0;
+  const tokensToValidate = useMemo(() => {
+    return multiple ? arrValue : strValue ? [strValue] : [];
+  }, [multiple, arrValue, strValue]);
+
+  const tooLongTokens = useMemo(() => {
+    return tokensToValidate.filter(
+      (val) => !checkLengthLimit(val, MAX_FIELD_LENGTH),
+    );
+  }, [tokensToValidate]);
+
+  const isTotalLengthInvalid = useMemo(() => {
+    if (!multiple) {
+      return false;
+    }
+    return !checkLengthLimit(arrValue.join(','), MAX_ARRAY_TOTAL_LENGTH);
+  }, [multiple, arrValue]);
+
+  const invalidFormatTokens = useMemo(() => {
+    return tokensToValidate.filter(
+      (val) => regexValidation && !regexValidation.test(val),
+    );
+  }, [tokensToValidate, regexValidation]);
+
+  const hasError =
+    tooLongTokens.length > 0 ||
+    isTotalLengthInvalid ||
+    invalidFormatTokens.length > 0;
+
+  const helperText = useMemo(() => {
+    if (!hasError) return undefined;
+    const errorMessages: string[] = [];
+    if (tooLongTokens.length > 0) {
+      errorMessages.push(
+        multiple
+          ? `Maximum length for each item is ${MAX_FIELD_LENGTH} characters (${tooLongTokens.join(', ')})`
+          : `Maximum length is ${MAX_FIELD_LENGTH} characters`,
+      );
+    }
+    if (isTotalLengthInvalid) {
+      errorMessages.push(
+        `Total combined length exceeds ${MAX_ARRAY_TOTAL_LENGTH} characters`,
+      );
+    }
+    if (invalidFormatTokens.length > 0) {
+      errorMessages.push(`Invalid format (${invalidFormatTokens.join(', ')})`);
+    }
+    return errorMessages.join('. ');
+  }, [
+    hasError,
+    tooLongTokens,
+    isTotalLengthInvalid,
+    invalidFormatTokens,
+    multiple,
+  ]);
 
   useEffect(() => {
     if (isEditing && isEditable) {
@@ -148,11 +198,6 @@ export const FormAutocompleteField = ({
       </Grid>
     );
   }
-
-  const helperText = hasError
-    ? `Invalid format or length: ${invalidTokens.join(', ')}`
-    : undefined;
-
   if (!multiple) {
     return (
       <Grid item xs={12} sm={gridSm}>

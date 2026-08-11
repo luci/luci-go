@@ -25,6 +25,7 @@ import {
   generateChangelogMarkdown,
   hasDeployableEdits,
   getEditableFields,
+  checkLengthLimit,
 } from './inventory_editing_utils';
 
 describe('inventory_editing_utils', () => {
@@ -43,6 +44,19 @@ describe('inventory_editing_utils', () => {
     it('returns undefined if path is missing', () => {
       const obj = { a: {} };
       expect(getNestedValue(obj, 'a.b.c')).toBeUndefined();
+    });
+  });
+
+  describe('checkLengthLimit', () => {
+    it('returns true for undefined or null or empty', () => {
+      expect(checkLengthLimit(undefined)).toBe(true);
+      expect(checkLengthLimit(null)).toBe(true);
+      expect(checkLengthLimit('')).toBe(true);
+    });
+
+    it('validates string length', () => {
+      expect(checkLengthLimit('short', 10)).toBe(true);
+      expect(checkLengthLimit('too-long-string', 10)).toBe(false);
     });
   });
 

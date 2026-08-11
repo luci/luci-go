@@ -24,6 +24,20 @@ export const isLabstationConfig = (
   return Boolean(lse?.chromeosMachineLse?.deviceLse?.labstation);
 };
 
+export const MAX_FIELD_LENGTH = 100;
+export const MAX_NUMBER_INPUT_LENGTH = 15;
+export const MAX_ARRAY_TOTAL_LENGTH = 2 * MAX_FIELD_LENGTH;
+
+export const checkLengthLimit = (
+  value: string | null | undefined,
+  limit = MAX_FIELD_LENGTH,
+): boolean => {
+  if (!value) {
+    return true;
+  }
+  return value.length <= limit;
+};
+
 export const LOGICAL_SCHEDULING_PATHS = {
   dutPools: 'chromeosMachineLse.deviceLse.dut.pools',
   labstationPools: 'chromeosMachineLse.deviceLse.labstation.pools',

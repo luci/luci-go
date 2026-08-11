@@ -18,7 +18,11 @@ import { useState } from 'react';
 
 import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 
-import { updateNestedValues } from '../../utils/inventory_editing_utils';
+import {
+  updateNestedValues,
+  MAX_NUMBER_INPUT_LENGTH,
+  MAX_ARRAY_TOTAL_LENGTH,
+} from '../../utils/inventory_editing_utils';
 
 jest.mock('../../utils/inventory_editing_utils', () => {
   const original = jest.requireActual('../../utils/inventory_editing_utils');
@@ -44,6 +48,12 @@ jest.mock('../../utils/inventory_editing_utils', () => {
         type: 'number',
         min: 9000,
         max: 9999,
+      },
+      {
+        label: 'Dummy Number',
+        path: 'chromeosMachineLse.deviceLse.dut.dummyNumber',
+        editPath: 'dummyNumber',
+        type: 'number',
       },
     ]),
   };
@@ -112,6 +122,7 @@ describe('<FormTextField />', () => {
         dut: {
           pools: ['pool1', 'pool2'],
           hive: 'hive-1',
+          dummyNumber: 12345,
         },
       },
     },
@@ -330,5 +341,172 @@ describe('<FormTextField />', () => {
       screen.getByText('Must be 0 or between 9000 and 9999'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+  });
+
+  it('validates string length and disables confirm button when exceeding limit', async () => {
+    render(
+      <TestWrapper initialLse={initialLse}>
+        <FormTextField
+          label="Hive"
+          path="chromeosMachineLse.deviceLse.dut.hive"
+          type="string"
+        />
+      </TestWrapper>,
+    );
+
+    const editBtn = screen.getByRole('button', { name: /edit/i });
+    await userEvent.click(editBtn);
+
+    const input = screen.getByRole('textbox');
+    await userEvent.clear(input);
+
+    const longString = 'a'.repeat(101);
+    await userEvent.type(input, longString);
+
+    expect(
+      screen.getByText('Maximum length is 100 characters'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+
+    // make it valid again
+    await userEvent.clear(input);
+    await userEvent.type(input, 'valid-hive');
+    expect(
+      screen.queryByText('Maximum length is 100 characters'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeEnabled();
+  });
+
+  it('validates array combined length and disables confirm button when exceeding limit', async () => {
+    render(
+      <TestWrapper initialLse={initialLse}>
+        <FormTextField
+          label="Pools"
+          path="chromeosMachineLse.deviceLse.dut.pools"
+          type="array"
+        />
+      </TestWrapper>,
+    );
+
+    const editBtn = screen.getByRole('button', { name: /edit/i });
+    await userEvent.click(editBtn);
+
+    const input = screen.getByRole('textbox');
+    await userEvent.clear(input);
+
+    const longString = 'a'.repeat(MAX_ARRAY_TOTAL_LENGTH + 1);
+    await userEvent.type(input, longString);
+
+    expect(
+      screen.getByText(
+        `Maximum length is ${MAX_ARRAY_TOTAL_LENGTH} characters`,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+  });
+
+  it(`caps numeric input to ${MAX_NUMBER_INPUT_LENGTH} characters and does not allow typing more`, async () => {
+    render(
+      <TestWrapper initialLse={initialLse}>
+        <FormTextField
+          label="Servo Port"
+          path="chromeosMachineLse.deviceLse.dut.peripherals.servo.servoPort"
+          type="number"
+        />
+      </TestWrapper>,
+    );
+
+    const editBtn = screen.getByRole('button', { name: /edit/i });
+    await userEvent.click(editBtn);
+
+    const input = screen.getByRole('spinbutton');
+    await userEvent.clear(input);
+
+    // Type 20 digits
+    const typedVal = '1'.repeat(MAX_NUMBER_INPUT_LENGTH + 5);
+    await userEvent.type(input, typedVal);
+
+    // Expect it to be capped
+    const expectedVal = Number('1'.repeat(MAX_NUMBER_INPUT_LENGTH));
+    expect(input).toHaveValue(expectedVal);
+  });
+
+  it('validates numeric input length and disables confirm button when exceeding limit', async () => {
+    const lseWithLongNum = {
+      chromeosMachineLse: {
+        deviceLse: {
+          dut: {
+            pools: ['pool1', 'pool2'],
+            hive: 'hive-1',
+            dummyNumber: Number('1'.repeat(17)),
+          },
+        },
+      },
+    } as unknown as MachineLSE;
+
+    render(
+      <TestWrapper initialLse={lseWithLongNum}>
+        <FormTextField
+          label="Dummy Number"
+          path="chromeosMachineLse.deviceLse.dut.dummyNumber"
+          type="number"
+        />
+      </TestWrapper>,
+    );
+
+    const editBtn = screen.getByRole('button', { name: /edit/i });
+    await userEvent.click(editBtn);
+
+    expect(
+      screen.getByText(
+        `Maximum length is ${MAX_NUMBER_INPUT_LENGTH} characters`,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+  });
+
+  it('allows backspace to correct an initially too-long numeric value', async () => {
+    const lseWithLongNum = {
+      chromeosMachineLse: {
+        deviceLse: {
+          dut: {
+            pools: ['pool1', 'pool2'],
+            hive: 'hive-1',
+            dummyNumber: Number('1'.repeat(17)),
+          },
+        },
+      },
+    } as unknown as MachineLSE;
+
+    render(
+      <TestWrapper initialLse={lseWithLongNum}>
+        <FormTextField
+          label="Dummy Number"
+          path="chromeosMachineLse.deviceLse.dut.dummyNumber"
+          type="number"
+        />
+      </TestWrapper>,
+    );
+
+    const editBtn = screen.getByRole('button', { name: /edit/i });
+    await userEvent.click(editBtn);
+
+    const input = screen.getByRole('spinbutton');
+
+    // Initial length is 17. Confirm is disabled.
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+
+    // Backspace once -> length 16. Still disabled.
+    await userEvent.type(input, '{backspace}');
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+
+    // Backspace twice -> length 15. Now enabled!
+    await userEvent.type(input, '{backspace}');
+    expect(
+      screen.queryByText(
+        `Maximum length is ${MAX_NUMBER_INPUT_LENGTH} characters`,
+      ),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeEnabled();
   });
 });

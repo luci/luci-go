@@ -15,6 +15,12 @@
 import { Box, Chip } from '@mui/material';
 import { useEffect, useState } from 'react';
 
+import {
+  checkLengthLimit,
+  MAX_FIELD_LENGTH,
+  MAX_NUMBER_INPUT_LENGTH,
+  MAX_ARRAY_TOTAL_LENGTH,
+} from '../../utils/inventory_editing_utils';
 import { PropertyField } from '../common/PropertyField';
 
 import { useCardForm } from './CardForm';
@@ -82,17 +88,33 @@ export const FormTextField = ({
     numVal !== 0 &&
     ((minVal !== undefined && numVal < minVal) ||
       (maxVal !== undefined && numVal > maxVal));
+
+  const limit =
+    resolvedType === 'number'
+      ? MAX_NUMBER_INPUT_LENGTH
+      : resolvedType === 'array'
+        ? MAX_ARRAY_TOTAL_LENGTH
+        : MAX_FIELD_LENGTH;
+  const isTooLong = !checkLengthLimit(localVal, limit);
+
+  const isError = isOutOfRange || isTooLong;
+
   const helperText = isOutOfRange
     ? `Must be 0 or between ${minVal} and ${maxVal}`
-    : undefined;
+    : isTooLong
+      ? `Maximum length is ${limit} characters`
+      : undefined;
 
   useEffect(() => {
     if (shouldRenderEditMode) {
-      setFieldError(pathStr, isOutOfRange);
+      setFieldError(pathStr, isError);
     } else {
       setFieldError(pathStr, false);
     }
-  }, [shouldRenderEditMode, isOutOfRange, pathStr, setFieldError]);
+    return () => {
+      setFieldError(pathStr, false);
+    };
+  }, [shouldRenderEditMode, isError, pathStr, setFieldError]);
 
   if (!shouldRenderEditMode) {
     if (resolvedType === 'array') {
@@ -133,6 +155,13 @@ export const FormTextField = ({
   }
 
   const handleChange = (newVal: string) => {
+    if (
+      resolvedType === 'number' &&
+      newVal.length > MAX_NUMBER_INPUT_LENGTH &&
+      newVal.length > localVal.length
+    ) {
+      return;
+    }
     setLocalVal(newVal);
 
     if (resolvedType === 'array') {
@@ -164,7 +193,7 @@ export const FormTextField = ({
       gridSm={gridSm}
       gridMd={gridMd}
       inputType={resolvedType === 'number' ? 'number' : 'text'}
-      error={isOutOfRange}
+      error={isError}
       helperText={helperText}
     />
   );
