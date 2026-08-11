@@ -204,7 +204,15 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	var logStreamStates []*coordinator.LogStreamState
 	var respLogStreamStates []*logdog.LogStreamState
 
-	err = q.Run(r.ctx, func(ls *coordinator.LogStream, cb ds.CursorCB) error {
+	it := q.Run(r.ctx)
+	for ls, err := range it.Results {
+		if err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+			}.Errorf(r.ctx, "Failed to execute query.")
+			return status.Errorf(codes.Internal, "failed to execute query: %s", err)
+		}
+
 		toAdd := &logdog.QueryResponse_Stream{
 			Path: string(ls.Path()),
 		}
@@ -227,20 +235,13 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 			}
 		}
 		if len(resp.Streams) == r.limit {
-			cursor, err := cb()
+			cursor, err := it.Cursor()
 			if err != nil {
 				return err
 			}
 			resp.Next = cursor.String()
-			return ds.Stop
+			return nil
 		}
-		return nil
-	})
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(r.ctx, "Failed to execute query.")
-		return status.Errorf(codes.Internal, "failed to execute query: %s", err)
 	}
 
 	if len(logStreamStates) > 0 {

@@ -126,12 +126,11 @@ func (s *server) DeletePrefix(ctx context.Context, req *logdog.DeletePrefixReque
 	if err != nil {
 		return nil, err
 	}
-	err = lsq.Run(ctx, func(ls *coordinator.LogStream, cc ds.CursorCB) error {
+	for ls, err := range lsq.Run(ctx).Results {
+		if err != nil {
+			return nil, err
+		}
 		addEntry(ls)
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 	// If there is a partial batch, flush them before waiting for the group.
 	flushBatch()

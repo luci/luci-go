@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -59,10 +58,10 @@ func TestDeletePrefix(t *testing.T) {
 		assert.NoErr(t, err)
 
 		var streams []*coordinator.LogStream
-		assert.NoErr(t, lsq.Run(ctx, func(ls *coordinator.LogStream, cc ds.CursorCB) error {
+		for ls, err := range lsq.Run(ctx).Results {
+			assert.NoErr(t, err)
 			streams = append(streams, ls)
-			return nil
-		}))
+		}
 		assert.Loosely(t, streams, should.BeEmpty)
 	})
 
@@ -82,10 +81,10 @@ func TestDeletePrefix(t *testing.T) {
 		assert.NoErr(t, err)
 
 		var streams []*coordinator.LogStream
-		assert.NoErr(t, lsq.Run(ctx, func(ls *coordinator.LogStream, cc ds.CursorCB) error {
+		for ls, err := range lsq.Run(ctx).Results {
+			assert.NoErr(t, err)
 			streams = append(streams, ls)
-			return nil
-		}))
+		}
 		assert.Loosely(t, streams, should.BeEmpty)
 	})
 

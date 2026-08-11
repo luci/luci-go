@@ -404,18 +404,22 @@ func (lsp *LogStreamQuery) filter(ls *LogStream) bool {
 	return true
 }
 
-// Run executes the LogStreamQuery and calls `cb` with each LogStream which
-// matches the LogStreamQuery.
-//
-// If `cb` returns ds.Stop, the query will stop with a nil error.
-// If `cb` returns a different error, the query will stop with the returned
-// error.
-// If `cb` returns nil, the query continues until it exhausts.
-func (lsp *LogStreamQuery) Run(ctx context.Context, cb func(*LogStream, ds.CursorCB) error) error {
-	return ds.Run(ctx, lsp.q, func(ls *LogStream, getCursor ds.CursorCB) (err error) {
-		if lsp.filter(ls) {
-			err = cb(ls, getCursor)
+// Run executes the LogStreamQuery, returning an iter for the results.
+func (lsp *LogStreamQuery) Run(ctx context.Context) *ds.QueryIter[*LogStream] {
+	ret := ds.RunQuery[*LogStream](ctx, lsp.q)
+	ogResults := ret.Results
+	ret.Results = func(yield func(*LogStream, error) bool) {
+		for ls, err := range ogResults {
+			if err != nil {
+				yield(nil, err)
+				return
+			}
+			if lsp.filter(ls) {
+				if !yield(ls, err) {
+					return
+				}
+			}
 		}
-		return
-	})
+	}
+	return ret
 }

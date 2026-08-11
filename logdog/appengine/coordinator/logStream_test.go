@@ -188,11 +188,10 @@ func TestLogStream(t *testing.T) {
 
 			getAll := func(q *LogStreamQuery) []*LogStream {
 				var streams []*LogStream
-				err := q.Run(c, func(ls *LogStream, _ ds.CursorCB) error {
+				for ls, err := range q.Run(c).Results {
+					assert.NoErr(t, err)
 					streams = append(streams, ls)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
+				}
 				return streams
 			}
 
@@ -285,11 +284,10 @@ func TestNewLogStreamGlob(t *testing.T) {
 		assert.Loosely(t, ds.Put(ctx, logStreams), should.BeNil)
 
 		var streams []*LogStream
-		err := q.Run(ctx, func(ls *LogStream, _ ds.CursorCB) error {
+		for ls, err := range q.Run(ctx).Results {
+			assert.NoErr(t, err)
 			streams = append(streams, ls)
-			return nil
-		})
-		assert.Loosely(t, err, should.BeNil)
+		}
 		return streams
 	}
 
