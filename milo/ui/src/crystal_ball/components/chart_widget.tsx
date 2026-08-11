@@ -59,6 +59,7 @@ import {
 import {
   dataPointsToData,
   detectRawUnit,
+  findMatchingSeriesIndex,
   findUnitInfo,
   generateColor,
   getSafeChartType,
@@ -126,16 +127,12 @@ function getChartSeries(
 
       return widgetResponse.invocationDistributionData.points
         .map((group, index) => {
-          const seriesIndex = widgetSeries?.findIndex(
-            (s) =>
-              s.id === group.seriesId ||
-              (s.id && group.seriesId.startsWith(s.id + '_')) ||
-              s.displayName === group.legendLabel,
+          const seriesIndex = findMatchingSeriesIndex(
+            widgetSeries,
+            group.seriesId,
           );
           const seriesConfig =
-            seriesIndex !== undefined && seriesIndex >= 0
-              ? widgetSeries?.[seriesIndex]
-              : undefined;
+            seriesIndex >= 0 ? widgetSeries?.[seriesIndex] : undefined;
           return {
             name: group.legendLabel,
             seriesId: group.seriesId,
@@ -180,7 +177,7 @@ function getChartSeries(
                   y,
                   count,
                   point,
-                  seriesId: seriesConfig?.id,
+                  seriesId: group.seriesId ?? seriesConfig?.id,
                   seriesIndex:
                     seriesIndex !== undefined && seriesIndex >= 0
                       ? seriesIndex
@@ -195,16 +192,12 @@ function getChartSeries(
           };
         })
         .filter((series) => {
-          const seriesIndex = widgetSeries?.findIndex(
-            (s) =>
-              s.id === series.seriesId ||
-              (s.id && series.seriesId?.startsWith(s.id + '_')) ||
-              s.displayName === series.name,
+          const seriesIndex = findMatchingSeriesIndex(
+            widgetSeries,
+            series.seriesId,
           );
           const configuredSeries =
-            seriesIndex !== undefined && seriesIndex >= 0
-              ? widgetSeries?.[seriesIndex]
-              : undefined;
+            seriesIndex >= 0 ? widgetSeries?.[seriesIndex] : undefined;
           return !(configuredSeries?.hidden ?? false);
         });
     }
@@ -216,16 +209,12 @@ function getChartSeries(
 
       return widgetResponse.multiMetricChartData.lines
         .map((line, index) => {
-          const seriesIndex = widgetSeries?.findIndex(
-            (s) =>
-              s.id === line.seriesId ||
-              (s.id && line.seriesId.startsWith(s.id + '_')) ||
-              s.displayName === line.legendLabel,
+          const seriesIndex = findMatchingSeriesIndex(
+            widgetSeries,
+            line.seriesId,
           );
           const seriesConfig =
-            seriesIndex !== undefined && seriesIndex >= 0
-              ? widgetSeries?.[seriesIndex]
-              : undefined;
+            seriesIndex >= 0 ? widgetSeries?.[seriesIndex] : undefined;
           return {
             name: line.legendLabel,
             seriesId: line.seriesId,
@@ -234,7 +223,7 @@ function getChartSeries(
               ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey).map(
                   (pt) => ({
                     ...pt,
-                    seriesId: seriesConfig?.id,
+                    seriesId: line.seriesId ?? seriesConfig?.id,
                     seriesIndex:
                       seriesIndex !== undefined && seriesIndex >= 0
                         ? seriesIndex
@@ -249,16 +238,12 @@ function getChartSeries(
           };
         })
         .filter((series) => {
-          const seriesIndex = widgetSeries?.findIndex(
-            (s) =>
-              s.id === series.seriesId ||
-              (s.id && series.seriesId?.startsWith(s.id + '_')) ||
-              s.displayName === series.name,
+          const seriesIndex = findMatchingSeriesIndex(
+            widgetSeries,
+            series.seriesId,
           );
           const configuredSeries =
-            seriesIndex !== undefined && seriesIndex >= 0
-              ? widgetSeries?.[seriesIndex]
-              : undefined;
+            seriesIndex >= 0 ? widgetSeries?.[seriesIndex] : undefined;
           return !(configuredSeries?.hidden ?? false);
         });
     }

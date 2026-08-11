@@ -429,7 +429,7 @@ describe('ChartWidget', () => {
         y: 10,
         count: 1,
         point: { timestamp: 1000, value: 10 },
-        seriesId: undefined,
+        seriesId: 's1',
         seriesIndex: undefined,
       },
       {
@@ -437,7 +437,7 @@ describe('ChartWidget', () => {
         y: 20,
         count: 1,
         point: { timestamp: 2000, value: 20 },
-        seriesId: undefined,
+        seriesId: 's1',
         seriesIndex: undefined,
       },
     ]);
@@ -626,7 +626,7 @@ describe('ChartWidget', () => {
         y: 10,
         count: 1,
         point: { timestamp: 1000, value: 10 },
-        seriesId: undefined,
+        seriesId: 's1',
         seriesIndex: undefined,
       },
       {
@@ -634,7 +634,7 @@ describe('ChartWidget', () => {
         y: 20,
         count: 1,
         point: { timestamp: 2000, value: 20 },
-        seriesId: undefined,
+        seriesId: 's1',
         seriesIndex: undefined,
       },
     ]);
@@ -682,7 +682,7 @@ describe('ChartWidget', () => {
         y: 10,
         count: 1,
         point: { timestamp: '2026-04-04T10:00:00Z', value: 10 },
-        seriesId: undefined,
+        seriesId: 's1',
         seriesIndex: undefined,
       },
       {
@@ -690,7 +690,7 @@ describe('ChartWidget', () => {
         y: 20,
         count: 1,
         point: { timestamp: '2026-04-04T11:00:00Z', value: 20 },
-        seriesId: undefined,
+        seriesId: 's1',
         seriesIndex: undefined,
       },
     ]);

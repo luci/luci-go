@@ -14,12 +14,71 @@
 
 import { NUM_AGGREGATED_ROWS } from '@/crystal_ball/constants';
 import {
+  PerfChartSeries,
   PerfChartWidget,
   PerfChartWidget_ChartType,
   perfChartWidget_ChartTypeFromJSON,
   PerfDashboardContent,
   PerfFilter,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+/**
+ * Finds the matching series index in the widget's configured series list.
+ * Matching precedence:
+ * 1. Exact series ID match (s.id === seriesId)
+ * 2. Parent ID match for expanded child series (e.g. "series-id_0" -> parent ID "series-id")
+ * 3. Index fallback (seriesIndex)
+ */
+export function findMatchingSeriesIndex(
+  seriesList?: readonly PerfChartSeries[],
+  seriesId?: string,
+  seriesIndex?: number,
+): number {
+  if (!seriesList || seriesList.length === 0) {
+    return -1;
+  }
+
+  if (seriesId) {
+    // 1. Exact ID match
+    const exactIndex = seriesList.findIndex((s) => s.id === seriesId);
+    if (exactIndex >= 0) {
+      return exactIndex;
+    }
+
+    // 2. Child series ID match with numeric index suffix (e.g. "<parent_id>_<number>")
+    const childMatch = seriesId.match(/^(.+)_\d+$/);
+    if (childMatch) {
+      const parentId = childMatch[1];
+      const parentIndex = seriesList.findIndex((s) => s.id === parentId);
+      if (parentIndex >= 0) {
+        return parentIndex;
+      }
+    }
+  }
+
+  // 3. Index fallback
+  if (
+    seriesIndex !== undefined &&
+    seriesIndex >= 0 &&
+    seriesIndex < seriesList.length
+  ) {
+    return seriesIndex;
+  }
+
+  return -1;
+}
+
+/**
+ * Finds the matching PerfChartSeries configuration in the widget's configured series list.
+ */
+export function findMatchingSeriesConfig(
+  seriesList?: readonly PerfChartSeries[],
+  seriesId?: string,
+  seriesIndex?: number,
+): PerfChartSeries | undefined {
+  const index = findMatchingSeriesIndex(seriesList, seriesId, seriesIndex);
+  return index >= 0 && seriesList ? seriesList[index] : undefined;
+}
 
 /**
  * Returns a safe chart type from the given chart type.

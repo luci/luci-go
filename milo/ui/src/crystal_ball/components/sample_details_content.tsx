@@ -210,10 +210,10 @@ export function SampleDetailsContent({
   }
 
   const seriesConfig =
-    seriesId !== undefined
-      ? widget.series?.find((s) => s.id === seriesId)
-      : seriesIndex !== undefined && seriesIndex >= 0
-        ? widget.series?.[seriesIndex]
+    seriesIndex !== undefined && seriesIndex >= 0
+      ? widget.series?.[seriesIndex]
+      : seriesId !== undefined
+        ? widget.series?.find((s) => s.id === seriesId)
         : undefined;
   const seriesColor = seriesConfig?.color;
 

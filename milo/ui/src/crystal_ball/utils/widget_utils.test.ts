@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  PerfChartSeries,
   PerfChartSeries_PerfAggregationFunction,
   PerfChartWidget,
   PerfChartWidget_ChartType,
@@ -22,6 +23,8 @@ import {
   calculateChange,
   calculateTooltipPosition,
   dataPointsToData,
+  findMatchingSeriesConfig,
+  findMatchingSeriesIndex,
   formatChange,
   getSafeChartType,
   getTrendInfo,
@@ -252,5 +255,67 @@ describe('calculateTooltipPosition', () => {
     // posY: 360 - 80 - 5 = 275
     const result = calculateTooltipPosition([450, 360], size, offset);
     expect(result).toEqual([325, 275]);
+  });
+});
+
+describe('findMatchingSeriesIndex and findMatchingSeriesConfig', () => {
+  const mockSeriesList: PerfChartSeries[] = [
+    PerfChartSeries.fromPartial({
+      id: 'cpu',
+      displayName: 'CPU Main',
+      color: '#ff0000',
+    }),
+    PerfChartSeries.fromPartial({
+      id: 'cpu_idle',
+      displayName: 'CPU Idle State',
+      color: '#00ff00',
+    }),
+    PerfChartSeries.fromPartial({
+      id: 'mem',
+      displayName: 'Memory Usage',
+      color: '#0000ff',
+    }),
+  ];
+
+  it('should match exact series ID', () => {
+    expect(findMatchingSeriesIndex(mockSeriesList, 'cpu')).toBe(0);
+    expect(findMatchingSeriesConfig(mockSeriesList, 'cpu')).toEqual(
+      mockSeriesList[0],
+    );
+  });
+
+  it('should match expanded child series ID by extracting parent ID before _<number>', () => {
+    // 'cpu_idle_0' matches parent 'cpu_idle' (index 1), NOT 'cpu'
+    expect(findMatchingSeriesIndex(mockSeriesList, 'cpu_idle_0')).toBe(1);
+    expect(findMatchingSeriesConfig(mockSeriesList, 'cpu_idle_0')).toEqual(
+      mockSeriesList[1],
+    );
+
+    // 'cpu_0' matches 'cpu' (index 0)
+    expect(findMatchingSeriesIndex(mockSeriesList, 'cpu_0')).toBe(0);
+    expect(findMatchingSeriesConfig(mockSeriesList, 'cpu_0')).toEqual(
+      mockSeriesList[0],
+    );
+
+    // 'cpu_idle_state' does not end with _<number>, so it does not match 'cpu_idle' as a child series ID
+    expect(findMatchingSeriesIndex(mockSeriesList, 'cpu_idle_state')).toBe(-1);
+  });
+
+  it('should fallback to seriesIndex when series ID does not match', () => {
+    expect(findMatchingSeriesIndex(mockSeriesList, 'unknown_id', 1)).toBe(1);
+    expect(findMatchingSeriesConfig(mockSeriesList, 'unknown_id', 1)).toEqual(
+      mockSeriesList[1],
+    );
+  });
+
+  it('should return -1 or undefined for invalid inputs or out of range index', () => {
+    expect(findMatchingSeriesIndex([], 'cpu')).toBe(-1);
+    expect(findMatchingSeriesConfig([], 'cpu')).toBeUndefined();
+    expect(findMatchingSeriesIndex(undefined, 'cpu')).toBe(-1);
+    expect(findMatchingSeriesConfig(undefined, 'cpu')).toBeUndefined();
+    expect(findMatchingSeriesIndex(mockSeriesList, 'unknown_id', 10)).toBe(-1);
+    expect(
+      findMatchingSeriesConfig(mockSeriesList, 'unknown_id', 10),
+    ).toBeUndefined();
   });
 });

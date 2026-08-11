@@ -284,4 +284,50 @@ describe('SampleDetailsContent', () => {
       }),
     );
   });
+
+  it('should match parent series config when child series ID is provided', () => {
+    mockUseFetchWidgetRawSamples.mockReturnValue(
+      createMockQueryResult({ rows: [], nextPageToken: '' }),
+    );
+    const childPoint: SelectedPointInfo = {
+      ...mockPoint,
+      seriesId: 's1_0',
+    };
+    render(
+      <SampleDetailsContent
+        selectedPoint={childPoint}
+        widgetId="w1"
+        widget={mockWidget}
+        dashboardName="dashboard1"
+      />,
+    );
+
+    expect(mockUseFetchWidgetRawSamples).toHaveBeenCalledWith(
+      expect.objectContaining({
+        seriesId: 's1_0',
+      }),
+    );
+    expect(screen.getByText('mean')).toBeInTheDocument();
+  });
+
+  it('should fallback to exact series ID when seriesIndex is undefined', () => {
+    mockUseFetchWidgetRawSamples.mockReturnValue(
+      createMockQueryResult({ rows: [], nextPageToken: '' }),
+    );
+    const pointWithoutIndex: SelectedPointInfo = {
+      ...mockPoint,
+      seriesId: 's1',
+      seriesIndex: undefined,
+    };
+    render(
+      <SampleDetailsContent
+        selectedPoint={pointWithoutIndex}
+        widgetId="w1"
+        widget={mockWidget}
+        dashboardName="dashboard1"
+      />,
+    );
+
+    expect(screen.getByText('mean')).toBeInTheDocument();
+  });
 });
