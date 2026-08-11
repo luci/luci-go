@@ -397,16 +397,20 @@ var queryExecutionTests = []qExTest{
 			extraFns: []func(context.Context, *testing.T){
 				func(c context.Context, t *testing.T) {
 					q := nq("").Gt("__key__", key("Kind", 2))
-					err := ds.Run(c, q, func(pm ds.PropertyMap) error {
+					for pm, err := range ds.RunQuery[ds.PropertyMap](c, q).Results {
+						assert.NoErr(t, err)
 						assert.Loosely(t, pm, should.Match(stage1Data[2]))
-						return ds.Stop
-					})
-					assert.Loosely(t, err, shouldBeSuccessful)
+						break
+					}
 				},
 
 				func(c context.Context, t *testing.T) {
+					var err error
 					q := nq("Something").Eq("Does", 2).Order("Not", "-Work")
-					assert.Loosely(t, ds.Run(c, q, func(ds.Key) {}), should.ErrLike(strings.Join([]string{
+					for _, err = range ds.RunQuery[*ds.Key](c, q).Results {
+						break
+					}
+					assert.ErrIsLike(t, err, strings.Join([]string{
 						"Consider adding:",
 						"- kind: Something",
 						"  properties:",
@@ -414,12 +418,16 @@ var queryExecutionTests = []qExTest{
 						"  - name: Not",
 						"  - name: Work",
 						"    direction: desc",
-					}, "\n")))
+					}, "\n"))
 				},
 
 				func(c context.Context, t *testing.T) {
+					var err error
 					q := nq("Something").Ancestor(key("Kind", 3)).Order("Val")
-					assert.Loosely(t, ds.Run(c, q, func(ds.Key) {}), should.ErrLike(strings.Join([]string{
+					for _, err = range ds.RunQuery[*ds.Key](c, q).Results {
+						break
+					}
+					assert.Loosely(t, err, should.ErrLike(strings.Join([]string{
 						"Consider adding:",
 						"- kind: Something",
 						"  ancestor: true",

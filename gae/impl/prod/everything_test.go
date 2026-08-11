@@ -163,9 +163,10 @@ func TestBasicDatastore(t *testing.T) {
 
 			t.Run("Can query", func(t *ftt.Test) {
 				q := ds.NewQuery("TestStruct")
-				ds.Run(ctx, q, func(ts *TestStruct) {
+				for ts, err := range ds.RunQuery[*TestStruct](ctx, q).Results {
+					assert.NoErr(t, err)
 					assert.Loosely(t, *ts, should.Match(orig))
-				})
+				}
 				count, err := ds.Count(ctx, q)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, count, should.Equal(1))
@@ -173,9 +174,10 @@ func TestBasicDatastore(t *testing.T) {
 
 			t.Run("Can query for bytes", func(t *ftt.Test) {
 				q := ds.NewQuery("TestStruct").Eq("ValueBS", []byte("allo"))
-				ds.Run(ctx, q, func(ts *TestStruct) {
+				for ts, err := range ds.RunQuery[*TestStruct](ctx, q).Results {
+					assert.NoErr(t, err)
 					assert.Loosely(t, *ts, should.Match(orig))
-				})
+				}
 				count, err := ds.Count(ctx, q)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, count, should.Equal(1))

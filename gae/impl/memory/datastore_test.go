@@ -182,9 +182,10 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					ds.GetTestable(c).CatchupIndexes()
 
 					count := 0
-					assert.Loosely(t, ds.Run(c, ds.NewQuery(""), func(_ *ds.Key) {
+					for _, err := range ds.RunQuery[*ds.Key](c, ds.NewQuery("")).Results {
+						assert.NoErr(t, err)
 						count++
-					}), should.BeNil)
+					}
 					assert.Loosely(t, count, should.Equal(2))
 
 					assert.Loosely(t, testGetMeta(c, k), should.Equal(22))
@@ -651,7 +652,10 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					getErr = ds.Get(doC, &foo)
 
 					q := ds.NewQuery("Foo").Ancestor(ds.KeyForObj(doC, &foo))
-					queryErr = ds.Run(doC, q, func(f *Foo) error { return nil })
+					for _, err := range ds.RunQuery[*Foo](doC, q).Results {
+						queryErr = err
+						break
+					}
 					_, countErr = ds.Count(doC, q)
 				}
 
@@ -740,10 +744,11 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			ds.GetTestable(c).CatchupIndexes()
 
 			var ids []int64
-			assert.Loosely(t, ds.Run(c, ds.NewQuery("Foo").Order("__scatter__").Limit(5), func(f *Foo) {
+			for f, err := range ds.RunQuery[*Foo](c, ds.NewQuery("Foo").Order("__scatter__").Limit(5)).Results {
+				assert.NoErr(t, err)
 				assert.Loosely(t, f.Scatter, should.BeNil) // it is "invisible"
 				ids = append(ids, f.ID)
-			}), should.BeNil)
+			}
 
 			// Approximately "even" distribution within [1, 100] range.
 			assert.Loosely(t, ids, should.Match([]int64{43, 55, 99, 23, 17}))
