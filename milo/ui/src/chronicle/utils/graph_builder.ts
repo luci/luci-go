@@ -33,6 +33,7 @@ import {
   isStage,
   StageResultStatus,
 } from './check_utils';
+import { COLORS, getCheckColors, getStageColors, NodeColors } from './styles';
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -125,61 +126,6 @@ const BASE_NODE_STYLE: CSSProperties = {
 
 const BORDER_STYLE = `${GRAPH_CONFIG.borderWidth}px solid`;
 
-const COLORS = {
-  check: {
-    bg: 'var(--light-background-color-1)',
-    border: 'var(--light-background-color-4)',
-    text: 'var(--default-text-color)',
-  },
-  checkSuccess: {
-    bg: 'var(--success-bg-color)',
-    border: 'var(--success-color)',
-    text: 'var(--default-text-color)',
-  },
-  checkFailure: {
-    bg: 'var(--failure-bg-color)',
-    border: 'var(--failure-color)',
-    text: 'var(--default-text-color)',
-  },
-  checkMixed: {
-    bg: 'var(--warning-bg-color)',
-    border: 'var(--warning-color)',
-    text: 'var(--default-text-color)',
-  },
-  stage: {
-    bg: 'var(--scheduled-bg-color)',
-    border: 'var(--scheduled-color)',
-    text: 'var(--default-text-color)',
-  },
-  stageSuccess: {
-    bg: 'var(--success-bg-color)',
-    border: 'var(--success-color)',
-    text: 'var(--default-text-color)',
-  },
-  stageFailure: {
-    bg: 'var(--failure-bg-color)',
-    border: 'var(--failure-color)',
-    text: 'var(--default-text-color)',
-  },
-  stageRunning: {
-    bg: 'var(--started-bg-color)',
-    border: 'var(--started-color)',
-    text: 'var(--default-text-color)',
-  },
-  stageCanceled: {
-    bg: 'var(--canceled-bg-color)',
-    border: 'var(--canceled-color)',
-    text: 'var(--default-text-color)',
-  },
-  collapsedGroup: {
-    bg: 'var(--light-background-color-1)',
-    border: 'var(--light-background-color-4)',
-    text: 'var(--default-text-color)',
-  },
-};
-
-type NodeColors = { bg: string; border: string; text: string };
-
 const NODE_STYLES = {
   // Standalone Check
   check: (colors: NodeColors) => ({
@@ -198,7 +144,7 @@ const NODE_STYLES = {
     background: colors.bg,
     color: colors.text,
     // Visual connector to stage above. Uses stage border color.
-    borderTop: createCssBorder(COLORS.stage.border),
+    borderTop: createCssBorder(COLORS.stagePending.border),
     borderRight: createCssBorder(colors.border),
     borderBottom: createCssBorder(colors.border),
     borderLeft: createCssBorder(colors.border),
@@ -320,36 +266,6 @@ export interface GraphBuilderOptions {
 // Helper to generate full border string for a given color
 function createCssBorder(color: string) {
   return `${BORDER_STYLE} ${color}`;
-}
-
-function getCheckColors(status: CheckResultStatus | undefined) {
-  switch (status) {
-    case CheckResultStatus.SUCCESS:
-      return COLORS.checkSuccess;
-    case CheckResultStatus.FAILURE:
-      return COLORS.checkFailure;
-    case CheckResultStatus.MIXED:
-      return COLORS.checkMixed;
-    default:
-      return COLORS.check;
-  }
-}
-
-function getStageColors(status: StageResultStatus | undefined) {
-  switch (status) {
-    case StageResultStatus.SUCCESS:
-      return COLORS.stageSuccess;
-    case StageResultStatus.FAILURE:
-      return COLORS.stageFailure;
-    case StageResultStatus.RUNNING:
-      return COLORS.stageRunning;
-    case StageResultStatus.CANCELLED:
-      return COLORS.stageCanceled;
-    case StageResultStatus.PENDING:
-    case StageResultStatus.UNKNOWN:
-    default:
-      return COLORS.stage;
-  }
 }
 
 function hashString(str: string): number {
@@ -1022,7 +938,7 @@ export class TurboCIGraphBuilder {
   private getGroupedStageStyle(
     index: number,
     totalStages: number,
-    colors: NodeColors = COLORS.stage,
+    colors: NodeColors = COLORS.stagePending,
   ) {
     if (totalStages === 1) {
       return NODE_STYLES.stageGrouped(colors);

@@ -24,7 +24,10 @@ import {
 } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
-import { getStageLabel } from '@/chronicle/utils/check_utils';
+import {
+  getStageLabel,
+  getStageResultStatus,
+} from '@/chronicle/utils/check_utils';
 import { getBaseNodeId } from '@/chronicle/utils/id/get_base_node_id';
 import { parseTimestamp } from '@/chronicle/utils/time_utils';
 import {
@@ -91,8 +94,8 @@ function TimelineView() {
     let minMs = Infinity;
     let maxMs = -Infinity;
 
-    const timelineItems: TimelineItem[] = stages
-      .map((sv) => {
+    const timelineItems = stages
+      .map((sv): TimelineItem | undefined => {
         if (!sv || !sv.stateHistory) return undefined;
 
         const attemptingStateHistory = sv.stateHistory.find(
@@ -122,6 +125,7 @@ function TimelineView() {
           start,
           end,
           stage: sv,
+          resultStatus: getStageResultStatus(sv, valueDataMap),
         };
       })
       .filter((item): item is TimelineItem => !!item)

@@ -14,9 +14,10 @@
 
 import { Box } from '@mui/material';
 
+import { getStageColors } from '@/chronicle/utils/styles';
+
 import {
   BAR_HEIGHT,
-  BAR_STYLE,
   SELECTED_BAR_STYLE,
   STAGE_COLUMN_WIDTH,
   TimelineItem,
@@ -29,6 +30,11 @@ interface StageRowProps {
 }
 
 export function StageRow({ item, isSelected, onClick }: StageRowProps) {
+  const colors = getStageColors(item.resultStatus);
+  const fill = isSelected ? SELECTED_BAR_STYLE.fill : colors.bg;
+  const stroke = isSelected ? SELECTED_BAR_STYLE.stroke : colors.border;
+  const textColor = isSelected ? SELECTED_BAR_STYLE.color : colors.text;
+
   return (
     <g style={{ cursor: 'pointer' }} onClick={onClick}>
       <rect
@@ -36,8 +42,8 @@ export function StageRow({ item, isSelected, onClick }: StageRowProps) {
         y={-BAR_HEIGHT / 2}
         width={STAGE_COLUMN_WIDTH - 8}
         height={BAR_HEIGHT}
-        fill={isSelected ? SELECTED_BAR_STYLE.fill : BAR_STYLE.fill}
-        stroke={isSelected ? SELECTED_BAR_STYLE.stroke : BAR_STYLE.stroke}
+        fill={fill}
+        stroke={stroke}
         strokeWidth={isSelected ? 2 : 1}
         rx={2}
       />
@@ -56,7 +62,7 @@ export function StageRow({ item, isSelected, onClick }: StageRowProps) {
             px: 1,
             fontSize: '12px',
             fontWeight: isSelected ? 'bold' : 'normal',
-            color: isSelected ? SELECTED_BAR_STYLE.color : 'inherit',
+            color: textColor,
             overflow: 'hidden',
             whiteSpace: 'nowrap',
             textOverflow: 'ellipsis',

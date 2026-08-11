@@ -14,6 +14,7 @@
 
 import { DateTime } from 'luxon';
 
+import { StageResultStatus } from '@/chronicle/utils/check_utils';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 
 export interface TimelineItem {
@@ -22,16 +23,12 @@ export interface TimelineItem {
   start: DateTime;
   end: DateTime;
   stage: Stage;
+  resultStatus: StageResultStatus;
 }
 
 export const ROW_HEIGHT = 30;
 export const BAR_HEIGHT = 24;
 export const STAGE_COLUMN_WIDTH = 300;
-
-export const BAR_STYLE = {
-  fill: 'var(--success-bg-color)',
-  stroke: 'var(--success-color)',
-};
 
 export const SELECTED_BAR_STYLE = {
   fill: '#e3f2fd',

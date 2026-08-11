@@ -14,12 +14,9 @@
 
 import { DateTime } from 'luxon';
 
-import {
-  BAR_HEIGHT,
-  BAR_STYLE,
-  SELECTED_BAR_STYLE,
-  TimelineItem,
-} from './types';
+import { getStageColors } from '@/chronicle/utils/styles';
+
+import { BAR_HEIGHT, SELECTED_BAR_STYLE, TimelineItem } from './types';
 
 interface StageTimelineBarProps {
   item: TimelineItem;
@@ -37,6 +34,9 @@ export function StageTimelineBar({
   const xStart = xScale(item.start);
   const xEnd = xScale(item.end);
   const width = Math.max(2, xEnd - xStart);
+  const colors = getStageColors(item.resultStatus);
+  const fill = isSelected ? SELECTED_BAR_STYLE.fill : colors.bg;
+  const stroke = isSelected ? SELECTED_BAR_STYLE.stroke : colors.border;
 
   return (
     <rect
@@ -44,8 +44,8 @@ export function StageTimelineBar({
       y={-BAR_HEIGHT / 2}
       width={width}
       height={BAR_HEIGHT}
-      fill={isSelected ? SELECTED_BAR_STYLE.fill : BAR_STYLE.fill}
-      stroke={isSelected ? SELECTED_BAR_STYLE.stroke : BAR_STYLE.stroke}
+      fill={fill}
+      stroke={stroke}
       strokeWidth={isSelected ? 2 : 1}
       rx={2}
       style={{ cursor: 'pointer' }}
