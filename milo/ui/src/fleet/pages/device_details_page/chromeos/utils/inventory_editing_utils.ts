@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import { DeviceConfigEdits } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/chromeos.pb';
+import { oSRPM_TypeToJSON } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/chromeos/lab/rpm.pb';
 import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
+
+import { formatEnum } from './formatters';
 
 export const isLabstationConfig = (
   lse: MachineLSE | null | undefined,
@@ -37,6 +40,19 @@ export const LOCATION_PATHS = {
   rack: 'rack',
 };
 
+export const RPM_PATHS = {
+  dut: {
+    host: 'chromeosMachineLse.deviceLse.dut.peripherals.rpm.powerunitName',
+    outlet: 'chromeosMachineLse.deviceLse.dut.peripherals.rpm.powerunitOutlet',
+    type: 'chromeosMachineLse.deviceLse.dut.peripherals.rpm.powerunitType',
+  },
+  labstation: {
+    host: 'chromeosMachineLse.deviceLse.labstation.rpm.powerunitName',
+    outlet: 'chromeosMachineLse.deviceLse.labstation.rpm.powerunitOutlet',
+    type: 'chromeosMachineLse.deviceLse.labstation.rpm.powerunitType',
+  },
+};
+
 export interface FieldConfig {
   label: string;
   path: string;
@@ -45,9 +61,11 @@ export interface FieldConfig {
   requiresRedeploy?: boolean;
   min?: number;
   max?: number;
+  formatter?: (val: unknown) => string;
 }
 
 export const getEditableFields = (isLabstation: boolean): FieldConfig[] => {
+  const rpmPaths = isLabstation ? RPM_PATHS.labstation : RPM_PATHS.dut;
   const fields: FieldConfig[] = [
     {
       label: 'Pools',
@@ -70,6 +88,28 @@ export const getEditableFields = (isLabstation: boolean): FieldConfig[] => {
       editPath: 'rack',
       type: 'string',
       requiresRedeploy: false,
+    },
+    {
+      label: 'RPM Hostname',
+      path: rpmPaths.host,
+      editPath: 'rpm.host',
+      type: 'string',
+      requiresRedeploy: true,
+    },
+    {
+      label: 'RPM Outlet',
+      path: rpmPaths.outlet,
+      editPath: 'rpm.outlet',
+      type: 'string',
+      requiresRedeploy: true,
+    },
+    {
+      label: 'RPM Type',
+      path: rpmPaths.type,
+      editPath: 'rpm.type',
+      type: 'number',
+      requiresRedeploy: true,
+      formatter: (val) => formatEnum(val as number, oSRPM_TypeToJSON, 'TYPE_'),
     },
   ];
   if (!isLabstation) {
@@ -177,7 +217,7 @@ export const calculateDiff = (
   const isLabstation = isLabstationConfig(original);
   const fields = getEditableFields(isLabstation);
 
-  fields.forEach(({ label, path, type }) => {
+  fields.forEach(({ label, path, type, formatter }) => {
     const origVal = getNestedValue(original, path);
     const draftVal = getNestedValue(updated, path);
 
@@ -192,10 +232,16 @@ export const calculateDiff = (
         });
       }
     } else {
-      let origStr =
-        origVal !== undefined && origVal !== null ? String(origVal) : '';
-      let draftStr =
-        draftVal !== undefined && draftVal !== null ? String(draftVal) : '';
+      let origStr = formatter
+        ? formatter(origVal)
+        : origVal !== undefined && origVal !== null
+          ? String(origVal)
+          : '';
+      let draftStr = formatter
+        ? formatter(draftVal)
+        : draftVal !== undefined && draftVal !== null
+          ? String(draftVal)
+          : '';
       if (type === 'number') {
         if (origStr === '0') origStr = '';
         if (draftStr === '0') draftStr = '';
@@ -251,6 +297,13 @@ export const translateDiffToEdits = (
       } else if (type === 'string' && (val === null || val === undefined)) {
         val = '';
       }
+      if (editPath === 'rpm.type') {
+        const rawStr = oSRPM_TypeToJSON(val as number);
+        val = rawStr.replace('TYPE_', '').toLowerCase();
+        if (val === 'unknown') {
+          val = '';
+        }
+      }
       mutateNestedValue(edits, editPath, val);
       paths.push(editPath);
     }
@@ -261,6 +314,18 @@ export const translateDiffToEdits = (
     if (!paths.includes('servo.port')) {
       paths.push('servo.port');
     }
+  }
+
+  if (edits.rpm && (edits.rpm as Record<string, unknown>).host === '') {
+    (edits.rpm as Record<string, unknown>).outlet = '';
+    if (!paths.includes('rpm.outlet')) {
+      paths.push('rpm.outlet');
+    }
+    const typeIdx = paths.indexOf('rpm.type');
+    if (typeIdx > -1) {
+      paths.splice(typeIdx, 1);
+    }
+    (edits.rpm as Record<string, unknown>).type = '';
   }
 
   // UFS requires updating rack whenever zone is updated ("Cannot update zone without updating rack").
@@ -374,6 +439,49 @@ export const generateShivasCommands = (
         '-servo-serial',
         updatedServoSerial ? updatedServoSerial : '-',
       );
+    }
+  }
+
+  // RPM Host/Outlet/Type
+  const rpmPaths = isLabstation ? RPM_PATHS.labstation : RPM_PATHS.dut;
+  const origRpmHost = String(getNestedValue(original, rpmPaths.host) || '');
+  const updatedRpmHost = String(getNestedValue(updated, rpmPaths.host) || '');
+  const origRpmOutlet = String(getNestedValue(original, rpmPaths.outlet) || '');
+  const updatedRpmOutlet = String(
+    getNestedValue(updated, rpmPaths.outlet) || '',
+  );
+  const origRpmTypeVal = getNestedValue(original, rpmPaths.type);
+  const updatedRpmTypeVal = getNestedValue(updated, rpmPaths.type);
+
+  const rpmHostChanged = origRpmHost !== updatedRpmHost;
+  const rpmOutletChanged = origRpmOutlet !== updatedRpmOutlet;
+  const rpmTypeChanged = origRpmTypeVal !== updatedRpmTypeVal;
+
+  const targetFlags = isLabstation ? labstationFlags : dutFlags;
+
+  if (rpmHostChanged || rpmOutletChanged || rpmTypeChanged) {
+    if (!updatedRpmHost) {
+      targetFlags.push('-rpm', '-');
+    } else {
+      if (rpmHostChanged) {
+        targetFlags.push('-rpm', updatedRpmHost);
+      }
+      if (rpmOutletChanged) {
+        targetFlags.push(
+          '-rpm-outlet',
+          updatedRpmOutlet ? updatedRpmOutlet : '-',
+        );
+      }
+      if (
+        rpmTypeChanged &&
+        updatedRpmTypeVal !== undefined &&
+        updatedRpmTypeVal !== null
+      ) {
+        const typeStr = oSRPM_TypeToJSON(updatedRpmTypeVal as number)
+          .replace('TYPE_', '')
+          .toLowerCase();
+        targetFlags.push('-rpm-type', typeStr);
+      }
     }
   }
 

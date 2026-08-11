@@ -382,11 +382,147 @@ describe('inventory_editing_utils', () => {
     });
   });
 
+  describe('RPM editing', () => {
+    const original = {
+      name: 'machineLSEs/test-host',
+      chromeosMachineLse: {
+        deviceLse: {
+          dut: {
+            peripherals: {
+              rpm: {
+                powerunitName: 'rpm-old',
+                powerunitOutlet: 'outlet-old',
+                powerunitType: 1, // TYPE_SENTRY
+              },
+            },
+          },
+        },
+      },
+    } as unknown as MachineLSE;
+
+    const updated = JSON.parse(JSON.stringify(original));
+    updated.chromeosMachineLse!.deviceLse!.dut!.peripherals!.rpm = {
+      powerunitName: 'rpm-new',
+      powerunitOutlet: 'outlet-new',
+      powerunitType: 2, // TYPE_IP9850
+    };
+
+    it('calculates diffs for rpm fields', () => {
+      const diffs = calculateDiff(original, updated);
+      expect(diffs).toContainEqual({
+        path: 'RPM Hostname',
+        original: 'rpm-old',
+        updated: 'rpm-new',
+      });
+      expect(diffs).toContainEqual({
+        path: 'RPM Outlet',
+        original: 'outlet-old',
+        updated: 'outlet-new',
+      });
+      expect(diffs).toContainEqual({
+        path: 'RPM Type',
+        original: 'SENTRY',
+        updated: 'IP9850',
+      });
+    });
+
+    it('translates diffs to DeviceConfigEdits format', () => {
+      const { edits, paths } = translateDiffToEdits(original, updated);
+      expect(edits.rpm).toEqual({
+        host: 'rpm-new',
+        outlet: 'outlet-new',
+        type: 'ip9850',
+      });
+      expect(paths).toEqual(['rpm.host', 'rpm.outlet', 'rpm.type']);
+    });
+
+    it('explicitly clears rpm.outlet and removes rpm.type when rpm.host is cleared', () => {
+      const clearedHost = JSON.parse(JSON.stringify(original));
+      clearedHost.chromeosMachineLse!.deviceLse!.dut!.peripherals!.rpm!.powerunitName =
+        '';
+      clearedHost.chromeosMachineLse!.deviceLse!.dut!.peripherals!.rpm!.powerunitType = 0;
+
+      const { edits, paths } = translateDiffToEdits(original, clearedHost);
+      expect(edits.rpm).toEqual({
+        host: '',
+        outlet: '',
+        type: '',
+      });
+      expect(paths).toEqual(['rpm.host', 'rpm.outlet']);
+    });
+
+    it('generates shivas update command for rpm fields on a DUT', () => {
+      const commands = generateShivasCommands(
+        original,
+        updated,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update dut -name test-host -namespace os -rpm rpm-new -rpm-outlet outlet-new -rpm-type ip9850',
+      ]);
+    });
+
+    it('generates shivas command with only changed RPM fields', () => {
+      const partialUpdated = JSON.parse(JSON.stringify(original));
+      partialUpdated.chromeosMachineLse!.deviceLse!.dut!.peripherals!.rpm!.powerunitName =
+        'rpm-new';
+
+      const commands = generateShivasCommands(
+        original,
+        partialUpdated,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update dut -name test-host -namespace os -rpm rpm-new',
+      ]);
+    });
+
+    it('generates shivas command to clear individual RPM fields', () => {
+      const clearedFields = JSON.parse(JSON.stringify(original));
+      clearedFields.chromeosMachineLse!.deviceLse!.dut!.peripherals!.rpm!.powerunitOutlet =
+        '';
+      clearedFields.chromeosMachineLse!.deviceLse!.dut!.peripherals!.rpm!.powerunitType = 0;
+
+      const commands = generateShivasCommands(
+        original,
+        clearedFields,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update dut -name test-host -namespace os -rpm-outlet - -rpm-type unknown',
+      ]);
+    });
+
+    it('generates shivas command to delete RPM entirely when host is cleared', () => {
+      const deletedRpm = JSON.parse(JSON.stringify(original));
+      deletedRpm.chromeosMachineLse!.deviceLse!.dut!.peripherals!.rpm!.powerunitName =
+        '';
+
+      const commands = generateShivasCommands(
+        original,
+        deletedRpm,
+        'test-host',
+        'os',
+      );
+      expect(commands).toEqual([
+        'shivas update dut -name test-host -namespace os -rpm -',
+      ]);
+    });
+  });
+
   describe('hasDeployableEdits', () => {
     it('returns true if servo fields are edited on a DUT', () => {
       const diffs = [
         { path: 'Servo Hostname', original: 'old', updated: 'new' },
       ];
+      expect(hasDeployableEdits(diffs, false)).toBe(true);
+    });
+
+    it('returns true if rpm fields are edited on a DUT', () => {
+      const diffs = [{ path: 'RPM Hostname', original: 'old', updated: 'new' }];
       expect(hasDeployableEdits(diffs, false)).toBe(true);
     });
 

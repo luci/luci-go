@@ -517,12 +517,20 @@ export interface DeviceConfigEdits {
   readonly servo: ServoEdit | undefined;
   readonly zone: string;
   readonly rack: string;
+  /** RPM configurations. */
+  readonly rpm: RPMEdit | undefined;
 }
 
 export interface ServoEdit {
   readonly hostname: string;
   readonly port: number;
   readonly serial: string;
+}
+
+export interface RPMEdit {
+  readonly host: string;
+  readonly outlet: string;
+  readonly type: string;
 }
 
 /** Response message for UpdateChromeOSDevice. */
@@ -4796,7 +4804,7 @@ export const UpdateChromeOSDeviceRequest: MessageFns<UpdateChromeOSDeviceRequest
 };
 
 function createBaseDeviceConfigEdits(): DeviceConfigEdits {
-  return { pools: [], servo: undefined, zone: "", rack: "" };
+  return { pools: [], servo: undefined, zone: "", rack: "", rpm: undefined };
 }
 
 export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
@@ -4812,6 +4820,9 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
     }
     if (message.rack !== "") {
       writer.uint32(34).string(message.rack);
+    }
+    if (message.rpm !== undefined) {
+      RPMEdit.encode(message.rpm, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -4855,6 +4866,14 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
           message.rack = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.rpm = RPMEdit.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4870,6 +4889,7 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
       servo: isSet(object.servo) ? ServoEdit.fromJSON(object.servo) : undefined,
       zone: isSet(object.zone) ? globalThis.String(object.zone) : "",
       rack: isSet(object.rack) ? globalThis.String(object.rack) : "",
+      rpm: isSet(object.rpm) ? RPMEdit.fromJSON(object.rpm) : undefined,
     };
   },
 
@@ -4887,6 +4907,9 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
     if (message.rack !== "") {
       obj.rack = message.rack;
     }
+    if (message.rpm !== undefined) {
+      obj.rpm = RPMEdit.toJSON(message.rpm);
+    }
     return obj;
   },
 
@@ -4901,6 +4924,7 @@ export const DeviceConfigEdits: MessageFns<DeviceConfigEdits> = {
       : undefined;
     message.zone = object.zone ?? "";
     message.rack = object.rack ?? "";
+    message.rpm = (object.rpm !== undefined && object.rpm !== null) ? RPMEdit.fromPartial(object.rpm) : undefined;
     return message;
   },
 };
@@ -4993,6 +5017,98 @@ export const ServoEdit: MessageFns<ServoEdit> = {
     message.hostname = object.hostname ?? "";
     message.port = object.port ?? 0;
     message.serial = object.serial ?? "";
+    return message;
+  },
+};
+
+function createBaseRPMEdit(): RPMEdit {
+  return { host: "", outlet: "", type: "" };
+}
+
+export const RPMEdit: MessageFns<RPMEdit> = {
+  encode(message: RPMEdit, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.host !== "") {
+      writer.uint32(10).string(message.host);
+    }
+    if (message.outlet !== "") {
+      writer.uint32(18).string(message.outlet);
+    }
+    if (message.type !== "") {
+      writer.uint32(26).string(message.type);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RPMEdit {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRPMEdit() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.host = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.outlet = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.type = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RPMEdit {
+    return {
+      host: isSet(object.host) ? globalThis.String(object.host) : "",
+      outlet: isSet(object.outlet) ? globalThis.String(object.outlet) : "",
+      type: isSet(object.type) ? globalThis.String(object.type) : "",
+    };
+  },
+
+  toJSON(message: RPMEdit): unknown {
+    const obj: any = {};
+    if (message.host !== "") {
+      obj.host = message.host;
+    }
+    if (message.outlet !== "") {
+      obj.outlet = message.outlet;
+    }
+    if (message.type !== "") {
+      obj.type = message.type;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RPMEdit>): RPMEdit {
+    return RPMEdit.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RPMEdit>): RPMEdit {
+    const message = createBaseRPMEdit() as any;
+    message.host = object.host ?? "";
+    message.outlet = object.outlet ?? "";
+    message.type = object.type ?? "";
     return message;
   },
 };

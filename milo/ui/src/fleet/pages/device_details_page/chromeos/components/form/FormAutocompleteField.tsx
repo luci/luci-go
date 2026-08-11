@@ -21,6 +21,7 @@ import {
   Typography,
   createFilterOptions,
 } from '@mui/material';
+import { useMemo } from 'react';
 import { useEffect } from 'react';
 
 import { CodeChip } from '../common/CodeChip';
@@ -37,6 +38,11 @@ interface FormAutocompleteFieldProps {
   regexValidation?: RegExp;
   maxLength?: number;
   multiple?: boolean;
+  freeSolo?: boolean;
+  valueMapping?: {
+    toStored: (displayVal: string) => unknown;
+    toDisplay: (storedVal: unknown) => string;
+  };
 }
 
 const filterOptionsLimit = createFilterOptions<string>({
@@ -52,6 +58,8 @@ export const FormAutocompleteField = ({
   regexValidation = /^[a-zA-Z0-9-_.]+$/,
   maxLength = 100,
   multiple = true,
+  freeSolo = true,
+  valueMapping,
 }: FormAutocompleteFieldProps) => {
   const { isEditing, getFieldValue, setFieldValue, setFieldError } =
     useCardForm();
@@ -60,8 +68,21 @@ export const FormAutocompleteField = ({
   const pathStr = typeof path === 'string' ? path : path.join('.');
   const isEditable = isPathEditable(pathStr);
   const value = getFieldValue(path);
-  const arrValue = Array.isArray(value) ? value.map(String) : [];
-  const strValue = value !== undefined && value !== null ? String(value) : '';
+  const arrValue = useMemo(() => {
+    if (Array.isArray(value)) {
+      return value.map((val) =>
+        valueMapping ? valueMapping.toDisplay(val) : String(val),
+      );
+    }
+    return [];
+  }, [value, valueMapping]);
+
+  const strValue = useMemo(() => {
+    if (value !== undefined && value !== null) {
+      return valueMapping ? valueMapping.toDisplay(value) : String(value);
+    }
+    return '';
+  }, [value, valueMapping]);
 
   const tokensToValidate = multiple ? arrValue : strValue ? [strValue] : [];
   const invalidTokens = tokensToValidate.filter(
@@ -136,20 +157,26 @@ export const FormAutocompleteField = ({
     return (
       <Grid item xs={12} sm={gridSm}>
         <Autocomplete
-          freeSolo
+          freeSolo={freeSolo}
           size="small"
           options={options}
           filterOptions={filterOptionsLimit}
           value={strValue || null}
           onChange={(_, newValue) => {
+            const val =
+              typeof newValue === 'string' ? newValue : (newValue ?? '');
             setFieldValue(
               path,
-              typeof newValue === 'string' ? newValue : (newValue ?? ''),
+              valueMapping ? valueMapping.toStored(val) : val,
             );
           }}
           onInputChange={(_, newInputValue, reason) => {
-            if (reason === 'input' || reason === 'clear') {
-              setFieldValue(path, newInputValue ?? '');
+            if (freeSolo && (reason === 'input' || reason === 'clear')) {
+              const val = newInputValue ?? '';
+              setFieldValue(
+                path,
+                valueMapping ? valueMapping.toStored(val) : val,
+              );
             }
           }}
           renderInput={(params) => (
@@ -172,14 +199,18 @@ export const FormAutocompleteField = ({
     <Grid item xs={12} sm={gridSm}>
       <Autocomplete
         multiple
-        freeSolo
+        freeSolo={freeSolo}
         size="small"
         limitTags={limitTags}
         options={options}
         filterOptions={filterOptionsLimit}
         value={arrValue}
         onChange={(_, newValue) => {
-          setFieldValue(path, newValue);
+          const vals = Array.isArray(newValue) ? newValue : [];
+          setFieldValue(
+            path,
+            valueMapping ? vals.map((v) => valueMapping.toStored(v)) : vals,
+          );
         }}
         renderTags={(value: readonly string[], getTagProps) =>
           value.map((option: string, index: number) => {
