@@ -15,12 +15,13 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PowerIcon from '@mui/icons-material/Power';
 import PowerOffOutlinedIcon from '@mui/icons-material/PowerOffOutlined';
-import { Tooltip } from '@mui/material';
+import { Link as MuiLink, Tooltip, Typography, Box } from '@mui/material';
 import { DateTime } from 'luxon';
 import { MRT_ColumnDef } from 'material-react-table';
 import React from 'react';
 import { Link } from 'react-router';
 
+import { genFeedbackUrl } from '@/common/tools/utils';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
@@ -28,6 +29,8 @@ import {
   renderChipCell,
   StateUnion,
 } from '@/fleet/components/table/cell_with_chip';
+import { getEnabledFeatureFlags } from '@/fleet/config/features';
+import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import {
   generateDeviceDetailsURL,
   ANDROID_PLATFORM,
@@ -65,6 +68,74 @@ const renderTimestamp = ({ value }: DeviceDisplayProps) => {
     return <>{value as string}</>;
   }
 };
+
+export const genUtilizationFeedbackUrl = () =>
+  genFeedbackUrl({
+    bugComponent: FEEDBACK_BUGANIZER_BUG_ID,
+    customComment:
+      `# Device Utilization Problem Description\n\n` +
+      `Please describe the discrepancy or issue you observed with the device utilization metrics.\n\n` +
+      `# Discrepancy Details\n\n` +
+      `- Expected utilization / behavior:\n` +
+      `- Actual utilization shown:\n\n` +
+      `# Screenshot & Network Calls\n\n` +
+      `Please attach a screenshot of the incorrect values and network tab if possible, as this will be super helpful for debugging.\n\n` +
+      `# Autopopulated Info\n\n` +
+      `- **Version**: ${UI_VERSION}\n` +
+      `- **From Link**: ${self.location.href}\n` +
+      `- **User Agent**: ${navigator.userAgent}\n` +
+      `- **Enabled Feature Flags**: ${getEnabledFeatureFlags().join(', ') || 'None'}\n`,
+  });
+
+export const UtilizationTooltipContent = ({
+  isSummary,
+}: {
+  isSummary?: boolean;
+}) => (
+  <Box
+    sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxWidth: '350px' }}
+  >
+    <Typography variant="body2" fontWeight="bold">
+      Device utilization (Beta)
+    </Typography>
+    <Typography variant="body2">
+      {isSummary
+        ? 'Shows the average utilization for devices matching your search. Excludes devices with no data.'
+        : 'Shows the average utilization for the device over the specified time period.'}
+    </Typography>
+
+    <Typography variant="body2" fontWeight="bold">
+      Calculation
+    </Typography>
+    <Typography variant="body2">
+      The percentage of total time a device actively runs tests (BUSY).
+    </Typography>
+
+    <Typography variant="body2" fontWeight="bold">
+      Device health limits
+    </Typography>
+    <Typography variant="body2">
+      This calculation currently includes downtime. A low rate might mean the
+      device is offline or broken, rather than idle. It does not yet check the
+      device&apos;s OperationalState (such as OFFLINE, TRANSIENT, or
+      NEED_MANUAL_REPAIR).
+    </Typography>
+
+    <Typography variant="body2" fontWeight="bold">
+      Feedback
+    </Typography>
+    <Typography variant="body2">
+      <MuiLink
+        href={genUtilizationFeedbackUrl()}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Report data issues to help us improve. Attaching screenshots with
+        incorrect values will help us with debugging!
+      </MuiLink>
+    </Typography>
+  </Box>
+);
 
 export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
   id: {
@@ -269,6 +340,9 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
   average_7d: {
     //TODO (b/502485099): this will be filterable after is resolved
     header: '7 Day Average Utilization',
+    meta: {
+      infoTooltip: <UtilizationTooltipContent />,
+    },
     orderByField: 'average_7d',
     accessorFn: (device) =>
       device.average7d !== undefined && device.average7d !== null
@@ -292,6 +366,9 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
   average_30d: {
     //TODO (b/502485099): this will be filterable after is resolved
     header: '30 Day Average Utilization',
+    meta: {
+      infoTooltip: <UtilizationTooltipContent />,
+    },
     orderByField: 'average_30d',
     accessorFn: (device) =>
       device.average30d !== undefined && device.average30d !== null

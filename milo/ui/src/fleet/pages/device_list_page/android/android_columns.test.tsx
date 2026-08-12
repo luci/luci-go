@@ -47,6 +47,8 @@ describe('Android Columns', () => {
 
     expect(avg7dCol.orderByField).toBe('average_7d');
     expect(avg30dCol.orderByField).toBe('average_30d');
+    expect(avg7dCol.meta?.infoTooltip).toBeDefined();
+    expect(avg30dCol.meta?.infoTooltip).toBeDefined();
   });
 
   it('should generate proper order_by_fields for Nlyte sync/update columns', () => {

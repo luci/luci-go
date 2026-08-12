@@ -31,6 +31,7 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { combineAipFilters } from '@/fleet/utils/search_param';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { UtilizationTooltipContent } from './android_fields';
 import { androidState } from './android_state';
 
 export interface AndroidSummaryHeaderProps {
@@ -256,14 +257,8 @@ export function AndroidSummaryHeader({
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Typography variant="body2">Utilization</Typography>
-                  <InfoTooltip>
-                    <Typography variant="body2">
-                      Average or all the average utilizations matching the
-                      current search.
-                      <br />
-                      Devices with missing utilization data are excluded from
-                      this metric.
-                    </Typography>
+                  <InfoTooltip paperCss={{ maxWidth: '350px' }}>
+                    <UtilizationTooltipContent isSummary />
                   </InfoTooltip>
                 </Box>
                 <Box
