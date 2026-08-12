@@ -35,15 +35,6 @@ type Response interface {
 	GetNextPageToken() string
 }
 
-// cursorCBType is the reflect.Type of a datastore.CursorCB.
-var cursorCBType = reflect.TypeOf((datastore.CursorCB)(nil))
-
-// returnedNil is a []reflect.Value{} containing one nil error.
-var returnedNil = reflect.ValueOf(func() error { return nil }).Call([]reflect.Value{})
-
-// returnedStop is a []reflect.Value{} containing one datastore.Stop error.
-var returnedStop = reflect.ValueOf(func() error { return datastore.Stop }).Call([]reflect.Value{})
-
 // Query executes a query to fetch the given page of results, invoking a
 // callback function for each key or entity returned by the query. If the page
 // isn't the last of the query, the given response will have its next page token
@@ -58,21 +49,7 @@ var returnedStop = reflect.ValueOf(func() error { return datastore.Stop }).Call(
 // nil halts the query, and if the error is not datastore.Stop, causes this
 // function to return an error as well. See datastore.Run for more information.
 // No maximum page size is imposed, use datastore.Stop to enforce one.
-func Query(ctx context.Context, lim int32, tok string, rsp Response, q *datastore.Query, cb any) error {
-	// Validate as much about the callback as this function relies on.
-	// The rest is validated by datastore.Run.
-	v := reflect.ValueOf(cb)
-	if v.Kind() != reflect.Func {
-		return errors.New("callback must be a function")
-	}
-	t := v.Type()
-	switch {
-	case t.NumIn() != 1:
-		return errors.New("callback function must accept one argument")
-	case t.NumOut() != 1:
-		return errors.New("callback function must return one value")
-	}
-
+func Query[V any](ctx context.Context, lim int32, tok string, rsp Response, q *datastore.Query, cb func(V) error) error {
 	// Modify the query with the request parameters.
 	if tok != "" {
 		cur, err := datastore.DecodeCursor(ctx, tok)
@@ -87,12 +64,8 @@ func Query(ctx context.Context, lim int32, tok string, rsp Response, q *datastor
 		q = q.Limit(lim + 1)
 	}
 
-	// Wrap the callback with a custom function that grabs the cursor (if necessary) before
-	// invoking the callback for each result up to the page size specified in the request.
-	// This is the type of function datastore.Run will receive as an argument.
-	// TODO(smut): Move this block to gae/datastore, since it doesn't depend on PagedRequest.
-	t = reflect.FuncOf([]reflect.Type{t.In(0), cursorCBType}, []reflect.Type{t.Out(0)}, false)
 	var cur datastore.Cursor
+	it := datastore.RunQuery[V](ctx, q)
 
 	// If the query is not limited and the callback never returns datastore.Stop, the query runs
 	// until the end so it's not necessary to set the next page token. If the callback does
@@ -104,34 +77,31 @@ func Query(ctx context.Context, lim int32, tok string, rsp Response, q *datastor
 	// datastore.Stop ahead of the limit. If it does, save the cursor but peek at the next result
 	// Only set the next page token if there is a next result.
 	i := int32(0)
-	curCB := reflect.MakeFunc(t, func(args []reflect.Value) []reflect.Value {
+	for rslt, err := range it.Results {
+		if err != nil {
+			return errors.Fmt("failed to fetch entities: %w", err)
+		}
+
 		i++
 		if cur != nil {
-			// Cursor is set below, when the result is at the limit or datastore.Stop
-			// is returned by the callback. Since the query is still running, there
-			// are more results. Set the page token and halt the query. Don't invoke
-			// the callback since it isn't expecting any more results.
-			f := reflect.ValueOf(rsp).Elem().FieldByName("NextPageToken")
-			f.SetString(cur.String())
-			return returnedStop
+			rspStruct := reflect.ValueOf(rsp).Elem()
+			rspStruct.FieldByName("NextPageToken").Set(reflect.ValueOf(cur.String()))
+			break
 		}
 		// Invoke the callback. Per t, it returns one argument (the error).
-		ret := v.Call([]reflect.Value{args[0]})
+		err := cb(rslt)
+
 		// Save the cursor if the callback wants to stop or the query is limited and
 		// this is the last requested result. In either case peek at the next result.
-		if ret[0].Interface() == datastore.Stop || (i == lim && ret[0].IsNil()) {
+		if err == datastore.Stop || (i == lim && err == nil) {
 			var err error
-			cur, err = args[1].Interface().(datastore.CursorCB)()
+			cur, err = it.Cursor()
 			if err != nil {
-				return []reflect.Value{reflect.ValueOf(errors.Fmt("failed to fetch cursor: %w", err))}
+				return errors.Fmt("failed to fetch cursor: %w", err)
 			}
-			return returnedNil
+		} else if err != nil {
+			return err
 		}
-		return ret
-	}).Interface()
-
-	if err := datastore.Run(ctx, q, curCB); err != nil {
-		return errors.Fmt("failed to fetch entities: %w", err)
 	}
 	return nil
 }

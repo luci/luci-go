@@ -43,39 +43,6 @@ func TestQueries(t *testing.T) {
 		q := datastore.NewQuery("kind")
 
 		t.Run("invalid", func(t *ftt.Test) {
-			t.Run("function", func(t *ftt.Test) {
-				t.Run("nil", func(t *ftt.Test) {
-					assert.Loosely(t, Query(c, 0, "", rsp, q, nil), should.ErrLike("callback must be a function"))
-				})
-
-				t.Run("no inputs", func(t *ftt.Test) {
-					f := func() error {
-						return nil
-					}
-					assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("callback function must accept one argument"))
-				})
-
-				t.Run("many inputs", func(t *ftt.Test) {
-					f := func(any, datastore.CursorCB) error {
-						return nil
-					}
-					assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("callback function must accept one argument"))
-				})
-
-				t.Run("no outputs", func(t *ftt.Test) {
-					f := func(any) {
-					}
-					assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("callback function must return one value"))
-				})
-
-				t.Run("many outputs", func(t *ftt.Test) {
-					f := func(any) (any, error) {
-						return nil, nil
-					}
-					assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("callback function must return one value"))
-				})
-			})
-
 			t.Run("token", func(t *ftt.Test) {
 				f := func(any) error {
 					return nil
