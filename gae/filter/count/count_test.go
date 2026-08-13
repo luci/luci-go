@@ -114,9 +114,9 @@ func TestCount(t *testing.T) {
 			}
 			assert.ErrIsLike(t, err, "RunQuery")
 			assert.ErrIsLike(t, err, "is broken")
-			assert.Loosely(t, ctr.Run.Successes(), should.Equal(0))
-			assert.Loosely(t, ctr.Run.Errors(), should.Equal(1))
-			assert.Loosely(t, ctr.Run.Total(), should.Equal(1))
+			assert.Loosely(t, ctr.RunQuery.Successes(), should.Equal(0))
+			assert.Loosely(t, ctr.RunQuery.Errors(), should.Equal(1))
+			assert.Loosely(t, ctr.RunQuery.Total(), should.Equal(1))
 		})
 	})
 

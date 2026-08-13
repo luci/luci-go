@@ -652,8 +652,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					getErr = ds.Get(doC, &foo)
 
 					q := ds.NewQuery("Foo").Ancestor(ds.KeyForObj(doC, &foo))
-					for _, err := range ds.RunQuery[*Foo](doC, q).Results {
-						queryErr = err
+					for _, queryErr = range ds.RunQuery[*Foo](doC, q).Results {
 						break
 					}
 					_, countErr = ds.Count(doC, q)

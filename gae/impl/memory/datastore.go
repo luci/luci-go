@@ -77,10 +77,6 @@ func (d *dsImpl) RunQuery(fq *ds.FinalizedQuery) ds.RawQueryIter {
 	return d.data.stripSpecialPropsIter(executeQuery(fq, d.kc, d.data, false, idx, head))
 }
 
-func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	return ds.RunCallbackAdapter(d.RunQuery(fq), cb)
-}
-
 func (d *dsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
 	ret, err = countQuery(fq, d.kc, d.data, false, idx, head)
@@ -190,10 +186,6 @@ func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) { return newCursor
 
 func (d *txnDsImpl) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 	return d.data.parent.stripSpecialPropsIter(executeQuery(q, d.kc, nil, true, d.data.snap, d.data.snap))
-}
-
-func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	return ds.RunCallbackAdapter(d.RunQuery(q), cb)
 }
 
 func (d *txnDsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {

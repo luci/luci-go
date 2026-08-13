@@ -32,98 +32,6 @@ import (
 	multicursor "go.chromium.org/luci/gae/service/datastore/internal/protos/multicursor"
 )
 
-type resolvedRunCallback func(reflect.Value, CursorCB) error
-
-func parseRunCallback(cbIface any) (rcb resolvedRunCallback, isKey bool, mat *multiArgType, hasCursorCB bool) {
-	badSig := func() {
-		panic(fmt.Errorf(
-			"cb does not match the required callback signature: `%T` != `func(TYPE, [CursorCB]) [error]`",
-			cbIface))
-	}
-
-	if cbIface == nil {
-		badSig()
-	}
-
-	// TODO(riannucci): Profile and determine if any of this is causing a real
-	// slowdown. Could potentially cache reflection stuff by cbTyp?
-	cbVal := reflect.ValueOf(cbIface)
-	cbTyp := cbVal.Type()
-
-	if cbTyp.Kind() != reflect.Func {
-		badSig()
-	}
-
-	numIn := cbTyp.NumIn()
-	if numIn != 1 && numIn != 2 {
-		badSig()
-	}
-
-	firstArg := cbTyp.In(0)
-	if firstArg == typeOfKey {
-		isKey = true
-	} else {
-		mat = mustParseArg(firstArg, false)
-		if mat.newElem == nil {
-			badSig()
-		}
-	}
-
-	hasCursorCB = numIn == 2
-	if hasCursorCB && cbTyp.In(1) != typeOfCursorCB {
-		badSig()
-	}
-
-	if cbTyp.NumOut() > 1 {
-		badSig()
-	} else if cbTyp.NumOut() == 1 && cbTyp.Out(0) != typeOfError {
-		badSig()
-	}
-	hasErr := cbTyp.NumOut() == 1
-
-	// Resolve to generic function.
-	switch {
-	case hasErr && hasCursorCB:
-		// func(reflect.Value, CursorCB) error
-		rcb = func(v reflect.Value, cb CursorCB) error {
-			err := cbVal.Call([]reflect.Value{v, reflect.ValueOf(cb)})[0].Interface()
-			if err != nil {
-				return err.(error)
-			}
-			return nil
-		}
-
-	case hasErr && !hasCursorCB:
-		// func(reflect.Value) error
-		rcb = func(v reflect.Value, _ CursorCB) error {
-			err := cbVal.Call([]reflect.Value{v})[0].Interface()
-			if err != nil {
-				return err.(error)
-			}
-			return nil
-		}
-
-	case !hasErr && hasCursorCB:
-		// func(reflect.Value, CursorCB)
-		rcb = func(v reflect.Value, cb CursorCB) error {
-			cbVal.Call([]reflect.Value{v, reflect.ValueOf(cb)})
-			return nil
-		}
-
-	case !hasErr && !hasCursorCB:
-		// func(reflect.Value)
-		rcb = func(v reflect.Value, _ CursorCB) error {
-			cbVal.Call([]reflect.Value{v})
-			return nil
-		}
-
-	default:
-		badSig()
-	}
-
-	return
-}
-
 // AllocateIDs allows you to allocate IDs from the datastore without putting
 // any data.
 //
@@ -330,85 +238,6 @@ func RunInTransaction(ctx context.Context, f func(ctx context.Context) error, op
 	return Raw(ctx).RunInTransaction(f, opts)
 }
 
-// Run executes the given query, and calls `cb` for each successfully
-// retrieved item.
-//
-// By default, datastore applies a short (~5s) timeout to queries. This can be
-// increased, usually to around several minutes, by explicitly setting a
-// deadline on the supplied Context.
-//
-// cb is a callback function whose signature is
-//
-//	func(obj TYPE[, getCursor CursorCB]) [error]
-//
-// Where TYPE is one of:
-//   - S or *S, where S is a struct
-//   - P or *P, where *P is a concrete type implementing PropertyLoadSaver
-//   - *Key (implies a keys-only query)
-//
-// If the error is omitted from the signature, this will run until the query
-// returns all its results, or has an error/times out.
-//
-// If error is in the signature, the query will continue as long as the
-// callback returns nil. If it returns `Stop`, the query will stop and Run
-// will return nil. Otherwise, the query will stop and Run will return the
-// user's error.
-//
-// Run may also stop on the first datastore error encountered, which can occur
-// due to flakiness, timeout, etc. If it encounters such an error, it will
-// be returned.
-func Run(ctx context.Context, q *Query, cb any) error {
-	return runImpl(ctx, q, true, cb)
-}
-
-func runImpl(ctx context.Context, q *Query, allowCursor bool, cb any) error {
-	rcb, isKey, mat, hasCursor := parseRunCallback(cb)
-	if hasCursor && !allowCursor {
-		panic(fmt.Errorf(
-			"cb does not match the required callback signature: `%T` != `func(TYPE) [error]`",
-			cb))
-	}
-
-	if isKey {
-		q = q.KeysOnly(true)
-	}
-	fq, err := q.Finalize()
-	if err != nil {
-		return err
-	}
-
-	raw := Raw(ctx)
-
-	it := raw.RunQuery(fq)
-	for pm, err := range it.Results {
-		if err != nil {
-			return filterStop(err)
-		}
-		key := mustGetKeyFromPM(pm)
-		var itm reflect.Value
-		if isKey {
-			itm = reflect.ValueOf(key)
-		} else {
-			itm = mat.newElem()
-			cleanPM := pm
-			if key != nil && len(pm) > 0 {
-				cleanPM = pm.Clone()
-				delete(cleanPM, "$key")
-			}
-			if err := mat.setPM(itm, cleanPM); err != nil {
-				return filterStop(err)
-			}
-			if key != nil {
-				mat.setKey(itm, key)
-			}
-		}
-		if err := rcb(itm, it.Cursor); err != nil {
-			return filterStop(err)
-		}
-	}
-	return nil
-}
-
 // QueryIter holds the cursor callback and result iterator for `RunQuery`ing a
 // Query.
 //
@@ -430,9 +259,9 @@ type QueryIter[V any] struct {
 	Results iter.Seq2[V, error]
 }
 
-// QueryIterStub returns a QueryIter whose CursorCB and Results yield err
+// queryIterStub returns a QueryIter whose CursorCB and Results yield err
 // (or behave as an empty iterator if err is nil).
-func QueryIterStub[V any](err error) *QueryIter[V] {
+func queryIterStub[V any](err error) *QueryIter[V] {
 	return &QueryIter[V]{
 		Cursor: func() (Cursor, error) { return nil, err },
 		Results: func(yield func(V, error) bool) {
@@ -515,8 +344,8 @@ func QueryIterFromRaw[V any](raw RawQueryIter) *QueryIter[V] {
 //     raw query, but will apply other QueryIter level features).
 //   - *Key (implies a keys-only query)
 //
-// Run will stop on the first datastore error encountered, which can occur due
-// to flakiness, timeout, etc. If it encounters such an error, it will be
+// RunQuery will stop on the first datastore error encountered, which can occur
+// due to flakiness, timeout, etc. If it encounters such an error, it will be
 // yielded and the iterator stopped.
 func RunQuery[V any](ctx context.Context, q *Query) *QueryIter[V] {
 	var zero V
@@ -526,7 +355,7 @@ func RunQuery[V any](ctx context.Context, q *Query) *QueryIter[V] {
 
 	fq, err := q.Finalize()
 	if err != nil {
-		return QueryIterStub[V](err)
+		return queryIterStub[V](err)
 	}
 
 	return QueryIterFromRaw[V](Raw(ctx).RunQuery(fq))
@@ -574,7 +403,7 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		}
 		fq, err := q.Finalize()
 		if err != nil {
-			return QueryIterStub[V](err)
+			return queryIterStub[V](err)
 		}
 		finalized[i] = fq
 		// Build a string identifying ordering of this query, e.g.
@@ -591,15 +420,15 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 			overallKind = fq.kind
 			overallOrder = order
 		case fq.kind != overallKind:
-			return QueryIterStub[V](fmt.Errorf("all RunMultiQuery queries should query the same kind, but got %q and %q", fq.kind, overallKind))
+			return queryIterStub[V](fmt.Errorf("all RunMultiQuery queries should query the same kind, but got %q and %q", fq.kind, overallKind))
 		case order != overallOrder:
-			return QueryIterStub[V](fmt.Errorf("all RunMultiQuery queries should use the same order, but got %q and %q", order, overallOrder))
+			return queryIterStub[V](fmt.Errorf("all RunMultiQuery queries should use the same order, but got %q and %q", order, overallOrder))
 		}
 	}
 
 	// No queries to run => no results to return. This is an edge case.
 	if len(finalized) == 0 {
-		return QueryIterStub[V](nil)
+		return queryIterStub[V](nil)
 	}
 
 	decodeValue := func(key *Key, pm PropertyMap) (V, error) {
@@ -803,246 +632,6 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 	}
 }
 
-// RunMulti executes the logical OR of multiple queries, calling `cb` for each
-// unique entity (by *Key) that it finds. Results will be returned in the order
-// of the provided queries; All queries must have matching Orders.
-//
-// cb is a callback function (please refer to the `Run` function comments for
-// formats and restrictions for `cb` in this file).
-//
-// The cursor that is returned by the callback cannot be used on a single query
-// by doing `query.Start(cursor)` (In some cases it may not even complain when
-// you try to do this. But the results are undefined). Apply the cursor to the
-// same list of queries using ApplyCursors.
-//
-// Note: projection queries are not supported, as they are non-trivial in
-// complexity and haven't been needed yet.
-//
-// Note: The cb is called for every unique entity (by *Key) that is retrieved
-// on the current run. It is possible to get the same entity twice over two
-// calls to RunMulti with different cursors.
-//
-// DANGER: Cursors are buggy when using Cloud Datastore production backend.
-// Paginated queries skip entities sitting on page boundaries. This doesn't
-// happen when using `impl/memory` and thus hard to spot in unit tests. See
-// queryIterator doc for more details.
-func RunMulti(ctx context.Context, queries []*Query, cb any) error {
-	rcb, isKey, mat, hasCursorCB := parseRunCallback(cb)
-
-	// A helper that passes an entity to the user callback.
-	var dispatchEntity func(key *Key, pm PropertyMap, ccb CursorCB) error
-	if isKey {
-		dispatchEntity = func(key *Key, _ PropertyMap, ccb CursorCB) error {
-			return rcb(reflect.ValueOf(key), ccb)
-		}
-	} else {
-		dispatchEntity = func(key *Key, pm PropertyMap, ccb CursorCB) error {
-			itm := mat.newElem()
-			cleanPM := pm
-			if key != nil && len(pm) > 0 {
-				cleanPM = pm.Clone()
-				delete(cleanPM, "$key")
-			}
-			if err := mat.setPM(itm, cleanPM); err != nil {
-				return err
-			}
-			mat.setKey(itm, key)
-			return rcb(itm, ccb)
-		}
-	}
-
-	// Finalize queries and do some basic validation. At very least queries must
-	// use the same kind and ordering, otherwise putting their results in a single
-	// sorted heap makes no sense.
-	finalized := make([]*FinalizedQuery, len(queries))
-	overallKind := ""
-	overallOrder := ""
-	for i, q := range queries {
-		if isKey {
-			q = q.KeysOnly(true)
-		}
-		fq, err := q.Finalize()
-		if err != nil {
-			return err
-		}
-		finalized[i] = fq
-		// Build a string identifying ordering of this query, e.g.
-		// "-field1,field2,__key__".
-		order := ""
-		for j, col := range fq.orders {
-			if j != 0 {
-				order += ","
-			}
-			order += col.String()
-		}
-		switch {
-		case i == 0:
-			overallKind = fq.kind
-			overallOrder = order
-		case fq.kind != overallKind:
-			return fmt.Errorf("all RunMulti queries should query the same kind, but got %q and %q", fq.kind, overallKind)
-		case order != overallOrder:
-			return fmt.Errorf("all RunMulti queries should use the same order, but got %q and %q", order, overallOrder)
-		}
-	}
-
-	// No queries to run => no results to return. This is an edge case.
-	if len(finalized) == 0 {
-		return nil
-	}
-
-	// If we have only one query, just run it directly without any extra
-	// synchronization overhead. Just make sure to use the correct cursor format.
-	// This is worth optimizing since running only one query is a very very
-	// common case.
-	if len(finalized) == 1 {
-		var err error
-		if hasCursorCB {
-			err = Raw(ctx).Run(finalized[0], func(key *Key, pm PropertyMap, cursorCB CursorCB) error {
-				return dispatchEntity(key, pm, func() (Cursor, error) {
-					cur, err := cursorCB()
-					if err != nil {
-						return nil, err
-					}
-					cursorStr := ""
-					if cur != nil {
-						cursorStr = cur.String()
-					}
-					return multiCursor{
-						curs: &multicursor.Cursors{
-							Version:     multiCursorVersion,
-							MagicNumber: multiCursorMagic,
-							Cursors:     []string{cursorStr},
-						},
-					}, nil
-				})
-			})
-		} else {
-			err = Raw(ctx).Run(finalized[0], func(key *Key, pm PropertyMap, _ CursorCB) error {
-				return dispatchEntity(key, pm, nil)
-			})
-		}
-		return filterStop(err)
-	}
-
-	// All iterators (active and exhausted) in some arbitrary order.
-	iterators := make([]*queryIterator, 0, len(finalized))
-
-	ctx, cancel := context.WithCancel(ctx)
-	eg, ectx := errgroup.WithContext(ctx)
-
-	// Make sure all spawned goroutines have fully stopped before returning.
-	defer func() {
-		// Signal all iterators to stop ASAP.
-		cancel()
-		// Wait for all of them to stop. Calling Next makes sure internal goroutines
-		// are not getting stuck trying to write to a channel that nothing is
-		// reading from (this blocks forever).
-		for _, iter := range iterators {
-			for done := false; !done; done, _ = iter.Next() {
-			}
-		}
-		// All goroutines should be stopping now. Wait until they are fully stopped.
-		_ = eg.Wait()
-	}()
-
-	// Launch all queries in parallel. Do it before ordering them as a heap, since
-	// to build a heap we need to have the first result from each query. We want
-	// all such first results to be fetched *in parallel*.
-	for _, fq := range finalized {
-		iterators = append(iterators, startQueryIterator(ectx, eg, fq))
-	}
-
-	// Wait for first items from all iterators. Gather all non-exhausted iterators
-	// to make a sorted heap out of them.
-	iHeap := make(iteratorHeap, 0, len(iterators))
-	for _, iter := range iterators {
-		switch done, err := iter.Next(); {
-		case err != nil:
-			return err // the defer will clean up everything
-		case !done:
-			iHeap = append(iHeap, iter)
-		}
-	}
-	heap.Init(&iHeap)
-
-	// ccb is the cursor callback for RunMulti. This grabs all the cursors for the
-	// queries involved and returns a single cursor. It is only executed if the
-	// user callback invokes it.
-	var ccb CursorCB
-	if hasCursorCB {
-		ccb = func() (Cursor, error) {
-			// Sort the list of queries. It is OK to update `iterators` in-place here.
-			// It is only used in the defer, the order doesn't matter there.
-			sort.Slice(iterators, func(i, j int) bool {
-				queryI := iterators[i].Query()
-				queryJ := iterators[j].Query()
-				return queryI.Less(queryJ)
-			})
-			// Create the cursor. It points to all items currently sitting in heap.
-			// We'll need to refetch them all again to repopulate the heap when
-			// resuming the query.
-			var curs multicursor.Cursors
-			curs.MagicNumber = multiCursorMagic
-			curs.Version = multiCursorVersion
-			for _, iter := range iterators {
-				switch cur, err := iter.CurrentCursor(); {
-				case err != nil:
-					return nil, err
-				case cur != nil:
-					curs.Cursors = append(curs.Cursors, cur.String())
-				default:
-					curs.Cursors = append(curs.Cursors, "")
-				}
-			}
-			return multiCursor{curs: &curs}, nil
-		}
-	}
-
-	// If queries are ordered only by key, all duplicates will be returned from
-	// the heap one after another and we can use a simple check to skip them. This
-	// is important for CountMulti(...) that can be visiting tens of thousands
-	// of entities: storing them all in a hash map for deduplication is a waste of
-	// memory.
-	//
-	// Use a hash map for any other ordering. There may be weird results if this
-	// is running non-transactionally and two different subqueries see two
-	// different versions of the same entity (with different values of fields
-	// affecting the order). Such entity will appear twice in the output, with
-	// some other entities in between these appearances. A simple check will not
-	// detect such deduplication.
-	var seenKey func(keyStr string) bool
-	if overallOrder == "__key__" || overallOrder == "-__key__" {
-		lastSeen := ""
-		seenKey = func(keyStr string) bool {
-			if lastSeen == keyStr {
-				return true
-			}
-			lastSeen = keyStr
-			return false
-		}
-	} else {
-		seenKeys := stringset.New(128)
-		seenKey = func(keyStr string) bool {
-			return !seenKeys.Add(keyStr)
-		}
-	}
-
-	// Merge query results.
-	for iHeap.Len() > 0 {
-		pm, key, keyStr, err := iHeap.nextData()
-		if err != nil {
-			return err
-		}
-		if !seenKey(keyStr) {
-			if err := dispatchEntity(key, pm, ccb); err != nil {
-				return filterStop(err)
-			}
-		}
-	}
-	return nil
-}
-
 // Count executes the given query and returns the number of entries which
 // match it.
 //
@@ -1071,15 +660,11 @@ func Count(ctx context.Context, q *Query) (int64, error) {
 // local counting.
 func CountMulti(ctx context.Context, queries []*Query) (int64, error) {
 	var count int64
-	err := RunMulti(ctx, queries,
-		func(_ *Key) error {
-			// RunMulti already does deduplication, we just need to count unique hits.
-			count++
-			return nil
-		},
-	)
-	if err != nil {
-		return 0, err
+	for _, err := range RunMultiQuery[*Key](ctx, queries).Results {
+		if err != nil {
+			return 0, err
+		}
+		count++
 	}
 	return count, nil
 }
@@ -1179,10 +764,14 @@ func getAllRaw(raw RawInterface, q *Query, dst any, o ...getAllOption) error {
 			return err
 		}
 
-		return raw.Run(fq, func(k *Key, _ PropertyMap, _ CursorCB) error {
-			*keys = append(*keys, k)
-			return nil
-		})
+		it := raw.RunQuery(fq)
+		for pm, err := range it.Results {
+			if err != nil {
+				return err
+			}
+			*keys = append(*keys, mustGetKeyFromPM(pm))
+		}
+		return nil
 	}
 	fq, err := q.Finalize()
 	if err != nil {
@@ -1197,33 +786,46 @@ func getAllRaw(raw RawInterface, q *Query, dst any, o ...getAllOption) error {
 
 	errs := map[int]error{}
 	i := 0
-	err = filterStop(raw.Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {
-		if cfg.limit > 0 && i >= cfg.limit {
-			return ErrLimitExceeded
+	it := raw.RunQuery(fq)
+	var runErr error
+	for pm, err := range it.Results {
+		if err != nil {
+			runErr = filterStop(err)
+			break
 		}
+		if cfg.limit > 0 && i >= cfg.limit {
+			runErr = ErrLimitExceeded
+			break
+		}
+		k := mustGetKeyFromPM(pm)
 		slice.Set(reflect.Append(slice, mat.newElem()))
 		itm := slice.Index(i)
 		mat.setKey(itm, k)
-		err := mat.setPM(itm, pm)
-		if err != nil {
-			errs[i] = err
+		cleanPM := pm
+		if k != nil && len(pm) > 0 {
+			cleanPM = pm.Clone()
+			delete(cleanPM, "$key")
+		}
+		if setErr := mat.setPM(itm, cleanPM); setErr != nil {
+			errs[i] = setErr
 		}
 		i++
-		return nil
-	}))
+	}
 	switch {
-	case errors.Is(err, ErrLimitExceeded):
-		return err
-	case err == nil:
+	case errors.Is(runErr, ErrLimitExceeded):
+		return runErr
+	case runErr == nil:
 		if len(errs) > 0 {
 			me := make(errors.MultiError, slice.Len())
 			for i, e := range errs {
 				me[i] = e
 			}
-			err = me
+			return me
 		}
+		return nil
+	default:
+		return runErr
 	}
-	return err
 }
 
 // Exists tests if the supplied objects are present in the datastore.

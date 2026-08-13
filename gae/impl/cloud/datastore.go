@@ -103,10 +103,6 @@ func (bds *boundDatastore) DecodeCursor(s string) (ds.Cursor, error) {
 	return cursor, normalizeError(err)
 }
 
-func (bds *boundDatastore) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	return ds.RunCallbackAdapter(bds.RunQuery(q), cb)
-}
-
 func (bds *boundDatastore) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 	it := bds.client.Run(bds, bds.prepareNativeQuery(q))
 	return ds.RawQueryIter{

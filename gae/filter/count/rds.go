@@ -25,7 +25,7 @@ type DSCounter struct {
 	AllocateIDs      Entry
 	DecodeCursor     Entry
 	RunInTransaction Entry
-	Run              Entry
+	RunQuery         Entry
 	Count            Entry
 	DeleteMulti      Entry
 	GetMulti         Entry
@@ -49,10 +49,6 @@ func (r *dsCounter) DecodeCursor(s string) (ds.Cursor, error) {
 	return cursor, r.c.DecodeCursor.up(err)
 }
 
-func (r *dsCounter) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	return r.c.Run.upFilterStop(r.ds.Run(q, cb))
-}
-
 func (r *dsCounter) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 	it := r.ds.RunQuery(q)
 	return ds.RawQueryIter{
@@ -60,7 +56,7 @@ func (r *dsCounter) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 		Results: func(yield func(ds.PropertyMap, error) bool) {
 			var err error
 			defer func() {
-				r.c.Run.upFilterStop(err)
+				r.c.RunQuery.up(err)
 			}()
 			var pm ds.PropertyMap
 			for pm, err = range it.Results {

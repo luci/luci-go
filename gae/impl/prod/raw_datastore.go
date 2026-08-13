@@ -261,10 +261,6 @@ func (d *rdsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 	return datastore.DecodeCursor(s)
 }
 
-func (d *rdsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	return ds.RunCallbackAdapter(d.RunQuery(fq), cb)
-}
-
 func (d *rdsImpl) RunQuery(fq *ds.FinalizedQuery) ds.RawQueryIter {
 	q, err := d.fixQuery(fq)
 	if err != nil {

@@ -35,22 +35,6 @@ func (tcf *checkFilter) RunInTransaction(f func(c context.Context) error, opts *
 	return tcf.checkCtxDone(tcf.RawInterface.RunInTransaction(f, opts))
 }
 
-func (tcf *checkFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
-	if fq == nil {
-		return fmt.Errorf("datastore: Run query is nil")
-	}
-	if cb == nil {
-		return fmt.Errorf("datastore: Run callback is nil")
-	}
-	return tcf.checkCtxDone(
-		tcf.RawInterface.Run(fq, func(key *Key, val PropertyMap, getCursor CursorCB) error {
-			if err := tcf.checkCtxDone(nil); err != nil {
-				return err
-			}
-			return cb(key, val, getCursor)
-		}))
-}
-
 func (tcf *checkFilter) RunQuery(fq *FinalizedQuery) RawQueryIter {
 	if fq == nil {
 		return RawQueryIterStub(fmt.Errorf("datastore: RunQuery query is nil"))

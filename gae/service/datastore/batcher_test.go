@@ -54,11 +54,6 @@ func (rc *counterFilterInst) RunQuery(fq *FinalizedQuery) RawQueryIter {
 	return rc.RawInterface.RunQuery(fq)
 }
 
-func (rc *counterFilterInst) Run(fq *FinalizedQuery, cb RawRunCB) error {
-	atomic.AddInt32(&rc.run, 1)
-	return rc.RawInterface.Run(fq, cb)
-}
-
 func (rc *counterFilterInst) PutMulti(keys []*Key, pmap []PropertyMap, cb NewKeyCB) error {
 	atomic.AddInt32(&rc.put, 1)
 	return rc.RawInterface.PutMulti(keys, pmap, cb)
@@ -166,10 +161,9 @@ func TestQueryBatch(t *testing.T) {
 			}
 		}
 
-		t.Run(`RunBatch panics if cursor is requested`, func(t *ftt.Test) {
-			assert.Loosely(t, func() {
-				RunBatch(c, 10, NewQuery(""), func(v CommonStruct, getCursor CursorCB) error { return nil })
-			}, should.Panic)
+		t.Run(`RunBatchQuery has erroring CursorCB`, func(t *ftt.Test) {
+			_, err := RunBatchQuery[*Key](c, 10, NewQuery("")).Cursor()
+			assert.ErrIsLike(t, err, ErrCursorNotImplemented)
 		})
 	})
 }

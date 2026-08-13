@@ -16,7 +16,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"iter"
 )
@@ -31,16 +30,6 @@ type Cursor interface {
 //
 // it can be invoked to obtain the current cursor.
 type CursorCB func() (Cursor, error)
-
-// RawRunCB is the callback signature provided to RawInterface.Run
-//
-//   - key is the Key of the entity
-//   - val is the data of the entity (or nil, if the query was keys-only)
-//
-// Return nil to continue iterating through the query results, or an error to
-// stop. If you return the error `Stop`, then Run will stop the query and
-// return nil.
-type RawRunCB func(key *Key, val PropertyMap, getCursor CursorCB) error
 
 // RawQueryIter holds the cursor callback and result iterator for `RunQuery`ing
 // a Query via RawInterface.
@@ -81,27 +70,6 @@ func RawQueryIterStub(err error) RawQueryIter {
 			}
 		},
 	}
-}
-
-// RunCallbackAdapter runs it yielding to cb until completion, error, or Stop.
-func RunCallbackAdapter(it RawQueryIter, cb RawRunCB) error {
-	for pm, err := range it.Results {
-		if err != nil {
-			return err
-		}
-		var key *Key
-		if val, ok := pm.GetMeta("key"); ok {
-			key, _ = val.(*Key)
-		}
-		delete(pm, "$key")
-		if err := cb(key, pm, it.Cursor); err != nil {
-			if errors.Is(err, Stop) {
-				return nil
-			}
-			return err
-		}
-	}
-	return nil
 }
 
 // GetMultiCB is the callback signature provided to RawInterface.GetMulti
@@ -232,13 +200,6 @@ type RawInterface interface {
 	// It will return an error if the supplied string is not valid, or could not
 	// be decoded by the implementation.
 	DecodeCursor(s string) (Cursor, error)
-
-	// Run executes the given query, and calls `cb` for each successfully item.
-	//
-	// NOTE: Implementations and filters are guaranteed that:
-	//   - query is not nil
-	//   - cb is not nil
-	Run(q *FinalizedQuery, cb RawRunCB) error
 
 	// RunQuery executes the given query, returning a callback to get the cursor for
 	// the next result, and an iterator to yield the results.

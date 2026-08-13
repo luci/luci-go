@@ -57,18 +57,17 @@ func TestCheckFilter(t *testing.T) {
 			assert.Loosely(t, hit, should.BeFalse)
 		})
 
-		t.Run("Run", func(t *ftt.Test) {
-			assert.Loosely(t, rds.Run(nil, nil), should.ErrLike("query is nil"))
+		t.Run("RunQuery", func(t *ftt.Test) {
+			assert.Loosely(t, rds.RunQuery(nil).Cursor, should.NotBeNil)
 			fq, err := NewQuery("sup").Finalize()
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, rds.Run(fq, nil), should.ErrLike("callback is nil"))
 			hit := false
 			assert.Loosely(t, func() {
-				assert.Loosely(t, rds.Run(fq, func(*Key, PropertyMap, CursorCB) error {
+				it := rds.RunQuery(fq)
+				for range it.Results {
 					hit = true
-					return nil
-				}), should.BeNil)
+				}
 			}, should.Panic)
 			assert.Loosely(t, hit, should.BeFalse)
 		})
@@ -157,9 +156,9 @@ func TestCheckFilter(t *testing.T) {
 
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, rds.DeleteMulti(keys, func(int, error) {}), should.Equal(context.Canceled))
-		assert.Loosely(t, rds.Run(fq, func(*Key, PropertyMap, CursorCB) error {
-			return nil
-		}), should.Equal(context.Canceled))
+		for _, err := range rds.RunQuery(fq).Results {
+			assert.Loosely(t, err, should.Equal(context.Canceled))
+		}
 		assert.Loosely(t, rds.RunInTransaction(func(context.Context) error {
 			return nil
 		}, nil), should.Equal(context.Canceled))

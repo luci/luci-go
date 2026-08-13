@@ -24,7 +24,6 @@ import (
 var DatastoreFeatures = []string{
 	"AllocateIDs",
 	"DecodeCursor",
-	"Run",
 	"RunQuery",
 	"Count",
 	"BeginTransaction",
@@ -57,12 +56,6 @@ func (r *dsState) DecodeCursor(s string) (ds.Cursor, error) {
 		return
 	})
 	return curs, err
-}
-
-func (r *dsState) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	return r.run(r.c, func() error {
-		return r.rds.Run(q, cb)
-	})
 }
 
 func (r *dsState) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {

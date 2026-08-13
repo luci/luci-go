@@ -141,15 +141,8 @@ func RunBatchQuery[V any](c context.Context, batchSize int32, q *Query) *QueryIt
 	return RunQuery[V](withQueryBatching(c, batchSize), q)
 }
 
-// RunBatch is a batching version of Run.
-//
-// Deprecated: Use RunBatchQuery instead.
-func RunBatch(c context.Context, batchSize int32, q *Query, cb any) error {
-	return runImpl(withQueryBatching(c, batchSize), q, false, cb)
-}
-
 // CountBatch is a batching version of Count. See [RunBatchQuery] for more
-// information about batching, and CountBatch for more information about the
+// information about batching, and [Count] for more information about the
 // parameters.
 //
 // If the Context supplied to CountBatch is cancelled or reaches its deadline,
@@ -183,10 +176,6 @@ type queryBatchingFilter struct {
 
 	ic        context.Context
 	batchSize int32
-}
-
-func (f *queryBatchingFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
-	return RunCallbackAdapter(f.RunQuery(fq), cb)
 }
 
 func (f *queryBatchingFilter) RunQuery(fq *FinalizedQuery) RawQueryIter {

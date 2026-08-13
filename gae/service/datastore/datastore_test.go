@@ -83,79 +83,51 @@ func (f *fakeDatastore) RunQuery(fq *FinalizedQuery) RawQueryIter {
 			return fakeCursor(0), nil
 		},
 		Results: func(yield func(PropertyMap, error) bool) {
-			err := f.Run(fq, func(key *Key, val PropertyMap, getCursor CursorCB) error {
-				pm := val.Clone()
-				if pm == nil {
-					pm = make(PropertyMap, 1)
+			cur := int32(0)
+			start, end := fq.Bounds()
+			if start != nil {
+				cur = int32(start.(fakeCursor))
+			}
+			remaining := int32(f.entities - cur)
+			if end != nil {
+				endV := int32(end.(fakeCursor))
+				if remaining > endV {
+					remaining = endV
 				}
-				if key != nil {
-					pm["$key"] = MkPropertyNI(key)
+			}
+			lim, _ := fq.Limit()
+			if lim <= 0 || lim > remaining {
+				lim = remaining
+			}
+
+			kfr := f.keyForResult
+			if kfr == nil {
+				kfr = func(i int32, kctx KeyContext) *Key { return kctx.MakeKey("Kind", int64(i+1)) }
+			}
+
+			for i := int32(0); i < lim; i++ {
+				if v, ok := fq.eqFilts["@err_single"]; ok {
+					idx := fq.eqFilts["@err_single_idx"][0].Value().(int64)
+					if idx == int64(i) {
+						yield(nil, errors.New(v[0].Value().(string)))
+						return
+					}
 				}
-				if cur, err := getCursor(); err == nil {
-					lastCursor = cur
-				}
+
+				k := kfr(cur, f.kctx)
+				pm := PropertyMap{"Value": MkProperty(cur)}
+				cur++
+				pm["$key"] = MkPropertyNI(k)
+				lastCursor = fakeCursor(cur)
 				if !yield(pm, nil) {
-					return Stop
+					return
 				}
-				return nil
-			})
-			if err != nil && !errors.Is(err, Stop) {
-				yield(nil, err)
 			}
 		},
 	}
 }
 
-func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
-	cur := int32(0)
 
-	start, end := fq.Bounds()
-	if start != nil {
-		cur = int32(start.(fakeCursor))
-	}
-
-	remaining := int32(f.entities - cur)
-	if end != nil {
-		endV := int32(end.(fakeCursor))
-		if remaining > endV {
-			remaining = endV
-		}
-	}
-	lim, _ := fq.Limit()
-	if lim <= 0 || lim > remaining {
-		lim = remaining
-	}
-
-	cursCB := func() (Cursor, error) {
-		return fakeCursor(cur), nil
-	}
-
-	kfr := f.keyForResult
-	if kfr == nil {
-		kfr = func(i int32, kctx KeyContext) *Key { return kctx.MakeKey("Kind", (i + 1)) }
-	}
-
-	for i := int32(0); i < lim; i++ {
-		if v, ok := fq.eqFilts["@err_single"]; ok {
-			idx := fq.eqFilts["@err_single_idx"][0].Value().(int64)
-			if idx == int64(i) {
-				return errors.New(v[0].Value().(string))
-			}
-		}
-
-		k := kfr(cur, f.kctx)
-		pm := PropertyMap{"Value": MkProperty(cur)}
-		cur++
-
-		if err := cb(k, pm, cursCB); err != nil {
-			if err == Stop {
-				err = nil
-			}
-			return err
-		}
-	}
-	return nil
-}
 
 func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
 	if keys[0].Kind() == "FailAll" {
@@ -2102,290 +2074,60 @@ func (f *fakeDatastore2) RunQuery(fq *FinalizedQuery) RawQueryIter {
 			return fakeCursor(0), nil
 		},
 		Results: func(yield func(PropertyMap, error) bool) {
-			err := f.Run(fq, func(key *Key, val PropertyMap, getCursor CursorCB) error {
-				pm := val.Clone()
+			if _, ok := fq.eqFilts["@err_single"]; ok {
+				yield(nil, errors.New("errors in fakeDatastore"))
+				return
+			}
+
+			if _, ok := fq.eqFilts["values"]; !ok {
+				return
+			}
+
+			first := int32(0)
+			start, end := fq.Bounds()
+			if start != nil {
+				first = int32(start.(fakeCursor))
+			}
+
+			searchStr := fq.eqFilts["values"][0].Value().(string)
+			keys := make([]*Key, len(keyMap[searchStr]))
+			pms := make([]PropertyMap, len(pmMap[searchStr]))
+			copy(keys, keyMap[searchStr])
+			copy(pms, pmMap[searchStr])
+
+			last := int32(len(keys) - 1)
+			if end != nil {
+				last = int32(end.(fakeCursor))
+			}
+
+			if fq.orders[0].Property == "val" && fq.orders[0].Descending {
+				// reverse
+				for i, j := first, last; i < j; i, j = i+1, j-1 {
+					keys[i], keys[j] = keys[j], keys[i]
+					pms[i], pms[j] = pms[j], pms[i]
+				}
+			}
+
+			for i := first; i <= last; i++ {
+				pm := pms[i].Clone()
 				if pm == nil {
 					pm = make(PropertyMap, 1)
 				}
-				if key != nil {
-					pm["$key"] = MkPropertyNI(key)
+				if keys[i] != nil {
+					pm["$key"] = MkPropertyNI(keys[i])
 				}
-				if cur, err := getCursor(); err == nil {
-					lastCursor = cur
-				}
+				lastCursor = fakeCursor(i + 1)
 				if !yield(pm, nil) {
-					return Stop
+					return
 				}
-				return nil
-			})
-			if err != nil && !errors.Is(err, Stop) {
-				yield(nil, err)
 			}
 		},
 	}
 }
 
-func (f *fakeDatastore2) Run(fq *FinalizedQuery, cb RawRunCB) error {
-	if _, ok := fq.eqFilts["@err_single"]; ok {
-		return errors.New("errors in fakeDatastore")
-	}
 
-	if _, ok := fq.eqFilts["values"]; !ok {
-		return nil
-	}
 
-	first := int32(0)
-	start, end := fq.Bounds()
-	if start != nil {
-		first = int32(start.(fakeCursor))
-	}
 
-	searchStr := fq.eqFilts["values"][0].Value().(string)
-	keys := make([]*Key, len(keyMap[searchStr]))
-	pms := make([]PropertyMap, len(pmMap[searchStr]))
-	copy(keys, keyMap[searchStr])
-	copy(pms, pmMap[searchStr])
-
-	last := int32(len(keys) - 1)
-	if end != nil {
-		last = int32(end.(fakeCursor))
-	}
-
-	if fq.orders[0].Property == "val" && fq.orders[0].Descending {
-		// reverse
-		for i, j := first, last; i < j; i, j = i+1, j-1 {
-			keys[i], keys[j] = keys[j], keys[i]
-			pms[i], pms[j] = pms[j], pms[i]
-		}
-	}
-
-	for i := first; i <= last; i++ {
-		// Cursor starts at the next available item.
-		j := i + 1
-		if err := cb(keys[i], pms[i], func() (Cursor, error) {
-			return fakeCursor(j), nil
-		}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func TestRunMulti(t *testing.T) {
-	t.Parallel()
-	ftt.Run("Test RunMulti", t, func(t *ftt.Test) {
-		c := info.Set(context.Background(), fakeInfo{})
-		fds2 := fakeDatastore2{}
-		c = SetRawFactory(c, fds2.factory())
-
-		t.Run("ok", func(t *ftt.Test) {
-			t.Run("default - key ascending", func(t *ftt.Test) {
-				queries := []*Query{
-					NewQuery("Foo").Eq("values", "aa"),
-					NewQuery("Foo").Eq("values", "cc"),
-				}
-				var foos []*Foo
-				err := RunMulti(c, queries, func(foo *Foo) error {
-					foos = append(foos, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2, foo3}))
-			})
-
-			t.Run("values field descending", func(t *ftt.Test) {
-				queries := []*Query{
-					NewQuery("Foo").Eq("values", "aa").Order("-val"),
-					NewQuery("Foo").Eq("values", "cc").Order("-val"),
-				}
-				var foos []*Foo
-				err := RunMulti(c, queries, func(foo *Foo) error {
-					foos = append(foos, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, foos, should.Resemble([]*Foo{foo3, foo2, foo1}))
-			})
-
-			t.Run("users send stop signal", func(t *ftt.Test) {
-				queries := []*Query{
-					NewQuery("Foo").Eq("values", "aa"),
-					NewQuery("Foo").Eq("values", "cc"),
-				}
-				var foos []*Foo
-				err := RunMulti(c, queries, func(foo *Foo) error {
-					if len(foos) >= 2 {
-						return Stop
-					}
-					foos = append(foos, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2}))
-			})
-
-			t.Run("not found", func(t *ftt.Test) {
-				queries := []*Query{
-					NewQuery("Foo").Eq("no_exist", "aa"),
-					NewQuery("Foo").Eq("no_exist", "bb"),
-				}
-				var foos []*Foo
-				err := RunMulti(c, queries, func(foo *Foo) error {
-					foos = append(foos, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.ErrLike(nil))
-				assert.Loosely(t, foos, should.BeNil)
-			})
-
-			t.Run("default - key ascending, With Cursor", func(t *ftt.Test) {
-				queries := []*Query{
-					NewQuery("Foo").Eq("values", "aa"),
-					NewQuery("Foo").Eq("values", "cc"),
-				}
-				var foos []*Foo
-				err := RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
-					foos = append(foos, foo)
-					cur, err := cb()
-					if err != nil {
-						return err
-					}
-					if len(foos) == 1 {
-						// Update the queries with the cursor
-						queries, err = ApplyCursors(c, queries, cur)
-						if err != nil {
-							return err
-						}
-						// Stop after reading one entity
-						return Stop
-					}
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1}))
-				// Get the remaining entity
-				err = RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
-					foos = append(foos, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2, foo3}))
-			})
-
-			t.Run("Query order - key ascending, With Cursor", func(t *ftt.Test) {
-				queries := []*Query{
-					NewQuery("Foo").Eq("values", "aa"),
-					NewQuery("Foo").Eq("values", "cc"),
-				}
-				// Order is flipped for the next query
-				queries1 := []*Query{
-					NewQuery("Foo").Eq("values", "cc"),
-					NewQuery("Foo").Eq("values", "aa"),
-				}
-				var foos []*Foo
-				err := RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
-					foos = append(foos, foo)
-					cur, err := cb()
-					if err != nil {
-						return err
-					}
-					if len(foos) == 1 {
-						// Update the queries1 with the cursor
-						queries1, err = ApplyCursorString(c, queries1, cur.String())
-						if err != nil {
-							return err
-						}
-						// Stop after reading one entity
-						return Stop
-					}
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1}))
-				// Get the remaining entities
-				err = RunMulti(c, queries1, func(foo *Foo, cb CursorCB) error {
-					foos = append(foos, foo)
-					return nil
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2, foo3}))
-			})
-
-			t.Run("Query cardinality - key ascending, With Cursor", func(t *ftt.Test) {
-				queries := []*Query{
-					NewQuery("Foo").Eq("values", "aa"),
-					NewQuery("Foo").Eq("values", "cc"),
-				}
-				// Only one query in the second one
-				queries1 := []*Query{
-					NewQuery("Foo").Eq("values", "cc"),
-				}
-				var foos []*Foo
-				var cur Cursor
-				var err error
-				err = RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
-					foos = append(foos, foo)
-					cur, err = cb()
-					if err != nil {
-						return err
-					}
-					if len(foos) == 2 {
-						// Stop after reading one entity
-						return Stop
-					}
-					return nil
-				})
-				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2}))
-				assert.Loosely(t, IsMultiCursor(cur), should.BeTrue)
-				assert.Loosely(t, IsMultiCursorString(cur.String()), should.BeTrue)
-				// Update the queries1 with the cursor
-				_, err = ApplyCursors(c, queries1, cur)
-				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err, should.ErrLike("Length mismatch. Cannot apply this cursor to the queries"))
-			})
-
-			t.Run("fake cursor fail", func(t *ftt.Test) {
-				queries := []*Query{
-					NewQuery("Foo").Eq("values", "aa"),
-					NewQuery("Foo").Eq("values", "cc"),
-				}
-				// Apply cursor expects a multi cursor format
-				cur := fakeCursor(100)
-				// Update the queries1 with the cursor
-				_, err := ApplyCursors(c, queries, cur)
-				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err, should.ErrLike("Failed to decode cursor"))
-				assert.Loosely(t, IsMultiCursor(cur), should.BeFalse)
-				assert.Loosely(t, IsMultiCursorString(cur.String()), should.BeFalse)
-			})
-
-			t.Run("Query of different kinds", func(t *ftt.Test) {
-				queries := []*Query{
-					NewQuery("Foo"),
-					NewQuery("Foo1"),
-				}
-				err := RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
-					return nil
-				})
-				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err, should.ErrLike("should query the same kind"))
-			})
-		})
-
-		t.Run("errors in one running query", func(t *ftt.Test) {
-			queries := []*Query{
-				NewQuery("Foo").Eq("values", "aa"),
-				NewQuery("Foo").Eq("@err_single", "error"),
-			}
-			var foos []*Foo
-			err := RunMulti(c, queries, func(foo *Foo) error {
-				foos = append(foos, foo)
-				return nil
-			})
-			assert.Loosely(t, err, should.ErrLike("errors in fakeDatastore"))
-		})
-	})
-}
 
 func TestCountMulti(t *testing.T) {
 	t.Parallel()
