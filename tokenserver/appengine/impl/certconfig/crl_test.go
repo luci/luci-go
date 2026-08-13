@@ -97,4 +97,51 @@ func TestCRL(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, revoked, should.Equal((sn%3) == 0))
 	})
+
+	ftt.Run("Rollback Protection works", t, func(t *ftt.Test) {
+		caName := "CA"
+		shardCount := 1
+
+		ctx := gaetesting.TestingContext()
+
+		// Older CRL
+		oldCRL := &pkix.CertificateList{
+			TBSCertList: pkix.TBSCertificateList{
+				ThisUpdate: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+				RevokedCertificates: []pkix.RevokedCertificate{
+					{SerialNumber: big.NewInt(1)},
+				},
+			},
+		}
+
+		// Newer CRL
+		newCRL := &pkix.CertificateList{
+			TBSCertList: pkix.TBSCertificateList{
+				ThisUpdate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				RevokedCertificates: []pkix.RevokedCertificate{
+					{SerialNumber: big.NewInt(2)},
+				},
+			},
+		}
+
+		// 1. Write the newer CRL
+		assert.Loosely(t, UpdateCRLSet(ctx, caName, shardCount, newCRL), should.BeNil)
+
+		// 2. Write the older CRL (simulates delayed execution).
+		// It should evaluate safely but skip overwriting the datastore.
+		assert.Loosely(t, UpdateCRLSet(ctx, caName, shardCount, oldCRL), should.BeNil)
+
+		// 3. Verify shards reflect the newer CRL
+		checker := NewCRLChecker(caName, shardCount, 0)
+
+		// Cert 1 (from old CRL) should NOT be revoked.
+		revoked, err := checker.IsRevokedSN(ctx, big.NewInt(1))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, revoked, should.BeFalse)
+
+		// Cert 2 (from new CRL) SHOULD be revoked.
+		revoked, err = checker.IsRevokedSN(ctx, big.NewInt(2))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, revoked, should.BeTrue)
+	})
 }

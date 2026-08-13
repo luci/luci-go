@@ -102,8 +102,9 @@ func (crl *CRL) GetStatusProto() *admin.CRLStatus {
 //
 // ID is "<cn name>|<total number of shards>|<shard index>" (see shardEntityID).
 type CRLShardHeader struct {
-	ID   string `gae:"$id"`
-	SHA1 string `gae:",noindex"` // SHA1 of serialized shard data (before compression)
+	ID             string    `gae:"$id"`
+	SHA1           string    `gae:",noindex"` // SHA1 of serialized shard data (before compression)
+	LastUpdateTime time.Time `gae:",noindex"` // Generation time of the CRL this shard came from
 }
 
 // CRLShardBody is a fat entity that contains serialized CRL shard.
@@ -133,6 +134,7 @@ func UpdateCRLSet(c context.Context, cn string, shardCount int, crl *pkix.Certif
 		}
 		set.Insert(sn)
 	}
+	thisUpdate := crl.TBSCertList.ThisUpdate.UTC()
 	// Update shards in parallel via a bunch of independent transactions.
 	wg := sync.WaitGroup{}
 	er := errors.NewLazyMultiError(len(set))
@@ -140,7 +142,7 @@ func UpdateCRLSet(c context.Context, cn string, shardCount int, crl *pkix.Certif
 		wg.Add(1)
 		go func(idx int, shard shards.Shard) {
 			defer wg.Done()
-			er.Assign(idx, updateCRLShard(c, cn, shard, shardCount, idx))
+			er.Assign(idx, updateCRLShard(c, cn, shard, shardCount, idx, thisUpdate))
 		}(idx, shard)
 	}
 	wg.Wait()
@@ -148,7 +150,7 @@ func UpdateCRLSet(c context.Context, cn string, shardCount int, crl *pkix.Certif
 }
 
 // updateCRLShard updates entities that holds a single shard of a CRL set.
-func updateCRLShard(c context.Context, cn string, shard shards.Shard, count, idx int) error {
+func updateCRLShard(c context.Context, cn string, shard shards.Shard, count, idx int, thisUpdate time.Time) error {
 	blob := shard.Serialize()
 	hash := sha1.Sum(blob)
 	digest := hex.EncodeToString(hash[:])
@@ -174,7 +176,21 @@ func updateCRLShard(c context.Context, cn string, shard shards.Shard, count, idx
 
 	// Upload, updating the header and the body at once.
 	return ds.RunInTransaction(c, func(c context.Context) error {
+		// Fetch the current header to check for a newer update.
+		curHeader := CRLShardHeader{ID: header.ID}
+		err := ds.Get(c, &curHeader)
+		if err != nil && err != ds.ErrNoSuchEntity {
+			return err
+		}
+
+		// Reject the overwrite if the shard in the DB is newer.
+		if err == nil && curHeader.LastUpdateTime.After(thisUpdate) {
+			logging.Warningf(c, "CRL for %q: shard %d/%d is newer in datastore, skipping overwrite", cn, idx, count)
+			return nil
+		}
+
 		header.SHA1 = digest
+		header.LastUpdateTime = thisUpdate
 		body := CRLShardBody{
 			Parent:     ds.KeyForObj(c, &header),
 			SHA1:       digest,
