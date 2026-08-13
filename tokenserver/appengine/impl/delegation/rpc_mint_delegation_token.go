@@ -357,10 +357,12 @@ func resolveServiceIDs(c context.Context, urls []string, out *identityset.Set) e
 	for range urls {
 		result := <-ch
 		if result.Err != nil {
+			logging.WithError(result.Err).Errorf(c, "could not resolve %q to service ID", result.URL)
+			genericErr := fmt.Errorf("could not resolve %q to service ID", result.URL)
 			if transient.Tag.In(result.Err) {
-				return result.Err
+				return transient.Tag.Apply(genericErr)
 			}
-			return fmt.Errorf("could not resolve %q to service ID - %s", result.URL, result.Err)
+			return genericErr
 		}
 		out.AddIdentity(result.ID)
 	}

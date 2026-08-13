@@ -208,7 +208,7 @@ func TestBuildRulesQuery(t *testing.T) {
 				"https://crash",
 			},
 		}, "user:requestor@example.com")
-		assert.Loosely(t, err, should.ErrLike(`could not resolve "https://crash" to service ID - boom`))
+		assert.Loosely(t, err, should.ErrLike(`could not resolve "https://crash" to service ID`))
 	})
 }
 
