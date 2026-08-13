@@ -256,13 +256,6 @@ func ExampleNewRequest() {
 	//         },
 	//         "realm": "$from_container"
 	//       }
-	//     },
-	//     {
-	//       "identifier": {
-	//         "isWorknode": true,
-	//         "id": "bad one"
-	//       },
-	//       "cancelled": true
 	//     }
 	//   ],
 	//   "currentAttempt": {
@@ -308,6 +301,14 @@ func ExampleNewRequest() {
 	//       ],
 	//       "threshold": 1
 	//     }
-	//   }
+	//   },
+	//   "stageCancellations": [
+	//     {
+	//       "identifier": {
+	//         "isWorknode": true,
+	//         "id": "bad one"
+	//       }
+	//     }
+	//   ]
 	// }
 }

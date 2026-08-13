@@ -17,8 +17,6 @@ package write_test
 import (
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
@@ -80,10 +78,9 @@ func TestAddStageCancellation(t *testing.T) {
 	req.AddStageCancellation(ids.Stage("stg"))
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
-		Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
-			orchestratorpb.WriteNodesRequest_StageWrite_builder{
+		StageCancellations: []*orchestratorpb.WriteNodesRequest_StageCancellation{
+			orchestratorpb.WriteNodesRequest_StageCancellation_builder{
 				Identifier: ids.Stage("stg"),
-				Cancelled:  proto.Bool(true),
 			}.Build(),
 		},
 	}.Build()))

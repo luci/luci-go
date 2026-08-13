@@ -32,6 +32,14 @@ type StageWrite struct {
 	Msg *orchestratorpb.WriteNodesRequest_StageWrite
 }
 
+// StageCancellation wraps an
+// orchestratorpb.WriteNodesRequest_StageCancellation.
+//
+// See package documentation for the behavior of this wrapper type.
+type StageCancellation struct {
+	Msg *orchestratorpb.WriteNodesRequest_StageCancellation
+}
+
 // AddCheckAssignment adds a new Assignment to the StageWrite.
 func (sw StageWrite) AddCheckAssignment(id *idspb.Check, goalState orchestratorpb.CheckState) *orchestratorpb.Stage_Assignment {
 	ret := orchestratorpb.Stage_Assignment_builder{
@@ -60,14 +68,11 @@ func (req Request) AddNewStage(id *idspb.Stage, args proto.Message) StageWrite {
 
 // AddStageCancellation adds a new stage cancellation to the WriteNodesRequest.
 //
-// Returns the StageWrite for consistency with other Add methods, but there are
-// no additional meaningful fields to change on the StageWrite when cancelling
-// a Stage.
-func (req Request) AddStageCancellation(id *idspb.Stage) StageWrite {
-	ret := orchestratorpb.WriteNodesRequest_StageWrite_builder{
+// Returns the StageCancellation for consistency with other Add methods.
+func (req Request) AddStageCancellation(id *idspb.Stage) StageCancellation {
+	ret := orchestratorpb.WriteNodesRequest_StageCancellation_builder{
 		Identifier: id,
-		Cancelled:  proto.Bool(true),
 	}.Build()
-	req.Msg.SetStages(append(req.Msg.GetStages(), ret))
-	return StageWrite{ret}
+	req.Msg.SetStageCancellations(append(req.Msg.GetStageCancellations(), ret))
+	return StageCancellation{ret}
 }
