@@ -55,9 +55,12 @@ func TestNamespaces(t *testing.T) {
 		}
 
 		t.Run(`A datastore with no namespaces returns {}.`, func(t *ftt.Test) {
-			var coll NamespacesCollector
-			assert.Loosely(t, Namespaces(ctx, coll.Callback), should.BeNil)
-			assert.Loosely(t, coll, should.Match(NamespacesCollector(nil)))
+			var coll []string
+			for ns, err := range Namespaces(ctx) {
+				assert.NoErr(t, err)
+				coll = append(coll, ns)
+			}
+			assert.Loosely(t, coll, should.BeNil)
 		})
 
 		t.Run(`With namespaces {<default>, foo, bar, baz-a, baz-b}`, func(t *ftt.Test) {
@@ -68,15 +71,21 @@ func TestNamespaces(t *testing.T) {
 			addNamespace("baz-b")
 
 			t.Run(`Can collect all namespaces.`, func(t *ftt.Test) {
-				var coll NamespacesCollector
-				assert.Loosely(t, Namespaces(ctx, coll.Callback), should.BeNil)
-				assert.Loosely(t, coll, should.Match(NamespacesCollector{"", "bar", "baz-a", "baz-b", "foo"}))
+				var coll []string
+				for ns, err := range Namespaces(ctx) {
+					assert.NoErr(t, err)
+					coll = append(coll, ns)
+				}
+				assert.Loosely(t, coll, should.Match([]string{"", "bar", "baz-a", "baz-b", "foo"}))
 			})
 
 			t.Run(`Can get namespaces with prefix "baz-".`, func(t *ftt.Test) {
-				var coll NamespacesCollector
-				assert.Loosely(t, NamespacesWithPrefix(ctx, "baz-", coll.Callback), should.BeNil)
-				assert.Loosely(t, coll, should.Match(NamespacesCollector{"baz-a", "baz-b"}))
+				var coll []string
+				for ns, err := range NamespacesWithPrefix(ctx, "baz-") {
+					assert.NoErr(t, err)
+					coll = append(coll, ns)
+				}
+				assert.Loosely(t, coll, should.Match([]string{"baz-a", "baz-b"}))
 			})
 		})
 	})
