@@ -63,9 +63,9 @@ func TestProxyRepositoryServer(t *testing.T) {
 		CASURLObfuscator: obfuscator,
 		UserAgent:        "proxy-user-agent",
 	})
-	// Mock ":authority" header to make TargetHost return what we want. Without
-	// this we'd need to replace http.DefaultTransport in the pRPC client with
-	// something more complicated.
+	// Mock ":authority" header to make rawTargetHost return what we want.
+	// Without this we'd need to replace http.DefaultTransport in the pRPC client
+	// with something more complicated.
 	local.UnaryServerInterceptor = func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		md, _ := metadata.FromIncomingContext(ctx)
 		if val := md.Get("fake-authority"); len(val) != 0 {

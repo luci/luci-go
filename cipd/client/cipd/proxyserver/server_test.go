@@ -133,7 +133,7 @@ type repoSrv struct {
 }
 
 func (s *repoSrv) GetInstanceURL(ctx context.Context, req *repopb.GetInstanceURLRequest) (*caspb.ObjectURL, error) {
-	assert.That(s.t, TargetHost(ctx), should.Equal(fakeHost))
+	assert.That(s.t, rawTargetHost(ctx), should.Equal(fakeHost))
 
 	assert.That(s.t, req, should.Match(&repopb.GetInstanceURLRequest{
 		Package: fakePackage,

@@ -76,31 +76,32 @@ func DefaultRemoteFactory(client *http.Client) RemoteFactory {
 // allowed by the policy.
 //
 // Returns gRPC errors.
-func (s *ProxyRepositoryServer) remote(ctx context.Context, hostname string) (repogrpcpb.RepositoryClient, error) {
+func (s *ProxyRepositoryServer) remote(ctx context.Context) (repogrpcpb.RepositoryClient, string, error) {
+	hostname := rawTargetHost(ctx)
 	if hostname == "" {
-		return nil, status.Errorf(codes.Internal, "unexpectedly missing remote name in a proxied CIPD call")
+		return nil, "", status.Errorf(codes.Internal, "unexpectedly missing remote name in a proxied CIPD call")
 	}
 
 	s.m.RLock()
 	r := s.remotes[hostname]
 	s.m.RUnlock()
 	if r != nil {
-		return r, nil
+		return r, hostname, nil
 	}
 
 	s.m.Lock()
 	defer s.m.Unlock()
 	if r := s.remotes[hostname]; r != nil {
-		return r, nil
+		return r, hostname, nil
 	}
 
 	if !slices.Contains(s.Policy.AllowedRemotes, hostname) {
-		return nil, status.Errorf(codes.PermissionDenied, "host %q is not allowed by the CIPD proxy policy", hostname)
+		return nil, "", status.Errorf(codes.PermissionDenied, "host %q is not allowed by the CIPD proxy policy", hostname)
 	}
 
 	conn, err := s.RemoteFactory(ctx, hostname)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to initialize remote in the CIPD proxy: %s", err)
+		return nil, "", status.Errorf(codes.Internal, "failed to initialize remote in the CIPD proxy: %s", err)
 	}
 	r = repogrpcpb.NewRepositoryClient(conn)
 
@@ -108,7 +109,7 @@ func (s *ProxyRepositoryServer) remote(ctx context.Context, hostname string) (re
 		s.remotes = make(map[string]repogrpcpb.RepositoryClient, 1)
 	}
 	s.remotes[hostname] = r
-	return r, nil
+	return r, hostname, nil
 }
 
 // callCtx prepares a context for the call to the remote.
@@ -161,7 +162,7 @@ func (s *ProxyRepositoryServer) ResolveVersion(ctx context.Context, req *repopb.
 		return nil, status.Errorf(codes.InvalidArgument, "bad version %q: not an instance ID, a ref or a tag", req.Version)
 	}
 
-	remote, err := s.remote(ctx, TargetHost(ctx))
+	remote, _, err := s.remote(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +176,7 @@ func (s *ProxyRepositoryServer) GetInstanceURL(ctx context.Context, req *repopb.
 		return nil, deniedByPolicy("GetInstanceURL", "")
 	}
 
-	remote, err := s.remote(ctx, TargetHost(ctx))
+	remote, _, err := s.remote(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +198,7 @@ func (s *ProxyRepositoryServer) DescribeClient(ctx context.Context, req *repopb.
 		return nil, deniedByPolicy("DescribeClient", "")
 	}
 
-	remote, err := s.remote(ctx, TargetHost(ctx))
+	remote, _, err := s.remote(ctx)
 	if err != nil {
 		return nil, err
 	}

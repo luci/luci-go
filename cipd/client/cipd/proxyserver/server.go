@@ -177,9 +177,9 @@ func (srv *Server) initialize(ctx context.Context) (*http.Server, chan struct{},
 	return srv.httpSrv, srv.stopped, nil
 }
 
-// TargetHost return hostname of the remote CIPD service the proxy client is
+// rawTargetHost return hostname of the remote CIPD service the proxy client is
 // hitting through the proxy or "" if unknown.
-func TargetHost(ctx context.Context) string {
+func rawTargetHost(ctx context.Context) string {
 	md, _ := metadata.FromIncomingContext(ctx)
 	if v := md.Get(":authority"); len(v) != 0 {
 		return v[0]
