@@ -16,6 +16,7 @@ package cli
 
 import (
 	"context"
+	"net/http"
 	"path/filepath"
 	"testing"
 
@@ -51,7 +52,7 @@ func TestCmdProxy_ReadOnlyCacheDir(t *testing.T) {
 			cipd.EnvReadOnlyCacheDir + "=relative/path",
 		}).SetInCtx(context.Background())
 
-		_, err := runProxy(ctx, authcli.Flags{}, "/dev/null", "-", "")
+		_, err := runProxy(ctx, authcli.Flags{}, "/dev/null", "-", "", false)
 		assert.That(t, err, should.ErrLike("not an absolute path"))
 	})
 
@@ -65,7 +66,47 @@ func TestCmdProxy_ReadOnlyCacheDir(t *testing.T) {
 
 		// With a bad policy file path, runProxy will proceed past readOnlyCacheDir resolution
 		// and fail on readProxyPolicy, proving readOnlyCacheDir was accepted.
-		_, err = runProxy(ctx, authcli.Flags{}, "/dev/null", "/nonexistent/policy.textpb", "")
+		_, err = runProxy(ctx, authcli.Flags{}, "/dev/null", "/nonexistent/policy.textpb", "", false)
 		assert.That(t, err, should.ErrLike("missing proxy policy file"))
+	})
+}
+
+func TestCmdProxy_DisableNetwork(t *testing.T) {
+	t.Parallel()
+
+	cmd := cmdProxy(Parameters{})
+	f := cmd.CommandRun().(*proxyRun)
+
+	t.Run("Flag registration", func(t *testing.T) {
+		flag := f.Flags.Lookup("disable-network")
+		assert.That(t, flag != nil, should.BeTrue)
+	})
+
+	t.Run("Flag parsing", func(t *testing.T) {
+		c := cmdProxy(Parameters{}).CommandRun().(*proxyRun)
+		err := c.Flags.Parse([]string{"-disable-network"})
+		assert.NoErr(t, err)
+		assert.That(t, c.disableNetwork, should.BeTrue)
+	})
+
+	t.Run("disabledRoundTripper returns 404", func(t *testing.T) {
+		req, err := http.NewRequest("GET", "http://example.com", nil)
+		assert.NoErr(t, err)
+		resp, err := disabledRoundTripper{}.RoundTrip(req)
+		assert.NoErr(t, err)
+		assert.That(t, resp.StatusCode, should.Equal(404))
+	})
+
+	t.Run("Env var resolution - CIPD_DISABLE_NETWORK accepted", func(t *testing.T) {
+		for _, val := range []string{"1", "true"} {
+			ctx := environ.New([]string{
+				cipd.EnvCIPDDisableNetwork + "=" + val,
+			}).SetInCtx(context.Background())
+
+			// With a bad policy file path, runProxy will proceed past env resolution
+			// and fail on readProxyPolicy, proving env was accepted.
+			_, err := runProxy(ctx, authcli.Flags{}, "/dev/null", "/nonexistent/policy.textpb", "", false)
+			assert.That(t, err, should.ErrLike("missing proxy policy file"))
+		}
 	})
 }

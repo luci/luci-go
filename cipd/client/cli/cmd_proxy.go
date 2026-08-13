@@ -15,6 +15,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -23,6 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth"
@@ -31,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/grpc/prpc"
 
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver"
@@ -57,6 +60,7 @@ func cmdProxy(params Parameters) *subcommands.Command {
 			c.Flags.StringVar(&c.proxyPolicy, "proxy-policy", "-", "Path to a text protobuf file with cipd.proxy.Policy message (or - for reading from stdin).")
 			c.Flags.StringVar(&c.readOnlyCacheDir, "read-only-cache-dir", "",
 				fmt.Sprintf(`Directory for a shared read-only cache (can also be set by %s env var). Prepared with "cipd cache-prepare".`, cipd.EnvReadOnlyCacheDir))
+			c.Flags.BoolVar(&c.disableNetwork, "disable-network", false, "If provided, client will make no network requests.")
 			return c
 		},
 	}
@@ -69,6 +73,7 @@ type proxyRun struct {
 	unixSocket       string // -unix-socket flag
 	proxyPolicy      string // -proxy-policy flag
 	readOnlyCacheDir string // -read-only-cache-dir flag
+	disableNetwork   bool   // -disable-network flag
 }
 
 func (c *proxyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -76,10 +81,29 @@ func (c *proxyRun) Run(a subcommands.Application, args []string, env subcommands
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(runProxy(ctx, c.authFlags, c.unixSocket, c.proxyPolicy, c.readOnlyCacheDir))
+	return c.done(runProxy(ctx, c.authFlags, c.unixSocket, c.proxyPolicy, c.readOnlyCacheDir, c.disableNetwork))
 }
 
-func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPolicy, readOnlyCacheDir string) (*proxyserver.ProxyStats, error) {
+type disabledRoundTripper struct{}
+
+func (r disabledRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	const body = "cipd proxy: not in read-only cache and network is disabled"
+	hdr := http.Header{}
+	hdr.Set(prpc.HeaderGRPCCode, fmt.Sprint(int(codes.NotFound)))
+	return &http.Response{
+		Status:        "404 Not Found",
+		StatusCode:    http.StatusNotFound,
+		Proto:         "HTTP/1.1",
+		ProtoMajor:    1,
+		ProtoMinor:    1,
+		Body:          io.NopCloser(bytes.NewBufferString(body)),
+		ContentLength: int64(len(body)),
+		Request:       req,
+		Header:        hdr,
+	}, nil
+}
+
+func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPolicy, readOnlyCacheDir string, disableNetwork bool) (*proxyserver.ProxyStats, error) {
 	if unixSocket == "" {
 		dir, err := os.MkdirTemp("", "cipd")
 		if err != nil {
@@ -101,6 +125,7 @@ func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPol
 	cliOpts := &cipd.ClientOptions{
 		ServiceURL:       "http://fake.example.com",
 		ReadOnlyCacheDir: readOnlyCacheDir,
+		DisableNetwork:   disableNetwork,
 	}
 	env := environ.FromCtx(ctx)
 	env.Remove(cipd.EnvCacheDir)
@@ -119,11 +144,17 @@ func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPol
 	if err != nil {
 		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad auth options: %w", err))
 	}
-	httpClient, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
-	if err != nil {
-		logging.Warningf(ctx, "Failed to initialize authenticated client: %s", err)
-		logging.Warningf(ctx, "Starting proxy in anonymous mode. Package fetches requiring authentication will fail.")
-		httpClient = http.DefaultClient
+	var httpClient *http.Client
+	if cliOpts.DisableNetwork {
+		httpClient = &http.Client{
+			Transport: disabledRoundTripper{},
+		}
+	} else {
+		if httpClient, err = auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client(); err != nil {
+			logging.Warningf(ctx, "Failed to initialize authenticated client: %s", err)
+			logging.Warningf(ctx, "Starting proxy in anonymous mode. Package fetches requiring authentication will fail.")
+			httpClient = http.DefaultClient
+		}
 	}
 	return runProxyImpl(ctx, unixSocket, policy, httpClient, cliOpts.ReadOnlyCacheDir)
 }
