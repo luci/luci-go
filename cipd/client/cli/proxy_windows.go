@@ -27,6 +27,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
 
-func runProxyImpl(context.Context, string, *proxypb.Policy, *http.Client) (*proxyserver.ProxyStats, error) {
+func runProxyImpl(context.Context, string, *proxypb.Policy, *http.Client, string) (*proxyserver.ProxyStats, error) {
 	return nil, errors.New("cipd proxy is not implemented on Windows")
 }

@@ -16,6 +16,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -29,7 +30,9 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
 
+	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 	"go.chromium.org/luci/cipd/common/cipderr"
@@ -52,6 +55,8 @@ func cmdProxy(params Parameters) *subcommands.Command {
 			c.authFlags.RegisterADCFlags(&c.Flags)
 			c.Flags.StringVar(&c.unixSocket, "unix-socket", "", "Unix domain socket path to serve the proxy on (default to a temp file).")
 			c.Flags.StringVar(&c.proxyPolicy, "proxy-policy", "-", "Path to a text protobuf file with cipd.proxy.Policy message (or - for reading from stdin).")
+			c.Flags.StringVar(&c.readOnlyCacheDir, "read-only-cache-dir", "",
+				fmt.Sprintf(`Directory for a shared read-only cache (can also be set by %s env var). Prepared with "cipd cache-prepare".`, cipd.EnvReadOnlyCacheDir))
 			return c
 		},
 	}
@@ -61,8 +66,9 @@ type proxyRun struct {
 	cipdSubcommand
 	authFlags authcli.Flags
 
-	unixSocket  string // -unix-socket flag
-	proxyPolicy string // -proxy-policy flag
+	unixSocket       string // -unix-socket flag
+	proxyPolicy      string // -proxy-policy flag
+	readOnlyCacheDir string // -read-only-cache-dir flag
 }
 
 func (c *proxyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -70,10 +76,10 @@ func (c *proxyRun) Run(a subcommands.Application, args []string, env subcommands
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(runProxy(ctx, c.authFlags, c.unixSocket, c.proxyPolicy))
+	return c.done(runProxy(ctx, c.authFlags, c.unixSocket, c.proxyPolicy, c.readOnlyCacheDir))
 }
 
-func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPolicy string) (*proxyserver.ProxyStats, error) {
+func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPolicy, readOnlyCacheDir string) (*proxyserver.ProxyStats, error) {
 	if unixSocket == "" {
 		dir, err := os.MkdirTemp("", "cipd")
 		if err != nil {
@@ -86,6 +92,25 @@ func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPol
 		}()
 		unixSocket = filepath.Join(dir, "proxy.unix")
 	}
+
+	// We use ClientOptions to handle the parsing of ReadOnlyCacheDir, including
+	// the restriction that if specified via the env, it MUST be absolute.
+	//
+	// CIPD_CACHE_DIR is unused by the proxy and cannot be the same as the
+	// CIPD_READ_ONLY_CACHE_DIR value, so unset it in the env.
+	cliOpts := &cipd.ClientOptions{
+		ServiceURL:       "http://fake.example.com",
+		ReadOnlyCacheDir: readOnlyCacheDir,
+	}
+	env := environ.FromCtx(ctx)
+	env.Remove(cipd.EnvCacheDir)
+	if err := cliOpts.LoadFromEnv(env.SetInCtx(ctx)); err != nil {
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("loading client envvars: %w", err))
+	}
+	if err := cliOpts.Normalize(); err != nil {
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("normalizing client envvars: %w", err))
+	}
+
 	policy, err := readProxyPolicy(ctx, proxyPolicy)
 	if err != nil {
 		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad proxy policy file: %w", err))
@@ -100,7 +125,7 @@ func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPol
 		logging.Warningf(ctx, "Starting proxy in anonymous mode. Package fetches requiring authentication will fail.")
 		httpClient = http.DefaultClient
 	}
-	return runProxyImpl(ctx, unixSocket, policy, httpClient)
+	return runProxyImpl(ctx, unixSocket, policy, httpClient, cliOpts.ReadOnlyCacheDir)
 }
 
 func readProxyPolicy(ctx context.Context, path string) (*proxypb.Policy, error) {

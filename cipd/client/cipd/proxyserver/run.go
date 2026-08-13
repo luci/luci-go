@@ -30,6 +30,8 @@ import (
 
 	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
 	logpb "go.chromium.org/luci/cipd/api/cipd/v1/logpb"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
 
@@ -49,6 +51,8 @@ type ProxyParams struct {
 	AccessLog func(ctx context.Context, entry *logpb.AccessLogEntry)
 	// CASOpLog is called to record number of bytes passed through the CAS proxy.
 	CASOpLog func(ctx context.Context, op *CASOp)
+	// ReadOnlyCacheDir is an optional directory for a shared read-only cache.
+	ReadOnlyCacheDir string
 }
 
 // Run runs the CIPD proxy until SIGTERM.
@@ -77,6 +81,21 @@ func Run(ctx context.Context, params ProxyParams) error {
 		return errors.Fmt("failed to initialize unix socket: %w", err)
 	}
 
+	var vc *internal.VersionCache
+	var ic *internal.InstanceCache
+	if params.ReadOnlyCacheDir != "" {
+		vc = &internal.VersionCache{
+			FS:             fs.NewFileSystem(params.ReadOnlyCacheDir, ""),
+			Tags:           internal.DisableWrite,
+			FileObjectRefs: internal.DisableWrite,
+			Refs:           internal.DisableWrite,
+		}
+		ic = &internal.InstanceCache{
+			FS:                 fs.NewFileSystem(filepath.Join(params.ReadOnlyCacheDir, "instances"), ""),
+			PassiveWritePolicy: internal.DisablePassiveWrites,
+		}
+	}
+
 	obfuscator := NewCASURLObfuscator()
 
 	srv := &Server{
@@ -86,6 +105,8 @@ func Run(ctx context.Context, params ProxyParams) error {
 			RemoteFactory:    DefaultRemoteFactory(params.AuthenticatingClient),
 			CASURLObfuscator: obfuscator,
 			UserAgent:        params.UserAgent,
+			VersionCache:     vc,
+			InstanceCache:    ic,
 		},
 		Storage: &casgrpcpb.UnimplementedStorageServer{},
 		UnaryServerInterceptors: []grpc.UnaryServerInterceptor{
@@ -93,7 +114,7 @@ func Run(ctx context.Context, params ProxyParams) error {
 			UnimplementedProxyInterceptor(),
 		},
 		CASURLObfuscator: obfuscator,
-		CAS:              NewProxyCAS(params.Policy, params.CASOpLog, nil),
+		CAS:              NewProxyCAS(params.Policy, params.CASOpLog, ic),
 	}
 
 	stop := signals.HandleInterrupt(func() {
