@@ -30,7 +30,7 @@ message BlobWithSHA256 {
 // same tags may point to different instances on different services.
 message VersionCache {
   message Entry {
-    string service     = 4; // e.g. 'chrome-infra-packages.appspot.com'
+    string service     = 4; // e.g. 'https://chrome-infra-packages.appspot.com'
     string package     = 1; // name of a tagged CIPD package
     string tag         = 2; // the tag, e.g. 'k:v'
     string instance_id = 3; // the instance ID it resolves to
@@ -40,7 +40,7 @@ message VersionCache {
   repeated Entry entries = 1;
 
   message FileEntry {
-    string service     = 5; // e.g. 'chrome-infra-packages.appspot.com'
+    string service     = 5; // e.g. 'https://chrome-infra-packages.appspot.com'
     string package     = 1; // name of a CIPD package containing the file
     string instance_id = 2; // identifier of the CIPD package instance
     string file_name   = 3; // file name inside the package, POSIX-style slashes
@@ -49,7 +49,7 @@ message VersionCache {
   repeated FileEntry file_entries = 2;
 
   message RefEntry {
-    string service     = 5; // e.g. 'chrome-infra-packages.appspot.com'
+    string service     = 5; // e.g. 'https://chrome-infra-packages.appspot.com'
     string package     = 1; // name of a referenced CIPD package
     string ref         = 2; // the ref, e.g. 'latest'
     string instance_id = 3; // the instance ID it resolves to

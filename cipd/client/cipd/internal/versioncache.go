@@ -70,8 +70,10 @@ const (
 //   - 'immutable' tags in the form (serviceURL, package, tag) -> instance ID.
 //   - mutable refs in the form (serviceURL, package, ref) -> (instance ID,
 //     capture time)
-//   - hashes of files-in-instaance in the form (serviceURL, package,
+//   - hashes of files-in-instance in the form (serviceURL, package,
 //     instance ID) -> file name -> file hash.
+//
+// NOTE: serviceURL must have the form <service>://<hostname>.
 //
 // Instance tags should not be detached, so the client keeps them indefinitely.
 // Service admins can detach them, but they are aware of the fact that the

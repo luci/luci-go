@@ -225,7 +225,7 @@ type VersionCache_Entry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Service    string `protobuf:"bytes,4,opt,name=service,proto3" json:"service,omitempty"`                         // e.g. 'chrome-infra-packages.appspot.com'
+	Service    string `protobuf:"bytes,4,opt,name=service,proto3" json:"service,omitempty"`                         // e.g. 'https://chrome-infra-packages.appspot.com'
 	Package    string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`                         // name of a tagged CIPD package
 	Tag        string `protobuf:"bytes,2,opt,name=tag,proto3" json:"tag,omitempty"`                                 // the tag, e.g. 'k:v'
 	InstanceId string `protobuf:"bytes,3,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"` // the instance ID it resolves to
@@ -296,7 +296,7 @@ type VersionCache_FileEntry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Service    string `protobuf:"bytes,5,opt,name=service,proto3" json:"service,omitempty"`                         // e.g. 'chrome-infra-packages.appspot.com'
+	Service    string `protobuf:"bytes,5,opt,name=service,proto3" json:"service,omitempty"`                         // e.g. 'https://chrome-infra-packages.appspot.com'
 	Package    string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`                         // name of a CIPD package containing the file
 	InstanceId string `protobuf:"bytes,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"` // identifier of the CIPD package instance
 	FileName   string `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`       // file name inside the package, POSIX-style slashes
@@ -375,7 +375,7 @@ type VersionCache_RefEntry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Service    string                 `protobuf:"bytes,5,opt,name=service,proto3" json:"service,omitempty"`                         // e.g. 'chrome-infra-packages.appspot.com'
+	Service    string                 `protobuf:"bytes,5,opt,name=service,proto3" json:"service,omitempty"`                         // e.g. 'https://chrome-infra-packages.appspot.com'
 	Package    string                 `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`                         // name of a referenced CIPD package
 	Ref        string                 `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`                                 // the ref, e.g. 'latest'
 	InstanceId string                 `protobuf:"bytes,3,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"` // the instance ID it resolves to
