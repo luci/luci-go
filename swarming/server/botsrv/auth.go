@@ -104,7 +104,7 @@ func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth
 					return logs, errors.Fmt("LUCI token CA %d is not in the expected CA list for host %q", tok.CA, hostID)
 				}
 			}
-			authMethodForMon, authConditionForMon = "luci_token", "-"
+			authMethodForMon, authConditionForMon = "luci_token_secure", "-"
 
 		case ba.RequireGceVmToken != nil:
 			tok := openid.GetGoogleComputeTokenInfo(ctx)
