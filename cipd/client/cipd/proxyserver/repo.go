@@ -27,12 +27,15 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
+	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -53,6 +56,8 @@ type ProxyRepositoryServer struct {
 	CASURLObfuscator *CASURLObfuscator
 	// UserAgent is the proxy's user agent, appended to the client's user agent.
 	UserAgent string
+	// VersionCache is an optional read-only version cache.
+	VersionCache *internal.VersionCache
 
 	m       sync.RWMutex
 	remotes map[string]repogrpcpb.RepositoryClient
@@ -145,6 +150,7 @@ func (s *ProxyRepositoryServer) ResolveVersion(ctx context.Context, req *repopb.
 		return nil, deniedByPolicy("ResolveVersion", "")
 	}
 
+	var isTag bool
 	switch {
 	case common.ValidateInstanceID(req.Version, common.AnyHash) == nil:
 		// Instance IDs are always allowed. Resolving them is a noop. In fact the
@@ -158,14 +164,38 @@ func (s *ProxyRepositoryServer) ResolveVersion(ctx context.Context, req *repopb.
 		if !policy.AllowTags {
 			return nil, deniedByPolicy("ResolveVersion", "tags are not allowed (resolving %s@%s)", req.Package, req.Version)
 		}
+		isTag = true
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "bad version %q: not an instance ID, a ref or a tag", req.Version)
 	}
 
-	remote, _, err := s.remote(ctx)
+	remote, host, err := s.remote(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	if s.VersionCache != nil {
+		serviceURL := "https://" + host
+		var pin common.Pin
+		var err error
+		if isTag {
+			pin, err = s.VersionCache.ResolveTag(ctx, serviceURL, req.Package, req.Version)
+		} else {
+			pin, err = s.VersionCache.ResolveRef(ctx, serviceURL, req.Package, req.Version)
+		}
+		if err == nil && pin.InstanceID == "" {
+			err = errors.New("missing")
+		}
+		if err != nil {
+			logging.Warningf(ctx, "version cache lookup for %q %q@%q: %s", serviceURL, req.Package, req.Version, err)
+		} else {
+			return &repopb.Instance{
+				Package:  req.Package,
+				Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+			}, nil
+		}
+	}
+
 	return remote.ResolveVersion(s.callCtx(ctx), req)
 }
 

@@ -16,6 +16,7 @@ package proxyserver
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -31,7 +32,10 @@ import (
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
+	"go.chromium.org/luci/cipd/common"
 )
 
 func TestProxyRepositoryServer(t *testing.T) {
@@ -147,13 +151,157 @@ func TestProxyRepositoryServer(t *testing.T) {
 	})
 }
 
+func TestProxyRepositoryServer_VersionCache(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	vc := &internal.VersionCache{
+		FS: fs.NewFileSystem(t.TempDir(), ""),
+	}
+
+	cachedTagRef := &caspb.ObjectRef{
+		HashAlgo:  caspb.HashAlgo_SHA256,
+		HexDigest: strings.Repeat("a", 64),
+	}
+	cachedTagIID := common.ObjectRefToInstanceID(cachedTagRef)
+	assert.NoErr(t, vc.AddTag(ctx, "https://allowed", common.Pin{
+		PackageName: "some/pkg",
+		InstanceID:  cachedTagIID,
+	}, "cached:tag"))
+
+	cachedRefRef := &caspb.ObjectRef{
+		HashAlgo:  caspb.HashAlgo_SHA256,
+		HexDigest: strings.Repeat("b", 64),
+	}
+	cachedRefIID := common.ObjectRefToInstanceID(cachedRefRef)
+	assert.NoErr(t, vc.AddRef(ctx, "https://allowed", common.Pin{
+		PackageName: "some/pkg",
+		InstanceID:  cachedRefIID,
+	}, "cached-ref"))
+
+	assert.NoErr(t, vc.Flush(ctx))
+
+	remoteRepo := &repoImpl{}
+	remote := &prpctest.Server{}
+	repogrpcpb.RegisterRepositoryServer(remote, remoteRepo)
+	remote.Start(ctx)
+	defer remote.Close()
+
+	policy := &proxypb.Policy{
+		AllowedRemotes: []string{"allowed"},
+		ResolveVersion: &proxypb.Policy_ResolveVersionPolicy{
+			AllowTags: true,
+			AllowRefs: true,
+		},
+	}
+
+	local := &prpctest.Server{}
+	repogrpcpb.RegisterRepositoryServer(local, &ProxyRepositoryServer{
+		Policy: policy,
+		RemoteFactory: func(ctx context.Context, hostname string) (grpc.ClientConnInterface, error) {
+			assert.That(t, hostname, should.Equal("allowed"))
+			return remote.NewClient()
+		},
+		CASURLObfuscator: NewCASURLObfuscator(),
+		VersionCache:     vc,
+	})
+	local.UnaryServerInterceptor = func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		md, _ := metadata.FromIncomingContext(ctx)
+		if val := md.Get("fake-authority"); len(val) != 0 {
+			md.Set(":authority", val...)
+		}
+		return handler(metadata.NewIncomingContext(ctx, md), req)
+	}
+	local.Start(ctx)
+	defer local.Close()
+
+	callCtx := func(target string) context.Context {
+		return metadata.NewOutgoingContext(ctx, metadata.MD{
+			"fake-authority": {target},
+		})
+	}
+
+	prpcC, err := local.NewClient()
+	assert.NoErr(t, err)
+	repoC := repogrpcpb.NewRepositoryClient(prpcC)
+
+	t.Run("Resolve cached tag (no remote call)", func(t *testing.T) {
+		remoteRepo.callCount = 0
+		resp, err := repoC.ResolveVersion(callCtx("allowed"), &repopb.ResolveVersionRequest{
+			Package: "some/pkg",
+			Version: "cached:tag",
+		})
+		assert.NoErr(t, err)
+		assert.That(t, resp, should.Match(&repopb.Instance{
+			Package:  "some/pkg",
+			Instance: cachedTagRef,
+		}))
+		assert.That(t, remoteRepo.callCount, should.Equal(0))
+	})
+
+	t.Run("Resolve cached ref (no remote call)", func(t *testing.T) {
+		remoteRepo.callCount = 0
+		resp, err := repoC.ResolveVersion(callCtx("allowed"), &repopb.ResolveVersionRequest{
+			Package: "some/pkg",
+			Version: "cached-ref",
+		})
+		assert.NoErr(t, err)
+		assert.That(t, resp, should.Match(&repopb.Instance{
+			Package:  "some/pkg",
+			Instance: cachedRefRef,
+		}))
+		assert.That(t, remoteRepo.callCount, should.Equal(0))
+	})
+
+	t.Run("Resolve uncached tag (calls remote)", func(t *testing.T) {
+		remoteRepo.callCount = 0
+		resp, err := repoC.ResolveVersion(callCtx("allowed"), &repopb.ResolveVersionRequest{
+			Package: "some/pkg",
+			Version: "uncached:tag",
+		})
+		assert.NoErr(t, err)
+		assert.That(t, resp, should.Match(&repopb.Instance{
+			Package: "some/pkg",
+			Instance: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
+				HexDigest: "fake-digest",
+			},
+		}))
+		assert.That(t, remoteRepo.callCount, should.Equal(1))
+	})
+
+	t.Run("Policy check precedes cache: disallowed ref", func(t *testing.T) {
+		policy.ResolveVersion.AllowRefs = false
+		defer func() { policy.ResolveVersion.AllowRefs = true }()
+
+		_, err := repoC.ResolveVersion(callCtx("allowed"), &repopb.ResolveVersionRequest{
+			Package: "some/pkg",
+			Version: "cached-ref",
+		})
+		assert.That(t, status.Code(err), should.Equal(codes.PermissionDenied))
+		assert.That(t, err, should.ErrLike("refs are not allowed"))
+	})
+
+	t.Run("Policy check precedes cache: disallowed remote", func(t *testing.T) {
+		_, err := repoC.ResolveVersion(callCtx("disallowed"), &repopb.ResolveVersionRequest{
+			Package: "some/pkg",
+			Version: "cached:tag",
+		})
+		assert.That(t, status.Code(err), should.Equal(codes.PermissionDenied))
+		assert.That(t, err, should.ErrLike(`host "disallowed" is not allowed`))
+	})
+}
+
 type repoImpl struct {
 	repogrpcpb.UnimplementedRepositoryServer
 
 	lastUserAgent string
+	callCount     int
 }
 
 func (r *repoImpl) ResolveVersion(ctx context.Context, req *repopb.ResolveVersionRequest) (*repopb.Instance, error) {
+	r.callCount++
 	r.lastUserAgent = ""
 	if val := metadata.ValueFromIncomingContext(ctx, "user-agent"); len(val) > 0 {
 		r.lastUserAgent = val[0]
