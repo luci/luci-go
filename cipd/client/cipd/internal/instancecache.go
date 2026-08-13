@@ -315,6 +315,9 @@ func (c *InstanceCache) Close(ctx context.Context) {
 //
 // If you need to access multiple instances concurrently, see
 // [ManagedInstanceCache].
+//
+// Note that only pin.InstanceID is required for cache hits. This is used for
+// using the instance cache in read-only mode where a miss is OK.
 func (c *InstanceCache) OpenAsSource(ctx context.Context, service string, pin common.Pin) (src pkg.Source, fetched bool, err error) {
 	c.maybeLaunch(ctx)
 
@@ -360,9 +363,13 @@ func (c *InstanceCache) AllInstanceIDs(ctx context.Context, forceSync bool) ([]s
 
 // openOrFetch either opens an existing instance file or writes a new one.
 func (c *InstanceCache) openOrFetch(ctx context.Context, service string, pin common.Pin) (*os.File, bool, error) {
-	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
+	// NOTE: We allow opening instances by instance-id-only, if they are in the
+	// cache, so split the validation for the package name until after a cache
+	// miss when we need to pass it through to the fetcher.
+	if err := common.ValidateInstanceID(pin.InstanceID, common.AnyHash); err != nil {
 		return nil, false, err
 	}
+	var validatedPackageName bool
 
 	path, err := c.FS.RootRelToAbs(pin.InstanceID)
 	if err != nil {
@@ -388,6 +395,13 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, service string, pin com
 
 		if c.Fetcher == nil {
 			return nil, false, errors.Fmt("missing %s: %w", pin, ErrNoFetcher)
+		}
+
+		if !validatedPackageName {
+			if err := common.ValidatePackageName(pin.PackageName); err != nil {
+				return nil, false, err
+			}
+			validatedPackageName = true
 		}
 
 		// No such cached instance, download it.

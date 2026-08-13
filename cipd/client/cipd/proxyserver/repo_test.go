@@ -16,6 +16,8 @@ package proxyserver
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -131,7 +133,7 @@ func TestProxyRepositoryServer(t *testing.T) {
 			Package: "some/pkg",
 			Instance: &caspb.ObjectRef{
 				HashAlgo:  caspb.HashAlgo_SHA256,
-				HexDigest: "fake-digest",
+				HexDigest: strings.Repeat("a", 64),
 			},
 		})
 		assert.NoErr(t, err)
@@ -293,6 +295,107 @@ func TestProxyRepositoryServer_VersionCache(t *testing.T) {
 	})
 }
 
+func TestProxyRepositoryServer_InstanceCache(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	instDir := t.TempDir()
+	ic := &internal.InstanceCache{
+		FS: fs.NewFileSystem(instDir, ""),
+	}
+
+	cachedRef := &caspb.ObjectRef{
+		HashAlgo:  caspb.HashAlgo_SHA256,
+		HexDigest: strings.Repeat("c", 64),
+	}
+	cachedIID := common.ObjectRefToInstanceID(cachedRef)
+	assert.NoErr(t, os.WriteFile(filepath.Join(instDir, cachedIID), []byte("local instance"), 0666))
+
+	remoteRepo := &repoImpl{}
+	remote := &prpctest.Server{}
+	repogrpcpb.RegisterRepositoryServer(remote, remoteRepo)
+	remote.Start(ctx)
+	defer remote.Close()
+
+	policy := &proxypb.Policy{
+		AllowedRemotes: []string{"allowed"},
+		GetInstanceUrl: &proxypb.Policy_GetInstanceURLPolicy{},
+	}
+
+	obfuscator := NewCASURLObfuscator()
+	local := &prpctest.Server{}
+	repogrpcpb.RegisterRepositoryServer(local, &ProxyRepositoryServer{
+		Policy: policy,
+		RemoteFactory: func(ctx context.Context, hostname string) (grpc.ClientConnInterface, error) {
+			assert.That(t, hostname, should.Equal("allowed"))
+			return remote.NewClient()
+		},
+		CASURLObfuscator: obfuscator,
+		InstanceCache:    ic,
+	})
+	local.UnaryServerInterceptor = func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		md, _ := metadata.FromIncomingContext(ctx)
+		if val := md.Get("fake-authority"); len(val) != 0 {
+			md.Set(":authority", val...)
+		}
+		return handler(metadata.NewIncomingContext(ctx, md), req)
+	}
+	local.Start(ctx)
+	defer local.Close()
+
+	callCtx := func(target string) context.Context {
+		return metadata.NewOutgoingContext(ctx, metadata.MD{
+			"fake-authority": {target},
+		})
+	}
+
+	prpcC, err := local.NewClient()
+	assert.NoErr(t, err)
+	repoC := repogrpcpb.NewRepositoryClient(prpcC)
+
+	t.Run("GetInstanceURL for cached instance (no remote call)", func(t *testing.T) {
+		remoteRepo.callCount = 0
+		resp, err := repoC.GetInstanceURL(callCtx("allowed"), &repopb.GetInstanceURLRequest{
+			Package:  "some/pkg",
+			Instance: cachedRef,
+		})
+		assert.NoErr(t, err)
+
+		original, err := obfuscator.Unobfuscate(resp.SignedUrl)
+		assert.NoErr(t, err)
+		assert.That(t, original.SignedUrl, should.Equal("local://"+cachedIID))
+		assert.That(t, remoteRepo.callCount, should.Equal(0))
+	})
+
+	t.Run("GetInstanceURL for uncached instance (calls remote)", func(t *testing.T) {
+		remoteRepo.callCount = 0
+		uncachedRef := &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
+			HexDigest: strings.Repeat("d", 64),
+		}
+		resp, err := repoC.GetInstanceURL(callCtx("allowed"), &repopb.GetInstanceURLRequest{
+			Package:  "some/pkg",
+			Instance: uncachedRef,
+		})
+		assert.NoErr(t, err)
+
+		original, err := obfuscator.Unobfuscate(resp.SignedUrl)
+		assert.NoErr(t, err)
+		assert.That(t, original.SignedUrl, should.Equal("http://cas.example.com/some/pkg"))
+		assert.That(t, remoteRepo.callCount, should.Equal(1))
+	})
+
+	t.Run("Policy check precedes cache: disallowed remote", func(t *testing.T) {
+		_, err := repoC.GetInstanceURL(callCtx("disallowed"), &repopb.GetInstanceURLRequest{
+			Package:  "some/pkg",
+			Instance: cachedRef,
+		})
+		assert.That(t, status.Code(err), should.Equal(codes.PermissionDenied))
+		assert.That(t, err, should.ErrLike(`host "disallowed" is not allowed`))
+	})
+}
+
 type repoImpl struct {
 	repogrpcpb.UnimplementedRepositoryServer
 
@@ -316,6 +419,7 @@ func (r *repoImpl) ResolveVersion(ctx context.Context, req *repopb.ResolveVersio
 }
 
 func (r *repoImpl) GetInstanceURL(ctx context.Context, req *repopb.GetInstanceURLRequest) (*caspb.ObjectURL, error) {
+	r.callCount++
 	return &caspb.ObjectURL{
 		SignedUrl: "http://cas.example.com/" + req.Package,
 	}, nil

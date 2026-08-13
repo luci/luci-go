@@ -19,12 +19,19 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
+	"go.chromium.org/luci/cipd/common"
 )
 
 func TestProxyCAS(t *testing.T) {
@@ -48,7 +55,7 @@ func TestProxyCAS(t *testing.T) {
 		}
 
 		var lastOp *CASOp
-		proxy := NewProxyCAS(policy, func(ctx context.Context, op *CASOp) { lastOp = op })
+		proxy := NewProxyCAS(policy, func(ctx context.Context, op *CASOp) { lastOp = op }, nil)
 
 		rr := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "http://doesntmatter.example.com/also-ignored", nil)
@@ -67,7 +74,7 @@ func TestProxyCAS(t *testing.T) {
 		policy := &proxypb.Policy{
 			GetInstanceUrl: &proxypb.Policy_GetInstanceURLPolicy{},
 		}
-		proxy := NewProxyCAS(policy, nil)
+		proxy := NewProxyCAS(policy, nil, nil)
 
 		rr := httptest.NewRecorder()
 		req := httptest.NewRequest("PUT", "http://doesntmatter.example.com/also-ignored", nil)
@@ -80,7 +87,7 @@ func TestProxyCAS(t *testing.T) {
 
 	t.Run("Proxy denied", func(t *testing.T) {
 		policy := &proxypb.Policy{}
-		proxy := NewProxyCAS(policy, nil)
+		proxy := NewProxyCAS(policy, nil, nil)
 
 		rr := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "http://doesntmatter.example.com/also-ignored", nil)
@@ -89,5 +96,75 @@ func TestProxyCAS(t *testing.T) {
 		assert.That(t, rr.Result().StatusCode, should.Equal(http.StatusForbidden))
 		body, _ := io.ReadAll(rr.Result().Body)
 		assert.That(t, string(body), should.Equal("Forbidden by the CIPD proxy\n"))
+	})
+
+	t.Run("Proxy local instance", func(t *testing.T) {
+		instDir := t.TempDir()
+		instCache := &internal.InstanceCache{
+			FS: fs.NewFileSystem(instDir, ""),
+		}
+
+		iid := common.ObjectRefToInstanceID(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
+			HexDigest: strings.Repeat("c", 64),
+		})
+		const instData = "local instance package content"
+		assert.NoErr(t, os.WriteFile(filepath.Join(instDir, iid), []byte(instData), 0666))
+
+		policy := &proxypb.Policy{
+			GetInstanceUrl: &proxypb.Policy_GetInstanceURLPolicy{},
+		}
+
+		var lastOp *CASOp
+		proxy := NewProxyCAS(policy, func(ctx context.Context, op *CASOp) { lastOp = op }, instCache)
+
+		t.Run("OK", func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "http://doesntmatter.example.com/also-ignored", nil)
+			proxy(&proxypb.ProxiedCASObject{SignedUrl: "local://" + iid}, rr, req)
+
+			assert.That(t, rr.Result().StatusCode, should.Equal(http.StatusOK))
+			body, _ := io.ReadAll(rr.Result().Body)
+			assert.That(t, string(body), should.Equal(instData))
+			// No remote CASOp reported for local cache hits.
+			assert.That(t, lastOp, should.Match[*CASOp](nil))
+		})
+
+		t.Run("Missing from cache", func(t *testing.T) {
+			missingIID := common.ObjectRefToInstanceID(&caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
+				HexDigest: strings.Repeat("d", 64),
+			})
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "http://doesntmatter.example.com/also-ignored", nil)
+			proxy(&proxypb.ProxiedCASObject{SignedUrl: "local://" + missingIID}, rr, req)
+
+			assert.That(t, rr.Result().StatusCode, should.Equal(http.StatusBadRequest))
+		})
+
+		t.Run("Bad instance ID", func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "http://doesntmatter.example.com/also-ignored", nil)
+			proxy(&proxypb.ProxiedCASObject{SignedUrl: "local://not-a-valid-iid"}, rr, req)
+
+			assert.That(t, rr.Result().StatusCode, should.Equal(http.StatusBadRequest))
+		})
+	})
+
+	t.Run("Proxy local instance without cache configured", func(t *testing.T) {
+		policy := &proxypb.Policy{
+			GetInstanceUrl: &proxypb.Policy_GetInstanceURLPolicy{},
+		}
+		proxy := NewProxyCAS(policy, nil, nil)
+
+		iid := common.ObjectRefToInstanceID(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
+			HexDigest: strings.Repeat("c", 64),
+		})
+		rr := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "http://doesntmatter.example.com/also-ignored", nil)
+		proxy(&proxypb.ProxiedCASObject{SignedUrl: "local://" + iid}, rr, req)
+
+		assert.That(t, rr.Result().StatusCode, should.Equal(http.StatusInternalServerError))
 	})
 }

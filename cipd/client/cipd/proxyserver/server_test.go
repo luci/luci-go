@@ -20,8 +20,10 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,8 +36,11 @@ import (
 	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/proxyclient"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
+	"go.chromium.org/luci/cipd/common"
 )
 
 const (
@@ -123,6 +128,111 @@ func TestServer(t *testing.T) {
 	assert.NoErr(t, resp.Body.Close())
 
 	assert.That(t, string(body), should.Equal(fakeCASBody))
+}
+
+func TestServer_WithReadOnlyCache(t *testing.T) {
+	t.Parallel()
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping on Windows: no unix sockets")
+	}
+
+	ctx := context.Background()
+
+	cacheDir := t.TempDir()
+	instDir := filepath.Join(cacheDir, "instances")
+	assert.NoErr(t, os.MkdirAll(instDir, 0777))
+
+	cachedRef := &caspb.ObjectRef{
+		HashAlgo:  caspb.HashAlgo_SHA256,
+		HexDigest: strings.Repeat("e", 64),
+	}
+	cachedIID := common.ObjectRefToInstanceID(cachedRef)
+	const pkgContent = "fully cached package instance payload"
+	assert.NoErr(t, os.WriteFile(filepath.Join(instDir, cachedIID), []byte(pkgContent), 0666))
+
+	ic := &internal.InstanceCache{
+		FS: fs.NewFileSystem(instDir, ""),
+	}
+	vc := &internal.VersionCache{
+		FS: fs.NewFileSystem(cacheDir, ""),
+	}
+	assert.NoErr(t, vc.AddTag(ctx, "https://"+fakeHost, common.Pin{
+		PackageName: fakePackage,
+		InstanceID:  cachedIID,
+	}, "latest:tag"))
+	assert.NoErr(t, vc.Flush(ctx))
+
+	socket := filepath.Join(t.TempDir(), "sock")
+	listener, err := net.Listen("unix", socket)
+	assert.NoErr(t, err)
+
+	pt, err := proxyclient.NewProxyTransport((&url.URL{
+		Scheme: "unix",
+		Path:   socket,
+	}).String())
+	assert.NoErr(t, err)
+	defer func() { assert.NoErr(t, pt.Close()) }()
+
+	httpC := &http.Client{Transport: pt.RoundTripper}
+	repoC := repogrpcpb.NewRepositoryClient(&prpc.Client{
+		C:    httpC,
+		Host: fakeHost,
+		Options: &prpc.Options{
+			Insecure: true,
+		},
+	})
+
+	policy := &proxypb.Policy{
+		AllowedRemotes: []string{fakeHost},
+		ResolveVersion: &proxypb.Policy_ResolveVersionPolicy{
+			AllowTags: true,
+		},
+		GetInstanceUrl: &proxypb.Policy_GetInstanceURLPolicy{},
+	}
+	ob := NewCASURLObfuscator()
+	repoS := &ProxyRepositoryServer{
+		Policy:           policy,
+		CASURLObfuscator: ob,
+		RemoteFactory:    DefaultRemoteFactory(http.DefaultClient),
+		VersionCache:     vc,
+		InstanceCache:    ic,
+	}
+
+	srv := &Server{
+		Listener:         listener,
+		Repository:       repoS,
+		Storage:          &casgrpcpb.UnimplementedStorageServer{},
+		CASURLObfuscator: ob,
+		CAS:              NewProxyCAS(policy, nil, ic),
+	}
+
+	go func() { assert.NoErr(t, srv.Serve(ctx)) }()
+	defer func() { assert.NoErr(t, srv.Stop(ctx)) }()
+
+	// 1. ResolveVersion via proxy -> should resolve from VersionCache.
+	resVers, err := repoC.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
+		Package: fakePackage,
+		Version: "latest:tag",
+	})
+	assert.NoErr(t, err)
+	assert.That(t, resVers.Instance, should.Match(cachedRef))
+
+	// 2. GetInstanceURL via proxy -> should return local:// obfuscated URL.
+	resURL, err := repoC.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
+		Package:  fakePackage,
+		Instance: resVers.Instance,
+	})
+	assert.NoErr(t, err)
+	assert.That(t, resURL.SignedUrl, should.HavePrefix("http://cipd.local/obj/"))
+
+	// 3. HTTP GET via proxy -> should serve cached file content directly.
+	resp, err := httpC.Get(resURL.SignedUrl)
+	assert.NoErr(t, err)
+	defer resp.Body.Close()
+	assert.That(t, resp.StatusCode, should.Equal(http.StatusOK))
+	body, err := io.ReadAll(resp.Body)
+	assert.NoErr(t, err)
+	assert.That(t, string(body), should.Equal(pkgContent))
 }
 
 type repoSrv struct {

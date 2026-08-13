@@ -58,6 +58,8 @@ type ProxyRepositoryServer struct {
 	UserAgent string
 	// VersionCache is an optional read-only version cache.
 	VersionCache *internal.VersionCache
+	// InstanceCache is an optional read-only instance cache.
+	InstanceCache *internal.InstanceCache
 
 	m       sync.RWMutex
 	remotes map[string]repogrpcpb.RepositoryClient
@@ -206,10 +208,33 @@ func (s *ProxyRepositoryServer) GetInstanceURL(ctx context.Context, req *repopb.
 		return nil, deniedByPolicy("GetInstanceURL", "")
 	}
 
-	remote, _, err := s.remote(ctx)
+	if err := common.ValidateObjectRef(req.Instance, common.AnyHash); err != nil {
+		return nil, err
+	}
+
+	remote, host, err := s.remote(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	if s.InstanceCache != nil {
+		iid := common.ObjectRefToInstanceID(req.Instance)
+		src, _, err := s.InstanceCache.OpenAsSource(ctx, string(host), common.Pin{
+			PackageName: req.GetPackage(),
+			InstanceID:  iid,
+		})
+		if err == nil {
+			src.Close(ctx, false)
+			resp := &caspb.ObjectURL{
+				SignedUrl: fmt.Sprintf("local://%s", iid),
+			}
+			if err := s.obfuscateObjectURL(resp); err != nil {
+				return nil, err
+			}
+			return resp, nil
+		}
+	}
+
 	resp, err := remote.GetInstanceURL(s.callCtx(ctx), req)
 	if err != nil {
 		return nil, err

@@ -93,7 +93,7 @@ func Run(ctx context.Context, params ProxyParams) error {
 			UnimplementedProxyInterceptor(),
 		},
 		CASURLObfuscator: obfuscator,
-		CAS:              NewProxyCAS(params.Policy, params.CASOpLog),
+		CAS:              NewProxyCAS(params.Policy, params.CASOpLog, nil),
 	}
 
 	stop := signals.HandleInterrupt(func() {

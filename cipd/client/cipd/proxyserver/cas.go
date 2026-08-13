@@ -16,14 +16,19 @@ package proxyserver
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"sync/atomic"
+	"time"
 
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // CASOp records how many bytes passed through the CAS proxy.
@@ -36,7 +41,7 @@ type CASOp struct {
 var ctxKey = "target *url.URL"
 
 // NewProxyCAS creates a CAS proxy handler.
-func NewProxyCAS(policy *proxypb.Policy, opLog func(ctx context.Context, op *CASOp)) CASHandler {
+func NewProxyCAS(policy *proxypb.Policy, opLog func(ctx context.Context, op *CASOp), instanceCache *internal.InstanceCache) CASHandler {
 	rp := &httputil.ReverseProxy{
 		Rewrite: func(pr *httputil.ProxyRequest) {
 			targetURL := pr.In.Context().Value(&ctxKey).(*url.URL)
@@ -58,6 +63,27 @@ func NewProxyCAS(policy *proxypb.Policy, opLog func(ctx context.Context, op *CAS
 		if err != nil {
 			logging.Errorf(ctx, "Failed to parse GCS URL: %s", err)
 			http.Error(rw, "Broken target of the proxy call", http.StatusInternalServerError)
+			return
+		}
+
+		if parsed.Scheme == "local" {
+			if instanceCache == nil {
+				logging.Errorf(ctx, "Forbidden call to the CIPD CAS proxy: local instance requested without instance cache")
+				http.Error(rw, "Local instance cache not configured", http.StatusInternalServerError)
+				return
+			}
+			instanceID := strings.TrimPrefix(obj.SignedUrl, "local://")
+			src, _, err := instanceCache.OpenAsSource(ctx, "", common.Pin{
+				PackageName: "<unknown pkg>",
+				InstanceID:  instanceID,
+			})
+			if err != nil {
+				logging.Errorf(ctx, "Cannot load instance %q from cache: %s", instanceID, err)
+				http.Error(rw, "Invalid instance ID", http.StatusBadRequest)
+				return
+			}
+			defer src.Close(ctx, false)
+			http.ServeContent(rw, req, instanceID, time.Time{}, io.NewSectionReader(src, 0, src.Size()))
 			return
 		}
 
