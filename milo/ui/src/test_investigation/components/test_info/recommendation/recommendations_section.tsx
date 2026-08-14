@@ -21,6 +21,7 @@ import { DateTime } from 'luxon';
 import { useCallback, useMemo } from 'react';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { Timestamp } from '@/common/components/timestamp';
 import { requestSurvey } from '@/fleet/utils/survey';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useInvocation, useProject } from '@/test_investigation/context';
@@ -28,13 +29,6 @@ import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 
 import { AnalysisSubsection } from './analysis_subsection';
 import { NextStepsSubsection } from './next_steps_subsection';
-// Helper to convert ISO string to Luxon DateTime (can be shared or local)
-// Assuming proto timestamps are ISO strings here.
-function isoStringToLuxonDateTime(isoString?: string): DateTime | undefined {
-  if (!isoString) return undefined;
-  const dt = DateTime.fromISO(isoString, { zone: 'utc' });
-  return dt.isValid ? dt : undefined;
-}
 
 interface RecommendationsSectionProps {
   expanded: boolean;
@@ -62,18 +56,13 @@ export function RecommendationsSection({
   );
 
   const now = useMemo(() => DateTime.now(), []);
-  const lastUpdateTime = useMemo(() => {
-    if (!invocation?.finalizeTime) {
-      return 'N/A';
-    }
-    const finalizeDt = isoStringToLuxonDateTime(invocation.finalizeTime);
-
-    if (finalizeDt && finalizeDt.isValid && now.isValid) {
-      const formattedDt = `${finalizeDt.hour}:${finalizeDt.minute}, ${finalizeDt.day}/${finalizeDt.month}/${finalizeDt.year} UTC`;
-      return formattedDt;
-    }
-    return 'N/A';
-  }, [invocation.finalizeTime, now]);
+  const finalizeDt = useMemo(
+    () =>
+      invocation?.finalizeTime
+        ? DateTime.fromISO(invocation.finalizeTime)
+        : undefined,
+    [invocation?.finalizeTime],
+  );
 
   return (
     <Box sx={{ flex: expanded ? { md: 9 } : { md: 3 } }}>
@@ -113,7 +102,12 @@ export function RecommendationsSection({
               Suggested next steps
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Last update: {lastUpdateTime}
+              Last update:{' '}
+              {finalizeDt?.isValid ? (
+                <Timestamp datetime={finalizeDt} />
+              ) : (
+                'N/A'
+              )}
             </Typography>
           </Box>
           {expanded && (
