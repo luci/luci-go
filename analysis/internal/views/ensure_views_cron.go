@@ -110,7 +110,15 @@ var datasetViewQueries = map[string]map[string]*bigquery.TableMetadata{
 				" results in postsubmit in the last 90 days. See go/luci-test-variant-analysis-design.",
 			ViewQuery: segmentsUnexpectedRealtimeQuery,
 			Labels:    map[string]string{bq.MetadataVersionKey: "4"},
-		}},
+		},
+	},
+	"android": {
+		"ants_invocations": &bigquery.TableMetadata{
+			Description: "Contains Android test invocations exported from AnTS.",
+			ViewQuery:   `SELECT * FROM internal.ants_invocations`,
+			Labels:      map[string]string{bq.MetadataVersionKey: "1"},
+		},
+	},
 }
 
 type makeTableMetadata func(luciProject string) *bigquery.TableMetadata
@@ -237,19 +245,28 @@ func projectWhereClause(luciProject string) string {
 }
 
 func ensureViews(ctx context.Context, bqClient *bigquery.Client) error {
+	// Get datasets for LUCI projects.
+	datasetIDs, err := projectDatasets(ctx, bqClient)
+	if err != nil {
+		return errors.Fmt("get LUCI project datasets: %w", err)
+	}
+	datasetSet := make(map[string]bool)
+	for _, id := range datasetIDs {
+		datasetSet[id] = true
+	}
+
 	// Create views for individual datasets.
 	for datasetID, tableSpecs := range datasetViewQueries {
+		if datasetID != bqutil.InternalDatasetID && !datasetSet[datasetID] {
+			// Skip views for datasets that do not exist in this GCP project.
+			continue
+		}
 		for tableName, spec := range tableSpecs {
 			table := bqClient.Dataset(datasetID).Table(tableName)
 			if err := bq.EnsureTable(ctx, table, spec, bq.UpdateMetadata(), bq.RefreshViewInterval(time.Hour)); err != nil {
 				return errors.Fmt("ensure view %s: %w", tableName, err)
 			}
 		}
-	}
-	// Get datasets for LUCI projects.
-	datasetIDs, err := projectDatasets(ctx, bqClient)
-	if err != nil {
-		return errors.Fmt("get LUCI project datasets: %w", err)
 	}
 	// Create views that is common to each LUCI project's dataset.
 	for _, projectDatasetID := range datasetIDs {
