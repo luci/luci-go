@@ -69,6 +69,27 @@ func (_ PluginIO) PluginCmd() string {
 	return fido2PluginExecutable
 }
 
+// Returns an error if ReAuth with the plugin will fail (i.e. there's an
+// obvious misconfiguration).
+func (p PluginIO) CheckAvailable(ctx context.Context) error {
+	cmd := p.PluginCmd()
+	if cmd == "" {
+		return errors.New("security key plugin isn't set")
+	}
+
+	logging.Debugf(ctx, "PluginIO.PluginCmd(): %v", cmd)
+	cmdName := strings.TrimSuffix(path.Base(cmd), path.Ext(cmd))
+
+	// Using SSH plugin.
+	if strings.EqualFold(cmdName, sshPluginExecutable) {
+		if err := pingSSHAgent(ctx); err != nil {
+			return errors.WrapIf(err, "LUCI SSH agent isn't usable")
+		}
+	}
+
+	return nil
+}
+
 // Dial and ping SSH Agent to check if it understoods ReAuth LUCI extension.
 // Returns an error if anything failed.
 func pingSSHAgent(ctx context.Context) error {
@@ -95,27 +116,6 @@ func pingSSHAgent(ctx context.Context) error {
 		} else {
 			// Other errors.
 			return err
-		}
-	}
-
-	return nil
-}
-
-// Returns an error if ReAuth with the plugin will fail (i.e. there's an
-// obvious misconfiguration).
-func (p PluginIO) CheckAvailable(ctx context.Context) error {
-	cmd := p.PluginCmd()
-	if cmd == "" {
-		return errors.New("security key plugin isn't set")
-	}
-
-	logging.Debugf(ctx, "PluginIO.PluginCmd(): %v", cmd)
-	cmdName := strings.TrimSuffix(path.Base(cmd), path.Ext(cmd))
-
-	// Using SSH plugin.
-	if strings.EqualFold(cmdName, sshPluginExecutable) {
-		if err := pingSSHAgent(ctx); err != nil {
-			return errors.WrapIf(err, "LUCI SSH agent isn't usable")
 		}
 	}
 
