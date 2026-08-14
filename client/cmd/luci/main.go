@@ -57,5 +57,9 @@ func getApplication() *cli.Application {
 }
 
 func main() {
-	os.Exit(subcommands.Run(getApplication(), nil))
+	args := os.Args[1:]
+	if len(args) == 1 && (args[0] == "-h" || args[0] == "--help" || args[0] == "-help") {
+		args = []string{"help"}
+	}
+	os.Exit(subcommands.Run(getApplication(), args))
 }
