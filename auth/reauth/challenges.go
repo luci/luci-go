@@ -31,10 +31,11 @@ func challengeHandlers(facetID string) map[string]challengeHandler {
 	}
 }
 
-// A challengeHandler handles a Reauth challenge.
+// A challengeHandler handles a ReAuth challenge.
 type challengeHandler interface {
-	// Checks if the handler is availablein the current execution environment
-	// (e.g. are the necessary environment variables set).
+	// Checks if the handler is available in the current execution
+	// environment (e.g. are the necessary environment variables
+	// set).
 	//
 	// Returns `nil` if the handler is available.
 	//
