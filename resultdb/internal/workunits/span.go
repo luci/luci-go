@@ -110,6 +110,7 @@ type WorkUnitRow struct {
 	ProducerResource        *pb.ProducerResource // Output-only fields in proto are not saved.
 	Tags                    []*pb.StringPair
 	Properties              *structpb.Struct
+	InheritedProperties     *structpb.Struct
 	Instructions            *pb.Instructions
 	ExtendedProperties      map[string]*structpb.Struct
 	ChildWorkUnits          []ID             // Output only.
@@ -127,6 +128,9 @@ func (w *WorkUnitRow) Clone() *WorkUnitRow {
 	}
 	if w.Properties != nil {
 		ret.Properties = proto.Clone(w.Properties).(*structpb.Struct)
+	}
+	if w.InheritedProperties != nil {
+		ret.InheritedProperties = proto.Clone(w.InheritedProperties).(*structpb.Struct)
 	}
 	if w.Instructions != nil {
 		ret.Instructions = proto.Clone(w.Instructions).(*pb.Instructions)
@@ -171,6 +175,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"ProducerResource":        spanutil.Compressed(pbutil.MustMarshal(pbutil.RemoveProducerResourceOutputOnlyFields(w.ProducerResource))),
 		"Tags":                    w.Tags,
 		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
+		"InheritedProperties":     spanutil.Compressed(pbutil.MustMarshal(w.InheritedProperties)),
 		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 	}
 	if w.ModuleID != nil {
@@ -432,7 +437,11 @@ func (b *MutationBuilder) Build() []*spanner.Mutation {
 	if len(b.values) > 2 {
 		b.values["LastUpdated"] = spanner.CommitTimestamp
 		mutations = append(mutations, spanutil.UpdateMap("WorkUnits", b.values))
-		mutations = append(mutations, spanutil.UpdateMap("Invocations", b.legacyInvocationValues))
+
+		// Only update Invocations if there are fields other than InvocationId.
+		if len(b.legacyInvocationValues) > 1 {
+			mutations = append(mutations, spanutil.UpdateMap("Invocations", b.legacyInvocationValues))
+		}
 
 		if b.rootInvocation != nil {
 			mutations = append(mutations, b.rootInvocation.Build()...)
@@ -482,6 +491,11 @@ func (b *MutationBuilder) UpdateDeadline(deadline time.Time) {
 func (b *MutationBuilder) UpdateProperties(properties *structpb.Struct) {
 	b.values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(properties))
 	b.legacyInvocationValues["Properties"] = spanutil.Compressed(pbutil.MustMarshal(properties))
+}
+
+// UpdateInheritedProperties updates the inherited properties of the work unit.
+func (b *MutationBuilder) UpdateInheritedProperties(properties *structpb.Struct) {
+	b.values["InheritedProperties"] = spanutil.Compressed(pbutil.MustMarshal(properties))
 }
 
 // UpdateTags updates the tags of the work unit.

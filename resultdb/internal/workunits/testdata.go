@@ -81,6 +81,11 @@ func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder
 					"key": structpb.NewStringValue("value"),
 				},
 			},
+			InheritedProperties: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"ikey": structpb.NewStringValue("ivalue"),
+				},
+			},
 			Instructions: &pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
@@ -249,6 +254,12 @@ func (b *Builder) WithProperties(p *structpb.Struct) *Builder {
 	return b
 }
 
+// WithInheritedProperties sets the inherited properties.
+func (b *Builder) WithInheritedProperties(p *structpb.Struct) *Builder {
+	b.row.InheritedProperties = p
+	return b
+}
+
 // WithInstructions sets the instructions.
 func (b *Builder) WithInstructions(i *pb.Instructions) *Builder {
 	b.row.Instructions = i
@@ -310,6 +321,7 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"ProducerResource":        spanutil.Compressed(pbutil.MustMarshal(pbutil.RemoveProducerResourceOutputOnlyFields(w.ProducerResource))),
 		"Tags":                    w.Tags,
 		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
+		"InheritedProperties":     spanutil.Compressed(pbutil.MustMarshal(w.InheritedProperties)),
 		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 		"ExtendedProperties":      spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
 	}

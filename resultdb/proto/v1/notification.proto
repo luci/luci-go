@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.resultdb.v1;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/work_unit.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto";
@@ -188,7 +189,7 @@ message TestResultsNotification {
 // Next id: 4
 message WorkUnitsNotification {
     // A message representing the work unit details.
-    // Next id: 3
+    // Next id: 4
     message WorkUnitDetails {
         // The name of the work unit.
         // Format: rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}.
@@ -197,6 +198,12 @@ message WorkUnitsNotification {
         // Whether the work unit or its contained test results have any
         // artifacts.
         bool has_artifacts = 2;
+
+        // Arbitrary JSON object that contains structured, domain-specific properties
+        // of the work unit that are inherited from its ancestors.
+        // In this notification payload, this field contains the fully calculated
+        // and merged properties from all ancestors.
+        google.protobuf.Struct merged_inherited_properties = 3;
     }
 
     // A list of work units that have been finalized.

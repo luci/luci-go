@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -272,6 +273,25 @@ func TestMutationBuilder(t *testing.T) {
 			expectedRootInv.SummaryMarkdown = "new summary"
 			expectedRootInv.LastUpdated = ct.In(time.UTC)
 			assert.That(t, readRootInv, should.Match(expectedRootInv))
+		})
+		t.Run("UpdateInheritedProperties", func(t *ftt.Test) {
+			b := NewMutationBuilder(id)
+			newProperties := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"new_ikey": structpb.NewStringValue("new_ivalue"),
+				},
+			}
+			b.UpdateInheritedProperties(newProperties)
+			ct, err := span.Apply(ctx, b.Build())
+			assert.Loosely(t, err, should.BeNil)
+
+			// Check the work unit.
+			readWU, err := Read(span.Single(ctx), id, AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectedWU := workUnit.Clone()
+			expectedWU.InheritedProperties = newProperties
+			expectedWU.LastUpdated = ct.In(time.UTC)
+			assert.That(t, readWU, should.Match(expectedWU))
 		})
 	})
 }

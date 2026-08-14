@@ -444,6 +444,11 @@ CREATE TABLE WorkUnits (
   -- See spanutil.Compressed type for details of compression.
   Properties BYTES(MAX),
 
+  -- A serialized then compressed google.protobuf.Struct that stores structured,
+  -- domain-specific properties of the work unit that are inherited from ancestors.
+  -- See spanutil.Compressed type for details of compression.
+  InheritedProperties BYTES(MAX),
+
   -- A serialized luci.resultdb.v1.Instructions describing instructions for this invocation.
   -- It may contains instructions for steps (for build-level invocation) and test results.
   -- It may contain instructions to test results directly contained in this invocation,

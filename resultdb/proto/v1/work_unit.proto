@@ -30,7 +30,7 @@ option java_multiple_files = true;
 // A process step that contributes results to a root invocation.
 // Work units contain test results, artifacts and exonerations. Work units may
 // also contain other work units and (legacy) invocations.
-// Next ID: 27.
+// Next ID: 28.
 message WorkUnit {
   // The resource name of this work unit.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}`
@@ -370,6 +370,29 @@ message WorkUnit {
   //
   // The serialized size must be <= 16 KB.
   google.protobuf.Struct properties = 15;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the work unit that are inherited by its descendants when they are
+  // exported to BigQuery on finalization.
+  //
+  // Inheritance of properties is only supported in BigQuery exports and pubsub.
+  // Reading this field in any ResultDB RPC will only read back the value set on
+  // this specific work unit; it will not calculate properties inherited from any
+  // ancestors.
+  //
+  // The value of this field is fixed at the moment the descendant work unit is
+  // exported, some arbitrary time after finalization of the descendant work
+  // unit. Thus it is the client's responsibility to ensure that the values for
+  // export are set on an ancestor work unit before any of its descendant work
+  // units are exported.
+  //
+  // Properties are interpreted and exported as JSON objects. If multiple
+  // ancestors in a chain specify a value for the same JSON path, the work unit
+  // closest to the leaf will overwrite the work unit closer to the root.
+  // Effectively the same as the typescript inherited = {...grandparent, ...parent}.
+  //
+  // Total size must be <= 16 KB.
+  google.protobuf.Struct inherited_properties = 27;
 
   // Additional JSON object(s) that contain additional structured data about the
   // work unit. Unlike `properties` this field is not included (denormalized)

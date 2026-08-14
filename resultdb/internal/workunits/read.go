@@ -579,6 +579,7 @@ func columnsToRead(tableAlias string, mask ReadMask) string {
 			%[1]s.ProducerResource,
 			%[1]s.Tags,
 			%[1]s.Properties,
+			%[1]s.InheritedProperties,
 			%[1]s.Instructions,
 			%[2]s
 			ARRAY(
@@ -600,6 +601,7 @@ func readRow(row *spanner.Row, mask ReadMask, b spanutil.Buffer) (*WorkUnitRow, 
 		workUnitID            string
 		producerResource      spanutil.Compressed
 		properties            spanutil.Compressed
+		inheritedProperties   spanutil.Compressed
 		instructions          spanutil.Compressed
 		extendedProperties    spanutil.Compressed
 		childWorkUnitIDs      []string
@@ -636,6 +638,7 @@ func readRow(row *spanner.Row, mask ReadMask, b spanutil.Buffer) (*WorkUnitRow, 
 		&producerResource,
 		&wu.Tags,
 		&properties,
+		&inheritedProperties,
 		&instructions,
 	}
 	if mask == AllFields {
@@ -674,6 +677,13 @@ func readRow(row *spanner.Row, mask ReadMask, b spanutil.Buffer) (*WorkUnitRow, 
 		wu.Properties = &structpb.Struct{}
 		if err := proto.Unmarshal(properties, wu.Properties); err != nil {
 			return nil, errors.Fmt("unmarshal properties for work unit %q: %w", wu.ID.Name(), err)
+		}
+	}
+
+	if len(inheritedProperties) > 0 {
+		wu.InheritedProperties = &structpb.Struct{}
+		if err := proto.Unmarshal(inheritedProperties, wu.InheritedProperties); err != nil {
+			return nil, errors.Fmt("unmarshal inherited properties for work unit %q: %w", wu.ID.Name(), err)
 		}
 	}
 
