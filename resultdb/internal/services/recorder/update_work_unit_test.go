@@ -274,6 +274,30 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 			})
 		})
 
+		t.Run("inherited_properties", func(t *ftt.Test) {
+			req.UpdateMask.Paths = []string{"inherited_properties"}
+
+			t.Run("valid (without @type)", func(t *ftt.Test) {
+				req.WorkUnit.InheritedProperties = &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key_1": structpb.NewStringValue("value_1"),
+					},
+				}
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
+				assert.Loosely(t, err, should.BeNil)
+			})
+
+			t.Run("too large", func(t *ftt.Test) {
+				req.WorkUnit.InheritedProperties = &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"a": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationProperties)),
+					},
+				}
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
+				assert.Loosely(t, err, should.ErrLike("work_unit: inherited_properties: the size of properties (16399) exceeds the maximum size of 16384 bytes"))
+			})
+		})
+
 		t.Run("extended_properties", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"extended_properties"}
 
@@ -709,21 +733,27 @@ func TestUpdateWorkUnit(t *testing.T) {
 				})
 			})
 
-			t.Run("deadline, properties, instructions, tags", func(t *ftt.Test) {
+			t.Run("deadline, properties, inherited_properties, instructions, tags", func(t *ftt.Test) {
 				newDeadline := pbutil.MustTimestampProto(now.Add(3 * time.Hour))
 				instruction := testutil.TestInstructions()
 				updateMask := &field_mask.FieldMask{
-					Paths: []string{"deadline", "properties", "instructions", "tags"},
+					Paths: []string{"deadline", "properties", "inherited_properties", "instructions", "tags"},
 				}
 				newProperties := testutil.TestStrictProperties()
+				newInheritedProperties := &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"new_inherited_key": structpb.NewStringValue("new_inherited_value"),
+					},
+				}
 				req := &pb.UpdateWorkUnitRequest{
 					WorkUnit: &pb.WorkUnit{
-						Name:              wuID.Name(),
-						Deadline:          newDeadline,
-						Properties:        newProperties,
-						Instructions:      instruction,
-						Tags:              []*pb.StringPair{{Key: "newkey", Value: "newvalue"}},
-						FinalizationState: pb.WorkUnit_FINALIZING,
+						Name:                wuID.Name(),
+						Deadline:            newDeadline,
+						Properties:          newProperties,
+						InheritedProperties: newInheritedProperties,
+						Instructions:        instruction,
+						Tags:                []*pb.StringPair{{Key: "newkey", Value: "newvalue"}},
+						FinalizationState:   pb.WorkUnit_FINALIZING,
 					},
 					UpdateMask: updateMask,
 					RequestId:  "test-request-id",
@@ -732,6 +762,7 @@ func TestUpdateWorkUnit(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				expectedWU.Deadline = newDeadline
 				expectedWU.Properties = newProperties
+				expectedWU.InheritedProperties = newInheritedProperties
 				expectedWU.Instructions = instructionutil.InstructionsWithNames(instruction, wuID.Name())
 				expectedWU.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
 				assertResponse(wu, expectedWU)
@@ -739,6 +770,7 @@ func TestUpdateWorkUnit(t *testing.T) {
 				// Validate work unit table.
 				expectedWURow.Deadline = newDeadline.AsTime()
 				expectedWURow.Properties = newProperties
+				expectedWURow.InheritedProperties = newInheritedProperties
 				expectedWURow.Instructions = instructionutil.InstructionsWithNames(instruction, wuID.Name())
 				expectedWURow.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
 				assertSpannerRows(expectedWURow)

@@ -112,6 +112,11 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 				mb.UpdateProperties(in.WorkUnit.Properties)
 				updatedRow.Properties = in.WorkUnit.Properties
 			}
+		case "inherited_properties":
+			if !proto.Equal(curWorkUnitRow.InheritedProperties, in.WorkUnit.InheritedProperties) {
+				mb.UpdateInheritedProperties(in.WorkUnit.InheritedProperties)
+				updatedRow.InheritedProperties = in.WorkUnit.InheritedProperties
+			}
 		case "tags":
 			if !pbutil.StringPairsEqual(curWorkUnitRow.Tags, in.WorkUnit.Tags) {
 				mb.UpdateTags(in.WorkUnit.Tags)
@@ -211,6 +216,10 @@ func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRe
 		case "properties":
 			if err := pbutil.ValidateWorkUnitProperties(req.WorkUnit.Properties); err != nil {
 				return errors.Fmt("work_unit: properties: %w", err)
+			}
+		case "inherited_properties":
+			if err := pbutil.ValidateWorkUnitInheritedProperties(req.WorkUnit.InheritedProperties); err != nil {
+				return errors.Fmt("work_unit: inherited_properties: %w", err)
 			}
 		case "extended_properties":
 			if err := pbutil.ValidateInvocationExtendedProperties(req.WorkUnit.ExtendedProperties); err != nil {

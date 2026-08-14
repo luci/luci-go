@@ -224,6 +224,11 @@ func validateWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceConfi
 			return errors.Fmt("properties: %w", err)
 		}
 	}
+	if wu.InheritedProperties != nil {
+		if err := pbutil.ValidateWorkUnitInheritedProperties(wu.InheritedProperties); err != nil {
+			return errors.Fmt("inherited_properties: %w", err)
+		}
+	}
 	if wu.ExtendedProperties != nil {
 		if err := pbutil.ValidateInvocationExtendedProperties(wu.ExtendedProperties); err != nil {
 			return errors.Fmt("extended_properties: %w", err)

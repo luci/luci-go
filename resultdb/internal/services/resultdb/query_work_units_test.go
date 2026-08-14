@@ -101,6 +101,7 @@ func TestQueryWorkUnits(t *testing.T) {
 			expectedRootWUMasked.ModuleId.ModuleVariant = nil
 			expectedRootWUMasked.Tags = nil
 			expectedRootWUMasked.Properties = nil
+			expectedRootWUMasked.InheritedProperties = nil
 			expectedRootWUMasked.Instructions = nil
 			expectedRootWUMasked.ExtendedProperties = nil
 			expectedRootWUMasked.IsMasked = true
@@ -110,6 +111,7 @@ func TestQueryWorkUnits(t *testing.T) {
 			expectedWU1Masked.ModuleId.ModuleVariant = nil
 			expectedWU1Masked.Tags = nil
 			expectedWU1Masked.Properties = nil
+			expectedWU1Masked.InheritedProperties = nil
 			expectedWU1Masked.Instructions = nil
 			expectedWU1Masked.ExtendedProperties = nil
 			expectedWU1Masked.IsMasked = true

@@ -302,6 +302,12 @@ func ValidateWorkUnitProperties(properties *structpb.Struct) error {
 	return validateProperties(properties, MaxSizeInvocationProperties, true)
 }
 
+// ValidateWorkUnitInheritedProperties returns a non-nil error if inherited properties is invalid
+// for a work unit.
+func ValidateWorkUnitInheritedProperties(properties *structpb.Struct) error {
+	return validateProperties(properties, MaxSizeInvocationProperties, false)
+}
+
 // ValidateWorkUnitProperties returns a non-nil error if properties is invalid
 // for a root invocation.
 func ValidateRootInvocationProperties(properties *structpb.Struct) error {

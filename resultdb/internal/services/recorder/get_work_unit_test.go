@@ -118,9 +118,10 @@ func TestGetWorkUnit(t *testing.T) {
 					Url:       "https://milo-prod/ui/b/123",
 				},
 				Tags:         rootWu.Tags,
-				Properties:   rootWu.Properties,
-				Instructions: rootWu.Instructions,
-				IsMasked:     false,
+				Properties:          rootWu.Properties,
+				InheritedProperties: rootWu.InheritedProperties,
+				Instructions:        rootWu.Instructions,
+				IsMasked:            false,
 				Etag:         `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 

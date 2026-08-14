@@ -80,6 +80,7 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		result.SummaryMarkdown = row.SummaryMarkdown
 		result.Tags = row.Tags
 		result.Properties = row.Properties
+		result.InheritedProperties = row.InheritedProperties
 		result.Instructions = row.Instructions
 		result.ModuleId = row.ModuleID
 		result.IsMasked = false

@@ -132,9 +132,10 @@ func TestBatchGetWorkUnits(t *testing.T) {
 					Url:       "https://milo-prod/ui/b/123",
 				},
 				Tags:         wu1.Tags,
-				Properties:   wu1.Properties,
-				Instructions: wu1.Instructions,
-				IsMasked:     false,
+				Properties:          wu1.Properties,
+				InheritedProperties: wu1.InheritedProperties,
+				Instructions:        wu1.Instructions,
+				IsMasked:            false,
 				Etag:         `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 			expectedWu2 := &pb.WorkUnit{
@@ -190,12 +191,14 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				expectedWu1.ModuleId.ModuleVariant = nil
 				expectedWu1.Tags = nil
 				expectedWu1.Properties = nil
+				expectedWu1.InheritedProperties = nil
 				expectedWu1.Instructions = nil
 				expectedWu1.ExtendedProperties = nil
 				expectedWu1.IsMasked = true
 
 				expectedWu2.Tags = nil
 				expectedWu2.Properties = nil
+				expectedWu2.InheritedProperties = nil
 				expectedWu2.Instructions = nil
 				expectedWu2.ExtendedProperties = nil
 				expectedWu2.IsMasked = true

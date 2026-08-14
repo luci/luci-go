@@ -342,6 +342,31 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("work_unit: properties: the size of properties (16448) exceeds the maximum size of 16384 bytes"))
 				})
 			})
+			t.Run("inherited_properties", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.WorkUnit.InheritedProperties = nil
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid (without @type)", func(t *ftt.Test) {
+					req.WorkUnit.InheritedProperties = &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key_1": structpb.NewStringValue("value_1"),
+						},
+					}
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("too large", func(t *ftt.Test) {
+					req.WorkUnit.InheritedProperties = &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"a": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationProperties)),
+						},
+					}
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("work_unit: inherited_properties: the size of properties (16399) exceeds the maximum size of 16384 bytes"))
+				})
+			})
 			t.Run("extended_properties", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.ExtendedProperties = nil
