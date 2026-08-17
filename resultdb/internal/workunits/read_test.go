@@ -224,7 +224,69 @@ func TestReadFunctions(t *testing.T) {
 				assert.That(t, err, should.ErrLike("ids[1]: workUnitID: unspecified"))
 			})
 		})
+		t.Run("ReadAncestorsBatch", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				t.Run("linear ancestors", func(t *ftt.Test) {
+					ids := []ID{
+						{RootInvocationID: rootInvID, WorkUnitID: "child1"},
+					}
+					roCtx, cancel := span.ReadOnlyTransaction(ctx)
+					defer cancel()
+					fetched, err := ReadAncestorsBatch(roCtx, ids, ExcludeExtendedProperties)
+					assert.Loosely(t, err, should.BeNil)
 
+					// Should fetch child1, work-unit-id, root
+					assert.That(t, len(fetched), should.Equal(3))
+					assert.Loosely(t, fetched[ids[0]], should.NotBeNil)
+					assert.Loosely(t, fetched[ID{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id"}], should.NotBeNil)
+					assert.Loosely(t, fetched[ID{RootInvocationID: rootInvID, WorkUnitID: "root"}], should.NotBeNil)
+				})
+
+				t.Run("shared ancestors", func(t *ftt.Test) {
+					ids := []ID{
+						{RootInvocationID: rootInvID, WorkUnitID: "child1"},
+						{RootInvocationID: rootInvID, WorkUnitID: "child2"},
+					}
+					roCtx, cancel := span.ReadOnlyTransaction(ctx)
+					defer cancel()
+					fetched, err := ReadAncestorsBatch(roCtx, ids, ExcludeExtendedProperties)
+					assert.Loosely(t, err, should.BeNil)
+
+					// Should fetch child1, child2, work-unit-id, root
+					assert.That(t, len(fetched), should.Equal(4))
+					assert.Loosely(t, fetched[ids[0]], should.NotBeNil)
+					assert.Loosely(t, fetched[ids[1]], should.NotBeNil)
+					assert.Loosely(t, fetched[ID{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id"}], should.NotBeNil)
+					assert.Loosely(t, fetched[ID{RootInvocationID: rootInvID, WorkUnitID: "root"}], should.NotBeNil)
+				})
+
+				t.Run("root node", func(t *ftt.Test) {
+					ids := []ID{
+						{RootInvocationID: rootInvID, WorkUnitID: "root"},
+					}
+					roCtx, cancel := span.ReadOnlyTransaction(ctx)
+					defer cancel()
+					fetched, err := ReadAncestorsBatch(roCtx, ids, ExcludeExtendedProperties)
+					assert.Loosely(t, err, should.BeNil)
+
+					// Should fetch root only
+					assert.That(t, len(fetched), should.Equal(1))
+					assert.Loosely(t, fetched[ids[0]], should.NotBeNil)
+				})
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				t.Run("start node missing", func(t *ftt.Test) {
+					ids := []ID{
+						{RootInvocationID: rootInvID, WorkUnitID: "non-existent"},
+					}
+					roCtx, cancel := span.ReadOnlyTransaction(ctx)
+					defer cancel()
+					_, err := ReadAncestorsBatch(roCtx, ids, ExcludeExtendedProperties)
+					assert.That(t, appstatus.Code(err), should.Equal(codes.NotFound))
+				})
+			})
+		})
 		t.Run("ReadRealm", func(t *ftt.Test) {
 			t.Run("happy path", func(t *ftt.Test) {
 				r, err := ReadRealm(span.Single(ctx), id)

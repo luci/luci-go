@@ -777,6 +777,84 @@ func ReadBatch(ctx context.Context, ids []ID, mask ReadMask) (ret []*WorkUnitRow
 	return ret, err
 }
 
+const spannerInClauseLimit = 10000
+
+// ReadAncestorsBatch fetches all ancestors of the given work units batch by batch,
+// minimizing Spanner round trips.
+// Returns a map of work unit IDs to their rows.
+// It fails if any of the start IDs or their ancestors (if specified) are not found.
+func ReadAncestorsBatch(ctx context.Context, startIDs []ID, mask ReadMask) (fetched map[ID]*WorkUnitRow, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadAncestorsBatch")
+	defer func() { tracing.End(ts, err) }()
+
+	if err := validateIDs(startIDs); err != nil {
+		return nil, err
+	}
+
+	fetched = make(map[ID]*WorkUnitRow)
+	toFetch := make(map[ID]struct{})
+	for _, id := range startIDs {
+		toFetch[id] = struct{}{}
+	}
+
+	depth := 0
+	for len(toFetch) > 0 {
+		if depth > MaxAncestorTraversalHeight {
+			return nil, appstatus.Errorf(codes.Internal, "max ancestor traversal height reached")
+		}
+
+		// Convert set to slice for processing.
+		var batchIDs []ID
+		for id := range toFetch {
+			batchIDs = append(batchIDs, id)
+		}
+
+		// Chunk batchIDs if it exceeds limit.
+		for i := 0; i < len(batchIDs); i += spannerInClauseLimit {
+			end := i + spannerInClauseLimit
+			if end > len(batchIDs) {
+				end = len(batchIDs)
+			}
+			chunk := batchIDs[i:end]
+
+			err := readBatchInternal(ctx, chunk, mask, func(wu *WorkUnitRow) error {
+				fetched[wu.ID] = wu
+				return nil
+			})
+			if err != nil {
+				return nil, errors.Fmt("read batch: %w", err)
+			}
+
+			// Verify all requested IDs in this chunk were found.
+			for _, id := range chunk {
+				if _, ok := fetched[id]; !ok {
+					return nil, appstatus.Errorf(codes.NotFound, "%q not found", id.Name())
+				}
+			}
+		}
+
+		// Prepare next batch.
+		toFetch = make(map[ID]struct{})
+		for _, id := range batchIDs {
+			row, ok := fetched[id]
+			if !ok {
+				continue
+			}
+			if row.ParentWorkUnitID.Valid {
+				parentID := ID{
+					RootInvocationID: row.ID.RootInvocationID,
+					WorkUnitID:       row.ParentWorkUnitID.StringVal,
+				}
+				if _, ok := fetched[parentID]; !ok {
+					toFetch[parentID] = struct{}{}
+				}
+			}
+		}
+		depth++
+	}
+	return fetched, nil
+}
+
 // CheckWorkUnitUpdateRequestsExist checks if the given work units have already been updated by the given user with the given request ID.
 // Returns a map of work unit IDs to a boolean indicating whether the update request exists.
 func CheckWorkUnitUpdateRequestsExist(ctx context.Context, ids []ID, updatedBy string, requestID string) (exists map[ID]bool, err error) {

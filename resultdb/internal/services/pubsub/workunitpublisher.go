@@ -17,6 +17,9 @@ package pubsub
 import (
 	"context"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
@@ -76,9 +79,7 @@ func (p *workUnitPublisher) handleWorkUnitPublisher(ctx context.Context) (err er
 }
 
 // workUnitsNotification constructs a WorkUnitsNotification message for the
-// given work units.
-// It checks if each work unit has artifacts and populates the HasArtifacts
-// field accordingly.
+// given work units, fully calculating and merging inherited properties from ancestors.
 func (p *workUnitPublisher) workUnitsNotification(ctx context.Context, rootInvID rootinvocations.ID, workUnitIDs []string) (*pb.WorkUnitsNotification, error) {
 	// Collect all invocation IDs to check.
 	invIDs := make(invocations.IDSet, len(workUnitIDs))
@@ -93,12 +94,38 @@ func (p *workUnitPublisher) workUnitsNotification(ctx context.Context, rootInvID
 		return nil, errors.Fmt("check artifacts for work units: %w", err)
 	}
 
+	// Local cache for merged properties.
+	propertyCache := make(map[workunits.ID]*structpb.Struct)
+
+	// 1. Batch fetch all ancestors using library function.
+	var startIDs []workunits.ID
+	for _, wuID := range workUnitIDs {
+		startIDs = append(startIDs, workunits.ID{RootInvocationID: rootInvID, WorkUnitID: wuID})
+	}
+
+	// Wrapped in ReadOnlyTransaction to avoid "closed transaction" errors across multiple levels.
+	roCtx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	fetchedWorkUnits, err := workunits.ReadAncestorsBatch(roCtx, startIDs, workunits.ExcludeExtendedProperties)
+	if err != nil {
+		return nil, err
+	}
+
 	workUnits := make([]*pb.WorkUnitsNotification_WorkUnitDetails, len(workUnitIDs))
 	for i, wuID := range workUnitIDs {
-		wuInvID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: wuID}.LegacyInvocationID()
+		wuInternalID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: wuID}
+		wuInvID := wuInternalID.LegacyInvocationID()
+
+		// Get merged properties from local cache/fetched map.
+		mergedProps, err := p.calculateMergedPropertiesLocal(wuInternalID, fetchedWorkUnits, propertyCache)
+		if err != nil {
+			return nil, err
+		}
+
 		workUnits[i] = &pb.WorkUnitsNotification_WorkUnitDetails{
-			WorkUnitName: pbutil.WorkUnitName(string(rootInvID), wuID),
-			HasArtifacts: hasArtifactsSet.Has(wuInvID),
+			WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID),
+			HasArtifacts:              hasArtifactsSet.Has(wuInvID),
+			MergedInheritedProperties: mergedProps,
 		}
 	}
 
@@ -106,4 +133,48 @@ func (p *workUnitPublisher) workUnitsNotification(ctx context.Context, rootInvID
 		WorkUnits:    workUnits,
 		ResultdbHost: p.resultDBHostname,
 	}, nil
+}
+
+// calculateMergedPropertiesLocal calculates the fully merged inherited properties
+// using the fetched work units map completely in memory.
+func (p *workUnitPublisher) calculateMergedPropertiesLocal(wuID workunits.ID, fetched map[workunits.ID]*workunits.WorkUnitRow, cache map[workunits.ID]*structpb.Struct) (*structpb.Struct, error) {
+	if merged, ok := cache[wuID]; ok {
+		return merged, nil
+	}
+
+	row, ok := fetched[wuID]
+	if !ok {
+		return nil, errors.Fmt("work unit %s not found in fetched map", wuID.Name())
+	}
+
+	merged := &structpb.Struct{Fields: make(map[string]*structpb.Value)}
+
+	if row.ParentWorkUnitID.Valid {
+		parentID := workunits.ID{
+			RootInvocationID: wuID.RootInvocationID,
+			WorkUnitID:       row.ParentWorkUnitID.StringVal,
+		}
+		parentMerged, err := p.calculateMergedPropertiesLocal(parentID, fetched, cache)
+		if err != nil {
+			return nil, err
+		}
+		if parentMerged != nil {
+			for k, v := range parentMerged.Fields {
+				merged.Fields[k] = proto.Clone(v).(*structpb.Value)
+			}
+		}
+	}
+
+	if row.InheritedProperties != nil {
+		for k, v := range row.InheritedProperties.Fields {
+			merged.Fields[k] = proto.Clone(v).(*structpb.Value)
+		}
+	}
+
+	if len(merged.Fields) == 0 {
+		merged = nil
+	}
+
+	cache[wuID] = merged
+	return merged, nil
 }

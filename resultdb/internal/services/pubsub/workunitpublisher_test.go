@@ -16,9 +16,9 @@ package pubsub
 
 import (
 	"testing"
-	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -42,6 +42,55 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
 
+		rootProps := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"root_key":   structpb.NewStringValue("root_val"),
+				"shared_key": structpb.NewStringValue("root_shared_val"),
+			},
+		}
+		wu1Props := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"wu1_key":    structpb.NewStringValue("wu1_val"),
+				"shared_key": structpb.NewStringValue("wu1_shared_val"),
+			},
+		}
+		wu2Props := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"wu2_key": structpb.NewStringValue("wu2_val"),
+			},
+		}
+
+		rootWU := workunits.NewBuilder(rootInvID, "root").WithMinimalFields().WithFinalizationState(pb.WorkUnit_FINALIZED).WithInheritedProperties(rootProps).Build()
+		wu1 := workunits.NewBuilder(rootInvID, "wu1").WithMinimalFields().WithParentWorkUnitID("root").WithFinalizationState(pb.WorkUnit_FINALIZED).WithInheritedProperties(wu1Props).Build()
+		wu2 := workunits.NewBuilder(rootInvID, "wu2").WithMinimalFields().WithParentWorkUnitID("root").WithFinalizationState(pb.WorkUnit_FINALIZED).WithInheritedProperties(wu2Props).Build()
+
+		successMutations := []*spanner.Mutation{}
+		successMutations = append(successMutations, workunits.InsertForTesting(rootWU)...)
+		successMutations = append(successMutations, workunits.InsertForTesting(wu1)...)
+		successMutations = append(successMutations, workunits.InsertForTesting(wu2)...)
+		successMutations = append(successMutations, spanutil.InsertMap("Artifacts", map[string]any{
+			"InvocationId": wuID1.LegacyInvocationID().RowID(),
+			"ParentId":     "",
+			"ArtifactId":   "a",
+			"ContentType":  "text/plain",
+			"Size":         100,
+		}))
+
+		expectedWU1Props := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"root_key":   structpb.NewStringValue("root_val"),
+				"wu1_key":    structpb.NewStringValue("wu1_val"),
+				"shared_key": structpb.NewStringValue("wu1_shared_val"),
+			},
+		}
+		expectedWU2Props := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"root_key":   structpb.NewStringValue("root_val"),
+				"wu2_key":    structpb.NewStringValue("wu2_val"),
+				"shared_key": structpb.NewStringValue("root_shared_val"),
+			},
+		}
+
 		testCases := []struct {
 			name                 string
 			rootInvBuilder       *rootinvocations.Builder
@@ -59,34 +108,19 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 				name:           "Success",
 				rootInvBuilder: rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL),
 				workUnitIDs:    []string{wuID1.WorkUnitID, wuID2.WorkUnitID},
-				extraMutations: []*spanner.Mutation{
-					spanutil.InsertMap("Invocations", map[string]any{
-						"InvocationId":             wuID1.LegacyInvocationID().RowID(),
-						"ShardId":                  0,
-						"State":                    pb.Invocation_FINALIZED,
-						"Realm":                    "testproject:testrealm",
-						"InvocationExpirationTime": time.Now().Add(time.Hour),
-						"CreateTime":               spanner.CommitTimestamp,
-						"Deadline":                 time.Now().Add(time.Hour),
-					}),
-					spanutil.InsertMap("Artifacts", map[string]any{
-						"InvocationId": wuID1.LegacyInvocationID().RowID(),
-						"ParentId":     "",
-						"ArtifactId":   "a",
-						"ContentType":  "text/plain",
-						"Size":         100,
-					}),
-				},
+				extraMutations: successMutations,
 				expectedNotification: &pb.WorkUnitsNotification{
 					ResultdbHost: rdbHost,
 					WorkUnits: []*pb.WorkUnitsNotification_WorkUnitDetails{
 						{
-							WorkUnitName: pbutil.WorkUnitName(string(rootInvID), wuID1.WorkUnitID),
-							HasArtifacts: true,
+							WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID1.WorkUnitID),
+							HasArtifacts:              true,
+							MergedInheritedProperties: expectedWU1Props,
 						},
 						{
-							WorkUnitName: pbutil.WorkUnitName(string(rootInvID), wuID2.WorkUnitID),
-							HasArtifacts: false,
+							WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID2.WorkUnitID),
+							HasArtifacts:              false,
+							MergedInheritedProperties: expectedWU2Props,
 						},
 					},
 				},
