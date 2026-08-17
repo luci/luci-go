@@ -90,7 +90,7 @@ func (p PluginIO) CheckAvailable(ctx context.Context) error {
 	return nil
 }
 
-// Dial and ping SSH Agent to check if it understoods ReAuth LUCI extension.
+// Dial and ping SSH Agent to check if it supports our ReAuth extension protocol.
 // Returns an error if anything failed.
 func pingSSHAgent(ctx context.Context) error {
 	d := DefaultAgentDialer{}
