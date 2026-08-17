@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/testresult"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
+	"go.chromium.org/luci/client/cmd/luci/workunit"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -44,6 +45,7 @@ func getApplication() *cli.Application {
 		Commands: []*subcommands.Command{
 			testresult.Cmd(af),
 			verdict.Cmd(af),
+			workunit.Cmd(af),
 
 			subcommands.Section("Authentication\n"),
 			authcli.SubcommandInfo(authOpts, "auth-info", false),
