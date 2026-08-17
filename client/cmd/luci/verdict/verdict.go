@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -38,7 +37,9 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "verdict <subcommand>",
 		ShortDesc: "Manage invocation test verdicts (combined variant outcomes)",
-		LongDesc:  "Manage invocation test verdicts. An 'invocation test verdict' (or simply test verdict) represents the combined outcome of all test results (retries) for a test variant within an invocation, evaluated alongside any test exonerations. For individual execution attempts, see 'luci test-result'.",
+		LongDesc: "Manage invocation test verdicts. An 'invocation test verdict' (or simply test verdict) represents the combined outcome of all test results (retries) for a test variant within an invocation, evaluated alongside any test exonerations. For individual execution attempts, see 'luci test-result'.\n\n" +
+			"Available subcommands:\n" +
+			"  get   Get details of an invocation test verdict (combined runs and exonerations)",
 		CommandRun: func() subcommands.CommandRun {
 			return &verdictRun{af: af}
 		},
@@ -51,21 +52,10 @@ type verdictRun struct {
 }
 
 func (r *verdictRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	app := &cli.Application{
-		Name:  "luci verdict",
-		Title: "Test verdicts management",
-		Commands: []*subcommands.Command{
-			GetCmd(r.af),
-			subcommands.CmdHelp,
-		},
-		Context: func(ctx context.Context) context.Context {
-			if m, ok := a.(cli.ContextModificator); ok {
-				return m.ModifyContext(ctx)
-			}
-			return ctx
-		},
-	}
-	return subcommands.Run(app, args)
+	return base.RunSubcommandApp(a, "luci verdict", "Test verdicts management", []*subcommands.Command{
+		GetCmd(r.af),
+		subcommands.CmdHelp,
+	}, args)
 }
 
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
@@ -79,6 +69,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.BoolVar(&r.showArtifacts, "show-artifacts", false, "Print content of artifacts embedded in run summary_html")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Additionally print test metadata, tags, and properties")
+			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
 		},
 	}
@@ -90,19 +81,11 @@ type verdictGetRun struct {
 	host          string
 	showArtifacts bool
 	showMetadata  bool
+	legacy        bool
 }
 
 func ParseVerdictName(name string) (invName, variantHash, testIDRegexp string, matchFunc func(*pb.TestResult) bool, err error) {
-	// Clean up domain if full URL was pasted
-	if idx := strings.Index(name, "invocations/"); idx != -1 {
-		name = name[idx:]
-	} else if idx := strings.Index(name, "rootInvocations/"); idx != -1 {
-		name = name[idx:]
-	}
-	// Strip query params or hash if present
-	if idx := strings.IndexAny(name, "?#"); idx != -1 {
-		name = name[:idx]
-	}
+	name = base.TrimResourceURL(name)
 
 	varIdx := strings.Index(name, "/variants/")
 	if varIdx == -1 {
@@ -155,12 +138,113 @@ func ParseVerdictName(name string) (invName, variantHash, testIDRegexp string, m
 	return "", "", "", nil, errors.New("invalid verdict name format: could not parse test ID or case name")
 }
 
-func QueryVerdictResultsAndExonerations(ctx context.Context, client pb.ResultDBClient, invName, variantHash, testIDRegexp string, matchFunc func(*pb.TestResult) bool) ([]*pb.TestResult, []*pb.TestExoneration, error) {
+// ResolveVerdictResults parses a target string (which may be a verdict URL, optionally containing
+// a ?result=<id> parameter) and returns the verdict's test results and the specific matched test result if any.
+func ResolveVerdictResults(ctx context.Context, client pb.ResultDBClient, target string, legacy bool) (results []*pb.TestResult, matched *pb.TestResult, err error) {
+	clean := target
+	resultID := ""
+	if u, err := url.Parse(target); err == nil && u.Query().Get("result") != "" {
+		resultID = u.Query().Get("result")
+		q := u.Query()
+		q.Del("result")
+		u.RawQuery = q.Encode()
+		clean = u.String()
+	}
+
+	clean = base.TrimResourceURL(clean)
+
+	invName, variantHash, testIDRegexp, matchFunc, err := ParseVerdictName(clean)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	results, _, err = QueryVerdictResultsAndExonerations(ctx, client, invName, variantHash, testIDRegexp, matchFunc, legacy)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(results) == 0 {
+		return nil, nil, errors.Fmt("no results found for verdict %q", clean)
+	}
+
+	if resultID == "" {
+		return results, results[0], nil
+	}
+
+	for _, tr := range results {
+		if tr.ResultId == resultID {
+			return results, tr, nil
+		}
+	}
+	return nil, nil, errors.Fmt("result ID %q not found in verdict (%d results available)", resultID, len(results))
+}
+
+// QueryVerdictResultsAndExonerations queries test results and exonerations for a verdict.
+// Defaults to querying as a root invocation using QueryTestVerdicts unless legacy is true.
+func QueryVerdictResultsAndExonerations(ctx context.Context, client pb.ResultDBClient, invName, variantHash, testIDRegexp string, matchFunc func(*pb.TestResult) bool, legacy bool) ([]*pb.TestResult, []*pb.TestExoneration, error) {
+	if legacy {
+		return queryLegacyInvocationVerdicts(ctx, client, invName, variantHash, testIDRegexp, matchFunc)
+	}
+	return queryRootInvocationVerdicts(ctx, client, invName, variantHash, matchFunc)
+}
+
+func queryRootInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, invName, variantHash string, matchFunc func(*pb.TestResult) bool) ([]*pb.TestResult, []*pb.TestExoneration, error) {
+	rootInvName := invName
+	if idx := strings.Index(rootInvName, "/workUnits/"); idx != -1 {
+		rootInvName = rootInvName[:idx]
+	}
+	rootInvName = "rootInvocations/" + base.NormalizeInvocation(rootInvName)
+
+	var verdictResults []*pb.TestResult
+	var exList []*pb.TestExoneration
+	pageToken := ""
+	for {
+		req := &pb.QueryTestVerdictsRequest{
+			Parent:    rootInvName,
+			View:      pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
+			PageSize:  1000,
+			PageToken: pageToken,
+		}
+		res, err := client.QueryTestVerdicts(ctx, req)
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "QueryTestVerdicts RPC failed for %s (if this is a legacy invocation, try with -legacy)", rootInvName)
+		}
+		for _, tv := range res.TestVerdicts {
+			matched := false
+			for _, tr := range tv.Results {
+				if tr.VariantHash == "" && tv.TestIdStructured != nil {
+					tr.VariantHash = tv.TestIdStructured.ModuleVariantHash
+				}
+				if tr.TestId == "" {
+					tr.TestId = tv.TestId
+				}
+				if tr.TestMetadata == nil {
+					tr.TestMetadata = tv.TestMetadata
+				}
+				if matchFunc(tr) {
+					verdictResults = append(verdictResults, tr)
+					matched = true
+				}
+			}
+			if matched {
+				exList = append(exList, tv.Exonerations...)
+			}
+		}
+		if res.NextPageToken == "" {
+			break
+		}
+		pageToken = res.NextPageToken
+	}
+	return verdictResults, exList, nil
+}
+
+func queryLegacyInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, invName, variantHash, testIDRegexp string, matchFunc func(*pb.TestResult) bool) ([]*pb.TestResult, []*pb.TestExoneration, error) {
+	legacyInvName := "invocations/" + base.NormalizeInvocation(invName)
+
 	var verdictResults []*pb.TestResult
 	pageToken := ""
 	for {
 		req := &pb.QueryTestResultsRequest{
-			Invocations: []string{invName},
+			Invocations: []string{legacyInvName},
 			PageSize:    1000,
 			PageToken:   pageToken,
 		}
@@ -171,7 +255,7 @@ func QueryVerdictResultsAndExonerations(ctx context.Context, client pb.ResultDBC
 		}
 		res, err := client.QueryTestResults(ctx, req)
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "QueryTestResults RPC failed")
+			return nil, nil, errors.Annotate(err, "QueryTestResults RPC failed for %s", legacyInvName)
 		}
 		for _, tr := range res.TestResults {
 			if matchFunc(tr) {
@@ -188,7 +272,7 @@ func QueryVerdictResultsAndExonerations(ctx context.Context, client pb.ResultDBC
 	pageToken = ""
 	for {
 		reqEx := &pb.QueryTestExonerationsRequest{
-			Invocations: []string{invName},
+			Invocations: []string{legacyInvName},
 			PageSize:    1000,
 			PageToken:   pageToken,
 		}
@@ -216,44 +300,51 @@ func QueryVerdictResultsAndExonerations(ctx context.Context, client pb.ResultDBC
 }
 
 func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" || arg == "-help" {
+			r.Flags.Usage()
+			return 0
+		}
+	}
 	ctx := cli.GetContext(a, r, env)
 	if len(args) != 1 {
 		fmt.Fprintf(os.Stderr, "Usage: luci verdict get <name>\n")
 		return 1
 	}
-	name := args[0]
+	name := strings.TrimSpace(args[0])
+	if name == "-" {
+		cd, err := base.LoadCache()
+		if err == nil && cd != nil && cd.Verdict != "" {
+			name = cd.Verdict
+		} else {
+			fmt.Fprintf(os.Stderr, "no previous verdict found in cache; please specify a verdict name or URL\n")
+			return 1
+		}
+	}
 
 	invName, variantHash, testIDRegexp, matchFunc, err := ParseVerdictName(name)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse verdict name %q: %s\n", name, err)
 		return 1
 	}
+	base.RecordVerdict(invName, name)
 
 	if err := r.af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 		return 1
 	}
 
-	httpClient, err := r.af.NewHTTPClient(ctx)
+	client, schemasClient, httpClient, err := r.af.NewResultDBClient(ctx, r.host)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create http client: %s\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
 		return 1
 	}
 
-	prpcClient := &prpc.Client{
-		C:       httpClient,
-		Host:    r.host,
-		Options: prpc.DefaultOptions(),
-	}
-	client := pb.NewResultDBPRPCClient(prpcClient)
-	schemasClient := pb.NewSchemasPRPCClient(prpcClient)
-
-	verdictResults, exList, err := QueryVerdictResultsAndExonerations(ctx, client, invName, variantHash, testIDRegexp, matchFunc)
+	verdictResults, exList, err := QueryVerdictResultsAndExonerations(ctx, client, invName, variantHash, testIDRegexp, matchFunc, r.legacy)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to query verdict: %s\n", err)
 		return 1
 	}
-
 	if len(verdictResults) == 0 {
 		fmt.Fprintf(os.Stderr, "no results found for verdict %q\n", name)
 		return 1
@@ -271,11 +362,7 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 }
 
 func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rdbClient pb.ResultDBClient, httpClient *http.Client, name string, g *VerdictGroup, showArtifacts, showMetadata bool) {
-	status := g.Status()
-	isExonerated := len(g.Exonerations) > 0 && (status == "FAILED" || status == "EXECUTION_ERRORED" || status == "PRECLUDED")
-	if isExonerated {
-		status = fmt.Sprintf("%s (EXONERATED)", status)
-	}
+	status := g.DisplayStatus()
 
 	fmt.Printf("Verdict Name: %s\n", name)
 	if len(g.Results) > 0 {
@@ -298,16 +385,51 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 			fmt.Printf("  - Reason: %s [%s]\n", reasonStr, ex.Reason)
 		}
 	}
-	fmt.Printf("Runs (%d):\n", len(g.Results))
-	for i, tr := range g.Results {
-		ctxStr := format.ParseInvocationContext(tr.Name)
-		fmt.Printf("  #%d %s in %s (%s)\n", i+1, tr.StatusV2, ctxStr, format.FormatDuration(tr.Duration))
-		fmt.Printf("     Result Name: %s (run 'luci test-result get <name>')\n", tr.Name)
-		if tr.FailureReason != nil && len(tr.FailureReason.Errors) > 0 {
-			fmt.Printf("     Error: %s\n", tr.FailureReason.Errors[0].Message)
+	type groupedRuns struct {
+		parent format.ParentGroup
+		items  []*pb.TestResult
+	}
+	var groups []groupedRuns
+	groupMap := make(map[string]int)
+
+	for _, tr := range g.Results {
+		pg := format.GetParentGroup(tr.Name)
+		idx, found := groupMap[pg.ID]
+		if !found {
+			idx = len(groups)
+			groupMap[pg.ID] = idx
+			groups = append(groups, groupedRuns{parent: pg})
 		}
-		if tr.SummaryHtml != "" {
-			fmt.Printf("     Summary:\n%s\n", format.FormatSummaryHTML(ctx, rdbClient, httpClient, tr.Name, tr.SummaryHtml, showArtifacts))
+		groups[idx].items = append(groups[idx].items, tr)
+	}
+
+	fmt.Printf("Runs (%d):\n", len(g.Results))
+	for _, grp := range groups {
+		runCountStr := ""
+		if len(grp.items) == 1 {
+			runCountStr = "1 run"
+		} else {
+			runCountStr = fmt.Sprintf("%d runs", len(grp.items))
+		}
+		fmt.Printf("  %s (%s):\n", grp.parent.Label, runCountStr)
+		for _, tr := range grp.items {
+			fmt.Printf("    - %s (%s) - result_id: %s\n", tr.StatusV2, format.FormatDuration(tr.Duration), tr.ResultId)
+			if tr.FailureReason != nil {
+				firstLine := format.FormatFailureReasonFirstLine(tr.FailureReason, 120)
+				if firstLine != "" {
+					fmt.Printf("      Error:   %s\n", firstLine)
+				}
+			}
+			if tr.SummaryHtml != "" {
+				if showArtifacts {
+					fmt.Printf("      Summary:\n%s\n", format.FormatSummaryHTML(ctx, rdbClient, httpClient, tr.Name, tr.SummaryHtml, showArtifacts))
+				} else {
+					firstLine := format.TruncateFirstLine(format.StripHTML(tr.SummaryHtml), 120)
+					if firstLine != "" {
+						fmt.Printf("      Summary: %s\n", firstLine)
+					}
+				}
+			}
 		}
 	}
 	if showMetadata && len(g.Results) > 0 {

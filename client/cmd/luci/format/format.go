@@ -15,6 +15,7 @@
 package format
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -27,8 +28,43 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/common/errors"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// FetchArtifactContent downloads the artifact content from fetchURL using an HTTP request with context.
+func FetchArtifactContent(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", fetchURL, nil)
+	if err != nil {
+		return errors.Annotate(err, "failed to create HTTP request")
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return errors.Annotate(err, "HTTP GET failed")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return errors.Fmt("HTTP GET failed with status %d: %s", resp.StatusCode, resp.Status)
+	}
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+// FetchArtifact fetches the full content of an artifact by its ResultDB resource name.
+func FetchArtifact(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, artName string) ([]byte, error) {
+	art, err := rdbClient.GetArtifact(ctx, &pb.GetArtifactRequest{Name: artName})
+	if err != nil {
+		return nil, errors.Annotate(err, "GetArtifact RPC failed")
+	}
+	if art.FetchUrl == "" {
+		return nil, errors.Fmt("artifact %q has no fetch URL", artName)
+	}
+	var buf bytes.Buffer
+	if err := FetchArtifactContent(ctx, httpClient, art.FetchUrl, &buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
 
 func PrintTestID(ctx context.Context, schemasClient pb.SchemasClient, res *pb.TestResult) {
 	st := res.TestIdStructured
@@ -79,9 +115,9 @@ func PrintTestID(ctx context.Context, schemasClient pb.SchemasClient, res *pb.Te
 	}
 }
 
-func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, resName, html string, showArtifacts bool) string {
+func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, resName, htmlStr string, showArtifacts bool) string {
 	re := regexp.MustCompile(`<text-artifact\s+([^>]+)>`)
-	html = re.ReplaceAllStringFunc(html, func(tag string) string {
+	htmlStr = re.ReplaceAllStringFunc(htmlStr, func(tag string) string {
 		match := re.FindStringSubmatch(tag)
 		if len(match) < 2 {
 			return tag
@@ -108,29 +144,17 @@ func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpCli
 		} else {
 			artName = resName + "/artifacts/" + artID
 		}
-		art, err := rdbClient.GetArtifact(ctx, &pb.GetArtifactRequest{Name: artName})
-		if err != nil || art.FetchUrl == "" {
-			return fmt.Sprintf("[Failed to fetch embedded artifact: %s]", artID)
-		}
-		resp, err := httpClient.Get(art.FetchUrl)
-		if err != nil || resp.StatusCode != http.StatusOK {
-			if resp != nil {
-				resp.Body.Close()
-			}
-			return fmt.Sprintf("[Failed to download embedded artifact: %s]", artID)
-		}
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
+		body, err := FetchArtifact(ctx, rdbClient, httpClient, artName)
 		if err != nil {
-			return fmt.Sprintf("[Failed to read embedded artifact: %s]", artID)
+			return fmt.Sprintf("[Failed to fetch embedded artifact: %s]", artID)
 		}
 		return fmt.Sprintf("\n--- Embedded Artifact: %s ---\n%s\n--- End Artifact ---", artID, string(body))
 	})
-	html = strings.ReplaceAll(html, "<br>", "\n")
-	html = strings.ReplaceAll(html, "<br/>", "\n")
-	html = strings.ReplaceAll(html, "<br />", "\n")
-	html = strings.ReplaceAll(html, "</p>", "\n")
-	return StripHTML(html)
+	htmlStr = strings.ReplaceAll(htmlStr, "<br>", "\n")
+	htmlStr = strings.ReplaceAll(htmlStr, "<br/>", "\n")
+	htmlStr = strings.ReplaceAll(htmlStr, "<br />", "\n")
+	htmlStr = strings.ReplaceAll(htmlStr, "</p>", "\n")
+	return StripHTML(htmlStr)
 }
 
 func PrintAdditionalMetadata(res *pb.TestResult) {
@@ -188,6 +212,106 @@ func ParseInvocationContext(resultName string) string {
 	return fmt.Sprintf("invocation %s", invID)
 }
 
+// FormatTestResultBreadcrumb returns a compact human-readable breadcrumb for a test result.
+// e.g. "Result 0c30c334-01920 in task 7a07b808bfa95b11"
+func FormatTestResultBreadcrumb(resultName string) string {
+	invLabel := ParseInvocationContext(resultName)
+	var resultID string
+	if idx := strings.Index(resultName, "/results/"); idx != -1 {
+		rest := resultName[idx+len("/results/"):]
+		if slashIdx := strings.Index(rest, "/"); slashIdx != -1 {
+			resultID = rest[:slashIdx]
+		} else {
+			resultID = rest
+		}
+	}
+	if resultID != "" && invLabel != "" {
+		return fmt.Sprintf("Result %s in %s", resultID, invLabel)
+	}
+	if resultID != "" {
+		return fmt.Sprintf("Result %s", resultID)
+	}
+	if invLabel != "" {
+		return invLabel
+	}
+	return resultName
+}
+
+// FormatWorkUnitBreadcrumb returns a compact human-readable breadcrumb for a work unit.
+// e.g. "Work Unit run-tests in build 8673802696052024673"
+func FormatWorkUnitBreadcrumb(wuName string) string {
+	invLabel := ParseInvocationContext(wuName)
+	var wuID string
+	if idx := strings.Index(wuName, "/workUnits/"); idx != -1 {
+		rest := wuName[idx+len("/workUnits/"):]
+		if slashIdx := strings.Index(rest, "/"); slashIdx != -1 {
+			wuID = rest[:slashIdx]
+		} else {
+			wuID = rest
+		}
+	}
+	if wuID != "" && invLabel != "" {
+		return fmt.Sprintf("Work Unit %s in %s", wuID, invLabel)
+	}
+	if wuID != "" {
+		return fmt.Sprintf("Work Unit %s", wuID)
+	}
+	if invLabel != "" {
+		return invLabel
+	}
+	return wuName
+}
+
+// ParentGroup holds grouping info for test results or artifacts.
+type ParentGroup struct {
+	Label string // e.g. "Task 7a07b808bfa95b11", "Work Unit run-tests", "build-867380...", "u-foo"
+	ID    string // canonical parent resource name or ID
+}
+
+// GetParentGroup determines the immediate parent task, work unit, or legacy invocation.
+// The label uses "Task" ONLY when the parent is actually a Swarming task; otherwise it
+// uses "Work Unit <id>" or the legacy invocation ID.
+func GetParentGroup(name string) ParentGroup {
+	if strings.Contains(name, "/workUnits/") {
+		idx := strings.Index(name, "/workUnits/")
+		rest := name[idx+len("/workUnits/"):]
+		wuID := rest
+		if slash := strings.Index(rest, "/"); slash != -1 {
+			wuID = rest[:slash]
+		}
+		parentName := name[:idx+len("/workUnits/")+len(wuID)]
+		return ParentGroup{
+			Label: fmt.Sprintf("Work Unit %s", wuID),
+			ID:    parentName,
+		}
+	}
+
+	if strings.HasPrefix(name, "invocations/") {
+		parts := strings.Split(name, "/")
+		if len(parts) >= 2 {
+			invID := parts[1]
+			parentName := "invocations/" + invID
+			if strings.HasPrefix(invID, "task-") {
+				taskParts := strings.Split(strings.TrimPrefix(invID, "task-"), "-")
+				taskID := taskParts[len(taskParts)-1]
+				return ParentGroup{
+					Label: fmt.Sprintf("Task %s", taskID),
+					ID:    parentName,
+				}
+			}
+			return ParentGroup{
+				Label: invID,
+				ID:    parentName,
+			}
+		}
+	}
+
+	return ParentGroup{
+		Label: name,
+		ID:    name,
+	}
+}
+
 func FormatVariant(v *pb.Variant) string {
 	if v == nil {
 		return ""
@@ -224,4 +348,127 @@ func StripHTML(s string) string {
 		}
 	}
 	return strings.TrimSpace(html.UnescapeString(b.String()))
+}
+
+func FormatSize(sizeBytes int64) string {
+	if sizeBytes < 0 {
+		return "0 B"
+	}
+	const unit = 1024
+	if sizeBytes < unit {
+		return fmt.Sprintf("%d B", sizeBytes)
+	}
+	div, exp := int64(unit), 0
+	for n := sizeBytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	prefixes := []string{"KiB", "MiB", "GiB", "TiB", "PiB"}
+	if exp < len(prefixes) {
+		return fmt.Sprintf("%.1f %s (%d bytes)", float64(sizeBytes)/float64(div), prefixes[exp], sizeBytes)
+	}
+	return fmt.Sprintf("%d bytes", sizeBytes)
+}
+
+// PrintFailureReason prints the failure reason error message(s) and stack trace(s).
+func PrintFailureReason(fr *pb.FailureReason, indent string) {
+	if fr == nil {
+		return
+	}
+	if len(fr.Errors) == 0 {
+		if fr.PrimaryErrorMessage != "" {
+			fmt.Printf("%sError:     %s\n", indent, fr.PrimaryErrorMessage)
+		}
+		return
+	}
+
+	for i, errItem := range fr.Errors {
+		errMsg := errItem.Message
+		if errMsg == "" && i == 0 && fr.PrimaryErrorMessage != "" {
+			errMsg = fr.PrimaryErrorMessage
+		}
+
+		if errMsg != "" {
+			var prefix string
+			if len(fr.Errors) > 1 {
+				prefix = fmt.Sprintf("%sError #%d: ", indent, i+1)
+			} else {
+				prefix = fmt.Sprintf("%sError:     ", indent)
+			}
+
+			lines := strings.Split(strings.TrimRight(errMsg, "\n"), "\n")
+			if len(lines) == 1 {
+				fmt.Printf("%s%s\n", prefix, lines[0])
+			} else {
+				fmt.Printf("%s\n", strings.TrimRight(prefix, " "))
+				for _, l := range lines {
+					fmt.Printf("%s  %s\n", indent, l)
+				}
+			}
+		}
+
+		if errItem.Trace != "" {
+			traceIndent := indent + "  "
+			fmt.Printf("%sStack Trace:\n", indent)
+			for _, l := range strings.Split(strings.TrimRight(errItem.Trace, "\n"), "\n") {
+				fmt.Printf("%s%s\n", traceIndent, l)
+			}
+		}
+	}
+}
+
+// TruncateFirstLine returns the first non-empty line of text, trimmed to maxLen characters with "..." if longer.
+func TruncateFirstLine(s string, maxLen int) string {
+	s = strings.TrimSpace(s)
+	if idx := strings.Index(s, "\n"); idx != -1 {
+		s = strings.TrimSpace(s[:idx])
+	}
+	if maxLen > 0 {
+		runes := []rune(s)
+		if len(runes) > maxLen {
+			return string(runes[:maxLen]) + "..."
+		}
+	}
+	return s
+}
+
+// FormatFailureReasonFirstLine extracts the first line of a failure reason for compact summary display.
+func FormatFailureReasonFirstLine(fr *pb.FailureReason, maxLen int) string {
+	if fr == nil {
+		return ""
+	}
+	msg := fr.PrimaryErrorMessage
+	if len(fr.Errors) > 0 && fr.Errors[0].Message != "" {
+		msg = fr.Errors[0].Message
+	}
+	if msg == "" && len(fr.Errors) > 0 && fr.Errors[0].Trace != "" {
+		msg = fr.Errors[0].Trace
+	}
+	return TruncateFirstLine(msg, maxLen)
+}
+
+// PrintIndentedArtifactList prints a formatted list of artifacts indented by the specified prefix.
+func PrintIndentedArtifactList(indent string, artifacts []*pb.Artifact) {
+	if len(artifacts) == 0 {
+		fmt.Printf("%s  (no artifacts)\n\n", indent)
+		return
+	}
+	for _, art := range artifacts {
+		fmt.Printf("%s  - artifact_id: %s\n", indent, art.ArtifactId)
+		if art.SizeBytes > 0 {
+			fmt.Printf("%s    size:        %s\n", indent, FormatSize(art.SizeBytes))
+		}
+		if art.ContentType != "" {
+			fmt.Printf("%s    type:        %s\n", indent, art.ContentType)
+		}
+		if art.ArtifactType != "" {
+			fmt.Printf("%s    category:    %s\n", indent, art.ArtifactType)
+		}
+	}
+	fmt.Println()
+}
+
+// PrintArtifactList prints a formatted list of artifacts.
+func PrintArtifactList(artifacts []*pb.Artifact) {
+	PrintIndentedArtifactList("", artifacts)
 }

@@ -72,3 +72,12 @@ func (g *VerdictGroup) Status() string {
 	}
 	return "STATUS_UNSPECIFIED"
 }
+
+// DisplayStatus returns the human-readable verdict status, annotated with (EXONERATED) if applicable.
+func (g *VerdictGroup) DisplayStatus() string {
+	s := g.Status()
+	if len(g.Exonerations) > 0 && (s == "FAILED" || s == "EXECUTION_ERRORED" || s == "PRECLUDED") {
+		return s + " (EXONERATED)"
+	}
+	return s
+}
