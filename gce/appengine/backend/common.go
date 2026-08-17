@@ -416,8 +416,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	}
 
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
-		defer cancel()
+		ctx := c.Request.Context()
 		appID := info.AppID(ctx)
 		if !info.IsDevAppServer(ctx) && appID != "" && appID != "app" && appID != "none" && appID != "testbed-test" {
 			if s := getSubmitter(ctx); s != nil {
@@ -430,11 +429,22 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		c.Request = c.Request.WithContext(ctx)
 		next(c)
 	})
+	taskMw := mw.Extend(func(c *router.Context, next router.Handler) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+		defer cancel()
+		c.Request = c.Request.WithContext(ctx)
+		next(c)
+	})
 	subR := r.Subrouter("/")
-	subR.Use(mw)
+	subR.Use(taskMw)
 	dsp.InstallTasksRoutes(subR, "/internal/tasks")
 	dsp.InstallSweepRoute(subR, "/internal/tasks/c/sweep")
-	cronMw := mw.Extend(gaemiddleware.RequireCron)
+	cronMw := mw.Extend(gaemiddleware.RequireCron, func(c *router.Context, next router.Handler) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Minute)
+		defer cancel()
+		c.Request = c.Request.WithContext(ctx)
+		next(c)
+	})
 	r.GET("/internal/cron/count-tasks", cronMw, newHTTPHandler(countTasks))
 	r.GET("/internal/cron/count-vms", cronMw, newHTTPHandler(countVMsAsync))
 	r.GET("/internal/cron/create-instances", cronMw, newHTTPHandler(createInstancesAsync))
