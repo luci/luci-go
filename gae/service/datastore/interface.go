@@ -23,6 +23,7 @@ import (
 	"slices"
 	"sort"
 	"sync"
+	"sync/atomic"
 
 	"golang.org/x/sync/errgroup"
 
@@ -256,21 +257,16 @@ type QueryIter[V any] struct {
 	// Yields query results in order.
 	//
 	// If an error is encountered, it is yielded and iteration stops.
+	//
+	// Using Results more than once (e.g. for more than one loop, or more than
+	// one pull iterator) will panic.
 	Results iter.Seq2[V, error]
 }
 
 // queryIterStub returns a QueryIter whose CursorCB and Results yield err
 // (or behave as an empty iterator if err is nil).
 func queryIterStub[V any](err error) *QueryIter[V] {
-	return &QueryIter[V]{
-		Cursor: func() (Cursor, error) { return nil, err },
-		Results: func(yield func(V, error) bool) {
-			if err != nil {
-				var zero V
-				yield(zero, err)
-			}
-		},
-	}
+	return QueryIterFromRaw[V](RawQueryIterStub(err))
 }
 
 // QueryIterFromRaw converts a RawQueryIter to a typed QueryIter.
@@ -289,9 +285,15 @@ func QueryIterFromRaw[V any](raw RawQueryIter) *QueryIter[V] {
 		}
 	}
 
+	var used atomic.Bool
+
 	return &QueryIter[V]{
 		Cursor: raw.Cursor,
 		Results: func(yield func(V, error) bool) {
+			if used.Swap(true) {
+				panic("cannot use QueryIter more than once.")
+			}
+
 			for pm, err := range raw.Results {
 				if err != nil {
 					yield(zero, err)
@@ -379,17 +381,8 @@ func RunQuery[V any](ctx context.Context, q *Query) *QueryIter[V] {
 // happen when using `impl/memory` and thus hard to spot in unit tests. See
 // queryIterator doc for more details.
 func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
-	t := reflect.TypeFor[V]()
-	isKey := t == typeOfKey
-
-	var mat *multiArgType
-	if !isKey {
-		mat = mustParseArg(t, false)
-		if mat.newElem == nil {
-			var zero V
-			panic(fmt.Errorf("RunMultiQuery[%T]: `V` is not a concrete type: %s", zero, t.Kind()))
-		}
-	}
+	var zero V
+	_, isKey := any(zero).(*Key)
 
 	// Finalize queries and do some basic validation. At very least queries must
 	// use the same kind and ordering, otherwise putting their results in a single
@@ -431,29 +424,6 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		return queryIterStub[V](nil)
 	}
 
-	decodeValue := func(key *Key, pm PropertyMap) (V, error) {
-		if isKey {
-			if t == typeOfKey {
-				return any(key).(V), nil
-			}
-			return any(*key).(V), nil
-		}
-		itm := mat.newElem()
-		cleanPM := pm
-		if key != nil && len(pm) > 0 {
-			cleanPM = pm.Clone()
-			delete(cleanPM, "$key")
-		}
-		if err := mat.setPM(itm, cleanPM); err != nil {
-			var zero V
-			return zero, err
-		}
-		if key != nil {
-			mat.setKey(itm, key)
-		}
-		return itm.Interface().(V), nil
-	}
-
 	// If we have only one query, just run it directly without any extra
 	// synchronization overhead. Just make sure to use the correct cursor format.
 	// This is worth optimizing since running only one query is a very very
@@ -464,9 +434,9 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 	// is 1 and then return `RunQuery(ctx, finalized[0])` without any of this
 	// other noise.
 	if len(finalized) == 1 {
-		it := QueryIterFromRaw[V](Raw(ctx).RunQuery(finalized[0]))
-		ogCursor := it.Cursor
-		it.Cursor = func() (Cursor, error) {
+		raw := Raw(ctx).RunQuery(finalized[0])
+		ogCursor := raw.Cursor
+		raw.Cursor = func() (Cursor, error) {
 			cur, err := ogCursor()
 			if err != nil {
 				return nil, err
@@ -483,7 +453,7 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 				},
 			}, nil
 		}
-		return it
+		return QueryIterFromRaw[V](raw)
 	}
 
 	var iterators []*queryIterator
@@ -524,7 +494,7 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		return multiCursor{curs: &curs}, nil
 	}
 
-	results := func(yield func(V, error) bool) {
+	results := func(yield func(PropertyMap, error) bool) {
 		// All iterators (active and exhausted) in some arbitrary order.
 		iters := make([]*queryIterator, 0, len(finalized))
 		cCtx, cancel := context.WithCancel(ctx)
@@ -562,8 +532,7 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		for _, iter := range iters {
 			switch done, err := iter.Next(); {
 			case err != nil:
-				var zero V
-				yield(zero, err)
+				yield(nil, err)
 				return
 			case !done:
 				iHeap = append(iHeap, iter)
@@ -604,32 +573,27 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		for iHeap.Len() > 0 {
 			pm, key, keyStr, err := iHeap.nextData()
 			if err != nil {
-				var zero V
-				if !yield(zero, err) {
+				if !yield(nil, err) {
 					return
 				}
 				continue
 			}
 			if !seenKey(keyStr) {
-				val, err := decodeValue(key, pm)
-				if err != nil {
-					var zero V
-					if !yield(zero, err) {
-						return
-					}
-					continue
+				if pm == nil {
+					pm = make(PropertyMap, 1)
 				}
-				if !yield(val, nil) {
+				pm.SetMeta("key", key)
+				if !yield(pm, nil) {
 					return
 				}
 			}
 		}
 	}
 
-	return &QueryIter[V]{
+	return QueryIterFromRaw[V](RawQueryIter{
 		Cursor:  cursorCB,
 		Results: results,
-	}
+	})
 }
 
 // Count executes the given query and returns the number of entries which

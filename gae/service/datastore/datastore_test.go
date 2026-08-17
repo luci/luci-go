@@ -127,8 +127,6 @@ func (f *fakeDatastore) RunQuery(fq *FinalizedQuery) RawQueryIter {
 	}
 }
 
-
-
 func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
 	if keys[0].Kind() == "FailAll" {
 		return errFailAll
@@ -2124,10 +2122,6 @@ func (f *fakeDatastore2) RunQuery(fq *FinalizedQuery) RawQueryIter {
 		},
 	}
 }
-
-
-
-
 
 func TestCountMulti(t *testing.T) {
 	t.Parallel()
