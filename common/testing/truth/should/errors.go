@@ -15,13 +15,33 @@
 package should
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
+	"go.chromium.org/luci/common/errors/errtag/stacktag"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 )
+
+func withErrorFindings(sb *comparison.SummaryBuilder, actual error) *comparison.SummaryBuilder {
+	if actual == nil {
+		return sb
+	}
+
+	tree := errors.ParseTree(actual)
+	sb.AddFindingf("errors.ParseTree", "%s", tree.String())
+
+	if tags := errtag.Collect(actual, stacktag.Tag); len(tags) > 0 {
+		sb.AddFindingf("errtag.Collect", "%s", tags.String())
+	}
+
+	if stack, ok := stacktag.Tag.Value(actual); ok && stack != "" {
+		sb.AddFindingf("stacktag.Tag.Value", "%s", stack).WarnIfLong()
+	}
+	return sb
+}
 
 // ErrLikeString returns failure when the stringified error is not a substring
 // of the target. Additionally, when the substring argument is empty, ErrLikeString
@@ -49,13 +69,13 @@ func ErrLikeString(substring string) comparison.Func[error] {
 		if strings.Contains(a, substring) {
 			return nil
 		}
-		return comparison.NewSummaryBuilder(cmpName).
-			Because("`actual.Error()` is missing substring.").
-			Actual(a).
-			AddFindingf("actual.Error()", "%q", a).
-			Expected(substring).
-			AddFindingf("Substring", "%q", substring).
-			Summary
+		return withErrorFindings(
+			comparison.NewSummaryBuilder(cmpName).
+				Because("`actual.Error()` is missing substring.").
+				AddFindingf("actual.Error()", "%q", a).
+				Expected(substring),
+			actual,
+		).Summary
 	}
 }
 
@@ -121,12 +141,14 @@ func UnwrapToErrStringLike(substring string) comparison.Func[error] {
 			}
 		}
 
-		return comparison.NewSummaryBuilder(cmpName).
-			Because("`$unwrapped.Error()` is missing substring after unwrapping %d errors.", count).
-			Actual(actual).
-			AddFindingf("$unwrapped values", "%s", strings.Join(strReprs, "\n")).
-			AddFindingf("Substring", "%q", substring).
-			Summary
+		return withErrorFindings(
+			comparison.NewSummaryBuilder(cmpName).
+				Because("`$unwrapped.Error()` is missing substring after unwrapping %d errors.", count).
+				AddFindingf("actual.Error()", "%q", actual.Error()).
+				Expected(substring).
+				AddFindingf("$unwrapped values", "%s", strings.Join(strReprs, "\n")),
+			actual,
+		).Summary
 	}
 }
 
@@ -140,11 +162,12 @@ func ErrLikeError(target error) comparison.Func[error] {
 			if actual == nil {
 				return nil
 			}
-			return comparison.NewSummaryBuilder(cmpName).
-				AddComparisonArgs("nil").
-				Actual(actual).
-				AddFindingf("actual.Error()", "%s", actual.Error()).
-				Summary
+			return withErrorFindings(
+				comparison.NewSummaryBuilder(cmpName).
+					AddComparisonArgs("nil").
+					AddFindingf("actual.Error()", "%q", actual.Error()),
+				actual,
+			).Summary
 		}
 	}
 	return func(actual error) *failure.Summary {
@@ -152,18 +175,19 @@ func ErrLikeError(target error) comparison.Func[error] {
 		if actual == nil {
 			return comparison.NewSummaryBuilder(cmpName, target).
 				Because("Actual is nil but target is not").
-				Expected(target).
-				AddFindingf("target.Error()", "%s", target.Error()).
+				Expected(target.Error()).
 				Summary
 		}
 		if errors.Is(actual, target) {
 			return nil
 		}
-		return comparison.NewSummaryBuilder(cmpName, target).
-			Because("Actual does not contain the expected error.").
-			Actual(actual).
-			Expected(target).
-			Summary
+		return withErrorFindings(
+			comparison.NewSummaryBuilder(cmpName, target).
+				Because("Actual does not contain the expected error.").
+				Actual(actual.Error()).
+				Expected(target.Error()),
+			actual,
+		).Summary
 	}
 }
 

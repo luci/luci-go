@@ -60,10 +60,13 @@ func PanicLikeString(substring string) comparison.Func[func()] {
 		}
 		exn := caught.reason
 		var str string
+		var finding string
 		switch v := exn.(type) {
 		case string:
+			finding = "Actual"
 			str = v
 		case error:
+			finding = "actual.Error()"
 			str = v.Error()
 		default:
 			return comparison.NewSummaryBuilder(cmpName).
@@ -77,8 +80,8 @@ func PanicLikeString(substring string) comparison.Func[func()] {
 		}
 		return comparison.NewSummaryBuilder(cmpName).
 			Because("Actual is missing substring.").
-			Actual(str).
-			AddFindingf("Substring", "%s", substring).
+			AddFindingf(finding, "%s", str).
+			Expected(substring).
 			Summary
 	}
 }
@@ -103,18 +106,20 @@ func PanicLikeError(target error) comparison.Func[func()] {
 		if !ok {
 			return comparison.NewSummaryBuilder(cmpName).
 				Because("caught panic is not an error").
-				Actual(e).
-				Expected(target).
+				Actual(exn).
+				Expected(target.Error()).
 				AddFindingf("stack", "%s", thing.stack).
 				WarnIfLong().
 				Summary
 		}
 		if !errors.Is(e, target) {
-			return comparison.NewSummaryBuilder(cmpName).
-				Because("error does not match target").
-				Actual(e).
-				Expected(target).
-				Summary
+			return withErrorFindings(
+				comparison.NewSummaryBuilder(cmpName).
+					Because("error does not match target").
+					AddFindingf("actual.Error()", "%q", e.Error()).
+					Expected(target.Error()),
+				e,
+			).Summary
 		}
 		return nil
 	}

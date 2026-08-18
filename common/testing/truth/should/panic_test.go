@@ -79,4 +79,19 @@ func TestPanicErrorDoesNotMatch(t *testing.T) {
 	shouldFail(PanicLike(errGoldenError)(func() {
 		panic(errors.New("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
 	}))(t)
+
+	t.Run("with tags", func(t *testing.T) {
+		summary := PanicLikeError(errGoldenError)(func() {
+			panic(tagA.Apply(errors.New("different error")))
+		})
+		if summary == nil {
+			t.Fatal("expected failure, got pass")
+		}
+		if tree := findFinding(summary, "errors.ParseTree"); tree == nil {
+			t.Fatal("expected 'errors.ParseTree' finding")
+		}
+		if tags := findFinding(summary, "errtag.Collect"); tags == nil {
+			t.Fatal("expected 'errtag.Collect' finding")
+		}
+	})
 }
