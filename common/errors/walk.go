@@ -14,6 +14,13 @@
 
 package errors
 
+import (
+	"fmt"
+	"strings"
+
+	"go.chromium.org/luci/common/errors/errtag"
+)
+
 // Walk performs a depth-first traversal of the supplied error, unfolding it and
 // invoke the supplied callback for each layered error recursively. If the
 // callback returns true, Walk will continue its traversal.
@@ -45,13 +52,6 @@ func walkVisit(err error, fn func(error) bool, leavesOnly bool) bool {
 	}
 
 	switch t := err.(type) {
-	case MultiError:
-		for _, e := range t {
-			if !walkVisit(e, fn, leavesOnly) {
-				return false
-			}
-		}
-
 	case interface{ Unwrap() []error }:
 		for _, e := range t.Unwrap() {
 			if !walkVisit(e, fn, leavesOnly) {
@@ -104,4 +104,148 @@ func Contains(outer error, inner error) bool {
 		}
 		return false
 	})
+}
+
+// Tree represents a parsed error as a tree.
+//
+// The top of the tree represents the most recent error wrapping, the leaves
+// of the tree represent the root/original errors.
+//
+// An error wrapping a singular other error (e.g. `Unwrap() error`) represents
+// a single chain link, and an error wrapping multiple other errors (e.g.
+// `Unwrap() []error`) represents multiple branches.
+type Tree struct {
+	// The error at this node.
+	Err error
+
+	// The unique keys of any tags this err contains.
+	Tags []errtag.TagKey
+
+	// All immediate non-tag errors this error contains.
+	Wraps []*Tree
+}
+
+const (
+	treeMore = "├"
+	treeLast = "└"
+
+	treeContMore = "│"
+	treeContLast = " "
+)
+
+// String formats this tree like:
+//
+//	err
+//	 ├ [Tag]
+//	 ├╔inner err 1 line 1
+//	 │║inner err 1 line 2
+//	 │╚inner err 1 line 3
+//	 │ ├ [Tag]
+//	 │ └ [Tag]
+//	 └ inner err N
+//	   └ [Tag]
+func (t *Tree) String() string {
+	var bld strings.Builder
+	t.stringInner(&bld, "", false)
+	return bld.String()
+}
+
+func (t *Tree) stringInner(bld *strings.Builder, prefix string, isLast bool) {
+	var childPrefix string
+	if prefix != "" {
+		bld.WriteByte('\n')
+		bld.WriteString(prefix)
+		if isLast {
+			bld.WriteString(treeLast)
+			childPrefix = prefix + treeContLast
+		} else {
+			bld.WriteString(treeMore)
+			childPrefix = prefix + treeContMore
+		}
+	}
+
+	if t.Err != nil {
+		lines := strings.Split(t.Err.Error(), "\n")
+		if len(lines) == 1 {
+			if prefix != "" {
+				bld.WriteRune(' ')
+			}
+			bld.WriteString(t.Err.Error())
+		} else {
+			pfx := "╔"
+			for i, line := range lines {
+				fmt.Fprintf(bld, "%s%s", pfx, line)
+				if i == len(lines)-1 {
+					break
+				}
+				bld.WriteString("\n")
+				if i < len(lines)-2 {
+					pfx = childPrefix + "║"
+				} else {
+					pfx = childPrefix + "╚"
+				}
+			}
+		}
+	} else {
+		if prefix != "" {
+			bld.WriteRune(' ')
+		}
+		bld.WriteString("<nil>")
+	}
+
+	childPrefix += " "
+
+	total := len(t.Tags) + len(t.Wraps)
+	for i, tag := range t.Tags {
+		tree := treeMore
+		if i == total-1 {
+			tree = treeLast
+		}
+		fmt.Fprintf(bld, "\n%s%s [%s]", childPrefix, tree, tag.String())
+	}
+
+	for i, wrap := range t.Wraps {
+		idx := len(t.Tags) + i
+		wrap.stringInner(bld, childPrefix, idx == total-1)
+	}
+}
+
+// ParseTree parses the `err` into a *Tree.
+//
+// If `err` contains errtags, they are represented as errtag.TagKey's in the
+// Tree of where they were attached. Use errtag.Collect to actually get the
+// merged values back for `err`.
+func ParseTree(err error) *Tree {
+	tree := &Tree{Err: err}
+	if err == nil {
+		return tree
+	}
+
+	// Unwrap all error tags to get to the root/original error.
+	for {
+		tk, ok := errtag.IsWrapper(err)
+		if !ok {
+			break
+		}
+		err = err.(Wrapped).Unwrap()
+		tree.Tags = append(tree.Tags, tk)
+	}
+
+	// Now unwrap and explore the root/original error.
+	switch t := err.(type) {
+	case interface{ Unwrap() []error }:
+		inners := t.Unwrap()
+		if len(inners) > 0 {
+			subtrees := make([]*Tree, len(inners))
+			for i, inner := range inners {
+				subtrees[i] = ParseTree(inner)
+			}
+			tree.Wraps = subtrees
+		}
+
+	case Wrapped:
+		tree.Wraps = []*Tree{ParseTree(t.Unwrap())}
+	}
+
+	return tree
 }

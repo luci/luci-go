@@ -16,6 +16,7 @@ package errtag_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	luci_errors "go.chromium.org/luci/common/errors"
@@ -187,5 +188,42 @@ func TestErrTag(t *testing.T) {
 		}
 
 		assert.That(t, stag.ValueOrDefault(merr), should.Equal("there"))
+	})
+
+	t.Run(`IsWrapper`, func(t *testing.T) {
+		t.Run(`nil error`, func(t *testing.T) {
+			k, ok := errtag.IsWrapper(nil)
+			assert.That(t, ok, should.BeFalse)
+			assert.That(t, k.Valid(), should.BeFalse)
+		})
+
+		t.Run(`plain error`, func(t *testing.T) {
+			k, ok := errtag.IsWrapper(errors.New("plain"))
+			assert.That(t, ok, should.BeFalse)
+			assert.That(t, k.Valid(), should.BeFalse)
+		})
+
+		t.Run(`applied tag`, func(t *testing.T) {
+			err := btag.Apply(errors.New("tagged"))
+			k, ok := errtag.IsWrapper(err)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, k.Valid(), should.BeTrue)
+			assert.That(t, k, should.Equal(btag.Key()))
+		})
+
+		t.Run(`applied value`, func(t *testing.T) {
+			err := stag.ApplyValue(errors.New("tagged"), "val")
+			k, ok := errtag.IsWrapper(err)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, k.Valid(), should.BeTrue)
+			assert.That(t, k, should.Equal(stag.Key()))
+		})
+
+		t.Run(`wrapped tagged error`, func(t *testing.T) {
+			err := fmt.Errorf("wrapped: %w", stag.Apply(errors.New("tagged")))
+			k, ok := errtag.IsWrapper(err)
+			assert.That(t, ok, should.BeFalse)
+			assert.That(t, k.Valid(), should.BeFalse)
+		})
 	})
 }

@@ -43,6 +43,21 @@ func (k TagKey) String() string {
 	return *k.unique
 }
 
+// IsWrapper returns a valid [TagKey] and true if `err` is
+// the result of [Tag.Apply] or [Tag.ApplyValue].
+//
+// If `err` is not the direct result of applying a tag, this
+// returns an invalid TagKey (e.g. [TagKey.Valid] is false)
+// and `false`.
+func IsWrapper(err error) (TagKey, bool) {
+	wrapped, ok := err.(wrappedErrIface)
+	if !ok {
+		return TagKey{}, false
+	}
+	tk, _, _ := wrapped.tagValuePtr()
+	return tk, true
+}
+
 // Tag holds everything necessary to associate values of type T with errors.
 //
 // Construct this with [Make].

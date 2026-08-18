@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -176,4 +177,171 @@ func TestContains(t *testing.T) {
 			assert.Loosely(t, Contains(wrapped0, &e2), should.BeFalse)
 		})
 	})
+}
+
+var (
+	tagA = errtag.Make("TagA", true)
+	tagB = errtag.Make("TagB", "val")
+	tagC = errtag.Make("TagC", 123)
+)
+
+func TestParseTree(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`Testing ParseTree and Tree.String`, t, func(t *ftt.Test) {
+		t.Run(`nil error`, func(t *ftt.Test) {
+			tree := ParseTree(nil)
+			assert.Loosely(t, tree.Err, should.BeNil)
+			assert.Loosely(t, tree.String(), should.Equal("<nil>"))
+		})
+
+		t.Run(`simple untagged error`, func(t *ftt.Test) {
+			err := errors.New("something went wrong")
+			tree := ParseTree(err)
+			assert.Loosely(t, tree.Err, should.Equal(err))
+			assert.Loosely(t, len(tree.Tags), should.BeZero)
+			assert.Loosely(t, len(tree.Wraps), should.BeZero)
+			assert.Loosely(t, tree.String(), should.Equal("something went wrong"))
+		})
+
+		t.Run(`single tagged error`, func(t *ftt.Test) {
+			core := errors.New("bad input")
+			err := tagA.Apply(core)
+			tree := ParseTree(err)
+			assert.Loosely(t, tree.Err, should.Equal(err))
+			assert.Loosely(t, tagA.In(tree.Err), should.BeTrue)
+			assert.Loosely(t, tree.Tags, should.Resemble([]errtag.TagKey{tagA.Key()}))
+			assert.Loosely(t, len(tree.Wraps), should.BeZero)
+			assert.Loosely(t, tree.String(), should.Equal("bad input\n └ [TagA]"))
+		})
+
+		t.Run(`multiple tags on single node preserve application order`, func(t *ftt.Test) {
+			core := errors.New("bad input")
+			err := tagC.Apply(tagA.Apply(tagB.Apply(core)))
+			tree := ParseTree(err)
+			assert.Loosely(t, tree.Tags, should.Resemble([]errtag.TagKey{
+				tagC.Key(),
+				tagA.Key(),
+				tagB.Key(),
+			}))
+			assert.Loosely(t, tree.Err, should.Equal(err))
+			assert.Loosely(t, tagA.In(tree.Err), should.BeTrue)
+			assert.Loosely(t, tagB.ValueOrDefault(tree.Err), should.Equal("val"))
+			assert.Loosely(t, tagC.ValueOrDefault(tree.Err), should.Equal(123))
+			assert.Loosely(t, tree.String(), should.Equal("bad input\n ├ [TagC]\n ├ [TagA]\n └ [TagB]"))
+		})
+
+		t.Run(`single wrapped error`, func(t *ftt.Test) {
+			inner := errors.New("inner error")
+			outer := fmt.Errorf("outer error: %w", inner)
+			tree := ParseTree(outer)
+			assert.Loosely(t, tree.Err, should.Equal(outer))
+			assert.Loosely(t, len(tree.Wraps), should.Equal(1))
+			assert.Loosely(t, tree.Wraps[0].Err, should.Equal(inner))
+			assert.Loosely(t, tree.String(), should.Equal("outer error: inner error\n └ inner error"))
+		})
+
+		t.Run(`wrapped error with tags at both levels`, func(t *ftt.Test) {
+			inner := tagB.Apply(errors.New("inner error"))
+			outer := tagA.Apply(fmt.Errorf("outer error: %w", inner))
+			tree := ParseTree(outer)
+			assert.Loosely(t, tree.Tags, should.Resemble([]errtag.TagKey{tagA.Key()}))
+			assert.Loosely(t, len(tree.Wraps), should.Equal(1))
+			assert.Loosely(t, tree.Err, should.Equal(outer))
+			assert.Loosely(t, tagA.In(tree.Err), should.BeTrue)
+			assert.Loosely(t, tree.Wraps[0].Err, should.Equal(inner))
+			assert.Loosely(t, tagB.ValueOrDefault(tree.Wraps[0].Err), should.Equal("val"))
+			assert.Loosely(t, tree.Wraps[0].Tags, should.Resemble([]errtag.TagKey{tagB.Key()}))
+			assert.Loosely(t, tree.String(), should.Equal(`outer error: inner error
+ ├ [TagA]
+ └ inner error
+   └ [TagB]`))
+		})
+
+		t.Run(`multi error (Unwrap []error)`, func(t *ftt.Test) {
+			err1 := tagA.Apply(errors.New("err 1"))
+			err2 := tagB.Apply(errors.New("err 2"))
+			merr := MultiError{err1, err2}
+			tree := ParseTree(merr)
+			assert.Loosely(t, len(tree.Wraps), should.Equal(2))
+			assert.Loosely(t, tree.String(), should.Equal(`╔err[0]: err 1
+╚err[1]: err 2
+ ├ err 1
+ │ └ [TagA]
+ └ err 2
+   └ [TagB]`))
+		})
+
+		t.Run(`std errors.Join (Unwrap []error)`, func(t *ftt.Test) {
+			err1 := tagA.Apply(errors.New("err 1"))
+			err2 := tagB.Apply(errors.New("err 2"))
+			jerr := errors.Join(err1, err2)
+			tree := ParseTree(jerr)
+			assert.Loosely(t, len(tree.Wraps), should.Equal(2))
+			assert.Loosely(t, tree.String(), should.Equal(`╔err 1
+╚err 2
+ ├ err 1
+ │ └ [TagA]
+ └ err 2
+   └ [TagB]`))
+		})
+
+		t.Run(`multi error containing nil`, func(t *ftt.Test) {
+			err1 := errors.New("err 1")
+			merr := MultiError{nil, err1, nil}
+			tree := ParseTree(merr)
+			assert.Loosely(t, len(tree.Wraps), should.Equal(3))
+			assert.Loosely(t, tree.Wraps[0].Err, should.BeNil)
+			assert.Loosely(t, tree.Wraps[1].Err, should.Equal(err1))
+			assert.Loosely(t, tree.Wraps[2].Err, should.BeNil)
+			assert.Loosely(t, tree.String(), should.Equal(`err 1
+ ├ <nil>
+ ├ err 1
+ └ <nil>`))
+		})
+
+		t.Run(`wrapped nil error`, func(t *ftt.Test) {
+			wrappedNil := testWrap(nil)
+			tree := ParseTree(wrappedNil)
+			assert.Loosely(t, len(tree.Wraps), should.Equal(1))
+			assert.Loosely(t, tree.Wraps[0].Err, should.BeNil)
+			assert.Loosely(t, tree.String(), should.Equal("wrapped: nil\n └ <nil>"))
+		})
+	})
+}
+
+func ExampleTree_String() {
+	tag := errtag.Make("Tag", true)
+
+	err := errors.Join(
+		tag.Apply(tag.Apply(errors.New(`inner err 1 line 1
+inner err 1 line 2
+inner err 1 line 3`))),
+		tag.Apply(errors.New("inner err N")),
+	)
+
+	err = tag.Apply(Fmt("outer: %w", err))
+
+	tree := ParseTree(err)
+
+	fmt.Println(tree.String())
+
+	// Output:
+	// ╔outer: inner err 1 line 1
+	// ║inner err 1 line 2
+	// ║inner err 1 line 3
+	// ╚inner err N
+	//  ├ [Tag]
+	//  ├ [stacktag.Capture]
+	//  └╔inner err 1 line 1
+	//   ║inner err 1 line 2
+	//   ║inner err 1 line 3
+	//   ╚inner err N
+	//    ├╔inner err 1 line 1
+	//    │║inner err 1 line 2
+	//    │╚inner err 1 line 3
+	//    │ ├ [Tag]
+	//    │ └ [Tag]
+	//    └ inner err N
+	//      └ [Tag]
 }
