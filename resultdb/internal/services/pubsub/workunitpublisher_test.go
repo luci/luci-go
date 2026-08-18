@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -199,4 +200,98 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestHandleWorkUnitPublisher_SizeBasedSplitting(t *testing.T) {
+	rootInvID := rootinvocations.ID("test-root-inv-split")
+	rdbHost := "results.api.cr.dev"
+
+	cfgProto := config.CreatePlaceholderServiceConfig()
+	compiledCfg, err := config.NewCompiledServiceConfig(cfgProto, "")
+	assert.Loosely(t, err, should.BeNil)
+
+	rootWU := workunits.NewBuilder(rootInvID, "root").WithMinimalFields().WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
+	wu1 := workunits.NewBuilder(rootInvID, "wu1").WithMinimalFields().WithParentWorkUnitID("root").WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
+	wu2 := workunits.NewBuilder(rootInvID, "wu2").WithMinimalFields().WithParentWorkUnitID("root").WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
+
+	// Override maxWorkUnitPubSubMessageSize to a small value.
+	oldLimit := maxWorkUnitPubSubMessageSize
+	// Calculate size of one basic notification to choose a good limit.
+	// We want to fit exactly one work unit per notification.
+	baseNotification := &pb.WorkUnitsNotification{
+		ResultdbHost:           rdbHost,
+		RootInvocationMetadata: masking.RootInvocationMetadata(rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).Build(), compiledCfg),
+	}
+	baseSize := proto.Size(baseNotification)
+
+	// Make a dummy WorkUnitDetails to check size.
+	dummyWUDetail := &pb.WorkUnitsNotification_WorkUnitDetails{
+		WorkUnitName: pbutil.WorkUnitName(string(rootInvID), "wu1"),
+		WorkUnit:     masking.WorkUnit(wu1, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg),
+	}
+	wuSize := proto.Size(dummyWUDetail)
+
+	// Set limit to fit base + one work unit, but not two.
+	maxWorkUnitPubSubMessageSize = baseSize + wuSize + 10 // buffer
+	defer func() { maxWorkUnitPubSubMessageSize = oldLimit }()
+
+	muts := []*spanner.Mutation{}
+	muts = append(muts, workunits.InsertForTesting(rootWU)...)
+	muts = append(muts, workunits.InsertForTesting(wu1)...)
+	muts = append(muts, workunits.InsertForTesting(wu2)...)
+
+	ctx := testutil.SpannerTestContext(t)
+	ctx = caching.WithEmptyProcessCache(ctx)
+	ctx = memory.Use(ctx)
+
+	err = config.SetServiceConfigForTesting(ctx, cfgProto)
+	assert.Loosely(t, err, should.BeNil)
+
+	ctx, sched := tq.TestingContext(ctx, nil)
+
+	// Insert the root invocation.
+	rootInv := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).Build()
+	testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInv)...)
+	testutil.MustApply(ctx, t, muts...)
+
+	task := &taskspb.PublishWorkUnitsTask{
+		RootInvocationId: string(rootInvID),
+		WorkUnitIds:      []string{"wu1", "wu2"},
+	}
+	p := &workUnitPublisher{
+		task:             task,
+		resultDBHostname: rdbHost,
+	}
+	err = p.handleWorkUnitPublisher(ctx)
+	assert.Loosely(t, err, should.BeNil)
+
+	allTasks := sched.Tasks()
+	var notifyTasks tqtesting.TaskList
+	for _, task := range allTasks {
+		if task.Class == "notify-work-units" {
+			notifyTasks = append(notifyTasks, task)
+		}
+	}
+
+	// Should be split into 2 tasks.
+	assert.Loosely(t, notifyTasks, should.HaveLength(2))
+
+	// Verify content of tasks.
+	// Order might not be guaranteed, so sort or identify by WorkUnitName.
+	wuNames := []string{
+		notifyTasks[0].Payload.(*taskspb.PublishWorkUnits).Message.WorkUnits[0].WorkUnitName,
+		notifyTasks[1].Payload.(*taskspb.PublishWorkUnits).Message.WorkUnits[0].WorkUnitName,
+	}
+	expectedNames := []string{
+		pbutil.WorkUnitName(string(rootInvID), "wu1"),
+		pbutil.WorkUnitName(string(rootInvID), "wu2"),
+	}
+
+	// We expect one of each.
+	assert.Loosely(t, wuNames, should.Contain(expectedNames[0]))
+	assert.Loosely(t, wuNames, should.Contain(expectedNames[1]))
+
+	// Both should have length 1.
+	assert.Loosely(t, notifyTasks[0].Payload.(*taskspb.PublishWorkUnits).Message.WorkUnits, should.HaveLength(1))
+	assert.Loosely(t, notifyTasks[1].Payload.(*taskspb.PublishWorkUnits).Message.WorkUnits, should.HaveLength(1))
 }

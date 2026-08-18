@@ -38,6 +38,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+var maxWorkUnitPubSubMessageSize = maxPubSubMessageSize
+
 // workUnitPublisher is a helper struct for publishing work units.
 type workUnitPublisher struct {
 	// task is the task payload.
@@ -73,8 +75,8 @@ func (p *workUnitPublisher) handleWorkUnitPublisher(ctx context.Context) (err er
 		return errors.Fmt("fetch service config: %w", err)
 	}
 
-	// 4. Construct the notification.
-	notification, err := p.workUnitsNotification(ctx, rootInvID, task.WorkUnitIds, cfg, rootInv)
+	// 4. Construct the notifications.
+	notifications, err := p.workUnitsNotification(ctx, rootInvID, task.WorkUnitIds, cfg, rootInv)
 	if err != nil {
 		return err
 	}
@@ -82,14 +84,16 @@ func (p *workUnitPublisher) handleWorkUnitPublisher(ctx context.Context) (err er
 	// 4. Generate attributes.
 	attrs := generateAttributes(rootInv)
 
-	// 5. Publish notification.
-	tasks.NotifyWorkUnits(ctx, notification, attrs)
+	// 5. Publish notifications.
+	for _, notification := range notifications {
+		tasks.NotifyWorkUnits(ctx, notification, attrs)
+	}
 	return nil
 }
 
 // workUnitsNotification constructs a WorkUnitsNotification message for the
 // given work units, fully calculating and merging inherited properties from ancestors.
-func (p *workUnitPublisher) workUnitsNotification(ctx context.Context, rootInvID rootinvocations.ID, workUnitIDs []string, cfg *config.CompiledServiceConfig, rootInv *rootinvocations.RootInvocationRow) (*pb.WorkUnitsNotification, error) {
+func (p *workUnitPublisher) workUnitsNotification(ctx context.Context, rootInvID rootinvocations.ID, workUnitIDs []string, cfg *config.CompiledServiceConfig, rootInv *rootinvocations.RootInvocationRow) ([]*pb.WorkUnitsNotification, error) {
 	// Collect all invocation IDs to check.
 	invIDs := make(invocations.IDSet, len(workUnitIDs))
 	for _, wuID := range workUnitIDs {
@@ -144,11 +148,48 @@ func (p *workUnitPublisher) workUnitsNotification(ctx context.Context, rootInvID
 		}
 	}
 
-	return &pb.WorkUnitsNotification{
-		WorkUnits:              workUnits,
+	// Partition workUnits into chunks based on size.
+	var notifications []*pb.WorkUnitsNotification
+	var currentChunk []*pb.WorkUnitsNotification_WorkUnitDetails
+	currentSize := 0
+
+	baseNotification := &pb.WorkUnitsNotification{
 		ResultdbHost:           p.resultDBHostname,
 		RootInvocationMetadata: masking.RootInvocationMetadata(rootInv, cfg),
-	}, nil
+	}
+	baseSize := proto.Size(baseNotification)
+
+	for _, wu := range workUnits {
+		wuSize := proto.Size(wu)
+
+		if wuSize+baseSize > maxWorkUnitPubSubMessageSize {
+			return nil, errors.Fmt("work unit %s is too large (%d bytes) to fit in a Pub/Sub message", wu.WorkUnitName, wuSize)
+		}
+
+		if currentSize+wuSize+baseSize > maxWorkUnitPubSubMessageSize {
+			// Flush current chunk
+			notifications = append(notifications, &pb.WorkUnitsNotification{
+				WorkUnits:              currentChunk,
+				ResultdbHost:           p.resultDBHostname,
+				RootInvocationMetadata: baseNotification.RootInvocationMetadata,
+			})
+			currentChunk = nil
+			currentSize = 0
+		}
+
+		currentChunk = append(currentChunk, wu)
+		currentSize += wuSize
+	}
+
+	if len(currentChunk) > 0 {
+		notifications = append(notifications, &pb.WorkUnitsNotification{
+			WorkUnits:              currentChunk,
+			ResultdbHost:           p.resultDBHostname,
+			RootInvocationMetadata: baseNotification.RootInvocationMetadata,
+		})
+	}
+
+	return notifications, nil
 }
 
 // calculateMergedPropertiesLocal calculates the fully merged inherited properties
