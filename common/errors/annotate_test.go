@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package errors
+package errors_test
 
 import (
 	"fmt"
@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/errors/errtag/stacktag"
 	"go.chromium.org/luci/common/retry/transient"
@@ -60,7 +61,7 @@ func TestAnnotation(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Test annotation struct", t, func(t *ftt.Test) {
-		e := Annotate(New("bad thing"), "%d some error: %q", 20, "stringy")
+		e := errors.Annotate(errors.New("bad thing"), "%d some error: %q", 20, "stringy")
 
 		t.Run("annotation can render itself for public usage", func(t *ftt.Test) {
 			assert.Loosely(t, e.Error(), should.Equal(`20 some error: "stringy": bad thing`))
@@ -69,13 +70,13 @@ func TestAnnotation(t *testing.T) {
 		t.Run("annotation can render itself", func(t *ftt.Test) {
 			e = transient.Tag.Apply(stacktag.Tag.ApplyValue(e, "I am a stack"))
 			e = customTag.ApplyValue(e, customTagValue{42})
-			lines := RenderStack(e, excludedPkgs...)
+			lines := errors.RenderStack(e, excludedPkgs...)
 
 			assert.That(t, lines, should.Match(strings.Join([]string{
 				`20 some error: "stringy": bad thing`,
 				``,
 				`errtags:`,
-				`  "custom tag": errors.customTagValue{Field:42}`,
+				`  "custom tag": errors_test.customTagValue{Field:42}`,
 				`  "error is transient": true`,
 				``,
 				`I am a stack`,
@@ -83,11 +84,11 @@ func TestAnnotation(t *testing.T) {
 		})
 
 		t.Run(`can render external errors with Unwrap and no inner error`, func(t *ftt.Test) {
-			assert.That(t, RenderStack(emptyWrapper("hi")), should.Match("hi"))
+			assert.That(t, errors.RenderStack(emptyWrapper("hi")), should.Match("hi"))
 		})
 
 		t.Run(`can render external errors with Unwrap`, func(t *ftt.Test) {
-			assert.That(t, RenderStack(fmt.Errorf("outer: %w", fmt.Errorf("inner"))), should.Match("outer: inner"))
+			assert.That(t, errors.RenderStack(fmt.Errorf("outer: %w", fmt.Errorf("inner"))), should.Match("outer: inner"))
 		})
 	})
 }
@@ -95,8 +96,8 @@ func TestAnnotation(t *testing.T) {
 func TestWrapIf(t *testing.T) {
 	t.Parallel()
 
-	assert.Loosely(t, WrapIf(nil, "blah"), should.BeNil)
-	base := New("base")
-	assert.Loosely(t, WrapIf(base, "blah(%d)", 100), should.ErrLike("blah(100): base"))
-	assert.Loosely(t, WrapIf(base, "blah(%d)", 100), should.ErrLike(base))
+	assert.Loosely(t, errors.WrapIf(nil, "blah"), should.BeNil)
+	base := errors.New("base")
+	assert.Loosely(t, errors.WrapIf(base, "blah(%d)", 100), should.ErrLike("blah(100): base"))
+	assert.Loosely(t, errors.WrapIf(base, "blah(%d)", 100), should.ErrLike(base))
 }

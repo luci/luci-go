@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package debugstack
+package debugstack_test
 
 import (
 	"os"
@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.chromium.org/luci/common/runtime/debugstack"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -39,17 +40,17 @@ func TestParseRoundTrip(t *testing.T) {
 			assert.NoErr(t, err)
 			dataS := string(data)
 
-			parsed := Parse(data)
+			parsed := debugstack.Parse(data)
 			check.That(t, parsed.String(), should.Equal(dataS))
 
-			parsed = ParseString(dataS)
+			parsed = debugstack.ParseString(dataS)
 			check.That(t, parsed.String(), should.Equal(dataS))
 		})
 	}
 }
 
 func TestParseStatistics(t *testing.T) {
-	run := func(expected map[FrameKind]int) func(t *testing.T) {
+	run := func(expected map[debugstack.FrameKind]int) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -57,7 +58,7 @@ func TestParseStatistics(t *testing.T) {
 			data, err := os.ReadFile(fname)
 			assert.NoErr(t, err)
 
-			parsed := Parse(data)
+			parsed := debugstack.Parse(data)
 			if !check.That(t, parsed.Stats(), should.Match(expected)) {
 				for _, frame := range parsed {
 					t.Logf("%#v", frame)
@@ -66,76 +67,76 @@ func TestParseStatistics(t *testing.T) {
 		}
 	}
 
-	t.Run("ancestors.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind:   1,
-		GoroutineAncestryKind: 6,
-		CreatedByFrameKind:    6,
-		StackFrameKind:        42,
+	t.Run("ancestors.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind:   1,
+		debugstack.GoroutineAncestryKind: 6,
+		debugstack.CreatedByFrameKind:    6,
+		debugstack.StackFrameKind:        42,
 	}))
 
-	t.Run("cgo.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
-		CreatedByFrameKind:  1,
-		StackFrameKind:      5,
+	t.Run("cgo.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.CreatedByFrameKind:  1,
+		debugstack.StackFrameKind:      5,
 	}))
 
 	t.Run("empty_input.txt", run(nil))
 
-	t.Run("empty_stack.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
+	t.Run("empty_stack.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
 	}))
 
-	t.Run("errorhandling.txt", run(map[FrameKind]int{
-		CreatedByFrameKind:  1,
-		GoroutineHeaderKind: 1,
-		StackFrameKind:      1,
+	t.Run("errorhandling.txt", run(map[debugstack.FrameKind]int{
+		debugstack.CreatedByFrameKind:  1,
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.StackFrameKind:      1,
 	}))
 
-	t.Run("frameselided.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
-		FramesElidedKind:    1,
-		StackFrameKind:      100,
+	t.Run("frameselided.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.FramesElidedKind:    1,
+		debugstack.StackFrameKind:      100,
 	}))
 
-	t.Run("frameselided_goroutine.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
-		FramesElidedKind:    1,
-		CreatedByFrameKind:  1,
-		StackFrameKind:      100,
+	t.Run("frameselided_goroutine.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.FramesElidedKind:    1,
+		debugstack.CreatedByFrameKind:  1,
+		debugstack.StackFrameKind:      100,
 	}))
 
-	t.Run("go121_createdby.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
-		StackFrameKind:      2,
-		CreatedByFrameKind:  1,
+	t.Run("go121_createdby.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.StackFrameKind:      2,
+		debugstack.CreatedByFrameKind:  1,
 	}))
 
-	t.Run("lockedm.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
-		StackFrameKind:      5,
-		CreatedByFrameKind:  1,
+	t.Run("lockedm.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.StackFrameKind:      5,
+		debugstack.CreatedByFrameKind:  1,
 	}))
 
-	t.Run("partial_createdby.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
-		StackFrameKind:      1,
-		CreatedByFrameKind:  1,
+	t.Run("partial_createdby.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.StackFrameKind:      1,
+		debugstack.CreatedByFrameKind:  1,
 	}))
 
-	t.Run("partial_stack.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
-		StackFrameKind:      1,
+	t.Run("partial_stack.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.StackFrameKind:      1,
 	}))
 
-	t.Run("waitsince.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
-		CreatedByFrameKind:  1,
-		StackFrameKind:      15,
+	t.Run("waitsince.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.CreatedByFrameKind:  1,
+		debugstack.StackFrameKind:      15,
 	}))
 
-	t.Run("windows.txt", run(map[FrameKind]int{
-		GoroutineHeaderKind: 1,
-		StackFrameKind:      1,
+	t.Run("windows.txt", run(map[debugstack.FrameKind]int{
+		debugstack.GoroutineHeaderKind: 1,
+		debugstack.StackFrameKind:      1,
 	}))
 }
 
@@ -146,10 +147,10 @@ func TestInvalidParse(t *testing.T) {
 		t.Parallel()
 
 		data := []byte("afharviraear\naatr\nartaronewoHveeeee a\n tarsTarion")
-		parsed := Parse(data)
+		parsed := debugstack.Parse(data)
 		check.That(t, parsed.String(), should.Equal(string(data)))
-		check.That(t, parsed.Stats(), should.Match(map[FrameKind]int{
-			UnknownFrameKind: 4,
+		check.That(t, parsed.Stats(), should.Match(map[debugstack.FrameKind]int{
+			debugstack.UnknownFrameKind: 4,
 		}))
 	})
 
@@ -157,10 +158,10 @@ func TestInvalidParse(t *testing.T) {
 		t.Parallel()
 
 		data := []byte("afharviraearaatrartaronewoHveeeee a tarsTarion")
-		parsed := Parse(data)
+		parsed := debugstack.Parse(data)
 		check.That(t, parsed.String(), should.Equal(string(data)))
-		check.That(t, parsed.Stats(), should.Match(map[FrameKind]int{
-			UnknownFrameKind: 1,
+		check.That(t, parsed.Stats(), should.Match(map[debugstack.FrameKind]int{
+			debugstack.UnknownFrameKind: 1,
 		}))
 	})
 
@@ -168,11 +169,11 @@ func TestInvalidParse(t *testing.T) {
 		t.Parallel()
 
 		data := []byte("[some randomline\npath/to/pkg.Func(...)\n\t/path/to/file.go:100 +0x8c")
-		parsed := Parse(data)
+		parsed := debugstack.Parse(data)
 		check.That(t, parsed.String(), should.Equal(string(data)))
-		check.That(t, parsed.Stats(), should.Match(map[FrameKind]int{
-			UnknownFrameKind: 1,
-			StackFrameKind:   1,
+		check.That(t, parsed.Stats(), should.Match(map[debugstack.FrameKind]int{
+			debugstack.UnknownFrameKind: 1,
+			debugstack.StackFrameKind:   1,
 		}))
 	})
 }

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package errors
+package errors_test
 
 import (
-	"errors"
 	"sync"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -28,22 +28,22 @@ func TestLazyMultiError(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Test LazyMultiError", t, func(t *ftt.Test) {
-		lme := NewLazyMultiError(10)
+		lme := errors.NewLazyMultiError(10)
 		assert.Loosely(t, lme.Get(), should.BeNil)
 
 		e := errors.New("sup")
 		lme.Assign(6, e)
 		assert.Loosely(t, lme.Get(), should.ErrLike(
-			MultiError{nil, nil, nil, nil, nil, nil, e, nil, nil, nil}))
+			errors.MultiError{nil, nil, nil, nil, nil, nil, e, nil, nil, nil}))
 
 		lme.Assign(2, e)
 		assert.Loosely(t, lme.Get(), should.ErrLike(
-			MultiError{nil, nil, e, nil, nil, nil, e, nil, nil, nil}))
+			errors.MultiError{nil, nil, e, nil, nil, nil, e, nil, nil, nil}))
 
 		assert.Loosely(t, func() { lme.Assign(20, e) }, should.Panic)
 
 		t.Run("Try to freak out the race detector", func(t *ftt.Test) {
-			lme := NewLazyMultiError(64)
+			lme := errors.NewLazyMultiError(64)
 			t.Run("all nils", func(t *ftt.Test) {
 				wg := sync.WaitGroup{}
 				for i := range 64 {
@@ -71,7 +71,7 @@ func TestLazyMultiError(t *testing.T) {
 					}(i)
 				}
 				wg.Wait()
-				me := make(MultiError, 64)
+				me := make(errors.MultiError, 64)
 				for i := range me {
 					if i&1 == 1 {
 						me[i] = wow
@@ -90,7 +90,7 @@ func TestLazyMultiError(t *testing.T) {
 					}(i)
 				}
 				wg.Wait()
-				me := make(MultiError, 64)
+				me := make(errors.MultiError, 64)
 				for i := range me {
 					me[i] = wow
 				}

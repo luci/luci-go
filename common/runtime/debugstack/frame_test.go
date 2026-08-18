@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package debugstack
+package debugstack_test
 
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/runtime/debugstack"
 	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -34,7 +35,7 @@ func TestSourceInfo(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
-			parsed := ParseString(tc.stack)
+			parsed := debugstack.ParseString(tc.stack)
 			path, lineno := parsed[0].SourceInfo()
 			check.That(t, path, should.Equal(tc.path))
 			check.That(t, lineno, should.Equal(tc.lineno))

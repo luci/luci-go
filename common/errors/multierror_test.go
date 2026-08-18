@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package errors
+package errors_test
 
 import (
-	"errors"
+	stderrors "errors"
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -27,14 +28,14 @@ import (
 func TestMultiError(t *testing.T) {
 	t.Parallel()
 	t.Run("works", func(t *testing.T) {
-		var me error = MultiError{errors.New("hello"), errors.New("bob")}
+		var me error = errors.MultiError{stderrors.New("hello"), stderrors.New("bob")}
 		assert.That(t, me, should.ErrLikeString("err[0]: hello\nerr[1]: bob"))
 	})
 
 	t.Run("compatible with errors.Is and errors.As", func(t *testing.T) {
-		inner := errors.New("hello")
-		annotated := Annotate(inner, "annotated err")
-		var me error = MultiError{annotated, fmt.Errorf("bob")}
+		inner := stderrors.New("hello")
+		annotated := errors.Annotate(inner, "annotated err")
+		var me error = errors.MultiError{annotated, fmt.Errorf("bob")}
 		assert.That(t, me, should.ErrLikeError(inner))
 		assert.That(t, me, should.ErrLikeString("annotated err"))
 	})
@@ -45,33 +46,33 @@ func TestUpstreamErrors(t *testing.T) {
 
 	ftt.Run("Test MultiError", t, func(t *ftt.Test) {
 		t.Run("nil", func(t *ftt.Test) {
-			me := MultiError(nil)
+			me := errors.MultiError(nil)
 			assert.Loosely(t, me.Error(), should.Equal("(0 errors)"))
 			t.Run("single", func(t *ftt.Test) {
-				assert.Loosely(t, SingleError(error(me)), should.BeNil)
+				assert.Loosely(t, errors.SingleError(error(me)), should.BeNil)
 			})
 		})
 		t.Run("one", func(t *ftt.Test) {
-			me := MultiError{errors.New("sup")}
+			me := errors.MultiError{stderrors.New("sup")}
 			assert.Loosely(t, me.Error(), should.Equal("sup"))
 		})
 		t.Run("two", func(t *ftt.Test) {
-			me := MultiError{errors.New("sup"), errors.New("what")}
+			me := errors.MultiError{stderrors.New("sup"), stderrors.New("what")}
 			assert.Loosely(t, me.Error(), should.Equal("err[0]: sup\nerr[1]: what"))
 		})
 		t.Run("more", func(t *ftt.Test) {
-			me := MultiError{errors.New("sup"), errors.New("what"), errors.New("nerds")}
+			me := errors.MultiError{stderrors.New("sup"), stderrors.New("what"), stderrors.New("nerds")}
 			assert.Loosely(t, me.Error(), should.Equal("err[0]: sup\nerr[1]: what\nerr[2]: nerds"))
 
 			t.Run("single", func(t *ftt.Test) {
-				assert.Loosely(t, SingleError(error(me)), should.Resemble(errors.New("sup")))
+				assert.Loosely(t, errors.SingleError(error(me)), should.Resemble(stderrors.New("sup")))
 			})
 		})
 		t.Run("Error with nil", func(t *ftt.Test) {
-			me := MultiError{
-				errors.New("1"),
+			me := errors.MultiError{
+				stderrors.New("1"),
 				nil,
-				errors.New("3"),
+				stderrors.New("3"),
 			}
 
 			assert.Loosely(t, me.Error(), should.Equal(
@@ -80,12 +81,12 @@ func TestUpstreamErrors(t *testing.T) {
 					"err[2]: 3"))
 		})
 
-		me20 := func() MultiError {
+		me20 := func() errors.MultiError {
 			var e []error
 			for i := range 20 {
-				e = append(e, errors.New(fmt.Sprint(i+1)))
+				e = append(e, stderrors.New(fmt.Sprint(i+1)))
 			}
-			return MultiError(e)
+			return errors.MultiError(e)
 		}
 
 		t.Run("max non-nil", func(t *ftt.Test) {
@@ -116,7 +117,7 @@ func TestUpstreamErrors(t *testing.T) {
 		t.Run("max nil", func(t *ftt.Test) {
 			me := me20()
 			me[5] = nil
-			me.MaybeAdd(errors.New("new"))
+			me.MaybeAdd(stderrors.New("new"))
 			assert.Loosely(t, me.Error(), should.Equal(
 				"err[0]: 1\n"+
 					"err[1]: 2\n"+
@@ -144,9 +145,9 @@ func TestUpstreamErrors(t *testing.T) {
 		t.Run("overflow non-nil", func(t *ftt.Test) {
 			me := me20()
 
-			me.MaybeAdd(errors.New("overflow"))
-			me.MaybeAdd(errors.New("overflow"))
-			me.MaybeAdd(errors.New("overflow"))
+			me.MaybeAdd(stderrors.New("overflow"))
+			me.MaybeAdd(stderrors.New("overflow"))
+			me.MaybeAdd(stderrors.New("overflow"))
 			assert.Loosely(t, me.Error(), should.Equal(
 				"err[0]: 1\n"+
 					"err[1]: 2\n"+
@@ -181,10 +182,10 @@ func TestUpstreamErrors(t *testing.T) {
 
 			me[5] = nil
 
-			me.MaybeAdd(errors.New("new"))
-			me.MaybeAdd(errors.New("overflow"))
-			me.MaybeAdd(errors.New("overflow"))
-			me.MaybeAdd(errors.New("overflow"))
+			me.MaybeAdd(stderrors.New("new"))
+			me.MaybeAdd(stderrors.New("overflow"))
+			me.MaybeAdd(stderrors.New("overflow"))
+			me.MaybeAdd(stderrors.New("overflow"))
 			assert.Loosely(t, me.Error(), should.Equal(
 				"err[0]: 1\n"+
 					"err[1]: 2\n"+
@@ -240,7 +241,7 @@ func TestUpstreamErrors(t *testing.T) {
 	})
 
 	ftt.Run("MaybeAdd", t, func(t *ftt.Test) {
-		me := MultiError(nil)
+		me := errors.MultiError(nil)
 
 		t.Run("nil", func(t *ftt.Test) {
 			me.MaybeAdd(nil)
@@ -249,18 +250,18 @@ func TestUpstreamErrors(t *testing.T) {
 		})
 
 		t.Run("thing", func(t *ftt.Test) {
-			me.MaybeAdd(errors.New("sup"))
+			me.MaybeAdd(stderrors.New("sup"))
 			assert.Loosely(t, me, should.HaveLength(1))
 			assert.Loosely(t, error(me), should.NotBeNilInterface)
 
-			me.MaybeAdd(errors.New("what"))
+			me.MaybeAdd(stderrors.New("what"))
 			assert.Loosely(t, me, should.HaveLength(2))
 			assert.Loosely(t, error(me), should.NotBeNilInterface)
 		})
 	})
 
 	ftt.Run("AsError", t, func(t *ftt.Test) {
-		var me MultiError
+		var me errors.MultiError
 		assert.Loosely(t, me == nil, should.BeTrue)
 
 		var err error
@@ -276,8 +277,8 @@ func TestUpstreamErrors(t *testing.T) {
 	})
 
 	ftt.Run("SingleError passes through", t, func(t *ftt.Test) {
-		e := errors.New("unique")
-		assert.Loosely(t, SingleError(e), should.Equal(e))
+		e := stderrors.New("unique")
+		assert.Loosely(t, errors.SingleError(e), should.Equal(e))
 	})
 }
 
@@ -286,23 +287,23 @@ func TestFlatten(t *testing.T) {
 
 	ftt.Run("Flatten works", t, func(t *ftt.Test) {
 		t.Run("Nil", func(t *ftt.Test) {
-			assert.Loosely(t, Flatten(MultiError{nil, nil, MultiError{nil, nil, nil}}), should.BeNil)
+			assert.Loosely(t, errors.Flatten(errors.MultiError{nil, nil, errors.MultiError{nil, nil, nil}}), should.BeNil)
 		})
 
 		t.Run("2-dim", func(t *ftt.Test) {
-			oneErr := errors.New("1")
-			twoErr := errors.New("2")
-			assert.Loosely(t, Flatten(MultiError{nil, oneErr, nil, MultiError{nil, twoErr, nil}}),
-				should.ErrLike(MultiError{oneErr, twoErr}))
+			oneErr := stderrors.New("1")
+			twoErr := stderrors.New("2")
+			assert.Loosely(t, errors.Flatten(errors.MultiError{nil, oneErr, nil, errors.MultiError{nil, twoErr, nil}}),
+				should.ErrLike(errors.MultiError{oneErr, twoErr}))
 		})
 
 		t.Run("Doesn't unwrap", func(t *ftt.Test) {
-			ann := Annotate(MultiError{nil, nil, nil}, "don't do this")
-			twoErr := errors.New("2")
-			merr, yup := Flatten(MultiError{nil, ann, nil, MultiError{nil, twoErr, nil}}).(MultiError)
+			ann := errors.Annotate(errors.MultiError{nil, nil, nil}, "don't do this")
+			twoErr := stderrors.New("2")
+			merr, yup := errors.Flatten(errors.MultiError{nil, ann, nil, errors.MultiError{nil, twoErr, nil}}).(errors.MultiError)
 			assert.Loosely(t, yup, should.BeTrue)
 			assert.Loosely(t, len(merr), should.Equal(2))
-			assert.Loosely(t, merr, should.ErrLike(MultiError{ann, twoErr}))
+			assert.Loosely(t, merr, should.ErrLike(errors.MultiError{ann, twoErr}))
 		})
 	})
 }
@@ -311,25 +312,25 @@ func TestAppend(t *testing.T) {
 	t.Parallel()
 	ftt.Run("Test Append function", t, func(t *ftt.Test) {
 		t.Run("combine empty", func(t *ftt.Test) {
-			assert.Loosely(t, Append(), should.BeNil)
+			assert.Loosely(t, errors.Append(), should.BeNil)
 		})
 		t.Run("more intricate empty cases", func(t *ftt.Test) {
-			assert.Loosely(t, Append(Append()), should.BeNil)
-			assert.Loosely(t, Append(nil), should.BeNil)
-			assert.Loosely(t, Append(Append(Append()), Append(), nil, Append(nil, nil)), should.BeNil)
+			assert.Loosely(t, errors.Append(errors.Append()), should.BeNil)
+			assert.Loosely(t, errors.Append(nil), should.BeNil)
+			assert.Loosely(t, errors.Append(errors.Append(errors.Append()), errors.Append(), nil, errors.Append(nil, nil)), should.BeNil)
 		})
 		t.Run("singleton physical equality", func(t *ftt.Test) {
 			e := fmt.Errorf("f59031c1-3d8d-47c4-8cff-b2b5d67ce7e7")
-			assert.Loosely(t, e, should.Equal(Append(e)))
-			assert.Loosely(t, e, should.Equal(Append(Append(e))))
+			assert.Loosely(t, e, should.Equal(errors.Append(e)))
+			assert.Loosely(t, e, should.Equal(errors.Append(errors.Append(e))))
 		})
 		t.Run("doubleton physical equality", func(t *ftt.Test) {
 			e := fmt.Errorf("f59031c1-3d8d-47c4-8cff-b2b5d67ce7e7")
-			assert.Loosely(t, Append(e, e).(MultiError)[0], should.Equal(e))
+			assert.Loosely(t, errors.Append(e, e).(errors.MultiError)[0], should.Equal(e))
 		})
 		t.Run("doubleton physical equality with nils", func(t *ftt.Test) {
 			e := fmt.Errorf("2d2a3939-e185-4210-9060-0cb0fdab42be")
-			assert.Loosely(t, Append(nil, e, e, nil).(MultiError)[0], should.Equal(e))
+			assert.Loosely(t, errors.Append(nil, e, e, nil).(errors.MultiError)[0], should.Equal(e))
 		})
 	})
 }

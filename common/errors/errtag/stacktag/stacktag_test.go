@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package stacktag
+package stacktag_test
 
 import (
 	"errors"
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/errors/errtag/stacktag"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -26,40 +27,40 @@ import (
 func TestMerge(t *testing.T) {
 	t.Parallel()
 
-	short := Tag.ApplyValue(errors.New("hi"), "short")
-	long := Tag.ApplyValue(errors.New("hi"), "longlonglong")
+	short := stacktag.Tag.ApplyValue(errors.New("hi"), "short")
+	long := stacktag.Tag.ApplyValue(errors.New("hi"), "longlonglong")
 
 	merged := fmt.Errorf("%w, %w", short, long)
-	assert.That(t, Tag.ValueOrDefault(merged), should.Equal("longlonglong"))
+	assert.That(t, stacktag.Tag.ValueOrDefault(merged), should.Equal("longlonglong"))
 }
 
-var globalErr = Capture(errors.New("hi"), 0)
+var globalErr = stacktag.Capture(errors.New("hi"), 0)
 var globalErr2 error
 
 func init() {
-	globalErr2 = Capture(errors.New("hi"), 0)
+	globalErr2 = stacktag.Capture(errors.New("hi"), 0)
 }
 
 func TestInitNoCapture(t *testing.T) {
 	t.Parallel()
 
-	assert.That(t, Tag.ValueOrDefault(globalErr), should.Equal(""))
-	assert.That(t, Tag.ValueOrDefault(globalErr2), should.Equal(""))
-	assert.That(t, Tag.ValueOrDefault(Capture(globalErr2, 0)), should.NotBeBlank)
+	assert.That(t, stacktag.Tag.ValueOrDefault(globalErr), should.Equal(""))
+	assert.That(t, stacktag.Tag.ValueOrDefault(globalErr2), should.Equal(""))
+	assert.That(t, stacktag.Tag.ValueOrDefault(stacktag.Capture(globalErr2, 0)), should.NotBeBlank)
 }
 
 func TestPickLongest(t *testing.T) {
 	t.Parallel()
 
 	err := fmt.Errorf("I am an error")
-	err = Tag.ApplyValue(err, "stack1")
-	assert.That(t, Tag.ValueOrDefault(err), should.Match("stack1"))
+	err = stacktag.Tag.ApplyValue(err, "stack1")
+	assert.That(t, stacktag.Tag.ValueOrDefault(err), should.Match("stack1"))
 
-	err2 := Tag.ApplyValue(fmt.Errorf("I am different error"), "st")
+	err2 := stacktag.Tag.ApplyValue(fmt.Errorf("I am different error"), "st")
 
 	combo := errors.Join(err, err2)
-	assert.That(t, Tag.ValueOrDefault(combo), should.Match("stack1"))
+	assert.That(t, stacktag.Tag.ValueOrDefault(combo), should.Match("stack1"))
 
-	combo = errors.Join(err, err2, Tag.ApplyValue(fmt.Errorf("another"), "staaaaaaaaAaacccck"))
-	assert.That(t, Tag.ValueOrDefault(combo), should.Match("staaaaaaaaAaacccck"))
+	combo = errors.Join(err, err2, stacktag.Tag.ApplyValue(fmt.Errorf("another"), "staaaaaaaaAaacccck"))
+	assert.That(t, stacktag.Tag.ValueOrDefault(combo), should.Match("staaaaaaaaAaacccck"))
 }

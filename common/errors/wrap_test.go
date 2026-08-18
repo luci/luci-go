@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package errors
+package errors_test
 
 import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -50,27 +51,27 @@ func TestWrapped(t *testing.T) {
 			var err error
 
 			t.Run(`Unwraps to nil.`, func(t *ftt.Test) {
-				assert.Loosely(t, Unwrap(err), should.BeNil)
+				assert.Loosely(t, errors.Unwrap(err), should.BeNil)
 			})
 
 			t.Run(`When wrapped, does not unwrap to nil.`, func(t *ftt.Test) {
-				assert.Loosely(t, Unwrap(testWrap(err)), should.NotBeNil)
+				assert.Loosely(t, errors.Unwrap(testWrap(err)), should.NotBeNil)
 			})
 		})
 
 		t.Run(`A non-wrapped error.`, func(t *ftt.Test) {
-			err := Unwrap(New("test error")) // to drop the stack
+			err := errors.Unwrap(errors.New("test error")) // to drop the stack
 
 			t.Run(`Unwraps to itself.`, func(t *ftt.Test) {
-				assert.Loosely(t, Unwrap(err), should.Equal(err))
+				assert.Loosely(t, errors.Unwrap(err), should.Equal(err))
 			})
 
 			t.Run(`When wrapped, unwraps to itself.`, func(t *ftt.Test) {
-				assert.Loosely(t, Unwrap(testWrap(err)), should.Equal(err))
+				assert.Loosely(t, errors.Unwrap(testWrap(err)), should.Equal(err))
 			})
 
 			t.Run(`When double-wrapped, unwraps to itself.`, func(t *ftt.Test) {
-				assert.Loosely(t, Unwrap(testWrap(testWrap(err))), should.Equal(err))
+				assert.Loosely(t, errors.Unwrap(testWrap(testWrap(err))), should.Equal(err))
 			})
 		})
 	})
