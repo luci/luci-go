@@ -146,11 +146,13 @@ func taskServiceAccount(infra *pb.BuildInfra) string {
 	return infra.GetSwarming().GetTaskServiceAccount()
 }
 
-func validateHostName(host string) error {
-	if strings.Contains(host, "://") {
-		return errors.New(`must not contain "://"`)
+func validateKnownHostName(host string, known []string) error {
+	for _, k := range known {
+		if host == k {
+			return nil
+		}
 	}
-	return nil
+	return errors.Fmt(`unknown host %q, want one of %q`, host, known)
 }
 
 func validateCipdPackage(pkg string, mustWithSuffix bool) error {
@@ -272,8 +274,8 @@ func validateInfraBuildbucket(ctx context.Context, globalCfg *pb.SettingsCfg, ib
 	}
 	hosts := stringset.NewFromSlice(globalCfg.GetKnownPublicGerritHosts()...)
 	for _, host := range ib.GetKnownPublicGerritHosts() {
-		if err = validateHostName(host); err != nil {
-			return errors.Fmt("known_public_gerrit_hosts: %w", err)
+		if strings.Contains(host, "://") {
+			return errors.New(`known_public_gerrit_hosts: must not contain "://"`)
 		}
 		hosts.Add(host)
 	}
@@ -414,13 +416,19 @@ func validateInfraBackend(globalCfg *pb.SettingsCfg, ib *pb.BuildInfra_Backend) 
 	}
 }
 
-func validateInfraSwarming(is *pb.BuildInfra_Swarming) error {
+func validateInfraSwarming(globalCfg *pb.SettingsCfg, is *pb.BuildInfra_Swarming) error {
 	var err error
 	if is == nil {
 		return nil
 	}
+
+	knownHosts := make([]string, len(globalCfg.Backends))
+	for i, b := range globalCfg.Backends {
+		knownHosts[i] = b.Hostname
+	}
+
 	switch {
-	case teeErr(validateHostName(is.GetHostname()), &err) != nil:
+	case teeErr(validateKnownHostName(is.GetHostname(), knownHosts), &err) != nil:
 		return errors.Fmt("hostname: %w", err)
 	case is.GetPriority() < 0 || is.GetPriority() > 255:
 		return errors.New("priority must be in [0, 255]")
@@ -468,7 +476,7 @@ func validateInfra(ctx context.Context, globalCfg *pb.SettingsCfg, infra *pb.Bui
 		return errors.New("can only have one of backend or swarming in build infra. both were provided")
 	case teeErr(validateInfraBackend(globalCfg, infra.GetBackend()), &err) != nil:
 		return errors.Fmt("backend: %w", err)
-	case teeErr(validateInfraSwarming(infra.GetSwarming()), &err) != nil:
+	case teeErr(validateInfraSwarming(globalCfg, infra.GetSwarming()), &err) != nil:
 		return errors.Fmt("swarming: %w", err)
 	case teeErr(validateInfraBuildbucket(ctx, globalCfg, infra.GetBuildbucket()), &err) != nil:
 		return errors.Fmt("buildbucket: %w", err)

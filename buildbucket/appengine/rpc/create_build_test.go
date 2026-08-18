@@ -99,7 +99,7 @@ func validCreateBuildRequest() *pb.CreateBuildRequest {
 					},
 				},
 				Swarming: &pb.BuildInfra_Swarming{
-					Hostname: "host",
+					Hostname: "chromium-swarm.appspot.com",
 					Priority: 25,
 					TaskDimensions: []*pb.RequestedDimension{
 						{
@@ -645,7 +645,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 					t.Run("hostname", func(t *ftt.Test) {
 						req.Build.Infra.Swarming.Hostname = "https://host"
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						assert.Loosely(t, err, should.ErrLike(`build: infra: swarming: hostname: must not contain "://"`))
+						assert.Loosely(t, err, should.ErrLike(`build: infra: swarming: hostname: unknown host`))
 					})
 					t.Run("priority", func(t *ftt.Test) {
 						req.Build.Infra.Swarming.Priority = 500
