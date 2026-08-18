@@ -23,6 +23,7 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
@@ -37,7 +38,8 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 		ShortDesc: "Manage individual test results (single attempt outcomes)",
 		LongDesc: "Manage individual test results. A 'test result' represents a single execution attempt of a test in an invocation (identified by invocation_id, test_id, and result_id). For the combined verdict across retries and exonerations, see 'luci verdict'.\n\n" +
 			"Available subcommands:\n" +
-			"  get       Get details of an individual test result",
+			"  get       Get details of an individual test result\n" +
+			"  artifact  Manage test result artifacts",
 		CommandRun: func() subcommands.CommandRun {
 			return &testResultRun{af: af}
 		},
@@ -52,6 +54,7 @@ type testResultRun struct {
 func (r *testResultRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	return base.RunSubcommandApp(a, "luci test-result", "Test results management", []*subcommands.Command{
 		GetCmd(r.af),
+		artifact.TestResultArtifactCmd(r.af),
 		subcommands.CmdHelp,
 	}, args)
 }

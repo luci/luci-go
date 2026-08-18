@@ -21,6 +21,7 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/cli"
@@ -34,7 +35,8 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 		ShortDesc: "Manage ResultDB work units",
 		LongDesc: "Manage ResultDB work units (V2 execution hierarchy nodes).\n\n" +
 			"Available subcommands:\n" +
-			"  get       Get details of a work unit",
+			"  get       Get details of a work unit\n" +
+			"  artifact  Manage work unit artifacts",
 		CommandRun: func() subcommands.CommandRun {
 			return &workUnitRun{af: af}
 		},
@@ -49,6 +51,7 @@ type workUnitRun struct {
 func (r *workUnitRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	return base.RunSubcommandApp(a, "luci work-unit", "Work unit management", []*subcommands.Command{
 		GetCmd(r.af),
+		artifact.WorkUnitArtifactCmd(r.af),
 		subcommands.CmdHelp,
 	}, args)
 }
