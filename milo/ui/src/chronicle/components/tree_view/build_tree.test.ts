@@ -15,6 +15,9 @@
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { Edge } from '@/proto/turboci/graph/orchestrator/v1/edge.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
+import { StageResultStatus } from '../../utils/check_utils';
 
 import { buildVisualGraph, Graph, subtreeSize } from './build_tree';
 
@@ -253,6 +256,71 @@ describe('BuildVisualGraph', () => {
     expect(graph.nodes['check1'].children).toContain('check2');
     expect(graph.nodes['check2'].parents).toContain('check1');
     expect(graph.roots).toEqual(['check1']);
+  });
+
+  it('should correctly set resultStatus on N-stages (legacy worknodes)', () => {
+    const stages: Stage[] = [
+      stageView({
+        identifier: { id: 'nstage-success' },
+        state: 40, // FINAL
+        legacy: { worknode: { digest: 'digest-success' } },
+      }),
+      stageView({
+        identifier: { id: 'nstage-failed' },
+        state: 40, // FINAL
+        legacy: { worknode: { digest: 'digest-failed' } },
+      }),
+      stageView({
+        identifier: { id: 'nstage-running' },
+        state: 20, // ATTEMPTING
+      }),
+      stageView({
+        identifier: { id: 'nstage-planned' },
+        state: 10, // PLANNED
+      }),
+    ];
+
+    const valueDataMap = new Map<string, ValueData>([
+      [
+        'digest-success',
+        ValueData.fromPartial({
+          json: {
+            value: JSON.stringify({
+              workExecutorType: 'PENDING_CHANGE_BUILD',
+              workParameters: {},
+              workOutput: { success: true },
+            }),
+          },
+        }),
+      ],
+      [
+        'digest-failed',
+        ValueData.fromPartial({
+          json: {
+            value: JSON.stringify({
+              workExecutorType: 'PENDING_CHANGE_BUILD',
+              workParameters: {},
+              workOutput: { success: false },
+            }),
+          },
+        }),
+      ],
+    ]);
+
+    const graph = buildVisualGraph(stages, [], valueDataMap);
+
+    expect(graph.nodes['nstage-success'].resultStatus).toBe(
+      StageResultStatus.SUCCESS,
+    );
+    expect(graph.nodes['nstage-failed'].resultStatus).toBe(
+      StageResultStatus.FAILURE,
+    );
+    expect(graph.nodes['nstage-running'].resultStatus).toBe(
+      StageResultStatus.RUNNING,
+    );
+    expect(graph.nodes['nstage-planned'].resultStatus).toBe(
+      StageResultStatus.PENDING,
+    );
   });
 });
 

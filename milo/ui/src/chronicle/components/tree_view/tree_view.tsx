@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import AutorenewIcon from '@mui/icons-material/Autorenew';
+import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -36,7 +37,7 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 
-import { CheckResultStatus } from '../../utils/check_utils';
+import { CheckResultStatus, StageResultStatus } from '../../utils/check_utils';
 import { ChronicleContext } from '../context';
 import { InspectorPanel } from '../inspector_panel/inspector_panel';
 
@@ -53,13 +54,17 @@ const Icons = {
   ChevronRight: () => <ChevronRightIcon sx={{ color: '#999' }} />,
   ChevronDown: () => <ExpandMoreIcon sx={{ color: '#999' }} />,
   // Green for success.
-  Success: () => <CheckCircleIcon sx={{ color: '#28a745' }} />,
+  Success: () => <CheckCircleIcon sx={{ color: 'var(--success-color)' }} />,
   // Red for failure.
-  Failure: () => <ErrorIcon sx={{ color: '#dc3545' }} />,
-  // Blue for running.
-  Running: () => <AutorenewIcon sx={{ color: '#007bff' }} />,
-  // Light grey for pending.
-  Pending: () => <FiberManualRecordIcon sx={{ color: '#ccc' }} />,
+  Failure: () => <ErrorIcon sx={{ color: 'var(--failure-color)' }} />,
+  // Orange for running.
+  Running: () => <AutorenewIcon sx={{ color: 'var(--started-color)' }} />,
+  // Blue for canceled.
+  Canceled: () => <CancelIcon sx={{ color: 'var(--canceled-color)' }} />,
+  // Grey for pending.
+  Pending: () => (
+    <FiberManualRecordIcon sx={{ color: 'var(--scheduled-color)' }} />
+  ),
   // Light grey for unknown.
   Unknown: () => <HelpOutlineIcon sx={{ color: '#ccc' }} />,
   // Grey for UI elements.
@@ -68,12 +73,38 @@ const Icons = {
   Search: () => <SearchIcon sx={{ color: '#999' }} />,
 };
 
-const StatusIcon = ({ node }: { node: GraphNode }) => {
-  const { status, resultStatus } = node;
+function getStageStatusIcon(node: GraphNode) {
+  switch (node.resultStatus) {
+    case StageResultStatus.SUCCESS:
+      return <Icons.Success />;
+    case StageResultStatus.FAILURE:
+      return <Icons.Failure />;
+    case StageResultStatus.RUNNING:
+      return <Icons.Running />;
+    case StageResultStatus.CANCELLED:
+      return <Icons.Canceled />;
+    case StageResultStatus.PENDING:
+      return <Icons.Pending />;
+    case StageResultStatus.UNKNOWN:
+    default:
+      switch (node.status) {
+        case 'FINAL':
+          return <Icons.Success />;
+        case 'ATTEMPTING':
+          return <Icons.Running />;
+        case 'PLANNED':
+        case 'AWAITING_GROUP':
+          return <Icons.Pending />;
+        default:
+          return <Icons.Unknown />;
+      }
+  }
+}
 
-  switch (status) {
+function getCheckStatusIcon(node: GraphNode) {
+  switch (node.status) {
     case 'FINAL':
-      switch (resultStatus) {
+      switch (node.resultStatus) {
         case CheckResultStatus.SUCCESS:
           return <Icons.Success />;
         case CheckResultStatus.FAILURE:
@@ -84,12 +115,19 @@ const StatusIcon = ({ node }: { node: GraphNode }) => {
     case 'ATTEMPTING':
       return <Icons.Running />;
     case 'AWAITING_GROUP':
-      return <Icons.Pending />;
     case 'PLANNED':
+    case 'PLANNING':
+    case 'WAITING':
       return <Icons.Pending />;
     default:
       return <Icons.Unknown />;
   }
+}
+
+const StatusIcon = ({ node }: { node: GraphNode }) => {
+  return node.type === 'STAGE'
+    ? getStageStatusIcon(node)
+    : getCheckStatusIcon(node);
 };
 
 const StyledTreeRowRoot = styled(Box, {

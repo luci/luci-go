@@ -23,6 +23,8 @@ import {
   getCheckLabel,
   getCheckResultStatus,
   getStageLabel,
+  getStageResultStatus,
+  StageResultStatus,
 } from '../../utils/check_utils';
 
 // Note; this enum may be incomplete if stage state or check state gets updated with new values.
@@ -42,7 +44,7 @@ export interface GraphNode {
   type: NodeType;
   label: string;
   status: NodeStatus;
-  resultStatus?: CheckResultStatus;
+  resultStatus?: CheckResultStatus | StageResultStatus;
   children: Set<string>;
   parents: Set<string>;
   raw?: Check | Stage;
@@ -121,6 +123,7 @@ export function buildVisualGraph(
     stageNode.label = getStageLabel(sv, valueDataMap);
     stageNode.status = stageStateToStatus(sv.state);
     stageNode.raw = sv;
+    stageNode.resultStatus = getStageResultStatus(sv, valueDataMap);
 
     // Add assignments as edges from check to stage.
     // A check is a parent of a stage if it is assigned to that stage.
