@@ -22,9 +22,14 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -38,6 +43,10 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 	t.Run("HandleWorkUnitPublisher", func(t *testing.T) {
 		rootInvID := rootinvocations.ID("test-root-inv")
 		rdbHost := "results.api.cr.dev"
+
+		cfgProto := config.CreatePlaceholderServiceConfig()
+		compiledCfg, err := config.NewCompiledServiceConfig(cfgProto, "")
+		assert.Loosely(t, err, should.BeNil)
 
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
@@ -116,13 +125,16 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 							WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID1.WorkUnitID),
 							HasArtifacts:              true,
 							MergedInheritedProperties: expectedWU1Props,
+							WorkUnit:                  masking.WorkUnit(wu1, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg),
 						},
 						{
 							WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID2.WorkUnitID),
 							HasArtifacts:              false,
 							MergedInheritedProperties: expectedWU2Props,
+							WorkUnit:                  masking.WorkUnit(wu2, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg),
 						},
 					},
+					RootInvocationMetadata: masking.RootInvocationMetadata(rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).Build(), compiledCfg),
 				},
 				expectedAttributes: map[string]string{
 					"luci_project":                 "testproject",
@@ -136,6 +148,13 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				ctx := testutil.SpannerTestContext(t)
+				ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+				ctx = memory.Use(ctx)                    // For config datastore cache.
+
+				// Set up a placeholder service config in context.
+				err := config.SetServiceConfigForTesting(ctx, cfgProto)
+				assert.Loosely(t, err, should.BeNil)
+
 				ctx, sched := tq.TestingContext(ctx, nil)
 
 				// Insert the root invocation for this test case.
@@ -152,7 +171,7 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 					task:             task,
 					resultDBHostname: rdbHost,
 				}
-				err := p.handleWorkUnitPublisher(ctx)
+				err = p.handleWorkUnitPublisher(ctx)
 				assert.Loosely(t, err, should.BeNil)
 
 				allTasks := sched.Tasks()

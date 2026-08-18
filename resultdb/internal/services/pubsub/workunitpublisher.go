@@ -25,7 +25,10 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -64,8 +67,14 @@ func (p *workUnitPublisher) handleWorkUnitPublisher(ctx context.Context) (err er
 		return nil
 	}
 
-	// 3. Construct the notification.
-	notification, err := p.workUnitsNotification(ctx, rootInvID, task.WorkUnitIds)
+	// 3. Fetch service config for URL generation.
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return errors.Fmt("fetch service config: %w", err)
+	}
+
+	// 4. Construct the notification.
+	notification, err := p.workUnitsNotification(ctx, rootInvID, task.WorkUnitIds, cfg, rootInv)
 	if err != nil {
 		return err
 	}
@@ -80,7 +89,7 @@ func (p *workUnitPublisher) handleWorkUnitPublisher(ctx context.Context) (err er
 
 // workUnitsNotification constructs a WorkUnitsNotification message for the
 // given work units, fully calculating and merging inherited properties from ancestors.
-func (p *workUnitPublisher) workUnitsNotification(ctx context.Context, rootInvID rootinvocations.ID, workUnitIDs []string) (*pb.WorkUnitsNotification, error) {
+func (p *workUnitPublisher) workUnitsNotification(ctx context.Context, rootInvID rootinvocations.ID, workUnitIDs []string, cfg *config.CompiledServiceConfig, rootInv *rootinvocations.RootInvocationRow) (*pb.WorkUnitsNotification, error) {
 	// Collect all invocation IDs to check.
 	invIDs := make(invocations.IDSet, len(workUnitIDs))
 	for _, wuID := range workUnitIDs {
@@ -122,16 +131,23 @@ func (p *workUnitPublisher) workUnitsNotification(ctx context.Context, rootInvID
 			return nil, err
 		}
 
+		row, ok := fetchedWorkUnits[wuInternalID]
+		if !ok {
+			return nil, errors.Fmt("work unit %s not found in fetched map", wuInternalID.Name())
+		}
+
 		workUnits[i] = &pb.WorkUnitsNotification_WorkUnitDetails{
 			WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID),
 			HasArtifacts:              hasArtifactsSet.Has(wuInvID),
 			MergedInheritedProperties: mergedProps,
+			WorkUnit:                  masking.WorkUnit(row, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, cfg),
 		}
 	}
 
 	return &pb.WorkUnitsNotification{
-		WorkUnits:    workUnits,
-		ResultdbHost: p.resultDBHostname,
+		WorkUnits:              workUnits,
+		ResultdbHost:           p.resultDBHostname,
+		RootInvocationMetadata: masking.RootInvocationMetadata(rootInv, cfg),
 	}, nil
 }
 
