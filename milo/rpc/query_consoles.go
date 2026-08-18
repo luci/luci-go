@@ -108,7 +108,7 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 
 	// Query consoles.
 	consoles := make([]*projectconfigpb.Console, 0, pageSize)
-	var nextCursor datastore.Cursor
+	var nextCursor datastore.RawCursor
 	it := datastore.RunQuery[*projectconfig.Console](ctx, q)
 	for con, err := range it.Results {
 		if err != nil {

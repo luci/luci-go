@@ -140,7 +140,7 @@ func TestCursor(t *testing.T) {
 			}
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			var cur datastore.Cursor
+			var cur datastore.RawCursor
 			var fetched []int64
 			it1 := datastore.RunQuery[*Entity](ctx, datastore.NewQuery("Entity"))
 			for e, err := range it1.Results {

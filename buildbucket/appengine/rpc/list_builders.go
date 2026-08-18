@@ -121,7 +121,7 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 // fetchBuilders fetches a page of builders together with a cursor.
 //
 // buckets in allowedBuckets should use project/bucket format.
-func fetchBuilders(ctx context.Context, q *datastore.Query, allowedBuckets []string, pageSize int32) (builders []*model.Builder, nextCursor datastore.Cursor, err error) {
+func fetchBuilders(ctx context.Context, q *datastore.Query, allowedBuckets []string, pageSize int32) (builders []*model.Builder, nextCursor datastore.RawCursor, err error) {
 	if pageSize <= 0 {
 		pageSize = 100
 	}

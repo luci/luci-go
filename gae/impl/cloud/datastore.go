@@ -98,7 +98,7 @@ func (bds *boundDatastore) RunInTransaction(fn func(context.Context) error, opts
 	return normalizeError(err)
 }
 
-func (bds *boundDatastore) DecodeCursor(s string) (ds.Cursor, error) {
+func (bds *boundDatastore) DecodeCursor(s string) (ds.RawCursor, error) {
 	cursor, err := datastore.DecodeCursor(s)
 	return cursor, normalizeError(err)
 }
@@ -106,7 +106,7 @@ func (bds *boundDatastore) DecodeCursor(s string) (ds.Cursor, error) {
 func (bds *boundDatastore) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 	it := bds.client.Run(bds, bds.prepareNativeQuery(q))
 	return ds.RawQueryIter{
-		Cursor: func() (ds.Cursor, error) {
+		Cursor: func() (ds.RawCursor, error) {
 			return it.Cursor()
 		},
 		Results: func(yield func(ds.PropertyMap, error) bool) {

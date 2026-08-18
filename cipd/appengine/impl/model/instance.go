@@ -185,7 +185,7 @@ func RegisterInstance(ctx context.Context, inst *Instance, md []*repopb.Instance
 // Only does a query over Instances entities. Doesn't check whether the Package
 // entity exists. Returns up to pageSize entities, plus non-nil cursor (if
 // there are more results). pageSize must be positive.
-func ListInstances(ctx context.Context, pkg string, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
+func ListInstances(ctx context.Context, pkg string, pageSize int32, cursor datastore.RawCursor) (out []*Instance, nextCur datastore.RawCursor, err error) {
 	if pageSize <= 0 {
 		panic("pageSize must be positive")
 	}

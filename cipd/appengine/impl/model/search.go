@@ -31,7 +31,7 @@ import (
 // Only does a query over Instances entities. Doesn't check whether the Package
 // entity exists. Returns up to pageSize entities, plus non-nil cursor (if
 // there are more results). 'pageSize' must be positive.
-func SearchInstances(ctx context.Context, pkg string, tags []*repopb.Tag, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
+func SearchInstances(ctx context.Context, pkg string, tags []*repopb.Tag, pageSize int32, cursor datastore.RawCursor) (out []*Instance, nextCur datastore.RawCursor, err error) {
 	switch {
 	case len(tags) == 0:
 		panic("tags must not be empty")
@@ -126,9 +126,9 @@ func SearchInstances(ctx context.Context, pkg string, tags []*repopb.Tag, pageSi
 //
 // Returns up to 'pageSize' of results, along with a cursor to continue the
 // query or nil if it was the end of it.
-func queryByTag(ctx context.Context, pkg, tag string, cursor datastore.Cursor, pageSize int32) (
+func queryByTag(ctx context.Context, pkg, tag string, cursor datastore.RawCursor, pageSize int32) (
 	out []*datastore.Key,
-	next datastore.Cursor,
+	next datastore.RawCursor,
 	err error) {
 	// TODO(vadimsh): 'registered_ts' here is when the tag was attached. The
 	// callers likely expect results ordered by instance registration time. This

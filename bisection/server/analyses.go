@@ -269,7 +269,7 @@ func (server *AnalysesServer) ListTestAnalyses(c context.Context, req *pb.ListTe
 	// Query datastore for test analyses.
 	q := datastore.NewQuery("TestFailureAnalysis").Eq("project", req.Project).Order("-create_time").Start(cursor)
 	tfas := make([]*model.TestFailureAnalysis, 0, pageSize)
-	var nextCursor datastore.Cursor
+	var nextCursor datastore.RawCursor
 	it := datastore.RunQuery[*model.TestFailureAnalysis](c, q)
 	for tfa, err := range it.Results {
 		if err != nil {
@@ -907,7 +907,7 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 
 	// Query datastore for compile failure analyses
 	compileFailureAnalyses := make([]*model.CompileFailureAnalysis, 0, pageSize)
-	var nextCursor datastore.Cursor
+	var nextCursor datastore.RawCursor
 	itCompile := datastore.RunQuery[*model.CompileFailureAnalysis](c, q)
 	for compileFailureAnalysis, err := range itCompile.Results {
 		if err != nil {

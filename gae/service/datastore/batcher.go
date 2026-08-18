@@ -182,12 +182,12 @@ func (f *queryBatchingFilter) RunQuery(fq *FinalizedQuery) RawQueryIter {
 	limit, hasLimit := fq.Limit()
 
 	return RawQueryIter{
-		Cursor: func() (Cursor, error) {
+		Cursor: func() (RawCursor, error) {
 			return nil, errors.Fmt("queryBatchingFilter: %w", ErrCursorNotImplemented)
 		},
 		Results: func(yield func(PropertyMap, error) bool) {
 			var buffer []PropertyMap
-			var nextCursor Cursor
+			var nextCursor RawCursor
 
 			for {
 				select {

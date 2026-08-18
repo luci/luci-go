@@ -59,8 +59,8 @@ type queryIterator struct {
 	currentQueryResult    *rawQueryResult
 	itemCh                chan *rawQueryResult
 	done                  bool
-	currentItemOrderCache string   // lazy loading (loaded when `CurrentItemOrder()` is called).
-	cursor                CursorCB // for the *current* item
+	currentItemOrderCache string      // lazy loading (loaded when `CurrentItemOrder()` is called).
+	cursor                RawCursorCB // for the *current* item
 }
 
 // startQueryIterator starts to run the given query and return the iterator for
@@ -73,7 +73,7 @@ func startQueryIterator(ctx context.Context, eg *errgroup.Group, fq *FinalizedQu
 		// This will be used as CurrentCursor after the first Next() call. To get
 		// the first query result, we just need to restart the query from its
 		// initial starting cursor.
-		cursor: func() (Cursor, error) {
+		cursor: func() (RawCursor, error) {
 			start, _ := fq.Bounds()
 			return start, nil
 		},
@@ -150,7 +150,7 @@ func (qi *queryIterator) CurrentItemKey() string {
 // didn't have a cursor set. In that case we'll need to restart the query from
 // scratch when restarting the iteration and this is precisely what `nil` cursor
 // does.
-func (qi *queryIterator) CurrentCursor() (Cursor, error) {
+func (qi *queryIterator) CurrentCursor() (RawCursor, error) {
 	return qi.cursor()
 }
 
@@ -226,5 +226,5 @@ type rawQueryResult struct {
 	key    *Key
 	data   PropertyMap
 	err    error
-	cursor CursorCB // points to the entry right after `key`
+	cursor RawCursorCB // points to the entry right after `key`
 }

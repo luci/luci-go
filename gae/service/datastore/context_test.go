@@ -36,7 +36,7 @@ type fakeService struct{ RawInterface }
 
 type fakeFilt struct{ RawInterface }
 
-func (f fakeService) DecodeCursor(s string) (Cursor, error) {
+func (f fakeService) DecodeCursor(s string) (RawCursor, error) {
 	v, err := strconv.Atoi(s)
 	return fakeCursor(v), err
 }

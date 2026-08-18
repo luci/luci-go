@@ -330,7 +330,7 @@ func GetAllAuthDBChange(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (
 		query = query.Eq("who", req.Modifier)
 	}
 
-	var cursor datastore.Cursor
+	var cursor datastore.RawCursor
 	if req.PageToken != "" {
 		cursor, err = datastore.DecodeCursor(ctx, req.PageToken)
 		if err != nil {

@@ -44,7 +44,7 @@ func (r *dsCounter) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
 	return r.c.AllocateIDs.up(r.ds.AllocateIDs(keys, cb))
 }
 
-func (r *dsCounter) DecodeCursor(s string) (ds.Cursor, error) {
+func (r *dsCounter) DecodeCursor(s string) (ds.RawCursor, error) {
 	cursor, err := r.ds.DecodeCursor(s)
 	return cursor, r.c.DecodeCursor.up(err)
 }

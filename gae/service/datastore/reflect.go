@@ -25,7 +25,7 @@ import (
 
 var (
 	typeOfBSKey             = reflect.TypeOf(blobstore.Key(""))
-	typeOfCursorCB          = reflect.TypeOf(CursorCB(nil))
+	typeOfCursorCB          = reflect.TypeOf(RawCursorCB(nil))
 	typeOfGeoPoint          = reflect.TypeOf(GeoPoint{})
 	typeOfKey               = reflect.TypeOf((*Key)(nil))
 	typeOfPropertyConverter = reflect.TypeOf((*PropertyConverter)(nil)).Elem()

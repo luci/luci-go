@@ -68,7 +68,7 @@ func (d *dsImpl) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	return nil
 }
 
-func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
+func (d *dsImpl) DecodeCursor(s string) (ds.RawCursor, error) {
 	return newCursor(s)
 }
 
@@ -182,7 +182,7 @@ func (d *txnDsImpl) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	})
 }
 
-func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) { return newCursor(s) }
+func (d *txnDsImpl) DecodeCursor(s string) (ds.RawCursor, error) { return newCursor(s) }
 
 func (d *txnDsImpl) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 	return d.data.parent.stripSpecialPropsIter(executeQuery(q, d.kc, nil, true, d.data.snap, d.data.snap))

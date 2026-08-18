@@ -943,7 +943,7 @@ type paginatedQueryOpts struct {
 	PageToken string
 	PageSize  int32
 	Validator func() error // validates callback-specific fields in the request
-	Handler   func(cur datastore.Cursor, pageSize int32) ([]*model.Instance, datastore.Cursor, error)
+	Handler   func(cur datastore.RawCursor, pageSize int32) ([]*model.Instance, datastore.RawCursor, error)
 }
 
 // paginatedQuery is a common part of ListInstances and SearchInstances.
@@ -960,7 +960,7 @@ func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpt
 		opts.PageSize = 100
 	}
 
-	var cursor datastore.Cursor
+	var cursor datastore.RawCursor
 	if opts.PageToken != "" {
 		if cursor, err = datastore.DecodeCursor(ctx, opts.PageToken); err != nil {
 			return nil, "", status.Errorf(codes.InvalidArgument, "bad 'page_token': %s", err)
@@ -1008,7 +1008,7 @@ func (impl *repoImpl) ListInstances(ctx context.Context, r *repopb.ListInstances
 		Package:   r.Package,
 		PageSize:  r.PageSize,
 		PageToken: r.PageToken,
-		Handler: func(cur datastore.Cursor, pageSize int32) ([]*model.Instance, datastore.Cursor, error) {
+		Handler: func(cur datastore.RawCursor, pageSize int32) ([]*model.Instance, datastore.RawCursor, error) {
 			return model.ListInstances(ctx, r.Package, pageSize, cur)
 		},
 	})
@@ -1036,7 +1036,7 @@ func (impl *repoImpl) SearchInstances(ctx context.Context, r *repopb.SearchInsta
 		PageSize:  r.PageSize,
 		PageToken: r.PageToken,
 		Validator: func() error { return validateTagList(r.Tags) },
-		Handler: func(cur datastore.Cursor, pageSize int32) ([]*model.Instance, datastore.Cursor, error) {
+		Handler: func(cur datastore.RawCursor, pageSize int32) ([]*model.Instance, datastore.RawCursor, error) {
 			return model.SearchInstances(ctx, r.Package, r.Tags, pageSize, cur)
 		},
 	})

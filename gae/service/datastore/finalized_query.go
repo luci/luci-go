@@ -38,8 +38,8 @@ type FinalizedQuery struct {
 	limit  *int32
 	offset *int32
 
-	start Cursor
-	end   Cursor
+	start RawCursor
+	end   RawCursor
 
 	project []string
 	orders  []IndexColumn
@@ -121,7 +121,7 @@ func (q *FinalizedQuery) Orders() []IndexColumn {
 // returned are implementation-specific depending on the actual RawInterface
 // implementation and the filters installed (if the filters interfere with
 // Cursor production).
-func (q *FinalizedQuery) Bounds() (start, end Cursor) {
+func (q *FinalizedQuery) Bounds() (start, end RawCursor) {
 	return q.start, q.end
 }
 

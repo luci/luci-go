@@ -43,7 +43,7 @@ func (*BotsServer) ListBotEvents(ctx context.Context, req *apipb.BotEventsReques
 		return nil, status.Errorf(codes.InvalidArgument, "invalid limit: %s", err)
 	}
 
-	var dscursor datastore.Cursor
+	var dscursor datastore.RawCursor
 	if req.Cursor != "" {
 		var err error
 		dscursor, err = cursor.DecodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_EVENTS, req.Cursor)

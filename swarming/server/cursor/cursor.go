@@ -180,7 +180,7 @@ func Decode[T any](ctx context.Context, kind cursorpb.RequestKind, cursor string
 // Returns gRPC errors. All errors have INTERNAL code (since there's no other
 // way for this function to fail) and can be returned to the user as are. Extra
 // details are logged.
-func EncodeOpaqueCursor(ctx context.Context, kind cursorpb.RequestKind, cursor datastore.Cursor) (string, error) {
+func EncodeOpaqueCursor(ctx context.Context, kind cursorpb.RequestKind, cursor datastore.RawCursor) (string, error) {
 	b64 := cursor.String()
 	blob, err := base64.RawURLEncoding.DecodeString(b64)
 	if err != nil {
@@ -194,7 +194,7 @@ func EncodeOpaqueCursor(ctx context.Context, kind cursorpb.RequestKind, cursor d
 //
 // Returns gRPC errors with an appropriate code. Such errors can be returned to
 // the user as are. Extra details are logged.
-func DecodeOpaqueCursor(ctx context.Context, kind cursorpb.RequestKind, cursor string) (datastore.Cursor, error) {
+func DecodeOpaqueCursor(ctx context.Context, kind cursorpb.RequestKind, cursor string) (datastore.RawCursor, error) {
 	opaque, err := Decode[cursorpb.OpaqueCursor](ctx, kind, cursor)
 	if err != nil {
 		return nil, err

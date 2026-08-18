@@ -42,7 +42,7 @@ const MaxIndexColumns = 64
 //	  must always be >= 1
 type queryCursor []byte
 
-func newCursor(s string) (ds.Cursor, error) {
+func newCursor(s string) (ds.RawCursor, error) {
 	d, err := base64.RawURLEncoding.DecodeString(s)
 	if err != nil {
 		return nil, fmt.Errorf("failed to Base64-decode cursor: %s", err)

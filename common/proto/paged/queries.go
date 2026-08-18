@@ -64,7 +64,7 @@ func Query[V any](ctx context.Context, lim int32, tok string, rsp Response, q *d
 		q = q.Limit(lim + 1)
 	}
 
-	var cur datastore.Cursor
+	var cur datastore.RawCursor
 	it := datastore.RunQuery[V](ctx, q)
 
 	// If the query is not limited and the callback never returns datastore.Stop, the query runs

@@ -92,8 +92,8 @@ type queryFields struct {
 	ineqFiltHighIncl bool
 	ineqFiltHighSet  bool
 
-	start Cursor
-	end   Cursor
+	start RawCursor
+	end   RawCursor
 
 	err error
 }
@@ -279,7 +279,7 @@ func (q *Query) ClearProject() *Query {
 
 // Start sets a starting cursor. The cursor is implementation-defined by the
 // particular 'impl' you have installed.
-func (q *Query) Start(c Cursor) *Query {
+func (q *Query) Start(c RawCursor) *Query {
 	return q.mod(func(q *Query) {
 		q.start = c
 	})
@@ -287,7 +287,7 @@ func (q *Query) Start(c Cursor) *Query {
 
 // End sets the ending cursor. The cursor is implementation-defined by the
 // particular 'impl' you have installed.
-func (q *Query) End(c Cursor) *Query {
+func (q *Query) End(c RawCursor) *Query {
 	return q.mod(func(q *Query) {
 		q.end = c
 	})
@@ -1113,7 +1113,7 @@ func cmpOptionalInt32(a, b *int32) int {
 	}
 }
 
-func cmpCursor(a, b Cursor) int {
+func cmpCursor(a, b RawCursor) int {
 	var astr string
 	if a != nil {
 		astr = a.String()

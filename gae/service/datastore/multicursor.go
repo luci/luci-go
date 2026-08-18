@@ -50,7 +50,7 @@ func (c multiCursor) String() string {
 //
 // Note: There is finite chance that some other cursor can be decoded as a valid
 // multicursor
-func IsMultiCursor(cursor Cursor) bool {
+func IsMultiCursor(cursor RawCursor) bool {
 	return IsMultiCursorString(cursor.String())
 }
 
@@ -76,7 +76,7 @@ func IsMultiCursorString(cursor string) bool {
 // should match the original list of queries that was used to generate the cursor. If
 // the queries don't match the behavior is undefined. The order for the queries is not
 // important as they will be sorted before use.
-func ApplyCursors(ctx context.Context, queries []*Query, cursor Cursor) ([]*Query, error) {
+func ApplyCursors(ctx context.Context, queries []*Query, cursor RawCursor) ([]*Query, error) {
 	curStr := cursor.String()
 	return ApplyCursorString(ctx, queries, curStr)
 }

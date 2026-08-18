@@ -92,7 +92,7 @@ func (ds) GetMulti([]*datastore.Key, datastore.MultiMetaGetter, datastore.GetMul
 	panic(ni())
 }
 func (ds) DeleteMulti([]*datastore.Key, datastore.DeleteMultiCB) error { panic(ni()) }
-func (ds) DecodeCursor(string) (datastore.Cursor, error)               { panic(ni()) }
+func (ds) DecodeCursor(string) (datastore.RawCursor, error)            { panic(ni()) }
 func (ds) Count(*datastore.FinalizedQuery) (int64, error)              { panic(ni()) }
 func (ds) RunQuery(*datastore.FinalizedQuery) datastore.RawQueryIter   { panic(ni()) }
 func (ds) RunInTransaction(func(context.Context) error, *datastore.TransactionOptions) error {

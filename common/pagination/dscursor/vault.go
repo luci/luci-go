@@ -31,7 +31,7 @@ type Vault struct {
 }
 
 // PageToken converts a datastore.Cursor to an encrypted, URL safe page token.
-func (v *Vault) PageToken(ctx context.Context, cursor datastore.Cursor) (string, error) {
+func (v *Vault) PageToken(ctx context.Context, cursor datastore.RawCursor) (string, error) {
 	if cursor == nil {
 		return "", nil
 	}
@@ -43,7 +43,7 @@ func (v *Vault) PageToken(ctx context.Context, cursor datastore.Cursor) (string,
 // Returns pagination.ErrInvalidPageToken if the token is malformed or can't be
 // decrypted and secrets.ErrNoPrimaryAEAD if the encryption key is not
 // configured.
-func (v *Vault) Cursor(ctx context.Context, pageToken string) (datastore.Cursor, error) {
+func (v *Vault) Cursor(ctx context.Context, pageToken string) (datastore.RawCursor, error) {
 	if pageToken == "" {
 		return nil, nil
 	}

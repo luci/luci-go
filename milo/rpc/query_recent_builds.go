@@ -87,7 +87,7 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 
 	// Query recent builds.
 	recentBuilds := make([]*buildbucketpb.Build, 0, pageSize)
-	var nextCursor datastore.Cursor
+	var nextCursor datastore.RawCursor
 	it := datastore.RunQuery[*model.BuildSummary](ctx, q)
 	for b, err := range it.Results {
 		if err != nil {

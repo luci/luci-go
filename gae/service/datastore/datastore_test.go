@@ -74,9 +74,9 @@ func (f *fakeDatastore) AllocateIDs(keys []*Key, cb NewKeyCB) error {
 }
 
 func (f *fakeDatastore) RunQuery(fq *FinalizedQuery) RawQueryIter {
-	var lastCursor Cursor
+	var lastCursor RawCursor
 	return RawQueryIter{
-		Cursor: func() (Cursor, error) {
+		Cursor: func() (RawCursor, error) {
 			if lastCursor != nil {
 				return lastCursor, nil
 			}
@@ -2057,15 +2057,15 @@ var (
 	}
 )
 
-func (f *fakeDatastore2) DecodeCursor(s string) (Cursor, error) {
+func (f *fakeDatastore2) DecodeCursor(s string) (RawCursor, error) {
 	v, err := strconv.Atoi(s)
 	return fakeCursor(v), err
 }
 
 func (f *fakeDatastore2) RunQuery(fq *FinalizedQuery) RawQueryIter {
-	var lastCursor Cursor
+	var lastCursor RawCursor
 	return RawQueryIter{
-		Cursor: func() (Cursor, error) {
+		Cursor: func() (RawCursor, error) {
 			if lastCursor != nil {
 				return lastCursor, nil
 			}

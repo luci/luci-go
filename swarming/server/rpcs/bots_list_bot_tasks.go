@@ -59,7 +59,7 @@ func (s *BotsServer) ListBotTasks(ctx context.Context, req *apipb.BotTasksReques
 		return nil, err
 	}
 
-	var dscursor datastore.Cursor
+	var dscursor datastore.RawCursor
 	if req.Cursor != "" {
 		var err error
 		dscursor, err = cursor.DecodeOpaqueCursor(ctx, cursorpb.RequestKind_LIST_BOT_TASKS, req.Cursor)

@@ -149,7 +149,7 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Eq("single_val", "s1"),
 					datastore.NewQuery("Foo").Eq("single_val", "s2"),
 				}
-				var cur datastore.Cursor
+				var cur datastore.RawCursor
 				var err error
 				var fooses []*Foo
 				it := datastore.RunMultiQuery[*Foo](ctx, queries)
@@ -197,7 +197,7 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
 					datastore.NewQuery("Foo").Eq("multi_vals", "m4"),
 				}
-				var cur datastore.Cursor
+				var cur datastore.RawCursor
 				var err error
 				var fooses []*Foo
 				it := datastore.RunMultiQuery[*Foo](ctx, queries)

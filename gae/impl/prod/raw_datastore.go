@@ -257,7 +257,7 @@ func (d *rdsImpl) fixQuery(fq *ds.FinalizedQuery) (*datastore.Query, error) {
 	return ret, nil
 }
 
-func (d *rdsImpl) DecodeCursor(s string) (ds.Cursor, error) {
+func (d *rdsImpl) DecodeCursor(s string) (ds.RawCursor, error) {
 	return datastore.DecodeCursor(s)
 }
 
@@ -270,7 +270,7 @@ func (d *rdsImpl) RunQuery(fq *ds.FinalizedQuery) ds.RawQueryIter {
 	t := q.Run(d.aeCtx)
 
 	return ds.RawQueryIter{
-		Cursor: func() (ds.Cursor, error) {
+		Cursor: func() (ds.RawCursor, error) {
 			return t.Cursor()
 		},
 		Results: func(yield func(ds.PropertyMap, error) bool) {

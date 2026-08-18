@@ -49,8 +49,8 @@ func (r *dsState) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
 	})
 }
 
-func (r *dsState) DecodeCursor(s string) (ds.Cursor, error) {
-	curs := ds.Cursor(nil)
+func (r *dsState) DecodeCursor(s string) (ds.RawCursor, error) {
+	curs := ds.RawCursor(nil)
 	err := r.run(r.c, func() (err error) {
 		curs, err = r.rds.DecodeCursor(s)
 		return

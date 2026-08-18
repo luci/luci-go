@@ -340,7 +340,7 @@ func (q *QueryIter[V]) AddFilter(filt func(V) (bool, error)) {
 // Cursor returns a cursor to the *next* item which will be yielded by Results.
 //
 // Safe to call before pulling anything from Results.
-func (q *QueryIter[V]) Cursor() (Cursor, error) {
+func (q *QueryIter[V]) Cursor() (RawCursor, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.ensureFinalizedLocked()
@@ -524,7 +524,7 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 	if len(finalized) == 1 {
 		raw := Raw(ctx).RunQuery(finalized[0])
 		ogCursor := raw.Cursor
-		raw.Cursor = func() (Cursor, error) {
+		raw.Cursor = func() (RawCursor, error) {
 			cur, err := ogCursor()
 			if err != nil {
 				return nil, err
@@ -547,7 +547,7 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 	var iterators []*queryIterator
 	var iteratorsMu sync.Mutex
 
-	cursorCB := func() (Cursor, error) {
+	cursorCB := func() (RawCursor, error) {
 		iteratorsMu.Lock()
 		iters := slices.Clone(iterators)
 		iteratorsMu.Unlock()
@@ -724,7 +724,7 @@ func CountMulti(ctx context.Context, queries []*Query) (int64, error) {
 // DecodeCursor converts a string returned by a Cursor into a Cursor instance.
 // It will return an error if the supplied string is not valid, or could not
 // be decoded by the implementation.
-func DecodeCursor(ctx context.Context, s string) (Cursor, error) {
+func DecodeCursor(ctx context.Context, s string) (RawCursor, error) {
 	return Raw(ctx).DecodeCursor(s)
 }
 

@@ -20,16 +20,16 @@ import (
 	"iter"
 )
 
-// Cursor wraps datastore.Cursor.
-type Cursor interface {
+// RawCursor wraps datastore.RawCursor.
+type RawCursor interface {
 	fmt.Stringer
 }
 
-// CursorCB is used to obtain a Cursor while Run'ing a query on either
+// RawCursorCB is used to obtain a Cursor while Run'ing a query on either
 // Interface or RawInterface.
 //
 // it can be invoked to obtain the current cursor.
-type CursorCB func() (Cursor, error)
+type RawCursorCB func() (RawCursor, error)
 
 // RawQueryIter holds the cursor callback and result iterator for `RunQuery`ing
 // a Query via RawInterface.
@@ -40,7 +40,7 @@ type RawQueryIter struct {
 	//
 	// Must be defined and return ErrCursorNotImplemented if cursors are not
 	// implemented.
-	Cursor CursorCB
+	Cursor RawCursorCB
 
 	// Yields query results in order.
 	//
@@ -63,7 +63,7 @@ func mustGetKeyFromPM(pm PropertyMap) *Key {
 // (or behave as an empty iterator if err is nil).
 func RawQueryIterStub(err error) RawQueryIter {
 	return RawQueryIter{
-		Cursor: func() (Cursor, error) { return nil, err },
+		Cursor: func() (RawCursor, error) { return nil, err },
 		Results: func(yield func(PropertyMap, error) bool) {
 			if err != nil {
 				yield(nil, err)
@@ -199,7 +199,7 @@ type RawInterface interface {
 	// DecodeCursor converts a string returned by a Cursor into a Cursor instance.
 	// It will return an error if the supplied string is not valid, or could not
 	// be decoded by the implementation.
-	DecodeCursor(s string) (Cursor, error)
+	DecodeCursor(s string) (RawCursor, error)
 
 	// RunQuery executes the given query, returning a callback to get the cursor for
 	// the next result, and an iterator to yield the results.
