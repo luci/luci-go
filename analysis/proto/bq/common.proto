@@ -249,3 +249,19 @@ message AndroidBuildDescriptor {
   // Required.
   string build_id = 4;
 }
+
+// ModuleIdentifier represents the identity of a module in structured form.
+message ModuleIdentifier {
+  // The name of the module being tested.
+  string module_name = 1;
+
+  // The scheme of the module.
+  string module_scheme = 2;
+
+  // Description of one specific way of running the tests in a module.
+  // Encoded as a JSON object.
+  string module_variant = 3 [(bqschema.options).bq_type = "JSON"];
+
+  // Hash of the module variant.
+  string module_variant_hash = 4;
+}

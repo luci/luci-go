@@ -575,6 +575,80 @@ func (x *AndroidBuildDescriptor) GetBuildId() string {
 	return ""
 }
 
+// ModuleIdentifier represents the identity of a module in structured form.
+type ModuleIdentifier struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The name of the module being tested.
+	ModuleName string `protobuf:"bytes,1,opt,name=module_name,json=moduleName,proto3" json:"module_name,omitempty"`
+	// The scheme of the module.
+	ModuleScheme string `protobuf:"bytes,2,opt,name=module_scheme,json=moduleScheme,proto3" json:"module_scheme,omitempty"`
+	// Description of one specific way of running the tests in a module.
+	// Encoded as a JSON object.
+	ModuleVariant string `protobuf:"bytes,3,opt,name=module_variant,json=moduleVariant,proto3" json:"module_variant,omitempty"`
+	// Hash of the module variant.
+	ModuleVariantHash string `protobuf:"bytes,4,opt,name=module_variant_hash,json=moduleVariantHash,proto3" json:"module_variant_hash,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ModuleIdentifier) Reset() {
+	*x = ModuleIdentifier{}
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModuleIdentifier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModuleIdentifier) ProtoMessage() {}
+
+func (x *ModuleIdentifier) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModuleIdentifier.ProtoReflect.Descriptor instead.
+func (*ModuleIdentifier) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ModuleIdentifier) GetModuleName() string {
+	if x != nil {
+		return x.ModuleName
+	}
+	return ""
+}
+
+func (x *ModuleIdentifier) GetModuleScheme() string {
+	if x != nil {
+		return x.ModuleScheme
+	}
+	return ""
+}
+
+func (x *ModuleIdentifier) GetModuleVariant() string {
+	if x != nil {
+		return x.ModuleVariant
+	}
+	return ""
+}
+
+func (x *ModuleIdentifier) GetModuleVariantHash() string {
+	if x != nil {
+		return x.ModuleVariantHash
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_analysis_proto_bq_common_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDesc = "" +
@@ -618,7 +692,15 @@ const file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDesc = "" +
 	"data_realm\x18\x01 \x01(\tR\tdataRealm\x12\x16\n" +
 	"\x06branch\x18\x02 \x01(\tR\x06branch\x12!\n" +
 	"\fbuild_target\x18\x03 \x01(\tR\vbuildTarget\x12\x19\n" +
-	"\bbuild_id\x18\x04 \x01(\tR\abuildIdB-Z+go.chromium.org/luci/analysis/proto/bq;bqpbb\x06proto3"
+	"\bbuild_id\x18\x04 \x01(\tR\abuildId\"\xbb\x01\n" +
+	"\x10ModuleIdentifier\x12\x1f\n" +
+	"\vmodule_name\x18\x01 \x01(\tR\n" +
+	"moduleName\x12#\n" +
+	"\rmodule_scheme\x18\x02 \x01(\tR\fmoduleScheme\x121\n" +
+	"\x0emodule_variant\x18\x03 \x01(\tB\n" +
+	"\xe2\xbc$\x06\n" +
+	"\x04JSONR\rmoduleVariant\x12.\n" +
+	"\x13module_variant_hash\x18\x04 \x01(\tR\x11moduleVariantHashB-Z+go.chromium.org/luci/analysis/proto/bq;bqpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescOnce sync.Once
@@ -632,13 +714,14 @@ func file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescGZIP() []by
 	return file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_go_chromium_org_luci_analysis_proto_bq_common_proto_goTypes = []any{
 	(*TestIdentifier)(nil),           // 0: luci.analysis.bq.TestIdentifier
 	(*TestIdentifierBase)(nil),       // 1: luci.analysis.bq.TestIdentifierBase
 	(*RootInvocationDefinition)(nil), // 2: luci.analysis.bq.RootInvocationDefinition
 	(*BuildDescriptor)(nil),          // 3: luci.analysis.bq.BuildDescriptor
 	(*AndroidBuildDescriptor)(nil),   // 4: luci.analysis.bq.AndroidBuildDescriptor
+	(*ModuleIdentifier)(nil),         // 5: luci.analysis.bq.ModuleIdentifier
 }
 var file_go_chromium_org_luci_analysis_proto_bq_common_proto_depIdxs = []int32{
 	4, // 0: luci.analysis.bq.BuildDescriptor.android_build:type_name -> luci.analysis.bq.AndroidBuildDescriptor
@@ -663,7 +746,7 @@ func file_go_chromium_org_luci_analysis_proto_bq_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

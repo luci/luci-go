@@ -1,0 +1,151 @@
+// Copyright 2026 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/bq/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/work_unit.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
+
+// WorkUnitRow represents a row in a BigQuery table for a ResultDB work unit.
+// Next ID: 27.
+message WorkUnitRow {
+  // The LUCI project. E.g. "chromium".
+  string project = 1;
+
+  // The ID of the root invocation.
+  string root_invocation_id = 2;
+
+  // The ID of the work unit.
+  string work_unit_id = 3;
+
+  // The resource name of this work unit.
+  // Format: `rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}`
+  string name = 4;
+
+  // Partition_time is used to partition the table.
+  // It is the time when exported invocation was created in Spanner.
+  // Note: it is NOT the time when the row is inserted into BigQuery table.
+  google.protobuf.Timestamp partition_time = 5;
+
+  // The parent work unit resource of this work unit. Null if it's the root work unit.
+  string parent_work_unit = 6;
+
+  // The type of work unit. This captures the process the work unit is
+  // performing and the infrastructure that is creating it.
+  string kind = 7;
+
+  // The overall state of the work unit, including any child work units.
+  luci.resultdb.v1.WorkUnit.State state = 8;
+
+  // A summary of the final state of the work unit, to be displayed on the UI.
+  string summary_markdown = 9;
+
+  // Current finalization state of the work unit.
+  luci.resultdb.v1.WorkUnit.FinalizationState finalization_state = 10;
+
+  // The realm of the work unit. This controls the ACLs that apply to the
+  // work unit and its contents.
+  string realm = 11;
+
+  // When the work unit was created.
+  google.protobuf.Timestamp create_time = 12;
+
+  // When the work unit was last updated.
+  google.protobuf.Timestamp last_updated = 13;
+
+  // When the work unit started to finalize.
+  google.protobuf.Timestamp finalize_start_time = 14;
+
+  // When the work unit was finalized.
+  google.protobuf.Timestamp finalize_time = 15;
+
+  // Timestamp when the work unit will be forcefully finalized.
+  google.protobuf.Timestamp deadline = 16;
+
+  // Resource names of child work units.
+  repeated string child_work_units = 17;
+
+  // Resource names of child (legacy) invocations.
+  repeated string child_invocations = 18;
+
+  // The module this work unit is reporting results for.
+  ModuleIdentifier module_id = 19;
+
+  // The identifier of the module-shard this work unit is running.
+  string module_shard_key = 20;
+
+  // The resource that produced results in this work unit.
+  luci.resultdb.v1.ProducerResource producer_resource = 21;
+
+  // Work unit-level string key-value pairs.
+  repeated luci.analysis.v1.StringPair tags = 22;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the work unit.
+  //
+  // The value must contain a field "@type" which is a URL/resource name that
+  // uniquely identifies the type of the source protocol buffer message that
+  // defines the schema of these properties.
+  //
+  // Stored here stringified as this is the only protocol buffer type that maps
+  // to the JSON BigQuery type:
+  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+  string properties = 23 [(bqschema.options).bq_type = "JSON"];
+
+  // Domain-specific properties inherited by descendants.
+  //
+  // Properties are interpreted and exported as JSON objects. If multiple
+  // ancestors in a chain specify a value for the same JSON path, the work unit
+  // closest to the leaf will overwrite the work unit closer to the root.
+  // Effectively the same as the typescript inherited = {...grandparent, ...parent}.
+  //
+  // Stored here stringified as this is the only protocol buffer type that maps
+  // to the JSON BigQuery type.
+  string inherited_properties = 24 [(bqschema.options).bq_type = "JSON"];
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the work unit that are inherited from its ancestors.
+  //
+  // This field contains the fully calculated and merged properties from all
+  // ancestors, applied in order from root to leaf (leaf overrides ancestor).
+  //
+  // Stored here stringified as this is the only protocol buffer type that maps
+  // to the JSON BigQuery type.
+  string merged_inherited_properties = 25 [(bqschema.options).bq_type = "JSON"];
+
+  // The time when the server started inserting the row into the BigQuery
+  // table.
+  //
+  // While this is approximately the same as the time the row became visible in the
+  // BigQuery table, it will not match exactly due factors such as:
+  // - RPC latency,
+  // - server processing delay,
+  // - server clock drift.
+  // For these reasons, a row with a later insert_time may actually have
+  // been visible before a row with an earlier insert_time.
+  //
+  // If you require timestamping that lines up with table visibility, e.g.
+  // for incremental extracts, you may better off using the APPENDS Table-valued
+  // function that is part of the BigQuery change history feature:
+  // https://cloud.google.com/bigquery/docs/change-history
+  google.protobuf.Timestamp insert_time = 26;
+}
