@@ -407,19 +407,8 @@ func (lsp *LogStreamQuery) filter(ls *LogStream) bool {
 // Run executes the LogStreamQuery, returning an iter for the results.
 func (lsp *LogStreamQuery) Run(ctx context.Context) *ds.QueryIter[*LogStream] {
 	ret := ds.RunQuery[*LogStream](ctx, lsp.q)
-	ogResults := ret.Results
-	ret.Results = func(yield func(*LogStream, error) bool) {
-		for ls, err := range ogResults {
-			if err != nil {
-				yield(nil, err)
-				return
-			}
-			if lsp.filter(ls) {
-				if !yield(ls, err) {
-					return
-				}
-			}
-		}
-	}
+	ret.AddFilter(func(ls *LogStream) (bool, error) {
+		return lsp.filter(ls), nil
+	})
 	return ret
 }

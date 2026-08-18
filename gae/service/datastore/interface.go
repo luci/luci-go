@@ -18,12 +18,10 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
-	"iter"
 	"reflect"
 	"slices"
 	"sort"
 	"sync"
-	"sync/atomic"
 
 	"golang.org/x/sync/errgroup"
 
@@ -249,87 +247,185 @@ func RunInTransaction(ctx context.Context, f func(ctx context.Context) error, op
 //     raw query, but will apply other QueryIter level features).
 //   - *Key (implies a keys-only query)
 type QueryIter[V any] struct {
-	// Returns a cursor to the *next* item which will be yielded by Results.
-	//
-	// Safe to call before pulling anything from Results.
-	Cursor CursorCB
+	ctx context.Context
+	q   *Query
 
-	// Yields query results in order.
-	//
-	// If an error is encountered, it is yielded and iteration stops.
-	//
-	// Using Results more than once (e.g. for more than one loop, or more than
-	// one pull iterator) will panic.
-	Results iter.Seq2[V, error]
+	mat           *multiArgType
+	isKey         bool
+	isPropertyMap bool
+
+	mu      sync.Mutex
+	err     error
+	used    bool
+	filters []func(V) (bool, error)
+	raw     *RawQueryIter
 }
 
-// queryIterStub returns a QueryIter whose CursorCB and Results yield err
-// (or behave as an empty iterator if err is nil).
+func (q *QueryIter[V]) populateMat() {
+	if q.mat == nil {
+		var zero V
+
+		t := reflect.TypeFor[V]()
+		q.isKey = t == typeOfKey
+		q.isPropertyMap = t == typeOfPropertyMap
+
+		if !q.isKey && !q.isPropertyMap {
+			q.mat = mustParseArg(t, false)
+			if q.mat.newElem == nil {
+				panic(fmt.Errorf("QueryIter[%T]: `V` is not a concrete type: %s", zero, t.Kind()))
+			}
+		}
+	}
+}
+
+func (q *QueryIter[V]) ensureFinalizedLocked() RawQueryIter {
+	if q.raw != nil {
+		return *q.raw
+	}
+
+	if q.err != nil || q.q == nil {
+		raw := RawQueryIterStub(q.err)
+		q.raw = &raw
+		return raw
+	}
+
+	qCopy := q.q
+	if q.isKey {
+		qCopy = qCopy.KeysOnly(true)
+	}
+	fq, err := qCopy.Finalize()
+
+	var raw RawQueryIter
+	if err != nil {
+		raw = RawQueryIterStub(err)
+	} else {
+		raw = Raw(q.ctx).RunQuery(fq)
+	}
+	q.raw = &raw
+	return raw
+}
+
+func (q *QueryIter[V]) mod(name string, cb func() error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if q.used {
+		panic(fmt.Sprintf("QueryIter[V].%s: cannot call after using Results", name))
+	}
+	if q.err == nil {
+		q.err = cb()
+	}
+}
+
+// AddFilter will add `filt` to the stack of filters in this QueryIter.
+//
+// For each non-error item yielded by the query, filt will be called before
+// yielding it.
+//
+// This should return (true, nil) if the item should be yielded, (false, nil)
+// if the item should be skipped, or (*, <error>) if the iterator should yield
+// an error and halt. If there are multiple filters, they will all be called
+// in the order they were added, as long as they return (true, nil).
+//
+// Panics if the query has already yielded any results.
+func (q *QueryIter[V]) AddFilter(filt func(V) (bool, error)) {
+	if filt == nil {
+		return
+	}
+	q.mod("AddFilter", func() error {
+		q.filters = append(q.filters, filt)
+		return nil
+	})
+}
+
+// Cursor returns a cursor to the *next* item which will be yielded by Results.
+//
+// Safe to call before pulling anything from Results.
+func (q *QueryIter[V]) Cursor() (Cursor, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.ensureFinalizedLocked()
+	return q.raw.Cursor()
+}
+
+// Results is an `iter.Seq2[V, error]` which yields query results in order.
+//
+// If an error is encountered, it is yielded and iteration stops.
+//
+// Using Results more than once (e.g. for more than one loop, or more than
+// one pull iterator) will panic.
+func (q *QueryIter[V]) Results(yield func(V, error) bool) {
+	q.mu.Lock()
+	if q.used {
+		q.mu.Unlock()
+		panic("cannot use QueryIter more than once.")
+	}
+	q.used = true
+	rslts := q.ensureFinalizedLocked().Results
+	q.mu.Unlock()
+
+	var zero V
+
+	for pm, err := range rslts {
+		if err != nil {
+			yield(zero, err)
+			return
+		}
+
+		key := mustGetKeyFromPM(pm)
+		var val V
+		if q.isKey {
+			val = any(key).(V)
+		} else if q.isPropertyMap {
+			val = any(pm).(V)
+			PopulateKey(pm, key)
+		} else {
+			itm := q.mat.newElem()
+			cleanPM := pm
+			if key != nil && len(pm) > 0 {
+				cleanPM = pm.Clone()
+				delete(cleanPM, "$key")
+			}
+			if err := q.mat.setPM(itm, cleanPM); err != nil {
+				yield(zero, err)
+				return
+			}
+			if key != nil {
+				q.mat.setKey(itm, key)
+			}
+			val = itm.Interface().(V)
+		}
+
+		shouldYield := true
+		var err error
+		for _, filt := range q.filters {
+			shouldYield, err = filt(val)
+			if !shouldYield || err != nil {
+				break
+			}
+		}
+
+		if err != nil {
+			yield(zero, err)
+			return
+		}
+		if shouldYield {
+			if !yield(val, nil) {
+				return
+			}
+		}
+	}
+}
+
+// queryIterStub wraps RawQueryIterStub into a QueryIter.
 func queryIterStub[V any](err error) *QueryIter[V] {
 	return QueryIterFromRaw[V](RawQueryIterStub(err))
 }
 
 // QueryIterFromRaw converts a RawQueryIter to a typed QueryIter.
 func QueryIterFromRaw[V any](raw RawQueryIter) *QueryIter[V] {
-	var zero V
-
-	t := reflect.TypeFor[V]()
-	isKey := t == typeOfKey
-	isPropertyMap := t == typeOfPropertyMap
-
-	var mat *multiArgType
-	if !isKey && !isPropertyMap {
-		mat = mustParseArg(t, false)
-		if mat.newElem == nil {
-			panic(fmt.Errorf("RunQuery[%T]: `V` is not a concrete type: %s", zero, t.Kind()))
-		}
-	}
-
-	var used atomic.Bool
-
-	return &QueryIter[V]{
-		Cursor: raw.Cursor,
-		Results: func(yield func(V, error) bool) {
-			if used.Swap(true) {
-				panic("cannot use QueryIter more than once.")
-			}
-
-			for pm, err := range raw.Results {
-				if err != nil {
-					yield(zero, err)
-					return
-				}
-
-				key := mustGetKeyFromPM(pm)
-				var val V
-				if isKey {
-					val = any(key).(V)
-				} else if isPropertyMap {
-					val = any(pm).(V)
-					PopulateKey(pm, key)
-				} else {
-					itm := mat.newElem()
-					cleanPM := pm
-					if key != nil && len(pm) > 0 {
-						cleanPM = pm.Clone()
-						delete(cleanPM, "$key")
-					}
-					if err := mat.setPM(itm, cleanPM); err != nil {
-						yield(zero, err)
-						return
-					}
-					if key != nil {
-						mat.setKey(itm, key)
-					}
-					val = itm.Interface().(V)
-				}
-
-				if !yield(val, nil) {
-					return
-				}
-			}
-		},
-	}
+	ret := &QueryIter[V]{raw: &raw}
+	ret.populateMat()
+	return ret
 }
 
 // RunQuery starts the given query, and returns the [*QueryIter[V]] which will
@@ -350,17 +446,9 @@ func QueryIterFromRaw[V any](raw RawQueryIter) *QueryIter[V] {
 // due to flakiness, timeout, etc. If it encounters such an error, it will be
 // yielded and the iterator stopped.
 func RunQuery[V any](ctx context.Context, q *Query) *QueryIter[V] {
-	var zero V
-	if _, isKey := any(zero).(*Key); isKey {
-		q = q.KeysOnly(true)
-	}
-
-	fq, err := q.Finalize()
-	if err != nil {
-		return queryIterStub[V](err)
-	}
-
-	return QueryIterFromRaw[V](Raw(ctx).RunQuery(fq))
+	ret := &QueryIter[V]{ctx: ctx, q: q}
+	ret.populateMat()
+	return ret
 }
 
 // RunMultiQuery executes the logical OR of multiple queries, returning a QueryIter[V]
