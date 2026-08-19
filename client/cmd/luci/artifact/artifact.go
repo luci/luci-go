@@ -27,6 +27,7 @@ func TestResultArtifactCmd(af *base.AuthFlags) *subcommands.Command {
 		ShortDesc: "Manage test result artifacts",
 		LongDesc: "Manage artifacts belonging to individual test results in ResultDB.\n\n" +
 			"Available subcommands:\n" +
+			"  list      List artifacts for a test result\n" +
 			"  get       Download or print full content of an artifact\n" +
 			"  head      Print first N lines/bytes of an artifact\n" +
 			"  tail      Print last N lines/bytes of an artifact",
@@ -43,6 +44,7 @@ func WorkUnitArtifactCmd(af *base.AuthFlags) *subcommands.Command {
 		ShortDesc: "Manage work unit artifacts",
 		LongDesc: "Manage artifacts belonging to work units in ResultDB.\n\n" +
 			"Available subcommands:\n" +
+			"  list      List artifacts for a work unit\n" +
 			"  get       Download or print full content of an artifact\n" +
 			"  head      Print first N lines/bytes of an artifact\n" +
 			"  tail      Print last N lines/bytes of an artifact",
@@ -68,6 +70,7 @@ func (r *artifactRun) Run(a subcommands.Application, args []string, env subcomma
 		appTitle = "Work unit artifact management"
 	}
 	return base.RunSubcommandApp(a, appName, appTitle, []*subcommands.Command{
+		ListCmd(r.af, r.parentType),
 		GetCmd(r.af, r.parentType),
 		HeadCmd(r.af, r.parentType),
 		TailCmd(r.af, r.parentType),

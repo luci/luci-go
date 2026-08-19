@@ -34,6 +34,9 @@ func TestArtifactCmds(t *testing.T) {
 		assert.Loosely(t, wuCmd, should.NotBeNil)
 		assert.Loosely(t, wuCmd.UsageLine, should.Equal("artifact <subcommand>"))
 
+		listCmd := ListCmd(nil, ParentTypeTestResult)
+		assert.Loosely(t, listCmd, should.NotBeNil)
+
 		getCmd := GetCmd(nil, ParentTypeTestResult)
 		assert.Loosely(t, getCmd, should.NotBeNil)
 

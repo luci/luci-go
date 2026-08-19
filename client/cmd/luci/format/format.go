@@ -447,28 +447,23 @@ func FormatFailureReasonFirstLine(fr *pb.FailureReason, maxLen int) string {
 	return TruncateFirstLine(msg, maxLen)
 }
 
-// PrintIndentedArtifactList prints a formatted list of artifacts indented by the specified prefix.
-func PrintIndentedArtifactList(indent string, artifacts []*pb.Artifact) {
+// PrintArtifactList prints a formatted list of artifacts.
+func PrintArtifactList(artifacts []*pb.Artifact) {
 	if len(artifacts) == 0 {
-		fmt.Printf("%s  (no artifacts)\n\n", indent)
+		fmt.Printf("  (no artifacts)\n\n")
 		return
 	}
 	for _, art := range artifacts {
-		fmt.Printf("%s  - artifact_id: %s\n", indent, art.ArtifactId)
+		fmt.Printf("  - artifact_id: %s\n", art.ArtifactId)
 		if art.SizeBytes > 0 {
-			fmt.Printf("%s    size:        %s\n", indent, FormatSize(art.SizeBytes))
+			fmt.Printf("    size:        %s\n", FormatSize(art.SizeBytes))
 		}
 		if art.ContentType != "" {
-			fmt.Printf("%s    type:        %s\n", indent, art.ContentType)
+			fmt.Printf("    type:        %s\n", art.ContentType)
 		}
 		if art.ArtifactType != "" {
-			fmt.Printf("%s    category:    %s\n", indent, art.ArtifactType)
+			fmt.Printf("    category:    %s\n", art.ArtifactType)
 		}
 	}
 	fmt.Println()
-}
-
-// PrintArtifactList prints a formatted list of artifacts.
-func PrintArtifactList(artifacts []*pb.Artifact) {
-	PrintIndentedArtifactList("", artifacts)
 }

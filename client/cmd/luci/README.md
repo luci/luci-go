@@ -34,7 +34,7 @@ INTEGRATION_TESTS=1 go test ./...
 *   `testresult/`: Subpackage for `test-result` resource management (e.g. `luci test-result get`, `luci test-result artifact ...`).
 *   `workunit/`: Subpackage for `work-unit` resource management (e.g. `luci work-unit get`, `luci work-unit artifact ...`).
 *   `verdict/`: Subpackage for `verdict` resource management (e.g. `luci verdict get`).
-*   `artifact/`: Core package for artifact fetching and streaming (`get`, `head`, `tail`).
+*   `artifact/`: Core package for artifact queries and streaming (`list`, `get`, `head`, `tail`).
 
 Subcommands are nested using the `subcommands.Application` wrapper to enforce nested sub-actions.
 
@@ -53,6 +53,9 @@ The tool automatically integrates with your local credentials. If running on cor
 ./luci test-result get "invocations/build-8676.../tests/.../results/0"
 ./luci test-result get build-8676... "ninja://..." 0
 
+# List test result artifacts
+./luci test-result artifact list "invocations/build-8676.../tests/.../results/0"
+
 # Get full test result artifact content or byte range
 ./luci test-result artifact get "invocations/build-8676.../tests/.../results/0" snippet
 ./luci test-result artifact get "invocations/build-8676.../tests/.../results/0" snippet -byte-range 0-500
@@ -63,7 +66,7 @@ The tool automatically integrates with your local credentials. If running on cor
 
 # Caching and '-' Substitution:
 # A leading '-' means "use the last thing", and you can override trailing components:
-./luci test-result get inv testid resultid
+./luci test-result artifact list inv testid resultid
 ./luci test-result artifact get - artifactid              # uses last test result, overrides artifactid
 ./luci test-result artifact get - resultid2 artifactid     # uses last inv and testid, overrides resultid and artifactid
 ./luci test-result artifact get - testid2 resultid2 art    # uses last inv, overrides testid, resultid, and artifactid
@@ -73,6 +76,8 @@ The tool automatically integrates with your local credentials. If running on cor
 
 # Work unit management and hierarchy invalidations:
 ./luci work-unit get "rootInvocations/build-8676.../workUnits/run-tests"
+./luci work-unit artifact list -                          # uses last work unit
+./luci work-unit artifact list - run-tests                # uses last root invocation, overrides work unit ID
 ./luci work-unit artifact get - stdout                    # uses last work unit, overrides artifactid
 # Note: Changing parent resource (e.g. invocation) automatically unsets/invalidates child resources.
 ```
