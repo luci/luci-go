@@ -67,8 +67,8 @@ func TestServices(t *testing.T) {
 				})
 
 				curs, err := DecodeCursor(c, "123")
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, curs.String(), should.Equal("123"))
+				assert.NoErr(t, err)
+				assert.Loosely(t, curs[0].String(), should.Equal("123"))
 			})
 		})
 		t.Run("adding zero filters does nothing", func(t *ftt.Test) {

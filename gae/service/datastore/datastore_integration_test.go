@@ -81,7 +81,7 @@ func TestRunMulti(t *testing.T) {
 				}
 				var res []*Foo
 				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					res = append(res, foo)
 				}
 				assert.Loosely(t, res, should.Resemble(foos))
@@ -94,7 +94,7 @@ func TestRunMulti(t *testing.T) {
 				}
 				var keys []*datastore.Key
 				for k, err := range datastore.RunMultiQuery[*datastore.Key](ctx, queries).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					keys = append(keys, k)
 				}
 				assert.Loosely(t, keys, should.Resemble([]*datastore.Key{
@@ -111,7 +111,7 @@ func TestRunMulti(t *testing.T) {
 				}
 				var res []*Foo
 				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					res = append(res, foo)
 				}
 				assert.Loosely(t, res, should.Resemble([]*Foo{foos[2], foos[1], foos[0]}))
@@ -124,7 +124,7 @@ func TestRunMulti(t *testing.T) {
 				}
 				var res []*Foo
 				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					res = append(res, foo)
 					if len(res) == 2 {
 						break
@@ -139,7 +139,7 @@ func TestRunMulti(t *testing.T) {
 				}
 				var res []*Foo
 				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					res = append(res, foo)
 				}
 				assert.Loosely(t, res, should.BeNil)
@@ -149,16 +149,16 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Eq("single_val", "s1"),
 					datastore.NewQuery("Foo").Eq("single_val", "s2"),
 				}
-				var cur datastore.RawCursor
+				var cur datastore.Cursor
 				var err error
 				var fooses []*Foo
 				it := datastore.RunMultiQuery[*Foo](ctx, queries)
 				for foo, err := range it.Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					fooses = append(fooses, foo)
 					if len(fooses) == 1 {
 						cur, err = it.Cursor()
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						break
 					}
 				}
@@ -166,15 +166,15 @@ func TestRunMulti(t *testing.T) {
 				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0]}))
 				// Apply the cursor to the queries
 				queries, err = datastore.ApplyCursors(ctx, queries, cur)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, queries, should.NotBeNil)
 				it = datastore.RunMultiQuery[*Foo](ctx, queries)
 				for foo, err := range it.Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					fooses = append(fooses, foo)
 					if len(fooses) == 3 {
 						cur, err = it.Cursor()
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						break
 					}
 				}
@@ -182,10 +182,10 @@ func TestRunMulti(t *testing.T) {
 				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[2], foos[3]}))
 				// Apply the cursor to the queries
 				queries, err = datastore.ApplyCursors(ctx, queries, cur)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, queries, should.NotBeNil)
 				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					fooses = append(fooses, foo)
 				}
 				assert.Loosely(t, fooses, should.NotBeNil)
@@ -197,16 +197,16 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
 					datastore.NewQuery("Foo").Eq("multi_vals", "m4"),
 				}
-				var cur datastore.RawCursor
+				var cur datastore.Cursor
 				var err error
 				var fooses []*Foo
 				it := datastore.RunMultiQuery[*Foo](ctx, queries)
 				for foo, err := range it.Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					fooses = append(fooses, foo)
 					if len(fooses) == 2 {
 						cur, err = it.Cursor()
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						break
 					}
 				}
@@ -214,10 +214,10 @@ func TestRunMulti(t *testing.T) {
 				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[1]}))
 				// Apply the cursor to the queries
 				queries, err = datastore.ApplyCursors(ctx, queries, cur)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, queries, should.NotBeNil)
 				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					fooses = append(fooses, foo)
 				}
 				assert.Loosely(t, fooses, should.NotBeNil)
@@ -260,6 +260,7 @@ func TestRunMulti(t *testing.T) {
 
 		t.Run("context cancelation", func(t *ftt.Test) {
 			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
 
 			queries := []*datastore.Query{
 				datastore.NewQuery("Foo").Eq("multi_vals", "m2"),

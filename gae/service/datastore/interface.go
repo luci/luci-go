@@ -27,8 +27,6 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-
-	multicursor "go.chromium.org/luci/gae/service/datastore/internal/protos/multicursor"
 )
 
 // AllocateIDs allows you to allocate IDs from the datastore without putting
@@ -340,11 +338,18 @@ func (q *QueryIter[V]) AddFilter(filt func(V) (bool, error)) {
 // Cursor returns a cursor to the *next* item which will be yielded by Results.
 //
 // Safe to call before pulling anything from Results.
-func (q *QueryIter[V]) Cursor() (RawCursor, error) {
+func (q *QueryIter[V]) Cursor() (Cursor, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.ensureFinalizedLocked()
-	return q.raw.Cursor()
+	single, err := q.raw.Cursor()
+	if err != nil {
+		return nil, err
+	}
+	if mc, ok := single.(Cursor); ok {
+		return mc, nil
+	}
+	return Cursor{single}, nil
 }
 
 // Results is an `iter.Seq2[V, error]` which yields query results in order.
@@ -512,36 +517,8 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		return queryIterStub[V](nil)
 	}
 
-	// If we have only one query, just run it directly without any extra
-	// synchronization overhead. Just make sure to use the correct cursor format.
-	// This is worth optimizing since running only one query is a very very
-	// common case.
-	//
-	// TODO: This is silly - we should just make cursor encode/decode *always*
-	// in the multi-cursor form, and we should see if `len(queries)` at the top
-	// is 1 and then return `RunQuery(ctx, finalized[0])` without any of this
-	// other noise.
-	if len(finalized) == 1 {
-		raw := Raw(ctx).RunQuery(finalized[0])
-		ogCursor := raw.Cursor
-		raw.Cursor = func() (RawCursor, error) {
-			cur, err := ogCursor()
-			if err != nil {
-				return nil, err
-			}
-			cursorStr := ""
-			if cur != nil {
-				cursorStr = cur.String()
-			}
-			return multiCursor{
-				curs: &multicursor.Cursors{
-					Version:     multiCursorVersion,
-					MagicNumber: multiCursorMagic,
-					Cursors:     []string{cursorStr},
-				},
-			}, nil
-		}
-		return QueryIterFromRaw[V](raw)
+	if len(queries) == 1 {
+		return RunQuery[V](ctx, queries[0])
 	}
 
 	var iterators []*queryIterator
@@ -566,20 +543,15 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		// Create the cursor. It points to all items currently sitting in heap.
 		// We'll need to refetch them all again to repopulate the heap when
 		// resuming the query.
-		var curs multicursor.Cursors
-		curs.MagicNumber = multiCursorMagic
-		curs.Version = multiCursorVersion
-		for _, iter := range iters {
-			switch cur, err := iter.CurrentCursor(); {
-			case err != nil:
+		ret := make(Cursor, len(iters))
+		for i, iter := range iters {
+			cur, err := iter.CurrentCursor()
+			if err != nil {
 				return nil, err
-			case cur != nil:
-				curs.Cursors = append(curs.Cursors, cur.String())
-			default:
-				curs.Cursors = append(curs.Cursors, "")
 			}
+			ret[i] = cur
 		}
-		return multiCursor{curs: &curs}, nil
+		return ret, nil
 	}
 
 	results := func(yield func(PropertyMap, error) bool) {
@@ -678,10 +650,14 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		}
 	}
 
-	return QueryIterFromRaw[V](RawQueryIter{
-		Cursor:  cursorCB,
-		Results: results,
-	})
+	ret := &QueryIter[V]{
+		raw: &RawQueryIter{
+			Results: results,
+			Cursor:  cursorCB,
+		},
+	}
+	ret.populateMat()
+	return ret
 }
 
 // Count executes the given query and returns the number of entries which
@@ -719,13 +695,6 @@ func CountMulti(ctx context.Context, queries []*Query) (int64, error) {
 		count++
 	}
 	return count, nil
-}
-
-// DecodeCursor converts a string returned by a Cursor into a Cursor instance.
-// It will return an error if the supplied string is not valid, or could not
-// be decoded by the implementation.
-func DecodeCursor(ctx context.Context, s string) (RawCursor, error) {
-	return Raw(ctx).DecodeCursor(s)
 }
 
 type getAllOptions struct {

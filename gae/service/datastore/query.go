@@ -280,6 +280,14 @@ func (q *Query) ClearProject() *Query {
 // Start sets a starting cursor. The cursor is implementation-defined by the
 // particular 'impl' you have installed.
 func (q *Query) Start(c RawCursor) *Query {
+	if mc, ok := c.(Cursor); ok {
+		if len(mc) > 0 {
+			c = mc[0]
+		} else {
+			c = nil
+		}
+	}
+
 	return q.mod(func(q *Query) {
 		q.start = c
 	})
@@ -288,6 +296,14 @@ func (q *Query) Start(c RawCursor) *Query {
 // End sets the ending cursor. The cursor is implementation-defined by the
 // particular 'impl' you have installed.
 func (q *Query) End(c RawCursor) *Query {
+	if mc, ok := c.(Cursor); ok {
+		if len(mc) > 0 {
+			c = mc[0]
+		} else {
+			c = nil
+		}
+	}
+
 	return q.mod(func(q *Query) {
 		q.end = c
 	})

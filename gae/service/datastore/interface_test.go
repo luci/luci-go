@@ -56,7 +56,7 @@ func TestGetAll_Empty(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 
 	records, err := getAll(ctx, 1)
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	assert.Loosely(t, len(records), should.Equal(0))
 }
 
@@ -68,10 +68,10 @@ func TestGetAll_Singleton(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 
 	err := datastore.Put(ctx, &SimpleRecord{key: "a", value: "b"})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 
 	records, err := getAll(ctx, 1)
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	assert.Loosely(t, len(records), should.Equal(1))
 }
 
@@ -83,17 +83,17 @@ func TestGetAll_Doubleton(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 
 	err := datastore.Put(ctx, &SimpleRecord{key: "a", value: "b"})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 
 	err = datastore.Put(ctx, &SimpleRecord{key: "a1", value: "b1"})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 
 	records, err := getAll(ctx, 1)
 	assert.Loosely(t, err, should.ErrLike(datastore.ErrLimitExceeded))
 	assert.Loosely(t, len(records), should.Equal(1))
 
 	records, err = getAll(ctx, 2)
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	assert.Loosely(t, len(records), should.Equal(2))
 }
 
@@ -111,16 +111,16 @@ func TestRunQuery(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 
 	err := datastore.Put(ctx, &TestIterRecord{ID: "a", Value: "val_a"})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	err = datastore.Put(ctx, &TestIterRecord{ID: "b", Value: "val_b"})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 
 	t.Run("PointerToStruct", func(t *testing.T) {
 		q := datastore.NewQuery("TestIterRecord")
 		it := datastore.RunQuery[*TestIterRecord](ctx, q)
 		var got []*TestIterRecord
 		for r, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got = append(got, r)
 		}
 		assert.Loosely(t, len(got), should.Equal(2))
@@ -133,7 +133,7 @@ func TestRunQuery(t *testing.T) {
 		it := datastore.RunQuery[TestIterRecord](ctx, q)
 		var got []TestIterRecord
 		for r, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got = append(got, r)
 		}
 		assert.Loosely(t, len(got), should.Equal(2))
@@ -146,7 +146,7 @@ func TestRunQuery(t *testing.T) {
 		it := datastore.RunQuery[*datastore.Key](ctx, q)
 		var got []*datastore.Key
 		for k, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got = append(got, k)
 		}
 		assert.Loosely(t, len(got), should.Equal(2))
@@ -159,21 +159,21 @@ func TestRunQuery(t *testing.T) {
 		it := datastore.RunQuery[*TestIterRecord](ctx, q)
 		var got []*TestIterRecord
 		for r, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got = append(got, r)
 		}
 		assert.Loosely(t, len(got), should.Equal(1))
 		assert.Loosely(t, got[0].Value, should.Equal("val_a"))
 
 		cur, err := it.Cursor()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, cur, should.NotBeNil)
 
 		q2 := datastore.NewQuery("TestIterRecord").Start(cur)
 		it2 := datastore.RunQuery[*TestIterRecord](ctx, q2)
 		var got2 []*TestIterRecord
 		for r, err := range it2.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got2 = append(got2, r)
 		}
 		assert.Loosely(t, len(got2), should.Equal(1))
@@ -185,7 +185,7 @@ func TestRunQuery(t *testing.T) {
 		it := datastore.RunQuery[datastore.PropertyMap](ctx, q)
 		var got []datastore.PropertyMap
 		for pm, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got = append(got, pm)
 		}
 		assert.Loosely(t, len(got), should.Equal(2))
@@ -210,9 +210,9 @@ func TestRunMultiQuery(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 
 	err := datastore.Put(ctx, &TestIterRecord{ID: "a", Value: "val_a"})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	err = datastore.Put(ctx, &TestIterRecord{ID: "b", Value: "val_b"})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 
 	t.Run("PointerToStruct", func(t *testing.T) {
 		queries := []*datastore.Query{
@@ -222,7 +222,7 @@ func TestRunMultiQuery(t *testing.T) {
 		it := datastore.RunMultiQuery[*TestIterRecord](ctx, queries)
 		var got []*TestIterRecord
 		for r, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got = append(got, r)
 		}
 		assert.Loosely(t, len(got), should.Equal(2))
@@ -238,7 +238,7 @@ func TestRunMultiQuery(t *testing.T) {
 		it := datastore.RunMultiQuery[TestIterRecord](ctx, queries)
 		var got []TestIterRecord
 		for r, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got = append(got, r)
 		}
 		assert.Loosely(t, len(got), should.Equal(2))
@@ -254,7 +254,7 @@ func TestRunMultiQuery(t *testing.T) {
 		it := datastore.RunMultiQuery[*datastore.Key](ctx, queries)
 		var got []*datastore.Key
 		for k, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got = append(got, k)
 		}
 		assert.Loosely(t, len(got), should.Equal(2))
@@ -270,7 +270,7 @@ func TestRunMultiQuery(t *testing.T) {
 		it := datastore.RunMultiQuery[datastore.PropertyMap](ctx, queries)
 		var got []datastore.PropertyMap
 		for pm, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			got = append(got, pm)
 		}
 		assert.Loosely(t, len(got), should.Equal(2))
@@ -287,16 +287,16 @@ func TestRunQuery_MultipleUses(t *testing.T) {
 	datastore.GetTestable(ctx).Consistent(true)
 
 	err := datastore.Put(ctx, &TestIterRecord{ID: "a", Value: "val_a"})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	err = datastore.Put(ctx, &TestIterRecord{ID: "b", Value: "val_b"})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 
 	t.Run("RunQuery Full Consumption", func(t *testing.T) {
 		q := datastore.NewQuery("TestIterRecord")
 		it := datastore.RunQuery[*TestIterRecord](ctx, q)
 		count := 0
 		for _, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			count++
 		}
 		assert.Loosely(t, count, should.Equal(2))
@@ -355,7 +355,7 @@ func TestRunQuery_MultipleUses(t *testing.T) {
 		it := datastore.RunMultiQuery[*TestIterRecord](ctx, queries)
 		count := 0
 		for _, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			count++
 		}
 		assert.Loosely(t, count, should.Equal(1))
@@ -374,7 +374,7 @@ func TestRunQuery_MultipleUses(t *testing.T) {
 		it := datastore.RunMultiQuery[*TestIterRecord](ctx, queries)
 		count := 0
 		for _, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			count++
 		}
 		assert.Loosely(t, count, should.Equal(2))
@@ -445,7 +445,7 @@ func TestRunQuery_MultipleUses(t *testing.T) {
 		it := datastore.RunQuery[*TestIterRecord](ctx, q)
 		count := 0
 		for _, err := range it.Results {
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			count++
 		}
 		assert.Loosely(t, count, should.Equal(0))

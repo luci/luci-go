@@ -849,7 +849,7 @@ func TestPut(t *testing.T) {
 					}
 
 					err := Put(c, &sa, &sb, &sc)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 
 					assert.Loosely(t, sa.ID, should.Equal(1))
 					assert.Loosely(t, sb._id, should.Equal(1))
@@ -873,7 +873,7 @@ func TestExists(t *testing.T) {
 		t.Run("Exists", func(t *ftt.Test) {
 			// Single key.
 			er, err := Exists(c, k)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, er.All(), should.BeTrue)
 
 			// Single key failure.
@@ -882,7 +882,7 @@ func TestExists(t *testing.T) {
 
 			// Single slice of keys.
 			er, err = Exists(c, []*Key{k, MakeKey(c, "hello", "other")})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, er.All(), should.BeTrue)
 
 			// Single slice of keys failure.
@@ -892,23 +892,23 @@ func TestExists(t *testing.T) {
 
 			// Single key missing.
 			er, err = Exists(c, MakeKey(c, "DNE", "nope"))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, er.Any(), should.BeFalse)
 
 			// Multi-arg keys with one missing.
 			er, err = Exists(c, k, MakeKey(c, "DNE", "other"))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, er.Get(0), should.BeTrue)
 			assert.Loosely(t, er.Get(1), should.BeFalse)
 
 			// Multi-arg keys with two missing.
 			er, err = Exists(c, MakeKey(c, "DNE", "nope"), MakeKey(c, "DNE", "other"))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, er.Any(), should.BeFalse)
 
 			// Single struct pointer.
 			er, err = Exists(c, &CommonStruct{ID: 1})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, er.All(), should.BeTrue)
 
 			// Multi-arg mixed key/struct/slices.
@@ -917,7 +917,7 @@ func TestExists(t *testing.T) {
 				[]*CommonStruct(nil),
 				[]*Key{MakeKey(c, "DNE", "nope"), MakeKey(c, "hello", "ohai")},
 			)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, er.Get(0), should.BeTrue)
 			assert.Loosely(t, er.Get(1), should.BeTrue)
 			assert.Loosely(t, er.Get(2), should.BeFalse)
@@ -1141,7 +1141,7 @@ func TestGet(t *testing.T) {
 					rds := Raw(c)
 					keys := []*Key{MakeKey(c, "Kind", 1)}
 					assert.Loosely(t, rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(1))
 					}), should.BeNil)
 				})
@@ -1156,7 +1156,7 @@ func TestGet(t *testing.T) {
 					cs := CommonStruct{ID: 3}
 
 					err := Get(c, successSlice, &cs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, successSlice[0].Value, should.Equal(1))
 					assert.Loosely(t, successSlice[1].Value, should.Equal(2))
 					assert.Loosely(t, cs.Value, should.Equal(3))
@@ -1341,11 +1341,11 @@ func TestRun(t *testing.T) {
 				i := 0
 				it := RunQuery[CommonStruct](c, q)
 				for _, err := range it.Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					i++
 					curs, err := it.Cursor()
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, curs.String(), should.Equal(fakeCursor(i).String()))
+					assert.NoErr(t, err)
+					assert.Loosely(t, curs[0].String(), should.Equal(fakeCursor(i).String()))
 				}
 				assert.Loosely(t, i, should.Equal(5))
 			})
@@ -1353,7 +1353,7 @@ func TestRun(t *testing.T) {
 			t.Run("*S", func(t *ftt.Test) {
 				i := 0
 				for cs, err := range RunQuery[*CommonStruct](c, q).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, cs.ID, should.Equal(i+1))
 					assert.Loosely(t, cs.Value, should.Equal(i))
 					i++
@@ -1370,7 +1370,7 @@ func TestRun(t *testing.T) {
 
 				i := 0
 				for fpls, err := range RunQuery[*FakePLS](c, q.Limit(12)).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, fpls.gotLoaded, should.BeTrue)
 					if i == 10 {
 						assert.Loosely(t, fpls.StringID, should.Equal("eleven"))
@@ -1385,7 +1385,7 @@ func TestRun(t *testing.T) {
 			t.Run("*P (map)", func(t *ftt.Test) {
 				i := 0
 				for pm, err := range RunQuery[*PropertyMap](c, q).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					k, ok := pm.GetMeta("key")
 					assert.Loosely(t, ok, should.BeTrue)
 					assert.Loosely(t, k.(*Key).IntID(), should.Equal(i+1))
@@ -1396,7 +1396,7 @@ func TestRun(t *testing.T) {
 
 			t.Run("*P (chan)", func(t *ftt.Test) {
 				for ch, err := range RunQuery[*plsChan](c, q).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, KeyForObj(c, ch).StringID(), should.Equal("whyDoIExist"))
 				}
 			})
@@ -1404,7 +1404,7 @@ func TestRun(t *testing.T) {
 			t.Run("S", func(t *ftt.Test) {
 				i := 0
 				for cs, err := range RunQuery[CommonStruct](c, q).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, cs.ID, should.Equal(i+1))
 					assert.Loosely(t, cs.Value, should.Equal(i))
 					i++
@@ -1414,7 +1414,7 @@ func TestRun(t *testing.T) {
 			t.Run("P", func(t *ftt.Test) {
 				i := 0
 				for fpls, err := range RunQuery[FakePLS](c, q).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, fpls.gotLoaded, should.BeTrue)
 					assert.Loosely(t, fpls.IntID, should.Equal(i+1))
 					assert.Loosely(t, fpls.Value, should.Equal(i))
@@ -1425,7 +1425,7 @@ func TestRun(t *testing.T) {
 			t.Run("P (map)", func(t *ftt.Test) {
 				i := 0
 				for pm, err := range RunQuery[PropertyMap](c, q).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					k, ok := pm.GetMeta("key")
 					assert.Loosely(t, ok, should.BeTrue)
 					assert.Loosely(t, k.(*Key).IntID(), should.Equal(i+1))
@@ -1436,7 +1436,7 @@ func TestRun(t *testing.T) {
 
 			t.Run("P (chan)", func(t *ftt.Test) {
 				for ch, err := range RunQuery[plsChan](c, q).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, KeyForObj(c, ch).StringID(), should.Equal("whyDoIExist"))
 				}
 			})
@@ -1444,7 +1444,7 @@ func TestRun(t *testing.T) {
 			t.Run("Key", func(t *ftt.Test) {
 				i := 0
 				for k, err := range RunQuery[*Key](c, q).Results {
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, k.IntID(), should.Equal(i+1))
 					i++
 				}
@@ -1779,7 +1779,7 @@ indexes:
     direction: asc
 `
 		ids, err := ParseIndexYAML(bytes.NewBuffer([]byte(yaml)))
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		expected := []*IndexDefinition{
 			{
@@ -1910,7 +1910,7 @@ indexes:
 			setup()
 			defer cleanup()
 			ids, err := FindAndParseIndexYAML(".")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ids[0].Kind, should.Equal("Test Same Level"))
 		})
 
@@ -1928,7 +1928,7 @@ indexes:
 			setup()
 			defer cleanup()
 			ids, err := FindAndParseIndexYAML("")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ids[1].Kind, should.Equal("Test Foo"))
 		})
 
@@ -1950,7 +1950,7 @@ indexes:
 			setup()
 			defer cleanup()
 			ids, err := FindAndParseIndexYAML(filepath.Join("..", filepath.Base(writeDir)))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ids[1].Kind, should.Equal("Test Foo"))
 		})
 
@@ -1974,7 +1974,7 @@ indexes:
 			}
 
 			ids, err := FindAndParseIndexYAML(abs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ids[1].Kind, should.Equal("Test Foo"))
 		})
 	})
@@ -2134,7 +2134,7 @@ func TestCountMulti(t *testing.T) {
 			NewQuery("Foo").Eq("values", "aa"),
 			NewQuery("Foo").Eq("values", "cc"),
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, count, should.Equal(3))
 	})
 }

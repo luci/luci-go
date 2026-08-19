@@ -17,8 +17,6 @@ package datastore
 
 import (
 	"context"
-	"encoding/base64"
-	"fmt"
 	"sort"
 
 	"google.golang.org/protobuf/proto"
@@ -32,18 +30,6 @@ import (
 const multiCursorVersion = 0
 
 const multiCursorMagic = 0xA455
-
-// multiCursor is a custom cursor that implements String. This is returned by
-// cursor callback from RunMulti as a cursor.
-type multiCursor struct {
-	curs *mc.Cursors
-}
-
-// String returns the marshalled Cursors proto encoded in base64
-func (c multiCursor) String() string {
-	bytes, _ := proto.Marshal(c.curs)
-	return base64.StdEncoding.EncodeToString(bytes)
-}
 
 // IsMultiCursor returns true if the cursor probably represents a multicursor
 // that is returned by RunMulti. Returns false otherwise
@@ -61,7 +47,7 @@ func IsMultiCursor(cursor RawCursor) bool {
 // Note: There is finite chance that some other cursor can be decoded as a valid
 // multicursor
 func IsMultiCursorString(cursor string) bool {
-	cursBuf, err := base64.StdEncoding.DecodeString(cursor)
+	cursBuf, err := decodeBase64(cursor)
 	if err != nil {
 		// Cannot be a multicursor
 		return false
@@ -76,35 +62,9 @@ func IsMultiCursorString(cursor string) bool {
 // should match the original list of queries that was used to generate the cursor. If
 // the queries don't match the behavior is undefined. The order for the queries is not
 // important as they will be sorted before use.
-func ApplyCursors(ctx context.Context, queries []*Query, cursor RawCursor) ([]*Query, error) {
-	curStr := cursor.String()
-	return ApplyCursorString(ctx, queries, curStr)
-}
-
-// ApplyCursorString applies the cursors represented by the string and returns the new
-// list of queries. The cursor string should be generated from cursor returned by
-// RunMulti, this will not work on any other cursor. The queries must match the original
-// list of queries that was used to generate the cursor. If the queries don't match
-// the behavior is undefined. The order of queries is not important as they will be
-// sorted before use.
-func ApplyCursorString(ctx context.Context, queries []*Query, cursorToken string) ([]*Query, error) {
-	cursBuf, err := base64.StdEncoding.DecodeString(cursorToken)
-	if err != nil {
-		return nil, errors.Fmt("Failed to decode cursor: %w", err)
-	}
-	var curs mc.Cursors
-	err = proto.Unmarshal(cursBuf, &curs)
-	if err != nil {
-		return nil, err
-	}
-	if curs.GetMagicNumber() != multiCursorMagic {
-		return nil, errors.New("Cursor doesn't contain valid magic")
-	}
-	if len(queries) != len(curs.Cursors) {
+func ApplyCursors(ctx context.Context, queries []*Query, cursor Cursor) ([]*Query, error) {
+	if len(queries) != len(cursor) {
 		return nil, errors.New("Length mismatch. Cannot apply this cursor to the queries")
-	}
-	if curs.Version != multiCursorVersion {
-		return nil, fmt.Errorf("Cursor version mismatch. Need %v, got %v", multiCursorVersion, curs.Version)
 	}
 	// sortedOrder will contain the sorted order for queries. This allows
 	// for updating the queries in order.
@@ -118,14 +78,24 @@ func ApplyCursorString(ctx context.Context, queries []*Query, cursorToken string
 	})
 	// Assign the cursors in sorted order
 	for idx, qIdx := range sortedOrder {
-		if curs.Cursors[idx] != "" {
-			cursor, err := DecodeCursor(ctx, curs.Cursors[idx])
-			if err != nil {
-				return nil, errors.Fmt("Cannot decode cursor for a query: %w", err)
-			}
-			queries[qIdx] = queries[qIdx].Start(cursor)
+		if cursor[idx] != nil {
+			queries[qIdx] = queries[qIdx].Start(cursor[idx])
 		}
 	}
-	// Return the queries in the order recieved
+	// Return the queries in the order received
 	return queries, nil
+}
+
+// ApplyCursorString applies the cursors represented by the string and returns the new
+// list of queries. The cursor string should be generated from cursor returned by
+// RunMulti, this will not work on any other cursor. The queries must match the original
+// list of queries that was used to generate the cursor. If the queries don't match
+// the behavior is undefined. The order of queries is not important as they will be
+// sorted before use.
+func ApplyCursorString(ctx context.Context, queries []*Query, cursorToken string) ([]*Query, error) {
+	cursor, err := DecodeCursor(ctx, cursorToken)
+	if err != nil {
+		return nil, errors.Fmt("Failed to decode cursor: %w", err)
+	}
+	return ApplyCursors(ctx, queries, cursor)
 }
