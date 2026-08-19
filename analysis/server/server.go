@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	luciserver "go.chromium.org/luci/server"
@@ -63,6 +64,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/ui"
 	"go.chromium.org/luci/analysis/internal/views"
+	wuexporter "go.chromium.org/luci/analysis/internal/workunits/exporter"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/analysis/rpc"
 	"go.chromium.org/luci/analysis/rpc/testhistory"
@@ -79,7 +81,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		ui.NewModuleFromFlags(),
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
-		gaeemulation.NewModuleFromFlags(),     // Needed by cfgmodule.
+		gaeemulation.NewModuleFromFlags(), // Needed by cfgmodule.
 		pubsub.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(), // Needed by encryptedcookies.
 		spanmodule.NewModuleFromFlags(nil),
@@ -187,12 +189,24 @@ func RegisterPubSubHandlers(srv *luciserver.Server) error {
 		return err
 	}
 
+	wuClient, err := wuexporter.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return err
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		if err := wuClient.Close(); err != nil {
+			logging.Errorf(ctx, "Cleaning up Work Units BQ exporter client: %s", err)
+		}
+	})
+	wuExporter := wuexporter.NewExporter(wuClient)
+
 	pubsub.RegisterJSONPBHandler("buildbucket", app.BuildbucketPubSubHandler)
 	pubsub.RegisterJSONPBHandler("cvrun", app.NewCVRunHandler().Handle)
 	pubsub.RegisterJSONPBHandler("invocation-finalized", app.NewInvocationFinalizedHandler().Handle)
 	pubsub.RegisterJSONPBHandler("invocation-ready-for-export", app.NewInvocationReadyForExportHandler().Handle)
 	pubsub.RegisterWirePBHandler("root-invocation-finalized", app.NewRootInvocationFinalizedHandler().Handle)
 	pubsub.RegisterWirePBHandler("test-results", app.NewTestResultsPubSubHandler(o).Handle)
+	pubsub.RegisterWirePBHandler("work-units", app.NewWorkUnitsPubSubHandler(wuExporter).Handle)
 	return nil
 }
 
