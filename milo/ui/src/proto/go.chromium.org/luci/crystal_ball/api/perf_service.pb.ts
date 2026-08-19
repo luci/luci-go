@@ -673,11 +673,14 @@ export interface BreakdownTableData {
 }
 
 /**
- * Represents one table in the breakdown (e.g., the "atptestname" or
- * "gpu_vendor" table).
+ * Represents one table in the breakdown (e.g., the "atp_test_name" or
+ * "dim.gpu_vendor" table).
  */
 export interface BreakdownSection {
-  /** Represents the dimension this section is grouped by. */
+  /**
+   * Represents the dimension this section is grouped by (e.g. "atp_test_name",
+   * "dim.gpu_vendor").
+   */
   readonly dimensionColumn: string;
   /**
    * Represents the rows of the table. Each struct in `rows` contains:
@@ -689,6 +692,11 @@ export interface BreakdownSection {
    * (e.g., 1000).
    */
   readonly rows: readonly { readonly [key: string]: any }[];
+  /**
+   * User-friendly display name of the dimension (e.g., "ATP Test Name", "GPU
+   * Vendor").
+   */
+  readonly dimensionDisplayName: string;
 }
 
 /** Data structured and transformed for the PeriodComparison widget. */
@@ -2214,6 +2222,13 @@ export interface FetchWidgetRawSamplesResponse {
   readonly rows: readonly RawSampleRow[];
   /** A token, which can be sent as `page_token` to retrieve the next page. */
   readonly nextPageToken: string;
+  /** User-friendly display names for dimensions present in `rows`. */
+  readonly dimensionDisplayNames: { [key: string]: string };
+}
+
+export interface FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry {
+  readonly key: string;
+  readonly value: string;
 }
 
 /** Row message for holding the raw sample results. */
@@ -5446,7 +5461,7 @@ export const BreakdownTableData: MessageFns<BreakdownTableData> = {
 };
 
 function createBaseBreakdownSection(): BreakdownSection {
-  return { dimensionColumn: "", rows: [] };
+  return { dimensionColumn: "", rows: [], dimensionDisplayName: "" };
 }
 
 export const BreakdownSection: MessageFns<BreakdownSection> = {
@@ -5456,6 +5471,9 @@ export const BreakdownSection: MessageFns<BreakdownSection> = {
     }
     for (const v of message.rows) {
       Struct.encode(Struct.wrap(v!), writer.uint32(18).fork()).join();
+    }
+    if (message.dimensionDisplayName !== "") {
+      writer.uint32(26).string(message.dimensionDisplayName);
     }
     return writer;
   },
@@ -5483,6 +5501,14 @@ export const BreakdownSection: MessageFns<BreakdownSection> = {
           message.rows.push(Struct.unwrap(Struct.decode(reader, reader.uint32())));
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.dimensionDisplayName = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5496,6 +5522,7 @@ export const BreakdownSection: MessageFns<BreakdownSection> = {
     return {
       dimensionColumn: isSet(object.dimensionColumn) ? globalThis.String(object.dimensionColumn) : "",
       rows: globalThis.Array.isArray(object?.rows) ? [...object.rows] : [],
+      dimensionDisplayName: isSet(object.dimensionDisplayName) ? globalThis.String(object.dimensionDisplayName) : "",
     };
   },
 
@@ -5507,6 +5534,9 @@ export const BreakdownSection: MessageFns<BreakdownSection> = {
     if (message.rows?.length) {
       obj.rows = message.rows;
     }
+    if (message.dimensionDisplayName !== "") {
+      obj.dimensionDisplayName = message.dimensionDisplayName;
+    }
     return obj;
   },
 
@@ -5517,6 +5547,7 @@ export const BreakdownSection: MessageFns<BreakdownSection> = {
     const message = createBaseBreakdownSection() as any;
     message.dimensionColumn = object.dimensionColumn ?? "";
     message.rows = object.rows?.map((e) => e) || [];
+    message.dimensionDisplayName = object.dimensionDisplayName ?? "";
     return message;
   },
 };
@@ -9950,7 +9981,7 @@ export const FetchWidgetRawSamplesRequest_SelectionContextEntry: MessageFns<
 };
 
 function createBaseFetchWidgetRawSamplesResponse(): FetchWidgetRawSamplesResponse {
-  return { rows: [], nextPageToken: "" };
+  return { rows: [], nextPageToken: "", dimensionDisplayNames: {} };
 }
 
 export const FetchWidgetRawSamplesResponse: MessageFns<FetchWidgetRawSamplesResponse> = {
@@ -9961,6 +9992,12 @@ export const FetchWidgetRawSamplesResponse: MessageFns<FetchWidgetRawSamplesResp
     if (message.nextPageToken !== "") {
       writer.uint32(18).string(message.nextPageToken);
     }
+    Object.entries(message.dimensionDisplayNames).forEach(([key, value]) => {
+      FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry.encode(
+        { key: key as any, value },
+        writer.uint32(26).fork(),
+      ).join();
+    });
     return writer;
   },
 
@@ -9987,6 +10024,17 @@ export const FetchWidgetRawSamplesResponse: MessageFns<FetchWidgetRawSamplesResp
           message.nextPageToken = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          const entry3 = FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry.decode(reader, reader.uint32());
+          if (entry3.value !== undefined) {
+            message.dimensionDisplayNames[entry3.key] = entry3.value;
+          }
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -10000,6 +10048,12 @@ export const FetchWidgetRawSamplesResponse: MessageFns<FetchWidgetRawSamplesResp
     return {
       rows: globalThis.Array.isArray(object?.rows) ? object.rows.map((e: any) => RawSampleRow.fromJSON(e)) : [],
       nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+      dimensionDisplayNames: isObject(object.dimensionDisplayNames)
+        ? Object.entries(object.dimensionDisplayNames).reduce<{ [key: string]: string }>((acc, [key, value]) => {
+          acc[key] = String(value);
+          return acc;
+        }, {})
+        : {},
     };
   },
 
@@ -10011,6 +10065,15 @@ export const FetchWidgetRawSamplesResponse: MessageFns<FetchWidgetRawSamplesResp
     if (message.nextPageToken !== "") {
       obj.nextPageToken = message.nextPageToken;
     }
+    if (message.dimensionDisplayNames) {
+      const entries = Object.entries(message.dimensionDisplayNames);
+      if (entries.length > 0) {
+        obj.dimensionDisplayNames = {};
+        entries.forEach(([k, v]) => {
+          obj.dimensionDisplayNames[k] = v;
+        });
+      }
+    }
     return obj;
   },
 
@@ -10021,6 +10084,99 @@ export const FetchWidgetRawSamplesResponse: MessageFns<FetchWidgetRawSamplesResp
     const message = createBaseFetchWidgetRawSamplesResponse() as any;
     message.rows = object.rows?.map((e) => RawSampleRow.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
+    message.dimensionDisplayNames = Object.entries(object.dimensionDisplayNames ?? {}).reduce<
+      { [key: string]: string }
+    >((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = globalThis.String(value);
+      }
+      return acc;
+    }, {});
+    return message;
+  },
+};
+
+function createBaseFetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry(): FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry {
+  return { key: "", value: "" };
+}
+
+export const FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry: MessageFns<
+  FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry
+> = {
+  encode(
+    message: FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry>,
+  ): FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry {
+    return FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry>,
+  ): FetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry {
+    const message = createBaseFetchWidgetRawSamplesResponse_DimensionDisplayNamesEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
     return message;
   },
 };

@@ -31,10 +31,17 @@ import {
   Column,
   COMMON_MESSAGES,
 } from '@/crystal_ball/constants';
-import { useFetchWidgetRawSamples } from '@/crystal_ball/hooks';
-import { getSafeChartType } from '@/crystal_ball/utils';
+import {
+  useFetchWidgetRawSamples,
+  useListMeasurementFilterColumns,
+} from '@/crystal_ball/hooks';
+import {
+  getColumnDisplayNameMap,
+  getSafeChartType,
+} from '@/crystal_ball/utils';
 import {
   FetchWidgetRawSamplesRequest,
+  ListMeasurementFilterColumnsRequest,
   PerfChartSeries_PerfAggregationFunction,
   perfChartSeries_PerfAggregationFunctionFromJSON,
   PerfChartWidget,
@@ -81,10 +88,28 @@ export function SampleDetailsContent({
     [widget.chartType],
   );
 
+  const { data: filterColumnsResponse } = useListMeasurementFilterColumns(
+    ListMeasurementFilterColumnsRequest.fromPartial({
+      parent: dashboardName,
+    }),
+    { enabled: !!dashboardName },
+  );
+  const columnDisplayNameMap = useMemo(
+    () =>
+      getColumnDisplayNameMap(
+        filterColumnsResponse?.measurementFilterColumns ?? [],
+      ),
+    [filterColumnsResponse?.measurementFilterColumns],
+  );
+
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [accumulatedRows, setAccumulatedRows] = useState<
     readonly RawSampleRow[]
   >([]);
+  const [
+    accumulatedDimensionDisplayNames,
+    setAccumulatedDimensionDisplayNames,
+  ] = useState<Record<string, string>>({});
   const [currentPageToken, setCurrentPageToken] = useState<string | undefined>(
     undefined,
   );
@@ -93,6 +118,7 @@ export function SampleDetailsContent({
   // Reset when dependencies change
   useEffect(() => {
     setAccumulatedRows([]);
+    setAccumulatedDimensionDisplayNames({});
     setCurrentPageToken(undefined);
     setExpandedItems(new Set());
   }, [
@@ -137,7 +163,7 @@ export function SampleDetailsContent({
       seriesIndex:
         seriesIndex !== undefined && seriesIndex >= 0 ? seriesIndex : undefined,
       selectionContext,
-      pageSize: 1000,
+      pageSize: 100,
       orderBy,
       pageToken: currentPageToken,
       extraColumns: [
@@ -191,6 +217,12 @@ export function SampleDetailsContent({
         return [...prev, ...newRows];
       });
     }
+    if (data?.dimensionDisplayNames) {
+      setAccumulatedDimensionDisplayNames((prev) => ({
+        ...prev,
+        ...data.dimensionDisplayNames,
+      }));
+    }
   }, [data]);
 
   if (isLoading && accumulatedRows.length === 0) {
@@ -242,6 +274,10 @@ export function SampleDetailsContent({
         <RawSampleList
           rows={accumulatedRows}
           expandedItems={expandedItems}
+          dimensionDisplayNames={{
+            ...columnDisplayNameMap,
+            ...accumulatedDimensionDisplayNames,
+          }}
           onToggleExpand={(index: number) => {
             setExpandedItems((prev) => {
               const next = new Set(prev);

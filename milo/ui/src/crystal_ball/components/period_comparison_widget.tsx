@@ -124,9 +124,16 @@ export function PeriodComparisonWidget({
   const currentAggregations = useMemo(() => {
     const config = widget.periodComparisonChartConfig;
     if (config?.aggregations?.length) {
-      return config.aggregations.map((a) =>
-        perfChartSeries_PerfAggregationFunctionFromJSON(a),
-      );
+      const filtered = config.aggregations
+        .map((a) => perfChartSeries_PerfAggregationFunctionFromJSON(a))
+        .filter(
+          (a) =>
+            a !==
+            PerfChartSeries_PerfAggregationFunction.PERF_AGGREGATION_FUNCTION_UNSPECIFIED,
+        );
+      if (filtered.length > 0) {
+        return filtered;
+      }
     }
     return [PerfChartSeries_PerfAggregationFunction.MEAN];
   }, [widget.periodComparisonChartConfig]);

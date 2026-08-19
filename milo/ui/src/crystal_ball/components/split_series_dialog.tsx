@@ -32,7 +32,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 
-import { Z_INDEX } from '@/crystal_ball/constants';
+import { DIMENSION_PREFIX, Z_INDEX } from '@/crystal_ball/constants';
 import {
   useListMeasurementFilterColumns,
   useSuggestMeasurementFilterValues,
@@ -47,6 +47,8 @@ import {
   PerfChartSeries,
   PerfFilter,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+import { DimBadge } from './raw_sample_list';
 
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
@@ -284,6 +286,25 @@ export function SplitSeriesDialog({
               setSelectedColumn(newValue?.column ?? null);
               setSelectedValues([]);
             }}
+            renderOption={(props, option) => {
+              const isDynamicDimension =
+                option.column.startsWith(DIMENSION_PREFIX);
+              return (
+                <li {...props} key={option.column}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                    }}
+                  >
+                    <span>{getColumnDisplayName(option)}</span>
+                    {isDynamicDimension && <DimBadge />}
+                  </Box>
+                </li>
+              );
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -357,21 +378,17 @@ export function SplitSeriesDialog({
                 onInputChange={(_event, newInputValue) => {
                   setInputValue(newInputValue);
                 }}
-                renderOption={(props, option, { selected }) => {
-                  // eslint-disable-next-line react/prop-types
-                  const { key, ...otherProps } = props;
-                  return (
-                    <li key={key} {...otherProps}>
-                      <Checkbox
-                        icon={icon}
-                        checkedIcon={checkedIcon}
-                        style={{ marginRight: 8 }}
-                        checked={selected}
-                      />
-                      {option}
-                    </li>
-                  );
-                }}
+                renderOption={(props, option, { selected }) => (
+                  <li {...props} key={option}>
+                    <Checkbox
+                      icon={icon}
+                      checkedIcon={checkedIcon}
+                      style={{ marginRight: 8 }}
+                      checked={selected}
+                    />
+                    {option}
+                  </li>
+                )}
                 renderInput={(params) => (
                   <TextField
                     {...params}

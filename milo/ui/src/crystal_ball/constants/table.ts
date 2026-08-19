@@ -133,3 +133,15 @@ export const REQUIRED_BREAKDOWN_AGGREGATIONS: readonly BreakdownTableConfig_Brea
     BreakdownTableConfig_BreakdownAggregation.MIN,
     BreakdownTableConfig_BreakdownAggregation.MAX,
   ];
+
+/**
+ * Prefix for dynamic dimensions (e.g. "dim.device_id") extracted from
+ * MetricDimensions, distinguishing them from static schema column dimensions
+ * (e.g. "build_target", "build_branch", "test_name").
+ */
+export const DIMENSION_PREFIX = 'dim.';
+
+/**
+ * Regular expression matching the dynamic dimension prefix ('dim.') at the start of a column name.
+ */
+export const DIMENSION_PREFIX_REGEX = /^dim\./i;

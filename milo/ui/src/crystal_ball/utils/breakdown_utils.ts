@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { OPERATOR_DISPLAY_NAMES } from '@/crystal_ball/constants';
+import {
+  DIMENSION_PREFIX_REGEX,
+  OPERATOR_DISPLAY_NAMES,
+} from '@/crystal_ball/constants';
 import { parseSingleFilter } from '@/crystal_ball/utils';
 import {
   BreakdownSection,
@@ -47,18 +50,27 @@ const BREAKDOWN_METRIC_KEYS = new Set(
  */
 export function deriveTableColumns(
   data: readonly Readonly<Record<string, string | number | null | undefined>>[],
+  preferredDimensionKey?: string,
 ) {
+  const preferredKey = preferredDimensionKey
+    ? preferredDimensionKey
+    : undefined;
   if (!data.length)
-    return { dimensionKey: DIMENSION_COLUMN_KEY, metricColumns: [] };
+    return {
+      dimensionKey: preferredKey ?? DIMENSION_COLUMN_KEY,
+      metricColumns: [],
+    };
 
   const keys = Object.keys(data[0]);
   const dimensionKey =
-    keys.find((key) => {
-      const isMetric = Array.from(BREAKDOWN_METRIC_KEYS).some(
-        (k) => k.toUpperCase() === key.toUpperCase(),
-      );
-      return !isMetric;
-    }) ?? DIMENSION_COLUMN_KEY;
+    preferredKey && keys.includes(preferredKey)
+      ? preferredKey
+      : (keys.find((key) => {
+          const isMetric = Array.from(BREAKDOWN_METRIC_KEYS).some(
+            (k) => k.toUpperCase() === key.toUpperCase(),
+          );
+          return !isMetric;
+        }) ?? DIMENSION_COLUMN_KEY);
 
   const metricColumns = keys.filter((key) => key !== dimensionKey);
 
@@ -96,12 +108,22 @@ export function prepareExportData(
   seriesFilters?: readonly PerfFilter[],
 ) {
   const data = activeSection.rows ?? [];
-  const { dimensionKey, metricColumns } = deriveTableColumns(data);
+  const { dimensionKey, metricColumns } = deriveTableColumns(
+    data,
+    activeSection.dimensionColumn,
+  );
+
+  const dimensionDisplayName =
+    (activeSection.dimensionDisplayName
+      ? activeSection.dimensionDisplayName
+      : undefined) ??
+    (activeSection.dimensionColumn ?? UNKNOWN_DIMENSION)
+      .replace(DIMENSION_PREFIX_REGEX, '')
+      .replace(/_/g, ' ')
+      .toUpperCase();
 
   const headers = [
-    (activeSection.dimensionColumn ?? UNKNOWN_DIMENSION)
-      .replace(/_/g, ' ')
-      .toUpperCase(),
+    dimensionDisplayName,
     ...metricColumns.map((c) => c.toUpperCase()),
   ];
 
@@ -128,8 +150,15 @@ export function prepareExportData(
 
   metadataRows.push([]); // Empty row separator
 
+  const titleDimension =
+    (activeSection.dimensionDisplayName
+      ? activeSection.dimensionDisplayName
+      : undefined) ??
+    activeSection.dimensionColumn ??
+    UNKNOWN_DIMENSION;
+
   return {
-    title: `Breakdown by ${activeSection.dimensionColumn}`,
+    title: `Breakdown by ${titleDimension}`,
     values: [...metadataRows, headers, ...values],
   };
 }

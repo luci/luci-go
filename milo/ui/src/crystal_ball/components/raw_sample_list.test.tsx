@@ -90,7 +90,7 @@ describe('RawSampleList', () => {
     const accordion = screen.getByText(COMMON_MESSAGES.ALL_DETAILS);
     fireEvent.click(accordion);
 
-    expect(screen.getByText('Other Field:')).toBeInTheDocument();
+    expect(screen.getByText('OTHER FIELD:')).toBeInTheDocument();
     expect(screen.getByText('other_value')).toBeInTheDocument();
   });
 
@@ -117,5 +117,50 @@ describe('RawSampleList', () => {
     const elements = screen.getAllByText(/test_class/);
     expect(elements.length).toBeGreaterThanOrEqual(1);
     expect(elements[0]).toHaveStyle({ wordBreak: 'break-all' });
+  });
+
+  it('should render friendly display names when dimensionDisplayNames is provided', () => {
+    const customDisplayNames = {
+      other_field: 'Custom Friendly Other Field',
+      atp_test_name: 'Custom ATP Test Label',
+    };
+
+    render(
+      <RawSampleList
+        rows={mockRows}
+        expandedItems={new Set([0])}
+        onToggleExpand={mockOnToggleExpand}
+        dimensionDisplayNames={customDisplayNames}
+      />,
+    );
+
+    expect(screen.getByText('Custom ATP Test Label')).toBeInTheDocument();
+    expect(
+      screen.getByText('Custom Friendly Other Field:'),
+    ).toBeInTheDocument();
+  });
+
+  it('should render DimBadge for keys starting with dim.', () => {
+    const dimRows: RawSampleRow[] = [
+      {
+        values: {
+          value: '200',
+          'dim.device_id': 'pixel_8',
+        },
+      },
+    ];
+
+    render(
+      <RawSampleList
+        rows={dimRows}
+        expandedItems={new Set([0])}
+        onToggleExpand={mockOnToggleExpand}
+        dimensionDisplayNames={{ 'dim.device_id': 'Device Identifier' }}
+      />,
+    );
+
+    expect(screen.getByText('Device Identifier:')).toBeInTheDocument();
+    expect(screen.getByLabelText('dynamic dimension')).toBeInTheDocument();
+    expect(screen.getByText('dim')).toBeInTheDocument();
   });
 });

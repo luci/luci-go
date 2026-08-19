@@ -96,12 +96,16 @@ describe('BreakdownTableChart', () => {
     ).toBeInTheDocument();
   });
 
+  const createSection = (
+    s: Parameters<typeof BreakdownSection.fromPartial>[0],
+  ): BreakdownSection => BreakdownSection.fromPartial(s);
+
   it('renders the tabs and table when data is provided', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: 'testname',
         rows: [{ dimension_value: 'test1', COUNT: 10, MIN: 1, MAX: 5 }],
-      },
+      }),
     ];
 
     render(
@@ -120,12 +124,64 @@ describe('BreakdownTableChart', () => {
     expect(screen.getByText('test1')).toBeInTheDocument();
   });
 
-  it('renders the friendly dimension name in column header when filterColumns metadata is provided', () => {
+  it('correctly displays values for dimension columns that start with dim. or contain dots', () => {
     const sections: BreakdownSection[] = [
-      {
-        dimensionColumn: 'testname',
-        rows: [{ dimension_value: 'test1', COUNT: 10 }],
-      },
+      createSection({
+        dimensionColumn: 'dim.device_id',
+        rows: [{ 'dim.device_id': 'pixel_7', COUNT: 10, MIN: 1, MAX: 5 }],
+      }),
+    ];
+
+    render(
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+      />,
+    );
+
+    expect(screen.getByText('pixel_7')).toBeInTheDocument();
+    expect(screen.queryByText('-')).not.toBeInTheDocument();
+  });
+
+  it('renders the friendly dimension name in column header from section.dimensionDisplayName', () => {
+    const sections: BreakdownSection[] = [
+      createSection({
+        dimensionColumn: 'dim.device_id',
+        dimensionDisplayName: 'Device Identifier',
+        rows: [{ 'dim.device_id': 'pixel_7', COUNT: 10 }],
+      }),
+    ];
+
+    render(
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+      />,
+    );
+
+    expect(
+      screen.getByRole('columnheader', { name: /Device Identifier/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'Breakdown by category' }),
+    ).toHaveTextContent(/Device Identifier/);
+    expect(
+      screen.getAllByLabelText('dynamic dimension').length,
+    ).toBeGreaterThanOrEqual(1);
+  });
+
+  it('matches filterColumns without dim. prefix when dimensionColumn has dim. prefix', () => {
+    const sections: BreakdownSection[] = [
+      createSection({
+        dimensionColumn: 'dim.device_id',
+        rows: [{ 'dim.device_id': 'pixel_7', COUNT: 10 }],
+      }),
     ];
 
     render(
@@ -136,10 +192,71 @@ describe('BreakdownTableChart', () => {
         onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
         filterColumns={[
-          {
+          MeasurementFilterColumn.fromPartial({
+            column: 'device_id',
+            displayName: 'Device Identifier',
+          }),
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole('columnheader', { name: /Device Identifier/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'Breakdown by category' }),
+    ).toHaveTextContent(/Device Identifier/);
+    expect(
+      screen.getAllByLabelText('dynamic dimension').length,
+    ).toBeGreaterThanOrEqual(1);
+  });
+
+  it('strips dim. prefix in fallback name when displayName is missing', () => {
+    const sections: BreakdownSection[] = [
+      createSection({
+        dimensionColumn: 'dim.gpu_vendor',
+        rows: [{ 'dim.gpu_vendor': 'adreno', COUNT: 10 }],
+      }),
+    ];
+
+    render(
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+      />,
+    );
+
+    expect(
+      screen.getByRole('columnheader', { name: /GPU VENDOR/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByLabelText('dynamic dimension').length,
+    ).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders the friendly dimension name in column header when filterColumns metadata is provided', () => {
+    const sections: BreakdownSection[] = [
+      createSection({
+        dimensionColumn: 'testname',
+        rows: [{ dimension_value: 'test1', COUNT: 10 }],
+      }),
+    ];
+
+    render(
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+        filterColumns={[
+          MeasurementFilterColumn.fromPartial({
             column: 'testname',
             displayName: 'Friendly Test Name',
-          } as MeasurementFilterColumn,
+          }),
         ]}
       />,
     );
@@ -151,10 +268,10 @@ describe('BreakdownTableChart', () => {
 
   it('renders the formatted raw name in column header when displayName is missing', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: 'build_target',
         rows: [{ dimension_value: 'target1', COUNT: 10 }],
-      },
+      }),
     ];
 
     render(
@@ -165,9 +282,9 @@ describe('BreakdownTableChart', () => {
         onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
         filterColumns={[
-          {
+          MeasurementFilterColumn.fromPartial({
             column: 'build_target',
-          } as MeasurementFilterColumn,
+          }),
         ]}
       />,
     );
@@ -179,14 +296,14 @@ describe('BreakdownTableChart', () => {
 
   it('renders the default dimension when specified', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: 'testname',
         rows: [{ dimension_value: 'test1', COUNT: 10 }],
-      },
-      {
+      }),
+      createSection({
         dimensionColumn: 'buildbranch',
         rows: [{ dimension_value: 'branch1', COUNT: 20 }],
-      },
+      }),
     ];
 
     render(
@@ -209,14 +326,14 @@ describe('BreakdownTableChart', () => {
 
   it('switches categories and displays corresponding data', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: 'testname',
         rows: [{ dimension_value: 'test1', COUNT: 10, MIN: 1, MAX: 5 }],
-      },
-      {
+      }),
+      createSection({
         dimensionColumn: 'buildbranch',
         rows: [{ dimension_value: 'branch1', COUNT: 20, MIN: 2, MAX: 6 }],
-      },
+      }),
     ];
 
     render(<TestWrapper sections={sections} initialDimension="testname" />);
@@ -240,9 +357,43 @@ describe('BreakdownTableChart', () => {
     expect(screen.getByText('branch1')).toBeInTheDocument();
   });
 
+  it('sorts dimension options alphabetically by display name', () => {
+    const sections: BreakdownSection[] = [
+      createSection({
+        dimensionColumn: 'dim.zebra',
+        dimensionDisplayName: 'Zebra Dimension',
+        rows: [],
+      }),
+      createSection({
+        dimensionColumn: 'alpha',
+        dimensionDisplayName: 'Alpha Dimension',
+        rows: [],
+      }),
+      createSection({
+        dimensionColumn: 'dim.middle',
+        dimensionDisplayName: 'Middle Dimension',
+        rows: [],
+      }),
+    ];
+
+    render(<TestWrapper sections={sections} initialDimension="alpha" />);
+
+    const select = screen.getByRole('combobox', {
+      name: 'Breakdown by category',
+    });
+    fireEvent.mouseDown(select);
+
+    const options = screen.getAllByRole('option');
+    expect(options.map((o) => o.textContent)).toEqual([
+      expect.stringMatching(/Alpha Dimension/),
+      expect.stringMatching(/Middle Dimension/),
+      expect.stringMatching(/Zebra Dimension/),
+    ]);
+  });
+
   it('dynamically derives metric columns from data', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: 'testname',
         rows: [
           {
@@ -253,7 +404,7 @@ describe('BreakdownTableChart', () => {
             CUSTOMSCORE: 9.9,
           },
         ],
-      },
+      }),
     ];
 
     render(
@@ -282,8 +433,8 @@ describe('BreakdownTableChart', () => {
     }));
 
     const sections: BreakdownSection[] = [
-      { dimensionColumn: 'testname', rows: rows1 },
-      { dimensionColumn: 'buildbranch', rows: rows2 },
+      createSection({ dimensionColumn: 'testname', rows: rows1 }),
+      createSection({ dimensionColumn: 'buildbranch', rows: rows2 }),
     ];
 
     render(<TestWrapper sections={sections} initialDimension="testname" />);
@@ -309,10 +460,10 @@ describe('BreakdownTableChart', () => {
 
   it('handles missing dimensionColumn and missing rows gracefully', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: '',
         rows: [],
-      },
+      }),
     ];
 
     render(
@@ -334,7 +485,7 @@ describe('BreakdownTableChart', () => {
 
   it('handles null/undefined values in cells', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: 'testname',
         rows: [
           {
@@ -343,7 +494,7 @@ describe('BreakdownTableChart', () => {
             CUSTOM: 'invalid_number',
           },
         ],
-      },
+      }),
     ];
 
     render(
@@ -365,10 +516,10 @@ describe('BreakdownTableChart', () => {
 
   it('allows opening the aggregates select dropdown', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: 'testname',
         rows: [{ dimension_value: 'test1', COUNT: 10, MIN: 1, MAX: 5 }],
-      },
+      }),
     ];
 
     render(
@@ -392,10 +543,10 @@ describe('BreakdownTableChart', () => {
 
   it('calls onExport when export button is clicked', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: 'testname',
         rows: [{ dimension_value: 'test1', COUNT: 10 }],
-      },
+      }),
     ];
 
     const mockOnExport = jest.fn();
@@ -423,10 +574,10 @@ describe('BreakdownTableChart', () => {
 
   it('displays all aggregation options', () => {
     const sections: BreakdownSection[] = [
-      {
+      createSection({
         dimensionColumn: 'testname',
         rows: [{ dimension_value: 'test1', COUNT: 10, MIN: 1, MAX: 5 }],
-      },
+      }),
     ];
 
     render(

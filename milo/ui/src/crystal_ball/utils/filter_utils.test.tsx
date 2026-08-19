@@ -14,11 +14,19 @@
 
 import { Column } from '@/crystal_ball/constants';
 import {
+  MeasurementFilterColumn,
+  MeasurementFilterColumn_FilterScope,
   PerfFilter,
   PerfFilterDefault_FilterOperator,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
-import { buildFilterString } from './filter_utils';
+import {
+  buildFilterString,
+  formatColumnNameFallback,
+  getColumnDisplayNameMap,
+  getDimensionLabel,
+  getFilterableColumns,
+} from './filter_utils';
 
 describe('buildFilterString', () => {
   const mockGlobalFilters: PerfFilter[] = [
@@ -237,5 +245,94 @@ describe('buildFilterString', () => {
     ];
     const result = buildFilterString(filters);
     expect(result).toBe('build_type IN ("Postsubmit", "Presubmit")');
+  });
+});
+
+describe('formatColumnNameFallback and getColumnDisplayNameMap', () => {
+  it('strips dim. prefix in formatColumnNameFallback', () => {
+    expect(formatColumnNameFallback('dim.device_id')).toBe('DEVICE ID');
+    expect(formatColumnNameFallback('build_target')).toBe('BUILD TARGET');
+  });
+
+  it('maps both dim. and non-dim. column names in getColumnDisplayNameMap', () => {
+    const map = getColumnDisplayNameMap([
+      MeasurementFilterColumn.fromPartial({
+        column: 'device_id',
+        displayName: 'Device Identifier',
+      }),
+      MeasurementFilterColumn.fromPartial({
+        column: 'dim.gpu_vendor',
+        displayName: 'GPU Vendor',
+      }),
+    ]);
+
+    expect(map['device_id']).toBe('Device Identifier');
+    expect(map['dim.device_id']).toBe('Device Identifier');
+    expect(map['gpu_vendor']).toBe('GPU Vendor');
+    expect(map['dim.gpu_vendor']).toBe('GPU Vendor');
+  });
+
+  it('resolves dimension labels with getDimensionLabel respecting precedence', () => {
+    const map = {
+      'dim.device_id': 'Device Identifier',
+      gpu_vendor: 'GPU Vendor',
+    };
+
+    // 1. Explicit display name takes highest precedence
+    expect(getDimensionLabel('dim.device_id', 'Custom Name', map)).toBe(
+      'Custom Name',
+    );
+
+    // 2. Direct map lookup
+    expect(getDimensionLabel('dim.device_id', undefined, map)).toBe(
+      'Device Identifier',
+    );
+
+    // 3. Stripped dim. prefix lookup
+    expect(getDimensionLabel('dim.gpu_vendor', undefined, map)).toBe(
+      'GPU Vendor',
+    );
+
+    // 4. Fallback formatting
+    expect(getDimensionLabel('dim.unknown_col', undefined, map)).toBe(
+      'UNKNOWN COL',
+    );
+    expect(getDimensionLabel('build_branch', undefined, undefined)).toBe(
+      'BUILD BRANCH',
+    );
+  });
+});
+
+describe('getFilterableColumns', () => {
+  it('excludes isMetricKey and global time range columns', () => {
+    const columns = [
+      MeasurementFilterColumn.fromPartial({
+        column: 'build_target',
+        displayName: 'Build Target',
+        applicableScopes: [MeasurementFilterColumn_FilterScope.WIDGET],
+      }),
+      MeasurementFilterColumn.fromPartial({
+        column: 'build_creation_timestamp',
+        displayName: 'Time Range',
+        applicableScopes: [MeasurementFilterColumn_FilterScope.WIDGET],
+      }),
+      MeasurementFilterColumn.fromPartial({
+        column: 'metric_key',
+        displayName: 'Metric Key',
+        isMetricKey: true,
+        applicableScopes: [MeasurementFilterColumn_FilterScope.WIDGET],
+      }),
+      MeasurementFilterColumn.fromPartial({
+        column: 'dim.device_id',
+        displayName: 'Device Identifier',
+        applicableScopes: [MeasurementFilterColumn_FilterScope.WIDGET],
+      }),
+    ];
+
+    const result = getFilterableColumns(columns);
+    expect(result.map((c) => c.column)).toEqual([
+      'build_target',
+      'dim.device_id',
+    ]);
   });
 });

@@ -90,6 +90,7 @@ import { AI_BUTTON_STYLE } from '@/crystal_ball/styles';
 import {
   extractIdFromName,
   formatApiError,
+  getFilterableColumns,
   isStringArray,
   sanitizeChartWidget,
 } from '@/crystal_ball/utils';
@@ -666,7 +667,10 @@ export function DashboardPage() {
     );
 
   const filterColumns = useMemo(
-    () => filterColumnsResponse?.measurementFilterColumns ?? [],
+    () =>
+      getFilterableColumns(
+        filterColumnsResponse?.measurementFilterColumns ?? [],
+      ),
     [filterColumnsResponse],
   );
 

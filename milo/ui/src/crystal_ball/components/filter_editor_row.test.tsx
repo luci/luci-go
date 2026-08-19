@@ -48,7 +48,7 @@ const mockedUseParams = jest.mocked(useParams);
 
 describe('FilterEditorRow', () => {
   const defaultProps = {
-    filter: {
+    filter: PerfFilter.fromPartial({
       id: 'filter-1',
       column: 'test_name',
       dataSpecId: 'spec-1',
@@ -59,15 +59,24 @@ describe('FilterEditorRow', () => {
           filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
         },
       },
-    } as PerfFilter,
+    }),
     dataSpecId: 'spec-1',
     primaryColumns: [
-      { column: 'test_name', displayName: 'Test Name' },
-      { column: 'build_branch', displayName: 'Build Branch' },
-    ] as MeasurementFilterColumn[],
+      MeasurementFilterColumn.fromPartial({
+        column: 'test_name',
+        displayName: 'Test Name',
+      }),
+      MeasurementFilterColumn.fromPartial({
+        column: 'build_branch',
+        displayName: 'Build Branch',
+      }),
+    ],
     secondaryColumns: [
-      { column: 'model', displayName: 'Model' },
-    ] as MeasurementFilterColumn[],
+      MeasurementFilterColumn.fromPartial({
+        column: 'model',
+        displayName: 'Model',
+      }),
+    ],
     dataType: MeasurementFilterColumn_ColumnDataType.STRING,
     onUpdateColumn: jest.fn(),
     onUpdateOperator: jest.fn(),
@@ -362,7 +371,9 @@ describe('FilterEditorRow', () => {
   it('renders with fallback column names formatted when displayName is missing', async () => {
     const props = {
       ...defaultProps,
-      primaryColumns: [{ column: 'build_target' }] as MeasurementFilterColumn[],
+      primaryColumns: [
+        MeasurementFilterColumn.fromPartial({ column: 'build_target' }),
+      ],
     };
     render(<FilterEditorRow {...props} />);
 
@@ -372,5 +383,26 @@ describe('FilterEditorRow', () => {
         screen.getByRole('option', { name: 'BUILD TARGET' }),
       ).toBeInTheDocument();
     });
+  });
+
+  it('renders DimBadge for dimension columns prefixed with dim.', async () => {
+    const props = {
+      ...defaultProps,
+      filter: {
+        ...defaultProps.filter,
+        column: 'dim.device_id',
+      },
+      primaryColumns: [
+        MeasurementFilterColumn.fromPartial({
+          column: 'dim.device_id',
+          displayName: 'Device Identifier',
+        }),
+      ],
+    };
+    render(<FilterEditorRow {...props} />);
+
+    expect(
+      screen.getAllByLabelText('dynamic dimension').length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });

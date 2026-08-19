@@ -27,6 +27,7 @@ import {
   createMockErrorResult,
 } from '@/crystal_ball/tests';
 import {
+  FetchWidgetRawSamplesResponse,
   PerfChartSeries_PerfAggregationFunction,
   PerfChartWidget,
   PerfChartWidget_ChartType,
@@ -36,6 +37,10 @@ import {
 jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
   useFetchWidgetRawSamples: jest.fn(),
+  useListMeasurementFilterColumns: () => ({
+    data: { measurementFilterColumns: [] },
+    isLoading: false,
+  }),
   useUserSettings: () => ({
     timeZone: 'UTC',
     isLocal: false,
@@ -102,7 +107,12 @@ describe('SampleDetailsContent', () => {
 
   it('should display empty state', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(
-      createMockQueryResult({ rows: [], nextPageToken: '' }),
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          rows: [],
+          nextPageToken: '',
+        }),
+      ),
     );
     render(
       <SampleDetailsContent
@@ -119,22 +129,24 @@ describe('SampleDetailsContent', () => {
 
   it('should render rows with data', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(
-      createMockQueryResult({
-        nextPageToken: '',
-        rows: [
-          {
-            values: {
-              value: '100',
-              test_name: 'test_class#test_method',
-              atp_test_name: 'atp_test',
-              build_id: '123',
-              build_branch: 'main',
-              build_target: 'target',
-              invocation_complete_timestamp: '2026-04-04T10:00:00Z',
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          nextPageToken: '',
+          rows: [
+            {
+              values: {
+                value: '100',
+                test_name: 'test_class#test_method',
+                atp_test_name: 'atp_test',
+                build_id: '123',
+                build_branch: 'main',
+                build_target: 'target',
+                invocation_complete_timestamp: '2026-04-04T10:00:00Z',
+              },
             },
-          },
-        ],
-      }),
+          ],
+        }),
+      ),
     );
 
     render(
@@ -157,7 +169,12 @@ describe('SampleDetailsContent', () => {
 
   it('should display descriptive sentence in header (plural)', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(
-      createMockQueryResult({ rows: [], nextPageToken: '' }),
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          rows: [],
+          nextPageToken: '',
+        }),
+      ),
     );
     render(
       <SampleDetailsContent
@@ -180,7 +197,12 @@ describe('SampleDetailsContent', () => {
 
   it('should display descriptive sentence in header (singular)', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(
-      createMockQueryResult({ rows: [], nextPageToken: '' }),
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          rows: [],
+          nextPageToken: '',
+        }),
+      ),
     );
     render(
       <SampleDetailsContent
@@ -203,24 +225,26 @@ describe('SampleDetailsContent', () => {
 
   it('should hide details with empty string values', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(
-      createMockQueryResult({
-        nextPageToken: '',
-        rows: [
-          {
-            values: {
-              value: '100',
-              test_name: 'test_class#test_method',
-              atp_test_name: 'atp_test',
-              build_id: '123',
-              build_branch: 'main',
-              build_target: 'target',
-              invocation_complete_timestamp: '2026-04-04T10:00:00Z',
-              empty_detail: '',
-              filled_detail: 'filled',
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          nextPageToken: '',
+          rows: [
+            {
+              values: {
+                value: '100',
+                test_name: 'test_class#test_method',
+                atp_test_name: 'atp_test',
+                build_id: '123',
+                build_branch: 'main',
+                build_target: 'target',
+                invocation_complete_timestamp: '2026-04-04T10:00:00Z',
+                empty_detail: '',
+                filled_detail: 'filled',
+              },
             },
-          },
-        ],
-      }),
+          ],
+        }),
+      ),
     );
 
     render(
@@ -235,13 +259,18 @@ describe('SampleDetailsContent', () => {
     const accordion = screen.getByText(COMMON_MESSAGES.ALL_DETAILS);
     fireEvent.click(accordion);
 
-    expect(screen.getByText('Filled Detail:')).toBeInTheDocument();
-    expect(screen.queryByText('Empty Detail:')).not.toBeInTheDocument();
+    expect(screen.getByText('FILLED DETAIL:')).toBeInTheDocument();
+    expect(screen.queryByText('EMPTY DETAIL:')).not.toBeInTheDocument();
   });
 
   it('should call useFetchWidgetRawSamples with correct parameters', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(
-      createMockQueryResult({ rows: [], nextPageToken: '' }),
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          rows: [],
+          nextPageToken: '',
+        }),
+      ),
     );
     render(
       <SampleDetailsContent
@@ -256,7 +285,7 @@ describe('SampleDetailsContent', () => {
       expect.objectContaining({
         widgetId: 'w1',
         seriesId: 's1',
-        pageSize: 1000,
+        pageSize: 100,
         orderBy: 'value asc', // Default sort
       }),
     );
@@ -264,7 +293,12 @@ describe('SampleDetailsContent', () => {
 
   it('should handle sort direction change', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(
-      createMockQueryResult({ rows: [], nextPageToken: '' }),
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          rows: [],
+          nextPageToken: '',
+        }),
+      ),
     );
     render(
       <SampleDetailsContent
@@ -287,7 +321,12 @@ describe('SampleDetailsContent', () => {
 
   it('should match parent series config when child series ID is provided', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(
-      createMockQueryResult({ rows: [], nextPageToken: '' }),
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          rows: [],
+          nextPageToken: '',
+        }),
+      ),
     );
     const childPoint: SelectedPointInfo = {
       ...mockPoint,
@@ -312,7 +351,12 @@ describe('SampleDetailsContent', () => {
 
   it('should fallback to exact series ID when seriesIndex is undefined', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(
-      createMockQueryResult({ rows: [], nextPageToken: '' }),
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          rows: [],
+          nextPageToken: '',
+        }),
+      ),
     );
     const pointWithoutIndex: SelectedPointInfo = {
       ...mockPoint,
@@ -329,5 +373,41 @@ describe('SampleDetailsContent', () => {
     );
 
     expect(screen.getByText('mean')).toBeInTheDocument();
+  });
+
+  it('should render friendly display names from dimensionDisplayNames', () => {
+    mockUseFetchWidgetRawSamples.mockReturnValue(
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          nextPageToken: '',
+          dimensionDisplayNames: {
+            custom_dim: 'Custom Dimension Label',
+          },
+          rows: [
+            {
+              values: {
+                value: '100',
+                custom_dim: 'custom_value',
+              },
+            },
+          ],
+        }),
+      ),
+    );
+
+    render(
+      <SampleDetailsContent
+        selectedPoint={mockPoint}
+        widgetId="w1"
+        widget={mockWidget}
+        dashboardName="dashboard1"
+      />,
+    );
+
+    const accordion = screen.getByText(COMMON_MESSAGES.ALL_DETAILS);
+    fireEvent.click(accordion);
+
+    expect(screen.getByText('Custom Dimension Label:')).toBeInTheDocument();
+    expect(screen.getByText('custom_value')).toBeInTheDocument();
   });
 });

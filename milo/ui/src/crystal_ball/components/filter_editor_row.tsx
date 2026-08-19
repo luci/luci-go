@@ -38,6 +38,7 @@ import { useDebounce } from 'react-use';
 import {
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   COMMON_MESSAGES,
+  DIMENSION_PREFIX,
   MAX_SUGGEST_RESULTS,
   OPERATOR_DISPLAY_NAMES,
   TYPE_TO_OPERATORS,
@@ -52,7 +53,11 @@ import {
   COMPACT_TEXTFIELD_SX,
 } from '@/crystal_ball/styles';
 import { DataTestId } from '@/crystal_ball/tests';
-import { buildFilterString, getColumnDisplayName } from '@/crystal_ball/utils';
+import {
+  buildFilterString,
+  formatColumnNameFallback,
+  getColumnDisplayName,
+} from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
   MeasurementFilterColumn_ColumnDataType,
@@ -60,6 +65,8 @@ import {
   PerfFilterDefault_FilterOperator,
   perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+import { DimBadge } from './raw_sample_list';
 
 interface FilterEditorRowProps {
   filter: PerfFilter;
@@ -233,27 +240,81 @@ export function FilterEditorRow({
         inputProps={{ 'aria-label': COMMON_MESSAGES.COLUMN }}
         sx={COMPACT_SELECT_SX}
         MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
+        renderValue={(val: string) => {
+          if (!val) {
+            return '';
+          }
+          const col =
+            primaryColumns.find((c) => c.column === val) ??
+            secondaryColumns.find((c) => c.column === val);
+          const displayName = col
+            ? getColumnDisplayName(col)
+            : formatColumnNameFallback(val);
+          const isDynamicDimension = val.startsWith(DIMENSION_PREFIX);
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <span>{displayName}</span>
+              {isDynamicDimension && <DimBadge />}
+            </Box>
+          );
+        }}
       >
         {filter.column &&
           !primaryColumns.some((c) => c.column === filter.column) &&
           !secondaryColumns.some((c) => c.column === filter.column) && (
-            <MenuItem key={filter.column} value={filter.column}>
-              {filter.column}
+            <MenuItem
+              key={filter.column}
+              value={filter.column}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+              }}
+            >
+              <span>{formatColumnNameFallback(filter.column)}</span>
+              {filter.column.startsWith(DIMENSION_PREFIX) && <DimBadge />}
             </MenuItem>
           )}
-        {primaryColumns.map((col) => (
-          <MenuItem key={col.column} value={col.column}>
-            {getColumnDisplayName(col)}
-          </MenuItem>
-        ))}
+        {primaryColumns.map((col) => {
+          const isDynamicDimension = col.column.startsWith(DIMENSION_PREFIX);
+          return (
+            <MenuItem
+              key={col.column}
+              value={col.column}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+              }}
+            >
+              <span>{getColumnDisplayName(col)}</span>
+              {isDynamicDimension && <DimBadge />}
+            </MenuItem>
+          );
+        })}
 
         {secondaryColumns.length > 0 && [
           <Divider key="divider" />,
-          ...secondaryColumns.map((col) => (
-            <MenuItem key={col.column} value={col.column}>
-              {getColumnDisplayName(col)}
-            </MenuItem>
-          )),
+          ...secondaryColumns.map((col) => {
+            const isDynamicDimension = col.column.startsWith(DIMENSION_PREFIX);
+            return (
+              <MenuItem
+                key={col.column}
+                value={col.column}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                }}
+              >
+                <span>{getColumnDisplayName(col)}</span>
+                {isDynamicDimension && <DimBadge />}
+              </MenuItem>
+            );
+          }),
         ]}
       </Select>
 

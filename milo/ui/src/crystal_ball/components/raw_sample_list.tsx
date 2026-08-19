@@ -29,11 +29,46 @@ import {
   ATP_BASE_URL,
   Column,
   COMMON_MESSAGES,
+  DIMENSION_PREFIX,
   INVOCATION_BASE_URL,
 } from '@/crystal_ball/constants';
 import { useUserSettings } from '@/crystal_ball/hooks';
-import { formatTimestampWithZone } from '@/crystal_ball/utils';
+import {
+  formatTimestampWithZone,
+  getDimensionLabel,
+} from '@/crystal_ball/utils';
 import type { RawSampleRow } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+/**
+ * A subtle badge displayed for columns/keys that start with 'dim.' to denote
+ * dynamic dimensions (extracted from MetricDimensions), as opposed to static schema columns.
+ */
+export const DimBadge = () => (
+  <Box
+    component="span"
+    aria-label="dynamic dimension"
+    sx={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      fontSize: '0.625rem',
+      fontWeight: 'bold',
+      lineHeight: 1,
+      px: 0.5,
+      py: 0.2,
+      borderRadius: 0.5,
+      bgcolor: 'action.selected',
+      color: 'text.secondary',
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+      ml: 0.75,
+      verticalAlign: 'middle',
+      border: '1px solid',
+      borderColor: 'divider',
+    }}
+  >
+    dim
+  </Box>
+);
 
 function constructAtiUrl(row: RawSampleRow): string {
   const invocationId = row.values?.[Column.ANTS_INVOCATION_ID];
@@ -52,9 +87,15 @@ interface RawSampleItemProps {
   row: RawSampleRow;
   expanded: boolean;
   onChange: (event: React.SyntheticEvent, expanded: boolean) => void;
+  dimensionDisplayNames?: Readonly<Record<string, string>>;
 }
 
-function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
+function RawSampleItem({
+  row,
+  expanded,
+  onChange,
+  dimensionDisplayNames,
+}: RawSampleItemProps) {
   const { timeZone } = useUserSettings();
 
   // Safe URL construction using URL and URLSearchParams
@@ -183,7 +224,7 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
             color="text.secondary"
             sx={{ fontWeight: 'medium' }}
           >
-            Build
+            {dimensionDisplayNames?.[Column.BUILD_ID] ?? 'Build'}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Link
@@ -231,7 +272,9 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
             color="text.secondary"
             sx={{ fontWeight: 'medium' }}
           >
-            Build Created
+            {dimensionDisplayNames?.[Column.BUILD_CREATION_TIMESTAMP] ??
+              dimensionDisplayNames?.['build_creation_timestamp'] ??
+              'Build Created'}
           </Typography>
           <Typography
             variant="caption"
@@ -245,7 +288,9 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
             color="text.secondary"
             sx={{ fontWeight: 'medium' }}
           >
-            Test Finished
+            {dimensionDisplayNames?.[Column.INVOCATION_COMPLETE_TIMESTAMP] ??
+              dimensionDisplayNames?.['invocation_complete_timestamp'] ??
+              'Test Finished'}
           </Typography>
           <Typography
             variant="caption"
@@ -259,7 +304,9 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
             color="text.secondary"
             sx={{ fontWeight: 'medium' }}
           >
-            Atp Test Name
+            {dimensionDisplayNames?.[Column.ATP_TEST_NAME] ??
+              dimensionDisplayNames?.['atp_test_name'] ??
+              'Atp Test Name'}
           </Typography>
           <Typography
             variant="caption"
@@ -277,7 +324,9 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
             color="text.secondary"
             sx={{ fontWeight: 'medium' }}
           >
-            Test Name
+            {dimensionDisplayNames?.[Column.TEST_NAME] ??
+              dimensionDisplayNames?.['test_name'] ??
+              'Test Name'}
           </Typography>
           <Typography
             variant="caption"
@@ -343,24 +392,41 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
                 key !== Column.INVOCATION_URL &&
                 key !== Column.PERFETTO_ARTIFACT_URL,
             )
-            .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+            .sort(([keyA], [keyB]) => {
+              const labelA = getDimensionLabel(
+                keyA,
+                undefined,
+                dimensionDisplayNames,
+              );
+              const labelB = getDimensionLabel(
+                keyB,
+                undefined,
+                dimensionDisplayNames,
+              );
+              return labelA.localeCompare(labelB);
+            })
             .map(([key, val]) => {
-              const formattedKey =
-                key
-                  .replace(/_/g, ' ')
-                  .replace(/\b\w/g, (l) => l.toUpperCase()) + ':';
+              const label = getDimensionLabel(
+                key,
+                undefined,
+                dimensionDisplayNames,
+              );
+              const formattedKey = `${label}:`;
+              const isDynamicDimension = key.startsWith(DIMENSION_PREFIX);
               return (
                 <React.Fragment key={key}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      fontWeight: 'medium',
-                      pr: 1,
-                    }}
-                  >
-                    {formattedKey}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', pr: 1 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        fontWeight: 'medium',
+                      }}
+                    >
+                      {formattedKey}
+                    </Typography>
+                    {isDynamicDimension && <DimBadge />}
+                  </Box>
                   <Typography
                     variant="caption"
                     color="text.primary"
@@ -387,6 +453,8 @@ export interface RawSampleListProps {
   expandedItems: Set<number>;
   /** Callback triggered when a row is toggled. */
   onToggleExpand: (index: number) => void;
+  /** User-friendly display names for dimensions. */
+  dimensionDisplayNames?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -396,6 +464,7 @@ export function RawSampleList({
   rows,
   expandedItems,
   onToggleExpand,
+  dimensionDisplayNames,
 }: RawSampleListProps) {
   if (rows.length === 0) {
     return (
@@ -413,6 +482,7 @@ export function RawSampleList({
           row={row}
           expanded={expandedItems.has(rowIndex)}
           onChange={() => onToggleExpand(rowIndex)}
+          dimensionDisplayNames={dimensionDisplayNames}
         />
       ))}
     </Box>

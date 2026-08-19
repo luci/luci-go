@@ -47,6 +47,7 @@ import {
   BREAKDOWN_AGGREGATIONS_LIST,
   COMMON_MESSAGES,
   COMMON_MRT_CONFIG,
+  DIMENSION_PREFIX,
   REQUIRED_BREAKDOWN_AGGREGATIONS,
   Z_INDEX,
 } from '@/crystal_ball/constants';
@@ -57,8 +58,9 @@ import {
 } from '@/crystal_ball/styles';
 import {
   deriveTableColumns,
-  formatColumnNameFallback,
+  DIMENSION_COLUMN_KEY,
   getColumnDisplayNameMap,
+  getDimensionLabel,
   UNKNOWN_DIMENSION,
 } from '@/crystal_ball/utils';
 import {
@@ -67,6 +69,8 @@ import {
   breakdownTableConfig_BreakdownAggregationFromJSON,
   MeasurementFilterColumn,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+import { DimBadge } from './raw_sample_list';
 
 /**
  * Represents a single row of breakdown data, where keys are dimension names
@@ -208,9 +212,14 @@ function InnerTable({
     [section.rows],
   );
 
+  const columnDisplayNameMap = useMemo(
+    () => getColumnDisplayNameMap(filterColumns),
+    [filterColumns],
+  );
+
   const { dimensionKey, metricColumns } = useMemo(
-    () => deriveTableColumns(data),
-    [data],
+    () => deriveTableColumns(data, section.dimensionColumn),
+    [data, section.dimensionColumn],
   );
 
   const { minKey, maxKey } = useMemo(() => {
@@ -242,13 +251,23 @@ function InnerTable({
   const columns = useMemo<
     MRT_ColumnDef<BreakdownRow, number | string | null | undefined>[]
   >(() => {
-    const match = filterColumns.find((c) => c.column === dimensionColumn);
-    const dimensionHeader =
-      match?.displayName || formatColumnNameFallback(dimensionColumn);
+    const dimensionHeader = getDimensionLabel(
+      dimensionColumn,
+      section.dimensionDisplayName,
+      columnDisplayNameMap,
+    );
+    const isDynamicDimension = dimensionColumn.startsWith(DIMENSION_PREFIX);
     return [
       {
-        accessorKey: dimensionKey,
+        id: dimensionKey ?? DIMENSION_COLUMN_KEY,
+        accessorFn: (row: BreakdownRow) => row[dimensionKey],
         header: dimensionHeader,
+        Header: () => (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <span>{dimensionHeader}</span>
+            {isDynamicDimension && <DimBadge />}
+          </Box>
+        ),
         Cell: DimensionCell,
       },
       {
@@ -272,7 +291,8 @@ function InnerTable({
         (
           col,
         ): MRT_ColumnDef<BreakdownRow, string | number | null | undefined> => ({
-          accessorKey: col,
+          id: col,
+          accessorFn: (row: BreakdownRow) => row[col],
           header: col.toUpperCase(),
           muiTableHeadCellProps: {
             align: 'right',
@@ -288,7 +308,8 @@ function InnerTable({
     globalMinMax,
     minKey,
     maxKey,
-    filterColumns,
+    columnDisplayNameMap,
+    section.dimensionDisplayName,
   ]);
 
   const countLabel =
@@ -417,6 +438,26 @@ export function BreakdownTableChart({
     onUpdateAggregations(finalValues);
   };
 
+  const sortedSections = useMemo(() => {
+    return [...sections].sort((a, b) => {
+      const rawColA = a.dimensionColumn ?? '';
+      const nameA = getDimensionLabel(
+        rawColA,
+        a.dimensionDisplayName,
+        columnDisplayNameMap,
+      );
+
+      const rawColB = b.dimensionColumn ?? '';
+      const nameB = getDimensionLabel(
+        rawColB,
+        b.dimensionDisplayName,
+        columnDisplayNameMap,
+      );
+
+      return nameA.localeCompare(nameB);
+    });
+  }, [sections, columnDisplayNameMap]);
+
   const activeSection = useMemo(() => {
     return (
       sections.find((s) => s.dimensionColumn === currentDimension) ??
@@ -476,32 +517,68 @@ export function BreakdownTableChart({
               renderValue={(val: string) => {
                 const sec =
                   sections.find(
-                    (s) => (s.dimensionColumn || UNKNOWN_DIMENSION) === val,
+                    (s) => (s.dimensionColumn ?? UNKNOWN_DIMENSION) === val,
                   ) ?? sections[0];
                 if (!sec) {
                   return sections.length === 0 ? 'N/A' : UNKNOWN_DIMENSION;
                 }
                 const rawCol = sec.dimensionColumn ?? '';
+                const displayName = getDimensionLabel(
+                  rawCol,
+                  sec.dimensionDisplayName,
+                  columnDisplayNameMap,
+                );
+                const isDynamicDimension = rawCol.startsWith(DIMENSION_PREFIX);
                 return (
-                  columnDisplayNameMap[rawCol] ||
-                  formatColumnNameFallback(rawCol) ||
-                  UNKNOWN_DIMENSION
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <span>{displayName}</span>
+                    {isDynamicDimension && <DimBadge />}
+                  </Box>
                 );
               }}
             >
-              {sections.map((section, idx) => {
+              {currentDimension &&
+                !sortedSections.some(
+                  (s) =>
+                    (s.dimensionColumn !== ''
+                      ? s.dimensionColumn
+                      : UNKNOWN_DIMENSION) === currentDimension,
+                ) && (
+                  <MenuItem key={currentDimension} value={currentDimension}>
+                    <span>
+                      {getDimensionLabel(
+                        currentDimension,
+                        undefined,
+                        columnDisplayNameMap,
+                      )}
+                    </span>
+                    {currentDimension.startsWith(DIMENSION_PREFIX) && (
+                      <DimBadge />
+                    )}
+                  </MenuItem>
+                )}
+              {sortedSections.map((section, idx) => {
                 const rawCol = section.dimensionColumn ?? '';
+                const displayName = getDimensionLabel(
+                  rawCol,
+                  section.dimensionDisplayName,
+                  columnDisplayNameMap,
+                );
+                const isDynamicDimension = rawCol.startsWith(DIMENSION_PREFIX);
                 return (
                   <MenuItem
-                    key={rawCol || `${UNKNOWN_DIMENSION}-${idx}`}
-                    value={rawCol || UNKNOWN_DIMENSION}
+                    key={rawCol !== '' ? rawCol : `${UNKNOWN_DIMENSION}-${idx}`}
+                    value={rawCol !== '' ? rawCol : UNKNOWN_DIMENSION}
                     sx={{
                       fontSize: (theme) => theme.typography.body2.fontSize,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
                     }}
                   >
-                    {columnDisplayNameMap[rawCol] ||
-                      formatColumnNameFallback(rawCol) ||
-                      UNKNOWN_DIMENSION}
+                    <span>{displayName}</span>
+                    {isDynamicDimension && <DimBadge />}
                   </MenuItem>
                 );
               })}

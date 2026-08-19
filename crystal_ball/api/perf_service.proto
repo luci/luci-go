@@ -933,10 +933,11 @@ message BreakdownTableData {
   repeated BreakdownSection sections = 1;
 }
 
-// Represents one table in the breakdown (e.g., the "atptestname" or
-// "gpu_vendor" table).
+// Represents one table in the breakdown (e.g., the "atp_test_name" or
+// "dim.gpu_vendor" table).
 message BreakdownSection {
-  // Represents the dimension this section is grouped by.
+  // Represents the dimension this section is grouped by (e.g. "atp_test_name",
+  // "dim.gpu_vendor").
   string dimension_column = 1;
 
   // Represents the rows of the table. Each struct in `rows` contains:
@@ -947,6 +948,10 @@ message BreakdownSection {
   // The number of rows returned is limited to a server-defined maximum
   // (e.g., 1000).
   repeated google.protobuf.Struct rows = 2;
+
+  // User-friendly display name of the dimension (e.g., "ATP Test Name", "GPU
+  // Vendor").
+  string dimension_display_name = 3;
 }
 
 // Data structured and transformed for the PeriodComparison widget.
@@ -1921,6 +1926,9 @@ message FetchWidgetRawSamplesResponse {
 
   // A token, which can be sent as `page_token` to retrieve the next page.
   string next_page_token = 2;
+
+  // User-friendly display names for dimensions present in `rows`.
+  map<string, string> dimension_display_names = 3;
 }
 
 // Row message for holding the raw sample results.

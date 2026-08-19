@@ -94,3 +94,8 @@ export const MAX_SUGGEST_RESULTS = 10;
  * Key for the number of aggregated rows in chart data points.
  */
 export const NUM_AGGREGATED_ROWS = 'num_aggregated_rows';
+
+/**
+ * Column name for the statistical key.
+ */
+export const STATISTICAL_KEY_COLUMN = 'statistical_key';

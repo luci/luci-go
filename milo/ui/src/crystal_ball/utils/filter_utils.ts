@@ -14,7 +14,12 @@
 
 import { DateTime } from 'luxon';
 
-import { GLOBAL_TIME_RANGE_COLUMN } from '@/crystal_ball/constants';
+import {
+  DIMENSION_PREFIX,
+  DIMENSION_PREFIX_REGEX,
+  GLOBAL_TIME_RANGE_COLUMN,
+  STATISTICAL_KEY_COLUMN,
+} from '@/crystal_ball/constants';
 import {
   MeasurementFilterColumn,
   MeasurementFilterColumn_FilterScope,
@@ -32,7 +37,7 @@ const widenScopeType = (val: unknown): string | number => {
 
 /**
  * Filters measurement filter columns to only those suitable as filter dimensions or breakdown table dimensions.
- * Excludes metric keys, the global time range column, and columns with no valid filter scopes.
+ * Excludes metric keys, the global time range column, statistical key column, and columns with no valid filter scopes.
  */
 export const getFilterableColumns = (
   columns: readonly MeasurementFilterColumn[],
@@ -42,6 +47,9 @@ export const getFilterableColumns = (
       return false;
     }
     if (c.column === GLOBAL_TIME_RANGE_COLUMN) {
+      return false;
+    }
+    if (c.column === STATISTICAL_KEY_COLUMN) {
       return false;
     }
     return c.applicableScopes?.some((scope) => {
@@ -337,21 +345,31 @@ export const getFilterLabel = (
 
 /**
  * Formats a raw column name to a capitalized, friendly name as a fallback.
- * e.g., 'build_branch' -> 'BUILD BRANCH'
+ * Automatically strips any dynamic dimension prefix 'dim.' (e.g. 'build_branch' -> 'BUILD BRANCH',
+ * 'dim.device_id' -> 'DEVICE ID').
  */
 export const formatColumnNameFallback = (column: string): string => {
-  return column.replace(/_/g, ' ').toUpperCase();
+  const cleaned = (column !== '' ? column : 'UNKNOWN')
+    .replace(DIMENSION_PREFIX_REGEX, '')
+    .replace(/_/g, ' ')
+    .toUpperCase();
+  return cleaned !== '' ? cleaned : 'UNKNOWN';
 };
 
 /**
  * Gets the display name for a filter column, falling back to its raw name if not provided.
  */
 export const getColumnDisplayName = (col: MeasurementFilterColumn): string => {
-  return col.displayName || formatColumnNameFallback(col.column);
+  return (
+    (col.displayName ? col.displayName : undefined) ??
+    formatColumnNameFallback(col.column)
+  );
 };
 
 /**
  * Creates a map from raw column name to its display name.
+ * Maps both raw keys and 'dim.'-prefixed keys so dynamic dimensions
+ * can be resolved regardless of prefix presence.
  */
 export const getColumnDisplayNameMap = (
   columns: readonly MeasurementFilterColumn[],
@@ -359,8 +377,46 @@ export const getColumnDisplayNameMap = (
   const map: Record<string, string> = {};
   for (const col of columns) {
     if (col.column) {
-      map[col.column] = getColumnDisplayName(col);
+      const displayName = getColumnDisplayName(col);
+      map[col.column] = displayName;
+      if (col.column.startsWith(DIMENSION_PREFIX)) {
+        map[col.column.slice(DIMENSION_PREFIX.length)] = displayName;
+      } else {
+        map[`${DIMENSION_PREFIX}${col.column}`] = displayName;
+      }
     }
   }
   return map;
+};
+
+/**
+ * Resolves the display label for a dimension or column name using available
+ * metadata and fallbacks.
+ *
+ * Precedence:
+ * 1. Explicit display name provided directly (e.g. from proto section metadata).
+ * 2. Lookup in the column display name map by raw key.
+ * 3. Lookup in the column display name map without the 'dim.' prefix.
+ * 4. Fallback formatting via formatColumnNameFallback (strips 'dim.' and converts to uppercase).
+ */
+export const getDimensionLabel = (
+  rawCol: string,
+  explicitDisplayName?: string | null,
+  displayNameMap?: Record<string, string>,
+): string => {
+  if (explicitDisplayName && explicitDisplayName.trim() !== '') {
+    return explicitDisplayName;
+  }
+  if (displayNameMap) {
+    const direct = displayNameMap[rawCol];
+    if (direct) {
+      return direct;
+    }
+    const strippedKey = rawCol.replace(DIMENSION_PREFIX_REGEX, '');
+    const stripped = displayNameMap[strippedKey];
+    if (stripped) {
+      return stripped;
+    }
+  }
+  return formatColumnNameFallback(rawCol);
 };

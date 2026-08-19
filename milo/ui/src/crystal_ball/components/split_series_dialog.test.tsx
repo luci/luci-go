@@ -18,6 +18,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useParams } from 'react-router';
 
 import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
+import { createMockQueryResult } from '@/crystal_ball/tests';
 import {
   ListMeasurementFilterColumnsResponse,
   MeasurementFilterColumn_FilterScope,
@@ -331,5 +332,42 @@ describe('SplitSeriesDialog', () => {
     const popperStyle2 = window.getComputedStyle(popper2!);
     const popperZIndex2 = parseInt(popperStyle2.zIndex, 10);
     expect(popperZIndex2).toBeGreaterThan(drawerZIndex);
+  });
+
+  it('renders DimBadge for dimension options prefixed with dim.', async () => {
+    mockedListColumns.mockReturnValue(
+      createMockQueryResult(
+        ListMeasurementFilterColumnsResponse.fromPartial({
+          measurementFilterColumns: [
+            {
+              column: 'dim.device_id',
+              displayName: 'Device Identifier',
+              applicableScopes: [MeasurementFilterColumn_FilterScope.METRIC],
+            },
+          ],
+          nextPageToken: '',
+        }),
+      ),
+    );
+
+    render(
+      <SplitSeriesDialog
+        open={true}
+        onClose={mockOnClose}
+        series={sampleSeries}
+        onSplit={mockOnSplit}
+        dataSpecId="spec-1"
+      />,
+    );
+
+    fireEvent.mouseDown(screen.getByLabelText('Select Dimension to Split On'));
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: /Device Identifier/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getAllByLabelText('dynamic dimension').length,
+      ).toBeGreaterThanOrEqual(1);
+    });
   });
 });
