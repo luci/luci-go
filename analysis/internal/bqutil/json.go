@@ -16,6 +16,7 @@ package bqutil
 
 import (
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -46,6 +47,18 @@ func MarshalStructPB(s *structpb.Struct) (string, error) {
 	// Structs are persisted as JSONPB strings.
 	// See also https://bit.ly/chromium-bq-struct
 	b, err := (&protojson.MarshalOptions{}).Marshal(s)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// MarshalProto serialises a proto.Message as a JSONPB.
+func MarshalProto(m proto.Message) (string, error) {
+	if m == nil || !m.ProtoReflect().IsValid() {
+		return pbutil.EmptyJSON, nil
+	}
+	b, err := (&protojson.MarshalOptions{}).Marshal(m)
 	if err != nil {
 		return "", err
 	}
