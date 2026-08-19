@@ -34,13 +34,13 @@ jest.mock('@/generic_libs/components/google_analytics', () => ({
 const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
   {
     dutId: 'chromeos15-row2-rack3-host4',
-    pool: 'DUT_POOL_QUOTA',
+    pools: ['DUT_POOL_QUOTA'],
     model: 'volteer',
     state: 'needs_repair',
   },
   {
     dutId: 'chromeos15-row2-rack3-host5',
-    pool: 'faft-cr50',
+    pools: ['faft-cr50'],
     model: 'brya',
     state: 'repair_failed',
   },

@@ -87,7 +87,7 @@ export const ChromeOSRepairTable = ({
         type: DeviceType.DEVICE_TYPE_PHYSICAL,
         deviceSpec: {
           labels: {
-            'label-pool': { values: item.pool ? [item.pool] : [] },
+            'label-pool': { values: item.pools ? [...item.pools] : [] },
             'label-model': { values: item.model ? [item.model] : [] },
             dut_state: { values: item.state ? [item.state] : [] },
             dut_name: { values: item.dutId ? [item.dutId] : [] },

@@ -557,7 +557,7 @@ export interface ListRepairQueueRequest {
 
 export interface RepairQueueItem {
   readonly dutId: string;
-  readonly pool: string;
+  readonly pools: readonly string[];
   readonly model: string;
   readonly state: string;
 }
@@ -5318,7 +5318,7 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
 };
 
 function createBaseRepairQueueItem(): RepairQueueItem {
-  return { dutId: "", pool: "", model: "", state: "" };
+  return { dutId: "", pools: [], model: "", state: "" };
 }
 
 export const RepairQueueItem: MessageFns<RepairQueueItem> = {
@@ -5326,8 +5326,8 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.dutId !== "") {
       writer.uint32(10).string(message.dutId);
     }
-    if (message.pool !== "") {
-      writer.uint32(18).string(message.pool);
+    for (const v of message.pools) {
+      writer.uint32(18).string(v!);
     }
     if (message.model !== "") {
       writer.uint32(26).string(message.model);
@@ -5358,7 +5358,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
             break;
           }
 
-          message.pool = reader.string();
+          message.pools.push(reader.string());
           continue;
         }
         case 3: {
@@ -5389,7 +5389,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
   fromJSON(object: any): RepairQueueItem {
     return {
       dutId: isSet(object.dutId) ? globalThis.String(object.dutId) : "",
-      pool: isSet(object.pool) ? globalThis.String(object.pool) : "",
+      pools: globalThis.Array.isArray(object?.pools) ? object.pools.map((e: any) => globalThis.String(e)) : [],
       model: isSet(object.model) ? globalThis.String(object.model) : "",
       state: isSet(object.state) ? globalThis.String(object.state) : "",
     };
@@ -5400,8 +5400,8 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.dutId !== "") {
       obj.dutId = message.dutId;
     }
-    if (message.pool !== "") {
-      obj.pool = message.pool;
+    if (message.pools?.length) {
+      obj.pools = message.pools;
     }
     if (message.model !== "") {
       obj.model = message.model;
@@ -5418,7 +5418,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
   fromPartial(object: DeepPartial<RepairQueueItem>): RepairQueueItem {
     const message = createBaseRepairQueueItem() as any;
     message.dutId = object.dutId ?? "";
-    message.pool = object.pool ?? "";
+    message.pools = object.pools?.map((e) => e) || [];
     message.model = object.model ?? "";
     message.state = object.state ?? "";
     return message;
