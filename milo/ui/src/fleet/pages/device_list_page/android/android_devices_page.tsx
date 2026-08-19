@@ -33,10 +33,16 @@ import { AndroidDevicesTable } from './android_devices_table';
 import { useAndroidColumns } from './use_android_columns';
 import { useAndroidFilters } from './use_android_filters';
 
+export type AndroidPageWorkspace = 'Android' | 'Pixel';
+
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500, 1000];
 const DEFAULT_PAGE_SIZE = 100;
 
-export const AndroidDevicesPage = () => {
+export const AndroidDevicesPage = ({
+  workspace,
+}: {
+  workspace: AndroidPageWorkspace;
+}) => {
   const showAvgUtilization = useFeatureFlag(enableAndroidUtilizationMetrics);
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
@@ -112,19 +118,20 @@ export const AndroidDevicesPage = () => {
         <AndroidDevicesTable
           mrtColumnManager={mrtColumnManager}
           availableColumns={availableColumns}
+          workspace={workspace}
         />
       </div>
     </div>
   );
 };
 
-export function Component() {
+export function Component({ workspace }: { workspace: AndroidPageWorkspace }) {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <FleetHelmet pageTitle="Device List" />
       <RecoverableErrorBoundary key="fleet-device-list-page">
         <LoggedInBoundary>
-          <AndroidDevicesPage />
+          <AndroidDevicesPage workspace={workspace} />
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>

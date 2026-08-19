@@ -53,12 +53,14 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { AndroidPageWorkspace } from './android_devices_page';
 import { AndroidColumnDef } from './android_fields';
 import { useAndroidFilters } from './use_android_filters';
 
 interface AndroidTableProps {
   mrtColumnManager: MrtColumnManager<AndroidColumnDef>;
   availableColumns: { id: string; label: string }[];
+  workspace: AndroidPageWorkspace;
 }
 
 export const AndroidDevicesTable = ({

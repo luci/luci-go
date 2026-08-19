@@ -20,6 +20,7 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 const COMMON_COLUMNS: Record<Platform, string[]> = {
   [Platform.UNSPECIFIED]: [],
   [Platform.ANDROID]: ANDROID_DEFAULT_COLUMNS,
+  [Platform.PIXEL]: ANDROID_DEFAULT_COLUMNS,
   [Platform.CHROMEOS]: ['id', 'dut_id', 'state'],
   [Platform.CHROMIUM]: [
     'id',

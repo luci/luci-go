@@ -20,13 +20,16 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import { Alert, Box, Button, Grid2, Link, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
+import { useFeatureFlag } from '@/common/feature_flags';
 import { useUserProfile } from '@/common/hooks/use_user_profile';
 import { getLoginUrl } from '@/common/tools/url_utils';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import androidLogo from '@/fleet/assets/logos/android.png';
 import browserLogo from '@/fleet/assets/logos/browser.png';
 import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
+import pixelLogo from '@/fleet/assets/logos/pixel.png';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
+import { enablePTE } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
@@ -96,6 +99,8 @@ export const HomePage = () => {
         )
       : undefined;
 
+  const isPTEEnabled = useFeatureFlag(enablePTE);
+
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-home">
       <FleetHelmet pageTitle="" />
@@ -155,7 +160,6 @@ export const HomePage = () => {
                   linkIcon={<DevicesIcon />}
                 />
               </Grid2>
-
               {/* Browser Card */}
               <Grid2 size={{ xs: 12, md: 6, lg: 4 }}>
                 <PlatformSummaryCard
@@ -169,12 +173,12 @@ export const HomePage = () => {
                   linkIcon={<DevicesIcon />}
                 />
               </Grid2>
-
               {/* Android Card */}
               <Grid2 size={{ xs: 12, md: 6, lg: 4 }}>
                 <PlatformSummaryCard
                   title="Android"
                   logoSrc={androidLogo}
+                  // TODO(bartekdeska@) Change the way the elements display the count of elements
                   total={androidTotal}
                   healthyPercentage={androidHealthy}
                   isLoading={
@@ -191,6 +195,29 @@ export const HomePage = () => {
                   secondTotal={androidOffline}
                 />
               </Grid2>
+              {isPTEEnabled && (
+                <>
+                  {/* Pixel Card */}
+                  <Grid2 size={{ xs: 12, md: 6, lg: 4 }}>
+                    <PlatformSummaryCard
+                      title="Pixel"
+                      logoSrc={pixelLogo}
+                      // TODO(bartekdeska@) Change the way the elements display the count of elements
+                      total={androidTotal}
+                      healthyPercentage={androidHealthy}
+                      isLoading={
+                        androidQuery.isPending || androidOfflineQuery.isPending
+                      }
+                      isError={
+                        androidQuery.isError || androidOfflineQuery.isError
+                      }
+                      linkTo="/ui/fleet/p/pixel/devices"
+                      linkText="View all devices"
+                      linkIcon={<DevicesIcon />}
+                    />
+                  </Grid2>
+                </>
+              )}
             </Grid2>
           )}
 

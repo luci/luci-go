@@ -31,6 +31,8 @@ export const platformRenderString = (p?: Platform) => {
       return 'Chrome OS';
     case Platform.CHROMIUM:
       return 'Chrome Browser';
+    case Platform.PIXEL:
+      return 'Pixel';
     case Platform.UNSPECIFIED:
       return 'Unspecified';
     case undefined:
@@ -70,6 +72,8 @@ export function useCurrentPlatform() {
       return Platform.CHROMEOS;
     case 'chromium':
       return Platform.CHROMIUM;
+    case 'pixel':
+      return Platform.PIXEL;
     case 'unspecified':
       return Platform.UNSPECIFIED;
     default:

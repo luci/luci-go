@@ -91,11 +91,13 @@ describe('<HomePage />', () => {
   });
 
   it('renders home page correctly', async () => {
+    localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
     render(
       <FakeContextProvider>
         <HomePage />
       </FakeContextProvider>,
     );
+    localStorage.removeItem('featureFlag:fleet-console:pte-support');
 
     expect(
       screen.getByText('Welcome to Fleet Console (FCon), Test!'),
@@ -103,6 +105,7 @@ describe('<HomePage />', () => {
     expect(screen.getByText('ChromeOS')).toBeInTheDocument();
     expect(screen.getByText('Browser')).toBeInTheDocument();
     expect(screen.getByText('Android')).toBeInTheDocument();
+    expect(screen.getByText('Pixel')).toBeInTheDocument();
 
     // Check external links
     expect(screen.getByText('Learn more').closest('a')).toHaveAttribute(
@@ -156,6 +159,17 @@ describe('<HomePage />', () => {
       expect(
         within(androidCard).getByText('Devices offline').closest('a'),
       ).toHaveAttribute('href', '/ui/fleet/p/android/repairs');
+
+      const pixelCard = screen
+        .getByText('Pixel')
+        .closest('.MuiCard-root') as HTMLElement;
+      expect(within(pixelCard).getByText('View all devices')).toHaveAttribute(
+        'href',
+        '/ui/fleet/p/pixel/devices',
+      );
+      expect(
+        within(pixelCard).getByText('Total Devices').closest('a'),
+      ).toHaveAttribute('href', '/ui/fleet/p/pixel/devices');
     });
   });
 

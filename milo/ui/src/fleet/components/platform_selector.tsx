@@ -26,11 +26,13 @@ import {
 import _ from 'lodash';
 import { useState } from 'react';
 
+import { useFeatureFlag } from '@/common/feature_flags';
 import { usePlatform, platformRenderString } from '@/fleet/hooks/usePlatform';
 import { colors } from '@/fleet/theme/colors';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getFeatureFlag } from '../config/features';
+import { enablePTE } from '../features';
 
 import { useShortcut } from './shortcut_provider';
 
@@ -42,6 +44,7 @@ export function PlatformSelector() {
     Platform.CHROMEOS,
     ...(getFeatureFlag('BrowserListDevices') ? [Platform.CHROMIUM] : []),
     Platform.ANDROID,
+    ...(useFeatureFlag(enablePTE) ? [Platform.PIXEL] : []),
   ];
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -74,6 +77,12 @@ export function PlatformSelector() {
     'g b',
     () => handlePlatformSelect(Platform.CHROMIUM),
     { category: 'Navigation', enabled: getFeatureFlag('BrowserListDevices') },
+  );
+  useShortcut(
+    'Switch to Pixel',
+    'g x',
+    () => handlePlatformSelect(Platform.PIXEL),
+    { category: 'Navigation', enabled: useFeatureFlag(enablePTE) },
   );
 
   return (

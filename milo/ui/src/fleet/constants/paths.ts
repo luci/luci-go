@@ -46,6 +46,7 @@ export const platformToURL = (p: Platform) => {
 export const CHROMEOS_PLATFORM = platformToURL(Platform.CHROMEOS);
 export const ANDROID_PLATFORM = platformToURL(Platform.ANDROID);
 export const CHROMIUM_PLATFORM = platformToURL(Platform.CHROMIUM);
+export const PIXEL_PLATFORM = platformToURL(Platform.PIXEL);
 
 export const generateDeviceListURL = (platform: string) => {
   return `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${DEVICES_SUBROUTE}`;
@@ -105,4 +106,8 @@ export const generateAndroidDeviceDetailsURL = (id: string) => {
 
 export const generateBrowserDeviceDetailsURL = (id: string) => {
   return generateDeviceDetailsURL(CHROMIUM_PLATFORM, id);
+};
+
+export const generatePixelDeviceDetailsURL = (id: string) => {
+  return generateDeviceDetailsURL(PIXEL_PLATFORM, id);
 };

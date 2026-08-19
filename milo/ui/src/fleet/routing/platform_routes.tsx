@@ -25,6 +25,18 @@ export type PageComponentMap = Partial<
   Record<Platform, React.ComponentType | ReactElement>
 >;
 
+const AndroidDevicesPage = lazy(
+  () => import('@/fleet/pages/device_list_page/android'),
+);
+
+const AndroidDeviceDetailsPage = lazy(() =>
+  import(
+    '@/fleet/pages/device_details_page/android/android_device_details_page'
+  ).then((module) => ({
+    default: module.Component,
+  })),
+);
+
 export const platformRoutes: RouteObject[] = [
   {
     path: '',
@@ -32,6 +44,7 @@ export const platformRoutes: RouteObject[] = [
       <PlatformDependentPage
         pageComponentMap={{
           [Platform.ANDROID]: <Navigate to={'repairs'} />,
+          [Platform.PIXEL]: <Navigate to={'devices'} />,
           [Platform.CHROMEOS]: <Navigate to={'devices'} />,
         }}
       />
@@ -72,9 +85,8 @@ export const platformRoutes: RouteObject[] = [
         element: (
           <PlatformDependentPage
             pageComponentMap={{
-              [Platform.ANDROID]: lazy(
-                () => import('@/fleet/pages/device_list_page/android'),
-              ),
+              [Platform.ANDROID]: <AndroidDevicesPage workspace="Android" />,
+              [Platform.PIXEL]: <AndroidDevicesPage workspace="Pixel" />,
               [Platform.CHROMEOS]: lazy(
                 () => import('@/fleet/pages/device_list_page/chromeos'),
               ),
@@ -93,13 +105,8 @@ export const platformRoutes: RouteObject[] = [
               [Platform.CHROMEOS]: lazy(
                 () => import('@/fleet/pages/device_details_page'),
               ),
-              [Platform.ANDROID]: lazy(() =>
-                import(
-                  '@/fleet/pages/device_details_page/android/android_device_details_page'
-                ).then((module) => ({
-                  default: module.Component,
-                })),
-              ),
+              [Platform.ANDROID]: <AndroidDeviceDetailsPage />,
+              [Platform.PIXEL]: <AndroidDeviceDetailsPage />,
               [Platform.CHROMIUM]: lazy(() =>
                 import(
                   '@/fleet/pages/device_details_page/browser/browser_device_details_page'

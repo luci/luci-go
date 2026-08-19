@@ -134,6 +134,8 @@ function getPlatformName(platform?: Platform): string {
       return 'Android';
     case Platform.CHROMIUM:
       return 'Chrome Browser';
+    case Platform.PIXEL:
+      return 'Pixel';
     default:
       return 'this platform';
   }

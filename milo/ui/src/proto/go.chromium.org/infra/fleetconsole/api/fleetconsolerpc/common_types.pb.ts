@@ -12,6 +12,7 @@ export enum Platform {
   ANDROID = 1,
   CHROMEOS = 2,
   CHROMIUM = 3,
+  PIXEL = 4,
 }
 
 export function platformFromJSON(object: any): Platform {
@@ -28,6 +29,9 @@ export function platformFromJSON(object: any): Platform {
     case 3:
     case "CHROMIUM":
       return Platform.CHROMIUM;
+    case 4:
+    case "PIXEL":
+      return Platform.PIXEL;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Platform");
   }
@@ -43,6 +47,8 @@ export function platformToJSON(object: Platform): string {
       return "CHROMEOS";
     case Platform.CHROMIUM:
       return "CHROMIUM";
+    case Platform.PIXEL:
+      return "PIXEL";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Platform");
   }
