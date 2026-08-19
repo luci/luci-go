@@ -184,6 +184,7 @@ export const OS_ALIASES: Record<string, string> = {
   'Windows-11-22621': 'Windows 11 version 22H2',
   'Windows-11-22631': 'Windows 11 version 23H2',
   'Windows-11-26100': 'Windows 11 version 24H2',
+  'Windows-11-26200': 'Windows 11 version 25H2',
   'Windows-Server-14393': 'Windows Server 2016',
   'Windows-Server-17134': 'Windows Server version 1803',
   'Windows-Server-17763': 'Windows Server 2019 or version 1809',

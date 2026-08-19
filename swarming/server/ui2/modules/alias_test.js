@@ -1,6 +1,16 @@
-// Copyright 2019 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 describe("alias", function () {
   const { applyAlias } = require("modules/alias");
@@ -46,6 +56,9 @@ describe("alias", function () {
       );
       expect(applyAlias("Windows-10-17134.345", "os")).toBe(
         "Windows 10 version 1803 (Windows-10-17134.345)"
+      );
+      expect(applyAlias("Windows-11-26200", "os")).toBe(
+        "Windows 11 version 25H2 (Windows-11-26200)"
       );
       expect(applyAlias("Windows-Server-14393", "os")).toBe(
         "Windows Server 2016 (Windows-Server-14393)"
