@@ -25,6 +25,9 @@ type RawCursor interface {
 	fmt.Stringer
 }
 
+// Type alias to allow autoroller to roll into infra.
+type Cursor = RawCursor
+
 // RawCursorCB is used to obtain a Cursor while Run'ing a query on either
 // Interface or RawInterface.
 //
