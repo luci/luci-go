@@ -568,3 +568,7 @@ func (k *Key) EstimateSize() int64 {
 	}
 	return ret
 }
+
+func (k *Key) estimateSize() int64 {
+	return k.EstimateSize()
+}

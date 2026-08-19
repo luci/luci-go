@@ -1105,7 +1105,7 @@ func (pm PropertyMap) Slice(key string) PropertySlice {
 func (pm PropertyMap) EstimateSize() int64 {
 	ret := int64(0)
 	for k, vals := range pm {
-		if !isMetaKey(k) {
+		if k == "$key" || !isMetaKey(k) {
 			ret += int64(len(k))
 			ret += vals.estimateSize()
 		}
