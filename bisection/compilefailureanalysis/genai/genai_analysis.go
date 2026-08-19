@@ -166,6 +166,16 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 	suspectCommitIDForVerification := suspectCommitID
 	if mainCommit != nil {
 		suspectCommitIDForVerification = mainCommit.Commit
+		if reviewUrl == "" {
+			if url, err := mainCommit.GetReviewUrl(); err == nil {
+				reviewUrl = url
+			}
+		}
+		if reviewTitle == "" {
+			if title, err := mainCommit.GetReviewTitle(); err == nil {
+				reviewTitle = title
+			}
+		}
 	}
 
 	// Save suspect to datastore

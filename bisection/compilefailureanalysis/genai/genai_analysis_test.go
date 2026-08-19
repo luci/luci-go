@@ -493,7 +493,7 @@ func TestGenAiAnalysisWithRoll(t *testing.T) {
         "email": "commit-bot@chromium.org",
         "time": "Tue Jan 02 15:04:05 2024"
       },
-      "message": "Roll src/third_party/skia/ c1d2e3f4f..a5b6c7d8e\n\nhttps://skia.googlesource.com/skia.git/+log/c1d2e3f4f..a5b6c7d8e",
+      "message": "Roll src/third_party/skia/ c1d2e3f4f..a5b6c7d8e\n\nhttps://skia.googlesource.com/skia.git/+log/c1d2e3f4f..a5b6c7d8e\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/123456\n",
       "tree_diff": [
         {
           "type": "modify",
@@ -585,6 +585,7 @@ func TestGenAiAnalysisWithRoll(t *testing.T) {
 	assert.Loosely(t, suspects[0].GitilesCommit.Host, should.Equal("chromium.googlesource.com"))
 	assert.Loosely(t, suspects[0].GitilesCommit.Project, should.Equal("chromium/src"))
 	assert.Loosely(t, suspects[0].SubCommit, should.Equal("subcommit123"))
+	assert.Loosely(t, suspects[0].ReviewUrl, should.Equal("https://chromium-review.googlesource.com/c/chromium/src/+/123456"))
 }
 
 func TestTraceToMainCommit(t *testing.T) {
