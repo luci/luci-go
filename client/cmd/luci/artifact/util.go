@@ -93,7 +93,7 @@ func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputF
 func FetchHTTPByteRange(ctx context.Context, httpClient *http.Client, fetchURL string, byteRange *ByteRange, out io.Writer) (int, int64, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", fetchURL, nil)
 	if err != nil {
-		return 0, -1, errors.Annotate(err, "failed to create HTTP request")
+		return 0, -1, errors.Fmt("failed to create HTTP request: %w", err)
 	}
 
 	if byteRange != nil {
@@ -112,7 +112,7 @@ func FetchHTTPByteRange(ctx context.Context, httpClient *http.Client, fetchURL s
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return 0, -1, errors.Annotate(err, "HTTP GET failed")
+		return 0, -1, errors.Fmt("HTTP GET failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -144,7 +144,7 @@ func FetchHTTPByteRange(ctx context.Context, httpClient *http.Client, fetchURL s
 	}
 
 	if _, err := io.Copy(out, resp.Body); err != nil {
-		return resp.StatusCode, totalSize, errors.Annotate(err, "failed to write response body")
+		return resp.StatusCode, totalSize, errors.Fmt("failed to write response body: %w", err)
 	}
 	return resp.StatusCode, totalSize, nil
 }

@@ -27,7 +27,7 @@ import (
 func (af *AuthFlags) NewResultDBClient(ctx context.Context, host string) (pb.ResultDBClient, pb.SchemasClient, *http.Client, error) {
 	httpClient, err := af.NewHTTPClient(ctx)
 	if err != nil {
-		return nil, nil, nil, errors.Annotate(err, "failed to create http client")
+		return nil, nil, nil, errors.Fmt("failed to create http client: %w", err)
 	}
 	prpcClient := &prpc.Client{
 		C:       httpClient,

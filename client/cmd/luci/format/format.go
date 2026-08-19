@@ -36,11 +36,11 @@ import (
 func FetchArtifactContent(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", fetchURL, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to create HTTP request")
+		return errors.Fmt("failed to create HTTP request: %w", err)
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return errors.Annotate(err, "HTTP GET failed")
+		return errors.Fmt("HTTP GET failed: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -54,7 +54,7 @@ func FetchArtifactContent(ctx context.Context, httpClient *http.Client, fetchURL
 func FetchArtifact(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, artName string) ([]byte, error) {
 	art, err := rdbClient.GetArtifact(ctx, &pb.GetArtifactRequest{Name: artName})
 	if err != nil {
-		return nil, errors.Annotate(err, "GetArtifact RPC failed")
+		return nil, errors.Fmt("GetArtifact RPC failed: %w", err)
 	}
 	if art.FetchUrl == "" {
 		return nil, errors.Fmt("artifact %q has no fetch URL", artName)

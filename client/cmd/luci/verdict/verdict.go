@@ -105,7 +105,7 @@ func ParseVerdictName(name string) (invName, variantHash, testIDRegexp string, m
 			caseParts := strings.Split(afterCase, "/")
 			caseName, err := url.PathUnescape(caseParts[0])
 			if err != nil {
-				return "", "", "", nil, errors.Annotate(err, "failed to unescape case name %q", caseParts[0])
+				return "", "", "", nil, errors.Fmt("failed to unescape case name %q: %w", caseParts[0], err)
 			}
 			testIDRegexp = ".*" + regexp.QuoteMeta(caseName)
 			matchFunc = func(tr *pb.TestResult) bool {
@@ -126,7 +126,7 @@ func ParseVerdictName(name string) (invName, variantHash, testIDRegexp string, m
 		encodedTestID := beforeVar[testIdx+len("/tests/"):]
 		testID, err := url.PathUnescape(encodedTestID)
 		if err != nil {
-			return "", "", "", nil, errors.Annotate(err, "failed to unescape test ID %q", encodedTestID)
+			return "", "", "", nil, errors.Fmt("failed to unescape test ID %q: %w", encodedTestID, err)
 		}
 		testIDRegexp = regexp.QuoteMeta(testID)
 		matchFunc = func(tr *pb.TestResult) bool {
@@ -206,7 +206,7 @@ func queryRootInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, 
 		}
 		res, err := client.QueryTestVerdicts(ctx, req)
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "QueryTestVerdicts RPC failed for %s (if this is a legacy invocation, try with -legacy)", rootInvName)
+			return nil, nil, errors.Fmt("QueryTestVerdicts RPC failed for %s (if this is a legacy invocation, try with -legacy): %w", rootInvName, err)
 		}
 		for _, tv := range res.TestVerdicts {
 			matched := false
@@ -255,7 +255,7 @@ func queryLegacyInvocationVerdicts(ctx context.Context, client pb.ResultDBClient
 		}
 		res, err := client.QueryTestResults(ctx, req)
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "QueryTestResults RPC failed for %s", legacyInvName)
+			return nil, nil, errors.Fmt("QueryTestResults RPC failed for %s: %w", legacyInvName, err)
 		}
 		for _, tr := range res.TestResults {
 			if matchFunc(tr) {
