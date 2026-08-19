@@ -31,7 +31,7 @@ type Client interface {
 }
 
 const (
-	geminiModel = "gemini-3.1-pro-preview"
+	geminiModel = "gemini-3.7-flash"
 	location    = "global"
 )
 
