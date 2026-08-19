@@ -200,6 +200,48 @@ func TestRunQuery(t *testing.T) {
 			assert.Loosely(t, err, should.NotBeNil)
 		}
 	})
+
+	t.Run("SetSizeLimit", func(t *testing.T) {
+		q := datastore.NewQuery("TestIterRecord")
+
+		t.Run("Exceeded", func(t *testing.T) {
+			it := datastore.RunQuery[*TestIterRecord](ctx, q)
+			it.SetSizeLimit(1)
+			var got []*TestIterRecord
+			var iterErr error
+			for r, err := range it.Results {
+				if err != nil {
+					iterErr = err
+					break
+				}
+				got = append(got, r)
+			}
+			assert.Loosely(t, iterErr, should.Equal(datastore.ErrLimitExceeded))
+			assert.Loosely(t, got, should.BeNil)
+		})
+
+		t.Run("Disabled", func(t *testing.T) {
+			it := datastore.RunQuery[*TestIterRecord](ctx, q)
+			it.SetSizeLimit(-1)
+			var got []*TestIterRecord
+			for r, err := range it.Results {
+				assert.NoErr(t, err)
+				got = append(got, r)
+			}
+			assert.Loosely(t, len(got), should.Equal(2))
+		})
+
+		t.Run("Sufficient", func(t *testing.T) {
+			it := datastore.RunQuery[*TestIterRecord](ctx, q)
+			it.SetSizeLimit(1024 * 1024)
+			var got []*TestIterRecord
+			for r, err := range it.Results {
+				assert.NoErr(t, err)
+				got = append(got, r)
+			}
+			assert.Loosely(t, len(got), should.Equal(2))
+		})
+	})
 }
 
 func TestRunMultiQuery(t *testing.T) {
@@ -528,6 +570,17 @@ func TestRunQuery_MultipleUses(t *testing.T) {
 		}
 		wg.Wait()
 		assert.Loosely(t, panicCount.Load(), should.Equal(4))
+	})
+
+	t.Run("SetSizeLimit after Results", func(t *testing.T) {
+		q := datastore.NewQuery("TestIterRecord")
+		it := datastore.RunQuery[*TestIterRecord](ctx, q)
+		for range it.Results {
+			break
+		}
+		assert.Loosely(t, func() {
+			it.SetSizeLimit(100)
+		}, should.PanicLike("QueryIter[V].SetSizeLimit: cannot call after using Results"))
 	})
 }
 

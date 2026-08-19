@@ -252,11 +252,14 @@ type QueryIter[V any] struct {
 	isKey         bool
 	isPropertyMap bool
 
-	mu      sync.Mutex
-	err     error
-	used    bool
-	filters []func(V) (bool, error)
-	raw     *RawQueryIter
+	mu   sync.Mutex
+	err  error
+	used bool
+	// nil means 'no limit was set'; this is used by AsSlice.
+	// 0 means 'infinite'.
+	sizeLimit *int
+	filters   []func(V) (bool, error)
+	raw       *RawQueryIter
 }
 
 func (q *QueryIter[V]) populateMat() {
@@ -335,6 +338,27 @@ func (q *QueryIter[V]) AddFilter(filt func(V) (bool, error)) {
 	})
 }
 
+// SetSizeLimit makes `Results` yield `ErrLimitExceeded` if the iterator yields
+// more than this number of bytes (as computed by [PropertyMap.EstimateSize]).
+//
+// By default, use of Results does not have a limit, because it's understood
+// that consumers are processing the results iteratively.
+//
+// However, for consumers which are simply stuffing the results into an
+// ever-growing slice, it's a good idea to limit the amount of memory allocated
+// in the service.
+//
+// Calling this with <= 0 removes the limit.
+//
+// Panics if the query has already yielded any results.
+func (q *QueryIter[V]) SetSizeLimit(bytes int) {
+	q.mod("SetSizeLimit", func() error {
+		lim := max(0, bytes)
+		q.sizeLimit = &lim
+		return nil
+	})
+}
+
 // Cursor returns a cursor to the *next* item which will be yielded by Results.
 //
 // Safe to call before pulling anything from Results.
@@ -366,14 +390,27 @@ func (q *QueryIter[V]) Results(yield func(V, error) bool) {
 	}
 	q.used = true
 	rslts := q.ensureFinalizedLocked().Results
+	var lim int
+	if q.sizeLimit != nil {
+		lim = *q.sizeLimit
+	}
 	q.mu.Unlock()
 
 	var zero V
+	var readSoFar int
 
 	for pm, err := range rslts {
 		if err != nil {
 			yield(zero, err)
 			return
+		}
+
+		if lim > 0 {
+			readSoFar += int(pm.EstimateSize())
+			if readSoFar > lim {
+				yield(zero, ErrLimitExceeded)
+				return
+			}
 		}
 
 		key := mustGetKeyFromPM(pm)
@@ -772,7 +809,7 @@ func getAllRaw(raw RawInterface, q *Query, dst any, o ...getAllOption) error {
 		}
 	}
 	v := reflect.ValueOf(dst)
-	if v.Kind() != reflect.Ptr {
+	if v.Kind() != reflect.Pointer {
 		panic(fmt.Errorf("invalid GetAll dst: must have a ptr-to-slice: %T", dst))
 	}
 	if !v.IsValid() || v.IsNil() {
