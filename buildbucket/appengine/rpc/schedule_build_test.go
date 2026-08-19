@@ -39,12 +39,10 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	luciCmProto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -2149,7 +2147,8 @@ func TestScheduleBuild(t *testing.T) {
 				Priority:  100,
 			}
 
-			buildResult := buildFromScheduleRequest(ctx, req, nil, "", bldrCfg, s, nil)
+			buildResult, err := buildFromScheduleRequest(ctx, req, nil, "", bldrCfg, s, nil)
+			assert.NoErr(t, err)
 			expectedBackendConfig := &structpb.Struct{}
 			expectedBackendConfig.Fields = make(map[string]*structpb.Value)
 			expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 100}}
@@ -3053,7 +3052,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			// Need these to be set so that setSwarmingOrBackend can be set.
 			setExecutable(nil, bldrCfg, b)
-			setInput(ctx, nil, bldrCfg, b)
+			assert.NoErr(t, setInput(ctx, nil, bldrCfg, b))
 			setExperiments(ctx, nil, bldrCfg, s, b, nil)
 
 			t.Run("use builder Priority and ServiceAccount", func(t *ftt.Test) {
@@ -3269,7 +3268,7 @@ func TestScheduleBuild(t *testing.T) {
 		t.Run("nil", func(t *ftt.Test) {
 			b := &pb.Build{}
 
-			setInput(ctx, nil, nil, b)
+			assert.NoErr(t, setInput(ctx, nil, nil, b))
 			assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 				Properties: &structpb.Struct{},
 			}))
@@ -3281,7 +3280,7 @@ func TestScheduleBuild(t *testing.T) {
 					req := &pb.ScheduleBuildRequest{}
 					b := &pb.Build{}
 
-					setInput(ctx, req, nil, b)
+					assert.NoErr(t, setInput(ctx, req, nil, b))
 					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{},
 					}))
@@ -3306,7 +3305,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 					b := &pb.Build{}
 
-					setInput(ctx, req, nil, b)
+					assert.NoErr(t, setInput(ctx, req, nil, b))
 					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3340,7 +3339,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInput(ctx, nil, cfg, b)
+				assert.NoErr(t, setInput(ctx, nil, cfg, b))
 				assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -3372,7 +3371,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setInput(ctx, nil, cfg, b)
+					assert.NoErr(t, setInput(ctx, nil, cfg, b))
 					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3400,7 +3399,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setInput(ctx, nil, cfg, b)
+					assert.NoErr(t, setInput(ctx, nil, cfg, b))
 					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3436,7 +3435,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setInput(ctx, nil, cfg, b)
+					assert.NoErr(t, setInput(ctx, nil, cfg, b))
 					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3472,7 +3471,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setInput(ctx, nil, cfg, b)
+					assert.NoErr(t, setInput(ctx, nil, cfg, b))
 					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3505,7 +3504,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setInput(ctx, nil, cfg, b)
+					assert.NoErr(t, setInput(ctx, nil, cfg, b))
 					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3541,7 +3540,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setInput(ctx, nil, cfg, b)
+					assert.NoErr(t, setInput(ctx, nil, cfg, b))
 					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3572,7 +3571,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setInput(ctx, nil, cfg, b)
+					assert.NoErr(t, setInput(ctx, nil, cfg, b))
 					assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3588,7 +3587,7 @@ func TestScheduleBuild(t *testing.T) {
 			})
 		})
 
-		t.Run("request > config", func(t *ftt.Test) {
+		t.Run("disallowed overrides", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -3627,7 +3626,44 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInput(ctx, req, cfg, b)
+			assert.ErrIsLike(t, setInput(ctx, req, cfg, b), `property "override": invalid property override`)
+		})
+
+		t.Run("request > config", func(t *ftt.Test) {
+			req := &pb.ScheduleBuildRequest{
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"allowed": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "I'm alright",
+							},
+						},
+						"same key": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "cfg value",
+							},
+						},
+						"req key": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "req value",
+							},
+						},
+					},
+				},
+			}
+			cfg := &pb.BuilderConfig{
+				Properties:               "{\"override\": \"cfg value\", \"allowed\": \"stuff\", \"same key\": \"cfg value\", \"cfg key\": \"cfg value\"}",
+				AllowedPropertyOverrides: []string{"allowed"},
+			}
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			}
+
+			assert.NoErr(t, setInput(ctx, req, cfg, b))
 			assert.Loosely(t, b.Input, should.Resemble(&pb.Build_Input{
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -3643,7 +3679,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						"override": {
 							Kind: &structpb.Value_StringValue{
-								StringValue: "req value",
+								StringValue: "cfg value",
 							},
 						},
 						"same key": {
@@ -3659,11 +3695,6 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}))
-			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"override\""))
-			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"allowed\""))
-			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"same key\""))
-			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"cfg key\""))
-			assert.Loosely(t, ctx, convey.Adapt(memlogger.ShouldNotHaveLog)(logging.Warning, "ScheduleBuild: Unpermitted Override for property \"req key\""))
 		})
 	})
 

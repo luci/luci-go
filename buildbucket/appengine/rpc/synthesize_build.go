@@ -84,12 +84,11 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 	case err != nil:
 		return nil, errors.Fmt("failed to get builder config: %w", err)
 	default:
-		bld := synthesizeShadowBuild(ctx, schReq, nil, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
-		return bld, nil
+		return synthesizeShadowBuild(ctx, schReq, nil, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
 	}
 }
 
-func synthesizeShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, ancestors []int64, shadowBucket string, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) *pb.Build {
+func synthesizeShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, ancestors []int64, shadowBucket string, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) (*pb.Build, error) {
 	origBucket := schReq.Builder.Bucket
 
 	cfgCopy := cfg
@@ -97,7 +96,14 @@ func synthesizeShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest,
 		cfgCopy = applyShadowAdjustment(cfg)
 	}
 
-	bld := buildFromScheduleRequest(ctx, schReq, ancestors, "", cfgCopy, globalCfg, nil)
+	bld, err := buildFromScheduleRequest(ctx, schReq, ancestors, "", cfgCopy, globalCfg, nil)
+	// When synthesizing shadow builds, we allow property overrides. The intent
+	// is to generate a new build to pass to CreateBuild. If the caller has
+	// permission to call CreateBuild, then they can already set properties to
+	// whatever they want.
+	if err != nil && !errors.Is(err, errInvalidPropertyOverride) {
+		return nil, err
+	}
 
 	if shadowBucket != "" && shadowBucket != origBucket {
 		bld.Infra.Led = &pb.BuildInfra_Led{
@@ -118,7 +124,7 @@ func synthesizeShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest,
 		}
 		bld.Builder.Bucket = shadowBucket
 	}
-	return bld
+	return bld, nil
 }
 
 // synthesizeBuildFromTemplate returns a request with fields populated by the

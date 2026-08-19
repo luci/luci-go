@@ -68,6 +68,8 @@ var hostnameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]+(\.[a-z0-9-]+)*$`)
 // CreateBuild.
 const internalRequestIDPrefix = "__bb__:"
 
+var errInvalidPropertyOverride = errors.New("invalid property override")
+
 // validateExpirationDuration validates the given expiration duration.
 func validateExpirationDuration(d *durationpb.Duration) error {
 	switch {
@@ -913,7 +915,7 @@ func deriveBackendCfgFromSwarming(cfg *pb.BuilderConfig, globalCfg *pb.SettingsC
 // setInput computes the input values from the given request and builder config,
 // setting them in the proto. Mutates the given *pb.Build. May panic if the
 // builder config is invalid.
-func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build) {
+func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build) error {
 	build.Input = &pb.Build_Input{
 		Properties: &structpb.Struct{},
 	}
@@ -964,13 +966,14 @@ func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 	anyOverride := allowedOverrides.Has("*")
 	for k, v := range req.GetProperties().GetFields() {
 		if build.Input.Properties.Fields[k] != nil && !proto.Equal(build.Input.Properties.Fields[k], v) && !anyOverride && !allowedOverrides.Has(k) {
-			logging.Warningf(ctx, "ScheduleBuild: Unpermitted Override for property %q for builder %q (ignored)", k, protoutil.FormatBuilderID(build.Builder))
+			return errors.Fmt("builder %q: property %q: %w", protoutil.FormatBuilderID(build.Builder), k, errInvalidPropertyOverride)
 		}
 		build.Input.Properties.Fields[k] = v
 	}
 
 	build.Input.GitilesCommit = req.GetGitilesCommit()
 	build.Input.GerritChanges = req.GetGerritChanges()
+	return nil
 }
 
 // setTags computes the tags from the given request, setting them in the proto.
@@ -1049,7 +1052,7 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.
 // determined at creation time.
 //
 // TODO(b/371610971): Refactor the code to use a struct to organize the arguments.
-func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, pRunID string, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg, params *scheduleBuildsParams) (b *pb.Build) {
+func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, pRunID string, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg, params *scheduleBuildsParams) (b *pb.Build, err error) {
 	b = &pb.Build{
 		Builder:         req.Builder,
 		Critical:        cfg.GetCritical(),
@@ -1084,7 +1087,9 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 
 	setExecutable(req, cfg, b)
 	setInfra(ctx, req, cfg, b, globalCfg) // Requires setExecutable.
-	setInput(ctx, req, cfg, b)
+	if err = setInput(ctx, req, cfg, b); err != nil {
+		return
+	}
 	setTags(req, b, pRunID)
 	setTimeouts(req, cfg, b)
 	setExperiments(ctx, req, cfg, globalCfg, b, params) // Requires setExecutable, setInfra, setInput.
@@ -1663,7 +1668,10 @@ func prepareNewBuild(ctx context.Context, op *scheduleBuildOp, params *scheduleB
 	var buildPb *pb.Build
 	if req.ShadowInput != nil {
 		// Prepare a build with shadow info.
-		buildPb = synthesizeShadowBuild(ctx, req, ancestors, op.Buckets.ShadowBucket(bucket), op.GlobalCfg, cfg)
+		buildPb, err = synthesizeShadowBuild(ctx, req, ancestors, op.Buckets.ShadowBucket(bucket), op.GlobalCfg, cfg)
+		if err != nil {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "synthesizing shadow build: %s", err)
+		}
 		if pBld != nil && req.ShadowInput.InheritFromParent {
 			// Inherit agent input and agent source from the parent build.
 			buildPb.Infra.Buildbucket.Agent.Input = pInfra.Proto.Buildbucket.Agent.Input
@@ -1674,7 +1682,10 @@ func prepareNewBuild(ctx context.Context, op *scheduleBuildOp, params *scheduleB
 			}
 		}
 	} else {
-		buildPb = buildFromScheduleRequest(ctx, req, ancestors, pRunID, cfg, op.GlobalCfg, params)
+		buildPb, err = buildFromScheduleRequest(ctx, req, ancestors, pRunID, cfg, op.GlobalCfg, params)
+		if err != nil {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "generating build from request: %s", err)
+		}
 	}
 
 	if params.TurboCIHost != "" {
