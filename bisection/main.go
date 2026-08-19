@@ -187,5 +187,8 @@ type LUCIAnalysisProject struct {
 // However, for some project (eg. chrome) where we don't have dev data, we need to
 // query from LUCI Analysis prod instead. In this case, we can set the GCP project here.
 func (pg *LUCIAnalysisProject) Project(luciProject string) string {
+	if luciProject == "chrome" && pg.DefaultProject != "luci-analysis" {
+		return "luci-analysis"
+	}
 	return pg.DefaultProject
 }
