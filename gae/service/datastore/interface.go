@@ -463,6 +463,55 @@ func queryIterStub[V any](err error) *QueryIter[V] {
 	return QueryIterFromRaw[V](RawQueryIterStub(err))
 }
 
+// DefaultAsSliceSizeLimit is the size limit that [QueryIter.AsSlice] will
+// apply to the iterator if the caller doesn't explicitly call
+// [QueryIter.SetSizeLimit].
+//
+// This is currently the maximum response size for AppEngine and CloudRun, but
+// much less than the standard amount of memory for services.
+//
+// The goal is to have queries return a real error (e.g. ErrLimitExceeded)
+// rather than panicking due to running out of memory.
+const DefaultAsSliceSizeLimit = 32 * 1024 * 1024
+
+// AsSlice returns the result of a query as a slice.
+//
+// Use this when you want "all" the results of the query.
+//
+// To protect servers, this will make a default call to
+// [QueryIter.SetSizeLimit] with a limit of [DefaultAsSliceSizeLimit].
+//
+// Returns `ErrLimitExceeded` *with the collected data* if the returned slice
+// meets the limit of the underlying query. It's fine to handle this
+// error by ignoring it.
+//
+// Note that if you find yourself setting a very high limit on the query just
+// to get AsSlice to return all the results, it is recommended that you
+// consider restructuring the code to instead iterate through results directly.
+// Setting a very high limit can cause your service to OOM if the query
+// suddenly matches much more data than you expected.
+//
+// Consumes `Results` from this iterator.
+func (q *QueryIter[V]) AsSlice() (ret []V, err error) {
+	q.mu.Lock()
+	lim := q.sizeLimit
+	q.mu.Unlock()
+	if lim == nil {
+		q.SetSizeLimit(DefaultAsSliceSizeLimit)
+	}
+	for result, err := range q.Results {
+		switch {
+		case err == nil:
+			ret = append(ret, result)
+		case errors.Is(err, ErrLimitExceeded):
+			return ret, err
+		default:
+			return nil, err
+		}
+	}
+	return
+}
+
 // QueryIterFromRaw converts a RawQueryIter to a typed QueryIter.
 func QueryIterFromRaw[V any](raw RawQueryIter) *QueryIter[V] {
 	ret := &QueryIter[V]{raw: &raw}
@@ -754,46 +803,14 @@ func limit(n int) getAllOption {
 
 // GetAll retrieves all of the Query results into dst.
 //
-// By default, datastore applies a short (~5s) timeout to queries. This can be
-// increased, usually to around several minutes, by explicitly setting a
-// deadline on the supplied Context.
-//
-// dst must be one of:
-//   - *[]S or *[]*S, where S is a struct
-//   - *[]P or *[]*P, where *P is a concrete type implementing
-//     PropertyLoadSaver
-//   - *[]*Key implies a keys-only query.
-//
-// Deprecated - Use GetAllWithLimit instead. If database happens to have many
-// entities which matchq, GetAll can easily exhaust the available memory before
-// returning, leading to an OOM error. If you use GetAllWithLimit you can pick
-// an 'impossible' limit, which will still be safer by default than GetAll, and
-// easier to debug, too.
+// Deprecated: Use [QueryIter.AsSlice] instead.
 func GetAll(ctx context.Context, q *Query, dst any) error {
 	return getAllRaw(Raw(ctx), q, dst)
 }
 
 // GetAllWithLimit retrieves all of the Query results into dst up to a limit.
 //
-// GetAllWithLimit is like GetAll, but it applies a limit.
-// If the limit is negative, we return an error.
-// Additionally, if we exceed the limit, then we return ErrLimitExceeded indicating that
-// a truncation has occurred.
-//
-// Note that GetAllWithLimit does NOT return the cursor. It is primarily intended as
-// a way to migrate calls to GetAll to a version with more predictable behavior so
-// that you get a nice failed RPC when the result set is too big rather than an a
-// hard-to-debug OOM.
-//
-// By default, datastore applies a short (~5s) timeout to queries. This can be
-// increased, usually to around several minutes, by explicitly setting a
-// deadline on the supplied Context.
-//
-// dst must be one of:
-//   - *[]S or *[]*S, where S is a struct
-//   - *[]P or *[]*P, where *P is a concrete type implementing
-//     PropertyLoadSaver
-//   - *[]*Key implies a keys-only query.
+// Deprecated: Use [QueryIter.AsSlice] instead.
 func GetAllWithLimit(ctx context.Context, q *Query, dst any, lim int) error {
 	if lim <= 0 {
 		return fmt.Errorf("GetAllWithLimit: invalid limit %d <= 0", lim)
