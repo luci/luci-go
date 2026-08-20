@@ -203,6 +203,18 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			Labels:    map[string]string{bq.MetadataVersionKey: "5"},
 		}
 	},
+	"work_units": func(luciProject string) *bigquery.TableMetadata {
+		// Revalidate project as safeguard against SQL-Injection.
+		if err := pbutil.ValidateProject(luciProject); err != nil {
+			panic(err)
+		}
+		return &bigquery.TableMetadata{
+			Description: "Contains all work units produced by " + luciProject + "." +
+				" See go/luci-reference#work-units.",
+			ViewQuery: `SELECT * FROM internal.work_units WHERE ` + projectWhereClause(luciProject),
+			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
+		}
+	},
 }
 
 // CronHandler is then entry-point for the ensure views cron job.
