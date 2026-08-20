@@ -19,6 +19,8 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import { workspaces } from '../../workspaces';
+
 import { HomePage } from './home_page';
 
 jest.mock('@/fleet/hooks/prpc_clients', () => ({
@@ -54,20 +56,40 @@ describe('<HomePage />', () => {
               });
             }
             if (req.platform === Platform.ANDROID) {
-              if (req.filter === 'fc_is_offline = "true"') {
-                return Promise.resolve({
-                  androidCount: {
-                    totalDevices: 300,
-                  },
-                });
+              switch (req.filter) {
+                case `${workspaces.Android.baseFilter} AND fc_is_offline = "true"`:
+                  return Promise.resolve({
+                    androidCount: {
+                      totalDevices: 300,
+                    },
+                  });
+                case workspaces.Android.baseFilter:
+                  return Promise.resolve({
+                    androidCount: {
+                      totalDevices: 500,
+                      idleDevices: 250,
+                      busyDevices: 100,
+                    },
+                  });
+                case `${workspaces.Pixel.baseFilter} AND fc_is_offline = "true"`:
+                  return Promise.resolve({
+                    androidCount: {
+                      totalDevices: 30,
+                    },
+                  });
+                case workspaces.Pixel.baseFilter:
+                  return Promise.resolve({
+                    androidCount: {
+                      totalDevices: 50,
+                      idleDevices: 25,
+                      busyDevices: 10,
+                    },
+                  });
+                default:
+                  throw new Error(
+                    `Unexpected filter for Android: "${req.filter}"`,
+                  );
               }
-              return Promise.resolve({
-                androidCount: {
-                  totalDevices: 500,
-                  idleDevices: 250,
-                  busyDevices: 100,
-                },
-              });
             }
             return Promise.resolve({});
           },
@@ -192,20 +214,23 @@ describe('<HomePage />', () => {
   });
 
   it('displays the loaded data and calculates healthy percentages', async () => {
+    localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
     render(
       <FakeContextProvider>
         <HomePage />
       </FakeContextProvider>,
     );
+    localStorage.removeItem('featureFlag:fleet-console:pte-support');
 
     expect(await screen.findByText('1,000')).toBeInTheDocument();
     expect(screen.getByText('200')).toBeInTheDocument();
     expect(screen.getByText('500')).toBeInTheDocument();
     expect(screen.getByText('300')).toBeInTheDocument();
+    expect(screen.getByText('50')).toBeInTheDocument();
 
     // Check healthy percentages
     expect(screen.getByText('90.0% Healthy')).toBeInTheDocument();
-    expect(screen.getByText('40.0% Healthy')).toBeInTheDocument();
+    expect(screen.getAllByText('40.0% Healthy')).toHaveLength(2);
   });
 
   it('displays the error state if counts fail to load', async () => {

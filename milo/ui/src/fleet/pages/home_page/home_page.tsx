@@ -33,14 +33,18 @@ import { enablePTE } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
+import { combineAipFilters } from '@/fleet/utils/search_param';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import { workspaces } from '../../workspaces';
 
 import { PlatformSummaryCard } from './platform_summary_card';
 
 export const HomePage = () => {
   const client = useFleetConsoleClient();
   const { displayFirstName, isAnonymous } = useUserProfile();
+  const isPTEEnabled = useFeatureFlag(enablePTE);
 
   const chromeosQuery = useQuery({
     ...client.CountDevices.query({
@@ -59,7 +63,7 @@ export const HomePage = () => {
 
   const androidQuery = useQuery({
     ...client.CountDevices.query({
-      filter: '',
+      filter: isPTEEnabled ? workspaces.Android.baseFilter : '',
       platform: Platform.ANDROID,
     }),
     enabled: !isAnonymous,
@@ -67,10 +71,32 @@ export const HomePage = () => {
 
   const androidOfflineQuery = useQuery({
     ...client.CountDevices.query({
-      filter: 'fc_is_offline = "true"',
+      filter: combineAipFilters(
+        isPTEEnabled ? workspaces.Android.baseFilter : '',
+        'fc_is_offline = "true"',
+      ),
       platform: Platform.ANDROID,
     }),
     enabled: !isAnonymous,
+  });
+
+  const pixelQuery = useQuery({
+    ...client.CountDevices.query({
+      filter: workspaces.Pixel.baseFilter,
+      platform: Platform.ANDROID,
+    }),
+    enabled: !isAnonymous && isPTEEnabled,
+  });
+
+  const pixelOfflineQuery = useQuery({
+    ...client.CountDevices.query({
+      filter: combineAipFilters(
+        workspaces.Pixel.baseFilter,
+        'fc_is_offline = "true"',
+      ),
+      platform: Platform.ANDROID,
+    }),
+    enabled: !isAnonymous && isPTEEnabled,
   });
 
   const chromeosTotal = chromeosQuery.data?.total ?? 0;
@@ -99,7 +125,16 @@ export const HomePage = () => {
         )
       : undefined;
 
-  const isPTEEnabled = useFeatureFlag(enablePTE);
+  // There is no need to check the isPTEEnabled because the query checks it itself and returns null.
+  const pixelTotal = pixelQuery.data?.androidCount?.totalDevices ?? 0;
+  const pixelOffline = pixelOfflineQuery.data?.androidCount?.totalDevices ?? 0;
+  const pixelHealthy =
+    pixelTotal > 0 && pixelOfflineQuery.data
+      ? Math.min(
+          100,
+          (Math.max(0, pixelTotal - pixelOffline) / pixelTotal) * 100,
+        )
+      : undefined;
 
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-home">
@@ -178,7 +213,6 @@ export const HomePage = () => {
                 <PlatformSummaryCard
                   title="Android"
                   logoSrc={androidLogo}
-                  // TODO(bartekdeska@) Change the way the elements display the count of elements
                   total={androidTotal}
                   healthyPercentage={androidHealthy}
                   isLoading={
@@ -203,14 +237,12 @@ export const HomePage = () => {
                       title="Pixel"
                       logoSrc={pixelLogo}
                       // TODO(bartekdeska@) Change the way the elements display the count of elements
-                      total={androidTotal}
-                      healthyPercentage={androidHealthy}
+                      total={pixelTotal}
+                      healthyPercentage={pixelHealthy}
                       isLoading={
-                        androidQuery.isPending || androidOfflineQuery.isPending
+                        pixelQuery.isPending || pixelOfflineQuery.isPending
                       }
-                      isError={
-                        androidQuery.isError || androidOfflineQuery.isError
-                      }
+                      isError={pixelQuery.isError || pixelOfflineQuery.isError}
                       linkTo="/ui/fleet/p/pixel/devices"
                       linkText="View all devices"
                       linkIcon={<DevicesIcon />}

@@ -34,7 +34,7 @@ import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_botto
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
-import { enableAndroidUtilizationMetrics } from '@/fleet/features';
+import { enableAndroidUtilizationMetrics, enablePTE } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
@@ -45,6 +45,7 @@ import {
   InvalidPageTokenAlert,
   isInvalidPageTokenError,
 } from '@/fleet/utils/invalid-page-token-alert';
+import { combineAipFilters } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   AndroidDevice,
@@ -53,7 +54,8 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { AndroidPageWorkspace } from './android_devices_page';
+import { AndroidPageWorkspace, workspaces } from '../../../workspaces';
+
 import { AndroidColumnDef } from './android_fields';
 import { useAndroidFilters } from './use_android_filters';
 
@@ -66,6 +68,7 @@ interface AndroidTableProps {
 export const AndroidDevicesTable = ({
   mrtColumnManager,
   availableColumns,
+  workspace,
 }: AndroidTableProps) => {
   const showAvgUtilization = useFeatureFlag(enableAndroidUtilizationMetrics);
   const client = useFleetConsoleClient();
@@ -93,7 +96,14 @@ export const AndroidDevicesTable = ({
     showAvgUtilization,
   );
 
-  const aip160Filter = aip160();
+  const pixelEnabled = useFeatureFlag(enablePTE);
+  const combinedAip160 = useMemo(
+    () =>
+      pixelEnabled
+        ? combineAipFilters(workspaces[workspace].baseFilter, aip160())
+        : aip160(),
+    [workspace, aip160, pixelEnabled],
+  );
 
   // Clear row selection when filters change to prevent performing bulk actions
   // on hidden/invisible rows.
@@ -107,10 +117,10 @@ export const AndroidDevicesTable = ({
         pageSize,
         pageToken,
         orderBy: orderByParam,
-        filter: aip160Filter,
+        filter: combinedAip160,
         platform: Platform.ANDROID,
       }),
-    [pageSize, pageToken, orderByParam, aip160Filter],
+    [pageSize, pageToken, orderByParam, combinedAip160],
   );
 
   const devicesQuery = useAndroidDevices(request);
@@ -162,7 +172,7 @@ export const AndroidDevicesTable = ({
         >
           <FleetCSVExportButton
             table={table}
-            filter={aip160Filter}
+            filter={combinedAip160}
             fileName="fleet_console_android_devices"
             onExport={(cols, filterStr, ids) =>
               client.ExportAndroidDevicesToCSV(
@@ -231,7 +241,7 @@ export const AndroidDevicesTable = ({
       devicesQuery.isFetching,
       columnSizing,
       onColumnSizingChange,
-      aip160Filter,
+      combinedAip160,
       client,
       orderByParam,
     ],
