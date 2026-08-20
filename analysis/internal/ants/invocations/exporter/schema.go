@@ -31,8 +31,8 @@ import (
 // tableName is the name of the exported BigQuery table.
 const tableName = "ants_invocations"
 
-// Only keep the data for 30 days, since all the data in the table will be exported to placer soon after they arrive.
-const partitionExpirationTime = 30 * 24 * time.Hour
+// Only keep the data for 120 days - the longer TTL was requested by go/value-oriented-presubmit
+const partitionExpirationTime = 120 * 24 * time.Hour
 
 const rowMessage = "luci.analysis.bq.legacy.AntsInvocationRow"
 
