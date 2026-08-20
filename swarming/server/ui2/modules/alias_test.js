@@ -69,11 +69,30 @@ describe("alias", function () {
       done();
     });
 
+    it("maps os for Mac versions", function (done) {
+      expect(applyAlias("Mac-10.15.7", "os")).toBe(
+        "macOS 10.15 Catalina (Mac-10.15.7)"
+      );
+      expect(applyAlias("Mac-14", "os")).toBe(
+        "macOS 14 Sonoma (Mac-14)"
+      );
+      expect(applyAlias("Mac-15.1", "os")).toBe(
+        "macOS 15 Sequoia (Mac-15.1)"
+      );
+      expect(applyAlias("Mac-26", "os")).toBe(
+        "macOS 26 Tahoe (Mac-26)"
+      );
+      expect(applyAlias("Mac-27", "os")).toBe(
+        "macOS 27 Golden Gate (Mac-27)"
+      );
+      done();
+    });
+
     it("does not affect other os values", function (done) {
       const check = (v) => expect(applyAlias(v, "os")).toBe(v);
       check("Android");
       check("Debian-9.8");
-      check("Mac-10.11.6");
+      check("Mac-10.9.5");
       check("Windows");
       check("Windows-10");
       check("Windows-2016Server");

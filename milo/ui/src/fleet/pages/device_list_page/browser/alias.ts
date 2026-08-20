@@ -160,6 +160,19 @@ export const DEVICE_ALIASES: Record<string, string> = {
  *  Win10 release.
  */
 export const OS_ALIASES: Record<string, string> = {
+  'Mac-10.10': 'OS X 10.10 Yosemite',
+  'Mac-10.11': 'OS X 10.11 El Capitan',
+  'Mac-10.12': 'macOS 10.12 Sierra',
+  'Mac-10.13': 'macOS 10.13 High Sierra',
+  'Mac-10.14': 'macOS 10.14 Mojave',
+  'Mac-10.15': 'macOS 10.15 Catalina',
+  'Mac-11': 'macOS 11 Big Sur',
+  'Mac-12': 'macOS 12 Monterey',
+  'Mac-13': 'macOS 13 Ventura',
+  'Mac-14': 'macOS 14 Sonoma',
+  'Mac-15': 'macOS 15 Sequoia',
+  'Mac-26': 'macOS 26 Tahoe',
+  'Mac-27': 'macOS 27 Golden Gate',
   'Ubuntu-14.04': 'Ubuntu 14.04 Trusty Tahr',
   'Ubuntu-16.04': 'Ubuntu 16.04 Xenial Xerus',
   'Ubuntu-18.04': 'Ubuntu 18.04 Bionic Beaver',
@@ -225,6 +238,12 @@ export function getDisplayName(
     // corresponds to a marketing name.
     if (value.startsWith('Windows')) {
       const trimmed = value.split('.')[0];
+      alias = aliasMap[key][trimmed];
+    } else if (value.startsWith('Mac')) {
+      const parts = value.split('.');
+      const trimmed = value.startsWith('Mac-10.')
+        ? parts.slice(0, 2).join('.')
+        : parts[0];
       alias = aliasMap[key][trimmed];
     }
   }
