@@ -128,7 +128,7 @@ func syncProjectConfigs(ctx context.Context) (merr errors.MultiError) {
 	go func() {
 		defer wg.Done()
 		var existing []*cachedConfig
-		existingErr = datastore.GetAll(ctx, datastore.NewQuery(projectConfigKind), &existing)
+		existing, existingErr = datastore.RunQuery[*cachedConfig](ctx, datastore.NewQuery(projectConfigKind)).AsSlice()
 		if existingErr == nil {
 			existingMap = make(map[string]*cachedConfig, len(existing))
 			for _, ent := range existing {

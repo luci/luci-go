@@ -94,8 +94,8 @@ func TestLogStreamState(t *testing.T) {
 				// runQuery will run the query, panic if it fails, and return whether the
 				// single record, "lst", was returned.
 				runQuery := func(q *ds.Query) bool {
-					var states []*LogStreamState
-					if err := ds.GetAll(c, q, &states); err != nil {
+					states, err := ds.RunQuery[*LogStreamState](c, q).AsSlice()
+					if err != nil {
 						panic(err)
 					}
 					return len(states) > 0
