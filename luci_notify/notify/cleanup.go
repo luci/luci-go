@@ -40,12 +40,12 @@ func CleanupStaleBuilders(ctx context.Context) error {
 
 	client, err := buildersClientCreator(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to create builders client")
+		return errors.Fmt("failed to create builders client: %w", err)
 	}
 
 	projects, err := getUniqueProjects(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to get unique projects")
+		return errors.Fmt("failed to get unique projects: %w", err)
 	}
 
 	var keysToDelete []string
@@ -53,12 +53,12 @@ func CleanupStaleBuilders(ctx context.Context) error {
 		logging.Infof(ctx, "Cleaning up stale builders for project %s", project)
 		activeBuilders, err := getActiveBuilders(ctx, client, project)
 		if err != nil {
-			return errors.Annotate(err, "failed to get active builders for project %s", project)
+			return errors.Fmt("failed to get active builders for project %s: %w", project, err)
 		}
 
 		storedKeys, err := getStoredBuildersForProject(ctx, project)
 		if err != nil {
-			return errors.Annotate(err, "failed to get stored builders for project %s", project)
+			return errors.Fmt("failed to get stored builders for project %s: %w", project, err)
 		}
 
 		for _, key := range storedKeys {
@@ -82,7 +82,7 @@ func CleanupStaleBuilders(ctx context.Context) error {
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to delete stale builders")
+		return errors.Fmt("failed to delete stale builders: %w", err)
 	}
 
 	return nil
