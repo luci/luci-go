@@ -81,8 +81,8 @@ func TestWorks(t *testing.T) {
 
 		// Check all log entities is there.
 		ds.GetTestable(ctx).CatchupIndexes()
-		entities := []settingsEntity{}
-		assert.Loosely(t, ds.GetAll(ctx, ds.NewQuery("gaesettings.SettingsLog"), &entities), should.BeNil)
+		entities, err := ds.RunQuery[settingsEntity](ctx, ds.NewQuery("gaesettings.SettingsLog")).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(entities), should.Match(2))
 		asMap := map[string]settingsEntity{}
 		for _, e := range entities {
