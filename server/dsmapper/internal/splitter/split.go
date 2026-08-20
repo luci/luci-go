@@ -112,13 +112,12 @@ func SplitIntoRanges(ctx context.Context, q *datastore.Query, p Params) ([]Range
 		return []Range{{}}, nil
 	}
 
-	keys := make([]*datastore.Key, 0, p.Samples)
-
 	byScat := q.ClearOrder().
 		Order("__scatter__").
 		Limit(int32(p.Samples)).
 		KeysOnly(true)
-	if err := datastore.GetAll(ctx, byScat, &keys); err != nil {
+	keys, err := datastore.RunQuery[*datastore.Key](ctx, byScat).AsSlice()
+	if err != nil {
 		return nil, err
 	}
 

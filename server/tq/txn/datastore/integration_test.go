@@ -175,8 +175,8 @@ func RunTest(t *testing.T, sweeper func(*tq.Dispatcher) tq.Sweeper) {
 	})
 
 	// See how many transactions really landed.
-	var landed []*testEntity
-	assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery("testEntity"), &landed), should.BeNil)
+	landed, err := datastore.RunQuery[*testEntity](ctx, datastore.NewQuery("testEntity")).AsSlice()
+	assert.Loosely(t, err, should.BeNil)
 	assert.Loosely(t, len(landed), should.BeGreaterThan(5)) // it is usually much larger (but still random)
 
 	// Run rounds of sweeps until there are no reminders left or we appear to

@@ -606,8 +606,8 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 		// backoff).
 		logging.Infof(ctx, "Fetching the next batch...")
 		q := rng.Apply(baseQ).Limit(int32(job.Config.PageSize)).KeysOnly(true)
-		keys = keys[:0]
-		if err = datastore.GetAll(ctx, q, &keys); err != nil {
+		keys, err = datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
+		if err != nil {
 			err = transient.Tag.Apply(errors.Fmt("when querying for keys: %w", err))
 			break
 		}

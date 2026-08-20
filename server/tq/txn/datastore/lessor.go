@@ -144,9 +144,9 @@ func (l *lease) remove(ctx context.Context) {
 }
 
 func loadAll(ctx context.Context, sectionID string) (active, expired []*lease, err error) {
-	var all []*lease
 	q := ds.NewQuery("tq.Lease").Ancestor(leasesRootKey(ctx, sectionID))
-	if err := ds.GetAll(ctx, q, &all); err != nil {
+	all, err := ds.RunQuery[*lease](ctx, q).AsSlice()
+	if err != nil {
 		return nil, nil, transient.Tag.Apply(errors.
 			Fmt("failed to fetch leases: %w", err))
 	}
