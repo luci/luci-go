@@ -216,8 +216,7 @@ func fetchLatestProjectConfigs(ctx context.Context) (map[string]config.Config, e
 // fetchProjectConfigEntities retrieves project configuration entities
 // from datastore, including metadata.
 func fetchProjectConfigEntities(ctx context.Context) (map[string]*cachedProjectConfig, error) {
-	var configs []*cachedProjectConfig
-	err := datastore.GetAll(ctx, datastore.NewQuery(projectConfigKind), &configs)
+	configs, err := datastore.RunQuery[*cachedProjectConfig](ctx, datastore.NewQuery(projectConfigKind)).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("fetching project configs from datastore: %w", err)
 	}
