@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Divider, Typography } from '@mui/material';
+import { Box, Divider, Typography } from '@mui/material';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
@@ -20,6 +20,7 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import { ChromeOSRepairTable } from './chromeos_repair_table';
+import { PriorityRulesPanel } from './priority_rules_panel';
 import { useRepairQueueColumns } from './use_repair_queue_columns';
 
 export const ChromeOSRepairDashboard = () => {
@@ -33,33 +34,45 @@ export const ChromeOSRepairDashboard = () => {
       }}
     >
       <div css={{ marginBottom: '16px' }}>
-        <Typography variant="h4" sx={{}}>
-          ChromeOS Manual Repair Dashboard
-        </Typography>
+        <Typography variant="h4">ChromeOS Manual Repair Dashboard</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Rule-based Priority Scoring using dynamic interactive FCon filter Bars
           with Range Filters.
         </Typography>
       </div>
 
-      <div css={{ display: 'flex', width: '100%' }}>
-        <div css={{ width: '50%' }}>
-          <Typography variant="h6" sx={{ mt: 2, fontSize: '16px' }}>
-            Priority Scoring Rules
-          </Typography>
-          <h1>TODO</h1>
-        </div>
-        <div css={{ width: '50%' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          width: '100%',
+          gap: 3,
+        }}
+      >
+        <Box
+          sx={{
+            flex: '1 1 540px',
+            minWidth: 0,
+          }}
+        >
+          <PriorityRulesPanel />
+        </Box>
+        <Box
+          sx={{
+            flex: '1 1 360px',
+            minWidth: 0,
+          }}
+        >
           <Typography variant="h6" sx={{ mt: 2, mb: 2, fontSize: '16px' }}>
             Active IRM Bugs
           </Typography>
           <h1>TODO</h1>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       <Divider sx={{ mt: 4, mb: 4 }} />
 
-      <Typography variant="h6" sx={{ fontSize: '16' }}>
+      <Typography variant="h6" sx={{ fontSize: '16px' }}>
         Prioritized Manual Repair Queue
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

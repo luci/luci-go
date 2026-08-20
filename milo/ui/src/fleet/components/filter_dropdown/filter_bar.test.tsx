@@ -62,12 +62,14 @@ jest.mock('@tanstack/react-virtual', () => ({
 
 const TestComponent = ({
   renderDuplicate = false,
+  disableShortcut = false,
   initialOptions = [
     { label: 'Option 1', key: 'option-1', options: ['Value 1'] },
     { label: 'Option 2', key: 'option-2', options: ['Value 1'] },
   ],
 }: {
   renderDuplicate?: boolean;
+  disableShortcut?: boolean;
   initialOptions?: { label: string; key: string; options: string[] }[];
 }) => {
   const [filterCategories, setFilterCategories] = useState<FilterCategory[]>(
@@ -102,12 +104,14 @@ const TestComponent = ({
         filterCategoryDatas={filterCategories}
         onApply={() => {}}
         data-testid="filter-bar"
+        disableShortcut={disableShortcut}
       />
       {renderDuplicate && (
         <FilterBar
           filterCategoryDatas={filterCategories}
           onApply={() => {}}
           data-testid="filter-bar-2"
+          disableShortcut={disableShortcut}
         />
       )}
       <TextField data-testid="text-field"></TextField>
@@ -1178,5 +1182,23 @@ describe('FilterBar', () => {
     } finally {
       consoleSpy.mockRestore();
     }
+  });
+
+  it('should NOT throw conflict error and not focus on "/" when disableShortcut is true', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent renderDuplicate={true} disableShortcut={true} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    // Verify both search inputs rendered without errors
+    const searchInputs = screen.getAllByRole('textbox');
+    expect(searchInputs.length).toBeGreaterThanOrEqual(2);
+
+    // Press '/' and verify neither search input gets focused
+    await user.keyboard('/');
+    expect(searchInputs[0]).not.toHaveFocus();
+    expect(searchInputs[1]).not.toHaveFocus();
   });
 });

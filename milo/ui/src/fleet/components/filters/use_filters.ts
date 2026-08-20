@@ -37,13 +37,24 @@ function supportsBatchUpdate(
   return 'setSelectedOptions' in f;
 }
 
-export const useFilters = <
+export const serializeFilters = (
+  filterValues: Record<string, FilterCategory>,
+): string => {
+  return Object.values(filterValues)
+    .filter((f) => f.isActive())
+    .map((f) => f.toAIP160())
+    .filter((f) => f !== '')
+    .join(' AND ');
+};
+
+export const useFilterState = <
   T extends Record<string, FilterCategoryBuilder<FilterCategory>>,
 >(
   rawBuilders: T | undefined,
+  aip160String: string | null,
+  onFilterChange?: (nextAip160: string) => void,
   options: {
     areFilterValuesLoading?: boolean;
-    onFilterChange?: (searchParams: URLSearchParams) => URLSearchParams | void;
   } = {},
 ): {
   filterValues: FilterValuesFromBuilders<T> | undefined;
@@ -51,54 +62,27 @@ export const useFilters = <
   warnings: string[];
   setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
-  const { areFilterValuesLoading = false, onFilterChange } = options;
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const { areFilterValuesLoading = false } = options;
   const [warnings, addWarning] = useWarnings();
-  const filtersAIP160 = searchParams.get(FILTERS_PARAM_KEY);
 
-  //This is needed to prevent infinite loops in the filter builder
   const onFilterChangeRef = useRef(onFilterChange);
   onFilterChangeRef.current = onFilterChange;
+
+  const aip160Ref = useRef(aip160String);
+  aip160Ref.current = aip160String;
 
   // Stabilize builders to prevent infinite loops if the parent passes a new object every render.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const builders = useMemo(() => rawBuilders, [JSON.stringify(rawBuilders)]);
 
-  const filtersRef = useRef(filtersAIP160);
-  filtersRef.current = filtersAIP160;
-
-  const updateUrl = useCallback(
-    function onFilterUpdate(
-      filterValues: Record<string, FilterCategory>,
-      replaceHistory: boolean = false,
-    ): void {
-      const filter = Object.values(filterValues)
-        .map((f) => f.toAIP160())
-        .filter((f) => f !== '')
-        .join(' AND ');
-
-      setSearchParams(
-        (prev: URLSearchParams) => {
-          const isFilterUnchanged =
-            filter === (prev.get(FILTERS_PARAM_KEY) ?? '') &&
-            filter === (filtersRef.current ?? '');
-          if (isFilterUnchanged) {
-            return prev;
-          }
-
-          let next = new URLSearchParams(prev);
-          next.set(FILTERS_PARAM_KEY, filter);
-
-          if (filter !== (filtersRef.current ?? '')) {
-            next = onFilterChangeRef.current?.(next) ?? next;
-          }
-
-          return next;
-        },
-        { replace: replaceHistory },
-      );
+  const handleFilterUpdate = useCallback(
+    (newFilters: Record<string, FilterCategory>): void => {
+      const nextAip160 = serializeFilters(newFilters);
+      if (nextAip160 !== (aip160Ref.current ?? '')) {
+        onFilterChangeRef.current?.(nextAip160);
+      }
     },
-    [setSearchParams],
+    [],
   );
 
   const [filterValues, warningsFromBuilder, hasParseError]: [
@@ -110,13 +94,13 @@ export const useFilters = <
 
     const { filters, warnings, hasParseError } = buildFilters(
       builders,
-      updateUrl,
-      filtersAIP160,
+      handleFilterUpdate,
+      aip160String,
       areFilterValuesLoading || false,
     );
 
     return [filters, warnings, hasParseError];
-  }, [builders, filtersAIP160, areFilterValuesLoading, updateUrl]);
+  }, [builders, aip160String, areFilterValuesLoading, handleFilterUpdate]);
 
   useEffect(() => {
     if (
@@ -125,26 +109,24 @@ export const useFilters = <
         (o) => o instanceof LoadingFilterCategory,
       )
     ) {
-      updateUrl(filterValues, true);
+      const currentSerialized = serializeFilters(
+        filterValues as Record<string, FilterCategory>,
+      );
+      if (aip160Ref.current === null && currentSerialized !== '') {
+        onFilterChangeRef.current?.(currentSerialized);
+      }
     }
-  }, [filterValues, updateUrl]);
+  }, [filterValues]);
 
   useEffect(() => {
     warningsFromBuilder.forEach((w) => addWarning(w));
   }, [warningsFromBuilder, addWarning]);
 
-  // We return a callback instead of a computed string to workaround "silent updates".
-  // Sometimes values inside filterValues change but the object reference stays same,
-  // we evaluate the most up-to-date values.
   const aip160 = useCallback(() => {
     if (hasParseError) return '';
-    if (!filterValues) return filtersAIP160 || '';
-    return Object.values(filterValues)
-      .filter((f) => f.isActive())
-      .map((f) => f.toAIP160())
-      .filter((f) => f !== '')
-      .join(' AND ');
-  }, [filterValues, filtersAIP160, hasParseError]);
+    if (!filterValues) return aip160String || '';
+    return serializeFilters(filterValues as Record<string, FilterCategory>);
+  }, [filterValues, aip160String, hasParseError]);
 
   const setFiltersBatch = useCallback(
     (updates: Record<string, string[]>) => {
@@ -162,9 +144,9 @@ export const useFilters = <
         }
       }
 
-      updateUrl(newFilters);
+      handleFilterUpdate(newFilters);
     },
-    [filterValues, updateUrl],
+    [filterValues, handleFilterUpdate],
   );
 
   return {
@@ -173,6 +155,61 @@ export const useFilters = <
     warnings,
     setFiltersBatch,
   };
+};
+
+export const useFilters = <
+  T extends Record<string, FilterCategoryBuilder<FilterCategory>>,
+>(
+  rawBuilders: T | undefined,
+  options: {
+    areFilterValuesLoading?: boolean;
+    onFilterChange?: (searchParams: URLSearchParams) => URLSearchParams | void;
+  } = {},
+): {
+  filterValues: FilterValuesFromBuilders<T> | undefined;
+  aip160: () => string;
+  warnings: string[];
+  setFiltersBatch: (updates: Record<string, string[]>) => void;
+} => {
+  const { areFilterValuesLoading = false, onFilterChange } = options;
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const filtersAIP160 = searchParams.get(FILTERS_PARAM_KEY);
+
+  const onFilterChangeRef = useRef(onFilterChange);
+  onFilterChangeRef.current = onFilterChange;
+
+  const filtersRef = useRef(filtersAIP160);
+  filtersRef.current = filtersAIP160;
+
+  const handleFilterChange = useCallback(
+    (nextAip160: string): void => {
+      setSearchParams(
+        (prev: URLSearchParams) => {
+          const isFilterUnchanged =
+            nextAip160 === (prev.get(FILTERS_PARAM_KEY) ?? '') &&
+            nextAip160 === (filtersRef.current ?? '');
+          if (isFilterUnchanged) {
+            return prev;
+          }
+
+          let next = new URLSearchParams(prev);
+          next.set(FILTERS_PARAM_KEY, nextAip160);
+
+          if (nextAip160 !== (filtersRef.current ?? '')) {
+            next = onFilterChangeRef.current?.(next) ?? next;
+          }
+
+          return next;
+        },
+        { replace: filtersRef.current === null },
+      );
+    },
+    [setSearchParams],
+  );
+
+  return useFilterState(rawBuilders, filtersAIP160, handleFilterChange, {
+    areFilterValuesLoading,
+  });
 };
 
 export type BuildResult<T> =

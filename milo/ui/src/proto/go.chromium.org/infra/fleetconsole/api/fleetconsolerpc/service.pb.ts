@@ -45,6 +45,10 @@ import {
   CountDevicesResponse,
   CountRepairMetricsRequest,
   CountRepairMetricsResponse,
+  CreatePriorityRuleRequest,
+  CreatePriorityRuleResponse,
+  DeletePriorityRuleRequest,
+  DeletePriorityRuleResponse,
   ExportDevicesToCSVRequest,
   ExportDevicesToCSVResponse,
   GetDeviceDimensionsRequest,
@@ -55,6 +59,8 @@ import {
   GetSmartRepairResponse,
   ListDevicesRequest,
   ListDevicesResponse,
+  ListPriorityRulesRequest,
+  ListPriorityRulesResponse,
   ListRepairMetricsRequest,
   ListRepairMetricsResponse,
   ListRepairQueueRequest,
@@ -69,6 +75,8 @@ import {
   ScheduleReserveResponse,
   UpdateChromeOSDeviceRequest,
   UpdateChromeOSDeviceResponse,
+  UpdatePriorityRuleRequest,
+  UpdatePriorityRuleResponse,
 } from "./chromeos.pb";
 import {
   CountResourceRequestsRequest,
@@ -353,6 +361,10 @@ export interface FleetConsole {
   GetDeviceACLs(request: GetDeviceACLsRequest): Promise<GetDeviceACLsResponse>;
   UpdateChromeOSDevice(request: UpdateChromeOSDeviceRequest): Promise<UpdateChromeOSDeviceResponse>;
   ListRepairQueue(request: ListRepairQueueRequest): Promise<ListRepairQueueResponse>;
+  ListPriorityRules(request: ListPriorityRulesRequest): Promise<ListPriorityRulesResponse>;
+  CreatePriorityRule(request: CreatePriorityRuleRequest): Promise<CreatePriorityRuleResponse>;
+  UpdatePriorityRule(request: UpdatePriorityRuleRequest): Promise<UpdatePriorityRuleResponse>;
+  DeletePriorityRule(request: DeletePriorityRuleRequest): Promise<DeletePriorityRuleResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -406,6 +418,10 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.GetDeviceACLs = this.GetDeviceACLs.bind(this);
     this.UpdateChromeOSDevice = this.UpdateChromeOSDevice.bind(this);
     this.ListRepairQueue = this.ListRepairQueue.bind(this);
+    this.ListPriorityRules = this.ListPriorityRules.bind(this);
+    this.CreatePriorityRule = this.CreatePriorityRule.bind(this);
+    this.UpdatePriorityRule = this.UpdatePriorityRule.bind(this);
+    this.DeletePriorityRule = this.DeletePriorityRule.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -673,6 +689,30 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ListRepairQueueRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListRepairQueue", data);
     return promise.then((data) => ListRepairQueueResponse.fromJSON(data));
+  }
+
+  ListPriorityRules(request: ListPriorityRulesRequest): Promise<ListPriorityRulesResponse> {
+    const data = ListPriorityRulesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListPriorityRules", data);
+    return promise.then((data) => ListPriorityRulesResponse.fromJSON(data));
+  }
+
+  CreatePriorityRule(request: CreatePriorityRuleRequest): Promise<CreatePriorityRuleResponse> {
+    const data = CreatePriorityRuleRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CreatePriorityRule", data);
+    return promise.then((data) => CreatePriorityRuleResponse.fromJSON(data));
+  }
+
+  UpdatePriorityRule(request: UpdatePriorityRuleRequest): Promise<UpdatePriorityRuleResponse> {
+    const data = UpdatePriorityRuleRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdatePriorityRule", data);
+    return promise.then((data) => UpdatePriorityRuleResponse.fromJSON(data));
+  }
+
+  DeletePriorityRule(request: DeletePriorityRuleRequest): Promise<DeletePriorityRuleResponse> {
+    const data = DeletePriorityRuleRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "DeletePriorityRule", data);
+    return promise.then((data) => DeletePriorityRuleResponse.fromJSON(data));
   }
 }
 

@@ -568,6 +568,44 @@ export interface ListRepairQueueResponse {
   readonly totalSize: number;
 }
 
+export interface PriorityRule {
+  readonly id: string;
+  readonly expressionAip160: string;
+  readonly weight: string;
+}
+
+export interface ListPriorityRulesRequest {
+}
+
+export interface ListPriorityRulesResponse {
+  readonly priorityRules: readonly PriorityRule[];
+}
+
+export interface CreatePriorityRuleRequest {
+  readonly priorityRule: PriorityRule | undefined;
+}
+
+export interface CreatePriorityRuleResponse {
+  readonly priorityRule: PriorityRule | undefined;
+}
+
+export interface UpdatePriorityRuleRequest {
+  readonly id: string;
+  readonly expressionAip160?: string | undefined;
+  readonly weight?: string | undefined;
+}
+
+export interface UpdatePriorityRuleResponse {
+  readonly priorityRule: PriorityRule | undefined;
+}
+
+export interface DeletePriorityRuleRequest {
+  readonly id: string;
+}
+
+export interface DeletePriorityRuleResponse {
+}
+
 function createBaseDevice(): Device {
   return { id: "", dutId: "", address: undefined, type: 0, state: 0, deviceSpec: undefined, realm: "" };
 }
@@ -5515,6 +5553,576 @@ export const ListRepairQueueResponse: MessageFns<ListRepairQueueResponse> = {
     message.repairQueueItems = object.repairQueueItems?.map((e) => RepairQueueItem.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
     message.totalSize = object.totalSize ?? 0;
+    return message;
+  },
+};
+
+function createBasePriorityRule(): PriorityRule {
+  return { id: "0", expressionAip160: "", weight: "0" };
+}
+
+export const PriorityRule: MessageFns<PriorityRule> = {
+  encode(message: PriorityRule, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.expressionAip160 !== "") {
+      writer.uint32(18).string(message.expressionAip160);
+    }
+    if (message.weight !== "0") {
+      writer.uint32(24).int64(message.weight);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PriorityRule {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePriorityRule() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.expressionAip160 = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.weight = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PriorityRule {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      expressionAip160: isSet(object.expressionAip160) ? globalThis.String(object.expressionAip160) : "",
+      weight: isSet(object.weight) ? globalThis.String(object.weight) : "0",
+    };
+  },
+
+  toJSON(message: PriorityRule): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.expressionAip160 !== "") {
+      obj.expressionAip160 = message.expressionAip160;
+    }
+    if (message.weight !== "0") {
+      obj.weight = message.weight;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PriorityRule>): PriorityRule {
+    return PriorityRule.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PriorityRule>): PriorityRule {
+    const message = createBasePriorityRule() as any;
+    message.id = object.id ?? "0";
+    message.expressionAip160 = object.expressionAip160 ?? "";
+    message.weight = object.weight ?? "0";
+    return message;
+  },
+};
+
+function createBaseListPriorityRulesRequest(): ListPriorityRulesRequest {
+  return {};
+}
+
+export const ListPriorityRulesRequest: MessageFns<ListPriorityRulesRequest> = {
+  encode(_: ListPriorityRulesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListPriorityRulesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListPriorityRulesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ListPriorityRulesRequest {
+    return {};
+  },
+
+  toJSON(_: ListPriorityRulesRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListPriorityRulesRequest>): ListPriorityRulesRequest {
+    return ListPriorityRulesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<ListPriorityRulesRequest>): ListPriorityRulesRequest {
+    const message = createBaseListPriorityRulesRequest() as any;
+    return message;
+  },
+};
+
+function createBaseListPriorityRulesResponse(): ListPriorityRulesResponse {
+  return { priorityRules: [] };
+}
+
+export const ListPriorityRulesResponse: MessageFns<ListPriorityRulesResponse> = {
+  encode(message: ListPriorityRulesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.priorityRules) {
+      PriorityRule.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListPriorityRulesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListPriorityRulesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.priorityRules.push(PriorityRule.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListPriorityRulesResponse {
+    return {
+      priorityRules: globalThis.Array.isArray(object?.priorityRules)
+        ? object.priorityRules.map((e: any) => PriorityRule.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ListPriorityRulesResponse): unknown {
+    const obj: any = {};
+    if (message.priorityRules?.length) {
+      obj.priorityRules = message.priorityRules.map((e) => PriorityRule.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListPriorityRulesResponse>): ListPriorityRulesResponse {
+    return ListPriorityRulesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListPriorityRulesResponse>): ListPriorityRulesResponse {
+    const message = createBaseListPriorityRulesResponse() as any;
+    message.priorityRules = object.priorityRules?.map((e) => PriorityRule.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseCreatePriorityRuleRequest(): CreatePriorityRuleRequest {
+  return { priorityRule: undefined };
+}
+
+export const CreatePriorityRuleRequest: MessageFns<CreatePriorityRuleRequest> = {
+  encode(message: CreatePriorityRuleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.priorityRule !== undefined) {
+      PriorityRule.encode(message.priorityRule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreatePriorityRuleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreatePriorityRuleRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.priorityRule = PriorityRule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreatePriorityRuleRequest {
+    return { priorityRule: isSet(object.priorityRule) ? PriorityRule.fromJSON(object.priorityRule) : undefined };
+  },
+
+  toJSON(message: CreatePriorityRuleRequest): unknown {
+    const obj: any = {};
+    if (message.priorityRule !== undefined) {
+      obj.priorityRule = PriorityRule.toJSON(message.priorityRule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CreatePriorityRuleRequest>): CreatePriorityRuleRequest {
+    return CreatePriorityRuleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CreatePriorityRuleRequest>): CreatePriorityRuleRequest {
+    const message = createBaseCreatePriorityRuleRequest() as any;
+    message.priorityRule = (object.priorityRule !== undefined && object.priorityRule !== null)
+      ? PriorityRule.fromPartial(object.priorityRule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseCreatePriorityRuleResponse(): CreatePriorityRuleResponse {
+  return { priorityRule: undefined };
+}
+
+export const CreatePriorityRuleResponse: MessageFns<CreatePriorityRuleResponse> = {
+  encode(message: CreatePriorityRuleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.priorityRule !== undefined) {
+      PriorityRule.encode(message.priorityRule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreatePriorityRuleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreatePriorityRuleResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.priorityRule = PriorityRule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreatePriorityRuleResponse {
+    return { priorityRule: isSet(object.priorityRule) ? PriorityRule.fromJSON(object.priorityRule) : undefined };
+  },
+
+  toJSON(message: CreatePriorityRuleResponse): unknown {
+    const obj: any = {};
+    if (message.priorityRule !== undefined) {
+      obj.priorityRule = PriorityRule.toJSON(message.priorityRule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CreatePriorityRuleResponse>): CreatePriorityRuleResponse {
+    return CreatePriorityRuleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CreatePriorityRuleResponse>): CreatePriorityRuleResponse {
+    const message = createBaseCreatePriorityRuleResponse() as any;
+    message.priorityRule = (object.priorityRule !== undefined && object.priorityRule !== null)
+      ? PriorityRule.fromPartial(object.priorityRule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseUpdatePriorityRuleRequest(): UpdatePriorityRuleRequest {
+  return { id: "0", expressionAip160: undefined, weight: undefined };
+}
+
+export const UpdatePriorityRuleRequest: MessageFns<UpdatePriorityRuleRequest> = {
+  encode(message: UpdatePriorityRuleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.expressionAip160 !== undefined) {
+      writer.uint32(18).string(message.expressionAip160);
+    }
+    if (message.weight !== undefined) {
+      writer.uint32(24).int64(message.weight);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdatePriorityRuleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdatePriorityRuleRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.expressionAip160 = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.weight = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdatePriorityRuleRequest {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      expressionAip160: isSet(object.expressionAip160) ? globalThis.String(object.expressionAip160) : undefined,
+      weight: isSet(object.weight) ? globalThis.String(object.weight) : undefined,
+    };
+  },
+
+  toJSON(message: UpdatePriorityRuleRequest): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.expressionAip160 !== undefined) {
+      obj.expressionAip160 = message.expressionAip160;
+    }
+    if (message.weight !== undefined) {
+      obj.weight = message.weight;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdatePriorityRuleRequest>): UpdatePriorityRuleRequest {
+    return UpdatePriorityRuleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdatePriorityRuleRequest>): UpdatePriorityRuleRequest {
+    const message = createBaseUpdatePriorityRuleRequest() as any;
+    message.id = object.id ?? "0";
+    message.expressionAip160 = object.expressionAip160 ?? undefined;
+    message.weight = object.weight ?? undefined;
+    return message;
+  },
+};
+
+function createBaseUpdatePriorityRuleResponse(): UpdatePriorityRuleResponse {
+  return { priorityRule: undefined };
+}
+
+export const UpdatePriorityRuleResponse: MessageFns<UpdatePriorityRuleResponse> = {
+  encode(message: UpdatePriorityRuleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.priorityRule !== undefined) {
+      PriorityRule.encode(message.priorityRule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdatePriorityRuleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdatePriorityRuleResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.priorityRule = PriorityRule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdatePriorityRuleResponse {
+    return { priorityRule: isSet(object.priorityRule) ? PriorityRule.fromJSON(object.priorityRule) : undefined };
+  },
+
+  toJSON(message: UpdatePriorityRuleResponse): unknown {
+    const obj: any = {};
+    if (message.priorityRule !== undefined) {
+      obj.priorityRule = PriorityRule.toJSON(message.priorityRule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdatePriorityRuleResponse>): UpdatePriorityRuleResponse {
+    return UpdatePriorityRuleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdatePriorityRuleResponse>): UpdatePriorityRuleResponse {
+    const message = createBaseUpdatePriorityRuleResponse() as any;
+    message.priorityRule = (object.priorityRule !== undefined && object.priorityRule !== null)
+      ? PriorityRule.fromPartial(object.priorityRule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseDeletePriorityRuleRequest(): DeletePriorityRuleRequest {
+  return { id: "0" };
+}
+
+export const DeletePriorityRuleRequest: MessageFns<DeletePriorityRuleRequest> = {
+  encode(message: DeletePriorityRuleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeletePriorityRuleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeletePriorityRuleRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeletePriorityRuleRequest {
+    return { id: isSet(object.id) ? globalThis.String(object.id) : "0" };
+  },
+
+  toJSON(message: DeletePriorityRuleRequest): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeletePriorityRuleRequest>): DeletePriorityRuleRequest {
+    return DeletePriorityRuleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeletePriorityRuleRequest>): DeletePriorityRuleRequest {
+    const message = createBaseDeletePriorityRuleRequest() as any;
+    message.id = object.id ?? "0";
+    return message;
+  },
+};
+
+function createBaseDeletePriorityRuleResponse(): DeletePriorityRuleResponse {
+  return {};
+}
+
+export const DeletePriorityRuleResponse: MessageFns<DeletePriorityRuleResponse> = {
+  encode(_: DeletePriorityRuleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeletePriorityRuleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeletePriorityRuleResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): DeletePriorityRuleResponse {
+    return {};
+  },
+
+  toJSON(_: DeletePriorityRuleResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeletePriorityRuleResponse>): DeletePriorityRuleResponse {
+    return DeletePriorityRuleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<DeletePriorityRuleResponse>): DeletePriorityRuleResponse {
+    const message = createBaseDeletePriorityRuleResponse() as any;
     return message;
   },
 };

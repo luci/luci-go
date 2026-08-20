@@ -26,29 +26,13 @@ import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { ChromeOSFilterKey } from './chromeos_fields';
 import { useChromeOSFields } from './use_chromeos_available_columns';
 
-export const useChromeOSFilters = (
-  onApply?: (searchParams: URLSearchParams) => URLSearchParams | void,
-): {
-  filterValues: Record<ChromeOSFilterKey, FilterCategory> | undefined;
-  aip160: () => string;
+export const useChromeOSFilterBuilders = (): {
+  filterBuilders: Record<ChromeOSFilterKey, StringListFilterCategoryBuilder>;
   isLoading: boolean;
-  warnings: string[];
-  setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
   const { availableFields, getValues, isLoading } = useChromeOSFields();
-  const { trackEvent } = useGoogleAnalytics();
 
-  const onApplyFilter = useCallback(
-    (searchParams: URLSearchParams) => {
-      trackEvent('filter_changed', {
-        componentName: 'device_list_filter',
-      });
-      return onApply?.(searchParams) ?? searchParams;
-    },
-    [onApply, trackEvent],
-  );
-
-  const filterOptions = useMemo(() => {
+  const filterBuilders = useMemo(() => {
     const filters = {} as Record<
       ChromeOSFilterKey,
       StringListFilterCategoryBuilder
@@ -69,8 +53,36 @@ export const useChromeOSFilters = (
     return filters;
   }, [availableFields, getValues]);
 
+  return {
+    filterBuilders,
+    isLoading,
+  };
+};
+
+export const useChromeOSFilters = (
+  onApply?: (searchParams: URLSearchParams) => URLSearchParams | void,
+): {
+  filterValues: Record<ChromeOSFilterKey, FilterCategory> | undefined;
+  aip160: () => string;
+  isLoading: boolean;
+  warnings: string[];
+  setFiltersBatch: (updates: Record<string, string[]>) => void;
+} => {
+  const { filterBuilders, isLoading } = useChromeOSFilterBuilders();
+  const { trackEvent } = useGoogleAnalytics();
+
+  const onApplyFilter = useCallback(
+    (searchParams: URLSearchParams) => {
+      trackEvent('filter_changed', {
+        componentName: 'device_list_filter',
+      });
+      return onApply?.(searchParams) ?? searchParams;
+    },
+    [onApply, trackEvent],
+  );
+
   const { filterValues, aip160, warnings, setFiltersBatch } = useFilters(
-    filterOptions,
+    filterBuilders,
     {
       areFilterValuesLoading: isLoading,
       onFilterChange: onApplyFilter,
@@ -82,7 +94,7 @@ export const useChromeOSFilters = (
       | Record<ChromeOSFilterKey, FilterCategory>
       | undefined,
     aip160,
-    isLoading: isLoading,
+    isLoading,
     warnings,
     setFiltersBatch,
   };

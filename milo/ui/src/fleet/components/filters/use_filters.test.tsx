@@ -26,6 +26,8 @@ import {
 } from './string_list_filter';
 import {
   useFilters,
+  useFilterState,
+  serializeFilters,
   FilterCategoryBuilder,
   FilterCategory,
 } from './use_filters';
@@ -1382,5 +1384,221 @@ describe('useFilters', () => {
         ],
       });
     });
+  });
+});
+
+describe('serializeFilters', () => {
+  it('should return empty string for empty dictionary', () => {
+    expect(serializeFilters({})).toBe('');
+  });
+
+  it('should return empty string when all categories are inactive', () => {
+    const inactiveFilter: FilterCategory = {
+      key: 'model',
+      label: 'Model',
+      isActive: () => false,
+      toAIP160: () => '(model = "v1")',
+      render: () => null,
+      getChipLabel: () => '',
+      clear: () => {},
+      getChildrenSearchScore: () => 0,
+      setReRender: () => {},
+    };
+
+    expect(serializeFilters({ model: inactiveFilter })).toBe('');
+  });
+
+  it('should format single active category', () => {
+    const activeFilter: FilterCategory = {
+      key: 'board',
+      label: 'Board',
+      isActive: () => true,
+      toAIP160: () => '(board = "bria")',
+      render: () => null,
+      getChipLabel: () => 'Board: bria',
+      clear: () => {},
+      getChildrenSearchScore: () => 0,
+      setReRender: () => {},
+    };
+
+    expect(serializeFilters({ board: activeFilter })).toBe('(board = "bria")');
+  });
+
+  it('should join multiple active categories with AND and ignore empty toAIP160', () => {
+    const filter1: FilterCategory = {
+      key: 'board',
+      label: 'Board',
+      isActive: () => true,
+      toAIP160: () => '(board = "bria")',
+      render: () => null,
+      getChipLabel: () => '',
+      clear: () => {},
+      getChildrenSearchScore: () => 0,
+      setReRender: () => {},
+    };
+    const filter2: FilterCategory = {
+      key: 'empty',
+      label: 'Empty',
+      isActive: () => true,
+      toAIP160: () => '',
+      render: () => null,
+      getChipLabel: () => '',
+      clear: () => {},
+      getChildrenSearchScore: () => 0,
+      setReRender: () => {},
+    };
+    const filter3: FilterCategory = {
+      key: 'pool',
+      label: 'Pool',
+      isActive: () => true,
+      toAIP160: () => '(pool = "DUT_POOL_QUOTA")',
+      render: () => null,
+      getChipLabel: () => '',
+      clear: () => {},
+      getChildrenSearchScore: () => 0,
+      setReRender: () => {},
+    };
+
+    expect(
+      serializeFilters({ board: filter1, empty: filter2, pool: filter3 }),
+    ).toBe('(board = "bria") AND (pool = "DUT_POOL_QUOTA")');
+  });
+});
+
+describe('useFilterState', () => {
+  it('should operate purely in-memory without SyncedSearchParamsProvider wrapper', async () => {
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('Model')
+        .setOptions([
+          { label: 'v1', value: 'v1' },
+          { label: 'v2', value: 'v2' },
+        ]),
+    };
+
+    const { result } = renderHook(() =>
+      useFilterState(builders, 'model = "v1"'),
+    );
+
+    await waitFor(() => expect(result.current.filterValues).toBeDefined());
+    expect(result.current.aip160()).toBe('(model = "v1")');
+
+    const category = result.current.filterValues
+      ?.model as StringListFilterCategory;
+    expect(category.getSelectedOptions()).toEqual(['v1']);
+  });
+
+  it('should invoke onFilterChange when a filter option is selected or cleared', async () => {
+    const onFilterChangeMock = jest.fn();
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('Model')
+        .setOptions([
+          { label: 'v1', value: 'v1' },
+          { label: 'v2', value: 'v2' },
+        ]),
+      pool: new StringListFilterCategoryBuilder()
+        .setLabel('Pool')
+        .setOptions([{ label: 'quota', value: 'quota' }]),
+    };
+
+    const { result } = renderHook(() =>
+      useFilterState(builders, 'model = "v1"', onFilterChangeMock),
+    );
+
+    await waitFor(() => expect(result.current.filterValues).toBeDefined());
+
+    act(() => {
+      const category = result.current.filterValues
+        ?.model as StringListFilterCategory;
+      category.setSelectedOptions(['v1', 'v2']);
+    });
+
+    expect(onFilterChangeMock).toHaveBeenCalledWith(
+      '(model = "v1" OR model = "v2")',
+    );
+
+    act(() => {
+      const category = result.current.filterValues
+        ?.model as StringListFilterCategory;
+      category.clear();
+    });
+
+    expect(onFilterChangeMock).toHaveBeenCalledWith('');
+  });
+
+  it('should update batch selections via setFiltersBatch', async () => {
+    const onFilterChangeMock = jest.fn();
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('Model')
+        .setOptions([{ label: 'v1', value: 'v1' }]),
+      pool: new StringListFilterCategoryBuilder()
+        .setLabel('Pool')
+        .setOptions([{ label: 'quota', value: 'quota' }]),
+    };
+
+    const { result } = renderHook(() =>
+      useFilterState(builders, null, onFilterChangeMock),
+    );
+
+    await waitFor(() => expect(result.current.filterValues).toBeDefined());
+
+    act(() => {
+      result.current.setFiltersBatch({
+        model: ['v1'],
+        pool: ['quota'],
+      });
+    });
+
+    expect(onFilterChangeMock).toHaveBeenCalledWith(
+      '(model = "v1") AND (pool = "quota")',
+    );
+  });
+
+  it('should return empty aip160 string and record parse error warnings', async () => {
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('Model')
+        .setOptions([{ label: 'v1', value: 'v1' }]),
+    };
+
+    const { result } = renderHook(() =>
+      useFilterState(builders, 'invalid (( syntax error'),
+    );
+
+    await waitFor(() => expect(result.current.filterValues).toBeDefined());
+    expect(result.current.aip160()).toBe('');
+    expect(result.current.warnings.length).toBeGreaterThan(0);
+    expect(result.current.warnings[0]).toContain(
+      'There was an error parsing your filters',
+    );
+  });
+
+  it('should handle undefined builders gracefully', () => {
+    const { result } = renderHook(() =>
+      useFilterState(undefined, 'model = "v1"'),
+    );
+
+    expect(result.current.filterValues).toBeUndefined();
+    expect(result.current.aip160()).toBe('model = "v1"');
+    expect(result.current.warnings).toEqual([]);
+  });
+
+  it('should handle areFilterValuesLoading without generating invalid filter warnings', async () => {
+    const builders = {
+      model: new StringListFilterCategoryBuilder()
+        .setLabel('Model')
+        .setOptions([{ label: 'v1', value: 'v1' }]),
+    };
+
+    const { result } = renderHook(() =>
+      useFilterState(builders, 'unknown_column = "xyz"', undefined, {
+        areFilterValuesLoading: true,
+      }),
+    );
+
+    await waitFor(() => expect(result.current.filterValues).toBeDefined());
+    expect(result.current.warnings).toEqual([]);
   });
 });

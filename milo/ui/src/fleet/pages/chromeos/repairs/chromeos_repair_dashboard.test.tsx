@@ -17,6 +17,7 @@ import { render, screen } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
+import * as UsePriorityRulesModule from '@/fleet/pages/chromeos/repairs/use_priority_rules';
 import * as UseRepairQueueModule from '@/fleet/pages/chromeos/repairs/use_repair_queue';
 import { RepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -56,6 +57,22 @@ describe('<ChromeOSRepairDashboard />', () => {
           retry: false,
         },
       },
+    });
+    jest.spyOn(UsePriorityRulesModule, 'usePriorityRules').mockReturnValue({
+      rules: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      createRule: jest.fn().mockResolvedValue({}),
+      isCreating: false,
+      createError: null,
+      updateRule: jest.fn().mockResolvedValue({}),
+      isUpdating: false,
+      updateError: null,
+      deleteRule: jest.fn().mockResolvedValue({}),
+      isDeleting: false,
+      deleteError: null,
     });
   });
 
@@ -191,5 +208,30 @@ describe('<ChromeOSRepairDashboard />', () => {
       await screen.findByText('Error Loading Repair Queue'),
     ).toBeInTheDocument();
     expect(screen.getByText(/Network error/i)).toBeInTheDocument();
+  });
+
+  it('renders priority scoring rules inline in the dashboard', async () => {
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: MOCK_QUEUE_ITEMS,
+        totalSize: 2,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    expect(
+      screen.getByRole('heading', {
+        level: 6,
+        name: /Priority Scoring Rules/i,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('add-priority-rule-button')).toBeInTheDocument();
   });
 });

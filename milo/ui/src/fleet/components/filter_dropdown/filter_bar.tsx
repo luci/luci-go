@@ -28,6 +28,7 @@ interface FilterBarProps {
   onApply?: () => void;
   isLoading?: boolean;
   searchPlaceholder?: string;
+  disableShortcut?: boolean;
 }
 
 export function FilterBar({
@@ -35,6 +36,7 @@ export function FilterBar({
   onApply,
   isLoading,
   searchPlaceholder,
+  disableShortcut = false,
 }: FilterBarProps) {
   const [value, setValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -49,12 +51,17 @@ export function FilterBar({
     setValue(newValue);
   };
 
-  useShortcut('Focus search bar', '/', (e) => {
-    if (!isTyping(document.activeElement)) {
-      e.preventDefault();
-      searchBarRef.current?.focus();
-    }
-  });
+  useShortcut(
+    'Focus search bar',
+    '/',
+    (e) => {
+      if (!isTyping(document.activeElement)) {
+        e.preventDefault();
+        searchBarRef.current?.focus();
+      }
+    },
+    { enabled: !disableShortcut },
+  );
   return (
     <div css={{ display: 'flex', gap: 8, width: '100%', position: 'relative' }}>
       <SearchBar

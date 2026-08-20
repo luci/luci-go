@@ -136,6 +136,33 @@ export function createMockUseFleetConsoleClient(
           isPending: false,
         }),
       },
+      ListPriorityRules: {
+        query: jest.fn().mockReturnValue({
+          queryKey: ['ListPriorityRules'],
+          queryFn: jest.fn().mockResolvedValue({
+            priorityRules: [],
+          }),
+          data: {
+            priorityRules: [],
+          },
+          isPending: false,
+        }),
+      },
+      CreatePriorityRule: jest.fn().mockResolvedValue({
+        priorityRule: {
+          id: '1',
+          expressionAip160: '',
+          weight: '0',
+        },
+      }),
+      UpdatePriorityRule: jest.fn().mockResolvedValue({
+        priorityRule: {
+          id: '1',
+          expressionAip160: '',
+          weight: '0',
+        },
+      }),
+      DeletePriorityRule: jest.fn().mockResolvedValue({}),
     } as unknown as ReturnType<typeof PrpcClients.useFleetConsoleClient>;
   };
 }
