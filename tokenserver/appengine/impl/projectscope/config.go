@@ -72,8 +72,8 @@ func importIdentities(ctx context.Context, cfg *config.ProjectsCfg, useStagingEm
 	}
 
 	// 2. Query all existing ScopedIdentity entities from Datastore.
-	var existing []*projectidentity.ProjectIdentity
-	if err := datastore.GetAll(ctx, datastore.NewQuery("ScopedIdentity"), &existing); err != nil {
+	existing, err := datastore.RunQuery[*projectidentity.ProjectIdentity](ctx, datastore.NewQuery("ScopedIdentity")).AsSlice()
+	if err != nil {
 		logging.Errorf(ctx, "Fetching all project scoped identities failed: %v", err)
 		merr = append(merr, err)
 		return merr.AsError()

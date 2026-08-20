@@ -81,9 +81,9 @@ func (c *CA) ParseConfig() (*admin.CertificateAuthorityConfig, error) {
 
 // ListCAs returns names of all currently active CAs, in no particular order.
 func ListCAs(c context.Context) ([]string, error) {
-	keys := []*ds.Key{}
 	q := ds.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
-	if err := ds.GetAll(c, q, &keys); err != nil {
+	keys, err := ds.RunQuery[*ds.Key](c, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
 	names := make([]string, len(keys))
