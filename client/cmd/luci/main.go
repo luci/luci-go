@@ -35,8 +35,25 @@ func getApplication() *cli.Application {
 	af := base.NewAuthFlags()
 
 	return &cli.Application{
-		Name:  "luci",
-		Title: "Unified CLI tool to access LUCI resources.",
+		Name: "luci",
+		Title: "Unified CLI tool to access LUCI resources.\n\n" +
+			"CONTEXT SHORTCUT ('-'):\n" +
+			"  Commands support '-' as a target argument to reuse recently accessed resources\n" +
+			"  (invocation, work unit, test result, verdict) without re-specifying them.\n" +
+			"  Trailing arguments after '-' override trailing components in the hierarchy.\n\n" +
+			"  Typical Investigation Workflow Examples:\n" +
+			"    1. Fetch a test verdict by URL or name:\n" +
+			"       $ luci verdict get https://ci.chromium.org/ui/test-investigate/invocations/build-123/...\n\n" +
+			"    2. Inspect a failed run using '-' to reuse the verdict/invocation context:\n" +
+			"       $ luci test-result get - 0efc0e5a-00528\n\n" +
+			"    3. List or download test result artifacts using '-' to reuse the test result:\n" +
+			"       $ luci test-result artifact list -\n" +
+			"       $ luci test-result artifact get - output.log\n\n" +
+			"    4. Inspect a parent/ancestor work unit using '-' to reuse the invocation:\n" +
+			"       $ luci work-unit get - ants-wu83500269020198004\n\n" +
+			"    5. List or download work unit artifacts using '-' to reuse the work unit:\n" +
+			"       $ luci work-unit artifact list -\n" +
+			"       $ luci work-unit artifact get - subprocess-test_result.xml.gz",
 
 		Context: func(ctx context.Context) context.Context {
 			return gologger.StdConfig.Use(ctx)
@@ -59,9 +76,7 @@ func getApplication() *cli.Application {
 }
 
 func main() {
-	args := os.Args[1:]
-	if len(args) == 1 && (args[0] == "-h" || args[0] == "--help" || args[0] == "-help") {
-		args = []string{"help"}
-	}
-	os.Exit(subcommands.Run(getApplication(), args))
+	app := getApplication()
+	args := base.NormalizeAppArgs(app.Commands, os.Args[1:])
+	os.Exit(subcommands.Run(app, args))
 }

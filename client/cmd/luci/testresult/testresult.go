@@ -118,7 +118,6 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
-	base.RecordTestResult(name, "", "")
 
 	if err := r.af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
@@ -136,6 +135,7 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		fmt.Fprintf(os.Stderr, "failed to get test result: %s\n", err)
 		return 1
 	}
+	base.RecordTestResult(res.Name, "", "")
 
 	fmt.Printf("Result ID: %s\n", res.ResultId)
 	format.PrintTestID(ctx, schemasClient, res)
@@ -190,5 +190,4 @@ func printVerdictContext(ctx context.Context, rdbClient pb.ResultDBClient, res *
 	verdictStatus := vg.DisplayStatus()
 
 	fmt.Printf("Verdict:   One of %d results in this verdict (overall status: %s)\n", len(verdictResults), verdictStatus)
-	fmt.Printf("           Run 'luci verdict get -' to view the full verdict\n")
 }

@@ -89,5 +89,23 @@ func TestTargets(t *testing.T) {
 				assert.Loosely(t, res, should.Equal("rootInvocations/ants-1/workUnits/wu-1"))
 			})
 		})
+
+		t.Run("ExtractTestResultComponents", func(t *ftt.Test) {
+			inv, testID, resID := ExtractTestResultComponents("rootInvocations/ants-i123/workUnits/wu-1/tests/:MTS!junit:Test#case/results/res-01")
+			assert.Loosely(t, inv, should.Equal("ants-i123"))
+			assert.Loosely(t, testID, should.Equal(":MTS!junit:Test#case"))
+			assert.Loosely(t, resID, should.Equal("res-01"))
+
+			inv2, testID2, resID2 := ExtractTestResultComponents("invocations/build-123/tests/test_foo/results/0")
+			assert.Loosely(t, inv2, should.Equal("build-123"))
+			assert.Loosely(t, testID2, should.Equal("test_foo"))
+			assert.Loosely(t, resID2, should.Equal("0"))
+		})
+
+		t.Run("ExtractWorkUnitComponents", func(t *ftt.Test) {
+			rootInv, wuID := ExtractWorkUnitComponents("rootInvocations/ants-i123/workUnits/wu-1")
+			assert.Loosely(t, rootInv, should.Equal("ants-i123"))
+			assert.Loosely(t, wuID, should.Equal("wu-1"))
+		})
 	})
 }

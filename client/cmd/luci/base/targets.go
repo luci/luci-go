@@ -180,7 +180,9 @@ func ParseWorkUnitTargetArgs(args []string) (string, error) {
 
 // ExtractTestResultComponents parses an invocation, test ID, and result ID from a resource name.
 func ExtractTestResultComponents(name string) (inv, testID, resultID string) {
-	if idx := strings.Index(name, "invocations/"); idx != -1 {
+	if idx := strings.Index(name, "rootInvocations/"); idx != -1 {
+		name = name[idx:]
+	} else if idx := strings.Index(name, "invocations/"); idx != -1 {
 		name = name[idx:]
 	}
 	if idx := strings.Index(name, "/artifacts/"); idx != -1 {
@@ -188,7 +190,7 @@ func ExtractTestResultComponents(name string) (inv, testID, resultID string) {
 	}
 	parts := strings.Split(name, "/")
 	for i := 0; i < len(parts); i++ {
-		if parts[i] == "invocations" && i+1 < len(parts) {
+		if (parts[i] == "invocations" || parts[i] == "rootInvocations") && i+1 < len(parts) {
 			inv = parts[i+1]
 		}
 		if parts[i] == "tests" && i+1 < len(parts) {

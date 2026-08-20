@@ -33,7 +33,7 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "work-unit <subcommand>",
 		ShortDesc: "Manage ResultDB work units",
-		LongDesc: "Manage ResultDB work units (V2 execution hierarchy nodes).\n\n" +
+		LongDesc: "Manage ResultDB work units. Work units represent modular execution units and test suites within an invocation.\n\n" +
 			"Available subcommands:\n" +
 			"  get       Get details of a work unit\n" +
 			"  artifact  Manage work unit artifacts",
@@ -49,7 +49,7 @@ type workUnitRun struct {
 }
 
 func (r *workUnitRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	return base.RunSubcommandApp(a, "luci work-unit", "Work unit management", []*subcommands.Command{
+	return base.RunSubcommandApp(a, "luci work-unit", "Work units management", []*subcommands.Command{
 		GetCmd(r.af),
 		artifact.WorkUnitArtifactCmd(r.af),
 		subcommands.CmdHelp,
@@ -60,12 +60,12 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get <name> | get - [<work_unit_id>] | get <root_inv> <work_unit_id>",
 		ShortDesc: "Get a work unit",
-		LongDesc:  "Get details of a work unit by its resource name or decomposed IDs.\nUse '-' to reuse the cached invocation with trailing work_unit_id override.",
+		LongDesc:  "Get details of a work unit by resource name, URL, or decomposed IDs.\nUse '-' to reuse cached root invocation with a work unit ID override.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &workUnitGetRun{af: af}
 			r.af.Register(&r.Flags)
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
-			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Additionally print metadata, tags, and properties")
+			r.Flags.BoolVar(&r.showMetadata, "metadata", false, "Show additional work unit metadata and tags")
 			return r
 		},
 	}
@@ -93,7 +93,6 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	}
 
 	clean := base.TrimResourceURL(name)
-	base.RecordWorkUnit(clean, "")
 
 	if err := r.af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
@@ -111,6 +110,7 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		fmt.Fprintf(os.Stderr, "GetWorkUnit RPC failed: %s\n", err)
 		return 1
 	}
+	base.RecordWorkUnit(wu.Name, "")
 
 	if wu.WorkUnitId != "" {
 		fmt.Printf("Work Unit ID: %s\n", wu.WorkUnitId)

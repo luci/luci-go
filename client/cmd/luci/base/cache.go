@@ -33,6 +33,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -49,22 +50,107 @@ type CacheData struct {
 	Artifact   string `json:"artifact,omitempty"`
 }
 
+// IsEmpty returns true if no resource components are stored in the cache data.
+func (cd *CacheData) IsEmpty() bool {
+	return cd == nil || (cd.Invocation == "" && cd.WorkUnitID == "" && cd.WorkUnit == "" && cd.TestID == "" && cd.ResultID == "" && cd.TestResult == "" && cd.Verdict == "" && cd.Artifact == "")
+}
+
 var (
-	cacheMu      sync.Mutex
-	testCacheDir string
+	cacheMu       sync.Mutex
+	testCacheDir  string
+	testSessionID string
 )
 
-func getCachePath() string {
+// SetTestSessionID sets an explicit session ID for testing.
+func SetTestSessionID(id string) {
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
+	testSessionID = id
+}
+
+// sanitizeSessionID cleans a session or TTY name for use in a file path.
+func sanitizeSessionID(s string) string {
+	s = strings.TrimSpace(s)
+	s = strings.TrimPrefix(s, "/dev/")
+	s = strings.TrimPrefix(s, "dev/")
+	var b strings.Builder
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' {
+			b.WriteRune(r)
+		} else if r == '/' || r == '.' || r == ':' {
+			b.WriteRune('_')
+		}
+	}
+	res := b.String()
+	if res == "" {
+		return "default"
+	}
+	return res
+}
+
+// GetSessionID determines the session/terminal identifier for scoping the cache.
+// It prioritizes explicit environment variables (e.g. LUCI_SESSION_ID, ANTIGRAVITY_CONVERSATION_ID,
+// INVOKER_INFO_SESSION_ID, CONVERSATION_ID), then checks controlling TTY file descriptors on Linux/Unix.
+func GetSessionID() string {
+	if testSessionID != "" {
+		return sanitizeSessionID(testSessionID)
+	}
+	for _, env := range []string{
+		"LUCI_SESSION_ID",
+		"LUCI_CACHE_ID",
+		"LUCI_CONTEXT_ID",
+		"ANTIGRAVITY_CONVERSATION_ID",
+		"INVOKER_INFO_SESSION_ID",
+		"INVOKER_INFO_ROOT_SESSION_ID",
+		"ANTIGRAVITY_TRAJECTORY_ID",
+		"CONVERSATION_ID",
+		"TERM_SESSION_ID",
+		"TMUX_PANE",
+		"SSH_TTY",
+		"TTY",
+	} {
+		if val := strings.TrimSpace(os.Getenv(env)); val != "" {
+			return sanitizeSessionID(val)
+		}
+	}
+	// Check standard file descriptors for TTY on Linux / Unix
+	for _, fdPath := range []string{"/proc/self/fd/0", "/proc/self/fd/1", "/proc/self/fd/2", "/dev/fd/0", "/dev/fd/1", "/dev/fd/2"} {
+		if target, err := os.Readlink(fdPath); err == nil && target != "" {
+			if strings.HasPrefix(target, "/dev/pts/") || strings.HasPrefix(target, "/dev/tty") {
+				return sanitizeSessionID(target)
+			}
+		}
+	}
+	return "default"
+}
+
+func getCacheDir() string {
 	if testCacheDir != "" {
-		return filepath.Join(testCacheDir, "last_resources.json")
+		return testCacheDir
 	}
 	if cacheDir, err := os.UserCacheDir(); err == nil && cacheDir != "" {
-		return filepath.Join(cacheDir, "luci", "last_resources.json")
+		return filepath.Join(cacheDir, "luci")
 	}
 	if homeDir, err := os.UserHomeDir(); err == nil && homeDir != "" {
-		return filepath.Join(homeDir, ".luci", "last_resources.json")
+		return filepath.Join(homeDir, ".luci")
 	}
-	return filepath.Join(os.TempDir(), fmt.Sprintf("luci_last_resources_%d.json", os.Getuid()))
+	return os.TempDir()
+}
+
+func getCachePathForSession(sessionID string) string {
+	dir := getCacheDir()
+	fileName := "last_resources.json"
+	if sessionID != "" && sessionID != "default" {
+		fileName = fmt.Sprintf("last_resources_%s.json", sessionID)
+	}
+	if dir == os.TempDir() {
+		return filepath.Join(dir, fmt.Sprintf("luci_last_resources_%d_%s.json", os.Getuid(), sessionID))
+	}
+	return filepath.Join(dir, fileName)
+}
+
+func getCachePath() string {
+	return getCachePathForSession(GetSessionID())
 }
 
 // SetTestCacheDir sets a temporary cache directory for testing.
@@ -75,26 +161,79 @@ func SetTestCacheDir(dir string) {
 }
 
 // LoadCache loads the cached resources.
+// If the session-specific cache file does not exist or is empty, it falls back to
+// checking the default cache file ("last_resources.json") or other recent session
+// cache files in the cache directory if modified within the last 10 minutes.
 func LoadCache() (*CacheData, error) {
 	cacheMu.Lock()
 	defer cacheMu.Unlock()
-	p := getCachePath()
-	data, err := os.ReadFile(p)
-	if err != nil {
-		return &CacheData{}, nil
+	sessionID := GetSessionID()
+	p := getCachePathForSession(sessionID)
+	if data, err := os.ReadFile(p); err == nil {
+		var cd CacheData
+		if err := json.Unmarshal(data, &cd); err == nil && !cd.IsEmpty() {
+			return &cd, nil
+		}
 	}
-	var cd CacheData
-	if err := json.Unmarshal(data, &cd); err != nil {
-		return &CacheData{}, nil
+
+	// Fallback 1: If session-specific cache is empty or missing, check default cache file
+	if sessionID != "default" {
+		defaultPath := getCachePathForSession("default")
+		if info, err := os.Stat(defaultPath); err == nil {
+			if time.Since(info.ModTime()) <= 10*time.Minute {
+				if data, err := os.ReadFile(defaultPath); err == nil {
+					var cd CacheData
+					if err := json.Unmarshal(data, &cd); err == nil && !cd.IsEmpty() {
+						return &cd, nil
+					}
+				}
+			}
+		}
 	}
-	return &cd, nil
+
+	// Fallback 2: Check any recent cache file in the cache directory
+	dir := getCacheDir()
+	prefix := "last_resources"
+	if dir == os.TempDir() {
+		prefix = fmt.Sprintf("luci_last_resources_%d_", os.Getuid())
+	}
+	if entries, err := os.ReadDir(dir); err == nil {
+		var mostRecentPath string
+		var mostRecentTime time.Time
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasPrefix(entry.Name(), prefix) || !strings.HasSuffix(entry.Name(), ".json") {
+				continue
+			}
+			filePath := filepath.Join(dir, entry.Name())
+			if filePath == p {
+				continue
+			}
+			if info, err := entry.Info(); err == nil {
+				if time.Since(info.ModTime()) <= 10*time.Minute && info.ModTime().After(mostRecentTime) {
+					mostRecentTime = info.ModTime()
+					mostRecentPath = filePath
+				}
+			}
+		}
+		if mostRecentPath != "" {
+			if data, err := os.ReadFile(mostRecentPath); err == nil {
+				var cd CacheData
+				if err := json.Unmarshal(data, &cd); err == nil && !cd.IsEmpty() {
+					return &cd, nil
+				}
+			}
+		}
+	}
+
+	return &CacheData{}, nil
 }
 
 // SaveCache updates and persists the cached resources.
 func SaveCache(update func(cd *CacheData)) error {
 	cacheMu.Lock()
 	defer cacheMu.Unlock()
-	p := getCachePath()
+	sessionID := GetSessionID()
+	p := getCachePathForSession(sessionID)
 	var cd CacheData
 	if data, err := os.ReadFile(p); err == nil {
 		_ = json.Unmarshal(data, &cd)
@@ -182,9 +321,8 @@ func (cd *CacheData) SetInvocation(inv string) {
 	if inv == "" || inv == "-" || isFlagLike(inv) {
 		return
 	}
-	if cd.Invocation != inv {
-		cd.Invocation = inv
-		// Invalidate all children of the old invocation
+	if cd.Invocation != "" && cd.Invocation != inv {
+		// Invalidate all children of the old invocation when switching to a different invocation
 		cd.WorkUnitID = ""
 		cd.WorkUnit = ""
 		cd.TestID = ""
@@ -193,6 +331,7 @@ func (cd *CacheData) SetInvocation(inv string) {
 		cd.Verdict = ""
 		cd.Artifact = ""
 	}
+	cd.Invocation = inv
 }
 
 // SetTestID updates the cached test ID, invalidating child results if changed.
