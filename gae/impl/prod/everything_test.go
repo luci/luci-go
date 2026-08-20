@@ -185,8 +185,8 @@ func TestBasicDatastore(t *testing.T) {
 
 			t.Run("Can project", func(t *ftt.Test) {
 				q := ds.NewQuery("TestStruct").Project("ValueS")
-				rslts := []ds.PropertyMap{}
-				assert.Loosely(t, ds.GetAll(ctx, q, &rslts), should.BeNil)
+				rslts, err := ds.RunQuery[ds.PropertyMap](ctx, q).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, rslts, should.Match([]ds.PropertyMap{
 					{
 						"$key":   mpNI(ds.KeyForObj(ctx, &orig)),
@@ -199,8 +199,8 @@ func TestBasicDatastore(t *testing.T) {
 				}))
 
 				q = ds.NewQuery("TestStruct").Project("ValueBS")
-				rslts = []ds.PropertyMap{}
-				assert.Loosely(t, ds.GetAll(ctx, q, &rslts), should.BeNil)
+				rslts, err = ds.RunQuery[ds.PropertyMap](ctx, q).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, rslts, should.Match([]ds.PropertyMap{
 					{
 						"$key":    mpNI(ds.KeyForObj(ctx, &orig)),
@@ -225,8 +225,8 @@ func TestBasicDatastore(t *testing.T) {
 				assert.Loosely(t, count, should.Equal(4))
 
 				q = ds.NewQuery("TestStruct").Lte("ValueI", 7).Project("ValueS").Distinct(true)
-				rslts = []ds.PropertyMap{}
-				assert.Loosely(t, ds.GetAll(ctx, q, &rslts), should.BeNil)
+				rslts, err = ds.RunQuery[ds.PropertyMap](ctx, q).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, rslts, should.Match([]ds.PropertyMap{
 					{
 						"$key":   mpNI(ds.KeyForObj(ctx, &orig)),
@@ -274,8 +274,8 @@ func TestBasicDatastore(t *testing.T) {
 			assert.Loosely(t, pm.Slice("Time")[0].Value(), should.Match(rslt.Slice("Time")[0].Value()))
 
 			q := ds.NewQuery("Something").Project("Time")
-			all := []ds.PropertyMap{}
-			assert.Loosely(t, ds.GetAll(ctx, q, &all), should.BeNil)
+			all, err := ds.RunQuery[ds.PropertyMap](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(all), should.Equal(2))
 			prop := all[0].Slice("Time")[0]
 			assert.Loosely(t, prop.Type(), should.Equal(ds.PTInt))

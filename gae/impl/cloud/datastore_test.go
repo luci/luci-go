@@ -298,8 +298,8 @@ func TestDatastore(t *testing.T) {
 
 			// Execute a kindless query to clear the namespace.
 			q := ds.NewQuery("").KeysOnly(true)
-			var allKeys []*ds.Key
-			assert.Loosely(t, ds.GetAll(c, q, &allKeys), should.BeNil)
+			allKeys, err := ds.RunQuery[*ds.Key](c, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ds.Delete(c, allKeys), should.BeNil)
 
 			t.Run(`Can allocate an ID range`, func(t *ftt.Test) {
@@ -384,8 +384,8 @@ func TestDatastore(t *testing.T) {
 					assert.NoErr(t, err)
 
 					// Actually stored them all with some unknown IDs.
-					var stored []*Ent
-					assert.NoErr(t, ds.GetAll(c, ds.NewQuery("Ent"), &stored))
+					stored, err := ds.RunQuery[*Ent](c, ds.NewQuery("Ent")).AsSlice()
+					assert.NoErr(t, err)
 					assert.Loosely(t, stored, should.HaveLength(len(ents)))
 				})
 			})
@@ -511,9 +511,9 @@ func TestDatastore(t *testing.T) {
 				q := ds.NewQuery("Test")
 
 				t.Run(`Can query for entities with FooBar == true.`, func(t *ftt.Test) {
-					var results []ds.PropertyMap
 					q = q.Eq("FooBar", true)
-					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
+					results, err := ds.RunQuery[ds.PropertyMap](c, q).AsSlice()
+					assert.Loosely(t, err, should.BeNil)
 
 					assert.Loosely(t, results, should.Match([]ds.PropertyMap{
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "bar")), "FooBar": mkp(true)}),
@@ -522,9 +522,9 @@ func TestDatastore(t *testing.T) {
 				})
 
 				t.Run(`Can query for entities whose __key__ > "baz".`, func(t *ftt.Test) {
-					var results []ds.PropertyMap
 					q = q.Gt("__key__", ds.MakeKey(c, "Test", "baz"))
-					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
+					results, err := ds.RunQuery[ds.PropertyMap](c, q).AsSlice()
+					assert.Loosely(t, err, should.BeNil)
 
 					assert.Loosely(t, results, should.Match([]ds.PropertyMap{
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))}),
@@ -535,9 +535,9 @@ func TestDatastore(t *testing.T) {
 				})
 
 				t.Run(`Can query for entities whose ancestor is "baz".`, func(t *ftt.Test) {
-					var results []ds.PropertyMap
 					q := ds.NewQuery("Test").Ancestor(ds.MakeKey(c, "Test", "baz"))
-					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
+					results, err := ds.RunQuery[ds.PropertyMap](c, q).AsSlice()
+					assert.Loosely(t, err, should.BeNil)
 
 					assert.Loosely(t, results, should.Match([]ds.PropertyMap{
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz"))}),
@@ -551,9 +551,9 @@ func TestDatastore(t *testing.T) {
 					// support IN queries, see https://cloud.google.com/datastore/docs/tools/datastore-emulator#known_issues
 					t.Skip("Cloud Datastore emulator doesn't support IN queries")
 
-					var results []*ds.Key
 					q := ds.NewQuery("AAA").In("Slice", "b", "c").KeysOnly(true)
-					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
+					results, err := ds.RunQuery[*ds.Key](c, q).AsSlice()
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, results, should.Match([]*ds.Key{
 						ds.MakeKey(c, "AAA", "e1"),
 						ds.MakeKey(c, "AAA", "e2"),

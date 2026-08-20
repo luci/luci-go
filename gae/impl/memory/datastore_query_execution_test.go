@@ -636,8 +636,8 @@ func TestQueryExecution(t *testing.T) {
 										assert.Loosely(t, err, shouldBeSuccessful)
 										assert.Loosely(t, count, should.Equal(expect.count))
 
-										rslt := []*ds.Key(nil)
-										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
+										rslt, err := ds.RunQuery[*ds.Key](c, expect.q).AsSlice()
+										assert.Loosely(t, err, shouldBeSuccessful)
 										assert.Loosely(t, len(rslt), should.Equal(len(expect.keys)))
 										for i, r := range rslt {
 											assert.Loosely(t, r, should.Match(expect.keys[i]))
@@ -655,8 +655,8 @@ func TestQueryExecution(t *testing.T) {
 										assert.Loosely(t, err, shouldBeSuccessful)
 										assert.Loosely(t, count, should.Equal(expect.count))
 
-										rslt := []ds.PropertyMap(nil)
-										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
+										rslt, err := ds.RunQuery[ds.PropertyMap](c, expect.q).AsSlice()
+										assert.Loosely(t, err, shouldBeSuccessful)
 										assert.Loosely(t, len(rslt), should.Equal(len(expect.get)))
 										for i, r := range rslt {
 											assert.Loosely(t, r, should.Match(expect.get[i]))

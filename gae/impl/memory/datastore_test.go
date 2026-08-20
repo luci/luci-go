@@ -844,9 +844,9 @@ func TestAddIndexes(t *testing.T) {
 			// Initial query, no indexes, will fail.
 			ds.GetTestable(ctx).CatchupIndexes()
 
-			var results []*Foo
 			q := ds.NewQuery("Foo").Eq("Val", 2).Gte("Name", "bar")
-			assert.Loosely(t, ds.GetAll(ctx, q, &results), should.ErrLike("Insufficient indexes"))
+			results, err := ds.RunQuery[*Foo](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.ErrLike("Insufficient indexes"))
 
 			// Add index for default namespace.
 			ds.GetTestable(ctx).AddIndexes(&ds.IndexDefinition{
@@ -864,8 +864,8 @@ func TestAddIndexes(t *testing.T) {
 					continue
 				}
 
-				results = nil
-				assert.Loosely(t, ds.GetAll(infoS.MustNamespace(ctx, ns), q, &results), should.BeNil)
+				results, err := ds.RunQuery[*Foo](infoS.MustNamespace(ctx, ns), q).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(results), should.Equal(2))
 			}
 
@@ -873,8 +873,8 @@ func TestAddIndexes(t *testing.T) {
 			assert.Loosely(t, ds.Put(infoS.MustNamespace(ctx, "qux"), foos), should.BeNil)
 			ds.GetTestable(ctx).CatchupIndexes()
 
-			results = nil
-			assert.Loosely(t, ds.GetAll(infoS.MustNamespace(ctx, "qux"), q, &results), should.BeNil)
+			results, err = ds.RunQuery[*Foo](infoS.MustNamespace(ctx, "qux"), q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(results), should.Equal(2))
 		})
 	})
