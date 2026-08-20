@@ -26,7 +26,28 @@ import { WorkflowType } from '../../fake_turboci_graph';
 import { TYPE_URL_BUILD_RESULT } from '../../utils/check_utils';
 import { ChronicleContext, ChronicleContextType } from '../context';
 
-import { Component as TreeView } from './tree_view';
+import { Component as TreeView, TREE_ROW_HEIGHT } from './tree_view';
+
+jest.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: ({
+    count,
+    getItemKey,
+  }: {
+    count: number;
+    getItemKey?: (index: number) => number | string;
+  }) => ({
+    getVirtualItems: () =>
+      Array.from({ length: count }).map((_, i) => ({
+        index: i,
+        start: i * TREE_ROW_HEIGHT,
+        size: TREE_ROW_HEIGHT,
+        key: getItemKey ? getItemKey(i) : i,
+        measureElement: () => {},
+      })),
+    getTotalSize: () => count * TREE_ROW_HEIGHT,
+    scrollToIndex: () => {},
+  }),
+}));
 
 jest.mock('@/generic_libs/components/routed_tabs/context', () => ({
   ...jest.requireActual('@/generic_libs/components/routed_tabs/context'),
@@ -214,5 +235,25 @@ describe('TreeView', () => {
     expect(
       within(tree).getAllByTestId('FiberManualRecordIcon').length,
     ).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders loading spinner when graph is not yet available', () => {
+    render(
+      <FakeContextProvider>
+        <ChronicleContext.Provider
+          value={{
+            ...mockContext,
+            graph: undefined,
+          }}
+        >
+          <TreeView />
+        </ChronicleContext.Provider>
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(
+      screen.queryByText('No graph data available.'),
+    ).not.toBeInTheDocument();
   });
 });

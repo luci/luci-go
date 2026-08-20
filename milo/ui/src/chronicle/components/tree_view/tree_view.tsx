@@ -22,8 +22,9 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import SearchIcon from '@mui/icons-material/Search';
-import { Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   memo,
   useCallback,
@@ -130,6 +131,8 @@ const StatusIcon = ({ node }: { node: GraphNode }) => {
     : getCheckStatusIcon(node);
 };
 
+export const TREE_ROW_HEIGHT = 29;
+
 const StyledTreeRowRoot = styled(Box, {
   shouldForwardProp: (prop) =>
     prop !== 'depth' &&
@@ -142,6 +145,8 @@ const StyledTreeRowRoot = styled(Box, {
   isSelected: boolean;
   isRepeated: boolean;
 }>(({ depth, isMatch, isSelected, isRepeated }) => ({
+  height: `${TREE_ROW_HEIGHT}px`,
+  boxSizing: 'border-box',
   paddingLeft: `${depth * 24}px`,
   display: 'flex',
   alignItems: 'center',
@@ -170,6 +175,8 @@ const StyledTreeRowRoot = styled(Box, {
 const StyledRepeatedTreeRowRoot = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'depth' && prop !== 'isSelected',
 })<{ depth: number; isSelected: boolean }>(({ depth, isSelected }) => ({
+  height: `${TREE_ROW_HEIGHT}px`,
+  boxSizing: 'border-box',
   paddingLeft: `${depth * 24}px`,
   display: 'flex',
   alignItems: 'center',
@@ -370,8 +377,7 @@ const StyledInput = styled('input', {
 function Tree() {
   useDeclareTabId('tree');
 
-  const { graph: turboCiGraph, valueDataMap: valueDataMap } =
-    useContext(ChronicleContext);
+  const { graph: turboCiGraph, valueDataMap } = useContext(ChronicleContext);
 
   const graph = useMemo(() => {
     if (!turboCiGraph) return { nodes: {}, roots: [] };
@@ -379,8 +385,10 @@ function Tree() {
     const stages = Object.values(turboCiGraph.stages) as Stage[];
     const checks = Object.values(turboCiGraph.checks) as Check[];
 
-    return buildVisualGraph(stages, checks, valueDataMap);
+    return buildVisualGraph(stages, checks, valueDataMap || new Map());
   }, [turboCiGraph, valueDataMap]);
+
+  const treeContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     visibleItems,
@@ -393,8 +401,19 @@ function Tree() {
     setSearchQuery,
   } = useTree({ graph });
 
+  // Virtualizes the flattened tree list so only nodes currently in (or near) the viewport are mounted into the DOM.
+  const rowVirtualizer = useVirtualizer({
+    count: visibleItems.length,
+    getScrollElement: () => treeContainerRef.current,
+    // Estimated row height in pixels (TREE_ROW_HEIGHT = 29px).
+    estimateSize: () => TREE_ROW_HEIGHT,
+    // Number of additional rows to render above and below the visible viewport.
+    // Overscanning prevents blank spaces from flashing when scrolling quickly.
+    overscan: 20,
+    getItemKey: (index) => visibleItems[index]?.key || index,
+  });
+
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const treeContainerRef = useRef<HTMLDivElement>(null);
 
   const selectedItem = useMemo(() => {
     return visibleItems.find((item) => item.key === selectedKey);
@@ -433,20 +452,31 @@ function Tree() {
     border: '1px solid #ccc',
   });
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'row', minHeight: '100%' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'row',
+        height: 'calc(100vh - 48px)',
+        overflow: 'hidden',
+      }}
+    >
       <Box
         sx={{
           flex: 1,
           minWidth: 0,
+          minHeight: 0,
           maxWidth: '100%',
           display: 'flex',
           flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden',
         }}
       >
         <Box
           sx={{
             padding: '15px',
             borderBottom: '1px solid #eee',
+            flexShrink: 0,
           }}
         >
           <Box sx={{ marginBottom: '15px', position: 'relative' }}>
@@ -507,41 +537,77 @@ function Tree() {
           onKeyDown={onTreeKeyDown}
           sx={{
             outline: 'none',
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
           }}
         >
-          {visibleItems.length === 0 ? (
+          {!turboCiGraph ? (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+                minHeight: '200px',
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          ) : visibleItems.length === 0 ? (
             <Box sx={{ padding: '20px', color: '#666', textAlign: 'center' }}>
               {searchQuery
                 ? 'No nodes match your filter.'
                 : 'No graph data available.'}
             </Box>
           ) : (
-            visibleItems.map((item, index) => {
-              const node = graph.nodes[item.id];
-              const isCollapsedRepeat =
-                item.isRepeated && !expandedIds.has(item.id);
-              const size = isCollapsedRepeat
-                ? subtreeSize(graph, item.id)
-                : undefined;
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const item = visibleItems[virtualRow.index];
+                if (!item) return null;
+                const node = graph.nodes[item.id];
+                const isCollapsedRepeat =
+                  item.isRepeated && !expandedIds.has(item.id);
+                const size = isCollapsedRepeat
+                  ? subtreeSize(graph, item.id)
+                  : undefined;
 
-              return (
-                <TreeRow
-                  key={item.key}
-                  index={index}
-                  item={item}
-                  node={node}
-                  isSelected={selectedKey === item.key}
-                  isExpanded={expandedIds.has(item.id)}
-                  subtreeSizeForRepeat={size}
-                  treeContainerRef={treeContainerRef}
-                  onClick={() => setSelectedKey(item.key)}
-                  onToggle={() => {
-                    setSelectedKey(item.key);
-                    toggleKey(item.key);
-                  }}
-                />
-              );
-            })
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <TreeRow
+                      index={virtualRow.index}
+                      item={item}
+                      node={node}
+                      isSelected={selectedKey === item.key}
+                      isExpanded={expandedIds.has(item.id)}
+                      subtreeSizeForRepeat={size}
+                      treeContainerRef={treeContainerRef}
+                      onClick={() => setSelectedKey(item.key)}
+                      onToggle={() => {
+                        setSelectedKey(item.key);
+                        toggleKey(item.key);
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           )}
         </Box>
       </Box>
@@ -555,9 +621,8 @@ function Tree() {
             width: '450px', // Fixed width for the details pane
             flexShrink: 0,
             borderLeft: '1px solid #eee',
-            position: 'sticky', // Inspector panel floats on the right.
-            top: 0, // Adjust this value if we need a fixed header (e.g. top: '64px')
-            height: '100vh', // Occupy full viewport height
+            height: '100%',
+            overflowY: 'auto',
             zIndex: 1,
           }}
         >
