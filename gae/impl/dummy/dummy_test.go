@@ -49,7 +49,7 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		// needed for everything else
-		c = infoS.Set(c, Info())
+		c = infoS.Set(c, Info{})
 
 		t.Run("Info", func(t *ftt.Test) {
 			assert.Loosely(t, infoS.Raw(c), should.NotBeNilInterface)
@@ -70,7 +70,7 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		t.Run("Datastore", func(t *ftt.Test) {
-			c = dsS.SetRaw(c, Datastore())
+			c = dsS.SetRaw(c, Datastore{})
 			assert.Loosely(t, dsS.Raw(c), should.NotBeNil)
 			assert.Loosely(t, func() {
 				defer p()
@@ -79,7 +79,7 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		t.Run("Memcache", func(t *ftt.Test) {
-			c = mcS.SetRaw(c, Memcache())
+			c = mcS.SetRaw(c, Memcache{})
 			assert.Loosely(t, mcS.Raw(c), should.NotBeNilInterface)
 			assert.Loosely(t, func() {
 				defer p()
@@ -88,7 +88,7 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		t.Run("TaskQueue", func(t *ftt.Test) {
-			c = tqS.SetRaw(c, TaskQueue())
+			c = tqS.SetRaw(c, TaskQueue{})
 			assert.Loosely(t, tqS.Raw(c), should.NotBeNilInterface)
 			assert.Loosely(t, func() {
 				defer p()
@@ -97,7 +97,7 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		t.Run("User", func(t *ftt.Test) {
-			c = userS.Set(c, User())
+			c = userS.Set(c, User{})
 			assert.Loosely(t, userS.Raw(c), should.NotBeNilInterface)
 			assert.Loosely(t, func() {
 				defer p()
@@ -106,7 +106,7 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		t.Run("Mail", func(t *ftt.Test) {
-			c = mailS.Set(c, Mail())
+			c = mailS.Set(c, Mail{})
 			assert.Loosely(t, mailS.Raw(c), should.NotBeNilInterface)
 			assert.Loosely(t, func() {
 				defer p()
@@ -115,7 +115,7 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		t.Run("Module", func(t *ftt.Test) {
-			c = modS.Set(c, Module())
+			c = modS.Set(c, Module{})
 			assert.Loosely(t, modS.Raw(c), should.NotBeNilInterface)
 			assert.Loosely(t, func() {
 				defer p()

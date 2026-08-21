@@ -92,11 +92,11 @@ type ConfigLite struct {
 // stubs will panic if called.
 func (cfg *ConfigLite) Use(c context.Context) context.Context {
 	// Dummy services that we don't support.
-	c = mail.Set(c, dummy.Mail())
-	c = module.Set(c, dummy.Module())
-	c = taskqueue.SetRaw(c, dummy.TaskQueue())
-	c = user.Set(c, dummy.User())
-	c = mc.SetRaw(c, dummy.Memcache())
+	c = mail.Set(c, dummy.Mail{})
+	c = module.Set(c, dummy.Module{})
+	c = taskqueue.SetRaw(c, dummy.TaskQueue{})
+	c = user.Set(c, dummy.User{})
+	c = mc.SetRaw(c, dummy.Memcache{})
 
 	c = useInfo(c, &serviceInstanceGlobalInfo{
 		IsDev:              cfg.IsDev,
@@ -112,7 +112,7 @@ func (cfg *ConfigLite) Use(c context.Context) context.Context {
 		cds := cloudDatastore{client: cfg.DS}
 		c = cds.use(c)
 	} else {
-		c = ds.SetRaw(c, dummy.Datastore())
+		c = ds.SetRaw(c, dummy.Datastore{})
 	}
 
 	return c

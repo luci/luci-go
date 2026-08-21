@@ -62,7 +62,7 @@ func useGID(c context.Context, f func(mod *globalInfoData)) context.Context {
 // by gae.GetGI(c)
 func useGI(c context.Context) context.Context {
 	return info.SetFactory(c, func(ic context.Context) info.RawInterface {
-		return &giImpl{dummy.Info(), curGID(ic), ic}
+		return &giImpl{dummy.Info{}, curGID(ic), ic}
 	})
 }
 

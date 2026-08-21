@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/gae/impl/dummy"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	mc "go.chromium.org/luci/gae/service/datastore/internal/protos/multicursor"
@@ -33,6 +34,14 @@ type mockRawCursor string
 
 func (m mockRawCursor) String() string {
 	return string(m)
+}
+
+type mockRawCursorDecoder struct {
+	dummy.Datastore
+}
+
+func (m mockRawCursorDecoder) DecodeCursor(curs string) (datastore.RawCursor, error) {
+	return mockRawCursor(curs), nil
 }
 
 func TestCursorSerialization(t *testing.T) {
@@ -79,7 +88,20 @@ func TestCursorSerialization(t *testing.T) {
 			assert.NoErr(t, err)
 			remaining = append(remaining, r.ID)
 		}
-		assert.Loosely(t, remaining, should.Resemble([]string{"c", "d", "e"}))
+		assert.Loosely(t, remaining, should.Match([]string{"c", "d", "e"}))
+	})
+
+	t.Run("Single-cursor is passed through, multi gets proto wrapper", func(t *testing.T) {
+		raw := mockRawCursor("hello")
+		c := datastore.Cursor{raw}
+		assert.That(t, string(raw), should.Match(c.String()))
+
+		c = datastore.Cursor{raw, raw}
+		ctx := datastore.SetRaw(ctx, mockRawCursorDecoder{})
+
+		decoded, err := datastore.DecodeCursor(ctx, c.String())
+		assert.NoErr(t, err)
+		assert.Loosely(t, decoded, should.HaveLength(2))
 	})
 
 	t.Run("Multi cursor with nil elements round-trip", func(t *testing.T) {

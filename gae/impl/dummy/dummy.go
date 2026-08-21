@@ -43,8 +43,8 @@ const niFmtStr = "dummy: method %s.%s is not implemented"
 // avoids copy+paste errors (such as if each one of them filled in the template
 // manually).
 //
-// If this function is somehow called from something other than one of the dummy
-// objects in this package, it will substitute the string UNKNOWN for the
+// If this function is somehow called from something other than one of the
+// dummy objects in this package, it will substitute the string UNKNOWN for the
 // interface and/or the method in the niFmtStr template.
 func ni() error {
 	iface := "UNKNOWN"
@@ -57,19 +57,19 @@ func ni() error {
 			parts := strings.Split(n, ".")
 			if len(parts) > 2 {
 				switch parts[len(parts)-2] {
-				case "ds":
+				case "Datastore":
 					iface = "Datastore"
-				case "i":
+				case "Info":
 					iface = "Info"
-				case "m":
+				case "Mail":
 					iface = "Mail"
-				case "mc":
+				case "Memcache":
 					iface = "Memcache"
-				case "mod":
+				case "Module":
 					iface = "Module"
-				case "tq":
+				case "TaskQueue":
 					iface = "TaskQueue"
-				case "u":
+				case "User":
 					iface = "User"
 				}
 				funcName = parts[len(parts)-1]
@@ -80,90 +80,91 @@ func ni() error {
 	return fmt.Errorf(niFmtStr, iface, funcName)
 }
 
-/////////////////////////////////// ds ////////////////////////////////////
+/////////////////////////////////// Datastore ////////////////////////////////////
 
-type ds struct{}
-
-func (ds) AllocateIDs([]*datastore.Key, datastore.NewKeyCB) error { panic(ni()) }
-func (ds) PutMulti([]*datastore.Key, []datastore.PropertyMap, datastore.NewKeyCB) error {
-	panic(ni())
-}
-func (ds) GetMulti([]*datastore.Key, datastore.MultiMetaGetter, datastore.GetMultiCB) error {
-	panic(ni())
-}
-func (ds) DeleteMulti([]*datastore.Key, datastore.DeleteMultiCB) error { panic(ni()) }
-func (ds) DecodeCursor(string) (datastore.RawCursor, error)            { panic(ni()) }
-func (ds) Count(*datastore.FinalizedQuery) (int64, error)              { panic(ni()) }
-func (ds) RunQuery(*datastore.FinalizedQuery) datastore.RawQueryIter   { panic(ni()) }
-func (ds) RunInTransaction(func(context.Context) error, *datastore.TransactionOptions) error {
-	panic(ni())
-}
-func (ds) WithoutTransaction() context.Context       { panic(ni()) }
-func (ds) CurrentTransaction() datastore.Transaction { panic(ni()) }
-
-func (ds) Constraints() datastore.Constraints { return datastore.Constraints{} }
-func (ds) GetTestable() datastore.Testable    { return nil }
-
-var dummyDSInst = ds{}
-
-// Datastore returns a dummy datastore.RawInterface implementation suitable
+// Datastore is a dummy datastore.RawInterface implementation suitable
 // for embedding. Every method panics with a message containing the name of the
 // method which was unimplemented.
-func Datastore() datastore.RawInterface { return dummyDSInst }
+type Datastore struct{}
 
-/////////////////////////////////// mc ////////////////////////////////////
+var _ datastore.RawInterface = Datastore{}
 
-type mc struct{}
-
-func (mc) NewItem(string) memcache.Item                              { panic(ni()) }
-func (mc) AddMulti([]memcache.Item, memcache.RawCB) error            { panic(ni()) }
-func (mc) SetMulti([]memcache.Item, memcache.RawCB) error            { panic(ni()) }
-func (mc) GetMulti([]string, memcache.RawItemCB) error               { panic(ni()) }
-func (mc) DeleteMulti([]string, memcache.RawCB) error                { panic(ni()) }
-func (mc) CompareAndSwapMulti([]memcache.Item, memcache.RawCB) error { panic(ni()) }
-func (mc) Increment(string, int64, *uint64) (uint64, error)          { panic(ni()) }
-func (mc) Flush() error                                              { panic(ni()) }
-func (mc) Stats() (*memcache.Statistics, error)                      { panic(ni()) }
-
-var dummyMCInst = mc{}
-
-// Memcache returns a dummy memcache.RawInterface implementation suitable for
-// embedding.  Every method panics with a message containing the name of the
-// method which was unimplemented.
-func Memcache() memcache.RawInterface { return dummyMCInst }
-
-/////////////////////////////////// tq ////////////////////////////////////
-
-type tq struct{}
-
-func (tq) AddMulti([]*taskqueue.Task, string, taskqueue.RawTaskCB) error            { panic(ni()) }
-func (tq) DeleteMulti([]*taskqueue.Task, string, taskqueue.RawCB) error             { panic(ni()) }
-func (tq) Lease(int, string, time.Duration) ([]*taskqueue.Task, error)              { panic(ni()) }
-func (tq) LeaseByTag(int, string, time.Duration, string) ([]*taskqueue.Task, error) { panic(ni()) }
-func (tq) ModifyLease(*taskqueue.Task, string, time.Duration) error                 { panic(ni()) }
-func (tq) Purge(string) error                                                       { panic(ni()) }
-func (tq) Stats([]string, taskqueue.RawStatsCB) error                               { panic(ni()) }
-func (tq) Constraints() taskqueue.Constraints                                       { panic(ni()) }
-func (tq) GetTestable() taskqueue.Testable                                          { return nil }
-
-var dummyTQInst = tq{}
-
-// TaskQueue returns a dummy taskqueue.RawInterface implementation suitable for
-// embedding.  Every method panics with a message containing the name of the
-// method which was unimplemented.
-func TaskQueue() taskqueue.RawInterface { return dummyTQInst }
-
-/////////////////////////////////// i ////////////////////////////////////
-
-type i struct{}
-
-func (i) AccessToken(...string) (token string, expiry time.Time, err error) {
+func (Datastore) AllocateIDs([]*datastore.Key, datastore.NewKeyCB) error { panic(ni()) }
+func (Datastore) PutMulti([]*datastore.Key, []datastore.PropertyMap, datastore.NewKeyCB) error {
 	panic(ni())
 }
-func (i) AppID() string               { return "appid" }
-func (i) FullyQualifiedAppID() string { return "dummy~appid" }
-func (i) GetNamespace() string        { return "dummy-namespace" }
-func (i) ModuleHostname(module, version, instance string) (string, error) {
+func (Datastore) GetMulti([]*datastore.Key, datastore.MultiMetaGetter, datastore.GetMultiCB) error {
+	panic(ni())
+}
+func (Datastore) DeleteMulti([]*datastore.Key, datastore.DeleteMultiCB) error { panic(ni()) }
+func (Datastore) DecodeCursor(string) (datastore.RawCursor, error)            { panic(ni()) }
+func (Datastore) Count(*datastore.FinalizedQuery) (int64, error)              { panic(ni()) }
+func (Datastore) RunQuery(*datastore.FinalizedQuery) datastore.RawQueryIter   { panic(ni()) }
+func (Datastore) RunInTransaction(func(context.Context) error, *datastore.TransactionOptions) error {
+	panic(ni())
+}
+func (Datastore) WithoutTransaction() context.Context       { panic(ni()) }
+func (Datastore) CurrentTransaction() datastore.Transaction { panic(ni()) }
+
+func (Datastore) Constraints() datastore.Constraints { return datastore.Constraints{} }
+func (Datastore) GetTestable() datastore.Testable    { return nil }
+
+/////////////////////////////////// Memcache ////////////////////////////////////
+
+// Memcache is a dummy memcache.RawInterface implementation suitable for
+// embedding.  Every method panics with a message containing the name of the
+// method which was unimplemented.
+type Memcache struct{}
+
+var _ memcache.RawInterface = Memcache{}
+
+func (Memcache) NewItem(string) memcache.Item                              { panic(ni()) }
+func (Memcache) AddMulti([]memcache.Item, memcache.RawCB) error            { panic(ni()) }
+func (Memcache) SetMulti([]memcache.Item, memcache.RawCB) error            { panic(ni()) }
+func (Memcache) GetMulti([]string, memcache.RawItemCB) error               { panic(ni()) }
+func (Memcache) DeleteMulti([]string, memcache.RawCB) error                { panic(ni()) }
+func (Memcache) CompareAndSwapMulti([]memcache.Item, memcache.RawCB) error { panic(ni()) }
+func (Memcache) Increment(string, int64, *uint64) (uint64, error)          { panic(ni()) }
+func (Memcache) Flush() error                                              { panic(ni()) }
+func (Memcache) Stats() (*memcache.Statistics, error)                      { panic(ni()) }
+
+/////////////////////////////////// TaskQueue ////////////////////////////////////
+
+// TaskQueue is a dummy taskqueue.RawInterface implementation suitable for
+// embedding.  Every method panics with a message containing the name of the
+// method which was unimplemented.
+type TaskQueue struct{}
+
+var _ taskqueue.RawInterface = TaskQueue{}
+
+func (TaskQueue) AddMulti([]*taskqueue.Task, string, taskqueue.RawTaskCB) error { panic(ni()) }
+func (TaskQueue) DeleteMulti([]*taskqueue.Task, string, taskqueue.RawCB) error  { panic(ni()) }
+func (TaskQueue) Lease(int, string, time.Duration) ([]*taskqueue.Task, error)   { panic(ni()) }
+func (TaskQueue) LeaseByTag(int, string, time.Duration, string) ([]*taskqueue.Task, error) {
+	panic(ni())
+}
+func (TaskQueue) ModifyLease(*taskqueue.Task, string, time.Duration) error { panic(ni()) }
+func (TaskQueue) Purge(string) error                                       { panic(ni()) }
+func (TaskQueue) Stats([]string, taskqueue.RawStatsCB) error               { panic(ni()) }
+func (TaskQueue) Constraints() taskqueue.Constraints                       { panic(ni()) }
+func (TaskQueue) GetTestable() taskqueue.Testable                          { return nil }
+
+/////////////////////////////////// Info ////////////////////////////////////
+
+// Info is a dummy info.RawInterface implementation suitable for embedding.
+// Every method panics with a message containing the name of the method which
+// was unimplemented.
+type Info struct{}
+
+var _ info.RawInterface = Info{}
+
+func (Info) AccessToken(...string) (token string, expiry time.Time, err error) {
+	panic(ni())
+}
+func (Info) AppID() string               { return "appid" }
+func (Info) FullyQualifiedAppID() string { return "dummy~appid" }
+func (Info) GetNamespace() string        { return "dummy-namespace" }
+func (Info) ModuleHostname(module, version, instance string) (string, error) {
 	if instance != "" {
 		panic(ni())
 	}
@@ -175,82 +176,69 @@ func (i) ModuleHostname(module, version, instance string) (string, error) {
 	}
 	return fmt.Sprintf("%s.%s.dummy-appid.example.com", version, module), nil
 }
-func (i) ModuleName() string                                             { return "module" }
-func (i) DefaultVersionHostname() string                                 { return "dummy-appid.example.com" }
-func (i) PublicCertificates() ([]info.Certificate, error)                { panic(ni()) }
-func (i) RequestID() string                                              { panic(ni()) }
-func (i) ServiceAccount() (string, error)                                { panic(ni()) }
-func (i) SignBytes([]byte) (keyName string, signature []byte, err error) { panic(ni()) }
-func (i) VersionID() string                                              { panic(ni()) }
-func (i) Namespace(string) (context.Context, error)                      { panic(ni()) }
-func (i) Datacenter() string                                             { panic(ni()) }
-func (i) InstanceID() string                                             { panic(ni()) }
-func (i) IsDevAppServer() bool                                           { panic(ni()) }
-func (i) ServerSoftware() string                                         { panic(ni()) }
-func (i) IsCapabilityDisabled(error) bool                                { panic(ni()) }
-func (i) IsOverQuota(error) bool                                         { panic(ni()) }
-func (i) IsTimeoutError(error) bool                                      { panic(ni()) }
-func (i) GetTestable() info.Testable                                     { panic(ni()) }
+func (Info) ModuleName() string                                             { return "module" }
+func (Info) DefaultVersionHostname() string                                 { return "dummy-appid.example.com" }
+func (Info) PublicCertificates() ([]info.Certificate, error)                { panic(ni()) }
+func (Info) RequestID() string                                              { panic(ni()) }
+func (Info) ServiceAccount() (string, error)                                { panic(ni()) }
+func (Info) SignBytes([]byte) (keyName string, signature []byte, err error) { panic(ni()) }
+func (Info) VersionID() string                                              { panic(ni()) }
+func (Info) Namespace(string) (context.Context, error)                      { panic(ni()) }
+func (Info) Datacenter() string                                             { panic(ni()) }
+func (Info) InstanceID() string                                             { panic(ni()) }
+func (Info) IsDevAppServer() bool                                           { panic(ni()) }
+func (Info) ServerSoftware() string                                         { panic(ni()) }
+func (Info) IsCapabilityDisabled(error) bool                                { panic(ni()) }
+func (Info) IsOverQuota(error) bool                                         { panic(ni()) }
+func (Info) IsTimeoutError(error) bool                                      { panic(ni()) }
+func (Info) GetTestable() info.Testable                                     { panic(ni()) }
 
-var dummyInfoInst = i{}
+////////////////////////////////////// User ///////////////////////////////////////
 
-// Info returns a dummy info.RawInterface implementation suitable for embedding.
+// User is a dummy user.RawInterface implementation suitable for embedding.
 // Every method panics with a message containing the name of the method which
 // was unimplemented.
-func Info() info.RawInterface { return dummyInfoInst }
+type User struct{}
 
-////////////////////////////////////// u ///////////////////////////////////////
+var _ user.RawInterface = User{}
 
-type u struct{}
+func (User) Current() *user.User                              { panic(ni()) }
+func (User) CurrentOAuth(...string) (*user.User, error)       { panic(ni()) }
+func (User) IsAdmin() bool                                    { panic(ni()) }
+func (User) LoginURL(string) (string, error)                  { panic(ni()) }
+func (User) LoginURLFederated(string, string) (string, error) { panic(ni()) }
+func (User) LogoutURL(string) (string, error)                 { panic(ni()) }
+func (User) OAuthConsumerKey() (string, error)                { panic(ni()) }
+func (User) GetTestable() user.Testable                       { panic(ni()) }
 
-func (u) Current() *user.User                              { panic(ni()) }
-func (u) CurrentOAuth(...string) (*user.User, error)       { panic(ni()) }
-func (u) IsAdmin() bool                                    { panic(ni()) }
-func (u) LoginURL(string) (string, error)                  { panic(ni()) }
-func (u) LoginURLFederated(string, string) (string, error) { panic(ni()) }
-func (u) LogoutURL(string) (string, error)                 { panic(ni()) }
-func (u) OAuthConsumerKey() (string, error)                { panic(ni()) }
-func (u) GetTestable() user.Testable                       { panic(ni()) }
+////////////////////////////////////// Mail ///////////////////////////////////////
 
-var dummyUserInst = u{}
-
-// User returns a dummy user.Interface implementation suitable for embedding.
+// Mail is a dummy mail.Interface implementation suitable for embedding.
 // Every method panics with a message containing the name of the method which
 // was unimplemented.
-func User() user.RawInterface { return dummyUserInst }
+type Mail struct{}
 
-////////////////////////////////////// m ///////////////////////////////////////
+var _ mail.RawInterface = Mail{}
 
-type m struct{}
+func (Mail) Send(*mail.Message) error         { panic(ni()) }
+func (Mail) SendToAdmins(*mail.Message) error { panic(ni()) }
+func (Mail) GetTestable() mail.Testable       { panic(ni()) }
 
-func (m) Send(*mail.Message) error         { panic(ni()) }
-func (m) SendToAdmins(*mail.Message) error { panic(ni()) }
-func (m) GetTestable() mail.Testable       { panic(ni()) }
+/////////////////////////////////// Module ////////////////////////////////////
 
-var dummyMailInst = m{}
-
-// Mail returns a dummy mail.Interface implementation suitable for embedding.
+// Module is a dummy module.RawInterface implementation suitable for embedding.
 // Every method panics with a message containing the name of the method which
 // was unimplemented.
-func Mail() mail.RawInterface { return dummyMailInst }
+type Module struct{}
 
-/////////////////////////////////// mod ////////////////////////////////////
+var _ module.RawInterface = Module{}
 
-type mod struct{}
-
-func (mod) List() ([]string, error)                          { panic(ni()) }
-func (mod) NumInstances(module, version string) (int, error) { panic(ni()) }
-func (mod) SetNumInstances(module, version string, instances int) error {
+func (Module) List() ([]string, error)                          { panic(ni()) }
+func (Module) NumInstances(module, version string) (int, error) { panic(ni()) }
+func (Module) SetNumInstances(module, version string, instances int) error {
 	panic(ni())
 }
-func (mod) Versions(module string) ([]string, error)     { panic(ni()) }
-func (mod) DefaultVersion(module string) (string, error) { panic(ni()) }
-func (mod) Start(module, version string) error           { panic(ni()) }
-func (mod) Stop(module, version string) error            { panic(ni()) }
-
-var dummyModuleInst = mod{}
-
-// Module returns a dummy module.Interface implementation suitable for
-// embedding. Every method panics with a message containing the name of the
-// method which was unimplemented.
-func Module() module.RawInterface { return dummyModuleInst }
+func (Module) Versions(module string) ([]string, error)     { panic(ni()) }
+func (Module) DefaultVersion(module string) (string, error) { panic(ni()) }
+func (Module) Start(module, version string) error           { panic(ni()) }
+func (Module) Stop(module, version string) error            { panic(ni()) }

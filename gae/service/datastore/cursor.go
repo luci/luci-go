@@ -47,6 +47,14 @@ func (c Cursor) String() string {
 	}
 
 	// TODO: Encrypt this.
+
+	// If Cursor only contains one RawCursor, return it directly. Our DecodeCursor
+	// routine can decode either single or multi-cursor as appropriate, but older
+	// versions of the code can *only* decode RawCursors.
+	if len(c) == 1 {
+		return c[0].String()
+	}
+
 	encoded := make([]string, len(c))
 	for i, raw := range c {
 		if raw != nil {
