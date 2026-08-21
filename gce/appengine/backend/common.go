@@ -132,8 +132,8 @@ func getDispatcher(c context.Context) *tq.Dispatcher {
 
 // ManageBotQueues is the list of queues to distribute manage-bot tasks across for load balancing purposes.
 var ManageBotQueues = []string{
-	"manage-bot",
-	"manage-bot-2",
+	manageBotQueue,
+	manageBot2Queue,
 }
 
 func getManageBotQueue(id string) string {

@@ -128,3 +128,47 @@ the VM.
 terminateBot receives a single VM to terminate the bot for and attempts to
 terminate it. Termination in Swarming is asynchronous, so the backend package
 calls [manageBot](#manageBot) repeatedly until it's detected as terminated.
+
+## Queue Sharding & Load Balancing
+
+High-throughput task queues such as `manage-bot` and `delete-stale-swarming-bots`
+are sharded across multiple parallel Cloud Tasks queues to avoid queue pileup and
+throttling. Dynamic task routing is implemented using `server/tq.QueuePicker` and
+deterministic FNV-32a hashing on the entity ID:
+
+$$\text{Shard Index} = \text{fnv32a}(\text{EntityID}) \pmod{\text{len}(\text{QueueList})}$$
+
+### How to Add a New Queue Shard (e.g. `manage-bot-3` or `delete-stale-swarming-bots-3`)
+
+Adding a new queue shard involves 4 steps:
+
+1. **Configure the Queue in `appengine/frontend/queue.yaml`**:
+   Add the new queue configuration with rate limits and retry parameters:
+   ```yaml
+   - name: manage-bot-3
+     rate: 500/s
+     retry_parameters:
+       task_retry_limit: 0
+   ```
+
+2. **Define the Queue Name Constant in `appengine/backend/bots.go`**:
+   Declare a constant for the new queue name:
+   ```go
+   // manageBot3Queue is the tertiary manage bot task handler queue.
+   const manageBot3Queue = "manage-bot-3"
+   ```
+
+3. **Add the Shard to the Queue Slice in `appengine/backend/common.go`**:
+   Append the constant to the relevant queue slice (`ManageBotQueues` or `DeleteStaleSwarmingBotsQueues`):
+   ```go
+   var ManageBotQueues = []string{
+       manageBotQueue,
+       manageBot2Queue,
+       manageBot3Queue,
+   }
+   ```
+   The hash function (`getManageBotQueue` / `getDeleteStaleSwarmingBotsQueue`) uses `len(Queues)` and will automatically load-balance across all $N$ shards.
+
+4. **Add / Update Unit Tests in `appengine/backend/common_test.go`**:
+   Ensure `TestGetManageBotQueue` or `TestGetDeleteStaleSwarmingBotsQueue` tests verify that bot IDs hash across all available queues using `slices.Contains(Queues, q)`.
+

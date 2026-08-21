@@ -95,6 +95,33 @@ func TestGetErrors(t *testing.T) {
 	}
 }
 
+func TestGetManageBotQueue(t *testing.T) {
+	t.Parallel()
+
+	t.Run("empty string", func(t *testing.T) {
+		t.Parallel()
+		q := getManageBotQueue("")
+		if !slices.Contains(ManageBotQueues, q) {
+			t.Errorf("unexpected queue name %q for empty string", q)
+		}
+	})
+
+	t.Run("hashes bot ID across queues", func(t *testing.T) {
+		t.Parallel()
+		seen := map[string]bool{}
+		for i := 0; i < 10; i++ {
+			q := getManageBotQueue(fmt.Sprintf("bot-%d", i))
+			if !slices.Contains(ManageBotQueues, q) {
+				t.Errorf("unexpected queue name %q for bot-%d", q, i)
+			}
+			seen[q] = true
+		}
+		if len(seen) < 2 {
+			t.Errorf("expected bot IDs to hash to multiple queues, got %v", seen)
+		}
+	})
+}
+
 func TestGetDeleteStaleSwarmingBotsQueue(t *testing.T) {
 	t.Parallel()
 
