@@ -59,7 +59,7 @@ func TestIAPAuthenticator(t *testing.T) {
 				Aud: AudForGAE("1234", "some-app-id"),
 				validator: func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error) {
 					return &idtoken.Payload{
-						Issuer:   "",
+						Issuer:   iapJWTIssuer,
 						IssuedAt: 0,
 						Subject:  "",
 					}, nil
@@ -74,12 +74,33 @@ func TestIAPAuthenticator(t *testing.T) {
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 
+		t.Run("invalid issuer claim", func(t *ftt.Test) {
+			a := &IAPAuthMethod{
+				Aud: AudForGAE("1234", "some-app-id"),
+				validator: func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error) {
+					return &idtoken.Payload{
+						Issuer: "https://accounts.google.com",
+						Claims: map[string]any{
+							"email": "someemail@somedomain.com",
+						},
+					}, nil
+				},
+			}
+			r := authtest.NewFakeRequestMetadata()
+			r.FakeHeader.Set(iapJWTAssertionHeader, "just needs to be non-empty for testing")
+
+			user, session, err := a.Authenticate(c, r)
+			assert.Loosely(t, user, should.BeNil)
+			assert.Loosely(t, session, should.BeNil)
+			assert.Loosely(t, err, should.ErrLike("invalid jwt issuer"))
+		})
+
 		t.Run("happy path", func(t *ftt.Test) {
 			a := &IAPAuthMethod{
 				Aud: AudForGAE("1234", "some-app-id"),
 				validator: func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error) {
 					return &idtoken.Payload{
-						Issuer:   "",
+						Issuer:   iapJWTIssuer,
 						IssuedAt: 0,
 						Subject:  "",
 						Claims: map[string]any{

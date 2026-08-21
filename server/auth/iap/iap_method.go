@@ -32,6 +32,7 @@ import (
 
 const (
 	iapJWTAssertionHeader = "X-Goog-Iap-Jwt-Assertion"
+	iapJWTIssuer          = "https://cloud.google.com/iap"
 )
 
 // AudForGAE returns an audience string for the GAE application as it will be formatted
@@ -77,6 +78,10 @@ func (a *IAPAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata
 	jwtPayload, err := validateFunc(ctx, iapJwt, a.Aud)
 	if err != nil {
 		return nil, nil, errors.Fmt("couldn't validate jwt payload: %w", err)
+	}
+
+	if jwtPayload.Issuer != iapJWTIssuer {
+		return nil, nil, errors.Fmt("iap: invalid jwt issuer %q, expected %q", jwtPayload.Issuer, iapJWTIssuer)
 	}
 
 	email, ok := jwtPayload.Claims["email"].(string)
