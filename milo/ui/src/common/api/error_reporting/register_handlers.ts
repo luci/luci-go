@@ -22,22 +22,40 @@ declare module 'source-map' {
 }
 
 /**
+ * Checks if an error message represents a generic, masked cross-origin or
+ * browser-injected script error.
+ *
+ * Browsers mask error details for scripts from other origins or browser extensions
+ * to satisfy the Same-Origin Policy, reporting only "Script error." with no stack trace
+ * or error object.
+ */
+export function isScriptError(message: string | undefined): boolean {
+  if (!message || !message.trim()) return true;
+  return /^(\s*javascript\s*error\s*:?\s*)?script\s+error\.?$/i.test(
+    message.trim(),
+  );
+}
+
+/**
  * Registers global error handlers to capture uncaught exceptions and
  * unhandled promise rejections.
  *
  * @param reporter - A callback function that takes the captured
  * error or rejection reason and sends it to a reporting service.
  */
-function registerErrorHandlers(reporter: (err: Error) => void) {
+export function registerErrorHandlers(reporter: (err: Error) => void) {
   window.addEventListener('error', (event: ErrorEvent) => {
     if (event.error instanceof Error) {
+      if (isScriptError(event.error.message)) {
+        return;
+      }
       reporter(event.error);
     } else if (event.error) {
       // This handles DOMExceptions and other values while creating a useful stack.
       reporter(
         new Error(`Non-error value thrown: ${JSON.stringify(event.error)}`),
       );
-    } else {
+    } else if (event.message && !isScriptError(event.message)) {
       // Fallback for legacy events where event.error is not available.
       reporter(
         new Error(
@@ -52,8 +70,14 @@ function registerErrorHandlers(reporter: (err: Error) => void) {
     (event: PromiseRejectionEvent) => {
       if (event) {
         if (event.reason instanceof Error) {
+          if (isScriptError(event.reason.message)) {
+            return;
+          }
           reporter(event.reason);
         } else {
+          if (typeof event.reason === 'string' && isScriptError(event.reason)) {
+            return;
+          }
           // If not, create a new error to get a stack trace.
           // The message includes the original reason.
           // Note: The stack trace will originate from this line,
