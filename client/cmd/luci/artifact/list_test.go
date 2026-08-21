@@ -23,6 +23,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -174,7 +175,7 @@ func TestQueryAncestorWorkUnits(t *testing.T) {
 				},
 			}
 
-			ancestors := queryAncestorWorkUnits(ctx, client, "rootInvocations/build-123/workUnits/step-1")
+			ancestors := format.QueryAncestorWorkUnits(ctx, client, "rootInvocations/build-123/workUnits/step-1")
 			assert.Loosely(t, len(ancestors), should.Equal(2))
 			assert.Loosely(t, ancestors[0].Name, should.Equal("rootInvocations/build-123/workUnits/root"))
 			assert.Loosely(t, ancestors[1].Name, should.Equal("rootInvocations/build-123/workUnits/parent-step"))
@@ -187,7 +188,7 @@ func TestQueryAncestorWorkUnits(t *testing.T) {
 				},
 			}
 
-			ancestors := queryAncestorWorkUnits(ctx, client, "rootInvocations/build-123/workUnits/child")
+			ancestors := format.QueryAncestorWorkUnits(ctx, client, "rootInvocations/build-123/workUnits/child")
 			assert.Loosely(t, len(ancestors), should.BeZero)
 		})
 
@@ -198,13 +199,13 @@ func TestQueryAncestorWorkUnits(t *testing.T) {
 				},
 			}
 
-			ancestors := queryAncestorWorkUnits(ctx, client, "rootInvocations/build-123/workUnits/root")
+			ancestors := format.QueryAncestorWorkUnits(ctx, client, "rootInvocations/build-123/workUnits/root")
 			assert.Loosely(t, len(ancestors), should.BeZero)
 		})
 
 		t.Run(`invalid target work unit format`, func(t *ftt.Test) {
 			client := &mockResultDBClient{}
-			ancestors := queryAncestorWorkUnits(ctx, client, "invalid")
+			ancestors := format.QueryAncestorWorkUnits(ctx, client, "invalid")
 			assert.Loosely(t, len(ancestors), should.BeZero)
 		})
 	})

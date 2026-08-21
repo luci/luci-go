@@ -99,7 +99,8 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 
-	client, _, _, err := r.af.NewResultDBClient(ctx, r.host)
+	ctx = format.WithDiscoveryCache(ctx)
+	client, _, httpClient, err := r.af.NewResultDBClient(ctx, r.host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
 		return 1
@@ -127,6 +128,11 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	}
 	if wu.SummaryMarkdown != "" {
 		fmt.Printf("Summary:\n%s\n", wu.SummaryMarkdown)
+	} else {
+		discErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, clean)
+		if discErr != nil {
+			format.PrintModuleErrorForTarget(discErr, clean, "")
+		}
 	}
 	if r.showMetadata {
 		fmt.Println()

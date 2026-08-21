@@ -280,14 +280,32 @@ func TestPrintFailureReason(t *testing.T) {
 
 	ftt.Run(`TruncateFirstLine and FormatFailureReasonFirstLine`, t, func(t *ftt.Test) {
 		t.Run(`TruncateFirstLine`, func(t *ftt.Test) {
-			assert.Loosely(t, TruncateFirstLine("hello\nworld", 0), should.Equal("hello"))
-			assert.Loosely(t, TruncateFirstLine("hello world this is a long line", 10), should.Equal("hello worl..."))
-			assert.Loosely(t, TruncateFirstLine("你好世界，这是一个测试", 4), should.Equal("你好世界..."))
-			assert.Loosely(t, TruncateFirstLine("", 10), should.Equal(""))
+			s1, t1 := TruncateFirstLine("hello\nworld", 0)
+			assert.Loosely(t, s1, should.Equal("hello"))
+			assert.Loosely(t, t1, should.BeTrue)
+
+			s2, t2 := TruncateFirstLine("hello world this is a long line", 10)
+			assert.Loosely(t, s2, should.Equal("hello worl..."))
+			assert.Loosely(t, t2, should.BeTrue)
+
+			sRune, tRune := TruncateFirstLine("你好世界，这是一个测试", 4)
+			assert.Loosely(t, sRune, should.Equal("你好世界..."))
+			assert.Loosely(t, tRune, should.BeTrue)
+
+			s3, t3 := TruncateFirstLine("short", 10)
+			assert.Loosely(t, s3, should.Equal("short"))
+			assert.Loosely(t, t3, should.BeFalse)
+
+			s4, t4 := TruncateFirstLine("", 10)
+			assert.Loosely(t, s4, should.Equal(""))
+			assert.Loosely(t, t4, should.BeFalse)
 		})
 
 		t.Run(`FormatFailureReasonFirstLine`, func(t *ftt.Test) {
-			assert.Loosely(t, FormatFailureReasonFirstLine(nil, 50), should.Equal(""))
+			s0, t0 := FormatFailureReasonFirstLine(nil, 50)
+			assert.Loosely(t, s0, should.Equal(""))
+			assert.Loosely(t, t0, should.BeFalse)
+
 			fr := &pb.FailureReason{
 				Errors: []*pb.FailureReason_Error{
 					{
@@ -295,7 +313,20 @@ func TestPrintFailureReason(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, FormatFailureReasonFirstLine(fr, 100), should.Equal("AssertionError: expected true but was false"))
+			s1, t1 := FormatFailureReasonFirstLine(fr, 100)
+			assert.Loosely(t, s1, should.Equal("AssertionError: expected true but was false"))
+			assert.Loosely(t, t1, should.BeTrue)
+
+			frSingle := &pb.FailureReason{
+				Errors: []*pb.FailureReason_Error{
+					{
+						Message: "Single line error",
+					},
+				},
+			}
+			s2, t2 := FormatFailureReasonFirstLine(frSingle, 100)
+			assert.Loosely(t, s2, should.Equal("Single line error"))
+			assert.Loosely(t, t2, should.BeFalse)
 
 			frFallback := &pb.FailureReason{
 				PrimaryErrorMessage: "Fallback primary error",
@@ -305,7 +336,9 @@ func TestPrintFailureReason(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, FormatFailureReasonFirstLine(frFallback, 100), should.Equal("Fallback primary error"))
+			s3, t3 := FormatFailureReasonFirstLine(frFallback, 100)
+			assert.Loosely(t, s3, should.Equal("Fallback primary error"))
+			assert.Loosely(t, t3, should.BeFalse)
 		})
 	})
 }

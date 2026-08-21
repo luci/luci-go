@@ -418,33 +418,48 @@ func PrintFailureReason(fr *pb.FailureReason, indent string) {
 }
 
 // TruncateFirstLine returns the first non-empty line of text, trimmed to maxLen characters with "..." if longer.
-func TruncateFirstLine(s string, maxLen int) string {
+// It also returns whether the input text was truncated (e.g. had more lines or exceeded maxLen).
+func TruncateFirstLine(s string, maxLen int) (string, bool) {
 	s = strings.TrimSpace(s)
+	if s == "" {
+		return "", false
+	}
+	truncated := false
 	if idx := strings.Index(s, "\n"); idx != -1 {
 		s = strings.TrimSpace(s[:idx])
+		truncated = true
 	}
 	if maxLen > 0 {
 		runes := []rune(s)
 		if len(runes) > maxLen {
-			return string(runes[:maxLen]) + "..."
+			s = string(runes[:maxLen]) + "..."
+			truncated = true
 		}
 	}
-	return s
+	return s, truncated
 }
 
-// FormatFailureReasonFirstLine extracts the first line of a failure reason for compact summary display.
-func FormatFailureReasonFirstLine(fr *pb.FailureReason, maxLen int) string {
+// FormatFailureReasonFirstLine extracts the first line of a failure reason for compact summary display,
+// and returns whether the failure reason contains more details (such as a stack trace or additional lines/errors).
+func FormatFailureReasonFirstLine(fr *pb.FailureReason, maxLen int) (string, bool) {
 	if fr == nil {
-		return ""
+		return "", false
 	}
 	msg := fr.PrimaryErrorMessage
-	if len(fr.Errors) > 0 && fr.Errors[0].Message != "" {
-		msg = fr.Errors[0].Message
+	hasMore := len(fr.Errors) > 1
+	if len(fr.Errors) > 0 {
+		if fr.Errors[0].Message != "" {
+			msg = fr.Errors[0].Message
+		}
+		if fr.Errors[0].Trace != "" {
+			hasMore = true
+		}
 	}
 	if msg == "" && len(fr.Errors) > 0 && fr.Errors[0].Trace != "" {
 		msg = fr.Errors[0].Trace
 	}
-	return TruncateFirstLine(msg, maxLen)
+	res, truncated := TruncateFirstLine(msg, maxLen)
+	return res, truncated || hasMore
 }
 
 // PrintArtifactList prints a formatted list of artifacts.

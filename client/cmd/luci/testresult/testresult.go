@@ -68,8 +68,9 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r := &testResultGetRun{af: af}
 			r.af.Register(&r.Flags)
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
-			r.Flags.BoolVar(&r.showArtifacts, "show-artifacts", false, "Print content of artifacts embedded in run summary_html")
-			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Additionally print test metadata, tags, and properties")
+			r.Flags.BoolVar(&r.showArtifacts, "show-artifacts", false, "Render HTML artifact links inline")
+			r.Flags.BoolVar(&r.showArtifacts, "artifacts", false, "Alias for -show-artifacts")
+			r.Flags.BoolVar(&r.showMetadata, "metadata", false, "Show additional result metadata and tags")
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
 		},
@@ -124,6 +125,7 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		return 1
 	}
 
+	ctx = format.WithDiscoveryCache(ctx)
 	client, schemasClient, httpClient, err := r.af.NewResultDBClient(ctx, r.host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
@@ -145,6 +147,19 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 	pg := format.GetParentGroup(res.Name)
 	if pg.Label != "" {
 		fmt.Printf("Run in:    %s\n", pg.Label)
+		if pg.ID != "" {
+			modErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, pg.ID)
+			if modErr != nil {
+				firstLine, truncated := format.FormatDiscoveredErrorFirstLine(modErr, 120)
+				if firstLine != "" {
+					label := "Module Error:"
+					if truncated {
+						label = "Module Error (truncated):"
+					}
+					fmt.Printf("  %s %s\n", label, firstLine)
+				}
+			}
+		}
 	}
 	printVerdictContext(ctx, client, res, r.legacy)
 	if res.Variant != nil && len(res.Variant.GetDef()) > 0 {

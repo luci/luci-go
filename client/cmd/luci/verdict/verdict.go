@@ -334,6 +334,7 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		return 1
 	}
 
+	ctx = format.WithDiscoveryCache(ctx)
 	client, schemasClient, httpClient, err := r.af.NewResultDBClient(ctx, r.host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
@@ -411,22 +412,47 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 		} else {
 			runCountStr = fmt.Sprintf("%d runs", len(grp.items))
 		}
-		fmt.Printf("  %s (%s):\n", grp.parent.Label, runCountStr)
-		for _, tr := range grp.items {
-			fmt.Printf("    - %s (%s) - result_id: %s\n", tr.StatusV2, format.FormatDuration(tr.Duration), tr.ResultId)
-			if tr.FailureReason != nil {
-				firstLine := format.FormatFailureReasonFirstLine(tr.FailureReason, 120)
+		fmt.Printf("- %s (%s):\n", grp.parent.Label, runCountStr)
+		if grp.parent.ID != "" {
+			modErr, _ := format.DiscoverWorkUnitError(ctx, rdbClient, httpClient, grp.parent.ID)
+			if modErr != nil {
+				firstLine, truncated := format.FormatDiscoveredErrorFirstLine(modErr, 120)
 				if firstLine != "" {
-					fmt.Printf("      Error:   %s\n", firstLine)
+					label := "Module Error:"
+					if truncated {
+						label = "Module Error (truncated):"
+					}
+					fmt.Printf("  %s %s\n", label, firstLine)
+				}
+			}
+		}
+		for _, tr := range grp.items {
+			fmt.Printf("  - %s (%s) - result_id: %s\n", tr.StatusV2, format.FormatDuration(tr.Duration), tr.ResultId)
+			if tr.FailureReason != nil {
+				firstLine, truncated := format.FormatFailureReasonFirstLine(tr.FailureReason, 120)
+				if firstLine != "" {
+					label := "Error:"
+					if truncated {
+						label = "Error (truncated):"
+					}
+					fmt.Printf("    %s %s\n", label, firstLine)
 				}
 			}
 			if tr.SummaryHtml != "" {
 				if showArtifacts {
-					fmt.Printf("      Summary:\n%s\n", format.FormatSummaryHTML(ctx, rdbClient, httpClient, tr.Name, tr.SummaryHtml, showArtifacts))
+					summaryText := format.FormatSummaryHTML(ctx, rdbClient, httpClient, tr.Name, tr.SummaryHtml, showArtifacts)
+					fmt.Printf("    Summary:\n")
+					for _, l := range strings.Split(strings.TrimRight(summaryText, "\n"), "\n") {
+						fmt.Printf("      %s\n", l)
+					}
 				} else {
-					firstLine := format.TruncateFirstLine(format.StripHTML(tr.SummaryHtml), 120)
+					firstLine, truncated := format.TruncateFirstLine(format.StripHTML(tr.SummaryHtml), 120)
 					if firstLine != "" {
-						fmt.Printf("      Summary: %s\n", firstLine)
+						label := "Summary:"
+						if truncated {
+							label = "Summary (truncated):"
+						}
+						fmt.Printf("    %s %s\n", label, firstLine)
 					}
 				}
 			}

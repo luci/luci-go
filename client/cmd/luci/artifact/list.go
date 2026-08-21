@@ -102,6 +102,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 
+	ctx = format.WithDiscoveryCache(ctx)
 	client, _, _, err := r.af.NewResultDBClient(ctx, r.host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
@@ -176,7 +177,7 @@ func printAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient,
 		visited[parentWU] = true
 		wuToCheck = append(wuToCheck, parentWU)
 
-		for _, anc := range queryAncestorWorkUnits(ctx, client, parentWU) {
+		for _, anc := range format.QueryAncestorWorkUnits(ctx, client, parentWU) {
 			if !visited[anc.Name] {
 				visited[anc.Name] = true
 				wuToCheck = append(wuToCheck, anc.Name)
@@ -184,7 +185,7 @@ func printAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient,
 		}
 	} else if parentType == ParentTypeWorkUnit {
 		visited[target] = true
-		for _, anc := range queryAncestorWorkUnits(ctx, client, target) {
+		for _, anc := range format.QueryAncestorWorkUnits(ctx, client, target) {
 			if !visited[anc.Name] {
 				visited[anc.Name] = true
 				wuToCheck = append(wuToCheck, anc.Name)
@@ -240,26 +241,6 @@ func printAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient,
 		}
 		fmt.Println()
 	}
-}
-
-func queryAncestorWorkUnits(ctx context.Context, client pb.ResultDBClient, targetWorkUnit string) []*pb.WorkUnit {
-	parts := strings.Split(targetWorkUnit, "/")
-	if len(parts) < 2 {
-		return nil
-	}
-	rootInv := parts[0] + "/" + parts[1]
-
-	qRes, err := client.QueryWorkUnits(ctx, &pb.QueryWorkUnitsRequest{
-		Parent: rootInv,
-		Predicate: &pb.WorkUnitPredicate{
-			AncestorsOf: targetWorkUnit,
-		},
-		PageSize: 1000,
-	})
-	if err != nil || qRes == nil {
-		return nil
-	}
-	return qRes.WorkUnits
 }
 
 func QueryAllArtifacts(ctx context.Context, client pb.ResultDBClient, parent string) ([]*pb.Artifact, error) {
