@@ -38,12 +38,14 @@ import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timest
 import {
   generateDeviceListURL,
   ANDROID_PLATFORM,
-  generateAndroidDeviceDetailsURL,
+  generateDeviceDetailsURL,
+  PIXEL_PLATFORM,
 } from '@/fleet/constants/paths';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { isTyping } from '@/fleet/utils/field_typing';
+import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -71,20 +73,31 @@ const useNavigatedFromLink = () => {
   return navigatedFromLink;
 };
 
-export const AndroidDeviceDetailsPage = () => {
+export const AndroidDeviceDetailsPage = ({
+  workspace,
+}: {
+  workspace: AndroidPageWorkspace;
+}) => {
   const { id = '' } = useParams();
   const [deviceIdInputValue, setDeviceIdInputValue] = useState(id);
   const navigate = useNavigate();
-  const { error, isError, isLoading, device } = useAndroidDeviceData(id);
+  const { error, isError, isLoading, device } = useAndroidDeviceData(
+    id,
+    workspace,
+  );
 
   const navigatedFromLink = useNavigatedFromLink();
   const deviceIdInputRef = useRef<HTMLInputElement>(null);
+
+  const platform = usePlatform();
+  const platformString =
+    platform.platform === Platform.ANDROID ? ANDROID_PLATFORM : PIXEL_PLATFORM;
 
   const navigateToDeviceIfChanged = (deviceId: string) => {
     const parts = location.pathname.toString().split('/');
     const urlId = parts[parts.length - 1];
     if (urlId !== deviceId) {
-      navigate(`${generateAndroidDeviceDetailsURL(deviceId)}`);
+      navigate(`${generateDeviceDetailsURL(platformString, deviceId)}`);
     }
   };
 
@@ -115,14 +128,18 @@ export const AndroidDeviceDetailsPage = () => {
 
           const override = DETAILS_COLUMN_OVERRIDES[fieldKey];
           if (override?.renderCell && device) {
-            return override.renderCell({ value, device });
+            return override.renderCell({
+              value,
+              device,
+              workspace,
+            });
           }
 
           return value ?? null;
         },
       },
     ],
-    [device],
+    [device, workspace],
   );
 
   const labels = useMemo<{ key: string; value: React.ReactNode }[]>(() => {
@@ -254,7 +271,7 @@ export const AndroidDeviceDetailsPage = () => {
           if (navigatedFromLink) {
             navigate(navigatedFromLink);
           } else {
-            navigate(generateDeviceListURL(ANDROID_PLATFORM));
+            navigate(generateDeviceListURL(platformString));
           }
         }}
       >
@@ -327,7 +344,7 @@ export const AndroidDeviceDetailsPage = () => {
   );
 };
 
-export function Component() {
+export function Component({ workspace }: { workspace: AndroidPageWorkspace }) {
   const { id = '' } = useParams();
   const { platform } = usePlatform();
   return (
@@ -339,10 +356,12 @@ export function Component() {
       >
         <FleetHelmet pageTitle={`${id ? `${id} | ` : ''}Device Details`} />
         <LoggedInBoundary>
-          {platform !== Platform.ANDROID ? (
-            <PlatformNotAvailable availablePlatforms={[Platform.ANDROID]} />
+          {platform !== Platform.ANDROID && platform !== Platform.PIXEL ? (
+            <PlatformNotAvailable
+              availablePlatforms={[Platform.ANDROID, Platform.PIXEL]}
+            />
           ) : (
-            <AndroidDeviceDetailsPage />
+            <AndroidDeviceDetailsPage workspace={workspace} />
           )}
         </LoggedInBoundary>
       </RecoverableErrorBoundary>

@@ -14,10 +14,14 @@
 
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { AndroidPageWorkspace } from '@/fleet/workspaces';
 
 import { AndroidColumnDef, ANDROID_COLUMN_OVERRIDES } from './android_fields';
 
-export const getAndroidColumns = (columnIds: string[]): AndroidColumnDef[] => {
+export const getAndroidColumns = (
+  columnIds: string[],
+  workspace: AndroidPageWorkspace,
+): AndroidColumnDef[] => {
   const topLevelProtoFields = [
     'id',
     'run_target',
@@ -60,6 +64,7 @@ export const getAndroidColumns = (columnIds: string[]): AndroidColumnDef[] => {
               renderCell({
                 value: params.cell.getValue(),
                 device: params.row.original,
+                workspace: workspace,
               }),
           }
         : {}),

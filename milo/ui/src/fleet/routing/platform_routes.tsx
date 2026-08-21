@@ -105,8 +105,10 @@ export const platformRoutes: RouteObject[] = [
               [Platform.CHROMEOS]: lazy(
                 () => import('@/fleet/pages/device_details_page'),
               ),
-              [Platform.ANDROID]: <AndroidDeviceDetailsPage />,
-              [Platform.PIXEL]: <AndroidDeviceDetailsPage />,
+              [Platform.ANDROID]: (
+                <AndroidDeviceDetailsPage workspace="Android" />
+              ),
+              [Platform.PIXEL]: <AndroidDeviceDetailsPage workspace="Pixel" />,
               [Platform.CHROMIUM]: lazy(() =>
                 import(
                   '@/fleet/pages/device_details_page/browser/browser_device_details_page'

@@ -14,11 +14,14 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { useFeatureFlag } from '@/common/feature_flags';
+import { enablePTE } from '@/fleet/features';
 import {
   useAndroidDevices,
   useListAndroidDevicesQueryKey,
 } from '@/fleet/hooks/use_android_devices';
-import { escapeAipValue } from '@/fleet/utils/search_param';
+import { combineAipFilters, escapeAipValue } from '@/fleet/utils/search_param';
+import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import {
   AndroidDevice,
   ListAndroidDevicesRequest,
@@ -34,6 +37,7 @@ export type UseAndroidDeviceDataResult = {
 
 export const useAndroidDeviceData = (
   deviceId: string,
+  workspace: AndroidPageWorkspace,
 ): UseAndroidDeviceDataResult => {
   const queryClient = useQueryClient();
   const listDevicesQueryKey = useListAndroidDevicesQueryKey();
@@ -42,9 +46,13 @@ export const useAndroidDeviceData = (
     queryKey: listDevicesQueryKey,
   });
 
+  const isPTEEnabled = useFeatureFlag(enablePTE);
+  const idFilter = `id = ${escapeAipValue(deviceId)}`;
   const request = ListAndroidDevicesRequest.fromPartial({
     pageSize: 1,
-    filter: `id = "${escapeAipValue(deviceId)}"`,
+    filter: isPTEEnabled
+      ? combineAipFilters(workspaces[workspace].baseFilter, idFilter)
+      : idFilter,
   });
   const { data, error, isError, isLoading } = useAndroidDevices(request);
 

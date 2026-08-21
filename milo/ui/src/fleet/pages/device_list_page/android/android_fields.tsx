@@ -34,8 +34,10 @@ import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import {
   generateDeviceDetailsURL,
   ANDROID_PLATFORM,
+  PIXEL_PLATFORM,
 } from '@/fleet/constants/paths';
 import { FC_CellProps } from '@/fleet/types/table';
+import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getAndroidStatusColor } from './android_state';
@@ -48,6 +50,7 @@ export type AndroidColumnDef = MRT_ColumnDef<AndroidDevice> & {
 export interface DeviceDisplayProps {
   value: unknown;
   device?: AndroidDevice;
+  workspace: AndroidPageWorkspace;
 }
 
 export type AndroidColumnOverride = Omit<Partial<AndroidColumnDef>, 'Cell'> & {
@@ -144,10 +147,13 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
     orderByField: 'id',
     accessorFn: (device) => device.id,
 
-    renderCell: ({ value, device }) => {
+    renderCell: ({ value, device, workspace }) => {
       const d = device;
       if (!d) return (value as React.ReactNode) ?? null;
-      const internalLink = generateDeviceDetailsURL(ANDROID_PLATFORM, d.id);
+      const internalLink = generateDeviceDetailsURL(
+        workspace === 'Android' ? ANDROID_PLATFORM : PIXEL_PLATFORM,
+        d.id,
+      );
 
       const type = d.omnilabSpec?.labels['fc_machine_type']?.values?.[0];
       const hostname = d.omnilabSpec?.labels['hostname']?.values?.[0];

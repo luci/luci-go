@@ -20,6 +20,7 @@ import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
+import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getAndroidColumns } from './android_columns';
@@ -37,6 +38,7 @@ export const useAndroidColumns = (
   isLoadingFilters: boolean,
   isLoadingDevices: boolean,
   showAvgUtilization = false,
+  workspace: AndroidPageWorkspace,
 ) => {
   const dimensionsQuery = useDeviceDimensions({ platform: Platform.ANDROID });
 
@@ -72,8 +74,11 @@ export const useAndroidColumns = (
   }, [extraColumnIds, dimensionsQuery.data]);
 
   const allColumns = useMemo(() => {
-    return getAndroidColumns(availableColumns.map((c) => c.id));
-  }, [availableColumns]);
+    return getAndroidColumns(
+      availableColumns.map((c) => c.id),
+      workspace,
+    );
+  }, [availableColumns, workspace]);
 
   const mrtColumnManager = useMRTColumnManagement({
     columns: allColumns,

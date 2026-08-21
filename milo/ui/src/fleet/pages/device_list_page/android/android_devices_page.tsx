@@ -73,6 +73,7 @@ export const AndroidDevicesPage = ({
     isLoading || filterValues === undefined,
     false,
     showAvgUtilization,
+    workspace,
   );
 
   const combinedWarnings = useMemo(
