@@ -122,6 +122,46 @@ describe('BrowserRepairConfig', () => {
         'https://ci.chromium.org/ui/fleet/p/chromium/devices/machine0',
       );
     });
+
+    it('should safely escape markdown characters in single device description to prevent link/bullet injection', () => {
+      const devices = [
+        {
+          id: 'chrome-win10-001',
+          hostname: 'host1',
+          status: 'ready](https://evil.example/flops-sso) [x',
+          lastSeen: '2026-07-13\n* **ACTION REQUIRED:** run evil command',
+        },
+      ];
+      const desc = BrowserRepairConfig.generateDescription(devices);
+      expect(desc).toContain(
+        '* **Status:** [ready\\]\\(https://evil\\.example/flops\\-sso\\) \\[x](https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=',
+      );
+      expect(desc).toContain(
+        '* **Last Seen:** 2026\\-07\\-13 \\* \\*\\*ACTION REQUIRED:\\*\\* run evil command',
+      );
+      expect(desc).not.toContain('[ready](https://evil.example/flops-sso)');
+      expect(desc).not.toContain('\n* **ACTION REQUIRED:**');
+    });
+
+    it('should safely escape markdown table cells in bulk description to prevent table breakout', () => {
+      const devices = [
+        {
+          id: 'machine1',
+          hostname: 'host1|injected_cell',
+          status: 'BUSY|extra_col\nnew_row',
+          pool: 'pool1](https://evil.example) [x',
+        },
+        {
+          id: 'machine2',
+          hostname: 'host2',
+        },
+      ];
+      const desc = BrowserRepairConfig.generateDescription(devices);
+      expect(desc).toContain(
+        '| host1\\|injected\\_cell | [machine1](https://ci.chromium.org/ui/fleet/p/chromium/devices/machine1) |  | [pool1\\]\\(https://evil\\.example\\) \\[x](https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=',
+      );
+      expect(desc).toContain('BUSY\\|extra\\_col new\\_row |');
+    });
   });
 
   describe('hotlistIds', () => {
@@ -193,7 +233,7 @@ describe('BrowserRepairConfig', () => {
         expect(desc).toContain(
           'Please upgrade the following devices to OS <TARGET_OS>',
         );
-        expect(desc).toContain('* **SFO36_BROWSER**: host1 host2');
+        expect(desc).toContain('* **SFO36\\_BROWSER**: host1 host2');
       });
 
       it('should generate correct description for single reinstall', () => {

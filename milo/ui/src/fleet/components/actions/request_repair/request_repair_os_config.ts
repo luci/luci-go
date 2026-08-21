@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { md, rawMd } from '@/fleet/utils/markdown_utils';
+
 import { DutToRepair } from '../shared/types';
 
 import { RepairConfig } from './request_repair';
@@ -19,16 +21,20 @@ import { FLEET_CONSOLE_TRACKING_HOTLIST } from './request_repair_utils';
 
 const LOCATION_MAP: { [key: string]: string[] } = {
   EM25: ['chromeos8'],
-  '946': ['chromeos15', 'chromeos7', 'chromeos5', 'chromeos3'],
+  EM24: ['chromeos6'],
+  EM23: ['chromeos4', 'chromeos-rack4'],
+  EM22: ['chromeos2', 'chromeos-rack2'],
+  EM21: ['chromeos1', 'chromeos-rack1'],
+  MTV1: ['chromeos15'],
 };
 
-const getLocationForDut = (dutName: string): string | undefined => {
-  for (const [lab, prefixes] of Object.entries(LOCATION_MAP)) {
-    if (prefixes.some((prefix) => dutName.includes(prefix))) {
-      return lab;
+const getLocationForDut = (name: string): string => {
+  for (const [location, prefixes] of Object.entries(LOCATION_MAP)) {
+    if (prefixes.some((prefix) => name.startsWith(prefix))) {
+      return location;
     }
   }
-  return undefined;
+  return '';
 };
 
 const generateIssueTitle = (duts: DutToRepair[]): string => {
@@ -52,7 +58,8 @@ const generateDutInfo = (selectedDuts: DutToRepair[]): string =>
         model && `Model: ${model}`,
         pool && `Pool: ${pool}`,
       ];
-      return ` * http://go/fcdut/${name} (${extraInfo.join(', ')})`;
+      const dutUrl = rawMd(`http://go/fcdut/${encodeURIComponent(name)}`);
+      return md` * [http://go/fcdut/${name}](${dutUrl}) (${extraInfo.filter(Boolean).join(', ')})`;
     })
     .join('\n');
 

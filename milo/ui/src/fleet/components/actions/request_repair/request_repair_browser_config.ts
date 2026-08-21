@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { md, rawMd } from '@/fleet/utils/markdown_utils';
+
 import { RepairConfig } from './request_repair';
 import {
   extractHostname,
@@ -60,31 +62,43 @@ const generateBrowserTitle = (devices: BrowserDeviceToRepair[]): string => {
 };
 
 const generateDeviceDetails = (dev: BrowserDeviceToRepair): string => {
-  const url = `https://ci.chromium.org/ui/fleet/p/chromium/devices/${dev.id}`;
+  const url = rawMd(
+    `https://ci.chromium.org/ui/fleet/p/chromium/devices/${encodeURIComponent(dev.id)}`,
+  );
   const poolUrl = dev.pool
-    ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."pool" = "${dev.pool}"`)}`
+    ? rawMd(
+        `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."pool" = "${dev.pool}"`)}`,
+      )
     : '';
   const zoneUrl = dev.zone
-    ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`ufs."zone" = "${dev.zone}"`)}`
+    ? rawMd(
+        `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`ufs."zone" = "${dev.zone}"`)}`,
+      )
     : '';
   const modelUrl = dev.model
-    ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."model" = "${dev.model}"`)}`
+    ? rawMd(
+        `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."model" = "${dev.model}"`)}`,
+      )
     : '';
   const statusUrl = dev.status
-    ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."status" = "${dev.status}"`)}`
+    ? rawMd(
+        `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."status" = "${dev.status}"`)}`,
+      )
     : '';
   const typeUrl = dev.type
-    ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."type" = "${dev.type}"`)}`
+    ? rawMd(
+        `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."type" = "${dev.type}"`)}`,
+      )
     : '';
   const details = [
-    `    * **Machine:** [${dev.id}](${url})`,
-    dev.serialNumber ? `    * **Serial Number:** ${dev.serialNumber}` : '',
-    dev.type ? `    * **Type:** [${dev.type}](${typeUrl})` : '',
-    dev.model ? `    * **Model:** [${dev.model}](${modelUrl})` : '',
-    dev.status ? `    * **Status:** [${dev.status}](${statusUrl})` : '',
-    dev.pool ? `    * **Pool:** [${dev.pool}](${poolUrl})` : '',
-    dev.zone ? `    * **Zone:** [${dev.zone}](${zoneUrl})` : '',
-    dev.lastSeen ? `    * **Last Seen:** ${dev.lastSeen}` : '',
+    md`    * **Machine:** [${dev.id}](${url})`,
+    dev.serialNumber ? md`    * **Serial Number:** ${dev.serialNumber}` : '',
+    dev.type ? md`    * **Type:** [${dev.type}](${typeUrl})` : '',
+    dev.model ? md`    * **Model:** [${dev.model}](${modelUrl})` : '',
+    dev.status ? md`    * **Status:** [${dev.status}](${statusUrl})` : '',
+    dev.pool ? md`    * **Pool:** [${dev.pool}](${poolUrl})` : '',
+    dev.zone ? md`    * **Zone:** [${dev.zone}](${zoneUrl})` : '',
+    dev.lastSeen ? md`    * **Last Seen:** ${dev.lastSeen}` : '',
   ]
     .filter(Boolean)
     .join('\n');
@@ -104,23 +118,27 @@ const generateBrowserTable = (
     const hostname = extractHostname(dev);
 
     if (!includeLinks) {
-      return `| ${hostname} | ${dev.id} | ${dev.serialNumber || ''} | ${dev.pool || ''} | ${dev.zone || ''} | ${dev.status || ''} |`;
+      return md`| ${hostname} | ${dev.id} | ${dev.serialNumber} | ${dev.pool} | ${dev.zone} | ${dev.status} |`;
     }
 
-    const url = `https://ci.chromium.org/ui/fleet/p/chromium/devices/${dev.id}`;
+    const url = rawMd(
+      `https://ci.chromium.org/ui/fleet/p/chromium/devices/${encodeURIComponent(dev.id)}`,
+    );
     const poolUrl = dev.pool
-      ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."pool" = "${dev.pool}"`)}`
+      ? rawMd(
+          `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."pool" = "${dev.pool}"`)}`,
+        )
       : '';
     const zoneUrl = dev.zone
-      ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`ufs."zone" = "${dev.zone}"`)}`
+      ? rawMd(
+          `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`ufs."zone" = "${dev.zone}"`)}`,
+        )
       : '';
 
-    const machineCell = `[${dev.id}](${url})`;
-    const serialCell = dev.serialNumber || '';
-    const poolCell = dev.pool ? `[${dev.pool}](${poolUrl})` : '';
-    const zoneCell = dev.zone ? `[${dev.zone}](${zoneUrl})` : '';
+    const poolCell = dev.pool ? rawMd(md`[${dev.pool}](${poolUrl})`) : '';
+    const zoneCell = dev.zone ? rawMd(md`[${dev.zone}](${zoneUrl})`) : '';
 
-    return `| ${hostname} | ${machineCell} | ${serialCell} | ${poolCell} | ${zoneCell} | ${dev.status || ''} |`;
+    return md`| ${hostname} | [${dev.id}](${url}) | ${dev.serialNumber} | ${poolCell} | ${zoneCell} | ${dev.status} |`;
   });
 
   return [headerRow, alignRow, ...rows].join('\n');
@@ -162,7 +180,7 @@ const generateBrowserIssueDescription = (
     '',
     requestText,
     '',
-    `* **Hostname:** ${hostname}`,
+    md`* **Hostname:** ${hostname}`,
     details,
     '',
     '**Issue / Request:**',
@@ -188,7 +206,7 @@ const generateZonalHostList = (devices: BrowserDeviceToRepair[]): string => {
   });
 
   return Object.entries(zoneMap)
-    .map(([zone, hosts]) => `* **${zone}**: ${hosts.join(' ')}`)
+    .map(([zone, hosts]) => md`* **${zone}**: ${hosts.join(' ')}`)
     .join('\n');
 };
 

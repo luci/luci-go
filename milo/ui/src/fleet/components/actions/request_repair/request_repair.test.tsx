@@ -93,7 +93,7 @@ describe('<RequestRepair />', () => {
     const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
     expect(openedUrl.origin).toBe('http://b');
     expect(openedUrl.pathname).toBe('/issues/new');
-    expect(openedUrl.searchParams.get('markdown')).toBe('true');
+    expect(openedUrl.searchParams.get('format')).toBe('MARKDOWN');
     expect(openedUrl.searchParams.get('component')).toBe('575445');
     expect(openedUrl.searchParams.get('template')).toBe('1509031');
     expect(openedUrl.searchParams.get('title')).toBe(
@@ -149,7 +149,7 @@ describe('<RequestRepair />', () => {
     const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
     expect(openedUrl.origin).toBe('http://b');
     expect(openedUrl.pathname).toBe('/issues/new');
-    expect(openedUrl.searchParams.get('markdown')).toBe('true');
+    expect(openedUrl.searchParams.get('format')).toBe('MARKDOWN');
     expect(openedUrl.searchParams.get('component')).toBe('1735976');
     expect(openedUrl.searchParams.get('template')).toBe('2107381');
     expect(openedUrl.searchParams.get('title')).toBe(

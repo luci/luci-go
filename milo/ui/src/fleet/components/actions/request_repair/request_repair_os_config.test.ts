@@ -49,7 +49,23 @@ describe('ChromeOSRepairConfig', () => {
       const desc = ChromeOSRepairConfig.generateDescription(duts);
       expect(desc).toContain('**DUT Link(s) / Locations:**:');
       expect(desc).toContain(
-        '* http://go/fcdut/dut1 (Location: <Please add if known>, Board: board1, Model: model1, Pool: pool1)',
+        '* [http://go/fcdut/dut1](http://go/fcdut/dut1) (Location: \\<Please add if known\\>, Board: board1, Model: model1, Pool: pool1)',
+      );
+    });
+
+    it('should sanitize markdown special characters in DUT fields', () => {
+      const duts: DutToRepair[] = [
+        {
+          name: 'dut_1',
+          board: 'board*bold*',
+          model: 'model [link](http://evil.com)',
+          pool: 'pool | col',
+          dutId: 'dut_1',
+        },
+      ];
+      const desc = ChromeOSRepairConfig.generateDescription(duts);
+      expect(desc).toContain(
+        '* [http://go/fcdut/dut\\_1](http://go/fcdut/dut_1) (Location: \\<Please add if known\\>, Board: board\\*bold\\*, Model: model \\[link\\]\\(http://evil\\.com\\), Pool: pool \\| col)',
       );
     });
   });

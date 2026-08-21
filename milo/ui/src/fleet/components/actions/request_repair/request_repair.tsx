@@ -102,7 +102,7 @@ export function RequestRepair({
     });
 
     const params = new URLSearchParams({
-      markdown: 'true',
+      format: 'MARKDOWN',
       component: componentId,
       template: templateId,
       title,
