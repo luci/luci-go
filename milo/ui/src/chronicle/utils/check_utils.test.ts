@@ -478,6 +478,18 @@ describe('check_utils', () => {
       );
       expect(index).toContain('n52000030948763694');
     });
+
+    it('indexes the full untruncated label including characters past 60 chars', () => {
+      const longLabel =
+        'Build ci:very-long-build-target-name-that-exceeds-sixty-characters-in-total-length';
+      const check: Check = {
+        identifier: { id: 'check-long' },
+      } as unknown as Check;
+      const index = getNodeSearchIndex('check-long', longLabel, check);
+      expect(index).toContain(
+        'very-long-build-target-name-that-exceeds-sixty-characters-in-total-length',
+      );
+    });
   });
 
   describe('getStageResultStatus', () => {

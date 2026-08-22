@@ -300,8 +300,11 @@ function Graph() {
     } else if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLocaleLowerCase();
       nextNodes = nextNodes.map((node) => {
-        const label = node.data.label || '';
-        const indexText = getNodeSearchIndex(node.id, label, node.data.view);
+        const indexText = getNodeSearchIndex(
+          node.id,
+          node.data.fullLabel,
+          node.data.view,
+        );
         const nodeMatch = indexText.includes(query);
 
         if (nodeMatch) {

@@ -29,7 +29,11 @@ import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { WorkPlan as TurboCIGraphWorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
-import { StageResultStatus, TYPE_URL_BUILD_RESULT } from './check_utils';
+import {
+  StageResultStatus,
+  TYPE_URL_BUILD_OPTIONS,
+  TYPE_URL_BUILD_RESULT,
+} from './check_utils';
 import {
   ChronicleNode,
   GroupMode,
@@ -220,6 +224,47 @@ describe('TurboCIGraphBuilder', () => {
 
       expect(cNode.zIndex).toBe(2);
       expect(sNode.zIndex).toBe(2);
+    });
+
+    it('should truncate long labels in data.label and preserve untruncated label in data.fullLabel', () => {
+      const valueDataMap: Map<string, ValueData> = new Map();
+      const longName =
+        'very-long-build-target-name-that-exceeds-sixty-characters-in-total-length';
+      const digest = 'digest-long-build';
+      valueDataMap.set(digest, {
+        json: {
+          value: JSON.stringify({
+            target: { namespace: 'ci', name: longName },
+          }),
+        },
+      });
+
+      const checkWithLongLabel: Check = {
+        identifier: { workPlan: WORKPLAN, id: 'C_LONG' },
+        kind: CheckKind.CHECK_KIND_BUILD,
+        options: [{ typeUrl: TYPE_URL_BUILD_OPTIONS, digest }],
+        results: [],
+        dependencies: { edges: [], resolutionEvents: {} },
+        stateHistory: [],
+        edits: [],
+      } as unknown as Check;
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: '',
+        checks: [checkWithLongLabel],
+        stages: [],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const { nodes } = new TurboCIGraphBuilder(graph, valueDataMap).build();
+      const node = nodes.find((n) => n.id === 'C_LONG');
+
+      expect(node).toBeDefined();
+      expect(node?.data.fullLabel).toBe(`Build ci:${longName}`);
+      expect(node?.data.label.endsWith('...')).toBe(true);
+      expect(node?.data.label.length).toBe(63); // 60 characters + '...'
+      expect(node?.data.label).toBe(
+        `Build ci:${longName}`.substring(0, 60) + '...',
+      );
     });
   });
 
@@ -828,7 +873,9 @@ describe('TurboCIGraphBuilder', () => {
       );
 
       expect(successNode?.data.label).toBe('2 successful builds');
+      expect(successNode?.data.fullLabel).toBe('2 successful builds');
       expect(failNode?.data.label).toBe('2 failed tests');
+      expect(failNode?.data.fullLabel).toBe('2 failed tests');
     });
 
     it('should map parents to child group IDs', () => {

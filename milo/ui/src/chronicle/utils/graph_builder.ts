@@ -40,6 +40,7 @@ dagreGraph.setDefaultEdgeLabel(() => ({}));
 
 export type ChronicleNodeData = {
   label: string;
+  fullLabel: string;
   view?: Check | Stage;
   groupId?: number;
   resultStatus?: CheckResultStatus | StageResultStatus;
@@ -291,12 +292,14 @@ function createCheckNode(
   groupId: number,
   valueDataMap: Map<string, ValueData>,
 ): ChronicleNode {
+  const fullLabel = getCheckLabel(check, valueDataMap);
   const resultStatus = getCheckResultStatus(check, valueDataMap);
   const colors = getCheckColors(resultStatus);
   return {
     id: check.identifier!.id!,
     data: {
-      label: truncateLabel(getCheckLabel(check, valueDataMap)),
+      label: truncateLabel(fullLabel),
+      fullLabel,
       view: check,
       groupId,
       resultStatus,
@@ -310,12 +313,14 @@ function createStageNode(
   stage: Stage,
   valueDataMap: Map<string, ValueData>,
 ): ChronicleNode {
+  const fullLabel = getStageLabel(stage, valueDataMap);
   const resultStatus = getStageResultStatus(stage, valueDataMap);
   const colors = getStageColors(resultStatus);
   return {
     id: stage.identifier!.id!,
     data: {
-      label: truncateLabel(getStageLabel(stage, valueDataMap)),
+      label: truncateLabel(fullLabel),
+      fullLabel,
       view: stage,
       resultStatus,
     },
@@ -335,6 +340,7 @@ function createCollapsedGroupNode(
     id,
     data: {
       label: truncateLabel(label),
+      fullLabel: label,
       isCollapsed: true,
       groupId,
       resultStatus: status,
