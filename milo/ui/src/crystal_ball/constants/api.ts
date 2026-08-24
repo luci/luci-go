@@ -99,3 +99,8 @@ export const NUM_AGGREGATED_ROWS = 'num_aggregated_rows';
  * Column name for the statistical key.
  */
 export const STATISTICAL_KEY_COLUMN = 'statistical_key';
+
+/**
+ * Display label for raw metric data (when no precomputed statistic is selected).
+ */
+export const RAW_DATA_STAT_LABEL = 'None (Raw Data)';

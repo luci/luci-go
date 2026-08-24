@@ -46,7 +46,9 @@ import {
   CHECKBOX_FILTERS,
   Column,
   COMMON_MESSAGES,
+  GLOBAL_TIME_RANGE_COLUMN,
   OPERATOR_DISPLAY_NAMES,
+  STATISTICAL_KEY_COLUMN,
 } from '@/crystal_ball/constants';
 import {
   useEditorUiState,
@@ -240,6 +242,19 @@ export function FilterEditor({
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
+  const displayFilters = useMemo(
+    () => filters.filter((f) => f.column !== STATISTICAL_KEY_COLUMN),
+    [filters],
+  );
+  const hiddenFilters = useMemo(
+    () => filters.filter((f) => f.column === STATISTICAL_KEY_COLUMN),
+    [filters],
+  );
+
+  const handleUpdateDisplayFilters = (updatedDisplayFilters: PerfFilter[]) => {
+    onUpdateFilters([...updatedDisplayFilters, ...hiddenFilters]);
+  };
+
   const { clipboardCount, copyFilters, getClipboardFilters, clearClipboard } =
     useFiltersClipboard();
   const [pasteMenuAnchor, setPasteMenuAnchor] = useState<null | HTMLElement>(
@@ -247,7 +262,7 @@ export function FilterEditor({
   );
 
   const handleCopyFilters = () => {
-    copyFilters(filters);
+    copyFilters(displayFilters);
     showSuccessToast('Filters copied to clipboard');
   };
 
@@ -255,8 +270,10 @@ export function FilterEditor({
     const pastedFilters = getClipboardFilters();
 
     // Filter out filters that don't match available columns in the target context
-    const validFilters = pastedFilters.filter((f) =>
-      availableColumns.some((c) => c.column === f.column),
+    const validFilters = pastedFilters.filter(
+      (f) =>
+        f.column !== STATISTICAL_KEY_COLUMN &&
+        availableColumns.some((c) => c.column === f.column),
     );
     const invalidCount = pastedFilters.length - validFilters.length;
 
@@ -266,9 +283,9 @@ export function FilterEditor({
       dataSpecId: dataSpecId,
     }));
     if (replace) {
-      onUpdateFilters(newFilters);
+      handleUpdateDisplayFilters(newFilters);
     } else {
-      onUpdateFilters([...filters, ...newFilters]);
+      handleUpdateDisplayFilters([...displayFilters, ...newFilters]);
     }
 
     let msg = '';
@@ -289,7 +306,7 @@ export function FilterEditor({
   };
 
   const handleClearFilters = () => {
-    if (filters.length > 0) {
+    if (displayFilters.length > 0) {
       setConfirmClearOpen(true);
     }
   };
@@ -300,19 +317,25 @@ export function FilterEditor({
 
   const handleDrop = (targetIndex: number) => {
     if (draggedIndex === null || draggedIndex === targetIndex) return;
-    const updatedFilters = [...filters];
+    const updatedFilters = [...displayFilters];
     const [removed] = updatedFilters.splice(draggedIndex, 1);
     updatedFilters.splice(targetIndex, 0, removed);
-    onUpdateFilters(updatedFilters);
+    handleUpdateDisplayFilters(updatedFilters);
     setDraggedIndex(null);
   };
 
   const handleAddFilter = () => {
     const newFilterId = `filter-${crypto.randomUUID()}`;
-    const atpTestColumn = availableColumns.find(
+    const validCols = availableColumns.filter(
+      (c) =>
+        c.column !== STATISTICAL_KEY_COLUMN &&
+        !c.isMetricKey &&
+        c.column !== GLOBAL_TIME_RANGE_COLUMN,
+    );
+    const atpTestColumn = validCols.find(
       (c) => c.column === Column.ATP_TEST_NAME,
     );
-    const selectedColumn = atpTestColumn ?? availableColumns[0];
+    const selectedColumn = atpTestColumn ?? validCols[0];
     const isNumber =
       selectedColumn?.dataType ===
         MeasurementFilterColumn_ColumnDataType.INT64 ||
@@ -342,25 +365,25 @@ export function FilterEditor({
             },
           }),
     };
-    onUpdateFilters([...filters, newFilter]);
+    handleUpdateDisplayFilters([...displayFilters, newFilter]);
   };
 
   const handleRemoveFilter = (index: number) => {
-    const updatedFilters = [...filters];
+    const updatedFilters = [...displayFilters];
     updatedFilters.splice(index, 1);
-    onUpdateFilters(updatedFilters);
+    handleUpdateDisplayFilters(updatedFilters);
   };
 
   const handleFilterChange = (
     index: number,
     updatedFilterPart: Partial<PerfFilter>,
   ) => {
-    const updatedFilters = [...filters];
+    const updatedFilters = [...displayFilters];
     updatedFilters[index] = {
       ...updatedFilters[index],
       ...updatedFilterPart,
     };
-    onUpdateFilters(updatedFilters);
+    handleUpdateDisplayFilters(updatedFilters);
   };
 
   const handleColumnChange = (index: number, column: string) => {
@@ -399,7 +422,7 @@ export function FilterEditor({
     key: K,
     value: PerfFilterDefault[K],
   ) => {
-    const updatedFilters = [...filters];
+    const updatedFilters = [...displayFilters];
     const currentFilter = updatedFilters[index];
 
     if (currentFilter.numberInput?.defaultValue) {
@@ -413,7 +436,7 @@ export function FilterEditor({
           },
         },
       };
-      onUpdateFilters(updatedFilters);
+      handleUpdateDisplayFilters(updatedFilters);
     } else if (currentFilter.textInput?.defaultValue) {
       updatedFilters[index] = {
         ...currentFilter,
@@ -425,14 +448,21 @@ export function FilterEditor({
           },
         },
       };
-      onUpdateFilters(updatedFilters);
+      handleUpdateDisplayFilters(updatedFilters);
     }
   };
 
   const primaryColumns = useMemo(
     () =>
       availableColumns
-        .filter((c) => c.primary && !!c.column)
+        .filter(
+          (c) =>
+            c.primary &&
+            !!c.column &&
+            c.column !== STATISTICAL_KEY_COLUMN &&
+            !c.isMetricKey &&
+            c.column !== GLOBAL_TIME_RANGE_COLUMN,
+        )
         .sort((a, b) =>
           getColumnDisplayName(a).localeCompare(getColumnDisplayName(b)),
         ),
@@ -442,7 +472,14 @@ export function FilterEditor({
   const secondaryColumns = useMemo(
     () =>
       availableColumns
-        .filter((c) => !c.primary && !!c.column)
+        .filter(
+          (c) =>
+            !c.primary &&
+            !!c.column &&
+            c.column !== STATISTICAL_KEY_COLUMN &&
+            !c.isMetricKey &&
+            c.column !== GLOBAL_TIME_RANGE_COLUMN,
+        )
         .sort((a, b) =>
           getColumnDisplayName(a).localeCompare(getColumnDisplayName(b)),
         ),
@@ -457,7 +494,7 @@ export function FilterEditor({
         </Box>
       ) : (
         <>
-          {filters.length === 0 && (
+          {displayFilters.length === 0 && (
             <Box
               sx={{
                 border: '1px dashed',
@@ -478,7 +515,7 @@ export function FilterEditor({
               </Typography>
             </Box>
           )}
-          {filters.map((filter, index) => {
+          {displayFilters.map((filter, index) => {
             const colDef = availableColumns.find(
               (c) => c.column === filter.column,
             );
@@ -508,7 +545,7 @@ export function FilterEditor({
                 onDragStart={() => handleDragStart(index)}
                 onDrop={() => handleDrop(index)}
                 globalFilters={globalFilters}
-                widgetFilters={filters}
+                widgetFilters={displayFilters}
               />
             );
           })}
@@ -658,7 +695,7 @@ export function FilterEditor({
             }}
           >
             {!expanded &&
-              filters.map((filter) => (
+              displayFilters.map((filter) => (
                 <Chip
                   key={filter.id}
                   label={getFilterLabel(
@@ -669,7 +706,7 @@ export function FilterEditor({
                   size="small"
                 />
               ))}
-            {!expanded && filters.length === 0 && (
+            {!expanded && displayFilters.length === 0 && (
               <Typography
                 variant="caption"
                 sx={{ color: 'text.secondary', fontStyle: 'italic' }}
@@ -737,7 +774,7 @@ export function FilterEditor({
           </Button>
           <Button
             onClick={() => {
-              onUpdateFilters([]);
+              handleUpdateDisplayFilters([]);
               setConfirmClearOpen(false);
             }}
             color="error"

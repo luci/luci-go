@@ -23,7 +23,11 @@ import {
 import { useState } from 'react';
 
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
-import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
+import {
+  Column,
+  COMMON_MESSAGES,
+  RAW_DATA_STAT_LABEL,
+} from '@/crystal_ball/constants';
 import { FiltersClipboardProvider } from '@/crystal_ball/context';
 import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
 import {
@@ -44,10 +48,11 @@ const mockedSuggestValues = jest.fn(
   ) => ({
     data: {
       suggestions: [
+        { value: '', count: '100' },
         { value: 'suggest1', count: '1' },
         { value: 'suggest2', count: '2' },
       ],
-      values: ['suggest1', 'suggest2'],
+      values: ['', 'suggest1', 'suggest2'],
     },
     isLoading: false,
     isError: false,
@@ -677,5 +682,208 @@ describe('ChartSeriesItem', () => {
         matchType: PerfChartSeries_MatchType.REGEX,
       }),
     );
+  });
+
+  it('renders Precomputed Statistic field and allows updating statistical key filter', async () => {
+    render(<ChartSeriesItem {...itemProps} />);
+    fireEvent.click(screen.getByText('Item 1'));
+    const statKeyInput = await screen.findByLabelText('Precomputed Statistic');
+
+    fireEvent.focus(statKeyInput);
+    fireEvent.keyDown(statKeyInput, { key: 'ArrowDown' });
+    const option = await screen.findByRole('option', { name: 'suggest1' });
+    fireEvent.click(option);
+
+    expect(itemProps.onUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          expect.objectContaining({
+            column: 'statistical_key',
+            textInput: expect.objectContaining({
+              defaultValue: expect.objectContaining({
+                values: ['suggest1'],
+              }),
+            }),
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it('allows selecting "None (Raw Data)" option to set statistical key to empty string', async () => {
+    const onUpdate = jest.fn();
+    render(
+      <ChartSeriesItem
+        {...itemProps}
+        series={PerfChartSeries.fromPartial({
+          ...itemProps.series,
+          filters: [
+            PerfFilter.fromPartial({
+              column: 'statistical_key',
+              textInput: {
+                defaultValue: {
+                  values: ['suggest1'],
+                  filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+                },
+              },
+            }),
+          ],
+        })}
+        onUpdate={onUpdate}
+      />,
+    );
+    fireEvent.click(screen.getByText('Item 1'));
+    const statKeyInput = await screen.findByLabelText('Precomputed Statistic');
+
+    fireEvent.focus(statKeyInput);
+    fireEvent.keyDown(statKeyInput, { key: 'ArrowDown' });
+    const rawOption = await screen.findByRole('option', {
+      name: 'None (Raw Data)',
+    });
+    fireEvent.click(rawOption);
+
+    expect(onUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          expect.objectContaining({
+            column: 'statistical_key',
+            textInput: expect.objectContaining({
+              defaultValue: expect.objectContaining({
+                values: [''],
+              }),
+            }),
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it('does not render statistical_key in the generic series filters list', async () => {
+    render(
+      <ChartSeriesItem
+        {...itemProps}
+        series={PerfChartSeries.fromPartial({
+          ...itemProps.series,
+          filters: [
+            PerfFilter.fromPartial({
+              id: 'stat-filter-1',
+              column: 'statistical_key',
+              textInput: {
+                defaultValue: {
+                  values: ['avg_val'],
+                  filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+                },
+              },
+            }),
+          ],
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByText('Item 1'));
+    await screen.findByLabelText('Precomputed Statistic');
+
+    expect(screen.getByText('No filters applied.')).toBeInTheDocument();
+  });
+
+  it('commits typed custom statistical key on blur', async () => {
+    const onUpdate = jest.fn();
+    render(
+      <ChartSeriesItem
+        {...itemProps}
+        onUpdate={onUpdate}
+        series={PerfChartSeries.fromPartial({
+          ...itemProps.series,
+          metricField: 'some_metric',
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByText('Item 1'));
+    const statKeyInput = await screen.findByLabelText('Precomputed Statistic');
+
+    fireEvent.change(statKeyInput, { target: { value: 'custom_p95' } });
+    fireEvent.blur(statKeyInput);
+
+    expect(onUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          expect.objectContaining({
+            column: 'statistical_key',
+            textInput: expect.objectContaining({
+              defaultValue: expect.objectContaining({
+                values: ['custom_p95'],
+              }),
+            }),
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it('preserves statistical_key filter when metric field blur is unchanged', async () => {
+    const onUpdate = jest.fn();
+    render(
+      <ChartSeriesItem
+        {...itemProps}
+        onUpdate={onUpdate}
+        series={PerfChartSeries.fromPartial({
+          ...itemProps.series,
+          metricField: 'existing_metric',
+          filters: [
+            PerfFilter.fromPartial({
+              id: 'stat-filter-1',
+              column: 'statistical_key',
+              textInput: {
+                defaultValue: {
+                  values: ['mean'],
+                  filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+                },
+              },
+            }),
+          ],
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByText('Item 1'));
+    const metricInput = screen.getByLabelText('Metric Field');
+
+    // Blur without changing
+    fireEvent.blur(metricInput);
+
+    // onUpdate not called because unchanged
+    expect(onUpdate).not.toHaveBeenCalled();
+  });
+
+  it('displays all statistical key options including raw data when focused/clicked', async () => {
+    render(
+      <ChartSeriesItem
+        {...itemProps}
+        series={PerfChartSeries.fromPartial({
+          ...itemProps.series,
+          metricField: 'existing_metric',
+          filters: [
+            PerfFilter.fromPartial({
+              id: 'stat-filter-1',
+              column: 'statistical_key',
+              textInput: {
+                defaultValue: {
+                  values: [''],
+                  filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+                },
+              },
+            }),
+          ],
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByText('Item 1'));
+    const statKeyInput = await screen.findByLabelText('Precomputed Statistic');
+
+    // Focus and open options
+    fireEvent.focus(statKeyInput);
+    fireEvent.keyDown(statKeyInput, { key: 'ArrowDown' });
+
+    expect(await screen.findByText(RAW_DATA_STAT_LABEL)).toBeInTheDocument();
+    expect(await screen.findByText('suggest1')).toBeInTheDocument();
+    expect(await screen.findByText('suggest2')).toBeInTheDocument();
   });
 });

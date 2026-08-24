@@ -304,11 +304,16 @@ describe('formatColumnNameFallback and getColumnDisplayNameMap', () => {
 });
 
 describe('getFilterableColumns', () => {
-  it('excludes isMetricKey and global time range columns', () => {
+  it('excludes statistical_key, isMetricKey, and global time range columns', () => {
     const columns = [
       MeasurementFilterColumn.fromPartial({
         column: 'build_target',
         displayName: 'Build Target',
+        applicableScopes: [MeasurementFilterColumn_FilterScope.WIDGET],
+      }),
+      MeasurementFilterColumn.fromPartial({
+        column: 'statistical_key',
+        displayName: 'Statistical Key',
         applicableScopes: [MeasurementFilterColumn_FilterScope.WIDGET],
       }),
       MeasurementFilterColumn.fromPartial({

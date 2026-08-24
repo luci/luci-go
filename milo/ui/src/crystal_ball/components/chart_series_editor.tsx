@@ -21,6 +21,7 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   FilterAlt as FunnelIcon,
+  Functions as FunctionsIcon,
   IndeterminateCheckBox as IndeterminateCheckBoxIcon,
   LibraryAdd as LibraryAddIcon,
   Palette as PaletteIcon,
@@ -40,6 +41,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -53,7 +55,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useContext, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
@@ -64,9 +66,12 @@ import {
 } from '@/crystal_ball/components';
 import {
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
+  Column,
   COMMON_MESSAGES,
   MAX_SUGGEST_RESULTS,
   OPERATOR_DISPLAY_NAMES,
+  RAW_DATA_STAT_LABEL,
+  STATISTICAL_KEY_COLUMN,
 } from '@/crystal_ball/constants';
 import { EditorUiContext } from '@/crystal_ball/context';
 import {
@@ -96,6 +101,7 @@ import {
   MeasurementFilterColumn_FilterScope,
   PerfChartSeries,
   PerfChartSeries_MatchType,
+  perfChartSeries_MatchTypeFromJSON,
   PerfFilter,
   PerfFilterDefault_FilterOperator,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
@@ -264,6 +270,13 @@ export function ChartSeriesEditor({
         ...sourceSeries,
         id,
         displayName: `${sourceSeries.displayName}${COMMON_MESSAGES.COPY_SUFFIX}`,
+        filters:
+          sourceSeries.filters?.map((f) =>
+            PerfFilter.fromPartial({
+              ...f,
+              id: `filter-${crypto.randomUUID()}`,
+            }),
+          ) ?? [],
       });
       const updatedSeries = [...series];
       updatedSeries.splice(index + 1, 0, newSeries);
@@ -345,7 +358,12 @@ export function ChartSeriesEditor({
           displayName: `${seriesToSplit.displayName} - ${val}`,
           parentSeriesId: seriesToSplit.id,
           filters: [
-            ...(seriesToSplit.filters ?? []),
+            ...(seriesToSplit.filters?.map((f) =>
+              PerfFilter.fromPartial({
+                ...f,
+                id: `filter-${crypto.randomUUID()}`,
+              }),
+            ) ?? []),
             {
               id: `filter-${crypto.randomUUID()}`,
               column: column,
@@ -375,11 +393,12 @@ export function ChartSeriesEditor({
     () =>
       filterColumns.filter(
         (c) =>
-          c.applicableScopes?.includes(
+          c.column !== STATISTICAL_KEY_COLUMN &&
+          (c.applicableScopes?.includes(
             MeasurementFilterColumn_FilterScope.METRIC,
           ) ||
-          (isStringArray(c.applicableScopes) &&
-            c.applicableScopes.includes('METRIC')),
+            (isStringArray(c.applicableScopes) &&
+              c.applicableScopes.includes('METRIC'))),
       ),
     [filterColumns],
   );
@@ -858,6 +877,18 @@ export function ChartSeriesItem({
   const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
   const [isFocused, setIsFocused] = useState(false);
 
+  useEffect(() => {
+    setInputValue(series.metricField ?? '');
+  }, [series.metricField]);
+
+  useEffect(() => {
+    setDisplayName(series.displayName ?? '');
+  }, [series.displayName]);
+
+  useEffect(() => {
+    setColor(series.color ?? '');
+  }, [series.color]);
+
   const isShowingPlaceholder =
     (series.displayName ?? '') === '' &&
     (series.metricField ?? '') === '' &&
@@ -887,7 +918,7 @@ export function ChartSeriesItem({
     useSuggestMeasurementFilterValues(
       {
         parent,
-        column: 'metric_key',
+        column: Column.METRIC_KEY,
         query: debouncedQuery,
         maxResultCount: MAX_SUGGEST_RESULTS,
         filter: filterString,
@@ -901,6 +932,98 @@ export function ChartSeriesItem({
 
   const options = suggestionData?.suggestions?.map((s) => s.value) ?? [];
 
+  const statKeyFilter = series.filters?.find(
+    (f) => f.column === STATISTICAL_KEY_COLUMN,
+  );
+  const currentStatKeyValue =
+    statKeyFilter?.textInput?.defaultValue?.values?.[0] ?? '';
+
+  const [statInputValue, setStatInputValue] = useState(
+    currentStatKeyValue === '' ? RAW_DATA_STAT_LABEL : currentStatKeyValue,
+  );
+
+  useEffect(() => {
+    setStatInputValue(
+      currentStatKeyValue === '' ? RAW_DATA_STAT_LABEL : currentStatKeyValue,
+    );
+  }, [currentStatKeyValue]);
+
+  const nonStatFilters = useMemo(
+    () =>
+      series.filters?.filter((f) => f.column !== STATISTICAL_KEY_COLUMN) ?? [],
+    [series.filters],
+  );
+
+  const effectiveMetricField = (
+    series.metricField ||
+    debouncedQuery ||
+    ''
+  ).trim();
+
+  const statKeyFilterString = useMemo(() => {
+    return buildFilterString([
+      ...(globalFilters ?? []),
+      ...(widgetFilters ?? []),
+      ...(effectiveMetricField
+        ? [
+            PerfFilter.fromPartial({
+              column: Column.METRIC_KEY,
+              textInput: {
+                defaultValue: {
+                  values: [effectiveMetricField],
+                  filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+                },
+              },
+            }),
+          ]
+        : []),
+    ]);
+  }, [globalFilters, widgetFilters, effectiveMetricField]);
+
+  const {
+    data: statKeySuggestionData,
+    isLoading: isLoadingStatKeysQuery,
+    isFetching: isFetchingStatKeys,
+  } = useSuggestMeasurementFilterValues(
+    {
+      parent,
+      column: STATISTICAL_KEY_COLUMN,
+      query: '',
+      maxResultCount: 50,
+      filter: statKeyFilterString,
+      skipCache: true,
+    },
+    {
+      enabled: !!parent && effectiveMetricField !== '',
+      retry: false,
+    },
+  );
+  const isLoadingStatKeys =
+    (isLoadingStatKeysQuery || isFetchingStatKeys) &&
+    effectiveMetricField !== '';
+
+  const statKeyOptions = useMemo(() => {
+    const validNonEmptyOptions = new Set<string>();
+    if (statKeySuggestionData) {
+      const fromSuggestions =
+        statKeySuggestionData.suggestions?.map((s) => s.value ?? '') ?? [];
+      const fromValues =
+        statKeySuggestionData.values?.map((v) => v ?? '') ?? [];
+      const backendOptions =
+        fromSuggestions.length > 0 ? fromSuggestions : fromValues;
+      for (const opt of backendOptions) {
+        if (opt && typeof opt === 'string' && opt.trim() !== '') {
+          validNonEmptyOptions.add(opt.trim());
+        }
+      }
+    }
+    if (currentStatKeyValue && currentStatKeyValue.trim() !== '') {
+      validNonEmptyOptions.add(currentStatKeyValue.trim());
+    }
+    const sortedNonEmpties = Array.from(validNonEmptyOptions).sort();
+    return ['', ...sortedNonEmpties];
+  }, [statKeySuggestionData, currentStatKeyValue]);
+
   const handleBlurDisplayName = () => {
     if (displayName !== series.displayName) {
       onUpdate({ ...series, displayName });
@@ -913,7 +1036,30 @@ export function ChartSeriesItem({
     }
   };
 
+  const handleStatisticalKeyChange = (newValue: string) => {
+    const otherFilters =
+      series.filters?.filter((f) => f.column !== STATISTICAL_KEY_COLUMN) ?? [];
+    const updatedFilter = PerfFilter.fromPartial({
+      id: statKeyFilter?.id ?? crypto.randomUUID(),
+      column: STATISTICAL_KEY_COLUMN,
+      textInput: {
+        defaultValue: {
+          values: [newValue],
+          filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+        },
+      },
+    });
+    onUpdate({
+      ...series,
+      filters: [...otherFilters, updatedFilter],
+    });
+  };
+
   const handleMetricFieldChange = (newValue: string) => {
+    if (newValue === series.metricField && statKeyFilter) {
+      return;
+    }
+
     setInputValue(newValue);
     const isDefaultOrEmpty =
       (series.displayName ?? '') === '' ||
@@ -924,15 +1070,47 @@ export function ChartSeriesItem({
         : series.displayName
       : series.displayName;
     setDisplayName(newDisplayName);
+
+    const otherFilters =
+      series.filters?.filter((f) => f.column !== STATISTICAL_KEY_COLUMN) ?? [];
+    let updatedFilters: PerfFilter[];
+    if (newValue === '') {
+      updatedFilters = otherFilters;
+    } else {
+      updatedFilters = [
+        ...otherFilters,
+        PerfFilter.fromPartial({
+          id: statKeyFilter?.id ?? crypto.randomUUID(),
+          column: STATISTICAL_KEY_COLUMN,
+          textInput: {
+            defaultValue: {
+              values: [''],
+              filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+            },
+          },
+        }),
+      ];
+    }
+
     onUpdate({
       ...series,
       metricField: newValue,
       displayName: newDisplayName,
+      filters: updatedFilters,
     });
   };
 
   const handleUpdateFilters = (updatedFilters: PerfFilter[]) => {
-    onUpdate({ ...series, filters: updatedFilters });
+    const currentStatFilter = series.filters?.find(
+      (f) => f.column === STATISTICAL_KEY_COLUMN,
+    );
+    const newFilters = currentStatFilter
+      ? [
+          ...updatedFilters.filter((f) => f.column !== STATISTICAL_KEY_COLUMN),
+          currentStatFilter,
+        ]
+      : updatedFilters;
+    onUpdate({ ...series, filters: newFilters });
   };
 
   return (
@@ -959,8 +1137,8 @@ export function ChartSeriesItem({
       <AccordionSummary
         component="div"
         expandIcon={null}
-        aria-controls={`series-${series.displayName}-content`}
-        id={`series-${series.displayName}-header`}
+        aria-controls={`series-${series.id || series.displayName}-content`}
+        id={`series-${series.id || series.displayName}-header`}
         sx={{
           py: 0,
           minHeight: (theme) => theme.spacing(5),
@@ -1038,18 +1216,22 @@ export function ChartSeriesItem({
             titlePlaceholder ||
             'Untitled Series'}
         </Typography>
-        {!expanded && series.filters?.length > 0 && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
-            {series.filters.map((filter) => {
-              const label = getFilterLabel(
-                filter,
-                OPERATOR_DISPLAY_NAMES,
-                columnDisplayNameMap,
-              );
-              return <Chip key={filter.id} label={label} size="small" />;
-            })}
-          </Box>
-        )}
+        {!expanded &&
+          (series.filters?.filter((f) => f.column !== STATISTICAL_KEY_COLUMN)
+            ?.length ?? 0) > 0 && (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
+              {series.filters
+                ?.filter((f) => f.column !== STATISTICAL_KEY_COLUMN)
+                .map((filter) => {
+                  const label = getFilterLabel(
+                    filter,
+                    OPERATOR_DISPLAY_NAMES,
+                    columnDisplayNameMap,
+                  );
+                  return <Chip key={filter.id} label={label} size="small" />;
+                })}
+            </Box>
+          )}
         <Box
           sx={{ display: 'flex', gap: 0.5, ml: 'auto', alignItems: 'center' }}
         >
@@ -1400,7 +1582,9 @@ export function ChartSeriesItem({
                     : series.matchType
                 }
                 onChange={(e) => {
-                  const matchType = e.target.value as PerfChartSeries_MatchType;
+                  const matchType = perfChartSeries_MatchTypeFromJSON(
+                    e.target.value,
+                  );
                   onUpdate({ ...series, matchType });
                 }}
                 inputProps={{
@@ -1421,11 +1605,250 @@ export function ChartSeriesItem({
             </Box>
           </Box>
 
+          {/* Statistical Key (Mandatory when metric is selected) */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: 1.5,
+              alignItems: 'flex-start',
+            }}
+          >
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  mb: 0.5,
+                }}
+              >
+                <FunctionsIcon
+                  sx={{
+                    ...COMPACT_ICON_SX,
+                    color: effectiveMetricField ? 'inherit' : 'text.disabled',
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: effectiveMetricField
+                      ? 'text.secondary'
+                      : 'text.disabled',
+                    fontWeight: (theme) => theme.typography.fontWeightBold,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Precomputed Statistic
+                </Typography>
+                {isLoadingStatKeys && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      ml: 1,
+                    }}
+                  >
+                    <CircularProgress size={12} color="primary" />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'primary.main',
+                        fontWeight: (theme) =>
+                          theme.typography.fontWeightMedium,
+                        fontSize: '0.7rem',
+                      }}
+                    >
+                      Searching statistics...
+                    </Typography>
+                  </Box>
+                )}
+                {!effectiveMetricField && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'warning.main',
+                      fontWeight: (theme) => theme.typography.fontWeightMedium,
+                      ml: 0.5,
+                    }}
+                  >
+                    (Select a metric field first)
+                  </Typography>
+                )}
+              </Box>
+              <Tooltip
+                title={
+                  !effectiveMetricField
+                    ? 'Please enter or select a Metric Field above before choosing a Precomputed Statistic.'
+                    : ''
+                }
+                arrow
+                placement="top-start"
+              >
+                <div>
+                  <Autocomplete
+                    freeSolo
+                    size="small"
+                    fullWidth
+                    openOnFocus
+                    selectOnFocus
+                    disabled={!effectiveMetricField}
+                    loading={isLoadingStatKeys}
+                    loadingText="Searching available statistics in CBDW..."
+                    noOptionsText={
+                      isLoadingStatKeys
+                        ? 'Searching available statistics in CBDW...'
+                        : 'No statistics found'
+                    }
+                    options={statKeyOptions}
+                    inputValue={statInputValue}
+                    onInputChange={(_event, newInputValue, reason) => {
+                      if (reason === 'reset') {
+                        setStatInputValue(
+                          currentStatKeyValue === ''
+                            ? RAW_DATA_STAT_LABEL
+                            : currentStatKeyValue,
+                        );
+                      } else {
+                        setStatInputValue(newInputValue);
+                      }
+                    }}
+                    onBlur={() => {
+                      const trimmed = statInputValue.trim();
+                      if (
+                        trimmed === RAW_DATA_STAT_LABEL ||
+                        trimmed.toLowerCase() ===
+                          RAW_DATA_STAT_LABEL.toLowerCase() ||
+                        trimmed.toLowerCase() === 'none' ||
+                        trimmed === ''
+                      ) {
+                        if (currentStatKeyValue !== '') {
+                          handleStatisticalKeyChange('');
+                        }
+                      } else if (trimmed !== currentStatKeyValue) {
+                        handleStatisticalKeyChange(trimmed);
+                      }
+                    }}
+                    getOptionLabel={(opt) =>
+                      typeof opt === 'string' && opt === ''
+                        ? RAW_DATA_STAT_LABEL
+                        : typeof opt === 'string'
+                          ? opt
+                          : ''
+                    }
+                    isOptionEqualToValue={(option, val) => option === val}
+                    filterOptions={(options, { inputValue }) => {
+                      const trimmed = (inputValue ?? '').trim().toLowerCase();
+                      const currentLabelTrimmed = (
+                        currentStatKeyValue === ''
+                          ? RAW_DATA_STAT_LABEL
+                          : currentStatKeyValue
+                      )
+                        .trim()
+                        .toLowerCase();
+                      const rawDataLabelTrimmed =
+                        RAW_DATA_STAT_LABEL.trim().toLowerCase();
+                      const currentStatKeyTrimmed = currentStatKeyValue
+                        .trim()
+                        .toLowerCase();
+
+                      if (
+                        !trimmed ||
+                        trimmed === currentLabelTrimmed ||
+                        trimmed === rawDataLabelTrimmed ||
+                        trimmed === currentStatKeyTrimmed
+                      ) {
+                        return options;
+                      }
+
+                      return options.filter((opt) => {
+                        const label = (
+                          opt === '' ? RAW_DATA_STAT_LABEL : opt
+                        ).toLowerCase();
+                        return (
+                          label.includes(trimmed) ||
+                          opt.toLowerCase().includes(trimmed)
+                        );
+                      });
+                    }}
+                    value={currentStatKeyValue}
+                    onChange={(_event, newValue, reason) => {
+                      if (reason === 'clear' || !newValue) {
+                        handleStatisticalKeyChange('');
+                        return;
+                      }
+                      if (typeof newValue === 'string') {
+                        const trimmed = newValue.trim();
+                        if (
+                          trimmed === RAW_DATA_STAT_LABEL ||
+                          trimmed.toLowerCase() ===
+                            RAW_DATA_STAT_LABEL.toLowerCase() ||
+                          trimmed.toLowerCase() === 'none' ||
+                          trimmed === ''
+                        ) {
+                          handleStatisticalKeyChange('');
+                        } else {
+                          handleStatisticalKeyChange(trimmed);
+                        }
+                      }
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder={
+                          !effectiveMetricField
+                            ? 'Disabled — select a metric field above first'
+                            : isLoadingStatKeys
+                              ? 'Loading statistics...'
+                              : `${RAW_DATA_STAT_LABEL} or select statistic`
+                        }
+                        helperText={
+                          !effectiveMetricField
+                            ? 'Select a Metric Field above to configure precomputed statistics or raw data.'
+                            : undefined
+                        }
+                        FormHelperTextProps={{
+                          sx: {
+                            mx: 0,
+                            mt: 0.5,
+                            fontSize: '0.75rem',
+                            color: 'text.secondary',
+                          },
+                        }}
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {isLoadingStatKeys ? (
+                                <CircularProgress
+                                  color="inherit"
+                                  size={16}
+                                  sx={{ mr: 1 }}
+                                />
+                              ) : null}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        }}
+                        inputProps={{
+                          ...params.inputProps,
+                          'aria-label': 'Precomputed Statistic',
+                        }}
+                        sx={COMPACT_TEXTFIELD_SX}
+                      />
+                    )}
+                  />
+                </div>
+              </Tooltip>
+            </Box>
+          </Box>
+
           <FilterEditor
             title="SERIES FILTERS"
             titleIcon={<FunnelIcon sx={COMPACT_ICON_SX} />}
             titleTooltip={COMMON_MESSAGES.SUGGESTIONS_CACHE_WARNING}
-            filters={[...(series.filters ?? [])]}
+            filters={nonStatFilters}
             onUpdateFilters={handleUpdateFilters}
             dataSpecId={dataSpecId}
             availableColumns={metricFilterColumns}

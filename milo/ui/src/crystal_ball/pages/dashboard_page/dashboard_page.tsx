@@ -44,7 +44,14 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { deepEqual } from 'fast-equals';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useBlocker, useNavigate, useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -71,6 +78,7 @@ import {
   GLOBAL_TIME_RANGE_COLUMN,
   GLOBAL_TIME_RANGE_FILTER_ID,
   MAX_PAGE_SIZE,
+  STATISTICAL_KEY_COLUMN,
   WidgetType,
 } from '@/crystal_ball/constants';
 import { EditorUiKeyPrefix, useToast } from '@/crystal_ball/hooks';
@@ -108,6 +116,7 @@ import {
   perfChartWidget_ChartTypeFromJSON,
   PerfDataSpec,
   PerfFilter,
+  PerfFilterDefault_FilterOperator,
   PerfWidget,
   PerfXAxisConfig,
   PerfXAxisConfig_Granularity,
@@ -610,6 +619,61 @@ const DASHBOARD_UPGRADE_RULES: readonly DashboardUpgradeRule[] = [
       });
     },
   },
+  {
+    needsUpgrade: (state) =>
+      state.dashboardContent?.widgets?.some((w) =>
+        w.chart?.series?.some(
+          (s) =>
+            (s.metricField ?? '') !== '' &&
+            !s.filters?.some((f) => f.column === STATISTICAL_KEY_COLUMN),
+        ),
+      ) ?? false,
+    upgrade: (state) => {
+      const upgradedWidgets =
+        state.dashboardContent?.widgets?.map((w) => {
+          if (!w.chart?.series) return w;
+          const upgradedSeries = w.chart.series.map((s) => {
+            if (
+              (s.metricField ?? '') === '' ||
+              s.filters?.some((f) => f.column === STATISTICAL_KEY_COLUMN)
+            ) {
+              return s;
+            }
+            return {
+              ...s,
+              filters: [
+                ...(s.filters ?? []),
+                PerfFilter.fromPartial({
+                  id: crypto.randomUUID(),
+                  column: STATISTICAL_KEY_COLUMN,
+                  textInput: {
+                    defaultValue: {
+                      values: [''],
+                      filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+                    },
+                  },
+                }),
+              ],
+            };
+          });
+          return PerfWidget.fromPartial({
+            ...w,
+            chart: {
+              ...w.chart,
+              series: upgradedSeries,
+            },
+          });
+        }) ?? [];
+
+      return DashboardState.fromPartial({
+        ...state,
+        dashboardContent: {
+          ...state.dashboardContent,
+          widgets: upgradedWidgets,
+        },
+      });
+    },
+  },
 ];
 
 function needsDashboardUpgrade(state: DashboardState): boolean {
@@ -699,6 +763,7 @@ export function DashboardPage() {
     useState<DashboardState | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const upgradeAttemptedRef = useRef(false);
 
   const hasUnsavedChanges = useMemo(() => {
     return (
@@ -760,9 +825,10 @@ export function DashboardPage() {
 
   useEffect(() => {
     async function checkAndUpgrade() {
-      if (!dashboardState || isUpgrading) return;
+      if (!dashboardState || isUpgrading || upgradeAttemptedRef.current) return;
 
       if (needsDashboardUpgrade(dashboardState)) {
+        upgradeAttemptedRef.current = true;
         setIsUpgrading(true);
         try {
           const upgraded = upgradeDashboardState(dashboardState);
@@ -776,7 +842,7 @@ export function DashboardPage() {
             setLocalDashboardState(response.response);
           }
         } catch (e) {
-          showErrorToast(e, 'Failed to upgrade dashboard missing series ids');
+          showErrorToast(e, 'Failed to apply automatic dashboard upgrades');
         } finally {
           setIsUpgrading(false);
         }

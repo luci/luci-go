@@ -470,6 +470,44 @@ describe('<DashboardPage />', () => {
     });
   });
 
+  it('handles automatic upgrade failure gracefully without infinite retries', async () => {
+    const mockMutateAsync = jest
+      .fn()
+      .mockRejectedValue(new Error('Upgrade Error'));
+    jest
+      .mocked(useDashboardStateApi.useUpdateDashboardState)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockMutateAsync }),
+      );
+
+    const testWidget = {
+      id: 'widget-1',
+      title: 'Legacy Widget',
+      chart: {
+        chartType: 2,
+        dataSpecId: 'dataspec-1',
+      },
+    };
+
+    const dashboardNeedingUpgrade = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        ...mockDashboard.dashboardContent,
+        widgets: [testWidget],
+      },
+    });
+
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(dashboardNeedingUpgrade));
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('displays error toast on save failure', async () => {
     const mockMutateAsync = jest.fn().mockRejectedValue(new Error('API Error'));
     jest
@@ -927,6 +965,77 @@ describe('<DashboardPage />', () => {
         validateOnly: false,
       });
       expect(screen.queryByTestId('summarize-dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('automatically upgrades legacy dashboard with series missing statistical_key filter', async () => {
+    const mockMutateAsync = jest.fn().mockResolvedValue({});
+    jest.mocked(useDashboardStateApi.useUpdateDashboardState).mockReturnValue(
+      createMockMutationResult({
+        mutateAsync: mockMutateAsync,
+      }),
+    );
+
+    const legacyDashboard = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        widgets: [
+          {
+            id: 'widget-1',
+            displayName: 'Chart',
+            chart: {
+              chartType: 1,
+              series: [
+                {
+                  id: 'series-1',
+                  metricField: 'MemAvailable_bytes',
+                  filters: [],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(legacyDashboard));
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dashboardState: expect.objectContaining({
+            dashboardContent: expect.objectContaining({
+              widgets: [
+                expect.objectContaining({
+                  chart: expect.objectContaining({
+                    series: [
+                      expect.objectContaining({
+                        id: 'series-1',
+                        metricField: 'MemAvailable_bytes',
+                        filters: [
+                          expect.objectContaining({
+                            column: 'statistical_key',
+                            textInput: expect.objectContaining({
+                              defaultValue: expect.objectContaining({
+                                values: [''],
+                              }),
+                            }),
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                }),
+              ],
+            }),
+          }),
+          updateMask: ['dashboardContent.widgets'],
+        }),
+      );
     });
   });
 });

@@ -981,5 +981,56 @@ describe('FilterEditor', () => {
 
       expect(defaultProps.onUpdateFilters).toHaveBeenCalledWith([]);
     });
+
+    it('does not display statistical_key filter and preserves it when updating filters', async () => {
+      const onUpdateFilters = jest.fn();
+      const filtersWithStatKey = [
+        ...initialFilters,
+        PerfFilter.fromPartial({
+          id: 'stat-key-filter',
+          column: 'statistical_key',
+          textInput: {
+            defaultValue: {
+              values: ['mean'],
+              filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+            },
+          },
+        }),
+      ];
+
+      wrapWithProviders(
+        <FilterEditor
+          {...defaultProps}
+          filters={filtersWithStatKey}
+          onUpdateFilters={onUpdateFilters}
+        />,
+      );
+
+      // Should not show statistical_key in chips or filter rows
+      expect(screen.queryByText('STATISTICAL KEY')).not.toBeInTheDocument();
+      expect(screen.queryByText('mean')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Filters'));
+
+      const clearButton = screen.getByRole('button', {
+        name: 'Clear all filters',
+      });
+      fireEvent.click(clearButton);
+
+      const confirmButton = screen.getByTestId('confirm-dialog-confirm');
+      fireEvent.click(confirmButton);
+
+      // Clears display filters but preserves statistical_key
+      expect(onUpdateFilters).toHaveBeenCalledWith([
+        expect.objectContaining({
+          column: 'statistical_key',
+          textInput: expect.objectContaining({
+            defaultValue: expect.objectContaining({
+              values: ['mean'],
+            }),
+          }),
+        }),
+      ]);
+    });
   });
 });

@@ -48,6 +48,7 @@ import {
   GLOBAL_TIME_RANGE_COLUMN,
   GROUP_BY_CONFIG,
   NUM_AGGREGATED_ROWS,
+  STATISTICAL_KEY_COLUMN,
   Z_INDEX,
 } from '@/crystal_ball/constants';
 import { WidgetPortalContext } from '@/crystal_ball/context';
@@ -628,11 +629,12 @@ export function ChartWidget({
     () =>
       filterColumns.filter(
         (c) =>
-          c.applicableScopes?.includes(
+          c.column !== STATISTICAL_KEY_COLUMN &&
+          (c.applicableScopes?.includes(
             MeasurementFilterColumn_FilterScope.WIDGET,
           ) ||
-          (isStringArray(c.applicableScopes) &&
-            c.applicableScopes.includes('WIDGET')),
+            (isStringArray(c.applicableScopes) &&
+              c.applicableScopes.includes('WIDGET'))),
       ),
     [filterColumns],
   );
