@@ -84,8 +84,7 @@ export const OrderForm = ({ entry }: OrderFormProps) => {
     return Array.from(groups).sort();
   }, [filterValuesData?.resourceGroups, resourceGroup]);
 
-  // TODO: Re-visit this once we add GCE VMs to the catalog.
-  const gceVm = 'No';
+  const gceVm = entry.productType?.toLowerCase() === 'gce' ? 'Yes' : 'No';
 
   // Android specific
   const isMobileHarness = entry.productType === 'android-testbed';

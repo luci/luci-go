@@ -229,6 +229,7 @@ describe('<OrderForm />', () => {
     expect(customFields).toContain('1473369:CrOS TryJob'); // Resource Group
     expect(customFields).toContain('1399763:No'); // Mobile Harness
     expect(customFields).toContain('1374342:Google Pixel 9 Pro'); // Resource Name (Android)
+    expect(customFields).toContain('1398886:No'); // GCE VM
     const expectedDate = DateTime.fromFormat(
       '10/12/2026',
       'MM/dd/yyyy',
@@ -258,6 +259,57 @@ describe('<OrderForm />', () => {
     await waitForElementToBeRemoved(() =>
       screen.queryByText('Order Submitted'),
     );
+
+    openSpy.mockRestore();
+  });
+
+  it('sets GCE VM custom field to Yes when productType is gce', async () => {
+    const gceEntry = { ...mockEntry, productType: 'gce' };
+    renderOrderForm(gceEntry);
+
+    // Select OS Platform
+    const platformSelect = screen.getByRole('combobox', {
+      name: /Platform \(Fulfillment Channel\)/,
+    });
+    fireEvent.mouseDown(platformSelect);
+    const osOption = screen.getByText('Chrome OS');
+    fireEvent.click(osOption);
+
+    // Enter Business Justification
+    fireEvent.change(screen.getByLabelText(/Business Justification/), {
+      target: { value: 'VM resources required.' },
+    });
+
+    // Select Resource Group
+    const resourceGroupSelect = await screen.findByRole('combobox', {
+      name: /Resource Group/,
+    });
+    await waitFor(() => {
+      expect(resourceGroupSelect).not.toHaveAttribute('aria-disabled', 'true');
+    });
+    fireEvent.mouseDown(resourceGroupSelect);
+    const groupOption = await screen.findByText('CrOS TryJob');
+    fireEvent.click(groupOption);
+
+    // Enter Launch Date
+    fireEvent.change(screen.getByLabelText(/Estimated Launch Date/), {
+      target: { value: '10/12/2026' },
+    });
+
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+    const submitButton = screen.getByRole('button', { name: 'Submit Order' });
+    const form = submitButton.closest('form');
+    expect(form).not.toBeNull();
+    if (form) {
+      fireEvent.submit(form);
+    }
+
+    expect(openSpy).toHaveBeenCalledTimes(1);
+    const openedUrlStr = openSpy.mock.calls[0][0] as string;
+    const url = new URL(openedUrlStr);
+    const customFields = url.searchParams.getAll('customFields');
+    expect(customFields).toContain('1398886:Yes'); // GCE VM is Yes for gce productType
 
     openSpy.mockRestore();
   });
