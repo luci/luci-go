@@ -77,7 +77,7 @@ import {
   perfChartSeries_PerfAggregationFunctionFromJSON,
   PerfChartWidget,
   PerfChartWidget_ChartType,
-  PerfDashboardContent,
+  PerfSeriesSplit,
   PerfDataSpec,
   PerfFilter,
   PerfFilterDefault_FilterOperator,
@@ -206,7 +206,6 @@ function getChartSeries(
 
       const xAxisKey = widgetResponse.multiMetricChartData.xAxisDataKey;
       const yAxisKey = widgetResponse.multiMetricChartData.yAxisDataKey;
-
       return widgetResponse.multiMetricChartData.lines
         .map((line, index) => {
           const seriesIndex = findMatchingSeriesIndex(
@@ -259,6 +258,7 @@ interface ChartWidgetProps {
   filterColumns: readonly MeasurementFilterColumn[];
   isLoadingFilterColumns?: boolean;
   dataSpecs?: { [key: string]: PerfDataSpec };
+  globalSeriesSplits?: readonly PerfSeriesSplit[];
 }
 
 /**
@@ -274,6 +274,7 @@ export function ChartWidget({
   globalFilters,
   dataSpecs,
   dashboardName,
+  globalSeriesSplits,
 }: ChartWidgetProps) {
   const { timeZone } = useUserSettings();
 
@@ -429,8 +430,9 @@ export function ChartWidget({
 
   const fetchRequest = useMemo(
     () => ({
-      dashboardContent: PerfDashboardContent.fromPartial({
+      dashboardContent: {
         globalFilters: globalFilters ?? [],
+        globalSeriesSplits: globalSeriesSplits ?? [],
         dataSpecs: dataSpecs ?? {},
         widgets: [
           PerfWidget.fromPartial({
@@ -441,10 +443,10 @@ export function ChartWidget({
             }),
           }),
         ],
-      }),
+      },
       widgetId,
     }),
-    [globalFilters, dataSpecs, widgetId, widget],
+    [globalFilters, globalSeriesSplits, dataSpecs, widgetId, widget],
   );
 
   const hasAtpTestFilter = useMemo(() => {

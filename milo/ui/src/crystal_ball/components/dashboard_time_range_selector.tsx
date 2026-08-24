@@ -184,6 +184,8 @@ export function DashboardTimeRangeSelector({
         widgets: dashboardState.dashboardContent?.widgets ?? [],
         dataSpecs: dashboardState.dashboardContent?.dataSpecs ?? {},
         globalFilters: newGlobalFilters,
+        globalSeriesSplits:
+          dashboardState.dashboardContent?.globalSeriesSplits ?? [],
       },
     });
   };

@@ -23,6 +23,7 @@ export * from './dashboard_dialog';
 export * from './dashboard_list_table';
 export * from './dashboard_time_range_selector';
 export * from './filter_editor';
+export * from './global_splits_editor';
 export * from './layout';
 export * from './markdown_widget';
 export * from './period_comparison_widget';

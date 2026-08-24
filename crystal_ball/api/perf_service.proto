@@ -1035,6 +1035,10 @@ message PerfDashboardContent {
 
   // List of widgets within this dashboard.
   repeated PerfWidget widgets = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Global series splits that apply dynamically to all applicable charts.
+  repeated PerfSeriesSplit global_series_splits = 4
+      [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Defines a single widget within the dashboard.

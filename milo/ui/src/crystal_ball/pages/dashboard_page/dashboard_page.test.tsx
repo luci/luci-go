@@ -341,6 +341,7 @@ describe('<DashboardPage />', () => {
             'description',
             'dashboardContent.widgets',
             'dashboardContent.globalFilters',
+            'dashboardContent.globalSeriesSplits',
           ],
         }),
       );
@@ -527,6 +528,7 @@ describe('<DashboardPage />', () => {
             'description',
             'dashboardContent.widgets',
             'dashboardContent.globalFilters',
+            'dashboardContent.globalSeriesSplits',
           ],
         }),
       );

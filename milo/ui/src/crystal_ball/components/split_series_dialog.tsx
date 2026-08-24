@@ -28,6 +28,7 @@ import {
   IconButton,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
@@ -41,7 +42,7 @@ import {
   buildFilterString,
   generateColor,
   getColumnDisplayName,
-  getFilterableColumns,
+  getSplittableColumns,
 } from '@/crystal_ball/utils';
 import {
   PerfChartSeries,
@@ -77,6 +78,7 @@ export function SplitSeriesDialog({
   globalFilters,
   widgetFilters,
 }: SplitSeriesDialogProps) {
+  const theme = useTheme();
   const { dashboardId } = useParams<{ dashboardId: string }>();
   const parent = dashboardId
     ? `dashboardStates/${dashboardId}/dataSpecs/${dataSpecId}`
@@ -101,7 +103,7 @@ export function SplitSeriesDialog({
     );
 
   const columns = useMemo(() => {
-    return getFilterableColumns(columnsData?.measurementFilterColumns ?? []);
+    return getSplittableColumns(columnsData?.measurementFilterColumns ?? []);
   }, [columnsData]);
 
   const filterString = useMemo(() => {
@@ -141,7 +143,7 @@ export function SplitSeriesDialog({
       onClose={onClose}
       disableScrollLock
       sx={{
-        zIndex: Z_INDEX.SIDE_DRAWER,
+        zIndex: Z_INDEX.SIDE_DRAWER(theme),
       }}
       PaperProps={{
         sx: {
@@ -276,7 +278,7 @@ export function SplitSeriesDialog({
             slotProps={{
               popper: {
                 sx: {
-                  zIndex: Z_INDEX.DRAWER_POPUP,
+                  zIndex: Z_INDEX.DRAWER_POPUP(theme),
                 },
               },
             }}
@@ -364,7 +366,7 @@ export function SplitSeriesDialog({
                 slotProps={{
                   popper: {
                     sx: {
-                      zIndex: Z_INDEX.DRAWER_POPUP,
+                      zIndex: Z_INDEX.DRAWER_POPUP(theme),
                     },
                   },
                 }}

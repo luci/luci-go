@@ -90,6 +90,7 @@ export function useGenerateDashboardWorkflow() {
         widgets: [],
         dataSpecs: {},
         globalFilters: [],
+        globalSeriesSplits: [],
       };
 
       const newDataSpecs = { ...baseDashboardContent.dataSpecs };
@@ -133,6 +134,7 @@ export function useGenerateDashboardWorkflow() {
           ...baseDashboardContent,
           dataSpecs: newDataSpecs,
           globalFilters: newGlobalFilters,
+          globalSeriesSplits: baseDashboardContent.globalSeriesSplits ?? [],
         },
       });
 
@@ -205,6 +207,7 @@ export function useCreateDashboardWorkflow() {
                 }),
                 createDefaultBuildTypeFilter(),
               ],
+              globalSeriesSplits: [],
             },
           }),
         }),

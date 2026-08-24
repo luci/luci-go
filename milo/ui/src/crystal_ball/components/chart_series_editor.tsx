@@ -397,11 +397,28 @@ export function ChartSeriesEditor({
     return filteredSeries.flatMap((s) => {
       const originalIndex = series.findIndex((orig) => orig.id === s.id);
       const key = s.id || String(originalIndex);
-      const hasChildren = s.id
+      const dynamicChildren = chartData
+        ? chartData.filter(
+            (d) =>
+              !series.some(
+                (ch) => ch.id === d.seriesId || d.seriesId === s.id,
+              ) &&
+              ((s.id &&
+                d.seriesId &&
+                d.seriesId !== s.id &&
+                d.seriesId.startsWith(s.id + '_')) ||
+                (d.name &&
+                  s.displayName &&
+                  d.name !== s.displayName &&
+                  d.name.startsWith(s.displayName + ' - '))),
+          )
+        : [];
+      const hasConfiguredChildren = s.id
         ? series.some(
             (child) => child.parentSeriesId === s.id && child.id !== s.id,
           )
         : false;
+      const hasChildren = hasConfiguredChildren || dynamicChildren.length > 0;
       const childrenExpanded = getChildrenExpanded(s.id);
 
       return [
@@ -439,8 +456,140 @@ export function ChartSeriesEditor({
             regressionInfo={getRegressionInfo(s)}
           />
         </Box>,
-        ...(hasChildren && childrenExpanded && s.id
+        ...(hasConfiguredChildren && childrenExpanded && s.id
           ? renderSeriesTree(s.id, depth + 1)
+          : []),
+        ...(childrenExpanded && dynamicChildren.length > 0
+          ? dynamicChildren.map((d, i) => {
+              const dKey = `dynamic-${d.seriesId || i}`;
+              const dParts = d.name.split(' - ');
+              const dName =
+                dParts.length > 1 ? dParts.slice(1).join(' - ') : d.name;
+              let trendInfo: ReturnType<typeof getTrendInfo> | null = null;
+              let regBadge: React.ReactNode = null;
+
+              if (!disableRegression && d.data && d.data.length > 0) {
+                const latestPt = d.data[d.data.length - 1];
+                const scale = d.yScaleFactor ?? 1;
+                const { diff, pctChange } = calculateChange(
+                  d.data[0].y * scale,
+                  latestPt.y * scale,
+                );
+                trendInfo = getTrendInfo(diff, s.metricField || '');
+                if (trendInfo) {
+                  const iconColor =
+                    trendInfo!.color === 'error.main' ? 'error' : 'success';
+                  regBadge = (
+                    <Tooltip
+                      title="Shows the overall change from the first point to the latest point."
+                      arrow
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          mr: 1,
+                          px: 0.8,
+                          py: 0.15,
+                          borderRadius: 10,
+                          bgcolor: (theme) =>
+                            trendInfo!.color === 'error.main'
+                              ? alpha(theme.palette.error.main, 0.08)
+                              : trendInfo!.color === 'success.main'
+                                ? alpha(theme.palette.success.main, 0.08)
+                                : 'action.hover',
+                          border: '1px solid',
+                          borderColor:
+                            trendInfo!.color === 'error.main'
+                              ? 'error.light'
+                              : trendInfo!.color === 'success.main'
+                                ? 'success.light'
+                                : 'divider',
+                          cursor: 'help',
+                        }}
+                      >
+                        {trendInfo.trend === 'up' && (
+                          <TrendingUpIcon
+                            color={iconColor as 'error' | 'success' | 'inherit'}
+                            fontSize="small"
+                          />
+                        )}
+                        {trendInfo.trend === 'down' && (
+                          <TrendingDownIcon
+                            color={iconColor as 'error' | 'success' | 'inherit'}
+                            fontSize="small"
+                          />
+                        )}
+                        {trendInfo.trend === 'flat' && (
+                          <TrendingFlatIcon color="action" fontSize="small" />
+                        )}
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 'bold',
+                            color: trendInfo!.color,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.25,
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {formatChange(diff, pctChange)}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  );
+                }
+              }
+
+              return (
+                <Box
+                  key={dKey}
+                  sx={{
+                    pl: (depth + 1) * 3,
+                    bgcolor: (theme) =>
+                      alpha(theme.palette.action.hover, BackgroundAlpha.LOW),
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      pl: 2,
+                      minHeight: (theme) => theme.spacing(5),
+                    }}
+                  >
+                    <Box sx={{ width: 14 }} />
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        bgcolor: d.stroke,
+                        borderRadius: '50%',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        mr: 0.5,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: (theme) => theme.typography.fontWeightBold,
+                      }}
+                    >
+                      {dName}
+                    </Typography>
+                    <Box
+                      sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}
+                    >
+                      {regBadge}
+                    </Box>
+                  </Box>
+                </Box>
+              );
+            })
           : []),
       ];
     });
@@ -690,7 +839,7 @@ export function ChartSeriesItem({
   }, [regressionInfo, series.metricField]);
 
   const iconColor = trendInfo
-    ? trendInfo.color === 'error.main'
+    ? trendInfo!.color === 'error.main'
       ? 'error'
       : 'success'
     : 'inherit';
@@ -916,16 +1065,16 @@ export function ChartSeriesItem({
                   py: 0.15,
                   borderRadius: 10,
                   bgcolor: (theme) =>
-                    trendInfo.color === 'error.main'
+                    trendInfo!.color === 'error.main'
                       ? alpha(theme.palette.error.main, 0.08)
-                      : trendInfo.color === 'success.main'
+                      : trendInfo!.color === 'success.main'
                         ? alpha(theme.palette.success.main, 0.08)
                         : 'action.hover',
                   border: '1px solid',
                   borderColor:
-                    trendInfo.color === 'error.main'
+                    trendInfo!.color === 'error.main'
                       ? 'error.light'
-                      : trendInfo.color === 'success.main'
+                      : trendInfo!.color === 'success.main'
                         ? 'success.light'
                         : 'divider',
                   cursor: 'help',
@@ -944,7 +1093,7 @@ export function ChartSeriesItem({
                   variant="caption"
                   sx={{
                     fontWeight: 'bold',
-                    color: trendInfo.color,
+                    color: trendInfo!.color,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 0.25,

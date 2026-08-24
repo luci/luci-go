@@ -776,6 +776,8 @@ export interface PerfDashboardContent {
   readonly globalFilters: readonly PerfFilter[];
   /** List of widgets within this dashboard. */
   readonly widgets: readonly PerfWidget[];
+  /** Global series splits that apply dynamically to all applicable charts. */
+  readonly globalSeriesSplits: readonly PerfSeriesSplit[];
 }
 
 export interface PerfDashboardContent_DataSpecsEntry {
@@ -5988,7 +5990,7 @@ export const PeriodStats: MessageFns<PeriodStats> = {
 };
 
 function createBasePerfDashboardContent(): PerfDashboardContent {
-  return { dataSpecs: {}, globalFilters: [], widgets: [] };
+  return { dataSpecs: {}, globalFilters: [], widgets: [], globalSeriesSplits: [] };
 }
 
 export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
@@ -6001,6 +6003,9 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
     }
     for (const v of message.widgets) {
       PerfWidget.encode(v!, writer.uint32(26).fork()).join();
+    }
+    for (const v of message.globalSeriesSplits) {
+      PerfSeriesSplit.encode(v!, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -6039,6 +6044,14 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
           message.widgets.push(PerfWidget.decode(reader, reader.uint32()));
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.globalSeriesSplits.push(PerfSeriesSplit.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6060,6 +6073,9 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
         ? object.globalFilters.map((e: any) => PerfFilter.fromJSON(e))
         : [],
       widgets: globalThis.Array.isArray(object?.widgets) ? object.widgets.map((e: any) => PerfWidget.fromJSON(e)) : [],
+      globalSeriesSplits: globalThis.Array.isArray(object?.globalSeriesSplits)
+        ? object.globalSeriesSplits.map((e: any) => PerfSeriesSplit.fromJSON(e))
+        : [],
     };
   },
 
@@ -6080,6 +6096,9 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
     if (message.widgets?.length) {
       obj.widgets = message.widgets.map((e) => PerfWidget.toJSON(e));
     }
+    if (message.globalSeriesSplits?.length) {
+      obj.globalSeriesSplits = message.globalSeriesSplits.map((e) => PerfSeriesSplit.toJSON(e));
+    }
     return obj;
   },
 
@@ -6099,6 +6118,7 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
     );
     message.globalFilters = object.globalFilters?.map((e) => PerfFilter.fromPartial(e)) || [];
     message.widgets = object.widgets?.map((e) => PerfWidget.fromPartial(e)) || [];
+    message.globalSeriesSplits = object.globalSeriesSplits?.map((e) => PerfSeriesSplit.fromPartial(e)) || [];
     return message;
   },
 };

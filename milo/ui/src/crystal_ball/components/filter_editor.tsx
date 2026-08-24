@@ -84,6 +84,7 @@ interface FilterEditorProps {
   isLoadingColumns?: boolean;
   disableAccordion?: boolean;
   titleIcon?: React.ReactNode;
+  children?: React.ReactNode;
   uiStateOptions?: UseEditorUiStateOptions;
   /** Tooltip message to show next to the title. */
   titleTooltip?: string;
@@ -223,6 +224,7 @@ export function FilterEditor({
   titleIcon,
   uiStateOptions,
   titleTooltip,
+  children,
 }: FilterEditorProps) {
   const { showSuccessToast, showWarningToast } = useToast();
   const [expanded, setExpanded] = useEditorUiState({
@@ -570,6 +572,7 @@ export function FilterEditor({
         </Box>
       )}
       {content}
+      {children}
     </Box>
   ) : (
     <Box sx={{ mt: 0 }}>
@@ -688,6 +691,7 @@ export function FilterEditor({
         </AccordionSummary>
         <AccordionDetails sx={{ pt: 1, pb: 2, px: 2 }}>
           {content}
+          {children}
         </AccordionDetails>
       </Accordion>
     </Box>

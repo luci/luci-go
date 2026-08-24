@@ -55,7 +55,7 @@ import {
   perfChartSeries_PerfAggregationFunctionFromJSON,
   PerfChartWidget,
   PerfChartWidget_ChartType,
-  PerfDashboardContent,
+  PerfSeriesSplit,
   PerfDataSpec,
   PerfFilter,
   PerfWidget,
@@ -73,6 +73,7 @@ export interface PeriodComparisonWidgetProps {
   isLoadingFilterColumns?: boolean;
   dataSpecs?: { [key: string]: PerfDataSpec };
   onUpdate: (updatedWidget: PerfChartWidget) => void;
+  globalSeriesSplits?: readonly PerfSeriesSplit[];
 }
 
 /**
@@ -110,6 +111,7 @@ export function PeriodComparisonWidget({
   filterColumns,
   isLoadingFilterColumns,
   dataSpecs,
+  globalSeriesSplits,
   onUpdate,
 }: PeriodComparisonWidgetProps): React.ReactElement {
   const handleSeriesUpdate = (updatedSeries: PerfChartSeries[]) => {
@@ -187,8 +189,9 @@ export function PeriodComparisonWidget({
 
   const fetchRequest = useMemo(
     () => ({
-      dashboardContent: PerfDashboardContent.fromPartial({
+      dashboardContent: {
         globalFilters: globalFilters ?? [],
+        globalSeriesSplits: globalSeriesSplits ?? [],
         dataSpecs: dataSpecs ?? {},
         widgets: [
           PerfWidget.fromPartial({
@@ -206,10 +209,17 @@ export function PeriodComparisonWidget({
             }),
           }),
         ],
-      }),
+      },
       widgetId,
     }),
-    [globalFilters, dataSpecs, widgetId, widget, currentAggregations],
+    [
+      globalFilters,
+      globalSeriesSplits,
+      dataSpecs,
+      widgetId,
+      widget,
+      currentAggregations,
+    ],
   );
 
   const {

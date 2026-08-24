@@ -29,7 +29,7 @@ import {
   MeasurementFilterColumn_FilterScope,
   PerfChartWidget,
   PerfChartWidget_ChartType,
-  PerfDashboardContent,
+  PerfSeriesSplit,
   PerfDataSpec,
   PerfFilter,
   PerfWidget,
@@ -51,6 +51,7 @@ export interface BreakdownTableWidgetProps {
   isLoadingFilterColumns?: boolean;
   dataSpecs?: { [key: string]: PerfDataSpec };
   onUpdate: (updatedWidget: PerfChartWidget) => void;
+  globalSeriesSplits?: readonly PerfSeriesSplit[];
 }
 
 /**
@@ -64,6 +65,7 @@ export function BreakdownTableWidget({
   filterColumns,
   isLoadingFilterColumns,
   dataSpecs,
+  globalSeriesSplits,
   onUpdate,
 }: BreakdownTableWidgetProps): React.ReactElement {
   const currentAggregations = useMemo(() => {
@@ -110,8 +112,9 @@ export function BreakdownTableWidget({
 
   const fetchRequest = useMemo(
     () => ({
-      dashboardContent: PerfDashboardContent.fromPartial({
+      dashboardContent: {
         globalFilters: globalFilters ?? [],
+        globalSeriesSplits: globalSeriesSplits ?? [],
         dataSpecs: dataSpecs ?? {},
         widgets: [
           PerfWidget.fromPartial({
@@ -125,10 +128,17 @@ export function BreakdownTableWidget({
             }),
           }),
         ],
-      }),
+      },
       widgetId,
     }),
-    [globalFilters, dataSpecs, widgetId, widget, currentAggregations],
+    [
+      globalFilters,
+      globalSeriesSplits,
+      dataSpecs,
+      widgetId,
+      widget,
+      currentAggregations,
+    ],
   );
 
   const {

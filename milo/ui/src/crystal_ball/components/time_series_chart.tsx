@@ -215,7 +215,10 @@ const BASE_OPTION: Partial<EChartsOption> = {
     appendToBody: true,
   },
   legend: {
-    show: false,
+    show: true,
+    type: 'scroll',
+    bottom: 0,
+    textStyle: { fontSize: 12 },
   },
   grid: {
     top: 40,
@@ -479,15 +482,17 @@ export function TimeSeriesChart({
           name: s.name,
           smooth: false,
           showSymbol: chartType === 'scatter' || s.data.length === 1,
-          data: s.data.map((pt) => [
-            pt.x,
-            pt.y * (s.yScaleFactor ?? 1),
-            pt.count,
-            pt.point ? JSON.stringify(pt.point) : '',
-            pt.seriesId,
-            pt.seriesIndex,
-            pt.y,
-          ]),
+          data: [...s.data]
+            .sort((a, b) => a.x - b.x)
+            .map((pt) => [
+              pt.x,
+              pt.y * (s.yScaleFactor ?? 1),
+              pt.count,
+              pt.point ? JSON.stringify(pt.point) : '',
+              pt.seriesId,
+              pt.seriesIndex,
+              pt.y,
+            ]),
           itemStyle: { color: s.stroke },
           clip: true,
           valueFormatter: (val: number | string) => {

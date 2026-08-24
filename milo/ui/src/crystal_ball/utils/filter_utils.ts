@@ -39,6 +39,32 @@ const widenScopeType = (val: unknown): string | number => {
  * Filters measurement filter columns to only those suitable as filter dimensions or breakdown table dimensions.
  * Excludes metric keys, the global time range column, statistical key column, and columns with no valid filter scopes.
  */
+
+/**
+ * Known columns that are not meant to be used for splitting series because they are too granular or internal identifiers.
+ */
+const NON_SPLITTABLE_COLUMNS = new Set([
+  'ants_invocation_id',
+  'ants_test_result_id',
+  'build_id',
+  'invocation_url',
+  'perfetto_artifact_url',
+  'stat_key',
+  'statistical_key',
+  'statistical_significance',
+]);
+
+/**
+ * Filters measurement filter columns to only those suitable for breaking down / splitting series.
+ */
+export const getSplittableColumns = (
+  columns: readonly MeasurementFilterColumn[],
+): MeasurementFilterColumn[] => {
+  return getFilterableColumns(columns).filter(
+    (c) => !NON_SPLITTABLE_COLUMNS.has(c.column.toLowerCase()),
+  );
+};
+
 export const getFilterableColumns = (
   columns: readonly MeasurementFilterColumn[],
 ): MeasurementFilterColumn[] => {

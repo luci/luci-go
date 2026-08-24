@@ -56,6 +56,7 @@ import {
   DashboardTimeRangeSelector,
   DeleteDashboardDialog,
   FilterEditor,
+  GlobalSplitsEditor,
   MarkdownWidget,
   PeriodComparisonWidget,
   RequireLogin,
@@ -111,6 +112,7 @@ import {
   PerfXAxisConfig,
   PerfXAxisConfig_Granularity,
   UpdateDashboardStateRequest,
+  PerfSeriesSplit,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
@@ -300,6 +302,7 @@ function getWidgetType(widget: PerfWidget): WidgetType {
 
 interface WidgetContextProps {
   globalFilters: readonly PerfFilter[];
+  globalSeriesSplits: readonly PerfSeriesSplit[];
   filterColumns: readonly MeasurementFilterColumn[];
   isLoadingFilterColumns: boolean;
   dataSpecs: { [key: string]: PerfDataSpec } | undefined;
@@ -312,6 +315,7 @@ const renderChartWidget = (
     dashboardName: string;
     widgetId: string;
     globalFilters?: readonly PerfFilter[];
+    globalSeriesSplits?: readonly PerfSeriesSplit[];
     filterColumns: readonly MeasurementFilterColumn[];
     isLoadingFilterColumns?: boolean;
     dataSpecs?: { [key: string]: PerfDataSpec };
@@ -326,6 +330,7 @@ const renderChartWidget = (
     dashboardName={`dashboardStates/${context.dashboardId}`}
     widgetId={widget.id}
     globalFilters={context.globalFilters}
+    globalSeriesSplits={context.globalSeriesSplits}
     filterColumns={context.filterColumns}
     isLoadingFilterColumns={context.isLoadingFilterColumns}
     dataSpecs={context.dataSpecs}
@@ -556,6 +561,7 @@ const DASHBOARD_UPGRADE_RULES: readonly DashboardUpgradeRule[] = [
         dashboardContent: {
           ...state.dashboardContent,
           widgets: upgradedWidgets,
+          globalSeriesSplits: state.dashboardContent?.globalSeriesSplits ?? [],
         },
       });
     },
@@ -599,6 +605,7 @@ const DASHBOARD_UPGRADE_RULES: readonly DashboardUpgradeRule[] = [
         dashboardContent: {
           ...state.dashboardContent,
           widgets: upgradedWidgets,
+          globalSeriesSplits: state.dashboardContent?.globalSeriesSplits ?? [],
         },
       });
     },
@@ -704,6 +711,10 @@ export function DashboardPage() {
       !deepEqual(
         localDashboardState?.dashboardContent?.globalFilters,
         dashboardState?.dashboardContent?.globalFilters,
+      ) ||
+      !deepEqual(
+        localDashboardState?.dashboardContent?.globalSeriesSplits ?? [],
+        dashboardState?.dashboardContent?.globalSeriesSplits ?? [],
       )
     );
   }, [localDashboardState, dashboardState]);
@@ -807,6 +818,8 @@ export function DashboardPage() {
                 stateToClone.dashboardContent?.globalFilters ?? [],
               ),
             ),
+            globalSeriesSplits:
+              stateToClone.dashboardContent?.globalSeriesSplits ?? [],
           },
         });
 
@@ -913,6 +926,8 @@ export function DashboardPage() {
             dataSpecs: localDashboardState.dashboardContent?.dataSpecs ?? {},
             globalFilters:
               localDashboardState.dashboardContent?.globalFilters ?? [],
+            globalSeriesSplits:
+              localDashboardState.dashboardContent?.globalSeriesSplits ?? [],
           },
         },
         updateMask: [
@@ -920,6 +935,7 @@ export function DashboardPage() {
           'description',
           'dashboardContent.widgets',
           'dashboardContent.globalFilters',
+          'dashboardContent.globalSeriesSplits',
         ],
       });
 
@@ -940,12 +956,12 @@ export function DashboardPage() {
       setIsSaving(false);
     }
   }, [
-    localDashboardState,
     updateDashboard,
     refetch,
     queryClient,
     showSuccessToast,
     showErrorToast,
+    localDashboardState,
   ]);
 
   const handleAddWidget = useCallback((widgetType: WidgetType) => {
@@ -967,6 +983,7 @@ export function DashboardPage() {
           widgets: [...(prev.dashboardContent?.widgets ?? []), newWidget],
           dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
           globalFilters: prev.dashboardContent?.globalFilters ?? [],
+          globalSeriesSplits: prev.dashboardContent?.globalSeriesSplits ?? [],
         },
       };
     });
@@ -986,6 +1003,7 @@ export function DashboardPage() {
             widgets: newWidgets,
             dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
             globalFilters: prev.dashboardContent?.globalFilters ?? [],
+            globalSeriesSplits: prev.dashboardContent?.globalSeriesSplits ?? [],
           },
         };
       });
@@ -1005,6 +1023,7 @@ export function DashboardPage() {
           widgets: newWidgets,
           dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
           globalFilters: prev.dashboardContent?.globalFilters ?? [],
+          globalSeriesSplits: prev.dashboardContent?.globalSeriesSplits ?? [],
         },
       };
     });
@@ -1033,6 +1052,7 @@ export function DashboardPage() {
           widgets: newWidgets,
           dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
           globalFilters: prev.dashboardContent?.globalFilters ?? [],
+          globalSeriesSplits: prev.dashboardContent?.globalSeriesSplits ?? [],
         },
       };
     });
@@ -1057,6 +1077,27 @@ export function DashboardPage() {
             widgets: newWidgets,
             dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
             globalFilters: prev.dashboardContent?.globalFilters ?? [],
+            globalSeriesSplits: prev.dashboardContent?.globalSeriesSplits ?? [],
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const handleUpdateGlobalSeriesSplits = useCallback(
+    (updatedSplits: PerfSeriesSplit[]) => {
+      setLocalDashboardState((prev: DashboardState | null) => {
+        if (!prev) return null;
+
+        return {
+          ...prev,
+          dashboardContent: {
+            ...prev.dashboardContent,
+            widgets: prev.dashboardContent?.widgets ?? [],
+            dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
+            globalFilters: prev.dashboardContent?.globalFilters ?? [],
+            globalSeriesSplits: updatedSplits,
           },
         };
       });
@@ -1080,6 +1121,7 @@ export function DashboardPage() {
             widgets: prev.dashboardContent?.widgets ?? [],
             dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
             globalFilters: [...conservedPrimaryFilters, ...updatedFilters],
+            globalSeriesSplits: prev.dashboardContent?.globalSeriesSplits ?? [],
           },
         };
       });
@@ -1195,11 +1237,11 @@ export function DashboardPage() {
       </Box>
     ),
     [
+      localDashboardState,
       hasUnsavedChanges,
       isUpdating,
       isLoading,
       handleSaveToApi,
-      localDashboardState,
       dashboardState,
       isSaving,
     ],
@@ -1266,7 +1308,15 @@ export function DashboardPage() {
           availableColumns={globalFilterColumns}
           isLoadingColumns={isLoadingFilterColumns}
           uiStateOptions={{ prefix: EditorUiKeyPrefix.GLOBAL_FILTERS }}
-        />
+        >
+          <GlobalSplitsEditor
+            splits={
+              localDashboardState?.dashboardContent?.globalSeriesSplits ?? []
+            }
+            onUpdateSplits={handleUpdateGlobalSeriesSplits}
+            availableColumns={globalFilterColumns}
+          />
+        </FilterEditor>
       </Box>
     );
   }, [
@@ -1274,6 +1324,7 @@ export function DashboardPage() {
     globalFilterColumns,
     localDashboardState,
     handleUpdateGlobalFilters,
+    handleUpdateGlobalSeriesSplits,
   ]);
 
   useTopBarConfig(topBarTitle, topBarAction, topBarMenuItems, subHeader);
@@ -1387,6 +1438,9 @@ export function DashboardPage() {
                             globalFilters:
                               localDashboardState?.dashboardContent
                                 ?.globalFilters ?? [],
+                            globalSeriesSplits:
+                              localDashboardState?.dashboardContent
+                                ?.globalSeriesSplits ?? [],
                             filterColumns,
                             isLoadingFilterColumns,
                             dataSpecs:

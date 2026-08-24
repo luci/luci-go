@@ -107,236 +107,302 @@ export function ChartTooltip({
         }}
       >
         <Box component="tbody">
-          {items.map((item, idx) => {
-            const val = item.data[1];
-            const count = item.data[2];
+          {Array.from(
+            items.reduce((acc, item) => {
+              const seriesId = String(item.data[4] ?? item.seriesName);
+              const parts = item.seriesName.split(' - ');
+              const parentName =
+                parts.length > 1
+                  ? parts.slice(0, -1).join(' - ')
+                  : item.seriesName;
 
-            const currentSeries = chartSeries.find(
-              (s) => s.name === item.seriesName,
-            );
-            let changeBadge = null;
-
-            if (
-              !isDistribution &&
-              currentSeries &&
-              currentSeries.data &&
-              currentSeries.data.length > 0
-            ) {
-              const scale = currentSeries.yScaleFactor ?? 1;
-              const { diff, pctChange } = calculateChange(
-                currentSeries.data[0].y * scale,
-                val,
-              );
-
-              if (Math.abs(diff) >= 0.0001) {
-                const trendInfo = getTrendInfo(diff, currentSeries.metricField);
-                const text = formatChange(diff, pctChange);
-
-                const icon =
-                  trendInfo.trend === 'up' ? (
-                    <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
-                  ) : trendInfo.trend === 'down' ? (
-                    <TrendingDownIcon fontSize="small" sx={{ mr: 0.5 }} />
-                  ) : (
-                    <TrendingFlatIcon fontSize="small" sx={{ mr: 0.5 }} />
-                  );
-
-                changeBadge = (
-                  <Box
-                    sx={{
-                      bgcolor: (theme) =>
-                        trendInfo.color === 'error.main'
-                          ? alpha(theme.palette.error.main, 0.08)
-                          : trendInfo.color === 'success.main'
-                            ? alpha(theme.palette.success.main, 0.08)
-                            : 'action.hover',
-                      border: '1px solid',
-                      borderColor:
-                        trendInfo.color === 'error.main'
-                          ? 'error.light'
-                          : trendInfo.color === 'success.main'
-                            ? 'success.light'
-                            : 'divider',
-                      borderRadius: '10px',
-                      px: 0.75,
-                      py: 0.15,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      fontSize: '10px',
-                      color: trendInfo.color,
-                      fontWeight: 'bold',
-                      whiteSpace: 'nowrap',
-                      mr: 0.5,
-                    }}
-                    title="Change vs baseline (first point)"
-                  >
-                    {icon}
-                    {text}
-                  </Box>
-                );
+              if (!acc.has(seriesId)) {
+                acc.set(seriesId, { name: parentName, items: [] });
               }
-
-              const currentIndex = currentSeries.data.findIndex(
-                (p) => p.x === item.data[0],
-              );
-
-              if (currentIndex > 0) {
-                const prevY = currentSeries.data[currentIndex - 1].y * scale;
-                const { diff: prevDiff, pctChange: prevPctChange } =
-                  calculateChange(prevY, val);
-
-                if (Math.abs(prevDiff) >= 0.0001) {
-                  const trendInfo = getTrendInfo(
-                    prevDiff,
-                    currentSeries.metricField,
-                  );
-                  const text = formatChange(prevDiff, prevPctChange);
-
-                  const icon =
-                    trendInfo.trend === 'up' ? (
-                      <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
-                    ) : trendInfo.trend === 'down' ? (
-                      <TrendingDownIcon fontSize="small" sx={{ mr: 0.5 }} />
-                    ) : (
-                      <TrendingFlatIcon fontSize="small" sx={{ mr: 0.5 }} />
-                    );
-
-                  const prevChangeBadge = (
-                    <Box
-                      sx={{
-                        bgcolor: (theme) =>
-                          trendInfo.color === 'error.main'
-                            ? alpha(theme.palette.error.main, 0.08)
-                            : trendInfo.color === 'success.main'
-                              ? alpha(theme.palette.success.main, 0.08)
-                              : 'action.hover',
-                        border: '1px solid',
-                        borderColor:
-                          trendInfo.color === 'error.main'
-                            ? 'error.light'
-                            : trendInfo.color === 'success.main'
-                              ? 'success.light'
-                              : 'divider',
-                        borderRadius: '10px',
-                        px: 0.75,
-                        py: 0.15,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        fontSize: '10px',
-                        color: trendInfo.color,
-                        fontWeight: 'bold',
-                        whiteSpace: 'nowrap',
-                      }}
-                      title="Change vs preceding point"
-                    >
-                      {icon}
-                      {text}
-                    </Box>
-                  );
-
-                  changeBadge = (
-                    <>
-                      {changeBadge}
-                      {prevChangeBadge}
-                    </>
-                  );
-                }
-              }
-            }
-
-            const handleRowClick = (e: React.MouseEvent) => {
-              e.preventDefault();
-              onRowClick(item);
-            };
+              acc.get(seriesId)!.items.push(item);
+              return acc;
+            }, new Map<string, { name: string; items: Array<(typeof items)[number]> }>()),
+          ).map(([seriesId, group]) => {
+            const parentName = group.name;
+            const groupItems = group.items;
+            const isGroup =
+              groupItems.length > 1 || groupItems[0].seriesName !== parentName;
 
             return (
-              <Box
-                component="tr"
-                key={`${item.seriesName}-${idx}`}
-                onClick={handleRowClick}
-                sx={{
-                  height: 24,
-                  verticalAlign: 'middle',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  },
-                  '&:active': {
-                    bgcolor: 'action.selected',
-                  },
-                }}
-              >
-                <Box
-                  component="td"
-                  sx={{
-                    py: 0.25,
-                    pr: 1.5,
-                    pl: 0,
-                    whiteSpace: 'nowrap',
-                    color: 'text.secondary',
-                    fontWeight: 'bold',
-                    minWidth: 140,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
+              <React.Fragment key={seriesId}>
+                {isGroup && (
                   <Box
+                    component="tr"
                     sx={{
-                      display: 'inline-block',
-                      mr: 0.5,
-                      borderRadius: '50%',
-                      width: 10,
-                      height: 10,
-                      bgcolor: currentSeries?.stroke || 'text.secondary',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  />
-                  {item.seriesName}
-                </Box>
-                <Box
-                  component="td"
-                  sx={{
-                    textAlign: 'right',
-                    fontWeight: 'bold',
-                    py: 0.25,
-                    px: 1.5,
-                    color: 'text.primary',
-                    minWidth: 90,
-                  }}
-                >
-                  {val.toLocaleString()}
-                  {count !== undefined && count !== 0 && (
-                    <Box
-                      component="span"
-                      sx={{
-                        color: 'text.disabled',
-                        fontSize: '10px',
-                        fontWeight: 'normal',
-                        fontStyle: 'italic',
-                        ml: 0.5,
-                      }}
-                    >
-                      (n={count})
-                    </Box>
-                  )}
-                </Box>
-                {!isDistribution && (
-                  <Box
-                    component="td"
-                    sx={{
-                      textAlign: 'right',
-                      py: 0.25,
-                      pl: 1.5,
-                      pr: 0,
-                      minWidth: 100,
-                      whiteSpace: 'nowrap',
+                      height: 24,
+                      verticalAlign: 'middle',
                     }}
                   >
-                    {changeBadge}
+                    <Box
+                      component="td"
+                      colSpan={isDistribution ? 2 : 3}
+                      sx={{
+                        py: 0.25,
+                        px: 0,
+                        whiteSpace: 'nowrap',
+                        color: 'text.primary',
+                        fontWeight: 'bold',
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      {parentName}
+                    </Box>
                   </Box>
                 )}
-              </Box>
+                {groupItems.map((item, idx) => {
+                  const val = item.data[1];
+                  const count = item.data[2];
+
+                  const currentSeries = chartSeries.find(
+                    (s) => s.name === item.seriesName,
+                  );
+                  let changeBadge = null;
+
+                  if (
+                    !isDistribution &&
+                    currentSeries &&
+                    currentSeries.data &&
+                    currentSeries.data.length > 0
+                  ) {
+                    const scale = currentSeries.yScaleFactor ?? 1;
+                    const { diff, pctChange } = calculateChange(
+                      currentSeries.data[0].y * scale,
+                      val,
+                    );
+
+                    if (Math.abs(diff) >= 0.0001) {
+                      const trendInfo = getTrendInfo(
+                        diff,
+                        currentSeries.metricField,
+                      );
+                      const text = formatChange(diff, pctChange);
+
+                      const icon =
+                        trendInfo.trend === 'up' ? (
+                          <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        ) : trendInfo.trend === 'down' ? (
+                          <TrendingDownIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        ) : (
+                          <TrendingFlatIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        );
+
+                      changeBadge = (
+                        <Box
+                          sx={{
+                            bgcolor: (theme) =>
+                              trendInfo.color === 'error.main'
+                                ? alpha(theme.palette.error.main, 0.08)
+                                : trendInfo.color === 'success.main'
+                                  ? alpha(theme.palette.success.main, 0.08)
+                                  : 'action.hover',
+                            border: '1px solid',
+                            borderColor:
+                              trendInfo.color === 'error.main'
+                                ? 'error.light'
+                                : trendInfo.color === 'success.main'
+                                  ? 'success.light'
+                                  : 'divider',
+                            borderRadius: '10px',
+                            px: 0.75,
+                            py: 0.15,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            fontSize: '10px',
+                            color: trendInfo.color,
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap',
+                            mr: 0.5,
+                          }}
+                          title="Change vs baseline (first point)"
+                        >
+                          {icon}
+                          {text}
+                        </Box>
+                      );
+                    }
+
+                    const currentIndex = currentSeries.data.findIndex(
+                      (p) => p.x === item.data[0],
+                    );
+
+                    if (currentIndex > 0) {
+                      const prevY =
+                        currentSeries.data[currentIndex - 1].y * scale;
+                      const { diff: prevDiff, pctChange: prevPctChange } =
+                        calculateChange(prevY, val);
+
+                      if (Math.abs(prevDiff) >= 0.0001) {
+                        const trendInfo = getTrendInfo(
+                          prevDiff,
+                          currentSeries.metricField,
+                        );
+                        const text = formatChange(prevDiff, prevPctChange);
+
+                        const icon =
+                          trendInfo.trend === 'up' ? (
+                            <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
+                          ) : trendInfo.trend === 'down' ? (
+                            <TrendingDownIcon
+                              fontSize="small"
+                              sx={{ mr: 0.5 }}
+                            />
+                          ) : (
+                            <TrendingFlatIcon
+                              fontSize="small"
+                              sx={{ mr: 0.5 }}
+                            />
+                          );
+
+                        const prevChangeBadge = (
+                          <Box
+                            sx={{
+                              bgcolor: (theme) =>
+                                trendInfo.color === 'error.main'
+                                  ? alpha(theme.palette.error.main, 0.08)
+                                  : trendInfo.color === 'success.main'
+                                    ? alpha(theme.palette.success.main, 0.08)
+                                    : 'action.hover',
+                              border: '1px solid',
+                              borderColor:
+                                trendInfo.color === 'error.main'
+                                  ? 'error.light'
+                                  : trendInfo.color === 'success.main'
+                                    ? 'success.light'
+                                    : 'divider',
+                              borderRadius: '10px',
+                              px: 0.75,
+                              py: 0.15,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              fontSize: '10px',
+                              color: trendInfo.color,
+                              fontWeight: 'bold',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title="Change vs preceding point"
+                          >
+                            {icon}
+                            {text}
+                          </Box>
+                        );
+
+                        changeBadge = (
+                          <>
+                            {changeBadge}
+                            {prevChangeBadge}
+                          </>
+                        );
+                      }
+                    }
+                  }
+
+                  const handleRowClick = (e: React.MouseEvent) => {
+                    e.preventDefault();
+                    onRowClick(item);
+                  };
+
+                  const displayName = isGroup
+                    ? item.seriesName.split(' - ').pop()
+                    : item.seriesName;
+
+                  return (
+                    <Box
+                      component="tr"
+                      key={`${item.seriesName}-${idx}`}
+                      onClick={handleRowClick}
+                      sx={{
+                        height: 24,
+                        verticalAlign: 'middle',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
+                        '&:active': {
+                          bgcolor: 'action.selected',
+                        },
+                      }}
+                    >
+                      <Box
+                        component="td"
+                        sx={{
+                          py: 0.25,
+                          pr: 1.5,
+                          pl: isGroup ? 1.5 : 0,
+                          whiteSpace: 'nowrap',
+                          color: 'text.secondary',
+                          fontWeight: 'bold',
+                          minWidth: 140,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'inline-block',
+                            mr: 0.5,
+                            borderRadius: '50%',
+                            width: 10,
+                            height: 10,
+                            bgcolor: currentSeries?.stroke || 'text.secondary',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                          }}
+                        />
+                        {displayName}
+                      </Box>
+                      <Box
+                        component="td"
+                        sx={{
+                          textAlign: 'right',
+                          fontWeight: 'bold',
+                          py: 0.25,
+                          px: 1.5,
+                          color: 'text.primary',
+                          minWidth: 90,
+                        }}
+                      >
+                        {val.toLocaleString()}
+                        {count !== undefined && count !== 0 && (
+                          <Box
+                            component="span"
+                            sx={{
+                              color: 'text.disabled',
+                              fontSize: '10px',
+                              fontWeight: 'normal',
+                              fontStyle: 'italic',
+                              ml: 0.5,
+                            }}
+                          >
+                            (n={count})
+                          </Box>
+                        )}
+                      </Box>
+                      {!isDistribution && (
+                        <Box
+                          component="td"
+                          sx={{
+                            textAlign: 'right',
+                            py: 0.25,
+                            pl: 1.5,
+                            pr: 0,
+                            minWidth: 100,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {changeBadge}
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
+              </React.Fragment>
             );
           })}
         </Box>
