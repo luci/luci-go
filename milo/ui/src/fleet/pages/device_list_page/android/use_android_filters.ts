@@ -14,6 +14,7 @@
 
 import { useCallback, useMemo } from 'react';
 
+import { useFeatureFlag } from '@/common/feature_flags';
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
@@ -22,6 +23,7 @@ import {
   FilterCategoryBuilder,
 } from '@/fleet/components/filters/use_filters';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
+import { enablePTE } from '@/fleet/features';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -51,6 +53,7 @@ export const useAndroidFilters = (
     [onFilterChange, trackEvent],
   );
 
+  const isPTEEnabled = useFeatureFlag(enablePTE);
   const filterOptions = useMemo(() => {
     const extraFilters: Record<
       string,
@@ -80,7 +83,11 @@ export const useAndroidFilters = (
       ...Object.entries(data.baseDimensions),
       ...Object.entries(data.labels),
     ]) {
-      if (value.values.length === 0) continue;
+      let values = value.values;
+      if (key === 'host_group' && isPTEEnabled) {
+        values = values.filter((v) => v !== 'pte_labs');
+      }
+      if (values.length === 0) continue;
 
       const isBase = baseKeys.includes(key);
       const filterKey = isBase ? `"${key}"` : `labels."${key}"`;
@@ -94,15 +101,16 @@ export const useAndroidFilters = (
         .setLabel(label)
         .setOptions([
           { label: BLANK_VALUE, value: BLANK_VALUE },
-          ...value.values.map((v) => ({ label: v, value: v })),
+          ...values.map((v) => ({ label: v, value: v })),
         ]);
     }
 
     return filters;
   }, [
+    showAvgUtilization,
     isDimensionsQueryProperlyLoaded,
     dimensionsQuery.data,
-    showAvgUtilization,
+    isPTEEnabled,
   ]);
 
   const filterCategoryDatas = useFilters(filterOptions, {
