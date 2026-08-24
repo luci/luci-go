@@ -133,6 +133,8 @@ func TestRootInvocationName(t *testing.T) {
 		})
 		t.Run(`Invalid`, func(t *ftt.Test) {
 			assert.Loosely(t, ValidateStreamingExportState(pb.RootInvocation_StreamingExportState(999)), should.ErrLike("unknown state 999"))
+			// 12 is a valid value for RootInvocation_State (SUCCEEDED) but not for StreamingExportState.
+			assert.Loosely(t, ValidateStreamingExportState(pb.RootInvocation_StreamingExportState(12)), should.ErrLike("unknown state 12"))
 		})
 	})
 }

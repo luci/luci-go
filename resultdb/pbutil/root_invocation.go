@@ -94,7 +94,7 @@ func ValidateStreamingExportState(state pb.RootInvocation_StreamingExportState) 
 	if state == pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
 		return errors.New("unspecified")
 	}
-	if _, ok := pb.RootInvocation_State_name[int32(state)]; !ok {
+	if _, ok := pb.RootInvocation_StreamingExportState_name[int32(state)]; !ok {
 		return errors.Fmt("unknown state %v", state)
 	}
 	return nil
