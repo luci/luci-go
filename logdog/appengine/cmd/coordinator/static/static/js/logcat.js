@@ -395,7 +395,6 @@ function setUpElements(currentFileLines) {
   setUpProcessDropdownList();
   setUpTagDropdownList();
   setUpPriorityDropdownList();
-  setUpArrowFeedback();
 }
 
 /**
@@ -974,6 +973,8 @@ function updateTextDisplayArea(restoreScrollPosition = true) {
     }
   }
 
+  setUpArrowFeedback(displayedLineNumbers);
+
   // Map each line number to an HTML element with appropriate styling.
   const hideDateTime = hideDateTimeCheckbox.checked;
   const displayedHTMLElements = document.createDocumentFragment();
@@ -1166,12 +1167,14 @@ function findFirstVisibleLine() {
 
 /**
  * Set up the feedback displayed on the exception and test buttons.
- * This is called initially after the user uploads a new logcat.
+ * This is called whenever we update the text display area.
+ * @param {Array<number>} displayedLineNumbers
  */
-function setUpArrowFeedback() {
+function setUpArrowFeedback(displayedLineNumbers) {
   let totalNumExceptions = 0;
   let totalNumTests = 0;
-  for (const parsedLine of currentFileParsedLines) {
+  for (const lineNumber of displayedLineNumbers) {
+    const parsedLine = currentFileParsedLines[lineNumber];
     if (isStartOfStackTrace(parsedLine)) {
       totalNumExceptions += 1;
     }
