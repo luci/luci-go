@@ -36,7 +36,7 @@ type ErrorWrapper interface {
 	Apply(err error) (wrapped error)
 }
 
-// Log logs the full error. If this is an Annotated error, it will log the full
+// Log logs the full error. If this error has a stack trace, it will log the full
 // stack information as well.
 //
 // Does nothing if err is nil.
@@ -107,15 +107,10 @@ func RenderStack(err error, excludePkgs ...string) string {
 // If it's false, then all goroutines which annotated this error will have their
 // stacks combined into a single trace.
 //
-// If `err` is not annotated, returns the empty string.
+// If `err` has no stack trace, returns the empty string.
 func RenderGoStack(err error, onlyInner bool, excludePkgs ...string) string {
 	return dropFrames(stacktag.Tag.ValueOrDefault(err), excludePkgs...)
 }
-
-// Annotate is a legacy API.
-//
-// It is exactly equivalent to WrapIf
-var Annotate = WrapIf
 
 // Reason is a legacy API.
 //

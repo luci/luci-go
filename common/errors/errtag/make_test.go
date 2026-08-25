@@ -43,7 +43,6 @@ func TestMake(t *testing.T) {
 			func() { badTag.WithDefault("yo") },
 			func() { badTag.Apply(nil) },
 			func() { badTag.ApplyValue(nil, "yo") },
-			func() { badTag.GenerateErrorTagValue() },
 		}
 
 		for i, fn := range fns {

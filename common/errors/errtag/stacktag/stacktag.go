@@ -46,16 +46,16 @@
 //	  wg := sync.WaitGroup{}
 //	  wg.Add(1)
 //	  go func() {  // goroutine Inner
-//	    err = errors.Reason("something").Err()   // LINE 1
+//	    err = errors.New("something")   // LINE 1
 //	    wg.Done()
 //	  }()
 //	  wg.Wait()
-//	  return errors.Annotate(err, "additional").Err()  // LINE 2
+//	  return errors.Fmt("additional: %w", err)  // LINE 2
 //	}
 //
 //	func OuterFunc() error {
 //	  if err := InnerFunc(); err != nil {  // LINE 3
-//	    return errors.Annotate(err, "outer").Err()  // LINE 4
+//	    return errors.Fmt("outer: %w", err)  // LINE 4
 //	  }
 //	  return nil
 //	}
