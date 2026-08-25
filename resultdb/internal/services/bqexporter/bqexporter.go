@@ -34,6 +34,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
@@ -228,6 +229,21 @@ func hasReason(apiErr *googleapi.Error, reason string) bool {
 	return false
 }
 
+var allowedAccessDeniedProjects = stringset.NewFromSlice("dawn", "angle")
+
+// isAllowedAccessDenied checks if the AccessDenied error is expected for the given luciProject and BigQueryExport.
+// It is known that the project scope account of dawn and angle doesn't have access to chrome-luci-data.chromium dataset.
+func isAllowedAccessDenied(luciProject string, bqExport *pb.BigQueryExport, err error) bool {
+	if !allowedAccessDeniedProjects.Has(luciProject) {
+		return false
+	}
+	if bqExport.Project != "chrome-luci-data" || bqExport.Dataset != "chromium" {
+		return false
+	}
+	var apiErr *googleapi.Error
+	return errors.As(err, &apiErr) && apiErr.Code == http.StatusForbidden && hasReason(apiErr, "accessDenied")
+}
+
 // bigqueryRow represents a BigQuery row to be exported.
 type bigqueryRow struct {
 	// The BigQuery row contents.
@@ -345,25 +361,29 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 	switch bqExport.ResultType.(type) {
 	case *pb.BigQueryExport_TestResults_:
 		tableMetadata.Schema = testResultRowSchema.Relax()
-		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.WithProject(client.Project())); err != nil {
+		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.WithProject(luciProject)); err != nil {
+			if isAllowedAccessDenied(luciProject, bqExport, err) {
+				logging.Warningf(ctx, "Failed to ensure test results BigQuery table for project %s to %s.%s: %s", luciProject, bqExport.Project, bqExport.Dataset, err)
+				return nil
+			}
 			if !transient.Tag.In(err) {
 				err = tq.Fatal.Apply(err)
 			}
-			return errors.Fmt("ensure test results bq table: %w", err)
+			return errors.Fmt("ensure test results bq table (project %s): %w", luciProject, err)
 		}
-		return errors.WrapIf(b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport), "export test results")
+		return errors.WrapIf(b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport), "export test results (project %s)", luciProject)
 	case *pb.BigQueryExport_TextArtifacts_:
 		tableMetadata.Schema = textArtifactRowSchema.Relax()
-		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.WithProject(client.Project())); err != nil {
+		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.WithProject(luciProject)); err != nil {
 			if !transient.Tag.In(err) {
 				err = tq.Fatal.Apply(err)
 			}
-			return errors.Fmt("ensure text artifacts bq table: %w", err)
+			return errors.Fmt("ensure text artifacts bq table (project %s): %w", luciProject, err)
 		}
 		if artifactTask == nil {
 			return errors.New("artifactTask is required for text artifacts export")
 		}
-		return errors.WrapIf(b.exportTextArtifactsToBigQuery(ctx, ins, artifactTask), "export text artifacts")
+		return errors.WrapIf(b.exportTextArtifactsToBigQuery(ctx, ins, artifactTask), "export text artifacts (project %s)", luciProject)
 	case nil:
 		return fmt.Errorf("bqExport.ResultType is unspecified")
 	default:
