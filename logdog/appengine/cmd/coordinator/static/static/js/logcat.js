@@ -204,7 +204,10 @@ let displaySingleNamedProcess = [];
 let displaySingleUnnamedProcess = [];
 
 /** @type {Array<string>|undefined} */
-let defaultFilteredProcesses = undefined;
+let defaultFilteredProcessNames = undefined;
+
+/** @type {Set<number>} */
+let defaultFilteredProcessIds = new Set();
 
 /** @type {Set<number>} */
 let allPids = new Set();
@@ -279,7 +282,7 @@ function toggleDropdown(dropdownList) {
  * we want to be filtered by default.
  */
 async function fetchLogcat(url, packages) {
-  defaultFilteredProcesses = packages;
+  defaultFilteredProcessNames = packages;
   try {
     const response = await fetch(url);
     if (response.ok) {
@@ -296,7 +299,7 @@ async function fetchLogcat(url, packages) {
     textDisplayArea.textContent = `Encountered an error when `
       + `fetching the logcat: ${error}`;
   } finally {
-    defaultFilteredProcesses = undefined;
+    defaultFilteredProcessNames = undefined;
   }
 }
 
@@ -400,7 +403,8 @@ function setUpElements(currentFileLines) {
 /**
  * Process an array containing the lines in the current logcat file,
  * and populate the global variables currentFileParsedLines, allPids, allTags,
- * pidToProcessName based on the contents of the logcat file.
+ * pidToProcessName, defaultFilteredProcessIds based on the contents of the
+ * logcat file.
  * @param {Array<string>} currentFileLines
  */
 function processCurrentFileLines(currentFileLines) {
@@ -408,6 +412,7 @@ function processCurrentFileLines(currentFileLines) {
   allPids = new Set();
   allTags = new Set();
   pidToProcessName = new Map();
+  defaultFilteredProcessIds = new Set();
 
   let previousLogcatLineNumber = -1;
 
@@ -426,6 +431,11 @@ function processCurrentFileLines(currentFileLines) {
 
     allPids.add(parsedLine.pid);
     allTags.add(parsedLine.tag);
+
+    if (parsedLine.tag.startsWith('crash_dump') ||
+      parsedLine.tag === 'tombstoned') {
+      defaultFilteredProcessIds.add(parsedLine.pid);
+    }
 
     const match = pidRegexPattern.exec(parsedLine.message);
     if (match) {
@@ -559,11 +569,12 @@ function createProcessListItem(pid, processName) {
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
 
-  if (defaultFilteredProcesses === undefined) {
+  if (defaultFilteredProcessNames === undefined ||
+    defaultFilteredProcessIds.has(pid)) {
     listItem.classList.add('selected');
     checkbox.checked = true;
   } else if (processName !== undefined) {
-    for (const defaultFilteredProcess of defaultFilteredProcesses) {
+    for (const defaultFilteredProcess of defaultFilteredProcessNames) {
       if (processName === defaultFilteredProcess ||
         processName.startsWith(defaultFilteredProcess + ':')) {
         listItem.classList.add('selected');
