@@ -104,7 +104,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 	// 1. Fetch culprit changelog
 	changelog, err := gitiles.GetChangeLogsForSingleRevision(ctx, repoUrl, culpritCommit)
 	if err != nil {
-		return errors.Annotate(err, "failed to get changelog")
+		return errors.Fmt("failed to get changelog: %w", err)
 	}
 
 	// 2. Fetch file contents for modified files and neighbor files
@@ -213,7 +213,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 		break
 	}
 	if err != nil {
-		return errors.Annotate(err, "LLM generation failed after retries")
+		return errors.Fmt("LLM generation failed after retries: %w", err)
 	}
 
 	logging.Infof(ctx, "Received raw response from LLM:\n%s", respText)
@@ -227,7 +227,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 
 	var llmParsed LLMResponse
 	if err := json.Unmarshal([]byte(respText), &llmParsed); err != nil {
-		return errors.Annotate(err, "failed to parse LLM JSON response")
+		return errors.Fmt("failed to parse LLM JSON response: %w", err)
 	}
 
 	if len(llmParsed.Files) == 0 {
@@ -259,7 +259,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 	}
 	change, err := gerritClient.CreateChange(ctx, createReq)
 	if err != nil {
-		return errors.Annotate(err, "failed to create change")
+		return errors.Fmt("failed to create change: %w", err)
 	}
 
 	// 7. Apply edits
@@ -294,14 +294,14 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 		Project: project,
 	}
 	if err := gerritClient.ChangeEditPublish(ctx, publishReq); err != nil {
-		return errors.Annotate(err, "failed to publish edit")
+		return errors.Fmt("failed to publish edit: %w", err)
 	}
 
 	// 9. Send for review to jiameil@google.com
 	reviewMessage := fmt.Sprintf("Please review this GenAI fixforward CL.\n\n%s", llmParsed.Message)
 	_, err = gerritClient.SendForReview(ctx, change, reviewMessage, []string{"jiameil@google.com"}, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to send for review")
+		return errors.Fmt("failed to send for review: %w", err)
 	}
 
 	return nil
