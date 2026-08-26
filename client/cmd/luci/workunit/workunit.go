@@ -58,14 +58,17 @@ func (r *workUnitRun) Run(a subcommands.Application, args []string, env subcomma
 
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get <name> | get - [<work_unit_id>] | get <root_inv> <work_unit_id>",
+		UsageLine: "get -invocationid <invocation_id> -workunitid <work_unit_id>",
 		ShortDesc: "Get a work unit",
-		LongDesc:  "Get details of a work unit by resource name, URL, or decomposed IDs.\nUse '-' to reuse cached root invocation with a work unit ID override.",
+		LongDesc:  "Get details of a work unit by its root invocation ID and work unit ID.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &workUnitGetRun{af: af}
 			r.af.Register(&r.Flags)
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
+			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Root invocation ID (e.g. build-867... or ants-i...)")
+			r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
 			r.Flags.BoolVar(&r.showMetadata, "metadata", false, "Show additional work unit metadata and tags")
+			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Alias for -metadata")
 			return r
 		},
 	}
@@ -75,6 +78,8 @@ type workUnitGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
 	host         string
+	invocationID string
+	workUnitID   string
 	showMetadata bool
 }
 
@@ -85,14 +90,16 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 			return 0
 		}
 	}
-	ctx := cli.GetContext(a, r, env)
-	name, err := base.ParseWorkUnitTargetArgs(args)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -invocationid and -workunitid (run 'luci ids <url>' to extract ids)\n")
 		return 1
 	}
-
-	clean := base.TrimResourceURL(name)
+	if r.invocationID == "" || r.workUnitID == "" {
+		fmt.Fprintf(os.Stderr, "flags -invocationid and -workunitid are required (run 'luci ids <url>' to extract ids)\n")
+		return 1
+	}
+	ctx := cli.GetContext(a, r, env)
+	clean := base.FormatWorkUnitResourceName(r.invocationID, r.workUnitID)
 
 	if err := r.af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
@@ -111,7 +118,6 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		fmt.Fprintf(os.Stderr, "GetWorkUnit RPC failed: %s\n", err)
 		return 1
 	}
-	base.RecordWorkUnit(wu.Name, "")
 
 	if wu.WorkUnitId != "" {
 		fmt.Printf("Work Unit ID: %s\n", wu.WorkUnitId)

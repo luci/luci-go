@@ -19,29 +19,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
-	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/errors"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 type artifactFetcher func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error
 
-func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile string, args []string, parentType ParentType, legacy bool, fetcher artifactFetcher) int {
-	if len(args) < 1 {
-		if parentType == ParentTypeTestResult {
-			fmt.Fprintf(os.Stderr, "Usage: luci test-result artifact <command> <target> <artifact_id> | <command> <inv> <test_id> <result_id> <artifact_id>\n")
-		} else {
-			fmt.Fprintf(os.Stderr, "Usage: luci work-unit artifact <command> <target> <artifact_id> | <command> <root_inv> <work_unit_id> <artifact_id>\n")
-		}
-		return 1
-	}
-
+func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile, artName string, fetcher artifactFetcher) int {
 	if err := af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 		return 1
@@ -50,12 +39,6 @@ func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputF
 	client, _, httpClient, err := af.NewResultDBClient(ctx, host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
-		return 1
-	}
-
-	artName, err := ResolveArtifactTarget(ctx, client, args, parentType, legacy)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
 
@@ -86,6 +69,16 @@ func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputF
 	}
 
 	return 0
+}
+
+// FormatTestResultArtifactName formats canonical test result artifact resource name.
+func FormatTestResultArtifactName(inv, testID, resultID, artID string) string {
+	return base.FormatTestResultResourceName(inv, testID, resultID) + "/artifacts/" + artID
+}
+
+// FormatWorkUnitArtifactName formats canonical work unit artifact resource name.
+func FormatWorkUnitArtifactName(inv, wuID, artID string) string {
+	return base.FormatWorkUnitResourceName(inv, wuID) + "/artifacts/" + artID
 }
 
 // FetchHTTPByteRange downloads a byte range (or full content if byteRange is nil) from fetchURL directly into out.
@@ -156,150 +149,3 @@ const (
 	ParentTypeTestResult ParentType = iota
 	ParentTypeWorkUnit
 )
-
-// ValidateTargetParent validates that target matches the expected parent type.
-func ValidateTargetParent(target string, expectedParent ParentType) error {
-	isWU := strings.Contains(target, "/workUnits/") || (strings.HasPrefix(target, "rootInvocations/") && !strings.Contains(target, "/tests/"))
-	isTR := strings.Contains(target, "/tests/") || strings.Contains(target, "/results/") || strings.Contains(target, "/variants/") || strings.Contains(target, "/modules/")
-
-	if expectedParent == ParentTypeTestResult && isWU && !isTR {
-		return errors.Fmt("%q is a work unit target; please use 'luci work-unit artifact ...'", target)
-	}
-	if expectedParent == ParentTypeWorkUnit && isTR {
-		return errors.Fmt("%q is a test result target; please use 'luci test-result artifact ...'", target)
-	}
-	return nil
-}
-
-// ResolveArtifactTarget normalizes target arguments into a ResultDB artifact resource name,
-// validating parent type compatibility and resolving cached parameters with "-".
-func ResolveArtifactTarget(ctx context.Context, client pb.ResultDBClient, args []string, parentType ParentType, legacy bool) (string, error) {
-	if len(args) == 0 {
-		return "", errors.New("missing artifact target")
-	}
-
-	cd, _ := base.LoadCache()
-
-	// Case 1: single '-' reuses both cached parent and cached artifact.
-	if len(args) == 1 && args[0] == "-" {
-		var parent string
-		var err error
-		if parentType == ParentTypeTestResult {
-			parent, err = base.ParseTestResultTargetArgs([]string{"-"})
-		} else {
-			parent, err = base.ParseWorkUnitTargetArgs([]string{"-"})
-		}
-		if err != nil {
-			return "", err
-		}
-		if cd.Artifact == "" {
-			return "", errors.New("no previous artifact found in cache; please specify an artifact ID")
-		}
-		return resolveTargetAndArtifactID(ctx, client, parent, cd.Artifact, parentType, legacy)
-	}
-
-	// Case 2: single full artifact name or URL.
-	if len(args) == 1 {
-		rawName := strings.TrimSpace(args[0])
-		if err := ValidateTargetParent(rawName, parentType); err != nil {
-			return "", err
-		}
-		return ResolveArtifactName(ctx, client, rawName, parentType, legacy)
-	}
-
-	// Case 3: N arguments where the last argument is artifact ID, and preceding args are parent target.
-	parentArgs := args[:len(args)-1]
-	artID := strings.TrimSpace(args[len(args)-1])
-	if artID == "" {
-		return "", errors.New("empty artifact ID")
-	}
-
-	var parentTarget string
-	var err error
-	if parentType == ParentTypeTestResult {
-		parentTarget, err = base.ParseTestResultTargetArgs(parentArgs)
-	} else {
-		parentTarget, err = base.ParseWorkUnitTargetArgs(parentArgs)
-	}
-	if err != nil {
-		return "", err
-	}
-
-	if err := ValidateTargetParent(parentTarget, parentType); err != nil {
-		return "", err
-	}
-
-	res, err := resolveTargetAndArtifactID(ctx, client, parentTarget, artID, parentType, legacy)
-	if err != nil {
-		return "", err
-	}
-	if parentType == ParentTypeTestResult {
-		base.RecordTestResultArtifact(parentTarget, "", "", "", artID)
-	} else {
-		base.RecordWorkUnitArtifact(parentTarget, "", "", artID)
-	}
-	return res, nil
-}
-
-func resolveTargetAndArtifactID(ctx context.Context, client pb.ResultDBClient, target, artID string, parentType ParentType, legacy bool) (string, error) {
-	clean := base.TrimResourceURL(target)
-
-	if strings.Contains(clean, "/results/") || strings.Contains(clean, "/workUnits/") {
-		return clean + "/artifacts/" + artID, nil
-	}
-
-	if strings.HasPrefix(clean, "invocations/") && !strings.Contains(clean, "/tests/") && !strings.Contains(clean, "/modules/") {
-		return clean + "/artifacts/" + artID, nil
-	}
-
-	// Try verdict target
-	_, matchedTR, vErr := verdict.ResolveVerdictResults(ctx, client, target, legacy)
-	if vErr == nil && matchedTR != nil {
-		return matchedTR.Name + "/artifacts/" + artID, nil
-	}
-
-	return clean + "/artifacts/" + artID, nil
-}
-
-// ResolveArtifactName normalizes a target artifact identifier or URL into a ResultDB artifact resource name.
-func ResolveArtifactName(ctx context.Context, client pb.ResultDBClient, rawName string, parentType ParentType, legacy bool) (string, error) {
-	rawName = strings.TrimSpace(rawName)
-	if rawName == "" {
-		return "", errors.New("empty artifact name")
-	}
-
-	if strings.Contains(rawName, "artifact=") {
-		u, err := url.Parse(rawName)
-		if err == nil {
-			artID := u.Query().Get("artifact")
-			if artID != "" {
-				res, err := resolveTargetAndArtifactID(ctx, client, rawName, artID, parentType, legacy)
-				if err == nil {
-					if parentType == ParentTypeWorkUnit {
-						base.RecordWorkUnitArtifact(res, "", "", artID)
-					} else {
-						base.RecordTestResultArtifact(res, "", "", "", artID)
-					}
-				}
-				return res, err
-			}
-		}
-	}
-
-	clean := base.TrimResourceURL(rawName)
-
-	if !strings.Contains(clean, "/artifacts/") {
-		return "", errors.Fmt("invalid artifact name %q: must contain /artifacts/ or specify target and artifact_id", rawName)
-	}
-
-	parts := strings.Split(clean, "/artifacts/")
-	if len(parts) == 2 {
-		if parentType == ParentTypeWorkUnit {
-			base.RecordWorkUnitArtifact(clean, "", "", parts[1])
-		} else {
-			base.RecordTestResultArtifact(clean, "", "", "", parts[1])
-		}
-	}
-
-	return clean, nil
-}

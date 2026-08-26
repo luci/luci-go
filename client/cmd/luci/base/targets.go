@@ -17,9 +17,28 @@ package base
 import (
 	"net/url"
 	"strings"
-
-	"go.chromium.org/luci/common/errors"
 )
+
+// NormalizeInvocation strips "rootInvocations/" or "invocations/" prefix from an invocation ID.
+// If the invocation ID starts with a digit, it is normalized to build-<id>.
+func NormalizeInvocation(inv string) string {
+	inv = strings.TrimSpace(inv)
+	inv = strings.TrimPrefix(inv, "invocations/")
+	inv = strings.TrimPrefix(inv, "rootInvocations/")
+	if !strings.HasPrefix(inv, "build-") && !strings.HasPrefix(inv, "task-") && !strings.HasPrefix(inv, "u-") {
+		if _, err := url.PathUnescape(inv); err == nil && len(inv) > 0 && (inv[0] >= '0' && inv[0] <= '9') {
+			inv = "build-" + inv
+		}
+	}
+	return inv
+}
+
+// NormalizeWorkUnit strips "workUnits/" prefix from a work unit ID.
+func NormalizeWorkUnit(wu string) string {
+	wu = strings.TrimSpace(wu)
+	wu = strings.TrimPrefix(wu, "workUnits/")
+	return wu
+}
 
 // TrimResourceURL strips URL scheme/host prefix and query/hash fragments from a resource target or URL.
 func TrimResourceURL(raw string) string {
@@ -45,137 +64,8 @@ func FormatTestResultResourceName(inv, testID, resultID string) string {
 // FormatWorkUnitResourceName formats a root invocation and work unit ID into a canonical resource name.
 func FormatWorkUnitResourceName(rootInv, wuID string) string {
 	rootInv = NormalizeInvocation(rootInv)
+	wuID = NormalizeWorkUnit(wuID)
 	return "rootInvocations/" + rootInv + "/workUnits/" + wuID
-}
-
-// ParseTestResultTargetArgs parses positional arguments for a test result target.
-func ParseTestResultTargetArgs(args []string) (string, error) {
-	if len(args) == 0 {
-		return "", errors.New("missing test result target")
-	}
-
-	cd, _ := LoadCache()
-
-	if len(args) == 1 {
-		raw := strings.TrimSpace(args[0])
-		if raw == "-" {
-			if cd.TestResult != "" {
-				return cd.TestResult, nil
-			}
-			if cd.Verdict != "" {
-				return cd.Verdict, nil
-			}
-			if cd.Invocation != "" && cd.TestID != "" && cd.ResultID != "" {
-				return FormatTestResultResourceName(cd.Invocation, cd.TestID, cd.ResultID), nil
-			}
-			return "", errors.New("no previous test result found in cache; please specify '<inv> <test_id> <result_id>' or full resource name")
-		}
-		if strings.Contains(raw, "/") || strings.HasPrefix(raw, "invocations/") || strings.HasPrefix(raw, "rootInvocations/") {
-			return raw, nil
-		}
-		return "", errors.Fmt("%q is not a full test result resource name or URL; specify '<inv> <test_id> <result_id>' or use '-' to reference cached context (e.g. 'luci test-result get - %s')", raw, raw)
-	}
-
-	if len(args) == 2 && args[0] == "-" {
-		override := strings.TrimSpace(args[1])
-		if cd.Verdict != "" {
-			if u, err := url.Parse(cd.Verdict); err == nil {
-				q := u.Query()
-				q.Set("result", override)
-				u.RawQuery = q.Encode()
-				return u.String(), nil
-			}
-			return cd.Verdict + "?result=" + url.QueryEscape(override), nil
-		}
-		if cd.TestResult != "" {
-			extInv, extTest, _ := ExtractTestResultComponents(cd.TestResult)
-			if extInv != "" && extTest != "" {
-				return FormatTestResultResourceName(extInv, extTest, override), nil
-			}
-		}
-		if cd.Invocation != "" && cd.TestID != "" {
-			return FormatTestResultResourceName(cd.Invocation, cd.TestID, override), nil
-		}
-		return "", errors.Fmt("no previous test or verdict found in cache to override result ID %q", override)
-	}
-
-	cachedInv := cd.Invocation
-	cachedTestID := cd.TestID
-	cachedResultID := cd.ResultID
-	if cd.TestResult != "" {
-		extInv, extTest, extRes := ExtractTestResultComponents(cd.TestResult)
-		if extInv != "" {
-			cachedInv = extInv
-		}
-		if extTest != "" {
-			cachedTestID = extTest
-		}
-		if extRes != "" {
-			cachedResultID = extRes
-		}
-	}
-
-	fields := []string{"invocation", "test ID", "result ID"}
-	cached := []string{cachedInv, cachedTestID, cachedResultID}
-
-	resolved, direct, err := ResolveHierarchyArgs(args, fields, cached)
-	if err != nil {
-		return "", err
-	}
-	if direct != "" {
-		return direct, nil
-	}
-	return FormatTestResultResourceName(resolved[0], resolved[1], resolved[2]), nil
-}
-
-// ParseWorkUnitTargetArgs parses positional arguments for a work unit target.
-func ParseWorkUnitTargetArgs(args []string) (string, error) {
-	if len(args) == 0 {
-		return "", errors.New("missing work unit target")
-	}
-
-	cd, _ := LoadCache()
-
-	if len(args) == 1 {
-		raw := strings.TrimSpace(args[0])
-		if raw == "-" {
-			if cd.WorkUnit != "" {
-				return cd.WorkUnit, nil
-			}
-			if cd.Invocation != "" && cd.WorkUnitID != "" {
-				return FormatWorkUnitResourceName(cd.Invocation, cd.WorkUnitID), nil
-			}
-			return "", errors.New("no previous work unit found in cache; please specify '<root_inv> <work_unit_id>' or full resource name")
-		}
-		if strings.Contains(raw, "/") || strings.HasPrefix(raw, "rootInvocations/") || strings.HasPrefix(raw, "invocations/") {
-			return raw, nil
-		}
-		return "", errors.Fmt("%q is not a full work unit resource name or URL; specify '<root_inv> <work_unit_id>' or use '-' to reference cached context (e.g. 'luci work-unit get - %s')", raw, raw)
-	}
-
-	cachedInv := cd.Invocation
-	cachedWuID := cd.WorkUnitID
-	if cd.WorkUnit != "" {
-		extRootInv, extWuID := ExtractWorkUnitComponents(cd.WorkUnit)
-		if extRootInv != "" {
-			cachedInv = extRootInv
-		}
-		if extWuID != "" {
-			cachedWuID = extWuID
-		}
-	}
-
-	fields := []string{"invocation", "work unit ID"}
-	cached := []string{cachedInv, cachedWuID}
-
-	resolved, direct, err := ResolveHierarchyArgs(args, fields, cached)
-	if err != nil {
-		return "", err
-	}
-	if direct != "" {
-		return direct, nil
-	}
-	return FormatWorkUnitResourceName(resolved[0], resolved[1]), nil
 }
 
 // ExtractTestResultComponents parses an invocation, test ID, and result ID from a resource name.

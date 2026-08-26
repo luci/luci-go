@@ -30,34 +30,39 @@ import (
 )
 
 func HeadCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
-	usage := "head <target> <artifact_id>"
-	desc := "Print the first N lines of an artifact"
-	if parentType == ParentTypeTestResult {
-		usage = "head <target> <artifact_id> | head <inv> <test_id> <result_id> <artifact_id>"
-		desc = "Print the first N lines of a test result artifact"
-	} else if parentType == ParentTypeWorkUnit {
-		usage = "head <target> <artifact_id> | head <root_inv> <work_unit_id> <artifact_id>"
+	usage := "head -invocationid <invocation_id> -testid <test_id> -resultid <result_id> -artifactid <artifact_id>"
+	desc := "Print the first N lines of a test result artifact"
+	if parentType == ParentTypeWorkUnit {
+		usage = "head -invocationid <invocation_id> -workunitid <work_unit_id> -artifactid <artifact_id>"
 		desc = "Print the first N lines of a work unit artifact"
 	}
 
 	return &subcommands.Command{
 		UsageLine: usage,
 		ShortDesc: desc,
-		LongDesc: desc + " by resource name, URL, or decomposed target IDs using optimized HTTP Range requests.\n\n" +
+		LongDesc: desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
 			"By default, prints the first 10 lines. You can customize the number of lines with -n / -lines, or bytes with -c / -bytes.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &artifactHeadRun{af: af, parentType: parentType, lines: 10}
 			r.af.Register(&r.Flags)
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
+			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
+			if parentType == ParentTypeTestResult {
+				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
+			} else {
+				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
+			}
+			r.Flags.StringVar(&r.artifactID, "artifactid", "", "Artifact ID (e.g. text_log or test.xml)")
+			r.Flags.StringVar(&r.artifactID, "artifact", "", "Alias for -artifactid")
+			r.Flags.StringVar(&r.artifactID, "a", "", "Alias for -artifactid")
 			r.Flags.IntVar(&r.lines, "n", 10, "Number of lines to fetch from the beginning of the artifact (default 10)")
 			r.Flags.IntVar(&r.lines, "lines", 10, "Alias for -n")
 			r.Flags.Int64Var(&r.bytes, "c", 0, "Number of bytes to fetch from the beginning of the artifact")
 			r.Flags.Int64Var(&r.bytes, "bytes", 0, "Alias for -c")
 			r.Flags.StringVar(&r.outputFile, "o", "", "Optional file path to save the artifact content to")
 			r.Flags.StringVar(&r.outputFile, "output", "", "Alias for -o")
-			if parentType == ParentTypeTestResult {
-				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
-			}
 			return r
 		},
 	}
@@ -65,13 +70,18 @@ func HeadCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 
 type artifactHeadRun struct {
 	subcommands.CommandRunBase
-	af         *base.AuthFlags
-	parentType ParentType
-	host       string
-	lines      int
-	bytes      int64
-	outputFile string
-	legacy     bool
+	af           *base.AuthFlags
+	parentType   ParentType
+	host         string
+	invocationID string
+	testID       string
+	resultID     string
+	workUnitID   string
+	artifactID   string
+	lines        int
+	bytes        int64
+	outputFile   string
+	legacy       bool
 }
 
 func (r *artifactHeadRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -81,12 +91,35 @@ func (r *artifactHeadRun) Run(a subcommands.Application, args []string, env subc
 			return 0
 		}
 	}
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "unexpected positional arguments (run 'luci ids <url>' to extract ids)\n")
+		return 1
+	}
+	if r.artifactID == "" {
+		fmt.Fprintf(os.Stderr, "flag -artifactid is required (run 'luci ids <url>' to extract ids)\n")
+		return 1
+	}
+	var artName string
+	if r.parentType == ParentTypeTestResult {
+		if r.invocationID == "" || r.testID == "" || r.resultID == "" {
+			fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, -resultid, and -artifactid are required (run 'luci ids <url>' to extract ids)\n")
+			return 1
+		}
+		artName = FormatTestResultArtifactName(r.invocationID, r.testID, r.resultID, r.artifactID)
+	} else {
+		if r.invocationID == "" || r.workUnitID == "" {
+			fmt.Fprintf(os.Stderr, "flags -invocationid, -workunitid, and -artifactid are required (run 'luci ids <url>' to extract ids)\n")
+			return 1
+		}
+		artName = FormatWorkUnitArtifactName(r.invocationID, r.workUnitID, r.artifactID)
+	}
+
 	if r.lines <= 0 && r.bytes <= 0 {
 		fmt.Fprintf(os.Stderr, "-n/lines or -c/bytes must be positive\n")
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
-	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, args, r.parentType, r.legacy, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
+	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, artName, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 		if r.bytes > 0 {
 			byteRange := &ByteRange{Start: 0, End: r.bytes - 1}
 			_, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, byteRange, out)

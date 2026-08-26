@@ -28,6 +28,7 @@ type VerdictGroup struct {
 	Variant      *pb.Variant
 	Results      []*pb.TestResult
 	Exonerations []*pb.TestExoneration
+	HasMore      bool
 }
 
 func (g *VerdictGroup) Status() string {

@@ -24,9 +24,6 @@ import (
 
 func TestTargets(t *testing.T) {
 	ftt.Run("Targets parsing and formatting", t, func(t *ftt.Test) {
-		tempDir := t.TempDir()
-		SetTestCacheDir(tempDir)
-
 		t.Run("TrimResourceURL", func(t *ftt.Test) {
 			assert.Loosely(t, TrimResourceURL("https://ci.chromium.org/ui/test-investigate/invocations/build-123/tests/test1?result=r1#top"), should.Equal("invocations/build-123/tests/test1"))
 			assert.Loosely(t, TrimResourceURL("https://ci.chromium.org/ui/test-investigate/rootInvocations/ants-123/workUnits/wu-456"), should.Equal("rootInvocations/ants-123/workUnits/wu-456"))
@@ -40,54 +37,6 @@ func TestTargets(t *testing.T) {
 		t.Run("FormatWorkUnitResourceName", func(t *ftt.Test) {
 			assert.Loosely(t, FormatWorkUnitResourceName("ants-123", "wu-456"), should.Equal("rootInvocations/ants-123/workUnits/wu-456"))
 			assert.Loosely(t, FormatWorkUnitResourceName("8673802696052024673", "wu-456"), should.Equal("rootInvocations/build-8673802696052024673/workUnits/wu-456"))
-		})
-
-		t.Run("ParseTestResultTargetArgs", func(t *ftt.Test) {
-			t.Run("direct URL", func(t *ftt.Test) {
-				res, err := ParseTestResultTargetArgs([]string{"invocations/build-1/tests/t1/results/r1"})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Equal("invocations/build-1/tests/t1/results/r1"))
-			})
-
-			t.Run("decomposed IDs", func(t *ftt.Test) {
-				res, err := ParseTestResultTargetArgs([]string{"build-1", "t1", "r1"})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Equal("invocations/build-1/tests/t1/results/r1"))
-			})
-
-			t.Run("cache override with -", func(t *ftt.Test) {
-				RecordTestResult("invocations/build-1/tests/t1/results/r1", "build-1", "t1")
-				res, err := ParseTestResultTargetArgs([]string{"-", "r2"})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Equal("invocations/build-1/tests/t1/results/r2"))
-			})
-
-			t.Run("single short non-url fails without -", func(t *ftt.Test) {
-				_, err := ParseTestResultTargetArgs([]string{"01a5d9e8-00081"})
-				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err.Error(), should.ContainSubstring("is not a full test result resource name or URL"))
-			})
-		})
-
-		t.Run("ParseWorkUnitTargetArgs", func(t *ftt.Test) {
-			t.Run("direct URL", func(t *ftt.Test) {
-				res, err := ParseWorkUnitTargetArgs([]string{"rootInvocations/ants-1/workUnits/wu-1"})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Equal("rootInvocations/ants-1/workUnits/wu-1"))
-			})
-
-			t.Run("decomposed IDs", func(t *ftt.Test) {
-				res, err := ParseWorkUnitTargetArgs([]string{"ants-1", "wu-1"})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Equal("rootInvocations/ants-1/workUnits/wu-1"))
-			})
-
-			t.Run("cache with -", func(t *ftt.Test) {
-				RecordWorkUnit("rootInvocations/ants-1/workUnits/wu-1", "ants-1")
-				res, err := ParseWorkUnitTargetArgs([]string{"-"})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Equal("rootInvocations/ants-1/workUnits/wu-1"))
-			})
 		})
 
 		t.Run("ExtractTestResultComponents", func(t *ftt.Test) {

@@ -32,6 +32,6 @@ func TestCmdWorkUnit(t *testing.T) {
 
 		getCmd := GetCmd(nil)
 		assert.Loosely(t, getCmd, should.NotBeNil)
-		assert.Loosely(t, getCmd.UsageLine, should.Equal("get <name> | get - [<work_unit_id>] | get <root_inv> <work_unit_id>"))
+		assert.Loosely(t, getCmd.UsageLine, should.Equal("get -invocationid <invocation_id> -workunitid <work_unit_id>"))
 	})
 }

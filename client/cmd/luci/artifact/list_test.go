@@ -252,8 +252,8 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			})
 
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
-			assert.Loosely(t, out, should.ContainSubstring("Work unit step-1 contains 2 artifacts. Run 'luci work-unit artifact list - step-1' to view."))
-			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root contains 1+ artifacts. Run 'luci work-unit artifact list - build-root' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("Work unit step-1 contains 2 artifacts. Run 'luci work-unit artifact list -invocationid build-123 -workunitid step-1' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root contains 1+ artifacts. Run 'luci work-unit artifact list -invocationid build-123 -workunitid build-root' to view."))
 		})
 
 		t.Run(`work unit only checks ancestors, not target itself`, func(t *ftt.Test) {
@@ -283,7 +283,7 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 				printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit)
 			})
 
-			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root contains 1 artifact. Run 'luci work-unit artifact list - build-root' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root contains 1 artifact. Run 'luci work-unit artifact list -invocationid build-123 -workunitid build-root' to view."))
 			assert.Loosely(t, out, should.NotContainSubstring("step-1"))
 		})
 
@@ -310,7 +310,7 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 				printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit)
 			})
 
-			assert.Loosely(t, out, should.ContainSubstring("Root work unit contains 1 artifact. Run 'luci work-unit artifact list - root' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("Root work unit contains 1 artifact. Run 'luci work-unit artifact list -invocationid build-123 -workunitid root' to view."))
 		})
 
 		t.Run(`no notice printed when ancestors have zero artifacts`, func(t *ftt.Test) {

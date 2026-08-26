@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"regexp"
-	"strings"
 
 	"github.com/maruel/subcommands"
 
@@ -28,6 +26,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -61,16 +60,20 @@ func (r *testResultRun) Run(a subcommands.Application, args []string, env subcom
 
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get <name> | get - [<result_id>] | get - <test_id> <result_id> | get <inv> <test_id> <result_id>",
+		UsageLine: "get -invocationid <invocation_id> -testid <test_id> -resultid <result_id>",
 		ShortDesc: "Get a test result",
-		LongDesc:  "Get details of an individual test result by its resource name, URL, or decomposed IDs.\nUse '-' to reuse cached parent resource components with trailing overrides.",
+		LongDesc:  "Get details of an individual test result by its invocation ID, test ID, and result ID.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &testResultGetRun{af: af}
 			r.af.Register(&r.Flags)
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
+			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
+			r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+			r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
 			r.Flags.BoolVar(&r.showArtifacts, "show-artifacts", false, "Render HTML artifact links inline")
 			r.Flags.BoolVar(&r.showArtifacts, "artifacts", false, "Alias for -show-artifacts")
 			r.Flags.BoolVar(&r.showMetadata, "metadata", false, "Show additional result metadata and tags")
+			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Alias for -metadata")
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
 		},
@@ -81,29 +84,38 @@ type testResultGetRun struct {
 	subcommands.CommandRunBase
 	af            *base.AuthFlags
 	host          string
+	invocationID  string
+	testID        string
+	resultID      string
 	showArtifacts bool
 	showMetadata  bool
 	legacy        bool
 }
 
-// FetchTestResult fetches a test result by its resource name or verdict target with result ID.
-func FetchTestResult(ctx context.Context, client pb.ResultDBClient, target string, legacy bool) (*pb.TestResult, error) {
-	clean := base.TrimResourceURL(target)
-	if strings.Contains(clean, "/tests/") && strings.Contains(clean, "/results/") && !strings.Contains(clean, "/modules/") && !strings.Contains(clean, "/variants/") {
-		req := &pb.GetTestResultRequest{Name: clean}
-		res, err := client.GetTestResult(ctx, req)
-		if err == nil {
-			return res, nil
+// FetchTestResult fetches a test result by its decomposed IDs.
+func FetchTestResult(ctx context.Context, client pb.ResultDBClient, invID, testID, resultID string, legacy bool) (*pb.TestResult, error) {
+	name := base.FormatTestResultResourceName(invID, testID, resultID)
+	req := &pb.GetTestResultRequest{Name: name}
+	res, err := client.GetTestResult(ctx, req)
+	if err == nil && res != nil {
+		return res, nil
+	}
+
+	// Try resolving via verdict query on root invocation (passing maxFetch: 0 to paginate all results for this test)
+	results, _, _, vErr := verdict.QueryVerdictResultsAndExonerations(ctx, client, invID, testID, "", legacy, 0)
+	if vErr != nil {
+		if err != nil {
+			return nil, errors.Fmt("direct lookup failed (%w); fallback verdict query failed (%w)", err, vErr)
+		}
+		return nil, vErr
+	}
+	for _, tr := range results {
+		if tr.ResultId == resultID {
+			return tr, nil
 		}
 	}
 
-	// Try resolving via verdict query
-	_, matched, err := verdict.ResolveVerdictResults(ctx, client, target, legacy)
-	if err == nil {
-		return matched, nil
-	}
-
-	return client.GetTestResult(ctx, &pb.GetTestResultRequest{Name: clean})
+	return nil, errors.Fmt("test result %q not found for test %q in invocation %q", resultID, testID, invID)
 }
 
 func (r *testResultGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -113,12 +125,15 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 			return 0
 		}
 	}
-	ctx := cli.GetContext(a, r, env)
-	name, err := base.ParseTestResultTargetArgs(args)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -invocationid, -testid, -resultid (run 'luci ids <url>' to extract ids)\n")
 		return 1
 	}
+	if r.invocationID == "" || r.testID == "" || r.resultID == "" {
+		fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, and -resultid are required (run 'luci ids <url>' to extract ids)\n")
+		return 1
+	}
+	ctx := cli.GetContext(a, r, env)
 
 	if err := r.af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
@@ -132,12 +147,11 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		return 1
 	}
 
-	res, err := FetchTestResult(ctx, client, name, r.legacy)
+	res, err := FetchTestResult(ctx, client, r.invocationID, r.testID, r.resultID, r.legacy)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get test result: %s\n", err)
 		return 1
 	}
-	base.RecordTestResult(res.Name, "", "")
 
 	fmt.Printf("Result ID: %s\n", res.ResultId)
 	format.PrintTestID(ctx, schemasClient, res)
@@ -161,7 +175,7 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 			}
 		}
 	}
-	printVerdictContext(ctx, client, res, r.legacy)
+	printVerdictContext(ctx, client, r.invocationID, res, r.legacy)
 	if res.Variant != nil && len(res.Variant.GetDef()) > 0 {
 		fmt.Printf("Variant:   %s\n", format.FormatVariant(res.Variant))
 	}
@@ -182,21 +196,8 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 	return 0
 }
 
-func printVerdictContext(ctx context.Context, rdbClient pb.ResultDBClient, res *pb.TestResult, legacy bool) {
-	idx := strings.Index(res.Name, "/tests/")
-	if idx == -1 {
-		return
-	}
-	invName := res.Name[:idx]
-	if wuIdx := strings.Index(invName, "/workUnits/"); wuIdx != -1 {
-		invName = invName[:wuIdx]
-	}
-	testIDRegexp := regexp.QuoteMeta(res.TestId)
-	matchFunc := func(tr *pb.TestResult) bool {
-		return tr.VariantHash == res.VariantHash && tr.TestId == res.TestId
-	}
-
-	verdictResults, exList, err := verdict.QueryVerdictResultsAndExonerations(ctx, rdbClient, invName, res.VariantHash, testIDRegexp, matchFunc, legacy)
+func printVerdictContext(ctx context.Context, rdbClient pb.ResultDBClient, invID string, res *pb.TestResult, legacy bool) {
+	verdictResults, exList, _, err := verdict.QueryVerdictResultsAndExonerations(ctx, rdbClient, invID, res.TestId, res.VariantHash, legacy, 1000)
 	if err != nil || (len(verdictResults) <= 1 && len(exList) == 0) {
 		return
 	}

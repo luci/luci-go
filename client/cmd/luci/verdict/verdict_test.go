@@ -86,6 +86,6 @@ func TestCmdVerdict(t *testing.T) {
 
 		getCmd := GetCmd(nil)
 		assert.Loosely(t, getCmd, should.NotBeNil)
-		assert.Loosely(t, getCmd.UsageLine, should.Equal("get <name>"))
+		assert.Loosely(t, getCmd.UsageLine, should.Equal("get -invocationid <invocation_id> -testid <test_id> [-varianthash <hash>]"))
 	})
 }

@@ -31,12 +31,13 @@ INTEGRATION_TESTS=1 go test ./...
 *   `main.go`: Root command setup. Registers authentication and sub-apps from subpackages.
 *   `base/`: Shared CLI utilities and authentication flags.
 *   `format/`: Common formatting and HTML summary processing helpers.
-*   `testresult/`: Subpackage for `test-result` resource management (e.g. `luci test-result get`, `luci test-result artifact ...`).
-*   `workunit/`: Subpackage for `work-unit` resource management (e.g. `luci work-unit get`, `luci work-unit artifact ...`).
-*   `verdict/`: Subpackage for `verdict` resource management (e.g. `luci verdict get`).
+*   `ids/`: Subcommand `luci ids <target>` to parse URLs / resource names and extract component IDs.
+*   `testresult/`: Subpackage for `test-result` resource management (`luci test-result get`, `luci test-result artifact ...`).
+*   `workunit/`: Subpackage for `work-unit` resource management (`luci work-unit get`, `luci work-unit artifact ...`).
+*   `verdict/`: Subpackage for `verdict` resource management (`luci verdict get`).
 *   `artifact/`: Core package for artifact queries and streaming (`list`, `get`, `head`, `tail`).
 
-Subcommands are nested using the `subcommands.Application` wrapper to enforce nested sub-actions.
+Commands are completely stateless and require explicit flags (`-invocationid`, `-testid`, `-resultid`, `-workunitid`, `-artifactid`). Use `luci ids <url>` to extract IDs from URLs or canonical resource names.
 
 ## Manual Testing & Authentication
 
@@ -46,40 +47,31 @@ The tool automatically integrates with your local credentials. If running on cor
 # Verify authentication
 ./luci auth-info
 
-# Get a test verdict by UI URL or resource name
-./luci verdict get "https://ci.chromium.org/ui/test-investigate/invocations/build-.../modules/.../schemes/.../variants/.../cases/..."
+# Extract IDs from a URL or resource name
+./luci ids "https://ci.chromium.org/ui/test-investigate/invocations/build-.../modules/.../schemes/.../variants/.../cases/..."
+./luci ids "https://android-build.corp.google.com/test_investigate/invocation/I.../test/TR..."
 
-# Get a test result (by URL, full name, or decomposed IDs)
-./luci test-result get "invocations/build-8676.../tests/.../results/0"
-./luci test-result get build-8676... "ninja://..." 0
+# Get a test verdict
+./luci verdict get -invocationid build-8676... -testid "ninja://..." [-varianthash ...]
+
+# Get a test result
+./luci test-result get -invocationid build-8676... -testid "ninja://..." -resultid 0
 
 # List test result artifacts
-./luci test-result artifact list "invocations/build-8676.../tests/.../results/0"
+./luci test-result artifact list -invocationid build-8676... -testid "ninja://..." -resultid 0
 
 # Get full test result artifact content or byte range
-./luci test-result artifact get "invocations/build-8676.../tests/.../results/0" snippet
-./luci test-result artifact get "invocations/build-8676.../tests/.../results/0" snippet -byte-range 0-500
+./luci test-result artifact get -invocationid build-8676... -testid "ninja://..." -resultid 0 -artifactid snippet
+./luci test-result artifact get -invocationid build-8676... -testid "ninja://..." -resultid 0 -artifactid snippet -byte-range 0-500
 
 # Fetch first / last lines of a test result artifact
-./luci test-result artifact head "invocations/build-8676.../tests/.../results/0" snippet
-./luci test-result artifact tail "invocations/build-8676.../tests/.../results/0" snippet
+./luci test-result artifact head -invocationid build-8676... -testid "ninja://..." -resultid 0 -artifactid snippet
+./luci test-result artifact tail -invocationid build-8676... -testid "ninja://..." -resultid 0 -artifactid snippet
 
-# Caching and '-' Substitution:
-# A leading '-' means "use the last thing", and you can override trailing components:
-./luci test-result artifact list inv testid resultid
-./luci test-result artifact get - artifactid              # uses last test result, overrides artifactid
-./luci test-result artifact get - resultid2 artifactid     # uses last inv and testid, overrides resultid and artifactid
-./luci test-result artifact get - testid2 resultid2 art    # uses last inv, overrides testid, resultid, and artifactid
-./luci test-result get -                                  # uses last test result
-./luci test-result get - resultid2                        # uses last inv and testid, overrides resultid
-./luci test-result get - testid2 resultid2                # uses last inv, overrides testid and resultid
-
-# Work unit management and hierarchy invalidations:
-./luci work-unit get "rootInvocations/build-8676.../workUnits/run-tests"
-./luci work-unit artifact list -                          # uses last work unit
-./luci work-unit artifact list - run-tests                # uses last root invocation, overrides work unit ID
-./luci work-unit artifact get - stdout                    # uses last work unit, overrides artifactid
-# Note: Changing parent resource (e.g. invocation) automatically unsets/invalidates child resources.
+# Work unit management
+./luci work-unit get -invocationid build-8676... -workunitid run-tests
+./luci work-unit artifact list -invocationid build-8676... -workunitid run-tests
+./luci work-unit artifact get -invocationid build-8676... -workunitid run-tests -artifactid stdout
 ```
 
 
