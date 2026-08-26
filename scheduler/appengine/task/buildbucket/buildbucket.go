@@ -21,8 +21,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -68,6 +68,12 @@ const (
 	maxTriggersAsSchedulerProperty = 100
 )
 
+// Only these hosts will be allowed to be specified in the config file.
+var knownBuildbucketHosts = []string{
+	"cr-buildbucket.appspot.com",
+	"cr-buildbucket-dev.appspot.com",
+}
+
 // TaskManager implements task.Manager interface for tasks defined with
 // BuildbucketTask proto message.
 type TaskManager struct {
@@ -106,16 +112,8 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 	switch {
 	case cfg.Server == "":
 		c.Errorf("field 'server' is required")
-	case strings.HasPrefix(cfg.Server, "https://") || strings.HasPrefix(cfg.Server, "http://"):
-		c.Errorf("field 'server' should be just a host, not a URL: %q", cfg.Server)
-	default:
-		u, err := url.Parse("https://" + cfg.Server)
-		switch {
-		case err != nil:
-			c.Errorf("field 'server' is not a valid hostname %q: %s", cfg.Server, err)
-		case !u.IsAbs() || u.Path != "":
-			c.Errorf("field 'server' is not a valid hostname %q", cfg.Server)
-		}
+	case !slices.Contains(knownBuildbucketHosts, cfg.Server):
+		c.Errorf("unrecognized Buildbucket hostname in 'server' field: %q", cfg.Server)
 	}
 
 	// Check can derive the bucket name.

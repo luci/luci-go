@@ -51,6 +51,10 @@ import (
 
 var _ task.Manager = (*TaskManager)(nil)
 
+func init() {
+	knownBuildbucketHosts = []string{"blah.com"}
+}
+
 func TestValidateProtoMessage(t *testing.T) {
 	t.Parallel()
 
@@ -100,9 +104,8 @@ func TestValidateProtoMessage(t *testing.T) {
 				return ctx.Finalize()
 			}
 			assert.Loosely(t, call(""), should.ErrLike("field 'server' is required"))
-			assert.Loosely(t, call("https://host/not-root"), should.ErrLike("field 'server' should be just a host, not a URL"))
-			assert.Loosely(t, call("%%%%"), should.ErrLike("field 'server' is not a valid hostname"))
-			assert.Loosely(t, call("blah.com/abc"), should.ErrLike("field 'server' is not a valid hostname"))
+			assert.Loosely(t, call("foo.com"), should.ErrLike("unrecognized Buildbucket hostname"))
+			assert.Loosely(t, call("blah.com/abc"), should.ErrLike("unrecognized Buildbucket hostname"))
 		})
 
 		t.Run("ValidateProtoMessage needs bucket", func(t *ftt.Test) {
