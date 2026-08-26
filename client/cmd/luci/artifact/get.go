@@ -53,17 +53,14 @@ func GetCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 			if parentType == ParentTypeTestResult {
 				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
 				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			} else {
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
 			}
 			r.Flags.StringVar(&r.artifactID, "artifactid", "", "Artifact ID (e.g. text_log or test.xml)")
-			r.Flags.StringVar(&r.artifactID, "artifact", "", "Alias for -artifactid")
-			r.Flags.StringVar(&r.artifactID, "a", "", "Alias for -artifactid")
 			r.Flags.StringVar(&r.byteRangeStr, "byte-range", "", "Byte range to fetch (e.g. 0-100, 500-, -500)")
-			r.Flags.StringVar(&r.byteRangeStr, "bytes", "", "Alias for -byte-range")
 			r.Flags.StringVar(&r.outputFile, "o", "", "Optional file path to save the artifact content to")
-			r.Flags.StringVar(&r.outputFile, "output", "", "Alias for -o")
 			return r
 		},
 	}
@@ -95,23 +92,9 @@ func (r *artifactGetRun) Run(a subcommands.Application, args []string, env subco
 		fmt.Fprintf(os.Stderr, "unexpected positional arguments (run 'luci ids <url>' to extract ids)\n")
 		return 1
 	}
-	if r.artifactID == "" {
-		fmt.Fprintf(os.Stderr, "flag -artifactid is required (run 'luci ids <url>' to extract ids)\n")
+	if err := ValidateArtifactFlags(r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
-	}
-	var artName string
-	if r.parentType == ParentTypeTestResult {
-		if r.invocationID == "" || r.testID == "" || r.resultID == "" {
-			fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, -resultid, and -artifactid are required (run 'luci ids <url>' to extract ids)\n")
-			return 1
-		}
-		artName = FormatTestResultArtifactName(r.invocationID, r.testID, r.resultID, r.artifactID)
-	} else {
-		if r.invocationID == "" || r.workUnitID == "" {
-			fmt.Fprintf(os.Stderr, "flags -invocationid, -workunitid, and -artifactid are required (run 'luci ids <url>' to extract ids)\n")
-			return 1
-		}
-		artName = FormatWorkUnitArtifactName(r.invocationID, r.workUnitID, r.artifactID)
 	}
 
 	byteRange, err := ParseByteRange(r.byteRangeStr)
@@ -120,7 +103,7 @@ func (r *artifactGetRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
-	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, artName, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
+	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, r.legacy, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 		_, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, byteRange, out)
 		return err
 	})

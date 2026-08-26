@@ -33,9 +33,10 @@ import (
 
 type mockResultDBClient struct {
 	pb.ResultDBClient
-	listArtifacts  func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
-	queryWorkUnits func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
-	getWorkUnit    func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
+	listArtifacts     func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
+	queryWorkUnits    func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
+	getWorkUnit       func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
+	queryTestVerdicts func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
 }
 
 func (m *mockResultDBClient) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
@@ -57,6 +58,13 @@ func (m *mockResultDBClient) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnit
 		return m.getWorkUnit(ctx, in)
 	}
 	return nil, errors.New("not implemented")
+}
+
+func (m *mockResultDBClient) QueryTestVerdicts(ctx context.Context, in *pb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*pb.QueryTestVerdictsResponse, error) {
+	if m.queryTestVerdicts != nil {
+		return m.queryTestVerdicts(ctx, in)
+	}
+	return &pb.QueryTestVerdictsResponse{}, nil
 }
 
 func captureStdout(fn func()) string {

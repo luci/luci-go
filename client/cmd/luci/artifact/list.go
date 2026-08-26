@@ -52,12 +52,12 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 			if parentType == ParentTypeTestResult {
 				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
 				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			} else {
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
 			}
 			r.Flags.IntVar(&r.maxArtifacts, "max-artifacts", 100, "Maximum number of artifacts to display (default: 100, 0 for all)")
-			r.Flags.IntVar(&r.maxArtifacts, "max-results", 100, "Alias for -max-artifacts")
 			r.Flags.BoolVar(&r.allArtifacts, "all", false, "Show all artifacts without truncation")
 			return r
 		},
@@ -89,21 +89,6 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		fmt.Fprintf(os.Stderr, "unexpected positional arguments (run 'luci ids <url>' to extract ids)\n")
 		return 1
 	}
-	var cleanTarget string
-	if r.parentType == ParentTypeTestResult {
-		if r.invocationID == "" || r.testID == "" || r.resultID == "" {
-			fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, and -resultid are required (run 'luci ids <url>' to extract ids)\n")
-			return 1
-		}
-		cleanTarget = base.FormatTestResultResourceName(r.invocationID, r.testID, r.resultID)
-	} else {
-		if r.invocationID == "" || r.workUnitID == "" {
-			fmt.Fprintf(os.Stderr, "flags -invocationid and -workunitid are required (run 'luci ids <url>' to extract ids)\n")
-			return 1
-		}
-		cleanTarget = base.FormatWorkUnitResourceName(r.invocationID, r.workUnitID)
-	}
-
 	ctx := cli.GetContext(a, r, env)
 	if err := r.af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
@@ -114,6 +99,24 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	client, _, _, err := r.af.NewResultDBClient(ctx, r.host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+		return 1
+	}
+
+	if r.parentType == ParentTypeTestResult {
+		if r.invocationID == "" || r.testID == "" || r.resultID == "" {
+			fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, and -resultid are required (run 'luci ids <url>' to extract ids)\n")
+			return 1
+		}
+	} else {
+		if r.invocationID == "" || r.workUnitID == "" {
+			fmt.Fprintf(os.Stderr, "flags -invocationid and -workunitid are required (run 'luci ids <url>' to extract ids)\n")
+			return 1
+		}
+	}
+
+	cleanTarget, err := ResolveTargetResourceName(ctx, client, r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.legacy)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
 

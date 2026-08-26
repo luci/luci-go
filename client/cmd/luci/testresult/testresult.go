@@ -71,9 +71,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
 			r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
 			r.Flags.BoolVar(&r.showArtifacts, "show-artifacts", false, "Render HTML artifact links inline")
-			r.Flags.BoolVar(&r.showArtifacts, "artifacts", false, "Alias for -show-artifacts")
-			r.Flags.BoolVar(&r.showMetadata, "metadata", false, "Show additional result metadata and tags")
-			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Alias for -metadata")
+			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Show additional result metadata and tags")
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
 		},
@@ -94,27 +92,22 @@ type testResultGetRun struct {
 
 // FetchTestResult fetches a test result by its decomposed IDs.
 func FetchTestResult(ctx context.Context, client pb.ResultDBClient, invID, testID, resultID string, legacy bool) (*pb.TestResult, error) {
-	name := base.FormatTestResultResourceName(invID, testID, resultID)
-	req := &pb.GetTestResultRequest{Name: name}
-	res, err := client.GetTestResult(ctx, req)
-	if err == nil && res != nil {
-		return res, nil
+	if legacy {
+		name := base.FormatTestResultResourceName(invID, testID, resultID)
+		req := &pb.GetTestResultRequest{Name: name}
+		return client.GetTestResult(ctx, req)
 	}
 
-	// Try resolving via verdict query on root invocation (passing maxFetch: 0 to paginate all results for this test)
-	results, _, _, vErr := verdict.QueryVerdictResultsAndExonerations(ctx, client, invID, testID, "", legacy, 0)
-	if vErr != nil {
-		if err != nil {
-			return nil, errors.Fmt("direct lookup failed (%w); fallback verdict query failed (%w)", err, vErr)
-		}
-		return nil, vErr
+	// For root invocations, query test results via QueryTestVerdicts on the root invocation (passing maxFetch: 0 to paginate all results for this test).
+	results, _, _, err := verdict.QueryVerdictResultsAndExonerations(ctx, client, invID, testID, "", false, 0)
+	if err != nil {
+		return nil, err
 	}
 	for _, tr := range results {
 		if tr.ResultId == resultID {
 			return tr, nil
 		}
 	}
-
 	return nil, errors.Fmt("test result %q not found for test %q in invocation %q", resultID, testID, invID)
 }
 

@@ -73,9 +73,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.IntVar(&r.maxResults, "max-results", 10, "Maximum number of results to display (default: 10, 0 for all)")
 			r.Flags.BoolVar(&r.allResults, "all", false, "Show all results without truncation")
 			r.Flags.BoolVar(&r.showArtifacts, "show-artifacts", false, "Print content of artifacts embedded in run summary_html")
-			r.Flags.BoolVar(&r.showArtifacts, "artifacts", false, "Alias for -show-artifacts")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Additionally print test metadata, tags, and properties")
-			r.Flags.BoolVar(&r.showMetadata, "metadata", false, "Alias for -show-metadata")
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
 		},

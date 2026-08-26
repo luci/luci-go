@@ -20,12 +20,22 @@ import (
 )
 
 // NormalizeInvocation strips "rootInvocations/" or "invocations/" prefix from an invocation ID.
+// If the invocation ID is an AnTS invocation (I<digits>), it is normalized to ants-i<digits>.
 // If the invocation ID starts with a digit, it is normalized to build-<id>.
 func NormalizeInvocation(inv string) string {
 	inv = strings.TrimSpace(inv)
 	inv = strings.TrimPrefix(inv, "invocations/")
 	inv = strings.TrimPrefix(inv, "rootInvocations/")
-	if !strings.HasPrefix(inv, "build-") && !strings.HasPrefix(inv, "task-") && !strings.HasPrefix(inv, "u-") {
+	if strings.HasPrefix(inv, "I") && len(inv) > 1 && isAllDigits(inv[1:]) {
+		return "ants-i" + inv[1:]
+	}
+	if strings.HasPrefix(inv, "i") && len(inv) > 1 && isAllDigits(inv[1:]) {
+		return "ants-i" + inv[1:]
+	}
+	if strings.HasPrefix(inv, "ants-I") {
+		return "ants-i" + inv[6:]
+	}
+	if !strings.HasPrefix(inv, "build-") && !strings.HasPrefix(inv, "task-") && !strings.HasPrefix(inv, "u-") && !strings.HasPrefix(inv, "ants-") {
 		if _, err := url.PathUnescape(inv); err == nil && len(inv) > 0 && (inv[0] >= '0' && inv[0] <= '9') {
 			inv = "build-" + inv
 		}
@@ -34,10 +44,29 @@ func NormalizeInvocation(inv string) string {
 }
 
 // NormalizeWorkUnit strips "workUnits/" prefix from a work unit ID.
+// If the work unit ID is an AnTS work unit (WU<digits>), it is normalized to ants-wu<digits>.
 func NormalizeWorkUnit(wu string) string {
 	wu = strings.TrimSpace(wu)
 	wu = strings.TrimPrefix(wu, "workUnits/")
+	if (strings.HasPrefix(wu, "WU") || strings.HasPrefix(wu, "wu")) && len(wu) > 2 && isAllDigits(wu[2:]) {
+		return "ants-wu" + wu[2:]
+	}
+	if strings.HasPrefix(strings.ToLower(wu), "ants-wu") && len(wu) > 7 && isAllDigits(wu[7:]) {
+		return "ants-wu" + wu[7:]
+	}
 	return wu
+}
+
+func isAllDigits(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] < '0' || s[i] > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // TrimResourceURL strips URL scheme/host prefix and query/hash fragments from a resource target or URL.
@@ -59,6 +88,14 @@ func FormatTestResultResourceName(inv, testID, resultID string) string {
 	inv = NormalizeInvocation(inv)
 	encodedTestID := url.PathEscape(testID)
 	return "invocations/" + inv + "/tests/" + encodedTestID + "/results/" + resultID
+}
+
+// FormatTestResultWorkUnitResourceName formats a root invocation, work unit ID, test ID, and result ID into a canonical resource name.
+func FormatTestResultWorkUnitResourceName(rootInv, wuID, testID, resultID string) string {
+	rootInv = NormalizeInvocation(rootInv)
+	wuID = NormalizeWorkUnit(wuID)
+	encodedTestID := url.PathEscape(testID)
+	return "rootInvocations/" + rootInv + "/workUnits/" + wuID + "/tests/" + encodedTestID + "/results/" + resultID
 }
 
 // FormatWorkUnitResourceName formats a root invocation and work unit ID into a canonical resource name.

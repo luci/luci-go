@@ -24,13 +24,71 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/errors"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 type artifactFetcher func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error
 
-func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile, artName string, fetcher artifactFetcher) int {
+// ValidateArtifactFlags verifies that required ID flags are provided for an artifact query.
+func ValidateArtifactFlags(parentType ParentType, invID, wuID, testID, resultID, artID string) error {
+	if artID == "" {
+		return errors.New("flag -artifactid is required (run 'luci ids <url>' to extract ids)")
+	}
+	if parentType == ParentTypeTestResult {
+		if invID == "" || testID == "" || resultID == "" {
+			return errors.New("flags -invocationid, -testid, -resultid, and -artifactid are required (run 'luci ids <url>' to extract ids)")
+		}
+	} else {
+		if invID == "" || wuID == "" {
+			return errors.New("flags -invocationid, -workunitid, and -artifactid are required (run 'luci ids <url>' to extract ids)")
+		}
+	}
+	return nil
+}
+
+// ResolveTestResultResourceName resolves the canonical resource name for a test result.
+// - In legacy mode (-legacy): formats "invocations/<invID>/tests/<testID>/results/<resultID>".
+// - When workUnitID is provided: formats "rootInvocations/<invID>/workUnits/<wuID>/tests/<testID>/results/<resultID>".
+// - Otherwise: queries verdicts on the root invocation to find the containing work unit and result resource name.
+func ResolveTestResultResourceName(ctx context.Context, client pb.ResultDBClient, invID, wuID, testID, resultID string, legacy bool) (string, error) {
+	if legacy {
+		return base.FormatTestResultResourceName(invID, testID, resultID), nil
+	}
+	if wuID != "" {
+		return base.FormatTestResultWorkUnitResourceName(invID, wuID, testID, resultID), nil
+	}
+	results, _, _, err := verdict.QueryVerdictResultsAndExonerations(ctx, client, invID, testID, "", false, 0)
+	if err != nil {
+		return "", errors.Fmt("failed to query test results: %w", err)
+	}
+	for _, tr := range results {
+		if tr.ResultId == resultID {
+			return tr.Name, nil
+		}
+	}
+	return "", errors.Fmt("test result %q not found for test %q in invocation %q", resultID, testID, invID)
+}
+
+// ResolveTargetResourceName resolves the canonical resource name for a test result or work unit.
+func ResolveTargetResourceName(ctx context.Context, client pb.ResultDBClient, parentType ParentType, invID, wuID, testID, resultID string, legacy bool) (string, error) {
+	if parentType == ParentTypeWorkUnit {
+		return base.FormatWorkUnitResourceName(invID, wuID), nil
+	}
+	return ResolveTestResultResourceName(ctx, client, invID, wuID, testID, resultID, legacy)
+}
+
+// ResolveArtifactResourceName resolves the full artifact resource name for a test result or work unit.
+func ResolveArtifactResourceName(ctx context.Context, client pb.ResultDBClient, parentType ParentType, invID, wuID, testID, resultID, artID string, legacy bool) (string, error) {
+	targetName, err := ResolveTargetResourceName(ctx, client, parentType, invID, wuID, testID, resultID, legacy)
+	if err != nil {
+		return "", err
+	}
+	return targetName + "/artifacts/" + artID, nil
+}
+
+func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile string, parentType ParentType, invID, wuID, testID, resultID, artID string, legacy bool, fetcher artifactFetcher) int {
 	if err := af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 		return 1
@@ -39,6 +97,12 @@ func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputF
 	client, _, httpClient, err := af.NewResultDBClient(ctx, host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+		return 1
+	}
+
+	artName, err := ResolveArtifactResourceName(ctx, client, parentType, invID, wuID, testID, resultID, artID, legacy)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
 
@@ -74,6 +138,11 @@ func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputF
 // FormatTestResultArtifactName formats canonical test result artifact resource name.
 func FormatTestResultArtifactName(inv, testID, resultID, artID string) string {
 	return base.FormatTestResultResourceName(inv, testID, resultID) + "/artifacts/" + artID
+}
+
+// FormatTestResultWorkUnitArtifactName formats canonical test result artifact resource name under a work unit.
+func FormatTestResultWorkUnitArtifactName(inv, wuID, testID, resultID, artID string) string {
+	return base.FormatTestResultWorkUnitResourceName(inv, wuID, testID, resultID) + "/artifacts/" + artID
 }
 
 // FormatWorkUnitArtifactName formats canonical work unit artifact resource name.

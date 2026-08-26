@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/client/cmd/luci/testresult"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/client/cmd/luci/workunit"
@@ -37,29 +38,28 @@ func getApplication() *cli.Application {
 	return &cli.Application{
 		Name: "luci",
 		Title: "Unified CLI tool to access LUCI resources.\n\n" +
-			"CONTEXT SHORTCUT ('-'):\n" +
-			"  Commands support '-' as a target argument to reuse recently accessed resources\n" +
-			"  (invocation, work unit, test result, verdict) without re-specifying them.\n" +
-			"  Trailing arguments after '-' override trailing components in the hierarchy.\n\n" +
-			"  Typical Investigation Workflow Examples:\n" +
-			"    1. Fetch a test verdict by URL or name:\n" +
-			"       $ luci verdict get https://ci.chromium.org/ui/test-investigate/invocations/build-123/...\n\n" +
-			"    2. Inspect a failed run using '-' to reuse the verdict/invocation context:\n" +
-			"       $ luci test-result get - 0efc0e5a-00528\n\n" +
-			"    3. List or download test result artifacts using '-' to reuse the test result:\n" +
-			"       $ luci test-result artifact list -\n" +
-			"       $ luci test-result artifact get - output.log\n\n" +
-			"    4. Inspect a parent/ancestor work unit using '-' to reuse the invocation:\n" +
-			"       $ luci work-unit get - ants-wu83500269020198004\n\n" +
-			"    5. List or download work unit artifacts using '-' to reuse the work unit:\n" +
-			"       $ luci work-unit artifact list -\n" +
-			"       $ luci work-unit artifact get - subprocess-test_result.xml.gz",
+			"Commands are stateless and require explicit resource ID flags (-invocationid, -testid, -resultid, -workunitid, -artifactid).\n" +
+			"Use 'luci ids <url>' to extract IDs from URLs (Milo UI, AnTS/ATI) or canonical resource names.\n\n" +
+			"Typical Investigation Workflow Examples:\n" +
+			"  1. Extract IDs from a Milo or ATI test URL:\n" +
+			"     $ luci ids https://ci.chromium.org/ui/test-investigate/invocations/build-123/...\n" +
+			"     $ luci ids https://android-build.corp.google.com/test_investigate/invocation/I.../test/TR...\n\n" +
+			"  2. Inspect a test verdict:\n" +
+			"     $ luci verdict get -invocationid build-123 -testid ninja://chrome/test\n\n" +
+			"  3. Inspect an individual test result:\n" +
+			"     $ luci test-result get -invocationid build-123 -testid ninja://chrome/test -resultid 0\n\n" +
+			"  4. List and inspect test result or work unit artifacts:\n" +
+			"     $ luci test-result artifact list -invocationid build-123 -testid ninja://chrome/test -resultid 0\n" +
+			"     $ luci test-result artifact get -invocationid build-123 -testid ninja://chrome/test -resultid 0 -artifactid output.log\n" +
+			"     $ luci work-unit get -invocationid build-123 -workunitid run-tests\n" +
+			"     $ luci work-unit artifact list -invocationid build-123 -workunitid run-tests",
 
 		Context: func(ctx context.Context) context.Context {
 			return gologger.StdConfig.Use(ctx)
 		},
 
 		Commands: []*subcommands.Command{
+			ids.Cmd(af),
 			testresult.Cmd(af),
 			verdict.Cmd(af),
 			workunit.Cmd(af),

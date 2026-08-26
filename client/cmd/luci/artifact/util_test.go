@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestFormatArtifactNames(t *testing.T) {
@@ -36,9 +37,121 @@ func TestFormatArtifactNames(t *testing.T) {
 		assert.Loosely(t, name, should.Equal("invocations/build-123/tests/test:foo%23bar/results/0/artifacts/stdout"))
 	})
 
+	ftt.Run(`FormatTestResultWorkUnitArtifactName`, t, func(t *ftt.Test) {
+		name := FormatTestResultWorkUnitArtifactName("ants-123", "wu-456", "test:foo#bar", "0", "stdout")
+		assert.Loosely(t, name, should.Equal("rootInvocations/ants-123/workUnits/wu-456/tests/test:foo%23bar/results/0/artifacts/stdout"))
+	})
+
 	ftt.Run(`FormatWorkUnitArtifactName`, t, func(t *ftt.Test) {
 		name := FormatWorkUnitArtifactName("ants-123", "wu-456", "stderr")
 		assert.Loosely(t, name, should.Equal("rootInvocations/ants-123/workUnits/wu-456/artifacts/stderr"))
+	})
+}
+
+func TestValidateArtifactFlags(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`ValidateArtifactFlags`, t, func(t *ftt.Test) {
+		t.Run(`missing artifact ID`, func(t *ftt.Test) {
+			err := ValidateArtifactFlags(ParentTypeTestResult, "inv", "", "test", "0", "")
+			assert.Loosely(t, err, should.ErrLike("flag -artifactid is required"))
+		})
+
+		t.Run(`test result parent missing required flags`, func(t *ftt.Test) {
+			err := ValidateArtifactFlags(ParentTypeTestResult, "", "", "test", "0", "stdout")
+			assert.Loosely(t, err, should.ErrLike("flags -invocationid, -testid, -resultid, and -artifactid are required"))
+
+			err = ValidateArtifactFlags(ParentTypeTestResult, "inv", "", "", "0", "stdout")
+			assert.Loosely(t, err, should.ErrLike("flags -invocationid, -testid, -resultid, and -artifactid are required"))
+
+			err = ValidateArtifactFlags(ParentTypeTestResult, "inv", "", "test", "", "stdout")
+			assert.Loosely(t, err, should.ErrLike("flags -invocationid, -testid, -resultid, and -artifactid are required"))
+		})
+
+		t.Run(`test result parent valid`, func(t *ftt.Test) {
+			err := ValidateArtifactFlags(ParentTypeTestResult, "inv", "", "test", "0", "stdout")
+			assert.Loosely(t, err, should.BeNil)
+		})
+
+		t.Run(`work unit parent missing required flags`, func(t *ftt.Test) {
+			err := ValidateArtifactFlags(ParentTypeWorkUnit, "", "wu-1", "", "", "stdout")
+			assert.Loosely(t, err, should.ErrLike("flags -invocationid, -workunitid, and -artifactid are required"))
+
+			err = ValidateArtifactFlags(ParentTypeWorkUnit, "inv", "", "", "", "stdout")
+			assert.Loosely(t, err, should.ErrLike("flags -invocationid, -workunitid, and -artifactid are required"))
+		})
+
+		t.Run(`work unit parent valid`, func(t *ftt.Test) {
+			err := ValidateArtifactFlags(ParentTypeWorkUnit, "inv", "wu-1", "", "", "stdout")
+			assert.Loosely(t, err, should.BeNil)
+		})
+	})
+}
+
+func TestResolveResourceAndArtifactNames(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`ResolveTestResultResourceName`, t, func(t *ftt.Test) {
+		ctx := context.Background()
+
+		t.Run(`legacy mode`, func(t *ftt.Test) {
+			res, err := ResolveTestResultResourceName(ctx, nil, "build-123", "", "test1", "res1", true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Equal("invocations/build-123/tests/test1/results/res1"))
+		})
+
+		t.Run(`explicit work unit`, func(t *ftt.Test) {
+			res, err := ResolveTestResultResourceName(ctx, nil, "ants-i123", "wu-999", "test1", "res1", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Equal("rootInvocations/ants-i123/workUnits/wu-999/tests/test1/results/res1"))
+		})
+
+		t.Run(`query verdict fallback`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: "test1",
+								Results: []*pb.TestResult{
+									{
+										Name:     "rootInvocations/ants-i123/workUnits/discovered-wu/tests/test1/results/res1",
+										TestId:   "test1",
+										ResultId: "res1",
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			res, err := ResolveTestResultResourceName(ctx, client, "ants-i123", "", "test1", "res1", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Equal("rootInvocations/ants-i123/workUnits/discovered-wu/tests/test1/results/res1"))
+
+			artName, err := ResolveArtifactResourceName(ctx, client, ParentTypeTestResult, "ants-i123", "", "test1", "res1", "snippet", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, artName, should.Equal("rootInvocations/ants-i123/workUnits/discovered-wu/tests/test1/results/res1/artifacts/snippet"))
+		})
+
+		t.Run(`not found`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{}, nil
+				},
+			}
+			_, err := ResolveTestResultResourceName(ctx, client, "ants-i123", "", "test1", "nonexistent", false)
+			assert.Loosely(t, err, should.ErrLike("not found"))
+		})
+		t.Run(`ResolveTargetResourceName work unit`, func(t *ftt.Test) {
+			res, err := ResolveTargetResourceName(ctx, nil, ParentTypeWorkUnit, "build-123", "wu-1", "", "", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Equal("rootInvocations/build-123/workUnits/wu-1"))
+
+			artName, err := ResolveArtifactResourceName(ctx, nil, ParentTypeWorkUnit, "build-123", "wu-1", "", "", "syslog", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, artName, should.Equal("rootInvocations/build-123/workUnits/wu-1/artifacts/syslog"))
+		})
 	})
 }
 
