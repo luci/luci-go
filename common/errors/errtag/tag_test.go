@@ -83,7 +83,7 @@ func TestErrTag(t *testing.T) {
 			assert.That(t, btag.ValueOrDefault(err), should.BeTrue)
 		})
 
-		t.Run(`apply with luci errors library Fmt`, func(t *testing.T) {
+		t.Run(`apply with luci errors library Annotate`, func(t *testing.T) {
 			stag2 := stag.WithDefault("newDefault")
 
 			err := stag2.Apply(luci_errors.Fmt("extra: %w", errors.New("bare")))

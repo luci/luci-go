@@ -34,7 +34,7 @@ func TestMultiError(t *testing.T) {
 
 	t.Run("compatible with errors.Is and errors.As", func(t *testing.T) {
 		inner := stderrors.New("hello")
-		annotated := errors.WrapIf(inner, "annotated err")
+		annotated := errors.Annotate(inner, "annotated err")
 		var me error = errors.MultiError{annotated, fmt.Errorf("bob")}
 		assert.That(t, me, should.ErrLikeError(inner))
 		assert.That(t, me, should.ErrLikeString("annotated err"))
@@ -298,7 +298,7 @@ func TestFlatten(t *testing.T) {
 		})
 
 		t.Run("Doesn't unwrap", func(t *ftt.Test) {
-			ann := errors.WrapIf(errors.MultiError{nil, nil, nil}, "don't do this")
+			ann := errors.Annotate(errors.MultiError{nil, nil, nil}, "don't do this")
 			twoErr := stderrors.New("2")
 			merr, yup := errors.Flatten(errors.MultiError{nil, ann, nil, errors.MultiError{nil, twoErr, nil}}).(errors.MultiError)
 			assert.Loosely(t, yup, should.BeTrue)

@@ -61,7 +61,7 @@ func TestAnnotation(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Test annotation struct", t, func(t *ftt.Test) {
-		e := errors.WrapIf(errors.New("bad thing"), "%d some error: %q", 20, "stringy")
+		e := errors.Annotate(errors.New("bad thing"), "%d some error: %q", 20, "stringy")
 
 		t.Run("annotation can render itself for public usage", func(t *ftt.Test) {
 			assert.Loosely(t, e.Error(), should.Equal(`20 some error: "stringy": bad thing`))

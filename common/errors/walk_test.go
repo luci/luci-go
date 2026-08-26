@@ -78,7 +78,7 @@ func TestWalk(t *testing.T) {
 		})
 
 		t.Run(`Will visit a wrapped annotator error.`, func(t *ftt.Test) {
-			errors.WalkLeaves(errors.WrapIf(errors.Reason("sup"), "boo"), walkFn)
+			errors.WalkLeaves(errors.Annotate(errors.Reason("sup"), "boo"), walkFn)
 			assert.Loosely(t, count, should.Equal(1))
 		})
 
@@ -133,7 +133,7 @@ func TestAny(t *testing.T) {
 		for _, err := range []error{
 			testErr,
 			errors.MultiError{stderrors.New("other error"), errors.MultiError{testErr, nil}},
-			errors.WrapIf(testErr, "error test"),
+			errors.Annotate(testErr, "error test"),
 		} {
 			t.Run(fmt.Sprintf(`Registers true for %T %v`, err, err), func(t *ftt.Test) {
 				assert.Loosely(t, errors.Any(err, filter), should.BeTrue)
@@ -161,7 +161,7 @@ func TestContains(t *testing.T) {
 		for _, err := range []error{
 			testErr,
 			errors.MultiError{stderrors.New("other error"), errors.MultiError{testErr, nil}},
-			errors.WrapIf(testErr, "error test"),
+			errors.Annotate(testErr, "error test"),
 		} {
 			t.Run(fmt.Sprintf(`Registers true for %T %v`, err, err), func(t *ftt.Test) {
 				assert.Loosely(t, errors.Contains(err, testErr), should.BeTrue)

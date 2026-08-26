@@ -24,13 +24,13 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-// TestErrorIs makes a new fake value implementing the Error interface and wraps it using WrapIf().
+// TestErrorIs makes a new fake value implementing the Error interface and wraps it using Annotate().
 // Along the way, we test whether Is returns what's expected.
 func TestErrorIs(t *testing.T) {
 	t.Parallel()
 	ftt.Run("test is", t, func(t *ftt.Test) {
 		newFakeError := &fakeError{}
-		wrappedError := errors.WrapIf(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6")
+		wrappedError := errors.Annotate(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6")
 		assert.Loosely(t, newFakeError.Error(), should.Equal("f9bd822e-6568-46ab-ba7d-419ef5f64b3b"))
 		assert.Loosely(t, stderrors.Is(newFakeError, &fakeError{}), should.BeTrue)
 		assert.Loosely(t, errors.Is(newFakeError, &fakeError{}), should.BeTrue)
@@ -39,8 +39,8 @@ func TestErrorIs(t *testing.T) {
 	})
 }
 
-// TestErrorAs makes a new fake value implementing the Error interface and wraps it using WrapIf().
-// Along the way, we test whether As succeeds for the raw error and the wrapped error.
+// TestErrorAs makes a new fake value implementing the Error interface and wraps it using Annotate().
+// Along the way, we test whether As succeeds for the raw error and the annotated error.
 func TestErrorAs(t *testing.T) {
 	t.Parallel()
 	ftt.Run("test as", t, func(t *ftt.Test) {
@@ -53,7 +53,7 @@ func TestErrorAs(t *testing.T) {
 		t.Run("wrapped error", func(t *ftt.Test) {
 			var dst *fakeError
 			newFakeError := &fakeError{}
-			wrappedError := errors.WrapIf(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6")
+			wrappedError := errors.Annotate(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6")
 			assert.Loosely(t, errors.As(wrappedError, &dst), should.BeTrue)
 			assert.Loosely(t, newFakeError == dst, should.BeTrue)
 		})
