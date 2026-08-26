@@ -252,6 +252,9 @@ const pidRegexPattern = new RegExp('Start proc (\\d+):(.+?)\\/');
 const appZygoteRegexPattern =
   new RegExp('Beginning application preload for (.+)');
 
+/** @type {RegExp} */
+const exceptionRegexPattern = new RegExp('^[\\w.]+:');
+
 /**
  * Toggles the display of a given dropdown list.
  * @param {HTMLElement} dropdownList The dropdown list element to toggle.
@@ -1198,11 +1201,15 @@ function setUpArrowFeedback(displayedLineNumbers) {
   let totalNumExceptions = 0;
   let totalNumTests = 0;
   for (const lineNumber of displayedLineNumbers) {
-    const parsedLine = currentFileParsedLines[lineNumber];
-    if (isStartOfStackTrace(parsedLine)) {
+    const currentLine = currentFileParsedLines[lineNumber];
+    let nextLine = undefined;
+    if (lineNumber + 1 < currentFileParsedLines.length) {
+      nextLine = currentFileParsedLines[lineNumber + 1];
+    }
+    if (isStartOfStackTrace(currentLine, nextLine)) {
       totalNumExceptions += 1;
     }
-    if (isStartOfTest(parsedLine)) {
+    if (isStartOfTest(currentLine)) {
       totalNumTests += 1;
     }
   }
@@ -1227,8 +1234,12 @@ function jumpToNextException() {
   let currentExceptionPosition = 0;
   for (const logcatLine of logcatLines) {
     const lineNumber = parseInt(logcatLine.dataset.lineNumber, 10);
-    const parsedLine = currentFileParsedLines[lineNumber];
-    if (isStartOfStackTrace(parsedLine)) {
+    const currentLine = currentFileParsedLines[lineNumber];
+    let nextLine = undefined;
+    if (lineNumber + 1 < currentFileParsedLines.length) {
+      nextLine = currentFileParsedLines[lineNumber + 1];
+    }
+    if (isStartOfStackTrace(currentLine, nextLine)) {
       totalNumExceptions += 1;
       if (currentExceptionPosition === 0 &&
         lineNumber > firstVisibleLineNumber) {
@@ -1267,8 +1278,12 @@ function jumpToPreviousException() {
   let currentExceptionLogcatLine;
   for (const logcatLine of logcatLines) {
     const lineNumber = parseInt(logcatLine.dataset.lineNumber, 10);
-    const parsedLine = currentFileParsedLines[lineNumber];
-    if (isStartOfStackTrace(parsedLine)) {
+    const currentLine = currentFileParsedLines[lineNumber];
+    let nextLine = undefined;
+    if (lineNumber + 1 < currentFileParsedLines.length) {
+      nextLine = currentFileParsedLines[lineNumber + 1];
+    }
+    if (isStartOfStackTrace(currentLine, nextLine)) {
       totalNumExceptions += 1;
       if (lineNumber < firstVisibleLineNumber - 1) {
         currentExceptionPosition = totalNumExceptions;
@@ -1289,16 +1304,51 @@ function jumpToPreviousException() {
 }
 
 /**
- * Given a ParsedLine, return whether it represents the start of a stack trace.
- * @param {ParsedLine} parsedLine
+ * Given a current line and a next line, return whether the current line
+ * represents the start of a stack trace.
+ * @param {ParsedLine} currentLine
+ * @param {ParsedLine|undefined} nextLine
  * @return {boolean}
  */
-function isStartOfStackTrace(parsedLine) {
-  return (parsedLine.isLogcat && parsedLine.tag === 'TestRunner' &&
-    parsedLine.message === '----- begin exception -----') ||
-    (!parsedLine.isLogcat && parsedLine.originalLine === 'Stack Trace:') ||
-    (!parsedLine.isLogcat &&
-      parsedLine.originalLine === '--------- beginning of crash');
+function isStartOfStackTrace(currentLine, nextLine) {
+  if ((currentLine.isLogcat && currentLine.tag === 'TestRunner' &&
+    currentLine.message === '----- begin exception -----') ||
+    (!currentLine.isLogcat && currentLine.originalLine === 'Stack Trace:') ||
+    (!currentLine.isLogcat &&
+      currentLine.originalLine === '--------- beginning of crash')) {
+    return true;
+  }
+
+  if (nextLine === undefined) {
+    return false;
+  }
+
+  const currentLineString = currentLine.isLogcat ?
+    currentLine.message : currentLine.originalLine;
+  const nextLineString = nextLine.isLogcat ?
+    nextLine.message : nextLine.originalLine;
+
+  if (!exceptionRegexPattern.test(currentLineString)) {
+    return false;
+  }
+
+  const currentLineMatch =
+    !currentLineString.startsWith(' ') &&
+    !currentLineString.startsWith('\t') &&
+    !currentLineString.includes('Caused by') &&
+    // The following exceptions are very spammy and are explicitly ignored
+    !currentLineString.includes('DeadObjectException') &&
+    !currentLineString.includes('ExecutionException') &&
+    !currentLineString.includes('CompletionException') &&
+    !currentLineString.includes('StatusRuntimeException') &&
+    !currentLineString.includes('com.google.frameworks.client.data.android.ac');
+
+  const nextLineMatch =
+    (nextLineString.startsWith(' ') || nextLineString.startsWith('\t')) &&
+    nextLineString.trim().startsWith('at') &&
+    nextLineString.trim().endsWith(')');
+
+  return currentLineMatch && nextLineMatch;
 }
 
 /**
