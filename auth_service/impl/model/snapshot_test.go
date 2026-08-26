@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -246,9 +247,14 @@ func TestTakeSnapshot(t *testing.T) {
 		})
 
 		t.Run("ToAuthDB", func(t *ftt.Test) {
+			ctx, _ := tsmon.WithDummyInMemory(ctx)
+			// The allocated bytes metric should initially be unset.
+			assert.Loosely(t, snapshotDBAllocatedBytes.Get(ctx), should.Equal(0))
 			db, err := snap.ToAuthDB(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, db.Rev, should.Equal(testAuthDBRev))
+			// Check the metric has a positive value.
+			assert.Loosely(t, snapshotDBAllocatedBytes.Get(ctx), should.BeGreaterThan(0))
 		})
 	})
 }

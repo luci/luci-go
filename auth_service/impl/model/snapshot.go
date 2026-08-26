@@ -16,18 +16,37 @@ package model
 
 import (
 	"context"
+	"runtime"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
-var tracer = otel.Tracer("go.chromium.org/luci/auth_service")
+var (
+	tracer = otel.Tracer("go.chromium.org/luci/auth_service")
+
+	// snapshotDBAllocatedBytes tracks the memory allocation from creating a new
+	// SnapshotDB.
+	//
+	// Note: this will be much larger than the actual AuthDB stored size, as the
+	// construction uses a lot of intermediate values that are later deduplicated.
+	// But downstream services also use authdb.NewSnapshotDB so this transient
+	// spike is more suitable for service spec planning to avoid OOM issues.
+	snapshotDBAllocatedBytes = metric.NewInt(
+		"authservice/snapshotdb/allocated_bytes",
+		"Allocated memory in bytes used in SnapshotDB construction.",
+		&types.MetricMetadata{Units: types.Bytes},
+	)
+)
 
 // Snapshot contains transactionally captured AuthDB entities.
 type Snapshot struct {
@@ -165,5 +184,21 @@ func (s *Snapshot) ToAuthDB(ctx context.Context) (*authdb.SnapshotDB, error) {
 	if err != nil {
 		return nil, errors.Fmt("failed converting AuthDB snapshot to proto: %w", err)
 	}
-	return authdb.NewSnapshotDB(authDBProto, "", s.ReplicationState.AuthDBRev, false)
+
+	var beforeMem, afterMem runtime.MemStats
+	runtime.ReadMemStats(&beforeMem)
+
+	snapDB, err := authdb.NewSnapshotDB(
+		authDBProto, "", s.ReplicationState.AuthDBRev, false)
+	if err != nil {
+		return nil, err
+	}
+
+	runtime.ReadMemStats(&afterMem)
+	allocatedBytes := afterMem.TotalAlloc - beforeMem.TotalAlloc
+	snapshotDBAllocatedBytes.Set(ctx, int64(allocatedBytes))
+	logging.Infof(ctx, "SnapshotDB construction (rev %d): %.4f MB",
+		s.ReplicationState.AuthDBRev, float64(allocatedBytes)/(1024*1024))
+
+	return snapDB, nil
 }
