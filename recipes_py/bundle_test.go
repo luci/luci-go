@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -140,7 +140,7 @@ func assertEqualTree(t *testing.T, expected, actual string) {
 func BenchmarkBundlingBuildRepo(b *testing.B) {
 	tmpDir := b.TempDir()
 	checkout := filepath.Join(tmpDir, "checkout")
-	_, err := git.PlainClone(checkout, false, &git.CloneOptions{
+	_, err := git.PlainClone(checkout, &git.CloneOptions{
 		URL:           "https://chromium.googlesource.com/chromium/tools/build",
 		ReferenceName: plumbing.ReferenceName("refs/heads/main"),
 		SingleBranch:  true,

@@ -64,7 +64,7 @@ func TestSanitize(t *testing.T) {
 		// Links
 		{
 			`<a href="https://ci.chromium.org" alt="x">link</a>`,
-			`<a rel="noopener" target="_blank" href="https://ci.chromium.org" alt="x">link</a>`,
+			`<a rel="noopener" target="_blank" alt="x" href="https://ci.chromium.org">link</a>`,
 		},
 		{
 			`<a href="javascript:evil.js">link</a>`,

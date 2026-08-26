@@ -15,7 +15,7 @@
 //go:build aix && ppc64
 
 // Disable git on unsupported platforms:
-// - github.com/go-git/go-billy/v5/osfs doesn't support aix-ppc64.
+// - github.com/go-git/go-billy/v6/osfs doesn't support aix-ppc64.
 
 package actions
 

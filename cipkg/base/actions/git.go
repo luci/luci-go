@@ -23,8 +23,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
 
 	"go.chromium.org/luci/cipkg/core"
 )
@@ -42,7 +42,7 @@ func ActionGitFetchExecutor(ctx context.Context, a *core.ActionGitFetch, out str
 		return fmt.Errorf("invalid git commit: %s", a.Commit)
 	}
 
-	repo, err := git.PlainCloneContext(ctx, out, false, &git.CloneOptions{
+	repo, err := git.PlainCloneContext(ctx, out, &git.CloneOptions{
 		URL:        a.Url,
 		NoCheckout: true,
 	})

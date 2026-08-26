@@ -30,8 +30,8 @@ import (
 	"text/template"
 
 	"github.com/bmatcuk/doublestar"
-	"github.com/go-git/go-git/v5/plumbing/format/gitattributes"
-	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
+	"github.com/go-git/go-git/v6/plumbing/format/gitattributes"
+	"github.com/go-git/go-git/v6/plumbing/format/gitignore"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/data/stringset"

@@ -22,8 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -37,7 +37,7 @@ func TestFetchGit(t *testing.T) {
 
 	ftt.Run("Test FetchGit generator", t, func(t *ftt.Test) {
 		repoURL, commit := testutils.InitGitRepo(t)
-		dir := filepath.FromSlash(strings.TrimPrefix(repoURL, "test://"))
+		dir := filepath.FromSlash(strings.TrimPrefix(repoURL, "file://"))
 
 		t.Run("Generate with commit hash", func(t *ftt.Test) {
 			g := &FetchGit{

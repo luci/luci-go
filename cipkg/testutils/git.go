@@ -24,15 +24,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/filemode"
-	"github.com/go-git/go-git/v5/plumbing/format/index"
-	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/storer"
-	"github.com/go-git/go-git/v5/plumbing/transport"
-	"github.com/go-git/go-git/v5/plumbing/transport/client"
-	"github.com/go-git/go-git/v5/plumbing/transport/server"
+	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
+	"github.com/go-git/go-git/v6/plumbing/filemode"
+	"github.com/go-git/go-git/v6/plumbing/format/index"
+	"github.com/go-git/go-git/v6/plumbing/object"
 )
 
 func createRepo(t testing.TB, dir string, files map[string]string) (*git.Repository, plumbing.Hash) {
@@ -84,7 +80,7 @@ func InitGitRepo(t testing.TB) (string, string) {
 		"file": "data",
 	})
 
-	return "test://" + filepath.ToSlash(dir), commit.String()
+	return "file://" + filepath.ToSlash(dir), commit.String()
 }
 
 // InitGitRepoWithSubmodule initializes a local git repository with a submodule for testing.
@@ -109,7 +105,7 @@ func InitGitRepoWithSubmodule(t testing.TB) (string, string) {
 	}
 
 	// Add .gitmodules
-	subUrl := "test://" + filepath.ToSlash(subDir)
+	subUrl := "file://" + filepath.ToSlash(subDir)
 	if err := os.WriteFile(filepath.Join(mainDir, ".gitmodules"), []byte(fmt.Sprintf("[submodule \"sub\"]\n\tpath = sub\n\turl = %s\n", subUrl)), 0644); err != nil {
 		t.Fatalf("failed to create .gitmodules: %s", err)
 	}
@@ -146,24 +142,5 @@ func InitGitRepoWithSubmodule(t testing.TB) (string, string) {
 		t.Fatalf("failed to commit: %s", err)
 	}
 
-	return "test://" + filepath.ToSlash(mainDir), commit.String()
-}
-
-// testRepoLoader loads git repository from filesystem for test protocol.
-type testRepoLoader struct{}
-
-func (l *testRepoLoader) Load(ep *transport.Endpoint) (storer.Storer, error) {
-	path := ep.Path
-	if ep.Host != "" {
-		path = ep.Host + ":" + path
-	}
-	r, err := git.PlainOpen(filepath.FromSlash(path))
-	if err != nil {
-		return nil, err
-	}
-	return r.Storer, nil
-}
-
-func init() {
-	client.InstallProtocol("test", server.NewClient(&testRepoLoader{}))
+	return "file://" + filepath.ToSlash(mainDir), commit.String()
 }
