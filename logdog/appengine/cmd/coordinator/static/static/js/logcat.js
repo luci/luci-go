@@ -248,6 +248,10 @@ const displaySinglePriority = displaySinglePriorityLi.map(li => {
 /** @type {RegExp} */
 const pidRegexPattern = new RegExp('Start proc (\\d+):(.+?)\\/');
 
+/** @type {RegExp} */
+const appZygoteRegexPattern =
+  new RegExp('Beginning application preload for (.+)');
+
 /**
  * Toggles the display of a given dropdown list.
  * @param {HTMLElement} dropdownList The dropdown list element to toggle.
@@ -435,6 +439,15 @@ function processCurrentFileLines(currentFileLines) {
     if (parsedLine.tag.startsWith('crash_dump') ||
       parsedLine.tag === 'tombstoned') {
       defaultFilteredProcessIds.add(parsedLine.pid);
+    }
+
+    const appZygoteMatch = appZygoteRegexPattern.exec(parsedLine.message);
+    if (appZygoteMatch) {
+      defaultFilteredProcessIds.add(parsedLine.pid);
+      if (!pidToProcessName.has(parsedLine.pid)) {
+        const processName = appZygoteMatch[1];
+        pidToProcessName.set(parsedLine.pid, `${processName} (app zygote)`);
+      }
     }
 
     const match = pidRegexPattern.exec(parsedLine.message);
