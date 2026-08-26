@@ -39,8 +39,12 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { getFilterQueryString } from '@/fleet/utils/search_param';
+import {
+  combineAipFilters,
+  getFilterQueryString,
+} from '@/fleet/utils/search_param';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
+import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -56,7 +60,11 @@ import { useRepairsFilters } from './use_repairs_filters';
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
-export const RepairListPage = () => {
+export const RepairListPage = ({
+  workspace,
+}: {
+  workspace: AndroidPageWorkspace;
+}) => {
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
@@ -74,6 +82,11 @@ export const RepairListPage = () => {
     warnings: filterWarnings,
     isLoading: isLoadingFilters,
   } = useRepairsFilters(handleFilterChange);
+
+  const combinedAip160 = useMemo(
+    () => combineAipFilters(workspaces[workspace].baseFilter, aip160()),
+    [aip160, workspace],
+  );
 
   const { mrtColumnManager, warnings: columnWarnings } = useRepairsColumns(
     filterValues,
@@ -94,7 +107,7 @@ export const RepairListPage = () => {
     >
       <WarningNotifications warnings={combinedWarnings} />
       <Metrics
-        filters={aip160()}
+        filters={combinedAip160}
         pagerContext={pagerCtx}
         filterValues={filterValues}
       />
@@ -123,7 +136,7 @@ export const RepairListPage = () => {
       >
         <RepairsTable
           mrtColumnManager={mrtColumnManager}
-          filter={filterWarnings.length > 0 ? '' : aip160()}
+          filter={filterWarnings.length > 0 ? '' : combinedAip160}
         />
       </div>
     </div>
@@ -387,13 +400,13 @@ function Metrics({
   );
 }
 
-export function Component() {
+export function Component({ workspace }: { workspace: AndroidPageWorkspace }) {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-repairs">
       <FleetHelmet pageTitle="Repairs" />
       <RecoverableErrorBoundary key="fleet-repairs">
         <LoggedInBoundary>
-          <RepairListPage />
+          <RepairListPage workspace={workspace} />
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>

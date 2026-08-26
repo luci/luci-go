@@ -63,7 +63,7 @@ export const HomePage = () => {
 
   const androidQuery = useQuery({
     ...client.CountDevices.query({
-      filter: isPTEEnabled ? workspaces.Android.baseFilter : '',
+      filter: workspaces.Android.baseFilter,
       platform: Platform.ANDROID,
     }),
     enabled: !isAnonymous,
@@ -72,7 +72,7 @@ export const HomePage = () => {
   const androidOfflineQuery = useQuery({
     ...client.CountDevices.query({
       filter: combineAipFilters(
-        isPTEEnabled ? workspaces.Android.baseFilter : '',
+        workspaces.Android.baseFilter,
         'fc_is_offline = "true"',
       ),
       platform: Platform.ANDROID,
@@ -246,6 +246,11 @@ export const HomePage = () => {
                       linkTo="/ui/fleet/p/pixel/devices"
                       linkText="View all devices"
                       linkIcon={<DevicesIcon />}
+                      secondaryLinkTo="/ui/fleet/p/pixel/repairs"
+                      secondaryLinkText="View all repairs"
+                      secondaryLinkIcon={<ConstructionIcon />}
+                      secondTotalText="Devices offline"
+                      secondTotal={pixelOffline}
                     />
                   </Grid2>
                 </>

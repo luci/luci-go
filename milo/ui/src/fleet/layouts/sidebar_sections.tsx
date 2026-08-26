@@ -83,6 +83,7 @@ function generateLabHealthSection(
   const isRepairsEnabled =
     !platform ||
     platform === Platform.ANDROID ||
+    platform === Platform.PIXEL ||
     (platform === Platform.CHROMEOS && showChromeOsRepairs);
   const isAdminTasksEnabled = !platform || platform === Platform.CHROMEOS;
   return {

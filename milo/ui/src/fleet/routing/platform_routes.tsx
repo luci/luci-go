@@ -29,6 +29,8 @@ const AndroidDevicesPage = lazy(
   () => import('@/fleet/pages/device_list_page/android'),
 );
 
+const AndroidRepairsPage = lazy(() => import('@/fleet/pages/android/repairs'));
+
 const AndroidDeviceDetailsPage = lazy(() =>
   import(
     '@/fleet/pages/device_details_page/android/android_device_details_page'
@@ -56,9 +58,8 @@ export const platformRoutes: RouteObject[] = [
     element: (
       <PlatformDependentPage
         pageComponentMap={{
-          [Platform.ANDROID]: lazy(
-            () => import('@/fleet/pages/android/repairs'),
-          ),
+          [Platform.ANDROID]: <AndroidRepairsPage workspace="Android" />,
+          [Platform.PIXEL]: <AndroidRepairsPage workspace="Pixel" />,
           ...(getFeatureFlag('ChromeOsRepairsDashboard')
             ? {
                 [Platform.CHROMEOS]: lazy(

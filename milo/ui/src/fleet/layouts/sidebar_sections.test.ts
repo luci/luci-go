@@ -76,6 +76,14 @@ describe('generateSidebarSections', () => {
     ).toBeUndefined();
   });
 
+  it('hides Admin tasks for Pixel platform', () => {
+    const sections = generateSidebarSections(Platform.PIXEL);
+    const labHealth = sections.find((s) => s.title === 'Lab Health');
+    expect(
+      labHealth?.pages.find((p) => p.label === 'Admin tasks'),
+    ).toBeUndefined();
+  });
+
   it('enables Admin tasks when platform is undefined (default)', () => {
     const sections = generateSidebarSections();
     const labHealth = sections.find((s) => s.title === 'Lab Health');
@@ -152,6 +160,15 @@ describe('generateSidebarSections', () => {
       expect(repairsPage).toBeDefined();
       expect(repairsPage?.disabled).toBeFalsy();
       expect(repairsPage?.url).toBe('/ui/fleet/p/chromeos/repairs');
+    });
+
+    it('is enabled for Pixel by default', () => {
+      const sections = generateSidebarSections(Platform.PIXEL);
+      const labHealth = sections.find((s) => s.title === 'Lab Health');
+      const repairsPage = labHealth?.pages.find((p) => p.label === 'Repairs');
+      expect(repairsPage).toBeDefined();
+      expect(repairsPage?.disabled).toBeFalsy();
+      expect(repairsPage?.url).toBe('/ui/fleet/p/pixel/repairs');
     });
   });
 });

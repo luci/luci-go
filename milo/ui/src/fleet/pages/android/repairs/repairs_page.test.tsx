@@ -49,7 +49,7 @@ describe('RepairListPage', () => {
         <FakeContextProvider>
           <SettingsProvider>
             <ShortcutProvider>
-              <RepairListPage />
+              <RepairListPage workspace="Android" />
             </ShortcutProvider>
           </SettingsProvider>
         </FakeContextProvider>

@@ -26,6 +26,7 @@ import { useShortcut } from '@/fleet/components/shortcut_provider';
 import {
   CHROMEOS_PLATFORM,
   ANDROID_PLATFORM,
+  PIXEL_PLATFORM,
   generateDeviceListURL,
   generateRepairsURL,
   platformToURL,
@@ -83,6 +84,7 @@ const FleetLayoutContent = () => {
       enabled:
         !currentPlatform ||
         platformStr === ANDROID_PLATFORM ||
+        platformStr === PIXEL_PLATFORM ||
         (getFeatureFlag('ChromeOsRepairsDashboard') &&
           platformStr === CHROMEOS_PLATFORM),
     },

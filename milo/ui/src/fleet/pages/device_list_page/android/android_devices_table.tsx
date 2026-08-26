@@ -34,7 +34,7 @@ import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_botto
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
-import { enableAndroidUtilizationMetrics, enablePTE } from '@/fleet/features';
+import { enableAndroidUtilizationMetrics } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
@@ -96,13 +96,9 @@ export const AndroidDevicesTable = ({
     showAvgUtilization,
   );
 
-  const pixelEnabled = useFeatureFlag(enablePTE);
   const combinedAip160 = useMemo(
-    () =>
-      pixelEnabled
-        ? combineAipFilters(workspaces[workspace].baseFilter, aip160())
-        : aip160(),
-    [workspace, aip160, pixelEnabled],
+    () => combineAipFilters(workspaces[workspace].baseFilter, aip160()),
+    [aip160, workspace],
   );
 
   // Clear row selection when filters change to prevent performing bulk actions
