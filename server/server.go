@@ -367,16 +367,17 @@ type Options struct {
 	InternalRequestTimeout time.Duration // how long "/internal/*" HTTP handlers are allowed to run, 10 min by default
 	ShutdownDelay          time.Duration // how long to wait after SIGTERM before shutting down
 
-	ClientAuth          clientauth.Options  // base settings for client auth options
-	TokenCacheDir       string              // where to cache auth tokens (optional)
-	AuthDBProvider      auth.DBProvider     // source of the AuthDB: if set all Auth* options below are ignored
-	AuthDBPath          string              // if set, load AuthDB from a file
-	AuthServiceHost     string              // hostname of an Auth Service to use
-	AuthDBDump          string              // Google Storage path to fetch AuthDB dumps from
-	AuthDBSigner        string              // service account that signs AuthDB dumps
-	AuthRestrictToHosts stringlistflag.Flag // Restrict outgoing auth to these hosts.
-	FrontendClientID    string              // OAuth2 ClientID for frontend (e.g. user sign in)
-	FrontendOAuthScopes stringlistflag.Flag // OAuth2 Scopes for frontend (e.g. user sign in)
+	ClientAuth                clientauth.Options  // base settings for client auth options
+	TokenCacheDir             string              // where to cache auth tokens (optional)
+	AuthDBProvider            auth.DBProvider     // source of the AuthDB: if set all Auth* options below are ignored
+	AuthDBPath                string              // if set, load AuthDB from a file
+	AuthServiceHost           string              // hostname of an Auth Service to use
+	AuthDBDump                string              // Google Storage path to fetch AuthDB dumps from
+	AuthDBSigner              string              // service account that signs AuthDB dumps
+	AuthRestrictToHosts       stringlistflag.Flag // Restrict outgoing auth to these hosts.
+	AuthAllowDelegationTokens bool                // if true, recognize incoming "X-Delegation-Token-V1" headers
+	FrontendClientID          string              // OAuth2 ClientID for frontend (e.g. user sign in)
+	FrontendOAuthScopes       stringlistflag.Flag // OAuth2 Scopes for frontend (e.g. user sign in)
 
 	OpenIDRPCAuthEnable   bool                // if true, use OIDC identity tokens for RPC authentication
 	OpenIDRPCAuthAudience stringlistflag.Flag // additional allowed OIDC token audiences
@@ -553,6 +554,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		&o.FrontendOAuthScopes,
 		"frontend-oauth-scopes",
 		"OAuth2 Scopes for use in frontend, e.g. for user sign in (optional)",
+	)
+	f.BoolVar(
+		&o.AuthAllowDelegationTokens,
+		"auth-allow-delegation-tokens",
+		o.AuthAllowDelegationTokens,
+		"If set, the server will accept \"X-Delegation-Token-V1\" headers in incoming requests",
 	)
 	f.BoolVar(
 		&o.OpenIDRPCAuthEnable,
@@ -2501,13 +2508,14 @@ func (s *Server) initAuthStart() error {
 		IDTokenProvider: func(ctx context.Context, audience string) (*oauth2.Token, error) {
 			return tokens.GenerateIDToken(ctx, audience, 0)
 		},
-		ActorTokensProvider: s.actorTokens,
-		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
-		FrontendClientID:    func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
-		FrontendOAuthScopes: func(context.Context) ([]string, error) { return s.Options.FrontendOAuthScopes, nil },
-		EndUserIP:           endUserIP,
-		IsDevMode:           !s.Options.Prod,
-		RestrictToHosts:     opts.RestrictToHosts,
+		ActorTokensProvider:   s.actorTokens,
+		AnonymousTransport:    func(context.Context) http.RoundTripper { return rootTransport },
+		FrontendClientID:      func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
+		FrontendOAuthScopes:   func(context.Context) ([]string, error) { return s.Options.FrontendOAuthScopes, nil },
+		EndUserIP:             endUserIP,
+		IsDevMode:             !s.Options.Prod,
+		RestrictToHosts:       opts.RestrictToHosts,
+		AllowDelegationTokens: s.Options.AuthAllowDelegationTokens,
 	})
 
 	// Make pRPC clients use the instrumented HTTP client by default.

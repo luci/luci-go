@@ -63,6 +63,11 @@ var (
 	ErrProjectHeaderForbidden = grpcutil.PermissionDeniedTag.Apply(
 		errors.New("auth: the caller is not allowed to use X-Luci-Project"))
 
+	// ErrUnexpectedDelegationToken is returned by Authenticate if the request
+	// contains a delegation token, but the server doesn't expect them.
+	ErrUnexpectedDelegationToken = grpcutil.UnauthenticatedTag.Apply(
+		errors.New("auth: got \"X-Delegation-Token-V1\" header, but the service is not configured to accept delegation tokens"))
+
 	// Other errors.
 
 	// ErrNoUsersAPI is returned by LoginURL and LogoutURL if none of
@@ -651,6 +656,10 @@ func checkDelegationToken(ctx context.Context, cfg *Config, db authdb.DB, token 
 	logging.Fields{
 		"fingerprint": tokenFingerprint(token),
 	}.Debugf(ctx, "auth: Received delegation token")
+
+	if !cfg.AllowDelegationTokens {
+		return nil, ErrUnexpectedDelegationToken
+	}
 
 	// Need to grab our own identity to verify that the delegation token is
 	// minted for consumption by us and not some other service.

@@ -35,3 +35,4 @@ entrypoint: >
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
   -ts-mon-account ${TS_MON_ACCOUNT}
+  -auth-allow-delegation-tokens

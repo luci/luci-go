@@ -43,9 +43,10 @@ import (
 
 func main() {
 	opts := server.Options{
-		AuthServiceHost:       os.Getenv("AUTH_SERVICE_HOST"),
-		TsMonAccount:          os.Getenv("TS_MON_ACCOUNT"),
-		DefaultRequestTimeout: 12 * time.Hour,
+		AuthServiceHost:           os.Getenv("AUTH_SERVICE_HOST"),
+		TsMonAccount:              os.Getenv("TS_MON_ACCOUNT"),
+		DefaultRequestTimeout:     12 * time.Hour,
+		AuthAllowDelegationTokens: true,
 	}
 	modules := []module.Module{
 		encryptedcookies.NewModule(&encryptedcookies.ModuleOptions{

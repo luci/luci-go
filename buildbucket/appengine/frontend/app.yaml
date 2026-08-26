@@ -60,6 +60,7 @@ entrypoint: >
   -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
   -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
   -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
+  -auth-allow-delegation-tokens
   -frontend-client-id ${OAUTH_CLIENT_ID}
   -frontend-oauth-scopes https://www.googleapis.com/auth/userinfo.email
   -frontend-oauth-scopes https://www.googleapis.com/auth/androidbuild.internal

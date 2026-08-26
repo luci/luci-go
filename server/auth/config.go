@@ -149,6 +149,15 @@ type Config struct {
 	// authentication headers when using GetRPCTransport or GetPerRPCCredentials.
 	// If empty, auth headers are sent to any host.
 	RestrictToHosts []string
+
+	// AllowDelegationTokens indicates if the server should accept LUCI delegation
+	// tokens addressed to it (in "X-Delegation-Token-V1" header).
+	//
+	// If false and an incoming request contains a delegation token (valid or
+	// not), it will be rejected with the 401 HTTP status code.
+	//
+	// Delegation tokens are deprecated and are not expected to be used widely.
+	AllowDelegationTokens bool
 }
 
 // Initialize inserts authentication configuration into the context.
