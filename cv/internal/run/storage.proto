@@ -183,6 +183,7 @@ message Options {
   // consumer of this information to handle it.
   //
   // Mutually exclusive with `overridden_tryjobs` option.
+  // Mutually exclusive with `excluded_tryjobs` for the same builder(s).
   // This option is ignored if `skip_tryjobs` is true.
   repeated string included_tryjobs = 6;
 
@@ -196,6 +197,7 @@ message Options {
   // consumer of this information to handle it.
   //
   // Mutually exclusive with `included_tryjobs` option.
+  // Mutually exclusive with `excluded_tryjobs` for the same builder(s).
   // This option is ignored if `skip_tryjobs` is true.
   repeated string overridden_tryjobs = 8;
 
@@ -205,6 +207,28 @@ message Options {
   // Each element SHOULD be in the format of "$tag_key:$tag_value" and the
   // character set for tag key is [a-z0-9_\-].
   repeated string custom_tryjob_tags = 7;
+
+  // Contains the directives to exclude specific builders from the Run.
+  //
+  // Its elements are strings of the form:
+  // project/bucket:builder1,builder2;project2/bucket:builder3
+  //
+  // Note that there may be duplication in the directives, it's up to the
+  // consumer of this information to handle it.
+  //
+  // Precedence and Interaction:
+  // - Mutually exclusive with `included_tryjobs` and `overridden_tryjobs`
+  //   for the same builder(s). Specifying the same builder in both will
+  //   cause the CQ Run computation to fail.
+  // - If a main builder is excluded, the entire tryjob requirement is skipped
+  //   (neither the main nor any equivalent builder will run).
+  // - If an equivalent builder is excluded, the Run will fall back to using
+  //   the main builder only if the user is authorized to trigger the main
+  //   builder; otherwise, the builder is skipped entirely (neither main nor
+  //   equivalent will run).
+  //
+  // This option is ignored if `skip_tryjobs` is true.
+  repeated string excluded_tryjobs = 9;
 }
 
 // LogEntries contains 1+ LogEntry ordered from logically oldest to newest.

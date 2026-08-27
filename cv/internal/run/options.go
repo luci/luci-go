@@ -82,6 +82,7 @@ func ExtractOptions(snapshot *changelist.Snapshot) *Options {
 	o.IncludedTryjobs = append(o.IncludedTryjobs, valuesOf(
 		common.FooterCQIncludeTryjobs,
 		common.FooterLegacyCQIncludeTryjobs)...)
+	o.ExcludedTryjobs = append(o.ExcludedTryjobs, valuesOf(common.FooterCQExcludeTryjobs, "")...)
 	o.OverriddenTryjobs = append(o.OverriddenTryjobs, valuesOf(common.FooterOverrideTryjobsForAutomation, "")...)
 	o.CustomTryjobTags = append(o.CustomTryjobTags, valuesOf(common.FooterCQClTag, "")...)
 	return o
@@ -104,6 +105,7 @@ func MergeOptions(a, b *Options) *Options {
 		SkipEquivalentBuilders: a.SkipEquivalentBuilders || b.SkipEquivalentBuilders,
 		SkipTreeChecks:         a.SkipTreeChecks || b.SkipTreeChecks,
 		IncludedTryjobs:        append(a.IncludedTryjobs, b.IncludedTryjobs...),
+		ExcludedTryjobs:        append(a.ExcludedTryjobs, b.ExcludedTryjobs...),
 		OverriddenTryjobs:      append(a.OverriddenTryjobs, b.OverriddenTryjobs...),
 		CustomTryjobTags:       append(a.CustomTryjobTags, b.CustomTryjobTags...),
 	}

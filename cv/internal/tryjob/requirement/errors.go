@@ -81,3 +81,22 @@ func (ito *incompatibleTryjobOptions) Reason() string {
 		panic(fmt.Errorf("impossible"))
 	}
 }
+
+// conflictingTryjobDirectives represents a computation failure where opposing
+// directives (e.g. include and exclude) are specified for the same builder(s).
+type conflictingTryjobDirectives struct {
+	Builders     []string
+	InDirective  string
+	OutDirective string
+}
+
+func (ctd *conflictingTryjobDirectives) Reason() string {
+	switch len(ctd.Builders) {
+	case 0:
+		panic(fmt.Errorf("impossible: at least one conflicting builder is needed"))
+	case 1:
+		return fmt.Sprintf("builder %q is specified in both %s and %s", ctd.Builders[0], ctd.InDirective, ctd.OutDirective)
+	default:
+		return fmt.Sprintf("the following builders are specified in both %s and %s:\n - %s", ctd.InDirective, ctd.OutDirective, strings.Join(ctd.Builders, "\n - "))
+	}
+}

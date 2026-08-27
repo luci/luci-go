@@ -128,6 +128,21 @@ func TestExtractOptions(t *testing.T) {
 				}))
 		})
 
+		t.Run("Cq-Exclude-Trybots", func(t *ftt.Test) {
+			assert.Loosely(t, extract(`
+				CL title.
+
+				Cq-Exclude-Trybots: project/bucket:builder1,builder2;project2/bucket:builder3
+				Cq-Exclude-Trybots: project/bucket:builder4
+			`), should.Match(
+				&Options{
+					ExcludedTryjobs: []string{
+						"project/bucket:builder4",
+						"project/bucket:builder1,builder2;project2/bucket:builder3",
+					},
+				}))
+		})
+
 		t.Run("Override-Tryjobs-For-Automation", func(t *ftt.Test) {
 			assert.Loosely(t, extract(`
 				CL title.
@@ -191,17 +206,23 @@ func TestMergeOptions(t *testing.T) {
 		a := &Options{
 			SkipTreeChecks:         true,
 			AvoidCancellingTryjobs: true,
+			IncludedTryjobs:        []string{"project/bucket:builder1"},
+			ExcludedTryjobs:        []string{"project/bucket:builder3"},
 		}
 		assert.That(t, MergeOptions(a, o), should.Match(a))
 
 		b := &Options{
 			SkipTreeChecks:         true,
 			SkipEquivalentBuilders: true,
+			IncludedTryjobs:        []string{"project/bucket:builder2"},
+			ExcludedTryjobs:        []string{"project/bucket:builder4"},
 		}
 		assert.That(t, MergeOptions(a, b), should.Match(&Options{
 			SkipTreeChecks:         true,
 			SkipEquivalentBuilders: true,
 			AvoidCancellingTryjobs: true,
+			IncludedTryjobs:        []string{"project/bucket:builder1", "project/bucket:builder2"},
+			ExcludedTryjobs:        []string{"project/bucket:builder3", "project/bucket:builder4"},
 		}))
 	})
 }

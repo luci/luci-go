@@ -444,6 +444,7 @@ type Options struct {
 	// consumer of this information to handle it.
 	//
 	// Mutually exclusive with `overridden_tryjobs` option.
+	// Mutually exclusive with `excluded_tryjobs` for the same builder(s).
 	// This option is ignored if `skip_tryjobs` is true.
 	IncludedTryjobs []string `protobuf:"bytes,6,rep,name=included_tryjobs,json=includedTryjobs,proto3" json:"included_tryjobs,omitempty"`
 	// Overrides all the Tryjobs triggered for this Run regardless of Project
@@ -456,6 +457,7 @@ type Options struct {
 	// consumer of this information to handle it.
 	//
 	// Mutually exclusive with `included_tryjobs` option.
+	// Mutually exclusive with `excluded_tryjobs` for the same builder(s).
 	// This option is ignored if `skip_tryjobs` is true.
 	OverriddenTryjobs []string `protobuf:"bytes,8,rep,name=overridden_tryjobs,json=overriddenTryjobs,proto3" json:"overridden_tryjobs,omitempty"`
 	// Contains the custom Tryjob tags that should be added when launching
@@ -464,8 +466,29 @@ type Options struct {
 	// Each element SHOULD be in the format of "$tag_key:$tag_value" and the
 	// character set for tag key is [a-z0-9_\-].
 	CustomTryjobTags []string `protobuf:"bytes,7,rep,name=custom_tryjob_tags,json=customTryjobTags,proto3" json:"custom_tryjob_tags,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Contains the directives to exclude specific builders from the Run.
+	//
+	// Its elements are strings of the form:
+	// project/bucket:builder1,builder2;project2/bucket:builder3
+	//
+	// Note that there may be duplication in the directives, it's up to the
+	// consumer of this information to handle it.
+	//
+	// Precedence and Interaction:
+	//   - Mutually exclusive with `included_tryjobs` and `overridden_tryjobs`
+	//     for the same builder(s). Specifying the same builder in both will
+	//     cause the CQ Run computation to fail.
+	//   - If a main builder is excluded, the entire tryjob requirement is skipped
+	//     (neither the main nor any equivalent builder will run).
+	//   - If an equivalent builder is excluded, the Run will fall back to using
+	//     the main builder only if the user is authorized to trigger the main
+	//     builder; otherwise, the builder is skipped entirely (neither main nor
+	//     equivalent will run).
+	//
+	// This option is ignored if `skip_tryjobs` is true.
+	ExcludedTryjobs []string `protobuf:"bytes,9,rep,name=excluded_tryjobs,json=excludedTryjobs,proto3" json:"excluded_tryjobs,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Options) Reset() {
@@ -550,6 +573,13 @@ func (x *Options) GetOverriddenTryjobs() []string {
 func (x *Options) GetCustomTryjobTags() []string {
 	if x != nil {
 		return x.CustomTryjobTags
+	}
+	return nil
+}
+
+func (x *Options) GetExcludedTryjobs() []string {
+	if x != nil {
+		return x.ExcludedTryjobs
 	}
 	return nil
 }
@@ -2250,7 +2280,7 @@ const file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc = "" +
 	"\ttree_open\x18\n" +
 	" \x01(\bR\btreeOpen\x12K\n" +
 	"\x14last_tree_check_time\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x11lastTreeCheckTime\x12D\n" +
-	"\x10tree_error_since\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\x0etreeErrorSince\"\xf9\x02\n" +
+	"\x10tree_error_since\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\x0etreeErrorSince\"\xa4\x03\n" +
 	"\aOptions\x12(\n" +
 	"\x10skip_tree_checks\x18\x01 \x01(\bR\x0eskipTreeChecks\x128\n" +
 	"\x18skip_equivalent_builders\x18\x02 \x01(\bR\x16skipEquivalentBuilders\x128\n" +
@@ -2259,7 +2289,8 @@ const file_go_chromium_org_luci_cv_internal_run_storage_proto_rawDesc = "" +
 	"\x0eskip_presubmit\x18\x05 \x01(\bR\rskipPresubmit\x12)\n" +
 	"\x10included_tryjobs\x18\x06 \x03(\tR\x0fincludedTryjobs\x12-\n" +
 	"\x12overridden_tryjobs\x18\b \x03(\tR\x11overriddenTryjobs\x12,\n" +
-	"\x12custom_tryjob_tags\x18\a \x03(\tR\x10customTryjobTags\"A\n" +
+	"\x12custom_tryjob_tags\x18\a \x03(\tR\x10customTryjobTags\x12)\n" +
+	"\x10excluded_tryjobs\x18\t \x03(\tR\x0fexcludedTryjobs\"A\n" +
 	"\n" +
 	"LogEntries\x123\n" +
 	"\aentries\x18\x01 \x03(\v2\x19.cv.internal.run.LogEntryR\aentries\"\x9c\r\n" +

@@ -32,6 +32,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/buildbucket"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -107,6 +108,17 @@ func (r ComputationResult) OK() bool {
 
 // Compute computes the Tryjob Requirement to verify the run.
 func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
+	var excluded stringset.Set
+	if len(in.RunOptions.GetExcludedTryjobs()) > 0 && in.RunMode != run.NewPatchsetRun {
+		var compFail ComputationFailure
+		excluded, compFail = calculateExcluded(in)
+		if compFail != nil {
+			return &ComputationResult{
+				ComputationFailure: compFail,
+			}, nil
+		}
+	}
+
 	hasIncluded := len(in.RunOptions.GetIncludedTryjobs()) > 0
 	hasOverridden := len(in.RunOptions.GetOverriddenTryjobs()) > 0
 	var explicitlyIncluded stringset.Set
@@ -120,7 +132,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 			},
 		}, nil
 	case hasOverridden:
-		return handleOverriddenTryjobs(ctx, in)
+		return handleOverriddenTryjobs(ctx, in, excluded)
 	case hasIncluded && in.RunMode != run.NewPatchsetRun:
 		// Ignore tryjobs included by the cq-include-trybots: footer for new
 		// patchset run, these are intended for CQ-vote runs.
@@ -129,6 +141,15 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 		if compFail != nil {
 			return &ComputationResult{
 				ComputationFailure: compFail,
+			}, nil
+		}
+		if conflict := explicitlyIncluded.Intersect(excluded); len(conflict) > 0 {
+			return &ComputationResult{
+				ComputationFailure: &conflictingTryjobDirectives{
+					Builders:     conflict.ToSortedSlice(),
+					InDirective:  common.FooterCQIncludeTryjobs,
+					OutDirective: common.FooterCQExcludeTryjobs,
+				},
 			}, nil
 		}
 	}
@@ -169,7 +190,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 				} else {
 					dm.skipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
 				}
-				switch r, compFail, err := shouldInclude(ctx, in, dm, isOptional, useEquivalent, builder, explicitlyIncluded, allOwners); {
+				switch r, compFail, err := shouldInclude(ctx, in, dm, isOptional, useEquivalent, builder, explicitlyIncluded, excluded, allOwners); {
 				case err != nil:
 					return err
 				case compFail != nil:
@@ -202,7 +223,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	}
 }
 
-func handleOverriddenTryjobs(ctx context.Context, in Input) (*ComputationResult, error) {
+func handleOverriddenTryjobs(ctx context.Context, in Input, excluded stringset.Set) (*ComputationResult, error) {
 	override, compFail := parseTryjobDirectives(in.RunOptions.GetOverriddenTryjobs())
 	if compFail != nil {
 		return &ComputationResult{ComputationFailure: compFail}, nil
@@ -211,6 +232,15 @@ func handleOverriddenTryjobs(ctx context.Context, in Input) (*ComputationResult,
 	if notDefined := override.Difference(allBuilders); len(notDefined) > 0 {
 		return &ComputationResult{
 			ComputationFailure: &buildersNotDefined{Builders: notDefined.ToSlice()},
+		}, nil
+	}
+	if conflict := override.Intersect(excluded); len(conflict) > 0 {
+		return &ComputationResult{
+			ComputationFailure: &conflictingTryjobDirectives{
+				Builders:     conflict.ToSortedSlice(),
+				InDirective:  common.FooterOverrideTryjobsForAutomation,
+				OutDirective: common.FooterCQExcludeTryjobs,
+			},
 		}, nil
 	}
 
@@ -281,11 +311,17 @@ const (
 
 // shouldInclude decides based on the configuration whether a given builder
 // should be skipped in generating the Requirement.
-func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptional, useEquivalent bool, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
+func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptional, useEquivalent bool, b *cfgpb.Verifiers_Tryjob_Builder, incl, excl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
 	switch skip, err := skipByFooters(in, b); {
 	case err != nil:
 		return skipBuilder, nil, err
 	case skip:
+		return skipBuilder, nil, nil
+	}
+
+	// TODO(crbug.com/552901369): Support project configuration to define mandatory builders that
+	// cannot be excluded via commit message footers.
+	if excl.Has(b.Name) {
 		return skipBuilder, nil, nil
 	}
 
@@ -345,38 +381,49 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptiona
 		}
 	}
 
+	// Decide whether to run the main builder, equivalent builder, or skip based
+	// on permissions and exclusion footers:
+	// 1. User allowed for main builder:
+	//    - Equivalent excluded or not allowed: fall back to main builder (mainOnly).
+	//    - Equivalent allowed & not excluded: run main or equivalent depending on percentage roll.
+	// 2. User NOT allowed for main builder:
+	//    - Equivalent allowed & not excluded: run equivalent builder (equivalentOnly).
+	//    - Equivalent excluded or not allowed: skip requirement entirely (no fallback).
 	switch allowed, err := isBuilderAllowed(ctx, in, owners, b); {
 	case err != nil:
 		return skipBuilder, nil, err
 	case allowed:
-		// Decide whether CV should use main builder or equivalent builder.
+		// User is allowed to use the main builder.
 		dm.equivalence = mainOnly
 		if b.GetEquivalentTo() != nil && !in.RunOptions.GetSkipEquivalentBuilders() {
 			dm.equivalence = bothMainAndEquivalent
 			switch allowed, err := isEquiBuilderAllowed(ctx, in, owners, b.GetEquivalentTo()); {
 			case err != nil:
 				return skipBuilder, nil, err
-			case allowed:
+			case allowed && !excl.Has(b.GetEquivalentTo().GetName()):
 				if useEquivalent {
 					// Invert equivalence: trigger equivalent, but accept reusing original too.
 					dm.equivalence = flipMainAndEquivalent
 				}
 			default:
-				// Not allowed to use equivalent.
+				// Not allowed to use equivalent or equivalent builder is excluded:
+				// fall back to main builder.
 				dm.equivalence = mainOnly
 			}
 		}
 		return includeBuilder, nil, nil
 	case b.GetEquivalentTo() != nil && !in.RunOptions.GetSkipEquivalentBuilders():
-		// See if the owners can trigger the equivalent builder instead.
+		// User is NOT allowed to use the main builder. Check if equivalent can run.
 		switch equiAllowed, err := isEquiBuilderAllowed(ctx, in, owners, b.GetEquivalentTo()); {
 		case err != nil:
 			return skipBuilder, nil, err
-		case equiAllowed:
+		case equiAllowed && !excl.Has(b.GetEquivalentTo().GetName()):
 			dm.equivalence = equivalentOnly
-			return includeBuilder, nil, err
+			return includeBuilder, nil, nil
 		default:
-			return skipBuilder, nil, err
+			// Equivalent builder is excluded or not allowed:
+			// do NOT fall back to main builder (unauthorized). Skip entirely.
+			return skipBuilder, nil, nil
 		}
 	default:
 		return skipBuilder, nil, nil
@@ -393,6 +440,18 @@ func calculateExplicitlyIncluded(in Input) (stringset.Set, ComputationFailure) {
 		return nil, &buildersNotDefined{Builders: undefined.ToSlice()}
 	}
 	return explicitlyIncluded, nil
+}
+
+func calculateExcluded(in Input) (stringset.Set, ComputationFailure) {
+	excluded, compFail := parseTryjobDirectives(in.RunOptions.GetExcludedTryjobs())
+	if compFail != nil {
+		return nil, compFail
+	}
+	allBuilders := getAllBuilders(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
+	if undefined := excluded.Difference(allBuilders); len(undefined) > 0 {
+		return nil, &buildersNotDefined{Builders: undefined.ToSlice()}
+	}
+	return excluded, nil
 }
 
 // getDisallowedOwners checks which of the owner emails given belong

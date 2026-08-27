@@ -643,6 +643,222 @@ func TestCompute(t *testing.T) {
 			})
 		})
 
+		t.Run("excludes undefined builder", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "test-proj/test:unlisted")
+
+			res, err := Compute(ctx, *in)
+			assert.NoErr(t, err)
+			assert.That(t, res.OK(), should.BeFalse)
+			assert.That(t, res, should.Match(&ComputationResult{
+				ComputationFailure: &buildersNotDefined{
+					Builders: []string{"test-proj/test/unlisted"},
+				},
+			}))
+		})
+
+		t.Run("excludes builder", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{Name: "test-proj/test/builder1"}.generate(),
+				builderConfigGenerator{Name: "test-proj/test.bucket/builder2"}.generate(),
+			})
+
+			check := func(t testing.TB) {
+				t.Helper()
+
+				res, err := Compute(ctx, *in)
+				assert.Loosely(t, err, should.BeNil, truth.LineContext())
+				assert.Loosely(t, res.ComputationFailure, should.BeNil, truth.LineContext())
+				assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
+					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+						SingleQuota: 2,
+						GlobalQuota: 8,
+					},
+					Definitions: []*tryjob.Definition{
+						{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Host: "cr-buildbucket.appspot.com",
+									Builder: &buildbucketpb.BuilderID{
+										Project: "test-proj",
+										Bucket:  "test",
+										Builder: "builder1",
+									},
+								},
+							},
+							Critical: true,
+						},
+					},
+				}), truth.LineContext())
+			}
+
+			t.Run("modern style", func(t *ftt.Test) {
+				in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "test-proj/test.bucket:builder2")
+				check(t)
+			})
+
+			t.Run("legacy style", func(t *ftt.Test) {
+				in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "luci.test-proj.test.bucket:builder2")
+				check(t)
+			})
+		})
+
+		t.Run("excludes equivalent builder", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				Name:     "test-proj/test/builder1",
+				EquiName: "test-proj/test/equibuilder",
+			}.generate()})
+			in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "test-proj/test:equibuilder")
+
+			res, err := Compute(ctx, *in)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.ComputationFailure, should.BeNil)
+			assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
+				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+					SingleQuota: 2,
+					GlobalQuota: 8,
+				},
+				Definitions: []*tryjob.Definition{{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "test-proj",
+								Bucket:  "test",
+								Builder: "builder1",
+							},
+						},
+					},
+					Critical: true,
+				}},
+			}))
+		})
+
+		t.Run("ignores excluded builders if in NPR mode", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{
+					Name:  "test-proj/test/builder1",
+					Modes: []string{string(run.NewPatchsetRun)},
+				}.generate(),
+			})
+			in.RunMode = run.NewPatchsetRun
+			in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "test-proj/test:builder1")
+			res, err := Compute(ctx, *in)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.ComputationFailure, should.BeNil)
+			assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
+				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+					SingleQuota: 2,
+					GlobalQuota: 8,
+				},
+				Definitions: []*tryjob.Definition{{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "test-proj",
+								Bucket:  "test",
+								Builder: "builder1",
+							},
+						},
+					},
+					Critical: true,
+				}},
+			}))
+		})
+
+		t.Run("fails when same builder is in both Cq-Include-Trybots and Cq-Exclude-Trybots", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{
+					Name: "test-proj/test/builder1",
+				}.generate(),
+			})
+			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
+			in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "test-proj/test:builder1")
+			res, err := Compute(ctx, *in)
+			assert.NoErr(t, err)
+			assert.That(t, res.OK(), should.BeFalse)
+			assert.That(t, res, should.Match(&ComputationResult{
+				ComputationFailure: &conflictingTryjobDirectives{
+					Builders:     []string{"test-proj/test/builder1"},
+					InDirective:  common.FooterCQIncludeTryjobs,
+					OutDirective: common.FooterCQExcludeTryjobs,
+				},
+			}))
+		})
+
+		t.Run("fails when same builder is in both Override-Tryjobs-For-Automation and Cq-Exclude-Trybots", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{
+					Name: "test-proj/test/builder1",
+				}.generate(),
+			})
+			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
+			in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "test-proj/test:builder1")
+			res, err := Compute(ctx, *in)
+			assert.NoErr(t, err)
+			assert.That(t, res.OK(), should.BeFalse)
+			assert.That(t, res, should.Match(&ComputationResult{
+				ComputationFailure: &conflictingTryjobDirectives{
+					Builders:     []string{"test-proj/test/builder1"},
+					InDirective:  common.FooterOverrideTryjobsForAutomation,
+					OutDirective: common.FooterCQExcludeTryjobs,
+				},
+			}))
+		})
+
+		t.Run("allows non-overlapping Cq-Include-Trybots and Cq-Exclude-Trybots", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{
+					Name: "test-proj/test/builder1",
+				}.generate(),
+				builderConfigGenerator{
+					Name:           "test-proj/test/builder2",
+					IncludableOnly: true,
+				}.generate(),
+			})
+			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder2")
+			in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "test-proj/test:builder1")
+			res, err := Compute(ctx, *in)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.ComputationFailure, should.BeNil)
+			assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
+				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+					SingleQuota: 2,
+					GlobalQuota: 8,
+				},
+				Definitions: []*tryjob.Definition{{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "test-proj",
+								Bucket:  "test",
+								Builder: "builder2",
+							},
+						},
+					},
+					Critical: true,
+				}},
+			}))
+		})
+
+		t.Run("excluding equivalent builder falls back to main builder", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{
+					Name:     "test-proj/test/builder1",
+					EquiName: "test-proj/test/builder2",
+				}.generate(),
+			})
+			in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "test-proj/test:builder2")
+			res, err := Compute(ctx, *in)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.ComputationFailure, should.BeNil)
+			assert.Loosely(t, res.Requirement.Definitions, should.HaveLength(1))
+			assert.That(t, res.Requirement.Definitions[0].GetBuildbucket().GetBuilder().GetBuilder(), should.Equal("builder1"))
+			assert.Loosely(t, res.Requirement.Definitions[0].GetEquivalentTo(), should.BeNil)
+		})
+
 		t.Run("owner allowlist denied", func(t *ftt.Test) {
 			t.Run("without equivalent builder", func(t *ftt.Test) {
 				in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
@@ -691,6 +907,20 @@ func TestCompute(t *testing.T) {
 						EquiName:      "test-proj/test/equibuilder",
 						EquiAllowlist: "another-secret-group",
 					}.generate()})
+					res, err := Compute(ctx, *in)
+					assert.NoErr(t, err)
+					assert.That(t, res.OK(), should.BeTrue)
+					assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
+				})
+
+				t.Run("equivalent builder excluded and main builder denied", func(t *ftt.Test) {
+					in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+						Name:          "test-proj/test/builder1",
+						Allowlist:     "secret-group",
+						EquiName:      "test-proj/test/equibuilder",
+						EquiAllowlist: "", // allow everyone
+					}.generate()})
+					in.RunOptions.ExcludedTryjobs = append(in.RunOptions.ExcludedTryjobs, "test-proj/test:equibuilder")
 					res, err := Compute(ctx, *in)
 					assert.NoErr(t, err)
 					assert.That(t, res.OK(), should.BeTrue)

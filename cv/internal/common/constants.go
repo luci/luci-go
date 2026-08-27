@@ -43,6 +43,8 @@ const (
 	// FooterLegacyCQIncludeTryjobs is the legacy version of
 	// FooterCQIncludeTryjobs.
 	FooterLegacyCQIncludeTryjobs = "CQ_INCLUDE_TRYBOTS"
+	// FooterCQExcludeTryjobs specifies the Tryjobs to exclude from launching.
+	FooterCQExcludeTryjobs = "Cq-Exclude-Trybots"
 	// FooterOverrideTryjobsForAutomation provides an list of Tryjobs that
 	// overrides ALL the Tryjobs supposed to be launched according to the
 	// configuration.
