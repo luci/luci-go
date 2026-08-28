@@ -19,6 +19,8 @@ import (
 	"compress/gzip"
 	"context"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"sort"
 	"testing"
 
@@ -34,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
@@ -833,5 +836,41 @@ func TestEmailKeyCollision(t *testing.T) {
 		task2, ok2 := tasks[expectedKey2]
 		assert.Loosely(c, ok2, should.BeTrue)
 		assert.Loosely(c, task2.Recipients, should.Resemble([]string{"chrome-sheriff@google.com"}))
+	})
+}
+
+func TestComputeRecipients_NoAuth(t *testing.T) {
+	ftt.Run("ComputeRecipients does not send authorization header", t, func(t *ftt.Test) {
+		var receivedAuthHeader string
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			receivedAuthHeader = r.Header.Get("Authorization")
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"emails": ["oncall@example.com"]}`))
+		}))
+		defer server.Close()
+
+		c := memory.Use(context.Background())
+		c = authtest.MockAuthConfig(c)
+		c = caching.WithEmptyProcessCache(c)
+
+		notifications := []ToNotify{
+			{
+				Notification: &notifypb.Notification{
+					Template: "default",
+					Email: &notifypb.Notification_Email{
+						RotationUrls: []string{server.URL},
+					},
+				},
+			},
+		}
+
+		recipients := ComputeRecipients(c, notifications, nil, nil)
+		assert.Loosely(t, receivedAuthHeader, should.BeEmpty)
+		assert.Loosely(t, recipients, should.Match([]EmailNotify{
+			{
+				Email:    "oncall@example.com",
+				Template: "default",
+			},
+		}))
 	})
 }

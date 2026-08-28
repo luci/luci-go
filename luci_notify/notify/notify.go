@@ -152,7 +152,7 @@ type ToNotify struct {
 func ComputeRecipients(c context.Context, notifications []ToNotify, inputBlame []*gitpb.Commit, outputBlame Logs) []EmailNotify {
 	return computeRecipientsInternal(c, notifications, inputBlame, outputBlame,
 		func(c context.Context, url string) ([]byte, error) {
-			transport, err := auth.GetRPCTransport(c, auth.AsSelf)
+			transport, err := auth.GetRPCTransport(c, auth.NoAuth)
 			if err != nil {
 				return nil, err
 			}
