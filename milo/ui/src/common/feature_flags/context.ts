@@ -31,6 +31,10 @@ import { logging } from '../tools/logging';
 
 export type FeatureEnvironment = 'dev' | 'prod';
 
+export type RolloutPercentage =
+  | number
+  | { readonly [env in FeatureEnvironment]?: number };
+
 export interface FeatureFlagConfig {
   /**
    * The namespace that the flag belongs to, used in calculating flag status.
@@ -45,16 +49,12 @@ export interface FeatureFlagConfig {
   readonly name: string;
 
   /**
-   * The rollout percentage, this is the threshold which will be used
-   * to check whether the flag is on or not.
-   * Note that a rollout of more than 80% is considered fully rolled out,
-   * In other words, all users will have the feature turned on if the rollout
-   * percentage reaches 80%.
-   * This is to encourage teams to clean up their flags early as
-   * 80% should give developers good signal of the status of their
-   * flag.
+   * The rollout percentage threshold for enabling the feature flag.
+   * Can be a single number (applies to all allowed environments) or
+   * an environment-specific mapping e.g. { dev: 100, prod: 0 }.
+   * Note that a rollout of more than 80% is considered fully rolled out.
    */
-  readonly percentage: number;
+  readonly percentage: RolloutPercentage;
 
   /**
    * What is this flag doing, this is displayed to users so that they
@@ -65,11 +65,11 @@ export interface FeatureFlagConfig {
   /**
    * The bug tracking this flags rollout.
    */
-  readonly trackingBug: string;
+  readonly trackingBug?: string;
 
   /**
    * Target environments where this feature flag can be toggled/available.
-   * If omitted, defaults to `['dev']` (only available in localhost and dev environments).
+   * If omitted, defaults to `['dev', 'prod']` (available in all environments).
    */
   readonly allowedEnvironments?: readonly FeatureEnvironment[];
 }
@@ -91,11 +91,34 @@ export function getCurrentEnvironment(): FeatureEnvironment {
   return 'prod';
 }
 
+export function getFlagRolloutPercentage(
+  config: FeatureFlagConfig,
+  env: FeatureEnvironment = getCurrentEnvironment(),
+): number {
+  if (typeof config.percentage === 'number') {
+    return config.percentage;
+  }
+  return config.percentage[env] ?? 0;
+}
+
+export function getFeatureFlagKey(
+  flagOrConfig: FeatureFlag | FeatureFlagConfig,
+): string {
+  const config = 'config' in flagOrConfig ? flagOrConfig.config : flagOrConfig;
+  return `${config.namespace}:${config.name}`;
+}
+
+export function getFeatureFlagLocalStorageKey(
+  flagOrConfig: FeatureFlag | FeatureFlagConfig,
+): string {
+  return `featureFlag:${getFeatureFlagKey(flagOrConfig)}`;
+}
+
 export function isFlagAvailableInEnvironment(
   flag: FeatureFlag,
   env: FeatureEnvironment = getCurrentEnvironment(),
 ): boolean {
-  const allowedEnvs = flag.config.allowedEnvironments ?? ['dev'];
+  const allowedEnvs = flag.config.allowedEnvironments ?? ['dev', 'prod'];
   return allowedEnvs.includes(env);
 }
 
@@ -109,20 +132,29 @@ export interface FeatureFlag {
 }
 
 /**
+ * Global registry of all feature flags created via createFeatureFlag.
+ * Map is keyed by `${namespace}:${name}` to deduplicate flag registrations during Vite HMR.
+ */
+export const REGISTERED_FLAGS = new Map<string, FeatureFlag>();
+
+/**
+ * Resets the global registry. For testing purposes only.
+ */
+export function resetRegisteredFlagsForTesting() {
+  REGISTERED_FLAGS.clear();
+}
+
+/**
  * Creates a feature flag holder to be used with `useFeatureFlag` hook.
- *
- * You should call this function a single time for any particular flag,
- * then reuse the instance.
- *
- * Calling this function multiple times with the same namespace and name
- * will cause unexpected results and different parts of the code will
- * calculate different status for the flag.
+ * Automatically pre-registers the flag in `REGISTERED_FLAGS` for global discovery.
  */
 export function createFeatureFlag(config: FeatureFlagConfig): FeatureFlag {
-  return {
+  const flag: FeatureFlag = {
     config,
     [ConfigSymbol]: true,
   };
+  REGISTERED_FLAGS.set(getFeatureFlagKey(config), flag);
+  return flag;
 }
 
 /**
@@ -210,17 +242,6 @@ export function useRemoveFlagFromAvailableFlags() {
 
 /**
  * Accepts a feature flag config and returns a boolean of whether the flag is on or off.
- *
- * Important: Using the same namespace and key with different data will cause the first
- * usage of the hook to take precedence over all other declarations.
- *
- * To avoid any unexpected behaviour, please declare the flag config in a common file
- * and reuse the same instance and values.
- *
- * Using this flag in a large list of items can cause performance problems
- * if each item resolves the flag separately.
- * A better use would be to fetch the flag value in a parent
- * component then pass it down to all children in the list.
  */
 export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
   const featureFlagConfig = featureFlag.config;
@@ -228,11 +249,19 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
   const addFlagToAvailableFlags = useAddFlagToAvailableFlags();
   const removeFlagFromAvailableFlags = useRemoveFlagFromAvailableFlags();
 
-  const isAvailableInEnv = isFlagAvailableInEnvironment(featureFlag);
+  const currentEnv = getCurrentEnvironment();
+  const isAvailableInEnv = isFlagAvailableInEnvironment(
+    featureFlag,
+    currentEnv,
+  );
+  const rolloutPercentage = getFlagRolloutPercentage(
+    featureFlagConfig,
+    currentEnv,
+  );
 
-  // Check the local storage to see if the user has overriden the feature flag value.
+  // Check local storage for feature flag overrides.
   const [overrideValue, flagObserver] = useLocalStorage(
-    `featureFlag:${featureFlagConfig.namespace}:${featureFlagConfig.name}`,
+    getFeatureFlagLocalStorageKey(featureFlagConfig),
     '',
     { raw: true },
   );
@@ -241,43 +270,56 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
       return false;
     }
     if (overrideValue) {
-      // Values other than on or off are ignored.
       if (overrideValue === 'on') {
         return true;
       } else if (overrideValue === 'off') {
         return false;
       }
     }
+    if (rolloutPercentage <= 0) {
+      return false;
+    }
+    if (rolloutPercentage >= 100) {
+      return true;
+    }
+    if (identity === ANONYMOUS_IDENTITY) {
+      return false;
+    }
     const flagHash = hashStringToNum(
-      `${featureFlagConfig.namespace}:${featureFlagConfig.name}:${identity}`,
+      `${getFeatureFlagKey(featureFlagConfig)}:${identity}`,
     );
-    // We are using Math.abs as the values returned by hashStringToNum can be negative.
-    // We max out at 80% as more than that should be considered fully rolled out and
-    // the flag should be removed.
     const userActivationThreshold = Math.abs(flagHash % 100) + 1;
 
-    if (featureFlagConfig.percentage >= 80) {
+    if (
+      currentEnv === 'prod' &&
+      rolloutPercentage >= 80 &&
+      !(
+        featureFlagConfig.allowedEnvironments?.length === 1 &&
+        featureFlagConfig.allowedEnvironments[0] === 'dev'
+      )
+    ) {
       logging.warn(
-        `Flag ${featureFlagConfig.namespace}:${featureFlagConfig.name} ` +
-          `is rolled out to ${featureFlagConfig.percentage}, any percentage over 80 ` +
+        `Flag ${getFeatureFlagKey(featureFlagConfig)} ` +
+          `is rolled out to ${rolloutPercentage}, any percentage over 80 ` +
           `will be capped at 80, if you need to rollout to more than 80% of users, then ` +
           `consider removing the flag as most users will now have it active ` +
           `and you should have a good signal.`,
       );
     }
-    return (
-      Math.min(userActivationThreshold, 80) <= featureFlagConfig.percentage
-    );
+    return Math.min(userActivationThreshold, 80) <= rolloutPercentage;
   }, [
     isAvailableInEnv,
     overrideValue,
-    featureFlagConfig.namespace,
-    featureFlagConfig.name,
-    featureFlagConfig.percentage,
+    featureFlagConfig,
+    rolloutPercentage,
+    currentEnv,
     identity,
   ]);
 
   useEffect(() => {
+    if (!isAvailableInEnv) {
+      return;
+    }
     addFlagToAvailableFlags({
       flag: featureFlag,
       activeStatus: flagStatus,
@@ -285,6 +327,7 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
     });
     return () => removeFlagFromAvailableFlags(featureFlag, flagObserver);
   }, [
+    isAvailableInEnv,
     addFlagToAvailableFlags,
     flagStatus,
     removeFlagFromAvailableFlags,
@@ -292,11 +335,55 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
     featureFlag,
   ]);
 
-  // we always return false if the user is not logged in or flag is not available in environment.
-  if (identity === ANONYMOUS_IDENTITY || !isAvailableInEnv) {
+  return flagStatus;
+}
+
+/**
+ * Evaluates the value of a feature flag synchronously without requiring a React hook.
+ * Respects environment eligibility, localStorage overrides, and percentage rollouts.
+ */
+export function getFeatureFlagValue(
+  featureFlag: FeatureFlag,
+  identity: string = ANONYMOUS_IDENTITY,
+  env: FeatureEnvironment = getCurrentEnvironment(),
+): boolean {
+  if (!isFlagAvailableInEnvironment(featureFlag, env)) {
     return false;
   }
-  return flagStatus;
+
+  if (typeof window !== 'undefined') {
+    try {
+      const overrideValue = window.localStorage.getItem(
+        getFeatureFlagLocalStorageKey(featureFlag),
+      );
+      if (overrideValue === 'on') {
+        return true;
+      } else if (overrideValue === 'off') {
+        return false;
+      }
+    } catch {
+      // Ignore localStorage access errors (e.g. strict security contexts)
+    }
+  }
+
+  const percentage = getFlagRolloutPercentage(featureFlag.config, env);
+
+  if (percentage <= 0) {
+    return false;
+  }
+  if (percentage >= 100) {
+    return true;
+  }
+
+  if (identity === ANONYMOUS_IDENTITY) {
+    return false;
+  }
+
+  const flagHash = hashStringToNum(
+    `${getFeatureFlagKey(featureFlag)}:${identity}`,
+  );
+  const userActivationThreshold = Math.abs(flagHash % 100) + 1;
+  return Math.min(userActivationThreshold, 80) <= percentage;
 }
 
 export function useSetFeatureFlag(flag: FeatureFlag) {
@@ -311,4 +398,33 @@ export function useSetFeatureFlag(flag: FeatureFlag) {
     },
     [availableFlags, flag],
   );
+}
+
+export function getEnabledFeatureFlags(): string[] {
+  const enabled: string[] = [];
+  for (const flag of REGISTERED_FLAGS.values()) {
+    if (getFeatureFlagValue(flag)) {
+      enabled.push(getFeatureFlagKey(flag));
+    }
+  }
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('featureFlag:')) {
+          const val = localStorage.getItem(key);
+          const flagKey = key.substring('featureFlag:'.length);
+          if (val === 'on' && !enabled.includes(flagKey)) {
+            enabled.push(flagKey);
+          }
+        }
+      }
+    } catch (e) {
+      logging.warn(
+        'Failed to read feature flag overrides from localStorage',
+        e,
+      );
+    }
+  }
+  return enabled;
 }

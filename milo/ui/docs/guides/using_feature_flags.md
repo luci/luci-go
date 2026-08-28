@@ -1,71 +1,104 @@
-# Using Feature Flags
+# Using Feature Flags in LUCI Milo UI
 
-## Description
+## Overview
 
-LUCI UI has a feature toggling ability that allows you to rollout
-UI changes gradually to users. This feature runs in the UI and
-does not have backend support, which introduces some limitations:
+LUCI Milo UI provides a unified client-side feature flag system that supports gradual user rollouts, environment gating (`dev` vs. `prod`), environment-specific percentage rollouts, central pre-registration, and real-time developer overrides via the top app bar dialog.
 
-1. Rollout percentages represent each individual user's
-   probability of having the feature turned on/off not the total
-   percentage of users who will get the feature.
+### Key Capabilities
 
-2. Granular user targeting or targeting users in a specific group is not possible.
+1. **Central Pre-Registration**: Any feature flag declared with `createFeatureFlag()` in eagerly imported configuration modules (such as `src/fleet/features.ts` or `src/common/feature_flags/`) is automatically registered in the global flag registry. It appears in the top app bar feature flags modal (`<AvailableFlags />`) for discovery and toggling upon app load. Flags declared inside lazily loaded route chunks (`React.lazy`) are registered when that JS chunk is imported.
+2. **Dual Context Support**:
+   - **React Components**: Use the `useFeatureFlag(flag)` hook.
+   - **Non-Hook / Routing Code**: Use the `getFeatureFlagValue(flag)` synchronous helper.
+3. **Environment Restrictions & Percentages**: Restrict flags to specific target environments (e.g. `allowedEnvironments: ['dev']`) or set environment-specific rollout percentages (e.g. `percentage: { dev: 100, prod: 0 }`). Omitting `allowedEnvironments` defaults to `['dev', 'prod']` (available everywhere).
+4. **Local Overrides**: Developers and testers can toggle flags in the UI modal or via `localStorage.setItem('featureFlag:<namespace>:<name>', 'on' | 'off')`. Overrides always take precedence over rollout percentages.
 
-3. Increasing the rollout percentage requires a new CL.
+---
 
-4. User overrides are stored in `localStorage`, which means that features won't work the same
-   across devices or browsers.
+## Defining a Feature Flag
 
-## Creating a feature flag
-
-### Step 1: create the `FeatureFlag` object
-
-* The first step is to create a `FeatureFlag` object, this object can
-  be created using the `createFeatureFlag` function.
-
-* Pass a `FeatureFlagConfig` object to this function:
-
-  ```ts
-  const newFlag = createFeatureFlag({
-    description: 'Test flag',
-    namespace: 'flagKey',
-    name: 'test-flag',
-    percentage: 20,
-    trackingBug: '123455',
-  });
-  ```
-
-  for more information about this function please check [feature flags context](../../src/common/feature_flags/context.ts).
-
-* **Recommended**: centralize the feature flag creation function call in a single file and reuse the object.
-  Otherwise, your feature might behave differently in different components if the configs don't match.
-
-* **Note**: User overrides will always override rollout percentages.
-
-### Step 2: use the flag with `useFeatureFlag` hook
-
-* Once you have created the `FeatureFlag` object you can then pass that to `useFeatureFlag` hook.
-
-* This hook will calculate the user's activation threshold, which is the percentage that will activate
-  the feature for the user. It will return a boolean to indicate the flag status.
-
-* If the user has overridden the flag activation, then the hook will use it instead.
-
-Example usage:
+Declare feature flags in a domain-specific file (e.g. `src/<domain>/features.ts`):
 
 ```ts
-function MyComponent() {
-  const myFlagValue = useFeatureFlag(newFlag);
-  return <>{myFlagValue ? 'flag is on' : 'flag is off'}</>;
+import { createFeatureFlag } from '@/common/feature_flags';
+
+// Option A: Uniform percentage across environments
+export const enableNewDashboard = createFeatureFlag({
+  namespace: 'my-feature-area',
+  name: 'new-dashboard',
+  description: 'Enable the redesigned analytics dashboard.',
+  percentage: 0,
+  trackingBug: '123456789',
+  allowedEnvironments: ['dev', 'prod'], // Optional, defaults to ['dev', 'prod']
+});
+
+// Option B: Environment-specific rollout percentages (Dev -> Prod rollout workflow)
+export const enableExperimentalMetrics = createFeatureFlag({
+  namespace: 'fleet-console',
+  name: 'experimental-metrics',
+  description: 'Enable experimental metrics display.',
+  percentage: { dev: 100, prod: 0 }, // 100% in Dev, 0% in Prod
+  trackingBug: '388907865',
+});
+```
+
+### Configuration Options
+
+| Option | Type | Description |
+| :--- | :--- | :--- |
+| `namespace` | `string` | Group namespace for the flag (e.g. `'fleet-console'`, `'test-investigation'`). |
+| `name` | `string` | Unique identifier within the namespace. |
+| `description` | `string` | Human-readable explanation displayed in the `<AvailableFlags />` modal. |
+| `percentage` | `number \| { dev?: number, prod?: number }` | Rollout percentage threshold. Can be a single number or environment-specific map (e.g. `{ dev: 100, prod: 0 }`). Values $\ge 80\%$ trigger a cleanup warning. |
+| `trackingBug` | `string` *(optional)* | Bug ID tracking the feature rollout. |
+| `allowedEnvironments` | `readonly ('dev' \| 'prod')[]` *(optional)* | Allowed environments. Defaults to `['dev', 'prod']`. Flags restricted to `['dev']` evaluate to `false` in production regardless of percentage. |
+
+---
+
+## Evaluating Feature Flags
+
+### 1. In React Components (`useFeatureFlag`)
+
+```tsx
+import { useFeatureFlag } from '@/common/feature_flags';
+import { enableNewDashboard } from '@/my_domain/features';
+
+export function DashboardContainer() {
+  const isEnabled = useFeatureFlag(enableNewDashboard);
+
+  if (!isEnabled) {
+    return <LegacyDashboard />;
+  }
+  return <NewDashboard />;
 }
 ```
 
-For more information about this hook please read [feature flags context](../../src/common/feature_flags/context.ts).
+### 2. Outside React Hooks / In Route Tables (`getFeatureFlagValue`)
 
-## Overriding flag values
+Use `getFeatureFlagValue(flag)` when evaluating flags in route definitions, navigation builders, or non-React utilities:
 
-* Users can override flag values using the feature flags dialog,
- this can be accessed using the lab icon button in the app bar.
+```ts
+import { getFeatureFlagValue } from '@/common/feature_flags';
+import { enableNewDashboard } from '@/my_domain/features';
 
-* User overrides will always take precedence over flag calculated rollout percentages and values.
+export const myRoutes = [
+  {
+    path: 'dashboard',
+    element: getFeatureFlagValue(enableNewDashboard) ? (
+      <NewDashboardRoute />
+    ) : (
+      <LegacyDashboardRoute />
+    ),
+  },
+];
+```
+
+---
+
+## Overriding Flag Values
+
+- **App Bar Modal**: Click the lab/flask icon in the top app bar to open the Feature Flags dialog and toggle any registered flag.
+- **LocalStorage API**: Set `featureFlag:<namespace>:<name>` to `'on'` or `'off'` in the browser console:
+  ```js
+  localStorage.setItem('featureFlag:my-feature-area:new-dashboard', 'on');
+  ```

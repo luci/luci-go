@@ -39,7 +39,7 @@ export function FeatureFlagsProvider({ children }: Props) {
         const flagObservers = new Set(activeFlag.observers);
         flagObservers.add(status.setOverrideStatus);
         newFlags.set(status.flag, {
-          status: activeFlag.status,
+          status,
           observers: flagObservers,
         });
       } else {
@@ -95,14 +95,17 @@ export function FeatureFlagsProvider({ children }: Props) {
       removeFlagFromAvailableFlags,
     };
   }, [addFlagToAvailableFlags, removeFlagFromAvailableFlags]);
+
+  const getterCtxValue = useMemo(() => {
+    return {
+      availableFlags,
+      getFlagStatus,
+    };
+  }, [availableFlags, getFlagStatus]);
+
   return (
     <FlagsSetterCtx.Provider value={setterCtxValue}>
-      <FlagsGetterCtx.Provider
-        value={{
-          availableFlags,
-          getFlagStatus,
-        }}
-      >
+      <FlagsGetterCtx.Provider value={getterCtxValue}>
         {children}
       </FlagsGetterCtx.Provider>
     </FlagsSetterCtx.Provider>

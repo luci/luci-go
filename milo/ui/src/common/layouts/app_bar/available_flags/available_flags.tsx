@@ -32,26 +32,60 @@ import { StyledIconButton } from '@/common/components/gm3_styled_components';
 import {
   FeatureFlag,
   getCurrentEnvironment,
+  getFeatureFlagKey,
+  getFeatureFlagLocalStorageKey,
+  getFeatureFlagValue,
   isFlagAvailableInEnvironment,
+  REGISTERED_FLAGS,
   useAvailableFlags,
   useGetFlagStatus,
 } from '@/common/feature_flags/';
+import { logging } from '@/common/tools/logging';
 
 export function AvailableFlags() {
   const availableFlags = useAvailableFlags();
   const getFlagStatus = useGetFlagStatus();
   const [open, setOpen] = useState(false);
+  const [toggleCount, setToggleCount] = useState(0);
 
   const currentEnv = getCurrentEnvironment();
-  const flagValues = useMemo(
-    () =>
-      [...availableFlags.values()].filter((f) =>
-        isFlagAvailableInEnvironment(f.status.flag, currentEnv),
-      ),
-    [availableFlags, currentEnv],
-  );
 
-  if (flagValues.length === 0) {
+  const flagDisplayList = useMemo(() => {
+    // Combine mounted availableFlags with all REGISTERED_FLAGS
+    const allFlagsMap = new Map<string, FeatureFlag>();
+
+    for (const flag of REGISTERED_FLAGS.values()) {
+      if (isFlagAvailableInEnvironment(flag, currentEnv)) {
+        const key = getFeatureFlagKey(flag);
+        allFlagsMap.set(key, flag);
+      }
+    }
+
+    for (const activeFlag of availableFlags.values()) {
+      const flag = activeFlag.status.flag;
+      if (isFlagAvailableInEnvironment(flag, currentEnv)) {
+        const key = getFeatureFlagKey(flag);
+        allFlagsMap.set(key, flag);
+      }
+    }
+
+    // Reference toggleCount to re-evaluate display list when user toggles flag overrides
+    void toggleCount;
+
+    return Array.from(allFlagsMap.values()).map((flag) => {
+      const activeFlag = availableFlags.get(flag);
+      const activeStatus = activeFlag
+        ? activeFlag.status.activeStatus
+        : getFeatureFlagValue(flag);
+
+      return {
+        flag,
+        activeStatus,
+      };
+    });
+  }, [availableFlags, currentEnv, toggleCount]);
+
+  if (flagDisplayList.length === 0) {
     return null;
   }
 
@@ -64,12 +98,26 @@ export function AvailableFlags() {
   };
 
   function handleFlagStatusChange(flag: FeatureFlag, value: boolean) {
+    const key = getFeatureFlagLocalStorageKey(flag);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(key, value ? 'on' : 'off');
+      } catch (e) {
+        logging.warn(
+          'Failed to write feature flag override to localStorage:',
+          e,
+        );
+      }
+    }
+
     const flagStatus = getFlagStatus(flag);
     if (flagStatus) {
       flagStatus.observers.forEach((observer) => {
         observer(value ? 'on' : 'off');
       });
     }
+
+    setToggleCount((c) => c + 1);
   }
 
   return (
@@ -80,11 +128,11 @@ export function AvailableFlags() {
         role="button"
         aria-label="Toggle feature flags"
         title={
-          flagValues.length === 0
+          flagDisplayList.length === 0
             ? 'No available flags'
             : 'Toggle feature flags'
         }
-        disabled={flagValues.length === 0}
+        disabled={flagDisplayList.length === 0}
       >
         <ScienceIcon />
       </StyledIconButton>
@@ -125,28 +173,24 @@ export function AvailableFlags() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {flagValues.map((flag) => (
-                <TableRow
-                  key={`${flag.status.flag.config.namespace}:${flag.status.flag.config.name}`}
-                >
-                  <TableCell>
-                    {`${flag.status.flag.config.namespace}:${flag.status.flag.config.name}`}
-                  </TableCell>
-                  <TableCell>{flag.status.flag.config.description}</TableCell>
-                  <TableCell>
-                    <Switch
-                      title={`${flag.status.flag.config.namespace}:${flag.status.flag.config.name} switch`}
-                      onChange={(e) =>
-                        handleFlagStatusChange(
-                          flag.status.flag,
-                          e.target.checked,
-                        )
-                      }
-                      checked={flag.status.activeStatus}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {flagDisplayList.map(({ flag, activeStatus }) => {
+                const flagKey = getFeatureFlagKey(flag);
+                return (
+                  <TableRow key={flagKey}>
+                    <TableCell>{flagKey}</TableCell>
+                    <TableCell>{flag.config.description}</TableCell>
+                    <TableCell>
+                      <Switch
+                        title={`${flagKey} switch`}
+                        onChange={(e) =>
+                          handleFlagStatusChange(flag, e.target.checked)
+                        }
+                        checked={activeStatus}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </DialogContent>

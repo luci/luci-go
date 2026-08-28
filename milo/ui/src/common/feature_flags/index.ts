@@ -15,7 +15,14 @@
 export {
   createFeatureFlag,
   getCurrentEnvironment,
+  getEnabledFeatureFlags,
+  getFeatureFlagKey,
+  getFeatureFlagLocalStorageKey,
+  getFeatureFlagValue,
+  getFlagRolloutPercentage,
   isFlagAvailableInEnvironment,
+  REGISTERED_FLAGS,
+  resetRegisteredFlagsForTesting,
   useAddFlagToAvailableFlags,
   useAvailableFlags,
   useFeatureFlag,
@@ -31,6 +38,7 @@ export type {
   FeatureFlagConfig,
   FeatureFlagStatus,
   FlagObserver,
+  RolloutPercentage,
 } from './context';
 
 export * from './provider';

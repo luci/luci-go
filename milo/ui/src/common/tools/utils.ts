@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getEnabledFeatureFlags } from '@/fleet/config/features';
+import { getEnabledFeatureFlags } from '@/common/feature_flags';
 
 export type GenFeedbackUrlArgs =
   | {
@@ -31,6 +31,8 @@ export function genFeedbackUrl({
   bugComponent,
   customComment,
 }: GenFeedbackUrlArgs = {}) {
+  const enabledFlags = getEnabledFeatureFlags();
+
   const feedbackComment =
     customComment ||
     `# Problem Description\n\n` +
@@ -49,7 +51,7 @@ export function genFeedbackUrl({
       `- **Version**: ${UI_VERSION}\n` +
       `- **From Link**: ${self.location.href}\n` +
       `- **User Agent**: ${navigator.userAgent}\n` +
-      `- **Enabled Feature Flags**: ${getEnabledFeatureFlags().join(', ') || 'None'}\n\n` +
+      `- **Enabled Feature Flags**: ${enabledFlags.join(', ') || 'None'}\n\n` +
       (errMsg ? `- **Error Message**:\n  ${errMsg}\n\n` : '') +
       (stacktrace ? `- **Stacktrace**:\n  ${stacktrace}\n\n` : '');
 
