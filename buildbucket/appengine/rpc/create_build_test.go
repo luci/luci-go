@@ -125,6 +125,9 @@ func validCreateBuildRequest() *pb.CreateBuildRequest {
 				Resultdb: &pb.BuildInfra_ResultDB{
 					Hostname: "host",
 				},
+				Led: &pb.BuildInfra_Led{
+					ShadowedBucket: "bucket",
+				},
 			},
 			Input: &pb.Build_Input{
 				Properties: &structpb.Struct{
@@ -711,6 +714,13 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 						req.Build.Infra.Resultdb.Hostname = ""
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 						assert.Loosely(t, err, should.ErrLike(`.build.infra.resultdb.hostname: required`))
+					})
+				})
+				t.Run("led", func(t *ftt.Test) {
+					t.Run("required", func(t *ftt.Test) {
+						req.Build.Infra.Led = nil
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						assert.Loosely(t, err, should.ErrLike(`.build.infra.led: required`))
 					})
 				})
 				t.Run("backend", func(t *ftt.Test) {

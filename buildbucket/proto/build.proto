@@ -906,6 +906,8 @@ message BuildInfra {
   BBAgent bbagent = 6;
   Backend backend = 7;
   // It should only be set for led builds.
-  Led led = 8;
+  // All builds created by CreateBuild RPC are led builds so they all require
+  // this field to be set.
+  Led led = 8 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];;
   TurboCI turboci = 9;
 }

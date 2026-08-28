@@ -815,6 +815,8 @@ type BuildInfra struct {
 	Bbagent     *BuildInfra_BBAgent     `protobuf:"bytes,6,opt,name=bbagent,proto3" json:"bbagent,omitempty"`
 	Backend     *BuildInfra_Backend     `protobuf:"bytes,7,opt,name=backend,proto3" json:"backend,omitempty"`
 	// It should only be set for led builds.
+	// All builds created by CreateBuild RPC are led builds so they all require
+	// this field to be set.
 	Led           *BuildInfra_Led     `protobuf:"bytes,8,opt,name=led,proto3" json:"led,omitempty"`
 	Turboci       *BuildInfra_TurboCI `protobuf:"bytes,9,opt,name=turboci,proto3" json:"turboci,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -3140,7 +3142,7 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\n" +
 	"was_cached\x18\x04 \x01(\x0e2\x17.buildbucket.v2.TrinaryR\twasCached\x12>\n" +
 	"\x06timing\x18\x05 \x01(\v2&.buildbucket.v2.ResolvedDataRef.TimingR\x06timingB\v\n" +
-	"\tdata_type\"\x89+\n" +
+	"\tdata_type\"\x91+\n" +
 	"\n" +
 	"BuildInfra\x12P\n" +
 	"\vbuildbucket\x18\x01 \x01(\v2&.buildbucket.v2.BuildInfra.BuildbucketB\x06\x8a\xc3\x1a\x02\b\x02R\vbuildbucket\x12?\n" +
@@ -3149,8 +3151,8 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\x06recipe\x18\x04 \x01(\v2!.buildbucket.v2.BuildInfra.RecipeR\x06recipe\x12F\n" +
 	"\bresultdb\x18\x05 \x01(\v2#.buildbucket.v2.BuildInfra.ResultDBB\x05\xb8μ\x03\x02R\bresultdb\x12<\n" +
 	"\abbagent\x18\x06 \x01(\v2\".buildbucket.v2.BuildInfra.BBAgentR\abbagent\x12<\n" +
-	"\abackend\x18\a \x01(\v2\".buildbucket.v2.BuildInfra.BackendR\abackend\x120\n" +
-	"\x03led\x18\b \x01(\v2\x1e.buildbucket.v2.BuildInfra.LedR\x03led\x12<\n" +
+	"\abackend\x18\a \x01(\v2\".buildbucket.v2.BuildInfra.BackendR\abackend\x128\n" +
+	"\x03led\x18\b \x01(\v2\x1e.buildbucket.v2.BuildInfra.LedB\x06\x8a\xc3\x1a\x02\b\x02R\x03led\x12<\n" +
 	"\aturboci\x18\t \x01(\v2\".buildbucket.v2.BuildInfra.TurboCIR\aturboci\x1a\xc5\x18\n" +
 	"\vBuildbucket\x126\n" +
 	"\x17service_config_revision\x18\x02 \x01(\tR\x15serviceConfigRevision\x12J\n" +

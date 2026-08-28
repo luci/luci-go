@@ -105,10 +105,13 @@ func synthesizeShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest,
 		return nil, err
 	}
 
+	// Always set bld.Infra.Led for synthesized build, this will cover
+	// * led get-build|get-builder,
+	// * ScheduleBuildRequest with `ShadowInput`.
+	bld.Infra.Led = &pb.BuildInfra_Led{
+		ShadowedBucket: origBucket,
+	}
 	if shadowBucket != "" && shadowBucket != origBucket {
-		bld.Infra.Led = &pb.BuildInfra_Led{
-			ShadowedBucket: origBucket,
-		}
 		bld.Input.Properties.Fields["$recipe_engine/led"] = &structpb.Value{
 			Kind: &structpb.Value_StructValue{
 				StructValue: &structpb.Struct{
