@@ -14,7 +14,7 @@
 
 /// <reference types="cypress" />
 
-import { mockPrpc } from './common/utils';
+import { mockCypressAuth, mockPrpcEndpoint } from './common/utils';
 
 describe('Browser Devices Page', () => {
   beforeEach(() => {
@@ -23,13 +23,7 @@ describe('Browser Devices Page', () => {
       win.indexedDB.deleteDatabase('keyval-store');
     });
 
-    // Mock auth state to be a Googler so that feature-flagged routes evaluate to active.
-    cy.intercept('GET', '**/auth/openid/state', {
-      body: {
-        identity: 'user:user@google.com',
-        email: 'user@google.com',
-      },
-    });
+    mockCypressAuth();
 
     const dimensionsData = {
       baseDimensions: { machine: { values: ['machine1'] } },
@@ -42,34 +36,20 @@ describe('Browser Devices Page', () => {
       },
     };
 
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/GetBrowserDeviceDimensions',
+    mockPrpcEndpoint(
+      'GetBrowserDeviceDimensions',
       dimensionsData,
       'getDimensions',
     );
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/ListBrowserDevices',
+    mockPrpcEndpoint(
+      'ListBrowserDevices',
       {
         devices: [{ id: '1', ufsLabels: { os: { values: ['Linux'] } } }],
         totalSize: 1,
       },
       'listDevices',
     );
-
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/CountBrowserDevices',
-      {
-        total: 1,
-        swarmingState: {
-          total: 1,
-          alive: 1,
-          dead: 0,
-          quarantined: 0,
-          maintenance: 0,
-        },
-      },
-      'countDevices',
-    );
+    mockPrpcEndpoint('CountBrowserDevices', undefined, 'countDevices');
   });
 
   it('should load with filters and render chips', () => {
@@ -79,20 +59,16 @@ describe('Browser Devices Page', () => {
 
     cy.wait(['@listDevices', '@countDevices']);
 
-    // Type filter in the filter bar after ensuring options are loaded
     cy.get('input[placeholder*="Add a filter"]').click();
-    // Wait for options to appear in dropdown
     cy.get('[role="menuitem"]').should('have.length.gt', 0);
 
     cy.get('[role="menuitem"]').contains('sw.os').click();
     cy.get('[role="menuitem"]').contains('Linux').click();
     cy.contains('button', 'Apply').click();
 
-    // Verify the filter chip is rendered
     cy.contains('[role="button"]', 'os').should('be.visible');
     cy.contains('[role="button"]', 'Linux').should('be.visible');
 
-    // Verify the table is rendered
     cy.get('table').should('be.visible');
     cy.get('table').find('td').contains('1').should('be.visible');
   });

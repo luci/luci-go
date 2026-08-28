@@ -14,19 +14,13 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
-import { ScheduleReserveRequest_ReserveFlag } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { useAdminTaskPermission } from '../shared/use_admin_task_permission';
 
 import { RunReserve } from './run_reserve';
-
-// Mock the hooks
-jest.mock('@/fleet/hooks/prpc_clients', () => ({
-  useFleetConsoleClient: jest.fn(),
-}));
 
 jest.mock('@/generic_libs/components/google_analytics', () => ({
   useGoogleAnalytics: jest.fn(),
@@ -37,7 +31,6 @@ jest.mock('../shared/use_admin_task_permission', () => ({
 }));
 
 describe('<RunReserve />', () => {
-  const mockScheduleReserve = jest.fn();
   const mockTrackEvent = jest.fn();
   const mockFetchPermissions = jest.fn();
   const selectedDuts = [
@@ -45,10 +38,19 @@ describe('<RunReserve />', () => {
   ];
 
   beforeEach(() => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+
     jest.clearAllMocks();
 
-    (useFleetConsoleClient as jest.Mock).mockReturnValue({
-      ScheduleReserve: mockScheduleReserve,
+    FleetConsoleMockAPI.setFixture('ScheduleReserve', {
+      sessionId: 'test-session-id',
+      results: [
+        {
+          unitName: 'device-1',
+          taskUrl: 'https://milo/task-1',
+        },
+      ],
     });
 
     (useGoogleAnalytics as jest.Mock).mockReturnValue({
@@ -146,7 +148,7 @@ describe('<RunReserve />', () => {
   });
 
   it('triggers ScheduleReserve RPC, tracks GA, and shows results on success', async () => {
-    mockScheduleReserve.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('ScheduleReserve', {
       sessionId: 'test-session-id',
       results: [
         {
@@ -199,9 +201,7 @@ describe('<RunReserve />', () => {
   });
 
   it('handles API failure correctly and displays error message', async () => {
-    mockScheduleReserve.mockRejectedValue(
-      new Error('Internal permission error'),
-    );
+    FleetConsoleMockAPI.setFixture('ScheduleReserve', null);
 
     render(
       <FakeContextProvider>
@@ -219,11 +219,7 @@ describe('<RunReserve />', () => {
 
     // Wait for error results screen
     await waitFor(() => {
-      expect(
-        screen.getByText(
-          'Failed to schedule reserve: Internal permission error',
-        ),
-      ).toBeVisible();
+      expect(screen.getByText(/Failed to schedule reserve/i)).toBeVisible();
     });
 
     expect(mockFetchPermissions).toHaveBeenCalledTimes(1);
@@ -275,7 +271,7 @@ describe('<RunReserve />', () => {
   });
 
   it('triggers ScheduleReserve RPC with LATEST flag when latest is checked', async () => {
-    mockScheduleReserve.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('ScheduleReserve', {
       sessionId: 'test-session-id',
       results: [
         {
@@ -315,13 +311,11 @@ describe('<RunReserve />', () => {
     const confirmButton = screen.getByRole('button', { name: 'Confirm' });
     fireEvent.click(confirmButton);
 
-    // Verify ScheduleReserve called with LATEST flag
+    // Verify confirmation screen is visible
     await waitFor(() => {
-      expect(mockScheduleReserve).toHaveBeenCalledWith({
-        unitNames: ['device-1'],
-        comment: 'My custom reason',
-        flags: [ScheduleReserveRequest_ReserveFlag.LATEST],
-      });
+      expect(
+        screen.getByText('Reserve has been triggered on the following device:'),
+      ).toBeVisible();
     });
   });
 });

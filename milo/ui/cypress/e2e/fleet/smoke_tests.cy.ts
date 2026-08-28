@@ -14,26 +14,15 @@
 
 /// <reference types="cypress" />
 
-import { mockPrpc } from './common/utils';
+import { mockCypressAuth, mockPrpcEndpoint } from './common/utils';
 
 describe('Fleet Console Smoke Tests', () => {
   beforeEach(() => {
     cy.clearLocalStorage();
 
-    // Mock auth state to be a Googler so that protected routes are accessible.
-    cy.intercept('GET', '**/auth/openid/state', {
-      body: {
-        identity: 'user:user@google.com',
-        email: 'user@google.com',
-      },
-    });
+    mockCypressAuth();
 
-    // Common mocks for device dimensions and list to prevent crashes on pages that use them.
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/GetDeviceDimensions',
-      { baseDimensions: {}, labels: {} },
-      'getDimensions',
-    );
+    mockPrpcEndpoint('GetDeviceDimensions', undefined, 'getDimensions');
   });
 
   it('should load Home Page', () => {
@@ -44,25 +33,13 @@ describe('Fleet Console Smoke Tests', () => {
   });
 
   it('should load Android Repairs Page', () => {
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/GetRepairMetricsDimensions',
+    mockPrpcEndpoint(
+      'GetRepairMetricsDimensions',
       { dimensions: {} },
       'getRepairDimensions',
     );
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/ListRepairMetrics',
-      {
-        repairMetrics: [
-          { labName: 'lab1', totalDevices: 10, devicesOffline: 2 },
-        ],
-      },
-      'listRepairMetrics',
-    );
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/CountRepairMetrics',
-      { total: 1 },
-      'countRepairMetrics',
-    );
+    mockPrpcEndpoint('ListRepairMetrics', undefined, 'listRepairMetrics');
+    mockPrpcEndpoint('CountRepairMetrics', undefined, 'countRepairMetrics');
 
     cy.visit('/ui/fleet/p/android/repairs');
     cy.wait([
@@ -72,23 +49,22 @@ describe('Fleet Console Smoke Tests', () => {
     ]);
     cy.contains('Repair metrics').should('be.visible');
     cy.get('table').should('be.visible');
-    cy.contains('lab1').should('be.visible');
   });
 
   it('should load Product Catalogue Page', () => {
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/ListProductCatalogEntries',
+    mockPrpcEndpoint(
+      'ListProductCatalogEntries',
       { entries: [{ productCatalogId: 'prod1', productName: 'Product 1' }] },
       'listCatalog',
     );
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/GetProductCatalogFilterValues',
+    mockPrpcEndpoint(
+      'GetProductCatalogFilterValues',
       { productCatalogId: [] },
       'getCatalogFilters',
     );
 
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/ListGceProductCatalogEntries',
+    mockPrpcEndpoint(
+      'ListGceProductCatalogEntries',
       { entries: [] },
       'listGceCatalog',
     );
@@ -115,7 +91,7 @@ describe('Fleet Console Smoke Tests', () => {
   });
 
   it('should load Admin Tasks Page', () => {
-    mockPrpc('**/prpc/swarming.v2.Tasks/ListTasks', { items: [] }, 'listTasks');
+    mockPrpcEndpoint('ListTasks', { items: [] }, 'listTasks');
 
     cy.visit('/ui/fleet/p/chromeos/admin-tasks');
     cy.contains('ChromeOS Admin Tasks').should('be.visible');

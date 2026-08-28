@@ -14,7 +14,7 @@
 
 /// <reference types="cypress" />
 
-import { mockPrpc } from './common/utils';
+import { mockCypressAuth, mockPrpcEndpoint } from './common/utils';
 
 describe('Android Devices Page', () => {
   beforeEach(() => {
@@ -23,42 +23,21 @@ describe('Android Devices Page', () => {
       win.indexedDB.deleteDatabase('keyval-store');
     });
 
-    // Mock auth state to be a Googler so that protected routes are accessible.
-    cy.intercept('GET', '**/auth/openid/state', {
-      body: {
-        identity: 'user:user@google.com',
-        email: 'user@google.com',
-      },
-    });
-    cy.intercept('**', (req) => {
-      req.continue((res) => {
-        if (res.statusCode >= 400) {
-          /* eslint-disable no-console */
-          console.error(`\n--- NETWORK ERROR ---`);
-          console.error(`URL: ${req.url}`);
-          console.error(`Status: ${res.statusCode}`);
-          console.error(`Body: ${JSON.stringify(res.body)}`);
-          console.error(`----------------------\n`);
-          /* eslint-enable no-console */
-        }
-      });
-    });
+    mockCypressAuth();
 
     const dimensionsData = {
       baseDimensions: {
         run_target: { values: ['a04e'] },
         state: { values: ['LAMEDUCK'] },
       },
-      labels: {},
+      labels: {
+        pool: { values: ['android'] },
+      },
     };
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/GetDeviceDimensions',
-      dimensionsData,
-      'getDimensions',
-    );
+    mockPrpcEndpoint('GetDeviceDimensions', dimensionsData, 'getDimensions');
 
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/ListAndroidDevices',
+    mockPrpcEndpoint(
+      'ListAndroidDevices',
       {
         devices: [{ id: '1', runTarget: 'a04e', state: 'LAMEDUCK' }],
         totalSize: 1,
@@ -66,8 +45,8 @@ describe('Android Devices Page', () => {
       'listDevices',
     );
 
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/CountDevices',
+    mockPrpcEndpoint(
+      'CountDevices',
       {
         androidCount: {
           totalDevices: 1,
@@ -90,29 +69,22 @@ describe('Android Devices Page', () => {
   });
 
   it('should not infinite loop or crash when loading with multiple filters', () => {
-    // The bug was triggered when reloading the page with more than 2 filters in the URL.
-    // We use the example from the commit message to reproduce the exact scenario.
     const filters = encodeURIComponent(
       '"run_target" = ("a04e") AND "state" = ("LAMEDUCK")',
     );
     const targetUrl = `/ui/fleet/p/android/devices?filters=${filters}`;
 
-    // Navigate to the page with the filters pre-applied in the URL
     cy.visit(targetUrl);
 
-    // Wait for network requests to settle
-    cy.wait(['@getDimensions', '@listDevices', '@countDevices']);
+    cy.wait(['@listDevices', '@countDevices']);
 
-    // Verify the URL remains stable and contains our filters (not infinitely rewritten)
     cy.url().should('include', 'filters');
 
-    // 4. Verify the page didn't crash and the filter chips rendered their full values.
     cy.get('.MuiChip-root').contains('run_target').should('be.visible');
     cy.get('.MuiChip-root').contains('a04e').should('be.visible');
     cy.get('.MuiChip-root').contains('State').should('be.visible');
     cy.get('.MuiChip-root').contains('LAMEDUCK').should('be.visible');
 
-    // 5. Ensure the main UI table is still present and contains data.
     cy.get('table').should('be.visible');
     cy.get('table').find('td').contains('1').should('be.visible');
   });

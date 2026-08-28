@@ -14,7 +14,7 @@
 
 /// <reference types="cypress" />
 
-import { mockPrpc } from './common/utils';
+import { mockCypressAuth, mockPrpcEndpoint } from './common/utils';
 
 describe('ChromeOS Devices Page', () => {
   beforeEach(() => {
@@ -23,44 +23,18 @@ describe('ChromeOS Devices Page', () => {
       win.indexedDB.deleteDatabase('keyval-store');
     });
 
-    // Mock auth state to be a Googler so that protected routes are accessible.
-    cy.intercept('GET', '**/auth/openid/state', {
-      body: {
-        identity: 'user:user@google.com',
-        email: 'user@google.com',
-      },
-    });
+    mockCypressAuth();
 
-    const dimensionsData = {
-      baseDimensions: { machine: { values: ['machine1'] } },
-      labels: {
-        os: { values: ['ChromeOS'] },
-      },
-    };
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/GetDeviceDimensions',
-      dimensionsData,
-      'getDimensions',
-    );
-
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/ListDevices',
+    mockPrpcEndpoint('GetDeviceDimensions', undefined, 'getDimensions');
+    mockPrpcEndpoint(
+      'ListDevices',
       {
         devices: [{ id: '1', labels: { os: { values: ['ChromeOS'] } } }],
         totalSize: 1,
       },
       'listDevices',
     );
-
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/CountDevices',
-      {
-        total: 1,
-        deviceState: { ready: 1 },
-        taskState: { idle: 1, busy: 0 },
-      },
-      'countDevices',
-    );
+    mockPrpcEndpoint('CountDevices', undefined, 'countDevices');
   });
 
   it('should load and render table', () => {

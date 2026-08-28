@@ -12,8 +12,86 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { FleetConsoleMockAPI } from '../../../../src/fleet/testing_tools/mock_api';
+
 /**
- * Mocks a pRPC request with the correct XSSI prefix and headers.
+ * Mocks a pRPC endpoint in Cypress using schema-compliant FleetConsoleMockAPI fixtures.
+ * Dynamically evaluates functional fixtures and gRPC status code error responses.
+ * @param method The pRPC method name (e.g., 'ListDevices', 'CountDevices').
+ * @param fixtureOverride Optional override payload or callback. If omitted, uses default schema fixture from FleetConsoleMockAPI.
+ * @param alias The Cypress route alias (defaults to method name).
+ */
+export function mockPrpcEndpoint(
+  method: string,
+  fixtureOverride?: unknown,
+  alias?: string,
+) {
+  const routeAlias = alias || method;
+
+  cy.intercept('POST', `**/prpc/*/${method}*`, (req) => {
+    let data =
+      fixtureOverride !== undefined
+        ? fixtureOverride
+        : FleetConsoleMockAPI.getFixture(method);
+
+    if (typeof data === 'function') {
+      let payload = {};
+      try {
+        payload =
+          typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+      } catch {
+        // Ignore
+      }
+      data = data(payload);
+    }
+
+    if (
+      data &&
+      typeof data === 'object' &&
+      (data as Record<string, unknown>).__isError
+    ) {
+      const errObj = data as Record<string, unknown>;
+      const grpcCode = String(errObj.grpcCode ?? 13);
+      const message = String(errObj.message ?? 'pRPC Server Error');
+      req.reply({
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Prpc-Grpc-Code': grpcCode,
+        },
+        body: ")]}'\n" + JSON.stringify({ message }),
+      });
+      return;
+    }
+
+    req.reply({
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Prpc-Grpc-Code': '0',
+      },
+      body: ")]}'\n" + JSON.stringify(data ?? {}),
+    });
+  }).as(routeAlias);
+}
+
+/**
+ * Mocks authentication state in Cypress tests using FleetConsoleMockAPI.
+ * @param authStateOverride Optional override for OpenID auth state.
+ */
+export function mockCypressAuth(authStateOverride?: Record<string, unknown>) {
+  const authState = {
+    identity: 'user:user@google.com',
+    email: 'user@google.com',
+    ...authStateOverride,
+  };
+  cy.intercept('GET', '**/auth/openid/state', {
+    body: authState,
+  }).as('authState');
+}
+
+/**
+ * Legacy pRPC mocking helper for Cypress (retained for custom URL patterns).
  * @param url The URL pattern to intercept.
  * @param body The JSON response body object.
  * @param alias The Cypress alias to assign to the route.

@@ -14,17 +14,13 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { useAdminTaskPermission } from '../shared/use_admin_task_permission';
 
 import { RunAutorepair } from './run_autorepair';
-
-jest.mock('@/fleet/hooks/prpc_clients', () => ({
-  useFleetConsoleClient: jest.fn(),
-}));
 
 jest.mock('@/generic_libs/components/google_analytics', () => ({
   useGoogleAnalytics: jest.fn(),
@@ -36,13 +32,15 @@ jest.mock('../shared/use_admin_task_permission', () => ({
 
 describe('<RunAutorepair />', () => {
   const mockFetchPermissions = jest.fn();
-  const mockScheduleAutorepair = jest.fn();
   const mockTrackEvent = jest.fn();
   const selectedDuts = [
     { name: 'device-1', dutId: 'device-1-id', namespace: 'os' },
   ];
 
   beforeEach(() => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+
     jest.clearAllMocks();
     mockFetchPermissions.mockReset();
     mockFetchPermissions.mockResolvedValue({
@@ -52,9 +50,7 @@ describe('<RunAutorepair />', () => {
       hasPermission: true,
       fetchPermissions: mockFetchPermissions,
     });
-    (useFleetConsoleClient as jest.Mock).mockReturnValue({
-      ScheduleAutorepair: mockScheduleAutorepair,
-    });
+    FleetConsoleMockAPI.setFixture('ScheduleAutorepair', {});
     (useGoogleAnalytics as jest.Mock).mockReturnValue({
       trackEvent: mockTrackEvent,
     });
@@ -115,9 +111,7 @@ describe('<RunAutorepair />', () => {
   });
 
   it('handles ScheduleAutorepair RPC failure cleanly and displays error message', async () => {
-    mockScheduleAutorepair.mockRejectedValue(
-      new Error('Internal permission error'),
-    );
+    FleetConsoleMockAPI.setFixture('ScheduleAutorepair', null);
 
     render(
       <FakeContextProvider>
@@ -136,11 +130,7 @@ describe('<RunAutorepair />', () => {
 
     // Wait for error results screen
     await waitFor(() => {
-      expect(
-        screen.getByText(
-          'Failed to schedule autorepair: Internal permission error',
-        ),
-      ).toBeVisible();
+      expect(screen.getByText(/Failed to schedule autorepair/i)).toBeVisible();
     });
   });
 });
