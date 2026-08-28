@@ -74,6 +74,10 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 		}
 	}
 
+	if opts.uploadOptions.shouldSkipRemoteUpload(ctx) {
+		return pin, nil
+	}
+
 	var attestation string
 	if opts.uploadOptions.attestation != "" {
 		blob, err := os.ReadFile(opts.uploadOptions.attestation)

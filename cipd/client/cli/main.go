@@ -92,6 +92,11 @@ func GetApplication(params Parameters) *cli.Application {
 				ShortDesc: "Directory path to store the package in addition to uploading to the CIPD backend " +
 					"(-write-cache-dir, if given, takes precedence).",
 			},
+			cipd.EnvSkipRemoteUpload: {
+				Advanced: true,
+				ShortDesc: "If set to true/1, skips uploading packages and metadata to the remote CIPD backend " +
+					"(-skip-remote-upload, if given, takes precedence).",
+			},
 			cipd.EnvMaxThreads: {
 				Advanced: true,
 				ShortDesc: "Number of worker threads for extracting packages. " +

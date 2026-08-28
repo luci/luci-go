@@ -33,6 +33,7 @@ type uploadOptions struct {
 	verificationTimeout time.Duration
 	attestation         string
 	writeCacheDir       string
+	skipRemoteUpload    bool
 }
 
 func (opts *uploadOptions) registerFlags(f *flag.FlagSet) {
@@ -42,6 +43,8 @@ func (opts *uploadOptions) registerFlags(f *flag.FlagSet) {
 	f.StringVar(&opts.attestation, "attestation", "", "Path to the attestation bundle file for the instance.")
 	f.StringVar(&opts.writeCacheDir, "write-cache-dir", "",
 		fmt.Sprintf("Directory `path` to store the package in addition to uploading to the CIPD backend (can also be set by %s env var).", cipd.EnvWriteCacheDir))
+	f.BoolVar(&opts.skipRemoteUpload, "skip-remote-upload", false,
+		fmt.Sprintf("Skip uploading packages and metadata to the remote CIPD backend (can also be set by $%s=1).", cipd.EnvSkipRemoteUpload))
 }
 
 func (opts *uploadOptions) targetCacheDir(ctx context.Context) string {
@@ -49,4 +52,12 @@ func (opts *uploadOptions) targetCacheDir(ctx context.Context) string {
 		return opts.writeCacheDir
 	}
 	return environ.FromCtx(ctx).Get(cipd.EnvWriteCacheDir)
+}
+
+func (opts *uploadOptions) shouldSkipRemoteUpload(ctx context.Context) bool {
+	if opts.skipRemoteUpload {
+		return true
+	}
+	v := environ.FromCtx(ctx).Get(cipd.EnvSkipRemoteUpload)
+	return v == "1" || v == "true"
 }
