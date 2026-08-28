@@ -88,7 +88,7 @@ func findInitScript(rel string) (string, error) {
 // background goroutine, but "go test -json" overwrites it in the main
 // goroutine, triggering the race detector).
 func runIntegrationTests() bool {
-	return os.Getenv(IntegrationTestEnvVar) == "1" && !racedetector.IsOn()
+	return os.Getenv(IntegrationTestEnvVar) == "1" && !racedetector.Enabled
 }
 
 // SpannerTestContext returns a context for testing code that talks to Spanner.

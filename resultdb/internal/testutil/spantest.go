@@ -65,7 +65,7 @@ const (
 // background goroutine, but "go test -json" overwrites it in the main
 // goroutine, triggering the race detector).
 func runIntegrationTests() bool {
-	return os.Getenv(IntegrationTestEnvVar) == "1" && !racedetector.IsOn()
+	return os.Getenv(IntegrationTestEnvVar) == "1" && !racedetector.Enabled
 }
 
 // ConnectToRedis returns true if tests should connect to Redis.

@@ -17,4 +17,5 @@
 
 package racedetector
 
-const raceDetectorOn = true
+// Enabled is true if the test was compiled in "-race" mode.
+const Enabled = true
