@@ -51,8 +51,13 @@ var retryPolicy = fmt.Sprintf(`{
       "MaxBackoff": "1s",
       "BackoffMultiplier": 2.0,
       "RetryableStatusCodes": [
+        "ABORTED",
+        "CANCELLED",
+        "DEADLINE_EXCEEDED",
         "INTERNAL",
-        "UNAVAILABLE"
+        "RESOURCE_EXHAUSTED",
+        "UNAVAILABLE",
+        "UNKNOWN"
       ]
     }
   }]
@@ -140,6 +145,12 @@ func (r *baseCommandRun) init(ctx context.Context) error {
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),
 		grpc.WithUserAgent(userAgent),
+		// Instructs the client to ignore any service configuration that might be
+		// provided by the name resolver.
+		// Without this, the default service config below acts strictly as a
+		// fallback, and will only be applied in cases where the name resolver does
+		// not return a service config, or if the config it returns is invalid.
+		grpc.WithDisableServiceConfig(),
 		grpc.WithDefaultServiceConfig(retryPolicy),
 	)
 	if err != nil {
