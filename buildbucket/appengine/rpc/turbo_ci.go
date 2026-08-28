@@ -120,7 +120,7 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	// the project's credentials to create workplans, it's better to still apply
 	// the caller's credential here to avoid conflicts if two
 	// ScheduleBuildRequests in the same project happen to use the same RequestId.
-	idempotencyKey := idempotencyKeyHash(ctx, req.RequestId)
+	idempotencyKey := callerScopedKey(ctx, req.RequestId)
 
 	plan, err := turboci.CreateWorkPlan(ctx, orchestratorpb.CreateWorkPlanRequest_builder{
 		Realm:          proto.String(build.Realm()),
@@ -178,8 +178,12 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	return nil
 }
 
-// idempotencyKeyHash calculate the idempotency key to create workplans.
-func idempotencyKeyHash(ctx context.Context, key string) string {
+// callerScopedKey derives a unique or idempotent Key scoped to the caller's
+// identity.
+// This key can be used as
+// * Idempotency key of the workplan if the build is the root; or
+// * Child build stage's ID.
+func callerScopedKey(ctx context.Context, key string) string {
 	if key == "" {
 		key = uuid.NewString()
 	}
@@ -233,7 +237,7 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 	for i, req := range reqs {
 		stageID := idspb.Stage_builder{
 			WorkPlan:   plan,
-			Id:         proto.String(generateStageID(req.GetRequestId())),
+			Id:         proto.String(callerScopedKey(ctx, req.GetRequestId())),
 			IsWorknode: proto.Bool(false),
 		}.Build()
 		stages[i] = scheduleBuildRequestToStage(req, stageID, builds[i].Realm())
@@ -283,27 +287,13 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 	return nil
 }
 
-func generateStageID(reqID string) string {
-	var bytes []byte
-
-	if reqID != "" {
-		h := sha256.Sum256([]byte(reqID))
-		bytes = h[:16]
-	} else {
-		u := uuid.New()
-		bytes = u[:]
-	}
-
-	return base64.StdEncoding.EncodeToString(bytes)
-}
-
 // scheduleBuildRequestToStage prepares stage args based on a build request.
 //
 // Note `req` here is roughly whatever was passed to ScheduleBuild(...). Only
 // a minor normalization was applied to it.
 func scheduleBuildRequestToStage(req *pb.ScheduleBuildRequest, stageID *idspb.Stage, realm string) turboci.ScheduleBuildRequestStage {
 	// Request ID has already been used to derive CreateWorkPlan idempotency key
-	// or a unique stage ID (see generateStageID). It isn't directly used by the
+	// or a unique stage ID. It isn't directly used by the
 	// Buildbucket stage executor.
 	req.RequestId = ""
 

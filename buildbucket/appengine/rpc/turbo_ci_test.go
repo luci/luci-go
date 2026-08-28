@@ -248,8 +248,8 @@ func TestLaunchTurboCIChildren(t *testing.T) {
 		assert.That(t, actualWriteNodes.GetToken(), should.Equal(orch.Token))
 		assert.That(t, actualWriteNodes.GetReason().GetMessage(), should.Equal("Submitting stage(s) via Buildbucket"))
 		assert.That(t, len(actualWriteNodes.GetStages()), should.Equal(2))
-		assert.That(t, actualWriteNodes.GetStages()[0].GetIdentifier().GetId(), should.Equal(generateStageID("child-req-1")))
-		assert.That(t, actualWriteNodes.GetStages()[1].GetIdentifier().GetId(), should.Equal(generateStageID("child-req-2")))
+		assert.That(t, actualWriteNodes.GetStages()[0].GetIdentifier().GetId(), should.Equal(callerScopedKey(ctx, "child-req-1")))
+		assert.That(t, actualWriteNodes.GetStages()[1].GetIdentifier().GetId(), should.Equal(callerScopedKey(ctx, "child-req-2")))
 
 		// Validate that all ValueRef have a digest (except for NO_ACCESS case).
 		assertValueRefsHaveDigests(t, orch.lastQueryNodesResponse)
