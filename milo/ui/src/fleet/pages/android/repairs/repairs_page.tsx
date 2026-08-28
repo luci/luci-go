@@ -30,10 +30,7 @@ import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
-import {
-  ANDROID_PLATFORM,
-  generateDeviceListURL,
-} from '@/fleet/constants/paths';
+import { generateDeviceListURL } from '@/fleet/constants/paths';
 import { ORDER_BY_PARAM_KEY } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
@@ -107,6 +104,7 @@ export const RepairListPage = ({
     >
       <WarningNotifications warnings={combinedWarnings} />
       <Metrics
+        workspace={workspace}
         filters={combinedAip160}
         pagerContext={pagerCtx}
         filterValues={filterValues}
@@ -144,10 +142,12 @@ export const RepairListPage = ({
 };
 
 function Metrics({
+  workspace,
   filters,
   pagerContext,
   filterValues,
 }: {
+  workspace: AndroidPageWorkspace;
   filters: string;
   pagerContext: PagerContext;
   filterValues: Record<string, FilterCategory> | undefined;
@@ -164,6 +164,9 @@ function Metrics({
   const crossPageSearchParams = new URLSearchParams(searchParams);
   crossPageSearchParams.delete(ORDER_BY_PARAM_KEY);
   crossPageSearchParams.delete('c');
+  const generateFilterURL = (filters: Record<string, string[]>) =>
+    generateDeviceListURL(workspaces[workspace].baseUrl) +
+    getFilterQueryString(filters, crossPageSearchParams, pagerContext);
 
   const getContent = () => {
     if (countQuery.isError) {
@@ -203,14 +206,7 @@ function Metrics({
               name="Total Hosts"
               value={countQuery.data?.totalHosts}
               loading={countQuery.isPending}
-              filterUrl={
-                generateDeviceListURL(ANDROID_PLATFORM) +
-                getFilterQueryString(
-                  { fc_machine_type: ['host'] },
-                  crossPageSearchParams,
-                  pagerContext,
-                )
-              }
+              filterUrl={generateFilterURL({ fc_machine_type: ['host'] })}
             />
             <SingleMetric
               name="Distinct Hosts Offline"
@@ -218,17 +214,10 @@ function Metrics({
               total={countQuery.data?.totalHosts}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
-              filterUrl={
-                generateDeviceListURL(ANDROID_PLATFORM) +
-                getFilterQueryString(
-                  {
-                    fc_machine_type: ['host'],
-                    state: ['LAB_MISSING'],
-                  },
-                  crossPageSearchParams,
-                  pagerContext,
-                )
-              }
+              filterUrl={generateFilterURL({
+                fc_machine_type: ['host'],
+                state: ['LAB_MISSING'],
+              })}
             />
             {/* needed to left align content while keeping the correct right spacing*/}
             <div />
@@ -258,14 +247,7 @@ function Metrics({
               name="Total"
               value={countQuery.data?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={
-                generateDeviceListURL(ANDROID_PLATFORM) +
-                getFilterQueryString(
-                  { fc_machine_type: ['device'] },
-                  crossPageSearchParams,
-                  pagerContext,
-                )
-              }
+              filterUrl={generateFilterURL({ fc_machine_type: ['device'] })}
             />
             <SingleMetric
               name="Distinct Devices Online"
@@ -278,17 +260,10 @@ function Metrics({
               total={countQuery.data?.totalDevices}
               Icon={<DoneIcon sx={{ color: colors.green[600] }} />}
               loading={countQuery.isPending}
-              filterUrl={
-                generateDeviceListURL(ANDROID_PLATFORM) +
-                getFilterQueryString(
-                  {
-                    fc_machine_type: ['device'],
-                    fc_is_offline: ['false'],
-                  },
-                  crossPageSearchParams,
-                  pagerContext,
-                )
-              }
+              filterUrl={generateFilterURL({
+                fc_machine_type: ['device'],
+                fc_is_offline: ['false'],
+              })}
             />
             <SingleMetric
               name="Distinct Devices Offline"
@@ -296,17 +271,10 @@ function Metrics({
               total={countQuery.data?.totalDevices}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
-              filterUrl={
-                generateDeviceListURL(ANDROID_PLATFORM) +
-                getFilterQueryString(
-                  {
-                    fc_machine_type: ['device'],
-                    fc_is_offline: ['true'],
-                  },
-                  crossPageSearchParams,
-                  pagerContext,
-                )
-              }
+              filterUrl={generateFilterURL({
+                fc_machine_type: ['device'],
+                fc_is_offline: ['true'],
+              })}
             />
             {/* needed to left align content while keeping the correct right spacing*/}
             <div />

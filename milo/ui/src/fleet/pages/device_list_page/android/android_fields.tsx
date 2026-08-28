@@ -31,13 +31,9 @@ import {
 } from '@/fleet/components/table/cell_with_chip';
 import { getEnabledFeatureFlags } from '@/fleet/config/features';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
-import {
-  generateDeviceDetailsURL,
-  ANDROID_PLATFORM,
-  PIXEL_PLATFORM,
-} from '@/fleet/constants/paths';
+import { generateDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FC_CellProps } from '@/fleet/types/table';
-import { AndroidPageWorkspace } from '@/fleet/workspaces';
+import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getAndroidStatusColor } from './android_state';
@@ -151,7 +147,7 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
       const d = device;
       if (!d) return (value as React.ReactNode) ?? null;
       const internalLink = generateDeviceDetailsURL(
-        workspace === 'Android' ? ANDROID_PLATFORM : PIXEL_PLATFORM,
+        workspaces[workspace].baseUrl,
         d.id,
       );
 

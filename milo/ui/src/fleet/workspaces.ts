@@ -12,14 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export type AndroidPageWorkspace = 'Android' | 'Pixel';
+import { ANDROID_PLATFORM, PIXEL_PLATFORM } from './constants/paths';
 
-export const workspaces: Record<AndroidPageWorkspace, { baseFilter: string }> =
-  {
-    Pixel: {
-      baseFilter: '("host_group" = "pte_labs")',
-    },
-    Android: {
-      baseFilter: 'host_group != "pte_labs"',
-    },
-  };
+export type AndroidPageWorkspace = 'Android' | 'Pixel';
+type WorkspaceConfiguration = Record<
+  AndroidPageWorkspace,
+  { baseFilter: string; baseUrl: string }
+>;
+
+export const workspaces: WorkspaceConfiguration = {
+  Pixel: {
+    baseFilter: '("host_group" = "pte_labs")',
+    baseUrl: PIXEL_PLATFORM,
+  },
+  Android: {
+    baseFilter: 'host_group != "pte_labs"',
+    baseUrl: ANDROID_PLATFORM,
+  },
+};
