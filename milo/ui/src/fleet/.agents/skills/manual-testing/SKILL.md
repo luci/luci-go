@@ -1,46 +1,129 @@
 ---
 name: manual-testing
-description: Instructions for manually testing the Fleet Console using the browser subagent. Use when you need to verify UI changes, filter interactions, or page loads in the actual browser.
+description: >-
+  Use when manually or interactively verifying Fleet Console Milo UI pages in Chrome, running automated UI browser recipes, debugging frontend interactions/layouts, or authoring repeatable UI test journeys. Do NOT use for pure unit testing (`npm run test`), TypeScript type-checking (`npm run type-check`), or backend Go unit testing.
 ---
 
 # Manual Testing Skill
 
-> **Note**: This document contains instructions for AI code assistants working in this repository. Human developers can use it as a reference.
+This skill guides the agent through setting up the local environment and running browser-based testing for Fleet Console UI pages in Chrome using a two-tier approach:
+- **Automated Recipes**: For fast, repeatable single-turn execution of well-established user flows.
+- **Chrome DevTools MCP**: For step-by-step interactive testing, exploratory verification of new or ad-hoc UI changes, and diagnosing runtime errors.
 
-Use this skill when you need to verify UI changes, filter interactions, or page loads in the actual browser. For automated validations, see [project-verification](../project-verification/SKILL.md).
+---
 
-## Prerequisites
+## 1. Environment Setup
 
-1. The local dev server must be running (usually at `http://localhost:8080`).
-2. The backend server must be running (usually at `localhost:8800`).
+### A. Browser & Frontend (Always Required)
 
-## Procedures
+1. **Chrome Remote Debugging (`port 9222`)**:
+   - Check if Chrome is listening on port 9222: `curl -s http://127.0.0.1:9222/json/version`
+   - If not running, launch headless Chrome in the background:
+     ```bash
+     google-chrome --headless=new --remote-debugging-port=9222 --user-data-dir="/tmp/chrome-fleet-profile" --remote-allow-origins="*" --no-sandbox &
+     ```
 
-### Using Browser Execution
-1. Use your available browser execution environments or subagents to navigate to the URL.
-2. Provide a clear task, such as: "Navigate to `http://localhost:8080/ui/fleet/labs/p/chromeos/devices` and verify that the Device Health Metrics section is visible and rendered correctly."
-3. Instruct the subagent to return a screenshot or DOM snippet to verify the state.
+2. **Configure Frontend Environment (`milo/ui/.env.development.local`)**:
+   - Ensure `.env.development.local` exists in `milo/ui/` configured with the appropriate backend host:
+     - **When running against local backend**:
+       ```env
+       VITE_OVERRIDE_FLEET_CONSOLE_HOST=localhost:8800
+       ```
+     - **When running against dev backend** (no local backend needed):
+       Ensure `.env.development.local` points to the dev backend endpoint or omits local overrides.
 
-### Common Test Scenarios
-- **Filter Verification**: Click a metric or select a filter in the dropdown and verify that the URL updates and the list refetches.
-- **Responsive View**: Instruct the subagent to resize the window to mobile width and verify that borders and grids adapt correctly.
+3. **Start Vite Development Server (`port 8080` in `milo/ui/`)**:
+   - Start the Vite development server as a background daemon:
+     ```bash
+     npm run dev
+     ```
+   - Verify it is listening: `curl -s http://localhost:8080/ui`
 
-## Recent Findings & Best Practices
+### B. Backend & Database Setup (Only If Local Changes Were Made)
 
-### Local Server Ports & CORS Issues
-- **Finding**: Testing on `http://localhost:8001` (Vite preview) may encounter CORS errors when the frontend attempts to fetch data from the backend.
-- **Action**: Use `http://localhost:8080/ui/fleet/p/android/devices?filters=` (the standard local server URL) instead, as it is properly configured to avoid CORS issues in the local dev environment.
+> [!NOTE]
+> **When is this needed?** Starting the local backend and PostgreSQL database is **only required if your changes include modifications to backend Go RPCs/handlers or Ent database schemas/migrations that are not yet deployed in the dev environment**. For pure UI changes, frontend unit tests and running against dev services are sufficient.
 
-### Automated Code Formatting
-- **Finding**: Presubmit checks may fail due to Prettier/ESLint formatting errors.
-- **Action**: Run `npx eslint --fix <file_path>` to automatically fix fixable errors before uploading the CL.
+If fullstack local services are needed:
+1. **PostgreSQL Database (`port 5432` in `infra/infra` -> `go/src/infra/fleetconsole`)**:
+   ```bash
+   make run-db
+   ```
+2. **Local Backend Server (`port 8800` in `infra/infra` -> `go/src/infra/fleetconsole`)**:
+   ```bash
+   make run-local-db
+   ```
+   - Verify it is listening: `curl -s http://127.0.0.1:8800/prpc/fleetconsole.FleetConsole/Ping`
 
-### High-Density UI Grid Alignment
-- **Finding**: When moving or adding custom components to high-density grids (like `Device Health Metrics`), ensure horizontal padding and margins match existing components like `SingleMetric` to maintain vertical alignment.
-- **Action**: Use `px: 1` (padding horizontal 1 unit) on containers to align with standard breakdown items, and `mt: 0.5` (margin top 0.5) to match spacing between headers and lists.
+---
 
-### Deploying UI Demos & Context Aware Access Workaround
-- **Finding**: When deploying UI demos (`make deploy-ui-demo`), you may encounter Context Aware Access (CAA) blocking errors if you are running in a restricted corporate environment.
-- **Action**: Before running `make deploy-ui-demo`, configure gcloud to use client certificates:
-  `gcloud config set context_aware/use_client_certificate true`
-  This permits gcloud commands to bypass CAA blocks during deployment.
+## 2. Testing Workflow
+
+```mermaid
+graph TD
+    Start[1. Environment Ready] --> Check{Is this a well-established flow<br>with an existing recipe in recipes/?}
+
+    Check -->|Yes| Recipe[Path A: Run Existing Recipe<br>Single-turn batch execution]
+    Recipe --> Verify[Inspect screenshots & checklists with view_file]
+
+    Check -->|No| MCP[Path B: Interactive Testing via DevTools MCP<br>navigate_page, take_snapshot, click, fill]
+    MCP --> Diag[Inspect a11y tree, console errors & screenshots]
+    Diag --> RecipeCheck{Is this a well-established flow<br>that will be run multiple times?}
+    RecipeCheck -->|Yes| Author[Author & commit new recipe in recipes/<feature>.md]
+    RecipeCheck -->|No| Done[Testing complete]
+```
+
+---
+
+## 3. Path A: Running Existing Recipes (Automated)
+
+If the user journey already has a matching document in `recipes/` (e.g. [`priority_scoring_rules.md`](./recipes/priority_scoring_rules.md)):
+
+1. Read the recipe file to review its target URL, action steps, and visual checklist.
+2. Execute the embedded JSON action sequence via `gbrowser batch`:
+   ```bash
+   GBROWSER=/google/bin/releases/gemini-agents-gbrowser/gbrowser
+   $GBROWSER batch --debug-port=9222 - << 'JSON_EOF'
+   [
+     {"action": "navigate", "url": "http://localhost:8080/ui/fleet/", "waitUntil": "none"},
+     {"action": "sleep", "duration": "2s"},
+     {"action": "click", "selector": "a:has-text('View all devices'), [data-testid='view-all-chromeos-devices']"},
+     {"action": "screenshot", "file": "/tmp/chromeos_devices.png"}
+   ]
+   JSON_EOF
+   ```
+3. Inspect screenshot output using `view_file` and compare the rendered UI state against the recipe's **Visual Verification Checklist**.
+
+---
+
+## 4. Path B: Interactive Testing & Exploration via DevTools MCP
+
+When verifying **new UI features**, testing **un-scripted edge cases**, or **troubleshooting a failed recipe step**, use the `chrome_devtools` MCP tools directly:
+
+### Fleet Console Specific Guidance
+- **FilterBar Interactions**: Filter chips in Fleet Console `<FilterBar />` require pressing `Enter` (or selecting from dropdown suggestions) to commit the chip value before applying or submitting filters.
+- **URL Parameter Sync**: The Fleet Console UI synchronizes active filters with URL query parameters (`?filters=...`). Verify URL state changes during navigation and filter application.
+- **Error Inspection**: Check console messages (`list_console_messages`) for silent pRPC errors (e.g. `InvalidArgument`, backend connection failures) or React hydration mismatches.
+
+### Authoring New Recipes (When Applicable)
+> [!IMPORTANT]
+> **Recipe Addition Criteria**: The goal of a recipe is to speed up future tests, so only create one if the flow represents a **well-established user journey that will be run multiple times for regression testing**. Do not create recipes for one-off manual verifications.
+
+If authoring a new recipe:
+1. Translate the verified MCP steps into a new Markdown document in `recipes/<feature_name>.md`.
+2. Follow the standard recipe format:
+   - **Goal & Target URL**
+   - **Prerequisites**
+   - **Action Steps with Embedded JSON** (using stable `data-testid` attributes with semantic text/ARIA fallbacks)
+   - **Visual Verification Checklist**
+3. Register the new recipe in `recipes/README.md`.
+
+---
+
+## 5. Port Conflicts & Custom Overrides
+
+If any default port is occupied, use custom overrides:
+- **PostgreSQL (`5432` -> e.g. `15432`)**: Run container with `-p 15432:5432` and update backend `-sqldb-connection-url="pgx://postgres@localhost:15432/postgres?default_query_exec_mode=exec"`.
+- **Backend (`8800` -> e.g. `18800`)**: Run `go run ./cmd/fleetconsoleserver -http-addr=127.0.0.1:18800` and update `.env.development.local` to `VITE_OVERRIDE_FLEET_CONSOLE_HOST=localhost:18800`.
+- **Vite (`8080` -> e.g. `13005`)**: Run `npm run dev -- --port 13005` and update target URLs accordingly.
+- **Chrome (`9222` -> e.g. `9223`)**: Run `google-chrome --remote-debugging-port=9223 ...` and pass `--debug-port=9223` to `gbrowser batch`.
