@@ -858,3 +858,104 @@ func TestPassiveWritePolicyMisc(t *testing.T) {
 		})
 	}
 }
+
+func TestPut(t *testing.T) {
+	t.Parallel()
+
+	testPin, data, err := mkContentPin(context.Background(), "test_data")
+	assert.NoErr(t, err)
+
+	setup := func(t *testing.T) (*InstanceCache, string, context.Context, testclock.TestClock) {
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+		tempDir := t.TempDir()
+		return &InstanceCache{
+			FS: fs.NewFileSystem(tempDir, ""),
+		}, tempDir, ctx, tc
+	}
+
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+		cache, tempDir, ctx, _ := setup(t)
+
+		src := pkg.NewBytesSource([]byte(data))
+		err := cache.Put(ctx, testPin, src)
+		assert.NoErr(t, err)
+
+		// Verify file exists on disk.
+		content, err := os.ReadFile(filepath.Join(tempDir, testPin.InstanceID))
+		assert.NoErr(t, err)
+		assert.That(t, string(content), should.Equal(data))
+
+		// Verify it is recorded in instance cache state.
+		ids, err := cache.AllInstanceIDs(ctx, false)
+		assert.NoErr(t, err)
+		assert.That(t, ids, should.Match([]string{testPin.InstanceID}))
+	})
+
+	t.Run("already in cache", func(t *testing.T) {
+		t.Parallel()
+		cache, tempDir, ctx, _ := setup(t)
+
+		src := pkg.NewBytesSource([]byte(data))
+		err := cache.Put(ctx, testPin, src)
+		assert.NoErr(t, err)
+
+		// Calling Put again with the same pin avoids re-verifying/re-writing.
+		dummySrc := pkg.NewBytesSource([]byte("not_a_zip"))
+		err = cache.Put(ctx, testPin, dummySrc)
+		assert.NoErr(t, err)
+
+		// Original content remains unchanged.
+		content, err := os.ReadFile(filepath.Join(tempDir, testPin.InstanceID))
+		assert.NoErr(t, err)
+		assert.That(t, string(content), should.Equal(data))
+	})
+
+	t.Run("hash mismatch", func(t *testing.T) {
+		t.Parallel()
+		cache, _, ctx, _ := setup(t)
+
+		badPin := testPin
+		badPin.InstanceID = strings.Repeat("b", 40)
+
+		src := pkg.NewBytesSource([]byte(data))
+		err := cache.Put(ctx, badPin, src)
+		assert.Loosely(t, err, should.NotBeNil)
+
+		// Verify nothing was written to cache.
+		ids, err := cache.AllInstanceIDs(ctx, false)
+		assert.NoErr(t, err)
+		assert.Loosely(t, ids, should.BeEmpty)
+	})
+
+	t.Run("package name mismatch", func(t *testing.T) {
+		t.Parallel()
+		cache, _, ctx, _ := setup(t)
+
+		badPin := testPin
+		badPin.PackageName = "pkg/other"
+
+		src := pkg.NewBytesSource([]byte(data))
+		err := cache.Put(ctx, badPin, src)
+		assert.ErrIsLike(t, err, "package name mismatch")
+
+		// Verify nothing was written to cache.
+		ids, err := cache.AllInstanceIDs(ctx, false)
+		assert.NoErr(t, err)
+		assert.Loosely(t, ids, should.BeEmpty)
+	})
+
+	t.Run("bad arguments", func(t *testing.T) {
+		t.Parallel()
+		cache, _, ctx, _ := setup(t)
+
+		// Nil source
+		err := cache.Put(ctx, testPin, nil)
+		assert.ErrIsLike(t, err, "Source is required")
+
+		// Invalid pin
+		src := pkg.NewBytesSource([]byte(data))
+		err = cache.Put(ctx, common.Pin{PackageName: "Bad_Name", InstanceID: "invalid"}, src)
+		assert.Loosely(t, err, should.NotBeNil)
+	})
+}

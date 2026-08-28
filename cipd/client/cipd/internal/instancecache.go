@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipderr"
 )
@@ -703,5 +704,59 @@ func (c *InstanceCache) withState(ctx context.Context, now time.Time, forceSync 
 			logging.Warningf(ctx, "Could not save instance cache: %s", err)
 		}
 	}
+	return nil
+}
+
+// Put validates and stores a package instance directly into the cache.
+//
+// It verifies that `src` is a valid CIPD package matching `pin` before writing it to
+// the cache directory and updating state.db.
+func (c *InstanceCache) Put(ctx context.Context, pin common.Pin, src pkg.Source) error {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
+		return err
+	}
+
+	if src == nil {
+		return cipderr.BadArgument.Apply(errors.New("Put: Source is required"))
+	}
+
+	path, err := c.FS.RootRelToAbs(pin.InstanceID)
+	if err != nil {
+		return cipderr.BadArgument.Apply(errors.Fmt("invalid instance ID %q: %w", pin.InstanceID, err))
+	}
+
+	// check if the instance is already in the cache.
+	switch file, err := c.FS.OpenFile(path); {
+	case err == nil:
+		_ = file.Close()
+		c.Touch(ctx, pin.InstanceID)
+		return nil
+	case !os.IsNotExist(err):
+		logging.Warningf(ctx, "Could not check %s in cache: %s", pin, err)
+	}
+
+	inst, err := reader.OpenInstance(ctx, src, reader.OpenInstanceOpts{
+		VerificationMode: reader.VerifyHash,
+		InstanceID:       pin.InstanceID,
+	})
+	if err != nil {
+		return err
+	}
+	defer inst.Close(ctx, false)
+
+	if inst.Pin().PackageName != pin.PackageName {
+		return cipderr.BadArgument.Apply(errors.Fmt(
+			"package name mismatch: got %q, expected %q", inst.Pin().PackageName, pin.PackageName))
+	}
+
+	err = c.FS.EnsureFile(ctx, path, func(f *os.File) error {
+		_, err := io.Copy(f, io.NewSectionReader(src, 0, src.Size()))
+		return err
+	})
+	if err != nil {
+		return cipderr.IO.Apply(errors.Fmt("writing to instance cache: %w", err))
+	}
+
+	c.Touch(ctx, pin.InstanceID)
 	return nil
 }
