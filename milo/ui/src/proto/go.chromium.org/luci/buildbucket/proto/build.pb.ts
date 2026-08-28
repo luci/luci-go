@@ -619,6 +619,8 @@ export enum BuildInfra_Buildbucket_ExperimentReason {
    * See go/buildbucket-settings.cfg for the list of global experiments.
    */
   EXPERIMENT_REASON_GLOBAL_INACTIVE = 5,
+  /** EXPERIMENT_REASON_TURBO_CI - This experiment was explicitly set by Turbo CI. */
+  EXPERIMENT_REASON_TURBO_CI = 6,
 }
 
 export function buildInfra_Buildbucket_ExperimentReasonFromJSON(object: any): BuildInfra_Buildbucket_ExperimentReason {
@@ -641,6 +643,9 @@ export function buildInfra_Buildbucket_ExperimentReasonFromJSON(object: any): Bu
     case 5:
     case "EXPERIMENT_REASON_GLOBAL_INACTIVE":
       return BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_GLOBAL_INACTIVE;
+    case 6:
+    case "EXPERIMENT_REASON_TURBO_CI":
+      return BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_TURBO_CI;
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum BuildInfra_Buildbucket_ExperimentReason",
@@ -662,6 +667,8 @@ export function buildInfra_Buildbucket_ExperimentReasonToJSON(object: BuildInfra
       return "EXPERIMENT_REASON_REQUESTED";
     case BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_GLOBAL_INACTIVE:
       return "EXPERIMENT_REASON_GLOBAL_INACTIVE";
+    case BuildInfra_Buildbucket_ExperimentReason.EXPERIMENT_REASON_TURBO_CI:
+      return "EXPERIMENT_REASON_TURBO_CI";
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum BuildInfra_Buildbucket_ExperimentReason",

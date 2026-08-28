@@ -156,7 +156,7 @@ export interface ListAnalysesRequest {
    * with the exception of page_size and page_token.
    */
   readonly pageToken: string;
-  /** Optional. The project that the compile analyses belong to. */
+  /** The project that the compile analyses belong to. */
   readonly project: string;
 }
 

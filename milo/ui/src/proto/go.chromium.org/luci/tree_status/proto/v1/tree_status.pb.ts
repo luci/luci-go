@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { Empty } from "../../../../../google/protobuf/empty.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 
 export const protobufPackage = "luci.tree_status.v1";
@@ -178,6 +179,14 @@ export interface CreateStatusRequest {
    * will be used for the date and the RPC caller will be used for the username.
    */
   readonly status: Status | undefined;
+}
+
+export interface DeleteStatusRequest {
+  /**
+   * The name of the status to delete.
+   * Format: trees/{tree_id}/status/{status_id}
+   */
+  readonly name: string;
 }
 
 function createBaseGetStatusRequest(): GetStatusRequest {
@@ -624,6 +633,64 @@ export const CreateStatusRequest: MessageFns<CreateStatusRequest> = {
   },
 };
 
+function createBaseDeleteStatusRequest(): DeleteStatusRequest {
+  return { name: "" };
+}
+
+export const DeleteStatusRequest: MessageFns<DeleteStatusRequest> = {
+  encode(message: DeleteStatusRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteStatusRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteStatusRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteStatusRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: DeleteStatusRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeleteStatusRequest>): DeleteStatusRequest {
+    return DeleteStatusRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeleteStatusRequest>): DeleteStatusRequest {
+    const message = createBaseDeleteStatusRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
 /**
  * Service to get and set status for LUCI trees.
  *
@@ -640,6 +707,8 @@ export interface TreeStatus {
   GetStatus(request: GetStatusRequest): Promise<Status>;
   /** Create a new status update for the tree. */
   CreateStatus(request: CreateStatusRequest): Promise<Status>;
+  /** Delete a status update. */
+  DeleteStatus(request: DeleteStatusRequest): Promise<Empty>;
 }
 
 export const TreeStatusServiceName = "luci.tree_status.v1.TreeStatus";
@@ -653,6 +722,7 @@ export class TreeStatusClientImpl implements TreeStatus {
     this.ListStatus = this.ListStatus.bind(this);
     this.GetStatus = this.GetStatus.bind(this);
     this.CreateStatus = this.CreateStatus.bind(this);
+    this.DeleteStatus = this.DeleteStatus.bind(this);
   }
   ListStatus(request: ListStatusRequest): Promise<ListStatusResponse> {
     const data = ListStatusRequest.toJSON(request);
@@ -670,6 +740,12 @@ export class TreeStatusClientImpl implements TreeStatus {
     const data = CreateStatusRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CreateStatus", data);
     return promise.then((data) => Status.fromJSON(data));
+  }
+
+  DeleteStatus(request: DeleteStatusRequest): Promise<Empty> {
+    const data = DeleteStatusRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "DeleteStatus", data);
+    return promise.then((data) => Empty.fromJSON(data));
   }
 }
 

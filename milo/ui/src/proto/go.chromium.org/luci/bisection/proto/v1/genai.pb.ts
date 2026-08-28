@@ -32,9 +32,15 @@ export interface GenAiSuspect {
   readonly commit:
     | GitilesCommit
     | undefined;
-  /** Review URL for the suspect commit. */
+  /**
+   * Review URL for the suspect commit.
+   * If the suspect is a sub-commit inside a roll, this is the review URL of the sub-commit.
+   */
   readonly reviewUrl: string;
-  /** Title of the review for the suspect commit. */
+  /**
+   * Title of the review for the suspect commit.
+   * If the suspect is a sub-commit inside a roll, this is the title of the sub-commit's review.
+   */
   readonly reviewTitle: string;
   /** True if the suspect is confirmed as the culprit by bisection. */
   readonly verified: boolean;
@@ -46,6 +52,11 @@ export interface GenAiSuspect {
   readonly justification: string;
   /** Confidence score for this suspect (0-10). */
   readonly confidenceScore: number;
+  /**
+   * If the suspect is a sub-commit inside a roll, this stores the sub-commit hash
+   * while the commit field stores the roll commit in the main repo.
+   */
+  readonly subCommit: string;
 }
 
 function createBaseGenAiAnalysisResult(): GenAiAnalysisResult {
@@ -167,6 +178,7 @@ function createBaseGenAiSuspect(): GenAiSuspect {
     verificationDetails: undefined,
     justification: "",
     confidenceScore: 0,
+    subCommit: "",
   };
 }
 
@@ -192,6 +204,9 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
     }
     if (message.confidenceScore !== 0) {
       writer.uint32(56).int32(message.confidenceScore);
+    }
+    if (message.subCommit !== "") {
+      writer.uint32(66).string(message.subCommit);
     }
     return writer;
   },
@@ -259,6 +274,14 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
           message.confidenceScore = reader.int32();
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.subCommit = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -279,6 +302,7 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
         : undefined,
       justification: isSet(object.justification) ? globalThis.String(object.justification) : "",
       confidenceScore: isSet(object.confidenceScore) ? globalThis.Number(object.confidenceScore) : 0,
+      subCommit: isSet(object.subCommit) ? globalThis.String(object.subCommit) : "",
     };
   },
 
@@ -305,6 +329,9 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
     if (message.confidenceScore !== 0) {
       obj.confidenceScore = Math.round(message.confidenceScore);
     }
+    if (message.subCommit !== "") {
+      obj.subCommit = message.subCommit;
+    }
     return obj;
   },
 
@@ -324,6 +351,7 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
       : undefined;
     message.justification = object.justification ?? "";
     message.confidenceScore = object.confidenceScore ?? 0;
+    message.subCommit = object.subCommit ?? "";
     return message;
   },
 };

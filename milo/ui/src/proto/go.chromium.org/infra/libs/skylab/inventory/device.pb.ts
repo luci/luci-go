@@ -503,7 +503,7 @@ export function modemTypeToJSON(object: ModemType): string {
   }
 }
 
-/** Next Tag: 23 */
+/** Next Tag: 24 */
 export enum NetworkProvider {
   NETWORK_OTHER = 0,
   NETWORK_UNSUPPORTED = 5,
@@ -528,6 +528,7 @@ export enum NetworkProvider {
   NETWORK_POVO = 20,
   NETWORK_HANSHIN = 21,
   NETWORK_ROAMSIM = 22,
+  NETWORK_CTS = 23,
 }
 
 export function networkProviderFromJSON(object: any): NetworkProvider {
@@ -601,6 +602,9 @@ export function networkProviderFromJSON(object: any): NetworkProvider {
     case 22:
     case "NETWORK_ROAMSIM":
       return NetworkProvider.NETWORK_ROAMSIM;
+    case 23:
+    case "NETWORK_CTS":
+      return NetworkProvider.NETWORK_CTS;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }
@@ -654,6 +658,8 @@ export function networkProviderToJSON(object: NetworkProvider): string {
       return "NETWORK_HANSHIN";
     case NetworkProvider.NETWORK_ROAMSIM:
       return "NETWORK_ROAMSIM";
+    case NetworkProvider.NETWORK_CTS:
+      return "NETWORK_CTS";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }
@@ -1534,7 +1540,7 @@ export interface HardwareCapabilities {
   readonly videoAcceleration: readonly HardwareCapabilities_VideoAcceleration[];
 }
 
-/** NEXT TAG: 31 */
+/** NEXT TAG: 32 */
 export enum HardwareCapabilities_Carrier {
   CARRIER_INVALID = 0,
   CARRIER_ATT = 1,
@@ -1567,6 +1573,7 @@ export enum HardwareCapabilities_Carrier {
   CARRIER_POVO = 28,
   CARRIER_HANSHIN = 29,
   CARRIER_AHAMO = 30,
+  CARRIER_CTS = 31,
 }
 
 export function hardwareCapabilities_CarrierFromJSON(object: any): HardwareCapabilities_Carrier {
@@ -1664,6 +1671,9 @@ export function hardwareCapabilities_CarrierFromJSON(object: any): HardwareCapab
     case 30:
     case "CARRIER_AHAMO":
       return HardwareCapabilities_Carrier.CARRIER_AHAMO;
+    case 31:
+    case "CARRIER_CTS":
+      return HardwareCapabilities_Carrier.CARRIER_CTS;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum HardwareCapabilities_Carrier");
   }
@@ -1733,6 +1743,8 @@ export function hardwareCapabilities_CarrierToJSON(object: HardwareCapabilities_
       return "CARRIER_HANSHIN";
     case HardwareCapabilities_Carrier.CARRIER_AHAMO:
       return "CARRIER_AHAMO";
+    case HardwareCapabilities_Carrier.CARRIER_CTS:
+      return "CARRIER_CTS";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum HardwareCapabilities_Carrier");
   }
@@ -2035,7 +2047,7 @@ export function hardwareCapabilities_VideoAccelerationToJSON(object: HardwareCap
  *
  * Keep sorted by field names.
  *
- * NEXT TAG: 61
+ * NEXT TAG: 62
  */
 export interface Peripherals {
   readonly audioBoard?:
@@ -2221,7 +2233,11 @@ export interface Peripherals {
    */
   readonly simFeatures: readonly Peripherals_SIMFeature[];
   /** The number of working BES boards in the testbed. */
-  readonly workingBesBoards?: number | undefined;
+  readonly workingBesBoards?:
+    | number
+    | undefined;
+  /** Indicate if RPM is present in the wificell. */
+  readonly wificellRpmPresent?: boolean | undefined;
 }
 
 /** NEXT TAG: 12 */
@@ -2552,6 +2568,7 @@ export enum Peripherals_WifiRouterFeature {
    * (b/389945993)
    */
   WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER = 13,
+  WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE = 14,
 }
 
 export function peripherals_WifiRouterFeatureFromJSON(object: any): Peripherals_WifiRouterFeature {
@@ -2598,6 +2615,9 @@ export function peripherals_WifiRouterFeatureFromJSON(object: any): Peripherals_
     case 13:
     case "WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER":
       return Peripherals_WifiRouterFeature.WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER;
+    case 14:
+    case "WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE":
+      return Peripherals_WifiRouterFeature.WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Peripherals_WifiRouterFeature");
   }
@@ -2633,6 +2653,8 @@ export function peripherals_WifiRouterFeatureToJSON(object: Peripherals_WifiRout
       return "WIFI_ROUTER_FEATURE_SAE_EXT_KEY";
     case Peripherals_WifiRouterFeature.WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER:
       return "WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER";
+    case Peripherals_WifiRouterFeature.WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE:
+      return "WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Peripherals_WifiRouterFeature");
   }
@@ -2724,6 +2746,10 @@ export enum Peripherals_SIMFeature {
   SIM_FEATURE_LIVE_NETWORK = 1,
   /** SIM_FEATURE_SMS - The SIM supports SMS messaging. */
   SIM_FEATURE_SMS = 2,
+  /** SIM_FEATURE_ESIM - The SIM is an eSIM. */
+  SIM_FEATURE_ESIM = 3,
+  /** SIM_FEATURE_PSIM - The SIM is a pSIM. */
+  SIM_FEATURE_PSIM = 4,
 }
 
 export function peripherals_SIMFeatureFromJSON(object: any): Peripherals_SIMFeature {
@@ -2737,6 +2763,12 @@ export function peripherals_SIMFeatureFromJSON(object: any): Peripherals_SIMFeat
     case 2:
     case "SIM_FEATURE_SMS":
       return Peripherals_SIMFeature.SIM_FEATURE_SMS;
+    case 3:
+    case "SIM_FEATURE_ESIM":
+      return Peripherals_SIMFeature.SIM_FEATURE_ESIM;
+    case 4:
+    case "SIM_FEATURE_PSIM":
+      return Peripherals_SIMFeature.SIM_FEATURE_PSIM;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Peripherals_SIMFeature");
   }
@@ -2750,6 +2782,10 @@ export function peripherals_SIMFeatureToJSON(object: Peripherals_SIMFeature): st
       return "SIM_FEATURE_LIVE_NETWORK";
     case Peripherals_SIMFeature.SIM_FEATURE_SMS:
       return "SIM_FEATURE_SMS";
+    case Peripherals_SIMFeature.SIM_FEATURE_ESIM:
+      return "SIM_FEATURE_ESIM";
+    case Peripherals_SIMFeature.SIM_FEATURE_PSIM:
+      return "SIM_FEATURE_PSIM";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Peripherals_SIMFeature");
   }
@@ -5392,6 +5428,7 @@ function createBasePeripherals(): Peripherals {
     cameraState: 0,
     simFeatures: [],
     workingBesBoards: 0,
+    wificellRpmPresent: false,
   };
 }
 
@@ -5564,6 +5601,9 @@ export const Peripherals: MessageFns<Peripherals> = {
     }
     if (message.workingBesBoards !== undefined && message.workingBesBoards !== 0) {
       writer.uint32(472).int32(message.workingBesBoards);
+    }
+    if (message.wificellRpmPresent !== undefined && message.wificellRpmPresent !== false) {
+      writer.uint32(488).bool(message.wificellRpmPresent);
     }
     return writer;
   },
@@ -6063,6 +6103,14 @@ export const Peripherals: MessageFns<Peripherals> = {
           message.workingBesBoards = reader.int32();
           continue;
         }
+        case 61: {
+          if (tag !== 488) {
+            break;
+          }
+
+          message.wificellRpmPresent = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6156,6 +6204,7 @@ export const Peripherals: MessageFns<Peripherals> = {
         ? object.simFeatures.map((e: any) => peripherals_SIMFeatureFromJSON(e))
         : [],
       workingBesBoards: isSet(object.workingBesBoards) ? globalThis.Number(object.workingBesBoards) : 0,
+      wificellRpmPresent: isSet(object.wificellRpmPresent) ? globalThis.Boolean(object.wificellRpmPresent) : false,
     };
   },
 
@@ -6331,6 +6380,9 @@ export const Peripherals: MessageFns<Peripherals> = {
     if (message.workingBesBoards !== undefined && message.workingBesBoards !== 0) {
       obj.workingBesBoards = Math.round(message.workingBesBoards);
     }
+    if (message.wificellRpmPresent !== undefined && message.wificellRpmPresent !== false) {
+      obj.wificellRpmPresent = message.wificellRpmPresent;
+    }
     return obj;
   },
 
@@ -6397,6 +6449,7 @@ export const Peripherals: MessageFns<Peripherals> = {
     message.cameraState = object.cameraState ?? 0;
     message.simFeatures = object.simFeatures?.map((e) => e) || [];
     message.workingBesBoards = object.workingBesBoards ?? 0;
+    message.wificellRpmPresent = object.wificellRpmPresent ?? false;
     return message;
   },
 };

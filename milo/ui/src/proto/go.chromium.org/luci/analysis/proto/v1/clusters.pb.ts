@@ -100,7 +100,15 @@ export interface ClusterRequest_TestResult {
   /** Identifier of the test (as reported to ResultDB). */
   readonly testId: string;
   /** The failure reason of the test (if any). */
-  readonly failureReason: FailureReason | undefined;
+  readonly failureReason:
+    | FailureReason
+    | undefined;
+  /**
+   * Description of one specific way of running the test,
+   * e.g. a specific bucket, builder and test suite.
+   * Optional. If not provided, rules matching on variant will not match.
+   */
+  readonly variant: Variant | undefined;
 }
 
 export interface ClusterResponse {
@@ -818,7 +826,7 @@ export const ClusterRequest: MessageFns<ClusterRequest> = {
 };
 
 function createBaseClusterRequest_TestResult(): ClusterRequest_TestResult {
-  return { requestTag: "", testId: "", failureReason: undefined };
+  return { requestTag: "", testId: "", failureReason: undefined, variant: undefined };
 }
 
 export const ClusterRequest_TestResult: MessageFns<ClusterRequest_TestResult> = {
@@ -831,6 +839,9 @@ export const ClusterRequest_TestResult: MessageFns<ClusterRequest_TestResult> = 
     }
     if (message.failureReason !== undefined) {
       FailureReason.encode(message.failureReason, writer.uint32(26).fork()).join();
+    }
+    if (message.variant !== undefined) {
+      Variant.encode(message.variant, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -866,6 +877,14 @@ export const ClusterRequest_TestResult: MessageFns<ClusterRequest_TestResult> = 
           message.failureReason = FailureReason.decode(reader, reader.uint32());
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.variant = Variant.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -880,6 +899,7 @@ export const ClusterRequest_TestResult: MessageFns<ClusterRequest_TestResult> = 
       requestTag: isSet(object.requestTag) ? globalThis.String(object.requestTag) : "",
       testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
       failureReason: isSet(object.failureReason) ? FailureReason.fromJSON(object.failureReason) : undefined,
+      variant: isSet(object.variant) ? Variant.fromJSON(object.variant) : undefined,
     };
   },
 
@@ -894,6 +914,9 @@ export const ClusterRequest_TestResult: MessageFns<ClusterRequest_TestResult> = 
     if (message.failureReason !== undefined) {
       obj.failureReason = FailureReason.toJSON(message.failureReason);
     }
+    if (message.variant !== undefined) {
+      obj.variant = Variant.toJSON(message.variant);
+    }
     return obj;
   },
 
@@ -906,6 +929,9 @@ export const ClusterRequest_TestResult: MessageFns<ClusterRequest_TestResult> = 
     message.testId = object.testId ?? "";
     message.failureReason = (object.failureReason !== undefined && object.failureReason !== null)
       ? FailureReason.fromPartial(object.failureReason)
+      : undefined;
+    message.variant = (object.variant !== undefined && object.variant !== null)
+      ? Variant.fromPartial(object.variant)
       : undefined;
     return message;
   },

@@ -7,10 +7,10 @@ var os = require('node:os');
 var tty = require('node:tty');
 var require$$0$5 = require('path');
 var require$$1$2 = require('url');
-var require$$0$4 = require('util');
+var require$$0$3 = require('util');
 var require$$0 = require('os');
 var require$$1 = require('tty');
-var require$$0$3 = require('fs');
+var require$$0$4 = require('fs');
 var require$$0$1 = require('constants');
 var require$$0$2 = require('stream');
 var require$$5 = require('assert');
@@ -68,7 +68,6 @@ var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 // of the input file used when generating it.  This code is not
 // standalone and requires a support library to be linked with it.  This
 // support library is itself covered by the above license.
-/* eslint-disable prefer-const,@typescript-eslint/restrict-plus-operands */
 /**
  * Read a 64 bit varint as two JS numbers.
  *
@@ -351,7 +350,7 @@ function varint32read() {
     return result >>> 0;
 }
 
-// Copyright 2021-2024 Buf Technologies, Inc.
+// Copyright 2021-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -376,11 +375,15 @@ function makeInt64Support() {
         typeof dv.getBigUint64 === "function" &&
         typeof dv.setBigInt64 === "function" &&
         typeof dv.setBigUint64 === "function" &&
-        (typeof process != "object" ||
+        (!!globalThis.Deno ||
+            typeof process != "object" ||
             typeof process.env != "object" ||
             process.env.BUF_BIGINT_DISABLE !== "1");
     if (ok) {
-        const MIN = BigInt("-9223372036854775808"), MAX = BigInt("9223372036854775807"), UMIN = BigInt("0"), UMAX = BigInt("18446744073709551615");
+        const MIN = BigInt("-9223372036854775808");
+        const MAX = BigInt("9223372036854775807");
+        const UMIN = BigInt("0");
+        const UMAX = BigInt("18446744073709551615");
         return {
             zero: BigInt(0),
             supported: true,
@@ -474,7 +477,7 @@ function assertUInt64String(value) {
     }
 }
 
-// Copyright 2021-2024 Buf Technologies, Inc.
+// Copyright 2021-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -504,7 +507,7 @@ function getTextEncoding() {
                     encodeURIComponent(text);
                     return true;
                 }
-                catch (e) {
+                catch (_) {
                     return false;
                 }
             },
@@ -513,7 +516,7 @@ function getTextEncoding() {
     return globalThis[symbol];
 }
 
-// Copyright 2021-2024 Buf Technologies, Inc.
+// Copyright 2021-2026 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -526,7 +529,6 @@ function getTextEncoding() {
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/* eslint-disable prefer-const,no-case-declarations,@typescript-eslint/restrict-plus-operands */
 /**
  * Protobuf binary format wire types.
  *
@@ -576,7 +578,7 @@ const FLOAT32_MAX = 3.4028234663852886e38;
 /**
  * Minimum value for a 32-bit floating point value (Protobuf FLOAT).
  */
-const FLOAT32_MIN = -3.4028234663852886e38;
+const FLOAT32_MIN = -34028234663852886e22;
 /**
  * Maximum value for an unsigned 32-bit integer (Protobuf UINT32, FIXED32).
  */
@@ -588,7 +590,7 @@ const INT32_MAX = 0x7fffffff;
 /**
  * Minimum value for a signed 32-bit integer (Protobuf INT32, SFIXED32, SINT32).
  */
-const INT32_MIN = -0x80000000;
+const INT32_MIN = -2147483648;
 class BinaryWriter {
     constructor(encodeUtf8 = getTextEncoding().encodeUtf8) {
         this.encodeUtf8 = encodeUtf8;
@@ -787,7 +789,7 @@ class BinaryWriter {
      * Write a `sint64` value, a signed, zig-zag-encoded 64-bit varint.
      */
     sint64(value) {
-        let tc = protoInt64.enc(value), 
+        const tc = protoInt64.enc(value), 
         // zigzag encode
         sign = tc.hi >> 31, lo = (tc.lo << 1) ^ sign, hi = ((tc.hi << 1) | (tc.lo >>> 31)) ^ sign;
         varint64write(lo, hi, this.buf);
@@ -797,7 +799,7 @@ class BinaryWriter {
      * Write a `uint64` value, an unsigned 64-bit varint.
      */
     uint64(value) {
-        let tc = protoInt64.uEnc(value);
+        const tc = protoInt64.uEnc(value);
         varint64write(tc.lo, tc.hi, this.buf);
         return this;
     }
@@ -838,11 +840,9 @@ class BinaryReader {
                     // ignore
                 }
                 break;
-            // eslint-disable-next-line
-            // @ts-expect-error TS7029: Fallthrough case in switch
+            // @ts-ignore TS7029: Fallthrough case in switch -- ignore instead of expect-error for compiler settings without noFallthroughCasesInSwitch: true
             case WireType.Bit64:
                 this.pos += 4;
-            // eslint-disable-next-line no-fallthrough
             case WireType.Bit32:
                 this.pos += 4;
                 break;
@@ -923,12 +923,14 @@ class BinaryReader {
      * Read a `fixed32` field, an unsigned, fixed-length 32-bit integer.
      */
     fixed32() {
+        // biome-ignore lint/suspicious/noAssignInExpressions: no
         return this.view.getUint32((this.pos += 4) - 4, true);
     }
     /**
      * Read a `sfixed32` field, a signed, fixed-length 32-bit integer.
      */
     sfixed32() {
+        // biome-ignore lint/suspicious/noAssignInExpressions: no
         return this.view.getInt32((this.pos += 4) - 4, true);
     }
     /**
@@ -947,12 +949,14 @@ class BinaryReader {
      * Read a `float` field, 32-bit floating point number.
      */
     float() {
+        // biome-ignore lint/suspicious/noAssignInExpressions: no
         return this.view.getFloat32((this.pos += 4) - 4, true);
     }
     /**
      * Read a `double` field, a 64-bit floating point number.
      */
     double() {
+        // biome-ignore lint/suspicious/noAssignInExpressions: no
         return this.view.getFloat64((this.pos += 8) - 8, true);
     }
     /**
@@ -1008,7 +1012,7 @@ function assertFloat32(arg) {
     if (typeof arg == "string") {
         const o = arg;
         arg = Number(arg);
-        if (isNaN(arg) && o !== "NaN") {
+        if (Number.isNaN(arg) && o !== "NaN") {
             throw new Error("invalid float32: " + o);
         }
     }
@@ -1022,8 +1026,8 @@ function assertFloat32(arg) {
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: google/protobuf/duration.proto
 /* eslint-disable */
 function createBaseDuration() {
@@ -1041,7 +1045,7 @@ const Duration = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseDuration();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -1070,8 +1074,8 @@ const Duration = {
     },
     fromJSON(object) {
         return {
-            seconds: isSet$8(object.seconds) ? globalThis.String(object.seconds) : "0",
-            nanos: isSet$8(object.nanos) ? globalThis.Number(object.nanos) : 0,
+            seconds: isSet$b(object.seconds) ? globalThis.String(object.seconds) : "0",
+            nanos: isSet$b(object.nanos) ? globalThis.Number(object.nanos) : 0,
         };
     },
     toJSON(message) {
@@ -1094,7 +1098,7 @@ const Duration = {
         return message;
     },
 };
-function isSet$8(value) {
+function isSet$b(value) {
     return value !== null && value !== undefined;
 }
 
@@ -1136,8 +1140,8 @@ Duration.fromJSON = (object) => {
         };
     }
     return {
-        seconds: isSet$7(object.seconds) ? globalThis.String(object.seconds) : '0',
-        nanos: isSet$7(object.nanos) ? globalThis.Number(object.nanos) : 0,
+        seconds: isSet$a(object.seconds) ? globalThis.String(object.seconds) : '0',
+        nanos: isSet$a(object.nanos) ? globalThis.Number(object.nanos) : 0,
     };
 };
 Duration.toJSON = (message) => {
@@ -1150,7 +1154,7 @@ Duration.toJSON = (message) => {
 };
 // Use the same signature as the code generated function.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isSet$7(value) {
+function isSet$a(value) {
     return value !== null && value !== undefined;
 }
 
@@ -1452,8 +1456,8 @@ class PrpcClient {
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: google/protobuf/empty.proto
 /* eslint-disable */
 function createBaseEmpty() {
@@ -1465,7 +1469,7 @@ const Empty = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseEmpty();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -1494,8 +1498,8 @@ const Empty = {
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: google/protobuf/field_mask.proto
 /* eslint-disable */
 function createBaseFieldMask() {
@@ -1510,7 +1514,7 @@ const FieldMask = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseFieldMask();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -1562,8 +1566,8 @@ const FieldMask = {
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: google/protobuf/struct.proto
 /* eslint-disable */
 /**
@@ -1608,7 +1612,7 @@ const Struct = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseStruct();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -1701,7 +1705,7 @@ const Struct_FieldsEntry = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseStruct_FieldsEntry();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -1730,8 +1734,8 @@ const Struct_FieldsEntry = {
     },
     fromJSON(object) {
         return {
-            key: isSet$6(object.key) ? globalThis.String(object.key) : "",
-            value: isSet$6(object?.value) ? object.value : undefined,
+            key: isSet$9(object.key) ? globalThis.String(object.key) : "",
+            value: isSet$9(object?.value) ? object.value : undefined,
         };
     },
     toJSON(message) {
@@ -1788,7 +1792,7 @@ const Value = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseValue();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -1845,10 +1849,10 @@ const Value = {
     },
     fromJSON(object) {
         return {
-            nullValue: isSet$6(object.nullValue) ? nullValueFromJSON(object.nullValue) : undefined,
-            numberValue: isSet$6(object.numberValue) ? globalThis.Number(object.numberValue) : undefined,
-            stringValue: isSet$6(object.stringValue) ? globalThis.String(object.stringValue) : undefined,
-            boolValue: isSet$6(object.boolValue) ? globalThis.Boolean(object.boolValue) : undefined,
+            nullValue: isSet$9(object.nullValue) ? nullValueFromJSON(object.nullValue) : undefined,
+            numberValue: isSet$9(object.numberValue) ? globalThis.Number(object.numberValue) : undefined,
+            stringValue: isSet$9(object.stringValue) ? globalThis.String(object.stringValue) : undefined,
+            boolValue: isSet$9(object.boolValue) ? globalThis.Boolean(object.boolValue) : undefined,
             structValue: isObject$4(object.structValue) ? object.structValue : undefined,
             listValue: globalThis.Array.isArray(object.listValue) ? [...object.listValue] : undefined,
         };
@@ -1947,7 +1951,7 @@ const ListValue = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseListValue();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2002,94 +2006,80 @@ const ListValue = {
 function isObject$4(value) {
     return typeof value === "object" && value !== null;
 }
-function isSet$6(value) {
+function isSet$9(value) {
     return value !== null && value !== undefined;
 }
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
-// source: google/protobuf/timestamp.proto
-/* eslint-disable */
-function createBaseTimestamp() {
-    return { seconds: "0", nanos: 0 };
-}
-const Timestamp = {
-    encode(message, writer = new BinaryWriter()) {
-        if (message.seconds !== "0") {
-            writer.uint32(8).int64(message.seconds);
-        }
-        if (message.nanos !== 0) {
-            writer.uint32(16).int32(message.nanos);
-        }
-        return writer;
-    },
-    decode(input, length) {
-        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseTimestamp();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.seconds = reader.int64().toString();
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.nanos = reader.int32();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
-        }
-        return message;
-    },
-    fromJSON(object) {
-        return {
-            seconds: isSet$5(object.seconds) ? globalThis.String(object.seconds) : "0",
-            nanos: isSet$5(object.nanos) ? globalThis.Number(object.nanos) : 0,
-        };
-    },
-    toJSON(message) {
-        const obj = {};
-        if (message.seconds !== "0") {
-            obj.seconds = message.seconds;
-        }
-        if (message.nanos !== 0) {
-            obj.nanos = Math.round(message.nanos);
-        }
-        return obj;
-    },
-    create(base) {
-        return Timestamp.fromPartial(base ?? {});
-    },
-    fromPartial(object) {
-        const message = createBaseTimestamp();
-        message.seconds = object.seconds ?? "0";
-        message.nanos = object.nanos ?? 0;
-        return message;
-    },
-};
-function isSet$5(value) {
-    return value !== null && value !== undefined;
-}
-
-// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
-// versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: go.chromium.org/luci/resultdb/proto/v1/common.proto
 /* eslint-disable */
+/**
+ * AggregationLevel defines the levels that test verdicts can be
+ * aggregated to.
+ */
+var AggregationLevel;
+(function (AggregationLevel) {
+    /** AGGREGATION_LEVEL_UNSPECIFIED - Aggregation level not specified. Do not use. */
+    AggregationLevel[AggregationLevel["AGGREGATION_LEVEL_UNSPECIFIED"] = 0] = "AGGREGATION_LEVEL_UNSPECIFIED";
+    /**
+     * INVOCATION - Aggregate to the invocation level. This means all test results
+     * in an invocation.
+     */
+    AggregationLevel[AggregationLevel["INVOCATION"] = 1] = "INVOCATION";
+    /**
+     * MODULE - Aggregate to the module level. This means all test results
+     * sharing the same module_name, module_variant and module_scheme.
+     */
+    AggregationLevel[AggregationLevel["MODULE"] = 2] = "MODULE";
+    /**
+     * COARSE - Aggregate to the coarse name level.
+     * This means all test results sharing the same module and coarse_name.
+     */
+    AggregationLevel[AggregationLevel["COARSE"] = 3] = "COARSE";
+    /**
+     * FINE - Aggregate to the fine name level.
+     * This means all test results sharing the same module, coarse_name,
+     * and fine_name.
+     */
+    AggregationLevel[AggregationLevel["FINE"] = 4] = "FINE";
+    /**
+     * CASE - Aggregate to the test case (test verdict) level.
+     * This means all test results sharing the same test identifier.
+     */
+    AggregationLevel[AggregationLevel["CASE"] = 5] = "CASE";
+})(AggregationLevel || (AggregationLevel = {}));
+/**
+ * WorkUnitView represents the set of work unit fields to be retrieved.
+ * See https://google.aip.dev/157.
+ */
+var WorkUnitView;
+(function (WorkUnitView) {
+    /** WORK_UNIT_VIEW_UNSPECIFIED - The default / unset value. The API will default to the basic view. */
+    WorkUnitView[WorkUnitView["WORK_UNIT_VIEW_UNSPECIFIED"] = 0] = "WORK_UNIT_VIEW_UNSPECIFIED";
+    /**
+     * WORK_UNIT_VIEW_BASIC - Include basic information about the work unit. Excludes
+     * extended_properties.
+     */
+    WorkUnitView[WorkUnitView["WORK_UNIT_VIEW_BASIC"] = 1] = "WORK_UNIT_VIEW_BASIC";
+    /** WORK_UNIT_VIEW_FULL - Include all fields, including extended_properties. */
+    WorkUnitView[WorkUnitView["WORK_UNIT_VIEW_FULL"] = 2] = "WORK_UNIT_VIEW_FULL";
+})(WorkUnitView || (WorkUnitView = {}));
+/**
+ * TestVerdictView represents the set of test verdict fields to be retrieved.
+ * See https://google.aip.dev/157.
+ */
+var TestVerdictView;
+(function (TestVerdictView) {
+    /** TEST_VERDICT_VIEW_UNSPECIFIED - The default value / unset value. */
+    TestVerdictView[TestVerdictView["TEST_VERDICT_VIEW_UNSPECIFIED"] = 0] = "TEST_VERDICT_VIEW_UNSPECIFIED";
+    /** TEST_VERDICT_VIEW_BASIC - Only the test identifier and status* fields are returned. */
+    TestVerdictView[TestVerdictView["TEST_VERDICT_VIEW_BASIC"] = 1] = "TEST_VERDICT_VIEW_BASIC";
+    /** TEST_VERDICT_VIEW_FULL - Include all fields. */
+    TestVerdictView[TestVerdictView["TEST_VERDICT_VIEW_FULL"] = 2] = "TEST_VERDICT_VIEW_FULL";
+})(TestVerdictView || (TestVerdictView = {}));
 function createBaseVariant() {
     return { def: {} };
 }
@@ -2102,7 +2092,7 @@ const Variant = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseVariant();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2177,7 +2167,7 @@ const Variant_DefEntry = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseVariant_DefEntry();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2206,8 +2196,8 @@ const Variant_DefEntry = {
     },
     fromJSON(object) {
         return {
-            key: isSet$4(object.key) ? globalThis.String(object.key) : "",
-            value: isSet$4(object.value) ? globalThis.String(object.value) : "",
+            key: isSet$8(object.key) ? globalThis.String(object.key) : "",
+            value: isSet$8(object.value) ? globalThis.String(object.value) : "",
         };
     },
     toJSON(message) {
@@ -2245,7 +2235,7 @@ const StringPair = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseStringPair();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2274,8 +2264,8 @@ const StringPair = {
     },
     fromJSON(object) {
         return {
-            key: isSet$4(object.key) ? globalThis.String(object.key) : "",
-            value: isSet$4(object.value) ? globalThis.String(object.value) : "",
+            key: isSet$8(object.key) ? globalThis.String(object.key) : "",
+            value: isSet$8(object.value) ? globalThis.String(object.value) : "",
         };
     },
     toJSON(message) {
@@ -2301,21 +2291,242 @@ const StringPair = {
 function isObject$3(value) {
     return typeof value === "object" && value !== null;
 }
-function isSet$4(value) {
+function isSet$8(value) {
     return value !== null && value !== undefined;
 }
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
+// source: go.chromium.org/luci/resultdb/proto/v1/test_exoneration.proto
+/* eslint-disable */
+/** Reason why a test variant was exonerated. */
+var ExonerationReason;
+(function (ExonerationReason) {
+    /**
+     * EXONERATION_REASON_UNSPECIFIED - Reason was not specified.
+     * Not to be used in actual test exonerations; serves as a default value for
+     * an unset field.
+     */
+    ExonerationReason[ExonerationReason["EXONERATION_REASON_UNSPECIFIED"] = 0] = "EXONERATION_REASON_UNSPECIFIED";
+    /**
+     * OCCURS_ON_MAINLINE - Similar unexpected results were observed on a mainline branch
+     * (i.e. against a build without unsubmitted changes applied).
+     * (For avoidance of doubt, this includes both flakily and
+     * deterministically occurring unexpected results.)
+     * Applies to unexpected results in presubmit/CQ runs only.
+     */
+    ExonerationReason[ExonerationReason["OCCURS_ON_MAINLINE"] = 1] = "OCCURS_ON_MAINLINE";
+    /**
+     * OCCURS_ON_OTHER_CLS - Similar unexpected results were observed in presubmit run(s) for other,
+     * unrelated CL(s). (This is suggestive of the issue being present
+     * on mainline but is not confirmed as there are possible confounding
+     * factors, like how tests are run on CLs vs how tests are run on
+     * mainline branches.)
+     * Applies to unexpected results in presubmit/CQ runs only.
+     */
+    ExonerationReason[ExonerationReason["OCCURS_ON_OTHER_CLS"] = 2] = "OCCURS_ON_OTHER_CLS";
+    /**
+     * NOT_CRITICAL - The tests are not critical to the test subject (e.g. CL) passing.
+     * This could be because more data is being collected to determine if
+     * the tests are stable enough to be made critical (as is often the
+     * case for experimental test suites).
+     * If information exists indicating the tests are producing unexpected
+     * results, and the tests are not critical for that reason,
+     * prefer more specific reasons OCCURS_ON_MAINLINE or OCCURS_ON_OTHER_CLS.
+     */
+    ExonerationReason[ExonerationReason["NOT_CRITICAL"] = 3] = "NOT_CRITICAL";
+    /**
+     * UNEXPECTED_PASS - The test result was an unexpected pass. (Note that such an exoneration is
+     * not automatically created for unexpected passes, unless the option is
+     * specified to ResultSink or the project manually creates one).
+     */
+    ExonerationReason[ExonerationReason["UNEXPECTED_PASS"] = 4] = "UNEXPECTED_PASS";
+})(ExonerationReason || (ExonerationReason = {}));
+function exonerationReasonFromJSON(object) {
+    switch (object) {
+        case 0:
+        case "EXONERATION_REASON_UNSPECIFIED":
+            return ExonerationReason.EXONERATION_REASON_UNSPECIFIED;
+        case 1:
+        case "OCCURS_ON_MAINLINE":
+            return ExonerationReason.OCCURS_ON_MAINLINE;
+        case 2:
+        case "OCCURS_ON_OTHER_CLS":
+            return ExonerationReason.OCCURS_ON_OTHER_CLS;
+        case 3:
+        case "NOT_CRITICAL":
+            return ExonerationReason.NOT_CRITICAL;
+        case 4:
+        case "UNEXPECTED_PASS":
+            return ExonerationReason.UNEXPECTED_PASS;
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum ExonerationReason");
+    }
+}
+function exonerationReasonToJSON(object) {
+    switch (object) {
+        case ExonerationReason.EXONERATION_REASON_UNSPECIFIED:
+            return "EXONERATION_REASON_UNSPECIFIED";
+        case ExonerationReason.OCCURS_ON_MAINLINE:
+            return "OCCURS_ON_MAINLINE";
+        case ExonerationReason.OCCURS_ON_OTHER_CLS:
+            return "OCCURS_ON_OTHER_CLS";
+        case ExonerationReason.NOT_CRITICAL:
+            return "NOT_CRITICAL";
+        case ExonerationReason.UNEXPECTED_PASS:
+            return "UNEXPECTED_PASS";
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum ExonerationReason");
+    }
+}
+
+// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
+// versions:
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
+// source: google/protobuf/timestamp.proto
+/* eslint-disable */
+function createBaseTimestamp() {
+    return { seconds: "0", nanos: 0 };
+}
+const Timestamp = {
+    encode(message, writer = new BinaryWriter()) {
+        if (message.seconds !== "0") {
+            writer.uint32(8).int64(message.seconds);
+        }
+        if (message.nanos !== 0) {
+            writer.uint32(16).int32(message.nanos);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseTimestamp();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.seconds = reader.int64().toString();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.nanos = reader.int32();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            seconds: isSet$7(object.seconds) ? globalThis.String(object.seconds) : "0",
+            nanos: isSet$7(object.nanos) ? globalThis.Number(object.nanos) : 0,
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.seconds !== "0") {
+            obj.seconds = message.seconds;
+        }
+        if (message.nanos !== 0) {
+            obj.nanos = Math.round(message.nanos);
+        }
+        return obj;
+    },
+    create(base) {
+        return Timestamp.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseTimestamp();
+        message.seconds = object.seconds ?? "0";
+        message.nanos = object.nanos ?? 0;
+        return message;
+    },
+};
+function isSet$7(value) {
+    return value !== null && value !== undefined;
+}
+
+// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
+// versions:
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto
 /* eslint-disable */
+/**
+ * Kind defines the general category of the failure.
+ * Open to extension.
+ */
+var FailureReason_Kind;
+(function (FailureReason_Kind) {
+    FailureReason_Kind[FailureReason_Kind["KIND_UNSPECIFIED"] = 0] = "KIND_UNSPECIFIED";
+    /**
+     * ORDINARY - The test failed in an ordinary way (not captured by another status).
+     * Includes:
+     * - GoogleTest and JUnit assertion failures.
+     * - Golang *testing.T .Fail(), .Fatal(...) calls.
+     * - Web platform tests that did not produce the expected result,
+     *   for example, an unexpected pass or fail.
+     */
+    FailureReason_Kind[FailureReason_Kind["ORDINARY"] = 1] = "ORDINARY";
+    /** CRASH - The test process crashed. */
+    FailureReason_Kind[FailureReason_Kind["CRASH"] = 2] = "CRASH";
+    /** TIMEOUT - The test timed out. */
+    FailureReason_Kind[FailureReason_Kind["TIMEOUT"] = 3] = "TIMEOUT";
+})(FailureReason_Kind || (FailureReason_Kind = {}));
+function failureReason_KindFromJSON(object) {
+    switch (object) {
+        case 0:
+        case "KIND_UNSPECIFIED":
+            return FailureReason_Kind.KIND_UNSPECIFIED;
+        case 1:
+        case "ORDINARY":
+            return FailureReason_Kind.ORDINARY;
+        case 2:
+        case "CRASH":
+            return FailureReason_Kind.CRASH;
+        case 3:
+        case "TIMEOUT":
+            return FailureReason_Kind.TIMEOUT;
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum FailureReason_Kind");
+    }
+}
+function failureReason_KindToJSON(object) {
+    switch (object) {
+        case FailureReason_Kind.KIND_UNSPECIFIED:
+            return "KIND_UNSPECIFIED";
+        case FailureReason_Kind.ORDINARY:
+            return "ORDINARY";
+        case FailureReason_Kind.CRASH:
+            return "CRASH";
+        case FailureReason_Kind.TIMEOUT:
+            return "TIMEOUT";
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum FailureReason_Kind");
+    }
+}
 function createBaseFailureReason() {
-    return { primaryErrorMessage: "", errors: [], truncatedErrorsCount: 0 };
+    return { kind: 0, primaryErrorMessage: "", errors: [], truncatedErrorsCount: 0 };
 }
 const FailureReason = {
     encode(message, writer = new BinaryWriter()) {
+        if (message.kind !== 0) {
+            writer.uint32(32).int32(message.kind);
+        }
         if (message.primaryErrorMessage !== "") {
             writer.uint32(10).string(message.primaryErrorMessage);
         }
@@ -2329,11 +2540,18 @@ const FailureReason = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseFailureReason();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
+                case 4: {
+                    if (tag !== 32) {
+                        break;
+                    }
+                    message.kind = reader.int32();
+                    continue;
+                }
                 case 1: {
                     if (tag !== 10) {
                         break;
@@ -2365,15 +2583,19 @@ const FailureReason = {
     },
     fromJSON(object) {
         return {
-            primaryErrorMessage: isSet$3(object.primaryErrorMessage) ? globalThis.String(object.primaryErrorMessage) : "",
+            kind: isSet$6(object.kind) ? failureReason_KindFromJSON(object.kind) : 0,
+            primaryErrorMessage: isSet$6(object.primaryErrorMessage) ? globalThis.String(object.primaryErrorMessage) : "",
             errors: globalThis.Array.isArray(object?.errors)
                 ? object.errors.map((e) => FailureReason_Error.fromJSON(e))
                 : [],
-            truncatedErrorsCount: isSet$3(object.truncatedErrorsCount) ? globalThis.Number(object.truncatedErrorsCount) : 0,
+            truncatedErrorsCount: isSet$6(object.truncatedErrorsCount) ? globalThis.Number(object.truncatedErrorsCount) : 0,
         };
     },
     toJSON(message) {
         const obj = {};
+        if (message.kind !== 0) {
+            obj.kind = failureReason_KindToJSON(message.kind);
+        }
         if (message.primaryErrorMessage !== "") {
             obj.primaryErrorMessage = message.primaryErrorMessage;
         }
@@ -2390,6 +2612,7 @@ const FailureReason = {
     },
     fromPartial(object) {
         const message = createBaseFailureReason();
+        message.kind = object.kind ?? 0;
         message.primaryErrorMessage = object.primaryErrorMessage ?? "";
         message.errors = object.errors?.map((e) => FailureReason_Error.fromPartial(e)) || [];
         message.truncatedErrorsCount = object.truncatedErrorsCount ?? 0;
@@ -2397,18 +2620,21 @@ const FailureReason = {
     },
 };
 function createBaseFailureReason_Error() {
-    return { message: "" };
+    return { message: "", trace: "" };
 }
 const FailureReason_Error = {
     encode(message, writer = new BinaryWriter()) {
         if (message.message !== "") {
             writer.uint32(10).string(message.message);
         }
+        if (message.trace !== "") {
+            writer.uint32(18).string(message.trace);
+        }
         return writer;
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseFailureReason_Error();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2420,6 +2646,13 @@ const FailureReason_Error = {
                     message.message = reader.string();
                     continue;
                 }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.trace = reader.string();
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -2429,12 +2662,18 @@ const FailureReason_Error = {
         return message;
     },
     fromJSON(object) {
-        return { message: isSet$3(object.message) ? globalThis.String(object.message) : "" };
+        return {
+            message: isSet$6(object.message) ? globalThis.String(object.message) : "",
+            trace: isSet$6(object.trace) ? globalThis.String(object.trace) : "",
+        };
     },
     toJSON(message) {
         const obj = {};
         if (message.message !== "") {
             obj.message = message.message;
+        }
+        if (message.trace !== "") {
+            obj.trace = message.trace;
         }
         return obj;
     },
@@ -2444,17 +2683,202 @@ const FailureReason_Error = {
     fromPartial(object) {
         const message = createBaseFailureReason_Error();
         message.message = object.message ?? "";
+        message.trace = object.trace ?? "";
         return message;
     },
 };
-function isSet$3(value) {
+function isSet$6(value) {
     return value !== null && value !== undefined;
 }
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
+// source: go.chromium.org/luci/resultdb/proto/v1/skipped_reason.proto
+/* eslint-disable */
+/**
+ * Provides structured explanation for why a test was skipped.
+ * It must be populated when the status is SKIP.
+ * Open to extension.
+ */
+var SkippedReason_Kind;
+(function (SkippedReason_Kind) {
+    /** KIND_UNSPECIFIED - Skipped reason was not specified. Do not use this value. */
+    SkippedReason_Kind[SkippedReason_Kind["KIND_UNSPECIFIED"] = 0] = "KIND_UNSPECIFIED";
+    /**
+     * DISABLED_AT_DECLARATION - Skipped by an annotation at the test declaration site.
+     *
+     * This includes:
+     * - JUnit4 @Ignore,
+     * - JUnit5 @Disabled, @DisabledIf/For/On... @EnabledIf/For/On...
+     *   annotations.
+     * - GoogleTest DISABLED_ text prefix.
+     * - Tast test skips from the declared software or hardware
+     *   dependencies being unsatisfied at runtime.
+     * and similar statically defined annotations at the test
+     * declaration site.
+     */
+    SkippedReason_Kind[SkippedReason_Kind["DISABLED_AT_DECLARATION"] = 1] = "DISABLED_AT_DECLARATION";
+    /**
+     * SKIPPED_BY_TEST_BODY - Test body began to run but determined the test should
+     * not finish. For example, the test did not detect a valid
+     * environment meeting the test assumptions.
+     *
+     * This covers:
+     * - a JUnit4 or JUnit5 assumption failure in the body of a test,
+     *   from Assume.assumeThat(...) and similar methods.
+     * - Use of the GTEST_SKIP() macro within the body of a test.
+     * - Golang's t.Skip(...) in the body of a test.
+     */
+    SkippedReason_Kind[SkippedReason_Kind["SKIPPED_BY_TEST_BODY"] = 2] = "SKIPPED_BY_TEST_BODY";
+    /**
+     * DEMOTED - Used to indicate the test was skipped due to presubmit demotion
+     * (e.g. because the test was too flaky).
+     *
+     * You must specify a human-readable detail message if you use this status.
+     * Please explain the criteria that was met and how the user should get the
+     * test undemoted or reference a link that explains more.
+     */
+    SkippedReason_Kind[SkippedReason_Kind["DEMOTED"] = 3] = "DEMOTED";
+    /**
+     * OTHER - The test was skipped by some other reason.
+     *
+     * This includes:
+     * - Blink web tests disabled in an expectation file.
+     *
+     * You must specify a human-readable detail message if you use this status.
+     */
+    SkippedReason_Kind[SkippedReason_Kind["OTHER"] = 4] = "OTHER";
+})(SkippedReason_Kind || (SkippedReason_Kind = {}));
+function skippedReason_KindFromJSON(object) {
+    switch (object) {
+        case 0:
+        case "KIND_UNSPECIFIED":
+            return SkippedReason_Kind.KIND_UNSPECIFIED;
+        case 1:
+        case "DISABLED_AT_DECLARATION":
+            return SkippedReason_Kind.DISABLED_AT_DECLARATION;
+        case 2:
+        case "SKIPPED_BY_TEST_BODY":
+            return SkippedReason_Kind.SKIPPED_BY_TEST_BODY;
+        case 3:
+        case "DEMOTED":
+            return SkippedReason_Kind.DEMOTED;
+        case 4:
+        case "OTHER":
+            return SkippedReason_Kind.OTHER;
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum SkippedReason_Kind");
+    }
+}
+function skippedReason_KindToJSON(object) {
+    switch (object) {
+        case SkippedReason_Kind.KIND_UNSPECIFIED:
+            return "KIND_UNSPECIFIED";
+        case SkippedReason_Kind.DISABLED_AT_DECLARATION:
+            return "DISABLED_AT_DECLARATION";
+        case SkippedReason_Kind.SKIPPED_BY_TEST_BODY:
+            return "SKIPPED_BY_TEST_BODY";
+        case SkippedReason_Kind.DEMOTED:
+            return "DEMOTED";
+        case SkippedReason_Kind.OTHER:
+            return "OTHER";
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum SkippedReason_Kind");
+    }
+}
+function createBaseSkippedReason() {
+    return { kind: 0, reasonMessage: "", trace: "" };
+}
+const SkippedReason = {
+    encode(message, writer = new BinaryWriter()) {
+        if (message.kind !== 0) {
+            writer.uint32(8).int32(message.kind);
+        }
+        if (message.reasonMessage !== "") {
+            writer.uint32(18).string(message.reasonMessage);
+        }
+        if (message.trace !== "") {
+            writer.uint32(26).string(message.trace);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseSkippedReason();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.kind = reader.int32();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.reasonMessage = reader.string();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.trace = reader.string();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            kind: isSet$5(object.kind) ? skippedReason_KindFromJSON(object.kind) : 0,
+            reasonMessage: isSet$5(object.reasonMessage) ? globalThis.String(object.reasonMessage) : "",
+            trace: isSet$5(object.trace) ? globalThis.String(object.trace) : "",
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.kind !== 0) {
+            obj.kind = skippedReason_KindToJSON(message.kind);
+        }
+        if (message.reasonMessage !== "") {
+            obj.reasonMessage = message.reasonMessage;
+        }
+        if (message.trace !== "") {
+            obj.trace = message.trace;
+        }
+        return obj;
+    },
+    create(base) {
+        return SkippedReason.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseSkippedReason();
+        message.kind = object.kind ?? 0;
+        message.reasonMessage = object.reasonMessage ?? "";
+        message.trace = object.trace ?? "";
+        return message;
+    },
+};
+function isSet$5(value) {
+    return value !== null && value !== undefined;
+}
+
+// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
+// versions:
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto
 /* eslint-disable */
 function createBaseTestMetadata() {
@@ -2491,7 +2915,7 @@ const TestMetadata = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTestMetadata();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2548,12 +2972,12 @@ const TestMetadata = {
     },
     fromJSON(object) {
         return {
-            name: isSet$2(object.name) ? globalThis.String(object.name) : "",
-            location: isSet$2(object.location) ? TestLocation.fromJSON(object.location) : undefined,
-            bugComponent: isSet$2(object.bugComponent) ? BugComponent.fromJSON(object.bugComponent) : undefined,
-            propertiesSchema: isSet$2(object.propertiesSchema) ? globalThis.String(object.propertiesSchema) : "",
+            name: isSet$4(object.name) ? globalThis.String(object.name) : "",
+            location: isSet$4(object.location) ? TestLocation.fromJSON(object.location) : undefined,
+            bugComponent: isSet$4(object.bugComponent) ? BugComponent.fromJSON(object.bugComponent) : undefined,
+            propertiesSchema: isSet$4(object.propertiesSchema) ? globalThis.String(object.propertiesSchema) : "",
             properties: isObject$2(object.properties) ? object.properties : undefined,
-            previousTestId: isSet$2(object.previousTestId) ? globalThis.String(object.previousTestId) : "",
+            previousTestId: isSet$4(object.previousTestId) ? globalThis.String(object.previousTestId) : "",
         };
     },
     toJSON(message) {
@@ -2614,7 +3038,7 @@ const TestLocation = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTestLocation();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2650,9 +3074,9 @@ const TestLocation = {
     },
     fromJSON(object) {
         return {
-            repo: isSet$2(object.repo) ? globalThis.String(object.repo) : "",
-            fileName: isSet$2(object.fileName) ? globalThis.String(object.fileName) : "",
-            line: isSet$2(object.line) ? globalThis.Number(object.line) : 0,
+            repo: isSet$4(object.repo) ? globalThis.String(object.repo) : "",
+            fileName: isSet$4(object.fileName) ? globalThis.String(object.fileName) : "",
+            line: isSet$4(object.line) ? globalThis.Number(object.line) : 0,
         };
     },
     toJSON(message) {
@@ -2694,7 +3118,7 @@ const BugComponent = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseBugComponent();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2723,8 +3147,8 @@ const BugComponent = {
     },
     fromJSON(object) {
         return {
-            issueTracker: isSet$2(object.issueTracker) ? IssueTrackerComponent.fromJSON(object.issueTracker) : undefined,
-            monorail: isSet$2(object.monorail) ? MonorailComponent.fromJSON(object.monorail) : undefined,
+            issueTracker: isSet$4(object.issueTracker) ? IssueTrackerComponent.fromJSON(object.issueTracker) : undefined,
+            monorail: isSet$4(object.monorail) ? MonorailComponent.fromJSON(object.monorail) : undefined,
         };
     },
     toJSON(message) {
@@ -2763,7 +3187,7 @@ const IssueTrackerComponent = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseIssueTrackerComponent();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2784,7 +3208,7 @@ const IssueTrackerComponent = {
         return message;
     },
     fromJSON(object) {
-        return { componentId: isSet$2(object.componentId) ? globalThis.String(object.componentId) : "0" };
+        return { componentId: isSet$4(object.componentId) ? globalThis.String(object.componentId) : "0" };
     },
     toJSON(message) {
         const obj = {};
@@ -2817,7 +3241,7 @@ const MonorailComponent = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseMonorailComponent();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -2846,8 +3270,8 @@ const MonorailComponent = {
     },
     fromJSON(object) {
         return {
-            project: isSet$2(object.project) ? globalThis.String(object.project) : "",
-            value: isSet$2(object.value) ? globalThis.String(object.value) : "",
+            project: isSet$4(object.project) ? globalThis.String(object.project) : "",
+            value: isSet$4(object.value) ? globalThis.String(object.value) : "",
         };
     },
     toJSON(message) {
@@ -2873,17 +3297,22 @@ const MonorailComponent = {
 function isObject$2(value) {
     return typeof value === "object" && value !== null;
 }
-function isSet$2(value) {
+function isSet$4(value) {
     return value !== null && value !== undefined;
 }
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: go.chromium.org/luci/resultdb/proto/v1/test_result.proto
 /* eslint-disable */
-/** Machine-readable status of a test result. */
+/**
+ * DEPRECATED: Use TestResult.Status instead.
+ * Machine-readable status of a test result.
+ *
+ * @deprecated
+ */
 var TestStatus;
 (function (TestStatus) {
     /**
@@ -2965,9 +3394,12 @@ function testStatusToJSON(object) {
     }
 }
 /**
+ * DEPRECATED: Use SkippedReason.Kind instead.
  * Machine-readable reason that a test execution was skipped.
  * Only reasons actually used are listed here, if you need a new reason
  * please add it here and send a CL to the OWNERS.
+ *
+ * @deprecated
  */
 var SkipReason;
 (function (SkipReason) {
@@ -2985,54 +3417,328 @@ var SkipReason;
      */
     SkipReason[SkipReason["AUTOMATICALLY_DISABLED_FOR_FLAKINESS"] = 1] = "AUTOMATICALLY_DISABLED_FOR_FLAKINESS";
 })(SkipReason || (SkipReason = {}));
-/** Reason why a test variant was exonerated. */
-var ExonerationReason;
-(function (ExonerationReason) {
+/**
+ * The machine-readable test result statuses (v2).
+ *
+ * These high-level categories are further refined:
+ * - for failing tests, by the failure_reason.kind.
+ * - for skipped tests, by the skipped_reason.kind.
+ *
+ * Web test users: Refer to framework_extensions.web_tests for the original
+ * test status reported by the web test harness. The status in this
+ * field is the logical test status, not the original status. E.g. for
+ * an expected failure, we record PASSED, not FAILED.
+ */
+var TestResult_Status;
+(function (TestResult_Status) {
+    /** STATUS_UNSPECIFIED - Status was not specified. Do not use. */
+    TestResult_Status[TestResult_Status["STATUS_UNSPECIFIED"] = 0] = "STATUS_UNSPECIFIED";
+    /** PASSED - The test case has passed. */
+    TestResult_Status[TestResult_Status["PASSED"] = 1] = "PASSED";
     /**
-     * EXONERATION_REASON_UNSPECIFIED - Reason was not specified.
-     * Not to be used in actual test exonerations; serves as a default value for
-     * an unset field.
+     * FAILED - The test case has failed.
+     * Suggests that the code under test is incorrect, but it is also possible
+     * that the test is incorrect or it is a flake.
+     *
+     * If a test failed to complete due to an error that is not the fault of
+     * this test's content, use the status EXECUTION_ERRORED (for errors specific
+     * to this test) or PRECLUDED (for errors at a higher-level) instead.
+     *
+     * If you specify this status, you must also populate the failure_reason.kind field.
      */
-    ExonerationReason[ExonerationReason["EXONERATION_REASON_UNSPECIFIED"] = 0] = "EXONERATION_REASON_UNSPECIFIED";
+    TestResult_Status[TestResult_Status["FAILED"] = 2] = "FAILED";
     /**
-     * OCCURS_ON_MAINLINE - Similar unexpected results were observed on a mainline branch
-     * (i.e. against a build without unsubmitted changes applied).
-     * (For avoidance of doubt, this includes both flakily and
-     * deterministically occurring unexpected results.)
-     * Applies to unexpected results in presubmit/CQ runs only.
+     * SKIPPED - The test case did not, *and should not*, run to completion in this
+     * configuration.
+     *
+     * For example:
+     * - The test is disabled in code
+     * - The test assumptions are not met (e.g. JUnit assumption failure
+     *   or Tast test hardware dependency unmet)
+     * - The test was not stable enough to in presubmit right now.
+     *
+     * If a test was not run or not run to completion due to an error, use the
+     * status EXECUTION_ERRORED (for test-level errors) or PRECLUDED
+     * (for higher-level errors) instead.
+     *
+     * If you specify this status, you must also populate the skipped_reason field.
      */
-    ExonerationReason[ExonerationReason["OCCURS_ON_MAINLINE"] = 1] = "OCCURS_ON_MAINLINE";
+    TestResult_Status[TestResult_Status["SKIPPED"] = 3] = "SKIPPED";
     /**
-     * OCCURS_ON_OTHER_CLS - Similar unexpected results were observed in presubmit run(s) for other,
-     * unrelated CL(s). (This is suggestive of the issue being present
-     * on mainline but is not confirmed as there are possible confounding
-     * factors, like how tests are run on CLs vs how tests are run on
-     * mainline branches.)
-     * Applies to unexpected results in presubmit/CQ runs only.
+     * EXECUTION_ERRORED - The test did not run to completion, because an infrastructure error
+     * precluded it from doing so.
+     *
+     * Infrastructure here is broadly defined, to mean "not the content
+     * of this test".
+     *
+     * For example:
+     * - The test ran, but the result file could not be parsed.
+     * - A file this test depends on could not be downloaded.
+     *
+     * Sometimes it is ambiguous whether test content is at fault or not.
+     * For example, loss of SSH connection during the test could be because
+     * the test caused a kernel panic or because of a flaky ethernet adapter.
+     * Judgement is required. If unsure, use EXECUTION_ERRORED status instead
+     * of FAIL to avoid falsely inflating the flakiness rate of a test.
+     *
+     * Results with this status should be ignored when calculating the flake
+     * and failure rates of the test.
+     *
+     * Currently, there is no dedicated 'reason' field for this status;
+     * please just include a suitable description in the result `summary_html`.
      */
-    ExonerationReason[ExonerationReason["OCCURS_ON_OTHER_CLS"] = 2] = "OCCURS_ON_OTHER_CLS";
+    TestResult_Status[TestResult_Status["EXECUTION_ERRORED"] = 4] = "EXECUTION_ERRORED";
     /**
-     * NOT_CRITICAL - The tests are not critical to the test subject (e.g. CL) passing.
-     * This could be because more data is being collected to determine if
-     * the tests are stable enough to be made critical (as is often the
-     * case for experimental test suites).
-     * If information exists indicating the tests are producing unexpected
-     * results, and the tests are not critical for that reason,
-     * prefer more specific reasons OCCURS_ON_MAINLINE or OCCURS_ON_OTHER_CLS.
+     * PRECLUDED - The test did not run to completion, because its execution is precluded
+     * by an error at a higher-level. For example, a work unit-level timeout.
+     *
+     * If you report this status, you must report an error on the containing
+     * work unit. If this restriction is changed in future to allow preclusion
+     * by other sources (e.g. a class fixture failed to setup so the tests in
+     * using it could not run), a preclusion reason field will be added to
+     * capture this.
+     *
+     * Results with this status should be ignored when calculating the flake
+     * and failure rates of the test.
+     *
+     * Currently, there is no dedicated 'reason' field for this status; please
+     * include a suitable description in the result `summary_html`.
      */
-    ExonerationReason[ExonerationReason["NOT_CRITICAL"] = 3] = "NOT_CRITICAL";
+    TestResult_Status[TestResult_Status["PRECLUDED"] = 5] = "PRECLUDED";
+})(TestResult_Status || (TestResult_Status = {}));
+function testResult_StatusFromJSON(object) {
+    switch (object) {
+        case 0:
+        case "STATUS_UNSPECIFIED":
+            return TestResult_Status.STATUS_UNSPECIFIED;
+        case 1:
+        case "PASSED":
+            return TestResult_Status.PASSED;
+        case 2:
+        case "FAILED":
+            return TestResult_Status.FAILED;
+        case 3:
+        case "SKIPPED":
+            return TestResult_Status.SKIPPED;
+        case 4:
+        case "EXECUTION_ERRORED":
+            return TestResult_Status.EXECUTION_ERRORED;
+        case 5:
+        case "PRECLUDED":
+            return TestResult_Status.PRECLUDED;
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestResult_Status");
+    }
+}
+function testResult_StatusToJSON(object) {
+    switch (object) {
+        case TestResult_Status.STATUS_UNSPECIFIED:
+            return "STATUS_UNSPECIFIED";
+        case TestResult_Status.PASSED:
+            return "PASSED";
+        case TestResult_Status.FAILED:
+            return "FAILED";
+        case TestResult_Status.SKIPPED:
+            return "SKIPPED";
+        case TestResult_Status.EXECUTION_ERRORED:
+            return "EXECUTION_ERRORED";
+        case TestResult_Status.PRECLUDED:
+            return "PRECLUDED";
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestResult_Status");
+    }
+}
+/** An enumeration of web test status values. */
+var WebTest_Status;
+(function (WebTest_Status) {
     /**
-     * UNEXPECTED_PASS - The test result was an unexpected pass. (Note that such an exoneration is
-     * not automatically created for unexpected passes, unless the option is
-     * specified to ResultSink or the project manually creates one).
+     * STATUS_UNSPECIFIED - Status was not specified.
+     * Not to be used in actual test results; serves as a default value for an
+     * unset field.
      */
-    ExonerationReason[ExonerationReason["UNEXPECTED_PASS"] = 4] = "UNEXPECTED_PASS";
-})(ExonerationReason || (ExonerationReason = {}));
+    WebTest_Status[WebTest_Status["STATUS_UNSPECIFIED"] = 0] = "STATUS_UNSPECIFIED";
+    /** PASS - The test case has passed. */
+    WebTest_Status[WebTest_Status["PASS"] = 1] = "PASS";
+    /** FAIL - The test case has failed. */
+    WebTest_Status[WebTest_Status["FAIL"] = 2] = "FAIL";
+    /** CRASH - The test case has crashed during execution. */
+    WebTest_Status[WebTest_Status["CRASH"] = 3] = "CRASH";
+    /** TIMEOUT - The test timed out. */
+    WebTest_Status[WebTest_Status["TIMEOUT"] = 4] = "TIMEOUT";
+    /** SKIP - The test case did not execute. */
+    WebTest_Status[WebTest_Status["SKIP"] = 5] = "SKIP";
+})(WebTest_Status || (WebTest_Status = {}));
+function webTest_StatusFromJSON(object) {
+    switch (object) {
+        case 0:
+        case "STATUS_UNSPECIFIED":
+            return WebTest_Status.STATUS_UNSPECIFIED;
+        case 1:
+        case "PASS":
+            return WebTest_Status.PASS;
+        case 2:
+        case "FAIL":
+            return WebTest_Status.FAIL;
+        case 3:
+        case "CRASH":
+            return WebTest_Status.CRASH;
+        case 4:
+        case "TIMEOUT":
+            return WebTest_Status.TIMEOUT;
+        case 5:
+        case "SKIP":
+            return WebTest_Status.SKIP;
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum WebTest_Status");
+    }
+}
+function webTest_StatusToJSON(object) {
+    switch (object) {
+        case WebTest_Status.STATUS_UNSPECIFIED:
+            return "STATUS_UNSPECIFIED";
+        case WebTest_Status.PASS:
+            return "PASS";
+        case WebTest_Status.FAIL:
+            return "FAIL";
+        case WebTest_Status.CRASH:
+            return "CRASH";
+        case WebTest_Status.TIMEOUT:
+            return "TIMEOUT";
+        case WebTest_Status.SKIP:
+            return "SKIP";
+        default:
+            throw new globalThis.Error("Unrecognized enum value " + object + " for enum WebTest_Status");
+    }
+}
+function createBaseFrameworkExtensions() {
+    return { webTest: undefined };
+}
+const FrameworkExtensions = {
+    encode(message, writer = new BinaryWriter()) {
+        if (message.webTest !== undefined) {
+            WebTest.encode(message.webTest, writer.uint32(10).fork()).join();
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseFrameworkExtensions();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.webTest = WebTest.decode(reader, reader.uint32());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return { webTest: isSet$3(object.webTest) ? WebTest.fromJSON(object.webTest) : undefined };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.webTest !== undefined) {
+            obj.webTest = WebTest.toJSON(message.webTest);
+        }
+        return obj;
+    },
+    create(base) {
+        return FrameworkExtensions.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseFrameworkExtensions();
+        message.webTest = (object.webTest !== undefined && object.webTest !== null)
+            ? WebTest.fromPartial(object.webTest)
+            : undefined;
+        return message;
+    },
+};
+function createBaseWebTest() {
+    return { isExpected: false, status: 0 };
+}
+const WebTest = {
+    encode(message, writer = new BinaryWriter()) {
+        if (message.isExpected !== false) {
+            writer.uint32(8).bool(message.isExpected);
+        }
+        if (message.status !== 0) {
+            writer.uint32(16).int32(message.status);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseWebTest();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.isExpected = reader.bool();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.status = reader.int32();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            isExpected: isSet$3(object.isExpected) ? globalThis.Boolean(object.isExpected) : false,
+            status: isSet$3(object.status) ? webTest_StatusFromJSON(object.status) : 0,
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.isExpected !== false) {
+            obj.isExpected = message.isExpected;
+        }
+        if (message.status !== 0) {
+            obj.status = webTest_StatusToJSON(message.status);
+        }
+        return obj;
+    },
+    create(base) {
+        return WebTest.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseWebTest();
+        message.isExpected = object.isExpected ?? false;
+        message.status = object.status ?? 0;
+        return message;
+    },
+};
+function isSet$3(value) {
+    return value !== null && value !== undefined;
+}
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: go.chromium.org/luci/resultdb/sink/proto/v1/test_result.proto
 /* eslint-disable */
 /** A result file format. */
@@ -3063,6 +3769,7 @@ function createBaseTestResult() {
         resultId: "",
         expected: false,
         status: 0,
+        statusV2: 0,
         summaryHtml: "",
         startTime: undefined,
         duration: undefined,
@@ -3072,6 +3779,8 @@ function createBaseTestResult() {
         failureReason: undefined,
         variant: undefined,
         properties: undefined,
+        skippedReason: undefined,
+        frameworkExtensions: undefined,
     };
 }
 const TestResult = {
@@ -3090,6 +3799,9 @@ const TestResult = {
         }
         if (message.status !== 0) {
             writer.uint32(32).int32(message.status);
+        }
+        if (message.statusV2 !== 0) {
+            writer.uint32(128).int32(message.statusV2);
         }
         if (message.summaryHtml !== "") {
             writer.uint32(42).string(message.summaryHtml);
@@ -3118,11 +3830,17 @@ const TestResult = {
         if (message.properties !== undefined) {
             Struct.encode(Struct.wrap(message.properties), writer.uint32(114).fork()).join();
         }
+        if (message.skippedReason !== undefined) {
+            SkippedReason.encode(message.skippedReason, writer.uint32(170).fork()).join();
+        }
+        if (message.frameworkExtensions !== undefined) {
+            FrameworkExtensions.encode(message.frameworkExtensions, writer.uint32(178).fork()).join();
+        }
         return writer;
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTestResult();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3160,6 +3878,13 @@ const TestResult = {
                         break;
                     }
                     message.status = reader.int32();
+                    continue;
+                }
+                case 16: {
+                    if (tag !== 128) {
+                        break;
+                    }
+                    message.statusV2 = reader.int32();
                     continue;
                 }
                 case 5: {
@@ -3228,6 +3953,20 @@ const TestResult = {
                     message.properties = Struct.unwrap(Struct.decode(reader, reader.uint32()));
                     continue;
                 }
+                case 21: {
+                    if (tag !== 170) {
+                        break;
+                    }
+                    message.skippedReason = SkippedReason.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 22: {
+                    if (tag !== 178) {
+                        break;
+                    }
+                    message.frameworkExtensions = FrameworkExtensions.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -3238,14 +3977,15 @@ const TestResult = {
     },
     fromJSON(object) {
         return {
-            testIdStructured: isSet$1(object.testIdStructured) ? TestIdentifier.fromJSON(object.testIdStructured) : undefined,
-            testId: isSet$1(object.testId) ? globalThis.String(object.testId) : "",
-            resultId: isSet$1(object.resultId) ? globalThis.String(object.resultId) : "",
-            expected: isSet$1(object.expected) ? globalThis.Boolean(object.expected) : false,
-            status: isSet$1(object.status) ? testStatusFromJSON(object.status) : 0,
-            summaryHtml: isSet$1(object.summaryHtml) ? globalThis.String(object.summaryHtml) : "",
-            startTime: isSet$1(object.startTime) ? globalThis.String(object.startTime) : undefined,
-            duration: isSet$1(object.duration) ? Duration.fromJSON(object.duration) : undefined,
+            testIdStructured: isSet$2(object.testIdStructured) ? TestIdentifier.fromJSON(object.testIdStructured) : undefined,
+            testId: isSet$2(object.testId) ? globalThis.String(object.testId) : "",
+            resultId: isSet$2(object.resultId) ? globalThis.String(object.resultId) : "",
+            expected: isSet$2(object.expected) ? globalThis.Boolean(object.expected) : false,
+            status: isSet$2(object.status) ? testStatusFromJSON(object.status) : 0,
+            statusV2: isSet$2(object.statusV2) ? testResult_StatusFromJSON(object.statusV2) : 0,
+            summaryHtml: isSet$2(object.summaryHtml) ? globalThis.String(object.summaryHtml) : "",
+            startTime: isSet$2(object.startTime) ? globalThis.String(object.startTime) : undefined,
+            duration: isSet$2(object.duration) ? Duration.fromJSON(object.duration) : undefined,
             tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e) => StringPair.fromJSON(e)) : [],
             artifacts: isObject$1(object.artifacts)
                 ? Object.entries(object.artifacts).reduce((acc, [key, value]) => {
@@ -3253,10 +3993,14 @@ const TestResult = {
                     return acc;
                 }, {})
                 : {},
-            testMetadata: isSet$1(object.testMetadata) ? TestMetadata.fromJSON(object.testMetadata) : undefined,
-            failureReason: isSet$1(object.failureReason) ? FailureReason.fromJSON(object.failureReason) : undefined,
-            variant: isSet$1(object.variant) ? Variant.fromJSON(object.variant) : undefined,
+            testMetadata: isSet$2(object.testMetadata) ? TestMetadata.fromJSON(object.testMetadata) : undefined,
+            failureReason: isSet$2(object.failureReason) ? FailureReason.fromJSON(object.failureReason) : undefined,
+            variant: isSet$2(object.variant) ? Variant.fromJSON(object.variant) : undefined,
             properties: isObject$1(object.properties) ? object.properties : undefined,
+            skippedReason: isSet$2(object.skippedReason) ? SkippedReason.fromJSON(object.skippedReason) : undefined,
+            frameworkExtensions: isSet$2(object.frameworkExtensions)
+                ? FrameworkExtensions.fromJSON(object.frameworkExtensions)
+                : undefined,
         };
     },
     toJSON(message) {
@@ -3275,6 +4019,9 @@ const TestResult = {
         }
         if (message.status !== 0) {
             obj.status = testStatusToJSON(message.status);
+        }
+        if (message.statusV2 !== 0) {
+            obj.statusV2 = testResult_StatusToJSON(message.statusV2);
         }
         if (message.summaryHtml !== "") {
             obj.summaryHtml = message.summaryHtml;
@@ -3309,6 +4056,12 @@ const TestResult = {
         if (message.properties !== undefined) {
             obj.properties = message.properties;
         }
+        if (message.skippedReason !== undefined) {
+            obj.skippedReason = SkippedReason.toJSON(message.skippedReason);
+        }
+        if (message.frameworkExtensions !== undefined) {
+            obj.frameworkExtensions = FrameworkExtensions.toJSON(message.frameworkExtensions);
+        }
         return obj;
     },
     create(base) {
@@ -3323,6 +4076,7 @@ const TestResult = {
         message.resultId = object.resultId ?? "";
         message.expected = object.expected ?? false;
         message.status = object.status ?? 0;
+        message.statusV2 = object.statusV2 ?? 0;
         message.summaryHtml = object.summaryHtml ?? "";
         message.startTime = object.startTime ?? undefined;
         message.duration = (object.duration !== undefined && object.duration !== null)
@@ -3345,6 +4099,12 @@ const TestResult = {
             ? Variant.fromPartial(object.variant)
             : undefined;
         message.properties = object.properties ?? undefined;
+        message.skippedReason = (object.skippedReason !== undefined && object.skippedReason !== null)
+            ? SkippedReason.fromPartial(object.skippedReason)
+            : undefined;
+        message.frameworkExtensions = (object.frameworkExtensions !== undefined && object.frameworkExtensions !== null)
+            ? FrameworkExtensions.fromPartial(object.frameworkExtensions)
+            : undefined;
         return message;
     },
 };
@@ -3363,7 +4123,7 @@ const TestResult_ArtifactsEntry = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTestResult_ArtifactsEntry();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3392,8 +4152,8 @@ const TestResult_ArtifactsEntry = {
     },
     fromJSON(object) {
         return {
-            key: isSet$1(object.key) ? globalThis.String(object.key) : "",
-            value: isSet$1(object.value) ? Artifact.fromJSON(object.value) : undefined,
+            key: isSet$2(object.key) ? globalThis.String(object.key) : "",
+            value: isSet$2(object.value) ? Artifact.fromJSON(object.value) : undefined,
         };
     },
     toJSON(message) {
@@ -3439,7 +4199,7 @@ const Artifact = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseArtifact();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3482,10 +4242,10 @@ const Artifact = {
     },
     fromJSON(object) {
         return {
-            filePath: isSet$1(object.filePath) ? globalThis.String(object.filePath) : undefined,
-            contents: isSet$1(object.contents) ? bytesFromBase64(object.contents) : undefined,
-            gcsUri: isSet$1(object.gcsUri) ? globalThis.String(object.gcsUri) : undefined,
-            contentType: isSet$1(object.contentType) ? globalThis.String(object.contentType) : "",
+            filePath: isSet$2(object.filePath) ? globalThis.String(object.filePath) : undefined,
+            contents: isSet$2(object.contents) ? bytesFromBase64(object.contents) : undefined,
+            gcsUri: isSet$2(object.gcsUri) ? globalThis.String(object.gcsUri) : undefined,
+            contentType: isSet$2(object.contentType) ? globalThis.String(object.contentType) : "",
         };
     },
     toJSON(message) {
@@ -3534,7 +4294,7 @@ const TestIdentifier = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTestIdentifier();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3570,8 +4330,8 @@ const TestIdentifier = {
     },
     fromJSON(object) {
         return {
-            coarseName: isSet$1(object.coarseName) ? globalThis.String(object.coarseName) : "",
-            fineName: isSet$1(object.fineName) ? globalThis.String(object.fineName) : "",
+            coarseName: isSet$2(object.coarseName) ? globalThis.String(object.coarseName) : "",
+            fineName: isSet$2(object.fineName) ? globalThis.String(object.fineName) : "",
             caseNameComponents: globalThis.Array.isArray(object?.caseNameComponents)
                 ? object.caseNameComponents.map((e) => globalThis.String(e))
                 : [],
@@ -3640,14 +4400,141 @@ function fromTimestamp(t) {
 function isObject$1(value) {
     return typeof value === "object" && value !== null;
 }
+function isSet$2(value) {
+    return value !== null && value !== undefined;
+}
+
+// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
+// versions:
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
+// source: go.chromium.org/luci/resultdb/sink/proto/v1/test_exoneration.proto
+/* eslint-disable */
+function createBaseTestExoneration() {
+    return { testIdStructured: undefined, testId: "", variant: undefined, explanationHtml: "", reason: 0 };
+}
+const TestExoneration = {
+    encode(message, writer = new BinaryWriter()) {
+        if (message.testIdStructured !== undefined) {
+            TestIdentifier.encode(message.testIdStructured, writer.uint32(10).fork()).join();
+        }
+        if (message.testId !== "") {
+            writer.uint32(18).string(message.testId);
+        }
+        if (message.variant !== undefined) {
+            Variant.encode(message.variant, writer.uint32(26).fork()).join();
+        }
+        if (message.explanationHtml !== "") {
+            writer.uint32(34).string(message.explanationHtml);
+        }
+        if (message.reason !== 0) {
+            writer.uint32(40).int32(message.reason);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseTestExoneration();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.testIdStructured = TestIdentifier.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.testId = reader.string();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.variant = Variant.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 34) {
+                        break;
+                    }
+                    message.explanationHtml = reader.string();
+                    continue;
+                }
+                case 5: {
+                    if (tag !== 40) {
+                        break;
+                    }
+                    message.reason = reader.int32();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            testIdStructured: isSet$1(object.testIdStructured) ? TestIdentifier.fromJSON(object.testIdStructured) : undefined,
+            testId: isSet$1(object.testId) ? globalThis.String(object.testId) : "",
+            variant: isSet$1(object.variant) ? Variant.fromJSON(object.variant) : undefined,
+            explanationHtml: isSet$1(object.explanationHtml) ? globalThis.String(object.explanationHtml) : "",
+            reason: isSet$1(object.reason) ? exonerationReasonFromJSON(object.reason) : 0,
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.testIdStructured !== undefined) {
+            obj.testIdStructured = TestIdentifier.toJSON(message.testIdStructured);
+        }
+        if (message.testId !== "") {
+            obj.testId = message.testId;
+        }
+        if (message.variant !== undefined) {
+            obj.variant = Variant.toJSON(message.variant);
+        }
+        if (message.explanationHtml !== "") {
+            obj.explanationHtml = message.explanationHtml;
+        }
+        if (message.reason !== 0) {
+            obj.reason = exonerationReasonToJSON(message.reason);
+        }
+        return obj;
+    },
+    create(base) {
+        return TestExoneration.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseTestExoneration();
+        message.testIdStructured = (object.testIdStructured !== undefined && object.testIdStructured !== null)
+            ? TestIdentifier.fromPartial(object.testIdStructured)
+            : undefined;
+        message.testId = object.testId ?? "";
+        message.variant = (object.variant !== undefined && object.variant !== null)
+            ? Variant.fromPartial(object.variant)
+            : undefined;
+        message.explanationHtml = object.explanationHtml ?? "";
+        message.reason = object.reason ?? 0;
+        return message;
+    },
+};
 function isSet$1(value) {
     return value !== null && value !== undefined;
 }
 
 // Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 // versions:
-//   protoc-gen-ts_proto  v2.2.5
-//   protoc               v6.30.1
+//   protoc-gen-ts_proto  v2.8.1
+//   protoc               v6.32.0
 // source: go.chromium.org/luci/resultdb/sink/proto/v1/sink.proto
 /* eslint-disable */
 function createBaseReportTestResultsRequest() {
@@ -3662,7 +4549,7 @@ const ReportTestResultsRequest = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseReportTestResultsRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3717,7 +4604,7 @@ const ReportTestResultsResponse = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseReportTestResultsResponse();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3773,7 +4660,7 @@ const ReportInvocationLevelArtifactsRequest = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseReportInvocationLevelArtifactsRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3848,7 +4735,7 @@ const ReportInvocationLevelArtifactsRequest_ArtifactsEntry = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseReportInvocationLevelArtifactsRequest_ArtifactsEntry();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3918,7 +4805,7 @@ const UpdateInvocationRequest = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseUpdateInvocationRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -3987,7 +4874,7 @@ const Invocation = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInvocation();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -4062,7 +4949,7 @@ const Invocation_ExtendedPropertiesEntry = {
     },
     decode(input, length) {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInvocation_ExtendedPropertiesEntry();
         while (reader.pos < end) {
             const tag = reader.uint32();
@@ -4115,6 +5002,116 @@ const Invocation_ExtendedPropertiesEntry = {
         return message;
     },
 };
+function createBaseReportTestExonerationsRequest() {
+    return { testExonerations: [] };
+}
+const ReportTestExonerationsRequest = {
+    encode(message, writer = new BinaryWriter()) {
+        for (const v of message.testExonerations) {
+            TestExoneration.encode(v, writer.uint32(10).fork()).join();
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseReportTestExonerationsRequest();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.testExonerations.push(TestExoneration.decode(reader, reader.uint32()));
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            testExonerations: globalThis.Array.isArray(object?.testExonerations)
+                ? object.testExonerations.map((e) => TestExoneration.fromJSON(e))
+                : [],
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.testExonerations?.length) {
+            obj.testExonerations = message.testExonerations.map((e) => TestExoneration.toJSON(e));
+        }
+        return obj;
+    },
+    create(base) {
+        return ReportTestExonerationsRequest.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseReportTestExonerationsRequest();
+        message.testExonerations = object.testExonerations?.map((e) => TestExoneration.fromPartial(e)) || [];
+        return message;
+    },
+};
+function createBaseReportTestExonerationsResponse() {
+    return { testExonerationNames: [] };
+}
+const ReportTestExonerationsResponse = {
+    encode(message, writer = new BinaryWriter()) {
+        for (const v of message.testExonerationNames) {
+            writer.uint32(10).string(v);
+        }
+        return writer;
+    },
+    decode(input, length) {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseReportTestExonerationsResponse();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.testExonerationNames.push(reader.string());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+    fromJSON(object) {
+        return {
+            testExonerationNames: globalThis.Array.isArray(object?.testExonerationNames)
+                ? object.testExonerationNames.map((e) => globalThis.String(e))
+                : [],
+        };
+    },
+    toJSON(message) {
+        const obj = {};
+        if (message.testExonerationNames?.length) {
+            obj.testExonerationNames = message.testExonerationNames;
+        }
+        return obj;
+    },
+    create(base) {
+        return ReportTestExonerationsResponse.fromPartial(base ?? {});
+    },
+    fromPartial(object) {
+        const message = createBaseReportTestExonerationsResponse();
+        message.testExonerationNames = object.testExonerationNames?.map((e) => e) || [];
+        return message;
+    },
+};
 const SinkServiceName = "luci.resultsink.v1.Sink";
 class SinkClientImpl {
     static DEFAULT_SERVICE = SinkServiceName;
@@ -4126,6 +5123,7 @@ class SinkClientImpl {
         this.ReportTestResults = this.ReportTestResults.bind(this);
         this.ReportInvocationLevelArtifacts = this.ReportInvocationLevelArtifacts.bind(this);
         this.UpdateInvocation = this.UpdateInvocation.bind(this);
+        this.ReportTestExonerations = this.ReportTestExonerations.bind(this);
     }
     ReportTestResults(request) {
         const data = ReportTestResultsRequest.toJSON(request);
@@ -4141,6 +5139,11 @@ class SinkClientImpl {
         const data = UpdateInvocationRequest.toJSON(request);
         const promise = this.rpc.request(this.service, "UpdateInvocation", data);
         return promise.then((data) => Invocation.fromJSON(data));
+    }
+    ReportTestExonerations(request) {
+        const data = ReportTestExonerationsRequest.toJSON(request);
+        const promise = this.rpc.request(this.service, "ReportTestExonerations", data);
+        return promise.then((data) => ReportTestExonerationsResponse.fromJSON(data));
     }
 }
 function isObject(value) {
@@ -4482,11 +5485,11 @@ function _supportsColor(haveStream, {streamIsTTY, sniffFlags = true} = {}) {
 	}
 
 	if ('CI' in env) {
-		if ('GITHUB_ACTIONS' in env || 'GITEA_ACTIONS' in env) {
+		if (['GITHUB_ACTIONS', 'GITEA_ACTIONS', 'CIRCLECI'].some(key => key in env)) {
 			return 3;
 		}
 
-		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'BUILDKITE', 'DRONE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+		if (['TRAVIS', 'APPVEYOR', 'GITLAB_CI', 'BUILDKITE', 'DRONE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
 			return 1;
 		}
 
@@ -4502,6 +5505,14 @@ function _supportsColor(haveStream, {streamIsTTY, sniffFlags = true} = {}) {
 	}
 
 	if (env.TERM === 'xterm-kitty') {
+		return 3;
+	}
+
+	if (env.TERM === 'xterm-ghostty') {
+		return 3;
+	}
+
+	if (env.TERM === 'wezterm') {
 		return 3;
 	}
 
@@ -4913,13 +5924,13 @@ function requireIdentifier () {
 	identifier.isIdentifierChar = isIdentifierChar;
 	identifier.isIdentifierName = isIdentifierName;
 	identifier.isIdentifierStart = isIdentifierStart;
-	let nonASCIIidentifierStartChars = "\xaa\xb5\xba\xc0-\xd6\xd8-\xf6\xf8-\u02c1\u02c6-\u02d1\u02e0-\u02e4\u02ec\u02ee\u0370-\u0374\u0376\u0377\u037a-\u037d\u037f\u0386\u0388-\u038a\u038c\u038e-\u03a1\u03a3-\u03f5\u03f7-\u0481\u048a-\u052f\u0531-\u0556\u0559\u0560-\u0588\u05d0-\u05ea\u05ef-\u05f2\u0620-\u064a\u066e\u066f\u0671-\u06d3\u06d5\u06e5\u06e6\u06ee\u06ef\u06fa-\u06fc\u06ff\u0710\u0712-\u072f\u074d-\u07a5\u07b1\u07ca-\u07ea\u07f4\u07f5\u07fa\u0800-\u0815\u081a\u0824\u0828\u0840-\u0858\u0860-\u086a\u0870-\u0887\u0889-\u088e\u08a0-\u08c9\u0904-\u0939\u093d\u0950\u0958-\u0961\u0971-\u0980\u0985-\u098c\u098f\u0990\u0993-\u09a8\u09aa-\u09b0\u09b2\u09b6-\u09b9\u09bd\u09ce\u09dc\u09dd\u09df-\u09e1\u09f0\u09f1\u09fc\u0a05-\u0a0a\u0a0f\u0a10\u0a13-\u0a28\u0a2a-\u0a30\u0a32\u0a33\u0a35\u0a36\u0a38\u0a39\u0a59-\u0a5c\u0a5e\u0a72-\u0a74\u0a85-\u0a8d\u0a8f-\u0a91\u0a93-\u0aa8\u0aaa-\u0ab0\u0ab2\u0ab3\u0ab5-\u0ab9\u0abd\u0ad0\u0ae0\u0ae1\u0af9\u0b05-\u0b0c\u0b0f\u0b10\u0b13-\u0b28\u0b2a-\u0b30\u0b32\u0b33\u0b35-\u0b39\u0b3d\u0b5c\u0b5d\u0b5f-\u0b61\u0b71\u0b83\u0b85-\u0b8a\u0b8e-\u0b90\u0b92-\u0b95\u0b99\u0b9a\u0b9c\u0b9e\u0b9f\u0ba3\u0ba4\u0ba8-\u0baa\u0bae-\u0bb9\u0bd0\u0c05-\u0c0c\u0c0e-\u0c10\u0c12-\u0c28\u0c2a-\u0c39\u0c3d\u0c58-\u0c5a\u0c5d\u0c60\u0c61\u0c80\u0c85-\u0c8c\u0c8e-\u0c90\u0c92-\u0ca8\u0caa-\u0cb3\u0cb5-\u0cb9\u0cbd\u0cdd\u0cde\u0ce0\u0ce1\u0cf1\u0cf2\u0d04-\u0d0c\u0d0e-\u0d10\u0d12-\u0d3a\u0d3d\u0d4e\u0d54-\u0d56\u0d5f-\u0d61\u0d7a-\u0d7f\u0d85-\u0d96\u0d9a-\u0db1\u0db3-\u0dbb\u0dbd\u0dc0-\u0dc6\u0e01-\u0e30\u0e32\u0e33\u0e40-\u0e46\u0e81\u0e82\u0e84\u0e86-\u0e8a\u0e8c-\u0ea3\u0ea5\u0ea7-\u0eb0\u0eb2\u0eb3\u0ebd\u0ec0-\u0ec4\u0ec6\u0edc-\u0edf\u0f00\u0f40-\u0f47\u0f49-\u0f6c\u0f88-\u0f8c\u1000-\u102a\u103f\u1050-\u1055\u105a-\u105d\u1061\u1065\u1066\u106e-\u1070\u1075-\u1081\u108e\u10a0-\u10c5\u10c7\u10cd\u10d0-\u10fa\u10fc-\u1248\u124a-\u124d\u1250-\u1256\u1258\u125a-\u125d\u1260-\u1288\u128a-\u128d\u1290-\u12b0\u12b2-\u12b5\u12b8-\u12be\u12c0\u12c2-\u12c5\u12c8-\u12d6\u12d8-\u1310\u1312-\u1315\u1318-\u135a\u1380-\u138f\u13a0-\u13f5\u13f8-\u13fd\u1401-\u166c\u166f-\u167f\u1681-\u169a\u16a0-\u16ea\u16ee-\u16f8\u1700-\u1711\u171f-\u1731\u1740-\u1751\u1760-\u176c\u176e-\u1770\u1780-\u17b3\u17d7\u17dc\u1820-\u1878\u1880-\u18a8\u18aa\u18b0-\u18f5\u1900-\u191e\u1950-\u196d\u1970-\u1974\u1980-\u19ab\u19b0-\u19c9\u1a00-\u1a16\u1a20-\u1a54\u1aa7\u1b05-\u1b33\u1b45-\u1b4c\u1b83-\u1ba0\u1bae\u1baf\u1bba-\u1be5\u1c00-\u1c23\u1c4d-\u1c4f\u1c5a-\u1c7d\u1c80-\u1c8a\u1c90-\u1cba\u1cbd-\u1cbf\u1ce9-\u1cec\u1cee-\u1cf3\u1cf5\u1cf6\u1cfa\u1d00-\u1dbf\u1e00-\u1f15\u1f18-\u1f1d\u1f20-\u1f45\u1f48-\u1f4d\u1f50-\u1f57\u1f59\u1f5b\u1f5d\u1f5f-\u1f7d\u1f80-\u1fb4\u1fb6-\u1fbc\u1fbe\u1fc2-\u1fc4\u1fc6-\u1fcc\u1fd0-\u1fd3\u1fd6-\u1fdb\u1fe0-\u1fec\u1ff2-\u1ff4\u1ff6-\u1ffc\u2071\u207f\u2090-\u209c\u2102\u2107\u210a-\u2113\u2115\u2118-\u211d\u2124\u2126\u2128\u212a-\u2139\u213c-\u213f\u2145-\u2149\u214e\u2160-\u2188\u2c00-\u2ce4\u2ceb-\u2cee\u2cf2\u2cf3\u2d00-\u2d25\u2d27\u2d2d\u2d30-\u2d67\u2d6f\u2d80-\u2d96\u2da0-\u2da6\u2da8-\u2dae\u2db0-\u2db6\u2db8-\u2dbe\u2dc0-\u2dc6\u2dc8-\u2dce\u2dd0-\u2dd6\u2dd8-\u2dde\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303c\u3041-\u3096\u309b-\u309f\u30a1-\u30fa\u30fc-\u30ff\u3105-\u312f\u3131-\u318e\u31a0-\u31bf\u31f0-\u31ff\u3400-\u4dbf\u4e00-\ua48c\ua4d0-\ua4fd\ua500-\ua60c\ua610-\ua61f\ua62a\ua62b\ua640-\ua66e\ua67f-\ua69d\ua6a0-\ua6ef\ua717-\ua71f\ua722-\ua788\ua78b-\ua7cd\ua7d0\ua7d1\ua7d3\ua7d5-\ua7dc\ua7f2-\ua801\ua803-\ua805\ua807-\ua80a\ua80c-\ua822\ua840-\ua873\ua882-\ua8b3\ua8f2-\ua8f7\ua8fb\ua8fd\ua8fe\ua90a-\ua925\ua930-\ua946\ua960-\ua97c\ua984-\ua9b2\ua9cf\ua9e0-\ua9e4\ua9e6-\ua9ef\ua9fa-\ua9fe\uaa00-\uaa28\uaa40-\uaa42\uaa44-\uaa4b\uaa60-\uaa76\uaa7a\uaa7e-\uaaaf\uaab1\uaab5\uaab6\uaab9-\uaabd\uaac0\uaac2\uaadb-\uaadd\uaae0-\uaaea\uaaf2-\uaaf4\uab01-\uab06\uab09-\uab0e\uab11-\uab16\uab20-\uab26\uab28-\uab2e\uab30-\uab5a\uab5c-\uab69\uab70-\uabe2\uac00-\ud7a3\ud7b0-\ud7c6\ud7cb-\ud7fb\uf900-\ufa6d\ufa70-\ufad9\ufb00-\ufb06\ufb13-\ufb17\ufb1d\ufb1f-\ufb28\ufb2a-\ufb36\ufb38-\ufb3c\ufb3e\ufb40\ufb41\ufb43\ufb44\ufb46-\ufbb1\ufbd3-\ufd3d\ufd50-\ufd8f\ufd92-\ufdc7\ufdf0-\ufdfb\ufe70-\ufe74\ufe76-\ufefc\uff21-\uff3a\uff41-\uff5a\uff66-\uffbe\uffc2-\uffc7\uffca-\uffcf\uffd2-\uffd7\uffda-\uffdc";
-	let nonASCIIidentifierChars = "\xb7\u0300-\u036f\u0387\u0483-\u0487\u0591-\u05bd\u05bf\u05c1\u05c2\u05c4\u05c5\u05c7\u0610-\u061a\u064b-\u0669\u0670\u06d6-\u06dc\u06df-\u06e4\u06e7\u06e8\u06ea-\u06ed\u06f0-\u06f9\u0711\u0730-\u074a\u07a6-\u07b0\u07c0-\u07c9\u07eb-\u07f3\u07fd\u0816-\u0819\u081b-\u0823\u0825-\u0827\u0829-\u082d\u0859-\u085b\u0897-\u089f\u08ca-\u08e1\u08e3-\u0903\u093a-\u093c\u093e-\u094f\u0951-\u0957\u0962\u0963\u0966-\u096f\u0981-\u0983\u09bc\u09be-\u09c4\u09c7\u09c8\u09cb-\u09cd\u09d7\u09e2\u09e3\u09e6-\u09ef\u09fe\u0a01-\u0a03\u0a3c\u0a3e-\u0a42\u0a47\u0a48\u0a4b-\u0a4d\u0a51\u0a66-\u0a71\u0a75\u0a81-\u0a83\u0abc\u0abe-\u0ac5\u0ac7-\u0ac9\u0acb-\u0acd\u0ae2\u0ae3\u0ae6-\u0aef\u0afa-\u0aff\u0b01-\u0b03\u0b3c\u0b3e-\u0b44\u0b47\u0b48\u0b4b-\u0b4d\u0b55-\u0b57\u0b62\u0b63\u0b66-\u0b6f\u0b82\u0bbe-\u0bc2\u0bc6-\u0bc8\u0bca-\u0bcd\u0bd7\u0be6-\u0bef\u0c00-\u0c04\u0c3c\u0c3e-\u0c44\u0c46-\u0c48\u0c4a-\u0c4d\u0c55\u0c56\u0c62\u0c63\u0c66-\u0c6f\u0c81-\u0c83\u0cbc\u0cbe-\u0cc4\u0cc6-\u0cc8\u0cca-\u0ccd\u0cd5\u0cd6\u0ce2\u0ce3\u0ce6-\u0cef\u0cf3\u0d00-\u0d03\u0d3b\u0d3c\u0d3e-\u0d44\u0d46-\u0d48\u0d4a-\u0d4d\u0d57\u0d62\u0d63\u0d66-\u0d6f\u0d81-\u0d83\u0dca\u0dcf-\u0dd4\u0dd6\u0dd8-\u0ddf\u0de6-\u0def\u0df2\u0df3\u0e31\u0e34-\u0e3a\u0e47-\u0e4e\u0e50-\u0e59\u0eb1\u0eb4-\u0ebc\u0ec8-\u0ece\u0ed0-\u0ed9\u0f18\u0f19\u0f20-\u0f29\u0f35\u0f37\u0f39\u0f3e\u0f3f\u0f71-\u0f84\u0f86\u0f87\u0f8d-\u0f97\u0f99-\u0fbc\u0fc6\u102b-\u103e\u1040-\u1049\u1056-\u1059\u105e-\u1060\u1062-\u1064\u1067-\u106d\u1071-\u1074\u1082-\u108d\u108f-\u109d\u135d-\u135f\u1369-\u1371\u1712-\u1715\u1732-\u1734\u1752\u1753\u1772\u1773\u17b4-\u17d3\u17dd\u17e0-\u17e9\u180b-\u180d\u180f-\u1819\u18a9\u1920-\u192b\u1930-\u193b\u1946-\u194f\u19d0-\u19da\u1a17-\u1a1b\u1a55-\u1a5e\u1a60-\u1a7c\u1a7f-\u1a89\u1a90-\u1a99\u1ab0-\u1abd\u1abf-\u1ace\u1b00-\u1b04\u1b34-\u1b44\u1b50-\u1b59\u1b6b-\u1b73\u1b80-\u1b82\u1ba1-\u1bad\u1bb0-\u1bb9\u1be6-\u1bf3\u1c24-\u1c37\u1c40-\u1c49\u1c50-\u1c59\u1cd0-\u1cd2\u1cd4-\u1ce8\u1ced\u1cf4\u1cf7-\u1cf9\u1dc0-\u1dff\u200c\u200d\u203f\u2040\u2054\u20d0-\u20dc\u20e1\u20e5-\u20f0\u2cef-\u2cf1\u2d7f\u2de0-\u2dff\u302a-\u302f\u3099\u309a\u30fb\ua620-\ua629\ua66f\ua674-\ua67d\ua69e\ua69f\ua6f0\ua6f1\ua802\ua806\ua80b\ua823-\ua827\ua82c\ua880\ua881\ua8b4-\ua8c5\ua8d0-\ua8d9\ua8e0-\ua8f1\ua8ff-\ua909\ua926-\ua92d\ua947-\ua953\ua980-\ua983\ua9b3-\ua9c0\ua9d0-\ua9d9\ua9e5\ua9f0-\ua9f9\uaa29-\uaa36\uaa43\uaa4c\uaa4d\uaa50-\uaa59\uaa7b-\uaa7d\uaab0\uaab2-\uaab4\uaab7\uaab8\uaabe\uaabf\uaac1\uaaeb-\uaaef\uaaf5\uaaf6\uabe3-\uabea\uabec\uabed\uabf0-\uabf9\ufb1e\ufe00-\ufe0f\ufe20-\ufe2f\ufe33\ufe34\ufe4d-\ufe4f\uff10-\uff19\uff3f\uff65";
+	let nonASCIIidentifierStartChars = "\xaa\xb5\xba\xc0-\xd6\xd8-\xf6\xf8-\u02c1\u02c6-\u02d1\u02e0-\u02e4\u02ec\u02ee\u0370-\u0374\u0376\u0377\u037a-\u037d\u037f\u0386\u0388-\u038a\u038c\u038e-\u03a1\u03a3-\u03f5\u03f7-\u0481\u048a-\u052f\u0531-\u0556\u0559\u0560-\u0588\u05d0-\u05ea\u05ef-\u05f2\u0620-\u064a\u066e\u066f\u0671-\u06d3\u06d5\u06e5\u06e6\u06ee\u06ef\u06fa-\u06fc\u06ff\u0710\u0712-\u072f\u074d-\u07a5\u07b1\u07ca-\u07ea\u07f4\u07f5\u07fa\u0800-\u0815\u081a\u0824\u0828\u0840-\u0858\u0860-\u086a\u0870-\u0887\u0889-\u088f\u08a0-\u08c9\u0904-\u0939\u093d\u0950\u0958-\u0961\u0971-\u0980\u0985-\u098c\u098f\u0990\u0993-\u09a8\u09aa-\u09b0\u09b2\u09b6-\u09b9\u09bd\u09ce\u09dc\u09dd\u09df-\u09e1\u09f0\u09f1\u09fc\u0a05-\u0a0a\u0a0f\u0a10\u0a13-\u0a28\u0a2a-\u0a30\u0a32\u0a33\u0a35\u0a36\u0a38\u0a39\u0a59-\u0a5c\u0a5e\u0a72-\u0a74\u0a85-\u0a8d\u0a8f-\u0a91\u0a93-\u0aa8\u0aaa-\u0ab0\u0ab2\u0ab3\u0ab5-\u0ab9\u0abd\u0ad0\u0ae0\u0ae1\u0af9\u0b05-\u0b0c\u0b0f\u0b10\u0b13-\u0b28\u0b2a-\u0b30\u0b32\u0b33\u0b35-\u0b39\u0b3d\u0b5c\u0b5d\u0b5f-\u0b61\u0b71\u0b83\u0b85-\u0b8a\u0b8e-\u0b90\u0b92-\u0b95\u0b99\u0b9a\u0b9c\u0b9e\u0b9f\u0ba3\u0ba4\u0ba8-\u0baa\u0bae-\u0bb9\u0bd0\u0c05-\u0c0c\u0c0e-\u0c10\u0c12-\u0c28\u0c2a-\u0c39\u0c3d\u0c58-\u0c5a\u0c5c\u0c5d\u0c60\u0c61\u0c80\u0c85-\u0c8c\u0c8e-\u0c90\u0c92-\u0ca8\u0caa-\u0cb3\u0cb5-\u0cb9\u0cbd\u0cdc-\u0cde\u0ce0\u0ce1\u0cf1\u0cf2\u0d04-\u0d0c\u0d0e-\u0d10\u0d12-\u0d3a\u0d3d\u0d4e\u0d54-\u0d56\u0d5f-\u0d61\u0d7a-\u0d7f\u0d85-\u0d96\u0d9a-\u0db1\u0db3-\u0dbb\u0dbd\u0dc0-\u0dc6\u0e01-\u0e30\u0e32\u0e33\u0e40-\u0e46\u0e81\u0e82\u0e84\u0e86-\u0e8a\u0e8c-\u0ea3\u0ea5\u0ea7-\u0eb0\u0eb2\u0eb3\u0ebd\u0ec0-\u0ec4\u0ec6\u0edc-\u0edf\u0f00\u0f40-\u0f47\u0f49-\u0f6c\u0f88-\u0f8c\u1000-\u102a\u103f\u1050-\u1055\u105a-\u105d\u1061\u1065\u1066\u106e-\u1070\u1075-\u1081\u108e\u10a0-\u10c5\u10c7\u10cd\u10d0-\u10fa\u10fc-\u1248\u124a-\u124d\u1250-\u1256\u1258\u125a-\u125d\u1260-\u1288\u128a-\u128d\u1290-\u12b0\u12b2-\u12b5\u12b8-\u12be\u12c0\u12c2-\u12c5\u12c8-\u12d6\u12d8-\u1310\u1312-\u1315\u1318-\u135a\u1380-\u138f\u13a0-\u13f5\u13f8-\u13fd\u1401-\u166c\u166f-\u167f\u1681-\u169a\u16a0-\u16ea\u16ee-\u16f8\u1700-\u1711\u171f-\u1731\u1740-\u1751\u1760-\u176c\u176e-\u1770\u1780-\u17b3\u17d7\u17dc\u1820-\u1878\u1880-\u18a8\u18aa\u18b0-\u18f5\u1900-\u191e\u1950-\u196d\u1970-\u1974\u1980-\u19ab\u19b0-\u19c9\u1a00-\u1a16\u1a20-\u1a54\u1aa7\u1b05-\u1b33\u1b45-\u1b4c\u1b83-\u1ba0\u1bae\u1baf\u1bba-\u1be5\u1c00-\u1c23\u1c4d-\u1c4f\u1c5a-\u1c7d\u1c80-\u1c8a\u1c90-\u1cba\u1cbd-\u1cbf\u1ce9-\u1cec\u1cee-\u1cf3\u1cf5\u1cf6\u1cfa\u1d00-\u1dbf\u1e00-\u1f15\u1f18-\u1f1d\u1f20-\u1f45\u1f48-\u1f4d\u1f50-\u1f57\u1f59\u1f5b\u1f5d\u1f5f-\u1f7d\u1f80-\u1fb4\u1fb6-\u1fbc\u1fbe\u1fc2-\u1fc4\u1fc6-\u1fcc\u1fd0-\u1fd3\u1fd6-\u1fdb\u1fe0-\u1fec\u1ff2-\u1ff4\u1ff6-\u1ffc\u2071\u207f\u2090-\u209c\u2102\u2107\u210a-\u2113\u2115\u2118-\u211d\u2124\u2126\u2128\u212a-\u2139\u213c-\u213f\u2145-\u2149\u214e\u2160-\u2188\u2c00-\u2ce4\u2ceb-\u2cee\u2cf2\u2cf3\u2d00-\u2d25\u2d27\u2d2d\u2d30-\u2d67\u2d6f\u2d80-\u2d96\u2da0-\u2da6\u2da8-\u2dae\u2db0-\u2db6\u2db8-\u2dbe\u2dc0-\u2dc6\u2dc8-\u2dce\u2dd0-\u2dd6\u2dd8-\u2dde\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303c\u3041-\u3096\u309b-\u309f\u30a1-\u30fa\u30fc-\u30ff\u3105-\u312f\u3131-\u318e\u31a0-\u31bf\u31f0-\u31ff\u3400-\u4dbf\u4e00-\ua48c\ua4d0-\ua4fd\ua500-\ua60c\ua610-\ua61f\ua62a\ua62b\ua640-\ua66e\ua67f-\ua69d\ua6a0-\ua6ef\ua717-\ua71f\ua722-\ua788\ua78b-\ua7dc\ua7f1-\ua801\ua803-\ua805\ua807-\ua80a\ua80c-\ua822\ua840-\ua873\ua882-\ua8b3\ua8f2-\ua8f7\ua8fb\ua8fd\ua8fe\ua90a-\ua925\ua930-\ua946\ua960-\ua97c\ua984-\ua9b2\ua9cf\ua9e0-\ua9e4\ua9e6-\ua9ef\ua9fa-\ua9fe\uaa00-\uaa28\uaa40-\uaa42\uaa44-\uaa4b\uaa60-\uaa76\uaa7a\uaa7e-\uaaaf\uaab1\uaab5\uaab6\uaab9-\uaabd\uaac0\uaac2\uaadb-\uaadd\uaae0-\uaaea\uaaf2-\uaaf4\uab01-\uab06\uab09-\uab0e\uab11-\uab16\uab20-\uab26\uab28-\uab2e\uab30-\uab5a\uab5c-\uab69\uab70-\uabe2\uac00-\ud7a3\ud7b0-\ud7c6\ud7cb-\ud7fb\uf900-\ufa6d\ufa70-\ufad9\ufb00-\ufb06\ufb13-\ufb17\ufb1d\ufb1f-\ufb28\ufb2a-\ufb36\ufb38-\ufb3c\ufb3e\ufb40\ufb41\ufb43\ufb44\ufb46-\ufbb1\ufbd3-\ufd3d\ufd50-\ufd8f\ufd92-\ufdc7\ufdf0-\ufdfb\ufe70-\ufe74\ufe76-\ufefc\uff21-\uff3a\uff41-\uff5a\uff66-\uffbe\uffc2-\uffc7\uffca-\uffcf\uffd2-\uffd7\uffda-\uffdc";
+	let nonASCIIidentifierChars = "\xb7\u0300-\u036f\u0387\u0483-\u0487\u0591-\u05bd\u05bf\u05c1\u05c2\u05c4\u05c5\u05c7\u0610-\u061a\u064b-\u0669\u0670\u06d6-\u06dc\u06df-\u06e4\u06e7\u06e8\u06ea-\u06ed\u06f0-\u06f9\u0711\u0730-\u074a\u07a6-\u07b0\u07c0-\u07c9\u07eb-\u07f3\u07fd\u0816-\u0819\u081b-\u0823\u0825-\u0827\u0829-\u082d\u0859-\u085b\u0897-\u089f\u08ca-\u08e1\u08e3-\u0903\u093a-\u093c\u093e-\u094f\u0951-\u0957\u0962\u0963\u0966-\u096f\u0981-\u0983\u09bc\u09be-\u09c4\u09c7\u09c8\u09cb-\u09cd\u09d7\u09e2\u09e3\u09e6-\u09ef\u09fe\u0a01-\u0a03\u0a3c\u0a3e-\u0a42\u0a47\u0a48\u0a4b-\u0a4d\u0a51\u0a66-\u0a71\u0a75\u0a81-\u0a83\u0abc\u0abe-\u0ac5\u0ac7-\u0ac9\u0acb-\u0acd\u0ae2\u0ae3\u0ae6-\u0aef\u0afa-\u0aff\u0b01-\u0b03\u0b3c\u0b3e-\u0b44\u0b47\u0b48\u0b4b-\u0b4d\u0b55-\u0b57\u0b62\u0b63\u0b66-\u0b6f\u0b82\u0bbe-\u0bc2\u0bc6-\u0bc8\u0bca-\u0bcd\u0bd7\u0be6-\u0bef\u0c00-\u0c04\u0c3c\u0c3e-\u0c44\u0c46-\u0c48\u0c4a-\u0c4d\u0c55\u0c56\u0c62\u0c63\u0c66-\u0c6f\u0c81-\u0c83\u0cbc\u0cbe-\u0cc4\u0cc6-\u0cc8\u0cca-\u0ccd\u0cd5\u0cd6\u0ce2\u0ce3\u0ce6-\u0cef\u0cf3\u0d00-\u0d03\u0d3b\u0d3c\u0d3e-\u0d44\u0d46-\u0d48\u0d4a-\u0d4d\u0d57\u0d62\u0d63\u0d66-\u0d6f\u0d81-\u0d83\u0dca\u0dcf-\u0dd4\u0dd6\u0dd8-\u0ddf\u0de6-\u0def\u0df2\u0df3\u0e31\u0e34-\u0e3a\u0e47-\u0e4e\u0e50-\u0e59\u0eb1\u0eb4-\u0ebc\u0ec8-\u0ece\u0ed0-\u0ed9\u0f18\u0f19\u0f20-\u0f29\u0f35\u0f37\u0f39\u0f3e\u0f3f\u0f71-\u0f84\u0f86\u0f87\u0f8d-\u0f97\u0f99-\u0fbc\u0fc6\u102b-\u103e\u1040-\u1049\u1056-\u1059\u105e-\u1060\u1062-\u1064\u1067-\u106d\u1071-\u1074\u1082-\u108d\u108f-\u109d\u135d-\u135f\u1369-\u1371\u1712-\u1715\u1732-\u1734\u1752\u1753\u1772\u1773\u17b4-\u17d3\u17dd\u17e0-\u17e9\u180b-\u180d\u180f-\u1819\u18a9\u1920-\u192b\u1930-\u193b\u1946-\u194f\u19d0-\u19da\u1a17-\u1a1b\u1a55-\u1a5e\u1a60-\u1a7c\u1a7f-\u1a89\u1a90-\u1a99\u1ab0-\u1abd\u1abf-\u1add\u1ae0-\u1aeb\u1b00-\u1b04\u1b34-\u1b44\u1b50-\u1b59\u1b6b-\u1b73\u1b80-\u1b82\u1ba1-\u1bad\u1bb0-\u1bb9\u1be6-\u1bf3\u1c24-\u1c37\u1c40-\u1c49\u1c50-\u1c59\u1cd0-\u1cd2\u1cd4-\u1ce8\u1ced\u1cf4\u1cf7-\u1cf9\u1dc0-\u1dff\u200c\u200d\u203f\u2040\u2054\u20d0-\u20dc\u20e1\u20e5-\u20f0\u2cef-\u2cf1\u2d7f\u2de0-\u2dff\u302a-\u302f\u3099\u309a\u30fb\ua620-\ua629\ua66f\ua674-\ua67d\ua69e\ua69f\ua6f0\ua6f1\ua802\ua806\ua80b\ua823-\ua827\ua82c\ua880\ua881\ua8b4-\ua8c5\ua8d0-\ua8d9\ua8e0-\ua8f1\ua8ff-\ua909\ua926-\ua92d\ua947-\ua953\ua980-\ua983\ua9b3-\ua9c0\ua9d0-\ua9d9\ua9e5\ua9f0-\ua9f9\uaa29-\uaa36\uaa43\uaa4c\uaa4d\uaa50-\uaa59\uaa7b-\uaa7d\uaab0\uaab2-\uaab4\uaab7\uaab8\uaabe\uaabf\uaac1\uaaeb-\uaaef\uaaf5\uaaf6\uabe3-\uabea\uabec\uabed\uabf0-\uabf9\ufb1e\ufe00-\ufe0f\ufe20-\ufe2f\ufe33\ufe34\ufe4d-\ufe4f\uff10-\uff19\uff3f\uff65";
 	const nonASCIIidentifierStart = new RegExp("[" + nonASCIIidentifierStartChars + "]");
 	const nonASCIIidentifier = new RegExp("[" + nonASCIIidentifierStartChars + nonASCIIidentifierChars + "]");
 	nonASCIIidentifierStartChars = nonASCIIidentifierChars = null;
-	const astralIdentifierStartCodes = [0, 11, 2, 25, 2, 18, 2, 1, 2, 14, 3, 13, 35, 122, 70, 52, 268, 28, 4, 48, 48, 31, 14, 29, 6, 37, 11, 29, 3, 35, 5, 7, 2, 4, 43, 157, 19, 35, 5, 35, 5, 39, 9, 51, 13, 10, 2, 14, 2, 6, 2, 1, 2, 10, 2, 14, 2, 6, 2, 1, 4, 51, 13, 310, 10, 21, 11, 7, 25, 5, 2, 41, 2, 8, 70, 5, 3, 0, 2, 43, 2, 1, 4, 0, 3, 22, 11, 22, 10, 30, 66, 18, 2, 1, 11, 21, 11, 25, 71, 55, 7, 1, 65, 0, 16, 3, 2, 2, 2, 28, 43, 28, 4, 28, 36, 7, 2, 27, 28, 53, 11, 21, 11, 18, 14, 17, 111, 72, 56, 50, 14, 50, 14, 35, 39, 27, 10, 22, 251, 41, 7, 1, 17, 2, 60, 28, 11, 0, 9, 21, 43, 17, 47, 20, 28, 22, 13, 52, 58, 1, 3, 0, 14, 44, 33, 24, 27, 35, 30, 0, 3, 0, 9, 34, 4, 0, 13, 47, 15, 3, 22, 0, 2, 0, 36, 17, 2, 24, 20, 1, 64, 6, 2, 0, 2, 3, 2, 14, 2, 9, 8, 46, 39, 7, 3, 1, 3, 21, 2, 6, 2, 1, 2, 4, 4, 0, 19, 0, 13, 4, 31, 9, 2, 0, 3, 0, 2, 37, 2, 0, 26, 0, 2, 0, 45, 52, 19, 3, 21, 2, 31, 47, 21, 1, 2, 0, 185, 46, 42, 3, 37, 47, 21, 0, 60, 42, 14, 0, 72, 26, 38, 6, 186, 43, 117, 63, 32, 7, 3, 0, 3, 7, 2, 1, 2, 23, 16, 0, 2, 0, 95, 7, 3, 38, 17, 0, 2, 0, 29, 0, 11, 39, 8, 0, 22, 0, 12, 45, 20, 0, 19, 72, 200, 32, 32, 8, 2, 36, 18, 0, 50, 29, 113, 6, 2, 1, 2, 37, 22, 0, 26, 5, 2, 1, 2, 31, 15, 0, 328, 18, 16, 0, 2, 12, 2, 33, 125, 0, 80, 921, 103, 110, 18, 195, 2637, 96, 16, 1071, 18, 5, 26, 3994, 6, 582, 6842, 29, 1763, 568, 8, 30, 18, 78, 18, 29, 19, 47, 17, 3, 32, 20, 6, 18, 433, 44, 212, 63, 129, 74, 6, 0, 67, 12, 65, 1, 2, 0, 29, 6135, 9, 1237, 42, 9, 8936, 3, 2, 6, 2, 1, 2, 290, 16, 0, 30, 2, 3, 0, 15, 3, 9, 395, 2309, 106, 6, 12, 4, 8, 8, 9, 5991, 84, 2, 70, 2, 1, 3, 0, 3, 1, 3, 3, 2, 11, 2, 0, 2, 6, 2, 64, 2, 3, 3, 7, 2, 6, 2, 27, 2, 3, 2, 4, 2, 0, 4, 6, 2, 339, 3, 24, 2, 24, 2, 30, 2, 24, 2, 30, 2, 24, 2, 30, 2, 24, 2, 30, 2, 24, 2, 7, 1845, 30, 7, 5, 262, 61, 147, 44, 11, 6, 17, 0, 322, 29, 19, 43, 485, 27, 229, 29, 3, 0, 496, 6, 2, 3, 2, 1, 2, 14, 2, 196, 60, 67, 8, 0, 1205, 3, 2, 26, 2, 1, 2, 0, 3, 0, 2, 9, 2, 3, 2, 0, 2, 0, 7, 0, 5, 0, 2, 0, 2, 0, 2, 2, 2, 1, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 1, 2, 0, 3, 3, 2, 6, 2, 3, 2, 3, 2, 0, 2, 9, 2, 16, 6, 2, 2, 4, 2, 16, 4421, 42719, 33, 4153, 7, 221, 3, 5761, 15, 7472, 16, 621, 2467, 541, 1507, 4938, 6, 4191];
-	const astralIdentifierCodes = [509, 0, 227, 0, 150, 4, 294, 9, 1368, 2, 2, 1, 6, 3, 41, 2, 5, 0, 166, 1, 574, 3, 9, 9, 7, 9, 32, 4, 318, 1, 80, 3, 71, 10, 50, 3, 123, 2, 54, 14, 32, 10, 3, 1, 11, 3, 46, 10, 8, 0, 46, 9, 7, 2, 37, 13, 2, 9, 6, 1, 45, 0, 13, 2, 49, 13, 9, 3, 2, 11, 83, 11, 7, 0, 3, 0, 158, 11, 6, 9, 7, 3, 56, 1, 2, 6, 3, 1, 3, 2, 10, 0, 11, 1, 3, 6, 4, 4, 68, 8, 2, 0, 3, 0, 2, 3, 2, 4, 2, 0, 15, 1, 83, 17, 10, 9, 5, 0, 82, 19, 13, 9, 214, 6, 3, 8, 28, 1, 83, 16, 16, 9, 82, 12, 9, 9, 7, 19, 58, 14, 5, 9, 243, 14, 166, 9, 71, 5, 2, 1, 3, 3, 2, 0, 2, 1, 13, 9, 120, 6, 3, 6, 4, 0, 29, 9, 41, 6, 2, 3, 9, 0, 10, 10, 47, 15, 343, 9, 54, 7, 2, 7, 17, 9, 57, 21, 2, 13, 123, 5, 4, 0, 2, 1, 2, 6, 2, 0, 9, 9, 49, 4, 2, 1, 2, 4, 9, 9, 330, 3, 10, 1, 2, 0, 49, 6, 4, 4, 14, 10, 5350, 0, 7, 14, 11465, 27, 2343, 9, 87, 9, 39, 4, 60, 6, 26, 9, 535, 9, 470, 0, 2, 54, 8, 3, 82, 0, 12, 1, 19628, 1, 4178, 9, 519, 45, 3, 22, 543, 4, 4, 5, 9, 7, 3, 6, 31, 3, 149, 2, 1418, 49, 513, 54, 5, 49, 9, 0, 15, 0, 23, 4, 2, 14, 1361, 6, 2, 16, 3, 6, 2, 1, 2, 4, 101, 0, 161, 6, 10, 9, 357, 0, 62, 13, 499, 13, 245, 1, 2, 9, 726, 6, 110, 6, 6, 9, 4759, 9, 787719, 239];
+	const astralIdentifierStartCodes = [0, 11, 2, 25, 2, 18, 2, 1, 2, 14, 3, 13, 35, 122, 70, 52, 268, 28, 4, 48, 48, 31, 14, 29, 6, 37, 11, 29, 3, 35, 5, 7, 2, 4, 43, 157, 19, 35, 5, 35, 5, 39, 9, 51, 13, 10, 2, 14, 2, 6, 2, 1, 2, 10, 2, 14, 2, 6, 2, 1, 4, 51, 13, 310, 10, 21, 11, 7, 25, 5, 2, 41, 2, 8, 70, 5, 3, 0, 2, 43, 2, 1, 4, 0, 3, 22, 11, 22, 10, 30, 66, 18, 2, 1, 11, 21, 11, 25, 7, 25, 39, 55, 7, 1, 65, 0, 16, 3, 2, 2, 2, 28, 43, 28, 4, 28, 36, 7, 2, 27, 28, 53, 11, 21, 11, 18, 14, 17, 111, 72, 56, 50, 14, 50, 14, 35, 39, 27, 10, 22, 251, 41, 7, 1, 17, 5, 57, 28, 11, 0, 9, 21, 43, 17, 47, 20, 28, 22, 13, 52, 58, 1, 3, 0, 14, 44, 33, 24, 27, 35, 30, 0, 3, 0, 9, 34, 4, 0, 13, 47, 15, 3, 22, 0, 2, 0, 36, 17, 2, 24, 20, 1, 64, 6, 2, 0, 2, 3, 2, 14, 2, 9, 8, 46, 39, 7, 3, 1, 3, 21, 2, 6, 2, 1, 2, 4, 4, 0, 19, 0, 13, 4, 31, 9, 2, 0, 3, 0, 2, 37, 2, 0, 26, 0, 2, 0, 45, 52, 19, 3, 21, 2, 31, 47, 21, 1, 2, 0, 185, 46, 42, 3, 37, 47, 21, 0, 60, 42, 14, 0, 72, 26, 38, 6, 186, 43, 117, 63, 32, 7, 3, 0, 3, 7, 2, 1, 2, 23, 16, 0, 2, 0, 95, 7, 3, 38, 17, 0, 2, 0, 29, 0, 11, 39, 8, 0, 22, 0, 12, 45, 20, 0, 19, 72, 200, 32, 32, 8, 2, 36, 18, 0, 50, 29, 113, 6, 2, 1, 2, 37, 22, 0, 26, 5, 2, 1, 2, 31, 15, 0, 24, 43, 261, 18, 16, 0, 2, 12, 2, 33, 125, 0, 80, 921, 103, 110, 18, 195, 2637, 96, 16, 1071, 18, 5, 26, 3994, 6, 582, 6842, 29, 1763, 568, 8, 30, 18, 78, 18, 29, 19, 47, 17, 3, 32, 20, 6, 18, 433, 44, 212, 63, 33, 24, 3, 24, 45, 74, 6, 0, 67, 12, 65, 1, 2, 0, 15, 4, 10, 7381, 42, 31, 98, 114, 8702, 3, 2, 6, 2, 1, 2, 290, 16, 0, 30, 2, 3, 0, 15, 3, 9, 395, 2309, 106, 6, 12, 4, 8, 8, 9, 5991, 84, 2, 70, 2, 1, 3, 0, 3, 1, 3, 3, 2, 11, 2, 0, 2, 6, 2, 64, 2, 3, 3, 7, 2, 6, 2, 27, 2, 3, 2, 4, 2, 0, 4, 6, 2, 339, 3, 24, 2, 24, 2, 30, 2, 24, 2, 30, 2, 24, 2, 30, 2, 24, 2, 30, 2, 24, 2, 7, 1845, 30, 7, 5, 262, 61, 147, 44, 11, 6, 17, 0, 322, 29, 19, 43, 485, 27, 229, 29, 3, 0, 208, 30, 2, 2, 2, 1, 2, 6, 3, 4, 10, 1, 225, 6, 2, 3, 2, 1, 2, 14, 2, 196, 60, 67, 8, 0, 1205, 3, 2, 26, 2, 1, 2, 0, 3, 0, 2, 9, 2, 3, 2, 0, 2, 0, 7, 0, 5, 0, 2, 0, 2, 0, 2, 2, 2, 1, 2, 0, 3, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 1, 2, 0, 3, 3, 2, 6, 2, 3, 2, 3, 2, 0, 2, 9, 2, 16, 6, 2, 2, 4, 2, 16, 4421, 42719, 33, 4381, 3, 5773, 3, 7472, 16, 621, 2467, 541, 1507, 4938, 6, 8489];
+	const astralIdentifierCodes = [509, 0, 227, 0, 150, 4, 294, 9, 1368, 2, 2, 1, 6, 3, 41, 2, 5, 0, 166, 1, 574, 3, 9, 9, 7, 9, 32, 4, 318, 1, 78, 5, 71, 10, 50, 3, 123, 2, 54, 14, 32, 10, 3, 1, 11, 3, 46, 10, 8, 0, 46, 9, 7, 2, 37, 13, 2, 9, 6, 1, 45, 0, 13, 2, 49, 13, 9, 3, 2, 11, 83, 11, 7, 0, 3, 0, 158, 11, 6, 9, 7, 3, 56, 1, 2, 6, 3, 1, 3, 2, 10, 0, 11, 1, 3, 6, 4, 4, 68, 8, 2, 0, 3, 0, 2, 3, 2, 4, 2, 0, 15, 1, 83, 17, 10, 9, 5, 0, 82, 19, 13, 9, 214, 6, 3, 8, 28, 1, 83, 16, 16, 9, 82, 12, 9, 9, 7, 19, 58, 14, 5, 9, 243, 14, 166, 9, 71, 5, 2, 1, 3, 3, 2, 0, 2, 1, 13, 9, 120, 6, 3, 6, 4, 0, 29, 9, 41, 6, 2, 3, 9, 0, 10, 10, 47, 15, 199, 7, 137, 9, 54, 7, 2, 7, 17, 9, 57, 21, 2, 13, 123, 5, 4, 0, 2, 1, 2, 6, 2, 0, 9, 9, 49, 4, 2, 1, 2, 4, 9, 9, 55, 9, 266, 3, 10, 1, 2, 0, 49, 6, 4, 4, 14, 10, 5350, 0, 7, 14, 11465, 27, 2343, 9, 87, 9, 39, 4, 60, 6, 26, 9, 535, 9, 470, 0, 2, 54, 8, 3, 82, 0, 12, 1, 19628, 1, 4178, 9, 519, 45, 3, 22, 543, 4, 4, 5, 9, 7, 3, 6, 31, 3, 149, 2, 1418, 49, 513, 54, 5, 49, 9, 0, 15, 0, 23, 4, 2, 14, 1361, 6, 2, 16, 3, 6, 2, 1, 2, 4, 101, 0, 161, 6, 10, 9, 357, 0, 62, 13, 499, 13, 245, 1, 2, 9, 233, 0, 3, 0, 8, 1, 6, 0, 475, 6, 110, 6, 6, 9, 4759, 9, 787719, 239];
 	function isInAstralSet(code, set) {
 	  let pos = 0x10000;
 	  for (let i = 0, length = set.length; i < length; i += 2) {
@@ -5132,39 +6143,39 @@ function requireLib () {
 	const NEWLINE$1 = /\r\n|[\n\r\u2028\u2029]/;
 	const BRACKET = /^[()[\]{}]$/;
 	let tokenize;
-	{
-	  const JSX_TAG = /^[a-z][\w-]*$/i;
-	  const getTokenType = function (token, offset, text) {
-	    if (token.type === "name") {
-	      if (helperValidatorIdentifier.isKeyword(token.value) || helperValidatorIdentifier.isStrictReservedWord(token.value, true) || sometimesKeywords.has(token.value)) {
-	        return "keyword";
-	      }
-	      if (JSX_TAG.test(token.value) && (text[offset - 1] === "<" || text.slice(offset - 2, offset) === "</")) {
-	        return "jsxIdentifier";
-	      }
-	      if (token.value[0] !== token.value[0].toLowerCase()) {
-	        return "capitalized";
-	      }
+	const JSX_TAG = /^[a-z][\w-]*$/i;
+	const getTokenType = function (token, offset, text) {
+	  if (token.type === "name") {
+	    const tokenValue = token.value;
+	    if (helperValidatorIdentifier.isKeyword(tokenValue) || helperValidatorIdentifier.isStrictReservedWord(tokenValue, true) || sometimesKeywords.has(tokenValue)) {
+	      return "keyword";
 	    }
-	    if (token.type === "punctuator" && BRACKET.test(token.value)) {
-	      return "bracket";
+	    if (JSX_TAG.test(tokenValue) && (text[offset - 1] === "<" || text.slice(offset - 2, offset) === "</")) {
+	      return "jsxIdentifier";
 	    }
-	    if (token.type === "invalid" && (token.value === "@" || token.value === "#")) {
-	      return "punctuator";
+	    const firstChar = String.fromCodePoint(tokenValue.codePointAt(0));
+	    if (firstChar !== firstChar.toLowerCase()) {
+	      return "capitalized";
 	    }
-	    return token.type;
-	  };
-	  tokenize = function* (text) {
-	    let match;
-	    while (match = jsTokens.default.exec(text)) {
-	      const token = jsTokens.matchToToken(match);
-	      yield {
-	        type: getTokenType(token, match.index, text),
-	        value: token.value
-	      };
-	    }
-	  };
-	}
+	  }
+	  if (token.type === "punctuator" && BRACKET.test(token.value)) {
+	    return "bracket";
+	  }
+	  if (token.type === "invalid" && (token.value === "@" || token.value === "#")) {
+	    return "punctuator";
+	  }
+	  return token.type;
+	};
+	tokenize = function* (text) {
+	  let match;
+	  while (match = jsTokens.default.exec(text)) {
+	    const token = jsTokens.matchToToken(match);
+	    yield {
+	      type: getTokenType(token, match.index, text),
+	      value: token.value
+	    };
+	  }
+	};
 	function highlight(text) {
 	  if (text === "") return "";
 	  const defs = getDefs(true);
@@ -5184,7 +6195,7 @@ function requireLib () {
 
 	let deprecationWarningShown = false;
 	const NEWLINE = /\r\n|[\n\r\u2028\u2029]/;
-	function getMarkerLines(loc, source, opts) {
+	function getMarkerLines(loc, source, opts, startLineBaseZero) {
 	  const startLoc = Object.assign({
 	    column: 0,
 	    line: -1
@@ -5194,9 +6205,9 @@ function requireLib () {
 	    linesAbove = 2,
 	    linesBelow = 3
 	  } = opts || {};
-	  const startLine = startLoc.line;
+	  const startLine = startLoc.line - startLineBaseZero;
 	  const startColumn = startLoc.column;
-	  const endLine = endLoc.line;
+	  const endLine = endLoc.line - startLineBaseZero;
 	  const endColumn = endLoc.column;
 	  let start = Math.max(startLine - (linesAbove + 1), 0);
 	  let end = Math.min(source.length, endLine + linesBelow);
@@ -5242,19 +6253,20 @@ function requireLib () {
 	}
 	function codeFrameColumns(rawLines, loc, opts = {}) {
 	  const shouldHighlight = opts.forceColor || isColorSupported() && opts.highlightCode;
+	  const startLineBaseZero = (opts.startLine || 1) - 1;
 	  const defs = getDefs(shouldHighlight);
 	  const lines = rawLines.split(NEWLINE);
 	  const {
 	    start,
 	    end,
 	    markerLines
-	  } = getMarkerLines(loc, lines, opts);
+	  } = getMarkerLines(loc, lines, opts, startLineBaseZero);
 	  const hasColumns = loc.start && typeof loc.start.column === "number";
-	  const numberMaxWidth = String(end).length;
+	  const numberMaxWidth = String(end + startLineBaseZero).length;
 	  const highlightedLines = shouldHighlight ? highlight(rawLines) : rawLines;
 	  let frame = highlightedLines.split(NEWLINE, end).slice(start, end).map((line, index) => {
 	    const number = start + 1 + index;
-	    const paddedNumber = ` ${number}`.slice(-numberMaxWidth);
+	    const paddedNumber = ` ${number + startLineBaseZero}`.slice(-numberMaxWidth);
 	    const gutter = ` ${paddedNumber} |`;
 	    const hasMarker = markerLines[number];
 	    const lastMarkerLine = !markerLines[number + 1];
@@ -5899,7 +6911,7 @@ function requireConversions () {
 
 		r = (x * 3.2406) + (y * -1.5372) + (z * -0.4986);
 		g = (x * -0.9689) + (y * 1.8758) + (z * 0.0415);
-		b = (x * 0.0557) + (y * -0.2040) + (z * 1.0570);
+		b = (x * 0.0557) + (y * -0.204) + (z * 1.0570);
 
 		// Assume sRGB
 		r = r > 0.0031308
@@ -7804,12 +8816,12 @@ var hasRequiredGracefulFs;
 function requireGracefulFs () {
 	if (hasRequiredGracefulFs) return gracefulFs;
 	hasRequiredGracefulFs = 1;
-	var fs = require$$0$3;
+	var fs = require$$0$4;
 	var polyfills = requirePolyfills();
 	var legacy = requireLegacyStreams();
 	var clone = requireClone();
 
-	var util = require$$0$4;
+	var util = require$$0$3;
 
 	/* istanbul ignore next - node 0.x polyfill */
 	var gracefulQueue;
@@ -8763,7 +9775,7 @@ function requireFillRange () {
 	if (hasRequiredFillRange) return fillRange;
 	hasRequiredFillRange = 1;
 
-	const util = require$$0$4;
+	const util = require$$0$3;
 	const toRegexRange = requireToRegexRange();
 
 	const isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
@@ -11904,7 +12916,7 @@ function requireMicromatch () {
 	if (hasRequiredMicromatch) return micromatch_1;
 	hasRequiredMicromatch = 1;
 
-	const util = require$$0$4;
+	const util = require$$0$3;
 	const braces = requireBraces();
 	const picomatch = requirePicomatch();
 	const utils = requireUtils();
@@ -13815,9 +14827,9 @@ function requireReactIs_production_min () {
 	hasRequiredReactIs_production_min = 1;
 var b=Symbol.for("react.element"),c=Symbol.for("react.portal"),d=Symbol.for("react.fragment"),e=Symbol.for("react.strict_mode"),f=Symbol.for("react.profiler"),g=Symbol.for("react.provider"),h=Symbol.for("react.context"),k=Symbol.for("react.server_context"),l=Symbol.for("react.forward_ref"),m=Symbol.for("react.suspense"),n=Symbol.for("react.suspense_list"),p=Symbol.for("react.memo"),q=Symbol.for("react.lazy"),t=Symbol.for("react.offscreen"),u;u=Symbol.for("react.module.reference");
 	function v(a){if("object"===typeof a&&null!==a){var r=a.$$typeof;switch(r){case b:switch(a=a.type,a){case d:case f:case e:case m:case n:return a;default:switch(a=a&&a.$$typeof,a){case k:case h:case l:case q:case p:case g:return a;default:return r}}case c:return r}}}reactIs_production_min.ContextConsumer=h;reactIs_production_min.ContextProvider=g;reactIs_production_min.Element=b;reactIs_production_min.ForwardRef=l;reactIs_production_min.Fragment=d;reactIs_production_min.Lazy=q;reactIs_production_min.Memo=p;reactIs_production_min.Portal=c;reactIs_production_min.Profiler=f;reactIs_production_min.StrictMode=e;reactIs_production_min.Suspense=m;
-	reactIs_production_min.SuspenseList=n;reactIs_production_min.isAsyncMode=function(){return !1};reactIs_production_min.isConcurrentMode=function(){return !1};reactIs_production_min.isContextConsumer=function(a){return v(a)===h};reactIs_production_min.isContextProvider=function(a){return v(a)===g};reactIs_production_min.isElement=function(a){return "object"===typeof a&&null!==a&&a.$$typeof===b};reactIs_production_min.isForwardRef=function(a){return v(a)===l};reactIs_production_min.isFragment=function(a){return v(a)===d};reactIs_production_min.isLazy=function(a){return v(a)===q};reactIs_production_min.isMemo=function(a){return v(a)===p};
+	reactIs_production_min.SuspenseList=n;reactIs_production_min.isAsyncMode=function(){return  false};reactIs_production_min.isConcurrentMode=function(){return  false};reactIs_production_min.isContextConsumer=function(a){return v(a)===h};reactIs_production_min.isContextProvider=function(a){return v(a)===g};reactIs_production_min.isElement=function(a){return "object"===typeof a&&null!==a&&a.$$typeof===b};reactIs_production_min.isForwardRef=function(a){return v(a)===l};reactIs_production_min.isFragment=function(a){return v(a)===d};reactIs_production_min.isLazy=function(a){return v(a)===q};reactIs_production_min.isMemo=function(a){return v(a)===p};
 	reactIs_production_min.isPortal=function(a){return v(a)===c};reactIs_production_min.isProfiler=function(a){return v(a)===f};reactIs_production_min.isStrictMode=function(a){return v(a)===e};reactIs_production_min.isSuspense=function(a){return v(a)===m};reactIs_production_min.isSuspenseList=function(a){return v(a)===n};
-	reactIs_production_min.isValidElementType=function(a){return "string"===typeof a||"function"===typeof a||a===d||a===f||a===e||a===m||a===n||a===t||"object"===typeof a&&null!==a&&(a.$$typeof===q||a.$$typeof===p||a.$$typeof===g||a.$$typeof===h||a.$$typeof===l||a.$$typeof===u||void 0!==a.getModuleId)?!0:!1};reactIs_production_min.typeOf=v;
+	reactIs_production_min.isValidElementType=function(a){return "string"===typeof a||"function"===typeof a||a===d||a===f||a===e||a===m||a===n||a===t||"object"===typeof a&&null!==a&&(a.$$typeof===q||a.$$typeof===p||a.$$typeof===g||a.$$typeof===h||a.$$typeof===l||a.$$typeof===u||void 0!==a.getModuleId)?true:false};reactIs_production_min.typeOf=v;
 	return reactIs_production_min;
 }
 
@@ -14794,7 +15806,7 @@ function requireBuild () {
 	    void 0;
 	var path = _interopRequireWildcard(require$$0$5);
 	var _url = require$$1$2;
-	var _util = require$$0$4;
+	var _util = require$$0$3;
 	var _codeFrame = requireLib();
 	var _chalk = _interopRequireDefault(requireSource());
 	var fs = _interopRequireWildcard(requireGracefulFs());

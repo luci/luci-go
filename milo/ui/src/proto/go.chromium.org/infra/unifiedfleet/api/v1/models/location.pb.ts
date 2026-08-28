@@ -105,7 +105,7 @@ export function labToJSON(object: Lab): string {
 
 /**
  * Zone refers to the different network zones under chrome org
- * Next tag: 121
+ * Next tag: 122
  */
 export enum Zone {
   ZONE_UNSPECIFIED = 0,
@@ -135,9 +135,17 @@ export enum Zone {
   ZONE_CHROMEOS7 = 8,
   /** ZONE_CHROMEOS15 - "chromeos15" // US-MTV-946 // Lindavista */
   ZONE_CHROMEOS15 = 10,
-  /** ZONE_ATL97 - "atl97" //  US-ATL-MET1 // Room ? */
+  /**
+   * ZONE_ATL97 - DEPRECATED "atl97" //  US-ATL-MET1 // Room ?
+   *
+   * @deprecated
+   */
   ZONE_ATL97 = 11,
-  /** ZONE_IAD97 - "iad97" // Building ? Room ? */
+  /**
+   * ZONE_IAD97 - DEPRECATED "iad97" // Building ? Room ?
+   *
+   * @deprecated
+   */
   ZONE_IAD97 = 12,
   /**
    * ZONE_MTV96 - DEPRECATED "mtv96" // US-MTV-41 // 1-1M0
@@ -385,6 +393,8 @@ export enum Zone {
   ZONE_SFO32_XR = 119,
   /** ZONE_SFP_104 - "sfp_104" // Zone for SfP assets for partner // Testhaus ID:104; */
   ZONE_SFP_104 = 120,
+  /** ZONE_SFP_112 - "sfp_112" // Zone for SfP assets for partner // Testhause ID: 112; */
+  ZONE_SFP_112 = 121,
 }
 
 export function zoneFromJSON(object: any): Zone {
@@ -749,6 +759,9 @@ export function zoneFromJSON(object: any): Zone {
     case 120:
     case "ZONE_SFP_104":
       return Zone.ZONE_SFP_104;
+    case 121:
+    case "ZONE_SFP_112":
+      return Zone.ZONE_SFP_112;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }
@@ -996,6 +1009,8 @@ export function zoneToJSON(object: Zone): string {
       return "ZONE_SFO32_XR";
     case Zone.ZONE_SFP_104:
       return "ZONE_SFP_104";
+    case Zone.ZONE_SFP_112:
+      return "ZONE_SFP_112";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }

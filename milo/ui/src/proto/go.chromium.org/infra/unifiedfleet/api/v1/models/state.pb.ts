@@ -10,44 +10,117 @@ import { Timestamp } from "../../../../../../google/protobuf/timestamp.pb";
 
 export const protobufPackage = "unifiedfleet.api.v1.models";
 
-/** Next tag: 16 */
+/** Next tag: 28 */
 export enum State {
+  /**
+   * STATE_UNSPECIFIED - Note: UFS state management and device lifecycles are being standardized across all product areas.
+   * Legacy workflow states are being replaced by explicit lifecycle milestones (InStorage, Allocated, Staged,
+   * Assembled, QACompleted, Deployed, Serving, NeedsRepair, RepairFailed, NeedsManualRepair, Reserved,
+   * ReleaseRequested, WaitingDecommission, Unallocated). For detailed mapping and transition guidelines,
+   * please read the proposal document at go/fleet-common-state-proposal.
+   */
   STATE_UNSPECIFIED = 0,
-  /** STATE_REGISTERED - Equlavant to the concept in ChromeOS lab: needs_deploy */
+  /**
+   * STATE_IN_STORAGE - --- Standard Lifecycle States (Ordered per go/fleet-common-state-proposal) ---
+   * Physically present in inventory or storage location with asset and/or serials.
+   */
+  STATE_IN_STORAGE = 18,
+  /** STATE_ALLOCATED - Hardware reserved and allocated for deployment to target testbed. */
+  STATE_ALLOCATED = 19,
+  /** STATE_STAGED - Hardware moved from storage and staged in physical rack/testbed. */
+  STATE_STAGED = 20,
+  /** STATE_ASSEMBLED - Hardware assembly complete, wired, and ready for physical QA verification. */
+  STATE_ASSEMBLED = 21,
+  /** STATE_QA_COMPLETED - Physical hardware QA complete, verified, and handed over to Fleet Systems. */
+  STATE_QA_COMPLETED = 22,
+  /** STATE_DEPLOYED - Systems/OS deployed and verified, waiting for host config and pool assignment. */
+  STATE_DEPLOYED = 23,
+  /** STATE_SERVING - Fully deployed with host config applied, serving actively in pools. */
+  STATE_SERVING = 3,
+  /** STATE_NEEDS_REPAIR - Device failed health checks or test preparation; queued for automated repair. */
+  STATE_NEEDS_REPAIR = 5,
+  /** STATE_REPAIR_FAILED - Automated repair task ran and failed; requires secondary repair or triage. */
+  STATE_REPAIR_FAILED = 11,
+  /** STATE_NEEDS_MANUAL_REPAIR - Requires physical or manual intervention by lab engineers. */
+  STATE_NEEDS_MANUAL_REPAIR = 24,
+  /** STATE_RESERVED - Device locked/reserved by lab operations or debugging (+reason). */
+  STATE_RESERVED = 7,
+  /** STATE_MAINTENANCE - Device or asset is undergoing active infrastructure maintenance (e.g., firmware upgrade, hardware swap, or lab servicing). */
+  STATE_MAINTENANCE = 16,
+  /** STATE_MIGRATION - Device or asset is in the process of being migrated between zones, services, or realms. */
+  STATE_MIGRATION = 17,
+  /** STATE_RELEASE_REQUESTED - Host configuration removed, resource release requested from pool. */
+  STATE_RELEASE_REQUESTED = 25,
+  /** STATE_WAITING_DECOMMISSION - Pending decision on whether to recycle for reuse or decommission. */
+  STATE_WAITING_DECOMMISSION = 26,
+  /** STATE_UNALLOCATED - Racked hardware resource with no assigned team owner or client pool. */
+  STATE_UNALLOCATED = 27,
+  /**
+   * STATE_REGISTERED - --- Planned to be deprecated ---
+   * Equlavant to the concept in ChromeOS lab: needs_deploy.
+   * Note: Being replaced by standardized lifecycle workflow milestones STATE_IN_STORAGE (18), STATE_STAGED (20),
+   * and STATE_QA_COMPLETED (22). See go/fleet-common-state-proposal.
+   */
   STATE_REGISTERED = 1,
+  /**
+   * STATE_DEPLOYED_TESTING - Deployed to the prod infrastructure, but for testing.
+   * Note: Being replaced by standardized lifecycle workflow milestones STATE_DEPLOYED (23) and
+   * STATE_NEEDS_MANUAL_REPAIR (24). See go/fleet-common-state-proposal.
+   */
+  STATE_DEPLOYED_TESTING = 2,
+  /**
+   * STATE_DISABLED - Deployed to the prod infrastructure, but get disabled.
+   * Note: Being replaced by explicit standardized lifecycle milestone STATE_NEEDS_MANUAL_REPAIR (24).
+   * See go/fleet-common-state-proposal.
+   */
+  STATE_DISABLED = 6,
+  /**
+   * STATE_DECOMMISSIONED - Decommissioned from the prod infrastructure, but still leave in UFS record.
+   * Note: Pre-disposal evaluation states are being replaced by standardized lifecycle workflow milestones
+   * STATE_RELEASE_REQUESTED (25) and STATE_WAITING_DECOMMISSION (26). See go/fleet-common-state-proposal.
+   */
+  STATE_DECOMMISSIONED = 8,
   /**
    * STATE_DEPLOYED_PRE_SERVING - Deployed but not placed in prod. It's only a temporarily state for browser machine
    * as there's no service to push a deployed machine to prod automatically yet.
+   * Note: Being replaced by standardized lifecycle workflow milestone STATE_DEPLOYED (23).
+   * See go/fleet-common-state-proposal.
    */
   STATE_DEPLOYED_PRE_SERVING = 9,
-  /** STATE_DEPLOYED_TESTING - Deployed to the prod infrastructure, but for testing. */
-  STATE_DEPLOYED_TESTING = 2,
-  /** STATE_SERVING - Deployed to the prod infrastructure, serving. */
-  STATE_SERVING = 3,
-  /** STATE_NEEDS_RESET - Deployed to the prod infrastructure, but required cleanup and verify the machine. */
-  STATE_NEEDS_RESET = 10,
-  /** STATE_NEEDS_REPAIR - Deployed to the prod infrastructure, but needs repair. */
-  STATE_NEEDS_REPAIR = 5,
   /**
-   * STATE_REPAIR_FAILED - Deployed to the prod infrastructure, but failed to be repaired in previous step
-   * and required new attempt for repairing.
+   * STATE_DEPLOYING - Deploying the resource with required configs just before it is READY.
+   * Note: Being standardized by lifecycle workflow milestones STATE_DEPLOYED (23) and STATE_SERVING (3).
+   * See go/fleet-common-state-proposal.
    */
-  STATE_REPAIR_FAILED = 11,
-  /** STATE_DISABLED - Deployed to the prod infrastructure, but get disabled. */
-  STATE_DISABLED = 6,
-  /** STATE_RESERVED - Deployed to the prod infrastructure, but get reserved (e.g. locked). */
-  STATE_RESERVED = 7,
-  /** STATE_DECOMMISSIONED - Decommissioned from the prod infrastructure, but still leave in UFS record. */
-  STATE_DECOMMISSIONED = 8,
-  /** STATE_DEPLOYING - Deploying the resource with required configs just before it is READY */
   STATE_DEPLOYING = 12,
-  /** STATE_BUILD - Resource is in the process of being built out or assembled. */
+  /**
+   * STATE_BUILD - Resource is in the process of being built out or assembled.
+   * Note: Being replaced by standardized lifecycle workflow milestones STATE_STAGED (20) and STATE_ASSEMBLED (21).
+   * See go/fleet-common-state-proposal.
+   */
   STATE_BUILD = 14,
   /**
    * STATE_MISSING - Resource is not detected and has gone missing. Possibly still physically
    * connected but needs a repair.
+   * Note: When missing or undetected devices require physical lab intervention, they transition to
+   * standardized lifecycle workflow milestone STATE_NEEDS_MANUAL_REPAIR (24). See go/fleet-common-state-proposal.
    */
   STATE_MISSING = 15,
+  /**
+   * STATE_NEEDS_RESET - --- Deprecated / Legacy States ---
+   * Deprecated: STATE_NEEDS_RESET is deprecated. Pre-deployment and verification uses are being replaced by
+   * standardized lifecycle workflow milestones STATE_QA_COMPLETED (22) and STATE_DEPLOYED (23). See go/fleet-common-state-proposal.
+   *
+   * @deprecated
+   */
+  STATE_NEEDS_RESET = 10,
+  /**
+   * STATE_READY - Deprecated: STATE_READY is deprecated. Being replaced by standardized lifecycle workflow milestone
+   * STATE_SERVING across ChromeOS and Browser. See go/fleet-common-state-proposal.
+   *
+   * @deprecated
+   */
+  STATE_READY = 13,
 }
 
 export function stateFromJSON(object: any): State {
@@ -55,36 +128,69 @@ export function stateFromJSON(object: any): State {
     case 0:
     case "STATE_UNSPECIFIED":
       return State.STATE_UNSPECIFIED;
-    case 1:
-    case "STATE_REGISTERED":
-      return State.STATE_REGISTERED;
-    case 9:
-    case "STATE_DEPLOYED_PRE_SERVING":
-      return State.STATE_DEPLOYED_PRE_SERVING;
-    case 2:
-    case "STATE_DEPLOYED_TESTING":
-      return State.STATE_DEPLOYED_TESTING;
+    case 18:
+    case "STATE_IN_STORAGE":
+      return State.STATE_IN_STORAGE;
+    case 19:
+    case "STATE_ALLOCATED":
+      return State.STATE_ALLOCATED;
+    case 20:
+    case "STATE_STAGED":
+      return State.STATE_STAGED;
+    case 21:
+    case "STATE_ASSEMBLED":
+      return State.STATE_ASSEMBLED;
+    case 22:
+    case "STATE_QA_COMPLETED":
+      return State.STATE_QA_COMPLETED;
+    case 23:
+    case "STATE_DEPLOYED":
+      return State.STATE_DEPLOYED;
     case 3:
     case "STATE_SERVING":
       return State.STATE_SERVING;
-    case 10:
-    case "STATE_NEEDS_RESET":
-      return State.STATE_NEEDS_RESET;
     case 5:
     case "STATE_NEEDS_REPAIR":
       return State.STATE_NEEDS_REPAIR;
     case 11:
     case "STATE_REPAIR_FAILED":
       return State.STATE_REPAIR_FAILED;
-    case 6:
-    case "STATE_DISABLED":
-      return State.STATE_DISABLED;
+    case 24:
+    case "STATE_NEEDS_MANUAL_REPAIR":
+      return State.STATE_NEEDS_MANUAL_REPAIR;
     case 7:
     case "STATE_RESERVED":
       return State.STATE_RESERVED;
+    case 16:
+    case "STATE_MAINTENANCE":
+      return State.STATE_MAINTENANCE;
+    case 17:
+    case "STATE_MIGRATION":
+      return State.STATE_MIGRATION;
+    case 25:
+    case "STATE_RELEASE_REQUESTED":
+      return State.STATE_RELEASE_REQUESTED;
+    case 26:
+    case "STATE_WAITING_DECOMMISSION":
+      return State.STATE_WAITING_DECOMMISSION;
+    case 27:
+    case "STATE_UNALLOCATED":
+      return State.STATE_UNALLOCATED;
+    case 1:
+    case "STATE_REGISTERED":
+      return State.STATE_REGISTERED;
+    case 2:
+    case "STATE_DEPLOYED_TESTING":
+      return State.STATE_DEPLOYED_TESTING;
+    case 6:
+    case "STATE_DISABLED":
+      return State.STATE_DISABLED;
     case 8:
     case "STATE_DECOMMISSIONED":
       return State.STATE_DECOMMISSIONED;
+    case 9:
+    case "STATE_DEPLOYED_PRE_SERVING":
+      return State.STATE_DEPLOYED_PRE_SERVING;
     case 12:
     case "STATE_DEPLOYING":
       return State.STATE_DEPLOYING;
@@ -94,6 +200,12 @@ export function stateFromJSON(object: any): State {
     case 15:
     case "STATE_MISSING":
       return State.STATE_MISSING;
+    case 10:
+    case "STATE_NEEDS_RESET":
+      return State.STATE_NEEDS_RESET;
+    case 13:
+    case "STATE_READY":
+      return State.STATE_READY;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum State");
   }
@@ -103,32 +215,58 @@ export function stateToJSON(object: State): string {
   switch (object) {
     case State.STATE_UNSPECIFIED:
       return "STATE_UNSPECIFIED";
-    case State.STATE_REGISTERED:
-      return "STATE_REGISTERED";
-    case State.STATE_DEPLOYED_PRE_SERVING:
-      return "STATE_DEPLOYED_PRE_SERVING";
-    case State.STATE_DEPLOYED_TESTING:
-      return "STATE_DEPLOYED_TESTING";
+    case State.STATE_IN_STORAGE:
+      return "STATE_IN_STORAGE";
+    case State.STATE_ALLOCATED:
+      return "STATE_ALLOCATED";
+    case State.STATE_STAGED:
+      return "STATE_STAGED";
+    case State.STATE_ASSEMBLED:
+      return "STATE_ASSEMBLED";
+    case State.STATE_QA_COMPLETED:
+      return "STATE_QA_COMPLETED";
+    case State.STATE_DEPLOYED:
+      return "STATE_DEPLOYED";
     case State.STATE_SERVING:
       return "STATE_SERVING";
-    case State.STATE_NEEDS_RESET:
-      return "STATE_NEEDS_RESET";
     case State.STATE_NEEDS_REPAIR:
       return "STATE_NEEDS_REPAIR";
     case State.STATE_REPAIR_FAILED:
       return "STATE_REPAIR_FAILED";
-    case State.STATE_DISABLED:
-      return "STATE_DISABLED";
+    case State.STATE_NEEDS_MANUAL_REPAIR:
+      return "STATE_NEEDS_MANUAL_REPAIR";
     case State.STATE_RESERVED:
       return "STATE_RESERVED";
+    case State.STATE_MAINTENANCE:
+      return "STATE_MAINTENANCE";
+    case State.STATE_MIGRATION:
+      return "STATE_MIGRATION";
+    case State.STATE_RELEASE_REQUESTED:
+      return "STATE_RELEASE_REQUESTED";
+    case State.STATE_WAITING_DECOMMISSION:
+      return "STATE_WAITING_DECOMMISSION";
+    case State.STATE_UNALLOCATED:
+      return "STATE_UNALLOCATED";
+    case State.STATE_REGISTERED:
+      return "STATE_REGISTERED";
+    case State.STATE_DEPLOYED_TESTING:
+      return "STATE_DEPLOYED_TESTING";
+    case State.STATE_DISABLED:
+      return "STATE_DISABLED";
     case State.STATE_DECOMMISSIONED:
       return "STATE_DECOMMISSIONED";
+    case State.STATE_DEPLOYED_PRE_SERVING:
+      return "STATE_DEPLOYED_PRE_SERVING";
     case State.STATE_DEPLOYING:
       return "STATE_DEPLOYING";
     case State.STATE_BUILD:
       return "STATE_BUILD";
     case State.STATE_MISSING:
       return "STATE_MISSING";
+    case State.STATE_NEEDS_RESET:
+      return "STATE_NEEDS_RESET";
+    case State.STATE_READY:
+      return "STATE_READY";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum State");
   }

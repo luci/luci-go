@@ -9,7 +9,7 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "unifiedfleet.api.v1.models.chromeos.lab";
 
-/** Next Tag: 23 */
+/** Next Tag: 24 */
 export enum NetworkProvider {
   NETWORK_OTHER = 0,
   NETWORK_UNSUPPORTED = 5,
@@ -34,6 +34,7 @@ export enum NetworkProvider {
   NETWORK_POVO = 20,
   NETWORK_HANSHIN = 21,
   NETWORK_ROAMSIM = 22,
+  NETWORK_CTS = 23,
 }
 
 export function networkProviderFromJSON(object: any): NetworkProvider {
@@ -107,6 +108,9 @@ export function networkProviderFromJSON(object: any): NetworkProvider {
     case 22:
     case "NETWORK_ROAMSIM":
       return NetworkProvider.NETWORK_ROAMSIM;
+    case 23:
+    case "NETWORK_CTS":
+      return NetworkProvider.NETWORK_CTS;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }
@@ -160,6 +164,8 @@ export function networkProviderToJSON(object: NetworkProvider): string {
       return "NETWORK_HANSHIN";
     case NetworkProvider.NETWORK_ROAMSIM:
       return "NETWORK_ROAMSIM";
+    case NetworkProvider.NETWORK_CTS:
+      return "NETWORK_CTS";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }
@@ -296,6 +302,10 @@ export enum SIMProfileInfo_Feature {
   FEATURE_LIVE_NETWORK = 1,
   /** FEATURE_SMS - The SIM supports SMS messaging. */
   FEATURE_SMS = 2,
+  /** FEATURE_ESIM - The SIM is an eSIM. */
+  FEATURE_ESIM = 3,
+  /** FEATURE_PSIM - The SIM is a pSIM. */
+  FEATURE_PSIM = 4,
 }
 
 export function sIMProfileInfo_FeatureFromJSON(object: any): SIMProfileInfo_Feature {
@@ -309,6 +319,12 @@ export function sIMProfileInfo_FeatureFromJSON(object: any): SIMProfileInfo_Feat
     case 2:
     case "FEATURE_SMS":
       return SIMProfileInfo_Feature.FEATURE_SMS;
+    case 3:
+    case "FEATURE_ESIM":
+      return SIMProfileInfo_Feature.FEATURE_ESIM;
+    case 4:
+    case "FEATURE_PSIM":
+      return SIMProfileInfo_Feature.FEATURE_PSIM;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum SIMProfileInfo_Feature");
   }
@@ -322,6 +338,10 @@ export function sIMProfileInfo_FeatureToJSON(object: SIMProfileInfo_Feature): st
       return "FEATURE_LIVE_NETWORK";
     case SIMProfileInfo_Feature.FEATURE_SMS:
       return "FEATURE_SMS";
+    case SIMProfileInfo_Feature.FEATURE_ESIM:
+      return "FEATURE_ESIM";
+    case SIMProfileInfo_Feature.FEATURE_PSIM:
+      return "FEATURE_PSIM";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum SIMProfileInfo_Feature");
   }

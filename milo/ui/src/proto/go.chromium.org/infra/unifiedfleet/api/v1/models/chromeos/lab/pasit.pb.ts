@@ -66,7 +66,14 @@ export interface Pasit_Device {
     | undefined;
   /** Optional RPM if one exists */
   readonly rpm: OSRPM | undefined;
-  readonly switchFixtureDetails?: Pasit_Device_SwitchFixtureDetails | undefined;
+  readonly switchFixtureDetails?:
+    | Pasit_Device_SwitchFixtureDetails
+    | undefined;
+  /**
+   * The camera ID that is pointed at/observing this device (e.g. if this
+   * device is a monitor).
+   */
+  readonly observingCamera: string;
 }
 
 /** The type of device represented. */
@@ -429,7 +436,15 @@ export const Pasit_Connection: MessageFns<Pasit_Connection> = {
 };
 
 function createBasePasit_Device(): Pasit_Device {
-  return { id: "", model: "", type: 0, powerSupply: undefined, rpm: undefined, switchFixtureDetails: undefined };
+  return {
+    id: "",
+    model: "",
+    type: 0,
+    powerSupply: undefined,
+    rpm: undefined,
+    switchFixtureDetails: undefined,
+    observingCamera: "",
+  };
 }
 
 export const Pasit_Device: MessageFns<Pasit_Device> = {
@@ -451,6 +466,9 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
     }
     if (message.switchFixtureDetails !== undefined) {
       Pasit_Device_SwitchFixtureDetails.encode(message.switchFixtureDetails, writer.uint32(50).fork()).join();
+    }
+    if (message.observingCamera !== "") {
+      writer.uint32(58).string(message.observingCamera);
     }
     return writer;
   },
@@ -510,6 +528,14 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
           message.switchFixtureDetails = Pasit_Device_SwitchFixtureDetails.decode(reader, reader.uint32());
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.observingCamera = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -529,6 +555,7 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
       switchFixtureDetails: isSet(object.switchFixtureDetails)
         ? Pasit_Device_SwitchFixtureDetails.fromJSON(object.switchFixtureDetails)
         : undefined,
+      observingCamera: isSet(object.observingCamera) ? globalThis.String(object.observingCamera) : "",
     };
   },
 
@@ -552,6 +579,9 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
     if (message.switchFixtureDetails !== undefined) {
       obj.switchFixtureDetails = Pasit_Device_SwitchFixtureDetails.toJSON(message.switchFixtureDetails);
     }
+    if (message.observingCamera !== "") {
+      obj.observingCamera = message.observingCamera;
+    }
     return obj;
   },
 
@@ -570,6 +600,7 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
     message.switchFixtureDetails = (object.switchFixtureDetails !== undefined && object.switchFixtureDetails !== null)
       ? Pasit_Device_SwitchFixtureDetails.fromPartial(object.switchFixtureDetails)
       : undefined;
+    message.observingCamera = object.observingCamera ?? "";
     return message;
   },
 };

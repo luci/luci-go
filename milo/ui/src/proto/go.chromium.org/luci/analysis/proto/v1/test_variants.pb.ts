@@ -231,7 +231,10 @@ export interface TestVariantFailureRateAnalysis_RecentVerdict {
 export interface QueryTestVariantStabilityRequest {
   /** The LUCI Project for which test variants should be looked up. */
   readonly project: string;
-  /** The test variant positions to query. */
+  /**
+   * The test variant positions to query.
+   * At most 100 test variant positions may be queried in one request.
+   */
   readonly testVariants: readonly QueryTestVariantStabilityRequest_TestVariantPosition[];
 }
 

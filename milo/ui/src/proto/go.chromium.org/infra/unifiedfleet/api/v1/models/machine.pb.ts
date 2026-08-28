@@ -195,7 +195,7 @@ export function machineTypeToJSON(object: MachineType): string {
  * Machine refers to the devices or bare metal servers
  * which serves the tests directly.
  *
- * Next Tag: 17
+ * Next Tag: 19
  */
 export interface Machine {
   /**
@@ -256,7 +256,15 @@ export interface Machine {
   /** Asset tag of the machine */
   readonly assetTag: string;
   /** Ownership information of the host like ResourceGroup, Security level etc. */
-  readonly ownership: OwnershipData | undefined;
+  readonly ownership:
+    | OwnershipData
+    | undefined;
+  /** Record the last update timestamp of this machine in Nlyte */
+  readonly nlyteUpdateTime:
+    | string
+    | undefined;
+  /** Record the last timestamp when this machine has been updated from Nlyte to UFS */
+  readonly nlyteLastSync: string | undefined;
 }
 
 /** ChromeBrowserMachine refers to bare metal servers in Chrome Browser lab */
@@ -586,6 +594,8 @@ function createBaseMachine(): Machine {
     resourceState: 0,
     assetTag: "",
     ownership: undefined,
+    nlyteUpdateTime: undefined,
+    nlyteLastSync: undefined,
   };
 }
 
@@ -632,6 +642,12 @@ export const Machine: MessageFns<Machine> = {
     }
     if (message.ownership !== undefined) {
       OwnershipData.encode(message.ownership, writer.uint32(114).fork()).join();
+    }
+    if (message.nlyteUpdateTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.nlyteUpdateTime), writer.uint32(138).fork()).join();
+    }
+    if (message.nlyteLastSync !== undefined) {
+      Timestamp.encode(toTimestamp(message.nlyteLastSync), writer.uint32(146).fork()).join();
     }
     return writer;
   },
@@ -755,6 +771,22 @@ export const Machine: MessageFns<Machine> = {
           message.ownership = OwnershipData.decode(reader, reader.uint32());
           continue;
         }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.nlyteUpdateTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.nlyteLastSync = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -782,6 +814,8 @@ export const Machine: MessageFns<Machine> = {
       resourceState: isSet(object.resourceState) ? stateFromJSON(object.resourceState) : 0,
       assetTag: isSet(object.assetTag) ? globalThis.String(object.assetTag) : "",
       ownership: isSet(object.ownership) ? OwnershipData.fromJSON(object.ownership) : undefined,
+      nlyteUpdateTime: isSet(object.nlyteUpdateTime) ? globalThis.String(object.nlyteUpdateTime) : undefined,
+      nlyteLastSync: isSet(object.nlyteLastSync) ? globalThis.String(object.nlyteLastSync) : undefined,
     };
   },
 
@@ -829,6 +863,12 @@ export const Machine: MessageFns<Machine> = {
     if (message.ownership !== undefined) {
       obj.ownership = OwnershipData.toJSON(message.ownership);
     }
+    if (message.nlyteUpdateTime !== undefined) {
+      obj.nlyteUpdateTime = message.nlyteUpdateTime;
+    }
+    if (message.nlyteLastSync !== undefined) {
+      obj.nlyteLastSync = message.nlyteLastSync;
+    }
     return obj;
   },
 
@@ -865,6 +905,8 @@ export const Machine: MessageFns<Machine> = {
     message.ownership = (object.ownership !== undefined && object.ownership !== null)
       ? OwnershipData.fromPartial(object.ownership)
       : undefined;
+    message.nlyteUpdateTime = object.nlyteUpdateTime ?? undefined;
+    message.nlyteLastSync = object.nlyteLastSync ?? undefined;
     return message;
   },
 };

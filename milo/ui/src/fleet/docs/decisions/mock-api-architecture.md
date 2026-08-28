@@ -45,8 +45,18 @@ We establish **`FleetConsoleMockAPI`** (`src/fleet/testing_tools/mock_api/mock_a
    ```
 4. **Clean Isolation**:
    `FleetConsoleMockAPI.resetFixtures()` restores defaults between test cases in `beforeEach`.
+5. **Standalone Prototyping Support**:
+   Static prototypes (hosted on Cloud Storage or static dev servers) can initialize network-level simulation with state persistence and latency control:
+   ```typescript
+   FleetConsoleMockAPI.initPrototypeMode({
+     persistToLocalStorage: true, // Persists mutations across browser reloads
+     latencyMs: 150,              // Simulates realistic network response delay
+     authState: { email: 'proto-admin@google.com' },
+   });
+   ```
 
 ## Consequences
-- **Zero Schema Drift**: Unit tests and prototypes use the same protobuf structures as production Go servers.
+- **Zero Schema Drift**: Unit tests and static prototypes use the same protobuf structures as production Go servers.
+- **Interactive Prototyping**: Static UI prototypes support full interactive CRUD user flows (editing inventory, reserving devices, running repairs) with optional `localStorage` persistence.
 - **Fast, Deterministic Tests**: In-memory fetch interception executes in <0.1ms without external network IO.
 - **Unified Maintenance**: Adding a new feature only requires updating one fixture set.

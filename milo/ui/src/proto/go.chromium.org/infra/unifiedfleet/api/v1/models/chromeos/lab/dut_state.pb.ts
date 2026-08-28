@@ -356,7 +356,7 @@ export function hardwareStateToJSON(object: HardwareState): string {
 
 /**
  * This proto defines status labels in lab config of a DUT.
- * Next Tag: 39
+ * Next Tag: 41
  */
 export interface DutState {
   readonly id: ChromeOSDeviceID | undefined;
@@ -434,6 +434,8 @@ export interface DutState {
   readonly fingerprintSensor: string;
   readonly gscChip: DutState_GscChip;
   readonly workingBesBoards: number;
+  readonly ecChip: string;
+  readonly cbiData: CBIData | undefined;
 }
 
 /**
@@ -662,6 +664,12 @@ export function versionInfo_OsTypeToJSON(object: VersionInfo_OsType): string {
   }
 }
 
+/** Next Tag: 3 */
+export interface CBIData {
+  readonly raw: string;
+  readonly formatted: string;
+}
+
 function createBaseDutState(): DutState {
   return {
     id: undefined,
@@ -702,6 +710,8 @@ function createBaseDutState(): DutState {
     fingerprintSensor: "",
     gscChip: 0,
     workingBesBoards: 0,
+    ecChip: "",
+    cbiData: undefined,
   };
 }
 
@@ -822,6 +832,12 @@ export const DutState: MessageFns<DutState> = {
     }
     if (message.workingBesBoards !== 0) {
       writer.uint32(304).int32(message.workingBesBoards);
+    }
+    if (message.ecChip !== "") {
+      writer.uint32(314).string(message.ecChip);
+    }
+    if (message.cbiData !== undefined) {
+      CBIData.encode(message.cbiData, writer.uint32(322).fork()).join();
     }
     return writer;
   },
@@ -1147,6 +1163,22 @@ export const DutState: MessageFns<DutState> = {
           message.workingBesBoards = reader.int32();
           continue;
         }
+        case 39: {
+          if (tag !== 314) {
+            break;
+          }
+
+          message.ecChip = reader.string();
+          continue;
+        }
+        case 40: {
+          if (tag !== 322) {
+            break;
+          }
+
+          message.cbiData = CBIData.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1204,6 +1236,8 @@ export const DutState: MessageFns<DutState> = {
       fingerprintSensor: isSet(object.fingerprintSensor) ? globalThis.String(object.fingerprintSensor) : "",
       gscChip: isSet(object.gscChip) ? dutState_GscChipFromJSON(object.gscChip) : 0,
       workingBesBoards: isSet(object.workingBesBoards) ? globalThis.Number(object.workingBesBoards) : 0,
+      ecChip: isSet(object.ecChip) ? globalThis.String(object.ecChip) : "",
+      cbiData: isSet(object.cbiData) ? CBIData.fromJSON(object.cbiData) : undefined,
     };
   },
 
@@ -1323,6 +1357,12 @@ export const DutState: MessageFns<DutState> = {
     if (message.workingBesBoards !== 0) {
       obj.workingBesBoards = Math.round(message.workingBesBoards);
     }
+    if (message.ecChip !== "") {
+      obj.ecChip = message.ecChip;
+    }
+    if (message.cbiData !== undefined) {
+      obj.cbiData = CBIData.toJSON(message.cbiData);
+    }
     return obj;
   },
 
@@ -1371,6 +1411,10 @@ export const DutState: MessageFns<DutState> = {
     message.fingerprintSensor = object.fingerprintSensor ?? "";
     message.gscChip = object.gscChip ?? 0;
     message.workingBesBoards = object.workingBesBoards ?? 0;
+    message.ecChip = object.ecChip ?? "";
+    message.cbiData = (object.cbiData !== undefined && object.cbiData !== null)
+      ? CBIData.fromPartial(object.cbiData)
+      : undefined;
     return message;
   },
 };
@@ -1479,6 +1523,82 @@ export const VersionInfo: MessageFns<VersionInfo> = {
     message.roFirmware = object.roFirmware ?? "";
     message.rwFirmware = object.rwFirmware ?? "";
     message.osType = object.osType ?? 0;
+    return message;
+  },
+};
+
+function createBaseCBIData(): CBIData {
+  return { raw: "", formatted: "" };
+}
+
+export const CBIData: MessageFns<CBIData> = {
+  encode(message: CBIData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.raw !== "") {
+      writer.uint32(10).string(message.raw);
+    }
+    if (message.formatted !== "") {
+      writer.uint32(18).string(message.formatted);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CBIData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCBIData() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.raw = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.formatted = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CBIData {
+    return {
+      raw: isSet(object.raw) ? globalThis.String(object.raw) : "",
+      formatted: isSet(object.formatted) ? globalThis.String(object.formatted) : "",
+    };
+  },
+
+  toJSON(message: CBIData): unknown {
+    const obj: any = {};
+    if (message.raw !== "") {
+      obj.raw = message.raw;
+    }
+    if (message.formatted !== "") {
+      obj.formatted = message.formatted;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CBIData>): CBIData {
+    return CBIData.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CBIData>): CBIData {
+    const message = createBaseCBIData() as any;
+    message.raw = object.raw ?? "";
+    message.formatted = object.formatted ?? "";
     return message;
   },
 };

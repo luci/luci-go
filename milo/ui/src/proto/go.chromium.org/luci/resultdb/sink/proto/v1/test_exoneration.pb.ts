@@ -6,12 +6,13 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { TestIdentifier, Variant } from "../../../proto/v1/common.pb";
+import { Variant } from "../../../proto/v1/common.pb";
 import {
   ExonerationReason,
   exonerationReasonFromJSON,
   exonerationReasonToJSON,
 } from "../../../proto/v1/test_exoneration.pb";
+import { TestIdentifier } from "./test_result.pb";
 
 export const protobufPackage = "luci.resultsink.v1";
 
