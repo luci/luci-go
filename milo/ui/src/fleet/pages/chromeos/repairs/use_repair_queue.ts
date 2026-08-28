@@ -17,9 +17,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { ListRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+export const REPAIR_QUEUE_QUERY_KEY = ['repairQueue'] as const;
+
 export const useRepairQueue = (request: ListRepairQueueRequest) => {
   const client = useFleetConsoleClient();
   return useQuery({
     ...client.ListRepairQueue.query(request),
+    queryKey: [...REPAIR_QUEUE_QUERY_KEY, request],
+    refetchInterval: 10000,
   });
 };

@@ -15,10 +15,8 @@
 import { Alert, AlertTitle } from '@mui/material';
 import {
   MaterialReactTable,
-  MRT_ColumnDef,
   MRT_RowSelectionState,
   MRT_TableInstance,
-  MRT_TableOptions,
 } from 'material-react-table';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -36,7 +34,10 @@ import { MrtColumnManager } from '@/fleet/components/columns/use_mrt_column_mana
 import { FleetCSVExportButton } from '@/fleet/components/export/fleet_csv_export_button';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
-import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import {
+  FC_TableOptions,
+  useFCDataTable,
+} from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { BROWSER_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
@@ -155,10 +156,10 @@ export const BrowserDevicesTable = ({
     setRowSelection({});
   }, [filterValues]);
 
-  const tableOptions: MRT_TableOptions<BrowserDevice> = useMemo(
+  const tableOptions: FC_TableOptions<BrowserDevice> = useMemo(
     () => ({
-      columns: mrtColumnManager.columns as MRT_ColumnDef<BrowserDevice>[],
-      data: devices as BrowserDevice[],
+      columns: mrtColumnManager.columns,
+      data: devices,
       displayColumnDefOptions: {
         'mrt-row-select': {
           size: 40,

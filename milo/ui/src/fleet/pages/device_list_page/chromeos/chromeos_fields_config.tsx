@@ -222,8 +222,13 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
     header: 'dut_state',
     accessorFn: (device) =>
       getLabelValueInternal(device, 'dut_state').toUpperCase(),
-    renderCell: (params: FC_CellProps<ChromeOSDevice>) => {
-      return <DutStateCell params={params} />;
+    renderCell: ({ row }: FC_CellProps<ChromeOSDevice>) => {
+      const state = getLabelValueInternal(row.original, 'dut_state');
+      const comment = getLabelValueInternal(
+        row.original,
+        'ufs.dut_state_reason',
+      );
+      return <DutStateCell state={state} comment={comment} />;
     },
   },
   'label-servo_state': {

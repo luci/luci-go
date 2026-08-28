@@ -16,7 +16,6 @@ import { Alert, AlertTitle } from '@mui/material';
 import {
   MaterialReactTable,
   MRT_RowSelectionState,
-  MRT_TableOptions,
 } from 'material-react-table';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -32,7 +31,10 @@ import {
 import { FleetCSVExportButton } from '@/fleet/components/export/fleet_csv_export_button';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
-import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import {
+  FC_TableOptions,
+  useFCDataTable,
+} from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { enableAndroidUtilizationMetrics } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
@@ -133,10 +135,10 @@ export const AndroidDevicesTable = ({
     });
   }, [mrtColumnManager.columns, mrtColumnManager.columnVisibility]);
 
-  const tableOptions: MRT_TableOptions<AndroidDevice> = useMemo(
+  const tableOptions: FC_TableOptions<AndroidDevice> = useMemo(
     () => ({
       columns: visibleColumns,
-      data: devices as AndroidDevice[],
+      data: devices,
       displayColumnDefOptions: {
         'mrt-row-select': {
           size: 40,

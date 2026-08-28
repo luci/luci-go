@@ -15,10 +15,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import { SettingsProvider } from '@/fleet/context/providers';
-import { FC_CellProps } from '@/fleet/types/table';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ChromeOSDevice } from './chromeos_types';
 import { DutStateCell } from './dut_state_cell';
 
 const mockTrackEvent = jest.fn();
@@ -33,24 +31,10 @@ describe('DutStateCell', () => {
     jest.clearAllMocks();
   });
   test('should render nothing when the state is empty', () => {
-    const mockProps = {
-      cell: {
-        getValue: () => '',
-      },
-      row: {
-        original: {
-          id: 'device-1',
-          deviceSpec: {
-            labels: {},
-          },
-        },
-      },
-    } as unknown as FC_CellProps<ChromeOSDevice>;
-
     const { container } = render(
       <FakeContextProvider>
         <SettingsProvider>
-          <DutStateCell params={mockProps} />
+          <DutStateCell state="" />
         </SettingsProvider>
       </FakeContextProvider>,
     );
@@ -59,26 +43,10 @@ describe('DutStateCell', () => {
   });
 
   test('should render only the chip when the state is not RESERVED', () => {
-    const mockProps = {
-      cell: {
-        getValue: () => 'READY',
-      },
-      row: {
-        original: {
-          id: 'device-1',
-          deviceSpec: {
-            labels: {
-              dut_state: { values: ['READY'] },
-            },
-          },
-        },
-      },
-    } as unknown as FC_CellProps<ChromeOSDevice>;
-
     render(
       <FakeContextProvider>
         <SettingsProvider>
-          <DutStateCell params={mockProps} />
+          <DutStateCell state="READY" />
         </SettingsProvider>
       </FakeContextProvider>,
     );
@@ -93,27 +61,10 @@ describe('DutStateCell', () => {
   });
 
   test('should render the chip and info icon when the state is RESERVED', () => {
-    const mockProps = {
-      cell: {
-        getValue: () => 'RESERVED',
-      },
-      row: {
-        original: {
-          id: 'device-1',
-          deviceSpec: {
-            labels: {
-              dut_state: { values: ['RESERVED'] },
-              'ufs.dut_state_reason': { values: ['test comment'] },
-            },
-          },
-        },
-      },
-    } as unknown as FC_CellProps<ChromeOSDevice>;
-
     render(
       <FakeContextProvider>
         <SettingsProvider>
-          <DutStateCell params={mockProps} />
+          <DutStateCell state="RESERVED" comment="test comment" />
         </SettingsProvider>
       </FakeContextProvider>,
     );
@@ -128,29 +79,13 @@ describe('DutStateCell', () => {
   });
 
   test('should display tooltip on hover with the correct reserve comment', async () => {
-    const mockProps = {
-      cell: {
-        getValue: () => 'RESERVED',
-      },
-      row: {
-        original: {
-          id: 'device-1',
-          deviceSpec: {
-            labels: {
-              dut_state: { values: ['RESERVED'] },
-              'ufs.dut_state_reason': {
-                values: ['This device is reserved for manual testing'],
-              },
-            },
-          },
-        },
-      },
-    } as unknown as FC_CellProps<ChromeOSDevice>;
-
     render(
       <FakeContextProvider>
         <SettingsProvider>
-          <DutStateCell params={mockProps} />
+          <DutStateCell
+            state="RESERVED"
+            comment="This device is reserved for manual testing"
+          />
         </SettingsProvider>
       </FakeContextProvider>,
     );
@@ -181,29 +116,13 @@ describe('DutStateCell', () => {
   });
 
   test('should display tooltip on focus and track GA event for keyboard accessibility', async () => {
-    const mockProps = {
-      cell: {
-        getValue: () => 'RESERVED',
-      },
-      row: {
-        original: {
-          id: 'device-1',
-          deviceSpec: {
-            labels: {
-              dut_state: { values: ['RESERVED'] },
-              'ufs.dut_state_reason': {
-                values: ['This device is reserved for manual testing'],
-              },
-            },
-          },
-        },
-      },
-    } as unknown as FC_CellProps<ChromeOSDevice>;
-
     render(
       <FakeContextProvider>
         <SettingsProvider>
-          <DutStateCell params={mockProps} />
+          <DutStateCell
+            state="RESERVED"
+            comment="This device is reserved for manual testing"
+          />
         </SettingsProvider>
       </FakeContextProvider>,
     );
@@ -227,27 +146,10 @@ describe('DutStateCell', () => {
   });
 
   test('should display fallback text in tooltip if comment is missing', async () => {
-    const mockProps = {
-      cell: {
-        getValue: () => 'RESERVED',
-      },
-      row: {
-        original: {
-          id: 'device-1',
-          deviceSpec: {
-            labels: {
-              dut_state: { values: ['RESERVED'] },
-              // 'ufs.dut_state_reason' is missing!
-            },
-          },
-        },
-      },
-    } as unknown as FC_CellProps<ChromeOSDevice>;
-
     render(
       <FakeContextProvider>
         <SettingsProvider>
-          <DutStateCell params={mockProps} />
+          <DutStateCell state="RESERVED" />
         </SettingsProvider>
       </FakeContextProvider>,
     );

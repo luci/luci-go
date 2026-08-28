@@ -21,11 +21,8 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 
 import { ChromeOSRepairTable } from './chromeos_repair_table';
 import { PriorityRulesPanel } from './priority_rules_panel';
-import { useRepairQueueColumns } from './use_repair_queue_columns';
 
 export const ChromeOSRepairDashboard = () => {
-  const { columns } = useRepairQueueColumns();
-
   return (
     <div
       css={{
@@ -81,7 +78,7 @@ export const ChromeOSRepairDashboard = () => {
       </Typography>
 
       <div css={{ marginTop: 16 }}>
-        <ChromeOSRepairTable columns={columns} filter={''} />
+        <ChromeOSRepairTable filter={''} />
       </div>
     </div>
   );

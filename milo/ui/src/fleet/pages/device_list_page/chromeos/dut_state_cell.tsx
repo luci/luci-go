@@ -16,46 +16,48 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
-import {
-  renderChipCell,
-  StateUnion,
-} from '@/fleet/components/table/cell_with_chip';
+import { StateUnion } from '@/fleet/components/table/cell_with_chip';
+import { ChipComponent } from '@/fleet/components/table/chip_component';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
-import { FC_CellProps } from '@/fleet/types/table';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
-import { ChromeOSDevice } from './chromeos_types';
 import { getStatusColor } from './dut_state';
 
+export interface DutStateCellProps {
+  state?: string;
+  comment?: string;
+}
+
 export const DutStateCell = ({
-  params,
-}: {
-  params: FC_CellProps<ChromeOSDevice>;
-}) => {
+  state = '',
+  comment = '',
+}: DutStateCellProps) => {
   const { trackEvent } = useGoogleAnalytics();
-  const stateValue = String(params.cell.getValue() ?? '');
-  const device = params.row.original;
+  const stateValue = state.trim();
 
   if (stateValue === '') {
-    return <></>;
+    return null;
   }
 
-  const chip = renderChipCell<ChromeOSDevice>({
-    getValueOrUrl: getSwarmingStateDocLinkForLabel,
-    getColor: getStatusColor,
-    overrideValue: stateValue.toUpperCase() as StateUnion,
-    getTrackingEvent: (value) => ({
-      eventName: 'state_doc_link_clicked',
-      payload: { componentName: 'dut_state', activeTab: value },
-    }),
-  })(params);
+  const upperState = stateValue.toUpperCase() as StateUnion;
 
-  if (stateValue !== 'RESERVED') {
+  const chip = (
+    <ChipComponent
+      label={upperState}
+      url={getSwarmingStateDocLinkForLabel(upperState)}
+      color={getStatusColor(upperState)}
+      onClick={() => {
+        trackEvent('state_doc_link_clicked', {
+          componentName: 'dut_state',
+          activeTab: upperState,
+        });
+      }}
+    />
+  );
+
+  if (upperState !== 'RESERVED') {
     return <>{chip}</>;
   }
-
-  const comment =
-    device.deviceSpec?.labels?.['ufs.dut_state_reason']?.values?.[0] || '';
 
   return (
     <Box

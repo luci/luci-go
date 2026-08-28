@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
-import * as UsePriorityRulesModule from '@/fleet/pages/chromeos/repairs/use_priority_rules';
+import * as UseClaimRepairTaskModule from '@/fleet/pages/chromeos/repairs/use_claim_repair_task';
 import * as UseRepairQueueModule from '@/fleet/pages/chromeos/repairs/use_repair_queue';
 import { RepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -34,16 +34,22 @@ jest.mock('@/generic_libs/components/google_analytics', () => ({
 
 const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
   {
+    taskId: '101',
     dutId: 'chromeos15-row2-rack3-host4',
     pools: ['DUT_POOL_QUOTA'],
     model: 'volteer',
     state: 'needs_repair',
+    claimedBy: '',
+    claimedAt: undefined,
   },
   {
+    taskId: '102',
     dutId: 'chromeos15-row2-rack3-host5',
     pools: ['faft-cr50'],
     model: 'brya',
     state: 'repair_failed',
+    claimedBy: 'tech1@google.com',
+    claimedAt: '2026-08-19T10:00:00Z',
   },
 ];
 
@@ -57,22 +63,6 @@ describe('<ChromeOSRepairDashboard />', () => {
           retry: false,
         },
       },
-    });
-    jest.spyOn(UsePriorityRulesModule, 'usePriorityRules').mockReturnValue({
-      rules: [],
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-      createRule: jest.fn().mockResolvedValue({}),
-      isCreating: false,
-      createError: null,
-      updateRule: jest.fn().mockResolvedValue({}),
-      isUpdating: false,
-      updateError: null,
-      deleteRule: jest.fn().mockResolvedValue({}),
-      isDeleting: false,
-      deleteError: null,
     });
   });
 
@@ -119,7 +109,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders the 4 columns: Dut ID, Pool, Model, State', async () => {
+  it('renders all 5 columns: Dut ID, Pool, Model, State, Assignee', async () => {
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
       data: {
         repairQueueItems: MOCK_QUEUE_ITEMS,
@@ -136,9 +126,10 @@ describe('<ChromeOSRepairDashboard />', () => {
     renderDashboard();
 
     expect(screen.getByText('Dut ID')).toBeInTheDocument();
-    expect(screen.getByText('label-pool')).toBeInTheDocument();
+    expect(screen.getByText('Pool')).toBeInTheDocument();
     expect(screen.getByText('Model')).toBeInTheDocument();
     expect(screen.getByText('State')).toBeInTheDocument();
+    expect(screen.getByText('Assignee')).toBeInTheDocument();
   });
 
   it('populates device rows correctly with mock data', async () => {
@@ -168,6 +159,261 @@ describe('<ChromeOSRepairDashboard />', () => {
     expect(screen.getByText('faft-cr50')).toBeInTheDocument();
     expect(screen.getByText('brya')).toBeInTheDocument();
     expect(screen.getByText('REPAIR_FAILED')).toBeInTheDocument();
+  });
+
+  it('renders Claim button for unclaimed item and Avatar for claimed item', async () => {
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: [
+          ...MOCK_QUEUE_ITEMS,
+          {
+            taskId: '103',
+            dutId: 'chromeos15-row2-rack3-host6',
+            pool: 'DUT_POOL_QUOTA',
+            model: 'volteer',
+            state: 'needs_repair',
+            claimedBy: '   ',
+            claimedAt: undefined,
+          },
+        ],
+        totalSize: 3,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    // Unclaimed items (including whitespace claimedBy) should render Claim buttons
+    const claimButtons = screen.getAllByRole('button', { name: /Claim/i });
+    expect(claimButtons).toHaveLength(2);
+
+    // Claimed item should render circular Avatar with initial 'T'
+    const avatar = screen.getByText('T');
+    expect(avatar).toBeInTheDocument();
+  });
+
+  it('invokes claim mutation when Claim button is clicked', async () => {
+    const mockMutate = jest.fn();
+    jest.spyOn(UseClaimRepairTaskModule, 'useClaimRepairTask').mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+    } as unknown as ReturnType<
+      typeof UseClaimRepairTaskModule.useClaimRepairTask
+    >);
+
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: MOCK_QUEUE_ITEMS,
+        totalSize: 2,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    const claimButton = screen.getByRole('button', { name: /Claim/i });
+    fireEvent.click(claimButton);
+
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        taskId: '101',
+      }),
+    );
+  });
+
+  it('invokes unclaim mutation when own Avatar is clicked', async () => {
+    const mockUnclaimMutate = jest.fn();
+    jest
+      .spyOn(UseClaimRepairTaskModule, 'useUnclaimRepairTask')
+      .mockReturnValue({
+        mutate: mockUnclaimMutate,
+        isPending: false,
+        isError: false,
+        isSuccess: false,
+      } as unknown as ReturnType<
+        typeof UseClaimRepairTaskModule.useUnclaimRepairTask
+      >);
+
+    const ownClaimedItem: RepairQueueItem = {
+      taskId: '103',
+      dutId: 'chromeos15-row2-rack3-host7',
+      pools: ['DUT_POOL_QUOTA'],
+      model: 'volteer',
+      state: 'needs_repair',
+      claimedBy: 'user@example.com',
+      claimedAt: '2026-08-19T10:00:00Z',
+    };
+
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: [ownClaimedItem],
+        totalSize: 1,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    // Default mock user is user@example.com -> Initial is 'U'
+    const avatar = screen.getByText('U');
+    fireEvent.click(avatar);
+
+    expect(mockUnclaimMutate).toHaveBeenCalledTimes(1);
+    expect(mockUnclaimMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        taskId: '103',
+      }),
+    );
+  });
+
+  it('invokes claim mutation when another user Avatar is clicked', async () => {
+    const mockClaimMutate = jest.fn();
+    jest.spyOn(UseClaimRepairTaskModule, 'useClaimRepairTask').mockReturnValue({
+      mutate: mockClaimMutate,
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+    } as unknown as ReturnType<
+      typeof UseClaimRepairTaskModule.useClaimRepairTask
+    >);
+
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: MOCK_QUEUE_ITEMS,
+        totalSize: 2,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    // tech1@google.com avatar has initial 'T'
+    const avatar = screen.getByText('T');
+    fireEvent.click(avatar);
+
+    expect(mockClaimMutate).toHaveBeenCalledTimes(1);
+    expect(mockClaimMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        taskId: '102',
+      }),
+    );
+  });
+
+  it('disables Claim button and Avatar interactions when claim mutation is pending', async () => {
+    const mockClaimMutate = jest.fn();
+    jest.spyOn(UseClaimRepairTaskModule, 'useClaimRepairTask').mockReturnValue({
+      mutate: mockClaimMutate,
+      isPending: true,
+      isError: false,
+      isSuccess: false,
+    } as unknown as ReturnType<
+      typeof UseClaimRepairTaskModule.useClaimRepairTask
+    >);
+
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: MOCK_QUEUE_ITEMS,
+        totalSize: 2,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    const claimButton = screen.getAllByRole('button', { name: /Claim/i })[0];
+    expect(claimButton).toBeDisabled();
+    fireEvent.click(claimButton);
+    expect(mockClaimMutate).not.toHaveBeenCalled();
+
+    const avatar = screen.getByText('T');
+    expect(avatar).toHaveStyle({
+      cursor: 'not-allowed',
+      opacity: '0.6',
+      pointerEvents: 'none',
+    });
+    fireEvent.click(avatar);
+    expect(mockClaimMutate).not.toHaveBeenCalled();
+  });
+
+  it('disables Claim button and Avatar interactions when unclaim mutation is pending', async () => {
+    const mockUnclaimMutate = jest.fn();
+    jest
+      .spyOn(UseClaimRepairTaskModule, 'useUnclaimRepairTask')
+      .mockReturnValue({
+        mutate: mockUnclaimMutate,
+        isPending: true,
+        isError: false,
+        isSuccess: false,
+      } as unknown as ReturnType<
+        typeof UseClaimRepairTaskModule.useUnclaimRepairTask
+      >);
+
+    const ownClaimedItem: RepairQueueItem = {
+      taskId: '103',
+      dutId: 'chromeos15-row2-rack3-host7',
+      pools: ['DUT_POOL_QUOTA'],
+      model: 'volteer',
+      state: 'needs_repair',
+      claimedBy: 'user@example.com',
+      claimedAt: '2026-08-19T10:00:00Z',
+    };
+
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: [...MOCK_QUEUE_ITEMS, ownClaimedItem],
+        totalSize: 3,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    const claimButton = screen.getAllByRole('button', { name: /Claim/i })[0];
+    expect(claimButton).toBeDisabled();
+    fireEvent.click(claimButton);
+    expect(mockUnclaimMutate).not.toHaveBeenCalled();
+
+    const avatar = screen.getByText('U');
+    expect(avatar).toHaveStyle({
+      cursor: 'not-allowed',
+      opacity: '0.6',
+      pointerEvents: 'none',
+    });
+    fireEvent.click(avatar);
+    expect(mockUnclaimMutate).not.toHaveBeenCalled();
   });
 
   it('displays empty list correctly', async () => {
@@ -208,30 +454,5 @@ describe('<ChromeOSRepairDashboard />', () => {
       await screen.findByText('Error Loading Repair Queue'),
     ).toBeInTheDocument();
     expect(screen.getByText(/Network error/i)).toBeInTheDocument();
-  });
-
-  it('renders priority scoring rules inline in the dashboard', async () => {
-    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
-      data: {
-        repairQueueItems: MOCK_QUEUE_ITEMS,
-        totalSize: 2,
-        nextPageToken: '',
-      },
-      isPending: false,
-      isError: false,
-      isFetching: false,
-      isLoading: false,
-      isPlaceholderData: false,
-    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
-
-    renderDashboard();
-
-    expect(
-      screen.getByRole('heading', {
-        level: 6,
-        name: /Priority Scoring Rules/i,
-      }),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId('add-priority-rule-button')).toBeInTheDocument();
   });
 });

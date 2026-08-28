@@ -560,12 +560,31 @@ export interface RepairQueueItem {
   readonly pools: readonly string[];
   readonly model: string;
   readonly state: string;
+  readonly taskId: string;
+  readonly claimedBy?: string | undefined;
+  readonly claimedAt?: string | undefined;
 }
 
 export interface ListRepairQueueResponse {
   readonly repairQueueItems: readonly RepairQueueItem[];
   readonly nextPageToken: string;
   readonly totalSize: number;
+}
+
+export interface ClaimRepairTaskRequest {
+  readonly taskId: string;
+}
+
+export interface ClaimRepairTaskResponse {
+  readonly repairQueueItem: RepairQueueItem | undefined;
+}
+
+export interface UnclaimRepairTaskRequest {
+  readonly taskId: string;
+}
+
+export interface UnclaimRepairTaskResponse {
+  readonly repairQueueItem: RepairQueueItem | undefined;
 }
 
 export interface PriorityRule {
@@ -5356,7 +5375,7 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
 };
 
 function createBaseRepairQueueItem(): RepairQueueItem {
-  return { dutId: "", pools: [], model: "", state: "" };
+  return { dutId: "", pools: [], model: "", state: "", taskId: "0", claimedBy: undefined, claimedAt: undefined };
 }
 
 export const RepairQueueItem: MessageFns<RepairQueueItem> = {
@@ -5372,6 +5391,15 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     if (message.state !== "") {
       writer.uint32(34).string(message.state);
+    }
+    if (message.taskId !== "" && message.taskId !== "0") {
+      writer.uint32(40).int64(message.taskId);
+    }
+    if (message.claimedBy !== undefined) {
+      writer.uint32(50).string(message.claimedBy);
+    }
+    if (message.claimedAt !== undefined) {
+      Timestamp.encode(toTimestamp(message.claimedAt), writer.uint32(58).fork()).join();
     }
     return writer;
   },
@@ -5415,6 +5443,30 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
           message.state = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.taskId = reader.int64().toString();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.claimedBy = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.claimedAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5430,6 +5482,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
       pools: globalThis.Array.isArray(object?.pools) ? object.pools.map((e: any) => globalThis.String(e)) : [],
       model: isSet(object.model) ? globalThis.String(object.model) : "",
       state: isSet(object.state) ? globalThis.String(object.state) : "",
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "0",
+      claimedBy: isSet(object.claimedBy) ? globalThis.String(object.claimedBy) : undefined,
+      claimedAt: isSet(object.claimedAt) ? globalThis.String(object.claimedAt) : undefined,
     };
   },
 
@@ -5447,6 +5502,15 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.state !== "") {
       obj.state = message.state;
     }
+    if (message.taskId !== "" && message.taskId !== "0") {
+      obj.taskId = message.taskId;
+    }
+    if (message.claimedBy !== undefined) {
+      obj.claimedBy = message.claimedBy;
+    }
+    if (message.claimedAt !== undefined) {
+      obj.claimedAt = message.claimedAt;
+    }
     return obj;
   },
 
@@ -5459,6 +5523,249 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.pools = object.pools?.map((e) => e) || [];
     message.model = object.model ?? "";
     message.state = object.state ?? "";
+    message.taskId = object.taskId ?? "0";
+    message.claimedBy = object.claimedBy ?? undefined;
+    message.claimedAt = object.claimedAt ?? undefined;
+    return message;
+  },
+};
+
+function createBaseClaimRepairTaskRequest(): ClaimRepairTaskRequest {
+  return { taskId: "0" };
+}
+
+export const ClaimRepairTaskRequest: MessageFns<ClaimRepairTaskRequest> = {
+  encode(message: ClaimRepairTaskRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "" && message.taskId !== "0") {
+      writer.uint32(8).int64(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClaimRepairTaskRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClaimRepairTaskRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.taskId = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ClaimRepairTaskRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "0" };
+  },
+
+  toJSON(message: ClaimRepairTaskRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "" && message.taskId !== "0") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ClaimRepairTaskRequest>): ClaimRepairTaskRequest {
+    return ClaimRepairTaskRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ClaimRepairTaskRequest>): ClaimRepairTaskRequest {
+    const message = createBaseClaimRepairTaskRequest() as any;
+    message.taskId = object.taskId ?? "0";
+    return message;
+  },
+};
+
+function createBaseClaimRepairTaskResponse(): ClaimRepairTaskResponse {
+  return { repairQueueItem: undefined };
+}
+
+export const ClaimRepairTaskResponse: MessageFns<ClaimRepairTaskResponse> = {
+  encode(message: ClaimRepairTaskResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.repairQueueItem !== undefined) {
+      RepairQueueItem.encode(message.repairQueueItem, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClaimRepairTaskResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClaimRepairTaskResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.repairQueueItem = RepairQueueItem.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ClaimRepairTaskResponse {
+    return {
+      repairQueueItem: isSet(object.repairQueueItem) ? RepairQueueItem.fromJSON(object.repairQueueItem) : undefined,
+    };
+  },
+
+  toJSON(message: ClaimRepairTaskResponse): unknown {
+    const obj: any = {};
+    if (message.repairQueueItem !== undefined) {
+      obj.repairQueueItem = RepairQueueItem.toJSON(message.repairQueueItem);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ClaimRepairTaskResponse>): ClaimRepairTaskResponse {
+    return ClaimRepairTaskResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ClaimRepairTaskResponse>): ClaimRepairTaskResponse {
+    const message = createBaseClaimRepairTaskResponse() as any;
+    message.repairQueueItem = (object.repairQueueItem !== undefined && object.repairQueueItem !== null)
+      ? RepairQueueItem.fromPartial(object.repairQueueItem)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseUnclaimRepairTaskRequest(): UnclaimRepairTaskRequest {
+  return { taskId: "0" };
+}
+
+export const UnclaimRepairTaskRequest: MessageFns<UnclaimRepairTaskRequest> = {
+  encode(message: UnclaimRepairTaskRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "" && message.taskId !== "0") {
+      writer.uint32(8).int64(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UnclaimRepairTaskRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnclaimRepairTaskRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.taskId = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnclaimRepairTaskRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "0" };
+  },
+
+  toJSON(message: UnclaimRepairTaskRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "" && message.taskId !== "0") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UnclaimRepairTaskRequest>): UnclaimRepairTaskRequest {
+    return UnclaimRepairTaskRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UnclaimRepairTaskRequest>): UnclaimRepairTaskRequest {
+    const message = createBaseUnclaimRepairTaskRequest() as any;
+    message.taskId = object.taskId ?? "0";
+    return message;
+  },
+};
+
+function createBaseUnclaimRepairTaskResponse(): UnclaimRepairTaskResponse {
+  return { repairQueueItem: undefined };
+}
+
+export const UnclaimRepairTaskResponse: MessageFns<UnclaimRepairTaskResponse> = {
+  encode(message: UnclaimRepairTaskResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.repairQueueItem !== undefined) {
+      RepairQueueItem.encode(message.repairQueueItem, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UnclaimRepairTaskResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnclaimRepairTaskResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.repairQueueItem = RepairQueueItem.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnclaimRepairTaskResponse {
+    return {
+      repairQueueItem: isSet(object.repairQueueItem) ? RepairQueueItem.fromJSON(object.repairQueueItem) : undefined,
+    };
+  },
+
+  toJSON(message: UnclaimRepairTaskResponse): unknown {
+    const obj: any = {};
+    if (message.repairQueueItem !== undefined) {
+      obj.repairQueueItem = RepairQueueItem.toJSON(message.repairQueueItem);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UnclaimRepairTaskResponse>): UnclaimRepairTaskResponse {
+    return UnclaimRepairTaskResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UnclaimRepairTaskResponse>): UnclaimRepairTaskResponse {
+    const message = createBaseUnclaimRepairTaskResponse() as any;
+    message.repairQueueItem = (object.repairQueueItem !== undefined && object.repairQueueItem !== null)
+      ? RepairQueueItem.fromPartial(object.repairQueueItem)
+      : undefined;
     return message;
   },
 };

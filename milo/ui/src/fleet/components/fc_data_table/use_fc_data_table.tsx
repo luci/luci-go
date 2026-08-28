@@ -72,8 +72,9 @@ export type FC_ColumnDef<
 // please be careful when modifing existing fields
 export type FC_TableOptions<TData extends MRT_RowData, TValue = unknown> = Omit<
   MRT_TableOptions<TData>,
-  'columns'
+  'columns' | 'data'
 > & {
+  data: readonly TData[];
   columns: FC_ColumnDef<TData, TValue>[];
   filterValues?: Record<string, FilterCategory>;
 };

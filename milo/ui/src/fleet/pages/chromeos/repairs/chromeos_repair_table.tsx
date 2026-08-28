@@ -13,40 +13,42 @@
 // limitations under the License.
 
 import { Alert, AlertTitle } from '@mui/material';
-import { MaterialReactTable, MRT_TableOptions } from 'material-react-table';
+import { MaterialReactTable } from 'material-react-table';
 import { useMemo } from 'react';
 
 import { usePagerContext } from '@/common/components/params_pager';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
-import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import {
+  FC_TableOptions,
+  useFCDataTable,
+} from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { usePager } from '@/fleet/hooks/use_pager';
-import {
-  ChromeOSColumnDef,
-  ChromeOSDevice,
-} from '@/fleet/pages/device_list_page/chromeos/chromeos_types';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import {
-  Device,
-  DeviceState,
-  DeviceType,
-  ListRepairQueueRequest,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { ListRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useRepairQueue } from './use_repair_queue';
+import {
+  RepairQueueColumnDef,
+  RepairQueueRow,
+  useRepairQueueColumns,
+} from './use_repair_queue_columns';
 
 const CHROMEOS_REPAIRS_LOCAL_STORAGE_KEY = 'fleet_chromeos_repairs_table';
 
 interface ChromeOSRepairTableProps {
-  columns: ChromeOSColumnDef[];
+  columns?: RepairQueueColumnDef[];
   filter: string;
 }
 
 export const ChromeOSRepairTable = ({
-  columns,
+  columns: propColumns,
   filter,
 }: ChromeOSRepairTableProps) => {
+  const { columns: defaultColumns } = useRepairQueueColumns();
+  const columns = propColumns || defaultColumns;
+
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100],
     defaultPageSize: 100,
@@ -78,34 +80,14 @@ export const ChromeOSRepairTable = ({
     totalSize = 0,
   } = queueQuery.data || {};
 
-  const rows: ChromeOSDevice[] = useMemo(() => {
-    return repairQueueItems.map((item) => {
-      const syntheticDevice: ChromeOSDevice = Device.fromPartial({
-        id: item.dutId,
-        dutId: item.dutId,
-        state: DeviceState.DEVICE_STATE_AVAILABLE,
-        type: DeviceType.DEVICE_TYPE_PHYSICAL,
-        deviceSpec: {
-          labels: {
-            'label-pool': { values: item.pools ? [...item.pools] : [] },
-            'label-model': { values: item.model ? [item.model] : [] },
-            dut_state: { values: item.state ? [item.state] : [] },
-            dut_name: { values: item.dutId ? [item.dutId] : [] },
-          },
-        },
-      });
-      return syntheticDevice;
-    });
-  }, [repairQueueItems]);
-
   const { columnSizing, onColumnSizingChange } = useMrtColumnSizing(
     CHROMEOS_REPAIRS_LOCAL_STORAGE_KEY,
   );
 
-  const tableOptions: MRT_TableOptions<ChromeOSDevice> = useMemo(
+  const tableOptions: FC_TableOptions<RepairQueueRow> = useMemo(
     () => ({
       columns,
-      data: rows,
+      data: repairQueueItems,
       enableRowSelection: false,
       positionToolbarAlertBanner: 'none',
       renderBottomToolbarCustomActions: ({ table }) => (
@@ -116,7 +98,7 @@ export const ChromeOSRepairTable = ({
           pagerCtx={pagerCtx}
         />
       ),
-      getRowId: (row: ChromeOSDevice) => row.id || row.dutId,
+      getRowId: (row: RepairQueueRow) => row.taskId,
       onSortingChange,
       enablePagination: false,
       enableTopToolbar: false,
@@ -133,7 +115,7 @@ export const ChromeOSRepairTable = ({
     }),
     [
       columns,
-      rows,
+      repairQueueItems,
       totalSize,
       nextPageToken,
       pagerCtx,
@@ -154,7 +136,7 @@ export const ChromeOSRepairTable = ({
       : undefined,
   });
 
-  if (queueQuery.isError) {
+  if (queueQuery.isError && !queueQuery.data) {
     return (
       <Alert severity="error">
         <AlertTitle>Error Loading Repair Queue</AlertTitle>

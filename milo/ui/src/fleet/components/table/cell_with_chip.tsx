@@ -12,61 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Chip from '@mui/material/Chip';
 import { MRT_RowData } from 'material-react-table';
 import React from 'react';
 
-import { useSettings } from '@/fleet/hooks/use_settings';
 import { androidState } from '@/fleet/pages/device_list_page/android/android_state';
-import { colors } from '@/fleet/theme/colors';
+import { swarmingState } from '@/fleet/pages/device_list_page/browser/swarming_state';
+import { dutState } from '@/fleet/pages/device_list_page/chromeos/dut_state';
 import { FC_CellProps } from '@/fleet/types/table';
 import {
   useGoogleAnalytics,
   EventPayload,
 } from '@/generic_libs/components/google_analytics';
 
-import { swarmingState } from '../../pages/device_list_page/browser/swarming_state';
-import { dutState } from '../../pages/device_list_page/chromeos/dut_state';
+import { ChipComponent } from './chip_component';
 
 export type StateUnion = dutState | androidState | swarmingState;
-
-// eslint-disable-next-line react-refresh/only-export-components
-function ChipComponent(props: {
-  value: string;
-  url: string;
-  getColor: (value: StateUnion) => string;
-  label?: string;
-  openInNewTab?: boolean;
-  onClick?: () => void;
-}) {
-  const { value, url, getColor, label, openInNewTab, onClick } = props;
-
-  const [settings, _] = useSettings();
-
-  const density = settings?.table?.density;
-
-  const chipColor = getColor(value as StateUnion);
-  const variant = chipColor === colors.transparent ? 'outlined' : 'filled';
-
-  return (
-    <Chip
-      label={label ?? value ?? ''}
-      variant={variant}
-      size={density === 'compact' ? 'small' : 'medium'}
-      sx={{
-        backgroundColor: chipColor,
-        width: 'fit-content',
-        fontWeight: 500,
-      }}
-      href={url}
-      target={openInNewTab ? '_blank' : '_self'}
-      rel={openInNewTab ? 'noopener noreferrer' : undefined}
-      component="a"
-      clickable
-      onClick={onClick}
-    />
-  );
-}
 
 export interface RenderChipCellOptions<R extends MRT_RowData> {
   getValueOrUrl: (value: string, rowOrProps: R) => string;
@@ -101,13 +61,14 @@ const ChipCell = <R extends MRT_RowData>(props: ChipCellProps<R>) => {
   const valueStr = String(overrideValue ?? cellProps.cell.getValue() ?? '');
   const paramsOrRow = cellProps.row.original;
   const url = getValueOrUrl(valueStr, paramsOrRow);
+  const color = getColor(valueStr as Exclude<StateUnion, ''>);
   const { trackEvent } = useGoogleAnalytics();
 
   return (
     <ChipComponent
-      value={label ?? valueStr}
+      label={label ?? valueStr}
       url={url}
-      getColor={() => getColor(valueStr as Exclude<StateUnion, ''>)}
+      color={color}
       openInNewTab={openInNewTab}
       onClick={
         getTrackingEvent

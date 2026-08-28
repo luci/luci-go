@@ -41,6 +41,8 @@ import {
   RepopulateBrowserCacheResponse,
 } from "./chromebrowser.pb";
 import {
+  ClaimRepairTaskRequest,
+  ClaimRepairTaskResponse,
   CountDevicesRequest,
   CountDevicesResponse,
   CountRepairMetricsRequest,
@@ -73,6 +75,8 @@ import {
   ScheduleDeployResponse,
   ScheduleReserveRequest,
   ScheduleReserveResponse,
+  UnclaimRepairTaskRequest,
+  UnclaimRepairTaskResponse,
   UpdateChromeOSDeviceRequest,
   UpdateChromeOSDeviceResponse,
   UpdatePriorityRuleRequest,
@@ -361,6 +365,8 @@ export interface FleetConsole {
   GetDeviceACLs(request: GetDeviceACLsRequest): Promise<GetDeviceACLsResponse>;
   UpdateChromeOSDevice(request: UpdateChromeOSDeviceRequest): Promise<UpdateChromeOSDeviceResponse>;
   ListRepairQueue(request: ListRepairQueueRequest): Promise<ListRepairQueueResponse>;
+  ClaimRepairTask(request: ClaimRepairTaskRequest): Promise<ClaimRepairTaskResponse>;
+  UnclaimRepairTask(request: UnclaimRepairTaskRequest): Promise<UnclaimRepairTaskResponse>;
   ListPriorityRules(request: ListPriorityRulesRequest): Promise<ListPriorityRulesResponse>;
   CreatePriorityRule(request: CreatePriorityRuleRequest): Promise<CreatePriorityRuleResponse>;
   UpdatePriorityRule(request: UpdatePriorityRuleRequest): Promise<UpdatePriorityRuleResponse>;
@@ -689,6 +695,18 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ListRepairQueueRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListRepairQueue", data);
     return promise.then((data) => ListRepairQueueResponse.fromJSON(data));
+  }
+
+  ClaimRepairTask(request: ClaimRepairTaskRequest): Promise<ClaimRepairTaskResponse> {
+    const data = ClaimRepairTaskRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ClaimRepairTask", data);
+    return promise.then((data) => ClaimRepairTaskResponse.fromJSON(data));
+  }
+
+  UnclaimRepairTask(request: UnclaimRepairTaskRequest): Promise<UnclaimRepairTaskResponse> {
+    const data = UnclaimRepairTaskRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UnclaimRepairTask", data);
+    return promise.then((data) => UnclaimRepairTaskResponse.fromJSON(data));
   }
 
   ListPriorityRules(request: ListPriorityRulesRequest): Promise<ListPriorityRulesResponse> {

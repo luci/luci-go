@@ -23,6 +23,8 @@ import {
   UpdatePriorityRuleRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { REPAIR_QUEUE_QUERY_KEY } from './use_repair_queue';
+
 export const PRIORITY_RULES_QUERY_KEY = ['ListPriorityRules'];
 
 const EMPTY_RULES: readonly PriorityRule[] = [];
@@ -38,9 +40,7 @@ export const usePriorityRules = () => {
 
   const invalidateRepairQueueQueries = () => {
     queryClient.invalidateQueries({
-      predicate: (query) =>
-        query.queryKey.includes('prpc') &&
-        query.queryKey.includes('ListRepairQueue'),
+      queryKey: REPAIR_QUEUE_QUERY_KEY,
     });
   };
 

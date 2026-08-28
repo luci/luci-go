@@ -30,7 +30,7 @@ import { useMrtSorting } from './use_mrt_sorting';
  * changing the sorting direction or sorted column will atomically reset the pagination token.
  */
 export function useMrtSortingState(
-  columns?: Array<{ id: string; orderByField?: string }>,
+  columns?: Array<{ id?: string; orderByField?: string }>,
   pagerCtx?: PagerContext,
 ): [
   MRT_SortingState,

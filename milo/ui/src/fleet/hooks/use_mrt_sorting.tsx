@@ -21,7 +21,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { OrderByDirection, ORDER_BY_PARAM_KEY } from './order_by';
 
 export function useMrtSorting(
-  columns?: Array<{ id: string; orderByField?: string }>,
+  columns?: Array<{ id?: string; orderByField?: string }>,
 ): MRT_SortingState {
   const [searchParams] = useSyncedSearchParams();
   const orderByParam = searchParams.get(ORDER_BY_PARAM_KEY);
@@ -38,7 +38,7 @@ export function useMrtSorting(
           (c) =>
             parsed.field === (c.orderByField ?? c.id) || parsed.field === c.id,
         );
-        if (match) {
+        if (match && match.id) {
           return {
             id: match.id,
             desc: parsed.direction === OrderByDirection.DESC,
