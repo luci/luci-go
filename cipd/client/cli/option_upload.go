@@ -15,8 +15,12 @@
 package cli
 
 import (
+	"context"
 	"flag"
+	"fmt"
 	"time"
+
+	"go.chromium.org/luci/common/system/environ"
 
 	"go.chromium.org/luci/cipd/client/cipd"
 )
@@ -28,6 +32,7 @@ import (
 type uploadOptions struct {
 	verificationTimeout time.Duration
 	attestation         string
+	writeCacheDir       string
 }
 
 func (opts *uploadOptions) registerFlags(f *flag.FlagSet) {
@@ -35,4 +40,13 @@ func (opts *uploadOptions) registerFlags(f *flag.FlagSet) {
 		&opts.verificationTimeout, "verification-timeout",
 		cipd.CASFinalizationTimeout, "Maximum time to wait for backend-side package hash verification.")
 	f.StringVar(&opts.attestation, "attestation", "", "Path to the attestation bundle file for the instance.")
+	f.StringVar(&opts.writeCacheDir, "write-cache-dir", "",
+		fmt.Sprintf("Directory `path` to store the package in addition to uploading to the CIPD backend (can also be set by %s env var).", cipd.EnvWriteCacheDir))
+}
+
+func (opts *uploadOptions) targetCacheDir(ctx context.Context) string {
+	if opts.writeCacheDir != "" {
+		return opts.writeCacheDir
+	}
+	return environ.FromCtx(ctx).Get(cipd.EnvWriteCacheDir)
 }

@@ -129,6 +129,7 @@ const (
 	EnvConfigFile          = "CIPD_CONFIG_FILE"
 	EnvCacheDir            = "CIPD_CACHE_DIR"
 	EnvReadOnlyCacheDir    = "CIPD_READ_ONLY_CACHE_DIR"
+	EnvWriteCacheDir       = "CIPD_WRITE_CACHE_DIR"
 	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
 	EnvMaxThreads          = "CIPD_MAX_THREADS"
 	EnvParallelDownloads   = "CIPD_PARALLEL_DOWNLOADS"

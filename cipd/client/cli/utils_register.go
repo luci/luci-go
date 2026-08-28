@@ -17,9 +17,11 @@ package cli
 import (
 	"context"
 	"os"
+	"path/filepath"
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
@@ -59,6 +61,18 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 		return common.Pin{}, err
 	}
 	defer client.Close(ctx)
+
+	if cacheDir := opts.uploadOptions.targetCacheDir(ctx); cacheDir != "" {
+		var err error
+		cacheDir, err = filepath.Abs(cacheDir)
+		if err != nil {
+			return common.Pin{}, cipderr.BadArgument.Apply(errors.Fmt("resolving cache dir: %w", err))
+		}
+		err = cipd.CacheRegister(ctx, client.Options().ServiceURL, cacheDir, src, pin, opts.tags, opts.refs)
+		if err != nil {
+			return common.Pin{}, err
+		}
+	}
 
 	var attestation string
 	if opts.uploadOptions.attestation != "" {

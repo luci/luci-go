@@ -87,6 +87,11 @@ func GetApplication(params Parameters) *cli.Application {
 					`(-read-only-cache-dir, if given, takes precedence). Pairs well with $%s.`,
 					cipd.EnvCIPDDisableNetwork),
 			},
+			cipd.EnvWriteCacheDir: {
+				Advanced: true,
+				ShortDesc: "Directory path to store the package in addition to uploading to the CIPD backend " +
+					"(-write-cache-dir, if given, takes precedence).",
+			},
 			cipd.EnvMaxThreads: {
 				Advanced: true,
 				ShortDesc: "Number of worker threads for extracting packages. " +
