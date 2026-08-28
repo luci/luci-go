@@ -101,7 +101,7 @@ func (cfg *MockedConfigs) MockBot(botID, pool string, extraDims ...string) *conf
 		Dimensions: dims,
 		Auth: []*configpb.BotAuth{
 			{
-				RequireLuciMachineToken: true,
+				RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken),
 			},
 		},
 	}

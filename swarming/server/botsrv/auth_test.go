@@ -83,7 +83,7 @@ func TestAuthorizeBot(t *testing.T) {
 				PeerIPOverride: badTestIP,
 			})
 			err := AuthorizeBot(ctx, "bot-id", []*configpb.BotAuth{
-				{RequireLuciMachineToken: true},
+				{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)},
 				{RequireGceVmToken: &configpb.BotAuth_GCE{Project: "gce-proj"}},
 				{RequireServiceAccount: []string{"some@example.com"}},
 				{IpWhitelist: ipAllowlist},
@@ -98,7 +98,7 @@ func TestAuthorizeBot(t *testing.T) {
 			)
 			assert.Loosely(t, logs(), should.Match([]string{
 				"Bot ID: bot-id",
-				`Auth method {"requireLuciMachineToken":true}: no LUCI machine token in the request`,
+				`Auth method {"requireLuciMachineToken":{}}: no LUCI machine token in the request`,
 				`Auth method {"requireGceVmToken":{"project":"gce-proj"}}: no GCE VM token in the request`,
 				`Auth method {"requireServiceAccount":["some@example.com"]}: no OAuth or OpenID credentials in the request`,
 				`Auth method {"ipWhitelist":"ip-allowlist"}: IP not allowed`,
@@ -199,7 +199,7 @@ func TestAuthorizeBot(t *testing.T) {
 					UserExtra: &machine.MachineTokenInfo{FQDN: cs.fqdn},
 				})
 				err := AuthorizeBot(ctx, cs.botID, []*configpb.BotAuth{
-					{RequireLuciMachineToken: true},
+					{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)},
 				})
 				assert.Loosely(t, err, should.ErrLike(cs.err))
 				assert.That(t, popMetric(), should.Equal(cs.metric))
@@ -214,12 +214,12 @@ func TestAuthorizeBot(t *testing.T) {
 				metric      string
 				err         any
 			}{
-				{"bot-id", "bot-id.domain", 123, []int64{123}, "luci_token_secure:-", nil},
-				{"bot-id", "bot-id.domain", 123, []int64{123, 456}, "luci_token_secure:-", nil},
+				{"bot-id", "bot-id.domain", 123, []int64{123}, "luci_token_secure:ca=123", nil},
+				{"bot-id", "bot-id.domain", 123, []int64{123, 456}, "luci_token_secure:ca=123", nil},
 				{"bot-id", "bot-id.domain", 123, nil, "luci_token_secure:-", nil},
 				{"bot-id", "bot-id.domain", 123, []int64{}, "luci_token_secure:-", nil},
-				{"bot-id", "bot-id", 123, []int64{123}, "luci_token_secure:-", nil},
-				{"bot-id--device123", "bot-id.domain", 123, []int64{123}, "luci_token_secure:-", nil},
+				{"bot-id", "bot-id", 123, []int64{123}, "luci_token_secure:ca=123", nil},
+				{"bot-id--device123", "bot-id.domain", 123, []int64{123}, "luci_token_secure:ca=123", nil},
 				{"bot1", "bot2", 123, []int64{123}, "", `host ID "bot1" doesn't match the LUCI token with FQDN "bot2"`},
 				{"bot-id", "bot-id.domain", 456, []int64{123}, "", `LUCI token CA 456 is not in the expected CA list for host "bot-id"`},
 				{"bot-id", "bot-id.domain", 456, []int64{123, 789}, "", `LUCI token CA 456 is not in the expected CA list for host "bot-id"`},

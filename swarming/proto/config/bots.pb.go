@@ -335,7 +335,7 @@ func (x *BotGroup) GetRbeMigration() *BotGroup_RBEMigration {
 //   - IP + require_service_account: requires both to pass.
 //   - IP + require_gce_vm_token: requires both to pass.
 //
-// Next ID: 7.
+// Next ID: 8.
 type BotAuth struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// If true, log an error (but proceed) if this method didn't succeed.
@@ -351,20 +351,22 @@ type BotAuth struct {
 	// the new method is used in 100% of cases, while still keeping a fallback
 	// to an old method.
 	LogIfFailed bool `protobuf:"varint,5,opt,name=log_if_failed,json=logIfFailed,proto3" json:"log_if_failed,omitempty"`
-	// If true, the bot should provide valid X-Luci-Machine-Token header.
+	// Deprecated: use `require_luci_machine_token` instead.
 	//
-	// The machine FQDN embedded in the token should have hostname equal to the
-	// bot_id.
-	RequireLuciMachineToken bool `protobuf:"varint,1,opt,name=require_luci_machine_token,json=requireLuciMachineToken,proto3" json:"require_luci_machine_token,omitempty"`
-	// If set, the bot should provide valid X-Luci-Machine-Token header.
-	//
-	// This is a variant of `require_luci_machine_token` with additional
-	// validation:
+	// If set, the bot should provide valid X-Luci-Machine-Token header:
 	//   - The machine FQDN embedded in the token should have hostname equal to
 	//     the bot_id.
 	//   - If ca_id is specified, the CA ID integer in the token must match one of
 	//     the configured values.
+	//
+	// Deprecated: Marked as deprecated in go.chromium.org/luci/swarming/proto/config/bots.proto.
 	RequireLuciMachineTokenSecure *BotAuth_LuciMachineToken `protobuf:"bytes,6,opt,name=require_luci_machine_token_secure,json=requireLuciMachineTokenSecure,proto3" json:"require_luci_machine_token_secure,omitempty"`
+	// If set, the bot should provide valid X-Luci-Machine-Token header:
+	//   - The machine FQDN embedded in the token should have hostname equal to
+	//     the bot_id.
+	//   - If ca_id is specified, the CA ID integer in the token must match one of
+	//     the configured values.
+	RequireLuciMachineToken *BotAuth_LuciMachineToken `protobuf:"bytes,7,opt,name=require_luci_machine_token,json=requireLuciMachineToken,proto3" json:"require_luci_machine_token,omitempty"`
 	// If set, the bot should use OAuth access token belonging to any of these
 	// service accounts.
 	//
@@ -383,7 +385,7 @@ type BotAuth struct {
 	// of IPs allowed to be used by the bots in this group.
 	//
 	// Works in conjunction with other checks, e.g. if require_luci_machine_token
-	// is true, both valid X-Luci-Machine-Token and a whitelisted IP are needed to
+	// is set, both valid X-Luci-Machine-Token and a whitelisted IP are needed to
 	// successfully authenticate.
 	//
 	// Can also be used on its own (when all other fields are empty). In that case
@@ -432,16 +434,17 @@ func (x *BotAuth) GetLogIfFailed() bool {
 	return false
 }
 
-func (x *BotAuth) GetRequireLuciMachineToken() bool {
-	if x != nil {
-		return x.RequireLuciMachineToken
-	}
-	return false
-}
-
+// Deprecated: Marked as deprecated in go.chromium.org/luci/swarming/proto/config/bots.proto.
 func (x *BotAuth) GetRequireLuciMachineTokenSecure() *BotAuth_LuciMachineToken {
 	if x != nil {
 		return x.RequireLuciMachineTokenSecure
+	}
+	return nil
+}
+
+func (x *BotAuth) GetRequireLuciMachineToken() *BotAuth_LuciMachineToken {
+	if x != nil {
+		return x.RequireLuciMachineToken
 	}
 	return nil
 }
@@ -602,7 +605,7 @@ func (x *BotAuth_GCE) GetProject() string {
 	return ""
 }
 
-// See require_luci_machine_token_secure below.
+// See require_luci_machine_token below.
 type BotAuth_LuciMachineToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// List of allowed CA IDs (as configured in Token Server).
@@ -677,18 +680,18 @@ const file_go_chromium_org_luci_swarming_proto_config_bots_proto_rawDesc = "" +
 	"\renable_rbe_on\x18\x02 \x03(\tR\venableRbeOn\x12$\n" +
 	"\x0edisable_rbe_on\x18\x03 \x03(\tR\fdisableRbeOn\x12\x1f\n" +
 	"\vhybrid_mode\x18\x04 \x01(\bR\n" +
-	"hybridModeJ\x04\b\x03\x10\x04\"\xd3\x03\n" +
+	"hybridModeJ\x04\b\x03\x10\x04\"\x88\x04\n" +
 	"\aBotAuth\x12\"\n" +
-	"\rlog_if_failed\x18\x05 \x01(\bR\vlogIfFailed\x12;\n" +
-	"\x1arequire_luci_machine_token\x18\x01 \x01(\bR\x17requireLuciMachineToken\x12s\n" +
-	"!require_luci_machine_token_secure\x18\x06 \x01(\v2).swarming.config.BotAuth.LuciMachineTokenR\x1drequireLuciMachineTokenSecure\x126\n" +
+	"\rlog_if_failed\x18\x05 \x01(\bR\vlogIfFailed\x12w\n" +
+	"!require_luci_machine_token_secure\x18\x06 \x01(\v2).swarming.config.BotAuth.LuciMachineTokenB\x02\x18\x01R\x1drequireLuciMachineTokenSecure\x12f\n" +
+	"\x1arequire_luci_machine_token\x18\a \x01(\v2).swarming.config.BotAuth.LuciMachineTokenR\x17requireLuciMachineToken\x126\n" +
 	"\x17require_service_account\x18\x02 \x03(\tR\x15requireServiceAccount\x12M\n" +
 	"\x14require_gce_vm_token\x18\x04 \x01(\v2\x1c.swarming.config.BotAuth.GCER\x11requireGceVmToken\x12!\n" +
 	"\fip_whitelist\x18\x03 \x01(\tR\vipWhitelist\x1a\x1f\n" +
 	"\x03GCE\x12\x18\n" +
 	"\aproject\x18\x01 \x01(\tR\aproject\x1a'\n" +
 	"\x10LuciMachineToken\x12\x13\n" +
-	"\x05ca_id\x18\x01 \x03(\x03R\x04caIdBu\xa2\xfe#<\n" +
+	"\x05ca_id\x18\x01 \x03(\x03R\x04caIdJ\x04\b\x01\x10\x02Bu\xa2\xfe#<\n" +
 	":https://config.luci.app/schemas/services/swarming:bots.cfgZ3go.chromium.org/luci/swarming/proto/config;configpbb\x06proto3"
 
 var (
@@ -717,12 +720,13 @@ var file_go_chromium_org_luci_swarming_proto_config_bots_proto_depIdxs = []int32
 	2, // 1: swarming.config.BotGroup.auth:type_name -> swarming.config.BotAuth
 	3, // 2: swarming.config.BotGroup.rbe_migration:type_name -> swarming.config.BotGroup.RBEMigration
 	5, // 3: swarming.config.BotAuth.require_luci_machine_token_secure:type_name -> swarming.config.BotAuth.LuciMachineToken
-	4, // 4: swarming.config.BotAuth.require_gce_vm_token:type_name -> swarming.config.BotAuth.GCE
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	5, // 4: swarming.config.BotAuth.require_luci_machine_token:type_name -> swarming.config.BotAuth.LuciMachineToken
+	4, // 5: swarming.config.BotAuth.require_gce_vm_token:type_name -> swarming.config.BotAuth.GCE
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_swarming_proto_config_bots_proto_init() }

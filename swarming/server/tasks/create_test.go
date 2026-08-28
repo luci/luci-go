@@ -566,7 +566,7 @@ func TestCreation(t *testing.T) {
 						{
 							BotId: []string{"bot-0"},
 							Auth: []*configpb.BotAuth{
-								{RequireLuciMachineToken: true},
+								{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)},
 							},
 							Dimensions: []string{
 								"pool:pool",

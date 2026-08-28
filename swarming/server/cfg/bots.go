@@ -310,7 +310,7 @@ func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
 	// Validates auth entry.
 	validateAuth := func(cfg *configpb.BotAuth) {
 		var fields []string
-		if cfg.RequireLuciMachineToken {
+		if cfg.RequireLuciMachineToken != nil {
 			fields = append(fields, "require_luci_machine_token")
 		}
 		if cfg.RequireLuciMachineTokenSecure != nil {

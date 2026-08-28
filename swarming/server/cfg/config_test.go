@@ -151,21 +151,21 @@ func TestParseAndValidateConfigs(t *testing.T) {
 					bot_id: "id1"
 					bot_config_script: "script1.py"
 					auth {
-						require_luci_machine_token: true
+						require_luci_machine_token: {}
 					}
 				}
 				bot_group {
 					bot_id: "id2"
 					bot_config_script: "script1.py"
 					auth {
-						require_luci_machine_token: true
+						require_luci_machine_token: {}
 					}
 				}
 				bot_group {
 					bot_id: "id3"
 					bot_config_script: "script2.py"
 					auth {
-						require_luci_machine_token: true
+						require_luci_machine_token: {}
 					}
 				}
 			`,
@@ -177,7 +177,7 @@ func TestParseAndValidateConfigs(t *testing.T) {
 		assert.NoErr(t, err)
 		assert.That(t, bundle, should.Match(&internalcfgpb.ConfigBundle{
 			Revision: "rev",
-			Digest:   "E9NO4r+ORh2B7LJlaQoTEGFy9cV9zKWGp4j8dATncDE",
+			Digest:   "YmTkPc6QBaaZZLtTwOngcxuEKKvFdAOWhcWlgF37JoA",
 			Settings: &configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			},
@@ -201,17 +201,17 @@ func TestParseAndValidateConfigs(t *testing.T) {
 					{
 						BotId:           []string{"id1"},
 						BotConfigScript: "script1.py",
-						Auth:            []*configpb.BotAuth{{RequireLuciMachineToken: true}},
+						Auth:            []*configpb.BotAuth{{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)}},
 					},
 					{
 						BotId:           []string{"id2"},
 						BotConfigScript: "script1.py",
-						Auth:            []*configpb.BotAuth{{RequireLuciMachineToken: true}},
+						Auth:            []*configpb.BotAuth{{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)}},
 					},
 					{
 						BotId:           []string{"id3"},
 						BotConfigScript: "script2.py",
-						Auth:            []*configpb.BotAuth{{RequireLuciMachineToken: true}},
+						Auth:            []*configpb.BotAuth{{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)}},
 					},
 				},
 			},
@@ -243,14 +243,14 @@ func TestParseAndValidateConfigs(t *testing.T) {
 					bot_id: "id1"
 					bot_config_script: "script1.py"
 					auth {
-						require_luci_machine_token: true
+						require_luci_machine_token: {}
 					}
 				}
 				bot_group {
 					bot_id: "id2"
 					bot_config_script: "missing.py"
 					auth {
-						require_luci_machine_token: true
+						require_luci_machine_token: {}
 					}
 				}
 			`,

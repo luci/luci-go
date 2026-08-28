@@ -79,7 +79,7 @@ func TestSwarmingServer(t *testing.T) {
 						Dimensions: []string{"pool:visible-pool-1"},
 						Auth: []*configpb.BotAuth{
 							{
-								RequireLuciMachineToken: true,
+								RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken),
 							},
 						},
 					},

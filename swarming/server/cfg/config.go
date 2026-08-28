@@ -534,7 +534,7 @@ func defaultConfigs() *internalcfgpb.ConfigBundle {
 				{
 					Dimensions: []string{"pool:unassigned"},
 					Auth: []*configpb.BotAuth{
-						{RequireLuciMachineToken: true, LogIfFailed: true},
+						{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken), LogIfFailed: true},
 					},
 				},
 			},

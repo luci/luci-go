@@ -581,7 +581,7 @@ func mockedConfig(settings *configpb.AuthSettings, pools map[string]string, bots
 			Dimensions: dims,
 			Auth: []*configpb.BotAuth{ // required field
 				{
-					RequireLuciMachineToken: true,
+					RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken),
 				},
 			},
 		})

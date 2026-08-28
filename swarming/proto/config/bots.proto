@@ -208,14 +208,17 @@ message BotGroup {
 //   * IP + require_service_account: requires both to pass.
 //   * IP + require_gce_vm_token: requires both to pass.
 //
-// Next ID: 7.
+// Next ID: 8.
 message BotAuth {
+  // Was used by a previous implementation of "require_luci_machine_token".
+  reserved 1;
+
   // See require_gce_vm_token below.
   message GCE {
     string project = 1;
   }
 
-  // See require_luci_machine_token_secure below.
+  // See require_luci_machine_token below.
   message LuciMachineToken {
     // List of allowed CA IDs (as configured in Token Server).
     //
@@ -237,21 +240,21 @@ message BotAuth {
   // to an old method.
   bool log_if_failed = 5;
 
-  // If true, the bot should provide valid X-Luci-Machine-Token header.
+  // Deprecated: use `require_luci_machine_token` instead.
   //
-  // The machine FQDN embedded in the token should have hostname equal to the
-  // bot_id.
-  bool require_luci_machine_token = 1;
-
-  // If set, the bot should provide valid X-Luci-Machine-Token header.
-  //
-  // This is a variant of `require_luci_machine_token` with additional
-  // validation:
+  // If set, the bot should provide valid X-Luci-Machine-Token header:
   //   * The machine FQDN embedded in the token should have hostname equal to
   //     the bot_id.
   //   * If ca_id is specified, the CA ID integer in the token must match one of
   //     the configured values.
-  LuciMachineToken require_luci_machine_token_secure = 6;
+  LuciMachineToken require_luci_machine_token_secure = 6 [deprecated = true];
+
+  // If set, the bot should provide valid X-Luci-Machine-Token header:
+  //   * The machine FQDN embedded in the token should have hostname equal to
+  //     the bot_id.
+  //   * If ca_id is specified, the CA ID integer in the token must match one of
+  //     the configured values.
+  LuciMachineToken require_luci_machine_token = 7;
 
   // If set, the bot should use OAuth access token belonging to any of these
   // service accounts.
@@ -273,7 +276,7 @@ message BotAuth {
   // of IPs allowed to be used by the bots in this group.
   //
   // Works in conjunction with other checks, e.g. if require_luci_machine_token
-  // is true, both valid X-Luci-Machine-Token and a whitelisted IP are needed to
+  // is set, both valid X-Luci-Machine-Token and a whitelisted IP are needed to
   // successfully authenticate.
   //
   // Can also be used on its own (when all other fields are empty). In that case

@@ -35,7 +35,7 @@ var goodBotsCfg = &configpb.BotsCfg{
 			BotIdPrefix: []string{"gce-vms-0-"},
 			Owners:      []string{"owner@example.com"},
 			Auth: []*configpb.BotAuth{
-				{RequireLuciMachineToken: true},
+				{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)},
 			},
 			Dimensions: []string{
 				"pool:a",
@@ -52,7 +52,7 @@ var goodBotsCfg = &configpb.BotsCfg{
 			BotIdPrefix: []string{"gce-vms-1-"},
 			Owners:      []string{"owner@example.com"},
 			Auth: []*configpb.BotAuth{
-				{RequireLuciMachineToken: true},
+				{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)},
 			},
 			Dimensions: []string{
 				"pool:b",
@@ -75,7 +75,7 @@ var goodBotsCfg = &configpb.BotsCfg{
 						Project: "some-project",
 					},
 				},
-				{RequireLuciMachineToken: true},
+				{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)},
 			},
 		},
 	},
@@ -188,7 +188,7 @@ func TestValidateBotsCfg(t *testing.T) {
 		}
 
 		defaultAuth := []*configpb.BotAuth{
-			{RequireLuciMachineToken: true},
+			{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)},
 		}
 
 		testCases := []struct {
@@ -309,7 +309,7 @@ func TestValidateBotsCfg(t *testing.T) {
 				cfg: groups(&configpb.BotGroup{
 					Auth: []*configpb.BotAuth{
 						{
-							RequireLuciMachineToken:       true,
+							RequireLuciMachineToken:       new(configpb.BotAuth_LuciMachineToken),
 							RequireLuciMachineTokenSecure: &configpb.BotAuth_LuciMachineToken{},
 							RequireServiceAccount:         []string{"some@example.com"},
 							RequireGceVmToken:             &configpb.BotAuth_GCE{Project: "some-project"},

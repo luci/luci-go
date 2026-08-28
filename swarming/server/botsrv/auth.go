@@ -82,15 +82,25 @@ func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth
 				log("Machine token SN: %s", hex.EncodeToString(tok.CertSN))
 				return nil, errors.Fmt("host ID %q doesn't match the LUCI token with FQDN %q", hostID, tok.FQDN)
 			}
+			authConditionForMon = "-"
 			return tok, nil
 		}
 
 		switch {
-		case ba.RequireLuciMachineToken:
-			if _, err := luciMachineTokenBasic(); err != nil {
+		case ba.RequireLuciMachineToken != nil:
+			tok, err := luciMachineTokenBasic()
+			if err != nil {
 				return logs, err
 			}
-			authMethodForMon, authConditionForMon = "luci_token", "-"
+			if caIDs := ba.RequireLuciMachineToken.GetCaId(); len(caIDs) > 0 {
+				if !slices.Contains(caIDs, tok.CA) {
+					log("Machine token CA: %d", tok.CA)
+					log("Machine token SN: %s", hex.EncodeToString(tok.CertSN))
+					return logs, errors.Fmt("LUCI token CA %d is not in the expected CA list for host %q", tok.CA, hostID)
+				}
+				authConditionForMon = fmt.Sprintf("ca=%d", tok.CA)
+			}
+			authMethodForMon = "luci_token"
 
 		case ba.RequireLuciMachineTokenSecure != nil:
 			tok, err := luciMachineTokenBasic()
@@ -103,8 +113,9 @@ func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth
 					log("Machine token SN: %s", hex.EncodeToString(tok.CertSN))
 					return logs, errors.Fmt("LUCI token CA %d is not in the expected CA list for host %q", tok.CA, hostID)
 				}
+				authConditionForMon = fmt.Sprintf("ca=%d", tok.CA)
 			}
-			authMethodForMon, authConditionForMon = "luci_token_secure", "-"
+			authMethodForMon = "luci_token_secure"
 
 		case ba.RequireGceVmToken != nil:
 			tok := openid.GetGoogleComputeTokenInfo(ctx)

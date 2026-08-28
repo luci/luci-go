@@ -91,7 +91,7 @@ func TestBotHandler(t *testing.T) {
 		}
 
 		goodBotAuth := &configpb.BotAuth{
-			RequireLuciMachineToken: true,
+			RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken),
 		}
 
 		var lastBody *testRequest
