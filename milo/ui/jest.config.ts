@@ -41,8 +41,13 @@ const config: Config = {
     '/node_modules/',
     '<rootDir>/\\.tmp/',
     '<rootDir>/\\.worktrees/',
+    '<rootDir>/\\.rollup\\.cache/',
   ],
-  watchPathIgnorePatterns: ['<rootDir>/\\.tmp/', '<rootDir>/\\.worktrees/'],
+  watchPathIgnorePatterns: [
+    '<rootDir>/\\.tmp/',
+    '<rootDir>/\\.worktrees/',
+    '<rootDir>/\\.rollup\\.cache/',
+  ],
 
   transform: {
     // The default transform from `ts-jest` preset doesn't handle `.mjs` files.

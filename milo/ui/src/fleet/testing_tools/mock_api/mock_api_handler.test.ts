@@ -188,4 +188,22 @@ describe('FleetConsoleMockAPI', () => {
     }>;
     expect(arr2).toHaveLength(1);
   });
+
+  it('awaits Promise-based fixtures and returns resolved data', async () => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.setFixture(
+      'CountDevices',
+      Promise.resolve({ total: 7777 }),
+    );
+
+    const response = await fetch(
+      '/prpc/fleetconsole.FleetConsole/CountDevices',
+      { method: 'POST' },
+    );
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(text).toContain('7777');
+
+    FleetConsoleMockAPI.disableBrowserInterceptor();
+  });
 });

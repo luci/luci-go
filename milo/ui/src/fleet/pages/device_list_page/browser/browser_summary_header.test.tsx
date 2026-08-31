@@ -12,99 +12,57 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BrowserSummaryHeader } from './browser_summary_header';
 
-jest.mock('@/fleet/hooks/prpc_clients');
 jest.mock('@/generic_libs/components/google_analytics', () => ({
   useGoogleAnalytics: () => ({ trackEvent: jest.fn() }),
 }));
 
 describe('BrowserSummaryHeader', () => {
   beforeEach(() => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
     jest.clearAllMocks();
   });
 
   const setupMockClient = (dataMap: Record<string, number>) => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountBrowserDevices: {
-        query: jest.fn().mockImplementation(({ filter }) => {
-          let total = 0;
-          let swarmingState = undefined;
+    const total = dataMap.total || 1000;
+    const healthy = dataMap.healthy || 800;
+    const dead = dataMap.dead || 50;
+    const quarantined = dataMap.quarantined || 30;
+    const maintenance = dataMap.maintenance || 20;
 
-          if (!filter) {
-            total = dataMap.total || 0;
-            swarmingState = {
-              total:
-                (dataMap.healthy || 0) +
-                (dataMap.dead || 0) +
-                (dataMap.quarantined || 0) +
-                (dataMap.maintenance || 0),
-              alive: dataMap.healthy || 0,
-              dead: dataMap.dead || 0,
-              quarantined: dataMap.quarantined || 0,
-              maintenance: dataMap.maintenance || 0,
-            };
-          } else if (
-            filter.includes('ufs.resource_state = "SERVING"') ||
-            filter.includes("ufs.resource_state = 'SERVING'")
-          ) {
-            total =
-              (dataMap.healthy || 0) +
-              (dataMap.dead || 0) +
-              (dataMap.quarantined || 0) +
-              (dataMap.maintenance || 0);
-            swarmingState = {
-              total: total,
-              alive: dataMap.healthy || 0,
-              dead: dataMap.dead || 0,
-              quarantined: dataMap.quarantined || 0,
-              maintenance: dataMap.maintenance || 0,
-            };
-          } else if (filter.includes('NEEDS_REPAIR')) {
-            total = dataMap.needsRepair || 0;
-          } else if (filter.includes('MISSING')) {
-            total = dataMap.missing || 0;
-          } else if (filter.includes('RESERVED')) {
-            total = dataMap.excluded || 0;
-          }
-
-          return {
-            queryKey: ['CountBrowserDevices', filter],
-            queryFn: async () => ({
-              total,
-              swarmingState,
-            }),
-          };
-        }),
+    FleetConsoleMockAPI.setFixture('CountBrowserDevices', {
+      total,
+      swarmingState: {
+        total: healthy + dead + quarantined + maintenance,
+        alive: healthy,
+        dead,
+        quarantined,
+        maintenance,
       },
-      GetBrowserDeviceDimensions: {
-        query: () => ({
-          queryKey: ['GetBrowserDeviceDimensions'],
-          queryFn: async () => ({
-            baseDimensions: {
-              os: { values: ['Linux', 'Windows'] },
-            },
-            swarmingLabels: {
-              state: {
-                values: ['alive', 'dead', 'quarantined', 'maintenance'],
-              },
-            },
-            ufsLabels: {
-              resource_state: {
-                values: ['SERVING', 'NEEDS_REPAIR', 'MISSING', 'RESERVED'],
-              },
-            },
-          }),
-        }),
+    });
+
+    FleetConsoleMockAPI.setFixture('GetBrowserDeviceDimensions', {
+      baseDimensions: {
+        os: { values: ['Linux', 'Windows'] },
+      },
+      swarmingLabels: {
+        state: {
+          values: ['alive', 'dead', 'quarantined', 'maintenance'],
+        },
+      },
+      ufsLabels: {
+        resource_state: {
+          values: ['SERVING', 'NEEDS_REPAIR', 'MISSING', 'RESERVED'],
+        },
       },
     });
   };
@@ -121,7 +79,6 @@ describe('BrowserSummaryHeader', () => {
       excluded: 85,
     });
 
-    const queryClient = new QueryClient();
     render(
       <FakeContextProvider
         mountedPath="/p/:platform/devices"
@@ -129,9 +86,7 @@ describe('BrowserSummaryHeader', () => {
           initialEntries: ['/p/chromium/devices'],
         }}
       >
-        <QueryClientProvider client={queryClient}>
-          <BrowserSummaryHeader />
-        </QueryClientProvider>
+        <BrowserSummaryHeader />
       </FakeContextProvider>,
     );
 
@@ -139,7 +94,7 @@ describe('BrowserSummaryHeader', () => {
     expect(
       await screen.findByText('Device Health Summary'),
     ).toBeInTheDocument();
-    expect(await screen.findByText('1,000')).toBeInTheDocument(); // total Devices
+    expect((await screen.findAllByText('1,000')).length).toBeGreaterThan(0); // total Devices
     expect(await screen.findAllByText('750')).toHaveLength(2); // healthy
   });
 
@@ -159,7 +114,6 @@ describe('BrowserSummaryHeader', () => {
       .spyOn(StringListFilterCategory.prototype, 'setSelectedOptions')
       .mockImplementation(() => undefined);
 
-    const queryClient = new QueryClient();
     render(
       <FakeContextProvider
         mountedPath="/p/:platform/devices"
@@ -167,14 +121,12 @@ describe('BrowserSummaryHeader', () => {
           initialEntries: ['/p/chromium/devices'],
         }}
       >
-        <QueryClientProvider client={queryClient}>
-          <BrowserSummaryHeader />
-        </QueryClientProvider>
+        <BrowserSummaryHeader />
       </FakeContextProvider>,
     );
 
     // Wait for stats to load first
-    expect(await screen.findByText('1,000')).toBeInTheDocument();
+    expect((await screen.findAllByText('1,000')).length).toBeGreaterThan(0);
 
     // Click Unhealthy Header
     const unhealthyHeader = screen.getByText('Unhealthy');

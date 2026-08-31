@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  waitFor,
+} from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
-import * as PrpcClients from '@/fleet/hooks/prpc_clients';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSDevicesPage } from './chromeos_devices_page';
@@ -25,19 +31,6 @@ const mockTrackEvent = jest.fn();
 jest.mock('@/generic_libs/components/google_analytics', () => ({
   ...jest.requireActual('@/generic_libs/components/google_analytics'),
   useGoogleAnalytics: () => ({ trackEvent: mockTrackEvent }),
-}));
-
-jest.mock('@/fleet/hooks/use_devices', () => ({
-  useDevices: () => ({
-    data: {
-      devices: [
-        { id: '1', dutId: 'dut-1' },
-        { id: '2', dutId: 'dut-2' },
-      ],
-    },
-    isPending: false,
-    isFetching: false,
-  }),
 }));
 
 jest.mock('./use_chromeos_current_tasks', () => ({
@@ -53,6 +46,11 @@ describe('<ChromeOSDevicesPage />', () => {
   beforeAll(() => {
     window.URL.createObjectURL = jest.fn(() => 'mock-url');
     window.URL.revokeObjectURL = jest.fn();
+  });
+
+  beforeEach(() => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
   });
 
   afterEach(() => {
@@ -95,8 +93,10 @@ describe('<ChromeOSDevicesPage />', () => {
     );
 
     // Wait for data to load and rows to appear
-    const checkboxes = await screen.findAllByRole('checkbox');
-    expect(checkboxes.length).toBeGreaterThan(1);
+    await waitFor(() => {
+      expect(screen.getAllByRole('checkbox').length).toBeGreaterThan(1);
+    });
+    const checkboxes = screen.getAllByRole('checkbox');
 
     // Click the first row checkbox (index 1, index 0 is select all)
     fireEvent.click(checkboxes[1]);
@@ -110,6 +110,7 @@ describe('<ChromeOSDevicesPage />', () => {
     // Click it
     fireEvent.click(autorepairButton);
   });
+
   it('should allow customizing columns', async () => {
     render(
       <FakeContextProvider
@@ -136,54 +137,23 @@ describe('<ChromeOSDevicesPage />', () => {
     expect(searchInput).toBeVisible();
 
     // Verify that there are checkboxes in the dropdown
-    const checkboxes = screen.getAllByRole('checkbox');
-    expect(checkboxes.length).toBeGreaterThan(1);
+    await waitFor(() => {
+      expect(screen.getAllByRole('checkbox').length).toBeGreaterThan(1);
+    });
   });
 
   it('should call ExportDevicesToCSV with correct filters', async () => {
-    const mockExport = jest
-      .fn()
-      .mockResolvedValue({ csvData: 'id,dut_id\n1,dut-1\n' });
-
-    const mockGetDimensions = jest.fn().mockReturnValue({
-      queryKey: ['GetDeviceDimensions'],
-      queryFn: jest.fn().mockResolvedValue({
-        baseDimensions: {},
-        labels: {
-          'label-pool': { values: ['cellular'] },
-          ufs_zone: { values: ['ZONE_CHROMEOS7'] },
-        },
-      }),
-      data: {
-        baseDimensions: {},
-        labels: {
-          'label-pool': { values: ['cellular'] },
-          ufs_zone: { values: ['ZONE_CHROMEOS7'] },
-        },
+    FleetConsoleMockAPI.setFixture('GetDeviceDimensions', {
+      baseDimensions: {},
+      labels: {
+        'label-pool': { values: ['cellular'] },
+        ufs_zone: { values: ['ZONE_CHROMEOS7'] },
       },
-      isPending: false,
     });
 
-    const mockCountDevices = jest.fn().mockReturnValue({
-      queryKey: ['CountDevices'],
-      queryFn: jest.fn().mockResolvedValue({ totalHosts: 0, offlineHosts: 0 }),
-      data: { totalHosts: 0, offlineHosts: 0 },
-      isPending: false,
+    FleetConsoleMockAPI.setFixture('ExportDevicesToCSV', {
+      csvData: 'id,dut_id\n1,dut-1\n',
     });
-
-    jest.spyOn(PrpcClients, 'useFleetConsoleClient').mockReturnValue({
-      ExportDevicesToCSV: mockExport,
-      GetDeviceDimensions: {
-        query: mockGetDimensions,
-      },
-      CountDevices: {
-        query: mockCountDevices,
-      },
-      CountBrowserDevices: {
-        query: mockCountDevices,
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
 
     render(
       <FakeContextProvider
@@ -218,11 +188,12 @@ describe('<ChromeOSDevicesPage />', () => {
       fireEvent.click(exportAllItem);
     });
 
-    // Verify that the query was triggered with parsed and formatted filter keys
-    expect(mockExport).toHaveBeenCalled();
-    const callArgs = mockExport.mock.lastCall![0];
-    expect(callArgs.filter).toBe(
+    const calls = FleetConsoleMockAPI.getCalls('ExportDevicesToCSV');
+    expect(calls.length).toBeGreaterThan(0);
+    expect(
+      (calls[calls.length - 1].payload as { filter?: string }).filter,
+    ).toBe(
       '(labels."label-pool" = "cellular") AND (labels."ufs_zone" = "ZONE_CHROMEOS7")',
     );
-  }, 15000);
+  });
 });

@@ -15,10 +15,11 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
-import { useAuthState } from '@/common/components/auth_state_provider';
+import { TestAuthStateContext } from '@/common/components/auth_state_provider';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
 import { useTasks } from '@/fleet/hooks/swarming_hooks';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import {
   StateQuery,
   TaskResultResponse,
@@ -28,7 +29,6 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { TasksTable } from './tasks_table';
 
-jest.mock('@/common/components/auth_state_provider');
 jest.mock('@/fleet/hooks/swarming_hooks');
 jest.mock('@/swarming/hooks/prpc_clients', () => ({
   useTasksClient: jest.fn(),
@@ -46,17 +46,28 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
 
 describe('TasksTable', () => {
   beforeEach(() => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
     jest.clearAllMocks();
-    (useAuthState as jest.Mock).mockReturnValue({
-      email: 'user@google.com',
+    (useTasks as jest.Mock).mockReturnValue({
+      tasks: [],
+      isLoading: false,
+      isError: false,
     });
   });
 
   it('renders error message if not logged in', () => {
-    (useAuthState as jest.Mock).mockReturnValue({ email: undefined });
     render(
       <TestWrapper>
-        <TasksTable />
+        <TestAuthStateContext.Provider
+          value={{
+            getAuthState: () => ({ identity: 'anonymous:anonymous' }),
+            getAccessToken: async () => '',
+            getIdToken: async () => '',
+          }}
+        >
+          <TasksTable />
+        </TestAuthStateContext.Provider>
       </TestWrapper>,
     );
 

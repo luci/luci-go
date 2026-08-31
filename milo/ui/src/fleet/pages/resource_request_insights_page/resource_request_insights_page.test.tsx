@@ -16,7 +16,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import { RRI_VERSION_TEST_URLS } from '@/fleet/testing_tools/version_test_urls';
 import { GetResourceRequestsMultiselectFilterValuesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -36,58 +36,26 @@ const MOCK_FILTER_VALUES =
     resourceGroups: ['ANDROID_TABLET', 'CHROME_DESKTOP'],
   });
 
-jest.mock('@/fleet/hooks/prpc_clients', () => ({
-  useFleetConsoleClient: jest.fn(),
-}));
-
 describe('<ResourceRequestListPage />', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useFleetConsoleClient as jest.Mock).mockReturnValue({
-      GetResourceRequestsMultiselectFilterValues: {
-        query: () => ({
-          queryKey: ['test'],
-          queryFn: () => MOCK_FILTER_VALUES,
-        }),
-      },
-      CountResourceRequests: {
-        query: () => ({
-          queryKey: ['count'],
-          queryFn: () => ({ count: 10 }),
-        }),
-      },
-      ListResourceRequests: {
-        query: () => ({
-          queryKey: ['list'],
-          queryFn: () => ({ resourceRequests: [] }),
-        }),
-      },
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+
+    FleetConsoleMockAPI.setFixture(
+      'GetResourceRequestsMultiselectFilterValues',
+      MOCK_FILTER_VALUES,
+    );
+    FleetConsoleMockAPI.setFixture('CountResourceRequests', { count: 10 });
+    FleetConsoleMockAPI.setFixture('ListResourceRequests', {
+      resourceRequests: [],
     });
   });
 
   it('renders loading by default', async () => {
-    (useFleetConsoleClient as jest.Mock).mockReturnValue({
-      GetResourceRequestsMultiselectFilterValues: {
-        query: () => ({
-          queryKey: ['test'],
-          isLoading: true,
-          data: undefined,
-          queryFn: () => new Promise(() => {}),
-        }),
-      },
-      CountResourceRequests: {
-        query: () => ({
-          queryKey: ['count'],
-          queryFn: () => ({ count: 0 }),
-        }),
-      },
-      ListResourceRequests: {
-        query: () => ({
-          queryKey: ['list'],
-          queryFn: () => ({ resourceRequests: [] }),
-        }),
-      },
-    });
+    FleetConsoleMockAPI.setFixture(
+      'GetResourceRequestsMultiselectFilterValues',
+      new Promise(() => {}) as unknown,
+    );
 
     render(
       <FakeContextProvider>

@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { AndroidSummaryHeader } from './android_summary_header';
 
-jest.mock('@/fleet/hooks/prpc_clients');
 jest.mock('@/generic_libs/components/google_analytics', () => ({
   useGoogleAnalytics: () => ({ trackEvent: jest.fn() }),
 }));
@@ -38,43 +37,38 @@ const FILTER_KEYS = {
 
 describe('AndroidSummaryHeader', () => {
   beforeEach(() => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
     jest.clearAllMocks();
   });
 
-  it('should render successfully with data', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+  const setupMockClient = (androidCount: Record<string, unknown>) => {
+    FleetConsoleMockAPI.setFixture('CountDevices', {
+      androidCount,
+    });
+  };
 
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({
-            androidCount: {
-              totalDevices: 100,
-              totalHosts: 10,
-              idleDevices: 50,
-              busyDevices: 30,
-              missingDevices: 5,
-              failedDevices: 5,
-              dirtyDevices: 5,
-              preppingDevices: 3,
-              dyingDevices: 2,
-              initDevices: 5,
-              lameduckDevices: 5,
-              labRunningHosts: 8,
-              labMissingHosts: 2,
-            },
-          }),
-        }),
-      },
+  it('should render successfully with data', async () => {
+    setupMockClient({
+      totalDevices: 100,
+      totalHosts: 10,
+      idleDevices: 50,
+      busyDevices: 30,
+      missingDevices: 5,
+      failedDevices: 5,
+      dirtyDevices: 5,
+      preppingDevices: 3,
+      dyingDevices: 2,
+      initDevices: 5,
+      lameduckDevices: 5,
+      labRunningHosts: 8,
+      labMissingHosts: 2,
     });
 
-    const queryClient = new QueryClient();
-
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader aip160="" setFiltersBatch={jest.fn()} />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     // Verify that the title is rendered
@@ -90,34 +84,21 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should call setFiltersBatch when clicking a breakdown item and switch scope', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({
-            androidCount: {
-              totalDevices: 100,
-              idleDevices: 50,
-            },
-          }),
-        }),
-      },
+    setupMockClient({
+      totalDevices: 100,
+      idleDevices: 50,
     });
 
     const mockSetFiltersBatch = jest.fn();
 
-    const queryClient = new QueryClient();
-
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader aip160="" setFiltersBatch={mockSetFiltersBatch} />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     // Click on Idle metric
-    fireEvent.click(screen.getByRole('button', { name: 'Idle' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Idle' }));
 
     // Verify that setFiltersBatch was called
     expect(mockSetFiltersBatch).toHaveBeenCalledWith({
@@ -128,34 +109,21 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should call setFiltersBatch with Init state when clicking Init', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({
-            androidCount: {
-              totalDevices: 100,
-              initDevices: 5,
-            },
-          }),
-        }),
-      },
+    setupMockClient({
+      totalDevices: 100,
+      initDevices: 5,
     });
 
     const mockSetFiltersBatch = jest.fn();
 
-    const queryClient = new QueryClient();
-
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader aip160="" setFiltersBatch={mockSetFiltersBatch} />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     // Click on Init metric
-    fireEvent.click(screen.getByRole('button', { name: 'Init' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Init' }));
 
     // Verify that setFiltersBatch was called
     expect(mockSetFiltersBatch).toHaveBeenCalledWith({
@@ -166,24 +134,14 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should call setFiltersBatch with IDLE, BUSY, LAMEDUCK when clicking Failed device_type', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({ androidCount: {} }),
-        }),
-      },
-    });
+    setupMockClient({});
 
     const mockSetFiltersBatch = jest.fn();
-    const queryClient = new QueryClient();
 
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader aip160="" setFiltersBatch={mockSetFiltersBatch} />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Failed device_type' }));
@@ -196,24 +154,14 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should call setFiltersBatch with (Blank) when clicking Blank states', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({ androidCount: {} }),
-        }),
-      },
-    });
+    setupMockClient({});
 
     const mockSetFiltersBatch = jest.fn();
-    const queryClient = new QueryClient();
 
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader aip160="" setFiltersBatch={mockSetFiltersBatch} />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Blank states' }));
@@ -226,28 +174,18 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should clear state filter when clicking Total Hosts', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({ androidCount: {} }),
-        }),
-      },
-    });
+    setupMockClient({});
 
     const mockSetFiltersBatch = jest.fn();
-    const queryClient = new QueryClient();
 
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader aip160="" setFiltersBatch={mockSetFiltersBatch} />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     // Click on Total Hosts
-    fireEvent.click(screen.getByText('Total Hosts'));
+    fireEvent.click(await screen.findByText('Total Hosts'));
 
     // Verify that setFiltersBatch was called
     expect(mockSetFiltersBatch).toHaveBeenCalledWith({
@@ -257,28 +195,18 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should clear state filter when clicking Total Devices', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({ androidCount: {} }),
-        }),
-      },
-    });
+    setupMockClient({});
 
     const mockSetFiltersBatch = jest.fn();
-    const queryClient = new QueryClient();
 
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader aip160="" setFiltersBatch={mockSetFiltersBatch} />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     // Click on Total Devices
-    fireEvent.click(screen.getByText('Total Devices'));
+    fireEvent.click(await screen.findByText('Total Devices'));
 
     // Verify that setFiltersBatch was called
     expect(mockSetFiltersBatch).toHaveBeenCalledWith({
@@ -288,28 +216,15 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should handle totalDevices: 0 without NaN% or crashing', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({
-            androidCount: {
-              totalDevices: 0,
-              idleDevices: 0,
-            },
-          }),
-        }),
-      },
+    setupMockClient({
+      totalDevices: 0,
+      idleDevices: 0,
     });
 
-    const queryClient = new QueryClient();
-
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader aip160="" setFiltersBatch={jest.fn()} />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     // Verify that it renders without NaN%
@@ -317,28 +232,18 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should call setFiltersBatch with Online filter when clicking Online', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({ androidCount: {} }),
-        }),
-      },
-    });
+    setupMockClient({});
 
     const mockSetFiltersBatch = jest.fn();
-    const queryClient = new QueryClient();
 
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader aip160="" setFiltersBatch={mockSetFiltersBatch} />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     // Click on Online
-    fireEvent.click(screen.getByText('Online'));
+    fireEvent.click(await screen.findByText('Online'));
 
     // Verify that setFiltersBatch was called
     expect(mockSetFiltersBatch).toHaveBeenCalledWith({
@@ -348,33 +253,20 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should render 7 days avg and 30 days avg formatted as percentages when showAvgUtilization is true', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({
-            androidCount: {
-              totalDevices: 100,
-              average7d: 0.17,
-              average30d: 0.16,
-            },
-          }),
-        }),
-      },
+    setupMockClient({
+      totalDevices: 100,
+      average7d: 0.17,
+      average30d: 0.16,
     });
 
-    const queryClient = new QueryClient();
-
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader
           aip160=""
           setFiltersBatch={jest.fn()}
           showAvgUtilization={true}
         />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     expect(await screen.findByText('17.00%')).toBeInTheDocument();
@@ -382,31 +274,18 @@ describe('AndroidSummaryHeader', () => {
   });
 
   it('should render "-" for 7 days avg and 30 days avg when utilization metrics are missing', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({
-            androidCount: {
-              totalDevices: 100,
-            },
-          }),
-        }),
-      },
+    setupMockClient({
+      totalDevices: 100,
     });
 
-    const queryClient = new QueryClient();
-
     render(
-      <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
         <AndroidSummaryHeader
           aip160=""
           setFiltersBatch={jest.fn()}
           showAvgUtilization={true}
         />
-      </QueryClientProvider>,
+      </FakeContextProvider>,
     );
 
     const dashElements = await screen.findAllByText('-');

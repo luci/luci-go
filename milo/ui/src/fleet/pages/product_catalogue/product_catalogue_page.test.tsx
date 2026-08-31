@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   fireEvent,
   render,
@@ -21,27 +20,20 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import {
-  SyncedSearchParamsProvider,
-  useSyncedSearchParams,
-} from '@/generic_libs/hooks/synced_search_params';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ProductCataloguePage } from './product_catalogue_page';
 
-jest.mock('@/fleet/hooks/prpc_clients');
 jest.mock('@/generic_libs/components/google_analytics', () => ({
   useGoogleAnalytics: () => ({ trackEvent: jest.fn() }),
 }));
 
-const renderPage = (
-  queryClient = new QueryClient(),
-  initialEntries = ['/ui/fleet/catalog'],
-) => {
+const renderPage = (initialEntries = ['/ui/fleet/catalog']) => {
   const entries = initialEntries.map((entry) => {
     const url = new URL(entry, 'http://localhost');
     if (!url.searchParams.has('view')) {
@@ -58,17 +50,16 @@ const renderPage = (
   };
 
   const utils = render(
-    <QueryClientProvider client={queryClient}>
+    <FakeContextProvider
+      mountedPath="/ui/fleet/catalog"
+      routerOptions={{ initialEntries: entries }}
+    >
       <SettingsProvider>
         <ShortcutProvider>
-          <MemoryRouter initialEntries={entries}>
-            <SyncedSearchParamsProvider>
-              <TestComponent />
-            </SyncedSearchParamsProvider>
-          </MemoryRouter>
+          <TestComponent />
         </ShortcutProvider>
       </SettingsProvider>
-    </QueryClientProvider>,
+    </FakeContextProvider>,
   );
 
   return {
@@ -81,82 +72,62 @@ const renderPage = (
 };
 
 describe('ProductCataloguePage', () => {
-  jest.setTimeout(15000);
+  beforeEach(() => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: ['val1', 'val2'],
+      fleetPlmStatus: [
+        { value: 'GA', inScope: true },
+        { value: 'LA', inScope: true },
+        { value: 'NPI', inScope: true },
+      ],
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'peripherals', inScope: true },
+      ],
+    });
+  });
 
   it('should render successfully', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({ productCatalogId: ['val1', 'val2'] }),
-        }),
-      },
-    });
-
-    const queryClient = new QueryClient();
-
-    renderPage(queryClient);
+    renderPage();
 
     // This test ensures the page can mount and render without throwing errors.
     expect(true).toBe(true);
   });
 
   it('should render R11N links correctly', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({
-            entries: [
-              {
-                productCatalogId: 'catalog-1',
-                productName: 'Product 1',
-                gpn: '12345',
-                descriptiveName: 'Desc 1',
-                resourceType: 'Type 1',
-                fleetPlmStatus: 'Status 1',
-                r11n: ['r11n-val', 'TBD'],
-                numberOfDevicesPerRack: 10,
-                unitCost: '100',
-                productType: 'Type A',
-              },
-            ],
-          }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({ productCatalogId: [] }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'catalog-1',
+          productName: 'Product 1',
+          gpn: '12345',
+          descriptiveName: 'Desc 1',
+          resourceType: 'Type 1',
+          fleetPlmStatus: 'Status 1',
+          r11n: ['r11n-val', 'TBD'],
+          numberOfDevicesPerRack: 10,
+          unitCost: '100',
+          productType: 'Type A',
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
     });
 
-    const queryClient = new QueryClient();
-
-    const { findByText } = renderPage(queryClient);
+    const { findByText } = renderPage();
 
     const link1 = await findByText('r11n-val');
     expect(link1).toBeInTheDocument();
@@ -170,59 +141,42 @@ describe('ProductCataloguePage', () => {
   }, 15000);
 
   it('should sort client-side by R11N correctly', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({
-            entries: [
-              {
-                productCatalogId: 'catalog-1',
-                productName: 'Product B',
-                gpn: '12345',
-                descriptiveName: 'Desc 1',
-                resourceType: 'Type 1',
-                fleetPlmStatus: 'Status 1',
-                r11n: ['B-val'],
-                numberOfDevicesPerRack: 10,
-                unitCost: '100',
-                productType: 'Type A',
-              },
-              {
-                productCatalogId: 'catalog-2',
-                productName: 'Product A',
-                gpn: '12346',
-                descriptiveName: 'Desc 2',
-                resourceType: 'Type 2',
-                fleetPlmStatus: 'Status 2',
-                r11n: ['A-val'],
-                numberOfDevicesPerRack: 10,
-                unitCost: '100',
-                productType: 'Type A',
-              },
-            ],
-          }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({ productCatalogId: [] }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'catalog-1',
+          productName: 'Product B',
+          gpn: '12345',
+          descriptiveName: 'Desc 1',
+          resourceType: 'Type 1',
+          fleetPlmStatus: 'Status 1',
+          r11n: ['B-val'],
+          numberOfDevicesPerRack: 10,
+          unitCost: '100',
+          productType: 'Type A',
+        },
+        {
+          productCatalogId: 'catalog-2',
+          productName: 'Product A',
+          gpn: '12346',
+          descriptiveName: 'Desc 2',
+          resourceType: 'Type 2',
+          fleetPlmStatus: 'Status 2',
+          r11n: ['A-val'],
+          numberOfDevicesPerRack: 10,
+          unitCost: '100',
+          productType: 'Type A',
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
     });
 
-    const queryClient = new QueryClient();
-
-    renderPage(queryClient);
+    renderPage();
 
     // Verify initial rendering order: B-val then A-val
     await screen.findByText('B-val');
@@ -256,47 +210,30 @@ describe('ProductCataloguePage', () => {
   });
 
   it('should render R11N in card view', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({
-            entries: [
-              {
-                productCatalogId: 'catalog-1',
-                productName: 'Product 1',
-                gpn: '12345',
-                descriptiveName: 'Desc 1',
-                resourceType: 'Type 1',
-                fleetPlmStatus: 'Status 1',
-                r11n: ['r11n-val', 'r11n-val-2'],
-                numberOfDevicesPerRack: 10,
-                unitCost: '100',
-                productType: 'Type A',
-              },
-            ],
-          }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({ productCatalogId: [] }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'catalog-1',
+          productName: 'Product 1',
+          gpn: '12345',
+          descriptiveName: 'Desc 1',
+          resourceType: 'Type 1',
+          fleetPlmStatus: 'Status 1',
+          r11n: ['r11n-val', 'r11n-val-2'],
+          numberOfDevicesPerRack: 10,
+          unitCost: '100',
+          productType: 'Type A',
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
     });
 
-    const queryClient = new QueryClient();
-
-    renderPage(queryClient);
+    renderPage();
 
     const switchBtn = await screen.findByRole('button', {
       name: /switch to card view/i,
@@ -308,57 +245,41 @@ describe('ProductCataloguePage', () => {
   });
 
   it('should render tabs, filter data/columns, and disable out-of-scope tabs', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: (req?: { filter?: string }) => ({
-          queryKey: ['ListProductCatalogEntries', req],
-          queryFn: async () => {
-            const all = [
-              {
-                productCatalogId: 'pc1',
-                productName: 'Hardware Product',
-                productType: 'hardware',
-                numberOfDevicesPerRack: 0,
-              },
-              {
-                productCatalogId: 'pc2',
-                productName: 'Peripherals Product',
-                productType: 'peripherals',
-                numberOfDevicesPerRack: 10,
-              },
-            ];
-            const entries =
-              req?.filter && req.filter.includes('hardware')
-                ? all.filter((e) => e.productType === 'hardware')
-                : all;
-            return { entries };
+    FleetConsoleMockAPI.setFixture(
+      'ListProductCatalogEntries',
+      (req: { filter?: string }) => {
+        const all = [
+          {
+            productCatalogId: 'pc1',
+            productName: 'Hardware Product',
+            productType: 'hardware',
+            numberOfDevicesPerRack: 0,
           },
-        }),
+          {
+            productCatalogId: 'pc2',
+            productName: 'Peripherals Product',
+            productType: 'peripherals',
+            numberOfDevicesPerRack: 10,
+          },
+        ];
+        const entries =
+          req?.filter && req.filter.includes('hardware')
+            ? all.filter((e) => e.productType === 'hardware')
+            : all;
+        return { entries };
       },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({
-            scopedProductType: [
-              { value: 'hardware', inScope: true },
-              { value: 'peripherals', inScope: false },
-            ],
-          }),
-        }),
-      },
+    );
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'peripherals', inScope: false },
+      ],
     });
 
-    const queryClient = new QueryClient();
-
-    const { findByRole, findByText, queryByText } = renderPage(queryClient);
+    const { findByRole, findByText, queryByText } = renderPage();
 
     // Should render the tabs (including prepended 'All')
     const allTab = await findByRole('tab', { name: 'All' });
@@ -390,73 +311,39 @@ describe('ProductCataloguePage', () => {
   }, 15000);
 
   it('should render empty fallback message when there are no products', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({
-            entries: [],
-          }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({
-            scopedProductType: [
-              { value: 'hardware', inScope: false },
-              { value: 'peripherals', inScope: false },
-            ],
-          }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: false },
+        { value: 'peripherals', inScope: false },
+      ],
     });
 
-    const queryClient = new QueryClient();
-
-    const { findByText } = renderPage(queryClient);
+    const { findByText } = renderPage();
 
     expect(await findByText('No products found')).toBeInTheDocument();
   });
 
   it('should remove product_type filter when switching from All tab to another tab', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({
-            scopedProductType: [
-              { value: 'hardware', inScope: true },
-              { value: 'peripherals', inScope: true },
-            ],
-          }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'peripherals', inScope: true },
+      ],
     });
 
-    const queryClient = new QueryClient();
-    const { findByRole, getSearchParams } = renderPage(queryClient, [
+    const { findByRole, getSearchParams } = renderPage([
       '/ui/fleet/catalog?filters=product_type+%3D+%28%22hardware%22%29',
     ]);
 
@@ -473,35 +360,20 @@ describe('ProductCataloguePage', () => {
   });
 
   it('should clear all filters when switching between tabs', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({
-            scopedProductType: [
-              { value: 'hardware', inScope: true },
-              { value: 'peripherals', inScope: true },
-            ],
-          }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'peripherals', inScope: true },
+      ],
     });
 
-    const queryClient = new QueryClient();
-    const { findByRole, getSearchParams } = renderPage(queryClient, [
+    const { findByRole, getSearchParams } = renderPage([
       '/ui/fleet/catalog?filters=gpn+%3D+%28%2212345%22%29',
     ]);
 
@@ -516,35 +388,20 @@ describe('ProductCataloguePage', () => {
   });
 
   it('should sync selected tab with the url parameter', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({
-            scopedProductType: [
-              { value: 'hardware', inScope: true },
-              { value: 'peripherals', inScope: true },
-            ],
-          }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'peripherals', inScope: true },
+      ],
     });
 
-    const queryClient = new QueryClient();
-    const { findByRole, getSearchParams } = renderPage(queryClient);
+    const { findByRole, getSearchParams } = renderPage();
 
     const hardwareTab = await findByRole('tab', { name: 'hardware' });
     fireEvent.click(hardwareTab);
@@ -562,8 +419,6 @@ describe('ProductCataloguePage', () => {
   });
 
   it('should navigate to next page without freezing or resetting pageIndex', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
     const entries = Array.from({ length: 15 }, (_, i) => ({
       productCatalogId: `catalog-${i + 1}`,
       productName: `Product ${i + 1}`,
@@ -577,31 +432,15 @@ describe('ProductCataloguePage', () => {
       productType: 'hardware',
     }));
 
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({ entries }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({
-            scopedProductType: [{ value: 'hardware', inScope: true }],
-          }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', { entries });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [{ value: 'hardware', inScope: true }],
     });
 
-    const queryClient = new QueryClient();
-    renderPage(queryClient, ['/ui/fleet/catalog?pageSize=10']);
+    renderPage(['/ui/fleet/catalog?pageSize=10']);
 
     expect(await screen.findByText('Product 1')).toBeInTheDocument();
     expect(screen.queryByText('Product 12')).not.toBeInTheDocument();
@@ -616,119 +455,86 @@ describe('ProductCataloguePage', () => {
   }, 15000);
 
   it('should render both standard and GCE entries in unified table on All tab', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListProductCatalogEntries'],
-          queryFn: async () => ({
-            entries: [
-              {
-                productCatalogId: 'std-catalog-1',
-                productName: 'Standard Pixel Device',
-                gpn: '12345',
-                descriptiveName: 'Desc 1',
-                resourceType: 'Type 1',
-                fleetPlmStatus: 'GA',
-                r11n: [],
-                numberOfDevicesPerRack: 10,
-                unitCost: '100',
-                productType: 'hardware',
-              },
-            ],
-          }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({
-            entries: [
-              {
-                productCatalogId: 'gce-catalog-1',
-                productName: 'GCE n2-standard-4',
-                descriptiveName: 'GCE N2 Instance',
-                cpuType: 'x86_64',
-                cpuNumPerVm: 4,
-                memoryGbPerVm: 16,
-                plmStatus: 'GA',
-              },
-            ],
-          }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: () => ({
-          queryKey: ['GetProductCatalogFilterValues'],
-          queryFn: async () => ({ productCatalogId: [] }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'std-catalog-1',
+          productName: 'Standard Pixel Device',
+          gpn: '12345',
+          descriptiveName: 'Desc 1',
+          resourceType: 'Type 1',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 10,
+          unitCost: '100',
+          productType: 'hardware',
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'gce-catalog-1',
+          productName: 'GCE n2-standard-4',
+          descriptiveName: 'GCE N2 Instance',
+          cpuType: 'x86_64',
+          cpuNumPerVm: 4,
+          memoryGbPerVm: 16,
+          plmStatus: 'GA',
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
     });
 
-    const queryClient = new QueryClient();
-    renderPage(queryClient);
+    renderPage();
 
-    expect(
-      await screen.findByText('Standard Pixel Device'),
-    ).toBeInTheDocument();
-    expect(await screen.findByText('GCE n2-standard-4')).toBeInTheDocument();
+    await waitFor(
+      () => {
+        expect(screen.getByText('Standard Pixel Device')).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
+    expect(screen.getByText('GCE n2-standard-4')).toBeInTheDocument();
     expect(screen.getByText('x86_64')).toBeInTheDocument();
   });
 
   it('should remove default fleet_plm_status filter on first click of chip delete icon', async () => {
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-
-    mockUseFleetConsoleClient.mockReturnValue({
-      ListProductCatalogEntries: {
-        query: (req?: { filter?: string }) => ({
-          queryKey: ['ListProductCatalogEntries', req],
-          queryFn: async () => ({
-            entries: [
-              {
-                productCatalogId: 'std-catalog-1',
-                productName: 'Standard Pixel Device',
-                gpn: '12345',
-                descriptiveName: 'Desc 1',
-                resourceType: 'Type 1',
-                fleetPlmStatus: 'GA',
-                r11n: [],
-                numberOfDevicesPerRack: 10,
-                unitCost: '100',
-                productType: 'hardware',
-              },
-            ],
-          }),
-        }),
-      },
-      ListGceProductCatalogEntries: {
-        query: () => ({
-          queryKey: ['ListGceProductCatalogEntries'],
-          queryFn: async () => ({ entries: [] }),
-        }),
-      },
-      GetProductCatalogFilterValues: {
-        query: (req?: { filter?: string }) => ({
-          queryKey: ['GetProductCatalogFilterValues', req],
-          queryFn: async () => ({
-            fleetPlmStatus: [
-              { value: 'GA', inScope: true },
-              { value: 'LA', inScope: true },
-              { value: 'NPI', inScope: true },
-            ],
-            scopedFleetPlmStatus: [
-              { value: 'GA', inScope: true },
-              { value: 'LA', inScope: true },
-              { value: 'NPI', inScope: true },
-            ],
-            scopedProductType: [{ value: 'hardware', inScope: true }],
-          }),
-        }),
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'std-catalog-1',
+          productName: 'Standard Pixel Device',
+          gpn: '12345',
+          descriptiveName: 'Desc 1',
+          resourceType: 'Type 1',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 10,
+          unitCost: '100',
+          productType: 'hardware',
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      fleetPlmStatus: [
+        { value: 'GA', inScope: true },
+        { value: 'LA', inScope: true },
+        { value: 'NPI', inScope: true },
+      ],
+      scopedFleetPlmStatus: [
+        { value: 'GA', inScope: true },
+        { value: 'LA', inScope: true },
+        { value: 'NPI', inScope: true },
+      ],
+      scopedProductType: [{ value: 'hardware', inScope: true }],
     });
 
-    const queryClient = new QueryClient();
-    const { getSearchParams } = renderPage(queryClient, ['/ui/fleet/catalog']);
+    const { getSearchParams } = renderPage(['/ui/fleet/catalog']);
 
     const user = userEvent.setup();
 

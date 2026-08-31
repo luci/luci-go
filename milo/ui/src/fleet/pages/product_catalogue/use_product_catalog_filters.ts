@@ -68,6 +68,7 @@ export const useProductCatalogFilters = (
 ) => {
   const [searchParams] = useSyncedSearchParams();
   const filtersParam = searchParams.get(FILTERS_PARAM_KEY);
+  const hasUrlFiltersParam = searchParams.has(FILTERS_PARAM_KEY);
   const { trackEvent } = useGoogleAnalytics();
 
   const onFilterChange = useCallback(
@@ -93,7 +94,9 @@ export const useProductCatalogFilters = (
     placeholderData: keepPreviousData,
   });
 
-  const filterOptions = useMemo(() => {
+  const rawDataJson = JSON.stringify(filterOptionsQuery.data);
+
+  const nextFilterOptions = useMemo(() => {
     if (!filterOptionsQuery.data) return undefined;
 
     const options: Record<
@@ -120,7 +123,9 @@ export const useProductCatalogFilters = (
       if (accessorKey === 'productType' && !isAllTab) continue;
 
       if (config.type === 'string_list') {
-        const defaultOptions = DEFAULT_FILTER_VALUES[accessorKey] ?? [];
+        const defaultOptions = hasUrlFiltersParam
+          ? []
+          : (DEFAULT_FILTER_VALUES[accessorKey] ?? []);
         options[filterKey] = new StringListFilterCategoryBuilder()
           .setLabel(column.header as string)
           .setOptions(
@@ -140,10 +145,11 @@ export const useProductCatalogFilters = (
       }
     }
     return options;
-  }, [filterOptionsQuery.data, isAllTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawDataJson, hasUrlFiltersParam, isAllTab]);
 
   const { filterValues, aip160, warnings, setFiltersBatch } = useFilters(
-    filterOptions,
+    nextFilterOptions,
     {
       areFilterValuesLoading: filterOptionsQuery.isLoading,
       onFilterChange,

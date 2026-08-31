@@ -274,16 +274,24 @@ export interface PrototypeOptions {
   debug?: boolean;
 }
 
+export interface MockCallRecord {
+  url: string;
+  payload: unknown;
+  headers?: unknown;
+}
+
 export class FleetConsoleMockAPI {
   private static fixtures: Record<string, unknown> =
     deepClone(DEFAULT_FIXTURES);
   private static currentAuthState: Record<string, unknown> =
     deepClone(DEFAULT_AUTH_STATE);
+  private static callHistory: Record<string, MockCallRecord[]> = {};
   private static interceptorEnabled = false;
   private static latencyMs = 0;
   private static prototypeMode = false;
   private static persistStorage = false;
   private static storageKey = 'fcon_prototype_mock_fixtures';
+  private static nativeFetch: typeof globalThis.fetch | null = null;
 
   /**
    * Initializes FleetConsoleMockAPI for standalone static UI prototyping.
@@ -316,8 +324,9 @@ export class FleetConsoleMockAPI {
         }
       } catch (e) {
         if (options.debug) {
-          // eslint-disable-next-line no-console
+          /* eslint-disable no-console */
           console.warn('Failed to restore mock state from localStorage', e);
+          /* eslint-enable no-console */
         }
       }
     }
@@ -339,18 +348,12 @@ export class FleetConsoleMockAPI {
   }
 
   /**
-   * Sets simulated network latency in milliseconds.
-   */
-  static setLatencyMs(ms: number): void {
-    this.latencyMs = Math.max(0, ms);
-  }
-
-  /**
-   * Resets all fixtures and auth state to default values.
+   * Resets all fixtures to default values and clears call history.
    */
   static resetFixtures(): void {
     this.fixtures = deepClone(DEFAULT_FIXTURES);
-    this.resetAuthState();
+    this.currentAuthState = deepClone(DEFAULT_AUTH_STATE);
+    this.callHistory = {};
     if (
       this.persistStorage &&
       typeof window !== 'undefined' &&
@@ -359,32 +362,54 @@ export class FleetConsoleMockAPI {
       try {
         window.localStorage.removeItem(this.storageKey);
       } catch {
-        // Ignore
+        // Ignore localStorage clear failures
       }
     }
   }
 
   /**
-   * Configures or overrides the mock authentication state.
+   * Clears call history records.
    */
-  static setAuthState(authState: Record<string, unknown>): void {
+  static clearCalls(): void {
+    this.callHistory = {};
+  }
+
+  /**
+   * Returns all recorded calls for a method.
+   */
+  static getCalls(method: string): MockCallRecord[] {
+    return this.callHistory[method] || [];
+  }
+
+  /**
+   * Records an intercepted pRPC call.
+   */
+  private static recordCall(method: string, call: MockCallRecord): void {
+    if (!this.callHistory[method]) {
+      this.callHistory[method] = [];
+    }
+    this.callHistory[method].push(call);
+  }
+
+  /**
+   * Sets mock auth state for OpenID state endpoint interception.
+   */
+  static setAuthState(stateOverride: Record<string, unknown>): void {
     this.currentAuthState = {
       ...this.currentAuthState,
-      ...authState,
+      ...stateOverride,
     };
   }
 
   /**
-   * Resets authentication state to the default user context.
+   * Resets auth state back to default logged-in identity.
    */
   static resetAuthState(): void {
     this.currentAuthState = deepClone(DEFAULT_AUTH_STATE);
   }
 
-  private static nativeFetch: typeof globalThis.fetch | null = null;
-
   /**
-   * Configures a specific pRPC method to return a gRPC error response.
+   * Sets an error fixture for a pRPC method.
    */
   static setErrorFixture(
     method: string,
@@ -398,10 +423,6 @@ export class FleetConsoleMockAPI {
    */
   static setFixture(method: string, data: unknown): void {
     this.fixtures[method] = data;
-    this.persistIfNeeded();
-  }
-
-  private static persistIfNeeded(): void {
     if (
       this.persistStorage &&
       typeof window !== 'undefined' &&
@@ -413,7 +434,7 @@ export class FleetConsoleMockAPI {
           JSON.stringify(this.fixtures),
         );
       } catch {
-        // Ignore
+        // Ignore localStorage quota / availability failures in test environments
       }
     }
   }
@@ -440,23 +461,25 @@ export class FleetConsoleMockAPI {
    */
   static getFixture(method: string): unknown {
     const fixture = this.fixtures[method];
-    if (fixture !== null && typeof fixture === 'object') {
+    if (
+      fixture !== null &&
+      typeof fixture === 'object' &&
+      typeof (fixture as Promise<unknown>).then !== 'function'
+    ) {
       return deepClone(fixture);
     }
     return fixture;
   }
 
   /**
-   * Enables the universal browser globalThis.fetch interceptor for pRPC and Auth calls.
+   * Enables the universal browser globalThis.fetch interceptor for pRPC calls.
    * Can be safely called in settings.js, Cypress beforeEach, or Jest setups.
    */
   static enableBrowserInterceptor(): void {
     if (this.interceptorEnabled) return;
-    if (
-      typeof process !== 'undefined' &&
-      process.env.NODE_ENV === 'production' &&
-      !this.prototypeMode
-    ) {
+
+    // Safety guardrail: Do not intercept requests in production environments unless explicitly in prototype mode.
+    if (process.env.NODE_ENV === 'production' && !this.prototypeMode) {
       /* eslint-disable no-console */
       console.warn(
         '[FleetConsoleMockAPI] Interceptor disabled in production build.',
@@ -512,12 +535,70 @@ export class FleetConsoleMockAPI {
               reqPayload = JSON.parse(bodyStr);
             }
           } catch {
-            // Ignore non-JSON bodies
+            reqPayload = opts.body;
           }
         }
-        let data = FleetConsoleMockAPI.getFixture(method);
-        if (typeof data === 'function') {
-          data = data(reqPayload);
+
+        FleetConsoleMockAPI.recordCall(method, {
+          url,
+          payload: reqPayload,
+          headers: opts?.headers,
+        });
+
+        const fixture = FleetConsoleMockAPI.getFixture(method);
+
+        let data: unknown = fixture;
+        if (typeof fixture === 'function') {
+          try {
+            data = fixture(reqPayload, options);
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            return new Response(
+              ")]}'\n" + JSON.stringify({ message: errorMsg }),
+              {
+                status: 500,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Prpc-Grpc-Code': '13',
+                },
+              },
+            );
+          }
+        }
+
+        if (
+          typeof data === 'object' &&
+          data !== null &&
+          typeof (data as Promise<unknown>).then === 'function'
+        ) {
+          try {
+            data = await data;
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            return new Response(
+              ")]}'\n" + JSON.stringify({ message: errorMsg }),
+              {
+                status: 500,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Prpc-Grpc-Code': '13',
+                },
+              },
+            );
+          }
+        }
+
+        if (data instanceof Error) {
+          return new Response(
+            ")]}'\n" + JSON.stringify({ message: data.message }),
+            {
+              status: 500,
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Prpc-Grpc-Code': '13',
+              },
+            },
+          );
         }
 
         if (

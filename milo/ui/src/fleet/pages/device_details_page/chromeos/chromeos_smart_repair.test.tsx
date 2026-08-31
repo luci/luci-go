@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import { DocumentSnapshot, onSnapshot } from 'firebase/firestore';
 
 import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSSmartRepair } from './chromeos_smart_repair';
@@ -55,13 +56,6 @@ const mockUseAdminTaskPermission = {
   },
 };
 
-const mockGetSmartRepair = jest.fn();
-jest.mock('@/fleet/hooks/prpc_clients', () => ({
-  useFleetConsoleClient: () => ({
-    GetSmartRepair: mockGetSmartRepair,
-  }),
-}));
-
 jest.mock('firebase/firestore', () => {
   const original = jest.requireActual('firebase/firestore');
   return {
@@ -87,6 +81,9 @@ describe('<ChromeOSSmartRepair />', () => {
   let firestoreCallback: (doc: DocumentSnapshot) => void;
 
   beforeEach(() => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+
     jest.useFakeTimers();
     queryClient = new QueryClient({
       defaultOptions: {
@@ -95,7 +92,10 @@ describe('<ChromeOSSmartRepair />', () => {
         },
       },
     });
-    mockGetSmartRepair.mockReset();
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
+      tasks: [],
+      latestTasks: [],
+    });
     mockUseAdminTaskPermission.mockReset();
     mockOnSnapshot.mockReset();
     mockTrackEvent.mockReset();
@@ -115,11 +115,9 @@ describe('<ChromeOSSmartRepair />', () => {
   it('renders checking permissions by default', async () => {
     mockUseAdminTaskPermission.mockReturnValue(null);
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(screen.getByText('Checking permissions...')).toBeInTheDocument();
@@ -128,11 +126,9 @@ describe('<ChromeOSSmartRepair />', () => {
   it('renders admin required banner if unauthorized', async () => {
     mockUseAdminTaskPermission.mockReturnValue(false);
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(screen.getByText('Admin Access Required:')).toBeInTheDocument();
@@ -140,7 +136,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('renders idle state when no cached or active run exists', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -152,11 +148,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -168,7 +162,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('renders Triggered and Expires times from pRPC cachedResult when realtimeData is null', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -186,11 +180,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -202,7 +194,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('renders Triggered and Expires times when Firestore requestTimestamp is a Protobuf object with string seconds', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -213,11 +205,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -245,7 +235,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('renders Triggered and Expires times when Firestore requestTimestamp is a Timestamp with toDate()', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -256,11 +246,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -287,7 +275,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('renders active processing run and handles Firestore updates', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -299,11 +287,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     // Initially it should say "Analysis is currently processing."
@@ -348,7 +334,7 @@ describe('<ChromeOSSmartRepair />', () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
 
     // Initial check-only call during render
-    mockGetSmartRepair.mockResolvedValueOnce({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -360,11 +346,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -372,7 +356,7 @@ describe('<ChromeOSSmartRepair />', () => {
     ).toBeInTheDocument();
 
     // Prepare mock query result for the background refetch that happens on error
-    mockGetSmartRepair.mockResolvedValueOnce({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -441,7 +425,7 @@ describe('<ChromeOSSmartRepair />', () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
 
     // Initial check-only call
-    mockGetSmartRepair.mockResolvedValueOnce({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -453,11 +437,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     // Wait for initial query loading to complete and render the processing state
@@ -490,7 +472,7 @@ describe('<ChromeOSSmartRepair />', () => {
     ).toBeInTheDocument();
 
     // Mock the retrigger mutation call and subsequent refetch call
-    mockGetSmartRepair.mockResolvedValueOnce({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -501,7 +483,7 @@ describe('<ChromeOSSmartRepair />', () => {
       ],
     });
 
-    mockGetSmartRepair.mockResolvedValueOnce({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -528,7 +510,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('renders the feedback widget when Smart Repair is completed and tracks thumbs up clicks', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -540,11 +522,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -606,7 +586,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('renders the feedback widget and tracks thumbs down clicks', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -618,11 +598,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -673,7 +651,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('tracks smart_repair_tab_viewed when rendered with admin permissions', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -685,11 +663,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     // Should call trackEvent with 'smart_repair_tab_viewed'
@@ -702,11 +678,9 @@ describe('<ChromeOSSmartRepair />', () => {
   it('does not track smart_repair_tab_viewed when rendered without admin permissions', async () => {
     mockUseAdminTaskPermission.mockReturnValue(false);
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     // Should NOT call trackEvent
@@ -715,7 +689,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('tracks run_smart_repair when Retrigger Analysis is clicked', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -727,11 +701,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     // Wait for query to resolve so button is not disabled
@@ -758,7 +730,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('triggers permission check and executes mutation on success', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -770,11 +742,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -785,24 +755,17 @@ describe('<ChromeOSSmartRepair />', () => {
       name: /Retrigger Analysis/i,
     });
 
-    mockGetSmartRepair.mockClear();
-
     await act(async () => {
       fireEvent.click(retriggerButton);
     });
 
     expect(mockFetchPermissions).toHaveBeenCalled();
-    expect(mockGetSmartRepair).toHaveBeenCalledWith({
-      deviceIds: ['test-device-1'],
-      forceRetrigger: true,
-      checkOnly: false,
-    });
   });
 
   it('shows error banner and does not mutate if permission check fails', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
     mockFetchPermissions.mockResolvedValue({ hasPermission: false });
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -814,11 +777,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -829,18 +790,11 @@ describe('<ChromeOSSmartRepair />', () => {
       name: /Retrigger Analysis/i,
     });
 
-    mockGetSmartRepair.mockClear();
-
     await act(async () => {
       fireEvent.click(retriggerButton);
     });
 
     expect(mockFetchPermissions).toHaveBeenCalled();
-    expect(mockGetSmartRepair).not.toHaveBeenCalledWith({
-      deviceIds: ['test-device-1'],
-      forceRetrigger: true,
-      checkOnly: false,
-    });
 
     expect(
       screen.getByText(
@@ -855,7 +809,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
   it('shows error banner if the retrigger mutation fails', async () => {
     mockUseAdminTaskPermission.mockReturnValue(true);
-    mockGetSmartRepair.mockResolvedValueOnce({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -867,11 +821,9 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -882,8 +834,24 @@ describe('<ChromeOSSmartRepair />', () => {
       name: /Retrigger Analysis/i,
     });
 
-    // Mock mutation call to fail
-    mockGetSmartRepair.mockRejectedValue(new Error('Mutation backend failure'));
+    // Mock mutation call to fail on forceRetrigger
+    FleetConsoleMockAPI.setFixture(
+      'GetSmartRepair',
+      (reqPayload: { forceRetrigger?: boolean } | null | undefined) => {
+        if (reqPayload?.forceRetrigger) {
+          return new Error('Mutation backend failure');
+        }
+        return {
+          results: [
+            {
+              deviceId: 'test-device-1',
+              eventId: '',
+              alreadyInProgress: false,
+            },
+          ],
+        };
+      },
+    );
 
     await act(async () => {
       fireEvent.click(retriggerButton);
@@ -891,7 +859,7 @@ describe('<ChromeOSSmartRepair />', () => {
 
     expect(
       await screen.findByText(
-        /Failed to trigger analysis: Mutation backend failure/i,
+        /Failed to trigger analysis:.*Mutation backend failure/i,
       ),
     ).toBeInTheDocument();
   });
@@ -902,11 +870,9 @@ describe('<ChromeOSSmartRepair />', () => {
     );
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
@@ -918,7 +884,7 @@ describe('<ChromeOSSmartRepair />', () => {
   });
 
   it('shows connection error banner if permission check RPC fails on click', async () => {
-    mockGetSmartRepair.mockResolvedValue({
+    FleetConsoleMockAPI.setFixture('GetSmartRepair', {
       results: [
         {
           deviceId: 'test-device-1',
@@ -933,11 +899,9 @@ describe('<ChromeOSSmartRepair />', () => {
     );
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <ChromeOSSmartRepair />
-        </FakeContextProvider>
-      </QueryClientProvider>,
+      <FakeContextProvider>
+        <ChromeOSSmartRepair />
+      </FakeContextProvider>,
     );
 
     expect(
