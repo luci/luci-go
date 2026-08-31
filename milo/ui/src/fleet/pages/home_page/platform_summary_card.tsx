@@ -213,6 +213,11 @@ export function PlatformSummaryCard({
                       alignItems: 'center',
                       gap: 1,
                     }}
+                    aria-label={
+                      totalText
+                        ? `${totalText} in ${title} platform`
+                        : `Total Devices in ${title} platform`
+                    }
                   >
                     <Typography color="text.secondary" variant="body2">
                       {totalText ?? 'Total Devices'}
@@ -234,6 +239,7 @@ export function PlatformSummaryCard({
                   variant="outlined"
                   disableElevation
                   fullWidth
+                  aria-label={`${linkText} in ${title} platform`}
                 >
                   {linkText}
                 </Button>
@@ -293,6 +299,11 @@ export function PlatformSummaryCard({
                         alignItems: 'center',
                         gap: 1,
                       }}
+                      aria-label={
+                        secondTotalText
+                          ? `${secondTotalText} in ${title} platform`
+                          : `Total Devices in ${title} platform`
+                      }
                     >
                       <Typography color="text.secondary" variant="body2">
                         {secondTotalText ?? 'Total Devices'}
@@ -316,6 +327,7 @@ export function PlatformSummaryCard({
                     variant="outlined"
                     disableElevation
                     fullWidth
+                    aria-label={`${secondaryLinkText} in ${title} platform`}
                   >
                     {secondaryLinkText}
                   </Button>

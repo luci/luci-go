@@ -107,7 +107,10 @@ export const Header = ({
           gap: 13,
         }}
       >
-        <IconButton onClick={() => window.open('http://go/fleet-console')}>
+        <IconButton
+          onClick={() => window.open('http://go/fleet-console')}
+          aria-label="Fleet Console Documentation"
+        >
           <Tooltip title="Fleet Console documentation">
             <HelpOutlineOutlinedIcon sx={{ color: colors.grey[700] }} />
           </Tooltip>
@@ -118,12 +121,16 @@ export const Header = ({
               genFeedbackUrl({ bugComponent: FEEDBACK_BUGANIZER_BUG_ID }),
             )
           }
+          aria-label="Report a bug"
         >
           <Tooltip title="Report a bug">
             <FeedbackOutlined sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
-        <IconButton onClick={() => window.open('http://go/fcon-feature')}>
+        <IconButton
+          onClick={() => window.open('http://go/fcon-feature')}
+          aria-label="Request a feature"
+        >
           <Tooltip title="Request a feature">
             <ExtensionOutlined sx={{ color: colors.grey[700] }} />
           </Tooltip>
