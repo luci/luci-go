@@ -253,20 +253,28 @@ describe('ProductCataloguePage', () => {
             productCatalogId: 'pc1',
             productName: 'Hardware Product',
             productType: 'hardware',
+            fleetPlmStatus: 'GA',
             numberOfDevicesPerRack: 0,
           },
           {
             productCatalogId: 'pc2',
             productName: 'Peripherals Product',
             productType: 'peripherals',
+            fleetPlmStatus: 'GA',
             numberOfDevicesPerRack: 10,
           },
         ];
-        const entries =
-          req?.filter && req.filter.includes('hardware')
-            ? all.filter((e) => e.productType === 'hardware')
-            : all;
-        return { entries };
+        if (req?.filter) {
+          if (req.filter.includes('hardware')) {
+            return { entries: all.filter((e) => e.productType === 'hardware') };
+          }
+          if (req.filter.includes('peripherals')) {
+            return {
+              entries: all.filter((e) => e.productType === 'peripherals'),
+            };
+          }
+        }
+        return { entries: all };
       },
     );
     FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
@@ -275,11 +283,11 @@ describe('ProductCataloguePage', () => {
     FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
       scopedProductType: [
         { value: 'hardware', inScope: true },
-        { value: 'peripherals', inScope: false },
+        { value: 'peripherals', inScope: true },
       ],
     });
 
-    const { findByRole, findByText, queryByText } = renderPage();
+    const { findByRole, findByText } = renderPage();
 
     // Should render the tabs (including prepended 'All')
     const allTab = await findByRole('tab', { name: 'All' });
@@ -305,9 +313,11 @@ describe('ProductCataloguePage', () => {
     fireEvent.click(hardwareTab);
     expect(hardwareTab).toHaveAttribute('aria-selected', 'true');
 
-    expect(await findByText('Hardware Product')).toBeInTheDocument();
-    expect(queryByText('Peripherals Product')).not.toBeInTheDocument();
-    expect(queryByText('Number of Devices Per Rack')).toBeInTheDocument();
+    expect(await screen.findByText('Hardware Product')).toBeInTheDocument();
+    expect(screen.queryByText('Peripherals Product')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Number of Devices Per Rack'),
+    ).toBeInTheDocument();
   }, 15000);
 
   it('should render empty fallback message when there are no products', async () => {

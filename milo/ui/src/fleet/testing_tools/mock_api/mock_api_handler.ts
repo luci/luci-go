@@ -47,12 +47,50 @@ export interface FleetConsoleMockFixtures {
   BatchCreateAdminTasks: unknown;
   GetProductCatalogue: unknown;
   CreateOrder: unknown;
+  Ping: unknown;
+  PingBigQuery: unknown;
+  PingDeviceManager: unknown;
+  PingUfs: unknown;
+  PingSwarming: unknown;
+  GetDeviceDimensions: unknown;
+  RepopulateCache: unknown;
+  RepopulateBrowserCache: unknown;
+  RepopulateAndroidCache: unknown;
+  RepopulateAndroidDeviceUtilization: unknown;
+  PingDB: unknown;
+  CleanExit: unknown;
+  ExportAndroidDevicesToCSV: unknown;
+  ScheduleAutorepair: unknown;
+  ScheduleReserve: unknown;
+  ScheduleDeploy: unknown;
+  UpdateAndroidMetrics: unknown;
+  CheckPermission: unknown;
+  CountResourceRequests: unknown;
+  GetResourceRequestsMultiselectFilterValues: unknown;
+  UpdateAndroidDevices: unknown;
+  GetRepairMetricsDimensions: unknown;
+  CleanupAndroidDevices: unknown;
+  ScheduleBuild: unknown;
+  ListProductCatalogEntries: unknown;
+  GetProductCatalogFilterValues: unknown;
+  ListGceProductCatalogEntries: unknown;
+  GetGceProductCatalogFilterValues: unknown;
+  GetSmartRepair: unknown;
+  GetDeviceACLs: unknown;
+  UpdateChromeOSDevice: unknown;
+  ListRepairQueue: unknown;
+  ClaimRepairTask: unknown;
+  UnclaimRepairTask: unknown;
+  ListPriorityRules: unknown;
+  CreatePriorityRule: unknown;
+  UpdatePriorityRule: unknown;
+  DeletePriorityRule: unknown;
   [method: string]: unknown;
 }
 
 const DEFAULT_AUTH_STATE = {
-  identity: 'user:user@google.com',
-  email: 'user@google.com',
+  identity: 'user:user@example.com',
+  email: 'user@example.com',
   picture: '',
   accessToken: 'mock-access-token',
   idToken: 'mock-id-token',
@@ -252,6 +290,97 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     orderId: 'order-999',
     status: 'SUBMITTED',
   },
+  Ping: {},
+  PingBigQuery: {},
+  PingDeviceManager: {},
+  PingUfs: {},
+  PingSwarming: {},
+  GetDeviceDimensions: {
+    baseDimensions: {
+      model: { values: ['brya', 'corsola'] },
+      board: { values: ['brya', 'corsola'] },
+    },
+    swarmingLabels: {},
+    ufsLabels: {},
+  },
+  RepopulateCache: {},
+  RepopulateBrowserCache: {},
+  RepopulateAndroidCache: {},
+  RepopulateAndroidDeviceUtilization: {},
+  PingDB: {},
+  CleanExit: {},
+  ExportAndroidDevicesToCSV: {
+    csvData: 'id,hostname\n1,android-1\n',
+  },
+  ScheduleAutorepair: {},
+  ScheduleReserve: {},
+  ScheduleDeploy: {},
+  UpdateAndroidMetrics: {},
+  CheckPermission: {
+    hasPermission: true,
+  },
+  CountResourceRequests: {
+    total: 1,
+  },
+  GetResourceRequestsMultiselectFilterValues: {
+    filterValues: {},
+  },
+  UpdateAndroidDevices: {},
+  GetRepairMetricsDimensions: {
+    dimensions: {},
+  },
+  CleanupAndroidDevices: {},
+  ScheduleBuild: {},
+  ListProductCatalogEntries: {
+    entries: [],
+    nextPageToken: '',
+  },
+  GetProductCatalogFilterValues: {
+    filterValues: {},
+  },
+  ListGceProductCatalogEntries: {
+    entries: [],
+    nextPageToken: '',
+  },
+  GetGceProductCatalogFilterValues: {
+    filterValues: {},
+  },
+  GetSmartRepair: {
+    url: 'https://example.com/smart-repair',
+  },
+  GetDeviceACLs: {
+    acls: [],
+  },
+  UpdateChromeOSDevice: {},
+  ListRepairQueue: {
+    tasks: [],
+    nextPageToken: '',
+  },
+  ClaimRepairTask: {
+    task: {
+      id: 'task-claimed-001',
+    },
+  },
+  UnclaimRepairTask: {
+    task: {
+      id: 'task-unclaimed-001',
+    },
+  },
+  ListPriorityRules: {
+    priorityRules: [],
+    nextPageToken: '',
+  },
+  CreatePriorityRule: {
+    priorityRule: {
+      id: 'rule-001',
+    },
+  },
+  UpdatePriorityRule: {
+    priorityRule: {
+      id: 'rule-001',
+    },
+  },
+  DeletePriorityRule: {},
 };
 
 function deepClone<T>(obj: T): T {
@@ -522,7 +651,7 @@ export class FleetConsoleMockAPI {
       if (url.includes('/prpc/')) {
         const method = (url.split('/').pop() || '').split('?')[0];
         const opts = options as RequestInit | undefined;
-        let reqPayload: unknown = {};
+        let reqPayload: Record<string, unknown> = {};
         if (opts?.body) {
           try {
             const bodyStr =
@@ -535,7 +664,7 @@ export class FleetConsoleMockAPI {
               reqPayload = JSON.parse(bodyStr);
             }
           } catch {
-            reqPayload = opts.body;
+            // Ignore non-JSON body parse errors
           }
         }
 
@@ -619,10 +748,62 @@ export class FleetConsoleMockAPI {
           });
         }
 
-        const fixtureData = data || {};
+        let responseData: Record<string, unknown> =
+          typeof data === 'object' && data !== null
+            ? (deepClone(data) as Record<string, unknown>)
+            : {};
+
+        // In-memory AIP-160 filter evaluation & pagination simulation (for static object fixtures)
+        if (typeof fixture !== 'function') {
+          const filterStr =
+            typeof reqPayload.filter === 'string' ? reqPayload.filter : '';
+          const listArrayKey = Object.keys(responseData).find((k) =>
+            Array.isArray(responseData[k]),
+          );
+
+          if (listArrayKey && Array.isArray(responseData[listArrayKey])) {
+            let items = responseData[listArrayKey] as Array<
+              Record<string, unknown>
+            >;
+
+            if (filterStr) {
+              // Simple AIP-160 substring match: matches any exact string literal in filter
+              const stringMatches =
+                filterStr.match(/"([^"]+)"/) || filterStr.match(/=\s*([^\s]+)/);
+              if (stringMatches && stringMatches[1]) {
+                const targetVal = stringMatches[1].toLowerCase();
+                items = items.filter((item) =>
+                  JSON.stringify(item).toLowerCase().includes(targetVal),
+                );
+              }
+            }
+
+            const pageSize =
+              typeof reqPayload.pageSize === 'number' && reqPayload.pageSize > 0
+                ? reqPayload.pageSize
+                : items.length;
+            const startIndex =
+              typeof reqPayload.pageToken === 'string' &&
+              reqPayload.pageToken.startsWith('token-')
+                ? parseInt(reqPayload.pageToken.replace('token-', ''), 10) || 0
+                : 0;
+
+            const pagedItems = items.slice(startIndex, startIndex + pageSize);
+            const nextIndex = startIndex + pageSize;
+            const nextPageToken =
+              nextIndex < items.length ? `token-${nextIndex}` : '';
+
+            responseData = {
+              ...responseData,
+              [listArrayKey]: pagedItems,
+              nextPageToken,
+              totalSize: items.length,
+            };
+          }
+        }
 
         // LUCI pRPC clients expect the )]}' prefix on JSON responses
-        return new Response(")]}'\n" + JSON.stringify(fixtureData), {
+        return new Response(")]}'\n" + JSON.stringify(responseData), {
           status: 200,
           headers: {
             'Content-Type': 'application/json',

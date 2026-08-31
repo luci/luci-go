@@ -108,7 +108,7 @@ describe('FleetConsoleMockAPI', () => {
     FleetConsoleMockAPI.resetAuthState();
     const resetRes = await fetch('/auth/openid/state');
     const resetAuth = await resetRes.json();
-    expect(resetAuth.identity).toBe('user:user@google.com');
+    expect(resetAuth.identity).toBe('user:user@example.com');
   });
 
   it('supports simulating gRPC error codes and disabling interceptor cleanly', async () => {
