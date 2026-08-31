@@ -45,12 +45,12 @@ func TestValidateProjectHighLevel(t *testing.T) {
 		assert.NoErr(t, prototext.Unmarshal([]byte(validConfigTextPB), &cfg))
 
 		t.Run("OK", func(t *ftt.Test) {
-			assert.NoErr(t, ValidateProjectConfig(vctx, &cfg))
+			assert.NoErr(t, ValidateProjectConfig(vctx, project, &cfg))
 			assert.NoErr(t, vctx.Finalize())
 		})
 		t.Run("Error", func(t *ftt.Test) {
 			cfg.GetConfigGroups()[0].Name = "!invalid! name"
-			assert.NoErr(t, ValidateProjectConfig(vctx, &cfg))
+			assert.NoErr(t, ValidateProjectConfig(vctx, project, &cfg))
 			assert.ErrIsLike(t, vctx.Finalize(), "must match")
 		})
 	})
@@ -686,6 +686,79 @@ func TestValidateProjectDetailed(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				assert.That(t, vctx.Finalize(), should.ErrLikeString(
 					"err[4]: in <unspecified file> (config_group #1 \"test\" / verifiers / tryjob / retry_config): negative timeout_weight not allowed (-1 given)"))
+			})
+
+			t.Run("commit-distance reuse_window allowlist", func(t *ftt.Test) {
+				testCases := []struct {
+					name        string
+					project     string
+					reuseWindow *cfgpb.ReuseWindow
+					expectedErr string
+				}{
+					{
+						name:        "allowed project chromium",
+						project:     "chromium",
+						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 1000},
+					},
+					{
+						name:        "allowed project chrome",
+						project:     "chrome",
+						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 500},
+					},
+					{
+						name:        "allowed milestone project chromium-m120",
+						project:     "chromium-m120",
+						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 1000},
+					},
+					{
+						name:        "allowed milestone project chrome-m120",
+						project:     "chrome-m120",
+						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 500},
+					},
+					{
+						name:        "disallowed project v8",
+						project:     "v8",
+						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 100},
+						expectedErr: "commit-distance-based reuse_window is only allowed for allowlisted projects",
+					},
+					{
+						name:        "disallowed project angle",
+						project:     "angle",
+						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 100},
+						expectedErr: "commit-distance-based reuse_window is only allowed for allowlisted projects",
+					},
+					{
+						name:        "unspecified project string skips allowlist check",
+						project:     "",
+						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 100},
+					},
+					{
+						name:        "zero max_commit_distance on allowed project rejected",
+						project:     "chromium",
+						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 0},
+						expectedErr: "MaxCommitDistance",
+					},
+					{
+						name:        "disallowed project without reuse_window passes",
+						project:     "v8",
+						reuseWindow: nil,
+					},
+				}
+
+				for _, tc := range testCases {
+					t.Run(tc.name, func(t *ftt.Test) {
+						vctx := &validation.Context{Context: ctx}
+						cfgCopy := proto.Clone(&cfg).(*cfgpb.Config)
+						cfgCopy.ConfigGroups[0].Verifiers.Tryjob.Builders[0].ReuseWindow = tc.reuseWindow
+						assert.NoErr(t, ValidateProjectConfig(vctx, tc.project, cfgCopy))
+
+						if tc.expectedErr != "" {
+							assert.That(t, vctx.Finalize().Error(), should.ContainSubstring(tc.expectedErr))
+						} else {
+							assert.NoErr(t, vctx.Finalize())
+						}
+					})
+				}
 			})
 		})
 

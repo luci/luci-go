@@ -47,10 +47,29 @@ const (
 var limitNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)
 
 // ValidateProjectConfig validates a given project config.
-func ValidateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) error {
-	vd := &projectConfigValidator{ctx: ctx}
+// If project is non-empty, project-specific restrictions (e.g. reuse_window allowlist) are enforced.
+func ValidateProjectConfig(ctx *validation.Context, project string, cfg *cfgpb.Config) error {
+	vd := &projectConfigValidator{ctx: ctx, project: project}
 	vd.validateProjectConfig(cfg)
 	return nil
+}
+
+// canUseCommitDistanceReuseWindow defines whether a LUCI project is permitted to configure commit-distance-based tryjob reuse (reuse_window).
+//
+// The default 24-hour time-based reuse window requires no allowlist and is available to all projects.
+// However, calculating commit position drift for commit-distance reuse relies on monotonic Cr-Commit-Position footers
+// (e.g. generated via git-numberer). Repositories lacking monotonic commit position metadata cannot support
+// commit-distance evaluation, so presubmit validation gates commit-distance reuse_window configuration strictly to allowlisted projects
+// (main projects "chromium", "chrome", and their release milestone projects "chromium-m*", "chrome-m*").
+func canUseCommitDistanceReuseWindow(project string) bool {
+	switch {
+	case project == "chromium", strings.HasPrefix(project, "chromium-"):
+		return true
+	case project == "chrome", strings.HasPrefix(project, "chrome-"):
+		return true
+	default:
+		return false
+	}
 }
 
 // validateProject validates a project-level CQ config.
@@ -64,15 +83,22 @@ func validateProject(ctx *validation.Context, configSet, path string, content []
 		ctx.Error(err)
 		return nil
 	}
-	return ValidateProjectConfig(ctx, &cfg)
+	// Extract LUCI project name from configSet (e.g. "projects/chromium" -> "chromium")
+	// to pass down to projectConfigValidator for allowlist enforcement.
+	project := luciconfig.Set(configSet).Project()
+	return ValidateProjectConfig(ctx, project, &cfg)
 }
 
 type projectConfigValidator struct {
-	ctx *validation.Context
+	ctx     *validation.Context
+	project string // LUCI project name (e.g. "chromium").
 }
 
 func makeProjectConfigValidator(ctx *validation.Context, project string) (*projectConfigValidator, error) {
-	return &projectConfigValidator{ctx: ctx}, nil
+	return &projectConfigValidator{
+		ctx:     ctx,
+		project: project,
+	}, nil
 }
 
 func (vd *projectConfigValidator) validateProjectConfig(cfg *cfgpb.Config) {
@@ -537,7 +563,26 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 			}
 			vd.ctx.Exit()
 		}
+
+		if rw := b.GetReuseWindow(); rw != nil {
+			vd.validateCommitDistanceReuseWindow(rw)
+		}
 	})
+}
+
+// validateCommitDistanceReuseWindow validates the commit-distance reuse_window configuration
+// and ensures it is only configured for allowlisted projects.
+func (vd *projectConfigValidator) validateCommitDistanceReuseWindow(rw *cfgpb.ReuseWindow) {
+	vd.ctx.Enter("reuse_window")
+	defer vd.ctx.Exit()
+
+	if err := rw.ValidateAll(); err != nil {
+		vd.ctx.Errorf("%s", err)
+	}
+
+	if vd.project != "" && !canUseCommitDistanceReuseWindow(vd.project) {
+		vd.ctx.Errorf("commit-distance-based reuse_window is only allowed for allowlisted projects (e.g. chromium, chrome), but project %q given", vd.project)
+	}
 }
 
 func matchAll(re string) bool {

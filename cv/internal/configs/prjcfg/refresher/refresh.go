@@ -63,7 +63,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 		return err
 	}
 	vctx := &lucivalidation.Context{Context: ctx}
-	if err := validation.ValidateProjectConfig(vctx, cfg); err != nil {
+	if err := validation.ValidateProjectConfig(vctx, project, cfg); err != nil {
 		return errors.Fmt("ValidateProject: %w", err)
 	}
 	if verr := vctx.Finalize(); verr != nil {
