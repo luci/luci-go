@@ -568,4 +568,33 @@ describe('ProductCataloguePage', () => {
       );
     });
   });
+
+  it('should render Descriptive Name filter correctly', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'std-catalog-1',
+          productName: 'Standard Pixel Device',
+          descriptiveName: 'Pixel 9 Pro Fold',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      descriptiveName: ['Pixel 9 Pro Fold'],
+      scopedDescriptiveName: [{ value: 'Pixel 9 Pro Fold', inScope: true }],
+    });
+
+    renderPage([
+      '/ui/fleet/catalog?filters=descriptive_name+%3D+%28%22Pixel+9+Pro+Fold%22%29',
+    ]);
+
+    // Verify filter chip is rendered with Descriptive Name
+    const chip = await screen.findByTestId('filter-chip');
+    expect(chip).toHaveTextContent(/Descriptive Name/i);
+    expect(chip).toHaveTextContent(/Pixel 9 Pro Fold/i);
+  });
 });

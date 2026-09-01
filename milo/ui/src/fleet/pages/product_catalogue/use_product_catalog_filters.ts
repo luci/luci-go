@@ -36,6 +36,7 @@ export const FILTERS = {
   productCatalogId: { type: 'string_list', filterKey: 'product_catalog_id' },
   productName: { type: 'string_list', filterKey: 'product_name' },
   gpn: { type: 'string_list', filterKey: 'gpn' },
+  descriptiveName: { type: 'string_list', filterKey: 'descriptive_name' },
   resourceType: { type: 'string_list', filterKey: 'resource_type' },
   fleetPlmStatus: {
     type: 'string_list',
