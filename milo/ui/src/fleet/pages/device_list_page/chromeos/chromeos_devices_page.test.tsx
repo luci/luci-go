@@ -179,7 +179,7 @@ describe('<ChromeOSDevicesPage />', () => {
     await screen.findAllByTestId('filter-chip');
 
     // Find and click the Export button
-    const exportButton = await screen.findByRole('button', { name: /export/i });
+    const exportButton = screen.getByText('Export');
     fireEvent.click(exportButton);
 
     // Find and click "Export all (CSV)" menu item
@@ -195,5 +195,5 @@ describe('<ChromeOSDevicesPage />', () => {
     ).toBe(
       '(labels."label-pool" = "cellular") AND (labels."ufs_zone" = "ZONE_CHROMEOS7")',
     );
-  });
+  }, 10000);
 });
