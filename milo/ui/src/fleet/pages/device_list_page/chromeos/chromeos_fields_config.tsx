@@ -16,7 +16,7 @@ import Typography from '@mui/material/Typography';
 
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
-import { CellWithTooltip } from '@/fleet/components/table';
+import { CellWithTooltip, renderTimestampCell } from '@/fleet/components/table';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
@@ -305,6 +305,15 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
         payload: { componentName: 'servo_usb_state', activeTab: value },
       }),
     }),
+  },
+  'ufs.last_sync': {
+    type: 'label',
+    orderByField: 'labels.ufs.last_sync',
+    filterKey: 'labels."ufs.last_sync"',
+    meta: {
+      infoTooltip: 'Time when UFS last synced state for this device',
+    },
+    renderCell: renderTimestampCell,
   },
   bot_id: {
     type: 'label',

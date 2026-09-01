@@ -269,4 +269,35 @@ describe('useChromeOSColumns', () => {
 
     expect(result.current.mrtColumnManager.warnings).toEqual([]);
   });
+
+  it('should generate proper order_by_field and tooltip for ufs.last_sync column', () => {
+    (useChromeOSFields as jest.Mock).mockReturnValue({
+      availableFields: [
+        {
+          id: 'ufs.last_sync',
+          columnDef: getFieldDefinition('ufs.last_sync').columnDef,
+        },
+      ],
+      isLoading: false,
+    });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(
+      () => useChromeOSColumns(undefined, false, false),
+      { wrapper },
+    );
+
+    const columns = result.current.mrtColumnManager.columns;
+    const lastSyncCol = columns.find((c) => c.id === 'ufs.last_sync');
+
+    expect(lastSyncCol?.orderByField).toBe('labels.ufs.last_sync');
+    expect(lastSyncCol?.meta?.infoTooltip).toBe(
+      'Time when UFS last synced state for this device',
+    );
+  });
 });

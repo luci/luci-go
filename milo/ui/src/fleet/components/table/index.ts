@@ -13,3 +13,4 @@
 // limitations under the License.
 
 export { CellWithTooltip } from './cell_with_tooltip';
+export { renderTimestampCell } from './cell_with_timestamp';

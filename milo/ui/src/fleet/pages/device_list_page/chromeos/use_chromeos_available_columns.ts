@@ -21,6 +21,7 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
 import { getFieldDefinition, EXTRA_COLUMN_IDS } from './chromeos_fields';
+import { CHROMEOS_FIELD_DEFINITIONS } from './chromeos_fields_config';
 
 export const useChromeOSFields = () => {
   const dimensionsQuery = useDeviceDimensions({ platform: Platform.CHROMEOS });
@@ -29,6 +30,7 @@ export const useChromeOSFields = () => {
     const ids = _.uniq([
       ...CHROMEOS_DEFAULT_COLUMNS,
       ...EXTRA_COLUMN_IDS,
+      ...Object.keys(CHROMEOS_FIELD_DEFINITIONS),
       ...Object.keys(dimensionsQuery.data?.baseDimensions ?? {}),
       ...Object.keys(dimensionsQuery.data?.labels ?? {}),
     ]);

@@ -19,7 +19,7 @@ import { MRT_ColumnDef } from 'material-react-table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
-import { CellWithTooltip } from '@/fleet/components/table';
+import { CellWithTooltip, renderTimestampCell } from '@/fleet/components/table';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import {
   renderChipCell,
@@ -224,17 +224,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
     },
   },
   [`${BROWSER_SWARMING_SOURCE}.last_sync`]: {
-    Cell: (params) => {
-      const value = params.cell.getValue() as string;
-      if (!value) {
-        return null;
-      }
-      const dt = DateTime.fromISO(value);
-      if (!dt.isValid) {
-        return <>{value}</>;
-      }
-      return <SmartRelativeTimestamp date={dt} />;
-    },
+    Cell: (params) => renderTimestampCell({ value: params.cell.getValue() }),
   },
   [`${BROWSER_SWARMING_SOURCE}.state`]: {
     Cell: (params) => {
@@ -294,17 +284,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
     },
   },
   [`${BROWSER_UFS_SOURCE}.last_sync`]: {
-    Cell: (params) => {
-      const value = params.cell.getValue() as string;
-      if (!value) {
-        return null;
-      }
-      const dt = DateTime.fromISO(value);
-      if (!dt.isValid) {
-        return <>{value}</>;
-      }
-      return <SmartRelativeTimestamp date={dt} />;
-    },
+    Cell: (params) => renderTimestampCell({ value: params.cell.getValue() }),
   },
   realm: {
     header: 'Realm',

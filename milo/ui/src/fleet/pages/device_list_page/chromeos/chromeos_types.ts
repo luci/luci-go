@@ -28,31 +28,30 @@ import { TaskResult } from './use_chromeos_current_tasks';
  */
 export type FieldType = 'base' | 'label' | 'special';
 
-export interface BaseFieldDefinition {
+export interface CommonFieldDefinition {
+  header?: string;
+  orderByField?: string;
+  filterKey?: string;
+  meta?: {
+    infoTooltip?: React.ReactNode;
+  };
+  renderCell?: (props: FC_CellProps<ChromeOSDevice>) => React.ReactNode;
+}
+
+export interface BaseFieldDefinition extends CommonFieldDefinition {
   type: 'base';
-  header?: string;
   accessorFn: (device: ChromeOSDevice) => unknown;
-  orderByField?: string;
-  filterKey?: string;
-  renderCell?: (props: FC_CellProps<ChromeOSDevice>) => React.ReactNode;
 }
 
-export interface LabelFieldDefinition {
+export interface LabelFieldDefinition extends CommonFieldDefinition {
   type: 'label';
-  header?: string;
   accessorFn?: (device: ChromeOSDevice) => unknown;
-  orderByField?: string;
-  filterKey?: string;
-  renderCell?: (props: FC_CellProps<ChromeOSDevice>) => React.ReactNode;
 }
 
-export interface SpecialFieldDefinition {
+export interface SpecialFieldDefinition extends CommonFieldDefinition {
   type: 'special';
   header: string;
   accessorFn: (device: ChromeOSDevice) => unknown;
-  orderByField?: string;
-  filterKey?: string;
-  renderCell?: (props: FC_CellProps<ChromeOSDevice>) => React.ReactNode;
 }
 
 export type FieldDefinition = Partial<ChromeOSColumnDef> &
@@ -64,4 +63,7 @@ export type ChromeOSColumnDef = Omit<MRT_ColumnDef<ChromeOSDevice>, 'id'> & {
   id: string;
   orderByField?: string;
   filterKey?: string;
+  meta?: {
+    infoTooltip?: React.ReactNode;
+  };
 };

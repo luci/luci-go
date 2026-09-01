@@ -16,20 +16,19 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PowerIcon from '@mui/icons-material/Power';
 import PowerOffOutlinedIcon from '@mui/icons-material/PowerOffOutlined';
 import { Link as MuiLink, Tooltip, Typography, Box } from '@mui/material';
-import { DateTime } from 'luxon';
 import { MRT_ColumnDef } from 'material-react-table';
 import React from 'react';
 import { Link } from 'react-router';
 
+import { getEnabledFeatureFlags } from '@/common/feature_flags';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import {
   renderChipCell,
   StateUnion,
 } from '@/fleet/components/table/cell_with_chip';
-import { getEnabledFeatureFlags } from '@/fleet/config/features';
+import { renderTimestampCell } from '@/fleet/components/table/cell_with_timestamp';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { generateDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FC_CellProps } from '@/fleet/types/table';
@@ -51,21 +50,6 @@ export interface DeviceDisplayProps {
 
 export type AndroidColumnOverride = Omit<Partial<AndroidColumnDef>, 'Cell'> & {
   renderCell?: (props: DeviceDisplayProps) => React.ReactNode;
-};
-
-const renderTimestamp = ({ value }: DeviceDisplayProps) => {
-  if (!value) {
-    return null;
-  }
-  try {
-    const dt = DateTime.fromISO(value as string);
-    if (!dt.isValid) {
-      return <>{value as string}</>;
-    }
-    return <SmartRelativeTimestamp date={dt} />;
-  } catch (_) {
-    return <>{value as string}</>;
-  }
 };
 
 export const genUtilizationFeedbackUrl = () =>
@@ -307,11 +291,17 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
   },
   'ufs.last_sync': {
     orderByField: 'labels.ufs.last_sync',
-    renderCell: renderTimestamp,
+    meta: {
+      infoTooltip: 'Time when UFS last synced state for this device',
+    },
+    renderCell: renderTimestampCell,
   },
   'mh.last_sync': {
     orderByField: 'labels.mh.last_sync',
-    renderCell: renderTimestamp,
+    meta: {
+      infoTooltip: 'Time when MH last synced state for this device',
+    },
+    renderCell: renderTimestampCell,
   },
   'ufs.nlyte_update_time': {
     header: 'Nlyte Update Time',
@@ -319,7 +309,7 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
     meta: {
       infoTooltip: 'Time when the Nlyte data last changed',
     },
-    renderCell: renderTimestamp,
+    renderCell: renderTimestampCell,
   },
   'ufs.nlyte_last_sync': {
     header: 'Nlyte Last Sync',
@@ -327,7 +317,7 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
     meta: {
       infoTooltip: 'Time that UFS ran the cron and checked for updates',
     },
-    renderCell: renderTimestamp,
+    renderCell: renderTimestampCell,
   },
   fc_offline_since: {
     //TODO (b/502485099): this will be filterable after is resolved
@@ -337,7 +327,7 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
     },
     orderByField: 'fc_offline_since',
     accessorFn: (device) => device.fcOfflineSince,
-    renderCell: renderTimestamp,
+    renderCell: renderTimestampCell,
   },
   average_7d: {
     //TODO (b/502485099): this will be filterable after is resolved
