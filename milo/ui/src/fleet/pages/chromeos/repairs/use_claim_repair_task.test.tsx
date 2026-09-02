@@ -19,6 +19,7 @@ import { AuthState } from '@/common/api/auth_state';
 import * as PrpcClientsModule from '@/fleet/hooks/prpc_clients';
 import {
   ListRepairQueueResponse,
+  PeripheralState,
   RepairQueueItem,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
@@ -38,6 +39,9 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     state: 'needs_repair',
     claimedBy: '',
     claimedAt: undefined,
+    servoState: PeripheralState.PERIPHERAL_STATE_OK,
+    wifiState: PeripheralState.PERIPHERAL_STATE_OK,
+    bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
   },
   {
     taskId: '102',
@@ -47,6 +51,9 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     state: 'repair_failed',
     claimedBy: 'other_tech@google.com',
     claimedAt: '2026-08-19T10:00:00Z',
+    servoState: PeripheralState.PERIPHERAL_STATE_OK,
+    wifiState: PeripheralState.PERIPHERAL_STATE_OK,
+    bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
   },
 ];
 
@@ -216,6 +223,9 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
             state: 'needs_repair',
             claimedBy: '',
             claimedAt: undefined,
+            servoState: PeripheralState.PERIPHERAL_STATE_OK,
+            wifiState: PeripheralState.PERIPHERAL_STATE_OK,
+            bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
           },
         ],
         nextPageToken: '',

@@ -82,6 +82,53 @@ export function deviceStateToJSON(object: DeviceState): string {
   }
 }
 
+export enum PeripheralState {
+  PERIPHERAL_STATE_UNSPECIFIED = 0,
+  PERIPHERAL_STATE_OK = 1,
+  PERIPHERAL_STATE_BROKEN = 2,
+  PERIPHERAL_STATE_MISSING = 3,
+  PERIPHERAL_STATE_NOT_APPLICABLE = 4,
+}
+
+export function peripheralStateFromJSON(object: any): PeripheralState {
+  switch (object) {
+    case 0:
+    case "PERIPHERAL_STATE_UNSPECIFIED":
+      return PeripheralState.PERIPHERAL_STATE_UNSPECIFIED;
+    case 1:
+    case "PERIPHERAL_STATE_OK":
+      return PeripheralState.PERIPHERAL_STATE_OK;
+    case 2:
+    case "PERIPHERAL_STATE_BROKEN":
+      return PeripheralState.PERIPHERAL_STATE_BROKEN;
+    case 3:
+    case "PERIPHERAL_STATE_MISSING":
+      return PeripheralState.PERIPHERAL_STATE_MISSING;
+    case 4:
+    case "PERIPHERAL_STATE_NOT_APPLICABLE":
+      return PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PeripheralState");
+  }
+}
+
+export function peripheralStateToJSON(object: PeripheralState): string {
+  switch (object) {
+    case PeripheralState.PERIPHERAL_STATE_UNSPECIFIED:
+      return "PERIPHERAL_STATE_UNSPECIFIED";
+    case PeripheralState.PERIPHERAL_STATE_OK:
+      return "PERIPHERAL_STATE_OK";
+    case PeripheralState.PERIPHERAL_STATE_BROKEN:
+      return "PERIPHERAL_STATE_BROKEN";
+    case PeripheralState.PERIPHERAL_STATE_MISSING:
+      return "PERIPHERAL_STATE_MISSING";
+    case PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE:
+      return "PERIPHERAL_STATE_NOT_APPLICABLE";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PeripheralState");
+  }
+}
+
 export interface Device {
   readonly id: string;
   readonly dutId: string;
@@ -563,6 +610,9 @@ export interface RepairQueueItem {
   readonly taskId: string;
   readonly claimedBy?: string | undefined;
   readonly claimedAt?: string | undefined;
+  readonly servoState: PeripheralState;
+  readonly wifiState: PeripheralState;
+  readonly bluetoothState: PeripheralState;
 }
 
 export interface ListRepairQueueResponse {
@@ -5375,7 +5425,18 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
 };
 
 function createBaseRepairQueueItem(): RepairQueueItem {
-  return { dutId: "", pools: [], model: "", state: "", taskId: "0", claimedBy: undefined, claimedAt: undefined };
+  return {
+    dutId: "",
+    pools: [],
+    model: "",
+    state: "",
+    taskId: "0",
+    claimedBy: undefined,
+    claimedAt: undefined,
+    servoState: 0,
+    wifiState: 0,
+    bluetoothState: 0,
+  };
 }
 
 export const RepairQueueItem: MessageFns<RepairQueueItem> = {
@@ -5400,6 +5461,15 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     if (message.claimedAt !== undefined) {
       Timestamp.encode(toTimestamp(message.claimedAt), writer.uint32(58).fork()).join();
+    }
+    if (message.servoState !== 0) {
+      writer.uint32(64).int32(message.servoState);
+    }
+    if (message.wifiState !== 0) {
+      writer.uint32(72).int32(message.wifiState);
+    }
+    if (message.bluetoothState !== 0) {
+      writer.uint32(80).int32(message.bluetoothState);
     }
     return writer;
   },
@@ -5467,6 +5537,30 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
           message.claimedAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.servoState = reader.int32() as any;
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.wifiState = reader.int32() as any;
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.bluetoothState = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5485,6 +5579,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
       taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "0",
       claimedBy: isSet(object.claimedBy) ? globalThis.String(object.claimedBy) : undefined,
       claimedAt: isSet(object.claimedAt) ? globalThis.String(object.claimedAt) : undefined,
+      servoState: isSet(object.servoState) ? peripheralStateFromJSON(object.servoState) : 0,
+      wifiState: isSet(object.wifiState) ? peripheralStateFromJSON(object.wifiState) : 0,
+      bluetoothState: isSet(object.bluetoothState) ? peripheralStateFromJSON(object.bluetoothState) : 0,
     };
   },
 
@@ -5511,6 +5608,15 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.claimedAt !== undefined) {
       obj.claimedAt = message.claimedAt;
     }
+    if (message.servoState !== 0) {
+      obj.servoState = peripheralStateToJSON(message.servoState);
+    }
+    if (message.wifiState !== 0) {
+      obj.wifiState = peripheralStateToJSON(message.wifiState);
+    }
+    if (message.bluetoothState !== 0) {
+      obj.bluetoothState = peripheralStateToJSON(message.bluetoothState);
+    }
     return obj;
   },
 
@@ -5526,6 +5632,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.taskId = object.taskId ?? "0";
     message.claimedBy = object.claimedBy ?? undefined;
     message.claimedAt = object.claimedAt ?? undefined;
+    message.servoState = object.servoState ?? 0;
+    message.wifiState = object.wifiState ?? 0;
+    message.bluetoothState = object.bluetoothState ?? 0;
     return message;
   },
 };

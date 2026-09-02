@@ -19,7 +19,10 @@ import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
 import * as UseClaimRepairTaskModule from '@/fleet/pages/chromeos/repairs/use_claim_repair_task';
 import * as UseRepairQueueModule from '@/fleet/pages/chromeos/repairs/use_repair_queue';
-import { RepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  PeripheralState,
+  RepairQueueItem,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSRepairDashboard } from './chromeos_repair_dashboard';
@@ -41,6 +44,9 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     state: 'needs_repair',
     claimedBy: '',
     claimedAt: undefined,
+    servoState: PeripheralState.PERIPHERAL_STATE_OK,
+    wifiState: PeripheralState.PERIPHERAL_STATE_OK,
+    bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
   },
   {
     taskId: '102',
@@ -50,6 +56,9 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     state: 'repair_failed',
     claimedBy: 'tech1@google.com',
     claimedAt: '2026-08-19T10:00:00Z',
+    servoState: PeripheralState.PERIPHERAL_STATE_BROKEN,
+    wifiState: PeripheralState.PERIPHERAL_STATE_BROKEN,
+    bluetoothState: PeripheralState.PERIPHERAL_STATE_BROKEN,
   },
 ];
 
@@ -255,6 +264,9 @@ describe('<ChromeOSRepairDashboard />', () => {
       state: 'needs_repair',
       claimedBy: 'user@example.com',
       claimedAt: '2026-08-19T10:00:00Z',
+      servoState: PeripheralState.PERIPHERAL_STATE_OK,
+      wifiState: PeripheralState.PERIPHERAL_STATE_OK,
+      bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -384,6 +396,9 @@ describe('<ChromeOSRepairDashboard />', () => {
       state: 'needs_repair',
       claimedBy: 'user@example.com',
       claimedAt: '2026-08-19T10:00:00Z',
+      servoState: PeripheralState.PERIPHERAL_STATE_OK,
+      wifiState: PeripheralState.PERIPHERAL_STATE_OK,
+      bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
