@@ -444,7 +444,6 @@ func TestBugManager(t *testing.T) {
 			expectedResponse := []bugs.BugUpdateResponse{
 				{
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
-					BugTitle:                  "Tests are failing: ClusterID",
 				},
 			}
 			verifyUpdateDoesNothing := func(t testing.TB) error {
@@ -924,7 +923,6 @@ func TestBugManager(t *testing.T) {
 								bugs.PolicyID(policyA.Id): struct{}{},
 							},
 						},
-						BugTitle: "Tests are failing: ClusterID",
 					},
 				}
 

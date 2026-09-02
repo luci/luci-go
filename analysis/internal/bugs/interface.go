@@ -112,8 +112,6 @@ type BugUpdateResponse struct {
 	// The result of validating a bug closure. This is only applicable to closed
 	// bugs.
 	BugClosureValidationResult BugClosureInvalidationResult
-	// Title of the issue that was updated.
-	BugTitle string
 }
 
 // DuplicateBugDetails holds the data of a duplicate bug, this includes it's bug id,

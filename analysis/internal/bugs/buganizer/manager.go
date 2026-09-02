@@ -459,12 +459,6 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 		delete(hotlistsIDsToAdd, hotlistID)
 	}
 
-	// Forward the bug title so that the test name or failure reason can be known.
-	// This is used when when filing a new bug due to a user bug closure being
-	// invalidated and the project configuration indicating new bugs will be filed
-	// as the bug closure invalidation action.
-	response.BugTitle = issue.IssueState.GetTitle()
-
 	if err := bm.insertIntoHotlists(ctx, hotlistsIDsToAdd, issue.IssueId); err != nil {
 		response.Error = errors.Fmt("insert issue into hotlists: %w", err)
 		return response

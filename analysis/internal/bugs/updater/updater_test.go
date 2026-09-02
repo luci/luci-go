@@ -752,6 +752,7 @@ func TestUpdate(t *testing.T) {
 
 				// Move residual impact from suggested clusters to new bug clusters.
 				bugClusters[0].MetricValues = suggestedClusters[0].MetricValues
+				bugClusters[0].PostsubmitBuildsWithFailures7d.Residual = 1
 				bugClusters[1].MetricValues = suggestedClusters[1].MetricValues
 				bugClusters[2].MetricValues = suggestedClusters[2].MetricValues
 				bugClusters[3].MetricValues = suggestedClusters[3].MetricValues

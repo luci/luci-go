@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -503,28 +502,37 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, opts updateBugsOpt
 			rsp.ShouldArchive = false
 		}
 
-		if rsp.BugClosureValidationResult.IsInvalidated && b.projectCfg.Config.BugManagement.GetFileNewBugs() != nil {
+		if opts.bugsToUpdate[i].IsManagingBug && rsp.BugClosureValidationResult.IsInvalidated && b.projectCfg.Config.BugManagement.GetFileNewBugs() != nil {
 			ruleID := opts.bugsToUpdate[i].RuleID
-			bugCreateRequest, err := b.createRequestForExistingBugClosureInvalidation(createRequestOpts{
-				cluster:        opts.clusterByRuleID[ruleID],
-				ruleID:         ruleID,
-				bugTitle:       rsp.BugTitle,
-				bugID:          opts.bugsToUpdate[i].Bug.ID,
-				ruleDefinition: opts.ruleDefinitionByRuleID[ruleID],
-			})
-			if err != nil {
-				err = errors.Fmt("failed to make a create bug request for %s rule and %s bug: %w", ruleID, opts.bugsToUpdate[i].Bug.String(), err)
-				errs = append(errs, err)
-				logging.Errorf(ctx, "%s", err)
-			} else {
-				// Use the mgrCtx to use the same time budget as bug updates to reserve time to commit all rule updates.
-				err := b.createBug(mgrCtx, opts.clusterByRuleID[ruleID], bugCreateRequest)
-				if err == bugFilingQuotaExhaustedErr {
-					logging.Warningf(ctx, "Bug filing quota for this run has been exhausted.")
-				} else if err != nil {
-					err = errors.Fmt("failed to create a new bug for %s rule and %s bug: %w", ruleID, opts.bugsToUpdate[i].Bug.String(), err)
+			cluster := opts.clusterByRuleID[ruleID]
+
+			meetsDispersionGate := true
+			if cluster != nil && cluster.DistinctUserCLsWithFailures7d.Residual < 3 && cluster.PostsubmitBuildsWithFailures7d.Residual == 0 {
+				meetsDispersionGate = false
+				logging.Debugf(ctx, "Skipping re-raising bug %s for rule %s due to dispersion gate", opts.bugsToUpdate[i].Bug.String(), ruleID)
+			}
+
+			if meetsDispersionGate {
+				bugCreateRequest, err := b.createRequestForExistingBugClosureInvalidation(createRequestOpts{
+					cluster:        cluster,
+					ruleID:         ruleID,
+					bugID:          opts.bugsToUpdate[i].Bug.ID,
+					ruleDefinition: opts.ruleDefinitionByRuleID[ruleID],
+				})
+				if err != nil {
+					err = errors.Fmt("failed to make a create bug request for %s rule and %s bug: %w", ruleID, opts.bugsToUpdate[i].Bug.String(), err)
 					errs = append(errs, err)
 					logging.Errorf(ctx, "%s", err)
+				} else {
+					// Use the mgrCtx to use the same time budget as bug updates to reserve time to commit all rule updates.
+					err := b.createBug(mgrCtx, cluster, bugCreateRequest)
+					if err == bugFilingQuotaExhaustedErr {
+						logging.Warningf(ctx, "Bug filing quota for this run has been exhausted.")
+					} else if err != nil {
+						err = errors.Fmt("failed to create a new bug for %s rule and %s bug: %w", ruleID, opts.bugsToUpdate[i].Bug.String(), err)
+						errs = append(errs, err)
+						logging.Errorf(ctx, "%s", err)
+					}
 				}
 			}
 		}
@@ -1147,7 +1155,6 @@ type createRequestOpts struct {
 	ruleID         string
 	ruleDefinition string
 	bugID          string
-	bugTitle       string
 }
 
 func (b *BugUpdater) createRequestForExistingBugClosureInvalidation(opts createRequestOpts) (bugs.BugCreateRequest, error) {
@@ -1156,8 +1163,21 @@ func (b *BugUpdater) createRequestForExistingBugClosureInvalidation(opts createR
 	impact := ExtractResidualMetrics(opts.cluster)
 	bugManagementState, _ := bugs.UpdatePolicyActivations(&bugspb.BugManagementState{}, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
 
+	var title string
+	if opts.cluster != nil {
+		if opts.cluster.ExampleFailureReason.Valid && opts.cluster.ExampleFailureReason.StringVal != "" {
+			title = opts.cluster.ExampleFailureReason.StringVal
+		} else {
+			title = opts.cluster.ExampleTestID()
+		}
+	}
+	if title == "" {
+		// Fallback
+		title = fmt.Sprintf("Failures matching %s", opts.ruleDefinition)
+	}
+
 	description := &clustering.ClusterDescription{
-		Title:       strings.TrimPrefix(opts.bugTitle, bugs.BugTitlePrefix),
+		Title:       clustering.EscapeToGraphical(title),
 		Description: fmt.Sprintf("This bug re-raises b/%s for all test failures matching: %s", opts.bugID, opts.ruleDefinition),
 	}
 
