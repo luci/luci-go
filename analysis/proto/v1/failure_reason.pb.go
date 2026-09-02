@@ -35,23 +35,102 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Kind defines the general category of the failure.
+// Open to extension.
+type FailureReason_Kind int32
+
+const (
+	FailureReason_KIND_UNSPECIFIED FailureReason_Kind = 0
+	// The test failed in an ordinary way (not captured by another status).
+	// Includes:
+	//   - GoogleTest and JUnit assertion failures.
+	//   - Golang *testing.T .Fail(), .Fatal(...) calls.
+	//   - Web platform tests that did not produce the expected result,
+	//     for example, an unexpected pass or fail.
+	FailureReason_ORDINARY FailureReason_Kind = 1
+	// The test process crashed.
+	FailureReason_CRASH FailureReason_Kind = 2
+	// The test timed out.
+	FailureReason_TIMEOUT FailureReason_Kind = 3
+)
+
+// Enum value maps for FailureReason_Kind.
+var (
+	FailureReason_Kind_name = map[int32]string{
+		0: "KIND_UNSPECIFIED",
+		1: "ORDINARY",
+		2: "CRASH",
+		3: "TIMEOUT",
+	}
+	FailureReason_Kind_value = map[string]int32{
+		"KIND_UNSPECIFIED": 0,
+		"ORDINARY":         1,
+		"CRASH":            2,
+		"TIMEOUT":          3,
+	}
+)
+
+func (x FailureReason_Kind) Enum() *FailureReason_Kind {
+	p := new(FailureReason_Kind)
+	*p = x
+	return p
+}
+
+func (x FailureReason_Kind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FailureReason_Kind) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_enumTypes[0].Descriptor()
+}
+
+func (FailureReason_Kind) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_enumTypes[0]
+}
+
+func (x FailureReason_Kind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FailureReason_Kind.Descriptor instead.
+func (FailureReason_Kind) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_rawDescGZIP(), []int{0, 0}
+}
+
 // Information about why a test failed.
+// Note: The total combined size of all errors within this message (as measured
+// by proto.Size()) must not exceed 16,384 bytes.
 type FailureReason struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The error message that ultimately caused the test to fail. This should
-	// only be the error message and should not include any stack traces.
-	// An example would be the message from an Exception in a Java test.
-	// In the case that a test failed due to multiple expectation failures, any
-	// immediately fatal failure should be chosen, or otherwise the first
-	// expectation failure.
-	// If this field is empty, other fields may be used to cluster the failure
-	// instead.
+	// The general category of the failure. Required.
+	Kind FailureReason_Kind `protobuf:"varint,4,opt,name=kind,proto3,enum=luci.analysis.v1.FailureReason_Kind" json:"kind,omitempty"`
+	// The error message that ultimately caused the test to fail.
+	// Equal to errors[0].message, or blank if errors is unset.
 	//
-	// The size of the message must be equal to or smaller than 1024 bytes in
-	// UTF-8.
+	// Output only. (For backwards compatibility, some clients are still
+	// allowed to set this, but new clients should set the errors field
+	// instead.)
 	PrimaryErrorMessage string `protobuf:"bytes,1,opt,name=primary_error_message,json=primaryErrorMessage,proto3" json:"primary_error_message,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// A list of all the errors that contributed to the test failure. There might
+	// be multiple errors if, for example, a test harness continues after non-fatal
+	// assertion failures.
+	//
+	// If there is more than one error (e.g. due to multiple expectation failures),
+	// a stable sorting should be used. A recommended form of stable sorting is:
+	//   - Fatal errors (errors that cause the test to terminate immediately first),
+	//     then
+	//   - Within fatal/non-fatal errors, sort by chronological order
+	//     (earliest error first).
+	//
+	// The total combined size of all errors (as measured by proto.Size()) must
+	// not exceed 16,384 bytes.
+	Errors []*FailureReason_Error `protobuf:"bytes,2,rep,name=errors,proto3" json:"errors,omitempty"`
+	// If the list of errors was too large to fit within the size limits for the
+	// FailureReason message, this count indicates how many errors were truncated
+	// from the end of the `errors` list.
+	TruncatedErrorsCount int32 `protobuf:"varint,3,opt,name=truncated_errors_count,json=truncatedErrorsCount,proto3" json:"truncated_errors_count,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *FailureReason) Reset() {
@@ -84,9 +163,98 @@ func (*FailureReason) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *FailureReason) GetKind() FailureReason_Kind {
+	if x != nil {
+		return x.Kind
+	}
+	return FailureReason_KIND_UNSPECIFIED
+}
+
 func (x *FailureReason) GetPrimaryErrorMessage() string {
 	if x != nil {
 		return x.PrimaryErrorMessage
+	}
+	return ""
+}
+
+func (x *FailureReason) GetErrors() []*FailureReason_Error {
+	if x != nil {
+		return x.Errors
+	}
+	return nil
+}
+
+func (x *FailureReason) GetTruncatedErrorsCount() int32 {
+	if x != nil {
+		return x.TruncatedErrorsCount
+	}
+	return 0
+}
+
+// Error represents a problem that caused a test to fail, such as a crash
+// or expectation failure.
+type FailureReason_Error struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The specific error message associated with this particular error instance
+	// (e.g., the text of a specific assertion failure). This should generally
+	// exclude stack traces, which belong in the `trace` field.
+	// This message is often used for clustering related failures.
+	//
+	// Example message:
+	// camera_unittest.cc(123): Value of GetPrivacyIndicatorsView()->CameraIcon()->GetVisible() Actual: false Expected: true
+	//
+	// The size of this message must be equal to or smaller than 1024 bytes in UTF-8.
+	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	// The stack trace associated with this error, if one is available.
+	// For very long stack traces, it's recommended to store them as separate
+	// artifacts linked to the TestResult and include a truncated version inline
+	// here to avoid exceeding size limits.
+	// A size limit of 4096 bytes (UTF-8) applies to this field.
+	Trace         string `protobuf:"bytes,2,opt,name=trace,proto3" json:"trace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FailureReason_Error) Reset() {
+	*x = FailureReason_Error{}
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FailureReason_Error) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FailureReason_Error) ProtoMessage() {}
+
+func (x *FailureReason_Error) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FailureReason_Error.ProtoReflect.Descriptor instead.
+func (*FailureReason_Error) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_rawDescGZIP(), []int{0, 0}
+}
+
+func (x *FailureReason_Error) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *FailureReason_Error) GetTrace() string {
+	if x != nil {
+		return x.Trace
 	}
 	return ""
 }
@@ -95,9 +263,20 @@ var File_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto protoreflec
 
 const file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_rawDesc = "" +
 	"\n" +
-	";go.chromium.org/luci/analysis/proto/v1/failure_reason.proto\x12\x10luci.analysis.v1\"C\n" +
-	"\rFailureReason\x122\n" +
-	"\x15primary_error_message\x18\x01 \x01(\tR\x13primaryErrorMessageB3Z1go.chromium.org/luci/analysis/proto/v1;analysispbb\x06proto3"
+	";go.chromium.org/luci/analysis/proto/v1/failure_reason.proto\x12\x10luci.analysis.v1\"\xef\x02\n" +
+	"\rFailureReason\x128\n" +
+	"\x04kind\x18\x04 \x01(\x0e2$.luci.analysis.v1.FailureReason.KindR\x04kind\x122\n" +
+	"\x15primary_error_message\x18\x01 \x01(\tR\x13primaryErrorMessage\x12=\n" +
+	"\x06errors\x18\x02 \x03(\v2%.luci.analysis.v1.FailureReason.ErrorR\x06errors\x124\n" +
+	"\x16truncated_errors_count\x18\x03 \x01(\x05R\x14truncatedErrorsCount\x1a7\n" +
+	"\x05Error\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\x12\x14\n" +
+	"\x05trace\x18\x02 \x01(\tR\x05trace\"B\n" +
+	"\x04Kind\x12\x14\n" +
+	"\x10KIND_UNSPECIFIED\x10\x00\x12\f\n" +
+	"\bORDINARY\x10\x01\x12\t\n" +
+	"\x05CRASH\x10\x02\x12\v\n" +
+	"\aTIMEOUT\x10\x03B3Z1go.chromium.org/luci/analysis/proto/v1;analysispbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_rawDescOnce sync.Once
@@ -111,16 +290,21 @@ func file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_rawDescGZI
 	return file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_goTypes = []any{
-	(*FailureReason)(nil), // 0: luci.analysis.v1.FailureReason
+	(FailureReason_Kind)(0),     // 0: luci.analysis.v1.FailureReason.Kind
+	(*FailureReason)(nil),       // 1: luci.analysis.v1.FailureReason
+	(*FailureReason_Error)(nil), // 2: luci.analysis.v1.FailureReason.Error
 }
 var file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: luci.analysis.v1.FailureReason.kind:type_name -> luci.analysis.v1.FailureReason.Kind
+	2, // 1: luci.analysis.v1.FailureReason.errors:type_name -> luci.analysis.v1.FailureReason.Error
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_init() }
@@ -133,13 +317,14 @@ func file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   1,
+			NumEnums:      1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_depIdxs,
+		EnumInfos:         file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_enumTypes,
 		MessageInfos:      file_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto_msgTypes,
 	}.Build()
 	File_go_chromium_org_luci_analysis_proto_v1_failure_reason_proto = out.File

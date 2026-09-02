@@ -28,13 +28,56 @@ import (
 
 func TestResultDB(t *testing.T) {
 	ftt.Run("FailureReasonFromResultDB", t, func(t *ftt.Test) {
-		rdbFailureReason := &rdbpb.FailureReason{
-			PrimaryErrorMessage: "Some error message.",
+		t.Run("nil", func(t *ftt.Test) {
+			assert.Loosely(t, FailureReasonFromResultDB(nil), should.BeNil)
+		})
+		t.Run("populated", func(t *ftt.Test) {
+			rdbFailureReason := &rdbpb.FailureReason{
+				Kind:                rdbpb.FailureReason_CRASH,
+				PrimaryErrorMessage: "Some error message.",
+				Errors: []*rdbpb.FailureReason_Error{
+					{
+						Message: "Error 1 message",
+						Trace:   "Error 1 trace",
+					},
+					{
+						Message: "Error 2 message",
+						Trace:   "Error 2 trace",
+					},
+				},
+				TruncatedErrorsCount: 5,
+			}
+			fr := FailureReasonFromResultDB(rdbFailureReason)
+			assert.Loosely(t, fr, should.Match(&pb.FailureReason{
+				Kind:                pb.FailureReason_CRASH,
+				PrimaryErrorMessage: "Some error message.",
+				Errors: []*pb.FailureReason_Error{
+					{
+						Message: "Error 1 message",
+						Trace:   "Error 1 trace",
+					},
+					{
+						Message: "Error 2 message",
+						Trace:   "Error 2 trace",
+					},
+				},
+				TruncatedErrorsCount: 5,
+			}))
+		})
+	})
+	ftt.Run("FailureReasonKindFromResultDB", t, func(t *ftt.Test) {
+		// Confirm LUCI Analysis handles every failure reason kind defined by ResultDB.
+		// This test is designed to break if ResultDB extends the set of
+		// allowed values, without a corresponding update to LUCI Analysis.
+		for _, v := range rdbpb.FailureReason_Kind_value {
+			rdbKind := rdbpb.FailureReason_Kind(v)
+			if rdbKind == rdbpb.FailureReason_KIND_UNSPECIFIED {
+				continue
+			}
+
+			kind := FailureReasonKindFromResultDB(rdbKind)
+			assert.Loosely(t, kind, should.NotEqual(pb.FailureReason_KIND_UNSPECIFIED))
 		}
-		fr := FailureReasonFromResultDB(rdbFailureReason)
-		assert.Loosely(t, fr, should.Match(&pb.FailureReason{
-			PrimaryErrorMessage: "Some error message.",
-		}))
 	})
 	ftt.Run("LegacyTestStatusFromResultDB", t, func(t *ftt.Test) {
 		// Confirm LUCI Analysis handles every test status defined by ResultDB.

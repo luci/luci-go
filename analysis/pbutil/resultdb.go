@@ -64,14 +64,39 @@ func StringPairFromResultDB(v []*rdbpb.StringPair) []*pb.StringPair {
 	return pairs
 }
 
+// FailureReasonKindFromResultDB returns the LUCI Analysis failure reason kind
+// corresponding to the ResultDB failure reason kind.
+func FailureReasonKindFromResultDB(k rdbpb.FailureReason_Kind) pb.FailureReason_Kind {
+	switch k {
+	case rdbpb.FailureReason_ORDINARY:
+		return pb.FailureReason_ORDINARY
+	case rdbpb.FailureReason_CRASH:
+		return pb.FailureReason_CRASH
+	case rdbpb.FailureReason_TIMEOUT:
+		return pb.FailureReason_TIMEOUT
+	default:
+		return pb.FailureReason_KIND_UNSPECIFIED
+	}
+}
+
 // FailureReasonFromResultDB returns a LUCI Analysis FailureReason
 // corresponding to the supplied ResultDB FailureReason.
 func FailureReasonFromResultDB(fr *rdbpb.FailureReason) *pb.FailureReason {
 	if fr == nil {
 		return nil
 	}
+	var errors []*pb.FailureReason_Error
+	for _, err := range fr.Errors {
+		errors = append(errors, &pb.FailureReason_Error{
+			Message: err.Message,
+			Trace:   err.Trace,
+		})
+	}
 	return &pb.FailureReason{
-		PrimaryErrorMessage: fr.PrimaryErrorMessage,
+		Kind:                 FailureReasonKindFromResultDB(fr.Kind),
+		PrimaryErrorMessage:  fr.PrimaryErrorMessage,
+		Errors:               errors,
+		TruncatedErrorsCount: fr.TruncatedErrorsCount,
 	}
 }
 
