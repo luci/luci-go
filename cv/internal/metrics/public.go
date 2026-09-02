@@ -45,6 +45,8 @@ var Public = struct {
 	TryjobBuilderPresence metric.Bool
 
 	RunQuotaRejection metric.Counter
+
+	SubmitQueueLength metric.Int
 }{
 	RunCreated: metric.NewCounter(
 		"cv/runs/created",
@@ -178,5 +180,11 @@ var Public = struct {
 		field.String("project"),
 		field.String("config_group"),
 		field.String("gerrit_account_id"), // `{gerrit_host}/{account_id}`.
+	),
+	SubmitQueueLength: metric.NewInt(
+		"cv/submit_queue/length",
+		"The current length of the submit queue",
+		nil,
+		field.String("project"),
 	),
 }

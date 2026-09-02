@@ -66,6 +66,44 @@ func TestQueue(t *testing.T) {
 			assert.NoErr(t, err)
 			return waitlisted
 		}
+		t.Run("QueueLen", func(t *ftt.Test) {
+			t.Run("Empty", func(t *ftt.Test) {
+				assert.NoErr(t, datastore.Put(ctx, &queue{
+					ID: lProject,
+				}))
+				l, err := QueueLen(ctx, lProject)
+				assert.NoErr(t, err)
+				assert.That(t, l, should.Equal(0))
+			})
+			t.Run("Submitting", func(t *ftt.Test) {
+				assert.NoErr(t, datastore.Put(ctx, &queue{
+					ID:      lProject,
+					Current: run1,
+				}))
+				l, err := QueueLen(ctx, lProject)
+				assert.NoErr(t, err)
+				assert.That(t, l, should.Equal(1))
+			})
+			t.Run("Submitting And Waitlist", func(t *ftt.Test) {
+				assert.NoErr(t, datastore.Put(ctx, &queue{
+					ID:       lProject,
+					Current:  run1,
+					Waitlist: common.RunIDs{run2, run3},
+				}))
+				l, err := QueueLen(ctx, lProject)
+				assert.NoErr(t, err)
+				assert.That(t, l, should.Equal(3))
+			})
+			t.Run("Waitlist Only", func(t *ftt.Test) {
+				assert.NoErr(t, datastore.Put(ctx, &queue{
+					ID:       lProject,
+					Waitlist: common.RunIDs{run1, run2, run3},
+				}))
+				l, err := QueueLen(ctx, lProject)
+				assert.NoErr(t, err)
+				assert.That(t, l, should.Equal(3))
+			})
+		})
 
 		t.Run("TryAcquire", func(t *ftt.Test) {
 			t.Run("When queue is empty", func(t *ftt.Test) {

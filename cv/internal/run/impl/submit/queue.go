@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 )
 
+// queue represents a submit queue entity.
 type queue struct {
 	_kind string `gae:"$kind,SubmitQueue"`
 	// ID is the ID of this submit queue.
@@ -50,6 +51,19 @@ type queue struct {
 	//
 	// Sorted in ascending order.
 	History []time.Time `gae:",noindex"`
+}
+
+// QueueLen returns the current length of the submit queue, which includes
+// the currently submitting run (if any) and all runs in the waitlist.
+func QueueLen(ctx context.Context, project string) (int, error) {
+	q, err := loadQueue(ctx, project)
+	if err != nil {
+		return 0, err
+	}
+	if q.Current != "" {
+		return len(q.Waitlist) + 1, nil
+	}
+	return len(q.Waitlist), nil
 }
 
 // nextSubmissionETA computes the eta of when next submission can happen based
@@ -81,10 +95,10 @@ func DeleteQueue(ctx context.Context, luciProject string) error {
 func loadQueue(ctx context.Context, luciProject string) (*queue, error) {
 	q := &queue{ID: luciProject}
 	switch err := datastore.Get(ctx, q); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, errors.Fmt("SubmitQueue %q doesn't exist", q.ID)
 	case err != nil:
-		return nil, transient.Tag.Apply(errors.Fmt("failed to load SubmitQueue %q: %w", q.ID, err))
+		return nil, transient.Tag.Apply(errors.Fmt("load SubmitQueue %q: %w", q.ID, err))
 	}
 	return q, nil
 }

@@ -32,6 +32,7 @@ func New(env *common.Env) *Driver {
 			&runsAggregator{},
 			&pmReporter{},
 			&builderPresenceAggregator{env: env},
+			&submitQueueAggregator{},
 		},
 	}
 	return d
