@@ -12,17 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Avatar, Box, Button, Tooltip } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import RemoveIcon from '@mui/icons-material/Remove';
+import WarningIcon from '@mui/icons-material/Warning';
+import { Avatar, Box, Button, Link, Tooltip, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { DutStateCell } from '@/fleet/pages/device_list_page/chromeos/dut_state_cell';
+import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
 import { RepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { PeripheralsCell } from './peripheral_state_indicator';
 import {
   useClaimRepairTask,
   useUnclaimRepairTask,
@@ -36,6 +43,7 @@ export const REPAIR_QUEUE_COLUMN_IDS = [
   'label-pool',
   'label-model',
   'dut_state',
+  'peripherals',
   'assignee',
 ] as const;
 
@@ -92,6 +100,89 @@ export const useRepairQueueColumns = () => {
         enableSorting: true,
         Cell: ({ cell }: FC_CellProps<RepairQueueRow>) => (
           <DutStateCell state={cell.getValue<string>()} />
+        ),
+      },
+      {
+        id: 'peripherals',
+        header: 'Peripherals (W / B / S)',
+        Header: () => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <span>Peripherals (W / B / S)</span>
+            <InfoTooltip paperCss={{ maxWidth: 360, p: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                Peripheral Health States
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 1.5 }}
+              >
+                Tracks Wi-Fi (W), Bluetooth (B), and Servo (S) status:
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                  mb: 1.5,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CheckCircleIcon
+                    sx={{ color: colors.green[500], fontSize: 18 }}
+                  />
+                  <Typography variant="body2">
+                    <strong>OK</strong> &mdash; Healthy &amp; responsive
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <WarningIcon sx={{ color: colors.red[600], fontSize: 18 }} />
+                  <Typography variant="body2">
+                    <strong>Broken</strong> &mdash; Hardware failure
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <WarningIcon
+                    sx={{ color: colors.orange[600], fontSize: 18 }}
+                  />
+                  <Typography variant="body2">
+                    <strong>Missing</strong> &mdash; Disconnected / unplugged
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <RemoveIcon sx={{ color: colors.grey[500], fontSize: 18 }} />
+                  <Typography variant="body2">
+                    <strong>N/A</strong> &mdash; Not applicable to this DUT
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HelpOutlineIcon
+                    sx={{ color: colors.grey[500], fontSize: 18 }}
+                  />
+                  <Typography variant="body2">
+                    <strong>Unknown</strong> &mdash; State indeterminate /
+                    unrecorded
+                  </Typography>
+                </Box>
+              </Box>
+              <Link
+                href="http://go/fleet-console#peripherals"
+                target="_blank"
+                rel="noopener"
+                variant="body2"
+                sx={{ fontWeight: 500 }}
+              >
+                Learn more at go/fleet-console
+              </Link>
+            </InfoTooltip>
+          </Box>
+        ),
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
+          <PeripheralsCell
+            wifiState={row.original.wifiState}
+            bluetoothState={row.original.bluetoothState}
+            servoState={row.original.servoState}
+          />
         ),
       },
       {

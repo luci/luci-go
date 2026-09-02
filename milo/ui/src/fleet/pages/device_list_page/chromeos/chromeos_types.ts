@@ -16,7 +16,10 @@ import { MRT_ColumnDef } from 'material-react-table';
 import React from 'react';
 
 import { FC_CellProps } from '@/fleet/types/table';
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  Device,
+  PeripheralState,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { TaskResult } from './use_chromeos_current_tasks';
 
@@ -57,7 +60,12 @@ export interface SpecialFieldDefinition extends CommonFieldDefinition {
 export type FieldDefinition = Partial<ChromeOSColumnDef> &
   (BaseFieldDefinition | LabelFieldDefinition | SpecialFieldDefinition);
 
-export type ChromeOSDevice = Device & { current_task?: TaskResult };
+export type ChromeOSDevice = Device & {
+  current_task?: TaskResult;
+  servoState?: PeripheralState;
+  wifiState?: PeripheralState;
+  bluetoothState?: PeripheralState;
+};
 
 export type ChromeOSColumnDef = Omit<MRT_ColumnDef<ChromeOSDevice>, 'id'> & {
   id: string;

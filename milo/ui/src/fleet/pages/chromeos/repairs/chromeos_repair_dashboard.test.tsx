@@ -45,8 +45,8 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     claimedBy: '',
     claimedAt: undefined,
     servoState: PeripheralState.PERIPHERAL_STATE_OK,
-    wifiState: PeripheralState.PERIPHERAL_STATE_OK,
-    bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
+    wifiState: PeripheralState.PERIPHERAL_STATE_BROKEN,
+    bluetoothState: PeripheralState.PERIPHERAL_STATE_MISSING,
   },
   {
     taskId: '102',
@@ -56,9 +56,9 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     state: 'repair_failed',
     claimedBy: 'tech1@google.com',
     claimedAt: '2026-08-19T10:00:00Z',
-    servoState: PeripheralState.PERIPHERAL_STATE_BROKEN,
-    wifiState: PeripheralState.PERIPHERAL_STATE_BROKEN,
-    bluetoothState: PeripheralState.PERIPHERAL_STATE_BROKEN,
+    servoState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+    wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+    bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
   },
 ];
 
@@ -118,7 +118,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders all 5 columns: Dut ID, Pool, Model, State, Assignee', async () => {
+  it('renders all 6 columns: Dut ID, Pool, Model, State, Peripherals, Assignee', async () => {
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
       data: {
         repairQueueItems: MOCK_QUEUE_ITEMS,
@@ -138,6 +138,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     expect(screen.getByText('Pool')).toBeInTheDocument();
     expect(screen.getByText('Model')).toBeInTheDocument();
     expect(screen.getByText('State')).toBeInTheDocument();
+    expect(screen.getByText('Peripherals (W / B / S)')).toBeInTheDocument();
     expect(screen.getByText('Assignee')).toBeInTheDocument();
   });
 
@@ -168,6 +169,14 @@ describe('<ChromeOSRepairDashboard />', () => {
     expect(screen.getByText('faft-cr50')).toBeInTheDocument();
     expect(screen.getByText('brya')).toBeInTheDocument();
     expect(screen.getByText('REPAIR_FAILED')).toBeInTheDocument();
+
+    // Verify peripheral icons for both rows
+    expect(screen.getByLabelText('Servo: OK')).toBeInTheDocument();
+    expect(screen.getByLabelText('Wi-Fi: BROKEN')).toBeInTheDocument();
+    expect(screen.getByLabelText('Bluetooth: MISSING')).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Wi-Fi: N/A')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Bluetooth: N/A')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Servo: N/A')).toHaveLength(1);
   });
 
   it('renders Claim button for unclaimed item and Avatar for claimed item', async () => {
