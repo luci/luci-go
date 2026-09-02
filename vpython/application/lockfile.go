@@ -115,7 +115,6 @@ func SyncLockfile(ctx context.Context, specPath, uvBin, pythonBin string, isBot 
 
 func updateLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin string, spec *standard.ProjectSpec, reason string) ([]byte, error) {
 	// Developer mode: synchronize the attached lockfile locally via stdin.
-	fmt.Printf("vpython3: %s is missing or out-of-sync (%s). Synchronizing lockfile on-the-fly...\n", filepath.Base(lockPath), reason)
 	logging.Infof(ctx, "%s is missing or out-of-sync (%s). Synchronizing via uv pip compile...", filepath.Base(lockPath), reason)
 
 	var reqs bytes.Buffer
@@ -158,7 +157,6 @@ func updateLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin st
 		return nil, errors.Fmt("failed to write lockfile %s: %w", filepath.Base(lockPath), err)
 	}
 
-	fmt.Printf("vpython3: Successfully synchronized lockfile %s!\n", filepath.Base(lockPath))
 	logging.Infof(ctx, "Successfully synchronized lockfile %s!", filepath.Base(lockPath))
 
 	return stdout.Bytes(), nil
