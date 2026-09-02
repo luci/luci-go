@@ -12,26 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { getFeatureFlagValue } from '@/common/feature_flags';
+import { enableChromeOsRepairsDashboard } from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
-
-import { getFeatureFlag } from '../config/features';
 
 import { generateSidebarSections } from './sidebar_sections';
 
-jest.mock('../config/features', () => ({
-  getFeatureFlag: jest.fn(),
+jest.mock('@/common/feature_flags', () => ({
+  ...jest.requireActual('@/common/feature_flags'),
+  getFeatureFlagValue: jest.fn(),
 }));
 
-const mockGetFeatureFlag = getFeatureFlag as jest.Mock;
+const mockGetFeatureFlagValue = getFeatureFlagValue as jest.Mock;
 
 describe('generateSidebarSections', () => {
   beforeEach(() => {
-    mockGetFeatureFlag.mockReset();
-    mockGetFeatureFlag.mockImplementation((flag) => {
-      if (flag === 'ProductCatalogListPage') return true;
+    mockGetFeatureFlagValue.mockReset();
+    mockGetFeatureFlagValue.mockImplementation((flag) => {
+      if (flag === enableChromeOsRepairsDashboard) return true;
       return false;
     });
   });
+
   it('enables Admin tasks for ChromeOS platform', () => {
     const sections = generateSidebarSections(Platform.CHROMEOS);
     const labHealth = sections.find((s) => s.title === 'Lab Health');
@@ -140,8 +142,8 @@ describe('generateSidebarSections', () => {
       expect(repairsPage?.disabled).toBeFalsy();
     });
 
-    it('is disabled for ChromeOS by default (feature flag off)', () => {
-      mockGetFeatureFlag.mockReturnValue(false);
+    it('is disabled for ChromeOS when feature flag is off', () => {
+      mockGetFeatureFlagValue.mockReturnValue(false);
       const sections = generateSidebarSections(Platform.CHROMEOS);
       const labHealth = sections.find((s) => s.title === 'Lab Health');
       const repairsPage = labHealth?.pages.find((p) => p.label === 'Repairs');
@@ -150,8 +152,8 @@ describe('generateSidebarSections', () => {
     });
 
     it('is enabled for ChromeOS when feature flag is on', () => {
-      mockGetFeatureFlag.mockImplementation((flag) => {
-        if (flag === 'ChromeOsRepairsDashboard') return true;
+      mockGetFeatureFlagValue.mockImplementation((flag) => {
+        if (flag === enableChromeOsRepairsDashboard) return true;
         return false;
       });
       const sections = generateSidebarSections(Platform.CHROMEOS);
@@ -170,5 +172,15 @@ describe('generateSidebarSections', () => {
       expect(repairsPage?.disabled).toBeFalsy();
       expect(repairsPage?.url).toBe('/ui/fleet/p/pixel/repairs');
     });
+  });
+
+  it('includes Product Catalog by default for all callers', () => {
+    const sections = generateSidebarSections();
+    const requests = sections.find((s) => s.title === 'Resource Requests');
+    const catalogPage = requests?.pages.find(
+      (p) => p.label === 'Product Catalog',
+    );
+    expect(catalogPage).toBeDefined();
+    expect(catalogPage?.url).toBe('/ui/fleet/labs/catalog');
   });
 });

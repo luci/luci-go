@@ -27,7 +27,6 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
-import { getFeatureFlag } from '@/fleet/config/features';
 import {
   CATALOG_PATH,
   generateCatalogDetailsURL,
@@ -117,7 +116,6 @@ export const ProductCatalogDetailsPage = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const navigatedFromLink = useNavigatedFromLink();
-  const requestFilingEnabled = getFeatureFlag('RequestFiling');
 
   const navigateToCatalogIfChanged = (newId: string) => {
     if (id !== newId) {
@@ -257,7 +255,7 @@ export const ProductCatalogDetailsPage = () => {
             not found.
           </p>
         </AlertWithFeedback>
-      ) : requestFilingEnabled ? (
+      ) : (
         <Box
           sx={{
             display: 'grid',
@@ -272,10 +270,6 @@ export const ProductCatalogDetailsPage = () => {
           <Box sx={{ order: { xs: 1, lg: 2 } }}>
             <OrderForm entry={entry} />
           </Box>
-        </Box>
-      ) : (
-        <Box sx={{ overflowX: 'auto' }}>
-          <MaterialReactTable table={table} />
         </Box>
       )}
     </Box>

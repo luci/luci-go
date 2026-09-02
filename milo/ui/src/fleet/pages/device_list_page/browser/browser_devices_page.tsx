@@ -22,12 +22,9 @@ import {
 } from '@/common/components/params_pager';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
-import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
-import { getFeatureFlag } from '@/fleet/config/features';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
 
@@ -121,20 +118,12 @@ export const BrowserDevicesPage = () => {
 };
 
 export function Component() {
-  const isSupported = getFeatureFlag('BrowserListDevices');
-
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <FleetHelmet pageTitle="Device List" />
       <RecoverableErrorBoundary key="fleet-device-list-page">
         <LoggedInBoundary>
-          {isSupported ? (
-            <BrowserDevicesPage />
-          ) : (
-            <PlatformNotAvailable
-              availablePlatforms={[Platform.CHROMEOS, Platform.ANDROID]}
-            />
-          )}
+          <BrowserDevicesPage />
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>

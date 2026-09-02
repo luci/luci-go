@@ -18,6 +18,7 @@ import { Outlet, useNavigate } from 'react-router';
 import { useLocalStorage } from 'react-use';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
+import { useFeatureFlag } from '@/common/feature_flags';
 import { SIDE_BAR_OPEN_CACHE_KEY } from '@/common/layouts/base_layout';
 import { CookieConsentBar } from '@/common/layouts/cookie_consent_bar';
 import { PrivacyFooter } from '@/common/layouts/privacy_footer';
@@ -31,6 +32,7 @@ import {
   generateRepairsURL,
   platformToURL,
 } from '@/fleet/constants/paths';
+import { enableChromeOsRepairsDashboard } from '@/fleet/features';
 import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
 import {
   QueuedStickyScrollingBase,
@@ -39,7 +41,6 @@ import {
 } from '@/generic_libs/components/queued_sticky';
 
 import { ShortcutProvider } from '../components/shortcut_provider';
-import { getFeatureFlag } from '../config/features';
 import { IndexedDBPersistClientProvider, SettingsProvider } from '../context';
 import { theme } from '../theme/theme';
 
@@ -64,6 +65,7 @@ const FleetLayoutContent = () => {
   );
   const navigate = useNavigate();
   const currentPlatform = useCurrentPlatform();
+  const chromeOsRepairsEnabled = useFeatureFlag(enableChromeOsRepairsDashboard);
 
   Settings.defaultLocale = 'en';
 
@@ -85,8 +87,7 @@ const FleetLayoutContent = () => {
         !currentPlatform ||
         platformStr === ANDROID_PLATFORM ||
         platformStr === PIXEL_PLATFORM ||
-        (getFeatureFlag('ChromeOsRepairsDashboard') &&
-          platformStr === CHROMEOS_PLATFORM),
+        (chromeOsRepairsEnabled && platformStr === CHROMEOS_PLATFORM),
     },
   );
   useShortcut(
@@ -107,7 +108,6 @@ const FleetLayoutContent = () => {
     () => navigate('/ui/fleet/labs/catalog'),
     {
       category: 'Navigation',
-      enabled: getFeatureFlag('ProductCatalogListPage'),
     },
   );
   useShortcut(

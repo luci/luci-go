@@ -24,9 +24,10 @@ import TopicIcon from '@mui/icons-material/Topic';
 import WarningIcon from '@mui/icons-material/Warning';
 import React from 'react';
 
+import { getFeatureFlagValue } from '@/common/feature_flags';
+import { enableChromeOsRepairsDashboard } from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getFeatureFlag } from '../config/features';
 import {
   generateAdminTasksURL,
   generateDeviceListURL,
@@ -79,7 +80,9 @@ function generateLabHealthSection(
   platform?: Platform,
   pendingAdminTasksCount?: number,
 ): SidebarSection {
-  const showChromeOsRepairs = getFeatureFlag('ChromeOsRepairsDashboard');
+  const showChromeOsRepairs = getFeatureFlagValue(
+    enableChromeOsRepairsDashboard,
+  );
   const isRepairsEnabled =
     !platform ||
     platform === Platform.ANDROID ||
@@ -146,15 +149,11 @@ function generateResourceRequestsSection(): SidebarSection {
   return {
     title: 'Resource Requests',
     pages: [
-      ...(getFeatureFlag('ProductCatalogListPage')
-        ? [
-            {
-              label: 'Product Catalog',
-              url: '/ui/fleet/labs/catalog',
-              icon: <ArticleIcon />,
-            },
-          ]
-        : []),
+      {
+        label: 'Product Catalog',
+        url: '/ui/fleet/labs/catalog',
+        icon: <ArticleIcon />,
+      },
       {
         label: 'Requester Insights',
         url: '/ui/fleet/labs/requests',

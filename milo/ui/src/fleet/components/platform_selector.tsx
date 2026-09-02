@@ -31,7 +31,6 @@ import { usePlatform, platformRenderString } from '@/fleet/hooks/usePlatform';
 import { colors } from '@/fleet/theme/colors';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getFeatureFlag } from '../config/features';
 import { enablePTE } from '../features';
 
 import { useShortcut } from './shortcut_provider';
@@ -42,7 +41,7 @@ export function PlatformSelector() {
 
   const PLATFORMS: Platform[] = [
     Platform.CHROMEOS,
-    ...(getFeatureFlag('BrowserListDevices') ? [Platform.CHROMIUM] : []),
+    Platform.CHROMIUM,
     Platform.ANDROID,
     ...(useFeatureFlag(enablePTE) ? [Platform.PIXEL] : []),
   ];
@@ -76,7 +75,7 @@ export function PlatformSelector() {
     'Switch to Chrome Browser',
     'g b',
     () => handlePlatformSelect(Platform.CHROMIUM),
-    { category: 'Navigation', enabled: getFeatureFlag('BrowserListDevices') },
+    { category: 'Navigation' },
   );
   useShortcut(
     'Switch to Pixel',

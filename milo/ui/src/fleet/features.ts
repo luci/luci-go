@@ -19,7 +19,10 @@ export const enableAndroidUtilizationMetrics = createFeatureFlag({
     'Displays average Android device utilization metrics, columns, and filters.',
   namespace: 'fleet-console',
   name: 'android-utilization-metrics',
-  percentage: 0,
+  percentage: {
+    dev: 100,
+    prod: 0,
+  },
   trackingBug: '525089400',
   allowedEnvironments: ['dev', 'prod'],
 });
@@ -30,5 +33,17 @@ export const enablePTE = createFeatureFlag({
   name: 'pte-support',
   percentage: 0,
   trackingBug: '503760268',
+  allowedEnvironments: ['dev'],
+});
+
+export const enableChromeOsRepairsDashboard = createFeatureFlag({
+  description: 'Displays the ChromeOS Repair Dashboard shell.',
+  namespace: 'fleet-console',
+  name: 'chromeos-repairs-dashboard',
+  percentage: {
+    dev: 100,
+    prod: 0,
+  },
+  trackingBug: '542600108',
   allowedEnvironments: ['dev'],
 });

@@ -15,9 +15,10 @@
 import { lazy, ReactElement } from 'react';
 import { Navigate, RouteObject } from 'react-router';
 
+import { getFeatureFlagValue } from '@/common/feature_flags';
+import { enableChromeOsRepairsDashboard } from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getFeatureFlag } from '../config/features';
 import { initiateSurvey } from '../utils/survey';
 
 import { PlatformDependentPage } from './platform_dependent_page';
@@ -60,7 +61,7 @@ export const platformRoutes: RouteObject[] = [
         pageComponentMap={{
           [Platform.ANDROID]: <AndroidRepairsPage workspace="Android" />,
           [Platform.PIXEL]: <AndroidRepairsPage workspace="Pixel" />,
-          ...(getFeatureFlag('ChromeOsRepairsDashboard')
+          ...(getFeatureFlagValue(enableChromeOsRepairsDashboard)
             ? {
                 [Platform.CHROMEOS]: lazy(
                   () => import('@/fleet/pages/chromeos/repairs'),
