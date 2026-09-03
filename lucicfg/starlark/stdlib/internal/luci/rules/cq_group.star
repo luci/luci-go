@@ -203,7 +203,7 @@ def _cq_group(
     if tree_status_host and tree_status_name:
         fail("tree_status_host and tree_stats_name are both set. Please unset tree_status_host.")
 
-    validate.duration("combine_cls_stabilization_delay", combine_cls_stabilization_delay, required=False)
+    validate.duration("combine_cls_stabilization_delay", combine_cls_stabilization_delay, required = False)
     if combine_cls_stabilization_delay and allow_submit_with_open_deps:
         fail("combine_cls_stabilization_delay and allow_submit_with_open_deps are both set.")
 

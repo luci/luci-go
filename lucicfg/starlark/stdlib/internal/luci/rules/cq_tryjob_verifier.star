@@ -29,6 +29,7 @@ def _cq_tryjob_verifier(
         result_visibility = None,
         disable_reuse = None,
         disable_reuse_footers = None,
+        reuse_max_commit_distance = None,
         cancel_stale = None,
         experiment_percentage = None,
         location_filters = None,
@@ -215,6 +216,10 @@ def _cq_tryjob_verifier(
         will be not be reused if the footer is added, removed, or has its value
         changed. Cannot be used together with `disable_reuse = True`, which
         unconditionally disables reuse.
+      reuse_max_commit_distance: maximum commit distance (number of commits from
+        target branch tip) for a tryjob build to remain reusable. Requires target
+        branch to use monotonic commit position footers. Cannot be used together
+        with `disable_reuse = True`.
       experiment_percentage: when this field is present, it marks the verifier
         as experimental. Such verifier is only triggered on a given percentage
         of the CLs and the outcome does not affect the decision whether a CL can
@@ -285,8 +290,19 @@ def _cq_tryjob_verifier(
     for m in mode_allowlist:
         validate.string("mode_allowlist", m)
 
+    disable_reuse = validate.bool("disable_reuse", disable_reuse, required = False)
+    reuse_max_commit_distance = validate.int(
+        "reuse_max_commit_distance",
+        reuse_max_commit_distance,
+        min = 1,
+        required = False,
+    )
+
     if disable_reuse and disable_reuse_footers:
         fail('"disable_reuse" and "disable_reuse_footers" can not be used together')
+
+    if disable_reuse and reuse_max_commit_distance:
+        fail('"disable_reuse" and "reuse_max_commit_distance" cannot be used together')
 
     if not equivalent_builder:
         if equivalent_builder_percentage != None:
@@ -307,8 +323,9 @@ def _cq_tryjob_verifier(
     # accidentally collide with some other name.
     key = keys.unique(kinds.CQ_TRYJOB_VERIFIER, builder.id)
     graph.add_node(key, props = {
-        "disable_reuse": validate.bool("disable_reuse", disable_reuse, required = False),
+        "disable_reuse": disable_reuse,
         "disable_reuse_footers": validate.list("disable_reuse_footers", disable_reuse_footers, required = False),
+        "reuse_max_commit_distance": reuse_max_commit_distance,
         "result_visibility": validate.int(
             "result_visibility",
             result_visibility,

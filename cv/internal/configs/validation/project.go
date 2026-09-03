@@ -565,6 +565,9 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 		}
 
 		if rw := b.GetReuseWindow(); rw != nil {
+			if b.GetDisableReuse() {
+				vd.ctx.Errorf("disable_reuse and reuse_window cannot be used together")
+			}
 			vd.validateCommitDistanceReuseWindow(rw)
 		}
 	})

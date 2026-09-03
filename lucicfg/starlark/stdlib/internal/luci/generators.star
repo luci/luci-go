@@ -1206,8 +1206,8 @@ def _cq_config_group(cq_group, project):
     combine_cls_stabilization_delay = cq_group.props.combine_cls_stabilization_delay
     combine_cls = None
     if combine_cls_stabilization_delay != None:
-      combine_cls = cq_pb.CombineCLs()
-      combine_cls.stabilization_delay = optional_duration_pb(combine_cls_stabilization_delay)
+        combine_cls = cq_pb.CombineCLs()
+        combine_cls.stabilization_delay = optional_duration_pb(combine_cls_stabilization_delay)
 
     return cq_pb.ConfigGroup(
         name = cq_group.key.id,
@@ -1238,7 +1238,7 @@ def _cq_config_group(cq_group, project):
         user_limit_default = user_limit_default,
         post_actions = post_actions,
         tryjob_experiments = tryjob_experiments,
-        combine_cls=combine_cls,
+        combine_cls = combine_cls,
     )
 
 def _cq_retry_config(retry_config):
@@ -1320,7 +1320,11 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
             trace = verifier.trace,
         )
         return None
-    seen[name] = verifier
+    reuse_window = None
+    if verifier.props.reuse_max_commit_distance != None:
+        reuse_window = cq_pb.ReuseWindow(
+            max_commit_distance = verifier.props.reuse_max_commit_distance,
+        )
 
     return cq_pb.Verifiers.Tryjob.Builder(
         host = "cr-buildbucket-dev.appspot.com" if get_project().props.dev else None,
@@ -1330,6 +1334,7 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
         cancel_stale = _cq_toggle(verifier.props.cancel_stale),
         disable_reuse = verifier.props.disable_reuse,
         disable_reuse_footers = verifier.props.disable_reuse_footers,
+        reuse_window = reuse_window,
         experiment_percentage = verifier.props.experiment_percentage,
         owner_whitelist_group = verifier.props.owner_whitelist,
         location_filters = [_cq_location_filter(n) for n in verifier.props.location_filters],

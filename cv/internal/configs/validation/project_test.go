@@ -690,10 +690,11 @@ func TestValidateProjectDetailed(t *testing.T) {
 
 			t.Run("commit-distance reuse_window allowlist", func(t *ftt.Test) {
 				testCases := []struct {
-					name        string
-					project     string
-					reuseWindow *cfgpb.ReuseWindow
-					expectedErr string
+					name         string
+					project      string
+					disableReuse bool
+					reuseWindow  *cfgpb.ReuseWindow
+					expectedErr  string
 				}{
 					{
 						name:        "allowed project chromium",
@@ -743,6 +744,13 @@ func TestValidateProjectDetailed(t *testing.T) {
 						project:     "v8",
 						reuseWindow: nil,
 					},
+					{
+						name:         "disable_reuse and reuse_window cannot be used together",
+						project:      "chromium",
+						disableReuse: true,
+						reuseWindow:  &cfgpb.ReuseWindow{MaxCommitDistance: 1000},
+						expectedErr:  "disable_reuse and reuse_window cannot be used together",
+					},
 				}
 
 				for _, tc := range testCases {
@@ -750,6 +758,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 						vctx := &validation.Context{Context: ctx}
 						cfgCopy := proto.Clone(&cfg).(*cfgpb.Config)
 						cfgCopy.ConfigGroups[0].Verifiers.Tryjob.Builders[0].ReuseWindow = tc.reuseWindow
+						cfgCopy.ConfigGroups[0].Verifiers.Tryjob.Builders[0].DisableReuse = tc.disableReuse
 						assert.NoErr(t, ValidateProjectConfig(vctx, tc.project, cfgCopy))
 
 						if tc.expectedErr != "" {
