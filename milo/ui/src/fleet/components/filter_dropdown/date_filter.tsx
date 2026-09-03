@@ -24,6 +24,7 @@ import { OptionComponentHandle } from './filter_dropdown';
 export interface DateFilterProps {
   value: DateFilterValue;
   onChange: (value: DateFilterValue) => void;
+  isFutureDisabled?: boolean;
 }
 
 interface CustomDatePickerProps {
@@ -34,6 +35,7 @@ interface CustomDatePickerProps {
   open?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
+  maxDate?: DateTime<true>;
 }
 
 const CustomDatePicker = ({
@@ -44,6 +46,7 @@ const CustomDatePicker = ({
   open,
   onOpen,
   onClose,
+  maxDate,
 }: CustomDatePickerProps) => {
   return (
     <div css={{ flex: 1 }}>
@@ -55,6 +58,7 @@ const CustomDatePicker = ({
           open={open}
           onOpen={onOpen}
           onClose={onClose}
+          maxDate={maxDate}
           slotProps={{
             field: {
               clearable: true,
@@ -75,7 +79,7 @@ const CustomDatePicker = ({
 };
 
 export const DateFilter = forwardRef(function DateFilter(
-  { value, onChange }: DateFilterProps,
+  { value, onChange, isFutureDisabled }: DateFilterProps,
   ref: React.Ref<OptionComponentHandle>,
 ) {
   const firstInputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +108,7 @@ export const DateFilter = forwardRef(function DateFilter(
     const dateTime = DateTime.fromJSDate(date);
     return dateTime.isValid ? dateTime : null;
   };
+  const FULL_DAY = 24 * 60 * 60 * 1000;
 
   return (
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
@@ -131,6 +136,7 @@ export const DateFilter = forwardRef(function DateFilter(
         }}
         inputRef={firstInputRef}
         open={openId === 'min'}
+        maxDate={isFutureDisabled ? DateTime.now().plus(FULL_DAY) : undefined}
         onOpen={() => setOpenId('min')}
         onClose={() => setOpenId(null)}
       />
@@ -144,6 +150,8 @@ export const DateFilter = forwardRef(function DateFilter(
           });
         }}
         open={openId === 'max'}
+        // Has to be a full day into the future because the date is a timestamp that starts at midnight the same day
+        maxDate={isFutureDisabled ? DateTime.now().plus(FULL_DAY) : undefined}
         onOpen={() => setOpenId('max')}
         onClose={() => setOpenId(null)}
       />

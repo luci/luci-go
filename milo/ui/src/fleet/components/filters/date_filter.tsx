@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { DateTime } from 'luxon';
-import { useImperativeHandle, useRef, useState } from 'react';
+import { useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { DateFilterValue } from '@/fleet/types';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
@@ -39,6 +39,7 @@ export class DateFilterCategoryData implements FilterCategory {
   // where we don't know the time and timezones.
   // in the future this may be expanded into 2 separate filters - one with time and the other date only
   public isDateOnly: boolean;
+  public isFutureDisabled?: boolean;
   private reRender: () => void;
 
   private constructor(
@@ -47,6 +48,7 @@ export class DateFilterCategoryData implements FilterCategory {
     value: DateFilterValue,
     reRender: (newFilter: DateFilterCategoryData) => void,
     isDateOnly = false,
+    isFutureDisabled?: boolean,
   ) {
     this.label = label;
     this.key = key;
@@ -55,6 +57,7 @@ export class DateFilterCategoryData implements FilterCategory {
     this.reRender = () => {
       reRender(this);
     };
+    this.isFutureDisabled = isFutureDisabled;
   }
 
   public static create(
@@ -63,6 +66,7 @@ export class DateFilterCategoryData implements FilterCategory {
     reRender: (newFilter: DateFilterCategoryData) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
     isDateOnly = false,
+    isFutureDisabled?: boolean,
   ): BuildResult<DateFilterCategoryData> {
     const value: DateFilterValue = {};
     const warnings: string[] = [];
@@ -109,6 +113,7 @@ export class DateFilterCategoryData implements FilterCategory {
       value,
       reRender,
       isDateOnly,
+      isFutureDisabled,
     );
     return { isError: false, value: filter, warnings };
   }
@@ -155,6 +160,7 @@ export class DateFilterCategoryData implements FilterCategory {
         }}
         onClose={onClose}
         ref={ref}
+        isFutureDisabled={this.isFutureDisabled}
       />
     );
   }
@@ -191,11 +197,13 @@ const DateOptionComponent = function DateOptionComponent({
   onApply,
   onClose,
   ref,
+  isFutureDisabled,
 }: {
   value: DateFilterValue;
   onApply: (value: DateFilterValue) => void;
   onClose: () => void;
   ref?: React.Ref<unknown>;
+  isFutureDisabled?: boolean;
 }) {
   const [tempValue, setTempValue] = useState(value);
   const innerRef = useRef<OptionComponentHandle>(null);
@@ -204,16 +212,33 @@ const DateOptionComponent = function DateOptionComponent({
       innerRef.current?.focus();
     },
   }));
+  const isInvalidRange = useMemo(
+    () => tempValue.min && tempValue.max && tempValue.max < tempValue.min,
+    [tempValue],
+  );
 
   return (
     <div
       role="presentation"
       onKeyDown={(e) => {
-        filterDropdownKeyDown(e, () => onApply(tempValue), onClose);
+        filterDropdownKeyDown(
+          e,
+          () => !isInvalidRange && onApply(tempValue),
+          onClose,
+        );
       }}
     >
-      <DateFilter ref={innerRef} value={tempValue} onChange={setTempValue} />
+      <DateFilter
+        ref={innerRef}
+        value={tempValue}
+        onChange={setTempValue}
+        isFutureDisabled={isFutureDisabled}
+      />
       <Footer
+        applyDisabled={
+          tempValue.min && tempValue.max && tempValue.max < tempValue.min
+        }
+        applyTooltip="The value of `From` cannot be more recent than the value of `To`"
         onCancelClick={onClose}
         onApplyClick={() => {
           onApply(tempValue);
@@ -228,11 +253,17 @@ export class DateFilterCategoryDataBuilder
 {
   public label: string | undefined;
   public isDateOnly = false;
+  public isFutureDisabled = false;
 
   constructor() {}
 
   public setLabel(label: string) {
     this.label = label;
+    return this;
+  }
+
+  public disableFuture() {
+    this.isFutureDisabled = true;
     return this;
   }
 
@@ -250,7 +281,7 @@ export class DateFilterCategoryDataBuilder
     reRender: (newFilter: DateFilterCategoryData) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ): BuildResult<DateFilterCategoryData> {
-    const { label, isDateOnly } = this;
+    const { label, isDateOnly, isFutureDisabled } = this;
     if (label === undefined) {
       return {
         isError: true,
@@ -264,6 +295,7 @@ export class DateFilterCategoryDataBuilder
       reRender,
       terms,
       isDateOnly,
+      isFutureDisabled,
     );
   }
 }
