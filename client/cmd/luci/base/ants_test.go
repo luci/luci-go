@@ -70,6 +70,18 @@ func TestAntsHelpers(t *testing.T) {
 			assert.Loosely(t, inv3, should.Equal("I77100010600769898"))
 			assert.Loosely(t, tr3, should.Equal(""))
 
+			url4 := "https://android-build.googleplex.com/builds/tests/view?invocationId=I30800010616707848"
+			assert.Loosely(t, IsAntsURL(url4), should.BeTrue)
+			inv4, tr4 := ExtractAntsURLComponents(url4)
+			assert.Loosely(t, inv4, should.Equal("I30800010616707848"))
+			assert.Loosely(t, tr4, should.Equal(""))
+
+			url5 := "https://android-build.corp.google.com/builds/tests/view?invocation_id=I30800010616707848&testResultId=TR29830335282615697"
+			assert.Loosely(t, IsAntsURL(url5), should.BeTrue)
+			inv5, tr5 := ExtractAntsURLComponents(url5)
+			assert.Loosely(t, inv5, should.Equal("I30800010616707848"))
+			assert.Loosely(t, tr5, should.Equal("TR29830335282615697"))
+
 			nonAnts := "https://ci.chromium.org/ui/test-investigate/invocations/build-123"
 			assert.Loosely(t, IsAntsURL(nonAnts), should.BeFalse)
 		})

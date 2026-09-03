@@ -191,6 +191,38 @@ EOF
 			assert.Loosely(t, idsParams.TestID, should.Equal(":CellBroadcastServiceTests!junit:test#testResetAreaInfoWithDefaultSubChanged"))
 			assert.Loosely(t, idsParams.ResultID, should.Equal("custom-res"))
 			assert.Loosely(t, idsParams.ArtifactID, should.Equal("stdout"))
+
+			// 4. From placeholder test case "#." (e.g. build failure in AnTS)
+			scriptPlaceholder := `#!/bin/sh
+cat <<EOF
+Test Result ID: TR98730375213734414
+Test Case: #.
+Status: testError
+Work Unit ID:
+Invocation ID: I56900010616552061
+Run Number: 0
+Attempt Number: 0
+EOF
+`
+			_ = os.WriteFile(fakeBin, []byte(scriptPlaceholder), 0755)
+			idsPlaceholder, err := ExtractIDs(ctx, nil, "TR98730375213734414", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsPlaceholder.InvocationID, should.Equal("ants-i56900010616552061"))
+			assert.Loosely(t, idsPlaceholder.TestID, should.Equal(""))
+		})
+
+		t.Run(`Android Build tests view URL with query param`, func(t *ftt.Test) {
+			url := "https://android-build.googleplex.com/builds/tests/view?invocationId=I30800010616707848"
+			ids, err := ExtractIDs(ctx, nil, url, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids.InvocationID, should.Equal("ants-i30800010616707848"))
+			assert.Loosely(t, ids.TestID, should.Equal(""))
+
+			urlCorp := "https://android-build.corp.google.com/builds/tests/view?invocation_id=I30800010616707848"
+			idsCorp, err := ExtractIDs(ctx, nil, urlCorp, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsCorp.InvocationID, should.Equal("ants-i30800010616707848"))
+			assert.Loosely(t, idsCorp.TestID, should.Equal(""))
 		})
 	})
 }

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -63,25 +64,47 @@ func IsAntsURL(raw string) bool {
 // ExtractAntsURLComponents extracts the invocation ID and test result ID from an ATI URL.
 func ExtractAntsURLComponents(raw string) (invID, trID string) {
 	clean := strings.TrimSpace(raw)
+
+	// Check query parameters first (e.g. ?invocationId=I123, ?testResultId=TR123)
+	if u, err := url.Parse(clean); err == nil {
+		q := u.Query()
+		for _, key := range []string{"invocationId", "invocation_id", "invId", "inv_id"} {
+			if v := q.Get(key); v != "" && IsAntsInvocationID(v) {
+				invID = v
+				break
+			}
+		}
+		for _, key := range []string{"testResultId", "test_result_id", "testId", "trId", "tr_id"} {
+			if v := q.Get(key); v != "" && IsAntsTestResultID(v) {
+				trID = v
+				break
+			}
+		}
+	}
+
 	if idx := strings.IndexAny(clean, "?#"); idx != -1 {
 		clean = clean[:idx]
 	}
 
-	// Match /invocation/(I[0-9]+)
-	if idx := strings.Index(clean, "/invocation/"); idx != -1 {
-		after := clean[idx+len("/invocation/"):]
-		parts := strings.Split(after, "/")
-		if len(parts) > 0 && IsAntsInvocationID(parts[0]) {
-			invID = parts[0]
+	// Match /invocation/(I[0-9]+) if not already extracted
+	if invID == "" {
+		if idx := strings.Index(clean, "/invocation/"); idx != -1 {
+			after := clean[idx+len("/invocation/"):]
+			parts := strings.Split(after, "/")
+			if len(parts) > 0 && IsAntsInvocationID(parts[0]) {
+				invID = parts[0]
+			}
 		}
 	}
 
-	// Match /test/(TR[0-9]+)
-	if idx := strings.Index(clean, "/test/"); idx != -1 {
-		after := clean[idx+len("/test/"):]
-		parts := strings.Split(after, "/")
-		if len(parts) > 0 && IsAntsTestResultID(parts[0]) {
-			trID = parts[0]
+	// Match /test/(TR[0-9]+) if not already extracted
+	if trID == "" {
+		if idx := strings.Index(clean, "/test/"); idx != -1 {
+			after := clean[idx+len("/test/"):]
+			parts := strings.Split(after, "/")
+			if len(parts) > 0 && IsAntsTestResultID(parts[0]) {
+				trID = parts[0]
+			}
 		}
 	}
 

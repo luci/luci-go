@@ -201,7 +201,7 @@ func ExtractIDs(ctx context.Context, client pb.ResultDBClient, raw string, legac
 					}
 				}
 			}
-			if extracted.TestID == "" && info.TestCase != "" {
+			if extracted.TestID == "" && info.TestCase != "" && !strings.HasPrefix(info.TestCase, "#") {
 				extracted.TestID = info.TestCase
 			}
 			return extracted, nil
@@ -313,6 +313,10 @@ func ExtractIDs(ctx context.Context, client pb.ResultDBClient, raw string, legac
 		after := clean[testIdx+len("/tests/"):]
 		parts := strings.Split(after, "/")
 		if len(parts) > 0 && parts[0] != "" {
+			if parts[0] == "view" && (strings.Contains(prefix, "android-build.googleplex.com") || strings.Contains(prefix, "android-build.corp.google.com")) {
+				// /builds/tests/view is an Android Build web endpoint, not a test ID.
+				return extracted, nil
+			}
 			if unescaped, err := url.PathUnescape(parts[0]); err == nil {
 				extracted.TestID = unescaped
 			} else {
