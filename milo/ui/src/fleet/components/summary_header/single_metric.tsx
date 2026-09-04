@@ -27,6 +27,7 @@ type SingleMetricProps = {
   filterUrl?: string;
   handleClick?: () => void;
   loading?: boolean;
+  infoTooltip?: React.ReactNode;
 };
 
 export function SingleMetric({
@@ -37,6 +38,7 @@ export function SingleMetric({
   filterUrl,
   handleClick,
   loading,
+  infoTooltip,
 }: SingleMetricProps) {
   const { trackEvent } = useGoogleAnalytics();
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ export function SingleMetric({
   const renderPercent = () => {
     if (percentage < 0) return <></>;
     return loading ? (
-      <Skeleton width={16} height={18} />
+      <Skeleton data-testid="metric-skeleton" width={16} height={18} />
     ) : (
       <Typography variant="body2">
         {percentage.toLocaleString(undefined, {
@@ -70,11 +72,34 @@ export function SingleMetric({
         color: theme.palette.text.primary,
       }}
     >
-      <Typography variant="body2">{name}</Typography>
+      <div css={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <Typography variant="body2">{name}</Typography>
+        {infoTooltip && (
+          <div
+            role="presentation"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onAuxClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.stopPropagation();
+              }
+            }}
+            css={{ display: 'inline-flex', alignItems: 'center' }}
+          >
+            {infoTooltip}
+          </div>
+        )}
+      </div>
       <div css={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         {Icon && Icon}
         {loading ? (
-          <Skeleton variant="text" width={34} height={36} />
+          <Skeleton
+            data-testid="metric-skeleton"
+            variant="text"
+            width={34}
+            height={36}
+          />
         ) : (
           <>
             <Typography
@@ -119,6 +144,7 @@ export function SingleMetric({
     <div>
       {isClickable ? (
         <Button
+          component="div"
           variant="text"
           css={{
             padding: 0,

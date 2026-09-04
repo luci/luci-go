@@ -47,3 +47,13 @@ export const enableChromeOsRepairsDashboard = createFeatureFlag({
   trackingBug: '542600108',
   allowedEnvironments: ['dev'],
 });
+
+export const enableAndroidHealthMetrics = createFeatureFlag({
+  description:
+    'Displays unified Android device health metrics based on health categories.',
+  namespace: 'fleet-console',
+  name: 'android-health-metrics',
+  percentage: 0,
+  trackingBug: '537412303',
+  allowedEnvironments: ['dev', 'prod'],
+});
