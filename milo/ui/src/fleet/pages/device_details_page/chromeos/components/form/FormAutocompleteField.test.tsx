@@ -233,7 +233,9 @@ describe('<FormAutocompleteField />', () => {
     await userEvent.click(editBtn);
 
     const input = screen.getByRole('combobox', { name: /pools/i });
-    await userEvent.type(input, `${longCustomOption}{enter}`);
+    await userEvent.click(input);
+    await userEvent.paste(longCustomOption);
+    await userEvent.type(input, '{enter}');
 
     expect(
       screen.getByText(
@@ -261,7 +263,8 @@ describe('<FormAutocompleteField />', () => {
 
     const input = screen.getByRole('combobox', { name: /rpm type/i });
     await userEvent.clear(input);
-    await userEvent.type(input, `${longCustomOption}{enter}`);
+    await userEvent.paste(longCustomOption);
+    await userEvent.type(input, '{enter}');
 
     expect(
       screen.getByText(`Maximum length is ${MAX_FIELD_LENGTH} characters`),

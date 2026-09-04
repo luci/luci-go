@@ -15,6 +15,8 @@ import {
 import {
   CleanupAndroidDevicesRequest,
   CleanupAndroidDevicesResponse,
+  CountAndroidDevicesRequest,
+  CountAndroidDevicesResponse,
   ExportAndroidDevicesToCSVRequest,
   ExportAndroidDevicesToCSVResponse,
   ListAndroidDevicesRequest,
@@ -82,6 +84,7 @@ import {
   UpdatePriorityRuleRequest,
   UpdatePriorityRuleResponse,
 } from "./chromeos.pb";
+import { ListCustomerSlosRequest, ListCustomerSlosResponse } from "./customer_slos.pb";
 import {
   CountResourceRequestsRequest,
   CountResourceRequestsResponse,
@@ -324,6 +327,7 @@ export interface FleetConsole {
   GetBrowserDeviceDimensions(request: GetBrowserDeviceDimensionsRequest): Promise<GetBrowserDeviceDimensionsResponse>;
   CountDevices(request: CountDevicesRequest): Promise<CountDevicesResponse>;
   CountBrowserDevices(request: CountBrowserDevicesRequest): Promise<CountBrowserDevicesResponse>;
+  CountAndroidDevices(request: CountAndroidDevicesRequest): Promise<CountAndroidDevicesResponse>;
   RepopulateCache(request: RepopulateCacheRequest): Promise<RepopulateCacheResponse>;
   RepopulateBrowserCache(request: RepopulateBrowserCacheRequest): Promise<RepopulateBrowserCacheResponse>;
   RepopulateAndroidCache(request: RepopulateAndroidCacheRequest): Promise<RepopulateAndroidCacheResponse>;
@@ -371,6 +375,7 @@ export interface FleetConsole {
   CreatePriorityRule(request: CreatePriorityRuleRequest): Promise<CreatePriorityRuleResponse>;
   UpdatePriorityRule(request: UpdatePriorityRuleRequest): Promise<UpdatePriorityRuleResponse>;
   DeletePriorityRule(request: DeletePriorityRuleRequest): Promise<DeletePriorityRuleResponse>;
+  ListCustomerSlos(request: ListCustomerSlosRequest): Promise<ListCustomerSlosResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -393,6 +398,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.GetBrowserDeviceDimensions = this.GetBrowserDeviceDimensions.bind(this);
     this.CountDevices = this.CountDevices.bind(this);
     this.CountBrowserDevices = this.CountBrowserDevices.bind(this);
+    this.CountAndroidDevices = this.CountAndroidDevices.bind(this);
     this.RepopulateCache = this.RepopulateCache.bind(this);
     this.RepopulateBrowserCache = this.RepopulateBrowserCache.bind(this);
     this.RepopulateAndroidCache = this.RepopulateAndroidCache.bind(this);
@@ -424,10 +430,13 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.GetDeviceACLs = this.GetDeviceACLs.bind(this);
     this.UpdateChromeOSDevice = this.UpdateChromeOSDevice.bind(this);
     this.ListRepairQueue = this.ListRepairQueue.bind(this);
+    this.ClaimRepairTask = this.ClaimRepairTask.bind(this);
+    this.UnclaimRepairTask = this.UnclaimRepairTask.bind(this);
     this.ListPriorityRules = this.ListPriorityRules.bind(this);
     this.CreatePriorityRule = this.CreatePriorityRule.bind(this);
     this.UpdatePriorityRule = this.UpdatePriorityRule.bind(this);
     this.DeletePriorityRule = this.DeletePriorityRule.bind(this);
+    this.ListCustomerSlos = this.ListCustomerSlos.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -499,6 +508,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = CountBrowserDevicesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CountBrowserDevices", data);
     return promise.then((data) => CountBrowserDevicesResponse.fromJSON(data));
+  }
+
+  CountAndroidDevices(request: CountAndroidDevicesRequest): Promise<CountAndroidDevicesResponse> {
+    const data = CountAndroidDevicesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CountAndroidDevices", data);
+    return promise.then((data) => CountAndroidDevicesResponse.fromJSON(data));
   }
 
   RepopulateCache(request: RepopulateCacheRequest): Promise<RepopulateCacheResponse> {
@@ -731,6 +746,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = DeletePriorityRuleRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "DeletePriorityRule", data);
     return promise.then((data) => DeletePriorityRuleResponse.fromJSON(data));
+  }
+
+  ListCustomerSlos(request: ListCustomerSlosRequest): Promise<ListCustomerSlosResponse> {
+    const data = ListCustomerSlosRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListCustomerSlos", data);
+    return promise.then((data) => ListCustomerSlosResponse.fromJSON(data));
   }
 }
 

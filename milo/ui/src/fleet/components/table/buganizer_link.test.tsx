@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 import { BuganizerLink } from './buganizer_link';
 
@@ -44,12 +44,10 @@ describe('BuganizerLink', () => {
     const link = screen.getByRole('link');
     fireEvent.mouseOver(link);
 
-    await waitFor(async () => {
-      const tooltip = await screen.findByRole('tooltip');
-      expect(tooltip).toHaveTextContent(
-        'Search for bugs related to this device in Buganizer',
-      );
-    });
+    const tooltip = await screen.findByRole('tooltip');
+    expect(tooltip).toHaveTextContent(
+      'Search for bugs related to this device in Buganizer',
+    );
   });
 
   test('should track event when clicked', () => {

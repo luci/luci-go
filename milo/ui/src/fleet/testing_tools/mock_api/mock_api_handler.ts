@@ -27,6 +27,7 @@
 
 export interface FleetConsoleMockFixtures {
   CountDevices: unknown;
+  CountAndroidDevices: unknown;
   CountBrowserDevices: unknown;
   ListDevices: unknown;
   ListAndroidDevices: unknown;
@@ -42,6 +43,7 @@ export interface FleetConsoleMockFixtures {
   GetDevice: unknown;
   UpdateDevice: unknown;
   ListAdminTasks: unknown;
+  ListCustomerSlos: unknown;
   GetAdminTask: unknown;
   CreateAdminTask: unknown;
   BatchCreateAdminTasks: unknown;
@@ -103,6 +105,41 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     total: 12536,
     androidTotal: 8420,
     chromeosTotal: 4116,
+  },
+  CountAndroidDevices: {
+    totalDevices: 100,
+    totalHosts: 20,
+    labMissingHosts: 0,
+    labRunningHosts: 20,
+    healthCategoryInService: {
+      total: 80,
+      statusCounts: {
+        'in service (ready)': 70,
+        'in service (busy)': 10,
+      },
+    },
+    healthCategoryInTransition: {
+      total: 5,
+      statusCounts: {
+        'in transition (installing)': 5,
+      },
+    },
+    healthCategoryInAutoRecovery: {
+      total: 5,
+      statusCounts: {
+        'in auto recovery': 5,
+      },
+    },
+    healthCategoryNeedManualRepair: {
+      total: 10,
+      statusCounts: {
+        'need manual repair': 10,
+      },
+    },
+    healthCategoryUnspecified: {
+      total: 0,
+      statusCounts: {},
+    },
   },
   CountBrowserDevices: {
     total: 10,
@@ -254,6 +291,11 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       },
     ],
     nextPageToken: '',
+  },
+  ListCustomerSlos: {
+    customerSlos: [],
+    nextPageToken: '',
+    totalSize: 0,
   },
   GetAdminTask: {
     task: {

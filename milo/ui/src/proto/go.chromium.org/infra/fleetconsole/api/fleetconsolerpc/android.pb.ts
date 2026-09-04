@@ -7,6 +7,11 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
+import {
+  HealthCategory,
+  healthCategoryFromJSON,
+  healthCategoryToJSON,
+} from "../../internal/infra/ext/omnilab/omnilab-device.pb";
 import { MonitoredRecord } from "../../internal/infra/ext/omnilab/omnilab-pubsub.pb";
 import { Column, DeviceSpec } from "./common_types.pb";
 
@@ -18,6 +23,7 @@ export interface AndroidDevice {
   readonly fcOfflineSince: string | undefined;
   readonly average7d?: number | undefined;
   readonly average30d?: number | undefined;
+  readonly healthCategory: HealthCategory;
 }
 
 export interface ListAndroidDevicesRequest {
@@ -49,6 +55,36 @@ export interface AndroidCount {
   readonly labRunningHosts: number;
   readonly average7d?: number | undefined;
   readonly average30d?: number | undefined;
+}
+
+export interface CountAndroidDevicesRequest {
+  readonly filter: string;
+}
+
+export interface CountAndroidDevicesResponse {
+  readonly totalDevices: number;
+  readonly totalHosts: number;
+  readonly labMissingHosts: number;
+  readonly labRunningHosts: number;
+  readonly average7d?: number | undefined;
+  readonly average30d?: number | undefined;
+  readonly healthCategoryInService: HealthCategoryBucket | undefined;
+  readonly healthCategoryInTransition: HealthCategoryBucket | undefined;
+  readonly healthCategoryInAutoRecovery: HealthCategoryBucket | undefined;
+  readonly healthCategoryNeedManualRepair: HealthCategoryBucket | undefined;
+  readonly healthCategoryUnspecified: HealthCategoryBucket | undefined;
+}
+
+export interface HealthCategoryBucket {
+  readonly total: number;
+  readonly statusCounts: { [key: string]: number };
+  readonly average7d?: number | undefined;
+  readonly average30d?: number | undefined;
+}
+
+export interface HealthCategoryBucket_StatusCountsEntry {
+  readonly key: string;
+  readonly value: number;
 }
 
 export interface RepopulateAndroidCacheRequest {
@@ -102,6 +138,7 @@ function createBaseAndroidDevice(): AndroidDevice {
     fcOfflineSince: undefined,
     average7d: undefined,
     average30d: undefined,
+    healthCategory: 0,
   };
 }
 
@@ -127,6 +164,9 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     }
     if (message.average30d !== undefined) {
       writer.uint32(57).double(message.average30d);
+    }
+    if (message.healthCategory !== 0) {
+      writer.uint32(64).int32(message.healthCategory);
     }
     return writer;
   },
@@ -194,6 +234,14 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
           message.average30d = reader.double();
           continue;
         }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.healthCategory = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -212,6 +260,7 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
       fcOfflineSince: isSet(object.fcOfflineSince) ? globalThis.String(object.fcOfflineSince) : undefined,
       average7d: isSet(object.average7d) ? globalThis.Number(object.average7d) : undefined,
       average30d: isSet(object.average30d) ? globalThis.Number(object.average30d) : undefined,
+      healthCategory: isSet(object.healthCategory) ? healthCategoryFromJSON(object.healthCategory) : 0,
     };
   },
 
@@ -238,6 +287,9 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     if (message.average30d !== undefined) {
       obj.average30d = message.average30d;
     }
+    if (message.healthCategory !== 0) {
+      obj.healthCategory = healthCategoryToJSON(message.healthCategory);
+    }
     return obj;
   },
 
@@ -255,6 +307,7 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     message.fcOfflineSince = object.fcOfflineSince ?? undefined;
     message.average7d = object.average7d ?? undefined;
     message.average30d = object.average30d ?? undefined;
+    message.healthCategory = object.healthCategory ?? 0;
     return message;
   },
 };
@@ -757,6 +810,527 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     message.labRunningHosts = object.labRunningHosts ?? 0;
     message.average7d = object.average7d ?? undefined;
     message.average30d = object.average30d ?? undefined;
+    return message;
+  },
+};
+
+function createBaseCountAndroidDevicesRequest(): CountAndroidDevicesRequest {
+  return { filter: "" };
+}
+
+export const CountAndroidDevicesRequest: MessageFns<CountAndroidDevicesRequest> = {
+  encode(message: CountAndroidDevicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.filter !== "") {
+      writer.uint32(10).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountAndroidDevicesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountAndroidDevicesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountAndroidDevicesRequest {
+    return { filter: isSet(object.filter) ? globalThis.String(object.filter) : "" };
+  },
+
+  toJSON(message: CountAndroidDevicesRequest): unknown {
+    const obj: any = {};
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountAndroidDevicesRequest>): CountAndroidDevicesRequest {
+    return CountAndroidDevicesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountAndroidDevicesRequest>): CountAndroidDevicesRequest {
+    const message = createBaseCountAndroidDevicesRequest() as any;
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseCountAndroidDevicesResponse(): CountAndroidDevicesResponse {
+  return {
+    totalDevices: 0,
+    totalHosts: 0,
+    labMissingHosts: 0,
+    labRunningHosts: 0,
+    average7d: undefined,
+    average30d: undefined,
+    healthCategoryInService: undefined,
+    healthCategoryInTransition: undefined,
+    healthCategoryInAutoRecovery: undefined,
+    healthCategoryNeedManualRepair: undefined,
+    healthCategoryUnspecified: undefined,
+  };
+}
+
+export const CountAndroidDevicesResponse: MessageFns<CountAndroidDevicesResponse> = {
+  encode(message: CountAndroidDevicesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.totalDevices !== 0) {
+      writer.uint32(8).int32(message.totalDevices);
+    }
+    if (message.totalHosts !== 0) {
+      writer.uint32(16).int32(message.totalHosts);
+    }
+    if (message.labMissingHosts !== 0) {
+      writer.uint32(24).int32(message.labMissingHosts);
+    }
+    if (message.labRunningHosts !== 0) {
+      writer.uint32(32).int32(message.labRunningHosts);
+    }
+    if (message.average7d !== undefined) {
+      writer.uint32(41).double(message.average7d);
+    }
+    if (message.average30d !== undefined) {
+      writer.uint32(49).double(message.average30d);
+    }
+    if (message.healthCategoryInService !== undefined) {
+      HealthCategoryBucket.encode(message.healthCategoryInService, writer.uint32(58).fork()).join();
+    }
+    if (message.healthCategoryInTransition !== undefined) {
+      HealthCategoryBucket.encode(message.healthCategoryInTransition, writer.uint32(66).fork()).join();
+    }
+    if (message.healthCategoryInAutoRecovery !== undefined) {
+      HealthCategoryBucket.encode(message.healthCategoryInAutoRecovery, writer.uint32(74).fork()).join();
+    }
+    if (message.healthCategoryNeedManualRepair !== undefined) {
+      HealthCategoryBucket.encode(message.healthCategoryNeedManualRepair, writer.uint32(82).fork()).join();
+    }
+    if (message.healthCategoryUnspecified !== undefined) {
+      HealthCategoryBucket.encode(message.healthCategoryUnspecified, writer.uint32(90).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountAndroidDevicesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountAndroidDevicesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.totalDevices = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.totalHosts = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.labMissingHosts = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.labRunningHosts = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 41) {
+            break;
+          }
+
+          message.average7d = reader.double();
+          continue;
+        }
+        case 6: {
+          if (tag !== 49) {
+            break;
+          }
+
+          message.average30d = reader.double();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.healthCategoryInService = HealthCategoryBucket.decode(reader, reader.uint32());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.healthCategoryInTransition = HealthCategoryBucket.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.healthCategoryInAutoRecovery = HealthCategoryBucket.decode(reader, reader.uint32());
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.healthCategoryNeedManualRepair = HealthCategoryBucket.decode(reader, reader.uint32());
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.healthCategoryUnspecified = HealthCategoryBucket.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountAndroidDevicesResponse {
+    return {
+      totalDevices: isSet(object.totalDevices) ? globalThis.Number(object.totalDevices) : 0,
+      totalHosts: isSet(object.totalHosts) ? globalThis.Number(object.totalHosts) : 0,
+      labMissingHosts: isSet(object.labMissingHosts) ? globalThis.Number(object.labMissingHosts) : 0,
+      labRunningHosts: isSet(object.labRunningHosts) ? globalThis.Number(object.labRunningHosts) : 0,
+      average7d: isSet(object.average7d) ? globalThis.Number(object.average7d) : undefined,
+      average30d: isSet(object.average30d) ? globalThis.Number(object.average30d) : undefined,
+      healthCategoryInService: isSet(object.healthCategoryInService)
+        ? HealthCategoryBucket.fromJSON(object.healthCategoryInService)
+        : undefined,
+      healthCategoryInTransition: isSet(object.healthCategoryInTransition)
+        ? HealthCategoryBucket.fromJSON(object.healthCategoryInTransition)
+        : undefined,
+      healthCategoryInAutoRecovery: isSet(object.healthCategoryInAutoRecovery)
+        ? HealthCategoryBucket.fromJSON(object.healthCategoryInAutoRecovery)
+        : undefined,
+      healthCategoryNeedManualRepair: isSet(object.healthCategoryNeedManualRepair)
+        ? HealthCategoryBucket.fromJSON(object.healthCategoryNeedManualRepair)
+        : undefined,
+      healthCategoryUnspecified: isSet(object.healthCategoryUnspecified)
+        ? HealthCategoryBucket.fromJSON(object.healthCategoryUnspecified)
+        : undefined,
+    };
+  },
+
+  toJSON(message: CountAndroidDevicesResponse): unknown {
+    const obj: any = {};
+    if (message.totalDevices !== 0) {
+      obj.totalDevices = Math.round(message.totalDevices);
+    }
+    if (message.totalHosts !== 0) {
+      obj.totalHosts = Math.round(message.totalHosts);
+    }
+    if (message.labMissingHosts !== 0) {
+      obj.labMissingHosts = Math.round(message.labMissingHosts);
+    }
+    if (message.labRunningHosts !== 0) {
+      obj.labRunningHosts = Math.round(message.labRunningHosts);
+    }
+    if (message.average7d !== undefined) {
+      obj.average7d = message.average7d;
+    }
+    if (message.average30d !== undefined) {
+      obj.average30d = message.average30d;
+    }
+    if (message.healthCategoryInService !== undefined) {
+      obj.healthCategoryInService = HealthCategoryBucket.toJSON(message.healthCategoryInService);
+    }
+    if (message.healthCategoryInTransition !== undefined) {
+      obj.healthCategoryInTransition = HealthCategoryBucket.toJSON(message.healthCategoryInTransition);
+    }
+    if (message.healthCategoryInAutoRecovery !== undefined) {
+      obj.healthCategoryInAutoRecovery = HealthCategoryBucket.toJSON(message.healthCategoryInAutoRecovery);
+    }
+    if (message.healthCategoryNeedManualRepair !== undefined) {
+      obj.healthCategoryNeedManualRepair = HealthCategoryBucket.toJSON(message.healthCategoryNeedManualRepair);
+    }
+    if (message.healthCategoryUnspecified !== undefined) {
+      obj.healthCategoryUnspecified = HealthCategoryBucket.toJSON(message.healthCategoryUnspecified);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountAndroidDevicesResponse>): CountAndroidDevicesResponse {
+    return CountAndroidDevicesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountAndroidDevicesResponse>): CountAndroidDevicesResponse {
+    const message = createBaseCountAndroidDevicesResponse() as any;
+    message.totalDevices = object.totalDevices ?? 0;
+    message.totalHosts = object.totalHosts ?? 0;
+    message.labMissingHosts = object.labMissingHosts ?? 0;
+    message.labRunningHosts = object.labRunningHosts ?? 0;
+    message.average7d = object.average7d ?? undefined;
+    message.average30d = object.average30d ?? undefined;
+    message.healthCategoryInService =
+      (object.healthCategoryInService !== undefined && object.healthCategoryInService !== null)
+        ? HealthCategoryBucket.fromPartial(object.healthCategoryInService)
+        : undefined;
+    message.healthCategoryInTransition =
+      (object.healthCategoryInTransition !== undefined && object.healthCategoryInTransition !== null)
+        ? HealthCategoryBucket.fromPartial(object.healthCategoryInTransition)
+        : undefined;
+    message.healthCategoryInAutoRecovery =
+      (object.healthCategoryInAutoRecovery !== undefined && object.healthCategoryInAutoRecovery !== null)
+        ? HealthCategoryBucket.fromPartial(object.healthCategoryInAutoRecovery)
+        : undefined;
+    message.healthCategoryNeedManualRepair =
+      (object.healthCategoryNeedManualRepair !== undefined && object.healthCategoryNeedManualRepair !== null)
+        ? HealthCategoryBucket.fromPartial(object.healthCategoryNeedManualRepair)
+        : undefined;
+    message.healthCategoryUnspecified =
+      (object.healthCategoryUnspecified !== undefined && object.healthCategoryUnspecified !== null)
+        ? HealthCategoryBucket.fromPartial(object.healthCategoryUnspecified)
+        : undefined;
+    return message;
+  },
+};
+
+function createBaseHealthCategoryBucket(): HealthCategoryBucket {
+  return { total: 0, statusCounts: {}, average7d: undefined, average30d: undefined };
+}
+
+export const HealthCategoryBucket: MessageFns<HealthCategoryBucket> = {
+  encode(message: HealthCategoryBucket, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.total !== 0) {
+      writer.uint32(8).int32(message.total);
+    }
+    Object.entries(message.statusCounts).forEach(([key, value]) => {
+      HealthCategoryBucket_StatusCountsEntry.encode({ key: key as any, value }, writer.uint32(18).fork()).join();
+    });
+    if (message.average7d !== undefined) {
+      writer.uint32(25).double(message.average7d);
+    }
+    if (message.average30d !== undefined) {
+      writer.uint32(33).double(message.average30d);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): HealthCategoryBucket {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseHealthCategoryBucket() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          const entry2 = HealthCategoryBucket_StatusCountsEntry.decode(reader, reader.uint32());
+          if (entry2.value !== undefined) {
+            message.statusCounts[entry2.key] = entry2.value;
+          }
+          continue;
+        }
+        case 3: {
+          if (tag !== 25) {
+            break;
+          }
+
+          message.average7d = reader.double();
+          continue;
+        }
+        case 4: {
+          if (tag !== 33) {
+            break;
+          }
+
+          message.average30d = reader.double();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): HealthCategoryBucket {
+    return {
+      total: isSet(object.total) ? globalThis.Number(object.total) : 0,
+      statusCounts: isObject(object.statusCounts)
+        ? Object.entries(object.statusCounts).reduce<{ [key: string]: number }>((acc, [key, value]) => {
+          acc[key] = Number(value);
+          return acc;
+        }, {})
+        : {},
+      average7d: isSet(object.average7d) ? globalThis.Number(object.average7d) : undefined,
+      average30d: isSet(object.average30d) ? globalThis.Number(object.average30d) : undefined,
+    };
+  },
+
+  toJSON(message: HealthCategoryBucket): unknown {
+    const obj: any = {};
+    if (message.total !== 0) {
+      obj.total = Math.round(message.total);
+    }
+    if (message.statusCounts) {
+      const entries = Object.entries(message.statusCounts);
+      if (entries.length > 0) {
+        obj.statusCounts = {};
+        entries.forEach(([k, v]) => {
+          obj.statusCounts[k] = Math.round(v);
+        });
+      }
+    }
+    if (message.average7d !== undefined) {
+      obj.average7d = message.average7d;
+    }
+    if (message.average30d !== undefined) {
+      obj.average30d = message.average30d;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<HealthCategoryBucket>): HealthCategoryBucket {
+    return HealthCategoryBucket.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<HealthCategoryBucket>): HealthCategoryBucket {
+    const message = createBaseHealthCategoryBucket() as any;
+    message.total = object.total ?? 0;
+    message.statusCounts = Object.entries(object.statusCounts ?? {}).reduce<{ [key: string]: number }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = globalThis.Number(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    message.average7d = object.average7d ?? undefined;
+    message.average30d = object.average30d ?? undefined;
+    return message;
+  },
+};
+
+function createBaseHealthCategoryBucket_StatusCountsEntry(): HealthCategoryBucket_StatusCountsEntry {
+  return { key: "", value: 0 };
+}
+
+export const HealthCategoryBucket_StatusCountsEntry: MessageFns<HealthCategoryBucket_StatusCountsEntry> = {
+  encode(message: HealthCategoryBucket_StatusCountsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== 0) {
+      writer.uint32(16).int32(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): HealthCategoryBucket_StatusCountsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseHealthCategoryBucket_StatusCountsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.value = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): HealthCategoryBucket_StatusCountsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+    };
+  },
+
+  toJSON(message: HealthCategoryBucket_StatusCountsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== 0) {
+      obj.value = Math.round(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<HealthCategoryBucket_StatusCountsEntry>): HealthCategoryBucket_StatusCountsEntry {
+    return HealthCategoryBucket_StatusCountsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<HealthCategoryBucket_StatusCountsEntry>): HealthCategoryBucket_StatusCountsEntry {
+    const message = createBaseHealthCategoryBucket_StatusCountsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? 0;
     return message;
   },
 };
@@ -1393,6 +1967,10 @@ function fromTimestamp(t: Timestamp): string {
   let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
   millis += (t.nanos || 0) / 1_000_000;
   return new globalThis.Date(millis).toISOString();
+}
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
 }
 
 function isSet(value: any): boolean {
