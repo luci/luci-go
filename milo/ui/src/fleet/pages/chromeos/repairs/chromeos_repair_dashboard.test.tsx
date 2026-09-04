@@ -47,6 +47,8 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     servoState: PeripheralState.PERIPHERAL_STATE_OK,
     wifiState: PeripheralState.PERIPHERAL_STATE_BROKEN,
     bluetoothState: PeripheralState.PERIPHERAL_STATE_MISSING,
+    poolHealthPct: 0.824,
+    modelHealthPct: 0.95,
   },
   {
     taskId: '102',
@@ -59,6 +61,8 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     servoState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
     wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
     bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+    poolHealthPct: 0.45,
+    modelHealthPct: 0.7,
   },
 ];
 
@@ -101,7 +105,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
       data: {
         repairQueueItems: MOCK_QUEUE_ITEMS,
-        totalSize: 2,
+        totalSize: 3,
         nextPageToken: '',
       },
       isPending: false,
@@ -118,11 +122,11 @@ describe('<ChromeOSRepairDashboard />', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders all 6 columns: Dut ID, Pool, Model, State, Peripherals, Assignee', async () => {
+  it('renders all 7 columns: Dut ID, Pool, Model, Pool / Model Health, State, Peripherals, Assignee', async () => {
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
       data: {
         repairQueueItems: MOCK_QUEUE_ITEMS,
-        totalSize: 2,
+        totalSize: 3,
         nextPageToken: '',
       },
       isPending: false,
@@ -137,16 +141,65 @@ describe('<ChromeOSRepairDashboard />', () => {
     expect(screen.getByText('Dut ID')).toBeInTheDocument();
     expect(screen.getByText('Pool')).toBeInTheDocument();
     expect(screen.getByText('Model')).toBeInTheDocument();
+    expect(screen.getByText('Pool / Model Health')).toBeInTheDocument();
+    expect(screen.getAllByTestId('InfoOutlinedIcon')).toHaveLength(2);
     expect(screen.getByText('State')).toBeInTheDocument();
     expect(screen.getByText('Peripherals (W / B / S)')).toBeInTheDocument();
     expect(screen.getByText('Assignee')).toBeInTheDocument();
   });
 
-  it('populates device rows correctly with mock data', async () => {
+  it('populates device rows and health metrics correctly with mock data', async () => {
+    const items: readonly RepairQueueItem[] = [
+      ...MOCK_QUEUE_ITEMS,
+      {
+        taskId: '103',
+        dutId: 'chromeos15-row2-rack3-host6',
+        pools: ['faft-cr50'],
+        model: 'brya',
+        state: 'repair_failed',
+        servoState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        modelHealthPct: 0.95,
+      },
+      {
+        taskId: '104',
+        dutId: 'chromeos15-row2-rack3-host7',
+        pools: ['DUT_POOL_QUOTA'],
+        model: 'volteer',
+        state: 'needs_repair',
+        servoState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        poolHealthPct: 0.85,
+      },
+      {
+        taskId: '105',
+        dutId: 'chromeos15-row2-rack3-host8',
+        pools: ['DUT_POOL_QUOTA'],
+        model: 'volteer',
+        state: 'needs_repair',
+        servoState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+      },
+      {
+        taskId: '106',
+        dutId: 'chromeos15-row2-rack3-host9',
+        pools: ['DUT_POOL_QUOTA'],
+        model: 'volteer',
+        state: 'needs_repair',
+        servoState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        poolHealthPct: 0.0,
+        modelHealthPct: 0.0,
+      },
+    ];
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
       data: {
-        repairQueueItems: MOCK_QUEUE_ITEMS,
-        totalSize: 2,
+        repairQueueItems: items,
+        totalSize: 6,
         nextPageToken: '',
       },
       isPending: false,
@@ -161,22 +214,42 @@ describe('<ChromeOSRepairDashboard />', () => {
     expect(
       await screen.findByText('chromeos15-row2-rack3-host4'),
     ).toBeInTheDocument();
-    expect(screen.getByText('DUT_POOL_QUOTA')).toBeInTheDocument();
-    expect(screen.getByText('volteer')).toBeInTheDocument();
-    expect(screen.getByText('NEEDS_REPAIR')).toBeInTheDocument();
+    expect(screen.getAllByText('DUT_POOL_QUOTA').length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(screen.getAllByText('volteer').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('82% / 95%')).toBeInTheDocument();
+    expect(screen.getAllByText('NEEDS_REPAIR').length).toBeGreaterThanOrEqual(
+      1,
+    );
 
     expect(screen.getByText('chromeos15-row2-rack3-host5')).toBeInTheDocument();
-    expect(screen.getByText('faft-cr50')).toBeInTheDocument();
-    expect(screen.getByText('brya')).toBeInTheDocument();
-    expect(screen.getByText('REPAIR_FAILED')).toBeInTheDocument();
+    expect(screen.getAllByText('faft-cr50').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('brya').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('45% / 70%')).toBeInTheDocument();
+    expect(screen.getAllByText('REPAIR_FAILED').length).toBeGreaterThanOrEqual(
+      1,
+    );
 
     // Verify peripheral icons for both rows
     expect(screen.getByLabelText('Servo: OK')).toBeInTheDocument();
     expect(screen.getByLabelText('Wi-Fi: BROKEN')).toBeInTheDocument();
     expect(screen.getByLabelText('Bluetooth: MISSING')).toBeInTheDocument();
-    expect(screen.getAllByLabelText('Wi-Fi: N/A')).toHaveLength(1);
-    expect(screen.getAllByLabelText('Bluetooth: N/A')).toHaveLength(1);
-    expect(screen.getAllByLabelText('Servo: N/A')).toHaveLength(1);
+    expect(screen.getAllByLabelText('Wi-Fi: N/A')).toHaveLength(5);
+    expect(screen.getAllByLabelText('Bluetooth: N/A')).toHaveLength(5);
+    expect(screen.getAllByLabelText('Servo: N/A')).toHaveLength(5);
+
+    expect(screen.getByText('chromeos15-row2-rack3-host6')).toBeInTheDocument();
+    expect(screen.getByText('- / 95%')).toBeInTheDocument();
+
+    expect(screen.getByText('chromeos15-row2-rack3-host7')).toBeInTheDocument();
+    expect(screen.getByText('85% / -')).toBeInTheDocument();
+
+    expect(screen.getByText('chromeos15-row2-rack3-host8')).toBeInTheDocument();
+    expect(screen.getByText('- / -')).toBeInTheDocument();
+
+    expect(screen.getByText('chromeos15-row2-rack3-host9')).toBeInTheDocument();
+    expect(screen.getByText('0% / 0%')).toBeInTheDocument();
   });
 
   it('renders Claim button for unclaimed item and Avatar for claimed item', async () => {

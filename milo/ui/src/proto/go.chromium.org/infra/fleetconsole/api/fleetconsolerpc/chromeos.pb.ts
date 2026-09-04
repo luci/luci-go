@@ -613,6 +613,8 @@ export interface RepairQueueItem {
   readonly servoState: PeripheralState;
   readonly wifiState: PeripheralState;
   readonly bluetoothState: PeripheralState;
+  readonly poolHealthPct?: number | undefined;
+  readonly modelHealthPct?: number | undefined;
 }
 
 export interface ListRepairQueueResponse {
@@ -5436,6 +5438,8 @@ function createBaseRepairQueueItem(): RepairQueueItem {
     servoState: 0,
     wifiState: 0,
     bluetoothState: 0,
+    poolHealthPct: undefined,
+    modelHealthPct: undefined,
   };
 }
 
@@ -5470,6 +5474,12 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     if (message.bluetoothState !== 0) {
       writer.uint32(80).int32(message.bluetoothState);
+    }
+    if (message.poolHealthPct !== undefined) {
+      writer.uint32(89).double(message.poolHealthPct);
+    }
+    if (message.modelHealthPct !== undefined) {
+      writer.uint32(97).double(message.modelHealthPct);
     }
     return writer;
   },
@@ -5561,6 +5571,22 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
           message.bluetoothState = reader.int32() as any;
           continue;
         }
+        case 11: {
+          if (tag !== 89) {
+            break;
+          }
+
+          message.poolHealthPct = reader.double();
+          continue;
+        }
+        case 12: {
+          if (tag !== 97) {
+            break;
+          }
+
+          message.modelHealthPct = reader.double();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5582,6 +5608,8 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
       servoState: isSet(object.servoState) ? peripheralStateFromJSON(object.servoState) : 0,
       wifiState: isSet(object.wifiState) ? peripheralStateFromJSON(object.wifiState) : 0,
       bluetoothState: isSet(object.bluetoothState) ? peripheralStateFromJSON(object.bluetoothState) : 0,
+      poolHealthPct: isSet(object.poolHealthPct) ? globalThis.Number(object.poolHealthPct) : undefined,
+      modelHealthPct: isSet(object.modelHealthPct) ? globalThis.Number(object.modelHealthPct) : undefined,
     };
   },
 
@@ -5617,6 +5645,12 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.bluetoothState !== 0) {
       obj.bluetoothState = peripheralStateToJSON(message.bluetoothState);
     }
+    if (message.poolHealthPct !== undefined) {
+      obj.poolHealthPct = message.poolHealthPct;
+    }
+    if (message.modelHealthPct !== undefined) {
+      obj.modelHealthPct = message.modelHealthPct;
+    }
     return obj;
   },
 
@@ -5635,6 +5669,8 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.servoState = object.servoState ?? 0;
     message.wifiState = object.wifiState ?? 0;
     message.bluetoothState = object.bluetoothState ?? 0;
+    message.poolHealthPct = object.poolHealthPct ?? undefined;
+    message.modelHealthPct = object.modelHealthPct ?? undefined;
     return message;
   },
 };

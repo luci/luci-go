@@ -42,6 +42,7 @@ export const REPAIR_QUEUE_COLUMN_IDS = [
   'dut_id',
   'label-pool',
   'label-model',
+  'pool_model_health',
   'dut_state',
   'peripherals',
   'assignee',
@@ -90,6 +91,39 @@ export const useRepairQueueColumns = () => {
         Cell: ({ cell }: FC_CellProps<RepairQueueRow>) => (
           <EllipsisTooltip>{cell.getValue<string>()}</EllipsisTooltip>
         ),
+      },
+      {
+        id: 'pool_model_health',
+        header: 'Pool / Model Health',
+        Header: () => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <span>Pool / Model Health</span>
+            <InfoTooltip fontSize="1rem">
+              Percentage of devices in the assigned pool(s) and model(s) that
+              are healthy (not in manual repair or repair failed). For devices
+              with multiple pools or models, the lowest percentage is shown.
+            </InfoTooltip>
+          </Box>
+        ),
+        size: 60,
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
+          const poolHealth = row.original.poolHealthPct;
+          const modelHealth = row.original.modelHealthPct;
+          const poolStr =
+            poolHealth !== undefined && poolHealth !== null
+              ? `${Math.round(poolHealth * 100)}%`
+              : '-';
+          const modelStr =
+            modelHealth !== undefined && modelHealth !== null
+              ? `${Math.round(modelHealth * 100)}%`
+              : '-';
+          return (
+            <Typography
+              variant="body2"
+              sx={{ fontSize: '13px' }}
+            >{`${poolStr} / ${modelStr}`}</Typography>
+          );
+        },
       },
       {
         id: 'dut_state',

@@ -18,6 +18,7 @@ import * as PrpcClients from '@/fleet/hooks/prpc_clients';
 import {
   CountRepairMetricsResponse,
   ListRepairMetricsResponse,
+  ListRepairQueueResponse,
   RepairMetric,
   RepairMetric_Priority,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -73,6 +74,7 @@ export function createMockUseFleetConsoleClient(
   countRepairMetrics: Partial<
     UseQueryResult<CountRepairMetricsResponse, Error>
   > = {},
+  listRepairQueue: Partial<UseQueryResult<ListRepairQueueResponse, Error>> = {},
 ) {
   return () => {
     return {
@@ -105,6 +107,7 @@ export function createMockUseFleetConsoleClient(
             nextPageToken: '',
           },
           isPending: false,
+          ...listRepairQueue,
         }),
       },
       CountRepairMetrics: {

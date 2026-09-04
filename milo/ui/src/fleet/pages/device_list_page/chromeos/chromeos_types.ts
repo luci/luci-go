@@ -65,6 +65,8 @@ export type ChromeOSDevice = Device & {
   servoState?: PeripheralState;
   wifiState?: PeripheralState;
   bluetoothState?: PeripheralState;
+  poolHealthPct?: number;
+  modelHealthPct?: number;
 };
 
 export type ChromeOSColumnDef = Omit<MRT_ColumnDef<ChromeOSDevice>, 'id'> & {
