@@ -178,7 +178,7 @@ export const AndroidDevicesTable = ({
           <FleetCSVExportButton
             table={table}
             filter={combinedAip160}
-            fileName="fleet_console_android_devices"
+            fileName={`fleet_console_${workspace.toLowerCase()}_devices`}
             onExport={(cols, filterStr, ids) =>
               client.ExportAndroidDevicesToCSV(
                 ExportAndroidDevicesToCSVRequest.fromPartial({
@@ -270,7 +270,7 @@ export const AndroidDevicesTable = ({
     }
     return (
       <Alert severity="error">
-        <AlertTitle>Error Loading Android Devices</AlertTitle>
+        <AlertTitle>Error Loading {workspace} Devices</AlertTitle>
         {getErrorMessage(devicesQuery.error, 'fetch device list')}
       </Alert>
     );
