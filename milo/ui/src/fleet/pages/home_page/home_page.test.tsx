@@ -101,10 +101,47 @@ describe('<HomePage />', () => {
       total: 200,
       swarmingState: { total: 200, alive: 150 },
     });
+
+    FleetConsoleMockAPI.setFixture(
+      'CountAndroidDevices',
+      (reqPayload: { filter?: string } | null | undefined) => {
+        if (reqPayload?.filter === workspaces.Pixel.baseFilter) {
+          return {
+            totalDevices: 50,
+            totalHosts: 5,
+            labRunningHosts: 5,
+            labMissingHosts: 0,
+            healthCategoryInService: {
+              total: 35,
+              statusCounts: { IDLE: 25, BUSY: 10 },
+            },
+            healthCategoryNeedManualRepair: {
+              total: 5,
+              statusCounts: { MISSING: 5 },
+            },
+          };
+        }
+        return {
+          totalDevices: 500,
+          totalHosts: 50,
+          labRunningHosts: 45,
+          labMissingHosts: 5,
+          healthCategoryInService: {
+            total: 400,
+            statusCounts: { IDLE: 300, BUSY: 100 },
+          },
+          healthCategoryNeedManualRepair: {
+            total: 40,
+            statusCounts: { MISSING: 30, FAILED: 10 },
+          },
+        };
+      },
+    );
   });
 
   afterEach(() => {
     jest.resetAllMocks();
+    localStorage.clear();
   });
 
   it('renders home page correctly', async () => {
@@ -228,6 +265,7 @@ describe('<HomePage />', () => {
   it('displays the error state if counts fail to load', async () => {
     FleetConsoleMockAPI.setFixture('CountDevices', null);
     FleetConsoleMockAPI.setFixture('CountBrowserDevices', null);
+    FleetConsoleMockAPI.setFixture('CountAndroidDevices', null);
 
     render(
       <FakeContextProvider>
@@ -239,6 +277,34 @@ describe('<HomePage />', () => {
     expect(errorMessages.length).toBe(3); // One for each platform
   });
 
+  it('displays the error state on Android and Pixel cards when android-health-metrics is enabled and health query fails', async () => {
+    localStorage.setItem(
+      'featureFlag:fleet-console:android-health-metrics',
+      'on',
+    );
+    localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
+
+    FleetConsoleMockAPI.setFixture('CountDevices', {
+      total: 1000,
+      deviceState: { ready: 800 },
+    });
+    FleetConsoleMockAPI.setFixture('CountBrowserDevices', { total: 200 });
+    FleetConsoleMockAPI.setFixture('CountAndroidDevices', null);
+
+    render(
+      <FakeContextProvider>
+        <HomePage />
+      </FakeContextProvider>,
+    );
+
+    const errorMessages = await screen.findAllByText('Error loading data');
+    expect(errorMessages.length).toBe(2); // Android and Pixel cards in error state
+
+    // ChromeOS and Browser cards should still display normal loaded data
+    expect(screen.getByText('1,000')).toBeInTheDocument();
+    expect(screen.getByText('200')).toBeInTheDocument();
+  });
+
   it('displays permission warning tooltip when device count is 0', async () => {
     FleetConsoleMockAPI.setFixture('CountDevices', {
       total: 0,
@@ -246,6 +312,9 @@ describe('<HomePage />', () => {
     });
     FleetConsoleMockAPI.setFixture('CountBrowserDevices', {
       total: 0,
+    });
+    FleetConsoleMockAPI.setFixture('CountAndroidDevices', {
+      totalDevices: 0,
     });
 
     render(
@@ -269,6 +338,7 @@ describe('<HomePage />', () => {
     FleetConsoleMockAPI.setFixture('CountBrowserDevices', {
       total: 0,
     });
+    FleetConsoleMockAPI.setFixture('CountAndroidDevices', {});
 
     render(
       <FakeContextProvider>
@@ -295,6 +365,7 @@ describe('<HomePage />', () => {
     FleetConsoleMockAPI.setFixture('CountBrowserDevices', {
       total: 0,
     });
+    FleetConsoleMockAPI.setFixture('CountAndroidDevices', {});
 
     render(
       <FakeContextProvider>
@@ -305,5 +376,46 @@ describe('<HomePage />', () => {
     // Should display '100.0% Healthy'
     const chip = await screen.findByText('100.0% Healthy');
     expect(chip).toBeInTheDocument();
+  });
+
+  it('renders Android and Pixel cards with health category metrics when android-health-metrics feature flag is enabled', async () => {
+    localStorage.setItem(
+      'featureFlag:fleet-console:android-health-metrics',
+      'on',
+    );
+    localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
+
+    render(
+      <FakeContextProvider>
+        <HomePage />
+      </FakeContextProvider>,
+    );
+
+    // Android card checks:
+    // Total: 500, In Service: 400 (80.0%), Need manual repair: 40
+    expect(await screen.findByText('80.0% In Service')).toBeInTheDocument();
+    expect(screen.getByText('40')).toBeInTheDocument();
+
+    // Pixel card checks:
+    // Total: 50, In Service: 35 (70.0%), Need manual repair: 5
+    expect(screen.getByText('70.0% In Service')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
+
+    const manualRepairLabels = screen.getAllByText('Need manual repair');
+    expect(manualRepairLabels.length).toBe(2);
+
+    const androidCard = screen
+      .getByText('Android')
+      .closest('.MuiCard-root') as HTMLElement;
+    expect(
+      within(androidCard).getByText('Need manual repair').closest('a'),
+    ).toHaveAttribute('href', '/ui/fleet/p/android/repairs');
+
+    const pixelCard = screen
+      .getByText('Pixel')
+      .closest('.MuiCard-root') as HTMLElement;
+    expect(
+      within(pixelCard).getByText('Need manual repair').closest('a'),
+    ).toHaveAttribute('href', '/ui/fleet/p/pixel/repairs');
   });
 });

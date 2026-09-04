@@ -77,6 +77,7 @@ export interface PlatformSummaryCardProps {
   secondTotal?: number;
   secondTotalText?: string;
   healthyPercentage?: number;
+  healthChipSuffix?: string;
 }
 
 export function PlatformSummaryCard({
@@ -95,6 +96,7 @@ export function PlatformSummaryCard({
   secondTotal,
   secondTotalText,
   healthyPercentage,
+  healthChipSuffix,
 }: PlatformSummaryCardProps) {
   const roundedPercentage =
     healthyPercentage !== undefined
@@ -147,7 +149,7 @@ export function PlatformSummaryCard({
             >
               <Chip
                 size="small"
-                label={`${roundedPercentage.toFixed(1)}% Healthy`}
+                label={`${roundedPercentage.toFixed(1)}% ${healthChipSuffix ?? 'Healthy'}`}
                 sx={{
                   bgcolor: status ? HEALTH_COLOR_MAP[status].bg : undefined,
                   color: status ? HEALTH_COLOR_MAP[status].text : undefined,

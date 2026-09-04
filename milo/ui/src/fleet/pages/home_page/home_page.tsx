@@ -29,7 +29,7 @@ import browserLogo from '@/fleet/assets/logos/browser.png';
 import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
 import pixelLogo from '@/fleet/assets/logos/pixel.png';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
-import { enablePTE } from '@/fleet/features';
+import { enableAndroidHealthMetrics, enablePTE } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
@@ -45,6 +45,9 @@ export const HomePage = () => {
   const client = useFleetConsoleClient();
   const { displayFirstName, isAnonymous } = useUserProfile();
   const isPTEEnabled = useFeatureFlag(enablePTE);
+  const isAndroidHealthMetricsEnabled = useFeatureFlag(
+    enableAndroidHealthMetrics,
+  );
 
   const chromeosQuery = useQuery({
     ...client.CountDevices.query({
@@ -66,7 +69,7 @@ export const HomePage = () => {
       filter: workspaces.Android.baseFilter,
       platform: Platform.ANDROID,
     }),
-    enabled: !isAnonymous,
+    enabled: !isAnonymous && !isAndroidHealthMetricsEnabled,
   });
 
   const androidOfflineQuery = useQuery({
@@ -77,7 +80,14 @@ export const HomePage = () => {
       ),
       platform: Platform.ANDROID,
     }),
-    enabled: !isAnonymous,
+    enabled: !isAnonymous && !isAndroidHealthMetricsEnabled,
+  });
+
+  const androidHealthQuery = useQuery({
+    ...client.CountAndroidDevices.query({
+      filter: workspaces.Android.baseFilter,
+    }),
+    enabled: !isAnonymous && isAndroidHealthMetricsEnabled,
   });
 
   const pixelQuery = useQuery({
@@ -85,7 +95,7 @@ export const HomePage = () => {
       filter: workspaces.Pixel.baseFilter,
       platform: Platform.ANDROID,
     }),
-    enabled: !isAnonymous && isPTEEnabled,
+    enabled: !isAnonymous && isPTEEnabled && !isAndroidHealthMetricsEnabled,
   });
 
   const pixelOfflineQuery = useQuery({
@@ -96,7 +106,14 @@ export const HomePage = () => {
       ),
       platform: Platform.ANDROID,
     }),
-    enabled: !isAnonymous && isPTEEnabled,
+    enabled: !isAnonymous && isPTEEnabled && !isAndroidHealthMetricsEnabled,
+  });
+
+  const pixelHealthQuery = useQuery({
+    ...client.CountAndroidDevices.query({
+      filter: workspaces.Pixel.baseFilter,
+    }),
+    enabled: !isAnonymous && isPTEEnabled && isAndroidHealthMetricsEnabled,
   });
 
   const chromeosTotal = chromeosQuery.data?.total ?? 0;
@@ -114,27 +131,63 @@ export const HomePage = () => {
 
   const browserTotal = browserQuery.data?.total ?? 0;
 
-  const androidTotal = androidQuery.data?.androidCount?.totalDevices ?? 0;
+  const androidTotal = isAndroidHealthMetricsEnabled
+    ? (androidHealthQuery.data?.totalDevices ?? 0)
+    : (androidQuery.data?.androidCount?.totalDevices ?? 0);
   const androidOffline =
     androidOfflineQuery.data?.androidCount?.totalDevices ?? 0;
-  const androidHealthy =
-    androidTotal > 0 && androidOfflineQuery.data
+  const androidInService =
+    androidHealthQuery.data?.healthCategoryInService?.total ?? 0;
+  const androidNeedManualRepair =
+    androidHealthQuery.data?.healthCategoryNeedManualRepair?.total ?? 0;
+
+  const androidHealthy = isAndroidHealthMetricsEnabled
+    ? androidTotal > 0 && androidHealthQuery.data
+      ? Math.min(100, Math.max(0, (androidInService / androidTotal) * 100))
+      : undefined
+    : androidTotal > 0 && androidOfflineQuery.data
       ? Math.min(
           100,
           (Math.max(0, androidTotal - androidOffline) / androidTotal) * 100,
         )
       : undefined;
 
+  const androidIsLoading = isAndroidHealthMetricsEnabled
+    ? androidHealthQuery.isPending
+    : androidQuery.isPending || androidOfflineQuery.isPending;
+
+  const androidIsError = isAndroidHealthMetricsEnabled
+    ? androidHealthQuery.isError
+    : androidQuery.isError || androidOfflineQuery.isError;
+
   // There is no need to check the isPTEEnabled because the query checks it itself and returns null.
-  const pixelTotal = pixelQuery.data?.androidCount?.totalDevices ?? 0;
+  const pixelTotal = isAndroidHealthMetricsEnabled
+    ? (pixelHealthQuery.data?.totalDevices ?? 0)
+    : (pixelQuery.data?.androidCount?.totalDevices ?? 0);
   const pixelOffline = pixelOfflineQuery.data?.androidCount?.totalDevices ?? 0;
-  const pixelHealthy =
-    pixelTotal > 0 && pixelOfflineQuery.data
+  const pixelInService =
+    pixelHealthQuery.data?.healthCategoryInService?.total ?? 0;
+  const pixelNeedManualRepair =
+    pixelHealthQuery.data?.healthCategoryNeedManualRepair?.total ?? 0;
+
+  const pixelHealthy = isAndroidHealthMetricsEnabled
+    ? pixelTotal > 0 && pixelHealthQuery.data
+      ? Math.min(100, Math.max(0, (pixelInService / pixelTotal) * 100))
+      : undefined
+    : pixelTotal > 0 && pixelOfflineQuery.data
       ? Math.min(
           100,
           (Math.max(0, pixelTotal - pixelOffline) / pixelTotal) * 100,
         )
       : undefined;
+
+  const pixelIsLoading = isAndroidHealthMetricsEnabled
+    ? pixelHealthQuery.isPending
+    : pixelQuery.isPending || pixelOfflineQuery.isPending;
+
+  const pixelIsError = isAndroidHealthMetricsEnabled
+    ? pixelHealthQuery.isError
+    : pixelQuery.isError || pixelOfflineQuery.isError;
 
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-home">
@@ -215,18 +268,27 @@ export const HomePage = () => {
                   logoSrc={androidLogo}
                   total={androidTotal}
                   healthyPercentage={androidHealthy}
-                  isLoading={
-                    androidQuery.isPending || androidOfflineQuery.isPending
+                  healthChipSuffix={
+                    isAndroidHealthMetricsEnabled ? 'In Service' : undefined
                   }
-                  isError={androidQuery.isError || androidOfflineQuery.isError}
+                  isLoading={androidIsLoading}
+                  isError={androidIsError}
                   linkTo="/ui/fleet/p/android/devices"
                   linkText="View all devices"
                   linkIcon={<DevicesIcon />}
                   secondaryLinkTo="/ui/fleet/p/android/repairs"
                   secondaryLinkText="View all repairs"
                   secondaryLinkIcon={<ConstructionIcon />}
-                  secondTotalText="Devices offline"
-                  secondTotal={androidOffline}
+                  secondTotalText={
+                    isAndroidHealthMetricsEnabled
+                      ? 'Need manual repair'
+                      : 'Devices offline'
+                  }
+                  secondTotal={
+                    isAndroidHealthMetricsEnabled
+                      ? androidNeedManualRepair
+                      : androidOffline
+                  }
                 />
               </Grid2>
               {isPTEEnabled && (
@@ -239,18 +301,27 @@ export const HomePage = () => {
                       // TODO(bartekdeska@) Change the way the elements display the count of elements
                       total={pixelTotal}
                       healthyPercentage={pixelHealthy}
-                      isLoading={
-                        pixelQuery.isPending || pixelOfflineQuery.isPending
+                      healthChipSuffix={
+                        isAndroidHealthMetricsEnabled ? 'In Service' : undefined
                       }
-                      isError={pixelQuery.isError || pixelOfflineQuery.isError}
+                      isLoading={pixelIsLoading}
+                      isError={pixelIsError}
                       linkTo="/ui/fleet/p/pixel/devices"
                       linkText="View all devices"
                       linkIcon={<DevicesIcon />}
                       secondaryLinkTo="/ui/fleet/p/pixel/repairs"
                       secondaryLinkText="View all repairs"
                       secondaryLinkIcon={<ConstructionIcon />}
-                      secondTotalText="Devices offline"
-                      secondTotal={pixelOffline}
+                      secondTotalText={
+                        isAndroidHealthMetricsEnabled
+                          ? 'Need manual repair'
+                          : 'Devices offline'
+                      }
+                      secondTotal={
+                        isAndroidHealthMetricsEnabled
+                          ? pixelNeedManualRepair
+                          : pixelOffline
+                      }
                     />
                   </Grid2>
                 </>
