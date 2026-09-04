@@ -73,6 +73,15 @@ func (p Platform) String() string {
 	return strings.Join(attrs, ",")
 }
 
+func (p Platform) IsZero() bool {
+	return p.attributes.Len() == 0
+}
+
+// UniversalPlatform returns an empty Platform.
+func UniversalPlatform() Platform {
+	return Platform{attributes: environ.New(nil)}
+}
+
 // CurrentPlatform returns a Platform with os and arch set to runtime.GOOS and
 // runtime.GOARCH.
 func CurrentPlatform() Platform {
