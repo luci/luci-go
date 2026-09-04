@@ -46,7 +46,10 @@ function isCheckView(view: Check | Stage): view is Check {
 }
 
 function isStageView(view: Check | Stage): view is Stage {
-  return (view as Stage).assignments !== undefined;
+  return (
+    (view as Stage).assignments !== undefined ||
+    (view as Stage).attempts !== undefined
+  );
 }
 
 export function InspectorPanel({
@@ -99,7 +102,7 @@ export function InspectorPanel({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          bgcolor: '#f5f5f5',
+          bgcolor: 'var(--block-background-color)',
         }}
       >
         <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>

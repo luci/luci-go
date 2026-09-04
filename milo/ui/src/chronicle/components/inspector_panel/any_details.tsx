@@ -106,6 +106,8 @@ export interface AnyDetailsProps {
   valueData?: ValueData;
   /** Rendering mode: structured UI or raw JSON. */
   renderMode?: RenderMode;
+  /** Maximum height for the details view. */
+  maxHeight?: string | number;
 }
 
 /**
@@ -121,6 +123,7 @@ export function AnyDetails({
   omitReason,
   valueData,
   renderMode,
+  maxHeight,
 }: AnyDetailsProps) {
   const parsedData = useMemo(() => {
     if (!json) return null;
@@ -168,7 +171,11 @@ export function AnyDetails({
     return (
       <Box sx={{ mt: 1 }}>
         {typeUrl && (
-          <Typography variant="caption" color="text.secondary">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ wordBreak: 'break-all' }}
+          >
             {label ? `${label}: ` : ''}
             {typeUrl}
           </Typography>
@@ -185,7 +192,9 @@ export function AnyDetails({
       label={label}
       typeUrl={typeUrl}
       json={json}
-      maxHeight={renderMode === RenderMode.Json ? 'none' : '200px'}
+      maxHeight={
+        maxHeight ?? (renderMode === RenderMode.Json ? 'none' : '200px')
+      }
     />
   );
 }
@@ -201,7 +210,11 @@ function AlertNotice({ severity, typeUrl, label, children }: AlertNoticeProps) {
   return (
     <Box sx={{ mt: 1 }}>
       {typeUrl && (
-        <Typography variant="caption" color="text.secondary">
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ wordBreak: 'break-all' }}
+        >
           {label ? `${label}: ` : ''}
           {typeUrl}
         </Typography>

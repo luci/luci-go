@@ -42,7 +42,11 @@ export function GenericJsonDetails({
       }}
     >
       {typeUrl && (
-        <Typography variant="caption" color="text.secondary">
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ wordBreak: 'break-all' }}
+        >
           {label ? `${label}: ` : ''}
           {typeUrl}
         </Typography>

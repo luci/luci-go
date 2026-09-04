@@ -26,7 +26,11 @@ export function DetailRow({ label, value }: DetailRowProps) {
       <Typography variant="caption" color="text.secondary">
         {label}
       </Typography>
-      <Typography variant="body2" component="div">
+      <Typography
+        variant="body2"
+        component="div"
+        sx={{ wordBreak: 'break-all' }}
+      >
         {value || 'N/A'}
       </Typography>
     </Box>

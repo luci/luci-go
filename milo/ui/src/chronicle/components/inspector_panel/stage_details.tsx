@@ -33,6 +33,7 @@ import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
 import { GenericJsonDetails } from './generic_json_details';
+import { StageAttemptProgress } from './stage_attempt_progress';
 import { RenderMode } from './types';
 
 export interface StageDetailsProps {
@@ -183,7 +184,7 @@ export function StageDetails({
                 key={index}
                 sx={{
                   p: 1,
-                  border: '1px solid #eee',
+                  border: '1px solid var(--divider-color)',
                   borderRadius: 1,
                   display: 'flex',
                   flexDirection: 'column',
@@ -225,6 +226,18 @@ export function StageDetails({
                     renderMode={renderMode}
                   />
                 ))}
+                {attempt.progress && attempt.progress.length > 0 && (
+                  <DetailRow
+                    label="Progress"
+                    value={
+                      <StageAttemptProgress
+                        progress={attempt.progress}
+                        valueDataMap={valueDataMap}
+                        renderMode={renderMode}
+                      />
+                    }
+                  />
+                )}
               </Box>
             ))}
           </Box>

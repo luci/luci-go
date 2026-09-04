@@ -164,4 +164,136 @@ describe('StageDetails', () => {
 
     expect(screen.getByText(/"stage-raw-json"/)).toBeInTheDocument();
   });
+
+  it('renders progress messages with timestamps and details for stage attempts', () => {
+    const stage = Stage.fromPartial({
+      identifier: { id: 'worknode-stage-progress', isWorknode: true },
+      state: StageState.STAGE_STATE_FINAL,
+      attempts: [
+        {
+          state: StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE,
+          version: { ts: '2026-09-02T00:07:52.625Z' },
+          details: [],
+          progress: [
+            {
+              message:
+                'Build P135607851 for node L94500030178125231:N32900031086014236 has been inserted',
+              version: { ts: '2026-09-01T23:44:32.771Z' },
+              details: [],
+            },
+            {
+              message:
+                'Build P135607851 for node L94500030178125231:N32900031086014236 has begun syncing sources',
+              version: { ts: '2026-09-01T23:45:59.483Z' },
+              details: [],
+            },
+            {
+              message: '',
+              version: { ts: '2026-09-02T00:07:52.625Z' },
+              details: [
+                {
+                  typeUrl:
+                    'type.googleapis.com/wireless.android.launchcontrol.WorkNode.ProgressMessage.AttemptEnded',
+                  omitReason: OmitReason.OMIT_REASON_NO_ACCESS,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const valueDataMap = new Map<string, ValueData>();
+
+    render(<StageDetails view={stage} valueDataMap={valueDataMap} />);
+
+    expect(screen.getByText('Progress')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Build P135607851 for node L94500030178125231:N32900031086014236 has been inserted',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Build P135607851 for node L94500030178125231:N32900031086014236 has begun syncing sources',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Timestamp')).toHaveLength(3);
+    expect(
+      screen.getByText(
+        'Access Denied: You do not have permission to view this data.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Details: type.googleapis.com/wireless.android.launchcontrol.WorkNode.ProgressMessage.AttemptEnded',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('renders progress details with valueData content when available', () => {
+    const detailJson = JSON.stringify({ step: 'downloading', percent: 75 });
+    const stage = Stage.fromPartial({
+      identifier: { id: 'stage-progress-with-data' },
+      state: StageState.STAGE_STATE_ATTEMPTING,
+      attempts: [
+        {
+          state: StageAttemptState.STAGE_ATTEMPT_STATE_RUNNING,
+          details: [],
+          progress: [
+            {
+              message: 'Step in progress',
+              version: { ts: '2026-09-01T12:00:00.000Z' },
+              details: [
+                {
+                  typeUrl: 'type.googleapis.com/example.StepProgress',
+                  digest: 'step-progress-digest',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const valueDataMap = new Map<string, ValueData>([
+      [
+        'step-progress-digest',
+        ValueData.fromPartial({
+          json: { value: detailJson },
+        }),
+      ],
+    ]);
+
+    render(<StageDetails view={stage} valueDataMap={valueDataMap} />);
+
+    expect(screen.getByText('Progress')).toBeInTheDocument();
+    expect(screen.getByText('Step in progress')).toBeInTheDocument();
+    expect(
+      screen.getByText('Details: type.googleapis.com/example.StepProgress'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/"step": "downloading"/)).toBeInTheDocument();
+    expect(screen.getByText(/"percent": 75/)).toBeInTheDocument();
+  });
+
+  it('does not render Progress section when attempt has no progress', () => {
+    const stage = Stage.fromPartial({
+      identifier: { id: 'stage-no-progress' },
+      state: StageState.STAGE_STATE_FINAL,
+      attempts: [
+        {
+          state: StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE,
+          details: [],
+          progress: [],
+        },
+      ],
+    });
+
+    const valueDataMap = new Map<string, ValueData>();
+
+    render(<StageDetails view={stage} valueDataMap={valueDataMap} />);
+
+    expect(screen.getByText('Attempt 1')).toBeInTheDocument();
+    expect(screen.queryByText('Progress')).not.toBeInTheDocument();
+  });
 });
