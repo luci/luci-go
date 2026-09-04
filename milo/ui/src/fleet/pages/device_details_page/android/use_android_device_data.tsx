@@ -47,7 +47,7 @@ export const useAndroidDeviceData = (
   });
 
   const isPTEEnabled = useFeatureFlag(enablePTE);
-  const idFilter = `id = ${escapeAipValue(deviceId)}`;
+  const idFilter = `id = "${escapeAipValue(deviceId)}"`;
   const request = ListAndroidDevicesRequest.fromPartial({
     pageSize: 1,
     filter: isPTEEnabled
