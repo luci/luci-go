@@ -21,11 +21,13 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 )
 
 type cbReaderAt struct {
@@ -39,38 +41,40 @@ func (c *cbReaderAt) ReadAt(b []byte, off int64) (int, error) {
 func TestPackageReader(t *testing.T) {
 	t.Parallel()
 
+	manifestName := pkg.ManifestName
 	testZip := testutil.MakeZip(map[string]string{
-		"file1": strings.Repeat("hello", 50),
-		"file2": "blah",
+		"file1":      strings.Repeat("hello", 50),
+		"file2":      "blah",
+		manifestName: `{"package_name": "some/package"}`,
 	})
 	reader := bytes.NewReader(testZip)
 	size := int64(reader.Len())
 
 	readErr := fmt.Errorf("some read error")
 
-	ftt.Run("Happy path", t, func(t *ftt.Test) {
+	t.Run("Happy path", func(t *testing.T) {
 		pkg, err := NewPackageReader(reader, size)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
-		assert.Loosely(t, pkg.Files(), should.Match([]string{"file1", "file2"}))
+		assert.Loosely(t, pkg.Files(), should.Match([]string{manifestName, "file1", "file2"}))
 
 		fr, actualSize, err := pkg.Open("file2")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, actualSize, should.Equal(4))
 		blob, err := io.ReadAll(fr)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, string(blob), should.Equal("blah"))
 	})
 
-	ftt.Run("No such file", t, func(t *ftt.Test) {
+	t.Run("No such file", func(t *testing.T) {
 		pkg, err := NewPackageReader(reader, size)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		_, _, err = pkg.Open("zzz")
 		assert.Loosely(t, err.Error(), should.Equal(`no file "zzz" inside the package`))
 	})
 
-	ftt.Run("Propagates errors when opening", t, func(t *ftt.Test) {
+	t.Run("Propagates errors when opening", func(t *testing.T) {
 		calls := 0
 		r := &cbReaderAt{
 			readAt: func(p []byte, off int64) (int, error) {
@@ -87,16 +91,48 @@ func TestPackageReader(t *testing.T) {
 		assert.Loosely(t, err, should.Equal(readErr)) // exact same error object
 	})
 
-	ftt.Run("Propagates errors when reading", t, func(t *ftt.Test) {
+	t.Run("Propagates errors when reading", func(t *testing.T) {
 		r := &cbReaderAt{readAt: reader.ReadAt}
 
 		// Let the directory be read successfully.
 		pkg, err := NewPackageReader(r, size)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		// Now inject errors.
 		r.readAt = func([]byte, int64) (int, error) { return 0, readErr }
 		_, _, err = pkg.Open("file1")
 		assert.Loosely(t, err, should.Equal(readErr)) // exact same error object
+	})
+
+	t.Run("Can extract manifest", func(t *testing.T) {
+		r := &cbReaderAt{readAt: reader.ReadAt}
+
+		pkg, err := NewPackageReader(r, size)
+		assert.NoErr(t, err)
+
+		manifest, err := pkg.Manifest()
+		assert.NoErr(t, err)
+
+		assert.That(t, manifest.PackageName, should.Equal("some/package"))
+	})
+
+	t.Run("Manifest too large", func(t *testing.T) {
+		testZip := testutil.MakeZip(map[string]string{
+			"file1": strings.Repeat("hello", 50),
+			"file2": "blah",
+			manifestName: fmt.Sprintf(
+				`{"package_name": "some/package", "other": %q}`,
+				strings.Repeat("spam", 3000),
+			),
+		})
+		reader := bytes.NewReader(testZip)
+		r := &cbReaderAt{readAt: reader.ReadAt}
+
+		pkg, err := NewPackageReader(r, int64(reader.Len()))
+		assert.NoErr(t, err)
+
+		_, err = pkg.Manifest()
+		assert.ErrIsLike(t, err, "manifest file is too large")
+		assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
 	})
 }

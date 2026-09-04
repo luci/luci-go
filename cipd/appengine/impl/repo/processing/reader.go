@@ -15,12 +15,18 @@
 package processing
 
 import (
+	"encoding/json"
 	"io"
 	"math"
 
 	"github.com/klauspost/compress/zip"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 )
 
 // TODO(vadimsh): Share code with the client.
@@ -71,4 +77,46 @@ func (p *PackageReader) Open(path string) (io.ReadCloser, int64, error) {
 		}
 	}
 	return nil, 0, errors.Fmt("no file %q inside the package", path)
+}
+
+// maximumManifestJSONSize limits the size of the manifest JSON we are willing
+// to extract from an uploaded package instance.
+//
+// As of 2026Q3, the only data in the manifest is the manifest version, the
+// package name, and the version file path.
+//
+// There are fields for file->hash associations, but these are only populated
+// by the CIPD client on disk during extraction.
+const maximumManifestJSONSize = 2 * 1024
+
+// Opens, parses and returns the Manifest in this package instance.
+//
+// Returns InvalidArgument for non-transient errors.
+func (p *PackageReader) Manifest() (pkg.Manifest, error) {
+	tagError := func(err error) error {
+		if transient.Tag.In(err) {
+			return err
+		}
+		return status.Errorf(codes.InvalidArgument, "%s", err)
+	}
+
+	raw, decompSize, err := p.Open(pkg.ManifestName)
+	if err != nil {
+		return pkg.Manifest{}, tagError(errors.Fmt("opening manifest file: %w", err))
+	}
+	defer raw.Close()
+	if decompSize > maximumManifestJSONSize {
+		return pkg.Manifest{}, tagError(errors.Fmt(
+			"manifest file is too large: %d > %d", decompSize, maximumManifestJSONSize))
+	}
+	rawDat, err := io.ReadAll(raw)
+	if err != nil {
+		return pkg.Manifest{}, tagError(errors.Fmt("reading manifest file: %w", err))
+	}
+
+	ret := pkg.Manifest{}
+	if err = json.Unmarshal(rawDat, &ret); err != nil {
+		return pkg.Manifest{}, tagError(errors.Fmt("decoding manifest file: %w", err))
+	}
+	return ret, nil
 }

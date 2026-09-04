@@ -16,6 +16,7 @@ package repo
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -58,6 +59,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa"
 	vsapb "go.chromium.org/luci/cipd/appengine/impl/vsa/api"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
 
 	// Using transactional datastore TQ tasks.
@@ -78,6 +80,30 @@ func newMockImpl(meta *testutil.MetadataStore, cas *testutil.MockCAS) *repoImpl 
 			return &prefixcfg.Entry{PrefixConfig: &api.Prefix{}}
 		},
 	}
+}
+
+// Makes a valid instance zip with `pkgName`.
+//
+// If `manifest` is given in singular, it will be used as the basis for the
+// written manifest. If it's given more than once, this will panic.
+func makePackageZip(pkgName string, manifest ...pkg.Manifest) []byte {
+	var m pkg.Manifest
+	if len(manifest) == 1 {
+		m = manifest[0]
+	} else if len(manifest) > 1 {
+		panic("makePackageZip only accepts one optional manifest")
+	}
+	if m.FormatVersion == "" {
+		m.FormatVersion = pkg.ManifestFormatVersion
+	}
+	m.PackageName = pkgName
+
+	dat, err := json.Marshal(m)
+	if err != nil {
+		panic(err)
+	}
+
+	return testutil.MakeZip(map[string]string{pkg.ManifestName: string(dat)})
 }
 
 func TestMetadataFetching(t *testing.T) {
@@ -986,6 +1012,9 @@ func TestRegisterInstance(t *testing.T) {
 			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
 			}
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
+				return testutil.NewMockGSReader(makePackageZip(inst.Package)), nil
+			}
 
 			// The instance is already uploaded => registers it in the datastore.
 			fullInstProto := &repopb.Instance{
@@ -1082,6 +1111,88 @@ func TestRegisterInstance(t *testing.T) {
 			_, err := impl.RegisterInstance(as("owner@example.com"), inst)
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike(`"user:owner@example.com" has no required WRITER role in prefix "a/b" because: policy`))
+		})
+
+		t.Run("Corrupted package zip", func(t *ftt.Test) {
+			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
+				return testutil.NewMockGSReader([]byte("not a zip file")), nil
+			}
+			_, err := impl.RegisterInstance(ctx, inst)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.Unknown))
+			assert.Loosely(t, err, should.ErrLike("opening instance"))
+		})
+
+		t.Run("Corrupted manifest", func(t *ftt.Test) {
+			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
+				return testutil.NewMockGSReader(testutil.MakeZip(map[string]string{
+					pkg.ManifestName: "I am a banana",
+				})), nil
+			}
+			_, err := impl.RegisterInstance(ctx, inst)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("opening manifest"))
+		})
+
+		t.Run("Package name mismatch", func(t *ftt.Test) {
+			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
+				return testutil.NewMockGSReader(makePackageZip("wrong/package")), nil
+			}
+			_, err := impl.RegisterInstance(ctx, inst)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`manifest: unexpected package name: "wrong/package" != "a/b"`))
+		})
+
+		t.Run("Manifest version mismatch", func(t *ftt.Test) {
+			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
+				return testutil.NewMockGSReader(makePackageZip("a/b", pkg.Manifest{
+					FormatVersion: "nope",
+				})), nil
+			}
+			_, err := impl.RegisterInstance(ctx, inst)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`manifest: unexpected format version`))
+		})
+
+		t.Run("Unexpected manifest files", func(t *ftt.Test) {
+			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
+				return testutil.NewMockGSReader(makePackageZip("a/b", pkg.Manifest{
+					Files: []pkg.FileInfo{
+						{},
+					},
+				})), nil
+			}
+			_, err := impl.RegisterInstance(ctx, inst)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`manifest: unexpected files`))
+		})
+
+		t.Run("Unexpected manifest actual_install_mode", func(t *ftt.Test) {
+			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
+				return testutil.NewMockGSReader(makePackageZip("a/b", pkg.Manifest{
+					ActualInstallMode: pkg.InstallModeCopy,
+				})), nil
+			}
+			_, err := impl.RegisterInstance(ctx, inst)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`manifest: unexpected actual_install_mode`))
 		})
 	})
 }
@@ -3834,6 +3945,9 @@ func TestVSA(t *testing.T) {
 			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
 			}
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
+				return testutil.NewMockGSReader(makePackageZip("a/pkg")), nil
+			}
 
 			t.Run("Success", func(t *ftt.Test) {
 				resp, err := impl.RegisterInstance(ctx, &repopb.Instance{
@@ -3916,6 +4030,9 @@ func TestVSA(t *testing.T) {
 
 			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
+				return testutil.NewMockGSReader(makePackageZip("a/pkg")), nil
 			}
 
 			t.Run("RegisterInstance", func(t *ftt.Test) {

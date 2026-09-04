@@ -56,6 +56,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa/api"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -722,6 +723,10 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 		return nil, err
 	}
 
+	if err := impl.verifyInstanceManifest(ctx, r.Instance, r.Package, userProject); err != nil {
+		return nil, err
+	}
+
 	var md []*repopb.InstanceMetadata
 	if vsaResp.Allowed && vsaResp.VerificationSummary != "" {
 		md = append(md, &repopb.InstanceMetadata{
@@ -748,6 +753,42 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 		resp.Status = repopb.RegistrationStatus_ALREADY_REGISTERED
 	}
 	return
+}
+
+// verifyInstanceManifest opens the package instance in CAS and checks that its
+// manifest is well-formed and is intended for `expectedPkg`.
+//
+// The instance must already exist in cas, and must already have its hash
+// verified (e.g. by the upload process).
+func (impl *repoImpl) verifyInstanceManifest(ctx context.Context, ref *caspb.ObjectRef, expectedPkg, userProject string) (err error) {
+	start := clock.Now(ctx)
+	defer func() {
+		logging.Infof(ctx, "verifyInstanceManifest: took %s (err: %s)", clock.Since(ctx, start), err)
+	}()
+
+	// Do all GCS I/O up front to make sure these errors propagate through.
+	reader, err := impl.packageReader(ctx, ref, userProject)
+	if err != nil {
+		return errors.Fmt("opening instance: %w", err)
+	}
+	manifest, err := reader.Manifest()
+	if err != nil {
+		return errors.Fmt("opening manifest: %w", err)
+	}
+
+	if manifest.FormatVersion != pkg.ManifestFormatVersion {
+		return status.Errorf(codes.InvalidArgument, "manifest: unexpected format version: %q != %q", manifest.FormatVersion, pkg.ManifestFormatVersion)
+	}
+	if manifest.PackageName != expectedPkg {
+		return status.Errorf(codes.InvalidArgument, "manifest: unexpected package name: %q != %q", manifest.PackageName, expectedPkg)
+	}
+	if len(manifest.Files) > 0 {
+		return status.Errorf(codes.InvalidArgument, "manifest: unexpected files")
+	}
+	if manifest.ActualInstallMode != "" {
+		return status.Errorf(codes.InvalidArgument, "manifest: unexpected actual_install_mode: %q", manifest.ActualInstallMode)
+	}
+	return nil
 }
 
 // onInstanceRegistration is called in a txn when registering an instance.
