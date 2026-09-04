@@ -21,6 +21,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -187,5 +188,13 @@ func TestFetchHeadLines(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, buf.String(), should.Equal(smallContent))
 		})
+	})
+
+	ftt.Run(`HeadCmd flags`, t, func(t *ftt.Test) {
+		cmd := HeadCmd(base.NewAuthFlags(), ParentTypeWorkUnit)
+		run, ok := cmd.CommandRun().(*artifactHeadRun)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, run.Flags.Lookup("o"), should.NotBeNil)
+		assert.Loosely(t, run.Flags.Lookup("output"), should.NotBeNil)
 	})
 }

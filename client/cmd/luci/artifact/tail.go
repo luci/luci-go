@@ -59,6 +59,7 @@ func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 			r.Flags.IntVar(&r.lines, "n", 10, "Number of lines to fetch from the end of the artifact (default 10)")
 			r.Flags.Int64Var(&r.bytes, "c", 0, "Number of bytes to fetch from the end of the artifact")
 			r.Flags.StringVar(&r.outputFile, "o", "", "Optional file path to save the artifact content to")
+			r.Flags.StringVar(&r.outputFile, "output", "", "Optional file path to save the artifact content to (alias for -o)")
 			return r
 		},
 	}

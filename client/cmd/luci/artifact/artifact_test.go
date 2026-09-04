@@ -45,5 +45,12 @@ func TestArtifactCmds(t *testing.T) {
 
 		tailCmd := TailCmd(nil, ParentTypeTestResult)
 		assert.Loosely(t, tailCmd, should.NotBeNil)
+
+		topCmd := Cmd(nil)
+		assert.Loosely(t, topCmd, should.NotBeNil)
+		assert.Loosely(t, topCmd.UsageLine, should.Equal("artifact <subcommand>"))
+		run := topCmd.CommandRun()
+		assert.Loosely(t, run.Run(nil, []string{}, nil), should.Equal(1))
+		assert.Loosely(t, run.Run(nil, []string{"--help"}, nil), should.Equal(0))
 	})
 }

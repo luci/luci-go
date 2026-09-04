@@ -15,6 +15,9 @@
 package artifact
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
@@ -76,4 +79,43 @@ func (r *artifactRun) Run(a subcommands.Application, args []string, env subcomma
 		TailCmd(r.af, r.parentType),
 		subcommands.CmdHelp,
 	}, args)
+}
+
+// Cmd returns a top-level command guiding users to work-unit or test-result artifacts.
+func Cmd(af *base.AuthFlags) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "artifact <subcommand>",
+		ShortDesc: "Manage ResultDB artifacts (scoped to work units or test results)",
+		LongDesc: "In ResultDB, artifacts are scoped to either a work unit or an individual test result.\n\n" +
+			"Available commands:\n" +
+			"  luci work-unit artifact <list|get|head|tail>    Manage artifacts on a work unit\n" +
+			"  luci test-result artifact <list|get|head|tail>  Manage artifacts on a test result\n\n" +
+			"Tip: Run 'luci ids <url>' to extract the appropriate resource IDs.",
+		CommandRun: func() subcommands.CommandRun {
+			return &topLevelArtifactRun{}
+		},
+	}
+}
+
+type topLevelArtifactRun struct {
+	subcommands.CommandRunBase
+}
+
+func (r *topLevelArtifactRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" || arg == "-help" {
+			fmt.Println("In ResultDB, artifacts are scoped to either a work unit or a test result.\n\n" +
+				"Available commands:\n" +
+				"  luci work-unit artifact <list|get|head|tail>    Manage artifacts on a work unit\n" +
+				"  luci test-result artifact <list|get|head|tail>  Manage artifacts on a test result\n\n" +
+				"Tip: Run 'luci ids <url>' to extract the appropriate resource IDs.")
+			return 0
+		}
+	}
+	fmt.Fprintf(os.Stderr, "In ResultDB, artifacts are scoped to either a work unit or a test result.\n\n"+
+		"Please use:\n"+
+		"  luci work-unit artifact <list|get|head|tail> -invocationid <id> -workunitid <wu_id> ...\n"+
+		"  luci test-result artifact <list|get|head|tail> -invocationid <id> -testid <test_id> -resultid <res_id> ...\n\n"+
+		"Tip: Run 'luci ids <url>' to extract the appropriate resource IDs.\n")
+	return 1
 }

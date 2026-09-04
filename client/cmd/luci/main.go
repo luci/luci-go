@@ -21,6 +21,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/client/cmd/luci/testresult"
@@ -60,6 +61,7 @@ func getApplication() *cli.Application {
 
 		Commands: []*subcommands.Command{
 			ids.Cmd(af),
+			artifact.Cmd(af),
 			testresult.Cmd(af),
 			verdict.Cmd(af),
 			workunit.Cmd(af),

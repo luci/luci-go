@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -227,5 +228,13 @@ func TestFetchTailLines(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, buf.Len(), should.Equal(0))
 		})
+	})
+
+	ftt.Run(`TailCmd flags`, t, func(t *ftt.Test) {
+		cmd := TailCmd(base.NewAuthFlags(), ParentTypeWorkUnit)
+		run, ok := cmd.CommandRun().(*artifactTailRun)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, run.Flags.Lookup("o"), should.NotBeNil)
+		assert.Loosely(t, run.Flags.Lookup("output"), should.NotBeNil)
 	})
 }

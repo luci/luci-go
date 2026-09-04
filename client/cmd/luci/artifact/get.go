@@ -61,6 +61,7 @@ func GetCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 			r.Flags.StringVar(&r.artifactID, "artifactid", "", "Artifact ID (e.g. text_log or test.xml)")
 			r.Flags.StringVar(&r.byteRangeStr, "byte-range", "", "Byte range to fetch (e.g. 0-100, 500-, -500)")
 			r.Flags.StringVar(&r.outputFile, "o", "", "Optional file path to save the artifact content to")
+			r.Flags.StringVar(&r.outputFile, "output", "", "Optional file path to save the artifact content to (alias for -o)")
 			return r
 		},
 	}
