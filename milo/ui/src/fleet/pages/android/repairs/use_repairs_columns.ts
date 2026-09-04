@@ -17,6 +17,11 @@ import { useMemo } from 'react';
 
 import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
+import {
+  ANDROID_REPAIRS_LOCAL_STORAGE_KEY,
+  PIXEL_REPAIRS_LOCAL_STORAGE_KEY,
+} from '@/fleet/constants/local_storage_keys';
+import { AndroidPageWorkspace } from '@/fleet/workspaces';
 
 import { COLUMNS } from './repairs_columns';
 import { Row } from './repairs_columns.utils';
@@ -24,6 +29,7 @@ import { Row } from './repairs_columns.utils';
 export const useRepairsColumns = (
   filterValues: Record<string, FilterCategory> | undefined,
   isLoadingFilters: boolean,
+  workspace: AndroidPageWorkspace,
 ) => {
   const availableColumns = useMemo<MRT_ColumnDef<Row>[]>(
     () => Object.values(COLUMNS),
@@ -34,7 +40,10 @@ export const useRepairsColumns = (
   const mrtColumnManager = useMRTColumnManagement({
     columns: availableColumns,
     defaultColumnIds,
-    localStorageKey: 'fleet-console-repairs-columns',
+    localStorageKey:
+      workspace === 'Android'
+        ? ANDROID_REPAIRS_LOCAL_STORAGE_KEY
+        : PIXEL_REPAIRS_LOCAL_STORAGE_KEY,
     filterValues,
     isLoadingFilters,
   });

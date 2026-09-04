@@ -18,7 +18,10 @@ import { useMemo } from 'react';
 import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
-import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import {
+  ANDROID_DEVICES_LOCAL_STORAGE_KEY,
+  PIXEL_DEVICES_LOCAL_STORAGE_KEY,
+} from '@/fleet/constants/local_storage_keys';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -83,12 +86,15 @@ export const useAndroidColumns = (
   const mrtColumnManager = useMRTColumnManagement({
     columns: allColumns,
     defaultColumnIds: ANDROID_DEFAULT_COLUMNS,
-    localStorageKey: ANDROID_DEVICES_LOCAL_STORAGE_KEY,
+    localStorageKey:
+      workspace === 'Android'
+        ? ANDROID_DEVICES_LOCAL_STORAGE_KEY
+        : PIXEL_DEVICES_LOCAL_STORAGE_KEY,
     filterValues,
     isLoadingColumns: dimensionsQuery.isPending,
     isLoadingFilters,
     isLoadingDevices,
-    platform: Platform.ANDROID,
+    platform: workspace === 'Android' ? Platform.ANDROID : Platform.PIXEL,
   });
 
   return {

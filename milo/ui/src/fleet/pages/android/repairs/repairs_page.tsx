@@ -88,6 +88,7 @@ export const RepairListPage = ({
   const { mrtColumnManager, warnings: columnWarnings } = useRepairsColumns(
     filterValues,
     isLoadingFilters || filterValues === undefined,
+    workspace,
   );
 
   const combinedWarnings = useMemo(

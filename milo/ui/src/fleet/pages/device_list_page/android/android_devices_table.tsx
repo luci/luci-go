@@ -35,7 +35,10 @@ import {
   FC_TableOptions,
   useFCDataTable,
 } from '@/fleet/components/fc_data_table/use_fc_data_table';
-import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import {
+  ANDROID_DEVICES_LOCAL_STORAGE_KEY,
+  PIXEL_DEVICES_LOCAL_STORAGE_KEY,
+} from '@/fleet/constants/local_storage_keys';
 import { enableAndroidUtilizationMetrics } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
@@ -126,7 +129,11 @@ export const AndroidDevicesTable = ({
   const { devices = [] } = devicesQuery.data || {};
 
   const { columnSizing, onColumnSizingChange, resetColumnWidths } =
-    useMrtColumnSizing(ANDROID_DEVICES_LOCAL_STORAGE_KEY);
+    useMrtColumnSizing(
+      workspace === 'Android'
+        ? ANDROID_DEVICES_LOCAL_STORAGE_KEY
+        : PIXEL_DEVICES_LOCAL_STORAGE_KEY,
+    );
 
   const visibleColumns = useMemo(() => {
     return mrtColumnManager.columns.filter((col) => {

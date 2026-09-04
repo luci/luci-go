@@ -15,6 +15,15 @@
 export const ANDROID_DEVICES_LOCAL_STORAGE_KEY =
   'fleet-console-android-devices-columns';
 
+export const PIXEL_DEVICES_LOCAL_STORAGE_KEY =
+  'fleet-console-pixel-devices-columns';
+
+export const ANDROID_REPAIRS_LOCAL_STORAGE_KEY =
+  'fleet-console-repairs-columns';
+
+export const PIXEL_REPAIRS_LOCAL_STORAGE_KEY =
+  'fleet-console-pixel-repairs-columns';
+
 export const CHROMEOS_DEVICES_LOCAL_STORAGE_KEY =
   'fleet-console-devices-columns';
 
