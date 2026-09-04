@@ -15,7 +15,6 @@
 import {
   QueryKey,
   useQuery,
-  keepPreviousData,
   UndefinedInitialDataOptions,
 } from '@tanstack/react-query';
 
@@ -26,12 +25,18 @@ import {
   ListAndroidDevicesResponse,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { AndroidPageWorkspace } from '../workspaces';
+
 export const useListAndroidDevicesQueryKey = (
   request?: ListAndroidDevicesRequest,
+  workspace?: AndroidPageWorkspace,
 ) => {
   const { identity } = useAuthState();
 
   let queryKey: QueryKey = ['fleet-console', identity, 'listDevices'];
+  if (workspace) {
+    queryKey = [...queryKey, workspace];
+  }
   if (request) {
     queryKey = [...queryKey, request];
   }
@@ -40,6 +45,7 @@ export const useListAndroidDevicesQueryKey = (
 
 export const useAndroidDevices = (
   request: ListAndroidDevicesRequest,
+  workspace: AndroidPageWorkspace,
   options?: Partial<
     UndefinedInitialDataOptions<
       ListAndroidDevicesResponse,
@@ -50,14 +56,23 @@ export const useAndroidDevices = (
   >,
 ) => {
   const client = useFleetConsoleClient();
-  const queryKey = useListAndroidDevicesQueryKey(request);
-
+  const queryKey = useListAndroidDevicesQueryKey(request, workspace);
   const devicesQuery = useQuery({
     queryKey: queryKey,
     queryFn: client.ListAndroidDevices.query(request).queryFn,
-    placeholderData: keepPreviousData, // avoid loading while switching page
+    placeholderData: (previousData, previousQuery) => {
+      // If transitioning between workspaces (e.g. Android <-> Pixel), do not
+      // retain previous devices as placeholders to avoid confusing the user.
+      const previousWorkspace = previousQuery?.queryKey.find(
+        (key): key is AndroidPageWorkspace =>
+          key === 'Android' || key === 'Pixel',
+      );
+      if (workspace && previousWorkspace && previousWorkspace !== workspace) {
+        return undefined;
+      }
+      return previousData;
+    },
     ...options,
   });
-
   return devicesQuery;
 };

@@ -54,7 +54,10 @@ export const useAndroidDeviceData = (
       ? combineAipFilters(workspaces[workspace].baseFilter, idFilter)
       : idFilter,
   });
-  const { data, error, isError, isLoading } = useAndroidDevices(request);
+  const { data, error, isError, isLoading } = useAndroidDevices(
+    request,
+    workspace,
+  );
 
   if (data) {
     return {

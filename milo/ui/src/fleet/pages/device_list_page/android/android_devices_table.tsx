@@ -110,7 +110,7 @@ export const AndroidDevicesTable = ({
   // on hidden/invisible rows.
   useEffect(() => {
     setRowSelection({});
-  }, [filterValues]);
+  }, [filterValues, workspace]);
 
   const request = useMemo(
     () =>
@@ -124,7 +124,7 @@ export const AndroidDevicesTable = ({
     [pageSize, pageToken, orderByParam, combinedAip160],
   );
 
-  const devicesQuery = useAndroidDevices(request);
+  const devicesQuery = useAndroidDevices(request, workspace);
 
   const { devices = [] } = devicesQuery.data || {};
 
