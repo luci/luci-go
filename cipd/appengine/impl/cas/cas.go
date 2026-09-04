@@ -187,6 +187,9 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *caspb.BeginUploadReque
 	var hashAlgo caspb.HashAlgo
 	var hexDigest string
 	if r.Object != nil {
+		if r.Object.HashAlgo == caspb.HashAlgo_SHA1 {
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'object': SHA1 not supported")
+		}
 		if err := common.ValidateObjectRef(r.Object, common.KnownHash); err != nil {
 			return nil, errors.Fmt("bad 'object': %w", err)
 		}
@@ -195,6 +198,8 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *caspb.BeginUploadReque
 		}
 		hashAlgo = r.Object.HashAlgo
 		hexDigest = r.Object.HexDigest
+	} else if r.HashAlgo == caspb.HashAlgo_SHA1 {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'hash_algo': SHA1 not supported")
 	} else if err := common.ValidateHashAlgo(r.HashAlgo); err != nil {
 		return nil, errors.Fmt("bad 'hash_algo': %w", err)
 	} else {

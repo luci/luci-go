@@ -648,6 +648,9 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
+	if r.Instance.HashAlgo == caspb.HashAlgo_SHA1 {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': SHA1 not supported")
+	}
 	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
@@ -717,13 +720,6 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 		}, nil
 	default:
 		return nil, err
-	}
-
-	// Warn about registering deprecated SHA1 packages. Eventually this will be
-	// forbidden completely.
-	if r.Instance.HashAlgo == caspb.HashAlgo_SHA1 {
-		logging.Warningf(ctx, "Deprecated SHA1 instance: %s (%s) from %s",
-			r.Package, common.ObjectRefToInstanceID(r.Instance), auth.CurrentIdentity(ctx))
 	}
 
 	var md []*repopb.InstanceMetadata

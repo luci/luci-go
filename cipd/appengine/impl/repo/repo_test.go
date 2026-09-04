@@ -938,11 +938,11 @@ func TestRegisterInstance(t *testing.T) {
 
 		ctx, sched := tq.TestingContext(ctx, impl.tq)
 
-		digest := strings.Repeat("a", 40)
+		digest := strings.Repeat("a", 64)
 		inst := &repopb.Instance{
 			Package: "a/b",
 			Instance: &caspb.ObjectRef{
-				HashAlgo:  caspb.HashAlgo_SHA1,
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: digest,
 			},
 		}
@@ -967,7 +967,7 @@ func TestRegisterInstance(t *testing.T) {
 			cas.BeginUploadImpl = func(_ context.Context, req *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 				assert.Loosely(t, req, should.Match(&caspb.BeginUploadRequest{
 					Object: &caspb.ObjectRef{
-						HashAlgo:  caspb.HashAlgo_SHA1,
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: digest,
 					},
 				}))
@@ -1043,12 +1043,24 @@ func TestRegisterInstance(t *testing.T) {
 			_, err := impl.RegisterInstance(ctx, &repopb.Instance{
 				Package: "a/b",
 				Instance: &caspb.ObjectRef{
-					HashAlgo:  caspb.HashAlgo_SHA1,
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: "abc",
 				},
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
+		})
+
+		t.Run("SHA1 instance rejected", func(t *ftt.Test) {
+			_, err := impl.RegisterInstance(ctx, &repopb.Instance{
+				Package: "a/b",
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("a", 40),
+				},
+			})
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'instance': SHA1 not supported"))
 		})
 
 		t.Run("No reader access", func(t *ftt.Test) {
@@ -3799,16 +3811,20 @@ func TestVSA(t *testing.T) {
 
 		ctx, _ = tq.TestingContext(ctx, impl.tq)
 
+		instRef := &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
+			HexDigest: strings.Repeat("1", 64),
+		}
 		inst := &model.Instance{
-			InstanceID: strings.Repeat("1", 40),
+			InstanceID: common.ObjectRefToInstanceID(instRef),
 			Package:    model.PackageKey(ctx, "a/pkg"),
 		}
 
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
 
 		cas.GetObjectURLImpl = func(_ context.Context, r *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error) {
-			assert.Loosely(t, r.Object.HashAlgo, should.Equal(caspb.HashAlgo_SHA1))
-			assert.Loosely(t, r.Object.HexDigest, should.Equal(inst.InstanceID))
+			assert.Loosely(t, r.Object.HashAlgo, should.Equal(caspb.HashAlgo_SHA256))
+			assert.Loosely(t, r.Object.HexDigest, should.Equal(instRef.HexDigest))
 			return &caspb.ObjectURL{
 				SignedUrl: fmt.Sprintf("http://example.com/%s?d=%s", r.Object.HexDigest, r.DownloadFilename),
 			}, nil
@@ -3823,8 +3839,8 @@ func TestVSA(t *testing.T) {
 				resp, err := impl.RegisterInstance(ctx, &repopb.Instance{
 					Package: "a/pkg",
 					Instance: &caspb.ObjectRef{
-						HashAlgo:  caspb.HashAlgo_SHA1,
-						HexDigest: strings.Repeat("2", 40),
+						HashAlgo:  caspb.HashAlgo_SHA256,
+						HexDigest: strings.Repeat("2", 64),
 					},
 					Attestations: "attestation bundle",
 				})
@@ -3907,8 +3923,8 @@ func TestVSA(t *testing.T) {
 				resp, err := impl.RegisterInstance(ctx, &repopb.Instance{
 					Package: "a/pkg",
 					Instance: &caspb.ObjectRef{
-						HashAlgo:  caspb.HashAlgo_SHA1,
-						HexDigest: strings.Repeat("e", 40),
+						HashAlgo:  caspb.HashAlgo_SHA256,
+						HexDigest: strings.Repeat("e", 64),
 					},
 					Attestations: "some attestations",
 				})

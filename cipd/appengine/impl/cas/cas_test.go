@@ -360,6 +360,25 @@ func TestBeginUpload(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("bad 'hash_algo'"))
 		})
 
+		t.Run("SHA1 object rejected", func(t *ftt.Test) {
+			_, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				Object: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("a", 40),
+				},
+			})
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'object': SHA1 not supported"))
+		})
+
+		t.Run("SHA1 hash_algo rejected", func(t *ftt.Test) {
+			_, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				HashAlgo: caspb.HashAlgo_SHA1,
+			})
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad 'hash_algo': SHA1 not supported"))
+		})
+
 		t.Run("Mismatch in hash_algo", func(t *ftt.Test) {
 			_, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
 				Object: &caspb.ObjectRef{
