@@ -152,9 +152,20 @@ LUCI Milo UI is a shared monorepo frontend serving multiple business domains (`s
    - **Production Promotion**: Do NOT add `'prod'` to `allowedEnvironments` unless the feature is production-ready AND explicitly requested by the user.
    - **No Ad-Hoc Flagging**: Never bypass the central feature flag system using ad-hoc global variables, custom local storage keys, or raw `window.location` checks. Always use `createFeatureFlag` and `useFeatureFlag` from `@/common/feature_flags`.
 
-4. **Hermetic Verification & Workspace Hygiene**:
-   - **Rule**: Run type checks (`npm run type-check`) and unit tests (`npm run test`) before creating or uploading CLs.
-   - **Temp Files**: Write transient test outputs strictly to `milo/ui/.tmp/`. Never run destructive commands like `git clean -fd` or `rm` in inherited workspaces.
+4. **Hermetic Verification & Workspace Hygiene (T-C-A-V)**:
+   - **Trigger**: Prior to pushing any CL patchset or claiming task completion.
+   - **Constraints**: Write transient test outputs strictly to `milo/ui/.tmp/`. Never run destructive commands like `git clean -fd` or `rm` in inherited workspaces.
+   - **Algorithm**:
+     1. Clean working tree: `git status --porcelain` (0 untracked files outside `.tmp/`).
+     2. Type Check: `npm run type-check` (0 errors).
+     3. Incremental Lint: `npx eslint .` (0 errors, 0 warnings).
+     4. Unit Tests: `npm run test` (100% test suites pass).
+     5. Presubmit: `PATH=$PATH:~/depot_tools git cl presubmit` (0 errors, 0 warnings).
+     6. Tryjobs: `PATH=$PATH:~/depot_tools git cl try` -> Poll `git cl try-results` until all builders reach `SUCCESS`.
+   - **Verification Gate**: All steps 1–6 pass cleanly with 0 errors.
+
+5. **Repository Guidelines Reference**:
+   - For repository-wide Gerrit CL rebase protocols ($CL_A \rightarrow CL_B$) and meta-infrastructure boundary rules (`package.json`, `PRESUBMIT.py`), refer directly to [`infra/.agents/AGENTS.md`](../../../../../../../.agents/AGENTS.md).
 
 ### Making pRPC Queries
 

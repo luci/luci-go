@@ -48,6 +48,10 @@ bash src/fleet/gen_ts_proto.sh
 ## Architectural Principles & Decisions
 Architecture decision records live in `docs/decisions/`:
 - **Keep Status Current**: Update decision docs as migrations progress to reflect current technical status.
+- **Cross-Link Core Framework Guides**: Avoid duplicating core LUCI Milo UI framework documentation. Link to framework guides using relative Markdown links:
+  - Feature Flags: [`../../docs/guides/using_feature_flags.md`](../../docs/guides/using_feature_flags.md)
+  - Authentication & Authorization: [`../../docs/guides/authentication_and_authorization.md`](../../docs/guides/authentication_and_authorization.md)
+  - Pagination: [`../../docs/guides/effective_pagination.md`](../../docs/guides/effective_pagination.md)
 
 ## Available Skills
 Detailed procedural workflows live in [.agents/skills/](./.agents/skills/):
