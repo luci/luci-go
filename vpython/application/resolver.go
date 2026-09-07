@@ -85,26 +85,67 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 
 		if filepath.Base(specPath) == "vpython.toml" || strings.EqualFold(filepath.Ext(specPath), ".toml") {
 			projectSpec, err := standard.ParseVpythonTOML(specPath)
-			if err != nil {
-				return nil, errors.Fmt("explicit TOML spec %q is invalid: %w", specPath, err)
+			if err == nil {
+				return &DiscoveredFlow{
+					Flow:            FlowUV,
+					StandardSpec:    projectSpec,
+					ProjectRoot:     filepath.Dir(specPath),
+					SpecPath:        specPath,
+					FromVpythonTOML: true,
+				}, nil
 			}
-			return &DiscoveredFlow{
-				Flow:            FlowUV,
-				StandardSpec:    projectSpec,
-				ProjectRoot:     filepath.Dir(specPath),
-				SpecPath:        specPath,
-				FromVpythonTOML: true,
-			}, nil
+
+			// If explicit TOML spec was not found, search for companion legacy specs.
+			if _, statErr := os.Stat(specPath); statErr != nil && errors.Is(statErr, os.ErrNotExist) {
+				for _, cand := range findLegacyCompanionCandidates(specPath) {
+					if st, errStat := os.Stat(cand); errStat == nil && !st.IsDir() {
+						var sp vpythonAPI.Spec
+						if errLoad := spec.Load(cand, &sp); errLoad == nil {
+							logging.Infof(ctx, "Explicit TOML spec %q was not found; redirected to legacy companion spec %q", specPath, cand)
+							return &DiscoveredFlow{
+								Flow:        FlowLegacy,
+								VpythonSpec: sp.Clone(),
+								SpecPath:    cand,
+							}, nil
+						}
+					}
+				}
+			}
+
+			return nil, errors.Fmt("explicit TOML spec %q is invalid: %w", specPath, err)
 		}
+
 		// Try parsing as legacy spec.
 		var sp vpythonAPI.Spec
-		if err := spec.Load(specPath, &sp); err != nil {
-			return nil, err
+		loadErr := spec.Load(specPath, &sp)
+		if loadErr == nil {
+			return &DiscoveredFlow{
+				Flow:        FlowLegacy,
+				VpythonSpec: sp.Clone(),
+				SpecPath:    specPath,
+			}, nil
 		}
-		return &DiscoveredFlow{
-			Flow:        FlowLegacy,
-			VpythonSpec: sp.Clone(),
-		}, nil
+
+		// If explicit legacy spec was not found, search for standard companion specs.
+		if _, statErr := os.Stat(specPath); statErr != nil && errors.Is(statErr, os.ErrNotExist) {
+			for _, cand := range findStandardCompanionCandidates(specPath) {
+				if st, errStat := os.Stat(cand); errStat == nil && !st.IsDir() {
+					projectSpec, errTOML := standard.ParseVpythonTOML(cand)
+					if errTOML == nil && projectSpec != nil {
+						logging.Infof(ctx, "Explicit legacy spec %q was not found; redirected to standard companion spec %q", specPath, cand)
+						return &DiscoveredFlow{
+							Flow:            FlowUV,
+							StandardSpec:    projectSpec,
+							ProjectRoot:     filepath.Dir(cand),
+							SpecPath:        cand,
+							FromVpythonTOML: true,
+						}, nil
+					}
+				}
+			}
+		}
+
+		return nil, loadErr
 	}
 
 	// Check adjacent companion spec (Partner file) first to support symlink wrappers.
@@ -236,4 +277,59 @@ func loadDefaultFlow(defaultSpecPath string) (*DiscoveredFlow, error) {
 		Flow:        FlowLegacy,
 		VpythonSpec: sp,
 	}, nil
+}
+
+func findLegacyCompanionCandidates(specPath string) []string {
+	dir := filepath.Dir(specPath)
+	base := filepath.Base(specPath)
+	if base == "vpython.toml" {
+		return []string{
+			filepath.Join(dir, ".vpython3"),
+			filepath.Join(dir, ".vpython"),
+		}
+	}
+	var prefix string
+	if strings.HasSuffix(base, ".vpython.toml") {
+		prefix = strings.TrimSuffix(base, ".vpython.toml")
+	} else if strings.EqualFold(filepath.Ext(base), ".toml") {
+		prefix = strings.TrimSuffix(base, filepath.Ext(base))
+	}
+	if prefix == "" {
+		return []string{
+			filepath.Join(dir, ".vpython3"),
+			filepath.Join(dir, ".vpython"),
+		}
+	}
+	return []string{
+		filepath.Join(dir, "."+prefix+".vpython3"),
+		filepath.Join(dir, prefix+".vpython3"),
+		filepath.Join(dir, prefix+".py.vpython3"),
+		filepath.Join(dir, "."+prefix+".vpython"),
+		filepath.Join(dir, prefix+".vpython"),
+		filepath.Join(dir, ".vpython3"),
+		filepath.Join(dir, ".vpython"),
+	}
+}
+
+func findStandardCompanionCandidates(specPath string) []string {
+	dir := filepath.Dir(specPath)
+	base := filepath.Base(specPath)
+	if base == ".vpython3" || base == ".vpython" {
+		return []string{
+			filepath.Join(dir, "vpython.toml"),
+		}
+	}
+	raw := strings.TrimSuffix(strings.TrimSuffix(base, ".vpython3"), ".vpython")
+	clean := strings.TrimPrefix(raw, ".")
+	scriptBase := strings.TrimSuffix(clean, ".py")
+
+	candidates := make([]string, 0, 4)
+	if clean != "" {
+		candidates = append(candidates, filepath.Join(dir, clean+".vpython.toml"))
+	}
+	if scriptBase != "" && scriptBase != clean {
+		candidates = append(candidates, filepath.Join(dir, scriptBase+".vpython.toml"))
+	}
+	candidates = append(candidates, filepath.Join(dir, "vpython.toml"))
+	return candidates
 }

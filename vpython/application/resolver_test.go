@@ -282,3 +282,146 @@ requires-python = ">=3.8"
 		})
 	})
 }
+
+func TestResolveFlow_ExplicitSpecFallback(t *testing.T) {
+	ctx := t.Context()
+
+	ftt.Run("ExplicitSpecFallback", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
+
+		// Scenario b/557060880: caller explicitly requests .vpython3, but repo migrated to vpython.toml.
+		t.Run("legacy_to_standard", func(t *ftt.Test) {
+			tomlPath := filepath.Join(tempDir, "vpython.toml")
+			tomlContent := `
+requires-python = ">=3.11"
+dependencies = ["requests>=2.0"]
+`
+			err := os.WriteFile(tomlPath, []byte(strings.TrimSpace(tomlContent)), 0644)
+			assert.NoErr(t, err)
+
+			// Caller explicitly requests .vpython3 which does NOT exist on disk.
+			explicitSpec := filepath.Join(tempDir, ".vpython3")
+			res, err := ResolveFlow(ctx, python.NoTarget{}, explicitSpec, "", ".vpython3", tempDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Flow, should.Equal(FlowUV))
+			assert.Loosely(t, res.SpecPath, should.Equal(tomlPath))
+			assert.Loosely(t, res.StandardSpec.RequiresPython, should.Equal(">=3.11"))
+			assert.Loosely(t, res.StandardSpec.Dependencies, should.Resemble([]string{"requests>=2.0"}))
+		})
+
+		// Scenario recipes-py revert: caller explicitly requests vpython.toml, but pinned repo only has .vpython3.
+		t.Run("standard_to_legacy", func(t *ftt.Test) {
+			legacyPath := filepath.Join(tempDir, ".vpython3")
+			legacyContent := `
+python_version: "3.11"
+wheel: <
+  name: "infra/python/wheels/six-py2_py3"
+  version: "version:1.16.0"
+>
+`
+			err := os.WriteFile(legacyPath, []byte(strings.TrimSpace(legacyContent)), 0644)
+			assert.NoErr(t, err)
+
+			// Caller explicitly requests vpython.toml which does NOT exist on disk.
+			explicitSpec := filepath.Join(tempDir, "vpython.toml")
+			res, err := ResolveFlow(ctx, python.NoTarget{}, explicitSpec, "", ".vpython3", tempDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Flow, should.Equal(FlowLegacy))
+			assert.Loosely(t, res.SpecPath, should.Equal(legacyPath))
+			assert.Loosely(t, res.VpythonSpec.PythonVersion, should.Equal("3.11"))
+			assert.Loosely(t, len(res.VpythonSpec.Wheel), should.Equal(1))
+		})
+
+		// Caller explicitly requests named legacy spec (e.g. gsutil.py.vpython3), repo has gsutil.vpython.toml.
+		t.Run("named_legacy_to_standard", func(t *ftt.Test) {
+			subDir := filepath.Join(tempDir, "named_spec")
+			err := os.MkdirAll(subDir, 0755)
+			assert.NoErr(t, err)
+
+			tomlPath := filepath.Join(subDir, "gsutil.vpython.toml")
+			tomlContent := `
+requires-python = ">=3.11"
+dependencies = ["google-cloud-storage>=2.0"]
+`
+			err = os.WriteFile(tomlPath, []byte(strings.TrimSpace(tomlContent)), 0644)
+			assert.NoErr(t, err)
+
+			// Caller explicitly requests gsutil.py.vpython3 or gsutil.vpython3.
+			explicitSpec := filepath.Join(subDir, "gsutil.py.vpython3")
+			res, err := ResolveFlow(ctx, python.NoTarget{}, explicitSpec, "", ".vpython3", subDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Flow, should.Equal(FlowUV))
+			assert.Loosely(t, res.SpecPath, should.Equal(tomlPath))
+			assert.Loosely(t, res.StandardSpec.Dependencies, should.Resemble([]string{"google-cloud-storage>=2.0"}))
+		})
+
+		// Caller explicitly requests named toml (e.g. pycharm.vpython.toml), repo has .pycharm.vpython3.
+		t.Run("named_standard_to_legacy", func(t *ftt.Test) {
+			subDir := filepath.Join(tempDir, "debugger_spec")
+			err := os.MkdirAll(subDir, 0755)
+			assert.NoErr(t, err)
+
+			legacyPath := filepath.Join(subDir, ".pycharm.vpython3")
+			legacyContent := `
+python_version: "3.11"
+wheel: <
+  name: "infra/python/wheels/pydevd-py3"
+  version: "version:2.8.0"
+>
+`
+			err = os.WriteFile(legacyPath, []byte(strings.TrimSpace(legacyContent)), 0644)
+			assert.NoErr(t, err)
+
+			// Caller explicitly requests pycharm.vpython.toml.
+			explicitSpec := filepath.Join(subDir, "pycharm.vpython.toml")
+			res, err := ResolveFlow(ctx, python.NoTarget{}, explicitSpec, "", ".vpython3", subDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Flow, should.Equal(FlowLegacy))
+			assert.Loosely(t, res.SpecPath, should.Equal(legacyPath))
+			assert.Loosely(t, res.VpythonSpec.PythonVersion, should.Equal("3.11"))
+		})
+
+		// Explicit spec and all candidate companions are missing.
+		t.Run("nonexistent", func(t *ftt.Test) {
+			missingSpec := filepath.Join(tempDir, "completely_missing.vpython3")
+			_, err := ResolveFlow(ctx, python.NoTarget{}, missingSpec, "", ".vpython3", tempDir)
+			assert.Loosely(t, err, should.ErrLike(os.ErrNotExist))
+
+			missingToml := filepath.Join(tempDir, "completely_missing.vpython.toml")
+			_, err = ResolveFlow(ctx, python.NoTarget{}, missingToml, "", ".vpython3", tempDir)
+			assert.Loosely(t, err, should.ErrLike(os.ErrNotExist))
+		})
+
+		// Explicit spec exists on disk, so it takes precedence without fallback even if companion exists.
+		t.Run("explicit_precedence", func(t *ftt.Test) {
+			subDir := filepath.Join(tempDir, "both_exist")
+			err := os.MkdirAll(subDir, 0755)
+			assert.NoErr(t, err)
+
+			legacyPath := filepath.Join(subDir, ".vpython3")
+			legacyContent := `python_version: "3.8"`
+			err = os.WriteFile(legacyPath, []byte(strings.TrimSpace(legacyContent)), 0644)
+			assert.NoErr(t, err)
+
+			tomlPath := filepath.Join(subDir, "vpython.toml")
+			tomlContent := `
+requires-python = ">=3.11"
+dependencies = ["six"]
+`
+			err = os.WriteFile(tomlPath, []byte(strings.TrimSpace(tomlContent)), 0644)
+			assert.NoErr(t, err)
+
+			// Explicitly asking for .vpython3 uses .vpython3
+			resLegacy, err := ResolveFlow(ctx, python.NoTarget{}, legacyPath, "", ".vpython3", subDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, resLegacy.Flow, should.Equal(FlowLegacy))
+			assert.Loosely(t, resLegacy.VpythonSpec.PythonVersion, should.Equal("3.8"))
+
+			// Explicitly asking for vpython.toml uses vpython.toml
+			resUV, err := ResolveFlow(ctx, python.NoTarget{}, tomlPath, "", ".vpython3", subDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, resUV.Flow, should.Equal(FlowUV))
+			assert.Loosely(t, resUV.StandardSpec.RequiresPython, should.Equal(">=3.11"))
+		})
+	})
+}
