@@ -17,16 +17,20 @@ import { ANDROID_PLATFORM, PIXEL_PLATFORM } from './constants/paths';
 export type AndroidPageWorkspace = 'Android' | 'Pixel';
 type WorkspaceConfiguration = Record<
   AndroidPageWorkspace,
-  { baseFilter: string; baseUrl: string }
+  { baseFilter: string; baseUrl: string; docsUrl: string }
 >;
 
 export const workspaces: WorkspaceConfiguration = {
   Pixel: {
     baseFilter: '("host_group" = "pte_labs")',
     baseUrl: PIXEL_PLATFORM,
+    docsUrl:
+      'https://g3doc.corp.google.com/company/teams/pte-labs/index.md?cl=head',
   },
   Android: {
     baseFilter: 'host_group != "pte_labs"',
     baseUrl: ANDROID_PLATFORM,
+    docsUrl:
+      'https://g3doc.corp.google.com/company/teams/chrome/ops/fleet/flops/android/labtechs.md?cl=head#device-terminology',
   },
 };

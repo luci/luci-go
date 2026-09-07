@@ -120,7 +120,9 @@ export const UtilizationTooltipContent = ({
   </Box>
 );
 
-export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
+export const getAndroidColumnOverrides: (
+  workspace: AndroidPageWorkspace,
+) => Record<string, AndroidColumnOverride> = (workspace) => ({
   id: {
     size: 180,
     minSize: 120,
@@ -206,8 +208,7 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
       if (stateValue === '') return <></>;
 
       return renderChipCell<AndroidDevice>({
-        getValueOrUrl: (_1, _2) =>
-          'https://g3doc.corp.google.com/company/teams/chrome/ops/fleet/flops/android/labtechs.md?cl=head#device-terminology',
+        getValueOrUrl: (_1, _2) => workspaces[workspace].docsUrl,
         getColor: getAndroidStatusColor,
         overrideValue: stateValue.toUpperCase() as StateUnion,
         getTrackingEvent: (value) => ({
@@ -393,4 +394,4 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
       return <EllipsisTooltip>{formatted}</EllipsisTooltip>;
     },
   },
-};
+});

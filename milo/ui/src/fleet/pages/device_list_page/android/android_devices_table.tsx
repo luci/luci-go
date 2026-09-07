@@ -97,6 +97,7 @@ export const AndroidDevicesTable = ({
   const [_, setSearchParams] = useSyncedSearchParams();
 
   const { filterValues, aip160 } = useAndroidFilters(
+    workspace,
     (searchParams) => emptyPageTokenUpdater(pagerCtx)(searchParams),
     showAvgUtilization,
   );

@@ -62,7 +62,7 @@ export const AndroidDevicesPage = ({
     warnings: filterWarnings,
     setFiltersBatch,
     aip160,
-  } = useAndroidFilters(handleFilterChange, showAvgUtilization);
+  } = useAndroidFilters(workspace, handleFilterChange, showAvgUtilization);
 
   const {
     mrtColumnManager,

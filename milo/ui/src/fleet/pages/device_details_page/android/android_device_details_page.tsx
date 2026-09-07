@@ -49,12 +49,9 @@ import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { ANDROID_COLUMN_OVERRIDES } from '../../device_list_page/android/android_fields';
+import { getAndroidColumnOverrides } from '../../device_list_page/android/android_fields';
 
 import { useAndroidDeviceData } from './use_android_device_data';
-
-// Omit the ID override for the details page so that it renders as plain text (no self-links)
-const { id: _, ...DETAILS_COLUMN_OVERRIDES } = ANDROID_COLUMN_OVERRIDES;
 
 const useNavigatedFromLink = () => {
   const { state } = useLocation();
@@ -110,8 +107,11 @@ export const AndroidDeviceDetailsPage = ({
 
   const columns = useMemo<
     MRT_ColumnDef<{ key: string; value: React.ReactNode }>[]
-  >(
-    () => [
+  >(() => {
+    // Omit the ID override for the details page so that it renders as plain text (no self-links)
+    const { id: _, ...DETAILS_COLUMN_OVERRIDES } =
+      getAndroidColumnOverrides(workspace);
+    return [
       {
         accessorKey: 'key',
         header: 'Label',
@@ -138,9 +138,8 @@ export const AndroidDeviceDetailsPage = ({
           return value ?? null;
         },
       },
-    ],
-    [device, workspace],
-  );
+    ];
+  }, [device, workspace]);
 
   const labels = useMemo<{ key: string; value: React.ReactNode }[]>(() => {
     if (!device) return [];

@@ -25,13 +25,15 @@ import {
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { enablePTE } from '@/fleet/features';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
+import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { ANDROID_COLUMN_OVERRIDES } from './android_fields';
+import { getAndroidColumnOverrides } from './android_fields';
 import { ANDROID_EXTRA_FILTERS } from './android_filters';
 
 export const useAndroidFilters = (
+  workspace: AndroidPageWorkspace,
   onFilterChange?: (searchParams: URLSearchParams) => URLSearchParams | void,
   showAvgUtilization = false,
 ) => {
@@ -52,6 +54,9 @@ export const useAndroidFilters = (
     },
     [onFilterChange, trackEvent],
   );
+  const ANDROID_COLUMN_OVERRIDES = useMemo(() => {
+    return getAndroidColumnOverrides(workspace);
+  }, [workspace]);
 
   const isPTEEnabled = useFeatureFlag(enablePTE);
   const filterOptions = useMemo(() => {
