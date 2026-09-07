@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
@@ -122,9 +123,9 @@ func TestFetchTailLines(t *testing.T) {
 
 		t.Run(`multi-chunk where only one chunk is needed`, func(t *ftt.Test) {
 			content := "line 1\nline 2\nline 3\nline 4\nline 5\n"
-			requestCount := 0
+			var requestCount atomic.Int32
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				requestCount++
+				requestCount.Add(1)
 				serveHTTPRange(w, r, []byte(content))
 			}))
 			defer server.Close()
@@ -134,14 +135,14 @@ func TestFetchTailLines(t *testing.T) {
 			err := FetchTailLinesWithInitialChunkSize(ctx, server.Client(), server.URL, 2, 0, 25, &buf)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, buf.String(), should.Equal("line 4\nline 5\n"))
-			assert.Loosely(t, requestCount, should.Equal(1))
+			assert.Loosely(t, requestCount.Load(), should.Equal(1))
 		})
 
 		t.Run(`multi-chunk where two chunks are needed`, func(t *ftt.Test) {
 			content := "line 1: aaaa\nline 2: bbbb\nline 3: cccc\nline 4: dddd\n"
-			requestCount := 0
+			var requestCount atomic.Int32
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				requestCount++
+				requestCount.Add(1)
 				serveHTTPRange(w, r, []byte(content))
 			}))
 			defer server.Close()
@@ -152,7 +153,7 @@ func TestFetchTailLines(t *testing.T) {
 			err := FetchTailLinesWithInitialChunkSize(ctx, server.Client(), server.URL, 3, 0, 25, &buf)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, buf.String(), should.Equal("line 2: bbbb\nline 3: cccc\nline 4: dddd\n"))
-			assert.Loosely(t, requestCount, should.Equal(2))
+			assert.Loosely(t, requestCount.Load(), should.Equal(2))
 		})
 
 		t.Run(`chunk boundary in middle of line`, func(t *ftt.Test) {
@@ -236,5 +237,19 @@ func TestFetchTailLines(t *testing.T) {
 		assert.Loosely(t, ok, should.BeTrue)
 		assert.Loosely(t, run.Flags.Lookup("o"), should.NotBeNil)
 		assert.Loosely(t, run.Flags.Lookup("output"), should.NotBeNil)
+
+		unknownCmd := TailCmd(base.NewAuthFlags(), ParentTypeUnknown)
+		unknownRun, ok := unknownCmd.CommandRun().(*artifactTailRun)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, unknownRun.Flags.Lookup("invocationid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("workunitid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("testid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("resultid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("artifactid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("legacy"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("n"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("c"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("o"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("output"), should.NotBeNil)
 	})
 }

@@ -31,18 +31,54 @@ import (
 
 type artifactFetcher func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error
 
+// ResolveParentType determines whether the target is a test result or work unit based on provided IDs.
+func ResolveParentType(invID, wuID, testID, resultID string) (ParentType, error) {
+	if testID != "" || resultID != "" {
+		if invID == "" || testID == "" || resultID == "" {
+			return ParentTypeUnknown, errors.New("flags -invocationid, -testid, and -resultid are required for test result artifacts (run 'luci ids <url>' to extract ids)")
+		}
+		return ParentTypeTestResult, nil
+	}
+	if wuID != "" {
+		if invID == "" {
+			return ParentTypeUnknown, errors.New("flags -invocationid and -workunitid are required (run 'luci ids <url>' to extract ids)")
+		}
+		return ParentTypeWorkUnit, nil
+	}
+	if invID == "" {
+		return ParentTypeUnknown, errors.New("flags -invocationid and either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) are required (run 'luci ids <url>' to extract ids)")
+	}
+	return ParentTypeUnknown, errors.New("either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) must be specified (run 'luci ids <url>' to extract ids)")
+}
+
 // ValidateArtifactFlags verifies that required ID flags are provided for an artifact query.
 func ValidateArtifactFlags(parentType ParentType, invID, wuID, testID, resultID, artID string) error {
 	if artID == "" {
 		return errors.New("flag -artifactid is required (run 'luci ids <url>' to extract ids)")
 	}
-	if parentType == ParentTypeTestResult {
+	switch parentType {
+	case ParentTypeTestResult:
 		if invID == "" || testID == "" || resultID == "" {
 			return errors.New("flags -invocationid, -testid, -resultid, and -artifactid are required (run 'luci ids <url>' to extract ids)")
 		}
-	} else {
+	case ParentTypeWorkUnit:
 		if invID == "" || wuID == "" {
 			return errors.New("flags -invocationid, -workunitid, and -artifactid are required (run 'luci ids <url>' to extract ids)")
+		}
+	default:
+		if testID != "" || resultID != "" {
+			if invID == "" || testID == "" || resultID == "" {
+				return errors.New("flags -invocationid, -testid, -resultid, and -artifactid are required for test result artifacts (run 'luci ids <url>' to extract ids)")
+			}
+		} else if wuID != "" {
+			if invID == "" {
+				return errors.New("flags -invocationid, -workunitid, and -artifactid are required (run 'luci ids <url>' to extract ids)")
+			}
+		} else {
+			if invID == "" {
+				return errors.New("flags -invocationid, -artifactid, and either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) are required (run 'luci ids <url>' to extract ids)")
+			}
+			return errors.New("either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) must be specified (run 'luci ids <url>' to extract ids)")
 		}
 	}
 	return nil
@@ -73,6 +109,13 @@ func ResolveTestResultResourceName(ctx context.Context, client pb.ResultDBClient
 
 // ResolveTargetResourceName resolves the canonical resource name for a test result or work unit.
 func ResolveTargetResourceName(ctx context.Context, client pb.ResultDBClient, parentType ParentType, invID, wuID, testID, resultID string, legacy bool) (string, error) {
+	if parentType == ParentTypeUnknown {
+		var err error
+		parentType, err = ResolveParentType(invID, wuID, testID, resultID)
+		if err != nil {
+			return "", err
+		}
+	}
 	if parentType == ParentTypeWorkUnit {
 		return base.FormatWorkUnitResourceName(invID, wuID), nil
 	}
@@ -217,4 +260,5 @@ type ParentType int
 const (
 	ParentTypeTestResult ParentType = iota
 	ParentTypeWorkUnit
+	ParentTypeUnknown
 )

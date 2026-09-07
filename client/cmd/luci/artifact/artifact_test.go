@@ -50,7 +50,28 @@ func TestArtifactCmds(t *testing.T) {
 		assert.Loosely(t, topCmd, should.NotBeNil)
 		assert.Loosely(t, topCmd.UsageLine, should.Equal("artifact <subcommand>"))
 		run := topCmd.CommandRun()
-		assert.Loosely(t, run.Run(nil, []string{}, nil), should.Equal(1))
+		assert.Loosely(t, run.Run(nil, []string{}, nil), should.Equal(0))
 		assert.Loosely(t, run.Run(nil, []string{"--help"}, nil), should.Equal(0))
+		assert.Loosely(t, run.Run(nil, []string{"help"}, nil), should.Equal(0))
+		assert.Loosely(t, run.Run(nil, []string{"list", "--help"}, nil), should.Equal(0))
+		assert.Loosely(t, run.Run(nil, []string{"get", "--help"}, nil), should.Equal(0))
+		assert.Loosely(t, run.Run(nil, []string{"head", "--help"}, nil), should.Equal(0))
+		assert.Loosely(t, run.Run(nil, []string{"tail", "--help"}, nil), should.Equal(0))
+
+		unknownListCmd := ListCmd(nil, ParentTypeUnknown)
+		assert.Loosely(t, unknownListCmd, should.NotBeNil)
+		assert.Loosely(t, unknownListCmd.ShortDesc, should.Equal("List artifacts for a work unit or test result"))
+
+		unknownGetCmd := GetCmd(nil, ParentTypeUnknown)
+		assert.Loosely(t, unknownGetCmd, should.NotBeNil)
+		assert.Loosely(t, unknownGetCmd.ShortDesc, should.Equal("Get a work unit or test result artifact"))
+
+		unknownHeadCmd := HeadCmd(nil, ParentTypeUnknown)
+		assert.Loosely(t, unknownHeadCmd, should.NotBeNil)
+		assert.Loosely(t, unknownHeadCmd.ShortDesc, should.Equal("Print the first N lines of a work unit or test result artifact"))
+
+		unknownTailCmd := TailCmd(nil, ParentTypeUnknown)
+		assert.Loosely(t, unknownTailCmd, should.NotBeNil)
+		assert.Loosely(t, unknownTailCmd.ShortDesc, should.Equal("Print the last N lines of a work unit or test result artifact"))
 	})
 }

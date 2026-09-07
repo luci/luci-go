@@ -50,10 +50,11 @@ func getApplication() *cli.Application {
 			"  3. Inspect an individual test result:\n" +
 			"     $ luci test-result get -invocationid build-123 -testid ninja://chrome/test -resultid 0\n\n" +
 			"  4. List and inspect test result or work unit artifacts:\n" +
-			"     $ luci test-result artifact list -invocationid build-123 -testid ninja://chrome/test -resultid 0\n" +
-			"     $ luci test-result artifact get -invocationid build-123 -testid ninja://chrome/test -resultid 0 -artifactid output.log\n" +
-			"     $ luci work-unit get -invocationid build-123 -workunitid run-tests\n" +
-			"     $ luci work-unit artifact list -invocationid build-123 -workunitid run-tests",
+			"     $ luci artifact list -invocationid build-123 -workunitid run-tests\n" +
+			"     $ luci artifact get -invocationid build-123 -workunitid run-tests -artifactid test.xml\n" +
+			"     $ luci artifact list -invocationid build-123 -testid ninja://chrome/test -resultid 0\n" +
+			"     $ luci artifact get -invocationid build-123 -testid ninja://chrome/test -resultid 0 -artifactid output.log\n" +
+			"     $ luci work-unit get -invocationid build-123 -workunitid run-tests",
 
 		Context: func(ctx context.Context) context.Context {
 			return gologger.StdConfig.Use(ctx)

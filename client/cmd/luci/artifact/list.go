@@ -17,6 +17,7 @@ package artifact
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -30,18 +31,31 @@ import (
 )
 
 func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
-	usage := "list -invocationid <invocation_id> -testid <test_id> -resultid <result_id>"
-	desc := "List artifacts for a test result"
-	if parentType == ParentTypeWorkUnit {
+	var usage, desc, longDesc string
+	switch parentType {
+	case ParentTypeTestResult:
+		usage = "list -invocationid <invocation_id> -testid <test_id> -resultid <result_id>"
+		desc = "List artifacts for a test result"
+		longDesc = desc + " in ResultDB by explicit ID flags.\n\n" +
+			"Ancestor work units are also checked and a notice is displayed if artifacts exist."
+	case ParentTypeWorkUnit:
 		usage = "list -invocationid <invocation_id> -workunitid <work_unit_id>"
 		desc = "List artifacts for a work unit"
+		longDesc = desc + " in ResultDB by explicit ID flags.\n\n" +
+			"Ancestor work units are also checked and a notice is displayed if artifacts exist."
+	default:
+		usage = "list -invocationid <invocation_id> (-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>)"
+		desc = "List artifacts for a work unit or test result"
+		longDesc = desc + " in ResultDB by explicit ID flags.\n\n" +
+			"Specify -invocationid and -workunitid for work unit artifacts,\n" +
+			"or -invocationid, -testid, and -resultid for test result artifacts.\n\n" +
+			"Ancestor work units are also checked and a notice is displayed if artifacts exist."
 	}
 
 	return &subcommands.Command{
 		UsageLine: usage,
 		ShortDesc: desc,
-		LongDesc: desc + " in ResultDB by explicit ID flags.\n\n" +
-			"Ancestor work units are also checked and a notice is displayed if artifacts exist.",
+		LongDesc:  longDesc,
 		CommandRun: func() subcommands.CommandRun {
 			r := &artifactListRun{af: af, parentType: parentType}
 			if r.af != nil {
@@ -54,8 +68,13 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
+			} else if parentType == ParentTypeWorkUnit {
+				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
 			} else {
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
+				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			}
 			r.Flags.IntVar(&r.maxArtifacts, "max-artifacts", 100, "Maximum number of artifacts to display (default: 100, 0 for all)")
 			r.Flags.BoolVar(&r.allArtifacts, "all", false, "Show all artifacts without truncation")
@@ -102,7 +121,15 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 
-	if r.parentType == ParentTypeTestResult {
+	effectiveParentType := r.parentType
+	if effectiveParentType == ParentTypeUnknown {
+		var err error
+		effectiveParentType, err = ResolveParentType(r.invocationID, r.workUnitID, r.testID, r.resultID)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			return 1
+		}
+	} else if effectiveParentType == ParentTypeTestResult {
 		if r.invocationID == "" || r.testID == "" || r.resultID == "" {
 			fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, and -resultid are required (run 'luci ids <url>' to extract ids)\n")
 			return 1
@@ -114,7 +141,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		}
 	}
 
-	cleanTarget, err := ResolveTargetResourceName(ctx, client, r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.legacy)
+	cleanTarget, err := ResolveTargetResourceName(ctx, client, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.legacy)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
@@ -125,7 +152,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		maxArtifacts = 0
 	}
 
-	if r.parentType == ParentTypeTestResult {
+	if effectiveParentType == ParentTypeTestResult {
 		trArtifacts, err := QueryAllArtifacts(ctx, client, cleanTarget)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to list artifacts for test result %q: %s\n", cleanTarget, err)
@@ -144,7 +171,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		format.PrintArtifactList(trArtifacts[:displayedCount])
 
 		if !r.legacy {
-			printAncestorWorkUnitNotices(ctx, client, cleanTarget, r.parentType)
+			printAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
 		}
 		return 0
 	}
@@ -167,11 +194,11 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	}
 	format.PrintArtifactList(wuArtifacts[:displayedCount])
 
-	printAncestorWorkUnitNotices(ctx, client, cleanTarget, r.parentType)
+	printAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
 	return 0
 }
 
-func printAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient, target string, parentType ParentType) {
+func printAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient, target string, parentType ParentType, out io.Writer) {
 	var wuToCheck []string
 	visited := make(map[string]bool)
 
@@ -226,7 +253,7 @@ func printAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient,
 	}
 
 	if len(withArtifacts) > 0 {
-		fmt.Println("Work Unit Artifacts:")
+		fmt.Fprintln(out, "Work Unit Artifacts:")
 		for _, info := range withArtifacts {
 			artLabel := "artifacts"
 			countStr := fmt.Sprintf("%d", info.count)
@@ -240,9 +267,9 @@ func printAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient,
 			if wuID != "" && wuID != "root" {
 				wuLabel = fmt.Sprintf("Work unit %s", wuID)
 			}
-			fmt.Printf("  - %s contains %s %s. Run 'luci work-unit artifact list -invocationid %s -workunitid %s' to view.\n", wuLabel, countStr, artLabel, invID, wuID)
+			fmt.Fprintf(out, "  - %s contains %s %s. Run 'luci work-unit artifact list -invocationid %s -workunitid %s' to view.\n", wuLabel, countStr, artLabel, invID, wuID)
 		}
-		fmt.Println()
+		fmt.Fprintln(out)
 	}
 }
 

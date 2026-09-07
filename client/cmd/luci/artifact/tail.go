@@ -30,21 +30,36 @@ import (
 )
 
 func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
-	usage := "tail -invocationid <invocation_id> -testid <test_id> -resultid <result_id> -artifactid <artifact_id>"
-	desc := "Print the last N lines of a test result artifact"
-	if parentType == ParentTypeWorkUnit {
+	var usage, desc, longDesc string
+	switch parentType {
+	case ParentTypeTestResult:
+		usage = "tail -invocationid <invocation_id> -testid <test_id> -resultid <result_id> -artifactid <artifact_id>"
+		desc = "Print the last N lines of a test result artifact"
+		longDesc = desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
+			"By default, prints the last 10 lines. You can customize the number of lines with -n / -lines, or bytes with -c / -bytes."
+	case ParentTypeWorkUnit:
 		usage = "tail -invocationid <invocation_id> -workunitid <work_unit_id> -artifactid <artifact_id>"
 		desc = "Print the last N lines of a work unit artifact"
+		longDesc = desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
+			"By default, prints the last 10 lines. You can customize the number of lines with -n / -lines, or bytes with -c / -bytes."
+	default:
+		usage = "tail -invocationid <invocation_id> (-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>) -artifactid <artifact_id>"
+		desc = "Print the last N lines of a work unit or test result artifact"
+		longDesc = desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
+			"Specify -invocationid and -workunitid for work unit artifacts,\n" +
+			"or -invocationid, -testid, and -resultid for test result artifacts.\n\n" +
+			"By default, prints the last 10 lines. You can customize the number of lines with -n / -lines, or bytes with -c / -bytes."
 	}
 
 	return &subcommands.Command{
 		UsageLine: usage,
 		ShortDesc: desc,
-		LongDesc: desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
-			"By default, prints the last 10 lines. You can customize the number of lines with -n / -lines, or bytes with -c / -bytes.",
+		LongDesc:  longDesc,
 		CommandRun: func() subcommands.CommandRun {
 			r := &artifactTailRun{af: af, parentType: parentType, lines: 10}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
 			if parentType == ParentTypeTestResult {
@@ -52,8 +67,13 @@ func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
+			} else if parentType == ParentTypeWorkUnit {
+				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
 			} else {
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
+				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			}
 			r.Flags.StringVar(&r.artifactID, "artifactid", "", "Artifact ID (e.g. text_log or test.xml)")
 			r.Flags.IntVar(&r.lines, "n", 10, "Number of lines to fetch from the end of the artifact (default 10)")
@@ -97,12 +117,21 @@ func (r *artifactTailRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 
+	effectiveParentType := r.parentType
+	if effectiveParentType == ParentTypeUnknown {
+		if r.testID != "" || r.resultID != "" {
+			effectiveParentType = ParentTypeTestResult
+		} else {
+			effectiveParentType = ParentTypeWorkUnit
+		}
+	}
+
 	if r.lines <= 0 && r.bytes <= 0 {
 		fmt.Fprintf(os.Stderr, "-n/lines or -c/bytes must be positive\n")
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
-	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, r.legacy, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
+	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, r.legacy, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 		if r.bytes > 0 {
 			byteRange := &ByteRange{Start: -1, End: r.bytes}
 			_, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, byteRange, out)

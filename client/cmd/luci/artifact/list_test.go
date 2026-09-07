@@ -17,8 +17,6 @@ package artifact
 import (
 	"bytes"
 	"context"
-	"io"
-	"os"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -67,22 +65,6 @@ func (m *mockResultDBClient) QueryTestVerdicts(ctx context.Context, in *pb.Query
 	return &pb.QueryTestVerdictsResponse{}, nil
 }
 
-func captureStdout(fn func()) string {
-	r, w, _ := os.Pipe()
-	old := os.Stdout
-	os.Stdout = w
-	outC := make(chan string)
-	go func() {
-		var buf bytes.Buffer
-		_, _ = io.Copy(&buf, r)
-		outC <- buf.String()
-	}()
-	fn()
-	w.Close()
-	os.Stdout = old
-	return <-outC
-}
-
 func TestListCmd(t *testing.T) {
 	t.Parallel()
 
@@ -96,6 +78,17 @@ func TestListCmd(t *testing.T) {
 		assert.Loosely(t, wuCmd, should.NotBeNil)
 		assert.Loosely(t, wuCmd.ShortDesc, should.Equal("List artifacts for a work unit"))
 		assert.Loosely(t, wuCmd.CommandRun().(*artifactListRun).maxArtifacts, should.Equal(100))
+
+		unknownCmd := ListCmd(nil, ParentTypeUnknown)
+		assert.Loosely(t, unknownCmd, should.NotBeNil)
+		assert.Loosely(t, unknownCmd.ShortDesc, should.Equal("List artifacts for a work unit or test result"))
+		unknownRun := unknownCmd.CommandRun().(*artifactListRun)
+		assert.Loosely(t, unknownRun.maxArtifacts, should.Equal(100))
+		assert.Loosely(t, unknownRun.Flags.Lookup("invocationid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("workunitid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("testid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("resultid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("legacy"), should.NotBeNil)
 	})
 }
 
@@ -255,9 +248,9 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 				},
 			}
 
-			out := captureStdout(func() {
-				printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1/tests/test1/results/0", ParentTypeTestResult)
-			})
+			var buf bytes.Buffer
+			printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1/tests/test1/results/0", ParentTypeTestResult, &buf)
+			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
 			assert.Loosely(t, out, should.ContainSubstring("Work unit step-1 contains 2 artifacts. Run 'luci work-unit artifact list -invocationid build-123 -workunitid step-1' to view."))
@@ -287,9 +280,9 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 				},
 			}
 
-			out := captureStdout(func() {
-				printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit)
-			})
+			var buf bytes.Buffer
+			printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit, &buf)
+			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root contains 1 artifact. Run 'luci work-unit artifact list -invocationid build-123 -workunitid build-root' to view."))
 			assert.Loosely(t, out, should.NotContainSubstring("step-1"))
@@ -314,9 +307,9 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 				},
 			}
 
-			out := captureStdout(func() {
-				printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit)
-			})
+			var buf bytes.Buffer
+			printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit, &buf)
+			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Root work unit contains 1 artifact. Run 'luci work-unit artifact list -invocationid build-123 -workunitid root' to view."))
 		})
@@ -335,9 +328,9 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 				},
 			}
 
-			out := captureStdout(func() {
-				printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step/tests/t/results/0", ParentTypeTestResult)
-			})
+			var buf bytes.Buffer
+			printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step/tests/t/results/0", ParentTypeTestResult, &buf)
+			out := buf.String()
 
 			assert.Loosely(t, out, should.Equal(""))
 		})

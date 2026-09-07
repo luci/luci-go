@@ -140,5 +140,18 @@ func TestFetchHTTPByteRange(t *testing.T) {
 		assert.Loosely(t, ok, should.BeTrue)
 		assert.Loosely(t, run.Flags.Lookup("o"), should.NotBeNil)
 		assert.Loosely(t, run.Flags.Lookup("output"), should.NotBeNil)
+
+		unknownCmd := GetCmd(base.NewAuthFlags(), ParentTypeUnknown)
+		unknownRun, ok := unknownCmd.CommandRun().(*artifactGetRun)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, unknownRun.Flags.Lookup("invocationid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("workunitid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("testid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("resultid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("artifactid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("legacy"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("o"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("output"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("byte-range"), should.NotBeNil)
 	})
 }

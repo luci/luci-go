@@ -32,22 +32,39 @@ import (
 )
 
 func GetCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
-	usage := "get -invocationid <invocation_id> -testid <test_id> -resultid <result_id> -artifactid <artifact_id>"
-	desc := "Get a test result artifact"
-	if parentType == ParentTypeWorkUnit {
+	var usage, desc, longDesc string
+	switch parentType {
+	case ParentTypeTestResult:
+		usage = "get -invocationid <invocation_id> -testid <test_id> -resultid <result_id> -artifactid <artifact_id>"
+		desc = "Get a test result artifact"
+		longDesc = desc + " by explicit ID flags.\n\n" +
+			"Supports fetching the full artifact content or a specific byte range:\n" +
+			"  - By byte range: -byte-range <start>-<end> (e.g. 0-100, 500-, -500)"
+	case ParentTypeWorkUnit:
 		usage = "get -invocationid <invocation_id> -workunitid <work_unit_id> -artifactid <artifact_id>"
 		desc = "Get a work unit artifact"
+		longDesc = desc + " by explicit ID flags.\n\n" +
+			"Supports fetching the full artifact content or a specific byte range:\n" +
+			"  - By byte range: -byte-range <start>-<end> (e.g. 0-100, 500-, -500)"
+	default:
+		usage = "get -invocationid <invocation_id> (-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>) -artifactid <artifact_id>"
+		desc = "Get a work unit or test result artifact"
+		longDesc = desc + " by explicit ID flags.\n\n" +
+			"Specify -invocationid and -workunitid for work unit artifacts,\n" +
+			"or -invocationid, -testid, and -resultid for test result artifacts.\n\n" +
+			"Supports fetching the full artifact content or a specific byte range:\n" +
+			"  - By byte range: -byte-range <start>-<end> (e.g. 0-100, 500-, -500)"
 	}
 
 	return &subcommands.Command{
 		UsageLine: usage,
 		ShortDesc: desc,
-		LongDesc: desc + " by explicit ID flags.\n\n" +
-			"Supports fetching the full artifact content or a specific byte range:\n" +
-			"  - By byte range: -byte-range <start>-<end> (e.g. 0-100, 500-, -500)",
+		LongDesc:  longDesc,
 		CommandRun: func() subcommands.CommandRun {
 			r := &artifactGetRun{af: af, parentType: parentType}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
 			if parentType == ParentTypeTestResult {
@@ -55,8 +72,13 @@ func GetCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
+			} else if parentType == ParentTypeWorkUnit {
+				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
 			} else {
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
+				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			}
 			r.Flags.StringVar(&r.artifactID, "artifactid", "", "Artifact ID (e.g. text_log or test.xml)")
 			r.Flags.StringVar(&r.byteRangeStr, "byte-range", "", "Byte range to fetch (e.g. 0-100, 500-, -500)")
@@ -98,13 +120,22 @@ func (r *artifactGetRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 
+	effectiveParentType := r.parentType
+	if effectiveParentType == ParentTypeUnknown {
+		if r.testID != "" || r.resultID != "" {
+			effectiveParentType = ParentTypeTestResult
+		} else {
+			effectiveParentType = ParentTypeWorkUnit
+		}
+	}
+
 	byteRange, err := ParseByteRange(r.byteRangeStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
-	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, r.legacy, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
+	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, r.legacy, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 		_, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, byteRange, out)
 		return err
 	})
