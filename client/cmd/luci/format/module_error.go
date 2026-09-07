@@ -34,14 +34,14 @@ import (
 // 2. Tradefed test result XML (<Reason> element in test_result.xml, subprocess-test_result.xml, etc.)
 // 3. Harness / Root Invocation SummaryMarkdown
 type DiscoveredError struct {
-	Source         string // e.g. "Work Unit summary", "Artifact subprocess-test_result.xml...", "Root invocation summary"
-	SourceWorkUnit string // Resource name of the work unit or invocation where the error originated
-	ArtifactID     string // Artifact ID where the error was found (if from artifact)
-	ErrorName      string // e.g. "INSTRUMENTATION_NULL_METHOD"
-	ErrorCode      string // e.g. "530002"
-	Message        string // Failure message
-	StackTrace     string // Extracted stack trace
-	RawSummary     string // Markdown summary from WorkUnit / Invocation
+	Source         string `json:"source,omitempty"`           // e.g. "Work Unit summary", "Artifact subprocess-test_result.xml...", "Root invocation summary"
+	SourceWorkUnit string `json:"source_work_unit,omitempty"` // Resource name of the work unit or invocation where the error originated
+	ArtifactID     string `json:"artifact_id,omitempty"`      // Artifact ID where the error was found (if from artifact)
+	ErrorName      string `json:"error_name,omitempty"`       // e.g. "INSTRUMENTATION_NULL_METHOD"
+	ErrorCode      string `json:"error_code,omitempty"`       // e.g. "530002"
+	Message        string `json:"message,omitempty"`          // Failure message
+	StackTrace     string `json:"stack_trace,omitempty"`      // Extracted stack trace
+	RawSummary     string `json:"raw_summary,omitempty"`      // Markdown summary from WorkUnit / Invocation
 }
 
 // XMLReason represents a Tradefed XML <Reason> tag.
@@ -94,6 +94,12 @@ func cleanAndSplitReasonMessage(rawMessage string) (msg, stackTrace string) {
 	if idx := strings.Index(s, "Stack:"); idx != -1 {
 		msg = strings.TrimSpace(s[:idx])
 		stackTrace = strings.TrimSpace(s[idx+len("Stack:"):])
+	} else if idx := strings.Index(s, "\tat "); idx != -1 {
+		msg = strings.TrimSpace(s[:idx])
+		stackTrace = strings.TrimSpace(s[idx:])
+	} else if idx := strings.Index(s, "\nat "); idx != -1 {
+		msg = strings.TrimSpace(s[:idx])
+		stackTrace = strings.TrimSpace(s[idx+1:])
 	} else {
 		msg = s
 	}

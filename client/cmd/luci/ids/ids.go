@@ -39,6 +39,7 @@ import (
 // ExtractedIDs holds all extracted resource identifiers.
 type ExtractedIDs struct {
 	InvocationID string `json:"invocation_id,omitempty"`
+	ModuleName   string `json:"module_name,omitempty"`
 	WorkUnitID   string `json:"work_unit_id,omitempty"`
 	TestID       string `json:"test_id,omitempty"`
 	ResultID     string `json:"result_id,omitempty"`
@@ -52,6 +53,7 @@ type ExtractedIDs struct {
 // IsEmpty returns true if no identifiers were extracted.
 func (e *ExtractedIDs) IsEmpty() bool {
 	return e.InvocationID == "" &&
+		e.ModuleName == "" &&
 		e.WorkUnitID == "" &&
 		e.TestID == "" &&
 		e.ResultID == "" &&
@@ -140,6 +142,9 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 	if extracted.InvocationID != "" {
 		fmt.Fprintf(out, "Invocation ID: %s\n", extracted.InvocationID)
 	}
+	if extracted.ModuleName != "" {
+		fmt.Fprintf(out, "Module Name:   %s\n", extracted.ModuleName)
+	}
 	if extracted.WorkUnitID != "" {
 		fmt.Fprintf(out, "Work Unit ID:  %s\n", extracted.WorkUnitID)
 	}
@@ -184,7 +189,12 @@ func ExtractIDs(ctx context.Context, client pb.ResultDBClient, raw string, legac
 
 	clean := base.TrimResourceURL(raw)
 
-	// 2. Milo / Chromium structured URL (/modules/.../variants/.../cases/..., /tests/.../variants/...)
+	// 2. Milo module URL without test cases: .../modules/<module>
+	if extractFromMiloModuleURL(clean, extracted) {
+		return extracted, nil
+	}
+
+	// 3. Milo / Chromium structured URL (/modules/.../variants/.../cases/..., /tests/.../variants/...)
 	if extractFromMiloStructuredURL(ctx, client, clean, legacy, extracted) {
 		return extracted, nil
 	}
@@ -276,6 +286,13 @@ func extractFromAntsTarget(ctx context.Context, client pb.ResultDBClient, raw st
 	}
 
 	extracted.InvocationID = base.NormalizeInvocation(info.InvocationID)
+
+	// If this is a module error or has no method name, extract only InvocationID and ModuleName.
+	if info.IsModuleError || (info.ModuleName != "" && info.MethodName == "") {
+		extracted.ModuleName = info.ModuleName
+		return true, nil
+	}
+
 	if info.WorkUnitID != "" {
 		extracted.WorkUnitID = base.NormalizeWorkUnit(info.WorkUnitID)
 	}
@@ -302,6 +319,23 @@ func extractFromAntsTarget(ctx context.Context, client pb.ResultDBClient, raw st
 	}
 
 	return true, nil
+}
+
+// extractFromMiloModuleURL handles Milo module URLs without test cases: .../modules/<module>
+func extractFromMiloModuleURL(clean string, extracted *ExtractedIDs) bool {
+	if strings.Contains(clean, "/modules/") && !strings.Contains(clean, "/cases/") && !strings.Contains(clean, "/tests/") {
+		if idx := strings.Index(clean, "/modules/"); idx != -1 {
+			invPrefix := clean[:idx]
+			modSuffix := clean[idx+len("/modules/"):]
+			if slashIdx := strings.Index(modSuffix, "/"); slashIdx != -1 {
+				modSuffix = modSuffix[:slashIdx]
+			}
+			extracted.InvocationID = base.NormalizeInvocation(invPrefix)
+			extracted.ModuleName = modSuffix
+			return true
+		}
+	}
+	return false
 }
 
 // extractFromMiloStructuredURL handles Milo test investigation URLs:

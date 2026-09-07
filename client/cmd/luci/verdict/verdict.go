@@ -359,7 +359,14 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		return 1
 	}
 	if len(verdictResults) == 0 {
-		fmt.Fprintf(os.Stderr, "no results found for test %q in invocation %q\n", r.testID, r.invocationID)
+		if strings.HasSuffix(r.testID, "#.") || strings.HasSuffix(r.testID, ".#") || !strings.Contains(r.testID, "#") {
+			modName := strings.TrimSuffix(r.testID, "#.")
+			modName = strings.TrimSuffix(modName, ".#")
+			modName = strings.TrimPrefix(modName, ":")
+			fmt.Fprintf(os.Stderr, "no results found for test %q in invocation %q (if this was a module error, try: luci module get -invocationid %s -modulename %s)\n", r.testID, r.invocationID, r.invocationID, modName)
+		} else {
+			fmt.Fprintf(os.Stderr, "no results found for test %q in invocation %q\n", r.testID, r.invocationID)
+		}
 		return 1
 	}
 

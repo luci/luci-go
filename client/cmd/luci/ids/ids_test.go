@@ -458,6 +458,44 @@ EOF
 			assert.Loosely(t, ids.InvocationID, should.Equal("custom-legacy-inv"))
 			assert.Loosely(t, ids.Legacy, should.BeTrue)
 		})
+
+		t.Run(`AnTS TR ID representing a module error`, func(t *ftt.Test) {
+			if runtime.GOOS == "windows" {
+				t.Skip("ants_cli mock shell script execution is not supported on Windows")
+			}
+			tempDir := t.TempDir()
+			fakeBin := filepath.Join(tempDir, "ants_cli")
+			script := `#!/bin/sh
+cat <<EOF
+Test Result ID: TR08930357531778741
+Test Case: CellBroadcastReceiverMTS#.
+Status: testError
+Work Unit ID: WU98100269380597657
+Invocation ID: I14600010609614895
+Run Number: 0
+Attempt Number: 0
+EOF
+`
+			_ = os.WriteFile(fakeBin, []byte(script), 0755)
+			t.Setenv("ANTS_CLI_PATH", fakeBin)
+
+			ids, err := ExtractIDs(ctx, nil, "TR08930357531778741", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids.InvocationID, should.Equal("ants-i14600010609614895"))
+			assert.Loosely(t, ids.ModuleName, should.Equal("CellBroadcastReceiverMTS"))
+			// WorkUnitID, TestID, ResultID should NOT be populated for module errors
+			assert.Loosely(t, ids.WorkUnitID, should.Equal(""))
+			assert.Loosely(t, ids.TestID, should.Equal(""))
+			assert.Loosely(t, ids.ResultID, should.Equal(""))
+		})
+
+		t.Run(`Milo module URL without test cases`, func(t *ftt.Test) {
+			url := "https://ci.chromium.org/ui/test-investigate/invocations/build-8676886509240051393/modules/my_module"
+			ids, err := ExtractIDs(ctx, nil, url, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids.InvocationID, should.Equal("build-8676886509240051393"))
+			assert.Loosely(t, ids.ModuleName, should.Equal("my_module"))
+		})
 	})
 }
 
@@ -502,6 +540,19 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:  ants-wu17100269020689387\n"))
 			assert.Loosely(t, out, should.NotContainSubstring("Legacy:"))
 			assert.Loosely(t, out, should.NotContainSubstring("Note: This is a legacy invocation"))
+		})
+
+		t.Run(`Human-readable output with module name`, func(t *ftt.Test) {
+			extracted := &ExtractedIDs{
+				InvocationID: "build-8676886509240051393",
+				ModuleName:   "my_module",
+			}
+			var buf bytes.Buffer
+			err := printExtractedIDs(&buf, extracted, false)
+			assert.Loosely(t, err, should.BeNil)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID: build-8676886509240051393\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Name:   my_module\n"))
 		})
 
 		t.Run(`JSON output with legacy`, func(t *ftt.Test) {
