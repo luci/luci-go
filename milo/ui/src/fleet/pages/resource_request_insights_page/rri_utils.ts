@@ -53,6 +53,7 @@ export type RriGridRow = {
   resource_groups: string;
   resource_request_status: string;
   rr_bug_status: string;
+  gce_vm: string;
 };
 
 export const getDateWithOverdueData = (
@@ -132,5 +133,6 @@ export const getRow = (rr: ResourceRequest): RriGridRow => {
           ]
         : '',
     rr_bug_status: rr.resourceRequestBugStatus ?? '',
+    gce_vm: rr.gceVm ?? '',
   };
 };

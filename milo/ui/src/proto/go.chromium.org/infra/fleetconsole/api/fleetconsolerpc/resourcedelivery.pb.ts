@@ -61,6 +61,7 @@ export interface ResourceRequest {
   readonly resourceRequestTargetDeliveryDate?: DateOnly | undefined;
   readonly resourceRequestStatus?: ResourceRequest_Status | undefined;
   readonly resourceRequestBugStatus?: string | undefined;
+  readonly gceVm?: string | undefined;
 }
 
 export enum ResourceRequest_Status {
@@ -132,6 +133,7 @@ export interface GetResourceRequestsMultiselectFilterValuesResponse {
   readonly executionStatus: readonly string[];
   readonly resourceGroups: readonly string[];
   readonly resourceRequestBugStatus: readonly string[];
+  readonly gceVm: readonly string[];
 }
 
 export interface ListProductCatalogEntriesRequest {
@@ -453,6 +455,7 @@ function createBaseResourceRequest(): ResourceRequest {
     resourceRequestTargetDeliveryDate: undefined,
     resourceRequestStatus: undefined,
     resourceRequestBugStatus: undefined,
+    gceVm: undefined,
   };
 }
 
@@ -577,6 +580,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     }
     if (message.resourceRequestBugStatus !== undefined) {
       writer.uint32(354).string(message.resourceRequestBugStatus);
+    }
+    if (message.gceVm !== undefined) {
+      writer.uint32(362).string(message.gceVm);
     }
     return writer;
   },
@@ -908,6 +914,14 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
           message.resourceRequestBugStatus = reader.string();
           continue;
         }
+        case 45: {
+          if (tag !== 362) {
+            break;
+          }
+
+          message.gceVm = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1003,6 +1017,7 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
       resourceRequestBugStatus: isSet(object.resourceRequestBugStatus)
         ? globalThis.String(object.resourceRequestBugStatus)
         : undefined,
+      gceVm: isSet(object.gceVm) ? globalThis.String(object.gceVm) : undefined,
     };
   },
 
@@ -1128,6 +1143,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     if (message.resourceRequestBugStatus !== undefined) {
       obj.resourceRequestBugStatus = message.resourceRequestBugStatus;
     }
+    if (message.gceVm !== undefined) {
+      obj.gceVm = message.gceVm;
+    }
     return obj;
   },
 
@@ -1226,6 +1244,7 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
         : undefined;
     message.resourceRequestStatus = object.resourceRequestStatus ?? undefined;
     message.resourceRequestBugStatus = object.resourceRequestBugStatus ?? undefined;
+    message.gceVm = object.gceVm ?? undefined;
     return message;
   },
 };
@@ -1514,6 +1533,7 @@ function createBaseGetResourceRequestsMultiselectFilterValuesResponse(): GetReso
     executionStatus: [],
     resourceGroups: [],
     resourceRequestBugStatus: [],
+    gceVm: [],
   };
 }
 
@@ -1573,6 +1593,9 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
     }
     for (const v of message.resourceRequestBugStatus) {
       writer.uint32(130).string(v!);
+    }
+    for (const v of message.gceVm) {
+      writer.uint32(138).string(v!);
     }
     return writer;
   },
@@ -1722,6 +1745,14 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
           message.resourceRequestBugStatus.push(reader.string());
           continue;
         }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.gceVm.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1775,6 +1806,7 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
       resourceRequestBugStatus: globalThis.Array.isArray(object?.resourceRequestBugStatus)
         ? object.resourceRequestBugStatus.map((e: any) => globalThis.String(e))
         : [],
+      gceVm: globalThis.Array.isArray(object?.gceVm) ? object.gceVm.map((e: any) => globalThis.String(e)) : [],
     };
   },
 
@@ -1828,6 +1860,9 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
     if (message.resourceRequestBugStatus?.length) {
       obj.resourceRequestBugStatus = message.resourceRequestBugStatus;
     }
+    if (message.gceVm?.length) {
+      obj.gceVm = message.gceVm;
+    }
     return obj;
   },
 
@@ -1856,6 +1891,7 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
     message.executionStatus = object.executionStatus?.map((e) => e) || [];
     message.resourceGroups = object.resourceGroups?.map((e) => e) || [];
     message.resourceRequestBugStatus = object.resourceRequestBugStatus?.map((e) => e) || [];
+    message.gceVm = object.gceVm?.map((e) => e) || [];
     return message;
   },
 };

@@ -261,6 +261,12 @@ export const COLUMNS = {
     size: 120,
     rriFilterKey: 'resourceGroups',
   },
+  gce_vm: {
+    accessorKey: 'gce_vm',
+    header: 'GCE VM',
+    size: 80,
+    rriFilterKey: 'gceVm',
+  },
 } satisfies Partial<{
   [Key in keyof RriGridRow]: RriColumnDef<Key>;
 }>;

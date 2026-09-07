@@ -27,12 +27,14 @@ describe('RRI_COLUMNS', () => {
       resourceRequestActualDeliveryDate: { year: 2025, month: 3, day: 25 },
       resourceGroups: ['group1', 'group2'],
       acceptedQuantity: BigInt(5),
+      gceVm: 'Yes',
     } as unknown as ResourceRequest;
 
     const row = getRow(rr);
     expect(row.slippage).toBe(5);
     expect(row.resource_groups).toBe('group1, group2');
     expect(row.accepted_quantity).toBe('5');
+    expect(row.gce_vm).toBe('Yes');
   });
 
   it('calculates slippage for completed items (LATE)', () => {

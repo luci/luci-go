@@ -140,6 +140,7 @@ export const getFilterBuilders = (
     COLUMNS.rr_bug_status.header,
     data?.resourceRequestBugStatus,
   ),
+  gce_vm: makeStringListFilter(COLUMNS.gce_vm.header, data?.gceVm),
 });
 
 type FilterBuilders = ReturnType<typeof getFilterBuilders>;

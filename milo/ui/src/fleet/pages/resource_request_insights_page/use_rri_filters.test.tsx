@@ -27,6 +27,7 @@ import { useRriFilters } from './use_rri_filters';
 const MOCK_FILTER_VALUES =
   GetResourceRequestsMultiselectFilterValuesResponse.fromPartial({
     rrIds: ['rr-id-1', 'rr-id-2', 'abc-123', 'xyz-123'],
+    gceVm: ['Yes', 'No'],
   });
 
 // TODO: b/435182355 - Look into patterns for improving network request mocking.
@@ -200,5 +201,27 @@ describe('useRriFilters', () => {
         'material_sourcing_actual_delivery_date >= "2022-01-01" AND material_sourcing_actual_delivery_date <= "2022-01-02"',
       ),
     );
+  });
+
+  it('should set and parse gce_vm filters from search params', async () => {
+    const { result: searchParamsResult } = renderHook(
+      () => useSyncedSearchParams(),
+      { wrapper },
+    );
+    act(() => {
+      const sp = new URLSearchParams();
+      sp.set('filters', 'gce_vm="Yes"');
+      searchParamsResult.current[1](sp);
+    });
+
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+
+    await waitFor(() => {
+      const gceVmFilter = result.current.filterValues
+        ?.gce_vm as StringListFilterCategory;
+      expect(gceVmFilter?.getOptions()['Yes']?.isSelected).toBe(true);
+    });
+
+    expect(result.current.aipString).toEqual('(gce_vm = "Yes")');
   });
 });
