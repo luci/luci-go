@@ -35,6 +35,9 @@ func NormalizeInvocation(inv string) string {
 	if strings.HasPrefix(inv, "ants-I") {
 		return "ants-i" + inv[6:]
 	}
+	if strings.HasPrefix(inv, "b") && len(inv) > 1 && isAllDigits(inv[1:]) {
+		return "build-" + inv[1:]
+	}
 	if !strings.HasPrefix(inv, "build-") && !strings.HasPrefix(inv, "task-") && !strings.HasPrefix(inv, "u-") && !strings.HasPrefix(inv, "ants-") {
 		if _, err := url.PathUnescape(inv); err == nil && len(inv) > 0 && (inv[0] >= '0' && inv[0] <= '9') {
 			inv = "build-" + inv

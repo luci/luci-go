@@ -51,10 +51,19 @@ func TestTargets(t *testing.T) {
 			assert.Loosely(t, resID2, should.Equal("0"))
 		})
 
-		t.Run("ExtractWorkUnitComponents", func(t *ftt.Test) {
-			rootInv, wuID := ExtractWorkUnitComponents("rootInvocations/ants-i123/workUnits/wu-1")
-			assert.Loosely(t, rootInv, should.Equal("ants-i123"))
-			assert.Loosely(t, wuID, should.Equal("wu-1"))
+		t.Run("NormalizeInvocation", func(t *ftt.Test) {
+			assert.Loosely(t, NormalizeInvocation("b8676886509240051393"), should.Equal("build-8676886509240051393"))
+			assert.Loosely(t, NormalizeInvocation("8676886509240051393"), should.Equal("build-8676886509240051393"))
+			assert.Loosely(t, NormalizeInvocation("I77100010600769898"), should.Equal("ants-i77100010600769898"))
+			assert.Loosely(t, NormalizeInvocation("ants-I77100010600769898"), should.Equal("ants-i77100010600769898"))
+			assert.Loosely(t, NormalizeInvocation("invocations/build-123"), should.Equal("build-123"))
+			assert.Loosely(t, NormalizeInvocation("rootInvocations/build-123"), should.Equal("build-123"))
+		})
+
+		t.Run("NormalizeWorkUnit", func(t *ftt.Test) {
+			assert.Loosely(t, NormalizeWorkUnit("WU17100269020689387"), should.Equal("ants-wu17100269020689387"))
+			assert.Loosely(t, NormalizeWorkUnit("wu17100269020689387"), should.Equal("ants-wu17100269020689387"))
+			assert.Loosely(t, NormalizeWorkUnit("workUnits/wu-1"), should.Equal("wu-1"))
 		})
 	})
 }

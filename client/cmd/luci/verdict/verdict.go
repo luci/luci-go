@@ -255,7 +255,7 @@ func queryLegacyInvocationVerdicts(ctx context.Context, client pb.ResultDBClient
 		}
 		if testID != "" {
 			req.Predicate = &pb.TestResultPredicate{
-				TestIdRegexp: "^" + regexp.QuoteMeta(testID) + "$",
+				TestIdRegexp: regexp.QuoteMeta(testID),
 			}
 			if variantHash != "" {
 				req.Predicate.Variant = &pb.VariantPredicate{
@@ -300,7 +300,7 @@ func queryLegacyInvocationVerdicts(ctx context.Context, client pb.ResultDBClient
 	}
 	if testID != "" {
 		reqEx.Predicate = &pb.TestExonerationPredicate{
-			TestIdRegexp: "^" + regexp.QuoteMeta(testID) + "$",
+			TestIdRegexp: regexp.QuoteMeta(testID),
 		}
 	}
 	resEx, err := client.QueryTestExonerations(ctx, reqEx)

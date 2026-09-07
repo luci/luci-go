@@ -18,16 +18,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strings"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -40,6 +44,9 @@ type ExtractedIDs struct {
 	ResultID     string `json:"result_id,omitempty"`
 	ArtifactID   string `json:"artifact_id,omitempty"`
 	VariantHash  string `json:"variant_hash,omitempty"`
+	Legacy       bool   `json:"legacy,omitempty"`
+
+	legacyResolved bool
 }
 
 // IsEmpty returns true if no identifiers were extracted.
@@ -112,37 +119,48 @@ func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return 1
 	}
 
-	if r.jsonOut {
+	if err := printExtractedIDs(os.Stdout, extracted, r.jsonOut); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		return 1
+	}
+	return 0
+}
+
+func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) error {
+	if jsonOut {
 		data, err := json.MarshalIndent(extracted, "", "  ")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to marshal JSON: %s\n", err)
-			return 1
+			return errors.Fmt("failed to marshal JSON: %w", err)
 		}
-		fmt.Println(string(data))
-		return 0
+		fmt.Fprintln(out, string(data))
+		return nil
 	}
 
 	// Aligned human-readable output
 	if extracted.InvocationID != "" {
-		fmt.Printf("Invocation ID: %s\n", extracted.InvocationID)
+		fmt.Fprintf(out, "Invocation ID: %s\n", extracted.InvocationID)
 	}
 	if extracted.WorkUnitID != "" {
-		fmt.Printf("Work Unit ID:  %s\n", extracted.WorkUnitID)
+		fmt.Fprintf(out, "Work Unit ID:  %s\n", extracted.WorkUnitID)
 	}
 	if extracted.TestID != "" {
-		fmt.Printf("Test ID:       %s\n", extracted.TestID)
+		fmt.Fprintf(out, "Test ID:       %s\n", extracted.TestID)
 	}
 	if extracted.ResultID != "" {
-		fmt.Printf("Result ID:     %s\n", extracted.ResultID)
+		fmt.Fprintf(out, "Result ID:     %s\n", extracted.ResultID)
 	}
 	if extracted.ArtifactID != "" {
-		fmt.Printf("Artifact ID:   %s\n", extracted.ArtifactID)
+		fmt.Fprintf(out, "Artifact ID:   %s\n", extracted.ArtifactID)
 	}
 	if extracted.VariantHash != "" {
-		fmt.Printf("Variant Hash:  %s\n", extracted.VariantHash)
+		fmt.Fprintf(out, "Variant Hash:  %s\n", extracted.VariantHash)
+	}
+	if extracted.Legacy {
+		fmt.Fprintf(out, "Legacy:        true (subsequent commands require -legacy)\n")
+		fmt.Fprintf(out, "\nNote: This is a legacy invocation. You will need to pass the -legacy flag to subsequent commands (e.g. 'luci verdict', 'luci test-result', 'luci test-result artifact').\n")
 	}
 
-	return 0
+	return nil
 }
 
 // ExtractIDs parses target string and extracts all available resource IDs.
@@ -153,8 +171,62 @@ func ExtractIDs(ctx context.Context, client pb.ResultDBClient, raw string, legac
 	}
 
 	extracted := &ExtractedIDs{}
+	defer resolveLegacy(ctx, client, extracted, legacy)
 
-	// Check for query parameters (?artifact=..., ?result=...)
+	extractQueryParams(raw, extracted)
+
+	// 1. Android Test Investigate (ATI) URL or AnTS target
+	if ok, err := extractFromAntsTarget(ctx, client, raw, extracted); err != nil {
+		return nil, err
+	} else if ok {
+		return extracted, nil
+	}
+
+	clean := base.TrimResourceURL(raw)
+
+	// 2. Milo / Chromium structured URL (/modules/.../variants/.../cases/..., /tests/.../variants/...)
+	if extractFromMiloStructuredURL(ctx, client, clean, legacy, extracted) {
+		return extracted, nil
+	}
+
+	// 3. Milo Invocation and Build URLs (/ui/inv/..., /ui/b/..., /builders/...)
+	if extractFromMiloBuildURL(clean, extracted) {
+		return extracted, nil
+	}
+
+	// 4. Milo Test History URL (/ui/test/:project/:testId)
+	if extractFromMiloTestHistoryURL(raw, extracted) {
+		return extracted, nil
+	}
+
+	// 5. Strip /artifacts/<art_id> suffix from ResultDB resource name if present
+	clean = extractArtifactSuffix(clean, extracted)
+
+	// 6. ResultDB test result resource name: .../tests/<escaped_test_id>/results/<result_id>
+	if extractFromTestResultResourceName(clean, extracted) {
+		return extracted, nil
+	}
+
+	// 7. ResultDB test resource name: .../tests/<escaped_test_id>
+	if extractFromTestResourceName(clean, extracted) {
+		return extracted, nil
+	}
+
+	// 8. ResultDB work unit resource name: rootInvocations/<root_inv>/workUnits/<wu_id>
+	if extractFromWorkUnitResourceName(clean, extracted) {
+		return extracted, nil
+	}
+
+	// 9. ResultDB root invocation / invocation resource name or bare ID: rootInvocations/<inv>, invocations/<inv>, or bare invocation ID
+	if extractFromInvocationResourceName(clean, extracted) {
+		return extracted, nil
+	}
+
+	return extracted, nil
+}
+
+// extractQueryParams extracts ?artifact=... and ?result=... query parameters if present.
+func extractQueryParams(raw string, extracted *ExtractedIDs) {
 	if u, err := url.Parse(raw); err == nil {
 		if art := u.Query().Get("artifact"); art != "" {
 			extracted.ArtifactID = art
@@ -163,126 +235,249 @@ func ExtractIDs(ctx context.Context, client pb.ResultDBClient, raw string, legac
 			extracted.ResultID = res
 		}
 	}
+}
 
-	// 1. Android Test Investigate (ATI) URL or AnTS TR ID
-	if base.IsAntsURL(raw) || base.IsAntsTestResultID(raw) {
-		trID := ""
-		invID := ""
-		if base.IsAntsTestResultID(raw) {
-			trID = raw
-		} else {
-			invID, trID = base.ExtractAntsURLComponents(raw)
-		}
-
-		if trID != "" {
-			info, err := base.ResolveAntsTestResult(ctx, trID)
-			if err != nil {
-				return nil, err
-			}
-			extracted.InvocationID = base.NormalizeInvocation(info.InvocationID)
-			if info.WorkUnitID != "" {
-				extracted.WorkUnitID = base.NormalizeWorkUnit(info.WorkUnitID)
-			}
-
-			// Query ResultDB to resolve canonical TestID, ResultID, VariantHash
-			if client != nil && extracted.InvocationID != "" {
-				results, _, errQuery := queryAntsResultDBVerdict(ctx, client, extracted.InvocationID, info)
-				if errQuery == nil && len(results) > 0 {
-					extracted.TestID = results[0].TestId
-					extracted.VariantHash = results[0].VariantHash
-					if extracted.ResultID == "" {
-						extracted.ResultID = results[0].ResultId
-					}
-					if extracted.WorkUnitID == "" {
-						_, wuID := base.ExtractWorkUnitComponents(results[0].Name)
-						if wuID != "" {
-							extracted.WorkUnitID = base.NormalizeWorkUnit(wuID)
-						}
-					}
-				}
-			}
-			if extracted.TestID == "" && info.TestCase != "" && !strings.HasPrefix(info.TestCase, "#") {
-				extracted.TestID = info.TestCase
-			}
-			return extracted, nil
-		}
-
-		if invID != "" {
-			extracted.InvocationID = base.NormalizeInvocation(invID)
-			return extracted, nil
-		}
-	}
-
+// extractFromAntsTarget handles AnTS/ATI targets: standalone invocation/work-unit IDs,
+// ATI URLs, and AnTS TR IDs.
+func extractFromAntsTarget(ctx context.Context, client pb.ResultDBClient, raw string, extracted *ExtractedIDs) (bool, error) {
 	if base.IsAntsInvocationID(raw) {
 		extracted.InvocationID = base.NormalizeInvocation(raw)
-		return extracted, nil
+		return true, nil
 	}
 
 	if base.IsAntsWorkUnitID(raw) {
 		extracted.WorkUnitID = base.NormalizeWorkUnit(raw)
-		return extracted, nil
+		return true, nil
 	}
 
-	clean := base.TrimResourceURL(raw)
+	if !base.IsAntsURL(raw) && !base.IsAntsTestResultID(raw) {
+		return false, nil
+	}
 
-	// 2. Milo / Chromium structured URL (/modules/.../variants/.../cases/...)
-	if strings.Contains(clean, "/modules/") || (strings.Contains(clean, "/variants/") && strings.Contains(clean, "/cases/")) {
-		invName, variantHash, _, matchFunc, err := verdict.ParseVerdictName(clean)
-		if err == nil {
-			extracted.InvocationID = base.NormalizeInvocation(invName)
-			extracted.VariantHash = variantHash
+	trID := ""
+	invID := ""
+	if base.IsAntsTestResultID(raw) {
+		trID = raw
+	} else {
+		invID, trID = base.ExtractAntsURLComponents(raw)
+	}
 
-			// If ResultDB client available, resolve canonical TestID and ResultID
-			if client != nil && extracted.InvocationID != "" {
-				results, _, _, errQuery := verdict.QueryVerdictResultsAndExonerations(ctx, client, extracted.InvocationID, "", variantHash, legacy, 1000)
-				if errQuery == nil {
-					for _, tr := range results {
-						if matchFunc == nil || matchFunc(tr) {
-							extracted.TestID = tr.TestId
-							if extracted.ResultID == "" {
-								extracted.ResultID = tr.ResultId
-							}
-							break
-						}
-					}
+	if trID == "" {
+		if invID != "" {
+			extracted.InvocationID = base.NormalizeInvocation(invID)
+			return true, nil
+		}
+		return false, nil
+	}
+
+	info, err := base.ResolveAntsTestResult(ctx, trID)
+	if err != nil {
+		return false, err
+	}
+
+	extracted.InvocationID = base.NormalizeInvocation(info.InvocationID)
+	if info.WorkUnitID != "" {
+		extracted.WorkUnitID = base.NormalizeWorkUnit(info.WorkUnitID)
+	}
+
+	// Query ResultDB to resolve canonical TestID, ResultID, VariantHash
+	if client != nil && extracted.InvocationID != "" {
+		results, _, errQuery := queryAntsResultDBVerdict(ctx, client, extracted.InvocationID, info)
+		if errQuery == nil && len(results) > 0 {
+			extracted.TestID = results[0].TestId
+			extracted.VariantHash = results[0].VariantHash
+			if extracted.ResultID == "" {
+				extracted.ResultID = results[0].ResultId
+			}
+			if extracted.WorkUnitID == "" {
+				_, wuID := base.ExtractWorkUnitComponents(results[0].Name)
+				if wuID != "" {
+					extracted.WorkUnitID = base.NormalizeWorkUnit(wuID)
 				}
 			}
-			return extracted, nil
+		}
+	}
+	if extracted.TestID == "" && info.TestCase != "" && !strings.HasPrefix(info.TestCase, "#") {
+		extracted.TestID = info.TestCase
+	}
+
+	return true, nil
+}
+
+// extractFromMiloStructuredURL handles Milo test investigation URLs:
+// - Structured URLs: .../modules/.../schemes/.../variants/.../cases/...
+// - Old/legacy URLs: .../tests/.../variants/...
+func extractFromMiloStructuredURL(ctx context.Context, client pb.ResultDBClient, clean string, legacy bool, extracted *ExtractedIDs) bool {
+	if !strings.Contains(clean, "/variants/") || (!strings.Contains(clean, "/modules/") && !strings.Contains(clean, "/cases/") && !strings.Contains(clean, "/tests/")) {
+		return false
+	}
+
+	invName, variantHash, _, matchFunc, err := verdict.ParseVerdictName(clean)
+	if err != nil {
+		return false
+	}
+
+	// Only set InvocationID if invName represents an invocation (not a project path like /ui/labs/p/chromium)
+	if strings.HasPrefix(invName, "invocations/") || strings.HasPrefix(invName, "rootInvocations/") || strings.HasPrefix(invName, "build-") || (!strings.Contains(invName, "/") && invName != "") {
+		extracted.InvocationID = base.NormalizeInvocation(invName)
+	}
+	extracted.VariantHash = variantHash
+
+	// Extract TestID from URL path if present
+	if caseIdx := strings.Index(clean, "/cases/"); caseIdx != -1 {
+		afterCase := clean[caseIdx+len("/cases/"):]
+		caseParts := strings.Split(afterCase, "/")
+		if caseName, errUnescape := url.PathUnescape(caseParts[0]); errUnescape == nil && caseName != "" {
+			extracted.TestID = caseName
+		}
+	} else if testIdx := strings.Index(clean, "/tests/"); testIdx != -1 {
+		afterTest := clean[testIdx+len("/tests/"):]
+		testParts := strings.Split(afterTest, "/")
+		if testName, errUnescape := url.PathUnescape(testParts[0]); errUnescape == nil && testName != "" {
+			extracted.TestID = testName
 		}
 	}
 
-	// 3. Milo Build URL (https://ci.chromium.org/ui/b/<build_id> or .../builders/.../<build_id>)
-	if idx := strings.Index(raw, "/ui/b/"); idx != -1 {
-		after := raw[idx+len("/ui/b/"):]
+	resolveLegacy(ctx, client, extracted, legacy)
+
+	// If ResultDB client available, resolve canonical TestID and ResultID
+	if client != nil && extracted.InvocationID != "" {
+		results, _, _, errQuery := verdict.QueryVerdictResultsAndExonerations(ctx, client, extracted.InvocationID, extracted.TestID, variantHash, extracted.Legacy, 1000)
+		if errQuery == nil {
+			for _, tr := range results {
+				if matchFunc == nil || matchFunc(tr) {
+					extracted.TestID = tr.TestId
+					if extracted.ResultID == "" {
+						extracted.ResultID = tr.ResultId
+					}
+					break
+				}
+			}
+		}
+	}
+
+	return true
+}
+
+// extractFromMiloBuildURL handles Milo UI invocation and build URLs
+// (e.g. /ui/inv/<inv>, /ui/b/<build_id>, /builders/.../<build_id>).
+func extractFromMiloBuildURL(clean string, extracted *ExtractedIDs) bool {
+	if idx := strings.Index(clean, "/inv/"); idx != -1 {
+		after := clean[idx+len("/inv/"):]
 		parts := strings.Split(after, "/")
 		if len(parts) > 0 && parts[0] != "" {
 			extracted.InvocationID = base.NormalizeInvocation(parts[0])
-			return extracted, nil
+			return true
 		}
 	}
-	if idx := strings.Index(raw, "/builders/"); idx != -1 {
-		after := raw[idx+len("/builders/"):]
+	if idx := strings.Index(clean, "/ui/b/"); idx != -1 {
+		after := clean[idx+len("/ui/b/"):]
 		parts := strings.Split(after, "/")
-		if len(parts) >= 3 && parts[len(parts)-1] != "" {
-			extracted.InvocationID = base.NormalizeInvocation(parts[len(parts)-1])
-			return extracted, nil
+		if len(parts) > 0 && parts[0] != "" {
+			extracted.InvocationID = base.NormalizeInvocation(parts[0])
+			return true
+		}
+	} else if idx := strings.Index(clean, "/b/"); idx != -1 {
+		after := clean[idx+len("/b/"):]
+		parts := strings.Split(after, "/")
+		if len(parts) > 0 && parts[0] != "" {
+			extracted.InvocationID = base.NormalizeInvocation(parts[0])
+			return true
 		}
 	}
+	if idx := strings.Index(clean, "/builders/"); idx != -1 {
+		after := clean[idx+len("/builders/"):]
+		parts := strings.Split(after, "/")
+		if len(parts) >= 3 && parts[2] != "" {
+			extracted.InvocationID = base.NormalizeInvocation(parts[2])
+			return true
+		}
+	}
+	return false
+}
 
-	// 4. Canonical artifact path: .../artifacts/<art_id>
+// extractFromMiloTestHistoryURL handles Milo test history URLs:
+// /ui/test/:projectOrRealm/:testId
+func extractFromMiloTestHistoryURL(raw string, extracted *ExtractedIDs) bool {
+	idx := strings.Index(raw, "/ui/test/")
+	if idx == -1 {
+		idx = strings.Index(raw, "/test/")
+	}
+	if idx == -1 {
+		return false
+	}
+	after := raw[idx:]
+	if strings.HasPrefix(after, "/ui/test/") {
+		after = after[len("/ui/test/"):]
+	} else if strings.HasPrefix(after, "/test/") {
+		after = after[len("/test/"):]
+	}
+	parts := strings.SplitN(after, "/", 2)
+	if len(parts) < 2 || parts[1] == "" {
+		return false
+	}
+	testIDPart := parts[1]
+	if qIdx := strings.IndexAny(testIDPart, "?#"); qIdx != -1 {
+		testIDPart = testIDPart[:qIdx]
+	}
+	if unescaped, err := url.PathUnescape(testIDPart); err == nil && unescaped != "" {
+		extracted.TestID = unescaped
+		return true
+	} else if testIDPart != "" {
+		extracted.TestID = testIDPart
+		return true
+	}
+	return false
+}
+
+// extractArtifactSuffix strips /artifacts/<art_id> from a ResultDB resource name if present and sets extracted.ArtifactID.
+func extractArtifactSuffix(clean string, extracted *ExtractedIDs) string {
 	if artIdx := strings.Index(clean, "/artifacts/"); artIdx != -1 {
 		artID := clean[artIdx+len("/artifacts/"):]
 		if idx := strings.IndexAny(artID, "/?#"); idx != -1 {
 			artID = artID[:idx]
 		}
-		if artID != "" {
+		if artID != "" && extracted.ArtifactID == "" {
 			extracted.ArtifactID = artID
 		}
-		clean = clean[:artIdx]
+		return clean[:artIdx]
 	}
+	return clean
+}
 
-	// 5. Work unit path: rootInvocations/<root_inv>/workUnits/<wu_id>...
-	if wuIdx := strings.Index(clean, "/workUnits/"); wuIdx != -1 {
+// extractFromTestResultResourceName handles ResultDB test result resource names:
+// .../tests/<escaped_test_id>/results/<result_id>
+func extractFromTestResultResourceName(clean string, extracted *ExtractedIDs) bool {
+	if !strings.Contains(clean, "/tests/") || !strings.Contains(clean, "/results/") {
+		return false
+	}
+	if strings.Contains(clean, "/workUnits/") {
+		_, wuID := base.ExtractWorkUnitComponents(clean)
+		if wuID != "" {
+			extracted.WorkUnitID = base.NormalizeWorkUnit(wuID)
+		}
+	}
+	inv, testID, resultID := base.ExtractTestResultComponents(clean)
+	if inv != "" {
+		extracted.InvocationID = base.NormalizeInvocation(inv)
+	}
+	if testID != "" {
+		extracted.TestID = testID
+	}
+	if resultID != "" {
+		extracted.ResultID = resultID
+	}
+	return true
+}
+
+// extractFromTestResourceName handles ResultDB test resource names:
+// .../tests/<escaped_test_id>
+func extractFromTestResourceName(clean string, extracted *ExtractedIDs) bool {
+	testIdx := strings.Index(clean, "/tests/")
+	if testIdx == -1 {
+		return false
+	}
+	if strings.Contains(clean, "/workUnits/") {
 		rootInv, wuID := base.ExtractWorkUnitComponents(clean)
 		if rootInv != "" {
 			extracted.InvocationID = base.NormalizeInvocation(rootInv)
@@ -291,58 +486,106 @@ func ExtractIDs(ctx context.Context, client pb.ResultDBClient, raw string, legac
 			extracted.WorkUnitID = base.NormalizeWorkUnit(wuID)
 		}
 	}
-
-	// 6. Test result path: .../tests/<escaped_test_id>/results/<result_id>
-	if strings.Contains(clean, "/tests/") && strings.Contains(clean, "/results/") {
-		inv, testID, resultID := base.ExtractTestResultComponents(clean)
-		if inv != "" {
-			extracted.InvocationID = base.NormalizeInvocation(inv)
-		}
-		if testID != "" {
-			extracted.TestID = testID
-		}
-		if resultID != "" {
-			extracted.ResultID = resultID
-		}
-		return extracted, nil
+	prefix := clean[:testIdx]
+	after := clean[testIdx+len("/tests/"):]
+	parts := strings.Split(after, "/")
+	if len(parts) == 0 || parts[0] == "" {
+		return false
 	}
-
-	// 7. Test path without results: .../tests/<escaped_test_id>
-	if testIdx := strings.Index(clean, "/tests/"); testIdx != -1 {
-		prefix := clean[:testIdx]
-		after := clean[testIdx+len("/tests/"):]
-		parts := strings.Split(after, "/")
-		if len(parts) > 0 && parts[0] != "" {
-			if parts[0] == "view" && (strings.Contains(prefix, "android-build.googleplex.com") || strings.Contains(prefix, "android-build.corp.google.com")) {
-				// /builds/tests/view is an Android Build web endpoint, not a test ID.
-				return extracted, nil
-			}
-			if unescaped, err := url.PathUnescape(parts[0]); err == nil {
-				extracted.TestID = unescaped
-			} else {
-				extracted.TestID = parts[0]
-			}
-		}
-		if idx := strings.Index(prefix, "/variants/"); idx != -1 {
-			extracted.VariantHash = prefix[idx+len("/variants/"):]
-			prefix = prefix[:idx]
-		}
-		extracted.InvocationID = base.NormalizeInvocation(prefix)
-		return extracted, nil
+	if parts[0] == "view" && (strings.Contains(prefix, "android-build.googleplex.com") || strings.Contains(prefix, "android-build.corp.google.com")) {
+		// /builds/tests/view is an Android Build web endpoint, not a test ID.
+		return true
 	}
-
-	// 8. Work unit only (already handled above if /workUnits/ was present)
-	if extracted.WorkUnitID != "" {
-		return extracted, nil
+	if unescaped, err := url.PathUnescape(parts[0]); err == nil {
+		extracted.TestID = unescaped
+	} else {
+		extracted.TestID = parts[0]
 	}
+	if idx := strings.Index(prefix, "/variants/"); idx != -1 {
+		extracted.VariantHash = prefix[idx+len("/variants/"):]
+		prefix = prefix[:idx]
+	}
+	extracted.InvocationID = base.NormalizeInvocation(prefix)
+	return true
+}
 
-	// 9. Root invocation / invocation only: rootInvocations/<inv> or invocations/<inv>
+// extractFromWorkUnitResourceName handles ResultDB work unit resource names:
+// rootInvocations/<root_inv>/workUnits/<wu_id>
+func extractFromWorkUnitResourceName(clean string, extracted *ExtractedIDs) bool {
+	if !strings.Contains(clean, "/workUnits/") {
+		return false
+	}
+	rootInv, wuID := base.ExtractWorkUnitComponents(clean)
+	if rootInv != "" {
+		extracted.InvocationID = base.NormalizeInvocation(rootInv)
+	}
+	if wuID != "" {
+		extracted.WorkUnitID = base.NormalizeWorkUnit(wuID)
+	}
+	return extracted.WorkUnitID != ""
+}
+
+// extractFromInvocationResourceName handles ResultDB root invocation / invocation resource names:
+// rootInvocations/<inv>, invocations/<inv>, or bare invocation IDs.
+func extractFromInvocationResourceName(clean string, extracted *ExtractedIDs) bool {
 	if strings.HasPrefix(clean, "rootInvocations/") || strings.HasPrefix(clean, "invocations/") {
-		extracted.InvocationID = base.NormalizeInvocation(clean)
-		return extracted, nil
+		trimmed := clean
+		if strings.HasPrefix(trimmed, "rootInvocations/") {
+			trimmed = strings.TrimPrefix(trimmed, "rootInvocations/")
+		} else {
+			trimmed = strings.TrimPrefix(trimmed, "invocations/")
+		}
+		parts := strings.Split(trimmed, "/")
+		if len(parts) > 0 && parts[0] != "" {
+			extracted.InvocationID = base.NormalizeInvocation(parts[0])
+			return true
+		}
 	}
+	if extracted.InvocationID == "" && clean != "" && !strings.Contains(clean, "/") {
+		extracted.InvocationID = base.NormalizeInvocation(clean)
+		return true
+	}
+	return false
+}
 
-	return extracted, nil
+// isLegacyInvocation queries ResultDB directly to determine if an invocation is a legacy invocation.
+// It queries for the root invocation, and if not found, queries for the legacy invocation.
+func isLegacyInvocation(ctx context.Context, client pb.ResultDBClient, invID string) bool {
+	normalized := base.NormalizeInvocation(invID)
+	_, err := client.GetRootInvocation(ctx, &pb.GetRootInvocationRequest{
+		Name: "rootInvocations/" + normalized,
+	})
+	if err == nil {
+		return false
+	}
+	code := status.Code(err)
+	if code == codes.Unknown {
+		code = appstatus.Code(err)
+	}
+	if code == codes.NotFound {
+		_, errLegacy := client.GetInvocation(ctx, &pb.GetInvocationRequest{
+			Name: "invocations/" + normalized,
+		})
+		if errLegacy == nil {
+			return true
+		}
+	}
+	return false
+}
+
+func resolveLegacy(ctx context.Context, client pb.ResultDBClient, extracted *ExtractedIDs, legacy bool) {
+	if extracted == nil || extracted.legacyResolved {
+		return
+	}
+	if extracted.Legacy || legacy {
+		extracted.Legacy = true
+		extracted.legacyResolved = true
+		return
+	}
+	if client != nil && extracted.InvocationID != "" {
+		extracted.Legacy = isLegacyInvocation(ctx, client, extracted.InvocationID)
+		extracted.legacyResolved = true
+	}
 }
 
 func queryAntsResultDBVerdict(ctx context.Context, client pb.ResultDBClient, rootInvID string, info *base.AntsTestResultInfo) ([]*pb.TestResult, []*pb.TestExoneration, error) {
