@@ -96,10 +96,17 @@ type Failure struct {
 	Reason string
 	// The value assigned to the identifier "variant.<key>".
 	Variant map[string]string
+	// The value assigned to the identifier "failure_reason.kind".
+	Kind string
+	// The value assigned to the identifier "failure_reason.errors.message".
+	ErrorMessages []string
+	// The value assigned to the identifier "failure_reason.errors.trace".
+	ErrorTraces []string
 }
 
 type boolEval func(Failure) bool
 type stringEval func(Failure) string
+type repeatedStringEval func(Failure) []string
 type predicateEval func(Failure, string) bool
 
 // Expr represents a predicate for a failure association rule.
@@ -291,6 +298,16 @@ func (f *boolFunction) format(w io.Writer) {
 	io.WriteString(w, ")")
 }
 
+func isDeclaredIdentifier(ident string) bool {
+	switch ident {
+	case "test", "reason", "failure_reason.kind",
+		"failure_reason.errors.message", "failure_reason.errors.trace":
+		return true
+	default:
+		return strings.HasPrefix(ident, "variant.")
+	}
+}
+
 func (f *boolFunction) evaluator(v *validator) boolEval {
 	switch strings.ToLower(f.Function) {
 	case "regexp_contains":
@@ -315,6 +332,78 @@ func (f *boolFunction) evaluator(v *validator) boolEval {
 		return func(f Failure) bool {
 			value := valueEval(f)
 			return re.MatchString(value)
+		}
+	case "any_like":
+		if len(f.Args) != 2 {
+			v.reportError(fmt.Errorf("invalid number of arguments to %s: got %v, want 2", f.Function, len(f.Args)))
+			return nil
+		}
+		valuesEval := f.Args[0].repeatedEvaluator(v)
+		pattern, ok := f.Args[1].asConstant(v)
+		if !ok {
+			v.reportError(fmt.Errorf("expected second argument to %s to be a constant pattern", f.Function))
+			return nil
+		}
+		regexpPattern, err := likePatternToRegexp(pattern)
+		if err != nil {
+			v.reportError(err)
+			return nil
+		}
+		re, err := regexp.Compile(regexpPattern)
+		if err != nil {
+			v.reportError(fmt.Errorf("invalid LIKE expression: %s", pattern))
+			return nil
+		}
+		return func(f Failure) bool {
+			for _, val := range valuesEval(f) {
+				if re.MatchString(val) {
+					return true
+				}
+			}
+			return false
+		}
+	case "any_equals":
+		if len(f.Args) != 2 {
+			v.reportError(fmt.Errorf("invalid number of arguments to %s: got %v, want 2", f.Function, len(f.Args)))
+			return nil
+		}
+		valuesEval := f.Args[0].repeatedEvaluator(v)
+		target, ok := f.Args[1].asConstant(v)
+		if !ok {
+			v.reportError(fmt.Errorf("expected second argument to %s to be a constant string", f.Function))
+			return nil
+		}
+		return func(f Failure) bool {
+			for _, val := range valuesEval(f) {
+				if val == target {
+					return true
+				}
+			}
+			return false
+		}
+	case "any_regexp_contains":
+		if len(f.Args) != 2 {
+			v.reportError(fmt.Errorf("invalid number of arguments to %s: got %v, want 2", f.Function, len(f.Args)))
+			return nil
+		}
+		valuesEval := f.Args[0].repeatedEvaluator(v)
+		pattern, ok := f.Args[1].asConstant(v)
+		if !ok {
+			v.reportError(fmt.Errorf("expected second argument to %s to be a constant pattern", f.Function))
+			return nil
+		}
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			v.reportError(fmt.Errorf("invalid regular expression %q", pattern))
+			return nil
+		}
+		return func(f Failure) bool {
+			for _, val := range valuesEval(f) {
+				if re.MatchString(val) {
+					return true
+				}
+			}
+			return false
 		}
 	default:
 		v.reportError(fmt.Errorf("undefined function: %q", f.Function))
@@ -524,6 +613,10 @@ func (e *stringExpr) evaluator(v *validator) stringEval {
 	}
 	if e.Ident != nil {
 		varName := *e.Ident
+		if !isDeclaredIdentifier(varName) {
+			v.reportError(fmt.Errorf("undeclared identifier %q", varName))
+			return nil
+		}
 		var accessor func(c Failure) string
 		if strings.HasPrefix(varName, "variant.") {
 			key := strings.TrimPrefix(varName, "variant.")
@@ -543,11 +636,44 @@ func (e *stringExpr) evaluator(v *validator) stringEval {
 				accessor = func(f Failure) string {
 					return f.Reason
 				}
+			case "failure_reason.kind":
+				accessor = func(f Failure) string {
+					return f.Kind
+				}
 			default:
-				v.reportError(fmt.Errorf("undeclared identifier %q", varName))
+				v.reportError(fmt.Errorf("cannot use repeated field %q in scalar context", varName))
+				return nil
 			}
 		}
 		return func(f Failure) string { return accessor(f) }
+	}
+	return nil
+}
+
+func (e *stringExpr) repeatedEvaluator(v *validator) repeatedStringEval {
+	if e.Literal != nil {
+		v.reportError(fmt.Errorf("expected repeated field, got string literal"))
+		return nil
+	}
+	if e.Ident != nil {
+		varName := *e.Ident
+		if !isDeclaredIdentifier(varName) {
+			v.reportError(fmt.Errorf("undeclared identifier %q", varName))
+			return nil
+		}
+		switch varName {
+		case "failure_reason.errors.message":
+			return func(f Failure) []string {
+				return f.ErrorMessages
+			}
+		case "failure_reason.errors.trace":
+			return func(f Failure) []string {
+				return f.ErrorTraces
+			}
+		default:
+			v.reportError(fmt.Errorf("expected repeated field, got scalar field %q", varName))
+			return nil
+		}
 	}
 	return nil
 }
