@@ -32,9 +32,9 @@ export enum androidState {
 export const getAndroidStatusColor = (status: StateUnion) => {
   switch (status.toUpperCase()) {
     case androidState.DYING:
-    case androidState.LAB_RUNNING:
     case androidState.MISSING:
     case androidState.FAILED:
+    case androidState.LAB_MISSING:
       return colors.red[100];
     case androidState.PREPPING:
     case androidState.INIT:
@@ -43,7 +43,7 @@ export const getAndroidStatusColor = (status: StateUnion) => {
     case androidState.IDLE:
     case androidState.BUSY:
     case androidState.LAMEDUCK:
-    case androidState.LAB_MISSING:
+    case androidState.LAB_RUNNING:
       return colors.transparent;
     default:
       return unknownStateColor;
