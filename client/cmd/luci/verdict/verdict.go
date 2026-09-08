@@ -39,7 +39,8 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 		ShortDesc: "Manage invocation test verdicts (combined variant outcomes)",
 		LongDesc: "Manage invocation test verdicts. An 'invocation test verdict' (or simply test verdict) represents the combined outcome of all test results (retries) for a test variant within an invocation, evaluated alongside any test exonerations. For individual execution attempts, see 'luci test-result'.\n\n" +
 			"Available subcommands:\n" +
-			"  get   Get details of an invocation test verdict (combined runs and exonerations)",
+			"  get   Get details of an invocation test verdict (combined runs and exonerations)\n" +
+			"  list  List test verdicts in an invocation",
 		CommandRun: func() subcommands.CommandRun {
 			return &verdictRun{af: af}
 		},
@@ -54,6 +55,7 @@ type verdictRun struct {
 func (r *verdictRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	return base.RunSubcommandApp(a, "luci verdict", "Test verdicts management", []*subcommands.Command{
 		GetCmd(r.af),
+		ListCmd(r.af),
 		subcommands.CmdHelp,
 	}, args)
 }

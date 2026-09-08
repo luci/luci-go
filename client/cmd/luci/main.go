@@ -46,13 +46,15 @@ func getApplication() *cli.Application {
 			"  1. Extract IDs from a Milo or ATI test URL:\n" +
 			"     $ luci ids https://ci.chromium.org/ui/test-investigate/invocations/build-123/...\n" +
 			"     $ luci ids https://android-build.corp.google.com/test_investigate/invocation/I.../test/TR...\n\n" +
-			"  2. Inspect a module and its shards/errors:\n" +
+			"  2. List test verdicts in an invocation:\n" +
+			"     $ luci verdict list -invocationid build-123\n\n" +
+			"  3. Inspect a module and its shards/errors:\n" +
 			"     $ luci module get -invocationid ants-i123 -modulename CellBroadcastReceiverMTS\n\n" +
-			"  3. Inspect a test verdict:\n" +
+			"  4. Inspect a test verdict:\n" +
 			"     $ luci verdict get -invocationid build-123 -testid ninja://chrome/test\n\n" +
-			"  4. Inspect an individual test result:\n" +
+			"  5. Inspect an individual test result:\n" +
 			"     $ luci test-result get -invocationid build-123 -testid ninja://chrome/test -resultid 0\n\n" +
-			"  5. List and inspect test result or work unit artifacts:\n" +
+			"  6. List and inspect test result or work unit artifacts:\n" +
 			"     $ luci artifact list -invocationid build-123 -workunitid run-tests\n" +
 			"     $ luci artifact get -invocationid build-123 -workunitid run-tests -artifactid test.xml\n" +
 			"     $ luci artifact list -invocationid build-123 -testid ninja://chrome/test -resultid 0\n" +
