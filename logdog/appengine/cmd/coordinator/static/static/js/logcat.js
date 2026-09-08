@@ -68,8 +68,8 @@ const dropdownHeaderSettings = document.getElementById(
 const dropdownListSettings = document.getElementById('dropdown-list-settings');
 const hideDateTimeCheckbox = document.getElementById('hide-date-time-checkbox');
 const wrapTextCheckbox = document.getElementById('wrap-text-checkbox');
-const alwaysShowActivityManagerCheckbox = document.getElementById(
-  'always-show-activity-manager-checkbox');
+const alwaysShowAllowlistedCheckbox = document.getElementById(
+  'always-show-allowlisted-checkbox');
 const toggleDarkModeCheckbox = document.getElementById(
   'toggle-dark-mode-checkbox');
 const switchToRawModeButton = document.getElementById('switch-to-raw-mode');
@@ -254,6 +254,16 @@ const appZygoteRegexPattern =
 
 /** @type {RegExp} */
 const exceptionRegexPattern = new RegExp('^[\\w.]+:');
+
+/** @type {Set<string>} */
+const allowlistedTags = new Set([
+  'ActivityManager', // Shows activity lifecycle messages.
+  'ActivityTaskManager', // More activity lifecycle messages.
+  'AndroidRuntime', // Java crash dumps.
+  'AppZygoteInit', // Android's native application zygote support.
+  'DEBUG', // Native crash dump.
+  'cr_wrap.sh', // Logs from wrap.sh scripts embedded in apks.
+]);
 
 /**
  * Toggles the display of a given dropdown list.
@@ -886,7 +896,7 @@ function handleSettingsOptionClick(event) {
   } else if (id === 'display-non-logcat-checkbox') {
     updateTextDisplayArea();
 
-  } else if (id === 'always-show-activity-manager-checkbox') {
+  } else if (id === 'always-show-allowlisted-checkbox') {
     updateTextDisplayArea();
 
   } else if (id === 'toggle-dark-mode-checkbox') {
@@ -969,7 +979,7 @@ function updateTextDisplayArea(restoreScrollPosition = true) {
   // Find out the line numbers that will be displayed based on the options
   // selected by the user.
   const displayedLineNumbers = [];
-  const alwaysShowActivityManager = alwaysShowActivityManagerCheckbox.checked;
+  const alwaysShowAllowlisted = alwaysShowAllowlistedCheckbox.checked;
 
   for (const [i, parsedLine] of currentFileParsedLines.entries()) {
     if (!parsedLine.isLogcat) {
@@ -992,8 +1002,8 @@ function updateTextDisplayArea(restoreScrollPosition = true) {
       continue;
     }
 
-    if (alwaysShowActivityManager) {
-      if (parsedLine.tag === 'ActivityManager') {
+    if (alwaysShowAllowlisted) {
+      if (allowlistedTags.has(parsedLine.tag)) {
         displayedLineNumbers.push(i);
         continue;
       }
