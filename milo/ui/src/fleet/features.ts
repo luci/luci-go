@@ -57,3 +57,15 @@ export const enableAndroidHealthMetrics = createFeatureFlag({
   trackingBug: '537412303',
   allowedEnvironments: ['dev', 'prod'],
 });
+
+export const enableChromeOsHealthDashboard = createFeatureFlag({
+  description: 'Enables the ChromeOS Health Dashboard.',
+  namespace: 'fleet-console',
+  name: 'chromeos-health-dashboard',
+  percentage: {
+    dev: 100,
+    prod: 0,
+  },
+  trackingBug: '537909853',
+  allowedEnvironments: ['dev'],
+});

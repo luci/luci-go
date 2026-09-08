@@ -19,6 +19,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
 import HomeIcon from '@mui/icons-material/Home';
 import LanIcon from '@mui/icons-material/Lan';
+import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import TaskIcon from '@mui/icons-material/Task';
 import TopicIcon from '@mui/icons-material/Topic';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -31,6 +32,7 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 import {
   generateAdminTasksURL,
   generateDeviceListURL,
+  generateHealthURL,
   generateRepairsURL,
   platformToURL,
 } from '../constants/paths';
@@ -54,10 +56,15 @@ export interface SidebarSection {
 export function generateSidebarSections(
   platform?: Platform,
   pendingAdminTasksCount?: number,
+  isHealthDashboardEnabled?: boolean,
 ): SidebarSection[] {
   return [
     generateHomeSection(),
-    generateLabHealthSection(platform, pendingAdminTasksCount),
+    generateLabHealthSection(
+      platform,
+      pendingAdminTasksCount,
+      isHealthDashboardEnabled,
+    ),
     generateResourceRequestsSection(),
     generateOtherToolsSection(),
   ];
@@ -79,6 +86,7 @@ function generateHomeSection(): SidebarSection {
 function generateLabHealthSection(
   platform?: Platform,
   pendingAdminTasksCount?: number,
+  isHealthDashboardEnabled?: boolean,
 ): SidebarSection {
   const showChromeOsRepairs = getFeatureFlagValue(
     enableChromeOsRepairsDashboard,
@@ -89,6 +97,8 @@ function generateLabHealthSection(
     platform === Platform.PIXEL ||
     (platform === Platform.CHROMEOS && showChromeOsRepairs);
   const isAdminTasksEnabled = !platform || platform === Platform.CHROMEOS;
+  const isHealthEnabled =
+    isHealthDashboardEnabled && (!platform || platform === Platform.CHROMEOS);
   return {
     title: 'Lab Health',
     pages: [
@@ -123,6 +133,17 @@ function generateLabHealthSection(
               icon: <TaskIcon />,
               badgeCount: pendingAdminTasksCount,
               badgeAriaLabel: `${pendingAdminTasksCount ?? 0} pending admin tasks`,
+            },
+          ]
+        : []),
+      ...(isHealthEnabled
+        ? [
+            {
+              label: 'Health dashboard',
+              url: generateHealthURL(
+                platformToURL(platform || Platform.CHROMEOS),
+              ),
+              icon: <MonitorHeartIcon />,
             },
           ]
         : []),

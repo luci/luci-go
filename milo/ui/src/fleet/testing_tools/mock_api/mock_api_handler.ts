@@ -87,6 +87,8 @@ export interface FleetConsoleMockFixtures {
   CreatePriorityRule: unknown;
   UpdatePriorityRule: unknown;
   DeletePriorityRule: unknown;
+  GetDefaultQuota: unknown;
+  SetDefaultQuota: unknown;
   [method: string]: unknown;
 }
 
@@ -423,6 +425,12 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     },
   },
   DeletePriorityRule: {},
+  GetDefaultQuota: {
+    defaultQuota: 49,
+  },
+  SetDefaultQuota: {
+    defaultQuota: 49,
+  },
 };
 
 function deepClone<T>(obj: T): T {

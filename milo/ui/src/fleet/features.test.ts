@@ -18,6 +18,7 @@ import {
 } from '@/common/feature_flags';
 import {
   enableAndroidUtilizationMetrics,
+  enableChromeOsHealthDashboard,
   enableChromeOsRepairsDashboard,
   enablePTE,
 } from '@/fleet/features';
@@ -51,6 +52,31 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
 
       localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
       expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(true);
+    });
+
+    it('enables chromeos-health-dashboard by default in dev (100% rollout)', () => {
+      expect(
+        isFlagAvailableInEnvironment(enableChromeOsHealthDashboard, env),
+      ).toBe(true);
+      expect(
+        getFeatureFlagValue(
+          enableChromeOsHealthDashboard,
+          'user@google.com',
+          env,
+        ),
+      ).toBe(true);
+
+      localStorage.setItem(
+        'featureFlag:fleet-console:chromeos-health-dashboard',
+        'off',
+      );
+      expect(
+        getFeatureFlagValue(
+          enableChromeOsHealthDashboard,
+          'user@google.com',
+          env,
+        ),
+      ).toBe(false);
     });
 
     it('enables android-utilization-metrics by default in dev', () => {
@@ -102,6 +128,19 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
       expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(
         false,
       );
+    });
+
+    it('prevents chromeos-health-dashboard from being available or enabled in prod', () => {
+      expect(
+        isFlagAvailableInEnvironment(enableChromeOsHealthDashboard, env),
+      ).toBe(false);
+      expect(
+        getFeatureFlagValue(
+          enableChromeOsHealthDashboard,
+          'user@google.com',
+          env,
+        ),
+      ).toBe(false);
     });
 
     it('disables android-utilization-metrics by default in prod', () => {

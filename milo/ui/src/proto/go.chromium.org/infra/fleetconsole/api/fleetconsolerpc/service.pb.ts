@@ -53,6 +53,10 @@ import {
   CreatePriorityRuleResponse,
   DeletePriorityRuleRequest,
   DeletePriorityRuleResponse,
+  GetDefaultQuotaRequest,
+  GetDefaultQuotaResponse,
+  SetDefaultQuotaRequest,
+  SetDefaultQuotaResponse,
   ExportDevicesToCSVRequest,
   ExportDevicesToCSVResponse,
   GetDeviceDimensionsRequest,
@@ -376,6 +380,8 @@ export interface FleetConsole {
   UpdatePriorityRule(request: UpdatePriorityRuleRequest): Promise<UpdatePriorityRuleResponse>;
   DeletePriorityRule(request: DeletePriorityRuleRequest): Promise<DeletePriorityRuleResponse>;
   ListCustomerSlos(request: ListCustomerSlosRequest): Promise<ListCustomerSlosResponse>;
+  GetDefaultQuota(request: GetDefaultQuotaRequest): Promise<GetDefaultQuotaResponse>;
+  SetDefaultQuota(request: SetDefaultQuotaRequest): Promise<SetDefaultQuotaResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -437,6 +443,8 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.UpdatePriorityRule = this.UpdatePriorityRule.bind(this);
     this.DeletePriorityRule = this.DeletePriorityRule.bind(this);
     this.ListCustomerSlos = this.ListCustomerSlos.bind(this);
+    this.GetDefaultQuota = this.GetDefaultQuota.bind(this);
+    this.SetDefaultQuota = this.SetDefaultQuota.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -752,6 +760,18 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ListCustomerSlosRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListCustomerSlos", data);
     return promise.then((data) => ListCustomerSlosResponse.fromJSON(data));
+  }
+
+  GetDefaultQuota(request: GetDefaultQuotaRequest): Promise<GetDefaultQuotaResponse> {
+    const data = GetDefaultQuotaRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetDefaultQuota", data);
+    return promise.then((data) => GetDefaultQuotaResponse.fromJSON(data));
+  }
+
+  SetDefaultQuota(request: SetDefaultQuotaRequest): Promise<SetDefaultQuotaResponse> {
+    const data = SetDefaultQuotaRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "SetDefaultQuota", data);
+    return promise.then((data) => SetDefaultQuotaResponse.fromJSON(data));
   }
 }
 

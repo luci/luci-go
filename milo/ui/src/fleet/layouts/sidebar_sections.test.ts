@@ -183,4 +183,33 @@ describe('generateSidebarSections', () => {
     expect(catalogPage).toBeDefined();
     expect(catalogPage?.url).toBe('/ui/fleet/labs/catalog');
   });
+
+  describe('Health dashboard page', () => {
+    it('is shown for ChromeOS when isHealthDashboardEnabled is true', () => {
+      const sections = generateSidebarSections(
+        Platform.CHROMEOS,
+        undefined,
+        true,
+      );
+      const labHealth = sections.find((s) => s.title === 'Lab Health');
+      const healthPage = labHealth?.pages.find(
+        (p) => p.label === 'Health dashboard',
+      );
+      expect(healthPage).toBeDefined();
+      expect(healthPage?.url).toBe('/ui/fleet/p/chromeos/health');
+    });
+
+    it('is hidden when isHealthDashboardEnabled is false or undefined', () => {
+      const sections = generateSidebarSections(
+        Platform.CHROMEOS,
+        undefined,
+        false,
+      );
+      const labHealth = sections.find((s) => s.title === 'Lab Health');
+      const healthPage = labHealth?.pages.find(
+        (p) => p.label === 'Health dashboard',
+      );
+      expect(healthPage).toBeUndefined();
+    });
+  });
 });

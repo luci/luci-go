@@ -27,6 +27,8 @@ import Toolbar from '@mui/material/Toolbar';
 import { Fragment, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
 
+import { useFeatureFlag } from '@/common/feature_flags';
+import { enableChromeOsHealthDashboard } from '@/fleet/features';
 import { colors } from '@/fleet/theme/colors';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -55,12 +57,19 @@ export const Sidebar = ({ open }: { open: boolean }) => {
   const location = useLocation();
   const platform = useCurrentPlatform();
   const isAdminTasksEnabled = !platform || platform === Platform.CHROMEOS;
+  const isHealthDashboardEnabled = useFeatureFlag(
+    enableChromeOsHealthDashboard,
+  );
   const pendingAdminTasksCount = usePendingAdminTasksCount({
     enabled: isAdminTasksEnabled,
   });
   const sidebarSections = useMemo(() => {
-    return generateSidebarSections(platform, pendingAdminTasksCount);
-  }, [platform, pendingAdminTasksCount]);
+    return generateSidebarSections(
+      platform,
+      pendingAdminTasksCount,
+      isHealthDashboardEnabled,
+    );
+  }, [platform, pendingAdminTasksCount, isHealthDashboardEnabled]);
 
   return (
     <Drawer

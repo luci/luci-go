@@ -16,7 +16,10 @@ import { lazy, ReactElement } from 'react';
 import { Navigate, RouteObject } from 'react-router';
 
 import { getFeatureFlagValue } from '@/common/feature_flags';
-import { enableChromeOsRepairsDashboard } from '@/fleet/features';
+import {
+  enableChromeOsHealthDashboard,
+  enableChromeOsRepairsDashboard,
+} from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { initiateSurvey } from '../utils/survey';
@@ -133,6 +136,23 @@ export const platformRoutes: RouteObject[] = [
           [Platform.CHROMEOS]: lazy(
             () => import('@/fleet/pages/admin_tasks_page'),
           ),
+        }}
+      />
+    ),
+  },
+
+  {
+    path: 'health',
+    element: (
+      <PlatformDependentPage
+        pageComponentMap={{
+          ...(getFeatureFlagValue(enableChromeOsHealthDashboard)
+            ? {
+                [Platform.CHROMEOS]: lazy(
+                  () => import('@/fleet/pages/chromeos/health'),
+                ),
+              }
+            : {}),
         }}
       />
     ),

@@ -677,6 +677,21 @@ export interface DeletePriorityRuleRequest {
 export interface DeletePriorityRuleResponse {
 }
 
+export interface GetDefaultQuotaRequest {
+}
+
+export interface GetDefaultQuotaResponse {
+  readonly defaultQuota: number;
+}
+
+export interface SetDefaultQuotaRequest {
+  readonly defaultQuota: number;
+}
+
+export interface SetDefaultQuotaResponse {
+  readonly defaultQuota: number;
+}
+
 function createBaseDevice(): Device {
   return { id: "", dutId: "", address: undefined, type: 0, state: 0, deviceSpec: undefined, realm: "" };
 }
@@ -6575,6 +6590,224 @@ export const DeletePriorityRuleResponse: MessageFns<DeletePriorityRuleResponse> 
   },
   fromPartial(_: DeepPartial<DeletePriorityRuleResponse>): DeletePriorityRuleResponse {
     const message = createBaseDeletePriorityRuleResponse() as any;
+    return message;
+  },
+};
+
+
+function createBaseGetDefaultQuotaRequest(): GetDefaultQuotaRequest {
+  return {};
+}
+
+export const GetDefaultQuotaRequest: MessageFns<GetDefaultQuotaRequest> = {
+  encode(_: GetDefaultQuotaRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetDefaultQuotaRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetDefaultQuotaRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetDefaultQuotaRequest {
+    return {};
+  },
+
+  toJSON(_: GetDefaultQuotaRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetDefaultQuotaRequest>): GetDefaultQuotaRequest {
+    return GetDefaultQuotaRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<GetDefaultQuotaRequest>): GetDefaultQuotaRequest {
+    const message = createBaseGetDefaultQuotaRequest() as any;
+    return message;
+  },
+};
+
+function createBaseGetDefaultQuotaResponse(): GetDefaultQuotaResponse {
+  return { defaultQuota: 0 };
+}
+
+export const GetDefaultQuotaResponse: MessageFns<GetDefaultQuotaResponse> = {
+  encode(message: GetDefaultQuotaResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.defaultQuota !== 0) {
+      writer.uint32(8).int32(message.defaultQuota);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetDefaultQuotaResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetDefaultQuotaResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.defaultQuota = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetDefaultQuotaResponse {
+    return { defaultQuota: isSet(object.defaultQuota) ? globalThis.Number(object.defaultQuota) : 0 };
+  },
+
+  toJSON(message: GetDefaultQuotaResponse): unknown {
+    const obj: any = {};
+    if (message.defaultQuota !== 0) {
+      obj.defaultQuota = Math.round(message.defaultQuota);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetDefaultQuotaResponse>): GetDefaultQuotaResponse {
+    return GetDefaultQuotaResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetDefaultQuotaResponse>): GetDefaultQuotaResponse {
+    const message = createBaseGetDefaultQuotaResponse() as any;
+    message.defaultQuota = object.defaultQuota ?? 0;
+    return message;
+  },
+};
+
+function createBaseSetDefaultQuotaRequest(): SetDefaultQuotaRequest {
+  return { defaultQuota: 0 };
+}
+
+export const SetDefaultQuotaRequest: MessageFns<SetDefaultQuotaRequest> = {
+  encode(message: SetDefaultQuotaRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.defaultQuota !== 0) {
+      writer.uint32(8).int32(message.defaultQuota);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SetDefaultQuotaRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetDefaultQuotaRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.defaultQuota = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetDefaultQuotaRequest {
+    return { defaultQuota: isSet(object.defaultQuota) ? globalThis.Number(object.defaultQuota) : 0 };
+  },
+
+  toJSON(message: SetDefaultQuotaRequest): unknown {
+    const obj: any = {};
+    if (message.defaultQuota !== 0) {
+      obj.defaultQuota = Math.round(message.defaultQuota);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SetDefaultQuotaRequest>): SetDefaultQuotaRequest {
+    return SetDefaultQuotaRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SetDefaultQuotaRequest>): SetDefaultQuotaRequest {
+    const message = createBaseSetDefaultQuotaRequest() as any;
+    message.defaultQuota = object.defaultQuota ?? 0;
+    return message;
+  },
+};
+
+function createBaseSetDefaultQuotaResponse(): SetDefaultQuotaResponse {
+  return { defaultQuota: 0 };
+}
+
+export const SetDefaultQuotaResponse: MessageFns<SetDefaultQuotaResponse> = {
+  encode(message: SetDefaultQuotaResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.defaultQuota !== 0) {
+      writer.uint32(8).int32(message.defaultQuota);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SetDefaultQuotaResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetDefaultQuotaResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.defaultQuota = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetDefaultQuotaResponse {
+    return { defaultQuota: isSet(object.defaultQuota) ? globalThis.Number(object.defaultQuota) : 0 };
+  },
+
+  toJSON(message: SetDefaultQuotaResponse): unknown {
+    const obj: any = {};
+    if (message.defaultQuota !== 0) {
+      obj.defaultQuota = Math.round(message.defaultQuota);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SetDefaultQuotaResponse>): SetDefaultQuotaResponse {
+    return SetDefaultQuotaResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SetDefaultQuotaResponse>): SetDefaultQuotaResponse {
+    const message = createBaseSetDefaultQuotaResponse() as any;
+    message.defaultQuota = object.defaultQuota ?? 0;
     return message;
   },
 };
