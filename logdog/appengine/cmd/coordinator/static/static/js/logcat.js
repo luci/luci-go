@@ -781,14 +781,19 @@ function updateDisplayAllTagSelection() {
  * Set up the dropdown list that filters the logcat based on priority.
  */
 function setUpPriorityDropdownList() {
-  // Automatically select 'Display All Priorities' and consequently all other
-  // options in the dropdown when the user uploads a new file.
-  displayAllPriorities.li.classList.add('selected');
-  displayAllPriorities.checkbox.checked = true;
+  // Hide verbose-level and debug-level logs by default. They are spammy.
+  displayAllPriorities.li.classList.remove('selected');
+  displayAllPriorities.checkbox.checked = false;
 
   for (const filterOption of displaySinglePriority) {
-    filterOption.li.classList.add('selected');
-    filterOption.checkbox.checked = true;
+    const value = filterOption.li.dataset.value;
+    if (value == 'V' || value == 'D') {
+      filterOption.li.classList.remove('selected');
+      filterOption.checkbox.checked = false;
+    } else {
+      filterOption.li.classList.add('selected');
+      filterOption.checkbox.checked = true;
+    }
   }
 }
 
