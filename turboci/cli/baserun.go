@@ -18,9 +18,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth"
@@ -29,6 +32,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/lucictx"
 	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 )
@@ -94,6 +100,59 @@ var attachTokenChoices = flagenum.Enum{
 	"never":   attachTokenNever,
 }
 
+// defaultRetryFactory provides application-level retries across committed HTTP/2 streams.
+func defaultRetryFactory() retry.Iterator {
+	return &retry.ExponentialBackoff{
+		Limited: retry.Limited{
+			Delay:   100 * time.Millisecond,
+			Retries: 5,
+		},
+		Multiplier: 2.0,
+		MaxDelay:   5 * time.Second,
+	}
+}
+
+// retryUnaryInterceptor provides application-level retries for TurboCI RPCs.
+//
+// While gRPC's transparent retry policy (in serviceConfig) protects against
+// edge-level drops and GFE 503s, it is completely bypassed for backend failures
+// (e.g. Spanner 60s context deadline exceeded returning INTERNAL, or lock aborts
+// returning ABORTED). Under gRFC A6, an RPC is marked "committed" as soon as
+// HTTP/2 response headers arrive. Because GFE/OnePlatform delivers backend errors
+// as separate HEADERS and TRAILERS frames, grpc-go treats the stream as committed
+// (!TrailersOnly()) and refuses to retry at the transport layer.
+//
+// This interceptor catches those committed errors at the application layer and
+// retries them with exponential backoff on a brand-new HTTP/2 stream.
+func retryUnaryInterceptor(rf retry.Factory) grpc.UnaryClientInterceptor {
+	return func(
+		ctx context.Context,
+		method string,
+		req, reply any,
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		opName := "turboci.cli: " + strings.TrimPrefix(method, "/")
+		return retry.Retry(ctx, transient.Only(rf), func() error {
+			err := invoker(ctx, method, req, reply, cc, opts...)
+			if err != nil {
+				// To retry on all of the RetryableStatusCodes,
+				// INTERNAL, UNKNOWN, UNAVAILABLE are default transient codes,
+				// add ABORTED, CANCELLED, DEADLINE_EXCEEDED and RESOURCE_EXHAUSTED
+				// additionally.
+				return grpcutil.WrapIfTransientOr(
+					err,
+					codes.Aborted,
+					codes.Canceled,
+					codes.DeadlineExceeded,
+					codes.ResourceExhausted)
+			}
+			return nil
+		}, retry.LogCallback(ctx, opName))
+	}
+}
+
 // baseCommandRun provides common command run functionality.
 // All turboci subcommands must embed it directly or indirectly.
 type baseCommandRun struct {
@@ -105,6 +164,10 @@ type baseCommandRun struct {
 
 	client         orchestratorgrpcpb.TurboCIOrchestratorClient
 	turboCIContext *lucictx.TurboCI
+
+	// retryFactory is used for application-level RPC retries. If nil,
+	// defaultRetryFactory is used.
+	retryFactory retry.Factory
 }
 
 // RegisterGlobalFlags registers the common flags.
@@ -141,6 +204,12 @@ func (r *baseCommandRun) init(ctx context.Context) error {
 	if err != nil {
 		return errors.Fmt("failed to get credentials: %w", err)
 	}
+
+	rf := r.retryFactory
+	if rf == nil {
+		rf = defaultRetryFactory
+	}
+
 	conn, err := grpc.NewClient(r.apiEndpoint,
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),
@@ -152,6 +221,7 @@ func (r *baseCommandRun) init(ctx context.Context) error {
 		// not return a service config, or if the config it returns is invalid.
 		grpc.WithDisableServiceConfig(),
 		grpc.WithDefaultServiceConfig(retryPolicy),
+		grpc.WithChainUnaryInterceptor(retryUnaryInterceptor(rf)),
 	)
 	if err != nil {
 		return errors.Fmt("cannot dial to %s: %w", r.apiEndpoint, err)

@@ -20,16 +20,21 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"strings"
+	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
@@ -67,6 +72,59 @@ var retryPolicy = fmt.Sprintf(`{
 	orchestratorgrpcpb.TurboCIOrchestrator_ServiceDesc.ServiceName,
 )
 
+// retryFactory provides application-level retries across committed HTTP/2 streams.
+func retryFactory() retry.Iterator {
+	return &retry.ExponentialBackoff{
+		Limited: retry.Limited{
+			Delay:   100 * time.Millisecond,
+			Retries: 5,
+		},
+		Multiplier: 2.0,
+		MaxDelay:   5 * time.Second,
+	}
+}
+
+// retryUnaryInterceptor provides application-level retries for TurboCI RPCs.
+//
+// While gRPC's transparent retry policy (in serviceConfig) protects against
+// edge-level drops and GFE 503s, it is completely bypassed for backend failures
+// (e.g. Spanner 60s context deadline exceeded returning INTERNAL, or lock aborts
+// returning ABORTED). Under gRFC A6, an RPC is marked "committed" as soon as
+// HTTP/2 response headers arrive. Because GFE/OnePlatform delivers backend errors
+// as separate HEADERS and TRAILERS frames, grpc-go treats the stream as committed
+// (!TrailersOnly()) and refuses to retry at the transport layer.
+//
+// This interceptor catches those committed errors at the application layer and
+// retries them with exponential backoff on a brand-new HTTP/2 stream.
+func retryUnaryInterceptor() grpc.UnaryClientInterceptor {
+	return func(
+		ctx context.Context,
+		method string,
+		req, reply any,
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		opName := "turboci.cli: " + strings.TrimPrefix(method, "/")
+		return retry.Retry(ctx, transient.Only(retryFactory), func() error {
+			err := invoker(ctx, method, req, reply, cc, opts...)
+			if err != nil {
+				// To retry on all of the RetryableStatusCodes,
+				// INTERNAL, UNKNOWN, UNAVAILABLE are default transient codes,
+				// add ABORTED, CANCELLED, DEADLINE_EXCEEDED and RESOURCE_EXHAUSTED
+				// additionally.
+				return grpcutil.WrapIfTransientOr(
+					err,
+					codes.Aborted,
+					codes.Canceled,
+					codes.DeadlineExceeded,
+					codes.ResourceExhausted)
+			}
+			return nil
+		}, retry.LogCallback(ctx, opName))
+	}
+}
+
 // Dial establishes a connection to the Turbo CI Orchestrator.
 //
 // Each individual call must supply its own per-RPC credentials, there's no
@@ -87,6 +145,7 @@ func Dial(ctx context.Context, apiEndpoint string) (orchestratorgrpcpb.TurboCIOr
 			// not return a service config, or if the config it returns is invalid.
 			grpc.WithDisableServiceConfig(),
 			grpc.WithDefaultServiceConfig(retryPolicy),
+			grpc.WithChainUnaryInterceptor(retryUnaryInterceptor()),
 		)
 		if err != nil {
 			return nil, errors.Fmt("failed to dial Turbo CI Orchestrator: %w", err)
