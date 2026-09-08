@@ -1108,10 +1108,16 @@ function formatParsedLine(parsedLine, lineNumber, hideDateTime) {
  */
 function getPidStyling(pid, tag, dim = false) {
   if (tag === 'ActivityManager' || tag === 'ActivityTaskManager') {
-    return ['log-fore-black-pid'];
+    return ['log-dim'];
   }
   if (pidToProcessName.has(pid)) {
-    return ['log-fore-yellow'];
+    if (pidToProcessName.get(pid).includes(':')) {
+      // Secondary processes have colon in their names, use a yellow color.
+      return ['log-fore-yellow'];
+    } else {
+      // Main processes do not have colon in their names, use a different color.
+      return ['log-fore-black-pid'];
+    }
   }
   if (dim) {
     return ['log-dim'];

@@ -35,9 +35,9 @@
   --checkbox-label-text-color: #202124;
   --text-display-bg-color: white;
   --text-display-text-color: black;
-  --log-dim-color: rgb(135, 135, 135);
+  --log-dim-color: rgb(0, 0, 0);
   --log-fore-yellow-color: rgb(160, 120, 80);
-  --log-fore-black-pid-color: rgb(0, 0, 0);
+  --log-fore-black-pid-color: rgb(135, 135, 135);
   --log-fore-black-priority-color: rgb(0, 0, 0);
   --log-back-red-color: rgb(200, 60, 50);
   --log-back-yellow-color: rgb(160, 120, 80);
@@ -67,9 +67,9 @@
   --checkbox-label-text-color: #e8eaed;
   --text-display-bg-color: #1e1e1e;
   --text-display-text-color: #e8eaed;
-  --log-dim-color: rgb(200, 200, 200);
+  --log-dim-color: rgb(140, 140, 140);
   --log-fore-yellow-color: rgb(160, 120, 80);
-  --log-fore-black-pid-color: rgb(140, 140, 140);
+  --log-fore-black-pid-color: rgb(200, 200, 200);
   --log-fore-black-priority-color: rgb(0, 0, 0);
   --log-back-red-color: rgb(200, 60, 50);
   --log-back-yellow-color: rgb(160, 120, 80);
