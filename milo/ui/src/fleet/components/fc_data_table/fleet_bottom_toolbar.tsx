@@ -71,17 +71,20 @@ export function FleetBottomToolbar<TData extends MRT_RowData>({
         rowsPerPageOptions={DEFAULT_PAGE_SIZE_OPTIONS}
         labelDisplayedRows={({ from, to }) => {
           if (totalSize !== undefined && totalSize > 0) {
-            return `${from}-${to} of ${totalSize}`;
+            return `${from}-${Math.min(to, totalSize)} of ${totalSize}`;
           }
           return `${from}-${to} of ${nextPageToken ? `more than ${to}` : to}`;
         }}
         slotProps={{
           actions: {
-            previousButtonProps: {
+            previousButton: {
               disabled: currentPage === 0,
             },
-            nextButtonProps: {
-              disabled: data.length === 0 || nextPageToken === '',
+            nextButton: {
+              disabled:
+                data.length === 0 ||
+                nextPageToken === '' ||
+                (totalSize && totalSize <= (currentPage + 1) * pageSize),
             },
           } as NonNullable<
             React.ComponentProps<typeof TablePagination>['slotProps']
