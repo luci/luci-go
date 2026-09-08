@@ -380,11 +380,11 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		HasMore:      hasMore,
 	}
 
-	printVerdictSummary(ctx, schemasClient, client, httpClient, r.invocationID, vg, r.showArtifacts, r.showMetadata)
+	printVerdictSummary(ctx, schemasClient, client, httpClient, r.invocationID, vg, r.showArtifacts, r.showMetadata, r.legacy)
 	return 0
 }
 
-func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rdbClient pb.ResultDBClient, httpClient *http.Client, invID string, g *VerdictGroup, showArtifacts, showMetadata bool) {
+func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rdbClient pb.ResultDBClient, httpClient *http.Client, invID string, g *VerdictGroup, showArtifacts, showMetadata, legacy bool) {
 	status := g.DisplayStatus()
 
 	fmt.Printf("Invocation:   %s\n", invID)
@@ -439,7 +439,7 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 			runCountStr = fmt.Sprintf("%d runs", len(grp.items))
 		}
 		fmt.Printf("- %s (%s):\n", grp.parent.Label, runCountStr)
-		if grp.parent.ID != "" {
+		if !legacy && grp.parent.ID != "" {
 			modErr, _ := format.DiscoverWorkUnitError(ctx, rdbClient, httpClient, grp.parent.ID)
 			if modErr != nil {
 				firstLine, truncated := format.FormatDiscoveredErrorFirstLine(modErr, 120)

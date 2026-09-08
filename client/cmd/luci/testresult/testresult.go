@@ -154,7 +154,7 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 	pg := format.GetParentGroup(res.Name)
 	if pg.Label != "" {
 		fmt.Printf("Run in:    %s\n", pg.Label)
-		if pg.ID != "" {
+		if !r.legacy && pg.ID != "" {
 			modErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, pg.ID)
 			if modErr != nil {
 				firstLine, truncated := format.FormatDiscoveredErrorFirstLine(modErr, 120)
