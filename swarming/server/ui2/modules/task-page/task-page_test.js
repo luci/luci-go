@@ -1,6 +1,16 @@
-// Copyright 2019 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import "./task-page";
 import fetchMock from "fetch-mock";
@@ -15,7 +25,8 @@ import {
   mockPrpc,
 } from "../test_util";
 import { taskOutput, taskResults, taskRequests } from "./test_data";
-import { richLogsLink } from "./task-page-helpers";
+import { localeTime } from "common-sk/modules/human";
+import { richLogsLink, sliceSchedulingDeadline } from "./task-page-helpers";
 
 // Tip from https://stackoverflow.com/a/37348710
 // for catching "full page reload" errors.
@@ -1163,6 +1174,37 @@ describe("task-page", function () {
       expect(url).toEqual(
         "https://example.com/project/45b22fd90cefdf12/+/annotations"
       );
+    });
+
+    describe("sliceSchedulingDeadline", function () {
+      const request = {
+        createdTs: new Date("2026-09-02T19:39:07Z"),
+        taskSlices: [
+          { expirationSecs: "60" },
+          { expirationSecs: "30" },
+          { expirationSecs: "3600" },
+        ],
+      };
+
+      it("returns empty string when inputs are invalid", function () {
+        expect(sliceSchedulingDeadline(-1, request)).toBe("");
+        expect(sliceSchedulingDeadline(3, request)).toBe("");
+        expect(sliceSchedulingDeadline(0, null)).toBe("");
+        expect(sliceSchedulingDeadline(0, {})).toBe("");
+      });
+
+      it("calculates cumulative deadline for each slice", function () {
+        const t0 = request.createdTs.getTime();
+        expect(sliceSchedulingDeadline(0, request)).toBe(
+          localeTime(new Date(t0 + 60 * 1000))
+        );
+        expect(sliceSchedulingDeadline(1, request)).toBe(
+          localeTime(new Date(t0 + 90 * 1000))
+        );
+        expect(sliceSchedulingDeadline(2, request)).toBe(
+          localeTime(new Date(t0 + 3690 * 1000))
+        );
+      });
     });
   }); // end describe('data')
 });

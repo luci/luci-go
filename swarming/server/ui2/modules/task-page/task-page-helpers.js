@@ -1,6 +1,16 @@
-// Copyright 2019 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import * as human from "common-sk/modules/human";
 
@@ -230,12 +240,25 @@ export function richLogsLink(ele) {
 
 /** sliceSchedulingDeadline returns a human readable time stamp of when a task
  *  slice expires.
+ *
+ * @param {Number} sliceIdx - The 0-based index of the slice in request.taskSlices.
+ * @param {Object} request - The task request object.
  */
-export function sliceSchedulingDeadline(slice, request) {
-  if (!request.createdTs) {
+export function sliceSchedulingDeadline(sliceIdx, request) {
+  if (
+    !request ||
+    !request.createdTs ||
+    !request.taskSlices ||
+    sliceIdx < 0 ||
+    sliceIdx >= request.taskSlices.length
+  ) {
     return "";
   }
-  const delta = slice.expirationSecs * 1000;
+  let cumulativeSecs = 0;
+  for (let i = 0; i <= sliceIdx; i++) {
+    cumulativeSecs += parseInt(request.taskSlices[i].expirationSecs, 10) || 0;
+  }
+  const delta = cumulativeSecs * 1000;
   return human.localeTime(new Date(request.createdTs.getTime() + delta));
 }
 

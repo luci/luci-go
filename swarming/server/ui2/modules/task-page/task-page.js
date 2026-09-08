@@ -1,6 +1,16 @@
-// Copyright 2019 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import { $, $$ } from "common-sk/modules/dom";
 import { errorMessage } from "elements-sk/errorMessage";
@@ -189,10 +199,12 @@ const sliceTab = (ele, idx) => html`
   </div>
 `;
 
-const taskInfoTable = (ele, request, result, currentSlice) => {
+const taskInfoTable = (ele, request, result, currentSliceIdx) => {
   if (!ele._taskId || ele._notFound) {
     return "";
   }
+  const currentSlice =
+    (request.taskSlices && request.taskSlices[currentSliceIdx]) || {};
   if (!currentSlice.properties) {
     currentSlice.properties = {};
   }
@@ -204,7 +216,7 @@ const taskInfoTable = (ele, request, result, currentSlice) => {
           <td>${request.name}</td>
         </tr>
         ${stateLoadBlock(ele, request, result)}
-        ${requestBlock(request, result, currentSlice)}
+        ${requestBlock(request, result, currentSliceIdx)}
         ${dimensionBlock(currentSlice.properties.dimensions || [])}
         ${casBlock(
           "CAS Inputs",
@@ -354,7 +366,10 @@ const count = (obj, value, def) => {
   return obj;
 };
 
-const requestBlock = (request, result, currentSlice) => html`
+const requestBlock = (request, result, currentSliceIdx) => {
+  const currentSlice =
+    (request.taskSlices && request.taskSlices[currentSliceIdx]) || {};
+  return html`
   <tr>
     <td>Priority</td>
     <td>${request.priority}</td>
@@ -365,7 +380,7 @@ const requestBlock = (request, result, currentSlice) => html`
   </tr>
   <tr>
     <td>Slice Scheduling Deadline</td>
-    <td>${sliceSchedulingDeadline(currentSlice, request)}</td>
+    <td>${sliceSchedulingDeadline(currentSliceIdx, request)}</td>
   </tr>
   <tr>
     <td>User</td>
@@ -383,7 +398,7 @@ const requestBlock = (request, result, currentSlice) => html`
     <td>Realm</td>
     <td>${request.realm}</td>
   </tr>
-  <tr ?hidden=${!currentSlice.properties.secretBytes}>
+  <tr ?hidden=${!(currentSlice.properties && currentSlice.properties.secretBytes)}>
     <td>Has Secret Bytes</td>
     <td
       title="The secret bytes are present on the machine, but not in the UI/API"
@@ -415,6 +430,7 @@ const requestBlock = (request, result, currentSlice) => html`
     </td>
   </tr>
 `;
+};
 
 const dimensionBlock = (dimensions) => html`
   <tr>
@@ -1208,7 +1224,7 @@ const template = (ele) => html`
 
     ${slicePicker(ele)}
 
-    ${taskInfoTable(ele, ele._request, ele._result, ele._currentSlice)}
+    ${taskInfoTable(ele, ele._request, ele._result, ele._currentSliceIdx)}
 
     ${taskTimingSection(ele, ele._request, ele._result)}
 
