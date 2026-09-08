@@ -41,10 +41,17 @@ export function useProductCatalogTabs() {
   const tabs = useMemo(() => {
     const apiTabs = filterOptionsQuery.data?.scopedProductType || [];
     if (apiTabs.length > 0) {
-      const isAnyInScope = apiTabs.some((t) => t.inScope);
+      const hasGce = apiTabs.some((t) => t.value?.toLowerCase() === 'gce');
+      const allTabs = hasGce
+        ? apiTabs
+        : [
+            ...apiTabs,
+            { value: ProductCatalogTab.GCE as string, inScope: true },
+          ];
+      const isAnyInScope = allTabs.some((t) => t.inScope);
       return [
         { value: ProductCatalogTab.ALL as string, inScope: isAnyInScope },
-        ...apiTabs,
+        ...allTabs,
       ];
     }
     return [];

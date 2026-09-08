@@ -25,11 +25,12 @@ import { combineAipFilters } from '@/fleet/utils/search_param';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
+  GetGceProductCatalogFilterValuesRequest,
   Int32Range,
   ProductCatalogFilterValue,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { COLUMNS } from './product_catalogue_columns';
+import { COLUMNS, getColumnsForTab } from './product_catalogue_columns';
 import { ProductCatalogTab } from './use_product_catalog_tabs';
 
 export const FILTERS = {
@@ -63,6 +64,145 @@ export const DEFAULT_FILTER_VALUES: Partial<
   fleetPlmStatus: ['GA', 'LA', 'NPI'],
 };
 
+// Filter keys that only exist in the non-virtual product catalog
+export const NONVIRTUAL_ONLY_KEYS = [
+  'resource_type',
+  'gpn',
+  'r11n',
+  'number_of_devices_per_rack',
+];
+
+// Filter keys that only exist in the GCE product catalog
+export const GCE_ONLY_KEYS = ['cpu_type'];
+
+/**
+ * Merges two lists of scoped filter values by unique value, combining their inScope flags.
+ */
+function mergeFilterValues(
+  nonVirtualValues: readonly ProductCatalogFilterValue[] = [],
+  gceValues: readonly ProductCatalogFilterValue[] = [],
+): ProductCatalogFilterValue[] {
+  const map = new Map<string, boolean>();
+  for (const item of nonVirtualValues) {
+    if (item.value !== undefined && item.value !== null) {
+      map.set(item.value, item.inScope);
+    }
+  }
+  for (const item of gceValues) {
+    if (item.value !== undefined && item.value !== null) {
+      const existing = map.get(item.value) ?? false;
+      map.set(item.value, existing || item.inScope);
+    }
+  }
+  return Array.from(map.entries()).map(([value, inScope]) => ({
+    value,
+    inScope,
+  }));
+}
+
+export interface QueryTargets {
+  enableNonVirtual: boolean;
+  enableGce: boolean;
+}
+
+/**
+ * Checks if a specific field key is targeted in an AIP-160 filter string,
+ * matching word boundaries / quotes / operators to prevent false positives
+ * from substrings in values.
+ */
+export function hasFilterField(
+  filters: string | null | undefined,
+  fieldKey: string,
+): boolean {
+  if (!filters) return false;
+  const regex = new RegExp(
+    `(?:^|[^\\w])"?${fieldKey}"?\\s*(=|!=|:|<=|>=|<|>)`,
+    'i',
+  );
+  return regex.test(filters);
+}
+
+/**
+ * Synchronously determines whether Non-virtual and/or GCE queries should be enabled
+ * based on the active tab and AIP-160 filter string.
+ */
+export function resolveQueryTargets(
+  selectedTab: ProductCatalogTab,
+  filtersParam: string | null | undefined,
+): QueryTargets {
+  if (selectedTab === ProductCatalogTab.GCE) {
+    return { enableNonVirtual: false, enableGce: true };
+  }
+  if (selectedTab !== ProductCatalogTab.ALL) {
+    return { enableNonVirtual: true, enableGce: false };
+  }
+
+  // On the "All" tab:
+  if (!filtersParam) {
+    return { enableNonVirtual: true, enableGce: true };
+  }
+
+  const hasNonVirtualOnly = NONVIRTUAL_ONLY_KEYS.some((k) =>
+    hasFilterField(filtersParam, k),
+  );
+  const hasGceOnly = GCE_ONLY_KEYS.some((k) => hasFilterField(filtersParam, k));
+
+  if (hasNonVirtualOnly && hasGceOnly) {
+    return { enableNonVirtual: false, enableGce: false };
+  }
+  if (hasNonVirtualOnly) {
+    return { enableNonVirtual: true, enableGce: false };
+  }
+  if (hasGceOnly) {
+    return { enableNonVirtual: false, enableGce: true };
+  }
+
+  // Inspect product_type if present in filters
+  const ptMatches = Array.from(
+    filtersParam.matchAll(
+      /(?:^|[^\w])"?product_type"?\s*(!=|=)\s*(?:\(([^)]*)\)|("[^"]*"|\S+))/gi,
+    ),
+  );
+  if (ptMatches.length > 0) {
+    const isExcluded = ptMatches.some((m) => m[1] === '!=');
+    const values = ptMatches
+      .flatMap((m) => (m[2] || m[3] || '').split(/,|\s+OR\s+/i))
+      .map((v) => v.replace(/["']/g, '').trim().toLowerCase())
+      .filter(Boolean);
+
+    if (values.length === 0) {
+      return { enableNonVirtual: true, enableGce: true };
+    }
+
+    const mentionsGce = values.includes(ProductCatalogTab.GCE);
+
+    if (isExcluded) {
+      if (mentionsGce) {
+        // GCE is excluded (e.g. product_type != ("gce")), so disable GCE
+        return { enableNonVirtual: true, enableGce: false };
+      }
+      // If a non-virtual type was excluded (e.g. product_type != ("hardware")),
+      // both GCE and other non-virtual types remain enabled
+      return { enableNonVirtual: true, enableGce: true };
+    } else {
+      // Inclusion
+      const uniqueValues = new Set(values);
+      if (mentionsGce && uniqueValues.size === 1) {
+        // Only GCE selected
+        return { enableNonVirtual: false, enableGce: true };
+      }
+      if (!mentionsGce) {
+        // Only non-virtual types selected, no GCE
+        return { enableNonVirtual: true, enableGce: false };
+      }
+      // Both GCE and non-virtual types selected
+      return { enableNonVirtual: true, enableGce: true };
+    }
+  }
+
+  return { enableNonVirtual: true, enableGce: true };
+}
+
 export const useProductCatalogFilters = (
   selectedTab: ProductCatalogTab,
   onApply?: () => void,
@@ -83,27 +223,67 @@ export const useProductCatalogFilters = (
   );
 
   const isAllTab = selectedTab === ProductCatalogTab.ALL;
-  const currentTab = isAllTab
-    ? ''
-    : `("${FILTERS.productType.filterKey}" = "${selectedTab}")`;
+  const isGceTab = selectedTab === ProductCatalogTab.GCE;
 
-  const combinedFilter = combineAipFilters(filtersParam || '', currentTab);
+  // Non-virtual tab predicate (e.g. product_type = "hardware")
+  const currentTab =
+    isAllTab || isGceTab
+      ? ''
+      : `("${FILTERS.productType.filterKey}" = "${selectedTab}")`;
+
+  const nonVirtualCombinedFilter = combineAipFilters(
+    filtersParam || '',
+    currentTab,
+  );
+
+  const { enableNonVirtual, enableGce } = resolveQueryTargets(
+    selectedTab,
+    filtersParam,
+  );
 
   const client = useFleetConsoleClient();
-  const filterOptionsQuery = useQuery({
-    ...client.GetProductCatalogFilterValues.query({ filter: combinedFilter }),
+
+  const nonVirtualFilterOptionsQuery = useQuery({
+    ...client.GetProductCatalogFilterValues.query({
+      filter: nonVirtualCombinedFilter,
+    }),
+    enabled: enableNonVirtual,
     placeholderData: keepPreviousData,
   });
 
-  const rawDataJson = JSON.stringify(filterOptionsQuery.data);
+  const gceFilterOptionsQuery = useQuery({
+    ...client.GetGceProductCatalogFilterValues.query(
+      GetGceProductCatalogFilterValuesRequest.fromPartial({
+        filter: filtersParam || '',
+      }),
+    ),
+    enabled: enableGce,
+    placeholderData: keepPreviousData,
+  });
+
+  const nonVirtualData = nonVirtualFilterOptionsQuery.data as
+    | Record<string, unknown>
+    | undefined;
+  const gceData = gceFilterOptionsQuery.data as
+    | Record<string, unknown>
+    | undefined;
+
+  const tabColumns = getColumnsForTab(selectedTab);
 
   const nextFilterOptions = useMemo(() => {
-    if (!filterOptionsQuery.data) return undefined;
+    const hasData =
+      (!isGceTab && nonVirtualFilterOptionsQuery.data) ||
+      (isGceTab && gceFilterOptionsQuery.data) ||
+      (isAllTab &&
+        (nonVirtualFilterOptionsQuery.data || gceFilterOptionsQuery.data));
+
+    if (!hasData) return undefined;
 
     const options: Record<
       string,
       StringListFilterCategoryBuilder | RangeFilterCategoryBuilder
     > = {};
+
     for (const column of COLUMNS) {
       if (!('accessorKey' in column) || !column.accessorKey) continue;
       if (!(column.accessorKey in FILTERS)) continue;
@@ -111,34 +291,61 @@ export const useProductCatalogFilters = (
       const accessorKey = column.accessorKey as keyof typeof FILTERS;
       const config = FILTERS[accessorKey];
 
-      const rawData = filterOptionsQuery.data as unknown as
-        | Record<string, unknown>
-        | undefined;
-      const data = rawData?.[accessorKey];
-      const filterKey = `"${config.filterKey}"`;
-      const scopedKey = `scoped${accessorKey.charAt(0).toUpperCase()}${accessorKey.slice(1)}`;
-      const scopedData = rawData?.[scopedKey] as
-        | ProductCatalogFilterValue[]
-        | undefined;
+      // Omit columns not visible on the current tab (e.g. cpu_type on hardware tab)
+      const isColumnInTab = tabColumns.some(
+        (c) => 'accessorKey' in c && c.accessorKey === accessorKey,
+      );
+      if (!isAllTab && !isColumnInTab) continue;
 
+      // Omit productType filter when not on All tab
       if (accessorKey === 'productType' && !isAllTab) continue;
 
+      const filterKey = `"${config.filterKey}"`;
+      const scopedKey = `scoped${accessorKey.charAt(0).toUpperCase()}${accessorKey.slice(1)}`;
+
       if (config.type === 'string_list') {
+        const nonVirtualScoped =
+          (nonVirtualData?.[scopedKey] as ProductCatalogFilterValue[]) ?? [];
+        const gceScoped =
+          (gceData?.[scopedKey] as ProductCatalogFilterValue[]) ?? [];
+
+        let scopedData: readonly ProductCatalogFilterValue[] = [];
+        if (NONVIRTUAL_ONLY_KEYS.includes(config.filterKey)) {
+          scopedData = nonVirtualScoped;
+        } else if (GCE_ONLY_KEYS.includes(config.filterKey)) {
+          scopedData = gceScoped;
+        } else if (isGceTab) {
+          scopedData = gceScoped;
+        } else if (isAllTab) {
+          scopedData = mergeFilterValues(nonVirtualScoped, gceScoped);
+          if (
+            accessorKey === 'productType' &&
+            !scopedData.some((v) => v.value === 'gce')
+          ) {
+            scopedData = [...scopedData, { value: 'gce', inScope: true }];
+          }
+        } else {
+          scopedData = nonVirtualScoped;
+        }
+
         const defaultOptions = hasUrlFiltersParam
           ? []
           : (DEFAULT_FILTER_VALUES[accessorKey] ?? []);
+
         options[filterKey] = new StringListFilterCategoryBuilder()
           .setLabel(column.header as string)
           .setOptions(
-            scopedData?.map((v) => ({
+            scopedData.map((v) => ({
               label: v.value === '' ? BLANK_VALUE : v.value,
               value: v.value,
               inScope: v.inScope,
-            })) ?? [],
+            })),
           )
           .setDefaultOptions([...defaultOptions]);
       } else if (config.type === 'range') {
-        const range = data as Int32Range;
+        const range = nonVirtualData?.[
+          accessorKey as keyof typeof nonVirtualData
+        ] as Int32Range | undefined;
         options[filterKey] = new RangeFilterCategoryBuilder()
           .setLabel(column.header as string)
           .setMin(range?.min ?? 0)
@@ -146,28 +353,43 @@ export const useProductCatalogFilters = (
       }
     }
     return options;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawDataJson, hasUrlFiltersParam, isAllTab]);
+  }, [
+    isAllTab,
+    isGceTab,
+    nonVirtualFilterOptionsQuery.data,
+    gceFilterOptionsQuery.data,
+    tabColumns,
+    nonVirtualData,
+    gceData,
+    hasUrlFiltersParam,
+  ]);
 
-  const { filterValues, aip160, warnings, setFiltersBatch } = useFilters(
-    nextFilterOptions,
-    {
-      areFilterValuesLoading: filterOptionsQuery.isLoading,
-      onFilterChange,
-    },
-  );
+  const isFiltersLoading =
+    (enableNonVirtual && nonVirtualFilterOptionsQuery.isLoading) ||
+    (enableGce && gceFilterOptionsQuery.isLoading);
+
+  const { filterValues, aip160, warnings } = useFilters(nextFilterOptions, {
+    areFilterValuesLoading: isFiltersLoading,
+    onFilterChange,
+  });
 
   const onApplyFilter = useCallback(() => {
     onApply?.();
   }, [onApply]);
 
+  const nonVirtualFilter = isAllTab
+    ? aip160()
+    : combineAipFilters(aip160(), currentTab);
+  const gceFilter = aip160();
+
   return {
     filterValues,
-    aip160: combineAipFilters(aip160(), currentTab),
+    nonVirtualFilter,
+    gceFilter,
+    isNonVirtualQueryEnabled: enableNonVirtual,
+    isGceQueryEnabled: enableGce,
     onApplyFilter,
-    isLoading: filterOptionsQuery.isLoading,
+    isLoading: isFiltersLoading,
     warnings,
-    scopedProductType: filterOptionsQuery.data?.scopedProductType,
-    setFiltersBatch,
   };
 };

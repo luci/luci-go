@@ -464,7 +464,7 @@ describe('ProductCataloguePage', () => {
     });
   }, 15000);
 
-  it('should render both standard and GCE entries in unified table on All tab', async () => {
+  it('should render both non-virtual and GCE entries in unified table on All tab', async () => {
     FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
       entries: [
         {
@@ -596,5 +596,361 @@ describe('ProductCataloguePage', () => {
     const chip = await screen.findByTestId('filter-chip');
     expect(chip).toHaveTextContent(/Descriptive Name/i);
     expect(chip).toHaveTextContent(/Pixel 9 Pro Fold/i);
+  });
+
+  it('should only query non-virtual catalog and disable GCE catalog when filtering by resource_type', async () => {
+    const nonVirtualSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'std-catalog-1',
+          productName: 'Standard Pixel Device',
+          gpn: '12345',
+          descriptiveName: 'Desc 1',
+          resourceType: 'DUT',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 10,
+          unitCost: '100',
+          productType: 'hardware',
+        },
+      ],
+    }));
+    const gceSpy = jest.fn((_req: { filter?: string }) => ({ entries: [] }));
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', nonVirtualSpy);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', gceSpy);
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      resourceType: ['DUT'],
+      scopedResourceType: [{ value: 'DUT', inScope: true }],
+      scopedProductType: [{ value: 'hardware', inScope: true }],
+    });
+
+    renderPage([
+      '/ui/fleet/catalog?filters=resource_type+%3D+%28%22DUT%22%29&view=table',
+    ]);
+
+    expect(
+      await screen.findByText('Standard Pixel Device'),
+    ).toBeInTheDocument();
+    expect(
+      nonVirtualSpy.mock.calls.some(([req]) =>
+        req?.filter?.includes('resource_type'),
+      ),
+    ).toBe(true);
+    // GCE query should be disabled and its queryFn never called
+    expect(gceSpy).not.toHaveBeenCalled();
+  });
+
+  it('should only query GCE catalog and disable non-virtual catalog when filtering by cpu_type', async () => {
+    const nonVirtualSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [],
+    }));
+    const gceSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'gce-catalog-1',
+          productName: 'GCE n2-standard-4',
+          descriptiveName: 'GCE N2 Instance',
+          cpuType: 'x86_64',
+          cpuNumPerVm: 4,
+          memoryGbPerVm: 16,
+          fleetPlmStatus: 'GA',
+          productType: 'gce',
+        },
+      ],
+    }));
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', nonVirtualSpy);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', gceSpy);
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'gce', inScope: true },
+      ],
+    });
+
+    renderPage([
+      '/ui/fleet/catalog?filters=cpu_type+%3D+%28%22x86_64%22%29&view=table',
+    ]);
+
+    expect(await screen.findByText('GCE n2-standard-4')).toBeInTheDocument();
+    expect(
+      gceSpy.mock.calls.some(([req]) => req?.filter?.includes('cpu_type')),
+    ).toBe(true);
+    // Non-virtual query should be disabled and its queryFn never called
+    expect(nonVirtualSpy).not.toHaveBeenCalled();
+  });
+
+  it('should query only GCE products and disable non-virtual catalog on GCE tab', async () => {
+    const nonVirtualSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [],
+    }));
+    const gceSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'gce-1',
+          productName: 'GCE Instance',
+          cpuType: 'x86_64',
+          fleetPlmStatus: 'GA',
+          productType: 'gce',
+        },
+      ],
+    }));
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', nonVirtualSpy);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', gceSpy);
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'gce', inScope: true },
+      ],
+    });
+
+    renderPage(['/ui/fleet/catalog?tab=gce&view=table']);
+
+    expect(await screen.findByText('GCE Instance')).toBeInTheDocument();
+    expect(gceSpy).toHaveBeenCalled();
+    expect(nonVirtualSpy).not.toHaveBeenCalled();
+  });
+
+  it('should query only non-virtual products and disable GCE catalog on hardware tab', async () => {
+    const nonVirtualSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'hw-1',
+          productName: 'Hardware Product',
+          productType: 'hardware',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    }));
+    const gceSpy = jest.fn((_req: { filter?: string }) => ({ entries: [] }));
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', nonVirtualSpy);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', gceSpy);
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'gce', inScope: true },
+      ],
+    });
+
+    renderPage(['/ui/fleet/catalog?tab=hardware&view=table']);
+
+    expect(await screen.findByText('Hardware Product')).toBeInTheDocument();
+    expect(nonVirtualSpy).toHaveBeenCalled();
+    expect(gceSpy).not.toHaveBeenCalled();
+  });
+
+  it('should query non-virtual catalog and disable GCE catalog when product_type != ("gce") on All tab', async () => {
+    const nonVirtualSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'std-prod-1',
+          productName: 'Standard Product 1',
+          productType: 'hardware',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    }));
+    const gceSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'gce-prod-1',
+          productName: 'GCE n2-standard-4',
+          productType: 'gce',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    }));
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', nonVirtualSpy);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', gceSpy);
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'gce', inScope: true },
+      ],
+    });
+
+    renderPage([
+      '/ui/fleet/catalog?filters=product_type+!%3D+%28%22gce%22%29&view=table',
+    ]);
+
+    expect(await screen.findByText('Standard Product 1')).toBeInTheDocument();
+    expect(screen.queryByText('GCE n2-standard-4')).not.toBeInTheDocument();
+    expect(nonVirtualSpy).toHaveBeenCalled();
+    expect(gceSpy).not.toHaveBeenCalled();
+  });
+
+  it('should merge non-virtual and GCE filter options on All tab', async () => {
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productName: ['Pixel 9'],
+      scopedProductName: [{ value: 'Pixel 9', inScope: true }],
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'gce', inScope: true },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('GetGceProductCatalogFilterValues', {
+      productName: ['n2-standard-4'],
+      scopedProductName: [{ value: 'n2-standard-4', inScope: true }],
+      scopedCpuType: [{ value: 'x86_64', inScope: true }],
+    });
+
+    renderPage(['/ui/fleet/catalog?filters=cpu_type+%3D+%28%22x86_64%22%29']);
+
+    const chip = await screen.findByTestId('filter-chip');
+    expect(chip).toHaveTextContent(/CPU Type/i);
+    expect(chip).toHaveTextContent(/x86_64/i);
+  });
+
+  it('should query both non-virtual and GCE catalogs when product_type != ("hardware") on All tab', async () => {
+    const nonVirtualSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'std-prod-2',
+          productName: 'Android Testbed 1',
+          productType: 'android-testbed',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    }));
+    const gceSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'gce-prod-1',
+          productName: 'GCE n2-standard-4',
+          productType: 'gce',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    }));
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', nonVirtualSpy);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', gceSpy);
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'android-testbed', inScope: true },
+        { value: 'gce', inScope: true },
+      ],
+    });
+
+    renderPage([
+      '/ui/fleet/catalog?filters=product_type+!%3D+%28%22hardware%22%29&view=table',
+    ]);
+
+    expect(await screen.findByText('Android Testbed 1')).toBeInTheDocument();
+    expect(screen.getByText('GCE n2-standard-4')).toBeInTheDocument();
+    expect(nonVirtualSpy).toHaveBeenCalled();
+    expect(gceSpy).toHaveBeenCalled();
+  });
+
+  it('should query both non-virtual and GCE catalogs when product_type = ("gce" OR "hardware") on All tab', async () => {
+    const nonVirtualSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'std-prod-1',
+          productName: 'Standard Product 1',
+          productType: 'hardware',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    }));
+    const gceSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'gce-prod-1',
+          productName: 'GCE n2-standard-4',
+          productType: 'gce',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    }));
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', nonVirtualSpy);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', gceSpy);
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'gce', inScope: true },
+      ],
+    });
+
+    renderPage([
+      '/ui/fleet/catalog?filters=product_type+%3D+%28%22gce%22+OR+%22hardware%22%29&view=table',
+    ]);
+
+    expect(await screen.findByText('Standard Product 1')).toBeInTheDocument();
+    expect(screen.getByText('GCE n2-standard-4')).toBeInTheDocument();
+    expect(nonVirtualSpy).toHaveBeenCalled();
+    expect(gceSpy).toHaveBeenCalled();
+  });
+
+  it('should disable both non-virtual and GCE catalogs when contradictory filters are present', async () => {
+    const nonVirtualSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [],
+    }));
+    const gceSpy = jest.fn((_req: { filter?: string }) => ({ entries: [] }));
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', nonVirtualSpy);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', gceSpy);
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'gce', inScope: true },
+      ],
+    });
+
+    renderPage([
+      '/ui/fleet/catalog?filters=gpn+%3D+%28%22123%22%29+AND+cpu_type+%3D+%28%22x86_64%22%29&view=table',
+    ]);
+
+    expect(await screen.findByText('No products found')).toBeInTheDocument();
+    expect(nonVirtualSpy).not.toHaveBeenCalled();
+    expect(gceSpy).not.toHaveBeenCalled();
+  });
+
+  it('should not disable GCE queries when search text contains key names as substrings', async () => {
+    const nonVirtualSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'std-prod-3',
+          productName: 'device-with-gpn-in-name',
+          productType: 'hardware',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    }));
+    const gceSpy = jest.fn((_req: { filter?: string }) => ({
+      entries: [
+        {
+          productCatalogId: 'gce-prod-2',
+          productName: 'gce-with-gpn-subtext',
+          productType: 'gce',
+          fleetPlmStatus: 'GA',
+        },
+      ],
+    }));
+
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', nonVirtualSpy);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', gceSpy);
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      scopedProductType: [
+        { value: 'hardware', inScope: true },
+        { value: 'gce', inScope: true },
+      ],
+    });
+
+    renderPage([
+      '/ui/fleet/catalog?filters=product_name+%3D+%28%22device-with-gpn-in-name%22%29&view=table',
+    ]);
+
+    expect(
+      await screen.findByText('device-with-gpn-in-name'),
+    ).toBeInTheDocument();
+    expect(nonVirtualSpy).toHaveBeenCalled();
+    expect(gceSpy).toHaveBeenCalled();
   });
 });

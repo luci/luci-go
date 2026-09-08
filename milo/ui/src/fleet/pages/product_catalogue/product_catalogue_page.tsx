@@ -47,10 +47,9 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ProductCatalogueCardView } from './product_catalogue_card_view';
-import { COLUMNS } from './product_catalogue_columns';
+import { COLUMNS, getColumnsForTab } from './product_catalogue_columns';
 import {
   UnifiedProductCatalogEntry,
-  CatalogColumnKey,
   fromStandardCatalogEntry,
   fromGceCatalogEntry,
 } from './types';
@@ -162,24 +161,37 @@ const ProductCatalogueTabPageContent = ({
 
   const [sorting, onSortingChange] = useMrtSortingState();
 
-  const { filterValues, aip160, onApplyFilter, isLoading, warnings } =
-    useProductCatalogFilters(selectedTab, () => {
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    });
+  const {
+    filterValues,
+    nonVirtualFilter,
+    gceFilter,
+    isNonVirtualQueryEnabled,
+    isGceQueryEnabled,
+    onApplyFilter,
+    isLoading,
+    warnings,
+  } = useProductCatalogFilters(selectedTab, () => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  });
 
   const query = useQuery({
-    ...client.ListProductCatalogEntries.query({ filter: aip160 }),
+    ...client.ListProductCatalogEntries.query({ filter: nonVirtualFilter }),
+    enabled: isNonVirtualQueryEnabled,
     placeholderData: keepPreviousData,
   });
 
   const gceQuery = useQuery({
-    ...client.ListGceProductCatalogEntries.query({ filter: aip160 }),
+    ...client.ListGceProductCatalogEntries.query({ filter: gceFilter }),
+    enabled: isGceQueryEnabled,
     placeholderData: keepPreviousData,
   });
 
   const onPaginationChange = useCallback(
     (updater: MRT_Updater<MRT_PaginationState>) => {
-      if (!query.data && !gceQuery.data) {
+      if (
+        (!isNonVirtualQueryEnabled || !query.data) &&
+        (!isGceQueryEnabled || !gceQuery.data)
+      ) {
         return;
       }
 
@@ -194,16 +206,32 @@ const ProductCatalogueTabPageContent = ({
         });
       }
     },
-    [query.data, gceQuery.data, pagination, setSearchParams],
+    [
+      isNonVirtualQueryEnabled,
+      isGceQueryEnabled,
+      query.data,
+      gceQuery.data,
+      pagination,
+      setSearchParams,
+    ],
   );
 
   const data = useMemo<UnifiedProductCatalogEntry[]>(() => {
-    const stdEntries = (query.data?.entries ?? []).map(
-      fromStandardCatalogEntry,
-    );
-    const gceEntries = (gceQuery.data?.entries ?? []).map(fromGceCatalogEntry);
-    return [...stdEntries, ...gceEntries];
-  }, [query.data?.entries, gceQuery.data?.entries]);
+    const nonVirtualEntries =
+      isNonVirtualQueryEnabled && query.data?.entries
+        ? query.data.entries.map(fromStandardCatalogEntry)
+        : [];
+    const gceEntries =
+      isGceQueryEnabled && gceQuery.data?.entries
+        ? gceQuery.data.entries.map(fromGceCatalogEntry)
+        : [];
+    return [...nonVirtualEntries, ...gceEntries];
+  }, [
+    isNonVirtualQueryEnabled,
+    isGceQueryEnabled,
+    query.data?.entries,
+    gceQuery.data?.entries,
+  ]);
 
   const mappedFilterValues = useMemo(
     () =>
@@ -218,9 +246,15 @@ const ProductCatalogueTabPageContent = ({
     [filterValues],
   );
 
-  const activeQueryError = query.error || gceQuery.error;
-  const isQueryLoading = query.isLoading || gceQuery.isLoading;
-  const isQueryFetching = query.isFetching || gceQuery.isFetching;
+  const activeQueryError =
+    (isNonVirtualQueryEnabled ? query.error : null) ||
+    (isGceQueryEnabled ? gceQuery.error : null);
+  const isQueryLoading =
+    (isNonVirtualQueryEnabled && query.isLoading) ||
+    (isGceQueryEnabled && gceQuery.isLoading);
+  const isQueryFetching =
+    (isNonVirtualQueryEnabled && query.isFetching) ||
+    (isGceQueryEnabled && gceQuery.isFetching);
 
   const table = useFCDataTable({
     columns: columns,
@@ -324,102 +358,6 @@ const ProductCatalogueTabPageContent = ({
       )}
     </>
   );
-};
-
-const ALL_TAB_COLUMN_KEYS: readonly CatalogColumnKey[] = [
-  'productCatalogId',
-  'productName',
-  'gpn',
-  'descriptiveName',
-  'resourceType',
-  'fleetPlmStatus',
-  'r11n',
-  'numberOfDevicesPerRack',
-  'unitCost',
-  'productType',
-  'cpuType',
-  'cpuNumPerVm',
-  'memoryGbPerVm',
-];
-
-const GCE_COLUMN_KEYS: readonly CatalogColumnKey[] = [
-  'productCatalogId',
-  'productName',
-  'descriptiveName',
-  'fleetPlmStatus',
-  'cpuType',
-  'cpuNumPerVm',
-  'memoryGbPerVm',
-  'productType',
-];
-
-const ANDROID_TESTBED_COLUMN_KEYS: readonly CatalogColumnKey[] = [
-  'productCatalogId',
-  'productName',
-  'gpn',
-  'descriptiveName',
-  'resourceType',
-  'fleetPlmStatus',
-  'r11n',
-  'numberOfDevicesPerRack',
-  'unitCost',
-];
-
-const HARDWARE_COLUMN_KEYS: readonly CatalogColumnKey[] = [
-  'productCatalogId',
-  'productName',
-  'gpn',
-  'descriptiveName',
-  'resourceType',
-  'fleetPlmStatus',
-  'r11n',
-  'numberOfDevicesPerRack',
-  'unitCost',
-];
-
-const OS_TESTBED_COLUMN_KEYS: readonly CatalogColumnKey[] = [
-  'productCatalogId',
-  'productName',
-  'gpn',
-  'descriptiveName',
-  'resourceType',
-  'fleetPlmStatus',
-  'r11n',
-  'numberOfDevicesPerRack',
-  'unitCost',
-];
-
-const PERIPHERALS_COLUMN_KEYS: readonly CatalogColumnKey[] = [
-  'productCatalogId',
-  'productName',
-  'gpn',
-  'descriptiveName',
-  'resourceType',
-  'fleetPlmStatus',
-  'r11n',
-  'numberOfDevicesPerRack',
-  'unitCost',
-];
-
-const TAB_COLUMN_KEYS: Record<
-  ProductCatalogTab | string,
-  readonly CatalogColumnKey[]
-> = {
-  [ProductCatalogTab.ALL]: ALL_TAB_COLUMN_KEYS,
-  [ProductCatalogTab.GCE]: GCE_COLUMN_KEYS,
-  [ProductCatalogTab.ANDROID_TESTBED]: ANDROID_TESTBED_COLUMN_KEYS,
-  [ProductCatalogTab.HARDWARE]: HARDWARE_COLUMN_KEYS,
-  [ProductCatalogTab.OS_TESTBED]: OS_TESTBED_COLUMN_KEYS,
-  [ProductCatalogTab.PERIPHERALS]: PERIPHERALS_COLUMN_KEYS,
-};
-
-const getColumnsForTab = (tab: ProductCatalogTab | string) => {
-  const keys = TAB_COLUMN_KEYS[tab] || ALL_TAB_COLUMN_KEYS;
-  return COLUMNS.filter(
-    (column) =>
-      column.accessorKey !== undefined &&
-      keys.includes(column.accessorKey as keyof UnifiedProductCatalogEntry),
-  ) as typeof COLUMNS;
 };
 
 export const ProductCataloguePage = () => {

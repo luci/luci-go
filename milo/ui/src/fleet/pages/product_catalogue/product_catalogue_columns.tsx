@@ -18,7 +18,8 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { generateCatalogDetailsURL } from '@/fleet/constants/paths';
 
-import { UnifiedProductCatalogEntry } from './types';
+import { UnifiedProductCatalogEntry, CatalogColumnKey } from './types';
+import { ProductCatalogTab } from './use_product_catalog_tabs';
 
 export const COLUMNS: MRT_ColumnDef<UnifiedProductCatalogEntry>[] &
   { accessorKey: keyof UnifiedProductCatalogEntry }[] = [
@@ -93,3 +94,98 @@ export const COLUMNS: MRT_ColumnDef<UnifiedProductCatalogEntry>[] &
     header: 'Memory (GB) Per VM',
   },
 ];
+
+export const ALL_TAB_COLUMN_KEYS: readonly CatalogColumnKey[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'productType',
+  'fleetPlmStatus',
+  'resourceType',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'cpuType',
+  'cpuNumPerVm',
+  'memoryGbPerVm',
+  'unitCost',
+];
+
+export const GCE_COLUMN_KEYS: readonly CatalogColumnKey[] = [
+  'productCatalogId',
+  'productName',
+  'descriptiveName',
+  'cpuType',
+  'cpuNumPerVm',
+  'memoryGbPerVm',
+  'fleetPlmStatus',
+];
+
+export const ANDROID_TESTBED_COLUMN_KEYS: readonly CatalogColumnKey[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'resourceType',
+  'fleetPlmStatus',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'unitCost',
+];
+
+export const HARDWARE_COLUMN_KEYS: readonly CatalogColumnKey[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'resourceType',
+  'fleetPlmStatus',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'unitCost',
+];
+
+export const OS_TESTBED_COLUMN_KEYS: readonly CatalogColumnKey[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'resourceType',
+  'fleetPlmStatus',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'unitCost',
+];
+
+export const PERIPHERALS_COLUMN_KEYS: readonly CatalogColumnKey[] = [
+  'productCatalogId',
+  'productName',
+  'gpn',
+  'descriptiveName',
+  'resourceType',
+  'fleetPlmStatus',
+  'r11n',
+  'numberOfDevicesPerRack',
+  'unitCost',
+];
+
+export const TAB_COLUMN_KEYS: Record<
+  ProductCatalogTab | string,
+  readonly CatalogColumnKey[]
+> = {
+  [ProductCatalogTab.ALL]: ALL_TAB_COLUMN_KEYS,
+  [ProductCatalogTab.GCE]: GCE_COLUMN_KEYS,
+  [ProductCatalogTab.ANDROID_TESTBED]: ANDROID_TESTBED_COLUMN_KEYS,
+  [ProductCatalogTab.HARDWARE]: HARDWARE_COLUMN_KEYS,
+  [ProductCatalogTab.OS_TESTBED]: OS_TESTBED_COLUMN_KEYS,
+  [ProductCatalogTab.PERIPHERALS]: PERIPHERALS_COLUMN_KEYS,
+};
+
+export const getColumnsForTab = (tab: ProductCatalogTab | string) => {
+  const keys = TAB_COLUMN_KEYS[tab] || ALL_TAB_COLUMN_KEYS;
+  return COLUMNS.filter(
+    (column) =>
+      column.accessorKey !== undefined &&
+      keys.includes(column.accessorKey as keyof UnifiedProductCatalogEntry),
+  ) as typeof COLUMNS;
+};
