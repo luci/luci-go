@@ -46,6 +46,9 @@ import (
 // Changing it will effectively reset the ID generation.
 const tokenIDSequenceKind = "delegationTokenID"
 
+// maxIntentLength is the maximum allowed length of 'intent' field in bytes.
+const maxIntentLength = 1024
+
 // MintDelegationTokenRPC implements TokenMinter.MintDelegationToken RPC method.
 type MintDelegationTokenRPC struct {
 	// Signer is mocked in tests.
@@ -133,6 +136,13 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	// Same for tags, they are transferred intact to the final token.
 	if err := utils.ValidateTags(req.Tags); err != nil {
 		err = fmt.Errorf("invalid 'tags': %s", err)
+		logging.WithError(err).Errorf(c, "Bad request")
+		return nil, status.Errorf(codes.InvalidArgument, "bad request - %s", err)
+	}
+
+	// Same for intent, it's used only for logging and not part of the rules query.
+	if len(req.Intent) > maxIntentLength {
+		err = fmt.Errorf("invalid 'intent': the length must not exceed %d", maxIntentLength)
 		logging.WithError(err).Errorf(c, "Bad request")
 		return nil, status.Errorf(codes.InvalidArgument, "bad request - %s", err)
 	}

@@ -297,7 +297,7 @@ message MintDelegationTokenRequest {
   // Optional reason why the token is created.
   //
   // Used only for logging and auditing purposes. Doesn't become part of the
-  // token.
+  // token. The length must not exceed 1024 bytes.
   string intent = 5;
 
   // Arbitrary key:value pairs embedded into the token by whoever requested it.

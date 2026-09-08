@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -334,6 +335,17 @@ func TestMintDelegationToken(t *testing.T) {
 			})
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("bad request - invalid 'tags': tag #1: not in <key>:<value> form"))
+		})
+
+		t.Run("Intent too long", func(t *ftt.Test) {
+			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
+				DelegatedIdentity: "REQUESTOR",
+				Audience:          []string{"REQUESTOR"},
+				Services:          []string{"*"},
+				Intent:            strings.Repeat("a", 1025),
+			})
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad request - invalid 'intent': the length must not exceed 1024"))
 		})
 
 		t.Run("Malformed request", func(t *ftt.Test) {
