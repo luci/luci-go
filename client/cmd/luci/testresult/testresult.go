@@ -92,14 +92,7 @@ type testResultGetRun struct {
 
 // FetchTestResult fetches a test result by its decomposed IDs.
 func FetchTestResult(ctx context.Context, client pb.ResultDBClient, invID, testID, resultID string, legacy bool) (*pb.TestResult, error) {
-	if legacy {
-		name := base.FormatTestResultResourceName(invID, testID, resultID)
-		req := &pb.GetTestResultRequest{Name: name}
-		return client.GetTestResult(ctx, req)
-	}
-
-	// For root invocations, query test results via QueryTestVerdicts on the root invocation (passing maxFetch: 0 to paginate all results for this test).
-	results, _, _, err := verdict.QueryVerdictResultsAndExonerations(ctx, client, invID, testID, "", false, 0)
+	results, _, _, err := verdict.QueryVerdictResultsAndExonerations(ctx, client, invID, testID, "", legacy, 0)
 	if err != nil {
 		return nil, err
 	}

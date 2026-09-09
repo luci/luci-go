@@ -262,6 +262,16 @@ func FormatWorkUnitBreadcrumb(wuName string) string {
 	return wuName
 }
 
+// FormatInvocationBreadcrumb returns a compact human-readable breadcrumb for an invocation.
+// e.g. "build 8673802696052024673" or "invocation u-root-2026-..."
+func FormatInvocationBreadcrumb(invName string) string {
+	invLabel := ParseInvocationContext(invName)
+	if invLabel != "" {
+		return invLabel
+	}
+	return invName
+}
+
 // ParentGroup holds grouping info for test results or artifacts.
 type ParentGroup struct {
 	Label string // e.g. "Task 7a07b808bfa95b11", "Work Unit run-tests", "build-867380...", "u-foo"

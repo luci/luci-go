@@ -31,10 +31,12 @@ import (
 
 type mockResultDBClient struct {
 	pb.ResultDBClient
-	listArtifacts     func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
-	queryWorkUnits    func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
-	getWorkUnit       func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
-	queryTestVerdicts func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
+	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
+	queryWorkUnits        func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
+	getWorkUnit           func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
+	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
+	queryTestResults      func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error)
+	queryTestExonerations func(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error)
 }
 
 func (m *mockResultDBClient) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
@@ -63,6 +65,20 @@ func (m *mockResultDBClient) QueryTestVerdicts(ctx context.Context, in *pb.Query
 		return m.queryTestVerdicts(ctx, in)
 	}
 	return &pb.QueryTestVerdictsResponse{}, nil
+}
+
+func (m *mockResultDBClient) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest, opts ...grpc.CallOption) (*pb.QueryTestResultsResponse, error) {
+	if m.queryTestResults != nil {
+		return m.queryTestResults(ctx, in)
+	}
+	return &pb.QueryTestResultsResponse{}, nil
+}
+
+func (m *mockResultDBClient) QueryTestExonerations(ctx context.Context, in *pb.QueryTestExonerationsRequest, opts ...grpc.CallOption) (*pb.QueryTestExonerationsResponse, error) {
+	if m.queryTestExonerations != nil {
+		return m.queryTestExonerations(ctx, in)
+	}
+	return &pb.QueryTestExonerationsResponse{}, nil
 }
 
 func TestListCmd(t *testing.T) {
@@ -333,6 +349,121 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			out := buf.String()
 
 			assert.Loosely(t, out, should.Equal(""))
+		})
+	})
+}
+
+func TestPrintImmediateParentInvocationNotice(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`printImmediateParentInvocationNotice`, t, func(t *ftt.Test) {
+		ctx := context.Background()
+
+		t.Run(`test result with immediate parent invocation artifacts`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == "invocations/u-root-123" {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{ArtifactId: "minidump"},
+								{ArtifactId: "stderr"},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			printImmediateParentInvocationNotice(ctx, client, "invocations/u-root-123/tests/test1/results/0", &buf)
+			out := buf.String()
+
+			assert.Loosely(t, out, should.ContainSubstring("Invocation Artifacts:"))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation u-root-123 contains 2 artifacts. Run 'luci artifact list -invocationid u-root-123 -legacy' to view."))
+		})
+
+		t.Run(`singular artifact count and paginated`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == "invocations/u-root-1" {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{ArtifactId: "minidump"},
+							},
+						}, nil
+					}
+					if in.Parent == "invocations/u-root-more" {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{ArtifactId: "minidump"},
+							},
+							NextPageToken: "page-2",
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			printImmediateParentInvocationNotice(ctx, client, "invocations/u-root-1/tests/test1/results/0", &buf)
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Invocation u-root-1 contains 1 artifact."))
+
+			buf.Reset()
+			printImmediateParentInvocationNotice(ctx, client, "invocations/u-root-more/tests/test1/results/0", &buf)
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Invocation u-root-more contains 1+ artifacts."))
+		})
+
+		t.Run(`no artifacts on parent invocation`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			printImmediateParentInvocationNotice(ctx, client, "invocations/u-root-123/tests/test1/results/0", &buf)
+			assert.Loosely(t, buf.String(), should.Equal(""))
+		})
+
+		t.Run(`invalid target format`, func(t *ftt.Test) {
+			client := &mockResultDBClient{}
+			var buf bytes.Buffer
+			printImmediateParentInvocationNotice(ctx, client, "invalid-target", &buf)
+			assert.Loosely(t, buf.String(), should.Equal(""))
+		})
+	})
+}
+
+func TestPrintArtifactHeader(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`printArtifactHeaderTo`, t, func(t *ftt.Test) {
+		t.Run(`empty artifacts displays count 0`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			displayed := printArtifactHeaderTo(&buf, "Test Result", "test-1/result-0", 0, 100)
+			assert.Loosely(t, displayed, should.Equal(0))
+			assert.Loosely(t, buf.String(), should.Equal("Test Result Artifacts (test-1/result-0) (0):\n"))
+		})
+
+		t.Run(`within limit displays total count`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			displayed := printArtifactHeaderTo(&buf, "Invocation", "inv-123", 5, 10)
+			assert.Loosely(t, displayed, should.Equal(5))
+			assert.Loosely(t, buf.String(), should.Equal("Invocation Artifacts (inv-123) (5):\n"))
+		})
+
+		t.Run(`exceeds maxArtifacts displays showing info`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			displayed := printArtifactHeaderTo(&buf, "Work Unit", "root/step", 15, 10)
+			assert.Loosely(t, displayed, should.Equal(10))
+			assert.Loosely(t, buf.String(), should.Equal("Work Unit Artifacts (root/step) (showing 10 of 15, use -all to see all):\n"))
+		})
+
+		t.Run(`all artifacts requested with maxArtifacts 0`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			displayed := printArtifactHeaderTo(&buf, "Test Result", "test-1/result-0", 15, 0)
+			assert.Loosely(t, displayed, should.Equal(15))
+			assert.Loosely(t, buf.String(), should.Equal("Test Result Artifacts (test-1/result-0) (15):\n"))
 		})
 	})
 }

@@ -67,6 +67,16 @@ func TestParseInvocationContext(t *testing.T) {
 			assert.Loosely(t, res, should.Equal("Work Unit run-tests in build 8673802696052024673"))
 		})
 
+		t.Run(`Invocation breadcrumb`, func(t *ftt.Test) {
+			inv := "invocations/build-8673802696052024673"
+			res := FormatInvocationBreadcrumb(inv)
+			assert.Loosely(t, res, should.Equal("build 8673802696052024673"))
+
+			inv2 := "invocations/u-root-2026-09-07"
+			res2 := FormatInvocationBreadcrumb(inv2)
+			assert.Loosely(t, res2, should.Equal("invocation u-root-2026-09-07"))
+		})
+
 		t.Run(`GetParentGroup`, func(t *ftt.Test) {
 			pgTask := GetParentGroup("invocations/task-chromium-swarm.appspot.com-7a07b808bfa95b11/tests/test1/results/res1")
 			assert.Loosely(t, pgTask.Label, should.Equal("Task 7a07b808bfa95b11"))

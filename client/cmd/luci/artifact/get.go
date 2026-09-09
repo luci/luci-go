@@ -47,10 +47,11 @@ func GetCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 			"Supports fetching the full artifact content or a specific byte range:\n" +
 			"  - By byte range: -byte-range <start>-<end> (e.g. 0-100, 500-, -500)"
 	default:
-		usage = "get -invocationid <invocation_id> (-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>) -artifactid <artifact_id>"
+		usage = "get -invocationid <invocation_id> [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>] -artifactid <artifact_id>"
 		desc = "Get a work unit or test result artifact"
 		longDesc = desc + " by explicit ID flags.\n\n" +
-			"Specify -invocationid and -workunitid for work unit artifacts,\n" +
+			"Specify -invocationid for invocation artifacts,\n" +
+			"-invocationid and -workunitid for work unit artifacts,\n" +
 			"or -invocationid, -testid, and -resultid for test result artifacts.\n\n" +
 			"Supports fetching the full artifact content or a specific byte range:\n" +
 			"  - By byte range: -byte-range <start>-<end> (e.g. 0-100, 500-, -500)"
@@ -124,8 +125,10 @@ func (r *artifactGetRun) Run(a subcommands.Application, args []string, env subco
 	if effectiveParentType == ParentTypeUnknown {
 		if r.testID != "" || r.resultID != "" {
 			effectiveParentType = ParentTypeTestResult
-		} else {
+		} else if r.workUnitID != "" {
 			effectiveParentType = ParentTypeWorkUnit
+		} else {
+			effectiveParentType = ParentTypeInvocation
 		}
 	}
 

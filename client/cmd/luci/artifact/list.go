@@ -44,12 +44,13 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 		longDesc = desc + " in ResultDB by explicit ID flags.\n\n" +
 			"Ancestor work units are also checked and a notice is displayed if artifacts exist."
 	default:
-		usage = "list -invocationid <invocation_id> (-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>)"
+		usage = "list -invocationid <invocation_id> [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>]"
 		desc = "List artifacts for a work unit or test result"
 		longDesc = desc + " in ResultDB by explicit ID flags.\n\n" +
-			"Specify -invocationid and -workunitid for work unit artifacts,\n" +
+			"Specify -invocationid to list invocation-level artifacts,\n" +
+			"-invocationid and -workunitid for work unit artifacts,\n" +
 			"or -invocationid, -testid, and -resultid for test result artifacts.\n\n" +
-			"Ancestor work units are also checked and a notice is displayed if artifacts exist."
+			"Ancestor work units or parent invocations are also checked and a notice is displayed if artifacts exist."
 	}
 
 	return &subcommands.Command{
@@ -134,9 +135,14 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 			fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, and -resultid are required (run 'luci ids <url>' to extract ids)\n")
 			return 1
 		}
-	} else {
+	} else if effectiveParentType == ParentTypeWorkUnit {
 		if r.invocationID == "" || r.workUnitID == "" {
 			fmt.Fprintf(os.Stderr, "flags -invocationid and -workunitid are required (run 'luci ids <url>' to extract ids)\n")
+			return 1
+		}
+	} else if effectiveParentType == ParentTypeInvocation {
+		if r.invocationID == "" {
+			fmt.Fprintf(os.Stderr, "flag -invocationid is required (run 'luci ids <url>' to extract ids)\n")
 			return 1
 		}
 	}
@@ -159,20 +165,26 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 			return 1
 		}
 
-		displayedCount := len(trArtifacts)
-		if maxArtifacts > 0 && displayedCount > maxArtifacts {
-			displayedCount = maxArtifacts
-			fmt.Printf("Test Result Artifacts (%s) (showing %d of %d, use -all to see all):\n", format.FormatTestResultBreadcrumb(cleanTarget), displayedCount, len(trArtifacts))
-		} else if len(trArtifacts) > 0 {
-			fmt.Printf("Test Result Artifacts (%s) (%d):\n", format.FormatTestResultBreadcrumb(cleanTarget), len(trArtifacts))
-		} else {
-			fmt.Printf("Test Result Artifacts (%s):\n", format.FormatTestResultBreadcrumb(cleanTarget))
-		}
+		displayedCount := printArtifactHeader("Test Result", format.FormatTestResultBreadcrumb(cleanTarget), len(trArtifacts), maxArtifacts)
 		format.PrintArtifactList(trArtifacts[:displayedCount])
 
-		if !r.legacy {
+		if r.legacy {
+			printImmediateParentInvocationNotice(ctx, client, cleanTarget, os.Stdout)
+		} else {
 			printAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
 		}
+		return 0
+	}
+
+	if effectiveParentType == ParentTypeInvocation {
+		invArtifacts, err := QueryAllArtifacts(ctx, client, cleanTarget)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to list artifacts for invocation %q: %s\n", cleanTarget, err)
+			return 1
+		}
+
+		displayedCount := printArtifactHeader("Invocation", format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), maxArtifacts)
+		format.PrintArtifactList(invArtifacts[:displayedCount])
 		return 0
 	}
 
@@ -183,19 +195,52 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 
-	displayedCount := len(wuArtifacts)
-	if maxArtifacts > 0 && displayedCount > maxArtifacts {
-		displayedCount = maxArtifacts
-		fmt.Printf("Work Unit Artifacts (%s) (showing %d of %d, use -all to see all):\n", format.FormatWorkUnitBreadcrumb(cleanTarget), displayedCount, len(wuArtifacts))
-	} else if len(wuArtifacts) > 0 {
-		fmt.Printf("Work Unit Artifacts (%s) (%d):\n", format.FormatWorkUnitBreadcrumb(cleanTarget), len(wuArtifacts))
-	} else {
-		fmt.Printf("Work Unit Artifacts (%s):\n", format.FormatWorkUnitBreadcrumb(cleanTarget))
-	}
+	displayedCount := printArtifactHeader("Work Unit", format.FormatWorkUnitBreadcrumb(cleanTarget), len(wuArtifacts), maxArtifacts)
 	format.PrintArtifactList(wuArtifacts[:displayedCount])
 
 	printAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
 	return 0
+}
+
+func printArtifactHeader(category, breadcrumb string, totalCount, maxArtifacts int) int {
+	return printArtifactHeaderTo(os.Stdout, category, breadcrumb, totalCount, maxArtifacts)
+}
+
+func printArtifactHeaderTo(out io.Writer, category, breadcrumb string, totalCount, maxArtifacts int) int {
+	displayedCount := totalCount
+	if maxArtifacts > 0 && totalCount > maxArtifacts {
+		displayedCount = maxArtifacts
+		fmt.Fprintf(out, "%s Artifacts (%s) (showing %d of %d, use -all to see all):\n", category, breadcrumb, displayedCount, totalCount)
+	} else {
+		fmt.Fprintf(out, "%s Artifacts (%s) (%d):\n", category, breadcrumb, totalCount)
+	}
+	return displayedCount
+}
+
+func printImmediateParentInvocationNotice(ctx context.Context, client pb.ResultDBClient, target string, out io.Writer) {
+	idx := strings.Index(target, "/tests/")
+	if idx == -1 {
+		return
+	}
+	parentInv := target[:idx]
+	leafInvID := strings.TrimPrefix(parentInv, "invocations/")
+
+	res, err := client.ListArtifacts(ctx, &pb.ListArtifactsRequest{
+		Parent:   parentInv,
+		PageSize: 1000,
+	})
+	if err == nil && len(res.Artifacts) > 0 {
+		artLabel := "artifacts"
+		countStr := fmt.Sprintf("%d", len(res.Artifacts))
+		if res.NextPageToken != "" {
+			countStr = fmt.Sprintf("%d+", len(res.Artifacts))
+		} else if len(res.Artifacts) == 1 {
+			artLabel = "artifact"
+		}
+		fmt.Fprintln(out, "Invocation Artifacts:")
+		fmt.Fprintf(out, "  - Invocation %s contains %s %s. Run 'luci artifact list -invocationid %s -legacy' to view.\n", leafInvID, countStr, artLabel, leafInvID)
+		fmt.Fprintln(out)
+	}
 }
 
 func printAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient, target string, parentType ParentType, out io.Writer) {

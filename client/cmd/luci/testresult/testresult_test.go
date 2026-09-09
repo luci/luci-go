@@ -29,8 +29,10 @@ import (
 
 type mockResultDBClient struct {
 	pb.ResultDBClient
-	getTestResult     func(ctx context.Context, in *pb.GetTestResultRequest) (*pb.TestResult, error)
-	queryTestVerdicts func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
+	getTestResult         func(ctx context.Context, in *pb.GetTestResultRequest) (*pb.TestResult, error)
+	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
+	queryTestResults      func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error)
+	queryTestExonerations func(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error)
 }
 
 func (m *mockResultDBClient) GetTestResult(ctx context.Context, in *pb.GetTestResultRequest, opts ...grpc.CallOption) (*pb.TestResult, error) {
@@ -45,6 +47,20 @@ func (m *mockResultDBClient) QueryTestVerdicts(ctx context.Context, in *pb.Query
 		return m.queryTestVerdicts(ctx, in)
 	}
 	return &pb.QueryTestVerdictsResponse{}, nil
+}
+
+func (m *mockResultDBClient) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest, opts ...grpc.CallOption) (*pb.QueryTestResultsResponse, error) {
+	if m.queryTestResults != nil {
+		return m.queryTestResults(ctx, in)
+	}
+	return &pb.QueryTestResultsResponse{}, nil
+}
+
+func (m *mockResultDBClient) QueryTestExonerations(ctx context.Context, in *pb.QueryTestExonerationsRequest, opts ...grpc.CallOption) (*pb.QueryTestExonerationsResponse, error) {
+	if m.queryTestExonerations != nil {
+		return m.queryTestExonerations(ctx, in)
+	}
+	return &pb.QueryTestExonerationsResponse{}, nil
 }
 
 func TestCmdTestResult(t *testing.T) {
@@ -67,29 +83,34 @@ func TestFetchTestResult(t *testing.T) {
 	ftt.Run(`FetchTestResult`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		t.Run(`legacy uses GetTestResult directly`, func(t *ftt.Test) {
-			calledGet := false
+		t.Run(`legacy uses QueryTestResults`, func(t *ftt.Test) {
+			calledQuery := false
 			client := &mockResultDBClient{
 				getTestResult: func(ctx context.Context, in *pb.GetTestResultRequest) (*pb.TestResult, error) {
-					calledGet = true
-					assert.Loosely(t, in.Name, should.Equal("invocations/build-123/tests/test1/results/res1"))
-					return &pb.TestResult{
-						Name:     in.Name,
-						TestId:   "test1",
-						ResultId: "res1",
-						StatusV2: pb.TestResult_PASSED,
-					}, nil
-				},
-				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
-					t.Fatalf("QueryTestVerdicts should not be called in legacy mode")
+					t.Fatalf("GetTestResult should not be called in legacy mode")
 					return nil, nil
+				},
+				queryTestResults: func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+					calledQuery = true
+					assert.Loosely(t, in.Invocations, should.Resemble([]string{"invocations/build-123"}))
+					return &pb.QueryTestResultsResponse{
+						TestResults: []*pb.TestResult{
+							{
+								Name:     "invocations/u-leaf/tests/test1/results/res1",
+								TestId:   "test1",
+								ResultId: "res1",
+								StatusV2: pb.TestResult_PASSED,
+							},
+						},
+					}, nil
 				},
 			}
 
 			tr, err := FetchTestResult(ctx, client, "build-123", "test1", "res1", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, calledGet, should.BeTrue)
+			assert.Loosely(t, calledQuery, should.BeTrue)
 			assert.Loosely(t, tr.ResultId, should.Equal("res1"))
+			assert.Loosely(t, tr.Name, should.Equal("invocations/u-leaf/tests/test1/results/res1"))
 		})
 
 		t.Run(`root invocation uses QueryTestVerdicts directly`, func(t *ftt.Test) {

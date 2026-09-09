@@ -43,10 +43,11 @@ func HeadCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 		longDesc = desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
 			"By default, prints the first 10 lines. You can customize the number of lines with -n / -lines, or bytes with -c / -bytes."
 	default:
-		usage = "head -invocationid <invocation_id> (-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>) -artifactid <artifact_id>"
+		usage = "head -invocationid <invocation_id> [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>] -artifactid <artifact_id>"
 		desc = "Print the first N lines of a work unit or test result artifact"
 		longDesc = desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
-			"Specify -invocationid and -workunitid for work unit artifacts,\n" +
+			"Specify -invocationid for invocation artifacts,\n" +
+			"-invocationid and -workunitid for work unit artifacts,\n" +
 			"or -invocationid, -testid, and -resultid for test result artifacts.\n\n" +
 			"By default, prints the first 10 lines. You can customize the number of lines with -n / -lines, or bytes with -c / -bytes."
 	}
@@ -121,8 +122,10 @@ func (r *artifactHeadRun) Run(a subcommands.Application, args []string, env subc
 	if effectiveParentType == ParentTypeUnknown {
 		if r.testID != "" || r.resultID != "" {
 			effectiveParentType = ParentTypeTestResult
-		} else {
+		} else if r.workUnitID != "" {
 			effectiveParentType = ParentTypeWorkUnit
+		} else {
+			effectiveParentType = ParentTypeInvocation
 		}
 	}
 

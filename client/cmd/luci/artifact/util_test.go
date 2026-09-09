@@ -46,6 +46,14 @@ func TestFormatArtifactNames(t *testing.T) {
 		name := FormatWorkUnitArtifactName("ants-123", "wu-456", "stderr")
 		assert.Loosely(t, name, should.Equal("rootInvocations/ants-123/workUnits/wu-456/artifacts/stderr"))
 	})
+
+	ftt.Run(`FormatInvocationArtifactName`, t, func(t *ftt.Test) {
+		name := FormatInvocationArtifactName("build-123", "minidump", true)
+		assert.Loosely(t, name, should.Equal("invocations/build-123/artifacts/minidump"))
+
+		nameRoot := FormatInvocationArtifactName("build-123", "minidump", false)
+		assert.Loosely(t, nameRoot, should.Equal("rootInvocations/build-123/artifacts/minidump"))
+	})
 }
 
 func TestValidateArtifactFlags(t *testing.T) {
@@ -86,14 +94,21 @@ func TestValidateArtifactFlags(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 		})
 
+		t.Run(`invocation parent missing required flags`, func(t *ftt.Test) {
+			err := ValidateArtifactFlags(ParentTypeInvocation, "", "", "", "", "stdout")
+			assert.Loosely(t, err, should.ErrLike("flags -invocationid and -artifactid are required"))
+		})
+
+		t.Run(`invocation parent valid`, func(t *ftt.Test) {
+			err := ValidateArtifactFlags(ParentTypeInvocation, "inv", "", "", "", "stdout")
+			assert.Loosely(t, err, should.BeNil)
+		})
+
 		t.Run(`unknown parent missing required flags`, func(t *ftt.Test) {
 			err := ValidateArtifactFlags(ParentTypeUnknown, "", "", "", "", "stdout")
-			assert.Loosely(t, err, should.ErrLike("either -workunitid (for work unit artifacts) or -testid and -resultid"))
+			assert.Loosely(t, err, should.ErrLike("flags -invocationid, -artifactid, and either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) are required"))
 
-			err = ValidateArtifactFlags(ParentTypeUnknown, "inv", "", "", "", "stdout")
-			assert.Loosely(t, err, should.ErrLike("either -workunitid (for work unit artifacts) or -testid and -resultid"))
-
-			err = ValidateArtifactFlags(ParentTypeUnknown, "inv", "", "test", "", "stdout")
+			err = ValidateArtifactFlags(ParentTypeUnknown, "", "", "test", "", "stdout")
 			assert.Loosely(t, err, should.ErrLike("flags -invocationid, -testid, -resultid, and -artifactid are required for test result artifacts"))
 
 			err = ValidateArtifactFlags(ParentTypeUnknown, "", "", "test", "0", "stdout")
@@ -108,6 +123,9 @@ func TestValidateArtifactFlags(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			err = ValidateArtifactFlags(ParentTypeUnknown, "inv", "wu-1", "", "", "stdout")
+			assert.Loosely(t, err, should.BeNil)
+
+			err = ValidateArtifactFlags(ParentTypeUnknown, "inv", "", "", "", "stdout")
 			assert.Loosely(t, err, should.BeNil)
 		})
 	})
@@ -146,12 +164,15 @@ func TestResolveParentType(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("flags -invocationid and -workunitid are required"))
 		})
 
+		t.Run(`invocation valid`, func(t *ftt.Test) {
+			pt, err := ResolveParentType("inv", "", "", "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pt, should.Equal(ParentTypeInvocation))
+		})
+
 		t.Run(`neither specified`, func(t *ftt.Test) {
 			_, err := ResolveParentType("", "", "", "")
 			assert.Loosely(t, err, should.ErrLike("flags -invocationid and either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) are required"))
-
-			_, err = ResolveParentType("inv", "", "", "")
-			assert.Loosely(t, err, should.ErrLike("either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) must be specified"))
 		})
 	})
 }
@@ -162,10 +183,23 @@ func TestResolveResourceAndArtifactNames(t *testing.T) {
 	ftt.Run(`ResolveTestResultResourceName`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		t.Run(`legacy mode`, func(t *ftt.Test) {
-			res, err := ResolveTestResultResourceName(ctx, nil, "build-123", "", "test1", "res1", true)
+		t.Run(`legacy mode queries test result`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				queryTestResults: func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+					return &pb.QueryTestResultsResponse{
+						TestResults: []*pb.TestResult{
+							{
+								Name:     "invocations/u-leaf/tests/test1/results/res1",
+								TestId:   "test1",
+								ResultId: "res1",
+							},
+						},
+					}, nil
+				},
+			}
+			res, err := ResolveTestResultResourceName(ctx, client, "build-123", "", "test1", "res1", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Equal("invocations/build-123/tests/test1/results/res1"))
+			assert.Loosely(t, res, should.Equal("invocations/u-leaf/tests/test1/results/res1"))
 		})
 
 		t.Run(`explicit work unit`, func(t *ftt.Test) {
@@ -211,6 +245,7 @@ func TestResolveResourceAndArtifactNames(t *testing.T) {
 			_, err := ResolveTestResultResourceName(ctx, client, "ants-i123", "", "test1", "nonexistent", false)
 			assert.Loosely(t, err, should.ErrLike("not found"))
 		})
+
 		t.Run(`ResolveTargetResourceName work unit`, func(t *ftt.Test) {
 			res, err := ResolveTargetResourceName(ctx, nil, ParentTypeWorkUnit, "build-123", "wu-1", "", "", false)
 			assert.Loosely(t, err, should.BeNil)
@@ -219,6 +254,26 @@ func TestResolveResourceAndArtifactNames(t *testing.T) {
 			artName, err := ResolveArtifactResourceName(ctx, nil, ParentTypeWorkUnit, "build-123", "wu-1", "", "", "syslog", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, artName, should.Equal("rootInvocations/build-123/workUnits/wu-1/artifacts/syslog"))
+		})
+
+		t.Run(`ResolveTargetResourceName invocation`, func(t *ftt.Test) {
+			res, err := ResolveTargetResourceName(ctx, nil, ParentTypeInvocation, "build-123", "", "", "", true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Equal("invocations/build-123"))
+
+			artName, err := ResolveArtifactResourceName(ctx, nil, ParentTypeInvocation, "build-123", "", "", "", "minidump", true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, artName, should.Equal("invocations/build-123/artifacts/minidump"))
+		})
+
+		t.Run(`ResolveTargetResourceName invocation unknown parent`, func(t *ftt.Test) {
+			res, err := ResolveTargetResourceName(ctx, nil, ParentTypeUnknown, "build-123", "", "", "", true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Equal("invocations/build-123"))
+
+			artName, err := ResolveArtifactResourceName(ctx, nil, ParentTypeUnknown, "build-123", "", "", "", "minidump", true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, artName, should.Equal("invocations/build-123/artifacts/minidump"))
 		})
 
 		t.Run(`ResolveTargetResourceName with ParentTypeUnknown`, func(t *ftt.Test) {
