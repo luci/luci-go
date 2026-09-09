@@ -139,6 +139,12 @@ export const ChromeOSDeviceDimensions = ({
     muiTableHeadRowProps: {
       sx: { minHeight: 'unset' },
     },
+    muiTableBodyCellProps: {
+      sx: {
+        wordBreak: 'break-word',
+        whiteSpace: 'normal',
+      },
+    },
     muiTableContainerProps: {
       sx: {
         maxWidth: '100%',

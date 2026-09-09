@@ -149,6 +149,12 @@ export const BrowserDeviceDimensions = ({
     muiTableHeadRowProps: {
       sx: { minHeight: 'unset' },
     },
+    muiTableBodyCellProps: {
+      sx: {
+        wordBreak: 'break-word',
+        whiteSpace: 'normal',
+      },
+    },
     muiTableContainerProps: {
       sx: {
         maxHeight: '600px', // or whatever constraints are appropriate
