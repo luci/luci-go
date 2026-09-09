@@ -53,12 +53,10 @@ import {
   CreatePriorityRuleResponse,
   DeletePriorityRuleRequest,
   DeletePriorityRuleResponse,
-  GetDefaultQuotaRequest,
-  GetDefaultQuotaResponse,
-  SetDefaultQuotaRequest,
-  SetDefaultQuotaResponse,
   ExportDevicesToCSVRequest,
   ExportDevicesToCSVResponse,
+  GetDefaultQuotaRequest,
+  GetDefaultQuotaResponse,
   GetDeviceDimensionsRequest,
   GetDeviceDimensionsResponse,
   GetRepairMetricsDimensionsRequest,
@@ -67,6 +65,8 @@ import {
   GetSmartRepairResponse,
   ListDevicesRequest,
   ListDevicesResponse,
+  ListIrmIncidentsRequest,
+  ListIrmIncidentsResponse,
   ListPriorityRulesRequest,
   ListPriorityRulesResponse,
   ListRepairMetricsRequest,
@@ -81,6 +81,8 @@ import {
   ScheduleDeployResponse,
   ScheduleReserveRequest,
   ScheduleReserveResponse,
+  SetDefaultQuotaRequest,
+  SetDefaultQuotaResponse,
   UnclaimRepairTaskRequest,
   UnclaimRepairTaskResponse,
   UpdateChromeOSDeviceRequest,
@@ -379,6 +381,7 @@ export interface FleetConsole {
   CreatePriorityRule(request: CreatePriorityRuleRequest): Promise<CreatePriorityRuleResponse>;
   UpdatePriorityRule(request: UpdatePriorityRuleRequest): Promise<UpdatePriorityRuleResponse>;
   DeletePriorityRule(request: DeletePriorityRuleRequest): Promise<DeletePriorityRuleResponse>;
+  ListIrmIncidents(request: ListIrmIncidentsRequest): Promise<ListIrmIncidentsResponse>;
   ListCustomerSlos(request: ListCustomerSlosRequest): Promise<ListCustomerSlosResponse>;
   GetDefaultQuota(request: GetDefaultQuotaRequest): Promise<GetDefaultQuotaResponse>;
   SetDefaultQuota(request: SetDefaultQuotaRequest): Promise<SetDefaultQuotaResponse>;
@@ -442,6 +445,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.CreatePriorityRule = this.CreatePriorityRule.bind(this);
     this.UpdatePriorityRule = this.UpdatePriorityRule.bind(this);
     this.DeletePriorityRule = this.DeletePriorityRule.bind(this);
+    this.ListIrmIncidents = this.ListIrmIncidents.bind(this);
     this.ListCustomerSlos = this.ListCustomerSlos.bind(this);
     this.GetDefaultQuota = this.GetDefaultQuota.bind(this);
     this.SetDefaultQuota = this.SetDefaultQuota.bind(this);
@@ -754,6 +758,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = DeletePriorityRuleRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "DeletePriorityRule", data);
     return promise.then((data) => DeletePriorityRuleResponse.fromJSON(data));
+  }
+
+  ListIrmIncidents(request: ListIrmIncidentsRequest): Promise<ListIrmIncidentsResponse> {
+    const data = ListIrmIncidentsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListIrmIncidents", data);
+    return promise.then((data) => ListIrmIncidentsResponse.fromJSON(data));
   }
 
   ListCustomerSlos(request: ListCustomerSlosRequest): Promise<ListCustomerSlosResponse> {

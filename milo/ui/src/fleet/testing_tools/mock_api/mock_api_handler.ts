@@ -89,6 +89,7 @@ export interface FleetConsoleMockFixtures {
   DeletePriorityRule: unknown;
   GetDefaultQuota: unknown;
   SetDefaultQuota: unknown;
+  ListIrmIncidents: unknown;
   [method: string]: unknown;
 }
 
@@ -430,6 +431,9 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   },
   SetDefaultQuota: {
     defaultQuota: 49,
+  },
+  ListIrmIncidents: {
+    irmIncidents: [],
   },
 };
 

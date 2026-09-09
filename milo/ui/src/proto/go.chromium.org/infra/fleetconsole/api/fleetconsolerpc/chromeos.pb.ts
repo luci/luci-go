@@ -677,6 +677,19 @@ export interface DeletePriorityRuleRequest {
 export interface DeletePriorityRuleResponse {
 }
 
+export interface IrmIncident {
+  readonly id: string;
+  readonly masterBugId: string;
+  readonly title: string;
+}
+
+export interface ListIrmIncidentsRequest {
+}
+
+export interface ListIrmIncidentsResponse {
+  readonly irmIncidents: readonly IrmIncident[];
+}
+
 export interface GetDefaultQuotaRequest {
 }
 
@@ -6594,6 +6607,202 @@ export const DeletePriorityRuleResponse: MessageFns<DeletePriorityRuleResponse> 
   },
 };
 
+function createBaseIrmIncident(): IrmIncident {
+  return { id: "0", masterBugId: "", title: "" };
+}
+
+export const IrmIncident: MessageFns<IrmIncident> = {
+  encode(message: IrmIncident, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.masterBugId !== "") {
+      writer.uint32(18).string(message.masterBugId);
+    }
+    if (message.title !== "") {
+      writer.uint32(26).string(message.title);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): IrmIncident {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseIrmIncident() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.masterBugId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.title = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): IrmIncident {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      masterBugId: isSet(object.masterBugId) ? globalThis.String(object.masterBugId) : "",
+      title: isSet(object.title) ? globalThis.String(object.title) : "",
+    };
+  },
+
+  toJSON(message: IrmIncident): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.masterBugId !== "") {
+      obj.masterBugId = message.masterBugId;
+    }
+    if (message.title !== "") {
+      obj.title = message.title;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<IrmIncident>): IrmIncident {
+    return IrmIncident.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<IrmIncident>): IrmIncident {
+    const message = createBaseIrmIncident() as any;
+    message.id = object.id ?? "0";
+    message.masterBugId = object.masterBugId ?? "";
+    message.title = object.title ?? "";
+    return message;
+  },
+};
+
+function createBaseListIrmIncidentsRequest(): ListIrmIncidentsRequest {
+  return {};
+}
+
+export const ListIrmIncidentsRequest: MessageFns<ListIrmIncidentsRequest> = {
+  encode(_: ListIrmIncidentsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListIrmIncidentsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListIrmIncidentsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ListIrmIncidentsRequest {
+    return {};
+  },
+
+  toJSON(_: ListIrmIncidentsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListIrmIncidentsRequest>): ListIrmIncidentsRequest {
+    return ListIrmIncidentsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<ListIrmIncidentsRequest>): ListIrmIncidentsRequest {
+    const message = createBaseListIrmIncidentsRequest() as any;
+    return message;
+  },
+};
+
+function createBaseListIrmIncidentsResponse(): ListIrmIncidentsResponse {
+  return { irmIncidents: [] };
+}
+
+export const ListIrmIncidentsResponse: MessageFns<ListIrmIncidentsResponse> = {
+  encode(message: ListIrmIncidentsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.irmIncidents) {
+      IrmIncident.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListIrmIncidentsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListIrmIncidentsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.irmIncidents.push(IrmIncident.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListIrmIncidentsResponse {
+    return {
+      irmIncidents: globalThis.Array.isArray(object?.irmIncidents)
+        ? object.irmIncidents.map((e: any) => IrmIncident.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ListIrmIncidentsResponse): unknown {
+    const obj: any = {};
+    if (message.irmIncidents?.length) {
+      obj.irmIncidents = message.irmIncidents.map((e) => IrmIncident.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListIrmIncidentsResponse>): ListIrmIncidentsResponse {
+    return ListIrmIncidentsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListIrmIncidentsResponse>): ListIrmIncidentsResponse {
+    const message = createBaseListIrmIncidentsResponse() as any;
+    message.irmIncidents = object.irmIncidents?.map((e) => IrmIncident.fromPartial(e)) || [];
+    return message;
+  },
+};
 
 function createBaseGetDefaultQuotaRequest(): GetDefaultQuotaRequest {
   return {};

@@ -19,6 +19,7 @@ import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
+import { ActiveIrmTable } from './active_irm_table';
 import { ChromeOSRepairTable } from './chromeos_repair_table';
 import { PriorityRulesPanel } from './priority_rules_panel';
 
@@ -60,10 +61,7 @@ export const ChromeOSRepairDashboard = () => {
             minWidth: 0,
           }}
         >
-          <Typography variant="h6" sx={{ mt: 2, mb: 2, fontSize: '16px' }}>
-            Active IRM Bugs
-          </Typography>
-          <h1>TODO</h1>
+          <ActiveIrmTable />
         </Box>
       </Box>
 
