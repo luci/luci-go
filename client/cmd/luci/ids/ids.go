@@ -293,10 +293,6 @@ func extractFromAntsTarget(ctx context.Context, client pb.ResultDBClient, raw st
 		return true, nil
 	}
 
-	if info.WorkUnitID != "" {
-		extracted.WorkUnitID = base.NormalizeWorkUnit(info.WorkUnitID)
-	}
-
 	// Query ResultDB to resolve canonical TestID, ResultID, VariantHash
 	if client != nil && extracted.InvocationID != "" {
 		results, _, errQuery := queryAntsResultDBVerdict(ctx, client, extracted.InvocationID, info)
@@ -306,16 +302,17 @@ func extractFromAntsTarget(ctx context.Context, client pb.ResultDBClient, raw st
 			if extracted.ResultID == "" {
 				extracted.ResultID = results[0].ResultId
 			}
-			if extracted.WorkUnitID == "" {
-				_, wuID := base.ExtractWorkUnitComponents(results[0].Name)
-				if wuID != "" {
-					extracted.WorkUnitID = base.NormalizeWorkUnit(wuID)
-				}
+			_, wuID := base.ExtractWorkUnitComponents(results[0].Name)
+			if wuID != "" {
+				extracted.WorkUnitID = base.NormalizeWorkUnit(wuID)
 			}
 		}
 	}
-	if extracted.TestID == "" && info.TestCase != "" && !strings.HasPrefix(info.TestCase, "#") {
-		extracted.TestID = info.TestCase
+	if extracted.TestID == "" && info.TestCase != "" {
+		trimmed := strings.TrimPrefix(info.TestCase, "#")
+		if !strings.HasPrefix(trimmed, ".") {
+			extracted.TestID = trimmed
+		}
 	}
 
 	return true, nil
@@ -636,18 +633,31 @@ func queryAntsResultDBVerdict(ctx context.Context, client pb.ResultDBClient, roo
 		filter += fmt.Sprintf("test_id_structured.case_name = %q", info.MethodName)
 	}
 
+	matchModuleName := func(trModuleName string) bool {
+		if info.ModuleName == "" {
+			return trModuleName == "" || trModuleName == "no-module-name"
+		}
+		return trModuleName == info.ModuleName
+	}
+
 	matchFunc := func(tr *pb.TestResult) bool {
 		if info.MethodName != "" {
-			if tr.TestIdStructured != nil && tr.TestIdStructured.CaseName == info.MethodName && tr.TestIdStructured.ModuleName == info.ModuleName {
+			if tr.TestIdStructured != nil && tr.TestIdStructured.CaseName == info.MethodName && matchModuleName(tr.TestIdStructured.ModuleName) {
 				return true
 			}
-			if strings.HasPrefix(tr.TestId, ":"+info.ModuleName+"!") && strings.HasSuffix(tr.TestId, "#"+info.MethodName) {
-				return true
+			if info.ModuleName == "" {
+				if (strings.HasPrefix(tr.TestId, ":no-module-name!") || strings.HasPrefix(tr.TestId, ":!")) && strings.HasSuffix(tr.TestId, "#"+info.MethodName) {
+					return true
+				}
+			} else {
+				if strings.HasPrefix(tr.TestId, ":"+info.ModuleName+"!") && strings.HasSuffix(tr.TestId, "#"+info.MethodName) {
+					return true
+				}
 			}
 			return false
 		}
 		if info.ModuleName != "" {
-			if tr.TestIdStructured != nil && tr.TestIdStructured.ModuleName == info.ModuleName {
+			if tr.TestIdStructured != nil && matchModuleName(tr.TestIdStructured.ModuleName) {
 				return true
 			}
 			return strings.HasPrefix(tr.TestId, ":"+info.ModuleName+"!")

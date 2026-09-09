@@ -323,7 +323,14 @@ EOF
 			assert.Loosely(t, idsParams.ResultID, should.Equal("custom-res"))
 			assert.Loosely(t, idsParams.ArtifactID, should.Equal("stdout"))
 
-			// 4. From placeholder test case "#." (e.g. build failure in AnTS)
+			// 4. Without ResultDB resolution, AnTS WorkUnitID is not populated as it does not match ResultDB WU IDs
+			idsNoRDB, err := ExtractIDs(ctx, nil, "TR13830335277435395", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsNoRDB.InvocationID, should.Equal("ants-i77100010600769898"))
+			assert.Loosely(t, idsNoRDB.WorkUnitID, should.Equal(""))
+			assert.Loosely(t, idsNoRDB.TestID, should.Equal("CellBroadcastServiceTests#com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest.testResetAreaInfoWithDefaultSubChanged"))
+
+			// 5. From placeholder test case "#." (e.g. build failure in AnTS)
 			scriptPlaceholder := `#!/bin/sh
 cat <<EOF
 Test Result ID: TR98730375213734414
@@ -340,6 +347,54 @@ EOF
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsPlaceholder.InvocationID, should.Equal("ants-i56900010616552061"))
 			assert.Loosely(t, idsPlaceholder.TestID, should.Equal(""))
+
+			// 6. From AnTS test result without module name (matching ResultDB no-module-name)
+			scriptNoModule := `#!/bin/sh
+cat <<EOF
+Test Result ID: TR36130379899461232
+Test Case: #SdvFWBaselineDHIOneVMTest.test_stop_start_vm
+Status: fail
+Work Unit ID: WU28600269761659804
+Invocation ID: I39300010618643739
+Run Number: 0
+Attempt Number: 0
+EOF
+`
+			_ = os.WriteFile(fakeBin, []byte(scriptNoModule), 0755)
+			clientNoModule := &mockResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					assert.Loosely(t, in.Parent, should.Equal("rootInvocations/ants-i39300010618643739"))
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: ":no-module-name!junit:no-package-name:SdvFWBaselineDHIOneVMTest#test_stop_start_vm",
+								TestIdStructured: &pb.TestIdentifier{
+									ModuleName:   "no-module-name",
+									ModuleScheme: "junit",
+									CoarseName:   "no-package-name",
+									FineName:     "SdvFWBaselineDHIOneVMTest",
+									CaseName:     "test_stop_start_vm",
+								},
+								Results: []*pb.TestResult{
+									{
+										Name:        "rootInvocations/ants-i39300010618643739/workUnits/ants-wu74900269761565426:u-376817f8-577f-435f-ae49-d04ecb2c2d1f/tests/:no-module-name%21junit:no-package-name:SdvFWBaselineDHIOneVMTest%23test_stop_start_vm/results/15e59e62-00003",
+										ResultId:    "15e59e62-00003",
+										VariantHash: "varhash-nomod",
+										StatusV2:    pb.TestResult_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			idsNoModule, err := ExtractIDs(ctx, clientNoModule, "TR36130379899461232", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsNoModule.InvocationID, should.Equal("ants-i39300010618643739"))
+			assert.Loosely(t, idsNoModule.WorkUnitID, should.Equal("ants-wu74900269761565426:u-376817f8-577f-435f-ae49-d04ecb2c2d1f"))
+			assert.Loosely(t, idsNoModule.TestID, should.Equal(":no-module-name!junit:no-package-name:SdvFWBaselineDHIOneVMTest#test_stop_start_vm"))
+			assert.Loosely(t, idsNoModule.ResultID, should.Equal("15e59e62-00003"))
+			assert.Loosely(t, idsNoModule.VariantHash, should.Equal("varhash-nomod"))
 		})
 
 		t.Run(`Android Build tests view URL with query param`, func(t *ftt.Test) {
