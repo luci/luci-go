@@ -21,6 +21,7 @@
 package lazyslot
 
 import (
+	"cmp"
 	"context"
 	"sync"
 	"time"
@@ -50,7 +51,21 @@ type Fetcher func(ctx context.Context, prev any) (updated any, exp time.Duration
 // Only one goroutine will be busy refreshing, all others will see a slightly
 // stale copy of the value during the refresh.
 type Slot struct {
-	RetryDelay time.Duration // how long to wait before fetching after a failure, 5 sec by default
+	// RetryDelay is how long to wait before fetching after a failure, 5 sec by
+	// default.
+	RetryDelay time.Duration
+
+	// CallbackCancelOverride is how to reset the cancellation deadline in the
+	// callback.
+	//
+	// Without this it's possible for requests with very short timeouts to starve
+	// the refresh callback.
+	//
+	// Slot will ensure the deadline of the context is ~at least this amount. If
+	// this is zero, then a default of 30s will be applied.
+	//
+	// If this is negative, then Slot will not override the context deadline.
+	CallbackCancelOverride time.Duration
 
 	lock                sync.RWMutex // protects the guts below
 	initialized         bool         // true if fetched the initial value already
@@ -60,7 +75,10 @@ type Slot struct {
 	consecutiveFailures int          // counts consecutive failures to distinguish transient from persistent errors
 }
 
-const consecutiveFailuresErrThreshold = 3
+const (
+	consecutiveFailuresErrThreshold = 3
+	defaultCallbackCancelOverride   = 30 * time.Second
+)
 
 // Get returns stored value if it is still fresh or refetches it if it's stale.
 //
@@ -125,7 +143,7 @@ func (s *Slot) Get(ctx context.Context, fetcher Fetcher) (value any, err error) 
 		}
 	}()
 
-	value, exp, fetchErr = fetcher(ctx, prevValue)
+	value, exp, fetchErr = s.invokeFetcher(ctx, fetcher, prevValue)
 	completed = true // we didn't panic!
 
 	// Return the previous value, bumping its expiration time by
@@ -138,6 +156,19 @@ func (s *Slot) Get(ctx context.Context, fetcher Fetcher) (value any, err error) 
 	}
 
 	return
+}
+
+// invokeFetcher invokes the fetcher function with `prev`, adjusting the
+// deadline on `ctx` if necessary.
+func (s *Slot) invokeFetcher(ctx context.Context, fetcher Fetcher, prev any) (updated any, exp time.Duration, err error) {
+	if override := cmp.Or(s.CallbackCancelOverride, defaultCallbackCancelOverride); override > 0 {
+		if dl, ok := ctx.Deadline(); ok && clock.Until(ctx, dl) < override {
+			var cancel func()
+			ctx, cancel = clock.WithTimeout(context.WithoutCancel(ctx), override)
+			defer cancel()
+		}
+	}
+	return fetcher(ctx, prev)
 }
 
 // initiateFetch modifies state of Slot to indicate that the current goroutine
@@ -161,7 +192,7 @@ func (s *Slot) initiateFetch(ctx context.Context, fetcher Fetcher, now time.Time
 	// there's nothing to return yet. All goroutines would have to wait for this
 	// initial fetch to complete. They'll all block on s.lock.RLock() in Get(...).
 	if !s.initialized {
-		result, exp, err := fetcher(ctx, nil)
+		result, exp, err := s.invokeFetcher(ctx, fetcher, nil)
 		if err != nil {
 			return false, nil, err
 		}
