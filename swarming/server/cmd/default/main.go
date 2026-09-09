@@ -387,9 +387,6 @@ var baseCSP = func() string {
 
 		"script-src": {
 			"'self'",
-			// Swarming pages are static so cannot use nonces for now
-			"'unsafe-inline'",
-
 			"https://www.google-analytics.com",
 			"https://www.google.com/jsapi",
 			"https://apis.google.com",
