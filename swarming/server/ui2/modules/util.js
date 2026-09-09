@@ -1,6 +1,16 @@
-// Copyright 2018 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /** @module swarming-ui/util
  * @description
@@ -360,3 +370,25 @@ export function humanize(obj) {
   obj.humanized = new Humanizer(obj);
   return obj;
 }
+
+/**
+ * sanitizeUrl ensures the given URL uses an allowed HTTP/HTTPS protocol or
+ * is a safe relative path. Returns undefined if invalid or untrusted.
+ *
+ * @param {string} url - The URL to sanitize.
+ * @returns {string|undefined} The sanitized URL or undefined.
+ */
+export function sanitizeUrl(url) {
+  if (!url || typeof url !== "string") {
+    return undefined;
+  }
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:"
+      ? url
+      : undefined;
+  } catch (_) {
+    return url.startsWith("/") && !url.startsWith("//") ? url : undefined;
+  }
+}
+

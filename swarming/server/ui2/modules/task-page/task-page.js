@@ -33,6 +33,7 @@ import {
   casLink,
   canRetry,
   cipdLink,
+  commitLink,
   durationChart,
   hasRichOutput,
   humanState,
@@ -54,6 +55,7 @@ import {
   botPageLink,
   humanDuration,
   parseDuration,
+  sanitizeUrl,
   taskListLink,
   taskPageLink,
   b64toUtf8,
@@ -463,15 +465,17 @@ const dimensionRow = (dimension) => html`
 `;
 
 const casBlock = (title, host, ref) => {
-  if (!ref.digest || !ref.digest.hash) {
+  if (!ref || !ref.digest || !ref.digest.hash) {
     return "";
   }
+  const url = casLink(host, ref);
+  const text = `${ref.digest.hash}/${ref.digest.sizeBytes || 0}`;
   return html` <tr>
     <td>${title}</td>
     <td>
-      <a href=${casLink(host, ref)} target="_blank">
-        ${ref.digest.hash}/${ref.digest.sizeBytes}
-      </a>
+      ${url
+        ? html`<a href=${url} target="_blank" rel="noopener">${text}</a>`
+        : text}
     </td>
   </tr>`;
 };
@@ -489,24 +493,33 @@ const missingCasBlock = (title, host, missingCas) => {
   </tr>`;
 };
 
-const missingCasRowSet = (host, input) => html`
-<tr>
-  <tr>
-    <td>
-      <b>Instance: </b>
-      ${input.casInstance}
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <b>Digest: </b>
-      <a href=${casLink(host, input)} target='_blank'>
-        ${input.digest.hash}/${input.digest.sizeBytes}
-      </a>
-    </td>
-  </tr>
-</tr>
-`;
+const missingCasRowSet = (host, input) => {
+  if (!input) {
+    return "";
+  }
+  const url = casLink(host, input);
+  const text = input.digest
+    ? `${input.digest.hash}/${input.digest.sizeBytes || 0}`
+    : "--";
+  return html`
+    <tr>
+      <tr>
+        <td>
+          <b>Instance: </b>
+          ${input.casInstance || "--"}
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <b>Digest: </b>
+          ${url
+            ? html`<a href=${url} target="_blank" rel="noopener">${text}</a>`
+            : text}
+        </td>
+      </tr>
+    </tr>
+  `;
+};
 
 const arrayInTable = (array, label, keyFn) => {
   if (!array || !array.length) {
@@ -533,13 +546,15 @@ const commitBlock = (tagMap) => {
   if (!tagMap || !tagMap.source_revision) {
     return "";
   }
+  const shortRev = tagMap.source_revision.substring(0, 12);
+  const commitUrl = commitLink(tagMap);
   return html`
     <tr>
       <td>Associated Commit</td>
       <td>
-        <a href=${tagMap.source_repo.replace("%s", tagMap.source_revision)}>
-          ${tagMap.source_revision.substring(0, 12)}
-        </a>
+        ${commitUrl
+          ? html`<a href=${commitUrl} target="_blank" rel="noopener">${shortRev}</a>`
+          : shortRev}
       </td>
     </tr>
   `;
@@ -646,11 +661,14 @@ const cipdBlock = (cipdInput, result) => {
   }
   // Add one because rowSpan counts from 1.
   cipdRowspan += 1;
+  const sanitized = sanitizeUrl(cipdInput.server);
   return html`
     <tr>
       <td>CIPD server</td>
       <td>
-        <a href=${cipdInput.server}>${cipdInput.server}</a>
+        ${sanitized
+          ? html`<a href=${sanitized} target="_blank" rel="noopener">${cipdInput.server}</a>`
+          : cipdInput.server || "--"}
       </td>
     </tr>
     <tr>
@@ -672,28 +690,27 @@ const cipdBlock = (cipdInput, result) => {
   `;
 };
 
-const cipdRowSet = (pkg, cipdInput, actualAvailable) => html`
-  <tr>
-    <td>${pkg.path}/</td>
-  </tr>
-  <tr>
-    <td class="break-all">
-      <span class="cipd-header">Requested: </span>${pkg.requested}
-    </td>
-  </tr>
-  <tr ?hidden=${!actualAvailable}>
-    <td class="break-all">
-      <span class="cipd-header">Actual: </span>
-      <a
-        href=${cipdLink(pkg.actual, cipdInput.server)}
-        target="_blank"
-        rel="noopener"
-      >
-        ${pkg.actual}
-      </a>
-    </td>
-  </tr>
-`;
+const cipdRowSet = (pkg, cipdInput, actualAvailable) => {
+  const link = cipdLink(pkg.actual, cipdInput.server);
+  return html`
+    <tr>
+      <td>${pkg.path}/</td>
+    </tr>
+    <tr>
+      <td class="break-all">
+        <span class="cipd-header">Requested: </span>${pkg.requested}
+      </td>
+    </tr>
+    <tr ?hidden=${!actualAvailable}>
+      <td class="break-all">
+        <span class="cipd-header">Actual: </span>
+        ${link
+          ? html`<a href=${link} target="_blank" rel="noopener">${pkg.actual}</a>`
+          : pkg.actual}
+      </td>
+    </tr>
+  `;
+};
 
 const taskTimingSection = (ele, request, result) => {
   if (!ele._taskId || ele._notFound || wasDeduped(result)) {

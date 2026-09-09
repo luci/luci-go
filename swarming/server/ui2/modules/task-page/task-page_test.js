@@ -26,7 +26,13 @@ import {
 } from "../test_util";
 import { taskOutput, taskResults, taskRequests } from "./test_data";
 import { localeTime } from "common-sk/modules/human";
-import { richLogsLink, sliceSchedulingDeadline } from "./task-page-helpers";
+import {
+  casLink,
+  cipdLink,
+  commitLink,
+  richLogsLink,
+  sliceSchedulingDeadline,
+} from "./task-page-helpers";
 
 // Tip from https://stackoverflow.com/a/37348710
 // for catching "full page reload" errors.
@@ -1157,23 +1163,166 @@ describe("task-page", function () {
   }); // end describe('api calls')
 
   describe("data", function () {
-    it("generates proper rich log links", function () {
-      const mockEle = {
-        _request: {
-          tagMap: {
-            milo_host: "https://example.com/%s",
-            log_location: "logdog://project/${SWARMING_TASK_ID}/+/annotations",
+    describe("richLogsLink", function () {
+      it("generates proper rich log links", function () {
+        const mockEle = {
+          _request: {
+            tagMap: {
+              milo_host: "https://example.com/%s",
+              log_location: "logdog://project/${SWARMING_TASK_ID}/+/annotations",
+            },
           },
-        },
-        _result: {
-          runId: "45b22fd90cefdf12",
+          _result: {
+            runId: "45b22fd90cefdf12",
+          },
+        };
+
+        const url = richLogsLink(mockEle);
+        expect(url).toEqual(
+          "https://example.com/project/45b22fd90cefdf12/+/annotations"
+        );
+      });
+
+      it("rejects malicious milo_host", function () {
+        const mockEle = {
+          _request: {
+            tagMap: {
+              milo_host: "javascript:alert(1)//%s",
+              log_location: "logdog://project/${SWARMING_TASK_ID}/+/annotations",
+            },
+          },
+          _result: {
+            runId: "45b22fd90cefdf12",
+          },
+        };
+        expect(richLogsLink(mockEle)).toBeUndefined();
+      });
+
+      it("accepts safe relative displayServerUrlTemplate", function () {
+        const mockEle = {
+          _request: { tagMap: {} },
+          _taskId: "test0b3c0fac7810",
+          serverDetails: {
+            displayServerUrlTemplate: "/task/%s",
+          },
+        };
+        expect(richLogsLink(mockEle)).toBe("/task/test0b3c0fac7810");
+      });
+
+      it("rejects malicious displayServerUrlTemplate", function () {
+        const mockEle = {
+          _request: { tagMap: {} },
+          _taskId: "test0b3c0fac7810",
+          serverDetails: {
+            displayServerUrlTemplate: "javascript:alert(1)//%s",
+          },
+        };
+        expect(richLogsLink(mockEle)).toBeUndefined();
+      });
+    });
+
+    describe("commitLink", function () {
+      it("generates proper commit links for valid tags", function () {
+        const tagMap = {
+          source_repo:
+            "https://chromium.googlesource.com/infra/luci/luci-go/+/%s",
+          source_revision: "deadbeefcafe1234",
+        };
+        expect(commitLink(tagMap)).toBe(
+          "https://chromium.googlesource.com/infra/luci/luci-go/+/deadbeefcafe1234"
+        );
+      });
+
+      it("returns undefined when source_repo is missing", function () {
+        const tagMap = {
+          source_revision: "deadbeefcafe1234",
+        };
+        expect(commitLink(tagMap)).toBeUndefined();
+      });
+
+      it("returns undefined when source_revision is missing", function () {
+        const tagMap = {
+          source_repo:
+            "https://chromium.googlesource.com/infra/luci/luci-go/+/%s",
+        };
+        expect(commitLink(tagMap)).toBeUndefined();
+      });
+
+      it("returns undefined when source_repo lacks placeholder", function () {
+        const tagMap = {
+          source_repo: "https://chromium.googlesource.com/infra/luci/luci-go",
+          source_revision: "deadbeefcafe1234",
+        };
+        expect(commitLink(tagMap)).toBeUndefined();
+      });
+
+      it("rejects malicious javascript pseudo-protocols", function () {
+        const tagMap = {
+          source_repo: "javascript:alert(1)//%s",
+          source_revision: "deadbeef",
+        };
+        expect(commitLink(tagMap)).toBeUndefined();
+      });
+
+      it("rejects data URIs", function () {
+        const tagMap = {
+          source_repo: "data:text/html,<script>alert(1)</script>%s",
+          source_revision: "deadbeef",
+        };
+        expect(commitLink(tagMap)).toBeUndefined();
+      });
+    });
+
+    describe("cipdLink", function () {
+      it("generates valid package links", function () {
+        expect(
+          cipdLink(
+            "infra/python/cpython/windows-amd64:1ba7",
+            "https://chrome-infra-packages.appspot.com"
+          )
+        ).toBe(
+          "https://chrome-infra-packages.appspot.com/p/infra/python/cpython/windows-amd64/+/1ba7"
+        );
+      });
+
+      it("rejects malicious server protocols", function () {
+        expect(
+          cipdLink("pkg:ver", "javascript:alert(1)")
+        ).toBeUndefined();
+      });
+    });
+
+    describe("casLink", function () {
+      const ref = {
+        casInstance: "projects/chromium/instances/default_instance",
+        digest: {
+          hash: "abcdef1234567890",
+          sizeBytes: 4096,
         },
       };
 
-      const url = richLogsLink(mockEle);
-      expect(url).toEqual(
-        "https://example.com/project/45b22fd90cefdf12/+/annotations"
-      );
+      it("generates valid CAS link", function () {
+        expect(casLink("https://cas-viewer.appspot.com", ref)).toBe(
+          "https://cas-viewer.appspot.com/projects/chromium/instances/default_instance/blobs/abcdef1234567890/4096/tree"
+        );
+      });
+
+      it("returns undefined when host is missing", function () {
+        expect(casLink("", ref)).toBeUndefined();
+        expect(casLink(null, ref)).toBeUndefined();
+      });
+
+      it("returns undefined when ref or digest is missing", function () {
+        expect(casLink("https://cas-viewer.appspot.com", null)).toBeUndefined();
+        expect(casLink("https://cas-viewer.appspot.com", {})).toBeUndefined();
+        expect(
+          casLink("https://cas-viewer.appspot.com", { casInstance: "proj" })
+        ).toBeUndefined();
+      });
+
+      it("rejects malicious host protocols", function () {
+        expect(casLink("javascript:alert(1)", ref)).toBeUndefined();
+      });
     });
 
     describe("sliceSchedulingDeadline", function () {

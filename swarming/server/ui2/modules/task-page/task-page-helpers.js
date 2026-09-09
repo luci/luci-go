@@ -19,6 +19,7 @@ import {
   humanDuration,
   humanize,
   sanitizeAndHumanizeTime,
+  sanitizeUrl,
   timeDiffExact,
 } from "../util";
 
@@ -27,6 +28,23 @@ import {
  */
 export function canRetry(request) {
   return request && request.properties && request.properties.idempotent;
+}
+
+/** commitLink returns a sanitized URL for an associated commit given a tagMap,
+ *  or undefined if invalid or missing.
+ */
+export function commitLink(tagMap) {
+  if (!tagMap || !tagMap.source_revision || !tagMap.source_repo) {
+    return undefined;
+  }
+  if (!tagMap.source_repo.includes("%s")) {
+    return undefined;
+  }
+  const rawUrl = tagMap.source_repo.replace(
+    "%s",
+    encodeURIComponent(tagMap.source_revision)
+  );
+  return sanitizeUrl(rawUrl);
 }
 
 /** cipdLink constructs a URL to a CIPD resource given a version string
@@ -43,7 +61,7 @@ export function cipdLink(actualVersion, server) {
   }
   const pkg = splits[0];
   const version = splits[1];
-  return `${server}/p/${pkg}/+/${version}`;
+  return sanitizeUrl(`${server}/p/${pkg}/+/${version}`);
 }
 
 /** durationChart returns an array of times to be displayed in a chart.
@@ -133,7 +151,10 @@ export function humanState(result, currentSliceIdx) {
 /** casLink constructs a URL to a CAS root directory given a CAS reference.
  */
 export function casLink(host, ref) {
-  return (
+  if (!host || !ref || !ref.digest) {
+    return undefined;
+  }
+  return sanitizeUrl(
     `${host}/${ref.casInstance}/blobs/` +
     `${ref.digest.hash}/${ref.digest.sizeBytes || 0}/tree`
   );
@@ -229,13 +250,17 @@ export function richLogsLink(ele) {
       }
       logs = logs.replace(TASK_ID_PLACEHOLDER, ele._result.runId);
     }
-    return miloHost.replace("%s", logs);
+    const candidate = miloHost.includes("%s")
+      ? miloHost.replace("%s", logs)
+      : `${miloHost}/${logs}`;
+    return sanitizeUrl(candidate);
   }
-  const displayTemplate = ele.serverDetails.displayServerUrlTemplate;
+  const displayTemplate =
+    ele.serverDetails && ele.serverDetails.displayServerUrlTemplate;
   if (!displayTemplate || !ele._taskId) {
     return undefined;
   }
-  return displayTemplate.replace("%s", ele._taskId);
+  return sanitizeUrl(displayTemplate.replace("%s", ele._taskId));
 }
 
 /** sliceSchedulingDeadline returns a human readable time stamp of when a task
