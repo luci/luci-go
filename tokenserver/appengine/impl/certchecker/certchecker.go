@@ -165,7 +165,7 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 
 // GetCA returns CA entity with ParsedConfig and ParsedCert fields set.
 func (ch *CertChecker) GetCA(c context.Context) (*certconfig.CA, error) {
-	value, err := ch.ca.Get(c, func(any) (ca any, exp time.Duration, err error) {
+	value, err := ch.ca.Get(c, func(c context.Context, _ any) (ca any, exp time.Duration, err error) {
 		ca, err = ch.refetchCA(c)
 		if err == nil {
 			exp = RefetchCAPeriod

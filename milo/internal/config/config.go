@@ -93,7 +93,7 @@ var serviceCfgCache = caching.RegisterCacheSlot()
 func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 	// This maker function is used to do the actual fetch of the ServiceConfig
 	// from datastore.  It is called if the ServiceConfig is not in proc cache.
-	item, err := serviceCfgCache.Fetch(c, func(any) (any, time.Duration, error) {
+	item, err := serviceCfgCache.Fetch(c, func(c context.Context, _ any) (any, time.Duration, error) {
 		msg := ServiceConfig{ID: serviceConfigID}
 		err := datastore.Get(c, &msg)
 		if err != nil {

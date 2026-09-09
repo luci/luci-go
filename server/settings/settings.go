@@ -172,7 +172,7 @@ func (s *Settings) IsMutable() bool {
 // to pass correct type and pass same type to all calls. If the setting is not
 // set returns ErrNoSettings.
 func (s *Settings) Get(c context.Context, key string, value any) error {
-	bundle, err := s.values.Get(c, func(any) (any, time.Duration, error) {
+	bundle, err := s.values.Get(c, func(c context.Context, _ any) (any, time.Duration, error) {
 		c, cancel := clock.WithTimeout(c, 15*time.Second) // retry for 15 sec total
 		defer cancel()
 		var bundle *Bundle

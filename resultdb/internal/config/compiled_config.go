@@ -169,7 +169,7 @@ var schemeCache = caching.RegisterCacheSlot()
 
 // Service returns the compiled configuration for the service.
 func Service(ctx context.Context) (*CompiledServiceConfig, error) {
-	result, err := schemeCache.Fetch(ctx, func(prev any) (updated any, exp time.Duration, err error) {
+	result, err := schemeCache.Fetch(ctx, func(ctx context.Context, prev any) (updated any, exp time.Duration, err error) {
 		var meta config.Meta
 		cfg, err := cachedServiceCfg.Get(ctx, &meta)
 		if err != nil {

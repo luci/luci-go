@@ -120,7 +120,7 @@ func (h SlotHandle) Valid() bool { return h.h != 0 }
 // If the returned expiration time is 0, the value is considered non-expirable.
 // If the returned expiration time is <0, the value will be refetched on the
 // next access. This is sometimes useful in tests that "freeze" time.
-type FetchCallback func(prev any) (updated any, exp time.Duration, err error)
+type FetchCallback func(ctx context.Context, prev any) (updated any, exp time.Duration, err error)
 
 // Fetch returns the cached data, if it is available and fresh, or attempts to
 // refresh it by calling the given callback.

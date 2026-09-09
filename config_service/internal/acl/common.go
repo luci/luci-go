@@ -41,7 +41,7 @@ var (
 )
 
 func getACLCfgCached(ctx context.Context) (*cfgcommonpb.AclCfg, error) {
-	item, err := aclCfgCache.Fetch(ctx, func(any) (any, time.Duration, error) {
+	item, err := aclCfgCache.Fetch(ctx, func(ctx context.Context, _ any) (any, time.Duration, error) {
 		aclCfg := &cfgcommonpb.AclCfg{}
 		if err := common.LoadSelfConfig(ctx, common.ACLRegistryFilePath, aclCfg); err != nil {
 			return nil, 0, err

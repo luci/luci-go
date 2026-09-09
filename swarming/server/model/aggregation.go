@@ -193,7 +193,7 @@ type BotsDimensionsCache struct {
 //
 // All returned errors should be treated as transient datastore errors.
 func (b *BotsDimensionsCache) Get(ctx context.Context) (*BotsDimensionsSets, error) {
-	val, err := b.cached.Get(ctx, func(prev any) (updated any, exp time.Duration, err error) {
+	val, err := b.cached.Get(ctx, func(ctx context.Context, prev any) (updated any, exp time.Duration, err error) {
 		var fresh *BotsDimensionsSets
 		if prev == nil {
 			fresh, err = b.fetch(ctx)

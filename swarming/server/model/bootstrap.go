@@ -107,7 +107,7 @@ func (legacyStore) RandomSecret(ctx context.Context, name string) (secrets.Secre
 	if name != legacyBootstrapToken.SecretKey {
 		return secrets.Secret{}, errors.Fmt("unexpected key requested: %s", name)
 	}
-	blob, err := cachedSecret.Fetch(ctx, func(any) (blob any, exp time.Duration, err error) {
+	blob, err := cachedSecret.Fetch(ctx, func(ctx context.Context, _ any) (blob any, exp time.Duration, err error) {
 		ent := &LegacyBootstrapSecret{Key: LegacyBootstrapSecretKey(ctx)}
 		if err = datastore.Get(ctx, ent); err != nil {
 			return nil, 0, err

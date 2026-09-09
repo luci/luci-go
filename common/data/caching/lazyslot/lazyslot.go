@@ -43,7 +43,7 @@ const ExpiresImmediately time.Duration = -1
 // expires. If the returned expiration duration is equal to ExpiresImmediately,
 // then the very next Get(...) will trigger another refresh (this is sometimes
 // useful in tests with "frozen" time to disable caching).
-type Fetcher func(prev any) (updated any, exp time.Duration, err error)
+type Fetcher func(ctx context.Context, prev any) (updated any, exp time.Duration, err error)
 
 // Slot holds a cached value and refreshes it when it expires.
 //
@@ -125,7 +125,7 @@ func (s *Slot) Get(ctx context.Context, fetcher Fetcher) (value any, err error) 
 		}
 	}()
 
-	value, exp, fetchErr = fetcher(prevValue)
+	value, exp, fetchErr = fetcher(ctx, prevValue)
 	completed = true // we didn't panic!
 
 	// Return the previous value, bumping its expiration time by
@@ -161,7 +161,7 @@ func (s *Slot) initiateFetch(ctx context.Context, fetcher Fetcher, now time.Time
 	// there's nothing to return yet. All goroutines would have to wait for this
 	// initial fetch to complete. They'll all block on s.lock.RLock() in Get(...).
 	if !s.initialized {
-		result, exp, err := fetcher(nil)
+		result, exp, err := fetcher(ctx, nil)
 		if err != nil {
 			return false, nil, err
 		}

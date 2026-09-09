@@ -62,7 +62,7 @@ var (
 
 // cachedCerts caches this app certs in local memory for 1 hour.
 func getCachedCerts(ctx context.Context) (*signing.PublicCertificates, error) {
-	v, err := certCache.Fetch(ctx, func(any) (any, time.Duration, error) {
+	v, err := certCache.Fetch(ctx, func(ctx context.Context, _ any) (any, time.Duration, error) {
 		aeCerts, err := info.PublicCertificates(ctx)
 		if err != nil {
 			return nil, 0, err
@@ -95,7 +95,7 @@ func getCachedCerts(ctx context.Context) (*signing.PublicCertificates, error) {
 //
 // This info is static during lifetime of the process.
 func getCachedInfo(ctx context.Context) (*signing.ServiceInfo, error) {
-	v, err := infoCache.Fetch(ctx, func(any) (any, time.Duration, error) {
+	v, err := infoCache.Fetch(ctx, func(ctx context.Context, _ any) (any, time.Duration, error) {
 		account, err := info.ServiceAccount(ctx)
 		if err != nil {
 			return nil, 0, err

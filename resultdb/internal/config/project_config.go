@@ -231,7 +231,7 @@ func fetchProjectConfigEntities(ctx context.Context) (map[string]*cachedProjectC
 // Uses in-memory cache to avoid hitting datastore all the time.
 // Note that the config may be stale by up to 1 minute.
 func Projects(ctx context.Context) (map[string]*configpb.ProjectConfig, error) {
-	val, err := projectCacheSlot.Fetch(ctx, func(any) (val any, exp time.Duration, err error) {
+	val, err := projectCacheSlot.Fetch(ctx, func(ctx context.Context, _ any) (val any, exp time.Duration, err error) {
 		var pc map[string]*configpb.ProjectConfig
 		if pc, err = fetchProjects(ctx); err != nil {
 			return nil, 0, err
