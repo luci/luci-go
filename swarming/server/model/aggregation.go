@@ -185,7 +185,7 @@ func unionOfPerPoolDims(perPool map[string][]*apipb.StringListPair, pools []stri
 // is initialized and refreshed lazily on use (instead of e.g. periodically in
 // background).
 type BotsDimensionsCache struct {
-	cached lazyslot.Slot
+	cached lazyslot.Slot[*BotsDimensionsSets]
 }
 
 // Get returns the aggregated bot dimensions, fetching or refreshing it if
@@ -193,22 +193,18 @@ type BotsDimensionsCache struct {
 //
 // All returned errors should be treated as transient datastore errors.
 func (b *BotsDimensionsCache) Get(ctx context.Context) (*BotsDimensionsSets, error) {
-	val, err := b.cached.Get(ctx, func(ctx context.Context, prev any) (updated any, exp time.Duration, err error) {
+	return b.cached.Get(ctx, func(ctx context.Context, prev *BotsDimensionsSets) (updated *BotsDimensionsSets, exp time.Duration, err error) {
 		var fresh *BotsDimensionsSets
 		if prev == nil {
 			fresh, err = b.fetch(ctx)
 		} else {
-			fresh, err = b.refresh(ctx, prev.(*BotsDimensionsSets))
+			fresh, err = b.refresh(ctx, prev)
 		}
 		if err != nil {
 			return nil, 0, err
 		}
 		return fresh, time.Minute, nil // cache in memory for 1 min
 	})
-	if err != nil {
-		return nil, err
-	}
-	return val.(*BotsDimensionsSets), nil
 }
 
 // fetch fetches the full copy of BotsDimensionsSets.

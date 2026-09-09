@@ -40,7 +40,7 @@ var legacyBootstrapToken = tokens.TokenKind{
 
 // cachedSecret is used to cache the legacy bootstrap secret key in the process
 // memory to avoid fetching it all the time (it never changes).
-var cachedSecret = caching.RegisterCacheSlot()
+var cachedSecret = caching.RegisterCacheSlot[[]byte]()
 
 // LegacyBootstrapSecret is a subset of the AuthSecret python entity with the
 // bootstrap token secret.
@@ -107,7 +107,7 @@ func (legacyStore) RandomSecret(ctx context.Context, name string) (secrets.Secre
 	if name != legacyBootstrapToken.SecretKey {
 		return secrets.Secret{}, errors.Fmt("unexpected key requested: %s", name)
 	}
-	blob, err := cachedSecret.Fetch(ctx, func(ctx context.Context, _ any) (blob any, exp time.Duration, err error) {
+	blob, err := cachedSecret.Fetch(ctx, func(ctx context.Context, _ []byte) (blob []byte, exp time.Duration, err error) {
 		ent := &LegacyBootstrapSecret{Key: LegacyBootstrapSecretKey(ctx)}
 		if err = datastore.Get(ctx, ent); err != nil {
 			return nil, 0, err
@@ -120,7 +120,7 @@ func (legacyStore) RandomSecret(ctx context.Context, name string) (secrets.Secre
 	if err != nil {
 		return secrets.Secret{}, transient.Tag.Apply(err)
 	}
-	return secrets.Secret{Active: blob.([]byte)}, nil
+	return secrets.Secret{Active: blob}, nil
 }
 
 // StoredSecret returns a previously stored secret given its name.

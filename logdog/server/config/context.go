@@ -46,13 +46,13 @@ type Store struct {
 	// NoCache disables in-process caching (useful in tests).
 	NoCache bool
 
-	service  lazyslot.Slot             // caches the main service config
-	m        sync.RWMutex              // protects 'projects'
-	projects map[string]*lazyslot.Slot // caches project configs
+	service  lazyslot.Slot[*svcconfig.Config]                    // caches the main service config
+	m        sync.RWMutex                                        // protects 'projects'
+	projects map[string]*lazyslot.Slot[*svcconfig.ProjectConfig] // caches project configs
 }
 
 // projectCacheSlot returns a slot with a project config cache.
-func (s *Store) projectCacheSlot(projectID string) *lazyslot.Slot {
+func (s *Store) projectCacheSlot(projectID string) *lazyslot.Slot[*svcconfig.ProjectConfig] {
 	s.m.RLock()
 	slot := s.projects[projectID]
 	s.m.RUnlock()
@@ -66,10 +66,10 @@ func (s *Store) projectCacheSlot(projectID string) *lazyslot.Slot {
 	if slot = s.projects[projectID]; slot != nil {
 		return slot
 	}
-	slot = &lazyslot.Slot{}
+	slot = &lazyslot.Slot[*svcconfig.ProjectConfig]{}
 
 	if s.projects == nil {
-		s.projects = make(map[string]*lazyslot.Slot, 1)
+		s.projects = make(map[string]*lazyslot.Slot[*svcconfig.ProjectConfig], 1)
 	}
 	s.projects[projectID] = slot
 
@@ -106,15 +106,11 @@ func Config(ctx context.Context) (*svcconfig.Config, error) {
 	if store.NoCache {
 		return fetchServiceConfig(ctx)
 	}
-	cached, err := store.service.Get(ctx, func(ctx context.Context, prev any) (val any, exp time.Duration, err error) {
+	return store.service.Get(ctx, func(ctx context.Context, prev *svcconfig.Config) (val *svcconfig.Config, exp time.Duration, err error) {
 		logging.Infof(ctx, "Cache miss for services.cfg, fetching it from datastore...")
 		cfg, err := fetchServiceConfig(ctx)
 		return cfg, time.Minute, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return cached.(*svcconfig.Config), nil
 }
 
 // fetchServiceConfig fetches the service config from the datastore.
@@ -133,15 +129,14 @@ func fetchServiceConfig(ctx context.Context) (*svcconfig.Config, error) {
 	}
 }
 
-// missingProjectMarker is cached instead of *svcconfig.ProjectConfig if the
-// project is missing to avoid hitting datastore all the time when accessing
-// missing projects.
+// missingProjectMarker is cached as a sentinel if the project is missing to
+// avoid hitting datastore all the time when accessing missing projects.
 //
 // Note: strictly speaking caching all missing projects forever in
 // Store.projects introduces a DoS attack vector. But this code is scheduled for
 // removal when Logdog is integrated with LUCI Realms, so it's fine to ignore
 // this problem for now.
-var missingProjectMarker = "missing project"
+var missingProjectMarker = &svcconfig.ProjectConfig{}
 
 // ProjectConfig loads the project config protobuf from the config service.
 //
@@ -160,21 +155,21 @@ func ProjectConfig(ctx context.Context, projectID string) (*svcconfig.ProjectCon
 	if store.NoCache {
 		return fetchProjectConfig(ctx, projectID)
 	}
-	cached, err := store.projectCacheSlot(projectID).Get(ctx, func(ctx context.Context, prev any) (val any, exp time.Duration, err error) {
+	cached, err := store.projectCacheSlot(projectID).Get(ctx, func(ctx context.Context, prev *svcconfig.ProjectConfig) (val *svcconfig.ProjectConfig, exp time.Duration, err error) {
 		logging.Infof(ctx, "Cache miss for %q project config, fetching it...", projectID)
 		cfg, err := fetchProjectConfig(ctx, projectID)
 		if err == config.ErrNoConfig {
-			return &missingProjectMarker, time.Minute, nil
+			return missingProjectMarker, time.Minute, nil
 		}
 		return cfg, time.Minute, err
 	})
 	if err != nil {
 		return nil, err
 	}
-	if cached == &missingProjectMarker {
+	if cached == missingProjectMarker {
 		return nil, config.ErrNoConfig
 	}
-	return cached.(*svcconfig.ProjectConfig), nil
+	return cached, nil
 }
 
 // fetchProjectConfig fetches a project config from the datastore.

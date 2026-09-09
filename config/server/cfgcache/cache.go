@@ -83,7 +83,7 @@ type Entry struct {
 	Rules *validation.RuleSet
 
 	// cacheSlot holds in-process cache of the config.
-	cacheSlot caching.SlotHandle
+	cacheSlot caching.SlotHandle[*procCache]
 
 	// See comments for Fetch.
 	eagerUpdateOnce sync.Once
@@ -101,7 +101,7 @@ func Register(e *Entry) *Entry {
 	if e.cacheSlot.Valid() {
 		panic("Register has already been called")
 	}
-	e.cacheSlot = caching.RegisterCacheSlot()
+	e.cacheSlot = caching.RegisterCacheSlot[*procCache]()
 
 	rules := e.Rules
 	if rules == nil {
@@ -244,7 +244,7 @@ func (e *Entry) Set(ctx context.Context, cfg proto.Message, meta *config.Meta) e
 //
 // If `meta` is non-nil, it will receive the config metadata.
 func (e *Entry) Get(ctx context.Context, meta *config.Meta) (proto.Message, error) {
-	val, err := e.cacheSlot.Fetch(ctx, func(ctx context.Context, _ any) (val any, exp time.Duration, err error) {
+	pc, err := e.cacheSlot.Fetch(ctx, func(ctx context.Context, _ *procCache) (val *procCache, exp time.Duration, err error) {
 		pc := procCache{}
 		if pc.Config, err = e.Fetch(ctx, &pc.Meta); err != nil {
 			return nil, 0, err
@@ -260,7 +260,6 @@ func (e *Entry) Get(ctx context.Context, meta *config.Meta) (proto.Message, erro
 	case err != nil:
 		return nil, err
 	default:
-		pc := val.(*procCache)
 		if meta != nil {
 			*meta = pc.Meta
 		}

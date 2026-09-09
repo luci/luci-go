@@ -37,44 +37,44 @@ func TestLazySlot(t *testing.T) {
 		lock := sync.Mutex{}
 		counter := 0
 
-		fetcher := func(ctx context.Context, prev any) (any, time.Duration, error) {
+		fetcher := func(ctx context.Context, prev int) (int, time.Duration, error) {
 			lock.Lock()
 			defer lock.Unlock()
 			counter++
 			return counter, time.Second, nil
 		}
 
-		s := Slot{}
+		s := Slot[int]{}
 
 		// Initial fetch.
-		assert.Loosely(t, s.current, should.BeNil)
+		assert.That(t, s.current, should.Equal(0))
 		v, err := s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, v.(int), should.Equal(1))
+		assert.That(t, v, should.Equal(1))
 
 		// Still fresh.
 		v, err = s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, v.(int), should.Equal(1))
+		assert.That(t, v, should.Equal(1))
 
 		// Expires and refreshed.
 		clk.Add(5 * time.Second)
 		v, err = s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, v.(int), should.Equal(2))
+		assert.That(t, v, should.Equal(2))
 	})
 
 	t.Run("Initial failed fetch causes errors", func(t *testing.T) {
 		c, _ := newContext()
 
-		s := Slot{}
+		s := Slot[any]{}
 
 		// Initial failed fetch.
 		failErr := errors.New("fail")
 		_, err := s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
 			return nil, 0, failErr
 		})
-		assert.Loosely(t, err, should.Equal(failErr))
+		assert.That(t, err, should.Equal(failErr))
 
 		// Subsequence successful fetch.
 		val, err := s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
@@ -88,16 +88,16 @@ func TestLazySlot(t *testing.T) {
 		c, clk := newContext()
 
 		// Put initial value.
-		s := Slot{}
-		v, err := s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		s := Slot[int]{}
+		v, err := s.Get(c, func(ctx context.Context, prev int) (int, time.Duration, error) {
 			return 1, time.Second, nil
 		})
 		assert.NoErr(t, err)
-		assert.Loosely(t, v.(int), should.Equal(1))
+		assert.That(t, v, should.Equal(1))
 
 		fetching := make(chan bool)
 		resume := make(chan bool)
-		fetcher := func(ctx context.Context, prev any) (any, time.Duration, error) {
+		fetcher := func(ctx context.Context, prev int) (int, time.Duration, error) {
 			fetching <- true
 			<-resume
 			return 2, time.Second, nil
@@ -109,7 +109,7 @@ func TestLazySlot(t *testing.T) {
 		wg.Go(func() {
 			v, err := s.Get(c, fetcher)
 			assert.NoErr(t, err)
-			assert.Loosely(t, v.(int), should.Equal(2))
+			assert.That(t, v, should.Equal(2))
 		})
 
 		// Wait until we hit the body of the fetcher callback.
@@ -118,7 +118,7 @@ func TestLazySlot(t *testing.T) {
 		// Concurrent Get() returns stale copy right away (does not deadlock).
 		v, err = s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, v.(int), should.Equal(1))
+		assert.That(t, v, should.Equal(1))
 
 		// Wait until another goroutine finishes the fetch.
 		resume <- true
@@ -127,39 +127,39 @@ func TestLazySlot(t *testing.T) {
 		// Returns new value now.
 		v, err = s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, v.(int), should.Equal(2))
+		assert.That(t, v, should.Equal(2))
 	})
 
 	t.Run("Recovers from panic", func(t *testing.T) {
 		c, clk := newContext()
 
 		// Initial value.
-		s := Slot{}
-		v, err := s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		s := Slot[int]{}
+		v, err := s.Get(c, func(ctx context.Context, prev int) (int, time.Duration, error) {
 			return 1, time.Second, nil
 		})
 		assert.NoErr(t, err)
-		assert.Loosely(t, v.(int), should.Equal(1))
+		assert.That(t, v, should.Equal(1))
 
 		// Make it expire. Start panicking fetch.
 		clk.Add(5 * time.Second)
 		assert.Loosely(t, func() {
-			s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+			s.Get(c, func(ctx context.Context, prev int) (int, time.Duration, error) {
 				panic("omg")
 			})
 		}, should.PanicLikeString("omg"))
 
 		// Doesn't deadlock.
-		v, err = s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		v, err = s.Get(c, func(ctx context.Context, prev int) (int, time.Duration, error) {
 			return 2, time.Second, nil
 		})
 		assert.NoErr(t, err)
-		assert.Loosely(t, v.(int), should.Equal(2))
+		assert.That(t, v, should.Equal(2))
 	})
 
 	t.Run("Nil value is allowed", func(t *testing.T) {
 		c, clk := newContext()
-		s := Slot{}
+		s := Slot[any]{}
 
 		// Initial nil fetch.
 		val, err := s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
@@ -180,10 +180,10 @@ func TestLazySlot(t *testing.T) {
 
 	t.Run("Zero expiration means never expires", func(t *testing.T) {
 		c, clk := newContext()
-		s := Slot{}
+		s := Slot[int]{}
 
 		// Initial fetch.
-		val, err := s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		val, err := s.Get(c, func(ctx context.Context, prev int) (int, time.Duration, error) {
 			return 1, 0, nil
 		})
 		assert.NoErr(t, err)
@@ -191,7 +191,7 @@ func TestLazySlot(t *testing.T) {
 
 		// Many years later still cached.
 		clk.Add(200000 * time.Hour)
-		val, err = s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		val, err = s.Get(c, func(ctx context.Context, prev int) (int, time.Duration, error) {
 			return 2, time.Second, nil
 		})
 		assert.NoErr(t, err)
@@ -200,17 +200,17 @@ func TestLazySlot(t *testing.T) {
 
 	t.Run("ExpiresImmediately means expires at the same instant", func(t *testing.T) {
 		c, _ := newContext()
-		s := Slot{}
+		s := Slot[int]{}
 
 		// Initial fetch.
-		val, err := s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		val, err := s.Get(c, func(ctx context.Context, prev int) (int, time.Duration, error) {
 			return 1, ExpiresImmediately, nil
 		})
 		assert.NoErr(t, err)
 		assert.Loosely(t, val, should.Match(1))
 
 		// No time moved, but refetch still happened.
-		val, err = s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		val, err = s.Get(c, func(ctx context.Context, prev int) (int, time.Duration, error) {
 			return 2, time.Second, nil
 		})
 		assert.NoErr(t, err)
@@ -224,12 +224,12 @@ func TestLazySlot(t *testing.T) {
 		var valueToReturn int
 
 		fetchCalls := 0
-		fetcher := func(ctx context.Context, prev any) (any, time.Duration, error) {
+		fetcher := func(ctx context.Context, prev int) (int, time.Duration, error) {
 			fetchCalls++
 			return valueToReturn, time.Minute, errorToReturn
 		}
 
-		s := Slot{}
+		s := Slot[int]{}
 
 		// Initial fetch.
 		valueToReturn = 1
@@ -237,7 +237,7 @@ func TestLazySlot(t *testing.T) {
 		val, err := s.Get(c, fetcher)
 		assert.Loosely(t, val, should.Match(1))
 		assert.NoErr(t, err)
-		assert.Loosely(t, fetchCalls, should.Equal(1))
+		assert.That(t, fetchCalls, should.Equal(1))
 
 		// Cached copy is good after 30 sec.
 		clk.Add(30 * time.Second)
@@ -246,7 +246,7 @@ func TestLazySlot(t *testing.T) {
 		val, err = s.Get(c, fetcher)
 		assert.Loosely(t, val, should.Match(1)) // still cached copy
 		assert.NoErr(t, err)
-		assert.Loosely(t, fetchCalls, should.Equal(1))
+		assert.That(t, fetchCalls, should.Equal(1))
 
 		// After 31 the cache copy expires, we attempt to update it, but something
 		// goes horribly wrong. Get(...) returns the old copy.
@@ -256,7 +256,7 @@ func TestLazySlot(t *testing.T) {
 		val, err = s.Get(c, fetcher)
 		assert.Loosely(t, val, should.Match(1)) // still cached copy
 		assert.NoErr(t, err)
-		assert.Loosely(t, fetchCalls, should.Equal(2)) // attempted to fetch
+		assert.That(t, fetchCalls, should.Equal(2)) // attempted to fetch
 
 		// 1 sec later still using old copy, because retry is scheduled for later.
 		clk.Add(time.Second)
@@ -265,7 +265,7 @@ func TestLazySlot(t *testing.T) {
 		val, err = s.Get(c, fetcher)
 		assert.Loosely(t, val, should.Match(1)) // still cached copy
 		assert.NoErr(t, err)
-		assert.Loosely(t, fetchCalls, should.Equal(2))
+		assert.That(t, fetchCalls, should.Equal(2))
 
 		// 5 sec later fetched is attempted, and it succeeds.
 		clk.Add(5 * time.Second)
@@ -274,7 +274,7 @@ func TestLazySlot(t *testing.T) {
 		val, err = s.Get(c, fetcher)
 		assert.Loosely(t, val, should.Match(5)) // new copy
 		assert.NoErr(t, err)
-		assert.Loosely(t, fetchCalls, should.Equal(3))
+		assert.That(t, fetchCalls, should.Equal(3))
 	})
 
 	t.Run("Logs warning on <3 failures and error on >=3", func(t *testing.T) {
@@ -285,12 +285,12 @@ func TestLazySlot(t *testing.T) {
 		c, clk := testclock.UseTime(logCfg.Use(context.Background()), testclock.TestTimeUTC)
 		logging.SetLevel(c, logging.Warning)
 
-		s := Slot{}
+		s := Slot[int]{}
 
 		fail := true
-		fetcher := func(ctx context.Context, prev any) (any, time.Duration, error) {
+		fetcher := func(ctx context.Context, prev int) (int, time.Duration, error) {
 			if fail {
-				return nil, 0, errors.New("fetch failed")
+				return 0, 0, errors.New("fetch failed")
 			}
 			return 1, time.Minute, nil
 		}
@@ -299,7 +299,7 @@ func TestLazySlot(t *testing.T) {
 		fail = false
 		val, err := s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, val, should.Equal(1))
+		assert.That(t, val, should.Equal(1))
 
 		// Expire the cache.
 		clk.Add(2 * time.Minute)
@@ -308,8 +308,8 @@ func TestLazySlot(t *testing.T) {
 		// 1st failure -> warning.
 		val, err = s.Get(c, fetcher)
 		assert.NoErr(t, err) // Returns stale copy.
-		assert.Loosely(t, val, should.Equal(1))
-		assert.Loosely(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("WARNING\n"))
+		assert.That(t, val, should.Equal(1))
+		assert.That(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("WARNING\n"))
 		logCfg.Out.(*bytes.Buffer).Reset()
 
 		// Advance clock to trigger another fetch attempt.
@@ -318,8 +318,8 @@ func TestLazySlot(t *testing.T) {
 		// 2nd failure -> warning.
 		val, err = s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, val, should.Equal(1))
-		assert.Loosely(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("WARNING\n"))
+		assert.That(t, val, should.Equal(1))
+		assert.That(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("WARNING\n"))
 		logCfg.Out.(*bytes.Buffer).Reset()
 
 		// Advance clock.
@@ -328,8 +328,8 @@ func TestLazySlot(t *testing.T) {
 		// 3rd failure -> error.
 		val, err = s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, val, should.Equal(1))
-		assert.Loosely(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("ERROR\n"))
+		assert.That(t, val, should.Equal(1))
+		assert.That(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("ERROR\n"))
 		logCfg.Out.(*bytes.Buffer).Reset()
 
 		// Advance clock.
@@ -338,8 +338,8 @@ func TestLazySlot(t *testing.T) {
 		// 4th failure -> error.
 		val, err = s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, val, should.Equal(1))
-		assert.Loosely(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("ERROR\n"))
+		assert.That(t, val, should.Equal(1))
+		assert.That(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("ERROR\n"))
 		logCfg.Out.(*bytes.Buffer).Reset()
 
 		// Advance clock.
@@ -349,7 +349,7 @@ func TestLazySlot(t *testing.T) {
 		fail = false
 		val, err = s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, val, should.Equal(1))
+		assert.That(t, val, should.Equal(1))
 		assert.Loosely(t, logCfg.Out.(*bytes.Buffer).String(), should.BeEmpty)
 
 		clk.Add(2 * time.Minute)
@@ -358,16 +358,16 @@ func TestLazySlot(t *testing.T) {
 		fail = true
 		val, err = s.Get(c, fetcher)
 		assert.NoErr(t, err)
-		assert.Loosely(t, val, should.Equal(1))
-		assert.Loosely(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("WARNING\n"))
+		assert.That(t, val, should.Equal(1))
+		assert.That(t, logCfg.Out.(*bytes.Buffer).String(), should.Equal("WARNING\n"))
 	})
 
 	t.Run("Passes context to Fetcher", func(t *testing.T) {
 		type testKey struct{}
 		c := context.WithValue(context.Background(), testKey{}, "test-val")
-		s := Slot{}
+		s := Slot[string]{}
 		var capturedVal any
-		_, err := s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		_, err := s.Get(c, func(ctx context.Context, prev string) (string, time.Duration, error) {
 			capturedVal = ctx.Value(testKey{})
 			return "ok", time.Minute, nil
 		})
@@ -379,7 +379,7 @@ func TestLazySlot(t *testing.T) {
 func FetcherContextResetsDeadline(t *testing.T) {
 	t.Run("Initial fetch", func(t *testing.T) {
 		c, clk := newContext()
-		s := Slot{}
+		s := Slot[string]{}
 		parentCtx, cancel := clock.WithTimeout(c, 10*time.Millisecond)
 		defer cancel()
 
@@ -387,7 +387,7 @@ func FetcherContextResetsDeadline(t *testing.T) {
 		assert.Loosely(t, ok, should.BeTrue)
 
 		fetcherCalled := false
-		val, err := s.Get(parentCtx, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		val, err := s.Get(parentCtx, func(ctx context.Context, prev string) (string, time.Duration, error) {
 			fetcherCalled = true
 			assert.Loosely(t, prev, should.BeNil)
 
@@ -398,7 +398,7 @@ func FetcherContextResetsDeadline(t *testing.T) {
 
 			// Canceling parent context must not cancel the fetcher context.
 			cancel()
-			assert.Loosely(t, parentCtx.Err(), should.Equal(context.Canceled))
+			assert.That(t, parentCtx.Err(), should.Equal(context.Canceled))
 			assert.Loosely(t, ctx.Err(), should.BeNil)
 
 			// Advancing clock past parent deadline must not affect the fetcher context.
@@ -408,15 +408,15 @@ func FetcherContextResetsDeadline(t *testing.T) {
 			return "initial", time.Minute, nil
 		})
 		assert.NoErr(t, err)
-		assert.Loosely(t, val, should.Equal("initial"))
+		assert.That(t, val, should.Equal("initial"))
 		assert.Loosely(t, fetcherCalled, should.BeTrue)
 	})
 
 	t.Run("Refresh fetch", func(t *testing.T) {
 		c, clk := newContext()
-		s := Slot{}
+		s := Slot[string]{}
 		// Populate initial value.
-		_, err := s.Get(c, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		_, err := s.Get(c, func(ctx context.Context, prev string) (string, time.Duration, error) {
 			return "initial", time.Minute, nil
 		})
 		assert.NoErr(t, err)
@@ -431,9 +431,9 @@ func FetcherContextResetsDeadline(t *testing.T) {
 		assert.Loosely(t, ok, should.BeTrue)
 
 		fetcherCalled := false
-		val, err := s.Get(parentCtx, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		val, err := s.Get(parentCtx, func(ctx context.Context, prev string) (string, time.Duration, error) {
 			fetcherCalled = true
-			assert.Loosely(t, prev, should.Equal("initial"))
+			assert.That(t, prev, should.Equal("initial"))
 
 			dl, ok := ctx.Deadline()
 			assert.Loosely(t, ok, should.BeTrue)
@@ -442,7 +442,7 @@ func FetcherContextResetsDeadline(t *testing.T) {
 
 			// Canceling parent context must not cancel the fetcher context.
 			cancel()
-			assert.Loosely(t, parentCtx.Err(), should.Equal(context.Canceled))
+			assert.That(t, parentCtx.Err(), should.Equal(context.Canceled))
 			assert.Loosely(t, ctx.Err(), should.BeNil)
 
 			// Advancing clock past parent deadline must not affect the fetcher context.
@@ -452,18 +452,18 @@ func FetcherContextResetsDeadline(t *testing.T) {
 			return "refreshed", time.Minute, nil
 		})
 		assert.NoErr(t, err)
-		assert.Loosely(t, val, should.Equal("refreshed"))
+		assert.That(t, val, should.Equal("refreshed"))
 		assert.Loosely(t, fetcherCalled, should.BeTrue)
 	})
 
 	t.Run("Custom CallbackCancelOverride", func(t *testing.T) {
 		c, clk := newContext()
-		s := Slot{CallbackCancelOverride: 10 * time.Second}
+		s := Slot[string]{CallbackCancelOverride: 10 * time.Second}
 		parentCtx, cancel := clock.WithTimeout(c, 10*time.Millisecond)
 		defer cancel()
 
 		fetcherCalled := false
-		val, err := s.Get(parentCtx, func(ctx context.Context, prev any) (any, time.Duration, error) {
+		val, err := s.Get(parentCtx, func(ctx context.Context, prev string) (string, time.Duration, error) {
 			fetcherCalled = true
 
 			dl, ok := ctx.Deadline()
@@ -471,13 +471,13 @@ func FetcherContextResetsDeadline(t *testing.T) {
 			assert.Loosely(t, dl, should.Match(clk.Now().Add(10*time.Second)))
 
 			cancel()
-			assert.Loosely(t, parentCtx.Err(), should.Equal(context.Canceled))
+			assert.That(t, parentCtx.Err(), should.Equal(context.Canceled))
 			assert.Loosely(t, ctx.Err(), should.BeNil)
 
 			return "custom", time.Minute, nil
 		})
 		assert.NoErr(t, err)
-		assert.Loosely(t, val, should.Equal("custom"))
+		assert.That(t, val, should.Equal("custom"))
 		assert.Loosely(t, fetcherCalled, should.BeTrue)
 	})
 }

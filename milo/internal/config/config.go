@@ -86,16 +86,16 @@ func GetSettings(c context.Context) *configpb.Settings {
 	return &settings
 }
 
-var serviceCfgCache = caching.RegisterCacheSlot()
+var serviceCfgCache = caching.RegisterCacheSlot[*ServiceConfig]()
 
 // GetCurrentServiceConfig gets the service config for the instance from either
 // process cache or datastore cache.
 func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 	// This maker function is used to do the actual fetch of the ServiceConfig
 	// from datastore.  It is called if the ServiceConfig is not in proc cache.
-	item, err := serviceCfgCache.Fetch(c, func(c context.Context, _ any) (any, time.Duration, error) {
-		msg := ServiceConfig{ID: serviceConfigID}
-		err := datastore.Get(c, &msg)
+	item, err := serviceCfgCache.Fetch(c, func(c context.Context, _ *ServiceConfig) (*ServiceConfig, time.Duration, error) {
+		msg := &ServiceConfig{ID: serviceConfigID}
+		err := datastore.Get(c, msg)
 		if err != nil {
 			return nil, time.Minute, err
 		}
@@ -105,11 +105,8 @@ func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service config: %s", err.Error())
 	}
-	if msg, ok := item.(ServiceConfig); ok {
-		logging.Infof(c, "loaded config entry from %s", msg.LastUpdated.Format(time.RFC3339))
-		return &msg, nil
-	}
-	return nil, fmt.Errorf("could not load service config %#v", item)
+	logging.Infof(c, "loaded config entry from %s", item.LastUpdated.Format(time.RFC3339))
+	return item, nil
 }
 
 // UpdateServiceConfig fetches the service config from luci-config

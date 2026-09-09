@@ -136,20 +136,19 @@ func LoadCAUniqueIDToCNMap(c context.Context) (map[int64]string, error) {
 }
 
 // holds cached result of LoadCAUniqueIDToCNMap().
-var mappingCache = caching.RegisterCacheSlot()
+var mappingCache = caching.RegisterCacheSlot[map[int64]string]()
 
 // GetCAByUniqueID returns CN name that corresponds to given unique ID.
 //
 // It uses cached CAUniqueIDToCNMap for lookups. Returns empty string if there's
 // no such CA.
 func GetCAByUniqueID(c context.Context, id int64) (string, error) {
-	cached, err := mappingCache.Fetch(c, func(c context.Context, _ any) (any, time.Duration, error) {
+	cached, err := mappingCache.Fetch(c, func(c context.Context, _ map[int64]string) (map[int64]string, time.Duration, error) {
 		val, err := LoadCAUniqueIDToCNMap(c)
 		return val, time.Minute, err
 	})
 	if err != nil {
 		return "", err
 	}
-	mapping := cached.(map[int64]string)
-	return mapping[id], nil
+	return cached[id], nil
 }

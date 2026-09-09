@@ -34,18 +34,14 @@ type DBCacheUpdater func(ctx context.Context, prev DB) (DB, error)
 // Even though the return value is technically a function, treat it as a heavy
 // stateful object, since it has the cache of DB in its closure.
 func NewDBCache(updater DBCacheUpdater) func(ctx context.Context) (DB, error) {
-	cacheSlot := lazyslot.Slot{}
+	cacheSlot := lazyslot.Slot[DB]{}
 	return func(ctx context.Context) (DB, error) {
-		val, err := cacheSlot.Get(ctx, func(ctx context.Context, prev any) (db any, exp time.Duration, err error) {
+		return cacheSlot.Get(ctx, func(ctx context.Context, prev DB) (db DB, exp time.Duration, err error) {
 			prevDB, _ := prev.(DB)
 			if db, err = updater(ctx, prevDB); err == nil {
 				exp = 5*time.Second + time.Duration(mathrand.Get(ctx).Intn(5000))*time.Millisecond
 			}
 			return
 		})
-		if err != nil {
-			return nil, err
-		}
-		return val.(DB), nil
 	}
 }

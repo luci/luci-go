@@ -44,13 +44,13 @@ const ExpiresImmediately time.Duration = -1
 // expires. If the returned expiration duration is equal to ExpiresImmediately,
 // then the very next Get(...) will trigger another refresh (this is sometimes
 // useful in tests with "frozen" time to disable caching).
-type Fetcher func(ctx context.Context, prev any) (updated any, exp time.Duration, err error)
+type Fetcher[T any] func(ctx context.Context, prev T) (updated T, exp time.Duration, err error)
 
 // Slot holds a cached value and refreshes it when it expires.
 //
 // Only one goroutine will be busy refreshing, all others will see a slightly
 // stale copy of the value during the refresh.
-type Slot struct {
+type Slot[T any] struct {
 	// RetryDelay is how long to wait before fetching after a failure, 5 sec by
 	// default.
 	RetryDelay time.Duration
@@ -69,7 +69,7 @@ type Slot struct {
 
 	lock                sync.RWMutex // protects the guts below
 	initialized         bool         // true if fetched the initial value already
-	current             any          // currently known value (may be nil)
+	current             T            // currently known value
 	exp                 time.Time    // when the currently known value expires or time.Time{} if never
 	fetching            bool         // true if some goroutine is fetching the value now
 	consecutiveFailures int          // counts consecutive failures to distinguish transient from persistent errors
@@ -97,7 +97,9 @@ const (
 // RetryDelay is 5 sec by default.
 //
 // The passed context is used for logging and for getting time.
-func (s *Slot) Get(ctx context.Context, fetcher Fetcher) (value any, err error) {
+func (s *Slot[T]) Get(ctx context.Context, fetcher Fetcher[T]) (value T, err error) {
+	var zero T
+
 	now := clock.Now(ctx)
 
 	// Fast path. Checks a cached value exists and it is still fresh or some
@@ -124,7 +126,7 @@ func (s *Slot) Get(ctx context.Context, fetcher Fetcher) (value any, err error) 
 	// 'value' here is currently known value that we are going to refresh. Need
 	// to clear the variable to make sure 'defer' below sees nil on panic.
 	prevValue := value
-	value = nil
+	value = zero
 
 	// The current goroutine won the contest and now is responsible for refetching
 	// the value. Do it, but be cautious to fix the state in case of a panic.
@@ -160,7 +162,7 @@ func (s *Slot) Get(ctx context.Context, fetcher Fetcher) (value any, err error) 
 
 // invokeFetcher invokes the fetcher function with `prev`, adjusting the
 // deadline on `ctx` if necessary.
-func (s *Slot) invokeFetcher(ctx context.Context, fetcher Fetcher, prev any) (updated any, exp time.Duration, err error) {
+func (s *Slot[T]) invokeFetcher(ctx context.Context, fetcher Fetcher[T], prev T) (updated T, exp time.Duration, err error) {
 	if override := cmp.Or(s.CallbackCancelOverride, defaultCallbackCancelOverride); override > 0 {
 		if dl, ok := ctx.Deadline(); ok && clock.Until(ctx, dl) < override {
 			var cancel func()
@@ -178,7 +180,9 @@ func (s *Slot) invokeFetcher(ctx context.Context, fetcher Fetcher, prev any) (up
 //   - (true, known value, nil) if the current goroutine should refetch.
 //   - (false, known value, nil) if the fetch is no longer necessary.
 //   - (false, nil, err) if the initial fetch failed.
-func (s *Slot) initiateFetch(ctx context.Context, fetcher Fetcher, now time.Time) (bool, any, error) {
+func (s *Slot[T]) initiateFetch(ctx context.Context, fetcher Fetcher[T], now time.Time) (bool, T, error) {
+	var zero T
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -192,9 +196,9 @@ func (s *Slot) initiateFetch(ctx context.Context, fetcher Fetcher, now time.Time
 	// there's nothing to return yet. All goroutines would have to wait for this
 	// initial fetch to complete. They'll all block on s.lock.RLock() in Get(...).
 	if !s.initialized {
-		result, exp, err := s.invokeFetcher(ctx, fetcher, nil)
+		result, exp, err := s.invokeFetcher(ctx, fetcher, zero)
 		if err != nil {
-			return false, nil, err
+			return false, zero, err
 		}
 		s.initialized = true
 		s.current = result
@@ -219,7 +223,7 @@ func (s *Slot) initiateFetch(ctx context.Context, fetcher Fetcher, now time.Time
 // fetched value.
 //
 // 'completed' is false if the fetch panicked.
-func (s *Slot) finishFetch(completed bool, isFailure bool, result any, exp time.Time) int {
+func (s *Slot[T]) finishFetch(completed bool, isFailure bool, result T, exp time.Time) int {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.fetching = false
@@ -237,7 +241,7 @@ func (s *Slot) finishFetch(completed bool, isFailure bool, result any, exp time.
 	return s.consecutiveFailures
 }
 
-func (s *Slot) retryDelay() time.Duration {
+func (s *Slot[T]) retryDelay() time.Duration {
 	if s.RetryDelay == 0 {
 		return 5 * time.Second
 	}

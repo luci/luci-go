@@ -122,7 +122,7 @@ type CertChecker struct {
 	CN  string                 // Common Name of the CA
 	CRL *certconfig.CRLChecker // knows how to query certificate revocation list
 
-	ca lazyslot.Slot // knows how to load CA cert and config
+	ca lazyslot.Slot[*certconfig.CA] // knows how to load CA cert and config
 }
 
 // CheckCertificate checks validity of a given certificate.
@@ -165,7 +165,7 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 
 // GetCA returns CA entity with ParsedConfig and ParsedCert fields set.
 func (ch *CertChecker) GetCA(c context.Context) (*certconfig.CA, error) {
-	value, err := ch.ca.Get(c, func(c context.Context, _ any) (ca any, exp time.Duration, err error) {
+	ca, err := ch.ca.Get(c, func(c context.Context, _ *certconfig.CA) (ca *certconfig.CA, exp time.Duration, err error) {
 		ca, err = ch.refetchCA(c)
 		if err == nil {
 			exp = RefetchCAPeriod
@@ -175,7 +175,6 @@ func (ch *CertChecker) GetCA(c context.Context) (*certconfig.CA, error) {
 	if err != nil {
 		return nil, err
 	}
-	ca, _ := value.(*certconfig.CA)
 	// nil 'ca' means 'refetchCA' could not find it in the datastore. May happen
 	// if CA entity was deleted after GetCertChecker call. It could have been also
 	// "soft-deleted" by setting Removed == true.

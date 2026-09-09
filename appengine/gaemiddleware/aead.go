@@ -42,7 +42,7 @@ import (
 )
 
 var (
-	cachedAEAD          = caching.RegisterCacheSlot()
+	cachedAEAD          = caching.RegisterCacheSlot[*aeadCachedState]()
 	settingsCheckPeriod = time.Minute
 	rotationCheckPeriod = time.Hour
 )
@@ -63,8 +63,7 @@ func AEADProvider(ctx context.Context) tink.AEAD {
 		}
 		return nil
 	}
-	state, err := cachedAEAD.Fetch(ctx, func(ctx context.Context, prev any) (updated any, exp time.Duration, err error) {
-		state, _ := prev.(*aeadCachedState)
+	state, err := cachedAEAD.Fetch(ctx, func(ctx context.Context, state *aeadCachedState) (updated *aeadCachedState, exp time.Duration, err error) {
 		if state == nil || state.keyPath != s.EncryptionKey {
 			state = &aeadCachedState{keyPath: s.EncryptionKey}
 		}
@@ -74,7 +73,7 @@ func AEADProvider(ctx context.Context) tink.AEAD {
 	if err != nil {
 		return brokenAEAD{err}
 	}
-	return state.(*aeadCachedState).aead
+	return state.aead
 }
 
 type brokenAEAD struct {

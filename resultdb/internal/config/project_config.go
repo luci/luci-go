@@ -35,7 +35,7 @@ import (
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
-var projectCacheSlot = caching.RegisterCacheSlot()
+var projectCacheSlot = caching.RegisterCacheSlot[map[string]*configpb.ProjectConfig]()
 
 const projectConfigKind = "resultdb.ProjectConfig"
 
@@ -231,7 +231,7 @@ func fetchProjectConfigEntities(ctx context.Context) (map[string]*cachedProjectC
 // Uses in-memory cache to avoid hitting datastore all the time.
 // Note that the config may be stale by up to 1 minute.
 func Projects(ctx context.Context) (map[string]*configpb.ProjectConfig, error) {
-	val, err := projectCacheSlot.Fetch(ctx, func(ctx context.Context, _ any) (val any, exp time.Duration, err error) {
+	val, err := projectCacheSlot.Fetch(ctx, func(ctx context.Context, _ map[string]*configpb.ProjectConfig) (val map[string]*configpb.ProjectConfig, exp time.Duration, err error) {
 		var pc map[string]*configpb.ProjectConfig
 		if pc, err = fetchProjects(ctx); err != nil {
 			return nil, 0, err
@@ -247,8 +247,7 @@ func Projects(ctx context.Context) (map[string]*configpb.ProjectConfig, error) {
 	case err != nil:
 		return nil, err
 	default:
-		pc := val.(map[string]*configpb.ProjectConfig)
-		return pc, nil
+		return val, nil
 	}
 }
 

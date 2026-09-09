@@ -35,13 +35,13 @@ var (
 	ReimportPermission = realms.RegisterPermission("configs.configSets.reimport")
 
 	// aclCfgCache holds cache for acl.cfg content.
-	aclCfgCache = caching.RegisterCacheSlot()
+	aclCfgCache = caching.RegisterCacheSlot[*cfgcommonpb.AclCfg]()
 	// aclCfgCacheExpiration is the expiration time of aclCfgCache entry.
 	aclCfgCacheExpiration = 10 * time.Minute
 )
 
 func getACLCfgCached(ctx context.Context) (*cfgcommonpb.AclCfg, error) {
-	item, err := aclCfgCache.Fetch(ctx, func(ctx context.Context, _ any) (any, time.Duration, error) {
+	item, err := aclCfgCache.Fetch(ctx, func(ctx context.Context, _ *cfgcommonpb.AclCfg) (*cfgcommonpb.AclCfg, time.Duration, error) {
 		aclCfg := &cfgcommonpb.AclCfg{}
 		if err := common.LoadSelfConfig(ctx, common.ACLRegistryFilePath, aclCfg); err != nil {
 			return nil, 0, err
@@ -52,5 +52,5 @@ func getACLCfgCached(ctx context.Context) (*cfgcommonpb.AclCfg, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load ACL config: %w", err)
 	}
-	return item.(*cfgcommonpb.AclCfg), nil
+	return item, nil
 }

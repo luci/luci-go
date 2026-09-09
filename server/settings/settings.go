@@ -145,8 +145,8 @@ type EventualConsistentStorage interface {
 // Settings represent process global cache of all settings. Exact same instance
 // of Settings should be injected into the context used by request handlers.
 type Settings struct {
-	storage Storage       // used to load and save settings
-	values  lazyslot.Slot // cached settings
+	storage Storage                // used to load and save settings
+	values  lazyslot.Slot[*Bundle] // cached settings
 }
 
 // New creates new Settings object that uses given Storage to fetch and save
@@ -172,7 +172,7 @@ func (s *Settings) IsMutable() bool {
 // to pass correct type and pass same type to all calls. If the setting is not
 // set returns ErrNoSettings.
 func (s *Settings) Get(c context.Context, key string, value any) error {
-	bundle, err := s.values.Get(c, func(c context.Context, _ any) (any, time.Duration, error) {
+	bundle, err := s.values.Get(c, func(c context.Context, _ *Bundle) (*Bundle, time.Duration, error) {
 		c, cancel := clock.WithTimeout(c, 15*time.Second) // retry for 15 sec total
 		defer cancel()
 		var bundle *Bundle
@@ -196,7 +196,7 @@ func (s *Settings) Get(c context.Context, key string, value any) error {
 	if err != nil {
 		return err
 	}
-	return bundle.(*Bundle).get(key, value)
+	return bundle.get(key, value)
 }
 
 // GetUncached is like Get, by always fetches settings from the storage.

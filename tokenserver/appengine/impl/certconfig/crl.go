@@ -220,10 +220,10 @@ func shardEntityID(cn string, total, index int) string {
 //
 // Safe for concurrent use. Should be reused between requests.
 type CRLChecker struct {
-	cn            string          // name of CA to check a CRL of
-	shardCount    int             // a total number of shards
-	shards        []lazyslot.Slot // per-shard local state, len(shards) == shardCount
-	cacheDuration time.Duration   // how often to refetch shards from datastore
+	cn            string                      // name of CA to check a CRL of
+	shardCount    int                         // a total number of shards
+	shards        []lazyslot.Slot[shardCache] // per-shard local state, len(shards) == shardCount
+	cacheDuration time.Duration               // how often to refetch shards from datastore
 }
 
 // shardCache is kept inside 'shards' slots in CRLChecker.
@@ -243,7 +243,7 @@ func NewCRLChecker(cn string, shardCount int, cacheDuration time.Duration) *CRLC
 	return &CRLChecker{
 		cn:            cn,
 		shardCount:    shardCount,
-		shards:        make([]lazyslot.Slot, shardCount),
+		shards:        make([]lazyslot.Slot[shardCache], shardCount),
 		cacheDuration: cacheDuration,
 	}
 }
@@ -264,8 +264,7 @@ func (ch *CRLChecker) IsRevokedSN(c context.Context, sn *big.Int) (bool, error) 
 
 // shard returns a shard given its index.
 func (ch *CRLChecker) shard(c context.Context, idx int) (shards.Shard, error) {
-	val, err := ch.shards[idx].Get(c, func(c context.Context, prev any) (any, time.Duration, error) {
-		prevState, _ := prev.(shardCache)
+	val, err := ch.shards[idx].Get(c, func(c context.Context, prevState shardCache) (shardCache, time.Duration, error) {
 		newState, err := ch.refetchShard(c, idx, prevState)
 		return newState, ch.cacheDuration, err
 	})
@@ -275,7 +274,7 @@ func (ch *CRLChecker) shard(c context.Context, idx int) (shards.Shard, error) {
 	// lazyslot.Get always returns non-nil val on success. It is safe to cast it
 	// to whatever we returned in the callback (which is always shardCache, see
 	// refetchShard).
-	return val.(shardCache).shard, nil
+	return val.shard, nil
 }
 
 // refetchShard is called by 'shard' to fetch a new version of a shard.

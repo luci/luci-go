@@ -80,7 +80,7 @@ type Policy struct {
 	// Users of Policy should type-cast it to an appropriate type.
 	Prepare func(c context.Context, cfg ConfigBundle, revision string) (Queryable, error)
 
-	cache lazyslot.Slot // holds and updates in-memory cache of Queryable
+	cache lazyslot.Slot[Queryable] // holds and updates in-memory cache of Queryable
 }
 
 // Queryable is validated and parsed configs in a form optimized for queries.
@@ -197,7 +197,7 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 //
 // Returns ErrNoPolicy if the policy config wasn't imported yet.
 func (p *Policy) Queryable(c context.Context) (Queryable, error) {
-	val, err := p.cache.Get(c, func(c context.Context, prev any) (newQ any, exp time.Duration, err error) {
+	return p.cache.Get(c, func(c context.Context, prev Queryable) (newQ Queryable, exp time.Duration, err error) {
 		prevQ, _ := prev.(Queryable)
 		newQ, err = p.grabQueryable(c, prevQ)
 		if err == nil {
@@ -205,10 +205,6 @@ func (p *Policy) Queryable(c context.Context) (Queryable, error) {
 		}
 		return
 	})
-	if err != nil {
-		return nil, err
-	}
-	return val.(Queryable), nil
 }
 
 // grabQueryable is called whenever cached Queryable in p.cache expires.

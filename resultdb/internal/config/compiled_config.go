@@ -165,11 +165,11 @@ func NewSchemeLevel(level *configpb.Scheme_Level) (*schemes.SchemeLevel, error) 
 	return result, nil
 }
 
-var schemeCache = caching.RegisterCacheSlot()
+var schemeCache = caching.RegisterCacheSlot[*CompiledServiceConfig]()
 
 // Service returns the compiled configuration for the service.
 func Service(ctx context.Context) (*CompiledServiceConfig, error) {
-	result, err := schemeCache.Fetch(ctx, func(ctx context.Context, prev any) (updated any, exp time.Duration, err error) {
+	return schemeCache.Fetch(ctx, func(ctx context.Context, prev *CompiledServiceConfig) (updated *CompiledServiceConfig, exp time.Duration, err error) {
 		var meta config.Meta
 		cfg, err := cachedServiceCfg.Get(ctx, &meta)
 		if err != nil {
@@ -179,12 +179,11 @@ func Service(ctx context.Context) (*CompiledServiceConfig, error) {
 		}
 
 		if prev != nil {
-			prevCfg := prev.(*CompiledServiceConfig)
-			if prevCfg.Revision == meta.Revision {
+			if prev.Revision == meta.Revision {
 				// Re-use the previously compiled config.
 				// Expire within one second. This method is cheap to run as it
 				// simply consults the other service config cache.
-				return prevCfg, time.Second, nil
+				return prev, time.Second, nil
 			}
 		}
 		cfgProto := cfg.(*configpb.Config)
@@ -198,10 +197,6 @@ func Service(ctx context.Context) (*CompiledServiceConfig, error) {
 		// simply consults the other service config cache.
 		return compiledCfg, time.Second, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*CompiledServiceConfig), nil
 }
 
 // TestIDLimits returns the validation limits for a given base test identifier.

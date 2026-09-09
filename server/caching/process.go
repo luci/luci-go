@@ -109,41 +109,41 @@ func RegisterLRUCache[K comparable, V any](capacity int) LRUHandle[K, V] {
 // method to access the value, potentially refreshing it, if necessary.
 //
 // The value itself lives inside a context. See WithProcessCacheData.
-type SlotHandle struct{ h uint32 }
+type SlotHandle[T any] struct{ h uint32 }
 
 // Valid returns true if h was initialized.
-func (h SlotHandle) Valid() bool { return h.h != 0 }
-
-// FetchCallback knows how to grab a new value for the cache slot (if prev is
-// nil) or refresh the known one (if prev is not nil).
-//
-// If the returned expiration time is 0, the value is considered non-expirable.
-// If the returned expiration time is <0, the value will be refetched on the
-// next access. This is sometimes useful in tests that "freeze" time.
-type FetchCallback func(ctx context.Context, prev any) (updated any, exp time.Duration, err error)
+func (h SlotHandle[T]) Valid() bool { return h.h != 0 }
 
 // Fetch returns the cached data, if it is available and fresh, or attempts to
 // refresh it by calling the given callback.
 //
 // Returns ErrNoProcessCache if the context doesn't have ProcessCacheData.
-func (h SlotHandle) Fetch(ctx context.Context, cb FetchCallback) (any, error) {
+func (h SlotHandle[T]) Fetch(ctx context.Context, cb lazyslot.Fetcher[T]) (T, error) {
+	var zero T
 	if h.h == 0 {
 		panic("calling Fetch on a uninitialized SlotHandle")
 	}
 	pcd, _ := ctx.Value(&processCacheKey).(*ProcessCacheData)
 	if pcd == nil {
-		return nil, ErrNoProcessCache
+		return zero, ErrNoProcessCache
 	}
-	return pcd.slots[h.h-1].Get(ctx, lazyslot.Fetcher(cb))
+	val, err := pcd.slots[h.h-1].Get(ctx, func(ctx context.Context, prev any) (updated any, exp time.Duration, err error) {
+		prevTyped, _ := prev.(T)
+		return cb(ctx, prevTyped)
+	})
+	if err != nil {
+		return zero, err
+	}
+	return val.(T), nil
 }
 
 // RegisterCacheSlot is used during init time to preallocate a place for the
 // cache global variable.
 //
 // The actual cache itself will be stored in ProcessCacheData inside a context.
-func RegisterCacheSlot() SlotHandle {
+func RegisterCacheSlot[T any]() SlotHandle[T] {
 	checkStillInitTime()
-	return SlotHandle{atomic.AddUint32(&registeredSlots, 1)}
+	return SlotHandle[T]{atomic.AddUint32(&registeredSlots, 1)}
 }
 
 // ProcessCacheData holds all process-cached data (internally).
@@ -157,8 +157,8 @@ func RegisterCacheSlot() SlotHandle {
 // Each instance of ProcessCacheData is its own universe of global data. This is
 // useful in unit tests as replacement for global variables.
 type ProcessCacheData struct {
-	caches []any           // handle => *lru.Cache, never nil once initialized
-	slots  []lazyslot.Slot // handle => corresponding slot
+	caches []any                // handle => *lru.Cache, never nil once initialized
+	slots  []lazyslot.Slot[any] // handle => corresponding slot
 }
 
 // NewProcessCacheData allocates and initializes all registered LRU caches.
@@ -175,7 +175,7 @@ func NewProcessCacheData() *ProcessCacheData {
 	finishInitTime()
 	d := &ProcessCacheData{
 		caches: make([]any, len(registeredCaches)),
-		slots:  make([]lazyslot.Slot, registeredSlots),
+		slots:  make([]lazyslot.Slot[any], registeredSlots),
 	}
 	for i, params := range registeredCaches {
 		d.caches[i] = params.factory()

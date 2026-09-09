@@ -28,8 +28,8 @@ import (
 
 // Bundle is a lazy-loaded cert bundle of some LUCI service.
 type Bundle struct {
-	ServiceURL string        // root URL of the service to fetch the bundle from
-	certs      lazyslot.Slot // stores fetchedBundle with the lazily fetched bundle
+	ServiceURL string                        // root URL of the service to fetch the bundle from
+	certs      lazyslot.Slot[*fetchedBundle] // stores fetchedBundle with the lazily fetched bundle
 }
 
 type fetchedBundle struct {
@@ -41,15 +41,14 @@ type fetchedBundle struct {
 //
 // Returns the service identity as well.
 func (b *Bundle) GetCerts(ctx context.Context) (identity.Identity, *signing.PublicCertificates, error) {
-	fetched, err := b.certs.Get(ctx, func(ctx context.Context, _ any) (any, time.Duration, error) {
+	fetched, err := b.certs.Get(ctx, func(ctx context.Context, _ *fetchedBundle) (*fetchedBundle, time.Duration, error) {
 		fetched, err := b.fetch(ctx)
 		return fetched, time.Hour, err
 	})
 	if err != nil {
 		return "", nil, err
 	}
-	fetchedBundle := fetched.(*fetchedBundle)
-	return fetchedBundle.id, fetchedBundle.certs, nil
+	return fetched.id, fetched.certs, nil
 }
 
 // fetch actually fetches the cert bundle.
