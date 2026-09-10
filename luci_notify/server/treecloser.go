@@ -46,8 +46,7 @@ func (server *TreeCloserServer) CheckTreeCloser(c context.Context, req *pb.Check
 	// Query tree closers based on project, bucket
 	ancestorKey := datastore.MakeKey(c, "Project", req.Project, "Builder", fmt.Sprintf("%s/%s", req.Bucket, req.Builder))
 	q := datastore.NewQuery("TreeCloser").Ancestor(ancestorKey)
-	treeClosers := []*config.TreeCloser{}
-	err := datastore.GetAll(c, q, &treeClosers)
+	treeClosers, err := datastore.RunQuery[*config.TreeCloser](c, q).AsSlice()
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "couldn't query tree closers: %v", err)

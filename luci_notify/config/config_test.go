@@ -101,16 +101,16 @@ func TestConfigIngestion(t *testing.T) {
 
 		datastore.GetTestable(c).CatchupIndexes()
 
-		var projects []*Project
-		assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Project"), &projects), should.BeNil)
+		projects, err := datastore.RunQuery[*Project](c, datastore.NewQuery("Project")).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 		assert.That(t, len(projects), should.Equal(2))
 		assert.That(t, projects[0].Name, should.Equal("chromium"))
 		assert.That(t, projects[0].TreeClosingEnabled, should.BeFalse)
 		assert.That(t, projects[1].Name, should.Equal("v8"))
 		assert.That(t, projects[1].TreeClosingEnabled, should.BeTrue)
 
-		var builders []*Builder
-		assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), should.BeNil)
+		builders, err := datastore.RunQuery[*Builder](c, datastore.NewQuery("Builder")).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 
 		// Can't test 'builders' using ShouldResembleProto, as the base object
 		// isn't a proto, it just contains one. Can't test it using
@@ -153,8 +153,8 @@ func TestConfigIngestion(t *testing.T) {
 			},
 		}))
 
-		var emailTemplates []*EmailTemplate
-		assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("EmailTemplate"), &emailTemplates), should.BeNil)
+		emailTemplates, err := datastore.RunQuery[*EmailTemplate](c, datastore.NewQuery("EmailTemplate")).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 		assert.That(t, emailTemplates, should.Match([]*EmailTemplate{
 			{
 				ProjectKey:          datastore.MakeKey(c, "Project", "chromium"),
@@ -186,8 +186,8 @@ func TestConfigIngestion(t *testing.T) {
 			},
 		}))
 
-		var treeClosers []*TreeCloser
-		assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers), should.BeNil)
+		treeClosers, err := datastore.RunQuery[*TreeCloser](c, datastore.NewQuery("TreeCloser")).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 
 		// As above, can't use ShouldResemble or ShouldResembleProto directly.
 		assert.Loosely(t, treeClosers, should.HaveLength(1))
@@ -216,16 +216,16 @@ func TestConfigIngestion(t *testing.T) {
 
 			datastore.GetTestable(c).CatchupIndexes()
 
-			var builders []*Builder
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), should.BeNil)
+			builders, err := datastore.RunQuery[*Builder](c, datastore.NewQuery("Builder")).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, builders, should.HaveLength(2))
 
-			var emailTemplates []*EmailTemplate
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("EmailTemplate"), &emailTemplates), should.BeNil)
+			emailTemplates, err := datastore.RunQuery[*EmailTemplate](c, datastore.NewQuery("EmailTemplate")).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, emailTemplates, should.HaveLength(4))
 
-			var treeClosers []*TreeCloser
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers), should.BeNil)
+			treeClosers, err := datastore.RunQuery[*TreeCloser](c, datastore.NewQuery("TreeCloser")).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, treeClosers, should.HaveLength(1))
 		})
 
@@ -262,8 +262,8 @@ func TestConfigIngestion(t *testing.T) {
 			chromium := &Project{Name: "chromium"}
 			chromiumKey := datastore.KeyForObj(c, chromium)
 
-			var newBuilders []*Builder
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(chromiumKey), &newBuilders), should.BeNil)
+			newBuilders, err := datastore.RunQuery[*Builder](c, datastore.NewQuery("Builder").Ancestor(chromiumKey)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, newBuilders, should.HaveLength(1))
 			// Check the fields we care about explicitly, because generated proto structs may have
 			// size caches which are updated.
@@ -271,8 +271,8 @@ func TestConfigIngestion(t *testing.T) {
 			assert.That(t, newBuilders[0].Revision, should.Match(chromiumBuilder.Revision))
 			assert.That(t, newBuilders[0].GitilesCommits, should.Match(chromiumBuilder.GitilesCommits))
 
-			var newTreeClosers []*TreeCloser
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromiumKey), &newTreeClosers), should.BeNil)
+			newTreeClosers, err := datastore.RunQuery[*TreeCloser](c, datastore.NewQuery("TreeCloser").Ancestor(chromiumKey)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, newTreeClosers, should.HaveLength(1))
 			assert.That(t, newTreeClosers[0].Status, should.Equal(treeCloser.Status))
 			// The returned Timestamp field is rounded to the microsecond, as datastore only stores times to µs precision.
@@ -320,12 +320,12 @@ func TestConfigIngestion(t *testing.T) {
 			assert.That(t, chromeos.Name, should.Equal("chromeos"))
 			assert.That(t, chromeos.TreeClosingEnabled, should.BeTrue)
 
-			var builders []*Builder
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(chromeosKey), &builders), should.BeNil)
+			builders, err := datastore.RunQuery[*Builder](c, datastore.NewQuery("Builder").Ancestor(chromeosKey)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, len(builders), should.Equal(1000))
 
-			var treeClosers []*TreeCloser
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromeosKey), &treeClosers), should.BeNil)
+			treeClosers, err := datastore.RunQuery[*TreeCloser](c, datastore.NewQuery("TreeCloser").Ancestor(chromeosKey)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, len(treeClosers), should.Equal(1000))
 		})
 		t.Run("delete project", func(t *ftt.Test) {
@@ -338,12 +338,12 @@ func TestConfigIngestion(t *testing.T) {
 			assert.That(t, datastore.Get(c, v8), should.Equal(datastore.ErrNoSuchEntity))
 			v8Key := datastore.KeyForObj(c, v8)
 
-			var builders []*Builder
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(v8Key), &builders), should.BeNil)
+			builders, err := datastore.RunQuery[*Builder](c, datastore.NewQuery("Builder").Ancestor(v8Key)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, builders, should.BeEmpty)
 
-			var emailTemplates []*EmailTemplate
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("EmailTemplate").Ancestor(v8Key), &emailTemplates), should.BeNil)
+			emailTemplates, err := datastore.RunQuery[*EmailTemplate](c, datastore.NewQuery("EmailTemplate").Ancestor(v8Key)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, emailTemplates, should.BeEmpty)
 		})
 
@@ -357,9 +357,9 @@ func TestConfigIngestion(t *testing.T) {
 			assert.Loosely(t, updateProjects(c), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
-			var emailTemplates []*EmailTemplate
 			q := datastore.NewQuery("EmailTemplate").Ancestor(datastore.MakeKey(c, "Project", "chromium"))
-			assert.Loosely(t, datastore.GetAll(c, q, &emailTemplates), should.BeNil)
+			emailTemplates, err := datastore.RunQuery[*EmailTemplate](c, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, len(emailTemplates), should.Equal(2))
 			assert.That(t, emailTemplates[0].Name, should.Equal("b"))
 			assert.That(t, emailTemplates[1].Name, should.Equal("c"))

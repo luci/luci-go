@@ -295,9 +295,9 @@ func partitionNotifiers(notifiers []*notifypb.Notifier) [][]*notifypb.Notifier {
 // clearDeadProjects calls deleteProject for all projects in the datastore
 // that are not in liveProjects.
 func clearDeadProjects(c context.Context, liveProjects stringset.Set) error {
-	var allProjects []*Project
 	projectQ := datastore.NewQuery("Project").KeysOnly(true)
-	if err := datastore.GetAll(c, projectQ, &allProjects); err != nil {
+	allProjects, err := datastore.RunQuery[*Project](c, projectQ).AsSlice()
+	if err != nil {
 		return err
 	}
 	return parallel.WorkPool(10, func(work chan<- func() error) {

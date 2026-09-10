@@ -111,8 +111,8 @@ func TestUpdateTrees(t *testing.T) {
 		evenEarlierTime := time.Now().AddDate(-2, 0, 0).UTC()
 
 		cleanup := func() {
-			var treeClosers []*config.TreeCloser
-			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeClosers"), &treeClosers), should.BeNil)
+			treeClosers, err := datastore.RunQuery[*config.TreeCloser](c, datastore.NewQuery("TreeClosers")).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			datastore.Delete(c, treeClosers)
 		}
 

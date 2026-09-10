@@ -68,13 +68,14 @@ func getBundle(c context.Context, projectID string) (*bundle, error) {
 		// On a transient error, return it and do not purge cache.
 		var templateEntities []*config.EmailTemplate
 		transientErr = datastore.RunInTransaction(c, func(c context.Context) error {
-			templateEntities = templateEntities[:0] // txn may be retried
 			if err := datastore.Get(c, project); err != nil {
 				return err
 			}
 
 			q := datastore.NewQuery("EmailTemplate").Ancestor(datastore.KeyForObj(c, project))
-			return datastore.GetAll(c, q, &templateEntities)
+			var err error
+			templateEntities, err = datastore.RunQuery[*config.EmailTemplate](c, q).AsSlice()
+			return err
 		}, nil)
 		if transientErr != nil {
 			return it

@@ -166,8 +166,8 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 	//   second fetch we just ignore that project and carry on.
 	// * New projects are ignored, and picked up the next time we run.
 	q := datastore.NewQuery("Project").KeysOnly(true)
-	var projects []*config.Project
-	if err := datastore.GetAll(c, q, &projects); err != nil {
+	projects, err := datastore.RunQuery[*config.Project](c, q).AsSlice()
+	if err != nil {
 		return errors.Fmt("failed to get project keys: %w", err)
 	}
 
@@ -176,7 +176,7 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 	var treeClosers []*config.TreeCloser
 	closingEnabledProjects := stringset.New(0)
 
-	err := parallel.WorkPool(32, func(ch chan<- func() error) {
+	err = parallel.WorkPool(32, func(ch chan<- func() error) {
 		for _, project := range projects {
 			ch <- func() error {
 				return datastore.RunInTransaction(c, func(c context.Context) error {
@@ -191,8 +191,8 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 					}
 
 					q := datastore.NewQuery("TreeCloser").Ancestor(datastore.KeyForObj(c, project))
-					var treeClosersForProject []*config.TreeCloser
-					if err := datastore.GetAll(c, q, &treeClosersForProject); err != nil {
+					treeClosersForProject, err := datastore.RunQuery[*config.TreeCloser](c, q).AsSlice()
+					if err != nil {
 						return transient.Tag.Apply(errors.Fmt("failed to get tree closers: %w", err))
 					}
 

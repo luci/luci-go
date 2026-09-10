@@ -409,8 +409,8 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 		ID:         getBuilderID(build.Build),
 	}
 	q := datastore.NewQuery("TreeCloser").Ancestor(datastore.KeyForObj(c, parentBuilder))
-	var toUpdate []*config.TreeCloser
-	if err := datastore.GetAll(c, q, &toUpdate); err != nil {
+	toUpdate, err := datastore.RunQuery[*config.TreeCloser](c, q).AsSlice()
+	if err != nil {
 		return err
 	}
 
