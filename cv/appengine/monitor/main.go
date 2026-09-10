@@ -40,7 +40,7 @@ import (
 const (
 	// aggregateMetricsCronTimeout is the amount off time the Cron has to compute
 	// and flush the aggregation metrics.
-	aggregateMetricsCronTimeout = 2 * time.Minute
+	aggregateMetricsCronTimeout = 5 * time.Minute
 )
 
 func main() {
