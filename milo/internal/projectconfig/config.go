@@ -648,8 +648,7 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 		if builderID != "" {
 			q = q.Eq("Builders", builderID)
 		}
-		con := []*Console{}
-		err := datastore.GetAll(c, q, &con)
+		con, err := datastore.RunQuery[*Console](c, q).AsSlice()
 
 		return con, 0, transient.Tag.Apply(
 			errors.WrapIf(err, "getting consoles for %q", builderID))
@@ -676,9 +675,8 @@ func GetProject(c context.Context, project string) (*Project, error) {
 // Skips projects that do not have Milo config file.
 func GetVisibleProjects(c context.Context) ([]*Project, error) {
 	q := datastore.NewQuery("Project").Eq("HasConfig", true)
-	projs := []*Project{}
-
-	if err := datastore.GetAll(c, q, &projs); err != nil {
+	projs, err := datastore.RunQuery[*Project](c, q).AsSlice()
+	if err != nil {
 		return nil, errors.Fmt("getting projects: %w", err)
 	}
 	result := []*Project{}
@@ -726,8 +724,8 @@ func GetProjectConsoles(c context.Context, projectID string) ([]*Console, error)
 	q := datastore.NewQuery("Console")
 	parentKey := datastore.MakeKey(c, "Project", projectID)
 	q = q.Ancestor(parentKey)
-	con := []*Console{}
-	if err := datastore.GetAll(c, q, &con); err != nil {
+	con, err := datastore.RunQuery[*Console](c, q).AsSlice()
+	if err != nil {
 		return nil, errors.Fmt("getting project %q consoles: %w", projectID, err)
 	}
 	sort.Slice(con, func(i, j int) bool { return con[i].Ordinal < con[j].Ordinal })

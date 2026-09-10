@@ -79,9 +79,9 @@ func BuildAddress(build *buildbucketpb.Build) string {
 func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 	// The host is set to prod because buildbot is hardcoded to talk to prod.
 	uri := fmt.Sprintf("buildbucket://cr-buildbucket.appspot.com/build/%d", id)
-	bs := make([]*model.BuildSummary, 0, 1)
 	q := datastore.NewQuery("BuildSummary").Eq("ContextURI", uri).Limit(1)
-	switch err := datastore.GetAll(c, q, &bs); {
+	bs, err := datastore.RunQuery[*model.BuildSummary](c, q).AsSlice()
+	switch {
 	case err != nil:
 		return nil, utils.ReplaceNSEWith(err.(errors.MultiError), ErrNotFound)
 	case len(bs) == 0:
