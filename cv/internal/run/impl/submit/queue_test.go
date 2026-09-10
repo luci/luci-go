@@ -103,6 +103,12 @@ func TestQueue(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.That(t, l, should.Equal(3))
 			})
+			t.Run("Not exist", func(t *ftt.Test) {
+				l, err := QueueLen(ctx, "non-existing")
+				assert.That(t, err, should.ErrLike(ErrQueueNotExist))
+				assert.That(t, err, should.ErrLike("project \"non-existing\""))
+				assert.That(t, l, should.Equal(0))
+			})
 		})
 
 		t.Run("TryAcquire", func(t *ftt.Test) {

@@ -16,6 +16,7 @@ package submit
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
@@ -30,6 +31,9 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 )
+
+// ErrQueueNotExist indicates that the submit queue does not exist.
+var ErrQueueNotExist = errors.New("submit queue doesn't exist")
 
 // queue represents a submit queue entity.
 type queue struct {
@@ -55,6 +59,8 @@ type queue struct {
 
 // QueueLen returns the current length of the submit queue, which includes
 // the currently submitting run (if any) and all runs in the waitlist.
+//
+// Returns ErrQueueNotExist if the submit queue doesn't exist for the project.
 func QueueLen(ctx context.Context, project string) (int, error) {
 	q, err := loadQueue(ctx, project)
 	if err != nil {
@@ -87,7 +93,7 @@ func (q *queue) nextSubmissionETA(now time.Time) time.Time {
 func DeleteQueue(ctx context.Context, luciProject string) error {
 	q := &queue{ID: luciProject}
 	if err := datastore.Delete(ctx, q); err != nil {
-		return transient.Tag.Apply(errors.Fmt("failed to delete SubmitQueue %q: %w", q.ID, err))
+		return transient.Tag.Apply(fmt.Errorf("delete SubmitQueue %q: %w", q.ID, err))
 	}
 	return nil
 }
@@ -96,9 +102,9 @@ func loadQueue(ctx context.Context, luciProject string) (*queue, error) {
 	q := &queue{ID: luciProject}
 	switch err := datastore.Get(ctx, q); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, errors.Fmt("SubmitQueue %q doesn't exist", q.ID)
+		return nil, fmt.Errorf("project %q: %w", luciProject, ErrQueueNotExist)
 	case err != nil:
-		return nil, transient.Tag.Apply(errors.Fmt("load SubmitQueue %q: %w", q.ID, err))
+		return nil, transient.Tag.Apply(fmt.Errorf("load SubmitQueue %q: %w", q.ID, err))
 	}
 	return q, nil
 }
@@ -143,7 +149,7 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 	case err == datastore.ErrNoSuchEntity:
 		shouldSave = true
 	case err != nil:
-		return false, transient.Tag.Apply(errors.Fmt("failed to load SubmitQueue %q: %w", q.ID, err))
+		return false, transient.Tag.Apply(fmt.Errorf("load SubmitQueue %q: %w", q.ID, err))
 	}
 	if !proto.Equal(q.Opts, opts) {
 		q.Opts = opts
@@ -183,7 +189,7 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 
 	if shouldSave {
 		if err := datastore.Put(ctx, q); err != nil {
-			return false, transient.Tag.Apply(errors.Fmt("failed to put SubmitQueue %q: %w", q.ID, err))
+			return false, transient.Tag.Apply(fmt.Errorf("put SubmitQueue %q: %w", q.ID, err))
 		}
 	}
 	return waitlisted, nil
@@ -195,6 +201,8 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 // first Run in the waitlist is ready for submission.
 // If the provided Run is in waitlist, remove it from the waitlist.
 // If the provided Run is not present in the submit queue, no-op.
+//
+// Returns ErrQueueNotExist if the submit queue doesn't exist for the project.
 //
 // MUST be called in a datastore transaction.
 func Release(ctx context.Context, notifyFn NotifyFn, runID common.RunID) error {
@@ -210,6 +218,8 @@ func Release(ctx context.Context, notifyFn NotifyFn, runID common.RunID) error {
 // Note that the submitted time will only be recorded if the provided Run takes
 // the current slot. It is used to support rate limiting based on the
 // `SubmitOptions` defined in the ProjectConfig.
+//
+// Returns ErrQueueNotExist if the submit queue doesn't exist for the project.
 //
 // MUST be called in a datastore transaction.
 func ReleaseOnSuccess(ctx context.Context, notifyFn NotifyFn, runID common.RunID, submittedAt time.Time) error {
@@ -255,7 +265,7 @@ func release(ctx context.Context, notifyFn NotifyFn, runID common.RunID, submitt
 	}
 
 	if err := datastore.Put(ctx, q); err != nil {
-		return transient.Tag.Apply(errors.Fmt("failed to put SubmitQueue %q: %w", q.ID, err))
+		return transient.Tag.Apply(fmt.Errorf("put SubmitQueue %q: %w", q.ID, err))
 	}
 
 	if q.Current == "" && len(q.Waitlist) > 0 {
@@ -268,6 +278,8 @@ func release(ctx context.Context, notifyFn NotifyFn, runID common.RunID, submitt
 
 // CurrentRun returns the RunID that is currently submitting in the submit queue
 // of the provided LUCI Project.
+//
+// Returns ErrQueueNotExist if the submit queue doesn't exist for the project.
 func CurrentRun(ctx context.Context, luciProject string) (common.RunID, error) {
 	q, err := loadQueue(ctx, luciProject)
 	if err != nil {
@@ -286,6 +298,9 @@ func MustCurrentRun(ctx context.Context, luciProject string) common.RunID {
 }
 
 // LoadCurrentAndWaitlist loads the current submission slot and the waitlist.
+//
+// Returns ErrQueueNotExist if the submit queue doesn't exist for the project
+// that the Run belongs to.
 func LoadCurrentAndWaitlist(ctx context.Context, runID common.RunID) (current common.RunID, waitlist common.RunIDs, err error) {
 	q, err := loadQueue(ctx, runID.LUCIProject())
 	if err != nil {

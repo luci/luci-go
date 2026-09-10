@@ -37,11 +37,14 @@ func (*submitQueueAggregator) metrics() []types.Metric {
 func (*submitQueueAggregator) report(ctx context.Context, projects []string) error {
 	var errs []error
 	for _, proj := range projects {
-		l, err := submit.QueueLen(ctx, proj)
-		if err != nil {
+		switch l, err := submit.QueueLen(ctx, proj); {
+		case errors.Is(err, submit.ErrQueueNotExist):
+			metrics.Public.SubmitQueueLength.Set(ctx, int64(0), proj)
+		case err != nil:
 			errs = append(errs, err)
+		default:
+			metrics.Public.SubmitQueueLength.Set(ctx, int64(l), proj)
 		}
-		metrics.Public.SubmitQueueLength.Set(ctx, int64(l), proj)
 	}
 	return errors.Join(errs...)
 }

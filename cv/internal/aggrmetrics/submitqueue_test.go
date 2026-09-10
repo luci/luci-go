@@ -60,5 +60,8 @@ func TestSubmitQueueAggregator(t *testing.T) {
 		}, nil))
 		assert.NoErr(t, sa.report(ctx, []string{lProject}))
 		assert.That(t, sentValue(lProject).(int64), should.Equal(int64(0)))
+
+		assert.NoErr(t, sa.report(ctx, []string{"non-existing-proj"}))
+		assert.That(t, sentValue("non-existing-proj").(int64), should.Equal(int64(0)))
 	})
 }
