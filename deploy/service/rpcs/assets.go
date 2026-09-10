@@ -52,8 +52,8 @@ func (*Assets) ListAssets(ctx context.Context, req *rpcpb.ListAssetsRequest) (re
 
 	q := datastore.NewQuery("Asset")
 
-	var entities []*model.Asset
-	if err = datastore.GetAll(ctx, q, &entities); err != nil {
+	entities, err := datastore.RunQuery[*model.Asset](ctx, q).AsSlice()
+	if err != nil {
 		return nil, status.Errorf(codes.Internal, "datastore query to list assets failed: %s", err)
 	}
 
@@ -94,8 +94,8 @@ func (*Assets) ListAssetHistory(ctx context.Context, req *rpcpb.ListAssetHistory
 		Order("-__key__").
 		Limit(req.Limit)
 
-	var entries []*model.AssetHistory
-	if err := datastore.GetAll(ctx, q, &entries); err != nil {
+	entries, err := datastore.RunQuery[*model.AssetHistory](ctx, q).AsSlice()
+	if err != nil {
 		return nil, grpcutil.InternalTag.Apply(errors.Fmt("querying AssetHistory: %w", err))
 	}
 
