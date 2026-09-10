@@ -170,7 +170,8 @@ func ListPackageRefs(ctx context.Context, pkg string) (out []*Ref, err error) {
 	q := datastore.NewQuery("PackageRef").
 		Ancestor(PackageKey(ctx, pkg)).
 		Order("-modified_ts")
-	if err := datastore.GetAll(ctx, q, &out); err != nil {
+	out, err = datastore.RunQuery[*Ref](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	return
@@ -193,7 +194,8 @@ func ListInstanceRefs(ctx context.Context, inst *Instance) (out []*Ref, err erro
 		Ancestor(inst.Package).
 		Eq("instance_id", inst.InstanceID).
 		Order("-modified_ts")
-	if err := datastore.GetAll(ctx, q, &out); err != nil {
+	out, err = datastore.RunQuery[*Ref](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	return

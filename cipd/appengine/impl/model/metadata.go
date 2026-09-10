@@ -272,8 +272,8 @@ func ListMetadata(ctx context.Context, inst *Instance) ([]*InstanceMetadata, err
 		Ancestor(datastore.KeyForObj(ctx, inst)).
 		Order("-attached_ts")
 
-	var out []*InstanceMetadata
-	if err := datastore.GetAll(ctx, q, &out); err != nil {
+	out, err := datastore.RunQuery[*InstanceMetadata](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	orderByTsAndKey(out)

@@ -191,8 +191,8 @@ func ResolveTag(ctx context.Context, pkg string, tag *repopb.Tag) (string, error
 		KeysOnly(true).
 		Limit(2)
 
-	var tags []*Tag
-	switch err := datastore.GetAll(ctx, q, &tags); {
+	tags, err := datastore.RunQuery[*Tag](ctx, q).AsSlice()
+	switch {
 	case err != nil:
 		return "", transient.Tag.Apply(errors.Fmt("failed to query tags: %w", err))
 	case len(tags) == 0:
@@ -216,7 +216,8 @@ func ListInstanceTags(ctx context.Context, inst *Instance) (out []*Tag, err erro
 	// tagged instances in our datastore have few hundred tags at most, so this is
 	// bearable.
 	q := datastore.NewQuery("InstanceTag").Ancestor(datastore.KeyForObj(ctx, inst))
-	if err := datastore.GetAll(ctx, q, &out); err != nil {
+	out, err = datastore.RunQuery[*Tag](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	sort.Slice(out, func(i, j int) bool {

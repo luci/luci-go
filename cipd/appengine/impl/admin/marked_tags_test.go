@@ -92,8 +92,8 @@ func TestVisitAndMarkTags(t *testing.T) {
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Correctly have only 1 tags (and only them) in job #1 output!
-			var marked []markedTag
-			assert.Loosely(t, datastore.GetAll(ctx, queryMarkedTags(1), &marked), should.BeNil)
+			marked, err := datastore.RunQuery[markedTag](ctx, queryMarkedTags(1)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, marked, should.Resemble([]markedTag{
 				{
 					ID:  "AwS3ochdSStSG0z9F5GXpjXLamSw0gUUPVK1oMTWlbg",
@@ -112,8 +112,8 @@ func TestVisitAndMarkTags(t *testing.T) {
 			}))
 
 			// Job #2 has collected all tags. And IDs are different from job #1.
-			marked = nil
-			assert.Loosely(t, datastore.GetAll(ctx, queryMarkedTags(2), &marked), should.BeNil)
+			marked, err = datastore.RunQuery[markedTag](ctx, queryMarkedTags(2)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, marked, should.Resemble([]markedTag{
 				{
 					ID:  "1ZOT2ST48S2gc2qrcKcS5C8g18roHwMhujwkluTSx8s",
@@ -162,8 +162,8 @@ func TestVisitAndMarkTags(t *testing.T) {
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			var marked []markedTag
-			assert.Loosely(t, datastore.GetAll(ctx, queryMarkedTags(1), &marked), should.BeNil)
+			marked, err := datastore.RunQuery[markedTag](ctx, queryMarkedTags(1)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			markedKeys := make([]*datastore.Key, len(marked))
 			for i, mTag := range marked {
 				markedKeys[i] = mTag.Key

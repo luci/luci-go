@@ -140,8 +140,8 @@ func NewEventsQuery() *datastore.Query {
 //
 // Start the query with NewEventsQuery.
 func QueryEvents(ctx context.Context, q *datastore.Query) ([]*repopb.Event, error) {
-	var ev []Event
-	if err := datastore.GetAll(ctx, q.Order("-When"), &ev); err != nil {
+	ev, err := datastore.RunQuery[Event](ctx, q.Order("-When")).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
 	out := make([]*repopb.Event, len(ev))

@@ -59,8 +59,8 @@ func fixMarkedTags(ctx context.Context, job dsmapper.JobID) (fixed []*adminpb.Ta
 	ctx, cancel := clock.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	var marked []markedTag
-	if err := datastore.GetAll(ctx, queryMarkedTags(job), &marked); err != nil {
+	marked, err := datastore.RunQuery[markedTag](ctx, queryMarkedTags(job)).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.
 			Fmt("failed to query marked tags: %w", err))
 	}

@@ -43,9 +43,9 @@ func TestFixMalformedTags(t *testing.T) {
 		}
 
 		allTags := func(pkg string) (tags []string) {
-			mTag := []model.Tag{}
 			q := datastore.NewQuery("InstanceTag").Ancestor(model.PackageKey(ctx, pkg))
-			assert.Loosely(t, datastore.GetAll(ctx, q, &mTag), should.BeNil)
+			mTag, err := datastore.RunQuery[model.Tag](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			for _, e := range mTag {
 				tags = append(tags, e.Tag)
 			}
@@ -74,8 +74,8 @@ func TestFixMalformedTags(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		// Verify all bad tags (and only them) were marked.
-		var marked []markedTag
-		assert.Loosely(t, datastore.GetAll(ctx, queryMarkedTags(jobID), &marked), should.BeNil)
+		marked, err := datastore.RunQuery[markedTag](ctx, queryMarkedTags(jobID)).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 		var badTags []string
 		for _, mTag := range marked {
 			badTags = append(badTags, mTag.Tag)

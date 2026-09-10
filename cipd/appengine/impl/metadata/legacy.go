@@ -574,7 +574,7 @@ func listACLsByPrefix(ctx context.Context, role, prefix string) (acls []*package
 		Parent: root,
 	}))
 
-	if err = datastore.GetAll(ctx, q, &acls); err != nil {
+	if acls, err = datastore.RunQuery[*packageACL](ctx, q).AsSlice(); err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("failed to query the list of ACLs: %w", err))
 	}
 	return
