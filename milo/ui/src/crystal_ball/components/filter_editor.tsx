@@ -48,6 +48,7 @@ import {
   COMMON_MESSAGES,
   GLOBAL_TIME_RANGE_COLUMN,
   OPERATOR_DISPLAY_NAMES,
+  MAX_FILTER_CHIP_WIDTH,
   STATISTICAL_KEY_COLUMN,
 } from '@/crystal_ball/constants';
 import {
@@ -647,6 +648,7 @@ export function FilterEditor({
               gap: 1,
               margin: '4px 0',
               width: '100%',
+              minWidth: 0,
               '&.Mui-expanded': {
                 margin: '4px 0',
               },
@@ -704,6 +706,13 @@ export function FilterEditor({
                     columnDisplayNameMap,
                   )}
                   size="small"
+                  sx={{
+                    maxWidth: MAX_FILTER_CHIP_WIDTH,
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    },
+                  }}
                 />
               ))}
             {!expanded && displayFilters.length === 0 && (

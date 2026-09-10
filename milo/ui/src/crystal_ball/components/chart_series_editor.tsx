@@ -106,6 +106,27 @@ import {
   PerfFilterDefault_FilterOperator,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
+function getEffectiveMatchType(
+  matchType?: PerfChartSeries_MatchType | null,
+): PerfChartSeries_MatchType {
+  if (
+    matchType === null ||
+    matchType === undefined ||
+    matchType === PerfChartSeries_MatchType.MATCH_TYPE_UNSPECIFIED
+  ) {
+    return PerfChartSeries_MatchType.EXACT;
+  }
+  return matchType;
+}
+
+const MATCH_TYPE_TO_OPERATOR: Partial<
+  Record<PerfChartSeries_MatchType, PerfFilterDefault_FilterOperator>
+> = {
+  [PerfChartSeries_MatchType.REGEX]:
+    PerfFilterDefault_FilterOperator.REGEX_MATCH,
+  [PerfChartSeries_MatchType.WILDCARD]: PerfFilterDefault_FilterOperator.LIKE,
+};
+
 interface ChartSeriesEditorProps {
   series: readonly PerfChartSeries[];
   onUpdateSeries: (updatedSeries: PerfChartSeries[]) => void;
@@ -177,7 +198,8 @@ export function ChartSeriesEditor({
 
   const getChildrenExpanded = (seriesId: string) => {
     return (
-      uiStates[`${EditorUiKeyPrefix.CHART_SERIES}:${seriesId}:children`] ?? true
+      uiStates[`${EditorUiKeyPrefix.CHART_SERIES}:${seriesId}:children`] ??
+      false
     );
   };
 
@@ -971,14 +993,17 @@ export function ChartSeriesItem({
               textInput: {
                 defaultValue: {
                   values: [effectiveMetricField],
-                  filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+                  filterOperator:
+                    MATCH_TYPE_TO_OPERATOR[
+                      getEffectiveMatchType(series.matchType)
+                    ] ?? PerfFilterDefault_FilterOperator.EQUAL,
                 },
               },
             }),
           ]
         : []),
     ]);
-  }, [globalFilters, widgetFilters, effectiveMetricField]);
+  }, [globalFilters, widgetFilters, effectiveMetricField, series.matchType]);
 
   const {
     data: statKeySuggestionData,
@@ -1574,13 +1599,7 @@ export function ChartSeriesItem({
               <Select
                 size="small"
                 fullWidth
-                value={
-                  series.matchType === undefined ||
-                  series.matchType ===
-                    PerfChartSeries_MatchType.MATCH_TYPE_UNSPECIFIED
-                    ? PerfChartSeries_MatchType.EXACT
-                    : series.matchType
-                }
+                value={getEffectiveMatchType(series.matchType)}
                 onChange={(e) => {
                   const matchType = perfChartSeries_MatchTypeFromJSON(
                     e.target.value,

@@ -120,3 +120,9 @@ export enum WidgetType {
   CHART_REGRESSION_METRIC = 'chart_regression_metric',
   MARKDOWN = 'markdown',
 }
+
+// Maximum width for filter chips in the UI to prevent layout blowout.
+export const MAX_FILTER_CHIP_WIDTH = 350;
+
+// Maximum number of expanded tag selections visible by default in global filters.
+export const MAX_FILTER_TAGS = 3;

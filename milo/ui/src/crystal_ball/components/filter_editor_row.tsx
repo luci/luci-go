@@ -41,6 +41,7 @@ import {
   DIMENSION_PREFIX,
   MAX_SUGGEST_RESULTS,
   OPERATOR_DISPLAY_NAMES,
+  MAX_FILTER_TAGS,
   TYPE_TO_OPERATORS,
 } from '@/crystal_ball/constants';
 import {
@@ -386,6 +387,8 @@ export function FilterEditorRow({
             multiple={isMultiSelect}
             freeSolo
             size="small"
+            limitTags={MAX_FILTER_TAGS}
+            sx={{ minWidth: 0 }}
             options={isCheckboxFilter ? sortedOptions : options}
             filterOptions={(x) => x}
             disableCloseOnSelect={isMultiSelect}
