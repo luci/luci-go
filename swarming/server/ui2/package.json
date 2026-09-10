@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://chromium.googlesource.com/infra/luci/luci-py"
+    "url": "https://chromium.googlesource.com/infra/luci/luci-go"
   },
   "dependencies": {
     "@chopsui/prpc-client": "~1.1.0",
