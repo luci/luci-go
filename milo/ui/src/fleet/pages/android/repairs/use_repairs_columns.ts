@@ -23,7 +23,7 @@ import {
 } from '@/fleet/constants/local_storage_keys';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 
-import { COLUMNS } from './repairs_columns';
+import { getRepairsColumns } from './repairs_columns';
 import { Row } from './repairs_columns.utils';
 
 export const useRepairsColumns = (
@@ -32,10 +32,13 @@ export const useRepairsColumns = (
   workspace: AndroidPageWorkspace,
 ) => {
   const availableColumns = useMemo<MRT_ColumnDef<Row>[]>(
-    () => Object.values(COLUMNS),
-    [],
+    () => Object.values(getRepairsColumns(workspace)),
+    [workspace],
   );
-  const defaultColumnIds = useMemo(() => Object.keys(COLUMNS), []);
+  const defaultColumnIds = useMemo(
+    () => Object.keys(getRepairsColumns(workspace)),
+    [workspace],
+  );
 
   const mrtColumnManager = useMRTColumnManagement({
     columns: availableColumns,

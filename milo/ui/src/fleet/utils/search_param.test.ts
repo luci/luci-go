@@ -40,8 +40,13 @@ describe('data_table_search_param_utils', () => {
   });
 
   describe('formatAipClause', () => {
+    it('should not handle empty labels', () => {
+      expect(formatAipClause('label', [])).toEqual('');
+    });
     it('should format single and multi value clauses', () => {
-      expect(formatAipClause('pool', ['default'])).toEqual('pool = "default"');
+      expect(formatAipClause('pool', ['default'])).toEqual(
+        '(pool = "default")',
+      );
       expect(
         formatAipClause('labels.label-model', ['lapis', 'sapphire']),
       ).toEqual(
@@ -84,7 +89,10 @@ describe('data_table_search_param_utils', () => {
         undefined,
       );
       expect(res).toEqual(
-        '?filters=pool+%3D+%22chrome%22+AND+state+%3D+%22ready%22',
+        '?' +
+          new URLSearchParams([
+            ['filters', `(pool = "chrome") AND (state = "ready")`],
+          ]).toString(),
       );
     });
   });

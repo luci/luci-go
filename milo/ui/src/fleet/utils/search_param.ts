@@ -18,6 +18,7 @@ import {
 } from '@/common/components/params_pager';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 
+import { StringListFilterCategoryBuilder } from '../components/filters/string_list_filter';
 import { OrderBy, OrderByDirection } from '../hooks/order_by';
 
 /**
@@ -88,11 +89,21 @@ export function quoteAipKey(key: string): string {
   return `"${key}"`;
 }
 
-export function formatAipClause(name: string, values: string[]): string {
+export function formatAipClause(
+  name: string,
+  values: string[],
+  comparator: ':' | '=' = '=',
+): string {
   if (!values?.length) return '';
   const qName = quoteAipKey(name);
-  if (values.length === 1) return `${qName} = "${escapeAipValue(values[0])}"`;
-  return `(${values.map((v) => `${qName} = "${escapeAipValue(v)}"`).join(' OR ')})`;
+  const result = new StringListFilterCategoryBuilder()
+    .setLabel(name)
+    .setComparator(comparator)
+    .setOptions(values.map((v) => ({ label: v, value: v })))
+    .setDefaultOptions(values)
+    .build(qName, () => {}, null);
+  if (result.isError) return '';
+  return result.value.toAIP160();
 }
 
 export function combineAipFilters(base: string, clause: string): string {
