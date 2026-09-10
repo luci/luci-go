@@ -66,7 +66,7 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "ids [-json] <target>",
 		ShortDesc: "Extract resource IDs from a URL or resource name",
-		LongDesc: "Parse a URL or resource name (including Milo URLs, ResultDB resource names, and AnTS / ATI URLs)\n" +
+		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket URLs, ResultDB resource names, and AnTS / ATI URLs)\n" +
 			"and extract the canonical IDs (-invocationid, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
 			"for use with other commands.",
 		CommandRun: func() subcommands.CommandRun {
@@ -199,7 +199,7 @@ func ExtractIDs(ctx context.Context, client pb.ResultDBClient, raw string, legac
 		return extracted, nil
 	}
 
-	// 3. Milo Invocation and Build URLs (/ui/inv/..., /ui/b/..., /builders/...)
+	// 3. Milo and Buildbucket invocation and build URLs (/ui/inv/..., /ui/b/..., /b/..., /build/..., /builders/...)
 	if extractFromMiloBuildURL(clean, extracted) {
 		return extracted, nil
 	}
@@ -390,8 +390,8 @@ func extractFromMiloStructuredURL(ctx context.Context, client pb.ResultDBClient,
 	return true
 }
 
-// extractFromMiloBuildURL handles Milo UI invocation and build URLs
-// (e.g. /ui/inv/<inv>, /ui/b/<build_id>, /builders/.../<build_id>).
+// extractFromMiloBuildURL handles Milo UI and Buildbucket invocation and build URLs
+// (e.g. /ui/inv/<inv>, /ui/b/<build_id>, /b/<build_id>, /build/<build_id>, /builders/.../<build_id>).
 func extractFromMiloBuildURL(clean string, extracted *ExtractedIDs) bool {
 	if idx := strings.Index(clean, "/inv/"); idx != -1 {
 		after := clean[idx+len("/inv/"):]
@@ -410,6 +410,28 @@ func extractFromMiloBuildURL(clean string, extracted *ExtractedIDs) bool {
 		}
 	} else if idx := strings.Index(clean, "/b/"); idx != -1 {
 		after := clean[idx+len("/b/"):]
+		parts := strings.Split(after, "/")
+		if len(parts) > 0 && parts[0] != "" {
+			extracted.InvocationID = base.NormalizeInvocation(parts[0])
+			return true
+		}
+	}
+	if idx := strings.Index(clean, "/ui/build/"); idx != -1 {
+		after := clean[idx+len("/ui/build/"):]
+		parts := strings.Split(after, "/")
+		if len(parts) > 0 && parts[0] != "" {
+			extracted.InvocationID = base.NormalizeInvocation(parts[0])
+			return true
+		}
+	} else if idx := strings.Index(clean, "/build/"); idx != -1 {
+		after := clean[idx+len("/build/"):]
+		parts := strings.Split(after, "/")
+		if len(parts) > 0 && parts[0] != "" {
+			extracted.InvocationID = base.NormalizeInvocation(parts[0])
+			return true
+		}
+	} else if idx := strings.Index(clean, "/builds/"); idx != -1 {
+		after := clean[idx+len("/builds/"):]
 		parts := strings.Split(after, "/")
 		if len(parts) > 0 && parts[0] != "" {
 			extracted.InvocationID = base.NormalizeInvocation(parts[0])

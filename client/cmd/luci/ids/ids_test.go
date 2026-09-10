@@ -159,6 +159,16 @@ func TestExtractIDs(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsShort.InvocationID, should.Equal("build-8676886509240051393"))
 
+			urlBuild := "https://ci.chromium.org/build/8676886509240051393"
+			idsBuild, err := ExtractIDs(ctx, legacyMockClient(), urlBuild, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsBuild.InvocationID, should.Equal("build-8676886509240051393"))
+
+			urlUIBuild := "https://ci.chromium.org/ui/build/8676886509240051393"
+			idsUIBuild, err := ExtractIDs(ctx, legacyMockClient(), urlUIBuild, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsUIBuild.InvocationID, should.Equal("build-8676886509240051393"))
+
 			urlBuilder := "https://ci.chromium.org/ui/p/chromium/builders/ci/linux-rel/8676886509240051393"
 			ids2, err := ExtractIDs(ctx, legacyMockClient(), urlBuilder, false)
 			assert.Loosely(t, err, should.BeNil)
@@ -174,6 +184,29 @@ func TestExtractIDs(t *testing.T) {
 			ids4, err := ExtractIDs(ctx, legacyMockClient(), urlBuilderBId, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids4.InvocationID, should.Equal("build-8676886509240051393"))
+		})
+
+		t.Run(`Buildbucket build URL`, func(t *ftt.Test) {
+			url := "https://cr-buildbucket.appspot.com/build/8671656129082602433"
+			ids, err := ExtractIDs(ctx, legacyMockClient(), url, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids.InvocationID, should.Equal("build-8671656129082602433"))
+			assert.Loosely(t, ids.Legacy, should.BeTrue)
+
+			urlOverview := "https://cr-buildbucket.appspot.com/build/8671656129082602433/overview"
+			idsOverview, err := ExtractIDs(ctx, legacyMockClient(), urlOverview, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsOverview.InvocationID, should.Equal("build-8671656129082602433"))
+
+			urlBId := "https://cr-buildbucket.appspot.com/build/b8671656129082602433"
+			idsBId, err := ExtractIDs(ctx, legacyMockClient(), urlBId, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsBId.InvocationID, should.Equal("build-8671656129082602433"))
+
+			urlBuilds := "https://cr-buildbucket.appspot.com/builds/8671656129082602433"
+			idsBuilds, err := ExtractIDs(ctx, legacyMockClient(), urlBuilds, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsBuilds.InvocationID, should.Equal("build-8671656129082602433"))
 		})
 
 		t.Run(`Milo test investigation and test history URLs`, func(t *ftt.Test) {
