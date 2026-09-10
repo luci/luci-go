@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -526,6 +527,9 @@ func TestUpdateRootInvocation(t *testing.T) {
 				expectedRowCopy := expectedRow.Clone()
 				expectedRowCopy.LastUpdated = rootInvRow.LastUpdated
 				expectedRowCopy.FinalizeStartTime = rootInvRow.FinalizeStartTime
+				if expectedRowCopy.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
+					expectedRowCopy.MetadataFinalizedTime = rootInvRow.MetadataFinalizedTime
+				}
 				// Validate RootInvocations table.
 				assert.That(t, rootInvRow, should.Match(expectedRowCopy), truth.LineContext())
 
@@ -723,6 +727,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 					expectedRootInv.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 					expectedRootInvRow.LastUpdated = ri.LastUpdated.AsTime()
 					expectedRootInvRow.StreamingExportState = pb.RootInvocation_METADATA_FINAL
+					expectedRootInvRow.MetadataFinalizedTime = spanner.NullTime{Valid: true, Time: ri.LastUpdated.AsTime()}
 					// Use a new request id to avoid the repeated request being deduplicated.
 					req.RequestId = "new-request-id"
 

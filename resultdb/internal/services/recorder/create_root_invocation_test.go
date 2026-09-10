@@ -1291,6 +1291,7 @@ func TestCreateRootInvocation(t *testing.T) {
 			expectInvRow.TestShardingAlgorithm = row.TestShardingAlgorithm // Accept the value set by the implementation.
 			expectInvRow.CreateTime = commitTime
 			expectInvRow.LastUpdated = commitTime
+			expectInvRow.MetadataFinalizedTime = spanner.NullTime{Valid: true, Time: commitTime}
 			assert.That(t, row, should.Match(expectInvRow))
 
 			// Check the test sharding algorithm exists.

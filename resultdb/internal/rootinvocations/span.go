@@ -100,6 +100,7 @@ type RootInvocationRow struct {
 	Properties                              *structpb.Struct
 	BaselineID                              string
 	StreamingExportState                    pb.RootInvocation_StreamingExportState
+	MetadataFinalizedTime                   spanner.NullTime
 	Submitted                               bool
 	FinalizerPending                        bool
 	FinalizerSequence                       int64
@@ -157,6 +158,9 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"FinalizerPending":                        r.FinalizerPending,
 		"FinalizerSequence":                       r.FinalizerSequence,
 		"TestShardingAlgorithm":                   string(r.TestShardingAlgorithm),
+	}
+	if r.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
+		row["MetadataFinalizedTime"] = spanner.CommitTimestamp
 	}
 	if r.Definition != nil {
 		row["DefinitionSystem"] = r.Definition.System
@@ -468,7 +472,10 @@ func (b *MutationBuilder) UpdateExtraBuilds(extraBuilds []*pb.BuildDescriptor) {
 // UpdateStreamingExportState updates the streaming export state of the root invocation.
 func (b *MutationBuilder) UpdateStreamingExportState(state pb.RootInvocation_StreamingExportState) {
 	b.values["StreamingExportState"] = state
-	b.legacyInvocationValues["IsSourceSpecFinal"] = spanner.NullBool{Valid: true, Bool: true}
+	b.legacyInvocationValues["IsSourceSpecFinal"] = spanner.NullBool{Valid: true, Bool: state == pb.RootInvocation_METADATA_FINAL}
+	if state == pb.RootInvocation_METADATA_FINAL {
+		b.values["MetadataFinalizedTime"] = spanner.CommitTimestamp
+	}
 }
 
 // UpdateTags updates the tags of the root invocation.

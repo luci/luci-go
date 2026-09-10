@@ -50,6 +50,7 @@ func TestWriteRootInvocation(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
+		commitTime = commitTime.UTC()
 
 		// Validation
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -60,6 +61,7 @@ func TestWriteRootInvocation(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		row.CreateTime = commitTime
 		row.LastUpdated = commitTime
+		row.MetadataFinalizedTime = spanner.NullTime{Valid: true, Time: commitTime}
 		row.SecondaryIndexShardID = row.RootInvocationID.shardID(secondaryIndexShardCount)
 		row.ProducerResource.Url = "" // Output only fields should not be stored.
 		assert.That(t, readRootInv, should.Match(row))
@@ -216,6 +218,46 @@ func TestMutationBuilder(t *testing.T) {
 			expectedRootInv.SummaryMarkdown = "new summary"
 			expectedRootInv.LastUpdated = ct.In(time.UTC)
 			assert.That(t, readRootInv, should.Match(expectedRootInv))
+		})
+		t.Run("UpdateStreamingExportState", func(t *ftt.Test) {
+			// Test transitioning to WAIT_FOR_METADATA
+			b := NewMutationBuilder(id)
+			b.UpdateStreamingExportState(pb.RootInvocation_WAIT_FOR_METADATA)
+			ct, err := span.Apply(ctx, b.Build())
+			assert.Loosely(t, err, should.BeNil)
+
+			// Check the root invocation.
+			readRootInv, err := Read(span.Single(ctx), id)
+			assert.Loosely(t, err, should.BeNil)
+			expectedRootInv := rootInv.Clone()
+			expectedRootInv.StreamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
+			expectedRootInv.LastUpdated = ct.In(time.UTC)
+			// MetadataFinalizedTime should not be set for WAIT_FOR_METADATA
+			assert.That(t, readRootInv, should.Match(expectedRootInv))
+
+			// Check the legacy invocation.
+			readLegacyInv, err := invocations.Read(span.Single(ctx), id.LegacyInvocationID(), invocations.AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, readLegacyInv.IsSourceSpecFinal, should.BeFalse)
+
+			// Test transitioning to METADATA_FINAL
+			b = NewMutationBuilder(id)
+			b.UpdateStreamingExportState(pb.RootInvocation_METADATA_FINAL)
+			ct, err = span.Apply(ctx, b.Build())
+			assert.Loosely(t, err, should.BeNil)
+
+			// Check the root invocation.
+			readRootInv, err = Read(span.Single(ctx), id)
+			assert.Loosely(t, err, should.BeNil)
+			expectedRootInv.StreamingExportState = pb.RootInvocation_METADATA_FINAL
+			expectedRootInv.LastUpdated = ct.In(time.UTC)
+			expectedRootInv.MetadataFinalizedTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
+			assert.That(t, readRootInv, should.Match(expectedRootInv))
+
+			// Check the legacy invocation.
+			readLegacyInv, err = invocations.Read(span.Single(ctx), id.LegacyInvocationID(), invocations.AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, readLegacyInv.IsSourceSpecFinal, should.BeTrue)
 		})
 	})
 }

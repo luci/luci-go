@@ -126,12 +126,12 @@ func TestBatchGetWorkUnits(t *testing.T) {
 					Name:      "builds/123",
 					Url:       "https://milo-prod/ui/b/123",
 				},
-				Tags:         wu1.Tags,
+				Tags:                wu1.Tags,
 				Properties:          wu1.Properties,
 				InheritedProperties: wu1.InheritedProperties,
 				Instructions:        wu1.Instructions,
 				IsMasked:            false,
-				Etag:         `W/"/2025-04-26T01:02:03.000004Z"`,
+				Etag:                `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 			expectedWu2 := &pb.WorkUnit{
 				Name:              wu2.ID.Name(),

@@ -182,6 +182,11 @@ CREATE TABLE RootInvocations (
   -- - METADATA_FINAL (2) - metadata is final and exports can commence
   StreamingExportState INT64 NOT NULL,
 
+  -- The time when StreamingExportState was updated to METADATA_FINAL.
+  -- This is used to guarantee mutual exclusivity and exhaustiveness between
+  -- low-latency Pub/Sub Direct Flow and CatchUp Flow.
+  MetadataFinalizedTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+
   -- The test sharding algorithm used to shard tests in this root invocation.
   TestShardingAlgorithm STRING(MAX) NOT NULL DEFAULT("by_case_name"),
 ) PRIMARY KEY (RootInvocationId),

@@ -334,6 +334,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"BaselineId":                              r.BaselineID,
 		"StreamingExportState":                    r.StreamingExportState,
+		"MetadataFinalizedTime":                   r.MetadataFinalizedTime,
 		"Submitted":                               r.Submitted,
 		"FinalizerPending":                        r.FinalizerPending,
 		"FinalizerSequence":                       r.FinalizerSequence,
