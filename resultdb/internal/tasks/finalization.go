@@ -95,6 +95,15 @@ var TestAggregationsPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/pubsub", // for routing to "pubsub" service
 })
 
+// WorkUnitsCatchUpPublisher defines the task to catch up on Pub/Sub processing.
+var WorkUnitsCatchUpPublisher = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "publish-work-units-catch-up",
+	Prototype:     &taskspb.PublishWorkUnitsCatchUpTask{},
+	Queue:         "workunitcatchuppublisher",
+	Kind:          tq.Transactional,
+	RoutingPrefix: "/internal/tasks/pubsub", // for routing to "pubsub" service
+})
+
 // StartInvocationFinalization enqueues a TryFinalizeInvocation task.
 //
 // The caller is responsible for ensuring that the invocation was

@@ -97,6 +97,17 @@ message PublishWorkUnitsTask {
   repeated string work_unit_ids = 2;
 }
 
+// PublishWorkUnitsCatchUpTask catches up on publishing work units and test results
+// that were skipped during work unit finalization when the root invocation
+// metadata was not yet finalized.
+//
+// At most one task should be scheduled per root invocation to avoid duplicate
+// work unit in Pub/Sub messages.
+// Next id: 2
+message PublishWorkUnitsCatchUpTask {
+  string root_invocation_id = 1;
+}
+
 // PublishTestAggregations defines a task to publish a batch of test
 // aggregations to the Cloud Pub/Sub.
 // Next id: 3
