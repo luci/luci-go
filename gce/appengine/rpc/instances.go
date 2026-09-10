@@ -72,10 +72,10 @@ func deleteByID(c context.Context, id string) (*emptypb.Empty, error) {
 // deleteByHostname asynchronously deletes the instance matching the given
 // hostname.
 func deleteByHostname(c context.Context, hostname string) (*emptypb.Empty, error) {
-	var vms []*model.VM
 	// Hostnames are globally unique, so there should be at most one match.
 	q := datastore.NewQuery(model.VMKind).Eq("hostname", hostname).Limit(1)
-	switch err := datastore.GetAll(c, q, &vms); {
+	vms, err := datastore.RunQuery[*model.VM](c, q).AsSlice()
+	switch {
 	case err != nil:
 		return nil, errors.Fmt("failed to fetch VM with hostname: %q: %w", hostname, err)
 	case len(vms) == 0:
@@ -169,10 +169,10 @@ func getByHostname(c context.Context, hostname string) (*instances.Instance, err
 		logging.Warningf(c, "VM %q trying to get host %q", vmtoken.Hostname(c), hostname)
 		return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
 	}
-	var vms []*model.VM
 	// Hostnames are globally unique, so there should be at most one match.
 	q := datastore.NewQuery(model.VMKind).Eq("hostname", hostname).Limit(1)
-	switch err := datastore.GetAll(c, q, &vms); {
+	vms, err := datastore.RunQuery[*model.VM](c, q).AsSlice()
+	switch {
 	case err != nil:
 		return nil, errors.Fmt("failed to fetch VM with hostname: %q: %w", hostname, err)
 	case len(vms) == 0:

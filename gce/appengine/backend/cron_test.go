@@ -56,15 +56,15 @@ func TestCron(t *testing.T) {
 
 			t.Run("none", func(t *ftt.Test) {
 				assert.Loosely(t, countTasks(c), should.BeNil)
-				var k []*datastore.Key
-				assert.Loosely(t, datastore.GetAll(c, q, &k), should.BeNil)
+				k, err := datastore.RunQuery[*datastore.Key](c, q).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, k, should.BeEmpty)
 			})
 
 			t.Run("many", func(t *ftt.Test) {
 				assert.Loosely(t, countTasks(c), should.BeNil)
-				var k []*datastore.Key
-				assert.Loosely(t, datastore.GetAll(c, q, &k), should.BeNil)
+				k, err := datastore.RunQuery[*datastore.Key](c, q).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, k, should.BeEmpty)
 			})
 		})
