@@ -61,6 +61,34 @@ func TestValidateQueryArtifactsRequest(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`invocations: "x": does not match`))
 		})
 
+		t.Run(`Valid with parent`, func(t *ftt.Test) {
+			err := validateQueryArtifactsRequest(&pb.QueryArtifactsRequest{
+				Parent:   "rootInvocations/inv1",
+				PageSize: 50,
+			})
+			assert.Loosely(t, err, should.BeNil)
+		})
+
+		t.Run(`Invalid parent`, func(t *ftt.Test) {
+			err := validateQueryArtifactsRequest(&pb.QueryArtifactsRequest{
+				Parent: "invalid",
+			})
+			assert.Loosely(t, err, should.ErrLike(`parent: "invalid": does not match`))
+		})
+
+		t.Run(`Both invocations and parent specified`, func(t *ftt.Test) {
+			err := validateQueryArtifactsRequest(&pb.QueryArtifactsRequest{
+				Invocations: []string{"invocations/x"},
+				Parent:      "rootInvocations/inv1",
+			})
+			assert.Loosely(t, err, should.ErrLike(`invocations and parent: mutually exclusive`))
+		})
+
+		t.Run(`Neither invocations nor parent specified`, func(t *ftt.Test) {
+			err := validateQueryArtifactsRequest(&pb.QueryArtifactsRequest{})
+			assert.Loosely(t, err, should.ErrLike(`invocations or parent: must be specified`))
+		})
+
 		t.Run(`Invalid test result predicate`, func(t *ftt.Test) {
 			err := validateQueryArtifactsRequest(&pb.QueryArtifactsRequest{
 				Invocations: []string{"x"},
@@ -384,6 +412,12 @@ func TestQueryArtifacts(t *testing.T) {
 					FinalizationState: pb.RootInvocation_ACTIVE,
 				})...)
 			testutil.MustApply(ctx, t,
+				insert.RootInvocationOnly(&rootinvocations.RootInvocationRow{
+					RootInvocationID:  "invx",
+					Realm:             "secretproject:testrealm",
+					FinalizationState: pb.RootInvocation_ACTIVE,
+				})...)
+			testutil.MustApply(ctx, t,
 				insert.WorkUnit(&workunits.WorkUnitRow{
 					ID: workunits.ID{
 						RootInvocationID: "inv1",
@@ -401,6 +435,44 @@ func TestQueryArtifacts(t *testing.T) {
 
 			// This option is not supported for root invocations.
 			req.Predicate.TestResultPredicate = nil
+
+			t.Run(`Permission denied`, func(t *ftt.Test) {
+				req.Invocations = nil
+				req.Parent = "rootInvocations/invx"
+				_, err := srv.QueryArtifacts(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.list in realm of root invocation "rootInvocations/invx"`))
+			})
+
+			t.Run(`Limited permission denied`, func(t *ftt.Test) {
+				ctxLimited := auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "testproject:testrealm", Permission: rdbperms.PermListLimitedArtifacts},
+					},
+				})
+				req.Invocations = nil
+				req.Parent = "rootInvocations/inv1"
+				_, err := srv.QueryArtifacts(ctxLimited, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.list in realm of root invocation "rootInvocations/inv1"`))
+			})
+
+			t.Run(`Root invocation not found`, func(t *ftt.Test) {
+				req.Invocations = nil
+				req.Parent = "rootInvocations/not-found"
+				_, err := srv.QueryArtifacts(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike(`"rootInvocations/not-found" not found`))
+			})
+
+			t.Run(`Invalid root invocation parent`, func(t *ftt.Test) {
+				req.Invocations = nil
+				req.Parent = "invalid-name"
+				_, err := srv.QueryArtifacts(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`parent: does not match pattern`))
+			})
 
 			t.Run(`Query by Parent (Root Invocation)`, func(t *ftt.Test) {
 				req.Invocations = nil

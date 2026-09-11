@@ -70,6 +70,25 @@ func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
 	return nil
 }
 
+// verifyQueryArtifactsPermissions verifies the caller has access to query
+// artifacts from the invocations or root invocation specified in the request.
+func verifyQueryArtifactsPermissions(ctx context.Context, in *pb.QueryArtifactsRequest) error {
+	// Flow 1: Legacy invocations.
+	if in.Parent == "" {
+		return permissions.VerifyInvocationsByName(ctx, in.Invocations, rdbperms.PermListArtifacts)
+	}
+
+	// Flow 2: Root invocation.
+	rootInvID, err := rootinvocations.ParseName(in.Parent)
+	if err != nil {
+		return appstatus.BadRequest(errors.Fmt("parent: %w", err))
+	}
+	if _, err = permissions.VerifyAllWorkUnitsAccess(ctx, rootInvID, permissions.ListArtifactsAccessModel, permissions.FullAccess); err != nil {
+		return err
+	}
+	return nil
+}
+
 // QueryArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest) (*pb.QueryArtifactsResponse, error) {
 	// Use one transaction for the entire RPC so that we work with a
@@ -78,7 +97,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	if err := permissions.VerifyInvocationsByName(ctx, in.Invocations, rdbperms.PermListArtifacts); err != nil {
+	if err := verifyQueryArtifactsPermissions(ctx, in); err != nil {
 		return nil, err
 	}
 
