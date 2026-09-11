@@ -270,8 +270,8 @@ func (rs *runStats) report(ctx context.Context) {
 // loadRunKeys returns only the keys of the Runs matching the given query.
 func loadRunKeys(ctx context.Context, q *datastore.Query, limit int32) ([]*datastore.Key, error) {
 	q = q.Limit(limit).KeysOnly(true)
-	var out []*datastore.Key
-	switch err := datastore.GetAll(ctx, q, &out); {
+	out, err := datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
+	switch {
 	case ctx.Err() != nil:
 		logging.Warningf(ctx, "%s while fetching %s", ctx.Err(), q)
 		return nil, ctx.Err()

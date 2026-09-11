@@ -192,9 +192,9 @@ func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 	//  - TryjobExecutionState
 	//  - TryjobExecutionLog
 	runKey := datastore.KeyForObj(ctx, r)
-	var toDelete []*datastore.Key
 	q := datastore.NewQuery("").Ancestor(runKey).KeysOnly(true)
-	if err := datastore.GetAll(ctx, q, &toDelete); err != nil {
+	toDelete, err := datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
+	if err != nil {
 		return transient.Tag.Apply(errors.Fmt("failed to query all child entities of run %s: %w", r.ID, err))
 	}
 	toDelete = append(toDelete, runKey)
@@ -202,7 +202,7 @@ func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 	// A run may have a lot of log entities which may cause timeouts if removed
 	// within a transaction. Therefore, deleting them first before deleting the
 	// rest of the run related entities in a transaction.
-	toDelete, err := removeLogEntities(ctx, toDelete)
+	toDelete, err = removeLogEntities(ctx, toDelete)
 	if err != nil {
 		return transient.Tag.Apply(errors.Fmt("failed to delete log entities of run %s: %w", r.ID, err))
 	}

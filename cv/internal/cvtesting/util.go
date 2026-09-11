@@ -411,8 +411,8 @@ func isOldTestDSNamespace(ns string, now time.Time) bool {
 func clearDS(ctx context.Context) error {
 	// Execute a kindless query to clear entire namespace.
 	q := datastore.NewQuery("").KeysOnly(true)
-	var allKeys []*datastore.Key
-	if err := datastore.GetAll(ctx, q, &allKeys); err != nil {
+	allKeys, err := datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
+	if err != nil {
 		return errors.Fmt("failed to get entities: %w", err)
 	}
 	if err := datastore.Delete(ctx, allKeys); err != nil {
@@ -426,8 +426,8 @@ func maybeCleanupOldDSNamespaces(ctx context.Context) {
 		return
 	}
 	q := datastore.NewQuery("__namespace__").KeysOnly(true)
-	var allKeys []*datastore.Key
-	if err := datastore.GetAll(ctx, q, &allKeys); err != nil {
+	allKeys, err := datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
+	if err != nil {
 		logging.Warningf(ctx, "failed to query all namespaces: %s", err)
 		return
 	}

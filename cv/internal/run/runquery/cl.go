@@ -153,8 +153,8 @@ func (b CLQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query {
 // Datastore keys to corresponding Run entities.
 func (b CLQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, error) {
 	// Fetch RunCL keys.
-	var keys []*datastore.Key
-	if err := datastore.GetAll(ctx, b.BuildKeysOnly(ctx), &keys); err != nil {
+	keys, err := datastore.RunQuery[*datastore.Key](ctx, b.BuildKeysOnly(ctx)).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.
 			Fmt("failed to fetch RunCLs IDs: %w", err))
 	}

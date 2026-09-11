@@ -158,8 +158,8 @@ func (a *AdminServer) GetProjectLogs(ctx context.Context, req *adminpb.GetProjec
 		q.Limit(128)
 	}
 
-	var out []*prjmanager.ProjectLog
-	if err = datastore.GetAll(ctx, q, &out); err != nil {
+	out, err := datastore.RunQuery[*prjmanager.ProjectLog](ctx, q).AsSlice()
+	if err != nil {
 		return nil, err
 	}
 
@@ -388,8 +388,8 @@ func (a *AdminServer) DeleteProjectEvents(ctx context.Context, req *adminpb.Dele
 
 	parent := datastore.MakeKey(ctx, prjmanager.ProjectKind, req.GetProject())
 	q := datastore.NewQuery("dsset.Item").Ancestor(parent).Limit(req.GetLimit())
-	var entities []*itemEntity
-	if err := datastore.GetAll(ctx, q, &entities); err != nil {
+	entities, err := datastore.RunQuery[*itemEntity](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch up to %d events: %w", req.GetLimit(), err))
 	}
 

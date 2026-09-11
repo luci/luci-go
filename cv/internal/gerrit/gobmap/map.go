@@ -119,8 +119,8 @@ func getAll(ctx context.Context, host, repo string) ([]*mapPart, error) {
 	hostRepo := host + "/" + repo
 	parentKey := datastore.MakeKey(ctx, parentKind, hostRepo)
 	q := datastore.NewQuery(mapKind).Ancestor(parentKey)
-	mps := []*mapPart{}
-	if err := datastore.GetAll(ctx, q, &mps); err != nil {
+	mps, err := datastore.RunQuery[*mapPart](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt(hostRepo+": %w", err))
 	}
 	return mps, nil
@@ -163,9 +163,9 @@ func update(ctx context.Context, meta *prjcfg.Meta, cgs []*prjcfg.ConfigGroup) e
 	var toPut, toDelete []*mapPart
 
 	// Fetch stored GWM entities.
-	mps := []*mapPart{}
 	q := datastore.NewQuery(mapKind).Eq("Project", meta.Project)
-	if err := datastore.GetAll(ctx, q, &mps); err != nil {
+	mps, err := datastore.RunQuery[*mapPart](ctx, q).AsSlice()
+	if err != nil {
 		return transient.Tag.Apply(errors.Fmt("failed to get MapPart entities for project %q: %w", meta.Project, err))
 	}
 

@@ -106,9 +106,9 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 
 	ftt.Run("Update with nonexistent project stores nothing", t, func(t *ftt.Test) {
 		assert.NoErr(t, Update(ctx, &prjcfg.Meta{Project: "bogus", Status: prjcfg.StatusNotExists}, nil))
-		mps := []*mapPart{}
 		q := datastore.NewQuery(mapKind)
-		assert.NoErr(t, datastore.GetAll(ctx, q, &mps))
+		mps, err := datastore.RunQuery[*mapPart](ctx, q).AsSlice()
+		assert.NoErr(t, err)
 		assert.Loosely(t, mps, should.BeEmpty)
 	})
 
@@ -455,8 +455,8 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 			// NOTE: this test reproducibly fails because gobmap.Update is not really
 			// safe to call concurrently, so asserts are commented out.
 			// TODO(crbug/1179286): fix the code and the test.
-			var mps []*mapPart
-			assert.NoErr(t, datastore.GetAll(ctx, datastore.NewQuery(mapKind).Eq("Project", project), &mps))
+			mps, err := datastore.RunQuery[*mapPart](ctx, datastore.NewQuery(mapKind).Eq("Project", project)).AsSlice()
+			assert.NoErr(t, err)
 			for _, mp := range mps {
 				// assert.That(t, mp.ConfigHash, should.Match(meta.Hash()))
 				hostAndRepo := strings.SplitN(mp.Parent.StringID(), "/", 2)

@@ -212,7 +212,9 @@ func (s *Set) List(ctx context.Context, maxEvents int) (l *Listing, err error) {
 	var entities []*itemEntity
 	eg.Go(func() error {
 		q := datastore.NewQuery("dsset.Item").Ancestor(s.Parent).Limit(int32(maxEvents))
-		return datastore.GetAll(ctx, q, &entities)
+		var err error
+		entities, err = datastore.RunQuery[*itemEntity](ctx, q).AsSlice()
+		return err
 	})
 	if err := eg.Wait(); err != nil {
 		return nil, transient.Tag.Apply(err)

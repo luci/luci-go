@@ -128,12 +128,12 @@ func SaveExecutionState(ctx context.Context, rid common.RunID, state *ExecutionS
 // a smaller ExecutionState EVersion should happen earlier than the logs
 // associated with a larger ExecutionState EVersion.
 func LoadExecutionLogs(ctx context.Context, runID common.RunID) ([]*ExecutionLogEntry, error) {
-	var keys []*datastore.Key
 	runKey := datastore.MakeKey(ctx, common.RunKind, string(runID))
 	// Getting the key first as getting the execution log entity directly is
 	// more likely a cache hit.
 	q := datastore.NewQuery("TryjobExecutionLog").KeysOnly(true).Ancestor(runKey)
-	if err := datastore.GetAll(ctx, q, &keys); err != nil {
+	keys, err := datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch keys of TryjobExecutionLog entities: %w", err))
 	}
 	if len(keys) == 0 {

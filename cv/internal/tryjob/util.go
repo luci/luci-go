@@ -94,8 +94,8 @@ func QueryTryjobIDsUpdatedBefore(ctx context.Context, before time.Time) (common.
 				Lt("RetentionKey", fmt.Sprintf("%02d/%010d", shard, before.Unix())).
 				Gt("RetentionKey", fmt.Sprintf("%02d/", shard)).
 				KeysOnly(true)
-			var keys []*datastore.Key
-			switch err := datastore.GetAll(ectx, q, &keys); {
+			keys, err := datastore.RunQuery[*datastore.Key](ectx, q).AsSlice()
+			switch {
 			case err != nil:
 				return transient.Tag.Apply(errors.Fmt("failed to query Tryjob keys: %w", err))
 			case len(keys) > 0:

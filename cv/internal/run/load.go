@@ -269,10 +269,10 @@ func LoadRunLogEntries(ctx context.Context, runID common.RunID) ([]*LogEntry, er
 	// DS cache. So, perform KeysOnly query first, which is cheap & fast, and then
 	// additional multi-Get which will go via DS cache.
 
-	var keys []*datastore.Key
 	runKey := datastore.MakeKey(ctx, common.RunKind, string(runID))
 	q := datastore.NewQuery(RunLogKind).KeysOnly(true).Ancestor(runKey)
-	if err := datastore.GetAll(ctx, q, &keys); err != nil {
+	keys, err := datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch keys of RunLog entities: %w", err))
 	}
 
@@ -301,8 +301,8 @@ func LoadRunLogEntries(ctx context.Context, runID common.RunID) ([]*LogEntry, er
 // LoadChildRuns loads all Runs with the given Run in their dep_runs.
 func LoadChildRuns(ctx context.Context, runID common.RunID) ([]*Run, error) {
 	q := datastore.NewQuery(common.RunKind).Eq("DepRuns", runID)
-	var runs []*Run
-	if err := datastore.GetAll(ctx, q, &runs); err != nil {
+	runs, err := datastore.RunQuery[*Run](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch dependency Run entities: %w", err))
 	}
 	return runs, nil

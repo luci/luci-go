@@ -117,9 +117,9 @@ func ProjectConfigKey(ctx context.Context, project string) *datastore.Key {
 
 // GetAllProjectIDs returns the names of all projects available in datastore.
 func GetAllProjectIDs(ctx context.Context, enabledOnly bool) ([]string, error) {
-	var projects []*ProjectConfig
 	query := datastore.NewQuery(projectConfigKind).Project("Enabled")
-	if err := datastore.GetAll(ctx, query, &projects); err != nil {
+	projects, err := datastore.RunQuery[*ProjectConfig](ctx, query).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("failed to query all projects: %w", err))
 	}
 	ret := make([]string, 0, len(projects))
@@ -248,14 +248,14 @@ func (c *ConfigGroup) ProjectString() string {
 // GetAllGerritHosts returns a map of the Gerrit hosts watched by enabled LUCI
 // projects.
 func GetAllGerritHosts(ctx context.Context) (map[string]stringset.Set, error) {
-	var prjs []*ProjectConfig
 	q := datastore.NewQuery(projectConfigKind).Eq("Enabled", true)
-	if err := datastore.GetAll(ctx, q, &prjs); err != nil {
+	prjs, err := datastore.RunQuery[*ProjectConfig](ctx, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
 
 	ret := make(map[string]stringset.Set)
-	err := parallel.WorkPool(32, func(work chan<- func() error) {
+	err = parallel.WorkPool(32, func(work chan<- func() error) {
 		for _, p := range prjs {
 			hosts := stringset.New(4)
 			ret[p.Project] = hosts
