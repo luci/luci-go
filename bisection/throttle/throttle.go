@@ -95,8 +95,7 @@ func CronHandler(ctx context.Context) error {
 func dailyAnalysisCount(ctx context.Context, project string) (int, error) {
 	cutoffTime := clock.Now(ctx).Add(-time.Hour * 24)
 	q := datastore.NewQuery("TestFailureAnalysis").Eq("project", project).Gt("create_time", cutoffTime)
-	analyses := []*model.TestFailureAnalysis{}
-	err := datastore.GetAll(ctx, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.TestFailureAnalysis](ctx, q).AsSlice()
 	if err != nil {
 		return 0, errors.Fmt("get analyses: %w", err)
 	}
@@ -117,16 +116,14 @@ func congestedCompileReruns(ctx context.Context, project string) ([]*model.Singl
 		Eq("project", project).
 		Gt("create_time", cutoffTime).
 		Lt("create_time", pendingCutoffTime)
-	rerunBuilds := []*model.CompileRerunBuild{}
-	err := datastore.GetAll(ctx, q, &rerunBuilds)
+	rerunBuilds, err := datastore.RunQuery[*model.CompileRerunBuild](ctx, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get scheduled CompileRerunBuilds: %w", err)
 	}
 	reruns := []*model.SingleRerun{}
 	for _, r := range rerunBuilds {
-		rerun := []*model.SingleRerun{}
 		q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(ctx, r))
-		err := datastore.GetAll(ctx, q, &rerun)
+		rerun, err := datastore.RunQuery[*model.SingleRerun](ctx, q).AsSlice()
 		if err != nil {
 			return nil, errors.Fmt("get rerun with CompileRerunBuilds ID %d: %w", r.Id, err)
 		}
@@ -143,8 +140,7 @@ func congestedTestReruns(ctx context.Context, project string) ([]*model.TestSing
 		Eq("luci_build.project", project).
 		Gt("luci_build.create_time", cutoffTime).
 		Lt("luci_build.create_time", pendingCutoffTime)
-	reruns := []*model.TestSingleRerun{}
-	err := datastore.GetAll(ctx, q, &reruns)
+	reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get scheduled TestSingleRerun: %w", err)
 	}

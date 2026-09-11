@@ -157,19 +157,19 @@ func TestAnalyzeFailure(t *testing.T) {
 
 	// Make sure that the analysis is created
 	q := datastore.NewQuery("CompileFailureAnalysis").Eq("compile_failure", datastore.KeyForObj(c, cf))
-	analyses := []*model.CompileFailureAnalysis{}
-	datastore.GetAll(c, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.CompileFailureAnalysis](c, q).AsSlice()
+	assert.Loosely(t, err, should.BeNil)
 	assert.Loosely(t, len(analyses), should.Equal(1))
 
 	// Make sure the GenAI analysis and nthsection analysis are run
 	q = datastore.NewQuery("CompileGenAIAnalysis").Ancestor(datastore.KeyForObj(c, cfa))
-	genai_analyses := []*model.CompileGenAIAnalysis{}
-	datastore.GetAll(c, q, &genai_analyses)
+	genai_analyses, err := datastore.RunQuery[*model.CompileGenAIAnalysis](c, q).AsSlice()
+	assert.Loosely(t, err, should.BeNil)
 	assert.Loosely(t, len(genai_analyses), should.Equal(1))
 
 	q = datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, cfa))
-	nthsection_analyses := []*model.CompileNthSectionAnalysis{}
-	datastore.GetAll(c, q, &nthsection_analyses)
+	nthsection_analyses, err := datastore.RunQuery[*model.CompileNthSectionAnalysis](c, q).AsSlice()
+	assert.Loosely(t, err, should.BeNil)
 	assert.Loosely(t, len(nthsection_analyses), should.Equal(1))
 }
 

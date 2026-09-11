@@ -182,9 +182,8 @@ func AnalyzeFailure(
 
 // verifyGenAIResult verifies if the suspect from GenAI analysis is the real culprit.
 func verifyGenAIResult(c context.Context, genaiAnalysis *model.CompileGenAIAnalysis, failedBuildID int64, analysisID int64) error {
-	suspects := []*model.Suspect{}
-	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
-	err := datastore.GetAllWithLimit(c, q, &suspects, 1)
+	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis)).Limit(1)
+	suspects, err := datastore.RunQuery[*model.Suspect](c, q).AsSlice()
 	if err != nil {
 		return err
 	}
@@ -201,9 +200,9 @@ func verifyGenAIResult(c context.Context, genaiAnalysis *model.CompileGenAIAnaly
 
 // triggerFixforward executes the GenerateFixforwardCL logic inline.
 func triggerFixforward(c context.Context, genaiAnalysis *model.CompileGenAIAnalysis, analysisID int64, genaiClient llm.Client, compileLogs *model.CompileLogs) {
-	suspects := []*model.Suspect{}
-	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
-	if err := datastore.GetAllWithLimit(c, q, &suspects, 1); err != nil {
+	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis)).Limit(1)
+	suspects, err := datastore.RunQuery[*model.Suspect](c, q).AsSlice()
+	if err != nil {
 		logging.Errorf(c, "failed to get suspect for fixforward: %v", err)
 		return
 	}

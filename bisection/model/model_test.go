@@ -203,8 +203,8 @@ func TestDatastoreModel(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 			q := datastore.NewQuery("TestSingleRerun").Eq("analysis_key", datastore.KeyForObj(c, tfa))
-			reruns := []*TestSingleRerun{}
-			assert.Loosely(t, datastore.GetAll(c, q, &reruns), should.BeNil)
+			reruns, err := datastore.RunQuery[*TestSingleRerun](c, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(reruns), should.Equal(1))
 			assert.Loosely(t, reruns[0], should.Match(singleRerun))
 		})

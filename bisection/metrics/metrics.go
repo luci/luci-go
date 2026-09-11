@@ -206,8 +206,7 @@ func collectMetricsForRunningAnalyses(c context.Context) error {
 
 func retrieveRunningTestAnalyses(c context.Context) (map[string]int, error) {
 	q := datastore.NewQuery("TestFailureAnalysis").Eq("run_status", pb.AnalysisRunStatus_STARTED)
-	analyses := []*model.TestFailureAnalysis{}
-	err := datastore.GetAll(c, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.TestFailureAnalysis](c, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get running test failure analyses: %w", err)
 	}
@@ -222,8 +221,7 @@ func retrieveRunningTestAnalyses(c context.Context) (map[string]int, error) {
 
 func retrieveRunningAnalyses(c context.Context) (map[string]int, error) {
 	q := datastore.NewQuery("CompileFailureAnalysis").Eq("run_status", pb.AnalysisRunStatus_STARTED)
-	analyses := []*model.CompileFailureAnalysis{}
-	err := datastore.GetAll(c, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.CompileFailureAnalysis](c, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("couldn't get running analyses: %w", err)
 	}
@@ -252,8 +250,7 @@ func collectMetricsForRunningReruns(c context.Context) error {
 	// safe to exclude them.
 	cutoffTime := clock.Now(c).Add(-time.Hour * 7 * 24)
 	q := datastore.NewQuery("SingleRerun").Eq("Status", pb.RerunStatus_RERUN_STATUS_IN_PROGRESS).Gt("create_time", cutoffTime)
-	reruns := []*model.SingleRerun{}
-	err := datastore.GetAll(c, q, &reruns)
+	reruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 	if err != nil {
 		return errors.Fmt("couldn't get running reruns: %w", err)
 	}
@@ -330,8 +327,7 @@ func collectMetricsForRunningTestReruns(c context.Context) error {
 	// safe to exclude them.
 	cutoffTime := clock.Now(c).Add(-time.Hour * 7 * 24)
 	q := datastore.NewQuery("TestSingleRerun").Eq("status", pb.RerunStatus_RERUN_STATUS_IN_PROGRESS).Gt("luci_build.create_time", cutoffTime)
-	reruns := []*model.TestSingleRerun{}
-	err := datastore.GetAll(c, q, &reruns)
+	reruns, err := datastore.RunQuery[*model.TestSingleRerun](c, q).AsSlice()
 	if err != nil {
 		return errors.Fmt("get running test reruns: %w", err)
 	}
@@ -391,8 +387,8 @@ func collectMetricsForGenAIVindicationWithClient(c context.Context, client tspb.
 
 	// Query for CompileGenAIAnalysis entities that ended in the last 24 hours.
 	q := datastore.NewQuery("CompileGenAIAnalysis").Gt("end_time", cutoffTime)
-	var genaiAnalyses []*model.CompileGenAIAnalysis
-	if err := datastore.GetAll(c, q, &genaiAnalyses); err != nil {
+	genaiAnalyses, err := datastore.RunQuery[*model.CompileGenAIAnalysis](c, q).AsSlice()
+	if err != nil {
 		return errors.Fmt("getting CompileGenAIAnalysis for genai metrics: %w", err)
 	}
 
@@ -413,8 +409,8 @@ func collectMetricsForGenAIVindicationWithClient(c context.Context, client tspb.
 		// For each analysis, find its suspects.
 		sq := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
 		logging.Infof(c, "DEBUG: Pre-Metric Increment VindicatedAnalysisCount. GenAI Analysis ID: %d", genaiAnalysis.Id)
-		var suspects []*model.Suspect
-		if err := datastore.GetAll(c, sq, &suspects); err != nil {
+		suspects, err := datastore.RunQuery[*model.Suspect](c, sq).AsSlice()
+		if err != nil {
 			logging.Warningf(c, "failed to get suspects for CompileGenAIAnalysis %d: %v", genaiAnalysis.Id, err)
 			continue
 		}

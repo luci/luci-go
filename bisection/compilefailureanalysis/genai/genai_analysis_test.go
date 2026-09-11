@@ -167,9 +167,8 @@ func TestGenAiAnalysis(t *testing.T) {
 	// Inspect the datastore to verify suspects were created
 	t.Run("inspect_datastore", func(t *testing.T) {
 		// Query for suspects that are children of the GenAI analysis
-		var suspects []*model.Suspect
 		q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(ctx, result))
-		err := datastore.GetAll(ctx, q, &suspects)
+		suspects, err := datastore.RunQuery[*model.Suspect](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 
 		t.Logf("Found %d suspects in datastore", len(suspects))
@@ -576,9 +575,8 @@ func TestGenAiAnalysisWithRoll(t *testing.T) {
 	assert.Loosely(t, err, should.BeNil)
 	assert.Loosely(t, result, should.NotBeNil)
 
-	var suspects []*model.Suspect
 	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(ctx, result))
-	err = datastore.GetAll(ctx, q, &suspects)
+	suspects, err := datastore.RunQuery[*model.Suspect](ctx, q).AsSlice()
 	assert.Loosely(t, err, should.BeNil)
 	assert.Loosely(t, len(suspects), should.Equal(1))
 	assert.Loosely(t, suspects[0].GitilesCommit.Id, should.Equal("abc123def456"))

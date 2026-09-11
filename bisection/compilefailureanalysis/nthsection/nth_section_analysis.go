@@ -348,8 +348,7 @@ func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSecti
 	// Get all reruns for the current analysis
 	// This should contain all reruns for nth section and culprit verification
 	q := datastore.NewQuery("SingleRerun").Eq("analysis", nthSectionAnalysis.ParentAnalysis).Order("start_time")
-	reruns := []*model.SingleRerun{}
-	err := datastore.GetAll(c, q, &reruns)
+	reruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("getting all reruns: %w", err)
 	}

@@ -259,9 +259,8 @@ func TestAnalyze(t *testing.T) {
 
 		// Retrieve the genaiAnalysis from datastore
 		datastore.GetTestable(ctx).CatchupIndexes()
-		var genaiAnalyses []*model.TestGenAIAnalysis
 		q := datastore.NewQuery("TestGenAIAnalysis")
-		err = datastore.GetAll(ctx, q, &genaiAnalyses)
+		genaiAnalyses, err := datastore.RunQuery[*model.TestGenAIAnalysis](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(genaiAnalyses), should.Equal(1))
 		genaiAnalysis := genaiAnalyses[0]
@@ -275,9 +274,8 @@ func TestAnalyze(t *testing.T) {
 		assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
 
 		// Verify 3 suspects were created
-		suspects := []*model.Suspect{}
 		suspectQuery := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(ctx, genaiAnalysis))
-		err = datastore.GetAll(ctx, suspectQuery, &suspects)
+		suspects, err := datastore.RunQuery[*model.Suspect](ctx, suspectQuery).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.Equal(3))
 
@@ -397,9 +395,8 @@ func TestAnalyze(t *testing.T) {
 
 		// Retrieve the genaiAnalysis from datastore
 		datastore.GetTestable(ctx).CatchupIndexes()
-		var genaiAnalyses []*model.TestGenAIAnalysis
 		q := datastore.NewQuery("TestGenAIAnalysis")
-		err = datastore.GetAll(ctx, q, &genaiAnalyses)
+		genaiAnalyses, err := datastore.RunQuery[*model.TestGenAIAnalysis](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(genaiAnalyses), should.Equal(1))
 		genaiAnalysis := genaiAnalyses[0]
@@ -409,9 +406,8 @@ func TestAnalyze(t *testing.T) {
 		assert.Loosely(t, genaiAnalysis.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 
 		// Verify ONLY 3 suspects were created (truncated from 4)
-		suspects := []*model.Suspect{}
 		suspectQuery := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(ctx, genaiAnalysis))
-		err = datastore.GetAll(ctx, suspectQuery, &suspects)
+		suspects, err := datastore.RunQuery[*model.Suspect](ctx, suspectQuery).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.Equal(3))
 
@@ -483,9 +479,8 @@ func TestAnalyze(t *testing.T) {
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		// Verify the genaiAnalysis entity in datastore was updated to ERROR status
-		var genaiAnalyses []*model.TestGenAIAnalysis
 		q := datastore.NewQuery("TestGenAIAnalysis")
-		err = datastore.GetAll(ctx, q, &genaiAnalyses)
+		genaiAnalyses, err := datastore.RunQuery[*model.TestGenAIAnalysis](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(genaiAnalyses), should.Equal(1))
 		savedAnalysis := genaiAnalyses[0]
@@ -493,9 +488,8 @@ func TestAnalyze(t *testing.T) {
 		assert.Loosely(t, savedAnalysis.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 
 		// Verify no suspects were created
-		suspects := []*model.Suspect{}
 		suspectQuery := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(ctx, savedAnalysis))
-		err = datastore.GetAll(ctx, suspectQuery, &suspects)
+		suspects, err := datastore.RunQuery[*model.Suspect](ctx, suspectQuery).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.BeZero)
 	})
@@ -563,9 +557,8 @@ func TestAnalyze(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		datastore.GetTestable(ctx).CatchupIndexes()
-		var genaiAnalyses []*model.TestGenAIAnalysis
 		q := datastore.NewQuery("TestGenAIAnalysis")
-		err = datastore.GetAll(ctx, q, &genaiAnalyses)
+		genaiAnalyses, err := datastore.RunQuery[*model.TestGenAIAnalysis](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(genaiAnalyses), should.Equal(1))
 		genaiAnalysis := genaiAnalyses[0]
@@ -573,9 +566,8 @@ func TestAnalyze(t *testing.T) {
 		assert.Loosely(t, genaiAnalysis.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
 		assert.Loosely(t, genaiAnalysis.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 
-		suspects := []*model.Suspect{}
 		suspectQuery := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(ctx, genaiAnalysis))
-		err = datastore.GetAll(ctx, suspectQuery, &suspects)
+		suspects, err := datastore.RunQuery[*model.Suspect](ctx, suspectQuery).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.Equal(2))
 
@@ -650,9 +642,8 @@ func TestAnalyze(t *testing.T) {
 
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		var genaiAnalyses []*model.TestGenAIAnalysis
 		q := datastore.NewQuery("TestGenAIAnalysis")
-		err = datastore.GetAll(ctx, q, &genaiAnalyses)
+		genaiAnalyses, err := datastore.RunQuery[*model.TestGenAIAnalysis](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(genaiAnalyses), should.Equal(1))
 		savedAnalysis := genaiAnalyses[0]

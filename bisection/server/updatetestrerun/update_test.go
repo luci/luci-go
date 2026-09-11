@@ -318,8 +318,8 @@ func TestUpdate(t *testing.T) {
 			assert.Loosely(t, tfs[1].IsDiverged, should.BeFalse)
 			// Check that a new rerun is not scheduled, because primary test was skipped.
 			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
-			reruns := []*model.TestSingleRerun{}
-			assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
+			reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(reruns), should.Equal(1))
 		})
 
@@ -397,8 +397,8 @@ func TestUpdate(t *testing.T) {
 			assert.Loosely(t, tfs[3].IsDiverged, should.BeTrue)
 			// Check that a new rerun is scheduled.
 			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
-			reruns := []*model.TestSingleRerun{}
-			assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
+			reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(reruns), should.Equal(2))
 		})
 
@@ -476,8 +476,8 @@ func TestUpdate(t *testing.T) {
 			assert.Loosely(t, tfs[3].IsDiverged, should.BeTrue)
 			// Check that a new rerun is scheduled.
 			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
-			reruns := []*model.TestSingleRerun{}
-			assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
+			reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(reruns), should.Equal(2))
 		})
 
@@ -510,15 +510,15 @@ func TestUpdate(t *testing.T) {
 
 			// Check that a new rerun is not scheduled.
 			q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
-			reruns := []*model.TestSingleRerun{}
-			assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
+			reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			// 1 because of the rerun created in setupTestAnalysisForTesting.
 			assert.Loosely(t, len(reruns), should.Equal(1))
 
 			// Check that no suspect is created.
 			q = datastore.NewQuery("Suspect")
-			suspects := []*model.Suspect{}
-			assert.Loosely(t, datastore.GetAll(ctx, q, &suspects), should.BeNil)
+			suspects, err := datastore.RunQuery[*model.Suspect](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(suspects), should.BeZero)
 		})
 	})
@@ -1051,8 +1051,8 @@ func TestScheduleNewRerun(t *testing.T) {
 
 		// Check suspect being stored.
 		q := datastore.NewQuery("Suspect")
-		suspects := []*model.Suspect{}
-		assert.Loosely(t, datastore.GetAll(ctx, q, &suspects), should.BeNil)
+		suspects, err := datastore.RunQuery[*model.Suspect](ctx, q).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.Equal(1))
 		// Check the field individually because ShouldResembleProto does not work here.
 		assert.Loosely(t, &suspects[0].GitilesCommit, should.Match(&bbpb.GitilesCommit{
@@ -1172,8 +1172,8 @@ func TestScheduleNewRerun(t *testing.T) {
 
 		// Check that a new rerun is scheduled.
 		q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa)).Eq("status", pb.RerunStatus_RERUN_STATUS_IN_PROGRESS)
-		reruns := []*model.TestSingleRerun{}
-		assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
+		reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(reruns), should.Equal(1))
 		assert.Loosely(t, reruns[0], should.Match(&model.TestSingleRerun{
 			ID:                    reruns[0].ID,

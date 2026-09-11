@@ -315,8 +315,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 
 			// Check SingleRerun
 			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuildModel))
-			singleReruns := []*model.SingleRerun{}
-			err = datastore.GetAll(c, q, &singleReruns)
+			singleReruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.Equal(1))
 			assert.Loosely(t, singleReruns[0].Suspect, should.Match(datastore.KeyForObj(c, suspect)))
@@ -351,8 +350,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 
 			// Check SingleRerun
 			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuildModel1))
-			singleReruns := []*model.SingleRerun{}
-			err = datastore.GetAll(c, q, &singleReruns)
+			singleReruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.Equal(1))
 			assert.Loosely(t, singleReruns[0].NthSectionAnalysis, should.Match(datastore.KeyForObj(c, nsa)))

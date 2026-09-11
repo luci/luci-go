@@ -72,8 +72,7 @@ func GetAnalysisForBuild(c context.Context, bbid int64) (*model.CompileFailureAn
 
 	// Get the analysis for the compile failure
 	q := datastore.NewQuery("CompileFailureAnalysis").Eq("compile_failure", cfKey)
-	analyses := []*model.CompileFailureAnalysis{}
-	err = datastore.GetAll(c, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.CompileFailureAnalysis](c, q).AsSlice()
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +88,7 @@ func GetAnalysisForBuild(c context.Context, bbid int64) (*model.CompileFailureAn
 func GetGenAIAnalysis(c context.Context, analysis *model.CompileFailureAnalysis) (*model.CompileGenAIAnalysis, error) {
 	// Gets genai analysis results.
 	q := datastore.NewQuery("CompileGenAIAnalysis").Ancestor(datastore.KeyForObj(c, analysis))
-	genaiAnalyses := []*model.CompileGenAIAnalysis{}
-	err := datastore.GetAll(c, q, &genaiAnalyses)
+	genaiAnalyses, err := datastore.RunQuery[*model.CompileGenAIAnalysis](c, q).AsSlice()
 
 	if err != nil {
 		return nil, err
@@ -112,9 +110,8 @@ func GetGenAIAnalysis(c context.Context, analysis *model.CompileFailureAnalysis)
 // GetSuspectsForGenAIAnalysis returns the genai suspect identified by the given genai analysis
 func GetSuspectsForGenAIAnalysis(c context.Context, genaiAnalysis *model.CompileGenAIAnalysis) (*model.Suspect, error) {
 	// Getting the suspects for genai analysis
-	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
-	err := datastore.GetAll(c, q, &suspects)
+	suspects, err := datastore.RunQuery[*model.Suspect](c, q).AsSlice()
 	if err != nil {
 		return nil, err
 	}
@@ -130,9 +127,8 @@ func GetSuspectsForGenAIAnalysis(c context.Context, genaiAnalysis *model.Compile
 // GetSuspectForNthSectionAnalysis returns the suspect identified by the given nthsection analysis
 func GetSuspectForNthSectionAnalysis(c context.Context, nthsectionAnalysis *model.CompileNthSectionAnalysis) (*model.Suspect, error) {
 	// Getting the suspects for nthsection analysis
-	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, nthsectionAnalysis))
-	err := datastore.GetAll(c, q, &suspects)
+	suspects, err := datastore.RunQuery[*model.Suspect](c, q).AsSlice()
 	if err != nil {
 		return nil, err
 	}
@@ -185,8 +181,7 @@ func GetFailedBuildForAnalysis(c context.Context, cfa *model.CompileFailureAnaly
 // GetRerunsForRerunBuild returns all SingleRerun for a rerunBuild
 func GetRerunsForRerunBuild(c context.Context, rerunBuild *model.CompileRerunBuild) ([]*model.SingleRerun, error) {
 	q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuild)).Order("start_time")
-	singleReruns := []*model.SingleRerun{}
-	err := datastore.GetAll(c, q, &singleReruns)
+	singleReruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 	return singleReruns, errors.WrapIf(err, "get reruns for rerun build %d", rerunBuild.Id)
 }
 
@@ -205,8 +200,7 @@ func GetLastRerunForRerunBuild(c context.Context, rerunBuild *model.CompileRerun
 // GetNthSectionAnalysis returns the nthsection analysis associated with the given failure analysis
 func GetNthSectionAnalysis(c context.Context, analysis *model.CompileFailureAnalysis) (*model.CompileNthSectionAnalysis, error) {
 	q := datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, analysis))
-	nthSectionAnalyses := []*model.CompileNthSectionAnalysis{}
-	err := datastore.GetAll(c, q, &nthSectionAnalyses)
+	nthSectionAnalyses, err := datastore.RunQuery[*model.CompileNthSectionAnalysis](c, q).AsSlice()
 
 	if err != nil {
 		return nil, errors.Fmt("couldn't get nthsection analysis for analysis %d: %w", analysis.Id, err)
@@ -239,9 +233,8 @@ func GetCompileFailureAnalysis(c context.Context, analysisID int64) (*model.Comp
 // that has the same reviewURL as this suspect.
 // It is meant to check if the same CL is the suspects for multiple failures.
 func GetOtherSuspectsWithSameCL(c context.Context, suspect *model.Suspect) ([]*model.Suspect, error) {
-	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Eq("review_url", suspect.ReviewUrl)
-	err := datastore.GetAll(c, q, &suspects)
+	suspects, err := datastore.RunQuery[*model.Suspect](c, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("failed GetSameSuspects: %w", err)
 	}
@@ -260,9 +253,8 @@ func GetOtherSuspectsWithSameCL(c context.Context, suspect *model.Suspect) ([]*m
 // GetLatestBuildFailureForBuilder returns the latest LuciFailedBuild model for a builderID
 // If there is no build failure, return (nil, nil)
 func GetLatestBuildFailureForBuilder(c context.Context, project string, bucket string, builder string) (*model.LuciFailedBuild, error) {
-	builds := []*model.LuciFailedBuild{}
 	q := datastore.NewQuery("LuciFailedBuild").Eq("project", project).Eq("bucket", bucket).Eq("builder", builder).Order("-end_time").Limit(1)
-	err := datastore.GetAll(c, q, &builds)
+	builds, err := datastore.RunQuery[*model.LuciFailedBuild](c, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("failed querying LuciFailedBuild: %w", err)
 	}
@@ -290,8 +282,7 @@ func GetLatestAnalysisForBuilder(c context.Context, project string, bucket strin
 // The result is sorted by start_time
 func GetRerunsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) ([]*model.SingleRerun, error) {
 	q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa)).Order("start_time")
-	reruns := []*model.SingleRerun{}
-	err := datastore.GetAll(c, q, &reruns)
+	reruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("getting reruns for analysis %d: %w", cfa.Id, err)
 	}
@@ -300,8 +291,7 @@ func GetRerunsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) 
 
 func GetRerunsForNthSectionAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis) ([]*model.SingleRerun, error) {
 	q := datastore.NewQuery("SingleRerun").Eq("analysis", nsa.ParentAnalysis).Eq("rerun_type", model.RerunBuildType_NthSection)
-	reruns := []*model.SingleRerun{}
-	err := datastore.GetAll(c, q, &reruns)
+	reruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("getting reruns for analysis %d: %w", nsa.ParentAnalysis.IntID(), err)
 	}
@@ -344,8 +334,7 @@ func GetTestFailureBundle(ctx context.Context, tfa *model.TestFailureAnalysis) (
 
 func getTestFailureBundleWithAnalysisKey(ctx context.Context, analysisKey *datastore.Key) (*model.TestFailureBundle, error) {
 	q := datastore.NewQuery("TestFailure").Eq("analysis_key", analysisKey)
-	tfs := []*model.TestFailure{}
-	err := datastore.GetAll(ctx, q, &tfs)
+	tfs, err := datastore.RunQuery[*model.TestFailure](ctx, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get test failures for analysis: %w", err)
 	}
@@ -406,8 +395,7 @@ func GetTestNthSectionForAnalysis(ctx context.Context, tfa *model.TestFailureAna
 	defer func() { tracing.End(ts, err) }()
 
 	q := datastore.NewQuery("TestNthSectionAnalysis").Eq("parent_analysis_key", datastore.KeyForObj(ctx, tfa))
-	analyses := []*model.TestNthSectionAnalysis{}
-	err = datastore.GetAll(ctx, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.TestNthSectionAnalysis](ctx, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get all: %w", err)
 	}
@@ -437,8 +425,7 @@ func GetTestGenAIAnalysisForAnalysis(ctx context.Context, tfa *model.TestFailure
 	defer func() { tracing.End(ts, err) }()
 
 	q := datastore.NewQuery("TestGenAIAnalysis").Eq("parent_analysis_key", datastore.KeyForObj(ctx, tfa))
-	analyses := []*model.TestGenAIAnalysis{}
-	err = datastore.GetAll(ctx, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.TestGenAIAnalysis](ctx, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get all: %w", err)
 	}
@@ -467,8 +454,7 @@ func GetInProgressReruns(ctx context.Context, tfa *model.TestFailureAnalysis) ([
 		Eq("analysis_key", datastore.KeyForObj(ctx, tfa)).
 		Eq("status", pb.RerunStatus_RERUN_STATUS_IN_PROGRESS)
 
-	reruns := []*model.TestSingleRerun{}
-	err := datastore.GetAll(ctx, q, &reruns)
+	reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get test reruns: %w", err)
 	}
@@ -505,8 +491,7 @@ func GetVerificationRerunsForTestCulprit(ctx context.Context, culprit *model.Sus
 // The reruns are ordered by create time.
 func GetTestNthSectionReruns(ctx context.Context, nsa *model.TestNthSectionAnalysis) ([]*model.TestSingleRerun, error) {
 	q := datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa)).Order("luci_build.create_time")
-	reruns := []*model.TestSingleRerun{}
-	err := datastore.GetAll(ctx, q, &reruns)
+	reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get test reruns: %w", err)
 	}

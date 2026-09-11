@@ -302,13 +302,13 @@ func TestFailureDetection(t *testing.T) {
 			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.BeZero)
 			// Check test analysis is saved.
 			q := datastore.NewQuery("TestFailureAnalysis")
-			analyses := []*model.TestFailureAnalysis{}
-			assert.Loosely(t, datastore.GetAll(ctx, q, &analyses), should.BeNil)
+			analyses, err := datastore.RunQuery[*model.TestFailureAnalysis](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(analyses), should.Equal(1))
 
 			q = datastore.NewQuery("TestFailure").Eq("test_id", insufficientDataTestID)
-			tfs := []*model.TestFailure{}
-			assert.Loosely(t, datastore.GetAll(ctx, q, &tfs), should.BeNil)
+			tfs, err := datastore.RunQuery[*model.TestFailure](ctx, q).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(tfs), should.Equal(1))
 
 			assert.Loosely(t, analyses[0], should.Match(&model.TestFailureAnalysis{

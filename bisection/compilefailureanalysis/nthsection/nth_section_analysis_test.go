@@ -271,8 +271,7 @@ func TestAnalyze(t *testing.T) {
 
 			// Fetch the nth section analysis
 			q := datastore.NewQuery("CompileNthSectionAnalysis")
-			nthsectionAnalyses := []*model.CompileNthSectionAnalysis{}
-			err = datastore.GetAll(c, q, &nthsectionAnalyses)
+			nthsectionAnalyses, err := datastore.RunQuery[*model.CompileNthSectionAnalysis](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(nthsectionAnalyses), should.Equal(1))
 			nsa = nthsectionAnalyses[0]
@@ -347,8 +346,7 @@ func TestAnalyze(t *testing.T) {
 
 			// Fetch the nth section analysis
 			q := datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, cfa))
-			nthsectionAnalyses := []*model.CompileNthSectionAnalysis{}
-			err = datastore.GetAll(c, q, &nthsectionAnalyses)
+			nthsectionAnalyses, err := datastore.RunQuery[*model.CompileNthSectionAnalysis](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(nthsectionAnalyses), should.Equal(1))
 			nsa = nthsectionAnalyses[0]
@@ -359,8 +357,7 @@ func TestAnalyze(t *testing.T) {
 
 			// Check that suspect was created.
 			q = datastore.NewQuery("Suspect")
-			suspects := []*model.Suspect{}
-			err = datastore.GetAll(c, q, &suspects)
+			suspects, err := datastore.RunQuery[*model.Suspect](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(suspects), should.Equal(1))
 			suspect := suspects[0]

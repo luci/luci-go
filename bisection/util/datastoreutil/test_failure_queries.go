@@ -25,7 +25,6 @@ import (
 // GetTestFailures returns all TestFailures for a test.
 // Optionally filter by variant_hash.
 func GetTestFailures(c context.Context, project, testID, refHash, variantHash string) ([]*model.TestFailure, error) {
-	testFailures := []*model.TestFailure{}
 	q := datastore.NewQuery("TestFailure").
 		Eq("project", project).
 		Eq("test_id", testID).
@@ -33,8 +32,5 @@ func GetTestFailures(c context.Context, project, testID, refHash, variantHash st
 	if variantHash != "" {
 		q = q.Eq("variant_hash", variantHash)
 	}
-	if err := datastore.GetAll(c, q, &testFailures); err != nil {
-		return nil, err
-	}
-	return testFailures, nil
+	return datastore.RunQuery[*model.TestFailure](c, q).AsSlice()
 }

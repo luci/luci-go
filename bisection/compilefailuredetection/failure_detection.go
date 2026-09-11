@@ -388,8 +388,7 @@ func createCompileFailureModel(c context.Context, failedBuild *buildbucketpb.Bui
 
 func searchAnalysis(c context.Context, firstFailedBuildId int64) (*model.CompileFailureAnalysis, error) {
 	q := datastore.NewQuery("CompileFailureAnalysis").Eq("first_failed_build_id", firstFailedBuildId)
-	analyses := []*model.CompileFailureAnalysis{}
-	err := datastore.GetAll(c, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.CompileFailureAnalysis](c, q).AsSlice()
 	if err != nil {
 		logging.Errorf(c, "Error querying datastore for analysis for first_failed_build_id %d: %s", firstFailedBuildId, err)
 		return nil, err

@@ -219,8 +219,7 @@ func fetchTestAnalyses(ctx context.Context) ([]*model.TestFailureAnalysis, error
 	// Query all analyses within 14 days.
 	cutoffTime := clock.Now(ctx).Add(-time.Hour * 24 * daysToLookBack)
 	q := datastore.NewQuery("TestFailureAnalysis").Gt("create_time", cutoffTime).Order("-create_time")
-	analyses := []*model.TestFailureAnalysis{}
-	err := datastore.GetAll(ctx, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.TestFailureAnalysis](ctx, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get test analyses: %w", err)
 	}
@@ -274,8 +273,7 @@ func fetchCompileAnalyses(ctx context.Context) ([]*model.CompileFailureAnalysis,
 	// Query all analyses within 14 days.
 	cutoffTime := clock.Now(ctx).Add(-time.Hour * 24 * daysToLookBack)
 	q := datastore.NewQuery("CompileFailureAnalysis").Gt("create_time", cutoffTime).Order("-create_time")
-	analyses := []*model.CompileFailureAnalysis{}
-	err := datastore.GetAll(ctx, q, &analyses)
+	analyses, err := datastore.RunQuery[*model.CompileFailureAnalysis](ctx, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("get compile analyses: %w", err)
 	}

@@ -156,13 +156,8 @@ func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalys
 }
 
 func fetchSuspectsForParentKey(c context.Context, parentKey *datastore.Key) ([]*model.Suspect, error) {
-	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Ancestor(parentKey)
-	err := datastore.GetAll(c, q, &suspects)
-	if err != nil {
-		return nil, err
-	}
-	return suspects, nil
+	return datastore.RunQuery[*model.Suspect](c, q).AsSlice()
 }
 
 // GetSuspectsForTestGenAIAnalysis returns all GenAI suspects for a test GenAI analysis.

@@ -347,8 +347,7 @@ func TestRunBisector(t *testing.T) {
 
 		// Check nthsection analysis.
 		q := datastore.NewQuery("TestNthSectionAnalysis").Eq("parent_analysis_key", datastore.KeyForObj(ctx, tfa))
-		nthSectionAnalyses := []*model.TestNthSectionAnalysis{}
-		err = datastore.GetAll(ctx, q, &nthSectionAnalyses)
+		nthSectionAnalyses, err := datastore.RunQuery[*model.TestNthSectionAnalysis](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(nthSectionAnalyses), should.Equal(1))
 		nsa := nthSectionAnalyses[0]
@@ -388,8 +387,7 @@ func TestRunBisector(t *testing.T) {
 
 		// Check that rerun model was created.
 		q = datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
-		reruns := []*model.TestSingleRerun{}
-		err = datastore.GetAll(ctx, q, &reruns)
+		reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(reruns), should.Equal(2))
 
@@ -521,16 +519,14 @@ func TestRunBisector(t *testing.T) {
 
 		// Check suspect is created.
 		q := datastore.NewQuery("Suspect")
-		suspects := []*model.Suspect{}
-		err = datastore.GetAll(ctx, q, &suspects)
+		suspects, err := datastore.RunQuery[*model.Suspect](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.Equal(1))
 		suspect := suspects[0]
 
 		// Check nthsection analysis.
 		q = datastore.NewQuery("TestNthSectionAnalysis").Eq("parent_analysis_key", datastore.KeyForObj(ctx, tfa))
-		nthSectionAnalyses := []*model.TestNthSectionAnalysis{}
-		err = datastore.GetAll(ctx, q, &nthSectionAnalyses)
+		nthSectionAnalyses, err := datastore.RunQuery[*model.TestNthSectionAnalysis](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(nthSectionAnalyses), should.Equal(1))
 		nsa := nthSectionAnalyses[0]
@@ -583,8 +579,7 @@ func TestRunBisector(t *testing.T) {
 
 		// Check that no rerun models were created.
 		q = datastore.NewQuery("TestSingleRerun").Eq("nthsection_analysis_key", datastore.KeyForObj(ctx, nsa))
-		reruns := []*model.TestSingleRerun{}
-		err = datastore.GetAll(ctx, q, &reruns)
+		reruns, err := datastore.RunQuery[*model.TestSingleRerun](ctx, q).AsSlice()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(reruns), should.BeZero)
 

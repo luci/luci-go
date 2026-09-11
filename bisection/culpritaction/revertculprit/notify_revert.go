@@ -67,9 +67,8 @@ func NotifyRevertLanded(ctx context.Context, treeName string, culpritModel *mode
 func isCulpritTreeCloser(ctx context.Context, culprit *model.Suspect) (bool, error) {
 	// Step 1: Query all suspects with the same commit hash
 	// The GitilesCommit struct is embedded, so we access its Id field directly
-	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Eq("Id", culprit.GitilesCommit.Id)
-	err := datastore.GetAll(ctx, q, &suspects)
+	suspects, err := datastore.RunQuery[*model.Suspect](ctx, q).AsSlice()
 	if err != nil {
 		return false, errors.Fmt("failed to query suspects with same commit ID: %w", err)
 	}

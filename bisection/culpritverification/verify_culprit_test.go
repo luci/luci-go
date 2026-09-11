@@ -229,14 +229,12 @@ func TestVerifySuspect(t *testing.T) {
 
 			// Check that 2 SingleRerun model was created
 			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerun1))
-			singleReruns := []*model.SingleRerun{}
-			err = datastore.GetAll(c, q, &singleReruns)
+			singleReruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.Equal(1))
 
 			q = datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerun2))
-			singleReruns = []*model.SingleRerun{}
-			err = datastore.GetAll(c, q, &singleReruns)
+			singleReruns, err = datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.Equal(1))
 		})
@@ -341,8 +339,7 @@ func TestVerifySuspect(t *testing.T) {
 
 			// Verify no reruns were created
 			q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
-			singleReruns := []*model.SingleRerun{}
-			err = datastore.GetAll(c, q, &singleReruns)
+			singleReruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.BeZero)
 		})
@@ -366,8 +363,7 @@ func TestVerifySuspect(t *testing.T) {
 
 			// Check that no rerun was created
 			q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
-			singleReruns := []*model.SingleRerun{}
-			err = datastore.GetAll(c, q, &singleReruns)
+			singleReruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.BeZero)
 			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Unverified))
@@ -418,8 +414,7 @@ func TestVerifySuspect(t *testing.T) {
 
 			// Check that no rerun was created
 			q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
-			singleReruns := []*model.SingleRerun{}
-			err = datastore.GetAll(c, q, &singleReruns)
+			singleReruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.BeZero)
 			assert.Loosely(t, datastore.Get(c, suspect), should.BeNil)
