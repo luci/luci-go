@@ -380,15 +380,15 @@ type loginRun struct {
 }
 
 func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.Env) int {
+	ctx := cli.GetContext(a, c, env)
 	opts, err := c.flags.Options()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInvalidInput
 	}
-	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
 	if err := authenticator.Login(); err != nil {
-		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err)
+		logging.Errorf(ctx, "Login failed: %s", err)
 		return ExitCodeBadLogin
 	}
 	var tokenInfo tokenInfo
@@ -398,7 +398,7 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 		tokenInfo, err = oauthTokenInfo(ctx, authenticator)
 	}
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		if errors.Is(err, errTokenInternal) {
 			return ExitCodeInternalError
 		}
@@ -441,15 +441,15 @@ type logoutRun struct {
 }
 
 func (c *logoutRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(a, c, env)
 	opts, err := c.flags.Options()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInvalidInput
 	}
-	ctx := cli.GetContext(a, c, env)
 	err = auth.NewAuthenticator(ctx, auth.SilentLogin, opts).PurgeCredentialsCache()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInternalError
 	}
 	return ExitCodeSuccess
@@ -492,12 +492,12 @@ type infoRun struct {
 }
 
 func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.Env) (exitCode int) {
+	ctx := cli.GetContext(a, c, env)
 	opts, err := c.flags.Options()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInvalidInput
 	}
-	ctx := cli.GetContext(a, c, env)
 	var autoMethod string
 	if opts.Method == auth.AutoSelectMethod {
 		autoMethod = " (selected automatically)"
@@ -530,10 +530,10 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	switch _, err := authenticator.Client(); {
 	case err == auth.ErrLoginRequired:
-		fmt.Fprintln(os.Stderr, "Not logged in.")
+		logging.Errorf(ctx, "Not logged in.")
 		return ExitCodeNoValidToken
 	case err != nil:
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInternalError
 	}
 
@@ -545,7 +545,7 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 	}
 
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		if errors.Is(err, errTokenInternal) {
 			return ExitCodeInternalError
 		}
@@ -568,12 +568,12 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 
 			jsonWriter, err = os.Create(c.jsonOutput)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
+				logging.Errorf(ctx, "%s", err)
 				return ExitCodeInvalidInput
 			}
 			defer func() {
 				if err := jsonWriter.Close(); err != nil {
-					fmt.Fprintln(os.Stderr, err)
+					logging.Errorf(ctx, "%s", err)
 					exitCode = ExitCodeInternalError
 				}
 			}()
@@ -581,7 +581,7 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 
 		// Write JSON to the destination determined above.
 		if err = json.NewEncoder(jsonWriter).Encode(tokenInfo); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			logging.Errorf(ctx, "%s", err)
 			return ExitCodeInternalError
 		}
 	}
@@ -631,28 +631,28 @@ type tokenRun struct {
 }
 
 func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands.Env) (exitCode int) {
+	ctx := cli.GetContext(a, c, env)
 	opts, err := c.flags.Options()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInvalidInput
 	}
 	if c.lifetime > 30*time.Minute {
-		fmt.Fprintf(os.Stderr, "Requested -lifetime (%s) must not exceed 30m.\n", c.lifetime)
+		logging.Errorf(ctx, "Requested -lifetime (%s) must not exceed 30m.", c.lifetime)
 		return ExitCodeInvalidInput
 	}
 	if c.jsonFormat != "luci" && c.jsonFormat != "reclient" && c.jsonFormat != "bazel" {
-		fmt.Fprintf(os.Stderr, "Unknown -json-format %q, must be 'luci', 'reclient' or 'bazel'.\n", c.jsonFormat)
+		logging.Errorf(ctx, "Unknown -json-format %q, must be 'luci', 'reclient' or 'bazel'.", c.jsonFormat)
 		return ExitCodeInvalidInput
 	}
 
-	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	token, err := authenticator.GetAccessToken(c.lifetime)
 	if err != nil {
 		if err == auth.ErrLoginRequired {
 			c.askToLogin(opts)
 		} else {
-			fmt.Fprintln(os.Stderr, err)
+			logging.Errorf(ctx, "%s", err)
 		}
 		return ExitCodeNoValidToken
 	}
@@ -667,12 +667,12 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 		if c.jsonOutput != "-" {
 			out, err = os.Create(c.jsonOutput)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
+				logging.Errorf(ctx, "%s", err)
 				return ExitCodeInvalidInput
 			}
 			defer func() {
 				if err := out.Close(); err != nil {
-					fmt.Fprintln(os.Stderr, err)
+					logging.Errorf(ctx, "%s", err)
 					exitCode = ExitCodeInternalError
 				}
 			}()
@@ -696,7 +696,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 			}{map[string][]string{"Authorization": []string{"Bearer " + token.AccessToken}}, token.Expiry.UTC().Format(time.RFC3339)}
 		}
 		if err = json.NewEncoder(out).Encode(data); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			logging.Errorf(ctx, "%s", err)
 			return ExitCodeInternalError
 		}
 	}
@@ -756,7 +756,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 
 	opts, err := c.flags.Options()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInvalidInput
 	}
 	opts.ActAsServiceAccount = c.actAs
@@ -765,7 +765,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 
 	// 'args' specify a subcommand to run.
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "Specify a command to run:\n  %s context [flags] [--] <bin> [args]\n", os.Args[0])
+		logging.Errorf(ctx, "Specify a command to run: %s context [flags] [--] <bin> [args]", os.Args[0])
 		return ExitCodeInvalidInput
 	}
 
@@ -788,7 +788,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		if err == auth.ErrLoginRequired {
 			c.askToLogin(opts)
 		} else {
-			fmt.Fprintln(os.Stderr, err)
+			logging.Errorf(ctx, "%s", err)
 		}
 		return ExitCodeNoValidToken
 	}
@@ -806,7 +806,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		EnableFirebaseAuth:  true,
 	}
 	if err = authCtx.Launch(ctx, ""); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInternalError
 	}
 	defer authCtx.Close(ctx) // logs errors inside
@@ -815,7 +815,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	cmdEnv := environ.System()
 	exported, err := lucictx.Export(authCtx.Export(ctx, cmdEnv))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInternalError
 	}
 	defer exported.Close()
@@ -835,7 +835,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 
 	// Launch.
 	if err = cmd.Start(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Errorf(ctx, "%s", err)
 		return ExitCodeInvalidInput
 	}
 
