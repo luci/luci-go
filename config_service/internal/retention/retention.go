@@ -38,9 +38,9 @@ const (
 
 // DeleteStaleConfigs deletes stale configs which exceeds the retention time.
 func DeleteStaleConfigs(ctx context.Context) error {
-	var cfgsets []*model.ConfigSet
 	cfgQuery := datastore.NewQuery(model.ConfigSetKind).Project("latest_revision.id")
-	if err := datastore.GetAll(ctx, cfgQuery, &cfgsets); err != nil {
+	cfgsets, err := datastore.RunQuery[*model.ConfigSet](ctx, cfgQuery).AsSlice()
+	if err != nil {
 		return errors.Fmt("failed to query all config sets: %w", err)
 	}
 	cfgsetToRev := make(map[string]string, len(cfgsets))
@@ -48,9 +48,9 @@ func DeleteStaleConfigs(ctx context.Context) error {
 		cfgsetToRev[string(cs.ID)] = cs.LatestRevision.ID
 	}
 
-	var files []*model.File
 	fileQuery := datastore.NewQuery(model.FileKind)
-	if err := datastore.GetAll(ctx, fileQuery, &files); err != nil {
+	files, err := datastore.RunQuery[*model.File](ctx, fileQuery).AsSlice()
+	if err != nil {
 		return errors.Fmt("failed to query all config files: %w", err)
 	}
 
@@ -79,7 +79,7 @@ func DeleteStaleConfigs(ctx context.Context) error {
 
 	// Best effort to delete GCS files. No need to put into the same transaction
 	// with the above File entities deletion.
-	err := parallel.WorkPool(8, func(workCh chan<- func() error) {
+	err = parallel.WorkPool(8, func(workCh chan<- func() error) {
 		for _, f := range toDelGsFiles.ToSlice() {
 			f := gs.Path(f)
 			if !f.IsFullPath() {

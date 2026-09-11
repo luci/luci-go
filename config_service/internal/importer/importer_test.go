@@ -263,9 +263,9 @@ func TestImportConfigSet(t *testing.T) {
 					ConfigSet: datastore.KeyForObj(ctx, cfgSet),
 				}
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
-				var files []*model.File
 				assert.Loosely(t, datastore.Get(ctx, cfgSet, attempt), should.BeNil)
-				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil)
+				files, err := datastore.RunQuery[*model.File](ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey)).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 
 				assert.Loosely(t, cfgSet.Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
@@ -678,8 +678,8 @@ func TestImportConfigSet(t *testing.T) {
 					err := importer.ImportConfigSet(ctx, cs)
 					assert.Loosely(t, err, should.BeNil)
 					revKey := datastore.MakeKey(ctx, model.ConfigSetKind, string(cs), model.RevisionKind, latestCommit.Id)
-					var files []*model.File
-					assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil)
+					files, err := datastore.RunQuery[*model.File](ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey)).AsSlice()
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, files, should.HaveLength(1))
 					assert.Loosely(t, files[0].Path, should.Equal("foo.cfg"))
 					attempt := &model.ImportAttempt{
@@ -706,8 +706,8 @@ func TestImportConfigSet(t *testing.T) {
 					check := func(t testing.TB) {
 						t.Helper()
 						revKey := datastore.MakeKey(ctx, model.ConfigSetKind, string(cs), model.RevisionKind, latestCommit.Id)
-						var files []*model.File
-						assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil, truth.LineContext())
+						files, err := datastore.RunQuery[*model.File](ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey)).AsSlice()
+						assert.Loosely(t, err, should.BeNil, truth.LineContext())
 						assert.Loosely(t, files, should.BeEmpty, truth.LineContext())
 						attempt := &model.ImportAttempt{
 							ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, string(cs)),
@@ -776,8 +776,8 @@ func TestImportConfigSet(t *testing.T) {
 
 				assert.Loosely(t, err, should.BeNil)
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
-				var files []*model.File
-				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil)
+				files, err := datastore.RunQuery[*model.File](ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey)).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, files, should.HaveLength(1))
 				file := files[0]
 				assert.Loosely(t, file.Path, should.Equal("large"))
@@ -908,8 +908,8 @@ func TestImportConfigSet(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("failed to upload file"))
 				assert.Loosely(t, err, should.ErrLike("GCS internal error"))
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
-				var files []*model.File
-				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil)
+				files, err := datastore.RunQuery[*model.File](ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey)).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, files, should.HaveLength(0))
 
 				attempt := &model.ImportAttempt{

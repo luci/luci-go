@@ -160,8 +160,8 @@ func importAllConfigs(ctx context.Context, dispatcher *tq.Dispatcher) error {
 	}
 
 	// Delete stale config sets.
-	var keys []*datastore.Key
-	if err := datastore.GetAll(ctx, datastore.NewQuery(model.ConfigSetKind).KeysOnly(true), &keys); err != nil {
+	keys, err := datastore.RunQuery[*datastore.Key](ctx, datastore.NewQuery(model.ConfigSetKind).KeysOnly(true)).AsSlice()
+	if err != nil {
 		return errors.Fmt("failed to fetch all config sets from Datastore: %w", err)
 	}
 	cfgSetsInDB := stringset.New(len(keys))

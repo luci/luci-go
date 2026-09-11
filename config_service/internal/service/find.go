@@ -144,8 +144,8 @@ func (m *Finder) RefreshPeriodically(ctx context.Context) {
 }
 
 func (m *Finder) refresh(ctx context.Context) error {
-	var services []*model.Service
-	if err := datastore.GetAll(ctx, datastore.NewQuery(model.ServiceKind), &services); err != nil {
+	services, err := datastore.RunQuery[*model.Service](ctx, datastore.NewQuery(model.ServiceKind)).AsSlice()
+	if err != nil {
 		return fmt.Errorf("failed to query all Services: %w", err)
 	}
 	m.mu.Lock()

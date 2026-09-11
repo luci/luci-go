@@ -84,7 +84,7 @@ func (c Configs) GetConfigSet(ctx context.Context, req *pb.GetConfigSetRequest) 
 	if m.MustIncludes("file_paths") != mask.Exclude || m.MustIncludes("configs") != mask.Exclude {
 		query := datastore.NewQuery(model.FileKind).
 			Ancestor(datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSet.ID), model.RevisionKind, cfgSet.LatestRevision.ID))
-		if err = datastore.GetAll(ctx, query, &files); err != nil {
+		if files, err = datastore.RunQuery[*model.File](ctx, query).AsSlice(); err != nil {
 			logging.Errorf(ctx, "error while fetching config files: %s", err)
 			return nil, status.Errorf(codes.Internal, "error while fetching config files")
 		}

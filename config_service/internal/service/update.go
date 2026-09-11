@@ -96,8 +96,8 @@ func Update(ctx context.Context) error {
 }
 
 func computeServicesToDelete(ctx context.Context, servicesCfg *cfgcommonpb.ServicesCfg) ([]*datastore.Key, error) {
-	var keys []*datastore.Key
-	if err := datastore.GetAll(ctx, datastore.NewQuery(model.ServiceKind).KeysOnly(true), &keys); err != nil {
+	keys, err := datastore.RunQuery[*datastore.Key](ctx, datastore.NewQuery(model.ServiceKind).KeysOnly(true)).AsSlice()
+	if err != nil {
 		return nil, fmt.Errorf("failed to query all service keys: %w", err)
 	}
 	currentServices := stringset.New(len(servicesCfg.GetServices()))
