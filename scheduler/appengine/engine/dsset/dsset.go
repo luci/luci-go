@@ -223,7 +223,9 @@ func (s *Set) List(c context.Context) (*Listing, error) {
 		go func(i int) {
 			defer wg.Done()
 			q := datastore.NewQuery("dsset.Item").Ancestor(s.shardRoot(c, i))
-			errs.Assign(i+1, datastore.GetAll(c, q, &shards[i]))
+			var err error
+			shards[i], err = datastore.RunQuery[*itemEntity](c, q).AsSlice()
+			errs.Assign(i+1, err)
 		}(i)
 	}
 

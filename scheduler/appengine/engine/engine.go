@@ -560,8 +560,8 @@ func (e *engineImpl) GetAllProjects(c context.Context) ([]string, error) {
 		Eq("Enabled", true).
 		Project("ProjectID").
 		Distinct(true)
-	entities := []Job{}
-	if err := ds.GetAll(c, q, &entities); err != nil {
+	entities, err := ds.RunQuery[Job](c, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
 	// Filter out duplicates, sort.
@@ -638,8 +638,8 @@ func (e *engineImpl) ResetAllJobsOnDevServer(c context.Context) error {
 		return errors.New("ResetAllJobsOnDevServer must not be used in production")
 	}
 	q := ds.NewQuery("Job").Eq("Enabled", true)
-	keys := []*ds.Key{}
-	if err := ds.GetAll(c, q, &keys); err != nil {
+	keys, err := ds.RunQuery[*ds.Key](c, q).AsSlice()
+	if err != nil {
 		return transient.Tag.Apply(err)
 	}
 	wg := sync.WaitGroup{}
@@ -829,8 +829,8 @@ func (e *engineImpl) getProjectJobs(c context.Context, projectID string) (map[st
 	q := ds.NewQuery("Job").
 		Eq("Enabled", true).
 		Eq("ProjectID", projectID)
-	entities := []*Job{}
-	if err := ds.GetAll(c, q, &entities); err != nil {
+	entities, err := ds.RunQuery[*Job](c, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
 	out := make(map[string]*Job, len(entities))
@@ -845,8 +845,8 @@ func (e *engineImpl) getProjectJobs(c context.Context, projectID string) (map[st
 // queryEnabledVisibleJobs fetches all jobs from the query and keeps only ones
 // that are enabled and visible by the current caller.
 func (e *engineImpl) queryEnabledVisibleJobs(c context.Context, q *ds.Query) ([]*Job, error) {
-	entities := []*Job{}
-	if err := ds.GetAll(c, q, &entities); err != nil {
+	entities, err := ds.RunQuery[*Job](c, q).AsSlice()
+	if err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
 	// Non-ancestor query used, need to recheck filters.

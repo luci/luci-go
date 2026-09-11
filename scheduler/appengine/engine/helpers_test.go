@@ -56,9 +56,12 @@ var epoch = time.Unix(1442270520, 0).UTC()
 
 func allJobs(c context.Context) []Job {
 	datastore.GetTestable(c).CatchupIndexes()
-	entities := []Job{}
-	if err := datastore.GetAll(c, datastore.NewQuery("Job"), &entities); err != nil {
+	entities, err := datastore.RunQuery[Job](c, datastore.NewQuery("Job")).AsSlice()
+	if err != nil {
 		panic(err)
+	}
+	if entities == nil {
+		entities = []Job{}
 	}
 	// Strip UTC location pointers from zero time.Time{} so that ShouldResemble
 	// can compare it to default time.Time{}. nil location is UTC too.
