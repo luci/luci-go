@@ -39,8 +39,8 @@ func getParentViaStage(ctx context.Context, stage *orchestratorpb.Stage) (*model
 
 	stageAttemptIDStr := ids.ToString(stageAttemptID)
 	q := datastore.NewQuery(model.BuildKind).Eq("stage_attempt_id", stageAttemptIDStr)
-	var blds []*model.Build
-	if err := datastore.GetAll(ctx, q, &blds); err != nil {
+	blds, err := datastore.RunQuery[*model.Build](ctx, q).AsSlice()
+	if err != nil {
 		logging.Errorf(ctx, "Failed to query builds by stage_attempt_id %q: %s", stageAttemptID, err)
 		return nil, appstatus.Error(codes.Internal, "failed to query builds by stage_attempt_id")
 	}

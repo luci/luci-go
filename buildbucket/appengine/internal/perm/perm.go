@@ -215,8 +215,8 @@ func BucketsByPerm(ctx context.Context, p realms.Permission, project string) (bu
 		projKey = datastore.KeyForObj(ctx, &model.Project{ID: project})
 	}
 
-	var bucketKeys []*datastore.Key
-	if err := datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(projKey), &bucketKeys); err != nil {
+	bucketKeys, err := datastore.RunQuery[*datastore.Key](ctx, datastore.NewQuery(model.BucketKind).Ancestor(projKey)).AsSlice()
+	if err != nil {
 		return nil, err
 	}
 

@@ -1578,8 +1578,8 @@ func TestUpdateProject(t *testing.T) {
 		// Datastore is empty. Mimic the first time receiving configs and store all
 		// of them into Datastore.
 		assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
-		var actualBkts []*model.Bucket
-		assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+		actualBkts, err := datastore.RunQuery[*model.Bucket](ctx, datastore.NewQuery(model.BucketKind)).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(actualBkts), should.Equal(5))
 		assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 			{
@@ -1644,8 +1644,8 @@ func TestUpdateProject(t *testing.T) {
 			},
 		}))
 
-		var actualBuilders []*model.Builder
-		assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+		actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind)).AsSlice()
+		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(actualBuilders), should.Equal(2))
 		expectedBuilder1 := &pb.BuilderConfig{
 			Name:                         "linux",
@@ -1723,8 +1723,8 @@ func TestUpdateProject(t *testing.T) {
 			cfgClient.v8BuildbucketCfg = ""
 
 			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
-			var actualBkts []*model.Bucket
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			actualBkts, err := datastore.RunQuery[*model.Bucket](ctx, datastore.NewQuery(model.BucketKind)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBkts), should.Equal(5))
 			assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 				{
@@ -1791,8 +1791,8 @@ func TestUpdateProject(t *testing.T) {
 				},
 			}))
 
-			var actualBuilders []*model.Builder
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+			actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBuilders), should.Equal(2))
 			expectedBuilder1 := &pb.BuilderConfig{
 				Name:                         "linux",
@@ -1967,8 +1967,8 @@ func TestUpdateProject(t *testing.T) {
 			cfgClient.dartBuildbucketCfg = ""
 
 			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
-			var actualBkts []*model.Bucket
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			actualBkts, err := datastore.RunQuery[*model.Bucket](ctx, datastore.NewQuery(model.BucketKind)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBkts), should.Equal(2))
 			assert.Loosely(t, stripBucketProtos(actualBkts)[0], should.Resemble(&pb.Bucket{
 				Name: "try",
@@ -1985,8 +1985,8 @@ func TestUpdateProject(t *testing.T) {
 				Revision: "new!",
 			}))
 
-			var actualBuilders []*model.Builder
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+			actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBuilders), should.Equal(1))
 			expectedBuilder1 := &pb.BuilderConfig{
 				Name:                         "linux",
@@ -2111,8 +2111,8 @@ func TestUpdateProject(t *testing.T) {
 			cfgClient.v8BuildbucketCfg = ""
 
 			assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
-			var actualBkts []*model.Bucket
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			actualBkts, err := datastore.RunQuery[*model.Bucket](ctx, datastore.NewQuery(model.BucketKind)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBkts), should.Equal(4))
 			assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 				{
@@ -2183,8 +2183,8 @@ func TestUpdateProject(t *testing.T) {
 
 			// We must not delete buckets or builders defined in a project that
 			// currently have a broken config.
-			var actualBkts []*model.Bucket
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			actualBkts, err := datastore.RunQuery[*model.Bucket](ctx, datastore.NewQuery(model.BucketKind)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBkts), should.Equal(1))
 			assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 				{
@@ -2204,8 +2204,8 @@ func TestUpdateProject(t *testing.T) {
 				},
 			}))
 
-			var actualBuilders []*model.Builder
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+			actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBuilders), should.Equal(1))
 			dartBuilder := &pb.BuilderConfig{
 				Name:       "linux",
@@ -2239,8 +2239,8 @@ func TestUpdateProject(t *testing.T) {
 
 			// Don't delete the stored buckets and builders when luci-config returns
 			// an error for fetching that project config.
-			var actualBkts []*model.Bucket
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), should.BeNil)
+			actualBkts, err := datastore.RunQuery[*model.Bucket](ctx, datastore.NewQuery(model.BucketKind)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBkts), should.Equal(1))
 			assert.Loosely(t, stripBucketProtos(actualBkts), should.Resemble([]*pb.Bucket{
 				{
@@ -2260,8 +2260,8 @@ func TestUpdateProject(t *testing.T) {
 				},
 			}))
 
-			var actualBuilders []*model.Builder
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), should.BeNil)
+			actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind)).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBuilders), should.Equal(1))
 			dartBuilder := &pb.BuilderConfig{
 				Name:       "linux",
@@ -2292,8 +2292,8 @@ func TestUpdateProject(t *testing.T) {
 			actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
 			assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
 			assert.Loosely(t, actualBucket.Revision, should.Equal("clear_dart"))
-			var actualBuilders []*model.Builder
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+			actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__")).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBuilders), should.BeZero)
 
 			t.Run("to put 499 builders", func(t *ftt.Test) {
@@ -2309,8 +2309,8 @@ func TestUpdateProject(t *testing.T) {
 				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
 				assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
 				assert.Loosely(t, actualBucket.Revision, should.Equal("put499"))
-				var actualBuilders []*model.Builder
-				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+				actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__")).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(actualBuilders), should.Equal(499))
 			})
 
@@ -2327,8 +2327,8 @@ func TestUpdateProject(t *testing.T) {
 				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
 				assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
 				assert.Loosely(t, actualBucket.Revision, should.Equal("put500"))
-				var actualBuilders []*model.Builder
-				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+				actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__")).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(actualBuilders), should.Equal(500))
 			})
 
@@ -2345,8 +2345,8 @@ func TestUpdateProject(t *testing.T) {
 				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
 				assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
 				assert.Loosely(t, actualBucket.Revision, should.Equal("put1105"))
-				var actualBuilders []*model.Builder
-				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+				actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__")).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(actualBuilders), should.Equal(1105))
 
 				t.Run("delete 111 and update 994", func(t *ftt.Test) {
@@ -2366,8 +2366,8 @@ func TestUpdateProject(t *testing.T) {
 					actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
 					assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
 					assert.Loosely(t, actualBucket.Revision, should.Equal("del111_update994"))
-					var actualBuilders []*model.Builder
-					assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+					actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__")).AsSlice()
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(actualBuilders), should.Equal(994))
 					for _, bldr := range actualBuilders {
 						assert.Loosely(t, strings.HasSuffix(bldr.ID, "1"), should.BeFalse)
@@ -2391,8 +2391,8 @@ func TestUpdateProject(t *testing.T) {
 					actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
 					assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
 					assert.Loosely(t, actualBucket.Revision, should.Equal("del994_update111"))
-					var actualBuilders []*model.Builder
-					assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+					actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__")).AsSlice()
+					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(actualBuilders), should.Equal(111))
 					for _, bldr := range actualBuilders {
 						assert.Loosely(t, strings.HasSuffix(bldr.ID, "1"), should.BeTrue)
@@ -2411,8 +2411,8 @@ func TestUpdateProject(t *testing.T) {
 			actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
 			assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
 			assert.Loosely(t, actualBucket.Revision, should.Equal("clear_dart"))
-			var actualBuilders []*model.Builder
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+			actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__")).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(actualBuilders), should.BeZero)
 
 			originalMaxBatchSize := maxBatchSize
@@ -2447,8 +2447,8 @@ func TestUpdateProject(t *testing.T) {
 				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
 				assert.Loosely(t, datastore.Get(ctx, actualBucket), should.BeNil)
 				assert.Loosely(t, actualBucket.Revision, should.Equal("sum_large"))
-				var actualBuilders []*model.Builder
-				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), should.BeNil)
+				actualBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__")).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(actualBuilders), should.Equal(212))
 			})
 		})
@@ -2533,11 +2533,11 @@ func TestUpdateProject(t *testing.T) {
 				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 				actualProj := &model.Project{ID: "dart"}
 				assert.Loosely(t, datastore.Get(ctx, actualProj), should.Equal(datastore.ErrNoSuchEntity))
-				dartBuckets := []*model.Bucket{}
-				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.ProjectKey(ctx, "dart")), &dartBuckets), should.BeNil)
+				dartBuckets, err := datastore.RunQuery[*model.Bucket](ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.ProjectKey(ctx, "dart"))).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, dartBuckets, should.BeEmpty)
-				dartBuilders := []*model.Builder{}
-				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.BucketKey(ctx, "dart", "try")), &dartBuilders), should.BeNil)
+				dartBuilders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.BucketKey(ctx, "dart", "try"))).AsSlice()
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, dartBuilders, should.BeEmpty)
 			})
 		})

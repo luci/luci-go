@@ -136,8 +136,8 @@ func UpdateProjectCfg(ctx context.Context) error {
 		logging.Errorf(ctx, err.Error())
 	}
 
-	var bucketKeys []*datastore.Key
-	if err := datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &bucketKeys); err != nil {
+	bucketKeys, err := datastore.RunQuery[*datastore.Key](ctx, datastore.NewQuery(model.BucketKind)).AsSlice()
+	if err != nil {
 		return errors.Fmt("failed to fetch all bucket keys: %w", err)
 	}
 
@@ -151,8 +151,8 @@ func UpdateProjectCfg(ctx context.Context) error {
 		bucketsToDelete[project][bk.StringID()] = bk
 	}
 
-	var projKeys []*datastore.Key
-	if err := datastore.GetAll(ctx, datastore.NewQuery(model.ProjectKind), &projKeys); err != nil {
+	projKeys, err := datastore.RunQuery[*datastore.Key](ctx, datastore.NewQuery(model.ProjectKind)).AsSlice()
+	if err != nil {
 		return errors.Fmt("failed to fetch all project keys: %w", err)
 	}
 	projsToDelete := make(map[string]*datastore.Key) // project -> project keys
@@ -243,9 +243,9 @@ func UpdateProjectCfg(ctx context.Context) error {
 				continue
 			}
 
-			var builders []*model.Builder
 			bktKey := model.BucketKey(ctx, project, cfgBktName)
-			if err := datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(bktKey), &builders); err != nil {
+			builders, err := datastore.RunQuery[*model.Builder](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(bktKey)).AsSlice()
+			if err != nil {
 				return errors.Fmt("failed to fetch builders for %s.%s: %w", project, cfgBktName, err)
 			}
 
@@ -331,7 +331,6 @@ func UpdateProjectCfg(ctx context.Context) error {
 					Parent: bldr.Parent,
 				})
 			}
-			var err error
 			// check if they can update transactionally.
 			if len(buildersToPut) == 1 && len(buildersToPut[0])+len(bldrsToDel) < maxEntityCount {
 				err = transacUpdate(ctx, bucketToUpdate, buildersToPut[0], bldrsToDel)
@@ -379,8 +378,8 @@ func UpdateProjectCfg(ctx context.Context) error {
 	var toDelete []*datastore.Key
 	for _, bktMap := range bucketsToDelete {
 		for _, bktKey := range bktMap {
-			bldrKeys := []*datastore.Key{}
-			if err := datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(bktKey), &bldrKeys); err != nil {
+			bldrKeys, err := datastore.RunQuery[*datastore.Key](ctx, datastore.NewQuery(model.BuilderKind).Ancestor(bktKey)).AsSlice()
+			if err != nil {
 				return err
 			}
 			toDelete = append(toDelete, bldrKeys...)

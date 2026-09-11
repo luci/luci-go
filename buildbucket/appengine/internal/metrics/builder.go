@@ -132,8 +132,8 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 		Limit(1)
 	eg, eCtx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		var b []*model.Build
-		if err := datastore.GetAll(eCtx, q.Eq("never_leased", false), &b); err != nil {
+		b, err := datastore.RunQuery[*model.Build](eCtx, q.Eq("never_leased", false)).AsSlice()
+		if err != nil {
 			return err
 		}
 		if len(b) > 0 {
@@ -142,8 +142,8 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 		return nil
 	})
 	eg.Go(func() error {
-		var b []*model.Build
-		if err := datastore.GetAll(eCtx, q.Eq("never_leased", true), &b); err != nil {
+		b, err := datastore.RunQuery[*model.Build](eCtx, q.Eq("never_leased", true)).AsSlice()
+		if err != nil {
 			return err
 		}
 		if len(b) > 0 {
@@ -158,16 +158,16 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 	var mu sync.Mutex
 	for _, name := range cmNames {
 		eg.Go(func() (err error) {
-			var b []*model.Build
-			if err = datastore.GetAll(eCtx, q.Eq("custom_builder_max_age_metrics", name), &b); err != nil {
-				return
+			b, err := datastore.RunQuery[*model.Build](eCtx, q.Eq("custom_builder_max_age_metrics", name)).AsSlice()
+			if err != nil {
+				return err
 			}
 			if len(b) > 0 {
 				mu.Lock()
 				cmRes[name] = b[0].CreateTime
 				mu.Unlock()
 			}
-			return
+			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
@@ -276,14 +276,14 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 }
 
 func reportConsecutiveFailures(ctx context.Context, project, bucket, builder string, bldrDefinedMetrics []string) error {
-	var b []*model.Build
 	// TODO(b/357664566): Make builder a dedicated field in Build model and use
 	// it instead of tags in the query.
 	q := datastore.NewQuery(model.BuildKind).
 		Eq("bucket_id", protoutil.FormatBucketID(project, bucket)).
 		Eq("tags", "builder:"+builder).
 		Order("-status_changed_time")
-	if err := datastore.GetAll(ctx, q.Eq("status_v2", pb.Status_SUCCESS).Limit(1), &b); err != nil {
+	b, err := datastore.RunQuery[*model.Build](ctx, q.Eq("status_v2", pb.Status_SUCCESS).Limit(1)).AsSlice()
+	if err != nil {
 		return err
 	}
 

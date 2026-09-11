@@ -37,8 +37,8 @@ func getProjectBackendPairs(ctx context.Context) ([]*projectBackendPair, error) 
 	q := datastore.NewQuery(model.BuildKind).
 		Eq("incomplete", true).Gt("backend_target", "").
 		Project("project", "backend_target").Distinct(true)
-	var blds []*model.Build
-	if err := datastore.GetAll(ctx, q, &blds); err != nil {
+	blds, err := datastore.RunQuery[*model.Build](ctx, q).AsSlice()
+	if err != nil {
 		return nil, errors.Fmt("failed to fetch all project keys: %w", err)
 	}
 
