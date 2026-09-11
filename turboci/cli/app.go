@@ -16,6 +16,7 @@ package cli
 
 import (
 	"context"
+	"time"
 
 	"github.com/maruel/subcommands"
 
@@ -25,7 +26,12 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/system/signals"
 )
+
+// cleanupTimeout is the maximum duration granted to in-flight requests after an
+// interrupt/termination signal before canceling the context.
+const cleanupTimeout = 5 * time.Second
 
 // Params is the parameters for the Turbo CI CLI client.
 type Params struct {
@@ -40,7 +46,16 @@ func application(p Params) *cli.Application {
 		Name:  "turboci",
 		Title: "A CLI client for TurboCI.",
 		Context: func(ctx context.Context) context.Context {
-			return gologger.StdConfig.Use(ctx)
+			ctx = gologger.StdConfig.Use(ctx)
+			ctx, cancel := context.WithCancel(ctx)
+			// On the first interrupt/termination signal, give in-flight requests
+			// a short cleanup window to finish before canceling the context.
+			// HandleInterrupt aborts the process immediately (os.Exit) on a
+			// second signal.
+			signals.HandleInterrupt(func() {
+				time.AfterFunc(cleanupTimeout, cancel)
+			})
+			return ctx
 		},
 		Commands: []*subcommands.Command{
 			// TODO(b/502646298): Optimization - add a subcommand to keep a
