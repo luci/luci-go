@@ -26,6 +26,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -87,13 +89,43 @@ func legacyMockClient() *mockResultDBClient {
 	}
 }
 
+type mockBuildsClient struct {
+	grpcpb.BuildsClient
+	getBuild func(ctx context.Context, in *bbpb.GetBuildRequest) (*bbpb.Build, error)
+}
+
+func (m *mockBuildsClient) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	if m.getBuild != nil {
+		return m.getBuild(ctx, in)
+	}
+	return &bbpb.Build{}, nil
+}
+
+func testBuildsClient() *mockBuildsClient {
+	return &mockBuildsClient{
+		getBuild: func(ctx context.Context, in *bbpb.GetBuildRequest) (*bbpb.Build, error) {
+			if in.Builder != nil && in.Builder.Project == "chromium" && in.Builder.Bucket == "ci" && in.Builder.Builder == "linux-rel" && in.BuildNumber == 12345 {
+				return &bbpb.Build{
+					Id: 8738491827364512345,
+				}, nil
+			}
+			if in.Builder != nil && in.Builder.Project == "chromium" && in.Builder.Bucket == "ci" && in.Builder.Builder == "linux-win-cross-rel" && in.BuildNumber == 10470 {
+				return &bbpb.Build{
+					Id: 8712345678901234567,
+				}, nil
+			}
+			return &bbpb.Build{Id: 1111111111111111111}, nil
+		},
+	}
+}
+
 func TestExtractIDs(t *testing.T) {
 	ftt.Run(`ExtractIDs`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		t.Run(`Milo structured verdict URL with query params`, func(t *ftt.Test) {
 			url := "https://ci.chromium.org/ui/test-investigate/invocations/build-8676886509240051393/modules/%2F%2Fchrome%3Achrome_private_code_test/schemes/single/variants/b7de9035241e76cc/cases/*fixture?artifact=summary_node&result=0"
-			ids, err := ExtractIDs(ctx, legacyMockClient(), url, false)
+			ids, err := ExtractIDs(ctx, legacyMockClient(), nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-8676886509240051393"))
 			assert.Loosely(t, ids.VariantHash, should.Equal("b7de9035241e76cc"))
@@ -102,14 +134,14 @@ func TestExtractIDs(t *testing.T) {
 			assert.Loosely(t, ids.TestID, should.Equal("*fixture"))
 			assert.Loosely(t, ids.Legacy, should.BeTrue)
 
-			idsNoClient, err := ExtractIDs(ctx, nil, url, false)
+			idsNoClient, err := ExtractIDs(ctx, nil, nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsNoClient.Legacy, should.BeFalse)
 		})
 
 		t.Run(`Canonical test result artifact name`, func(t *ftt.Test) {
 			name := "invocations/build-123/tests/ninja%3A%2F%2Fchrome%2Ftest%3Abrowser_tests%2FMyTest.Case/results/0/artifacts/stdout"
-			ids, err := ExtractIDs(ctx, legacyMockClient(), name, false)
+			ids, err := ExtractIDs(ctx, legacyMockClient(), nil, name, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-123"))
 			assert.Loosely(t, ids.TestID, should.Equal("ninja://chrome/test:browser_tests/MyTest.Case"))
@@ -120,7 +152,7 @@ func TestExtractIDs(t *testing.T) {
 
 		t.Run(`Canonical test result name`, func(t *ftt.Test) {
 			name := "invocations/build-123/tests/ninja%3A%2F%2Fchrome%2Ftest/results/1"
-			ids, err := ExtractIDs(ctx, legacyMockClient(), name, false)
+			ids, err := ExtractIDs(ctx, legacyMockClient(), nil, name, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-123"))
 			assert.Loosely(t, ids.TestID, should.Equal("ninja://chrome/test"))
@@ -130,7 +162,7 @@ func TestExtractIDs(t *testing.T) {
 
 		t.Run(`Canonical work unit artifact name`, func(t *ftt.Test) {
 			name := "rootInvocations/ants-i123/workUnits/wu-1/artifacts/log.txt"
-			ids, err := ExtractIDs(ctx, nil, name, false)
+			ids, err := ExtractIDs(ctx, nil, nil, name, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("ants-i123"))
 			assert.Loosely(t, ids.WorkUnitID, should.Equal("wu-1"))
@@ -140,7 +172,7 @@ func TestExtractIDs(t *testing.T) {
 
 		t.Run(`Canonical work unit name`, func(t *ftt.Test) {
 			name := "rootInvocations/build-123/workUnits/run-tests"
-			ids, err := ExtractIDs(ctx, nil, name, false)
+			ids, err := ExtractIDs(ctx, nil, nil, name, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-123"))
 			assert.Loosely(t, ids.WorkUnitID, should.Equal("run-tests"))
@@ -149,86 +181,118 @@ func TestExtractIDs(t *testing.T) {
 
 		t.Run(`Milo build URL`, func(t *ftt.Test) {
 			url := "https://ci.chromium.org/ui/b/8676886509240051393"
-			ids, err := ExtractIDs(ctx, legacyMockClient(), url, false)
+			ids, err := ExtractIDs(ctx, legacyMockClient(), nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids.BuildID, should.Equal("8676886509240051393"))
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-8676886509240051393"))
 			assert.Loosely(t, ids.Legacy, should.BeTrue)
 
 			urlShort := "https://ci.chromium.org/b/8676886509240051393"
-			idsShort, err := ExtractIDs(ctx, legacyMockClient(), urlShort, false)
+			idsShort, err := ExtractIDs(ctx, legacyMockClient(), nil, urlShort, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsShort.BuildID, should.Equal("8676886509240051393"))
 			assert.Loosely(t, idsShort.InvocationID, should.Equal("build-8676886509240051393"))
 
 			urlBuild := "https://ci.chromium.org/build/8676886509240051393"
-			idsBuild, err := ExtractIDs(ctx, legacyMockClient(), urlBuild, false)
+			idsBuild, err := ExtractIDs(ctx, legacyMockClient(), nil, urlBuild, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsBuild.BuildID, should.Equal("8676886509240051393"))
 			assert.Loosely(t, idsBuild.InvocationID, should.Equal("build-8676886509240051393"))
 
 			urlUIBuild := "https://ci.chromium.org/ui/build/8676886509240051393"
-			idsUIBuild, err := ExtractIDs(ctx, legacyMockClient(), urlUIBuild, false)
+			idsUIBuild, err := ExtractIDs(ctx, legacyMockClient(), nil, urlUIBuild, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsUIBuild.BuildID, should.Equal("8676886509240051393"))
 			assert.Loosely(t, idsUIBuild.InvocationID, should.Equal("build-8676886509240051393"))
 
 			urlBuilder := "https://ci.chromium.org/ui/p/chromium/builders/ci/linux-rel/8676886509240051393"
-			ids2, err := ExtractIDs(ctx, legacyMockClient(), urlBuilder, false)
+			ids2, err := ExtractIDs(ctx, legacyMockClient(), nil, urlBuilder, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids2.BuildID, should.Equal("8676886509240051393"))
 			assert.Loosely(t, ids2.InvocationID, should.Equal("build-8676886509240051393"))
 			assert.Loosely(t, ids2.Legacy, should.BeTrue)
 
 			urlBuilderTab := "https://ci.chromium.org/ui/p/chromium/builders/ci/linux-rel/8676886509240051393/test-results"
-			ids3, err := ExtractIDs(ctx, legacyMockClient(), urlBuilderTab, false)
+			ids3, err := ExtractIDs(ctx, legacyMockClient(), nil, urlBuilderTab, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids3.BuildID, should.Equal("8676886509240051393"))
 			assert.Loosely(t, ids3.InvocationID, should.Equal("build-8676886509240051393"))
 
 			urlBuilderBId := "https://ci.chromium.org/ui/p/chromium/builders/ci/linux-rel/b8676886509240051393/overview"
-			ids4, err := ExtractIDs(ctx, legacyMockClient(), urlBuilderBId, false)
+			ids4, err := ExtractIDs(ctx, legacyMockClient(), nil, urlBuilderBId, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids4.BuildID, should.Equal("8676886509240051393"))
 			assert.Loosely(t, ids4.InvocationID, should.Equal("build-8676886509240051393"))
+
+			urlBuilderNumber := "https://ci.chromium.org/p/chromium/builders/ci/linux-rel/12345"
+			ids5, err := ExtractIDs(ctx, legacyMockClient(), testBuildsClient(), urlBuilderNumber, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids5.BuildID, should.Equal("8738491827364512345"))
+			assert.Loosely(t, ids5.InvocationID, should.Equal("build-8738491827364512345"))
+
+			pathBuilderNumber := "chromium/ci/linux-rel/12345"
+			ids6, err := ExtractIDs(ctx, legacyMockClient(), testBuildsClient(), pathBuilderNumber, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids6.BuildID, should.Equal("8738491827364512345"))
+			assert.Loosely(t, ids6.InvocationID, should.Equal("build-8738491827364512345"))
+
+			urlWinCross := "https://ci.chromium.org/ui/p/chromium/builders/ci/linux-win-cross-rel/10470/overview"
+			idsWin, err := ExtractIDs(ctx, legacyMockClient(), testBuildsClient(), urlWinCross, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsWin.BuildID, should.Equal("8712345678901234567"))
+			assert.Loosely(t, idsWin.InvocationID, should.Equal("build-8712345678901234567"))
+
+			_, errNoClient := ExtractIDs(ctx, nil, nil, urlWinCross, false)
+			assert.Loosely(t, errNoClient, should.NotBeNil)
 		})
 
 		t.Run(`Buildbucket build URL`, func(t *ftt.Test) {
 			url := "https://cr-buildbucket.appspot.com/build/8671656129082602433"
-			ids, err := ExtractIDs(ctx, legacyMockClient(), url, false)
+			ids, err := ExtractIDs(ctx, legacyMockClient(), nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids.BuildID, should.Equal("8671656129082602433"))
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-8671656129082602433"))
 			assert.Loosely(t, ids.Legacy, should.BeTrue)
 
 			urlOverview := "https://cr-buildbucket.appspot.com/build/8671656129082602433/overview"
-			idsOverview, err := ExtractIDs(ctx, legacyMockClient(), urlOverview, false)
+			idsOverview, err := ExtractIDs(ctx, legacyMockClient(), nil, urlOverview, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsOverview.BuildID, should.Equal("8671656129082602433"))
 			assert.Loosely(t, idsOverview.InvocationID, should.Equal("build-8671656129082602433"))
 
 			urlBId := "https://cr-buildbucket.appspot.com/build/b8671656129082602433"
-			idsBId, err := ExtractIDs(ctx, legacyMockClient(), urlBId, false)
+			idsBId, err := ExtractIDs(ctx, legacyMockClient(), nil, urlBId, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsBId.BuildID, should.Equal("8671656129082602433"))
 			assert.Loosely(t, idsBId.InvocationID, should.Equal("build-8671656129082602433"))
 
 			urlBuilds := "https://cr-buildbucket.appspot.com/builds/8671656129082602433"
-			idsBuilds, err := ExtractIDs(ctx, legacyMockClient(), urlBuilds, false)
+			idsBuilds, err := ExtractIDs(ctx, legacyMockClient(), nil, urlBuilds, false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsBuilds.BuildID, should.Equal("8671656129082602433"))
 			assert.Loosely(t, idsBuilds.InvocationID, should.Equal("build-8671656129082602433"))
 		})
 
 		t.Run(`Milo test investigation and test history URLs`, func(t *ftt.Test) {
 			// Invocation subtabs
 			invTests := "https://ci.chromium.org/ui/test-investigate/invocations/build-8671749950226328289/tests"
-			idsTests, err := ExtractIDs(ctx, legacyMockClient(), invTests, false)
+			idsTests, err := ExtractIDs(ctx, legacyMockClient(), nil, invTests, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsTests.InvocationID, should.Equal("build-8671749950226328289"))
 
 			invDetails := "https://ci.chromium.org/ui/test-investigate/invocations/build-8671749950226328289/details"
-			idsDetails, err := ExtractIDs(ctx, legacyMockClient(), invDetails, false)
+			idsDetails, err := ExtractIDs(ctx, legacyMockClient(), nil, invDetails, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsDetails.InvocationID, should.Equal("build-8671749950226328289"))
 
 			invArtifacts := "https://ci.chromium.org/ui/test-investigate/invocations/build-8671749950226328289/artifacts"
-			idsArtifacts, err := ExtractIDs(ctx, legacyMockClient(), invArtifacts, false)
+			idsArtifacts, err := ExtractIDs(ctx, legacyMockClient(), nil, invArtifacts, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsArtifacts.InvocationID, should.Equal("build-8671749950226328289"))
 
 			// Old test investigation route: invocations/:invId/tests/:testId/variants/:variantHash
 			oldTI := "https://ci.chromium.org/ui/test-investigate/invocations/build-8671749950226328289/tests/ninja%3A%2F%2Ftest/variants/a24ef92542e11200"
-			idsOldTI, err := ExtractIDs(ctx, nil, oldTI, false)
+			idsOldTI, err := ExtractIDs(ctx, nil, nil, oldTI, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsOldTI.InvocationID, should.Equal("build-8671749950226328289"))
 			assert.Loosely(t, idsOldTI.TestID, should.Equal("ninja://test"))
@@ -236,26 +300,26 @@ func TestExtractIDs(t *testing.T) {
 
 			// Test history route: test/:projectOrRealm/:testId
 			testHistory := "https://ci.chromium.org/ui/test/chromium/ninja%3A%2F%2Fchrome%2Ftest%3Abrowser_tests%2FMyTest.Case?q=V%3Aos%3DLinux"
-			idsHistory, err := ExtractIDs(ctx, nil, testHistory, false)
+			idsHistory, err := ExtractIDs(ctx, nil, nil, testHistory, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsHistory.TestID, should.Equal("ninja://chrome/test:browser_tests/MyTest.Case"))
 
 			// Blamelist route: p/:project/tests/:testId/variants/:variantHash/refs/:refHash/blamelist
 			blamelist := "https://ci.chromium.org/ui/labs/p/chromium/tests/ninja%3A%2F%2Fchrome%2Ftest%3Abrowser_tests%2FMyTest.Case/variants/a24ef92542e11200/refs/deadbeef/blamelist#CP-12345"
-			idsBlamelist, err := ExtractIDs(ctx, nil, blamelist, false)
+			idsBlamelist, err := ExtractIDs(ctx, nil, nil, blamelist, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsBlamelist.TestID, should.Equal("ninja://chrome/test:browser_tests/MyTest.Case"))
 			assert.Loosely(t, idsBlamelist.VariantHash, should.Equal("a24ef92542e11200"))
 
 			// Artifact routes
 			artRaw := "https://ci.chromium.org/ui/artifact/raw/invocations/build-12345/artifacts/my-art"
-			idsRaw, err := ExtractIDs(ctx, nil, artRaw, false)
+			idsRaw, err := ExtractIDs(ctx, nil, nil, artRaw, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsRaw.InvocationID, should.Equal("build-12345"))
 			assert.Loosely(t, idsRaw.ArtifactID, should.Equal("my-art"))
 
 			artDiff := "https://ci.chromium.org/ui/artifact/text-diff/invocations/build-12345/tests/ninja%3A%2F%2Ftest/results/r1/artifacts/stdout"
-			idsDiff, err := ExtractIDs(ctx, nil, artDiff, false)
+			idsDiff, err := ExtractIDs(ctx, nil, nil, artDiff, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsDiff.InvocationID, should.Equal("build-12345"))
 			assert.Loosely(t, idsDiff.TestID, should.Equal("ninja://test"))
@@ -264,24 +328,24 @@ func TestExtractIDs(t *testing.T) {
 		})
 
 		t.Run(`Standalone invocation resource names`, func(t *ftt.Test) {
-			ids, err := ExtractIDs(ctx, legacyMockClient(), "invocations/build-123", false)
+			ids, err := ExtractIDs(ctx, legacyMockClient(), nil, "invocations/build-123", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-123"))
 			assert.Loosely(t, ids.Legacy, should.BeTrue)
 
-			ids2, err := ExtractIDs(ctx, nil, "rootInvocations/ants-i456", false)
+			ids2, err := ExtractIDs(ctx, nil, nil, "rootInvocations/ants-i456", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids2.InvocationID, should.Equal("ants-i456"))
 			assert.Loosely(t, ids2.Legacy, should.BeFalse)
 		})
 
 		t.Run(`Standalone AnTS Invocation and Work Unit IDs`, func(t *ftt.Test) {
-			ids, err := ExtractIDs(ctx, nil, "I77100010600769898", false)
+			ids, err := ExtractIDs(ctx, nil, nil, "I77100010600769898", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, ids.Legacy, should.BeFalse)
 
-			ids2, err := ExtractIDs(ctx, nil, "WU17100269020689387", false)
+			ids2, err := ExtractIDs(ctx, nil, nil, "WU17100269020689387", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids2.WorkUnitID, should.Equal("ants-wu17100269020689387"))
 			assert.Loosely(t, ids2.Legacy, should.BeFalse)
@@ -330,7 +394,7 @@ EOF
 
 			// 1. From ATI URL
 			atiURL := "https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898/test/TR13830335277435395/"
-			ids, err := ExtractIDs(ctx, client, atiURL, false)
+			ids, err := ExtractIDs(ctx, client, nil, atiURL, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, ids.WorkUnitID, should.Equal("ants-wu17100269020689387"))
@@ -339,7 +403,7 @@ EOF
 			assert.Loosely(t, ids.VariantHash, should.Equal("varhash123"))
 
 			// 2. From direct TR ID
-			idsTR, err := ExtractIDs(ctx, client, "TR13830335277435395", false)
+			idsTR, err := ExtractIDs(ctx, client, nil, "TR13830335277435395", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsTR.InvocationID, should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, idsTR.WorkUnitID, should.Equal("ants-wu17100269020689387"))
@@ -348,7 +412,7 @@ EOF
 
 			// 3. From ATI URL with query params
 			atiURLWithParams := "https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898/test/TR13830335277435395/?artifact=stdout&result=custom-res"
-			idsParams, err := ExtractIDs(ctx, client, atiURLWithParams, false)
+			idsParams, err := ExtractIDs(ctx, client, nil, atiURLWithParams, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsParams.InvocationID, should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, idsParams.WorkUnitID, should.Equal("ants-wu17100269020689387"))
@@ -357,7 +421,7 @@ EOF
 			assert.Loosely(t, idsParams.ArtifactID, should.Equal("stdout"))
 
 			// 4. Without ResultDB resolution, AnTS WorkUnitID is not populated as it does not match ResultDB WU IDs
-			idsNoRDB, err := ExtractIDs(ctx, nil, "TR13830335277435395", false)
+			idsNoRDB, err := ExtractIDs(ctx, nil, nil, "TR13830335277435395", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsNoRDB.InvocationID, should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, idsNoRDB.WorkUnitID, should.Equal(""))
@@ -376,7 +440,7 @@ Attempt Number: 0
 EOF
 `
 			_ = os.WriteFile(fakeBin, []byte(scriptPlaceholder), 0755)
-			idsPlaceholder, err := ExtractIDs(ctx, nil, "TR98730375213734414", false)
+			idsPlaceholder, err := ExtractIDs(ctx, nil, nil, "TR98730375213734414", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsPlaceholder.InvocationID, should.Equal("ants-i56900010616552061"))
 			assert.Loosely(t, idsPlaceholder.TestID, should.Equal(""))
@@ -421,7 +485,7 @@ EOF
 					}, nil
 				},
 			}
-			idsNoModule, err := ExtractIDs(ctx, clientNoModule, "TR36130379899461232", false)
+			idsNoModule, err := ExtractIDs(ctx, clientNoModule, nil, "TR36130379899461232", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsNoModule.InvocationID, should.Equal("ants-i39300010618643739"))
 			assert.Loosely(t, idsNoModule.WorkUnitID, should.Equal("ants-wu74900269761565426:u-376817f8-577f-435f-ae49-d04ecb2c2d1f"))
@@ -432,13 +496,13 @@ EOF
 
 		t.Run(`Android Build tests view URL with query param`, func(t *ftt.Test) {
 			url := "https://android-build.googleplex.com/builds/tests/view?invocationId=I30800010616707848"
-			ids, err := ExtractIDs(ctx, nil, url, false)
+			ids, err := ExtractIDs(ctx, nil, nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("ants-i30800010616707848"))
 			assert.Loosely(t, ids.TestID, should.Equal(""))
 
 			urlCorp := "https://android-build.corp.google.com/builds/tests/view?invocation_id=I30800010616707848"
-			idsCorp, err := ExtractIDs(ctx, nil, urlCorp, false)
+			idsCorp, err := ExtractIDs(ctx, nil, nil, urlCorp, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsCorp.InvocationID, should.Equal("ants-i30800010616707848"))
 			assert.Loosely(t, idsCorp.TestID, should.Equal(""))
@@ -446,7 +510,7 @@ EOF
 
 		t.Run(`Milo legacy test-investigate URL without client`, func(t *ftt.Test) {
 			url := "https://ci.chromium.org/ui/test-investigate/invocations/build-8671749950226328289/modules/legacy/schemes/legacy/variants/a24ef92542e11200/cases/ninja%3A%2F%2Fchromeos%3Achrome_all_tast_tests%2Ftast.cryptohome.UssMigrationPasswordPin?artifact=summary_node"
-			ids, err := ExtractIDs(ctx, nil, url, false)
+			ids, err := ExtractIDs(ctx, nil, nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-8671749950226328289"))
 			assert.Loosely(t, ids.VariantHash, should.Equal("a24ef92542e11200"))
@@ -454,7 +518,7 @@ EOF
 			assert.Loosely(t, ids.TestID, should.Equal("ninja://chromeos:chrome_all_tast_tests/tast.cryptohome.UssMigrationPasswordPin"))
 			assert.Loosely(t, ids.Legacy, should.BeFalse)
 
-			idsLegacy, err := ExtractIDs(ctx, nil, url, true)
+			idsLegacy, err := ExtractIDs(ctx, nil, nil, url, true)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsLegacy.Legacy, should.BeTrue)
 		})
@@ -482,7 +546,7 @@ EOF
 					}, nil
 				},
 			}
-			ids, err := ExtractIDs(ctx, client, url, false)
+			ids, err := ExtractIDs(ctx, client, nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-8671749950226328289"))
 			assert.Loosely(t, ids.VariantHash, should.Equal("a24ef92542e11200"))
@@ -517,7 +581,7 @@ EOF
 					}, nil
 				},
 			}
-			ids, err := ExtractIDs(ctx, client, url, false)
+			ids, err := ExtractIDs(ctx, client, nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-8671749950226328289"))
 			assert.Loosely(t, ids.Legacy, should.BeFalse)
@@ -526,7 +590,7 @@ EOF
 
 		t.Run(`Milo invocation URL`, func(t *ftt.Test) {
 			url := "https://ci.chromium.org/ui/inv/build-8671749950226328289"
-			ids, err := ExtractIDs(ctx, legacyMockClient(), url, false)
+			ids, err := ExtractIDs(ctx, legacyMockClient(), nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-8671749950226328289"))
 			assert.Loosely(t, ids.Legacy, should.BeTrue)
@@ -541,7 +605,7 @@ EOF
 					return &pb.Invocation{Name: in.Name}, nil
 				},
 			}
-			ids, err := ExtractIDs(ctx, client, "custom-legacy-inv", false)
+			ids, err := ExtractIDs(ctx, client, nil, "custom-legacy-inv", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("custom-legacy-inv"))
 			assert.Loosely(t, ids.Legacy, should.BeTrue)
@@ -567,7 +631,7 @@ EOF
 			_ = os.WriteFile(fakeBin, []byte(script), 0755)
 			t.Setenv("ANTS_CLI_PATH", fakeBin)
 
-			ids, err := ExtractIDs(ctx, nil, "TR08930357531778741", false)
+			ids, err := ExtractIDs(ctx, nil, nil, "TR08930357531778741", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("ants-i14600010609614895"))
 			assert.Loosely(t, ids.ModuleName, should.Equal("CellBroadcastReceiverMTS"))
@@ -579,7 +643,7 @@ EOF
 
 		t.Run(`Milo module URL without test cases`, func(t *ftt.Test) {
 			url := "https://ci.chromium.org/ui/test-investigate/invocations/build-8676886509240051393/modules/my_module"
-			ids, err := ExtractIDs(ctx, nil, url, false)
+			ids, err := ExtractIDs(ctx, nil, nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-8676886509240051393"))
 			assert.Loosely(t, ids.ModuleName, should.Equal("my_module"))
@@ -643,6 +707,21 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Module Name:   my_module\n"))
 		})
 
+		t.Run(`Human-readable output with build ID does not print builder or build number`, func(t *ftt.Test) {
+			extracted := &ExtractedIDs{
+				BuildID:      "8738491827364512345",
+				InvocationID: "build-8738491827364512345",
+			}
+			var buf bytes.Buffer
+			err := printExtractedIDs(&buf, extracted, false)
+			assert.Loosely(t, err, should.BeNil)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Build ID:      8738491827364512345\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("Builder:"))
+			assert.Loosely(t, out, should.NotContainSubstring("Build Number:"))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID: build-8738491827364512345\n"))
+		})
+
 		t.Run(`JSON output with legacy`, func(t *ftt.Test) {
 			extracted := &ExtractedIDs{
 				InvocationID: "build-8671749950226328289",
@@ -666,6 +745,20 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			out := buf.String()
 			assert.Loosely(t, out, should.NotContainSubstring(`"legacy"`))
+		})
+
+		t.Run(`JSON output with build ID does not contain builder or build_number`, func(t *ftt.Test) {
+			extracted := &ExtractedIDs{
+				BuildID:      "8738491827364512345",
+				InvocationID: "build-8738491827364512345",
+			}
+			var buf bytes.Buffer
+			err := printExtractedIDs(&buf, extracted, true)
+			assert.Loosely(t, err, should.BeNil)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring(`"build_id": "8738491827364512345"`))
+			assert.Loosely(t, out, should.NotContainSubstring(`"builder"`))
+			assert.Loosely(t, out, should.NotContainSubstring(`"build_number"`))
 		})
 	})
 }

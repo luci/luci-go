@@ -21,12 +21,16 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/cli"
@@ -38,6 +42,7 @@ import (
 
 // ExtractedIDs holds all extracted resource identifiers.
 type ExtractedIDs struct {
+	BuildID      string `json:"build_id,omitempty"`
 	InvocationID string `json:"invocation_id,omitempty"`
 	ModuleName   string `json:"module_name,omitempty"`
 	WorkUnitID   string `json:"work_unit_id,omitempty"`
@@ -47,12 +52,17 @@ type ExtractedIDs struct {
 	VariantHash  string `json:"variant_hash,omitempty"`
 	Legacy       bool   `json:"legacy,omitempty"`
 
+	// builder and buildNumber are unexported internal fields used during ID extraction
+	// to query Buildbucket for the build ID. They are not output.
+	builder        string
+	buildNumber    int
 	legacyResolved bool
 }
 
 // IsEmpty returns true if no identifiers were extracted.
 func (e *ExtractedIDs) IsEmpty() bool {
-	return e.InvocationID == "" &&
+	return e.BuildID == "" &&
+		e.InvocationID == "" &&
 		e.ModuleName == "" &&
 		e.WorkUnitID == "" &&
 		e.TestID == "" &&
@@ -67,12 +77,13 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 		UsageLine: "ids [-json] <target>",
 		ShortDesc: "Extract resource IDs from a URL or resource name",
 		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket URLs, ResultDB resource names, and AnTS / ATI URLs)\n" +
-			"and extract the canonical IDs (-invocationid, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
+			"and extract the canonical IDs (-buildid, -invocationid, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
 			"for use with other commands.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &idsRun{af: af}
 			r.af.Register(&r.Flags)
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
+			r.Flags.StringVar(&r.bbHost, "bb-host", chromeinfra.BuildbucketHost, "Buildbucket host")
 			r.Flags.BoolVar(&r.jsonOut, "json", false, "Output extracted IDs in JSON format")
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
@@ -82,10 +93,13 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 
 type idsRun struct {
 	subcommands.CommandRunBase
-	af      *base.AuthFlags
-	host    string
-	jsonOut bool
-	legacy  bool
+	af        *base.AuthFlags
+	rdbClient pb.ResultDBClient
+	bbClient  grpcpb.BuildsClient
+	host      string
+	bbHost    string
+	jsonOut   bool
+	legacy    bool
 }
 
 func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -103,14 +117,24 @@ func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.E
 	target := strings.TrimSpace(args[0])
 	ctx := cli.GetContext(a, r, env)
 
-	var client pb.ResultDBClient
-	if err := r.af.Parse(); err == nil {
-		if c, _, _, errClient := r.af.NewResultDBClient(ctx, r.host); errClient == nil {
-			client = c
+	rdbClient := r.rdbClient
+	bbClient := r.bbClient
+	if rdbClient == nil || bbClient == nil {
+		if err := r.af.Parse(); err == nil {
+			if rdbClient == nil {
+				if c, _, _, errClient := r.af.NewResultDBClient(ctx, r.host); errClient == nil {
+					rdbClient = c
+				}
+			}
+			if bbClient == nil {
+				if c, _, errClient := r.af.NewBuildsClient(ctx, r.bbHost); errClient == nil {
+					bbClient = c
+				}
+			}
 		}
 	}
 
-	extracted, err := ExtractIDs(ctx, client, target, r.legacy)
+	extracted, err := ExtractIDs(ctx, rdbClient, bbClient, target, r.legacy)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to extract IDs: %s\n", err)
 		return 1
@@ -139,6 +163,9 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 	}
 
 	// Aligned human-readable output
+	if extracted.BuildID != "" {
+		fmt.Fprintf(out, "Build ID:      %s\n", extracted.BuildID)
+	}
 	if extracted.InvocationID != "" {
 		fmt.Fprintf(out, "Invocation ID: %s\n", extracted.InvocationID)
 	}
@@ -169,70 +196,91 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 }
 
 // ExtractIDs parses target string and extracts all available resource IDs.
-func ExtractIDs(ctx context.Context, client pb.ResultDBClient, raw string, legacy bool) (*ExtractedIDs, error) {
+func ExtractIDs(ctx context.Context, rdbClient pb.ResultDBClient, bbClient grpcpb.BuildsClient, raw string, legacy bool) (*ExtractedIDs, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return nil, errors.New("empty target")
 	}
 
 	extracted := &ExtractedIDs{}
-	defer resolveLegacy(ctx, client, extracted, legacy)
 
 	extractQueryParams(raw, extracted)
 
 	// 1. Android Test Investigate (ATI) URL or AnTS target
-	if ok, err := extractFromAntsTarget(ctx, client, raw, extracted); err != nil {
+	if ok, err := extractFromAntsTarget(ctx, rdbClient, raw, extracted); err != nil {
 		return nil, err
-	} else if ok {
-		return extracted, nil
+	} else if !ok {
+		clean := base.TrimResourceURL(raw)
+
+		// 2. Milo module URL without test cases: .../modules/<module>
+		if !extractFromMiloModuleURL(clean, extracted) &&
+			// 3. Milo / Chromium structured URL (/modules/.../variants/.../cases/..., /tests/.../variants/...)
+			!extractFromMiloStructuredURL(ctx, rdbClient, clean, legacy, extracted) &&
+			// 4. Milo Invocation and Build URLs (/ui/inv/..., /ui/b/..., /builders/...)
+			!extractFromMiloBuildURL(clean, extracted) &&
+			// 5. Milo Test History URL (/ui/test/:project/:testId)
+			!extractFromMiloTestHistoryURL(raw, extracted) {
+			// 6. Strip /artifacts/<art_id> suffix from ResultDB resource name if present
+			clean = extractArtifactSuffix(clean, extracted)
+
+			// 7. ResultDB test result resource name: .../tests/<escaped_test_id>/results/<result_id>
+			if !extractFromTestResultResourceName(clean, extracted) &&
+				// 8. ResultDB test resource name: .../tests/<escaped_test_id>
+				!extractFromTestResourceName(clean, extracted) &&
+				// 9. ResultDB work unit resource name: rootInvocations/<root_inv>/workUnits/<wu_id>
+				!extractFromWorkUnitResourceName(clean, extracted) &&
+				// 10. Builder path: <project>/<bucket>/<builder>/<build_number>
+				!extractFromBuilderPath(clean, extracted) {
+				// 11. ResultDB root invocation / invocation resource name or bare ID: rootInvocations/<inv>, invocations/<inv>, or bare invocation ID
+				extractFromInvocationResourceName(clean, extracted)
+			}
+		}
 	}
 
-	clean := base.TrimResourceURL(raw)
-
-	// 2. Milo module URL without test cases: .../modules/<module>
-	if extractFromMiloModuleURL(clean, extracted) {
-		return extracted, nil
+	if extracted.builder != "" && extracted.buildNumber != 0 && extracted.BuildID == "" {
+		if err := resolveBuildID(ctx, bbClient, extracted); err != nil {
+			return nil, err
+		}
 	}
 
-	// 3. Milo / Chromium structured URL (/modules/.../variants/.../cases/..., /tests/.../variants/...)
-	if extractFromMiloStructuredURL(ctx, client, clean, legacy, extracted) {
-		return extracted, nil
-	}
-
-	// 3. Milo and Buildbucket invocation and build URLs (/ui/inv/..., /ui/b/..., /b/..., /build/..., /builders/...)
-	if extractFromMiloBuildURL(clean, extracted) {
-		return extracted, nil
-	}
-
-	// 4. Milo Test History URL (/ui/test/:project/:testId)
-	if extractFromMiloTestHistoryURL(raw, extracted) {
-		return extracted, nil
-	}
-
-	// 5. Strip /artifacts/<art_id> suffix from ResultDB resource name if present
-	clean = extractArtifactSuffix(clean, extracted)
-
-	// 6. ResultDB test result resource name: .../tests/<escaped_test_id>/results/<result_id>
-	if extractFromTestResultResourceName(clean, extracted) {
-		return extracted, nil
-	}
-
-	// 7. ResultDB test resource name: .../tests/<escaped_test_id>
-	if extractFromTestResourceName(clean, extracted) {
-		return extracted, nil
-	}
-
-	// 8. ResultDB work unit resource name: rootInvocations/<root_inv>/workUnits/<wu_id>
-	if extractFromWorkUnitResourceName(clean, extracted) {
-		return extracted, nil
-	}
-
-	// 9. ResultDB root invocation / invocation resource name or bare ID: rootInvocations/<inv>, invocations/<inv>, or bare invocation ID
-	if extractFromInvocationResourceName(clean, extracted) {
-		return extracted, nil
-	}
+	populateBuildIDFromInvocation(extracted)
+	resolveLegacy(ctx, rdbClient, extracted, legacy)
 
 	return extracted, nil
+}
+
+func resolveBuildID(ctx context.Context, bbClient grpcpb.BuildsClient, extracted *ExtractedIDs) error {
+	if extracted.builder == "" || extracted.buildNumber == 0 {
+		return nil
+	}
+	if bbClient == nil {
+		return errors.Fmt("cannot resolve build ID for %s/%d: Buildbucket client not available", extracted.builder, extracted.buildNumber)
+	}
+	parts := strings.Split(extracted.builder, "/")
+	if len(parts) != 3 {
+		return errors.Fmt("invalid builder format %q", extracted.builder)
+	}
+	req := &bbpb.GetBuildRequest{
+		Builder: &bbpb.BuilderID{
+			Project: parts[0],
+			Bucket:  parts[1],
+			Builder: parts[2],
+		},
+		BuildNumber: int32(extracted.buildNumber),
+		Mask: &bbpb.BuildMask{
+			Fields: &field_mask.FieldMask{Paths: []string{"id"}},
+		},
+	}
+	b, err := bbClient.GetBuild(ctx, req)
+	if err != nil {
+		return errors.Fmt("failed to resolve build ID from Buildbucket for %s/%d: %w", extracted.builder, extracted.buildNumber, err)
+	}
+	if b.Id == 0 {
+		return errors.Fmt("Buildbucket returned empty build ID for %s/%d", extracted.builder, extracted.buildNumber)
+	}
+	extracted.BuildID = strconv.FormatInt(b.Id, 10)
+	extracted.InvocationID = fmt.Sprintf("build-%d", b.Id)
+	return nil
 }
 
 // extractQueryParams extracts ?artifact=... and ?result=... query parameters if present.
@@ -439,14 +487,70 @@ func extractFromMiloBuildURL(clean string, extracted *ExtractedIDs) bool {
 		}
 	}
 	if idx := strings.Index(clean, "/builders/"); idx != -1 {
+		before := clean[:idx]
 		after := clean[idx+len("/builders/"):]
 		parts := strings.Split(after, "/")
-		if len(parts) >= 3 && parts[2] != "" {
-			extracted.InvocationID = base.NormalizeInvocation(parts[2])
+		if len(parts) >= 3 && parts[0] != "" && parts[1] != "" && parts[2] != "" {
+			target := parts[2]
+			trimmed := strings.TrimPrefix(target, "b")
+			if isAllDigits(trimmed) && (len(trimmed) > 10 || strings.HasPrefix(target, "b")) {
+				extracted.BuildID = trimmed
+				extracted.InvocationID = "build-" + trimmed
+				return true
+			}
+			project := ""
+			if pIdx := strings.Index(before, "/p/"); pIdx != -1 {
+				pAfter := before[pIdx+len("/p/"):]
+				pParts := strings.Split(pAfter, "/")
+				if len(pParts) > 0 {
+					project = pParts[0]
+				}
+			}
+			if num, err := strconv.Atoi(target); err == nil && project != "" {
+				extracted.builder = fmt.Sprintf("%s/%s/%s", project, parts[0], parts[1])
+				extracted.buildNumber = num
+				return true
+			}
+			extracted.InvocationID = base.NormalizeInvocation(target)
 			return true
 		}
 	}
 	return false
+}
+
+// extractFromBuilderPath handles builder paths with a build number:
+// <project>/<bucket>/<builder>/<build_number>
+func extractFromBuilderPath(clean string, extracted *ExtractedIDs) bool {
+	parts := strings.Split(clean, "/")
+	if len(parts) == 4 && parts[0] != "" && parts[1] != "" && parts[2] != "" && parts[3] != "" {
+		if num, err := strconv.Atoi(parts[3]); err == nil {
+			extracted.builder = fmt.Sprintf("%s/%s/%s", parts[0], parts[1], parts[2])
+			extracted.buildNumber = num
+			return true
+		}
+	}
+	return false
+}
+
+func populateBuildIDFromInvocation(extracted *ExtractedIDs) {
+	if extracted.BuildID == "" && strings.HasPrefix(extracted.InvocationID, "build-") {
+		trimmed := strings.TrimPrefix(extracted.InvocationID, "build-")
+		if isAllDigits(trimmed) && len(trimmed) > 10 {
+			extracted.BuildID = trimmed
+		}
+	}
+}
+
+func isAllDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // extractFromMiloTestHistoryURL handles Milo test history URLs:

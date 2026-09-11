@@ -20,6 +20,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
+
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -35,4 +37,18 @@ func (af *AuthFlags) NewResultDBClient(ctx context.Context, host string) (pb.Res
 		Options: prpc.DefaultOptions(),
 	}
 	return pb.NewResultDBClient(prpcClient), pb.NewSchemasClient(prpcClient), httpClient, nil
+}
+
+// NewBuildsClient creates an authenticated Buildbucket Builds pRPC client.
+func (af *AuthFlags) NewBuildsClient(ctx context.Context, host string) (grpcpb.BuildsClient, *http.Client, error) {
+	httpClient, err := af.NewHTTPClient(ctx)
+	if err != nil {
+		return nil, nil, errors.Fmt("failed to create http client: %w", err)
+	}
+	prpcClient := &prpc.Client{
+		C:       httpClient,
+		Host:    host,
+		Options: prpc.DefaultOptions(),
+	}
+	return grpcpb.NewBuildsClient(prpcClient), httpClient, nil
 }

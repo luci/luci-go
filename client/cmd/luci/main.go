@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/build"
 	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/client/cmd/luci/module"
 	"go.chromium.org/luci/client/cmd/luci/testresult"
@@ -40,21 +41,23 @@ func getApplication() *cli.Application {
 	return &cli.Application{
 		Name: "luci",
 		Title: "Unified CLI tool to access LUCI resources.\n\n" +
-			"Commands are stateless and require explicit resource ID flags (-invocationid, -modulename, -testid, -resultid, -workunitid, -artifactid).\n" +
+			"Commands are stateless and require explicit resource ID flags (-buildid, -invocationid, -modulename, -testid, -resultid, -workunitid, -artifactid).\n" +
 			"Use 'luci ids <url>' to extract IDs from URLs (Milo UI, AnTS/ATI) or canonical resource names.\n\n" +
 			"Typical Investigation Workflow Examples:\n" +
 			"  1. Extract IDs from a Milo or ATI test URL:\n" +
 			"     $ luci ids https://ci.chromium.org/ui/test-investigate/invocations/build-123/...\n" +
 			"     $ luci ids https://android-build.corp.google.com/test_investigate/invocation/I.../test/TR...\n\n" +
-			"  2. List test verdicts in an invocation:\n" +
+			"  2. Inspect a Buildbucket build, its status, summary, and failed steps:\n" +
+			"     $ luci build get -buildid 8738491827364512345\n\n" +
+			"  3. List test verdicts in an invocation:\n" +
 			"     $ luci verdict list -invocationid build-123\n\n" +
-			"  3. Inspect a module and its shards/errors:\n" +
+			"  4. Inspect a module and its shards/errors:\n" +
 			"     $ luci module get -invocationid ants-i123 -modulename CellBroadcastReceiverMTS\n\n" +
-			"  4. Inspect a test verdict:\n" +
+			"  5. Inspect a test verdict:\n" +
 			"     $ luci verdict get -invocationid build-123 -testid ninja://chrome/test\n\n" +
-			"  5. Inspect an individual test result:\n" +
+			"  6. Inspect an individual test result:\n" +
 			"     $ luci test-result get -invocationid build-123 -testid ninja://chrome/test -resultid 0\n\n" +
-			"  6. List and inspect test result or work unit artifacts:\n" +
+			"  7. List and inspect test result or work unit artifacts:\n" +
 			"     $ luci artifact list -invocationid build-123 -workunitid run-tests\n" +
 			"     $ luci artifact get -invocationid build-123 -workunitid run-tests -artifactid test.xml\n" +
 			"     $ luci artifact list -invocationid build-123 -testid ninja://chrome/test -resultid 0\n" +
@@ -68,6 +71,7 @@ func getApplication() *cli.Application {
 		Commands: []*subcommands.Command{
 			ids.Cmd(af),
 			artifact.Cmd(af),
+			build.Cmd(af),
 			module.Cmd(af),
 			testresult.Cmd(af),
 			verdict.Cmd(af),
