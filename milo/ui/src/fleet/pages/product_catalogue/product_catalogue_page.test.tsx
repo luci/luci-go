@@ -796,13 +796,23 @@ describe('ProductCataloguePage', () => {
       productName: ['n2-standard-4'],
       scopedProductName: [{ value: 'n2-standard-4', inScope: true }],
       scopedCpuType: [{ value: 'x86_64', inScope: true }],
+      scopedCpuNumPerVm: [{ value: '4', inScope: true }],
+      scopedMemoryGbPerVm: [{ value: '16', inScope: true }],
     });
 
-    renderPage(['/ui/fleet/catalog?filters=cpu_type+%3D+%28%22x86_64%22%29']);
+    renderPage([
+      '/ui/fleet/catalog?filters=' +
+        'cpu_type+%3D+%28%22x86_64%22%29+AND+cpu_num_per_vm+%3D+%28%224%22%29+AND+memory_gb_per_vm+%3D+%28%2216%22%29',
+    ]);
 
-    const chip = await screen.findByTestId('filter-chip');
-    expect(chip).toHaveTextContent(/CPU Type/i);
-    expect(chip).toHaveTextContent(/x86_64/i);
+    const chips = await screen.findAllByTestId('filter-chip');
+    expect(chips).toHaveLength(3);
+    expect(chips[0]).toHaveTextContent(/CPU Type/i);
+    expect(chips[0]).toHaveTextContent(/x86_64/i);
+    expect(chips[1]).toHaveTextContent(/CPU Count Per VM/i);
+    expect(chips[1]).toHaveTextContent(/4/i);
+    expect(chips[2]).toHaveTextContent(/Memory \(GB\) Per VM/i);
+    expect(chips[2]).toHaveTextContent(/16/i);
   });
 
   it('should query both non-virtual and GCE catalogs when product_type != ("hardware") on All tab', async () => {

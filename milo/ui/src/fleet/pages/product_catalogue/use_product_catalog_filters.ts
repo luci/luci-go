@@ -50,6 +50,8 @@ export const FILTERS = {
   },
   productType: { type: 'string_list', filterKey: 'product_type' },
   cpuType: { type: 'string_list', filterKey: 'cpu_type' },
+  cpuNumPerVm: { type: 'string_list', filterKey: 'cpu_num_per_vm' },
+  memoryGbPerVm: { type: 'string_list', filterKey: 'memory_gb_per_vm' },
 } satisfies Record<
   string,
   {
@@ -73,7 +75,7 @@ export const NONVIRTUAL_ONLY_KEYS = [
 ];
 
 // Filter keys that only exist in the GCE product catalog
-export const GCE_ONLY_KEYS = ['cpu_type'];
+export const GCE_ONLY_KEYS = ['cpu_type', 'cpu_num_per_vm', 'memory_gb_per_vm'];
 
 /**
  * Merges two lists of scoped filter values by unique value, combining their inScope flags.
