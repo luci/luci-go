@@ -246,9 +246,7 @@ func testAuthDBSnapshotSharded(ctx context.Context, rev int64, shardCount int) (
 
 func getAllDatastoreEntities(ctx context.Context, entityKind string, parent *datastore.Key) ([]datastore.PropertyMap, error) {
 	query := datastore.NewQuery(entityKind).Ancestor(parent)
-	var entities []datastore.PropertyMap
-	err := datastore.GetAll(ctx, query, &entities)
-	return entities, err
+	return datastore.RunQuery[datastore.PropertyMap](ctx, query).AsSlice()
 }
 
 // isPropIndexed returns true if any property with the given key is indexed.

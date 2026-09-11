@@ -79,8 +79,7 @@ func authDBReaderKey(ctx context.Context, email string) *datastore.Key {
 func getAllAuthDBReaders(ctx context.Context) ([]*datastore.Key, error) {
 	// Query for all AuthDBReader entities' keys.
 	q := datastore.NewQuery("AuthDBReader").Ancestor(authDBReadersRootKey(ctx)).KeysOnly(true)
-	var readerKeys []*datastore.Key
-	err := datastore.GetAll(ctx, q, &readerKeys)
+	readerKeys, err := datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
 	if err != nil {
 		return []*datastore.Key{}, errors.Fmt("error getting all AuthDBReader entities: %w", err)
 	}

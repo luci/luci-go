@@ -717,8 +717,7 @@ func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 // Note: Members will NOT be unsharded.
 func getRawAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 	query := datastore.NewQuery("AuthGroup").Ancestor(RootKey(ctx))
-	var authGroups []*AuthGroup
-	err := datastore.GetAll(ctx, query, &authGroups)
+	authGroups, err := datastore.RunQuery[*AuthGroup](ctx, query).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("error getting all AuthGroup entities: %w", err)
 	}
@@ -1028,8 +1027,8 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment st
 // given field has at least one value equal to val.
 func findGroupsWithFieldEq(ctx context.Context, field string, val string) ([]string, error) {
 	q := datastore.NewQuery("AuthGroup").Ancestor(RootKey(ctx)).Eq(field, val)
-	var keys []*datastore.Key
-	if err := datastore.GetAll(ctx, q, &keys); err != nil {
+	keys, err := datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
+	if err != nil {
 		return nil, err
 	}
 	names := make([]string, len(keys))
@@ -1416,8 +1415,7 @@ func GetAuthIPAllowlist(ctx context.Context, allowlistName string) (*AuthIPAllow
 // Returns an annotated error.
 func GetAllAuthIPAllowlists(ctx context.Context) ([]*AuthIPAllowlist, error) {
 	query := datastore.NewQuery("AuthIPWhitelist").Ancestor(RootKey(ctx))
-	var authIPAllowlists []*AuthIPAllowlist
-	err := datastore.GetAll(ctx, query, &authIPAllowlists)
+	authIPAllowlists, err := datastore.RunQuery[*AuthIPAllowlist](ctx, query).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("error getting all AuthIPAllowlist entities: %w", err)
 	}
@@ -1839,8 +1837,7 @@ func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectReal
 // Returns an annotated error.
 func GetAllAuthProjectRealms(ctx context.Context) ([]*AuthProjectRealms, error) {
 	query := datastore.NewQuery("AuthProjectRealms").Ancestor(RootKey(ctx))
-	var authProjectRealms []*AuthProjectRealms
-	err := datastore.GetAll(ctx, query, &authProjectRealms)
+	authProjectRealms, err := datastore.RunQuery[*AuthProjectRealms](ctx, query).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("error getting all AuthProjectRealms entities: %w", err)
 	}
@@ -2035,8 +2032,7 @@ func GetAuthProjectRealmsMeta(ctx context.Context, project string) (*AuthProject
 // Returns an annotated error.
 func GetAllAuthProjectRealmsMeta(ctx context.Context) ([]*AuthProjectRealmsMeta, error) {
 	query := datastore.NewQuery("AuthProjectRealmsMeta").Ancestor(RootKey(ctx))
-	var authProjectRealmsMeta []*AuthProjectRealmsMeta
-	err := datastore.GetAll(ctx, query, &authProjectRealmsMeta)
+	authProjectRealmsMeta, err := datastore.RunQuery[*AuthProjectRealmsMeta](ctx, query).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("error getting all AuthProjectRealmsMeta entities: %w", err)
 	}

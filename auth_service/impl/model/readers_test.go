@@ -51,8 +51,8 @@ func testReader(ctx context.Context, email string) *AuthDBReader {
 // datastore. MUST be called from within a test case.
 func getRawReaders(t testing.TB, ctx context.Context) []*AuthDBReader {
 	q := datastore.NewQuery("AuthDBReader").Ancestor(authDBReadersRootKey(ctx))
-	readers := []*AuthDBReader{}
-	assert.Loosely(t, datastore.GetAll(ctx, q, &readers), should.BeNil)
+	readers, err := datastore.RunQuery[*AuthDBReader](ctx, q).AsSlice()
+	assert.Loosely(t, err, should.BeNil)
 	return readers
 }
 
