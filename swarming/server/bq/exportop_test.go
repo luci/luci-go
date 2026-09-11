@@ -265,8 +265,8 @@ func setUp(t *testing.T) (context.Context, *localGRPC, *bigQueryWrite, *pubSubPu
 
 // exportState returns the single ExportState if it exists.
 func exportState(ctx context.Context) *ExportState {
-	var ents []*ExportState
-	if err := datastore.GetAll(ctx, datastore.NewQuery("bq.ExportState"), &ents); err != nil {
+	ents, err := datastore.RunQuery[*ExportState](ctx, datastore.NewQuery("bq.ExportState")).AsSlice()
+	if err != nil {
 		panic(err)
 	}
 	switch len(ents) {

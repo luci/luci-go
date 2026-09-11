@@ -117,7 +117,6 @@ func TestBotInfoUpdate(t *testing.T) {
 
 		check := func() (*model.BotInfo, []*model.BotEvent) {
 			info := &model.BotInfo{Key: model.BotInfoKey(ctx, "bot-id")}
-			events := []*model.BotEvent{}
 			q := datastore.NewQuery("BotEvent").Ancestor(info.Key.Root()).Order("ts")
 			err := datastore.Get(ctx, info)
 			if errors.Is(err, datastore.ErrNoSuchEntity) {
@@ -125,7 +124,8 @@ func TestBotInfoUpdate(t *testing.T) {
 			} else {
 				assert.NoErr(t, err)
 			}
-			assert.NoErr(t, datastore.GetAll(ctx, q, &events))
+			events, err := datastore.RunQuery[*model.BotEvent](ctx, q).AsSlice()
+			assert.NoErr(t, err)
 			return info, events
 		}
 

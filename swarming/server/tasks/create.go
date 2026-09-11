@@ -342,12 +342,12 @@ func (c *CreationOp) dedupByRequestID(ctx context.Context) (*CreatedTask, error)
 // See TaskResultSummary.PropertiesHash on what tasks are reusable.
 func (c *CreationOp) findDuplicateTask(ctx context.Context, propertiesHash []byte) (*model.TaskResultSummary, error) {
 	logging.Infof(ctx, "Look for duplicate task with properties_hash %s", hex.EncodeToString(propertiesHash))
-	var results []*model.TaskResultSummary
 	q := model.TaskResultSummaryQuery().
 		Eq("properties_hash", propertiesHash).
 		Order("__key__").
 		Limit(1)
-	if err := datastore.GetAll(ctx, q, &results); err != nil {
+	results, err := datastore.RunQuery[*model.TaskResultSummary](ctx, q).AsSlice()
+	if err != nil {
 		return nil, err
 	}
 	if len(results) == 0 {

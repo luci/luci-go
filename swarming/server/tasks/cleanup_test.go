@@ -85,8 +85,8 @@ func TestTasksCleanup(t *testing.T) {
 		}
 
 		remainingGroups := func() []string {
-			var ents []*model.TaskRequest
-			if err := datastore.GetAll(ctx, datastore.NewQuery("TaskRequest"), &ents); err != nil {
+			ents, err := datastore.RunQuery[*model.TaskRequest](ctx, datastore.NewQuery("TaskRequest")).AsSlice()
+			if err != nil {
 				panic(err)
 			}
 			var names []string
@@ -181,8 +181,7 @@ func TestCleanupEntityGroup(t *testing.T) {
 		}
 
 		fetchGroup := func(key *datastore.Key) []*datastore.Key {
-			var keys []*datastore.Key
-			err := datastore.GetAll(ctx, datastore.NewQuery("").Ancestor(key).KeysOnly(true), &keys)
+			keys, err := datastore.RunQuery[*datastore.Key](ctx, datastore.NewQuery("").Ancestor(key).KeysOnly(true)).AsSlice()
 			if err != nil {
 				panic(err)
 			}

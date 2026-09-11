@@ -305,9 +305,7 @@ func getChildTaskRequestKeys(ctx context.Context, parentID string) ([]*datastore
 	parentRunID := model.RequestKeyToTaskID(parentReqKey, model.AsRunResult)
 	// TODO(b/355013314): We should put parent_task_id into TaskResultSummary and use a normal query.
 	q := datastore.NewQuery("TaskRequest").Eq("parent_task_id", parentRunID).KeysOnly(true)
-	var children []*datastore.Key
-	err = datastore.GetAll(ctx, q, &children)
-	return children, err
+	return datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
 }
 
 func (m *managerImpl) runBatchCancellation(ctx context.Context, workers int, bct *taskspb.BatchCancelTask) error {

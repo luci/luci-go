@@ -110,8 +110,8 @@ func findExistingTerminationTask(ctx context.Context, botID string) (string, err
 	q := qs[0]
 	q = q.Limit(1).KeysOnly(true)
 
-	var existing []*datastore.Key
-	if err = datastore.GetAll(ctx, q, &existing); err != nil {
+	existing, err := datastore.RunQuery[*datastore.Key](ctx, q).AsSlice()
+	if err != nil {
 		logging.Errorf(ctx, "Error querying TaskResultSummary: %s", err)
 		return "", status.Errorf(codes.Internal, "datastore error fetching tasks")
 	}
