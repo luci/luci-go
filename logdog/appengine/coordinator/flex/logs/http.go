@@ -22,6 +22,7 @@ import (
 	"html/template"
 	"image/color"
 	"math"
+	"mime"
 	"net/http"
 	"regexp"
 	"strings"
@@ -497,6 +498,13 @@ func writeOKHeaders(ctx *router.Context, data logData) {
 	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
 	// Tell the browser to prefer HTTPS.
 	ctx.Writer.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+	// Prevent MIME-sniffing.
+	ctx.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+
+	if data.options.format == formatRAW {
+		ctx.Writer.Header().Set("Content-Disposition", `attachment; filename="log.txt"`)
+	}
+
 	// Set the correct content type based off the log stream and format.
 	ctx.Writer.Header().Set("Content-Type", contentTypeHeader(data))
 	ctx.Writer.WriteHeader(http.StatusOK)
@@ -508,19 +516,38 @@ func writeOKHeaders(ctx *router.Context, data logData) {
 // contentTypeHeader returns the HTTP Content-Type header value to use, given
 // the content type from the log data.
 func contentTypeHeader(data logData) string {
-	contentType := data.logDesc.ContentType
-	if data.options.isHTML() {
-		// In the case of HTML, if no charset is specified we can assume it's
-		// UTF-8, as that's the default.
-		if contentType == "text/plain" {
+	rawType := ""
+	if data.logDesc != nil {
+		rawType = data.logDesc.ContentType
+	}
+	mediaType, params, err := mime.ParseMediaType(rawType)
+	if err != nil {
+		if data.options.isHTML() {
 			return "text/html; charset=utf-8"
 		}
-		// If the log is text, we can serve it as HTML and retain the charset.
-		if strings.Contains(contentType, "text/plain; charset=") {
-			contentType = strings.Replace(contentType, "plain", "html", 1)
-		}
+		return "text/plain; charset=utf-8"
 	}
-	return contentType
+
+	if data.options.isHTML() {
+		// In HTML mode, we always render our HTML template.
+		charset := "utf-8"
+		if mediaType == "text/plain" {
+			if cs, ok := params["charset"]; ok && cs != "" {
+				charset = cs
+			}
+		}
+		return mime.FormatMediaType("text/html", map[string]string{"charset": charset})
+	}
+
+	// In RAW mode, enforce safe plain text.
+	if mediaType == "text/plain" {
+		if _, ok := params["charset"]; !ok {
+			params["charset"] = "utf-8"
+		}
+		return mime.FormatMediaType(mediaType, params)
+	}
+	// Always fall back to safe plain text for any non-text or unrecognized content type.
+	return "text/plain; charset=utf-8"
 }
 
 // writeErrorPage renders an error page.

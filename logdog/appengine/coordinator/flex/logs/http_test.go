@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/logdog/api/logpb"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
@@ -205,6 +206,20 @@ func TestHelperFunctions(t *testing.T) {
 			}), should.Equal("text/plain; charset=iso-unicorns"))
 		})
 
+		t.Run(`Raw text with dangerous HTML content type is sanitized`, func(t *ftt.Test) {
+			assert.Loosely(t, contentTypeHeader(logData{
+				options: userOptions{format: "raw"},
+				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/html"},
+			}), should.Equal("text/plain; charset=utf-8"))
+		})
+
+		t.Run(`Raw text with dangerous SVG content type is sanitized`, func(t *ftt.Test) {
+			assert.Loosely(t, contentTypeHeader(logData{
+				options: userOptions{format: "raw"},
+				logDesc: &logpb.LogStreamDescriptor{ContentType: "image/svg+xml"},
+			}), should.Equal("text/plain; charset=utf-8"))
+		})
+
 		t.Run(`HTML with default text encoding`, func(t *ftt.Test) {
 			assert.Loosely(t, contentTypeHeader(logData{
 				options: userOptions{format: "full"},
@@ -218,5 +233,28 @@ func TestHelperFunctions(t *testing.T) {
 				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/plain; charset=iso-unicorns"},
 			}), should.Equal("text/html; charset=iso-unicorns"))
 		})
+
+		t.Run(`HTML with HTML content type retains HTML`, func(t *ftt.Test) {
+			assert.Loosely(t, contentTypeHeader(logData{
+				options: userOptions{format: "full"},
+				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/html"},
+			}), should.Equal("text/html; charset=utf-8"))
+		})
+	})
+
+	ftt.Run(`Raw format with HTML content type is sanitized and served safely`, t, func(t *ftt.Test) {
+		resp := httptest.NewRecorder()
+		rctx := &router.Context{
+			Writer: resp,
+		}
+		data := logData{
+			options: userOptions{format: "raw"},
+			logDesc: &logpb.LogStreamDescriptor{ContentType: "text/html"},
+		}
+		writeOKHeaders(rctx, data)
+
+		assert.Loosely(t, resp.Header().Get("Content-Type"), should.Equal("text/plain; charset=utf-8"))
+		assert.Loosely(t, resp.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
+		assert.Loosely(t, resp.Header().Get("Content-Disposition"), should.Equal(`attachment; filename="log.txt"`))
 	})
 }
