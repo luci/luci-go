@@ -90,6 +90,7 @@ export interface FleetConsoleMockFixtures {
   GetDefaultQuota: unknown;
   SetDefaultQuota: unknown;
   ListIrmIncidents: unknown;
+  ListSupportRiskIncidents: unknown;
   [method: string]: unknown;
 }
 
@@ -434,6 +435,100 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   },
   ListIrmIncidents: {
     irmIncidents: [],
+  },
+  ListSupportRiskIncidents: {
+    incidents: [
+      {
+        id: '1',
+        model: 'brya',
+        buganizerId: '1001',
+        title: 'Brya trackpad failure batch',
+      },
+      {
+        id: '2',
+        model: 'brask',
+        buganizerId: '1002',
+        title: 'Brask USB controller glitch',
+      },
+      {
+        id: '3',
+        model: 'asurada',
+        buganizerId: '1003',
+        title: 'Asurada battery swelling campaign',
+      },
+      {
+        id: '4',
+        model: 'atlas',
+        buganizerId: '1004',
+        title: 'Atlas firmware crash loop',
+      },
+      {
+        id: '5',
+        model: 'volteer',
+        buganizerId: '1005',
+        title: 'Volteer Type-C power delivery failure',
+      },
+      {
+        id: '6',
+        model: 'dedede',
+        buganizerId: '1006',
+        title: 'Dedede eMMC storage read degradation',
+      },
+      {
+        id: '7',
+        model: 'zork',
+        buganizerId: '1007',
+        title: 'Zork thermal throttle BIOS bug',
+      },
+      {
+        id: '8',
+        model: 'hatch',
+        buganizerId: '1008',
+        title: 'Hatch audio codec kernel panic',
+      },
+      {
+        id: '9',
+        model: 'puff',
+        buganizerId: '1009',
+        title: 'Puff fan bearing degradation',
+      },
+      {
+        id: '10',
+        model: 'octopus',
+        buganizerId: '1010',
+        title: 'Octopus display flicker on wake',
+      },
+      {
+        id: '11',
+        model: 'nissa',
+        buganizerId: '1011',
+        title: 'Nissa Wi-Fi module disconnection',
+      },
+      {
+        id: '12',
+        model: 'guybrush',
+        buganizerId: '1012',
+        title: 'Guybrush sleep state power drain',
+      },
+      {
+        id: '13',
+        model: 'skyrim',
+        buganizerId: '1013',
+        title: 'Skyrim camera sensor detection loss',
+      },
+      {
+        id: '14',
+        model: 'corsola',
+        buganizerId: '1014',
+        title: 'Corsola keyboard matrix ghosting',
+      },
+      {
+        id: '15',
+        model: 'geralt',
+        buganizerId: '1015',
+        title: 'Geralt touch digitizer deadzone',
+      },
+    ],
   },
 };
 

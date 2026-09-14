@@ -705,6 +705,20 @@ export interface SetDefaultQuotaResponse {
   readonly defaultQuota: number;
 }
 
+export interface SupportRiskIncident {
+  readonly id: string;
+  readonly model: string;
+  readonly buganizerId: string;
+  readonly title: string;
+}
+
+export interface ListSupportRiskIncidentsRequest {
+}
+
+export interface ListSupportRiskIncidentsResponse {
+  readonly incidents: readonly SupportRiskIncident[];
+}
+
 function createBaseDevice(): Device {
   return { id: "", dutId: "", address: undefined, type: 0, state: 0, deviceSpec: undefined, realm: "" };
 }
@@ -7017,6 +7031,219 @@ export const SetDefaultQuotaResponse: MessageFns<SetDefaultQuotaResponse> = {
   fromPartial(object: DeepPartial<SetDefaultQuotaResponse>): SetDefaultQuotaResponse {
     const message = createBaseSetDefaultQuotaResponse() as any;
     message.defaultQuota = object.defaultQuota ?? 0;
+    return message;
+  },
+};
+
+function createBaseSupportRiskIncident(): SupportRiskIncident {
+  return { id: "0", model: "", buganizerId: "", title: "" };
+}
+
+export const SupportRiskIncident: MessageFns<SupportRiskIncident> = {
+  encode(message: SupportRiskIncident, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.model !== "") {
+      writer.uint32(18).string(message.model);
+    }
+    if (message.buganizerId !== "") {
+      writer.uint32(26).string(message.buganizerId);
+    }
+    if (message.title !== "") {
+      writer.uint32(34).string(message.title);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SupportRiskIncident {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSupportRiskIncident() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.model = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.buganizerId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.title = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SupportRiskIncident {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      model: isSet(object.model) ? globalThis.String(object.model) : "",
+      buganizerId: isSet(object.buganizerId) ? globalThis.String(object.buganizerId) : "",
+      title: isSet(object.title) ? globalThis.String(object.title) : "",
+    };
+  },
+
+  toJSON(message: SupportRiskIncident): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.model !== "") {
+      obj.model = message.model;
+    }
+    if (message.buganizerId !== "") {
+      obj.buganizerId = message.buganizerId;
+    }
+    if (message.title !== "") {
+      obj.title = message.title;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SupportRiskIncident>): SupportRiskIncident {
+    return SupportRiskIncident.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SupportRiskIncident>): SupportRiskIncident {
+    const message = createBaseSupportRiskIncident() as any;
+    message.id = object.id ?? "0";
+    message.model = object.model ?? "";
+    message.buganizerId = object.buganizerId ?? "";
+    message.title = object.title ?? "";
+    return message;
+  },
+};
+
+function createBaseListSupportRiskIncidentsRequest(): ListSupportRiskIncidentsRequest {
+  return {};
+}
+
+export const ListSupportRiskIncidentsRequest: MessageFns<ListSupportRiskIncidentsRequest> = {
+  encode(_: ListSupportRiskIncidentsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListSupportRiskIncidentsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListSupportRiskIncidentsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ListSupportRiskIncidentsRequest {
+    return {};
+  },
+
+  toJSON(_: ListSupportRiskIncidentsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListSupportRiskIncidentsRequest>): ListSupportRiskIncidentsRequest {
+    return ListSupportRiskIncidentsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<ListSupportRiskIncidentsRequest>): ListSupportRiskIncidentsRequest {
+    const message = createBaseListSupportRiskIncidentsRequest() as any;
+    return message;
+  },
+};
+
+function createBaseListSupportRiskIncidentsResponse(): ListSupportRiskIncidentsResponse {
+  return { incidents: [] };
+}
+
+export const ListSupportRiskIncidentsResponse: MessageFns<ListSupportRiskIncidentsResponse> = {
+  encode(message: ListSupportRiskIncidentsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.incidents) {
+      SupportRiskIncident.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListSupportRiskIncidentsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListSupportRiskIncidentsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.incidents.push(SupportRiskIncident.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListSupportRiskIncidentsResponse {
+    return {
+      incidents: globalThis.Array.isArray(object?.incidents)
+        ? object.incidents.map((e: any) => SupportRiskIncident.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ListSupportRiskIncidentsResponse): unknown {
+    const obj: any = {};
+    if (message.incidents?.length) {
+      obj.incidents = message.incidents.map((e) => SupportRiskIncident.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListSupportRiskIncidentsResponse>): ListSupportRiskIncidentsResponse {
+    return ListSupportRiskIncidentsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListSupportRiskIncidentsResponse>): ListSupportRiskIncidentsResponse {
+    const message = createBaseListSupportRiskIncidentsResponse() as any;
+    message.incidents = object.incidents?.map((e) => SupportRiskIncident.fromPartial(e)) || [];
     return message;
   },
 };

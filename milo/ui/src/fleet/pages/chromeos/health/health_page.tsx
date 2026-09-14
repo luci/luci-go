@@ -19,6 +19,7 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ExpectedQuotaCard } from './expected_quota_card';
+import { SupportRiskIncidentsPanel } from './support_risk_incidents_panel';
 
 export const HealthPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -45,57 +46,75 @@ export const HealthPage = () => {
         }`}
       />
       <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
-        {/* Initial Dashboard View: Only Title, Subtitle, and Top-Right Configuration Button */}
+        {/* Initial Dashboard View: Title, Subtitle, Configuration Button, and Side Panel */}
         {pageTab === 'overview' && (
-          <Box
-            sx={{
-              mb: 4,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              flexWrap: 'wrap',
-              gap: 2,
-            }}
-          >
-            <Box>
-              <Typography
-                variant="h4"
-                component="h1"
-                gutterBottom
-                sx={{ fontWeight: 'bold' }}
+          <>
+            <Box
+              sx={{
+                mb: 4,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                flexWrap: 'wrap',
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography
+                  variant="h4"
+                  component="h1"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  ChromeOS Fleet Health Metrics
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  Analyze hardware reliability trends, monitor model health, and
+                  identify pool degradations.
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 1.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
               >
-                ChromeOS Fleet Health Metrics
-              </Typography>
-              <Typography variant="subtitle1" color="text.secondary">
-                Analyze hardware reliability trends, monitor model health, and
-                identify pool degradations.
-              </Typography>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<Settings />}
+                  onClick={() => setPageTab('configuration')}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 'bold',
+                    px: 2,
+                    py: 0.8,
+                    borderRadius: 1.5,
+                  }}
+                >
+                  Configuration
+                </Button>
+              </Box>
             </Box>
+
+            {/* Dashboard Layout */}
             <Box
               sx={{
                 display: 'flex',
-                gap: 1.5,
-                alignItems: 'center',
-                flexWrap: 'wrap',
+                flexDirection: { xs: 'column', lg: 'row' },
+                gap: 4,
+                alignItems: 'flex-start',
               }}
             >
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<Settings />}
-                onClick={() => setPageTab('configuration')}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 'bold',
-                  px: 2,
-                  py: 0.8,
-                  borderRadius: 1.5,
-                }}
-              >
-                Configuration
-              </Button>
+              {/* Placeholder container reserving space for main health metrics & trendline charts */}
+              <Box sx={{ flex: 1, width: '100%' }} />
+              <Box sx={{ width: { xs: '100%', lg: 440 }, flexShrink: 0 }}>
+                <SupportRiskIncidentsPanel />
+              </Box>
             </Box>
-          </Box>
+          </>
         )}
 
         {/* Configuration View: Back button, Header, and Expected Quota Card */}

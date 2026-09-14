@@ -15,11 +15,15 @@
 import { UseQueryResult } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { GetDefaultQuotaResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  GetDefaultQuotaResponse,
+  ListSupportRiskIncidentsResponse,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { HealthPage } from './health_page';
 import * as UseDefaultQuotaModule from './use_default_quota';
+import * as UseSupportRiskIncidentsModule from './use_support_risk_incidents';
 
 describe('HealthPage', () => {
   beforeEach(() => {
@@ -41,9 +45,22 @@ describe('HealthPage', () => {
       canEdit: true,
       isPermissionLoading: false,
     });
+
+    jest
+      .spyOn(UseSupportRiskIncidentsModule, 'useSupportRiskIncidents')
+      .mockReturnValue({
+        data: { incidents: [] } as ListSupportRiskIncidentsResponse,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<ListSupportRiskIncidentsResponse, Error>);
   });
 
-  it('renders overview page with only title, subtitle, and top-right Configuration button', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('renders overview page with header, Configuration button, and Support Risk Incidents panel', () => {
     render(
       <FakeContextProvider>
         <HealthPage />
@@ -61,7 +78,9 @@ describe('HealthPage', () => {
     expect(
       screen.getByRole('button', { name: /^configuration$/i }),
     ).toBeInTheDocument();
-    // Quota card is NOT on the initial overview dashboard
+    expect(
+      screen.getByText('Active Support Risk Incidents'),
+    ).toBeInTheDocument();
     expect(
       screen.queryByText('Global Default Expected Quota'),
     ).not.toBeInTheDocument();

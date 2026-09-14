@@ -73,6 +73,8 @@ import {
   ListRepairMetricsResponse,
   ListRepairQueueRequest,
   ListRepairQueueResponse,
+  ListSupportRiskIncidentsRequest,
+  ListSupportRiskIncidentsResponse,
   RepopulateCacheRequest,
   RepopulateCacheResponse,
   ScheduleAutorepairRequest,
@@ -385,6 +387,7 @@ export interface FleetConsole {
   ListCustomerSlos(request: ListCustomerSlosRequest): Promise<ListCustomerSlosResponse>;
   GetDefaultQuota(request: GetDefaultQuotaRequest): Promise<GetDefaultQuotaResponse>;
   SetDefaultQuota(request: SetDefaultQuotaRequest): Promise<SetDefaultQuotaResponse>;
+  ListSupportRiskIncidents(request: ListSupportRiskIncidentsRequest): Promise<ListSupportRiskIncidentsResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -449,6 +452,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ListCustomerSlos = this.ListCustomerSlos.bind(this);
     this.GetDefaultQuota = this.GetDefaultQuota.bind(this);
     this.SetDefaultQuota = this.SetDefaultQuota.bind(this);
+    this.ListSupportRiskIncidents = this.ListSupportRiskIncidents.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -782,6 +786,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = SetDefaultQuotaRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "SetDefaultQuota", data);
     return promise.then((data) => SetDefaultQuotaResponse.fromJSON(data));
+  }
+
+  ListSupportRiskIncidents(request: ListSupportRiskIncidentsRequest): Promise<ListSupportRiskIncidentsResponse> {
+    const data = ListSupportRiskIncidentsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListSupportRiskIncidents", data);
+    return promise.then((data) => ListSupportRiskIncidentsResponse.fromJSON(data));
   }
 }
 
