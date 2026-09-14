@@ -97,8 +97,8 @@ func TestQueryBatch(t *testing.T) {
 		}
 
 		// Get all items in the query, then reset the counter.
-		all := []*CommonStruct(nil)
-		if err := GetAll(c, NewQuery(""), &all); err != nil {
+		all, err := RunQuery[*CommonStruct](c, NewQuery("")).AsSlice()
+		if err != nil {
 			panic(err)
 		}
 		cf.run = 0
