@@ -291,7 +291,7 @@ func (q *QueryIter[V]) ensureFinalizedLocked() RawQueryIter {
 	}
 
 	qCopy := q.q
-	if q.isKey {
+	if q.isKey && len(qCopy.project) == 0 {
 		qCopy = qCopy.KeysOnly(true)
 	}
 	fq, err := qCopy.Finalize()
@@ -781,126 +781,6 @@ func CountMulti(ctx context.Context, queries []*Query) (int64, error) {
 		count++
 	}
 	return count, nil
-}
-
-type getAllOptions struct {
-	limit int
-}
-
-type getAllOption = func(*getAllOptions) error
-
-// Function limit controls the behavior of GetAll. A positive limit indicates how many results
-// to return.
-func limit(n int) getAllOption {
-	return func(o *getAllOptions) error {
-		if n < 0 {
-			return fmt.Errorf("n (%d) cannot be negative", n)
-		}
-		o.limit = n
-		return nil
-	}
-}
-
-// GetAll retrieves all of the Query results into dst.
-//
-// Deprecated: Use [QueryIter.AsSlice] instead.
-func GetAll(ctx context.Context, q *Query, dst any) error {
-	return getAllRaw(Raw(ctx), q, dst)
-}
-
-// GetAllWithLimit retrieves all of the Query results into dst up to a limit.
-//
-// Deprecated: Use [QueryIter.AsSlice] instead.
-func GetAllWithLimit(ctx context.Context, q *Query, dst any, lim int) error {
-	if lim <= 0 {
-		return fmt.Errorf("GetAllWithLimit: invalid limit %d <= 0", lim)
-	}
-	return getAllRaw(Raw(ctx), q, dst, limit(lim))
-}
-
-func getAllRaw(raw RawInterface, q *Query, dst any, o ...getAllOption) error {
-	var cfg getAllOptions
-	for _, f := range o {
-		if err := f(&cfg); err != nil {
-			return err
-		}
-	}
-	v := reflect.ValueOf(dst)
-	if v.Kind() != reflect.Pointer {
-		panic(fmt.Errorf("invalid GetAll dst: must have a ptr-to-slice: %T", dst))
-	}
-	if !v.IsValid() || v.IsNil() {
-		panic(errors.New("invalid GetAll dst: <nil>"))
-	}
-
-	if keys, ok := dst.(*[]*Key); ok {
-		fq, err := q.KeysOnly(true).Finalize()
-		if err != nil {
-			return err
-		}
-
-		it := raw.RunQuery(fq)
-		for pm, err := range it.Results {
-			if err != nil {
-				return err
-			}
-			*keys = append(*keys, mustGetKeyFromPM(pm))
-		}
-		return nil
-	}
-	fq, err := q.Finalize()
-	if err != nil {
-		return err
-	}
-
-	slice := v.Elem()
-	mat := mustParseMultiArg(slice.Type())
-	if mat.newElem == nil {
-		panic(fmt.Errorf("invalid GetAll dst (non-concrete element type): %T", dst))
-	}
-
-	errs := map[int]error{}
-	i := 0
-	it := raw.RunQuery(fq)
-	var runErr error
-	for pm, err := range it.Results {
-		if err != nil {
-			runErr = filterStop(err)
-			break
-		}
-		if cfg.limit > 0 && i >= cfg.limit {
-			runErr = ErrLimitExceeded
-			break
-		}
-		k := mustGetKeyFromPM(pm)
-		slice.Set(reflect.Append(slice, mat.newElem()))
-		itm := slice.Index(i)
-		mat.setKey(itm, k)
-		cleanPM := pm
-		if k != nil && len(pm) > 0 {
-			cleanPM = pm.Clone()
-			delete(cleanPM, "$key")
-		}
-		if setErr := mat.setPM(itm, cleanPM); setErr != nil {
-			errs[i] = setErr
-		}
-		i++
-	}
-	switch {
-	case errors.Is(runErr, ErrLimitExceeded):
-		return runErr
-	case runErr == nil:
-		if len(errs) > 0 {
-			me := make(errors.MultiError, slice.Len())
-			for i, e := range errs {
-				me[i] = e
-			}
-			return me
-		}
-		return nil
-	default:
-		return runErr
-	}
 }
 
 // Exists tests if the supplied objects are present in the datastore.

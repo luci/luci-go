@@ -1177,34 +1177,11 @@ func TestGetAll(t *testing.T) {
 		fds.entities = 5
 		q := NewQuery("")
 
-		t.Run("bad", func(t *ftt.Test) {
-			t.Run("nil target", func(t *ftt.Test) {
-				assert.Loosely(t, func() { GetAll(c, q, (*[]PropertyMap)(nil)) }, should.PanicLike(
-					"invalid GetAll dst: <nil>"))
-			})
-
-			t.Run("bad type", func(t *ftt.Test) {
-				output := 100
-				assert.Loosely(t, func() { GetAll(c, q, &output) }, should.PanicLike(
-					"invalid argument type: expected slice, got int"))
-			})
-
-			t.Run("bad type (non pointer)", func(t *ftt.Test) {
-				assert.Loosely(t, func() { GetAll(c, q, "moo") }, should.PanicLike(
-					"invalid GetAll dst: must have a ptr-to-slice"))
-			})
-
-			t.Run("bad type (underspecified)", func(t *ftt.Test) {
-				output := []PropertyLoadSaver(nil)
-				assert.Loosely(t, func() { GetAll(c, q, &output) }, should.PanicLike(
-					"invalid GetAll dst (non-concrete element type): *[]datastore.PropertyLoadSaver"))
-			})
-		})
-
 		t.Run("ok", func(t *ftt.Test) {
 			t.Run("*[]S", func(t *ftt.Test) {
 				output := []CommonStruct(nil)
-				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				output, err := RunQuery[CommonStruct](c, q).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
 					assert.Loosely(t, o.ID, should.Equal(i+1))
@@ -1213,8 +1190,8 @@ func TestGetAll(t *testing.T) {
 			})
 
 			t.Run("*[]*S", func(t *ftt.Test) {
-				output := []*CommonStruct(nil)
-				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				output, err := RunQuery[*CommonStruct](c, q).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
 					assert.Loosely(t, o.ID, should.Equal(i+1))
@@ -1223,8 +1200,8 @@ func TestGetAll(t *testing.T) {
 			})
 
 			t.Run("*[]P", func(t *ftt.Test) {
-				output := []FakePLS(nil)
-				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				output, err := RunQuery[FakePLS](c, q).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
 					assert.Loosely(t, o.gotLoaded, should.BeTrue)
@@ -1234,8 +1211,8 @@ func TestGetAll(t *testing.T) {
 			})
 
 			t.Run("*[]P (map)", func(t *ftt.Test) {
-				output := []PropertyMap(nil)
-				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				output, err := RunQuery[PropertyMap](c, q).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
 					k, ok := o.GetMeta("key")
@@ -1246,8 +1223,8 @@ func TestGetAll(t *testing.T) {
 			})
 
 			t.Run("*[]P (chan)", func(t *ftt.Test) {
-				output := []plsChan(nil)
-				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				output, err := RunQuery[plsChan](c, q).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, output, should.HaveLength(5))
 				for _, o := range output {
 					assert.Loosely(t, KeyForObj(c, o).StringID(), should.Equal("whyDoIExist"))
@@ -1255,8 +1232,8 @@ func TestGetAll(t *testing.T) {
 			})
 
 			t.Run("*[]*P", func(t *ftt.Test) {
-				output := []*FakePLS(nil)
-				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				output, err := RunQuery[*FakePLS](c, q).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
 					assert.Loosely(t, o.gotLoaded, should.BeTrue)
@@ -1266,8 +1243,8 @@ func TestGetAll(t *testing.T) {
 			})
 
 			t.Run("*[]*P (map)", func(t *ftt.Test) {
-				output := []*PropertyMap(nil)
-				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				output, err := RunQuery[*PropertyMap](c, q).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, len(output), should.Equal(5))
 				for i, op := range output {
 					o := *op
@@ -1279,8 +1256,8 @@ func TestGetAll(t *testing.T) {
 			})
 
 			t.Run("*[]*P (chan)", func(t *ftt.Test) {
-				output := []*plsChan(nil)
-				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				output, err := RunQuery[*plsChan](c, q).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, output, should.HaveLength(5))
 				for _, o := range output {
 					assert.Loosely(t, KeyForObj(c, o).StringID(), should.Equal("whyDoIExist"))
@@ -1288,8 +1265,8 @@ func TestGetAll(t *testing.T) {
 			})
 
 			t.Run("*[]*Key", func(t *ftt.Test) {
-				output := []*Key(nil)
-				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				output, err := RunQuery[*Key](c, q).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, len(output), should.Equal(5))
 				for i, k := range output {
 					assert.Loosely(t, k.IntID(), should.Equal(i+1))

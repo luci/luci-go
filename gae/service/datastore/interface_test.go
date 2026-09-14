@@ -33,66 +33,63 @@ const SimpleRecordKind = "SimpleRecord"
 type SimpleRecord struct {
 	_kind string `gae:"$kind,SimpleRecord"`
 	key   string `gae:"$id"`
-	value string `gae:"value"`
+	Value string `gae:"value"`
 }
 
-func getAll(ctx context.Context, n int) ([]*SimpleRecord, error) {
-	var out []*SimpleRecord
-	query := datastore.NewQuery(SimpleRecordKind)
-	var err error
-	if n <= 0 {
-		err = datastore.GetAll(ctx, query, &out)
-	} else {
-		err = datastore.GetAllWithLimit(ctx, query, &out, n)
-	}
-	return out, err
-}
-
-func TestGetAll_Empty(t *testing.T) {
+func TestAsSlice_Empty(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 	ctx = memory.Use(ctx)
 	datastore.GetTestable(ctx).Consistent(true)
 
-	records, err := getAll(ctx, 1)
+	q := datastore.NewQuery(SimpleRecordKind).Limit(1)
+	records, err := datastore.RunQuery[*SimpleRecord](ctx, q).AsSlice()
 	assert.NoErr(t, err)
 	assert.Loosely(t, len(records), should.Equal(0))
 }
 
-func TestGetAll_Singleton(t *testing.T) {
+func TestAsSlice_Singleton(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 	ctx = memory.Use(ctx)
 	datastore.GetTestable(ctx).Consistent(true)
 
-	err := datastore.Put(ctx, &SimpleRecord{key: "a", value: "b"})
+	err := datastore.Put(ctx, &SimpleRecord{key: "a", Value: "b"})
 	assert.NoErr(t, err)
 
-	records, err := getAll(ctx, 1)
+	q := datastore.NewQuery(SimpleRecordKind)
+	it := datastore.RunQuery[*SimpleRecord](ctx, q)
+	it.SetSizeLimit(40)
+	records, err := it.AsSlice()
 	assert.NoErr(t, err)
 	assert.Loosely(t, len(records), should.Equal(1))
 }
 
-func TestGetAll_Doubleton(t *testing.T) {
+func TestAsSlice_Doubleton(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 	ctx = memory.Use(ctx)
 	datastore.GetTestable(ctx).Consistent(true)
 
-	err := datastore.Put(ctx, &SimpleRecord{key: "a", value: "b"})
+	err := datastore.Put(ctx, &SimpleRecord{key: "a", Value: "b"})
 	assert.NoErr(t, err)
 
-	err = datastore.Put(ctx, &SimpleRecord{key: "a1", value: "b1"})
+	err = datastore.Put(ctx, &SimpleRecord{key: "a1", Value: "b1"})
 	assert.NoErr(t, err)
 
-	records, err := getAll(ctx, 1)
+	q := datastore.NewQuery(SimpleRecordKind)
+	it := datastore.RunQuery[*SimpleRecord](ctx, q)
+	it.SetSizeLimit(40)
+	records, err := it.AsSlice()
 	assert.Loosely(t, err, should.ErrLike(datastore.ErrLimitExceeded))
 	assert.Loosely(t, len(records), should.Equal(1))
 
-	records, err = getAll(ctx, 2)
+	it = datastore.RunQuery[*SimpleRecord](ctx, q)
+	it.SetSizeLimit(80)
+	records, err = it.AsSlice()
 	assert.NoErr(t, err)
 	assert.Loosely(t, len(records), should.Equal(2))
 }
