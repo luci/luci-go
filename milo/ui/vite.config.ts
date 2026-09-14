@@ -103,7 +103,7 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       strictPort: true,
       watch: {
-        ignored: ['**/.worktrees/**', '**/.tmp/**'],
+        ignored: ['**/.worktrees/**', '**/.tmp/**', '**/.cache/**'],
       },
       // Proxy the queries to `self.location.host` to the configured milo server
       // (typically https://luci-milo-dev.appspot.com) since we don't run the
