@@ -51,6 +51,8 @@ import {
   CountRepairMetricsResponse,
   CreatePriorityRuleRequest,
   CreatePriorityRuleResponse,
+  DeleteModelQuotaOverrideRequest,
+  DeleteModelQuotaOverrideResponse,
   DeletePriorityRuleRequest,
   DeletePriorityRuleResponse,
   ExportDevicesToCSVRequest,
@@ -67,6 +69,8 @@ import {
   ListDevicesResponse,
   ListIrmIncidentsRequest,
   ListIrmIncidentsResponse,
+  ListModelQuotaOverridesRequest,
+  ListModelQuotaOverridesResponse,
   ListPriorityRulesRequest,
   ListPriorityRulesResponse,
   ListRepairMetricsRequest,
@@ -85,6 +89,8 @@ import {
   ScheduleReserveResponse,
   SetDefaultQuotaRequest,
   SetDefaultQuotaResponse,
+  SetModelQuotaOverrideRequest,
+  SetModelQuotaOverrideResponse,
   UnclaimRepairTaskRequest,
   UnclaimRepairTaskResponse,
   UpdateChromeOSDeviceRequest,
@@ -388,6 +394,9 @@ export interface FleetConsole {
   GetDefaultQuota(request: GetDefaultQuotaRequest): Promise<GetDefaultQuotaResponse>;
   SetDefaultQuota(request: SetDefaultQuotaRequest): Promise<SetDefaultQuotaResponse>;
   ListSupportRiskIncidents(request: ListSupportRiskIncidentsRequest): Promise<ListSupportRiskIncidentsResponse>;
+  SetModelQuotaOverride(request: SetModelQuotaOverrideRequest): Promise<SetModelQuotaOverrideResponse>;
+  DeleteModelQuotaOverride(request: DeleteModelQuotaOverrideRequest): Promise<DeleteModelQuotaOverrideResponse>;
+  ListModelQuotaOverrides(request: ListModelQuotaOverridesRequest): Promise<ListModelQuotaOverridesResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -453,6 +462,9 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.GetDefaultQuota = this.GetDefaultQuota.bind(this);
     this.SetDefaultQuota = this.SetDefaultQuota.bind(this);
     this.ListSupportRiskIncidents = this.ListSupportRiskIncidents.bind(this);
+    this.SetModelQuotaOverride = this.SetModelQuotaOverride.bind(this);
+    this.DeleteModelQuotaOverride = this.DeleteModelQuotaOverride.bind(this);
+    this.ListModelQuotaOverrides = this.ListModelQuotaOverrides.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -792,6 +804,24 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ListSupportRiskIncidentsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListSupportRiskIncidents", data);
     return promise.then((data) => ListSupportRiskIncidentsResponse.fromJSON(data));
+  }
+
+  SetModelQuotaOverride(request: SetModelQuotaOverrideRequest): Promise<SetModelQuotaOverrideResponse> {
+    const data = SetModelQuotaOverrideRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "SetModelQuotaOverride", data);
+    return promise.then((data) => SetModelQuotaOverrideResponse.fromJSON(data));
+  }
+
+  DeleteModelQuotaOverride(request: DeleteModelQuotaOverrideRequest): Promise<DeleteModelQuotaOverrideResponse> {
+    const data = DeleteModelQuotaOverrideRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "DeleteModelQuotaOverride", data);
+    return promise.then((data) => DeleteModelQuotaOverrideResponse.fromJSON(data));
+  }
+
+  ListModelQuotaOverrides(request: ListModelQuotaOverridesRequest): Promise<ListModelQuotaOverridesResponse> {
+    const data = ListModelQuotaOverridesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListModelQuotaOverrides", data);
+    return promise.then((data) => ListModelQuotaOverridesResponse.fromJSON(data));
   }
 }
 

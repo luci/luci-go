@@ -30,8 +30,7 @@ import {
 import { useEffect, useState } from 'react';
 
 import { useDefaultQuota } from './use_default_quota';
-
-const MAX_SAFE_INT32 = 2_147_483_647;
+import { validateQuota } from './validation_utils';
 
 const isNotFoundError = (err: unknown): boolean => {
   if (!err) {
@@ -49,20 +48,6 @@ const isNotFoundError = (err: unknown): boolean => {
     return true;
   }
   return false;
-};
-
-const validateQuota = (val: string): string => {
-  if (val.trim() === '') {
-    return 'Expected quota must be a positive whole integer greater than 0.';
-  }
-  const num = Number(val);
-  if (isNaN(num) || num <= 0 || !Number.isInteger(num)) {
-    return 'Expected quota must be a positive whole integer greater than 0.';
-  }
-  if (num > MAX_SAFE_INT32) {
-    return `Expected quota cannot exceed ${MAX_SAFE_INT32.toLocaleString()}.`;
-  }
-  return '';
 };
 
 export const ExpectedQuotaCard = () => {

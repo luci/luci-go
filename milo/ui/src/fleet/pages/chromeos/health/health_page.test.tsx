@@ -102,6 +102,9 @@ describe('HealthPage', () => {
     expect(
       screen.getByText('Global Default Expected Quota'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText('Manual Model Quota Overrides'),
+    ).toBeInTheDocument();
 
     const backButton = screen.getByRole('button', {
       name: /back to fleet overview/i,

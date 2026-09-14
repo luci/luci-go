@@ -216,10 +216,10 @@ describe('ExpectedQuotaCard', () => {
     ).toBeInTheDocument();
     expect(saveButton).toBeDisabled();
 
-    // Enter number exceeding int32 max
-    fireEvent.change(input, { target: { value: '3000000000' } });
+    // Enter number exceeding max quota
+    fireEvent.change(input, { target: { value: '100001' } });
     expect(
-      screen.getByText('Expected quota cannot exceed 2,147,483,647.'),
+      screen.getByText('Expected quota cannot exceed 100,000.'),
     ).toBeInTheDocument();
     expect(saveButton).toBeDisabled();
   });

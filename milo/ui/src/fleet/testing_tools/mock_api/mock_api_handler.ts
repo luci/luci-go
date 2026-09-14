@@ -91,6 +91,9 @@ export interface FleetConsoleMockFixtures {
   SetDefaultQuota: unknown;
   ListIrmIncidents: unknown;
   ListSupportRiskIncidents: unknown;
+  ListModelQuotaOverrides: unknown;
+  SetModelQuotaOverride: unknown;
+  DeleteModelQuotaOverride: unknown;
   [method: string]: unknown;
 }
 
@@ -530,6 +533,28 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       },
     ],
   },
+  ListModelQuotaOverrides: {
+    overrides: [
+      {
+        id: '1',
+        model: 'brya',
+        overriddenExpectedQuantity: 15,
+      },
+      {
+        id: '2',
+        model: 'volteer',
+        overriddenExpectedQuantity: 20,
+      },
+    ],
+  },
+  SetModelQuotaOverride: {
+    override: {
+      id: '1',
+      model: 'brya',
+      overriddenExpectedQuantity: 15,
+    },
+  },
+  DeleteModelQuotaOverride: {},
 };
 
 function deepClone<T>(obj: T): T {

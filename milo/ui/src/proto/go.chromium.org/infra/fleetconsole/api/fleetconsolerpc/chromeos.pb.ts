@@ -719,6 +719,35 @@ export interface ListSupportRiskIncidentsResponse {
   readonly incidents: readonly SupportRiskIncident[];
 }
 
+export interface ModelQuotaOverride {
+  readonly id: string;
+  readonly model: string;
+  readonly overriddenExpectedQuantity: number;
+}
+
+export interface SetModelQuotaOverrideRequest {
+  readonly model: string;
+  readonly overriddenExpectedQuantity: number;
+}
+
+export interface SetModelQuotaOverrideResponse {
+  readonly override: ModelQuotaOverride | undefined;
+}
+
+export interface DeleteModelQuotaOverrideRequest {
+  readonly model: string;
+}
+
+export interface DeleteModelQuotaOverrideResponse {
+}
+
+export interface ListModelQuotaOverridesRequest {
+}
+
+export interface ListModelQuotaOverridesResponse {
+  readonly overrides: readonly ModelQuotaOverride[];
+}
+
 function createBaseDevice(): Device {
   return { id: "", dutId: "", address: undefined, type: 0, state: 0, deviceSpec: undefined, realm: "" };
 }
@@ -7244,6 +7273,444 @@ export const ListSupportRiskIncidentsResponse: MessageFns<ListSupportRiskInciden
   fromPartial(object: DeepPartial<ListSupportRiskIncidentsResponse>): ListSupportRiskIncidentsResponse {
     const message = createBaseListSupportRiskIncidentsResponse() as any;
     message.incidents = object.incidents?.map((e) => SupportRiskIncident.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseModelQuotaOverride(): ModelQuotaOverride {
+  return { id: "0", model: "", overriddenExpectedQuantity: 0 };
+}
+
+export const ModelQuotaOverride: MessageFns<ModelQuotaOverride> = {
+  encode(message: ModelQuotaOverride, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.model !== "") {
+      writer.uint32(18).string(message.model);
+    }
+    if (message.overriddenExpectedQuantity !== 0) {
+      writer.uint32(24).int32(message.overriddenExpectedQuantity);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ModelQuotaOverride {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseModelQuotaOverride() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.model = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.overriddenExpectedQuantity = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ModelQuotaOverride {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      model: isSet(object.model) ? globalThis.String(object.model) : "",
+      overriddenExpectedQuantity: isSet(object.overriddenExpectedQuantity)
+        ? globalThis.Number(object.overriddenExpectedQuantity)
+        : 0,
+    };
+  },
+
+  toJSON(message: ModelQuotaOverride): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.model !== "") {
+      obj.model = message.model;
+    }
+    if (message.overriddenExpectedQuantity !== 0) {
+      obj.overriddenExpectedQuantity = Math.round(message.overriddenExpectedQuantity);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ModelQuotaOverride>): ModelQuotaOverride {
+    return ModelQuotaOverride.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ModelQuotaOverride>): ModelQuotaOverride {
+    const message = createBaseModelQuotaOverride() as any;
+    message.id = object.id ?? "0";
+    message.model = object.model ?? "";
+    message.overriddenExpectedQuantity = object.overriddenExpectedQuantity ?? 0;
+    return message;
+  },
+};
+
+function createBaseSetModelQuotaOverrideRequest(): SetModelQuotaOverrideRequest {
+  return { model: "", overriddenExpectedQuantity: 0 };
+}
+
+export const SetModelQuotaOverrideRequest: MessageFns<SetModelQuotaOverrideRequest> = {
+  encode(message: SetModelQuotaOverrideRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.model !== "") {
+      writer.uint32(10).string(message.model);
+    }
+    if (message.overriddenExpectedQuantity !== 0) {
+      writer.uint32(16).int32(message.overriddenExpectedQuantity);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SetModelQuotaOverrideRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetModelQuotaOverrideRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.model = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.overriddenExpectedQuantity = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetModelQuotaOverrideRequest {
+    return {
+      model: isSet(object.model) ? globalThis.String(object.model) : "",
+      overriddenExpectedQuantity: isSet(object.overriddenExpectedQuantity)
+        ? globalThis.Number(object.overriddenExpectedQuantity)
+        : 0,
+    };
+  },
+
+  toJSON(message: SetModelQuotaOverrideRequest): unknown {
+    const obj: any = {};
+    if (message.model !== "") {
+      obj.model = message.model;
+    }
+    if (message.overriddenExpectedQuantity !== 0) {
+      obj.overriddenExpectedQuantity = Math.round(message.overriddenExpectedQuantity);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SetModelQuotaOverrideRequest>): SetModelQuotaOverrideRequest {
+    return SetModelQuotaOverrideRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SetModelQuotaOverrideRequest>): SetModelQuotaOverrideRequest {
+    const message = createBaseSetModelQuotaOverrideRequest() as any;
+    message.model = object.model ?? "";
+    message.overriddenExpectedQuantity = object.overriddenExpectedQuantity ?? 0;
+    return message;
+  },
+};
+
+function createBaseSetModelQuotaOverrideResponse(): SetModelQuotaOverrideResponse {
+  return { override: undefined };
+}
+
+export const SetModelQuotaOverrideResponse: MessageFns<SetModelQuotaOverrideResponse> = {
+  encode(message: SetModelQuotaOverrideResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.override !== undefined) {
+      ModelQuotaOverride.encode(message.override, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SetModelQuotaOverrideResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetModelQuotaOverrideResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.override = ModelQuotaOverride.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetModelQuotaOverrideResponse {
+    return { override: isSet(object.override) ? ModelQuotaOverride.fromJSON(object.override) : undefined };
+  },
+
+  toJSON(message: SetModelQuotaOverrideResponse): unknown {
+    const obj: any = {};
+    if (message.override !== undefined) {
+      obj.override = ModelQuotaOverride.toJSON(message.override);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SetModelQuotaOverrideResponse>): SetModelQuotaOverrideResponse {
+    return SetModelQuotaOverrideResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SetModelQuotaOverrideResponse>): SetModelQuotaOverrideResponse {
+    const message = createBaseSetModelQuotaOverrideResponse() as any;
+    message.override = (object.override !== undefined && object.override !== null)
+      ? ModelQuotaOverride.fromPartial(object.override)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseDeleteModelQuotaOverrideRequest(): DeleteModelQuotaOverrideRequest {
+  return { model: "" };
+}
+
+export const DeleteModelQuotaOverrideRequest: MessageFns<DeleteModelQuotaOverrideRequest> = {
+  encode(message: DeleteModelQuotaOverrideRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.model !== "") {
+      writer.uint32(10).string(message.model);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteModelQuotaOverrideRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteModelQuotaOverrideRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.model = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteModelQuotaOverrideRequest {
+    return { model: isSet(object.model) ? globalThis.String(object.model) : "" };
+  },
+
+  toJSON(message: DeleteModelQuotaOverrideRequest): unknown {
+    const obj: any = {};
+    if (message.model !== "") {
+      obj.model = message.model;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeleteModelQuotaOverrideRequest>): DeleteModelQuotaOverrideRequest {
+    return DeleteModelQuotaOverrideRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeleteModelQuotaOverrideRequest>): DeleteModelQuotaOverrideRequest {
+    const message = createBaseDeleteModelQuotaOverrideRequest() as any;
+    message.model = object.model ?? "";
+    return message;
+  },
+};
+
+function createBaseDeleteModelQuotaOverrideResponse(): DeleteModelQuotaOverrideResponse {
+  return {};
+}
+
+export const DeleteModelQuotaOverrideResponse: MessageFns<DeleteModelQuotaOverrideResponse> = {
+  encode(_: DeleteModelQuotaOverrideResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteModelQuotaOverrideResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteModelQuotaOverrideResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): DeleteModelQuotaOverrideResponse {
+    return {};
+  },
+
+  toJSON(_: DeleteModelQuotaOverrideResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeleteModelQuotaOverrideResponse>): DeleteModelQuotaOverrideResponse {
+    return DeleteModelQuotaOverrideResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<DeleteModelQuotaOverrideResponse>): DeleteModelQuotaOverrideResponse {
+    const message = createBaseDeleteModelQuotaOverrideResponse() as any;
+    return message;
+  },
+};
+
+function createBaseListModelQuotaOverridesRequest(): ListModelQuotaOverridesRequest {
+  return {};
+}
+
+export const ListModelQuotaOverridesRequest: MessageFns<ListModelQuotaOverridesRequest> = {
+  encode(_: ListModelQuotaOverridesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListModelQuotaOverridesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListModelQuotaOverridesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ListModelQuotaOverridesRequest {
+    return {};
+  },
+
+  toJSON(_: ListModelQuotaOverridesRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListModelQuotaOverridesRequest>): ListModelQuotaOverridesRequest {
+    return ListModelQuotaOverridesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<ListModelQuotaOverridesRequest>): ListModelQuotaOverridesRequest {
+    const message = createBaseListModelQuotaOverridesRequest() as any;
+    return message;
+  },
+};
+
+function createBaseListModelQuotaOverridesResponse(): ListModelQuotaOverridesResponse {
+  return { overrides: [] };
+}
+
+export const ListModelQuotaOverridesResponse: MessageFns<ListModelQuotaOverridesResponse> = {
+  encode(message: ListModelQuotaOverridesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.overrides) {
+      ModelQuotaOverride.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListModelQuotaOverridesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListModelQuotaOverridesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.overrides.push(ModelQuotaOverride.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListModelQuotaOverridesResponse {
+    return {
+      overrides: globalThis.Array.isArray(object?.overrides)
+        ? object.overrides.map((e: any) => ModelQuotaOverride.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ListModelQuotaOverridesResponse): unknown {
+    const obj: any = {};
+    if (message.overrides?.length) {
+      obj.overrides = message.overrides.map((e) => ModelQuotaOverride.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListModelQuotaOverridesResponse>): ListModelQuotaOverridesResponse {
+    return ListModelQuotaOverridesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListModelQuotaOverridesResponse>): ListModelQuotaOverridesResponse {
+    const message = createBaseListModelQuotaOverridesResponse() as any;
+    message.overrides = object.overrides?.map((e) => ModelQuotaOverride.fromPartial(e)) || [];
     return message;
   },
 };

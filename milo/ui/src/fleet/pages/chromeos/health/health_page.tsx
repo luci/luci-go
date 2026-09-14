@@ -19,6 +19,7 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ExpectedQuotaCard } from './expected_quota_card';
+import { ManualQuotaOverridesCard } from './manual_quota_overrides_card';
 import { SupportRiskIncidentsPanel } from './support_risk_incidents_panel';
 
 export const HealthPage = () => {
@@ -147,8 +148,16 @@ export const HealthPage = () => {
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 4,
+                alignItems: 'flex-start',
+              }}
+            >
               <ExpectedQuotaCard />
+              <ManualQuotaOverridesCard />
             </Box>
           </Box>
         )}
