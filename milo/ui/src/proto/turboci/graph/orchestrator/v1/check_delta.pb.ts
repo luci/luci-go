@@ -23,6 +23,10 @@ export interface CheckDelta {
   readonly state?:
     | CheckState
     | undefined;
+  /** The display_name of the check, if it was modified. */
+  readonly displayName?:
+    | string
+    | undefined;
   /**
    * Dependencies written as part of this edit.
    *
@@ -84,13 +88,16 @@ export interface CheckDelta_Result {
 }
 
 function createBaseCheckDelta(): CheckDelta {
-  return { state: undefined, dependencies: undefined, options: [], results: [] };
+  return { state: undefined, displayName: undefined, dependencies: undefined, options: [], results: [] };
 }
 
 export const CheckDelta: MessageFns<CheckDelta> = {
   encode(message: CheckDelta, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.state !== undefined) {
       writer.uint32(8).int32(message.state);
+    }
+    if (message.displayName !== undefined) {
+      writer.uint32(42).string(message.displayName);
     }
     if (message.dependencies !== undefined) {
       Dependencies.encode(message.dependencies, writer.uint32(18).fork()).join();
@@ -117,6 +124,14 @@ export const CheckDelta: MessageFns<CheckDelta> = {
           }
 
           message.state = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.displayName = reader.string();
           continue;
         }
         case 2: {
@@ -155,6 +170,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
   fromJSON(object: any): CheckDelta {
     return {
       state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : undefined,
       dependencies: isSet(object.dependencies) ? Dependencies.fromJSON(object.dependencies) : undefined,
       options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => ValueRef.fromJSON(e)) : [],
       results: globalThis.Array.isArray(object?.results)
@@ -167,6 +183,9 @@ export const CheckDelta: MessageFns<CheckDelta> = {
     const obj: any = {};
     if (message.state !== undefined) {
       obj.state = checkStateToJSON(message.state);
+    }
+    if (message.displayName !== undefined) {
+      obj.displayName = message.displayName;
     }
     if (message.dependencies !== undefined) {
       obj.dependencies = Dependencies.toJSON(message.dependencies);
@@ -186,6 +205,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
   fromPartial(object: DeepPartial<CheckDelta>): CheckDelta {
     const message = createBaseCheckDelta() as any;
     message.state = object.state ?? undefined;
+    message.displayName = object.displayName ?? undefined;
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? Dependencies.fromPartial(object.dependencies)
       : undefined;

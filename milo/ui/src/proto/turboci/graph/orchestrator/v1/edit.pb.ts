@@ -57,10 +57,8 @@ export interface Edit {
    * to allow easy ACL resolution).
    *
    * The premise is that if you can read a Check or Stage, you can read the
-   * edits for that Check or Stage.
-   *
-   * Read access to the Edit is governed by the same permission used for the
-   * base node (e.g. turboci.checks.read or turboci.stages.read).
+   * edits for that Check or Stage, i.e. the read access to the Edit is governed
+   * by the same permission used for the base node.
    */
   readonly realm?:
     | string

@@ -84,6 +84,38 @@ export interface TurboCIStageExecutor {
    * related to RPC peers (or network between them) dying midway through
    * execution.
    *
+   * # Interaction with stage cancellation
+   *
+   * A stage attempt can be cancelled at any moment before or during RunStage
+   * execution.
+   *
+   * If it is cancelled before RunStage switches the attempt into SCHEDULED or
+   * RUNNING state, WriteNodes RPCs (e.g. calls to switch the attempt into
+   * RUNNING state) will return FAILED_PRECONDITION error and the gRPC status
+   * details will contain StageAttemptCurrentState with INCOMPLETE `state`
+   * and `cancelled_at` populated.
+   *
+   * If the stage attempt is cancelled after RunStage switches it to SCHEDULED
+   * or RUNNING state, the orchestrator will switch the attempt into CANCELLING
+   * state and will call CancelStage RPC to notify the executor the cancellation
+   * is happening (this is most useful for SCHEDULED attempts that just sit idle
+   * in some queue). The executor can also passively check if the attempt is
+   * CANCELLING now by looking at `current_attempt_state` in WriteNodes RPC
+   * response (useful for running attempts that periodically send heartbeats by
+   * calling WriteNodes with `current_attempt` set).
+   *
+   * Either way the executor must acknowledge the cancellation by switching
+   * the attempt into TEARING_DOWN state (or any terminal states). This can
+   * happen either inside CancelStage implementation or in the executor's
+   * run loop. The orchestrator will keep calling CancelStage as long as the
+   * attempt is in CANCELLING state, up to `cancelling` timeout, after which the
+   * attempt will be marked as INCOMPLETE.
+   *
+   * If there's no `cancelling` timeout, then cancelling a stage will
+   * immediately transition the attempt into INCOMPLETE state (CancelStage will
+   * not be called). The executor can discover this happened by examining
+   * FAILED_PRECONDITION error details as explained above.
+   *
    * Examples:
    *
    * # Fast Synchronous stage - single write:
@@ -218,19 +250,21 @@ export interface TurboCIStageExecutor {
   /**
    * CancelStage instructs the executor to cancel the given stage attempt.
    *
-   * This RPC is used to cancel an asynchronous stage attempt that is in
-   * CANCELLING state.
+   * It is called for attempts in CANCELLING state soon after they are
+   * cancelled.
    *
    * To handle this RPC, the executor may
-   * * call TurboCIOrchestrator.WriteNodes with CurrentStageWrite to mark the
-   *   stage as COMPLETE/INCOMPLETE if it can do so (for example, if the stage
-   *   attempt has not started running yet).
-   * * call TurboCIOrchestrator.WriteNodes with CurrentStageWrite to mark the
-   *   stage as TEARING_DOWN if the execution policy allows this, and there is
-   *   some additional work that needs to happen in this state.
-   * * communicate with its stage attempt worker (e.g. bbagent) to make a
-   *   similar TurboCIOrchestrator.WriteNodes call to transition the stage
-   *   attempt to COMPLETE/INCOMPLETE/TEARING_DOWN.
+   * * Switch the attempt into COMPLETE/INCOMPLETE state if it can do so
+   *   (for example, if the stage attempt has not started running yet).
+   * * Switch the attempt into TEARING_DOWN state if cancelling the attempt
+   *   requires some additional work.
+   *
+   * CancelStage will be called (with exponential backoff) as long as the
+   * attempt remains in CANCELLING state.
+   *
+   * CancelStage will not be called at all if the StageAttemptExecutionPolicy of
+   * the attempt has no `cancelling` timeout. Such attempts transition into
+   * INCOMPLETE on cancellation immediately.
    */
   CancelStage(request: CancelStageRequest): Promise<CancelStageResponse>;
 }

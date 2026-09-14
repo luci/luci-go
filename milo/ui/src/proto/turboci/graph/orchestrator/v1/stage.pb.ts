@@ -9,6 +9,7 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Timestamp } from "../../../../google/protobuf/timestamp.pb";
 import { Check, Stage as Stage1, StageAttempt } from "../../ids/v1/identifier.pb";
 import { Actor } from "./actor.pb";
+import { BuiltinExecutor, builtinExecutorFromJSON, builtinExecutorToJSON } from "./builtin_executor.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { Dependencies } from "./dependencies.pb";
 import { Edit } from "./edit.pb";
@@ -35,12 +36,21 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * See also:
  *   * Identifier.Stage* (Identifiers for Stages, StageAttempts, etc.)
  *
- * Next ID: 17
+ * Next ID: 20
  */
 export interface Stage {
   /** The Stage's identifier. */
   readonly identifier?:
     | Stage1
+    | undefined;
+  /**
+   * Optional, non-unique, display name of this Stage.
+   *
+   * Should only be set if it provides meaningful context for what this Stage
+   * is above and beyond the Stage's identifier.id, args.type_url and sub_type.
+   */
+  readonly displayName?:
+    | string
     | undefined;
   /** Actor which created the Stage. */
   readonly createdBy?:
@@ -49,8 +59,12 @@ export interface Stage {
   /**
    * The security realm for this Stage.
    *
-   * When a Stage inserts another, the inserted Stage will inherit the realm of
-   * the inserting Stage, unless this is explicitly set.
+   * See WriteNodesRequest.StageWrite for how it is determined.
+   *
+   * Can be unset if this stage represents a legacy work node created via
+   * WorkPlan API. In that case access to this stage (and all realmless
+   * ValueRefs in it) is authorized using legacy WorkPlan API ACLs (which are
+   * based on Google groups, not realms).
    */
   readonly realm?:
     | string
@@ -62,29 +76,36 @@ export interface Stage {
    * and that registration will indicate which Executor should handle this
    * Stage.
    *
-   * NOTE: It's assumed that args.type_url will be a sufficient routing key to
-   * the various registered Executors, but it's POSSIBLE that we may need to
-   * have multiple Executors handle exactly the same Stage type, at which point
-   * we would need to either:
-   *   * Add a secondary type to distinguish them; this would have the
-   *     additional benefit of allowing us to clearly delineate the differences
-   *     via documentation, but if we have this situation a lot, it could be
-   *     confusing.
-   *   * Add another field to Stage to allow registration on (newfield,
-   *     type_url) instead of just type_url.
+   * Type type.googleapis.com/wireless.android.launchcontrol.WorkNodeStage is
+   * recognized by the Orchestrator natively. It can be used to insert legacy
+   * work nodes using Turbo CI API. Such nodes will be accessible both via
+   * WorkPlan API and Turbo CI API. WorkPlan API will always use legacy ACLs
+   * (based on Google groups). Turbo CI API will either use the legacy ACLs
+   * as well (if the stage was inserted with "$legacy_worknode" realm) or
+   * realm ACLs (if the stage with inserted with any other realm).
    *
-   * Looking at WorkNode, there are definitely multiple executor types which
-   * accept the same arguments in WorkParameters, but these could be
-   * represented by adding a new field to WorkParameters. There is also the
-   * PARTIAL_RERUN executor type which is used when duplicating WorkNodes, but
-   * this seems like it will be handled differently with Checks (i.e. Checks of
-   * the same options would be added, and new Results of the cached results
-   * would be added. There wouldn't be a need to add placeholder Stages into
-   * such a graph). There are also some executor types which serve as a way to
-   * separate ACLs, but we expect this to be handled by realms.
+   * Stages with WorkNodeStage type have `is_worknode` set to true in their
+   * `identifier` and they have numeric IDs. See AllocateWorkNodeIDs RPC.
+   *
+   * The realm always matches the realm of the stage.
    */
   readonly args?:
     | ValueRef
+    | undefined;
+  /**
+   * A disambiguating sub-type for this Stage returned by the stage executor
+   * from ValidateStage.
+   *
+   * Used to identify a specific, named, variant of this stage when many exist,
+   * to differentiate metrics between stage sub-types. This value should be
+   * computed by the executor from `args` with some pure function (for example,
+   * this could be the `config` field of a hypothetical args message, or
+   * combination of `os` and `flagset` fields).
+   *
+   * Must adhere to the regex: /^[a-zA-Z0-9\(\)\-_./ ]{0,256}$/
+   */
+  readonly subType?:
+    | string
     | undefined;
   /**
    * The version of this Stage.
@@ -100,17 +121,39 @@ export interface Stage {
     | StageState
     | undefined;
   /**
-   * If this stage was cancelled, this indicates the Actor which cancelled
-   * it.
+   * If this stage was cancelled, this indicates the Actor which cancelled it.
+   *
+   * It is populated immediately after the cancellation was submitted and
+   * signals that the stage is pending cancellation. The stage may still be in
+   * non-final state for some time, since the cancellation process is generally
+   * asynchronous.
+   *
+   * Here's what cancellation does to stages in different states:
+   *  * PLANNED: the stage will remain PLANNED as long as it has unresolved
+   *    dependencies. When they are resolved, the stage will immediately
+   *    switch into FINAL state (instead of ATTEMPTING).
+   *  * ATTEMPTING: the current stage attempt will be moved to CANCELLING state
+   *    (followed by TEARING_DOWN, followed by COMPLETE or INCOMPLETE). No new
+   *    attempts will be allowed. Once the current attempt is COMPLETE or
+   *    INCOMPLETE, the stage will switch into AWAITING_GROUP or FINAL states,
+   *    just as if it finished normally.
+   *  * AWAITING_GROUP, FINAL: cancellation has no effect on stages in this
+   *    state (they have finished running already).
    */
   readonly cancelledBy?:
     | Actor
     | undefined;
+  /** When the stage was cancelled (i.e. when `cancelled_by` was set). */
+  readonly cancelledAt?:
+    | Revision
+    | undefined;
   /**
    * Set only for stages that represent legacy WorkNodes.
    *
-   * Such stages are submitted either via legacy WorkPlan API or as a special
-   * kind of a Stage (with `args` having type TBD).
+   * Such stages are submitted either via legacy WorkPlan API (in which case
+   * their realm will be unset) or via Turbo CI API using special `args` of
+   * type type.googleapis.com/wireless.android.launchcontrol.WorkNodeStage
+   * (in which case the realm may or may not be set, see `args`).
    */
   readonly legacy?:
     | Stage_Legacy
@@ -151,7 +194,7 @@ export interface Stage {
    * Stage. While the Stage is ATTEMPTING, the Stage's revision only changes
    * when:
    *   * A new Attempt is created
-   *   * The Stage is canceled
+   *   * The Stage is cancelled
    */
   readonly attempts: readonly Stage_Attempt[];
   /** The workflow's intent for this Stage. */
@@ -180,7 +223,7 @@ export interface Stage {
   /**
    * Describes why this stage is not PLANNED or ATTEMPTING anymore.
    *
-   * Set for stages that are in AWAITING_GROUP or FINAL states.
+   * Always set for stages that are in AWAITING_GROUP or FINAL states.
    */
   readonly concludedReason?:
     | StageConcludedReason
@@ -214,7 +257,7 @@ export interface Stage_Legacy {
    * The WorkExecutorType as extracted from `worknode`.
    *
    * Have it as a separate field is useful for skipping decoding large proto
-   * during ACL checks (that just need the executor type).
+   * during legacy ACL checks (that just need the executor type).
    */
   readonly workExecutorType?: number | undefined;
 }
@@ -238,9 +281,6 @@ export interface Stage_StateHistoryEntry {
  *
  * `requested` is set by the stage creator. This is validated and augmented by
  * the Executor to become the `validated` policy.
- *
- * In the future, this may also include a `dynamic` policy which could allow
- * additional restrictions to be added after the Stage is created.
  */
 export interface Stage_ExecutionPolicyState {
   /**
@@ -250,8 +290,8 @@ export interface Stage_ExecutionPolicyState {
    * This will be validated by the Executor prior to the Stage being committed
    * to the graph.
    *
-   * If omitted, the Executor will provide a full StageExecutionPolicy according to
-   * its own logic/configuration.
+   * If omitted, the Executor will provide a full StageExecutionPolicy
+   * according to its own logic/configuration.
    */
   readonly requested?:
     | StageExecutionPolicy
@@ -263,7 +303,18 @@ export interface Stage_ExecutionPolicyState {
    * This is the policy that TurboCI will use to drive Attempts for this
    * Stage.
    */
-  readonly validated?: StageExecutionPolicy | undefined;
+  readonly validated?:
+    | StageExecutionPolicy
+    | undefined;
+  /**
+   * Present if this stage is implemented natively by the Orchestrator (i.e.
+   * there's no external Executor that implements it, instead its logic is
+   * implemented directly inside the Orchestrator).
+   *
+   * This field is set by the Orchestrator (based on its configuration) when
+   * the stage is submitted.
+   */
+  readonly builtinExecutor?: BuiltinExecutor | undefined;
 }
 
 /**
@@ -272,10 +323,7 @@ export interface Stage_ExecutionPolicyState {
  * Stages in the AWAITING state ALWAYS have an active Attempt, even before
  * the Orchestrator sends the first RPC to the Executor for this Stage.
  *
- * TBD: Pull this into its own top-level StageAttempt entity because it will
- * need to have its own state and lifecycle/transactions.
- *
- * Next ID: 9, then 12
+ * Next ID: 12
  */
 export interface Stage_Attempt {
   /** The Stage Attempt's identifier. */
@@ -329,6 +377,10 @@ export interface Stage_Attempt {
    *   * AWAITING_RETRY - This Attempt was created as a retry of a previous
    *     INCOMPLETE attempt, and the Orchestrator will not advance it to
    *     PENDING until this time.
+   *   * CANCELLING - The Orchestrator called CancelStage, but the attempt
+   *     is still in CANCELLING state (i.e. it didn't progress to TEARING_DOWN
+   *     or concluded). The Orchestrator will try calling CancelStage again
+   *     after this time.
    *
    * In all other states, this field is unset.
    */
@@ -447,6 +499,7 @@ export interface Stage_Attempt_Progress {
    * If created_by is Orchestrator, then `details` may contain the
    * following:
    *   * turboci.graph.orchestrator.v1.ProgressEvolvePending
+   *   * turboci.graph.orchestrator.v1.ProgressCancelling
    *   * turboci.graph.orchestrator.v1.ProgressIgnoredDetail
    */
   readonly createdBy?:
@@ -535,22 +588,7 @@ export interface StageAttemptCurrentState {
    * NOTE: This is authoritative, and could be in a state which is later than
    * the one that the client which made the RPC expects.
    *
-   *   * CANCELLING - The Stage has been cancelled, but there has not yet been
-   *     a heartbeat from the the Stage Attempt. As soon as there is a
-   *     current_stage write from the Stage Attempt, this state will turn into
-   *     TEARING_DOWN.
-   *   * TEARING_DOWN - The Stage was cancelled while a Stage Attempt was
-   *     RUNNING. When a WriteNodes with current_stage set happens, the
-   *     orchestrator will transition to TEARING_DOWN in that same
-   *     transaction and report this state here. The still-running attempt
-   *     should do any graceful shutdown it can before
-   *     `current_state_deadline` and then do a WriteNodes to mark the
-   *     current attempt as either COMPLETE or INCOMPLETE.
-   *   * COMPLETE/INCOMPLETE - Something already marked this attempt as
-   *     finished. The still-running attempt should immediately shutdown
-   *     without attempting to do any further QueryNodes/WriteNodes calls.
-   *     Note that this could happen if a Stage is cancelled while PENDING or
-   *     SCHEDULED.
+   * See StageAttemptState for all details.
    */
   readonly state?:
     | StageAttemptState
@@ -570,18 +608,25 @@ export interface StageAttemptCurrentState {
    * If set, the timestamp for when the orchestrator expects the next
    * heartbeat.
    */
-  readonly heartbeatBy?: string | undefined;
+  readonly heartbeatBy?:
+    | string
+    | undefined;
+  /** Set if the stage was cancelled. */
+  readonly cancelledAt?: Revision | undefined;
 }
 
 function createBaseStage(): Stage {
   return {
     identifier: undefined,
+    displayName: undefined,
     createdBy: undefined,
     realm: undefined,
     args: undefined,
+    subType: undefined,
     version: undefined,
     state: undefined,
     cancelledBy: undefined,
+    cancelledAt: undefined,
     legacy: undefined,
     stateHistory: [],
     dependencies: undefined,
@@ -599,6 +644,9 @@ export const Stage: MessageFns<Stage> = {
     if (message.identifier !== undefined) {
       Stage1.encode(message.identifier, writer.uint32(10).fork()).join();
     }
+    if (message.displayName !== undefined) {
+      writer.uint32(146).string(message.displayName);
+    }
     if (message.createdBy !== undefined) {
       Actor.encode(message.createdBy, writer.uint32(18).fork()).join();
     }
@@ -608,6 +656,9 @@ export const Stage: MessageFns<Stage> = {
     if (message.args !== undefined) {
       ValueRef.encode(message.args, writer.uint32(34).fork()).join();
     }
+    if (message.subType !== undefined) {
+      writer.uint32(154).string(message.subType);
+    }
     if (message.version !== undefined) {
       Revision.encode(message.version, writer.uint32(42).fork()).join();
     }
@@ -616,6 +667,9 @@ export const Stage: MessageFns<Stage> = {
     }
     if (message.cancelledBy !== undefined) {
       Actor.encode(message.cancelledBy, writer.uint32(114).fork()).join();
+    }
+    if (message.cancelledAt !== undefined) {
+      Revision.encode(message.cancelledAt, writer.uint32(138).fork()).join();
     }
     if (message.legacy !== undefined) {
       Stage_Legacy.encode(message.legacy, writer.uint32(130).fork()).join();
@@ -662,6 +716,14 @@ export const Stage: MessageFns<Stage> = {
           message.identifier = Stage1.decode(reader, reader.uint32());
           continue;
         }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
         case 2: {
           if (tag !== 18) {
             break;
@@ -686,6 +748,14 @@ export const Stage: MessageFns<Stage> = {
           message.args = ValueRef.decode(reader, reader.uint32());
           continue;
         }
+        case 19: {
+          if (tag !== 154) {
+            break;
+          }
+
+          message.subType = reader.string();
+          continue;
+        }
         case 5: {
           if (tag !== 42) {
             break;
@@ -708,6 +778,14 @@ export const Stage: MessageFns<Stage> = {
           }
 
           message.cancelledBy = Actor.decode(reader, reader.uint32());
+          continue;
+        }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.cancelledAt = Revision.decode(reader, reader.uint32());
           continue;
         }
         case 16: {
@@ -794,12 +872,15 @@ export const Stage: MessageFns<Stage> = {
   fromJSON(object: any): Stage {
     return {
       identifier: isSet(object.identifier) ? Stage1.fromJSON(object.identifier) : undefined,
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : undefined,
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       args: isSet(object.args) ? ValueRef.fromJSON(object.args) : undefined,
+      subType: isSet(object.subType) ? globalThis.String(object.subType) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       state: isSet(object.state) ? stageStateFromJSON(object.state) : undefined,
       cancelledBy: isSet(object.cancelledBy) ? Actor.fromJSON(object.cancelledBy) : undefined,
+      cancelledAt: isSet(object.cancelledAt) ? Revision.fromJSON(object.cancelledAt) : undefined,
       legacy: isSet(object.legacy) ? Stage_Legacy.fromJSON(object.legacy) : undefined,
       stateHistory: globalThis.Array.isArray(object?.stateHistory)
         ? object.stateHistory.map((e: any) => Stage_StateHistoryEntry.fromJSON(e))
@@ -825,6 +906,9 @@ export const Stage: MessageFns<Stage> = {
     if (message.identifier !== undefined) {
       obj.identifier = Stage1.toJSON(message.identifier);
     }
+    if (message.displayName !== undefined) {
+      obj.displayName = message.displayName;
+    }
     if (message.createdBy !== undefined) {
       obj.createdBy = Actor.toJSON(message.createdBy);
     }
@@ -834,6 +918,9 @@ export const Stage: MessageFns<Stage> = {
     if (message.args !== undefined) {
       obj.args = ValueRef.toJSON(message.args);
     }
+    if (message.subType !== undefined) {
+      obj.subType = message.subType;
+    }
     if (message.version !== undefined) {
       obj.version = Revision.toJSON(message.version);
     }
@@ -842,6 +929,9 @@ export const Stage: MessageFns<Stage> = {
     }
     if (message.cancelledBy !== undefined) {
       obj.cancelledBy = Actor.toJSON(message.cancelledBy);
+    }
+    if (message.cancelledAt !== undefined) {
+      obj.cancelledAt = Revision.toJSON(message.cancelledAt);
     }
     if (message.legacy !== undefined) {
       obj.legacy = Stage_Legacy.toJSON(message.legacy);
@@ -881,17 +971,22 @@ export const Stage: MessageFns<Stage> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? Stage1.fromPartial(object.identifier)
       : undefined;
+    message.displayName = object.displayName ?? undefined;
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;
     message.realm = object.realm ?? undefined;
     message.args = (object.args !== undefined && object.args !== null) ? ValueRef.fromPartial(object.args) : undefined;
+    message.subType = object.subType ?? undefined;
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;
     message.state = object.state ?? undefined;
     message.cancelledBy = (object.cancelledBy !== undefined && object.cancelledBy !== null)
       ? Actor.fromPartial(object.cancelledBy)
+      : undefined;
+    message.cancelledAt = (object.cancelledAt !== undefined && object.cancelledAt !== null)
+      ? Revision.fromPartial(object.cancelledAt)
       : undefined;
     message.legacy = (object.legacy !== undefined && object.legacy !== null)
       ? Stage_Legacy.fromPartial(object.legacy)
@@ -1071,7 +1166,7 @@ export const Stage_StateHistoryEntry: MessageFns<Stage_StateHistoryEntry> = {
 };
 
 function createBaseStage_ExecutionPolicyState(): Stage_ExecutionPolicyState {
-  return { requested: undefined, validated: undefined };
+  return { requested: undefined, validated: undefined, builtinExecutor: undefined };
 }
 
 export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> = {
@@ -1081,6 +1176,9 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
     }
     if (message.validated !== undefined) {
       StageExecutionPolicy.encode(message.validated, writer.uint32(18).fork()).join();
+    }
+    if (message.builtinExecutor !== undefined) {
+      writer.uint32(24).int32(message.builtinExecutor);
     }
     return writer;
   },
@@ -1108,6 +1206,14 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
           message.validated = StageExecutionPolicy.decode(reader, reader.uint32());
           continue;
         }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.builtinExecutor = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1121,6 +1227,7 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
     return {
       requested: isSet(object.requested) ? StageExecutionPolicy.fromJSON(object.requested) : undefined,
       validated: isSet(object.validated) ? StageExecutionPolicy.fromJSON(object.validated) : undefined,
+      builtinExecutor: isSet(object.builtinExecutor) ? builtinExecutorFromJSON(object.builtinExecutor) : undefined,
     };
   },
 
@@ -1131,6 +1238,9 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
     }
     if (message.validated !== undefined) {
       obj.validated = StageExecutionPolicy.toJSON(message.validated);
+    }
+    if (message.builtinExecutor !== undefined) {
+      obj.builtinExecutor = builtinExecutorToJSON(message.builtinExecutor);
     }
     return obj;
   },
@@ -1146,6 +1256,7 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
     message.validated = (object.validated !== undefined && object.validated !== null)
       ? StageExecutionPolicy.fromPartial(object.validated)
       : undefined;
+    message.builtinExecutor = object.builtinExecutor ?? undefined;
     return message;
   },
 };
@@ -1726,7 +1837,13 @@ export const StageAttemptClaimedFailure: MessageFns<StageAttemptClaimedFailure> 
 };
 
 function createBaseStageAttemptCurrentState(): StageAttemptCurrentState {
-  return { state: undefined, version: undefined, updateStateBy: undefined, heartbeatBy: undefined };
+  return {
+    state: undefined,
+    version: undefined,
+    updateStateBy: undefined,
+    heartbeatBy: undefined,
+    cancelledAt: undefined,
+  };
 }
 
 export const StageAttemptCurrentState: MessageFns<StageAttemptCurrentState> = {
@@ -1742,6 +1859,9 @@ export const StageAttemptCurrentState: MessageFns<StageAttemptCurrentState> = {
     }
     if (message.heartbeatBy !== undefined) {
       Timestamp.encode(toTimestamp(message.heartbeatBy), writer.uint32(34).fork()).join();
+    }
+    if (message.cancelledAt !== undefined) {
+      Revision.encode(message.cancelledAt, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -1785,6 +1905,14 @@ export const StageAttemptCurrentState: MessageFns<StageAttemptCurrentState> = {
           message.heartbeatBy = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.cancelledAt = Revision.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1800,6 +1928,7 @@ export const StageAttemptCurrentState: MessageFns<StageAttemptCurrentState> = {
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       updateStateBy: isSet(object.updateStateBy) ? globalThis.String(object.updateStateBy) : undefined,
       heartbeatBy: isSet(object.heartbeatBy) ? globalThis.String(object.heartbeatBy) : undefined,
+      cancelledAt: isSet(object.cancelledAt) ? Revision.fromJSON(object.cancelledAt) : undefined,
     };
   },
 
@@ -1817,6 +1946,9 @@ export const StageAttemptCurrentState: MessageFns<StageAttemptCurrentState> = {
     if (message.heartbeatBy !== undefined) {
       obj.heartbeatBy = message.heartbeatBy;
     }
+    if (message.cancelledAt !== undefined) {
+      obj.cancelledAt = Revision.toJSON(message.cancelledAt);
+    }
     return obj;
   },
 
@@ -1831,6 +1963,9 @@ export const StageAttemptCurrentState: MessageFns<StageAttemptCurrentState> = {
       : undefined;
     message.updateStateBy = object.updateStateBy ?? undefined;
     message.heartbeatBy = object.heartbeatBy ?? undefined;
+    message.cancelledAt = (object.cancelledAt !== undefined && object.cancelledAt !== null)
+      ? Revision.fromPartial(object.cancelledAt)
+      : undefined;
     return message;
   },
 };

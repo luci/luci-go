@@ -8,72 +8,143 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { TypeInfo } from "./type_info.pb";
 import { ValueMask, valueMaskFromJSON, valueMaskToJSON } from "./value_mask.pb";
+import { ValueSlot, valueSlotFromJSON, valueSlotToJSON } from "./value_slot.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /**
- * Describes how ValueData messages within the WorkPlan content matching the
- * query criteria should be selected for inclusion in the response. We allow
- * some aspects of this selection to be specified hierarchically (on a
- * per-field basis) while other aspects are specified on a per-type_url basis.
+ * Describes which data we want to include in the response, and how we want to
+ * include it.
  *
- * For a ValueRef's ValueData to be included in the response, the field
- * containing the ValueRef (e.g. Check.options) must have a ValueMask that
- * includes the ValueData (e.g. VALUE_MASK_TYPE_VALUE) and also type_info.wanted
- * must include content matching the ValueRef's type_url. If either of these
- * conditions is not met, the ValueRef will be populated but the ValueData will
- * not be present in the value_data map on the response and (for inline
- * ValueData content) the `inline` field will be unset. In both cases,
- * ValueRef's omit_reason will be set to UNWANTED.
+ * There are two components to this:
+ *   * Is this a *type* that we want to handle?
+ *     * And, as a secondary aspect, does this type need to be converted to
+ *     JSONPB?
+ *   * Is this in a slot (e.g. structural location in the graph) that we want
+ *     to handle?
+ *
+ * Clients should request the narrowest possible amount of data necessary to
+ * accomplish their task. Pulling data whose types or location in the graph the
+ * client doesn't need will only waste time and bandwidth.
+ *
+ * The notable exception to this is clients which are retrieving data for
+ * debugging or exploration (e.g. a UI where the user hasn't specifically
+ * set a filter on the data to pull yet), or clients which are attempting to
+ * serialize the graph in some agnostic way (though ideally the downstream
+ * consumer of the serialized graph should just make its own queries instead).
+ *
+ * If a given ValueRef is 'wanted' (i.e. it has a type matched by `type_info`,
+ * and is in a slot in `include_data`), the server will include the matching
+ * data for it (keyed by digest) in the returned `value_data` map, which is part
+ * of the query response.
+ *
+ * Some exceptions for wanted ValueRefs:
+ *   * If you do not have read access, it will be marked as omitted with the
+ *   NO_ACCESS reason. The digest will also be stripped in this case.
+ *   * If the data is missing from the backend (e.g. expired), the omit reason
+ *   will be MISSING (but the digest will be retained).
+ *
+ * ValueRefs which are unwanted (e.g. don't match `type_info` or `include_data`)
+ * will be marked as omitted with the reason UNWANTED.
  */
 export interface ValueFilter {
   /** How to handle per-type_url decisions about including Values. */
   readonly typeInfo?:
     | TypeInfo
     | undefined;
-  /** ValueMask for Values in Check.options. */
+  /**
+   * Which slots in the graph do we want to include *data* for?
+   *
+   * Such slots will have their data returned in the response value_data map.
+   *
+   * If `include_data` is non-empty, all deprecated ValueMask fields below are
+   * ignored.
+   */
+  readonly includeData: readonly ValueSlot[];
+  /**
+   * ValueMask for Values in Check.options.
+   *
+   * @deprecated
+   */
   readonly checkOptions?:
     | ValueMask
     | undefined;
-  /** ValueMask for Values in Check.results.data. */
+  /**
+   * ValueMask for Values in Check.results.data.
+   *
+   * @deprecated
+   */
   readonly checkResultData?:
     | ValueMask
     | undefined;
-  /** ValueMask for Values in Edit.check.options. */
+  /**
+   * ValueMask for Values in Edit.check.options.
+   *
+   * @deprecated
+   */
   readonly checkEditOptions?:
     | ValueMask
     | undefined;
-  /** ValueMask for Values in Edit.check.results.data. */
+  /**
+   * ValueMask for Values in Edit.check.results.data.
+   *
+   * @deprecated
+   */
   readonly checkEditResultData?:
     | ValueMask
     | undefined;
-  /** ValueMask for Values in Stage.args. */
+  /**
+   * ValueMask for Values in Stage.args.
+   *
+   * @deprecated
+   */
   readonly stageArgs?:
     | ValueMask
     | undefined;
-  /** ValueMask for Values in Stage.attempts.details. */
+  /**
+   * ValueMask for Values in Stage.attempts.details.
+   *
+   * @deprecated
+   */
   readonly stageAttemptDetails?:
     | ValueMask
     | undefined;
-  /** ValueMask for Values in Stage.attempts.progress.details. */
+  /**
+   * ValueMask for Values in Stage.attempts.progress.details.
+   *
+   * @deprecated
+   */
   readonly stageAttemptProgressDetails?:
     | ValueMask
     | undefined;
-  /** ValueMask for Values in Edit.stage.attempts.details. */
+  /**
+   * ValueMask for Values in Edit.stage.attempts.details.
+   *
+   * @deprecated
+   */
   readonly stageEditAttemptDetails?:
     | ValueMask
     | undefined;
-  /** ValueMask for Values in Edit.stage.attempts.progress.details. */
+  /**
+   * ValueMask for Values in Edit.stage.attempts.progress.details.
+   *
+   * @deprecated
+   */
   readonly stageEditAttemptProgressDetails?:
     | ValueMask
     | undefined;
-  /** ValueMask for Values in Stage.legacy.worknode. */
+  /**
+   * ValueMask for Values in Stage.legacy.worknode.
+   *
+   * @deprecated
+   */
   readonly stageLegacyWorknode?: ValueMask | undefined;
 }
 
 function createBaseValueFilter(): ValueFilter {
   return {
     typeInfo: undefined,
+    includeData: [],
     checkOptions: undefined,
     checkResultData: undefined,
     checkEditOptions: undefined,
@@ -92,6 +163,11 @@ export const ValueFilter: MessageFns<ValueFilter> = {
     if (message.typeInfo !== undefined) {
       TypeInfo.encode(message.typeInfo, writer.uint32(10).fork()).join();
     }
+    writer.uint32(98).fork();
+    for (const v of message.includeData) {
+      writer.int32(v);
+    }
+    writer.join();
     if (message.checkOptions !== undefined) {
       writer.uint32(16).int32(message.checkOptions);
     }
@@ -139,6 +215,24 @@ export const ValueFilter: MessageFns<ValueFilter> = {
 
           message.typeInfo = TypeInfo.decode(reader, reader.uint32());
           continue;
+        }
+        case 12: {
+          if (tag === 96) {
+            message.includeData.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 98) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.includeData.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
         }
         case 2: {
           if (tag !== 16) {
@@ -232,6 +326,9 @@ export const ValueFilter: MessageFns<ValueFilter> = {
   fromJSON(object: any): ValueFilter {
     return {
       typeInfo: isSet(object.typeInfo) ? TypeInfo.fromJSON(object.typeInfo) : undefined,
+      includeData: globalThis.Array.isArray(object?.includeData)
+        ? object.includeData.map((e: any) => valueSlotFromJSON(e))
+        : [],
       checkOptions: isSet(object.checkOptions) ? valueMaskFromJSON(object.checkOptions) : undefined,
       checkResultData: isSet(object.checkResultData) ? valueMaskFromJSON(object.checkResultData) : undefined,
       checkEditOptions: isSet(object.checkEditOptions) ? valueMaskFromJSON(object.checkEditOptions) : undefined,
@@ -261,6 +358,9 @@ export const ValueFilter: MessageFns<ValueFilter> = {
     const obj: any = {};
     if (message.typeInfo !== undefined) {
       obj.typeInfo = TypeInfo.toJSON(message.typeInfo);
+    }
+    if (message.includeData?.length) {
+      obj.includeData = message.includeData.map((e) => valueSlotToJSON(e));
     }
     if (message.checkOptions !== undefined) {
       obj.checkOptions = valueMaskToJSON(message.checkOptions);
@@ -303,6 +403,7 @@ export const ValueFilter: MessageFns<ValueFilter> = {
     message.typeInfo = (object.typeInfo !== undefined && object.typeInfo !== null)
       ? TypeInfo.fromPartial(object.typeInfo)
       : undefined;
+    message.includeData = object.includeData?.map((e) => e) || [];
     message.checkOptions = object.checkOptions ?? undefined;
     message.checkResultData = object.checkResultData ?? undefined;
     message.checkEditOptions = object.checkEditOptions ?? undefined;

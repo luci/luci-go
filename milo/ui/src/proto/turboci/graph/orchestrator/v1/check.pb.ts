@@ -36,6 +36,8 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  *
  * Checks are not, themselves, executable, but Stages are the executable nodes
  * which operate to plan and resolve Checks.
+ *
+ * Next ID: 14
  */
 export interface Check {
   /**
@@ -45,6 +47,15 @@ export interface Check {
    */
   readonly identifier?:
     | Check1
+    | undefined;
+  /**
+   * Optional, non-unique, display name of this Check.
+   *
+   * Should only be set if it provides meaningful context for what this Check
+   * is for, above and beyond the Check's identifier.id and kind.
+   */
+  readonly displayName?:
+    | string
     | undefined;
   /** Actor which created the Check. */
   readonly createdBy?:
@@ -60,6 +71,24 @@ export interface Check {
    */
   readonly kind?:
     | CheckKind
+    | undefined;
+  /**
+   * An optional disambiguating sub-type of this check, controlled by the
+   * inserter of the Check.
+   *
+   * Identifies a specific, named, variant of this Check kind, to differentiate
+   * between Check kinds in metrics and queries. This value should be computed
+   * by the workflow in some deterministic, low-cardinality way.
+   *
+   * This must NOT contain high-cardinality data like change IDs, commit hashes,
+   * or arbitrary user-controlled data.
+   *
+   * Refer to WriteNodesRequest.CheckWrite.sub_type for more info and examples.
+   *
+   * Adheres to the regex: /^[a-zA-Z0-9\(\)\-_./ ]{0,256}$/
+   */
+  readonly subType?:
+    | string
     | undefined;
   /**
    * The security realm for this Check.
@@ -225,8 +254,10 @@ export interface Check_Result {
 function createBaseCheck(): Check {
   return {
     identifier: undefined,
+    displayName: undefined,
     createdBy: undefined,
     kind: undefined,
+    subType: undefined,
     realm: undefined,
     version: undefined,
     state: undefined,
@@ -243,11 +274,17 @@ export const Check: MessageFns<Check> = {
     if (message.identifier !== undefined) {
       Check1.encode(message.identifier, writer.uint32(10).fork()).join();
     }
+    if (message.displayName !== undefined) {
+      writer.uint32(98).string(message.displayName);
+    }
     if (message.createdBy !== undefined) {
       Actor.encode(message.createdBy, writer.uint32(18).fork()).join();
     }
     if (message.kind !== undefined) {
       writer.uint32(24).int32(message.kind);
+    }
+    if (message.subType !== undefined) {
+      writer.uint32(106).string(message.subType);
     }
     if (message.realm !== undefined) {
       writer.uint32(34).string(message.realm);
@@ -291,6 +328,14 @@ export const Check: MessageFns<Check> = {
           message.identifier = Check1.decode(reader, reader.uint32());
           continue;
         }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
         case 2: {
           if (tag !== 18) {
             break;
@@ -305,6 +350,14 @@ export const Check: MessageFns<Check> = {
           }
 
           message.kind = reader.int32() as any;
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.subType = reader.string();
           continue;
         }
         case 4: {
@@ -383,8 +436,10 @@ export const Check: MessageFns<Check> = {
   fromJSON(object: any): Check {
     return {
       identifier: isSet(object.identifier) ? Check1.fromJSON(object.identifier) : undefined,
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : undefined,
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
       kind: isSet(object.kind) ? checkKindFromJSON(object.kind) : undefined,
+      subType: isSet(object.subType) ? globalThis.String(object.subType) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
@@ -405,11 +460,17 @@ export const Check: MessageFns<Check> = {
     if (message.identifier !== undefined) {
       obj.identifier = Check1.toJSON(message.identifier);
     }
+    if (message.displayName !== undefined) {
+      obj.displayName = message.displayName;
+    }
     if (message.createdBy !== undefined) {
       obj.createdBy = Actor.toJSON(message.createdBy);
     }
     if (message.kind !== undefined) {
       obj.kind = checkKindToJSON(message.kind);
+    }
+    if (message.subType !== undefined) {
+      obj.subType = message.subType;
     }
     if (message.realm !== undefined) {
       obj.realm = message.realm;
@@ -446,10 +507,12 @@ export const Check: MessageFns<Check> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? Check1.fromPartial(object.identifier)
       : undefined;
+    message.displayName = object.displayName ?? undefined;
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;
     message.kind = object.kind ?? undefined;
+    message.subType = object.subType ?? undefined;
     message.realm = object.realm ?? undefined;
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)

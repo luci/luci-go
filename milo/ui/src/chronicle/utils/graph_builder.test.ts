@@ -27,12 +27,15 @@ import {
 import { StageConcludedReason } from '@/proto/turboci/graph/orchestrator/v1/stage_concluded_reason.pb';
 import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 import { WorkPlan as TurboCIGraphWorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import {
+  CheckResultStatus,
   StageResultStatus,
   TYPE_URL_BUILD_OPTIONS,
   TYPE_URL_BUILD_RESULT,
+  TYPE_URL_BUILD_RESULTS,
 } from './check_utils';
 import {
   ChronicleNode,
@@ -61,6 +64,7 @@ function createCheck(
   checkDependencies: CheckId[] = [],
   stageDependencies: StageId[] = [],
   isSuccess?: boolean,
+  typeUrl: string = TYPE_URL_BUILD_RESULTS,
 ): Check {
   const deps: Dependencies = {
     edges: [
@@ -78,15 +82,15 @@ function createCheck(
     const DIGEST = 'digest-' + json;
     results.push({
       data: [
-        {
-          typeUrl: TYPE_URL_BUILD_RESULT,
+        ValueRef.fromPartial({
+          typeUrl,
           digest: DIGEST,
-        },
+        }),
       ],
     });
     valueDataMap.set(DIGEST, {
       json: {
-        typeUrl: TYPE_URL_BUILD_RESULT,
+        typeUrl,
         value: json,
       },
     });
@@ -671,6 +675,53 @@ describe('TurboCIGraphBuilder', () => {
       expect(t1.data.groupId).toBeDefined();
       expect(t1.data.groupId).toBe(groupId);
       expect(t2.data.groupId).toBe(groupId);
+    });
+
+    it('should assign identical groupId to nodes with identical topology using backwards-compatible TYPE_URL_BUILD_RESULT', () => {
+      const valueDataMap: Map<string, ValueData> = new Map();
+
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphWorkPlan = {
+        id: '',
+        checks: [
+          createCheck('B1', valueDataMap, CheckKind.CHECK_KIND_BUILD),
+          createCheck(
+            'T1',
+            valueDataMap,
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+            TYPE_URL_BUILD_RESULT,
+          ),
+          createCheck(
+            'T2',
+            valueDataMap,
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+            TYPE_URL_BUILD_RESULT,
+          ),
+        ],
+        stages: [],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const { groupIdToChecks } = getTopologyGroups(graph);
+      const groupT = Array.from(groupIdToChecks.values()).find(
+        (checks) => checks.length === 2,
+      );
+      expect(groupT).toBeDefined();
+
+      const groupId = Array.from(groupIdToChecks.keys()).find(
+        (k) => groupIdToChecks.get(k) === groupT,
+      )!;
+      const groupModes = new Map([[groupId, GroupMode.EXPANDED]]);
+      const { nodes } = new TurboCIGraphBuilder(graph, valueDataMap).build({
+        groupModes,
+      });
+      const t1 = nodes.find((n) => n.id === 'T1');
+      expect(t1?.data.resultStatus).toBe(CheckResultStatus.SUCCESS);
     });
 
     it('should assign identical groupId to nodes with identical topology regardless of status', () => {

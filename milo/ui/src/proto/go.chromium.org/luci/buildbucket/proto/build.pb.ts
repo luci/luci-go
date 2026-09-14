@@ -536,7 +536,11 @@ export interface BuildInfra {
   readonly backend:
     | BuildInfra_Backend
     | undefined;
-  /** It should only be set for led builds. */
+  /**
+   * It should only be set for led builds.
+   * All builds created by CreateBuild RPC are led builds so they all require
+   * this field to be set.
+   */
   readonly led: BuildInfra_Led | undefined;
   readonly turboci: BuildInfra_TurboCI | undefined;
 }

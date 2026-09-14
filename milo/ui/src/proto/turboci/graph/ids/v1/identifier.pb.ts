@@ -156,7 +156,7 @@ export interface Stage {
   /**
    * An opaque identifier unique within this WorkPlan.
    *
-   * For WorkNodes (`is_worknode` is true), this will a decimal integer.
+   * For WorkNodes (`is_worknode` is true), this will be a decimal integer.
    *
    * Otherwise this will be an arbitrary string supplied by the Stage which
    * added this.
@@ -173,7 +173,7 @@ export interface Stage {
  *
  * Serialized as "<stage>:A<attempts_idx>".
  *
- * E.g. "L<stage.work_plan.id>:<stage.id>:A<attempts_idx>"
+ * E.g. "L<stage.work_plan.id>:S<stage.id>:A<idx>"
  */
 export interface StageAttempt {
   /** The Stage that this Stage Attempt belongs to. */
@@ -194,7 +194,7 @@ export interface StageAttempt {
  * Serialized as "<stage>:V<version>".
  *
  * E.g.
- * "L<stage.work_plan.id>:<stage.id>:V<version.seconds>/<version.nanos>"
+ * "L<stage.work_plan.id>:S<stage.id>:V<version.seconds>/<version.nanos>"
  */
 export interface StageEdit {
   /** The stage that this edit belongs to. */

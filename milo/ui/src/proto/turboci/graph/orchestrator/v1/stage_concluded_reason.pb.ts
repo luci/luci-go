@@ -11,24 +11,22 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
 /**
  * Describes why a stage is not in PLANNED or ATTEMPTING state anymore.
  *
- * Set for stages that are in AWAITING_GROUP or FINAL states.
+ * Always set for stages that are in AWAITING_GROUP or FINAL states.
  */
 export enum StageConcludedReason {
   /** STAGE_CONCLUDED_REASON_UNKNOWN - UNKNOWN means the stage is not concluded yet. */
   STAGE_CONCLUDED_REASON_UNKNOWN = 0,
-  /**
-   * STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE - The last attempt to run the stage finished in STAGE_ATTEMPT_STATE_COMPLETE
-   * state.
-   */
+  /** STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE - The last stage attempt finished in STAGE_ATTEMPT_STATE_COMPLETE state. */
   STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE = 1,
   /**
-   * STAGE_CONCLUDED_REASON_NO_RETRIES_LEFT - The last attempt to run the stage finished in STAGE_ATTEMPT_STATE_INCOMPLETE
-   * state and the stage reached max allowed number of attempt retries.
+   * STAGE_CONCLUDED_REASON_NO_RETRIES_LEFT - The last stage attempt finished in STAGE_ATTEMPT_STATE_INCOMPLETE state and
+   * the stage reached max allowed number of attempt retries.
    */
   STAGE_CONCLUDED_REASON_NO_RETRIES_LEFT = 2,
   /**
-   * STAGE_CONCLUDED_REASON_FINAL_ATTEMPT_BLOCKED_RETRY - The last attempt to run the stage finished in STAGE_ATTEMPT_STATE_INCOMPLETE
-   * state and the executor indicated that there should be no retry.
+   * STAGE_CONCLUDED_REASON_FINAL_ATTEMPT_BLOCKED_RETRY - The last stage attempt finished in STAGE_ATTEMPT_STATE_INCOMPLETE state,
+   * retries are allowed by the execution policy, but the executor explicitly
+   * indicated that there should be no retry.
    */
   STAGE_CONCLUDED_REASON_FINAL_ATTEMPT_BLOCKED_RETRY = 3,
   /**
@@ -41,8 +39,28 @@ export enum StageConcludedReason {
    * See StageExecutionPolicy for details.
    */
   STAGE_CONCLUDED_REASON_TIMEOUT = 4,
-  /** STAGE_CONCLUDED_REASON_CANCELLED - The Stage was explicitly cancelled via WriteNodes. */
+  /**
+   * STAGE_CONCLUDED_REASON_CANCELLED - The stage was cancelled.
+   *
+   * This reason can be set even if the stage has no attempts (which means it
+   * was cancelled while it was still blocked on dependencies).
+   *
+   * Note that if the stage was cancelled while running an attempt, but this
+   * attempt actually completed successfully, the concluded reason would be
+   * STAGE_CONCLUDED_REASON_ATTEMPT_COMPLETE.
+   */
   STAGE_CONCLUDED_REASON_CANCELLED = 5,
+  /** STAGE_CONCLUDED_REASON_NO_EXECUTOR - The executor that was supposed to run this stage is no longer registered. */
+  STAGE_CONCLUDED_REASON_NO_EXECUTOR = 6,
+  /**
+   * STAGE_CONCLUDED_REASON_PERMISSION_DENIED - The stage is no longer allowed to run due to ACLs.
+   *
+   * This can happen if ACLs change after the stage was already added to the
+   * work plan, but before it runs.
+   */
+  STAGE_CONCLUDED_REASON_PERMISSION_DENIED = 7,
+  /** STAGE_CONCLUDED_REASON_DEPENDENCIES_UNSATISFIED - The stage didn't run because its dependencies resolved as unsatisfied. */
+  STAGE_CONCLUDED_REASON_DEPENDENCIES_UNSATISFIED = 8,
 }
 
 export function stageConcludedReasonFromJSON(object: any): StageConcludedReason {
@@ -65,6 +83,15 @@ export function stageConcludedReasonFromJSON(object: any): StageConcludedReason 
     case 5:
     case "STAGE_CONCLUDED_REASON_CANCELLED":
       return StageConcludedReason.STAGE_CONCLUDED_REASON_CANCELLED;
+    case 6:
+    case "STAGE_CONCLUDED_REASON_NO_EXECUTOR":
+      return StageConcludedReason.STAGE_CONCLUDED_REASON_NO_EXECUTOR;
+    case 7:
+    case "STAGE_CONCLUDED_REASON_PERMISSION_DENIED":
+      return StageConcludedReason.STAGE_CONCLUDED_REASON_PERMISSION_DENIED;
+    case 8:
+    case "STAGE_CONCLUDED_REASON_DEPENDENCIES_UNSATISFIED":
+      return StageConcludedReason.STAGE_CONCLUDED_REASON_DEPENDENCIES_UNSATISFIED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum StageConcludedReason");
   }
@@ -84,6 +111,12 @@ export function stageConcludedReasonToJSON(object: StageConcludedReason): string
       return "STAGE_CONCLUDED_REASON_TIMEOUT";
     case StageConcludedReason.STAGE_CONCLUDED_REASON_CANCELLED:
       return "STAGE_CONCLUDED_REASON_CANCELLED";
+    case StageConcludedReason.STAGE_CONCLUDED_REASON_NO_EXECUTOR:
+      return "STAGE_CONCLUDED_REASON_NO_EXECUTOR";
+    case StageConcludedReason.STAGE_CONCLUDED_REASON_PERMISSION_DENIED:
+      return "STAGE_CONCLUDED_REASON_PERMISSION_DENIED";
+    case StageConcludedReason.STAGE_CONCLUDED_REASON_DEPENDENCIES_UNSATISFIED:
+      return "STAGE_CONCLUDED_REASON_DEPENDENCIES_UNSATISFIED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum StageConcludedReason");
   }

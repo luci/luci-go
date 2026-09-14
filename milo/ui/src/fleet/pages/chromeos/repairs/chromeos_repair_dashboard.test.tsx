@@ -49,6 +49,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     bluetoothState: PeripheralState.PERIPHERAL_STATE_MISSING,
     poolHealthPct: 0.824,
     modelHealthPct: 0.95,
+    priorityScore: '0',
   },
   {
     taskId: '102',
@@ -63,6 +64,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
     poolHealthPct: 0.45,
     modelHealthPct: 0.7,
+    priorityScore: '0',
   },
 ];
 
@@ -161,6 +163,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         modelHealthPct: 0.95,
+        priorityScore: '0',
       },
       {
         taskId: '104',
@@ -172,6 +175,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         poolHealthPct: 0.85,
+        priorityScore: '0',
       },
       {
         taskId: '105',
@@ -182,6 +186,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         servoState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
+        priorityScore: '0',
       },
       {
         taskId: '106',
@@ -194,6 +199,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         poolHealthPct: 0.0,
         modelHealthPct: 0.0,
+        priorityScore: '0',
       },
     ];
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -349,6 +355,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       servoState: PeripheralState.PERIPHERAL_STATE_OK,
       wifiState: PeripheralState.PERIPHERAL_STATE_OK,
       bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
+      priorityScore: '0',
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -481,6 +488,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       servoState: PeripheralState.PERIPHERAL_STATE_OK,
       wifiState: PeripheralState.PERIPHERAL_STATE_OK,
       bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
+      priorityScore: '0',
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({

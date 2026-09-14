@@ -7,6 +7,8 @@
 /* eslint-disable */
 import { AllocateWorkNodeIDsRequest } from "./allocate_worknode_ids_request.pb";
 import { AllocateWorkNodeIDsResponse } from "./allocate_worknode_ids_response.pb";
+import { CancelWorkPlanRequest } from "./cancel_workplan_request.pb";
+import { CancelWorkPlanResponse } from "./cancel_workplan_response.pb";
 import { CreateWorkPlanRequest } from "./create_workplan_request.pb";
 import { CreateWorkPlanResponse } from "./create_workplan_response.pb";
 import { QueryNodesRequest } from "./query_nodes_request.pb";
@@ -38,6 +40,15 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * a different realm than their parent. Permission to read or write a nested
  * message also requires the corresponding permission for all parent nodes, and
  * for the containing Workplan.
+ *
+ * See http://go/turbo-ci-acls (Googlers only) for detailed description of
+ * relevant permissions and roles.
+ *
+ * Some endpoints in this API interact with Android legacy worknodes as stages
+ * by calling the WorkNode API, which has credential requirements that apply
+ * to this API when these endpoints operate on worknodes. gRPC callers already
+ * satisfy these requirements, but maintainers of internal Google services
+ * should see the WorkNode API documentation for additional details.
  */
 export interface TurboCIOrchestrator {
   /**
@@ -126,6 +137,23 @@ export interface TurboCIOrchestrator {
    * actually does.
    */
   AllocateWorkNodeIDs(request: AllocateWorkNodeIDsRequest): Promise<AllocateWorkNodeIDsResponse>;
+  /**
+   * CancelWorkPlan initiates asynchronous cancellation of all stages in the
+   * work plan.
+   *
+   * All existing stages will eventually be cancelled. All new stages being
+   * added are added as immediately cancelled (that way stages that are
+   * oblivious of cancellation can still finish their WriteNodes calls with no
+   * errors). Such stages won't actually ever run.
+   *
+   * Eventually all activity in such a work plan will cease.
+   *
+   * CancelWorkPlan initiates this cancellation process and returns immediately.
+   * It doesn't wait for the cancellation to propagate through all of the plan.
+   *
+   * Cancelling an already canceled work plan succeeds and does nothing.
+   */
+  CancelWorkPlan(request: CancelWorkPlanRequest): Promise<CancelWorkPlanResponse>;
 }
 
 export const TurboCIOrchestratorServiceName = "turboci.graph.orchestrator.v1.TurboCIOrchestrator";
@@ -141,6 +169,7 @@ export class TurboCIOrchestratorClientImpl implements TurboCIOrchestrator {
     this.QueryNodes = this.QueryNodes.bind(this);
     this.ReadWorkPlan = this.ReadWorkPlan.bind(this);
     this.AllocateWorkNodeIDs = this.AllocateWorkNodeIDs.bind(this);
+    this.CancelWorkPlan = this.CancelWorkPlan.bind(this);
   }
   CreateWorkPlan(request: CreateWorkPlanRequest): Promise<CreateWorkPlanResponse> {
     const data = CreateWorkPlanRequest.toJSON(request);
@@ -170,6 +199,12 @@ export class TurboCIOrchestratorClientImpl implements TurboCIOrchestrator {
     const data = AllocateWorkNodeIDsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "AllocateWorkNodeIDs", data);
     return promise.then((data) => AllocateWorkNodeIDsResponse.fromJSON(data));
+  }
+
+  CancelWorkPlan(request: CancelWorkPlanRequest): Promise<CancelWorkPlanResponse> {
+    const data = CancelWorkPlanRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CancelWorkPlan", data);
+    return promise.then((data) => CancelWorkPlanResponse.fromJSON(data));
   }
 }
 

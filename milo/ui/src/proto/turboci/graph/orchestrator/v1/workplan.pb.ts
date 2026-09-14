@@ -35,6 +35,8 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * Within a node, all ValueRefs will be present, but they may reference the
  * digest of a ValueData that is not present in the WorkPlan based on the
  * parameters the caller provides in the request.
+ *
+ * Next ID: 8
  */
 export interface WorkPlan {
   /** The WorkPlan to which all nodes in this WorkPlan belong. */
@@ -53,6 +55,21 @@ export interface WorkPlan {
   readonly realm?:
     | string
     | undefined;
+  /** A workflow name from pre-registered service configuration. */
+  readonly workflowName?:
+    | string
+    | undefined;
+  /**
+   * A workflow name provided manually by the caller of CreateWorkPlan.
+   *
+   * This may look like a `workflow_name`, but only has syntactic validation.
+   * Do not assume that workplans with a dynamic_workflow_name have any
+   * correlation whatsoever with other workplans with the same
+   * dynamic_workflow_name, or workplans with the same workflow_name.
+   */
+  readonly dynamicWorkflowName?:
+    | string
+    | undefined;
   /** Checks in the graph. */
   readonly checks: readonly Check[];
   /** Stages in the graph. */
@@ -60,7 +77,15 @@ export interface WorkPlan {
 }
 
 function createBaseWorkPlan(): WorkPlan {
-  return { identifier: undefined, version: undefined, realm: undefined, checks: [], stages: [] };
+  return {
+    identifier: undefined,
+    version: undefined,
+    realm: undefined,
+    workflowName: undefined,
+    dynamicWorkflowName: undefined,
+    checks: [],
+    stages: [],
+  };
 }
 
 export const WorkPlan: MessageFns<WorkPlan> = {
@@ -73,6 +98,12 @@ export const WorkPlan: MessageFns<WorkPlan> = {
     }
     if (message.realm !== undefined) {
       writer.uint32(26).string(message.realm);
+    }
+    if (message.workflowName !== undefined) {
+      writer.uint32(50).string(message.workflowName);
+    }
+    if (message.dynamicWorkflowName !== undefined) {
+      writer.uint32(58).string(message.dynamicWorkflowName);
     }
     for (const v of message.checks) {
       Check.encode(v!, writer.uint32(34).fork()).join();
@@ -114,6 +145,22 @@ export const WorkPlan: MessageFns<WorkPlan> = {
           message.realm = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.workflowName = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.dynamicWorkflowName = reader.string();
+          continue;
+        }
         case 4: {
           if (tag !== 34) {
             break;
@@ -144,6 +191,10 @@ export const WorkPlan: MessageFns<WorkPlan> = {
       identifier: isSet(object.identifier) ? WorkPlan1.fromJSON(object.identifier) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
+      workflowName: isSet(object.workflowName) ? globalThis.String(object.workflowName) : undefined,
+      dynamicWorkflowName: isSet(object.dynamicWorkflowName)
+        ? globalThis.String(object.dynamicWorkflowName)
+        : undefined,
       checks: globalThis.Array.isArray(object?.checks) ? object.checks.map((e: any) => Check.fromJSON(e)) : [],
       stages: globalThis.Array.isArray(object?.stages) ? object.stages.map((e: any) => Stage.fromJSON(e)) : [],
     };
@@ -159,6 +210,12 @@ export const WorkPlan: MessageFns<WorkPlan> = {
     }
     if (message.realm !== undefined) {
       obj.realm = message.realm;
+    }
+    if (message.workflowName !== undefined) {
+      obj.workflowName = message.workflowName;
+    }
+    if (message.dynamicWorkflowName !== undefined) {
+      obj.dynamicWorkflowName = message.dynamicWorkflowName;
     }
     if (message.checks?.length) {
       obj.checks = message.checks.map((e) => Check.toJSON(e));
@@ -181,6 +238,8 @@ export const WorkPlan: MessageFns<WorkPlan> = {
       ? Revision.fromPartial(object.version)
       : undefined;
     message.realm = object.realm ?? undefined;
+    message.workflowName = object.workflowName ?? undefined;
+    message.dynamicWorkflowName = object.dynamicWorkflowName ?? undefined;
     message.checks = object.checks?.map((e) => Check.fromPartial(e)) || [];
     message.stages = object.stages?.map((e) => Stage.fromPartial(e)) || [];
     return message;

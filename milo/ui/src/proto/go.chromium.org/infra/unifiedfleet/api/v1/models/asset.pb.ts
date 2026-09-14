@@ -9,6 +9,7 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Timestamp } from "../../../../../../google/protobuf/timestamp.pb";
 import { AssetInfo } from "./assetinfo.pb";
 import { Location } from "./location.pb";
+import { NlyteOwnershipData } from "./ownership.pb";
 
 export const protobufPackage = "unifiedfleet.api.v1.models";
 
@@ -90,6 +91,8 @@ export interface asset {
   readonly realm: string;
   /** tags user can attach for easy querying/searching */
   readonly tags: readonly string[];
+  /** Nlyte business group ownership hierarchy */
+  readonly nlyteOwnership: NlyteOwnershipData | undefined;
 }
 
 function createBaseasset(): asset {
@@ -102,6 +105,7 @@ function createBaseasset(): asset {
     updateTime: undefined,
     realm: "",
     tags: [],
+    nlyteOwnership: undefined,
   };
 }
 
@@ -130,6 +134,9 @@ export const asset: MessageFns<asset> = {
     }
     for (const v of message.tags) {
       writer.uint32(66).string(v!);
+    }
+    if (message.nlyteOwnership !== undefined) {
+      NlyteOwnershipData.encode(message.nlyteOwnership, writer.uint32(74).fork()).join();
     }
     return writer;
   },
@@ -205,6 +212,14 @@ export const asset: MessageFns<asset> = {
           message.tags.push(reader.string());
           continue;
         }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.nlyteOwnership = NlyteOwnershipData.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -224,6 +239,7 @@ export const asset: MessageFns<asset> = {
       updateTime: isSet(object.updateTime) ? globalThis.String(object.updateTime) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
       tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e: any) => globalThis.String(e)) : [],
+      nlyteOwnership: isSet(object.nlyteOwnership) ? NlyteOwnershipData.fromJSON(object.nlyteOwnership) : undefined,
     };
   },
 
@@ -253,6 +269,9 @@ export const asset: MessageFns<asset> = {
     if (message.tags?.length) {
       obj.tags = message.tags;
     }
+    if (message.nlyteOwnership !== undefined) {
+      obj.nlyteOwnership = NlyteOwnershipData.toJSON(message.nlyteOwnership);
+    }
     return obj;
   },
 
@@ -271,6 +290,9 @@ export const asset: MessageFns<asset> = {
     message.updateTime = object.updateTime ?? undefined;
     message.realm = object.realm ?? "";
     message.tags = object.tags?.map((e) => e) || [];
+    message.nlyteOwnership = (object.nlyteOwnership !== undefined && object.nlyteOwnership !== null)
+      ? NlyteOwnershipData.fromPartial(object.nlyteOwnership)
+      : undefined;
     return message;
   },
 };

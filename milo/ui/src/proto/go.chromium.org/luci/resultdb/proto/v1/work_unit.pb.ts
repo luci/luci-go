@@ -25,7 +25,7 @@ export const protobufPackage = "luci.resultdb.v1";
  * A process step that contributes results to a root invocation.
  * Work units contain test results, artifacts and exonerations. Work units may
  * also contain other work units and (legacy) invocations.
- * Next ID: 27.
+ * Next ID: 28.
  */
 export interface WorkUnit {
   /**
@@ -256,6 +256,32 @@ export interface WorkUnit {
    * The serialized size must be <= 16 KB.
    */
   readonly properties:
+    | { readonly [key: string]: any }
+    | undefined;
+  /**
+   * Arbitrary JSON object that contains structured, domain-specific properties
+   * of the work unit that are inherited by its descendants when they are
+   * exported to BigQuery on finalization.
+   *
+   * Inheritance of properties is only supported in BigQuery exports and pubsub.
+   * Reading this field in any ResultDB RPC will only read back the value set on
+   * this specific work unit; it will not calculate properties inherited from any
+   * ancestors.
+   *
+   * The value of this field is fixed at the moment the descendant work unit is
+   * exported, some arbitrary time after finalization of the descendant work
+   * unit. Thus it is the client's responsibility to ensure that the values for
+   * export are set on an ancestor work unit before any of its descendant work
+   * units are exported.
+   *
+   * Properties are interpreted and exported as JSON objects. If multiple
+   * ancestors in a chain specify a value for the same JSON path, the work unit
+   * closest to the leaf will overwrite the work unit closer to the root.
+   * Effectively the same as the typescript inherited = {...grandparent, ...parent}.
+   *
+   * Total size must be <= 16 KB.
+   */
+  readonly inheritedProperties:
     | { readonly [key: string]: any }
     | undefined;
   /**
@@ -649,6 +675,7 @@ function createBaseWorkUnit(): WorkUnit {
     producerResource: undefined,
     tags: [],
     properties: undefined,
+    inheritedProperties: undefined,
     extendedProperties: {},
     instructions: undefined,
     isMasked: false,
@@ -720,6 +747,9 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     }
     if (message.properties !== undefined) {
       Struct.encode(Struct.wrap(message.properties), writer.uint32(122).fork()).join();
+    }
+    if (message.inheritedProperties !== undefined) {
+      Struct.encode(Struct.wrap(message.inheritedProperties), writer.uint32(218).fork()).join();
     }
     Object.entries(message.extendedProperties).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -913,6 +943,14 @@ export const WorkUnit: MessageFns<WorkUnit> = {
           message.properties = Struct.unwrap(Struct.decode(reader, reader.uint32()));
           continue;
         }
+        case 27: {
+          if (tag !== 218) {
+            break;
+          }
+
+          message.inheritedProperties = Struct.unwrap(Struct.decode(reader, reader.uint32()));
+          continue;
+        }
         case 16: {
           if (tag !== 130) {
             break;
@@ -986,6 +1024,7 @@ export const WorkUnit: MessageFns<WorkUnit> = {
       producerResource: isSet(object.producerResource) ? ProducerResource.fromJSON(object.producerResource) : undefined,
       tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e: any) => StringPair.fromJSON(e)) : [],
       properties: isObject(object.properties) ? object.properties : undefined,
+      inheritedProperties: isObject(object.inheritedProperties) ? object.inheritedProperties : undefined,
       extendedProperties: isObject(object.extendedProperties)
         ? Object.entries(object.extendedProperties).reduce<
           { [key: string]: { readonly [key: string]: any } | undefined }
@@ -1065,6 +1104,9 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     if (message.properties !== undefined) {
       obj.properties = message.properties;
     }
+    if (message.inheritedProperties !== undefined) {
+      obj.inheritedProperties = message.inheritedProperties;
+    }
     if (message.extendedProperties) {
       const entries = Object.entries(message.extendedProperties);
       if (entries.length > 0) {
@@ -1116,6 +1158,7 @@ export const WorkUnit: MessageFns<WorkUnit> = {
       : undefined;
     message.tags = object.tags?.map((e) => StringPair.fromPartial(e)) || [];
     message.properties = object.properties ?? undefined;
+    message.inheritedProperties = object.inheritedProperties ?? undefined;
     message.extendedProperties = Object.entries(object.extendedProperties ?? {}).reduce<
       { [key: string]: { readonly [key: string]: any } | undefined }
     >((acc, [key, value]) => {

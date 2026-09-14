@@ -18,10 +18,18 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  *   4. FINAL
  *
  * The Workflow (i.e. a Stage) can explicitly evolve a Check from one state to
- * the next, but the Orchestrator will also enforce Check state evolution via
- * Stage Check Assignment "goal states". When all Stages with Check Assignments
- * for a given goal_state are Final, if the Check is not explicitly advanced to
- * (or past) that goal state, the Orchestrator will advance the check state.
+ * the next, but in certain cases the Orchestrator will also enforce Check state
+ * evolution. Today the orchestrator only performs the PLANNED -> WAITING
+ * transition (when all dependencies are satisfied and the check is unblocked),
+ * whereas Stages will need to execute the other two transitions.
+ *
+ * In the future, we will explore having the orchestrator also manage the
+ * PLANNING -> PLANNED and WAITING -> FINAL transitions, possibly via "goal
+ * states" on the Check Assignments for Stages. In this approach, when all
+ * Stages with Check Assignments for a given goal_state are FINAL, if the Check
+ * is not explicitly advanced to (or past) that goal state, the Orchestrator
+ * will advance the check state. However, the exact implementation and timeline
+ * for this feature are still TBD.
  *
  * These states have enum values in multiples of 10 in case we need to add more
  * states later which fall between these 4 initial states.

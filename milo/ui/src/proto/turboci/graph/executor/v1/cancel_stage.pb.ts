@@ -14,7 +14,7 @@ export const protobufPackage = "turboci.graph.executor.v1";
 
 /** Request to cancel an asynchronous stage attempt. */
 export interface CancelStageRequest {
-  /** Stage with the attempt being canceled. */
+  /** Stage with the attempt being cancelled. */
   readonly stage?:
     | Stage
     | undefined;

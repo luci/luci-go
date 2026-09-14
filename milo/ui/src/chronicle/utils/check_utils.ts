@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { BuildCheckOptions } from '@/proto/turboci/data/build/v1/build_check_options.pb';
-import { BuildCheckResult } from '@/proto/turboci/data/build/v1/build_check_results.pb';
+import { BuildCheckResults } from '@/proto/turboci/data/build/v1/build_check_results.pb';
 import { GobSourceCheckOptions } from '@/proto/turboci/data/gerrit/v1/gob_source_check_options.pb';
 import { PiperSourceCheckOptions } from '@/proto/turboci/data/piper/v1/piper_source_check_options.pb';
 import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_check_description_option.pb';
@@ -52,6 +52,12 @@ export enum StageResultStatus {
 
 export const TYPE_URL_BUILD_OPTIONS =
   'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions';
+export const TYPE_URL_BUILD_RESULTS =
+  'type.googleapis.com/turboci.data.build.v1.BuildCheckResults';
+/**
+ * @deprecated Legacy type URL before proto rename from BuildCheckResult to BuildCheckResults.
+ * Kept for backwards compatibility.
+ */
 export const TYPE_URL_BUILD_RESULT =
   'type.googleapis.com/turboci.data.build.v1.BuildCheckResult';
 export const TYPE_URL_GOB_SOURCE_OPTIONS =
@@ -94,11 +100,17 @@ export function getCheckResultStatus(
 
   for (const result of check.results) {
     for (const value_ref of result.data) {
-      const buildCheckResult = parseValueRef<BuildCheckResult>(
-        value_ref,
-        TYPE_URL_BUILD_RESULT,
-        valueDataMap,
-      );
+      const buildCheckResult =
+        parseValueRef<BuildCheckResults>(
+          value_ref,
+          TYPE_URL_BUILD_RESULTS,
+          valueDataMap,
+        ) ??
+        parseValueRef<BuildCheckResults>(
+          value_ref,
+          TYPE_URL_BUILD_RESULT,
+          valueDataMap,
+        );
       if (buildCheckResult) {
         return buildCheckResult.success
           ? CheckResultStatus.SUCCESS

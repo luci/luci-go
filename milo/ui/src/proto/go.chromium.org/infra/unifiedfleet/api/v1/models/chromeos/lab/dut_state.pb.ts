@@ -531,6 +531,14 @@ export enum DutState_RepairRequest {
   REPAIR_REQUEST_UPDATE_USBKEY_IMAGE = 3,
   /** REPAIR_REQUEST_REFLASH_FW - Request to re-flash firmware of the DUT. */
   REPAIR_REQUEST_REFLASH_FW = 4,
+  /** REPAIR_REQUEST_AUDIT_STORAGE - Request to audit DUT storage. */
+  REPAIR_REQUEST_AUDIT_STORAGE = 5,
+  /** REPAIR_REQUEST_AUDIT_USBKEY - Request to audit Servo USB-key. */
+  REPAIR_REQUEST_AUDIT_USBKEY = 6,
+  /** REPAIR_REQUEST_AUDIT_RPM - Request to audit RPM config. */
+  REPAIR_REQUEST_AUDIT_RPM = 7,
+  /** REPAIR_REQUEST_POWER_CYCLE_SERVO_BY_HUB - Request to power cycle servo by hub. */
+  REPAIR_REQUEST_POWER_CYCLE_SERVO_BY_HUB = 8,
 }
 
 export function dutState_RepairRequestFromJSON(object: any): DutState_RepairRequest {
@@ -550,6 +558,18 @@ export function dutState_RepairRequestFromJSON(object: any): DutState_RepairRequ
     case 4:
     case "REPAIR_REQUEST_REFLASH_FW":
       return DutState_RepairRequest.REPAIR_REQUEST_REFLASH_FW;
+    case 5:
+    case "REPAIR_REQUEST_AUDIT_STORAGE":
+      return DutState_RepairRequest.REPAIR_REQUEST_AUDIT_STORAGE;
+    case 6:
+    case "REPAIR_REQUEST_AUDIT_USBKEY":
+      return DutState_RepairRequest.REPAIR_REQUEST_AUDIT_USBKEY;
+    case 7:
+    case "REPAIR_REQUEST_AUDIT_RPM":
+      return DutState_RepairRequest.REPAIR_REQUEST_AUDIT_RPM;
+    case 8:
+    case "REPAIR_REQUEST_POWER_CYCLE_SERVO_BY_HUB":
+      return DutState_RepairRequest.REPAIR_REQUEST_POWER_CYCLE_SERVO_BY_HUB;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum DutState_RepairRequest");
   }
@@ -567,6 +587,14 @@ export function dutState_RepairRequestToJSON(object: DutState_RepairRequest): st
       return "REPAIR_REQUEST_UPDATE_USBKEY_IMAGE";
     case DutState_RepairRequest.REPAIR_REQUEST_REFLASH_FW:
       return "REPAIR_REQUEST_REFLASH_FW";
+    case DutState_RepairRequest.REPAIR_REQUEST_AUDIT_STORAGE:
+      return "REPAIR_REQUEST_AUDIT_STORAGE";
+    case DutState_RepairRequest.REPAIR_REQUEST_AUDIT_USBKEY:
+      return "REPAIR_REQUEST_AUDIT_USBKEY";
+    case DutState_RepairRequest.REPAIR_REQUEST_AUDIT_RPM:
+      return "REPAIR_REQUEST_AUDIT_RPM";
+    case DutState_RepairRequest.REPAIR_REQUEST_POWER_CYCLE_SERVO_BY_HUB:
+      return "REPAIR_REQUEST_POWER_CYCLE_SERVO_BY_HUB";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum DutState_RepairRequest");
   }

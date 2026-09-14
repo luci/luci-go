@@ -35,9 +35,9 @@ export interface WriteNodesRequest {
    *
    * This is in addition to regular RPC authorization.
    *
-   * If missing, this RPC will check that the caller additionally has the
-   * 'turboci.workplans.writeExternal' permission on Workplan(s) in the
-   * CheckWrites/StageWrites.
+   * If missing, this Orchestrator will check that the caller is permitted to
+   * act "externally" in the work plan, see http://go/turbo-ci-acls (Googlers
+   * only) for details.
    */
   readonly token?:
     | string
@@ -102,7 +102,11 @@ export interface WriteNodesRequest {
    *
    * This does not impact the heartbeat timer for the current attempt.
    */
-  readonly currentStage?: WriteNodesRequest_CurrentStageWrite | undefined;
+  readonly currentStage?:
+    | WriteNodesRequest_CurrentStageWrite
+    | undefined;
+  /** A list of Stages to cancel. */
+  readonly stageCancellations: readonly WriteNodesRequest_StageCancellation[];
 }
 
 /**
@@ -237,17 +241,24 @@ export interface WriteNodesRequest_Reason {
   readonly details: readonly ValueWrite[];
 }
 
-/** A description of modifications to make to a single Check. */
+/**
+ * A description of modifications to make to a single Check.
+ *
+ * All fields annotated as `(turboci).creation_only = true` can be set only
+ * once in a sense that if a CheckWrite updates an existing check, values
+ * of all these fields (if they are set) must match existing check values.
+ *
+ * Next ID: 11
+ */
 export interface WriteNodesRequest_CheckWrite {
   /**
    * The check to write to.
    *
-   * If the WorkPlan is left blank, will be populated with the WorkPlan in
-   * `token`, if it's provided.
+   * The work plan in the ID can either be unset or be equal to the work plan
+   * the WriteNodesRequest's token is associated with. If there's no token,
+   * the work plan in the ID must be set.
    *
-   * Otherwise, the Check must belong to the token's WorkPlan, or the caller
-   * must have the additional "turboci.workplans.writeExternal" permission in
-   * the check's realm (or in the realm of the option/result data).
+   * Required.
    */
   readonly identifier?:
     | Check
@@ -255,12 +266,12 @@ export interface WriteNodesRequest_CheckWrite {
   /**
    * Realm to assign to this Check.
    *
-   * If provided, must be the absolute form "<project>:<name>", or a
-   * special form "$from_token" or "$from_container". "$from_token" works
-   * as documented in [ValueWrite]. "$from_container" means "the same realm
-   * as the WorkPlan".
+   * If provided, must be in the absolute form "<project>:<name>" or be one
+   * of special values:
+   *   * "$from_token" - see [ValueWrite] for how it works.
+   *   * "$from_container" means "the same realm as the WorkPlan".
    *
-   * If omitted, it means that this check must already exist.
+   * Required when inserting a new check.
    */
   readonly realm?:
     | string
@@ -268,16 +279,59 @@ export interface WriteNodesRequest_CheckWrite {
   /**
    * Kind to assign to this check.
    *
-   * If this is set, and the Check DOES already exist, this MUST match the
-   * existing Check kind.
+   * Required when inserting a new check.
    */
   readonly kind?:
     | CheckKind
     | undefined;
   /**
+   * An optional disambiguating sub-type of this check.
+   *
+   * Used to identify a specific, named, variant of this Check kind within
+   * WorkPlans belonging to the same workflow, to differentiate metrics and
+   * queries between Check kinds. This value should be computed by the
+   * workflow in some deterministic, low-cardinality, way (including leaving
+   * it unset).
+   *
+   * This must NOT contain high-cardinality data like change IDs, commit
+   * hashes, or arbitrary user-controlled data.
+   *
+   * Good examples:
+   *   kind:SOURCE   sub_type:"gerrit"
+   *   kind:BUILD    sub_type:"${branch_name}"
+   *   kind:ANALYSIS sub_type:"presubmit"
+   *   kind:ANALYSIS sub_type:"experimental"
+   *
+   * OK examples:
+   *   kind:BUILD    sub_type:"${branch_name}-${build_config_name}"
+   *   # e.g. if build_config_name has only one value for a given workflow,
+   *   # it's not needed; but if it has hundreds of values, it may be too
+   *   # high-cardinality. But if it's only got a handful of values, this is
+   *   # OK.
+   *
+   * BAD examples:
+   *   kind:SOURCE   sub_type:"changeid:123456..."
+   *   kind:SOURCE   sub_type:"git:bad...c0ffee"
+   *   kind:BUILD    sub_type:"${branch_name}-${flag1}-${flag2}-${flag3}..."
+   *
+   * Must adhere to the regex: /^[a-zA-Z0-9\(\)\-_./ ]{0,256}$/
+   */
+  readonly subType?:
+    | string
+    | undefined;
+  /**
+   * The display name of this Check.
+   *
+   * Optional. If set, overrides the existing value.
+   */
+  readonly displayName?:
+    | string
+    | undefined;
+  /**
    * The list of Options to write/overwrite.
    *
-   * Must be unique on `ValueWrite.data.type_url`.
+   * Must be unique on `ValueWrite.data.type_url`. Changing realms of existing
+   * options is not allowed.
    */
   readonly options: readonly ValueWrite[];
   /**
@@ -334,51 +388,66 @@ export interface WriteNodesRequest_CheckWrite {
  * Note that the `state` of a Stage is managed entirely by the Orchestrator
  * itself. If you are a Stage implementation and need to manage the state of
  * your own Stage Attempt, see CurrentStageWrite.
+ *
+ * There are only two sorts of writes currently allowed: inserting a new stage
+ * or cancelling an existing stage.
+ *
+ * All fields annotated as `(turboci).creation_only = true` can be set only
+ * once in a sense that if a StageWrite overwrites an existing stage, values
+ * of all these fields (if they are set) must match existing stage values.
  */
 export interface WriteNodesRequest_StageWrite {
   /**
    * The stage to write to.
    *
-   * If the WorkPlan is left blank, will be populated with the WorkPlan in
-   * `token`, if it's provided.
+   * The work plan in the ID can either be unset or be equal to the work plan
+   * the WriteNodesRequest's token is associated with. If there's no token,
+   * the work plan in the ID must be set.
    *
-   * Otherwise, the Stage must belong to the token's WorkPlan, or the caller
-   * must have the additional "turboci.workplans.writeExternal" permission in
-   * the stage's realm.
+   * When inserting a new stage, if `identifier.is_worknode` is true, `args`
+   * must be type.googleapis.com/wireless.android.launchcontrol.WorkNodeStage
+   * (only vice versa: if a WorkNodeStage is given as `args, the ID must be
+   * `is_worknode`). Such writes can be used to insert legacy work nodes using
+   * Turbo CI APIs. IDs for such stages must be preallocated via
+   * AllocateWorkNodeIDs RPC.
    *
-   * The `is_worknode` field should also be omitted - it will be filled in by
-   * the server according to the type of `args`.
+   * Required.
    */
   readonly identifier?:
     | Stage
     | undefined;
   /**
-   * The arguments of the Stage.
+   * The arguments of the Stage when inserting a new stage.
    *
-   * A Stage MUST have `args` - if this write would create the Stage and
-   * `args` is omitted, the write will be rejected. If the Stage already
-   * exists and `args` is specified, the supplied args must match the existing
-   * Stages's `args` exactly.
-   *
-   * TBD: Document executor registration/selection process.
+   * Required when inserting a new stage. The realm must match `realm` (or
+   * be "$from_container", which will make it match the stage realm).
    */
   readonly args?:
     | ValueWrite
     | undefined;
   /**
-   * Realm to assign to this Stage.
+   * Realm to assign to this Stage when inserting it.
    *
-   * If provided, must be the absolute form "<project>:<name>", or a
-   * special form "$from_token" or "$from_container". "$from_token" works
-   * as documented in [ValueWrite]. "$from_container" means "the same realm
-   * as the WorkPlan".
+   * If provided, must be in the absolute form "<project>:<name>" or be one
+   * of special values:
+   *   * "$from_token" - see [ValueWrite] for how it works.
+   *   * "$from_container" means "the same realm as the WorkPlan".
+   *   * "$legacy_worknode" means to use legacy WorkPlan API ACLs. Can only be
+   *     used if `identifier.is_worknode` is true.
    *
-   * If the Stage already exists, this will only result in an error if it
-   * doesn't match the existing realm.
-   *
-   * Defaults to "$from_token" if unset while creating a Stage.
+   * When inserting a new stage defaults to:
+   *   * "$from_token" if `identifier.is_worknode` is false.
+   *   * "$legacy_worknode" if `identifier.is_worknode` is true.
    */
   readonly realm?:
+    | string
+    | undefined;
+  /**
+   * The display name of this Stage.
+   *
+   * Optional.
+   */
+  readonly displayName?:
     | string
     | undefined;
   /**
@@ -386,9 +455,6 @@ export interface WriteNodesRequest_StageWrite {
    *
    * If set, used to populate the dependencies.edges and
    * dependencies.predicate fields in the target Check.
-   *
-   * If the Stage already exists, this will only result in an error if it
-   * doesn't match the existing dependencies identically.
    *
    * NOTE: Currently Stages in this group must only point to Stages created by
    * the Stage performing this write. In theory, this should help prevent
@@ -409,12 +475,8 @@ export interface WriteNodesRequest_StageWrite {
   /**
    * The requested execution policy of the Stage.
    *
-   * If the Stage already exists, this will only result in an error if this
-   * requested policy doesn't match the existing requested policy.
-   *
-   * If this write creates the stage and the requested_stage_execution_policy
-   * is omitted, the stage will get the default StageExecutionPolicy from the
-   * Executor.
+   * Optional. If omitted when creating a stage, the executor will decide what
+   * policy to enforce in its ValidateStage RPC.
    */
   readonly requestedStageExecutionPolicy?:
     | StageExecutionPolicy
@@ -422,24 +484,9 @@ export interface WriteNodesRequest_StageWrite {
   /**
    * The Check assignments of the Stage.
    *
-   * If the Stage already exists, this will only result in an error if it
-   * doesn't match the existing assignments.
+   * Currently not implemented.
    */
   readonly assignments: readonly Stage_Assignment[];
-  /**
-   * If true, ensures that this Stage is marked for cancellation.
-   *
-   * If the Stage is in the ATTEMPTING state, and the current Attempt is
-   * RUNNING, the Attempt will transition to CANCELLING - Otherwise the
-   * current Attempt will be marked INCOMPLETE.
-   *
-   * If the Stage is already marked for cancellation, setting this is a no-op.
-   *
-   * A value of `false` is the same as `unset` (no-op).
-   *
-   * Use the top-level `reason` field to provide the cancellation reason.
-   */
-  readonly cancelled?: boolean | undefined;
 }
 
 /**
@@ -452,7 +499,9 @@ export interface WriteNodesRequest_CurrentAttemptWrite {
   /**
    * Sets details in the Stage Attempt.details field.
    *
-   * Overwrites any existing detail of the same type.
+   * Details are stored in an append-only map "type URL -> ValueRef".
+   * Overwrites of existing details are ignored (see ProgressIgnoredDetail
+   * message).
    */
   readonly details: readonly ValueWrite[];
   /**
@@ -659,6 +708,25 @@ export interface WriteNodesRequest_CurrentStageWrite {
   readonly continuationGroup?: WriteNodesRequest_DependencyGroup | undefined;
 }
 
+/**
+ * Identifies a Stage for cancellation.
+ *
+ * Use the top-level `reason` field to provide the cancellation reason.
+ *
+ * A StageAttempt may not cancel its own Stage, because cancellation is an
+ * action taken by a different actor (and a StageAttempt cancelling its
+ * Stage is equivalent to a Stage cancelling itself). If a Stage wants to
+ * terminate itself, it should mark its attempt INCOMPLETE or COMPLETE.
+ */
+export interface WriteNodesRequest_StageCancellation {
+  /**
+   * The identifier of the stage to cancel.
+   *
+   * Required.
+   */
+  readonly identifier?: Stage | undefined;
+}
+
 function createBaseWriteNodesRequest(): WriteNodesRequest {
   return {
     token: undefined,
@@ -668,6 +736,7 @@ function createBaseWriteNodesRequest(): WriteNodesRequest {
     stages: [],
     currentAttempt: undefined,
     currentStage: undefined,
+    stageCancellations: [],
   };
 }
 
@@ -693,6 +762,9 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
     }
     if (message.currentStage !== undefined) {
       WriteNodesRequest_CurrentStageWrite.encode(message.currentStage, writer.uint32(58).fork()).join();
+    }
+    for (const v of message.stageCancellations) {
+      WriteNodesRequest_StageCancellation.encode(v!, writer.uint32(66).fork()).join();
     }
     return writer;
   },
@@ -760,6 +832,14 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
           message.currentStage = WriteNodesRequest_CurrentStageWrite.decode(reader, reader.uint32());
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.stageCancellations.push(WriteNodesRequest_StageCancellation.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -786,6 +866,9 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
       currentStage: isSet(object.currentStage)
         ? WriteNodesRequest_CurrentStageWrite.fromJSON(object.currentStage)
         : undefined,
+      stageCancellations: globalThis.Array.isArray(object?.stageCancellations)
+        ? object.stageCancellations.map((e: any) => WriteNodesRequest_StageCancellation.fromJSON(e))
+        : [],
     };
   },
 
@@ -812,6 +895,9 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
     if (message.currentStage !== undefined) {
       obj.currentStage = WriteNodesRequest_CurrentStageWrite.toJSON(message.currentStage);
     }
+    if (message.stageCancellations?.length) {
+      obj.stageCancellations = message.stageCancellations.map((e) => WriteNodesRequest_StageCancellation.toJSON(e));
+    }
     return obj;
   },
 
@@ -835,6 +921,8 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
     message.currentStage = (object.currentStage !== undefined && object.currentStage !== null)
       ? WriteNodesRequest_CurrentStageWrite.fromPartial(object.currentStage)
       : undefined;
+    message.stageCancellations =
+      object.stageCancellations?.map((e) => WriteNodesRequest_StageCancellation.fromPartial(e)) || [];
     return message;
   },
 };
@@ -1106,6 +1194,8 @@ function createBaseWriteNodesRequest_CheckWrite(): WriteNodesRequest_CheckWrite 
     identifier: undefined,
     realm: undefined,
     kind: undefined,
+    subType: undefined,
+    displayName: undefined,
     options: [],
     dependencies: undefined,
     resultData: [],
@@ -1124,6 +1214,12 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
     }
     if (message.kind !== undefined) {
       writer.uint32(24).int32(message.kind);
+    }
+    if (message.subType !== undefined) {
+      writer.uint32(82).string(message.subType);
+    }
+    if (message.displayName !== undefined) {
+      writer.uint32(74).string(message.displayName);
     }
     for (const v of message.options) {
       ValueWrite.encode(v!, writer.uint32(34).fork()).join();
@@ -1172,6 +1268,22 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
           }
 
           message.kind = reader.int32() as any;
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.subType = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.displayName = reader.string();
           continue;
         }
         case 4: {
@@ -1228,6 +1340,8 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
       identifier: isSet(object.identifier) ? Check.fromJSON(object.identifier) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       kind: isSet(object.kind) ? checkKindFromJSON(object.kind) : undefined,
+      subType: isSet(object.subType) ? globalThis.String(object.subType) : undefined,
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : undefined,
       options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => ValueWrite.fromJSON(e)) : [],
       dependencies: isSet(object.dependencies)
         ? WriteNodesRequest_DependencyGroup.fromJSON(object.dependencies)
@@ -1250,6 +1364,12 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
     }
     if (message.kind !== undefined) {
       obj.kind = checkKindToJSON(message.kind);
+    }
+    if (message.subType !== undefined) {
+      obj.subType = message.subType;
+    }
+    if (message.displayName !== undefined) {
+      obj.displayName = message.displayName;
     }
     if (message.options?.length) {
       obj.options = message.options.map((e) => ValueWrite.toJSON(e));
@@ -1279,6 +1399,8 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
       : undefined;
     message.realm = object.realm ?? undefined;
     message.kind = object.kind ?? undefined;
+    message.subType = object.subType ?? undefined;
+    message.displayName = object.displayName ?? undefined;
     message.options = object.options?.map((e) => ValueWrite.fromPartial(e)) || [];
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? WriteNodesRequest_DependencyGroup.fromPartial(object.dependencies)
@@ -1295,10 +1417,10 @@ function createBaseWriteNodesRequest_StageWrite(): WriteNodesRequest_StageWrite 
     identifier: undefined,
     args: undefined,
     realm: undefined,
+    displayName: undefined,
     dependencies: undefined,
     requestedStageExecutionPolicy: undefined,
     assignments: [],
-    cancelled: undefined,
   };
 }
 
@@ -1313,6 +1435,9 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
     if (message.realm !== undefined) {
       writer.uint32(26).string(message.realm);
     }
+    if (message.displayName !== undefined) {
+      writer.uint32(66).string(message.displayName);
+    }
     if (message.dependencies !== undefined) {
       WriteNodesRequest_DependencyGroup.encode(message.dependencies, writer.uint32(34).fork()).join();
     }
@@ -1321,9 +1446,6 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
     }
     for (const v of message.assignments) {
       Stage_Assignment.encode(v!, writer.uint32(50).fork()).join();
-    }
-    if (message.cancelled !== undefined) {
-      writer.uint32(56).bool(message.cancelled);
     }
     return writer;
   },
@@ -1359,6 +1481,14 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
           message.realm = reader.string();
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
         case 4: {
           if (tag !== 34) {
             break;
@@ -1383,14 +1513,6 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
           message.assignments.push(Stage_Assignment.decode(reader, reader.uint32()));
           continue;
         }
-        case 7: {
-          if (tag !== 56) {
-            break;
-          }
-
-          message.cancelled = reader.bool();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1405,6 +1527,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
       identifier: isSet(object.identifier) ? Stage.fromJSON(object.identifier) : undefined,
       args: isSet(object.args) ? ValueWrite.fromJSON(object.args) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : undefined,
       dependencies: isSet(object.dependencies)
         ? WriteNodesRequest_DependencyGroup.fromJSON(object.dependencies)
         : undefined,
@@ -1414,7 +1537,6 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
       assignments: globalThis.Array.isArray(object?.assignments)
         ? object.assignments.map((e: any) => Stage_Assignment.fromJSON(e))
         : [],
-      cancelled: isSet(object.cancelled) ? globalThis.Boolean(object.cancelled) : undefined,
     };
   },
 
@@ -1429,6 +1551,9 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
     if (message.realm !== undefined) {
       obj.realm = message.realm;
     }
+    if (message.displayName !== undefined) {
+      obj.displayName = message.displayName;
+    }
     if (message.dependencies !== undefined) {
       obj.dependencies = WriteNodesRequest_DependencyGroup.toJSON(message.dependencies);
     }
@@ -1437,9 +1562,6 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
     }
     if (message.assignments?.length) {
       obj.assignments = message.assignments.map((e) => Stage_Assignment.toJSON(e));
-    }
-    if (message.cancelled !== undefined) {
-      obj.cancelled = message.cancelled;
     }
     return obj;
   },
@@ -1456,6 +1578,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
       ? ValueWrite.fromPartial(object.args)
       : undefined;
     message.realm = object.realm ?? undefined;
+    message.displayName = object.displayName ?? undefined;
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? WriteNodesRequest_DependencyGroup.fromPartial(object.dependencies)
       : undefined;
@@ -1464,7 +1587,6 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
         ? StageExecutionPolicy.fromPartial(object.requestedStageExecutionPolicy)
         : undefined;
     message.assignments = object.assignments?.map((e) => Stage_Assignment.fromPartial(e)) || [];
-    message.cancelled = object.cancelled ?? undefined;
     return message;
   },
 };
@@ -2282,6 +2404,66 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
     const message = createBaseWriteNodesRequest_CurrentStageWrite() as any;
     message.continuationGroup = (object.continuationGroup !== undefined && object.continuationGroup !== null)
       ? WriteNodesRequest_DependencyGroup.fromPartial(object.continuationGroup)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseWriteNodesRequest_StageCancellation(): WriteNodesRequest_StageCancellation {
+  return { identifier: undefined };
+}
+
+export const WriteNodesRequest_StageCancellation: MessageFns<WriteNodesRequest_StageCancellation> = {
+  encode(message: WriteNodesRequest_StageCancellation, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.identifier !== undefined) {
+      Stage.encode(message.identifier, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): WriteNodesRequest_StageCancellation {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWriteNodesRequest_StageCancellation() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.identifier = Stage.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WriteNodesRequest_StageCancellation {
+    return { identifier: isSet(object.identifier) ? Stage.fromJSON(object.identifier) : undefined };
+  },
+
+  toJSON(message: WriteNodesRequest_StageCancellation): unknown {
+    const obj: any = {};
+    if (message.identifier !== undefined) {
+      obj.identifier = Stage.toJSON(message.identifier);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<WriteNodesRequest_StageCancellation>): WriteNodesRequest_StageCancellation {
+    return WriteNodesRequest_StageCancellation.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<WriteNodesRequest_StageCancellation>): WriteNodesRequest_StageCancellation {
+    const message = createBaseWriteNodesRequest_StageCancellation() as any;
+    message.identifier = (object.identifier !== undefined && object.identifier !== null)
+      ? Stage.fromPartial(object.identifier)
       : undefined;
     return message;
   },

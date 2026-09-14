@@ -9,32 +9,146 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "luci.analysis.v1";
 
-/** Information about why a test failed. */
+/**
+ * Information about why a test failed.
+ * Note: The total combined size of all errors within this message (as measured
+ * by proto.Size()) must not exceed 16,384 bytes.
+ */
 export interface FailureReason {
+  /** The general category of the failure. Required. */
+  readonly kind: FailureReason_Kind;
   /**
-   * The error message that ultimately caused the test to fail. This should
-   * only be the error message and should not include any stack traces.
-   * An example would be the message from an Exception in a Java test.
-   * In the case that a test failed due to multiple expectation failures, any
-   * immediately fatal failure should be chosen, or otherwise the first
-   * expectation failure.
-   * If this field is empty, other fields may be used to cluster the failure
-   * instead.
+   * The error message that ultimately caused the test to fail.
+   * Equal to errors[0].message, or blank if errors is unset.
    *
-   * The size of the message must be equal to or smaller than 1024 bytes in
-   * UTF-8.
+   * Output only. (For backwards compatibility, some clients are still
+   * allowed to set this, but new clients should set the errors field
+   * instead.)
    */
   readonly primaryErrorMessage: string;
+  /**
+   * A list of all the errors that contributed to the test failure. There might
+   * be multiple errors if, for example, a test harness continues after non-fatal
+   * assertion failures.
+   *
+   * If there is more than one error (e.g. due to multiple expectation failures),
+   * a stable sorting should be used. A recommended form of stable sorting is:
+   * - Fatal errors (errors that cause the test to terminate immediately first),
+   *   then
+   * - Within fatal/non-fatal errors, sort by chronological order
+   *   (earliest error first).
+   *
+   * The total combined size of all errors (as measured by proto.Size()) must
+   * not exceed 16,384 bytes.
+   */
+  readonly errors: readonly FailureReason_Error[];
+  /**
+   * If the list of errors was too large to fit within the size limits for the
+   * FailureReason message, this count indicates how many errors were truncated
+   * from the end of the `errors` list.
+   */
+  readonly truncatedErrorsCount: number;
+}
+
+/**
+ * Kind defines the general category of the failure.
+ * Open to extension.
+ */
+export enum FailureReason_Kind {
+  KIND_UNSPECIFIED = 0,
+  /**
+   * ORDINARY - The test failed in an ordinary way (not captured by another status).
+   * Includes:
+   * - GoogleTest and JUnit assertion failures.
+   * - Golang *testing.T .Fail(), .Fatal(...) calls.
+   * - Web platform tests that did not produce the expected result,
+   *   for example, an unexpected pass or fail.
+   */
+  ORDINARY = 1,
+  /** CRASH - The test process crashed. */
+  CRASH = 2,
+  /** TIMEOUT - The test timed out. */
+  TIMEOUT = 3,
+}
+
+export function failureReason_KindFromJSON(object: any): FailureReason_Kind {
+  switch (object) {
+    case 0:
+    case "KIND_UNSPECIFIED":
+      return FailureReason_Kind.KIND_UNSPECIFIED;
+    case 1:
+    case "ORDINARY":
+      return FailureReason_Kind.ORDINARY;
+    case 2:
+    case "CRASH":
+      return FailureReason_Kind.CRASH;
+    case 3:
+    case "TIMEOUT":
+      return FailureReason_Kind.TIMEOUT;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum FailureReason_Kind");
+  }
+}
+
+export function failureReason_KindToJSON(object: FailureReason_Kind): string {
+  switch (object) {
+    case FailureReason_Kind.KIND_UNSPECIFIED:
+      return "KIND_UNSPECIFIED";
+    case FailureReason_Kind.ORDINARY:
+      return "ORDINARY";
+    case FailureReason_Kind.CRASH:
+      return "CRASH";
+    case FailureReason_Kind.TIMEOUT:
+      return "TIMEOUT";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum FailureReason_Kind");
+  }
+}
+
+/**
+ * Error represents a problem that caused a test to fail, such as a crash
+ * or expectation failure.
+ */
+export interface FailureReason_Error {
+  /**
+   * The specific error message associated with this particular error instance
+   * (e.g., the text of a specific assertion failure). This should generally
+   * exclude stack traces, which belong in the `trace` field.
+   * This message is often used for clustering related failures.
+   *
+   * Example message:
+   * camera_unittest.cc(123): Value of GetPrivacyIndicatorsView()->CameraIcon()->GetVisible() Actual: false Expected: true
+   *
+   * The size of this message must be equal to or smaller than 1024 bytes in UTF-8.
+   */
+  readonly message: string;
+  /**
+   * The stack trace associated with this error, if one is available.
+   * For very long stack traces, it's recommended to store them as separate
+   * artifacts linked to the TestResult and include a truncated version inline
+   * here to avoid exceeding size limits.
+   * A size limit of 4096 bytes (UTF-8) applies to this field.
+   */
+  readonly trace: string;
 }
 
 function createBaseFailureReason(): FailureReason {
-  return { primaryErrorMessage: "" };
+  return { kind: 0, primaryErrorMessage: "", errors: [], truncatedErrorsCount: 0 };
 }
 
 export const FailureReason: MessageFns<FailureReason> = {
   encode(message: FailureReason, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.kind !== 0) {
+      writer.uint32(32).int32(message.kind);
+    }
     if (message.primaryErrorMessage !== "") {
       writer.uint32(10).string(message.primaryErrorMessage);
+    }
+    for (const v of message.errors) {
+      FailureReason_Error.encode(v!, writer.uint32(18).fork()).join();
+    }
+    if (message.truncatedErrorsCount !== 0) {
+      writer.uint32(24).int32(message.truncatedErrorsCount);
     }
     return writer;
   },
@@ -46,12 +160,36 @@ export const FailureReason: MessageFns<FailureReason> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.kind = reader.int32() as any;
+          continue;
+        }
         case 1: {
           if (tag !== 10) {
             break;
           }
 
           message.primaryErrorMessage = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.errors.push(FailureReason_Error.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.truncatedErrorsCount = reader.int32();
           continue;
         }
       }
@@ -65,14 +203,28 @@ export const FailureReason: MessageFns<FailureReason> = {
 
   fromJSON(object: any): FailureReason {
     return {
+      kind: isSet(object.kind) ? failureReason_KindFromJSON(object.kind) : 0,
       primaryErrorMessage: isSet(object.primaryErrorMessage) ? globalThis.String(object.primaryErrorMessage) : "",
+      errors: globalThis.Array.isArray(object?.errors)
+        ? object.errors.map((e: any) => FailureReason_Error.fromJSON(e))
+        : [],
+      truncatedErrorsCount: isSet(object.truncatedErrorsCount) ? globalThis.Number(object.truncatedErrorsCount) : 0,
     };
   },
 
   toJSON(message: FailureReason): unknown {
     const obj: any = {};
+    if (message.kind !== 0) {
+      obj.kind = failureReason_KindToJSON(message.kind);
+    }
     if (message.primaryErrorMessage !== "") {
       obj.primaryErrorMessage = message.primaryErrorMessage;
+    }
+    if (message.errors?.length) {
+      obj.errors = message.errors.map((e) => FailureReason_Error.toJSON(e));
+    }
+    if (message.truncatedErrorsCount !== 0) {
+      obj.truncatedErrorsCount = Math.round(message.truncatedErrorsCount);
     }
     return obj;
   },
@@ -82,7 +234,86 @@ export const FailureReason: MessageFns<FailureReason> = {
   },
   fromPartial(object: DeepPartial<FailureReason>): FailureReason {
     const message = createBaseFailureReason() as any;
+    message.kind = object.kind ?? 0;
     message.primaryErrorMessage = object.primaryErrorMessage ?? "";
+    message.errors = object.errors?.map((e) => FailureReason_Error.fromPartial(e)) || [];
+    message.truncatedErrorsCount = object.truncatedErrorsCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseFailureReason_Error(): FailureReason_Error {
+  return { message: "", trace: "" };
+}
+
+export const FailureReason_Error: MessageFns<FailureReason_Error> = {
+  encode(message: FailureReason_Error, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.message !== "") {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.trace !== "") {
+      writer.uint32(18).string(message.trace);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FailureReason_Error {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFailureReason_Error() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.trace = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FailureReason_Error {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : "",
+      trace: isSet(object.trace) ? globalThis.String(object.trace) : "",
+    };
+  },
+
+  toJSON(message: FailureReason_Error): unknown {
+    const obj: any = {};
+    if (message.message !== "") {
+      obj.message = message.message;
+    }
+    if (message.trace !== "") {
+      obj.trace = message.trace;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<FailureReason_Error>): FailureReason_Error {
+    return FailureReason_Error.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<FailureReason_Error>): FailureReason_Error {
+    const message = createBaseFailureReason_Error() as any;
+    message.message = object.message ?? "";
+    message.trace = object.trace ?? "";
     return message;
   },
 };

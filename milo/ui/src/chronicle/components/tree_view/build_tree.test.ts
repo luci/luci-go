@@ -16,6 +16,7 @@ import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { Edge } from '@/proto/turboci/graph/orchestrator/v1/edge.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 
 import { StageResultStatus } from '../../utils/check_utils';
 
@@ -263,12 +264,16 @@ describe('BuildVisualGraph', () => {
       stageView({
         identifier: { id: 'nstage-success' },
         state: 40, // FINAL
-        legacy: { worknode: { digest: 'digest-success' } },
+        legacy: {
+          worknode: ValueRef.fromPartial({ digest: 'digest-success' }),
+        },
       }),
       stageView({
         identifier: { id: 'nstage-failed' },
         state: 40, // FINAL
-        legacy: { worknode: { digest: 'digest-failed' } },
+        legacy: {
+          worknode: ValueRef.fromPartial({ digest: 'digest-failed' }),
+        },
       }),
       stageView({
         identifier: { id: 'nstage-running' },

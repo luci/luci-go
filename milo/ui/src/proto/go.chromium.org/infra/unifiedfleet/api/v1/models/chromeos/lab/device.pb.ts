@@ -46,7 +46,12 @@ export interface DeviceUnderTest {
   readonly modeminfo: ModemInfo | undefined;
   readonly siminfo: readonly SIMInfo[];
   readonly roVpdMap: { [key: string]: string };
-  /** CBI contents on the DUT */
+  /**
+   * CBI contents on the DUT
+   * Deprecated: raw CBI binary proto is replaced by formatted CBI data.
+   *
+   * @deprecated
+   */
   readonly cbi:
     | Cbi
     | undefined;

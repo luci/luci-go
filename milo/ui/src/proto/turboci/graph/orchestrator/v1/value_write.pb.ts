@@ -7,6 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Any } from "../../../../google/protobuf/any.pb";
+import { Tag } from "./tags.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -52,15 +53,30 @@ export interface ValueWrite {
    *       * Edit Reasons for a Check or Stage are contained in their
    *         respective Edit, which always has the same realm as the Check or
    *         Stage to which the Edit belongs.
+   *   * "$legacy_worknode" - Can only be used only for Values contained by
+   *     a stage that has `identifier.is_worknode` set to true. Indicates that
+   *     access to the value is governed by legacy WorkPlan API ACLs, not
+   *     realms. Useful for compatibility with WorkPlan executors.
    *
    * See the surrounding context for this ValueWrite for which permissions
    * will be checked for writing and/or reading this data.
    */
-  readonly realm?: string | undefined;
+  readonly realm?:
+    | string
+    | undefined;
+  /**
+   * Additional tags to associate with the written data.
+   *
+   * Typically you should not set these directly; they should be generated for
+   * you using the `turboci.tag` field annotations in your protos, using one of
+   * the Turbo CI helper libraries (such as the Go or Python libraries in this
+   * repo).
+   */
+  readonly tags: readonly Tag[];
 }
 
 function createBaseValueWrite(): ValueWrite {
-  return { data: undefined, realm: undefined };
+  return { data: undefined, realm: undefined, tags: [] };
 }
 
 export const ValueWrite: MessageFns<ValueWrite> = {
@@ -70,6 +86,9 @@ export const ValueWrite: MessageFns<ValueWrite> = {
     }
     if (message.realm !== undefined) {
       writer.uint32(18).string(message.realm);
+    }
+    for (const v of message.tags) {
+      Tag.encode(v!, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -97,6 +116,14 @@ export const ValueWrite: MessageFns<ValueWrite> = {
           message.realm = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.tags.push(Tag.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -110,6 +137,7 @@ export const ValueWrite: MessageFns<ValueWrite> = {
     return {
       data: isSet(object.data) ? Any.fromJSON(object.data) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
+      tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e: any) => Tag.fromJSON(e)) : [],
     };
   },
 
@@ -121,6 +149,9 @@ export const ValueWrite: MessageFns<ValueWrite> = {
     if (message.realm !== undefined) {
       obj.realm = message.realm;
     }
+    if (message.tags?.length) {
+      obj.tags = message.tags.map((e) => Tag.toJSON(e));
+    }
     return obj;
   },
 
@@ -131,6 +162,7 @@ export const ValueWrite: MessageFns<ValueWrite> = {
     const message = createBaseValueWrite() as any;
     message.data = (object.data !== undefined && object.data !== null) ? Any.fromPartial(object.data) : undefined;
     message.realm = object.realm ?? undefined;
+    message.tags = object.tags?.map((e) => Tag.fromPartial(e)) || [];
     return message;
   },
 };

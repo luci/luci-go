@@ -42,6 +42,19 @@ export interface OwnershipData {
   readonly pools: readonly string[];
 }
 
+/** NlyteOwnershipData represents Nlyte business group ownership hierarchy. */
+export interface NlyteOwnershipData {
+  /** Immediate Business Group Name (e.g. "SLAAS") */
+  readonly businessGroupName: string;
+  /** Immediate Parent Business Group Name (e.g. "PDEIO Fleet Operations") */
+  readonly parentBusinessGroup: string;
+  /**
+   * Full ancestry hierarchy path from root to leaf
+   * e.g. ["Google", "PDEIO Fleet Operations", "SLAAS"]
+   */
+  readonly businessGroupPath: readonly string[];
+}
+
 function createBaseOwnershipData(): OwnershipData {
   return {
     resourceGroup: [],
@@ -221,6 +234,100 @@ export const OwnershipData: MessageFns<OwnershipData> = {
     message.customer = object.customer ?? "";
     message.builders = object.builders?.map((e) => e) || [];
     message.pools = object.pools?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseNlyteOwnershipData(): NlyteOwnershipData {
+  return { businessGroupName: "", parentBusinessGroup: "", businessGroupPath: [] };
+}
+
+export const NlyteOwnershipData: MessageFns<NlyteOwnershipData> = {
+  encode(message: NlyteOwnershipData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.businessGroupName !== "") {
+      writer.uint32(10).string(message.businessGroupName);
+    }
+    if (message.parentBusinessGroup !== "") {
+      writer.uint32(18).string(message.parentBusinessGroup);
+    }
+    for (const v of message.businessGroupPath) {
+      writer.uint32(26).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): NlyteOwnershipData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseNlyteOwnershipData() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.businessGroupName = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.parentBusinessGroup = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.businessGroupPath.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): NlyteOwnershipData {
+    return {
+      businessGroupName: isSet(object.businessGroupName) ? globalThis.String(object.businessGroupName) : "",
+      parentBusinessGroup: isSet(object.parentBusinessGroup) ? globalThis.String(object.parentBusinessGroup) : "",
+      businessGroupPath: globalThis.Array.isArray(object?.businessGroupPath)
+        ? object.businessGroupPath.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: NlyteOwnershipData): unknown {
+    const obj: any = {};
+    if (message.businessGroupName !== "") {
+      obj.businessGroupName = message.businessGroupName;
+    }
+    if (message.parentBusinessGroup !== "") {
+      obj.parentBusinessGroup = message.parentBusinessGroup;
+    }
+    if (message.businessGroupPath?.length) {
+      obj.businessGroupPath = message.businessGroupPath;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<NlyteOwnershipData>): NlyteOwnershipData {
+    return NlyteOwnershipData.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<NlyteOwnershipData>): NlyteOwnershipData {
+    const message = createBaseNlyteOwnershipData() as any;
+    message.businessGroupName = object.businessGroupName ?? "";
+    message.parentBusinessGroup = object.parentBusinessGroup ?? "";
+    message.businessGroupPath = object.businessGroupPath?.map((e) => e) || [];
     return message;
   },
 };

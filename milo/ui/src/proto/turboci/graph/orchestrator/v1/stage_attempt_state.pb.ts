@@ -25,6 +25,7 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  *   THROTTLED -> PENDING
  *
  *   SCHEDULED -> RUNNING
+ *   SCHEDULED -> CANCELLING
  *   SCHEDULED -> COMPLETE
  *   SCHEDULED -> INCOMPLETE
  *
@@ -34,6 +35,7 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  *   RUNNING -> INCOMPLETE
  *
  *   CANCELLING -> TEARING_DOWN
+ *   CANCELLING -> COMPLETE
  *   CANCELLING -> INCOMPLETE
  *
  *   TEARING_DOWN -> COMPLETE
@@ -48,10 +50,9 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  *   AWAITING_RETRY -> INCOMPLETE
  *
  * The Orchestrator manages Stage Attempt state evolution in conjunction with
- * the Executor, and explicit state transitions made explicitly by the Stage
- * Attempt itself. The only state transition which can be activated by a third
- * party would be transitions to INCOMPLETE or CANCELLING done when the Stage is
- * cancelled.
+ * the Executor. The only state transition which can be initiated by a third
+ * party (and actuated by the Orchestrator) would be transitions to INCOMPLETE
+ * or CANCELLING done when the Stage is cancelled.
  *
  * These states have enum values in multiples of 10 in case we need to add more
  * states later which fall between these initial states.
@@ -64,7 +65,7 @@ export enum StageAttemptState {
    * now.
    *
    * Either the attempt is queued to start running soon or executors' RunStage
-   * is already running but the executor hasn't updated the attempt's state yet.
+   * is already running but the Executor hasn't updated the attempt's state yet.
    *
    * This is usually the initial state for an attempt. Two other possible
    * initial states are THROTTLED (if the execution policy has
@@ -73,16 +74,24 @@ export enum StageAttemptState {
    * was set) and AWAITING_RETRY (if this attempt follows an INCOMPLETE previous
    * attempt and no `throttle_next_attempt_until` was set).
    *
-   * This state can transition to THROTTLED, SCHEDULED, RUNNING, COMPLETE or
-   * INCOMPLETE.
+   * The Executor transitions this state into:
+   *  * RUNNING - to mark the stage attempt as being executed now.
+   *  * SCHEDULED - to acknowledge that the stage attempt is scheduled for a
+   *    asynchronous execution.
+   *  * THROTTLED - to purposefully delay running the stage attempt.
+   *  * COMPLETE - to immediately complete the stage.
+   *  * INCOMPLETE - to immediately fail the stage attempt.
+   *
+   * The Orchestrator transitions this state into:
+   *  * INCOMPLETE - on reaching `pending_throttled` timeout.
    */
   STAGE_ATTEMPT_STATE_PENDING = 10,
   /**
    * STAGE_ATTEMPT_STATE_THROTTLED - This state indicates that the Stage Attempt is currently throttled.
    *
-   * It means the stage's execution is purposefully delayed until some specified
-   * time. An attempt either starts in this state (if it was throttled when
-   * the stage was submitted or by the previous attempt, see below) or it
+   * It means the stage attempt's execution is purposefully delayed until some
+   * specified time. An attempt either starts in this state (if it was throttled
+   * when the stage was submitted or by the previous attempt, see below) or it
    * transitions into this state from PENDING.
    *
    * A similar state is AWAITING_RETRY, with the primary difference being that
@@ -105,53 +114,96 @@ export enum StageAttemptState {
    *     in THROTTLED state. This is useful if the executors discovers it needs
    *     to slow down after already starting the stage execution.
    *
-   * This state can transition to PENDING or INCOMPLETE.
+   * The Orchestrator transitions this state into:
+   *  * PENDING - when it is time to launch the attempt.
+   *  * INCOMPLETE - on reaching `pending_throttled` timeout.
    */
   STAGE_ATTEMPT_STATE_THROTTLED = 20,
   /**
    * STAGE_ATTEMPT_STATE_SCHEDULED - This state indicates that the Stage Attempt was PENDING, but is now picked
-   * up for execution by an Executor.
+   * up for future execution by an Executor.
    *
-   * This state can transition to RUNNING, COMPLETE or INCOMPLETE.
+   * The Executor transitions this state into:
+   *  * RUNNING - to mark the stage attempt as being executed now.
+   *  * COMPLETE - to immediately complete the stage.
+   *  * INCOMPLETE - to immediately fail the stage attempt.
+   *
+   * The Orchestrator transitions this state into:
+   *  * CANCELLING - if the stage was cancelled.
+   *  * INCOMPLETE - on reaching `scheduled` timeout or missing `scheduled`
+   *    heartbeat, or if the stage was cancelled and the attempt execution
+   *    policy has no `cancelling` timeout set.
    */
   STAGE_ATTEMPT_STATE_SCHEDULED = 30,
   /**
    * STAGE_ATTEMPT_STATE_RUNNING - This state indicates that the Stage Attempt is now actually being executed
    * by an Executor.
    *
-   * This state can transition to COMPLETE or INCOMPLETE.
+   * The Executor transitions this state into:
+   *  * COMPLETE - to complete the stage.
+   *  * INCOMPLETE - to fail the stage attempt.
+   *  * TEARING_DOWN - to signal the stage attempt is about to be finished soon.
+   *
+   * The Orchestrator transitions this state into:
+   *  * CANCELLING - if the stage was cancelled.
+   *  * INCOMPLETE - on reaching `running` timeout or missing `running`
+   *    heartbeat, or if the stage was cancelled and the attempt execution
+   *    policy has no `cancelling` timeout set
    */
   STAGE_ATTEMPT_STATE_RUNNING = 40,
   /**
-   * STAGE_ATTEMPT_STATE_CANCELLING - This state indicates that the Stage Attempt has been cancelled, but this
-   * has not yet been communicated to the running Stage Attempt.
+   * STAGE_ATTEMPT_STATE_CANCELLING - This state indicates that the stage has been cancelled, but this has not
+   * yet been acknowledged by the Executor.
    *
-   * The Stage Attempt must be assumed to internally consider itself to be
-   * RUNNING while viewing this state from the API - this means that the
-   * `running` heartbeat and timeout still apply during this state.
+   * While the attempt is in this state, The Orchestrator will keep calling
+   * executor's CancelStage RPC (with exponential backoff). The Executor is
+   * supposed to acknowledge the cancellation by moving the attempt into
+   * TEARING_DOWN or COMPLETE/INCOMPLETE state.
    *
-   * This state will transition to TEARING_DOWN as soon as TurboCI has
-   * confirmation that the Stage Attempt knows it's been cancelled.
+   * This state will be skipped if the attempt execution policy has no
+   * `cancelling` timeout set. In that case the cancelled attempt will
+   * transition into INCOMPLETE immediately.
    *
-   * This state is explicitly different than TEARING_DOWN to avoid the
-   * possibility that a Stage is cancelled, but the Stage Attempt doesn't see
-   * this until its next valid heartbeat - thus effectively losing up to 1.9x
-   * the heartbeat interval out of its TEARING_DOWN timeout.
+   * The Executor transitions this state into:
+   *  * COMPLETE - to complete the stage.
+   *  * INCOMPLETE - to fail the stage attempt.
+   *  * TEARING_DOWN - to acknowledge the cancellation, but keep working.
+   *
+   * The Orchestrator transitions this state into:
+   *  * INCOMPLETE - on reaching `cancelling` timeout or missing a heartbeat.
+   *    The heartbeat deadline that is being checked depends on the attempt
+   *    history: it is either `scheduled` if the attempt was SCHEDULED prior to
+   *    being cancelled, or `running` if the attempt was RUNNING prior to
+   *    being cancelled.
    */
   STAGE_ATTEMPT_STATE_CANCELLING = 50,
   /**
    * STAGE_ATTEMPT_STATE_TEARING_DOWN - This state indicates that the Stage Attempt is doing some work after the
-   * RUNNING state.
+   * RUNNING state, in particular (but not necessarily) in response to
+   * cancellation.
    *
    * This is meant to model things like:
-   *   * doing best-effort cleanup
-   *   * exporting logs or other state to other systems
-   *   * things like swarming's isolated upload/cache cleanup phase
+   *   * Doing best-effort cleanup.
+   *   * Exporting logs or other state to other systems.
    *
-   * This state will only be used if the stage attempt has execution policy with
-   * a non-zero timeout for this state.
+   * It's desirable for stage attempts to explicitly transition to TEARING_DOWN
+   * for two reasons:
+   *  * To signal that the attempt is shutting down (e.g. for debugging UIs).
+   *  * To set a much shorter cleanup timeout when they know their primary work
+   *    is done. Otherwise they would only timeout on their possibly very-long
+   *    `running` timeout.
    *
-   * This state can transition to COMPLETE or INCOMPLETE.
+   * Note that cancellation of an attempt in TEARING_DOWN state does nothing
+   * (the executor's CancelStage RPC won't be called), because the attempt is
+   * assumed do be done soon anyway (as enforced by `tearing_down` timeout).
+   *
+   * The Executor transitions this state into:
+   *  * COMPLETE - to complete the stage.
+   *  * INCOMPLETE - to fail the stage attempt.
+   *
+   * The Orchestrator transitions this state into:
+   *  * INCOMPLETE - on reaching `tearing_down` timeout or missing
+   *    `tearing_down` heartbeat.
    */
   STAGE_ATTEMPT_STATE_TEARING_DOWN = 60,
   /**
@@ -195,7 +247,9 @@ export enum StageAttemptState {
    * Transition to PENDING is automatic after the exponential backoff delay
    * computed based on the number of previous incomplete attempts.
    *
-   * This state can transition to PENDING or INCOMPLETE.
+   * The Orchestrator transitions this state into:
+   *  * PENDING - when it is time to launch the attempt.
+   *  * INCOMPLETE - on reaching `pending_throttled` timeout.
    */
   STAGE_ATTEMPT_STATE_AWAITING_RETRY = 90,
 }

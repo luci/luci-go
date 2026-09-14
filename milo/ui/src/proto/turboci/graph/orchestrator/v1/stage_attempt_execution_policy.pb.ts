@@ -70,6 +70,9 @@ export interface StageAttemptExecutionPolicy_Heartbeat {
    * The expected duration that a Stage Attempt can be in the SCHEDULED
    * state without sending a heartbeat.
    *
+   * Also applies to CANCELLING state if the attempt was cancelled while
+   * still being SCHEDULED.
+   *
    * If unset, then there is no required heartbeat cadence, though the stage
    * is still subject to timeouts for the phase.
    */
@@ -80,12 +83,11 @@ export interface StageAttemptExecutionPolicy_Heartbeat {
    * The expected duration that a Stage Attempt can be in the RUNNING state
    * without sending a heartbeat.
    *
+   * Also applies to CANCELLING state if the attempt was cancelled while
+   * still being RUNNING.
+   *
    * If unset, then there is no required heartbeat cadence, though the stage
    * is still subject to timeouts for the phase.
-   *
-   * NOTE: This heartbeat still applies during the CANCELLING state - it's
-   * expected that CANCELLING only applies to Stage Attempts which are
-   * RUNNING, but before the Stage Attempt actually knows this.
    */
   readonly running?:
     | Duration
@@ -144,10 +146,6 @@ export interface StageAttemptExecutionPolicy_Timeout {
   /**
    * The maximum amount of time a Stage Attempt can be RUNNING.
    *
-   * NOTE: This timeout still applies during the CANCELLING state - it's
-   * expected that CANCELLING only applies to Stage Attempts which are
-   * RUNNING, but before the Stage Attempt actually knows this.
-   *
    * If unset or zero, it is assumed the executor is a synchronous one, i.e.
    * it moves attempts immediately into COMPLETE or INCOMPLETE states,
    * bypassing SCHEDULED/RUNNING.
@@ -156,12 +154,35 @@ export interface StageAttemptExecutionPolicy_Timeout {
     | Duration
     | undefined;
   /**
+   * The maximum amount of time a Stage Attempt can be CANCELLING.
+   *
+   * This is also an upper bound on how long the orchestrator will keep
+   * retrying calling CancelStage RPC.
+   *
+   * If unset or zero, it is assumed the executor doesn't implement graceful
+   * cancellation. In that case cancelling a stage will make the attempt
+   * INCOMPLETE right away without any graceful tear down.
+   *
+   * For executors that implement graceful cancellation, the value here should
+   * generally be pretty small (minutes), since the executor is expected to
+   * acknowledge the cancellation ASAP e.g. by transitioning the attempt to
+   * TEARING_DOWN (which has its own timeout).
+   *
+   * To make sure cancelled stages terminate in a timely manner no matter
+   * what, the orchestrator puts a hard upper bound on a value of this timeout
+   * (currently 15 min).
+   */
+  readonly cancelling?:
+    | Duration
+    | undefined;
+  /**
    * The maximum amount of time a Stage Attempt can be TEARING_DOWN.
    *
-   * Can be unset or zero if `running` is also unset or zero or if the
-   * executor doesn't implement stage cancellation at all. Otherwise it should
-   * be set to something to avoid premature termination of a cancelled
-   * attempt as timed out during the tear down.
+   * If unset or zero, the orchestrator will use some default value.
+   *
+   * To make sure cancelled stages terminate in a timely manner no matter
+   * what, the orchestrator puts a hard upper bound on a value of this timeout
+   * (currently 15 min).
    */
   readonly tearingDown?: Duration | undefined;
 }
@@ -345,7 +366,13 @@ export const StageAttemptExecutionPolicy_Heartbeat: MessageFns<StageAttemptExecu
 };
 
 function createBaseStageAttemptExecutionPolicy_Timeout(): StageAttemptExecutionPolicy_Timeout {
-  return { pendingThrottled: undefined, scheduled: undefined, running: undefined, tearingDown: undefined };
+  return {
+    pendingThrottled: undefined,
+    scheduled: undefined,
+    running: undefined,
+    cancelling: undefined,
+    tearingDown: undefined,
+  };
 }
 
 export const StageAttemptExecutionPolicy_Timeout: MessageFns<StageAttemptExecutionPolicy_Timeout> = {
@@ -358,6 +385,9 @@ export const StageAttemptExecutionPolicy_Timeout: MessageFns<StageAttemptExecuti
     }
     if (message.running !== undefined) {
       Duration.encode(message.running, writer.uint32(26).fork()).join();
+    }
+    if (message.cancelling !== undefined) {
+      Duration.encode(message.cancelling, writer.uint32(42).fork()).join();
     }
     if (message.tearingDown !== undefined) {
       Duration.encode(message.tearingDown, writer.uint32(34).fork()).join();
@@ -396,6 +426,14 @@ export const StageAttemptExecutionPolicy_Timeout: MessageFns<StageAttemptExecuti
           message.running = Duration.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.cancelling = Duration.decode(reader, reader.uint32());
+          continue;
+        }
         case 4: {
           if (tag !== 34) {
             break;
@@ -418,6 +456,7 @@ export const StageAttemptExecutionPolicy_Timeout: MessageFns<StageAttemptExecuti
       pendingThrottled: isSet(object.pendingThrottled) ? Duration.fromJSON(object.pendingThrottled) : undefined,
       scheduled: isSet(object.scheduled) ? Duration.fromJSON(object.scheduled) : undefined,
       running: isSet(object.running) ? Duration.fromJSON(object.running) : undefined,
+      cancelling: isSet(object.cancelling) ? Duration.fromJSON(object.cancelling) : undefined,
       tearingDown: isSet(object.tearingDown) ? Duration.fromJSON(object.tearingDown) : undefined,
     };
   },
@@ -432,6 +471,9 @@ export const StageAttemptExecutionPolicy_Timeout: MessageFns<StageAttemptExecuti
     }
     if (message.running !== undefined) {
       obj.running = Duration.toJSON(message.running);
+    }
+    if (message.cancelling !== undefined) {
+      obj.cancelling = Duration.toJSON(message.cancelling);
     }
     if (message.tearingDown !== undefined) {
       obj.tearingDown = Duration.toJSON(message.tearingDown);
@@ -452,6 +494,9 @@ export const StageAttemptExecutionPolicy_Timeout: MessageFns<StageAttemptExecuti
       : undefined;
     message.running = (object.running !== undefined && object.running !== null)
       ? Duration.fromPartial(object.running)
+      : undefined;
+    message.cancelling = (object.cancelling !== undefined && object.cancelling !== null)
+      ? Duration.fromPartial(object.cancelling)
       : undefined;
     message.tearingDown = (object.tearingDown !== undefined && object.tearingDown !== null)
       ? Duration.fromPartial(object.tearingDown)

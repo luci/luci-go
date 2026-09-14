@@ -35,11 +35,29 @@ export interface CreateWorkPlanRequest {
    * Required. Must be at least 8 bytes long. Can be a randomly generated
    * string.
    */
-  readonly idempotencyKey?: string | undefined;
+  readonly idempotencyKey?:
+    | string
+    | undefined;
+  /**
+   * The optional name of the workflow that this WorkPlan is an instance of.
+   *
+   * This should describe the 'class' of the workplan within the given project,
+   * e.g. "presubmit", "postsubmit", etc. The classes used over time should
+   * be fairly static - this must *not* include high-cardinality data like:
+   *   * ChangeIds or Git Commits
+   *   * Build numbers
+   *   * etc.
+   *
+   * This is *not* intended to be globally unique, but rather to be used to
+   * group together workplans of similar purpose/intent.
+   *
+   * Must adhere to the regex: /^[a-zA-Z0-9\(\)\-_./ ]{0,256}$/
+   */
+  readonly workflowName?: string | undefined;
 }
 
 function createBaseCreateWorkPlanRequest(): CreateWorkPlanRequest {
-  return { realm: undefined, idempotencyKey: undefined };
+  return { realm: undefined, idempotencyKey: undefined, workflowName: undefined };
 }
 
 export const CreateWorkPlanRequest: MessageFns<CreateWorkPlanRequest> = {
@@ -49,6 +67,9 @@ export const CreateWorkPlanRequest: MessageFns<CreateWorkPlanRequest> = {
     }
     if (message.idempotencyKey !== undefined) {
       writer.uint32(18).string(message.idempotencyKey);
+    }
+    if (message.workflowName !== undefined) {
+      writer.uint32(26).string(message.workflowName);
     }
     return writer;
   },
@@ -76,6 +97,14 @@ export const CreateWorkPlanRequest: MessageFns<CreateWorkPlanRequest> = {
           message.idempotencyKey = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.workflowName = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -89,6 +118,7 @@ export const CreateWorkPlanRequest: MessageFns<CreateWorkPlanRequest> = {
     return {
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       idempotencyKey: isSet(object.idempotencyKey) ? globalThis.String(object.idempotencyKey) : undefined,
+      workflowName: isSet(object.workflowName) ? globalThis.String(object.workflowName) : undefined,
     };
   },
 
@@ -100,6 +130,9 @@ export const CreateWorkPlanRequest: MessageFns<CreateWorkPlanRequest> = {
     if (message.idempotencyKey !== undefined) {
       obj.idempotencyKey = message.idempotencyKey;
     }
+    if (message.workflowName !== undefined) {
+      obj.workflowName = message.workflowName;
+    }
     return obj;
   },
 
@@ -110,6 +143,7 @@ export const CreateWorkPlanRequest: MessageFns<CreateWorkPlanRequest> = {
     const message = createBaseCreateWorkPlanRequest() as any;
     message.realm = object.realm ?? undefined;
     message.idempotencyKey = object.idempotencyKey ?? undefined;
+    message.workflowName = object.workflowName ?? undefined;
     return message;
   },
 };

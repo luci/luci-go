@@ -25,6 +25,8 @@ export interface Pasit {
   readonly devices: readonly Pasit_Device[];
   /** The connections between devices/components in the testbed. */
   readonly connections: readonly Pasit_Connection[];
+  /** Optional RPM for controlling power to the overall PASIT host / testbed. */
+  readonly rpm: OSRPM | undefined;
 }
 
 /** A single connection between two components in the topology. */
@@ -200,7 +202,7 @@ export interface Pasit_Device_SwitchFixtureDetails {
 }
 
 function createBasePasit(): Pasit {
-  return { hostname: "", devices: [], connections: [] };
+  return { hostname: "", devices: [], connections: [], rpm: undefined };
 }
 
 export const Pasit: MessageFns<Pasit> = {
@@ -213,6 +215,9 @@ export const Pasit: MessageFns<Pasit> = {
     }
     for (const v of message.connections) {
       Pasit_Connection.encode(v!, writer.uint32(26).fork()).join();
+    }
+    if (message.rpm !== undefined) {
+      OSRPM.encode(message.rpm, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -248,6 +253,14 @@ export const Pasit: MessageFns<Pasit> = {
           message.connections.push(Pasit_Connection.decode(reader, reader.uint32()));
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.rpm = OSRPM.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -266,6 +279,7 @@ export const Pasit: MessageFns<Pasit> = {
       connections: globalThis.Array.isArray(object?.connections)
         ? object.connections.map((e: any) => Pasit_Connection.fromJSON(e))
         : [],
+      rpm: isSet(object.rpm) ? OSRPM.fromJSON(object.rpm) : undefined,
     };
   },
 
@@ -280,6 +294,9 @@ export const Pasit: MessageFns<Pasit> = {
     if (message.connections?.length) {
       obj.connections = message.connections.map((e) => Pasit_Connection.toJSON(e));
     }
+    if (message.rpm !== undefined) {
+      obj.rpm = OSRPM.toJSON(message.rpm);
+    }
     return obj;
   },
 
@@ -291,6 +308,7 @@ export const Pasit: MessageFns<Pasit> = {
     message.hostname = object.hostname ?? "";
     message.devices = object.devices?.map((e) => Pasit_Device.fromPartial(e)) || [];
     message.connections = object.connections?.map((e) => Pasit_Connection.fromPartial(e)) || [];
+    message.rpm = (object.rpm !== undefined && object.rpm !== null) ? OSRPM.fromPartial(object.rpm) : undefined;
     return message;
   },
 };

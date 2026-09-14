@@ -615,6 +615,7 @@ export interface RepairQueueItem {
   readonly bluetoothState: PeripheralState;
   readonly poolHealthPct?: number | undefined;
   readonly modelHealthPct?: number | undefined;
+  readonly priorityScore: string;
 }
 
 export interface ListRepairQueueResponse {
@@ -5511,6 +5512,7 @@ function createBaseRepairQueueItem(): RepairQueueItem {
     bluetoothState: 0,
     poolHealthPct: undefined,
     modelHealthPct: undefined,
+    priorityScore: "0",
   };
 }
 
@@ -5551,6 +5553,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     if (message.modelHealthPct !== undefined) {
       writer.uint32(97).double(message.modelHealthPct);
+    }
+    if (message.priorityScore !== "0") {
+      writer.uint32(104).int64(message.priorityScore);
     }
     return writer;
   },
@@ -5658,6 +5663,14 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
           message.modelHealthPct = reader.double();
           continue;
         }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.priorityScore = reader.int64().toString();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5681,6 +5694,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
       bluetoothState: isSet(object.bluetoothState) ? peripheralStateFromJSON(object.bluetoothState) : 0,
       poolHealthPct: isSet(object.poolHealthPct) ? globalThis.Number(object.poolHealthPct) : undefined,
       modelHealthPct: isSet(object.modelHealthPct) ? globalThis.Number(object.modelHealthPct) : undefined,
+      priorityScore: isSet(object.priorityScore) ? globalThis.String(object.priorityScore) : "0",
     };
   },
 
@@ -5722,6 +5736,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.modelHealthPct !== undefined) {
       obj.modelHealthPct = message.modelHealthPct;
     }
+    if (message.priorityScore !== "0") {
+      obj.priorityScore = message.priorityScore;
+    }
     return obj;
   },
 
@@ -5742,6 +5759,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.bluetoothState = object.bluetoothState ?? 0;
     message.poolHealthPct = object.poolHealthPct ?? undefined;
     message.modelHealthPct = object.modelHealthPct ?? undefined;
+    message.priorityScore = object.priorityScore ?? "0";
     return message;
   },
 };

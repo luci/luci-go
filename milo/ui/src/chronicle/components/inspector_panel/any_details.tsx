@@ -16,7 +16,7 @@ import { Box, Typography, Alert } from '@mui/material';
 import { ComponentType, ReactNode, useMemo } from 'react';
 
 import { BuildCheckOptions } from '@/proto/turboci/data/build/v1/build_check_options.pb';
-import { BuildCheckResult } from '@/proto/turboci/data/build/v1/build_check_results.pb';
+import { BuildCheckResults } from '@/proto/turboci/data/build/v1/build_check_results.pb';
 import { GobSourceCheckOptions } from '@/proto/turboci/data/gerrit/v1/gob_source_check_options.pb';
 import { GobSourceCheckResults } from '@/proto/turboci/data/gerrit/v1/gob_source_check_results.pb';
 import { PiperSourceCheckOptions } from '@/proto/turboci/data/piper/v1/piper_source_check_options.pb';
@@ -63,9 +63,14 @@ const KNOWN_TYPE_RENDERERS: Record<string, TypeRenderer> = {
     component: BuildCheckOptionsDetails as unknown as GenericRenderer,
     fromJson: BuildCheckOptions.fromJSON,
   },
+  'type.googleapis.com/turboci.data.build.v1.BuildCheckResults': {
+    component: BuildCheckResultDetails as unknown as GenericRenderer,
+    fromJson: BuildCheckResults.fromJSON,
+  },
+  // Deprecated type, maintained for backwards compatibility reasons.
   'type.googleapis.com/turboci.data.build.v1.BuildCheckResult': {
     component: BuildCheckResultDetails as unknown as GenericRenderer,
-    fromJson: BuildCheckResult.fromJSON,
+    fromJson: BuildCheckResults.fromJSON,
   },
   'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckOptions': {
     component: GobSourceCheckOptionsDetails as unknown as GenericRenderer,

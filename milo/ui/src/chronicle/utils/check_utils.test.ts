@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { BuildCheckOptions } from '@/proto/turboci/data/build/v1/build_check_options.pb';
-import { BuildCheckResult } from '@/proto/turboci/data/build/v1/build_check_results.pb';
+import { BuildCheckResults } from '@/proto/turboci/data/build/v1/build_check_results.pb';
 import { GobSourceCheckOptions } from '@/proto/turboci/data/gerrit/v1/gob_source_check_options.pb';
 import { PiperSourceCheckOptions } from '@/proto/turboci/data/piper/v1/piper_source_check_options.pb';
 import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_check_description_option.pb';
@@ -38,6 +38,7 @@ import {
   StageResultStatus,
   TYPE_URL_BUILD_OPTIONS,
   TYPE_URL_BUILD_RESULT,
+  TYPE_URL_BUILD_RESULTS,
   TYPE_URL_GOB_SOURCE_OPTIONS,
   TYPE_URL_PIPER_SOURCE_OPTIONS,
   TYPE_URL_TEST_OPTIONS,
@@ -52,11 +53,13 @@ function createCheck(
   optionsData: { typeUrl: string; digest: string; json: unknown }[] = [],
   resultsData: { typeUrl: string; digest: string; json: unknown }[] = [],
 ): Check {
-  const options: ValueRef[] = optionsData.map((o) => ({
-    realm: 'test-realm',
-    typeUrl: o.typeUrl,
-    digest: o.digest,
-  }));
+  const options: ValueRef[] = optionsData.map((o) =>
+    ValueRef.fromPartial({
+      realm: 'test-realm',
+      typeUrl: o.typeUrl,
+      digest: o.digest,
+    }),
+  );
   optionsData.forEach((o) => {
     valueDataMap.set(o.digest, {
       json: { value: o.json !== undefined ? JSON.stringify(o.json) : '' },
@@ -69,11 +72,13 @@ function createCheck(
           {
             identifier: { check: { id, workPlan: { id: 'test-wp' } }, idx: 1 },
             owner: { orchestrator: {} },
-            data: resultsData.map((r) => ({
-              realm: 'test-realm',
-              typeUrl: r.typeUrl,
-              digest: r.digest,
-            })),
+            data: resultsData.map((r) =>
+              ValueRef.fromPartial({
+                realm: 'test-realm',
+                typeUrl: r.typeUrl,
+                digest: r.digest,
+              }),
+            ),
             createdAt: { ts: '2024-01-01T12:00:00Z' },
             finalizedAt: { ts: '2024-01-01T12:05:00Z' },
           },
@@ -127,26 +132,26 @@ describe('check_utils', () => {
         expected: CheckResultStatus.UNKNOWN,
       },
       {
-        name: 'returns SUCCESS for BuildCheckResult with success=true',
+        name: 'returns SUCCESS for BuildCheckResults with success=true',
         kind: CheckKind.CHECK_KIND_BUILD,
         results: [
           {
-            typeUrl: TYPE_URL_BUILD_RESULT,
+            typeUrl: TYPE_URL_BUILD_RESULTS,
             digest: DIGEST,
-            json: { success: true } as BuildCheckResult,
+            json: { success: true } as BuildCheckResults,
           },
         ],
         valueDataMap: new Map(),
         expected: CheckResultStatus.SUCCESS,
       },
       {
-        name: 'returns FAILURE for BuildCheckResult with success=false',
+        name: 'returns FAILURE for BuildCheckResults with success=false',
         kind: CheckKind.CHECK_KIND_BUILD,
         results: [
           {
-            typeUrl: TYPE_URL_BUILD_RESULT,
+            typeUrl: TYPE_URL_BUILD_RESULTS,
             digest: DIGEST,
-            json: { success: false } as BuildCheckResult,
+            json: { success: false } as BuildCheckResults,
           },
         ],
         valueDataMap: new Map(),
@@ -183,13 +188,26 @@ describe('check_utils', () => {
         kind: CheckKind.CHECK_KIND_BUILD,
         results: [
           {
-            typeUrl: TYPE_URL_BUILD_RESULT,
+            typeUrl: TYPE_URL_BUILD_RESULTS,
             digest: DIGEST,
             json: undefined,
           },
         ],
         valueDataMap: new Map(),
         expected: CheckResultStatus.UNKNOWN,
+      },
+      {
+        name: 'returns SUCCESS for BuildCheckResults with success=true using backwards-compatible type_url',
+        kind: CheckKind.CHECK_KIND_BUILD,
+        results: [
+          {
+            typeUrl: TYPE_URL_BUILD_RESULT,
+            digest: DIGEST,
+            json: { success: true } as BuildCheckResults,
+          },
+        ],
+        valueDataMap: new Map(),
+        expected: CheckResultStatus.SUCCESS,
       },
     ];
 

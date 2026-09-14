@@ -23,7 +23,10 @@ import { WorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { WorkflowType } from '../../fake_turboci_graph';
-import { TYPE_URL_BUILD_RESULT } from '../../utils/check_utils';
+import {
+  TYPE_URL_BUILD_RESULT,
+  TYPE_URL_BUILD_RESULTS,
+} from '../../utils/check_utils';
 import { ChronicleContext, ChronicleContextType } from '../context';
 
 import { Component as TreeView, TREE_ROW_HEIGHT } from './tree_view';
@@ -116,7 +119,12 @@ function createNStage(
   });
 }
 
-function createCheck(id: string, state: CheckState, digest?: string): Check {
+function createCheck(
+  id: string,
+  state: CheckState,
+  digest?: string,
+  typeUrl: string = TYPE_URL_BUILD_RESULTS,
+): Check {
   return Check.fromPartial({
     identifier: { id },
     state,
@@ -124,7 +132,7 @@ function createCheck(id: string, state: CheckState, digest?: string): Check {
       ? {
           results: [
             {
-              data: [{ digest, typeUrl: TYPE_URL_BUILD_RESULT }],
+              data: [{ digest, typeUrl }],
             },
           ],
         }
@@ -235,6 +243,32 @@ describe('TreeView', () => {
     expect(
       within(tree).getAllByTestId('FiberManualRecordIcon').length,
     ).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders status icons for Checks correctly using backwards-compatible type_url', () => {
+    const valueDataMap = new Map<string, ValueData>([
+      ['digest-chk-legacy-success', createBuildResultValueData(true)],
+    ]);
+
+    const graph = WorkPlan.fromPartial({
+      stages: [],
+      checks: [
+        createCheck(
+          'check-legacy-success',
+          CheckState.CHECK_STATE_FINAL,
+          'digest-chk-legacy-success',
+          TYPE_URL_BUILD_RESULT,
+        ),
+      ],
+    });
+
+    renderTreeView(graph, valueDataMap);
+
+    const tree = screen.getByRole('tree');
+    expect(
+      within(tree).getByText('Check: check-legacy-success'),
+    ).toBeInTheDocument();
+    expect(within(tree).getByTestId('CheckCircleIcon')).toBeInTheDocument();
   });
 
   it('renders loading spinner when graph is not yet available', () => {

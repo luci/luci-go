@@ -22,11 +22,6 @@ export interface QueryNodesRequest {
    * of an empty Workplan.
    *
    * This is in addition to regular RPC authorization.
-   *
-   * If the token is populated and its workplan ID matches the workplan ID in
-   * the request, this RPC will check that the caller has the relevant 'read'
-   * permissions. Otherwise, the relevant 'readExternal' permissions will be
-   * checked.
    */
   readonly token?:
     | string

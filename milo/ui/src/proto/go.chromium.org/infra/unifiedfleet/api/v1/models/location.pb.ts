@@ -105,7 +105,7 @@ export function labToJSON(object: Lab): string {
 
 /**
  * Zone refers to the different network zones under chrome org
- * Next tag: 122
+ * Next tag: 124
  */
 export enum Zone {
   ZONE_UNSPECIFIED = 0,
@@ -395,6 +395,10 @@ export enum Zone {
   ZONE_SFP_104 = 120,
   /** ZONE_SFP_112 - "sfp_112" // Zone for SfP assets for partner // Testhause ID: 112; */
   ZONE_SFP_112 = 121,
+  /** ZONE_SFP_113 - "sfp_113" // Zone for SfP assets for partner // Testhaus ID: 113; */
+  ZONE_SFP_113 = 122,
+  /** ZONE_SFP_117 - "sfp_117" // Zone for SfP assets for partner // Testhaus ID: 117; */
+  ZONE_SFP_117 = 123,
 }
 
 export function zoneFromJSON(object: any): Zone {
@@ -762,6 +766,12 @@ export function zoneFromJSON(object: any): Zone {
     case 121:
     case "ZONE_SFP_112":
       return Zone.ZONE_SFP_112;
+    case 122:
+    case "ZONE_SFP_113":
+      return Zone.ZONE_SFP_113;
+    case 123:
+    case "ZONE_SFP_117":
+      return Zone.ZONE_SFP_117;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }
@@ -1011,6 +1021,10 @@ export function zoneToJSON(object: Zone): string {
       return "ZONE_SFP_104";
     case Zone.ZONE_SFP_112:
       return "ZONE_SFP_112";
+    case Zone.ZONE_SFP_113:
+      return "ZONE_SFP_113";
+    case Zone.ZONE_SFP_117:
+      return "ZONE_SFP_117";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }
@@ -1022,7 +1036,7 @@ export function zoneToJSON(object: Zone): string {
  * The fine-grained location is mainly for OS machine as we care about rack,
  * row, shelf.
  *
- * Next Tag: 16
+ * Next Tag: 17
  */
 export interface Location {
   /**
@@ -1077,6 +1091,8 @@ export interface Location {
   readonly city: string;
   /** Building. Used by lab ops. */
   readonly building: string;
+  /** LocationGroup Tag from Nlyte (e.g. Org-level tag of the lab/room/area). */
+  readonly locationGroupTag: string;
 }
 
 function createBaseLocation(): Location {
@@ -1095,6 +1111,7 @@ function createBaseLocation(): Location {
     lab: 0,
     city: "",
     building: "",
+    locationGroupTag: "",
   };
 }
 
@@ -1141,6 +1158,9 @@ export const Location: MessageFns<Location> = {
     }
     if (message.building !== "") {
       writer.uint32(122).string(message.building);
+    }
+    if (message.locationGroupTag !== "") {
+      writer.uint32(130).string(message.locationGroupTag);
     }
     return writer;
   },
@@ -1264,6 +1284,14 @@ export const Location: MessageFns<Location> = {
           message.building = reader.string();
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.locationGroupTag = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1289,6 +1317,7 @@ export const Location: MessageFns<Location> = {
       lab: isSet(object.lab) ? labFromJSON(object.lab) : 0,
       city: isSet(object.city) ? globalThis.String(object.city) : "",
       building: isSet(object.building) ? globalThis.String(object.building) : "",
+      locationGroupTag: isSet(object.locationGroupTag) ? globalThis.String(object.locationGroupTag) : "",
     };
   },
 
@@ -1336,6 +1365,9 @@ export const Location: MessageFns<Location> = {
     if (message.building !== "") {
       obj.building = message.building;
     }
+    if (message.locationGroupTag !== "") {
+      obj.locationGroupTag = message.locationGroupTag;
+    }
     return obj;
   },
 
@@ -1358,6 +1390,7 @@ export const Location: MessageFns<Location> = {
     message.lab = object.lab ?? 0;
     message.city = object.city ?? "";
     message.building = object.building ?? "";
+    message.locationGroupTag = object.locationGroupTag ?? "";
     return message;
   },
 };

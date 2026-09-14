@@ -34,7 +34,7 @@ import { ReadWorkPlanRequest } from '@/proto/turboci/graph/orchestrator/v1/read_
 import { ReadWorkPlanResponse } from '@/proto/turboci/graph/orchestrator/v1/read_workplan_response.pb';
 import { TurboCIOrchestratorServiceName } from '@/proto/turboci/graph/orchestrator/v1/turbo_ci_orchestrator_service.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
-import { ValueMask } from '@/proto/turboci/graph/orchestrator/v1/value_mask.pb';
+import { ValueSlot } from '@/proto/turboci/graph/orchestrator/v1/value_slot.pb';
 
 import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
 
@@ -522,21 +522,12 @@ export function ChronicleContextProvider({
         IdentifierKind.IDENTIFIER_KIND_STAGE_EDIT,
       ],
       valueFilter: {
+        includeData: [ValueSlot.VALUE_SLOT_ALL],
         typeInfo: {
           wanted: { typeUrls: ['*'] },
           unknownJsonpb: true,
           known: { typeUrls: [] },
         },
-        checkOptions: ValueMask.VALUE_MASK_VALUE_TYPE,
-        checkResultData: ValueMask.VALUE_MASK_VALUE_TYPE,
-        checkEditOptions: ValueMask.VALUE_MASK_VALUE_TYPE,
-        checkEditResultData: ValueMask.VALUE_MASK_VALUE_TYPE,
-        stageArgs: ValueMask.VALUE_MASK_VALUE_TYPE,
-        stageAttemptDetails: ValueMask.VALUE_MASK_VALUE_TYPE,
-        stageAttemptProgressDetails: ValueMask.VALUE_MASK_VALUE_TYPE,
-        stageEditAttemptDetails: ValueMask.VALUE_MASK_VALUE_TYPE,
-        stageEditAttemptProgressDetails: ValueMask.VALUE_MASK_VALUE_TYPE,
-        stageLegacyWorknode: ValueMask.VALUE_MASK_VALUE_TYPE,
       },
     },
     activeHost || '',

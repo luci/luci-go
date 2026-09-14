@@ -61,8 +61,21 @@ export interface ReadWorkPlanResponse {
    * with the next node in the stream. Callers looking to retrieve additional
    * pages of results can do so by providing this token. If omitted, there are
    * no further pages of results so no further queries are needed.
+   *
+   * Deprecated, please use `next_page_token` instead.
+   *
+   * @deprecated
    */
-  readonly paginationToken?: string | undefined;
+  readonly paginationToken?:
+    | string
+    | undefined;
+  /**
+   * Opaque pagination token, so follow-on queries can resume consuming nodes
+   * with the next node in the stream. Callers looking to retrieve additional
+   * pages of results can do so by providing this token. If omitted, there are
+   * no further pages of results so no further queries are needed.
+   */
+  readonly nextPageToken?: string | undefined;
 }
 
 export interface ReadWorkPlanResponse_ValueDataEntry {
@@ -77,6 +90,7 @@ function createBaseReadWorkPlanResponse(): ReadWorkPlanResponse {
     currentAttemptState: undefined,
     version: undefined,
     paginationToken: undefined,
+    nextPageToken: undefined,
   };
 }
 
@@ -96,6 +110,9 @@ export const ReadWorkPlanResponse: MessageFns<ReadWorkPlanResponse> = {
     }
     if (message.paginationToken !== undefined) {
       writer.uint32(42).string(message.paginationToken);
+    }
+    if (message.nextPageToken !== undefined) {
+      writer.uint32(50).string(message.nextPageToken);
     }
     return writer;
   },
@@ -150,6 +167,14 @@ export const ReadWorkPlanResponse: MessageFns<ReadWorkPlanResponse> = {
           message.paginationToken = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -173,6 +198,7 @@ export const ReadWorkPlanResponse: MessageFns<ReadWorkPlanResponse> = {
         : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       paginationToken: isSet(object.paginationToken) ? globalThis.String(object.paginationToken) : undefined,
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : undefined,
     };
   },
 
@@ -198,6 +224,9 @@ export const ReadWorkPlanResponse: MessageFns<ReadWorkPlanResponse> = {
     }
     if (message.paginationToken !== undefined) {
       obj.paginationToken = message.paginationToken;
+    }
+    if (message.nextPageToken !== undefined) {
+      obj.nextPageToken = message.nextPageToken;
     }
     return obj;
   },
@@ -226,6 +255,7 @@ export const ReadWorkPlanResponse: MessageFns<ReadWorkPlanResponse> = {
       ? Revision.fromPartial(object.version)
       : undefined;
     message.paginationToken = object.paginationToken ?? undefined;
+    message.nextPageToken = object.nextPageToken ?? undefined;
     return message;
   },
 };

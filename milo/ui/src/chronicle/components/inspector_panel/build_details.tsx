@@ -18,7 +18,7 @@ import {
   BuildCheckOptions,
   productToJSON,
 } from '@/proto/turboci/data/build/v1/build_check_options.pb';
-import { BuildCheckResult } from '@/proto/turboci/data/build/v1/build_check_results.pb';
+import { BuildCheckResults } from '@/proto/turboci/data/build/v1/build_check_results.pb';
 
 import { DetailRow } from './detail_row';
 
@@ -43,7 +43,7 @@ export function BuildCheckOptionsDetails({
   );
 }
 
-export function BuildCheckResultDetails({ data }: { data: BuildCheckResult }) {
+export function BuildCheckResultDetails({ data }: { data: BuildCheckResults }) {
   return (
     <Box>
       <DetailRow label="Success" value={data.success ? 'True' : 'False'} />
@@ -115,7 +115,7 @@ export function BuildCheckResultDetails({ data }: { data: BuildCheckResult }) {
 function GcsArtifactsDetails({
   artifacts,
 }: {
-  artifacts: BuildCheckResult['gcsArtifacts'];
+  artifacts: BuildCheckResults['gcsArtifacts'];
 }) {
   return (
     <Box sx={{ p: 1, border: '1px solid #eee', borderRadius: 1, mt: 0.5 }}>

@@ -70,6 +70,54 @@ export interface ValidateStageResponse {
    * If omitted, defaults to ["EUC"].
    */
   readonly stageServiceAccounts: readonly string[];
+  /**
+   * A disambiguating sub-type for this Stage.
+   *
+   * Used to identify a specific, named, variant of this stage when many exist,
+   * to differentiate metrics between stage sub-types. This value should be
+   * computed by the executor from `args` with some pure function (for example,
+   * this could be the `config` field of a hypothetical args message, or
+   * combination of `os` and `flagset` fields).
+   *
+   * This must *not* contain high-cardinality data like:
+   *   * ChangeIds or Git Commits
+   *   * Build numbers
+   *   * etc.
+   *
+   * This should ideally have high predictive power for the performance
+   * characteristics of this particular instantiation of this stage - many
+   * different stages with the same stage args type_url and sub_type should
+   * perform similarly.
+   *
+   * This is *not* intended to be globally unique, but rather to be used to
+   * group together stages of similar purpose/intent which use the same stage
+   * args type_url.
+   *
+   * If the executor wants the workflow to control this value, it should
+   * provide a field via the stage args, which the executor can relay to here,
+   * but cardinality rules still apply, so this should be done with great
+   * caution. An example of this usage would be a Stage which takes an
+   * executable payload as part of its args (e.g. a wasm module or starlark
+   * script). In this case the workflow dictates the execution contents of what
+   * this Stage will do, and so it makes sense for the executor to allow the
+   * workflow to directly characterize the performance of this execution via
+   * sub_type.
+   *
+   * As an example, Buildbucket uses this to contain the
+   * `<bucketname>/<buildername>` (e.g. `try/linux-rel`). Without specifying
+   * this sub_type, all metrics for `buildbucket.v2.ScheduleBuild` stages would
+   * be indistinguishable (so the 30s markdown presubmit builder and the 12h+
+   * ASAN build+test builder would both just show as
+   * `buildbucket.v2.ScheduleBuild` stages).
+   *
+   * Where possible, it is preferable to have uinque Stage arg types instead of
+   * one big stage type with lots of configurations. This allows the arg types
+   * to be tailored more closely to the behavior of the actual stage, which
+   * makes documentation and debugging easier.
+   *
+   * Must adhere to the regex: /^[a-zA-Z0-9\(\)\-_./ ]{0,256}$/
+   */
+  readonly stageSubType?: string | undefined;
 }
 
 function createBaseValidateStageRequest(): ValidateStageRequest {
@@ -267,7 +315,7 @@ export const ValidateStageRequest_ValueDataEntry: MessageFns<ValidateStageReques
 };
 
 function createBaseValidateStageResponse(): ValidateStageResponse {
-  return { stageExecutionPolicy: undefined, stageServiceAccounts: [] };
+  return { stageExecutionPolicy: undefined, stageServiceAccounts: [], stageSubType: undefined };
 }
 
 export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
@@ -277,6 +325,9 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
     }
     for (const v of message.stageServiceAccounts) {
       writer.uint32(18).string(v!);
+    }
+    if (message.stageSubType !== undefined) {
+      writer.uint32(26).string(message.stageSubType);
     }
     return writer;
   },
@@ -304,6 +355,14 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
           message.stageServiceAccounts.push(reader.string());
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.stageSubType = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -321,6 +380,7 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
       stageServiceAccounts: globalThis.Array.isArray(object?.stageServiceAccounts)
         ? object.stageServiceAccounts.map((e: any) => globalThis.String(e))
         : [],
+      stageSubType: isSet(object.stageSubType) ? globalThis.String(object.stageSubType) : undefined,
     };
   },
 
@@ -331,6 +391,9 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
     }
     if (message.stageServiceAccounts?.length) {
       obj.stageServiceAccounts = message.stageServiceAccounts;
+    }
+    if (message.stageSubType !== undefined) {
+      obj.stageSubType = message.stageSubType;
     }
     return obj;
   },
@@ -344,6 +407,7 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
       ? StageExecutionPolicy.fromPartial(object.stageExecutionPolicy)
       : undefined;
     message.stageServiceAccounts = object.stageServiceAccounts?.map((e) => e) || [];
+    message.stageSubType = object.stageSubType ?? undefined;
     return message;
   },
 };

@@ -16,6 +16,10 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * the Java proto implementation appends `_VALUE` to enums, causing Java-only
  * collisions between e.g. VALUE_MASK_TYPE and VALUE_MASK_TYPE_VALUE if we were
  * to allow the latter.
+ *
+ * Deprecated.
+ *
+ * @deprecated
  */
 export enum ValueMask {
   /** VALUE_MASK_UNKNOWN - UNKNOWN is the default value. Equivalent to VALUE_MASK_TYPE. */

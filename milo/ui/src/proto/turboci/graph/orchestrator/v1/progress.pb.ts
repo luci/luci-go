@@ -12,18 +12,12 @@ import { Status } from "../../../../google/rpc/status.pb";
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /**
- * ProgressEvolvePending is a progress detail attached to Stage Attempts
+ * ProgressEvolvePending is a Progress detail attached to Stage Attempts
  * by the Orchestrator itself while the StageAttempt is PENDING and something
- * goes wrong while talking to the Executor.
- *
- * This will be set in the transaction that validates that the Executor did
- * advance the Attempt to the next state after PENDING.
+ * goes wrong while calling Executor's RunStage endpoint.
  */
 export interface ProgressEvolvePending {
-  /**
-   * The target time when the Orchestrator will next try calling the
-   * Executor's RunStage endpoint.
-   */
+  /** The target time when the Orchestrator will call RunStage RPC again. */
   readonly nextTry?:
     | string
     | undefined;
@@ -37,9 +31,34 @@ export interface ProgressEvolvePending {
   /**
    * Set if the Executor returned a status other than OK.
    *
-   * This will be the most recent rpc.Status across all `retry_count` RPCs.
    * If this is unset, then it means the Executor returned an OK status, but
    * failed to advance the Attempt out of the PENDING state.
+   */
+  readonly rpc?: Status | undefined;
+}
+
+/**
+ * ProgressCancelling is a Progress detail attached to Stage Attempts by
+ * the Orchestrator itself while the StageAttempt is CANCELLING and something
+ * goes wrong while calling Executor's CancelStage endpoint.
+ */
+export interface ProgressCancelling {
+  /** The target time when the Orchestrator will call CancelStage RPC again. */
+  readonly nextTry?:
+    | string
+    | undefined;
+  /**
+   * Set if the Orchestrator encountered an error before reaching out to the
+   * Executor.
+   */
+  readonly preRpc?:
+    | Status
+    | undefined;
+  /**
+   * Set if the Executor returned a status other than OK.
+   *
+   * If this is unset, then it means the Executor returned an OK status, but
+   * failed to advance the Attempt out of the CANCELLING state.
    */
   readonly rpc?: Status | undefined;
 }
@@ -139,6 +158,100 @@ export const ProgressEvolvePending: MessageFns<ProgressEvolvePending> = {
   },
   fromPartial(object: DeepPartial<ProgressEvolvePending>): ProgressEvolvePending {
     const message = createBaseProgressEvolvePending() as any;
+    message.nextTry = object.nextTry ?? undefined;
+    message.preRpc = (object.preRpc !== undefined && object.preRpc !== null)
+      ? Status.fromPartial(object.preRpc)
+      : undefined;
+    message.rpc = (object.rpc !== undefined && object.rpc !== null) ? Status.fromPartial(object.rpc) : undefined;
+    return message;
+  },
+};
+
+function createBaseProgressCancelling(): ProgressCancelling {
+  return { nextTry: undefined, preRpc: undefined, rpc: undefined };
+}
+
+export const ProgressCancelling: MessageFns<ProgressCancelling> = {
+  encode(message: ProgressCancelling, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.nextTry !== undefined) {
+      Timestamp.encode(toTimestamp(message.nextTry), writer.uint32(10).fork()).join();
+    }
+    if (message.preRpc !== undefined) {
+      Status.encode(message.preRpc, writer.uint32(18).fork()).join();
+    }
+    if (message.rpc !== undefined) {
+      Status.encode(message.rpc, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ProgressCancelling {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProgressCancelling() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.nextTry = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.preRpc = Status.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.rpc = Status.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ProgressCancelling {
+    return {
+      nextTry: isSet(object.nextTry) ? globalThis.String(object.nextTry) : undefined,
+      preRpc: isSet(object.preRpc) ? Status.fromJSON(object.preRpc) : undefined,
+      rpc: isSet(object.rpc) ? Status.fromJSON(object.rpc) : undefined,
+    };
+  },
+
+  toJSON(message: ProgressCancelling): unknown {
+    const obj: any = {};
+    if (message.nextTry !== undefined) {
+      obj.nextTry = message.nextTry;
+    }
+    if (message.preRpc !== undefined) {
+      obj.preRpc = Status.toJSON(message.preRpc);
+    }
+    if (message.rpc !== undefined) {
+      obj.rpc = Status.toJSON(message.rpc);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ProgressCancelling>): ProgressCancelling {
+    return ProgressCancelling.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ProgressCancelling>): ProgressCancelling {
+    const message = createBaseProgressCancelling() as any;
     message.nextTry = object.nextTry ?? undefined;
     message.preRpc = (object.preRpc !== undefined && object.preRpc !== null)
       ? Status.fromPartial(object.preRpc)

@@ -144,7 +144,11 @@ export interface GerritChangeInfo {
     | boolean
     | undefined;
   /** Whether the owner of the CL is a bot or not. */
-  readonly isOwnerBot?: boolean | undefined;
+  readonly isOwnerBot?:
+    | boolean
+    | undefined;
+  /** Original commit SHA if this is a cherry-pick. */
+  readonly cherrypickedFrom?: string | undefined;
 }
 
 /** Possible statuses for changes. */
@@ -334,11 +338,24 @@ export interface CommitInfo {
     | undefined;
   /** The parent commits of this commit. In each parent only the commit and subject fields are populated. */
   readonly parents: readonly CommitInfo[];
-  /** The author of this commit. */
+  /**
+   * The author of this commit.
+   *
+   * Note that Gerrit REST API actually uses
+   * https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#git-person-info
+   * for author, we chose to use AccountInfo instead.
+   */
   readonly author?:
     | AccountInfo
     | undefined;
-  /** The committer of this commit. */
+  /**
+   * The committer of this commit.
+   *
+   * Note that Gerrit REST API actually uses
+   * https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#git-person-info
+   * for committer, we chose to use AccountInfo instead, and use
+   * CommitInfo.date for the commit date.
+   */
   readonly committer?:
     | AccountInfo
     | undefined;
@@ -347,7 +364,33 @@ export interface CommitInfo {
     | string
     | undefined;
   /** The commit message. */
-  readonly message?: string | undefined;
+  readonly message?:
+    | string
+    | undefined;
+  /** Whether the commit is a robot commit or not. */
+  readonly isRobotCommit?:
+    | boolean
+    | undefined;
+  /** A list of bugs associated with the commit (likely via its commit message). */
+  readonly bugId: readonly string[];
+  /**
+   * Hash of the tree object that represents the snapshot of the project's root
+   * directory at the moment that commit was made, can be used to identify blank
+   * commits.
+   */
+  readonly treeId?:
+    | string
+    | undefined;
+  /**
+   * The timestamp of the commit.
+   *
+   * Sourced from the `date` field of
+   * https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#git-person-info.
+   *
+   * We choose to use AccountInfo instead of GerritPersonInfo for `committer`
+   * and `author`, while need the commit date, so adding it to CommitInfo.
+   */
+  readonly date?: string | undefined;
 }
 
 /** Sourced from https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#file-info */
@@ -595,6 +638,7 @@ function createBaseGerritChangeInfo(): GerritChangeInfo {
     topic: undefined,
     local: undefined,
     isOwnerBot: undefined,
+    cherrypickedFrom: undefined,
   };
 }
 
@@ -659,6 +703,9 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
     }
     if (message.isOwnerBot !== undefined) {
       writer.uint32(152).bool(message.isOwnerBot);
+    }
+    if (message.cherrypickedFrom !== undefined) {
+      writer.uint32(170).string(message.cherrypickedFrom);
     }
     return writer;
   },
@@ -839,6 +886,14 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
           message.isOwnerBot = reader.bool();
           continue;
         }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.cherrypickedFrom = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -889,6 +944,7 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
       topic: isSet(object.topic) ? globalThis.String(object.topic) : undefined,
       local: isSet(object.local) ? globalThis.Boolean(object.local) : undefined,
       isOwnerBot: isSet(object.isOwnerBot) ? globalThis.Boolean(object.isOwnerBot) : undefined,
+      cherrypickedFrom: isSet(object.cherrypickedFrom) ? globalThis.String(object.cherrypickedFrom) : undefined,
     };
   },
 
@@ -972,6 +1028,9 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
     if (message.isOwnerBot !== undefined) {
       obj.isOwnerBot = message.isOwnerBot;
     }
+    if (message.cherrypickedFrom !== undefined) {
+      obj.cherrypickedFrom = message.cherrypickedFrom;
+    }
     return obj;
   },
 
@@ -1023,6 +1082,7 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
     message.topic = object.topic ?? undefined;
     message.local = object.local ?? undefined;
     message.isOwnerBot = object.isOwnerBot ?? undefined;
+    message.cherrypickedFrom = object.cherrypickedFrom ?? undefined;
     return message;
   },
 };
@@ -1861,6 +1921,10 @@ function createBaseCommitInfo(): CommitInfo {
     committer: undefined,
     subject: undefined,
     message: undefined,
+    isRobotCommit: undefined,
+    bugId: [],
+    treeId: undefined,
+    date: undefined,
   };
 }
 
@@ -1883,6 +1947,20 @@ export const CommitInfo: MessageFns<CommitInfo> = {
     }
     if (message.message !== undefined) {
       writer.uint32(50).string(message.message);
+    }
+    if (message.isRobotCommit !== undefined) {
+      writer.uint32(56).bool(message.isRobotCommit);
+    }
+    writer.uint32(66).fork();
+    for (const v of message.bugId) {
+      writer.int64(v);
+    }
+    writer.join();
+    if (message.treeId !== undefined) {
+      writer.uint32(74).string(message.treeId);
+    }
+    if (message.date !== undefined) {
+      Timestamp.encode(toTimestamp(message.date), writer.uint32(82).fork()).join();
     }
     return writer;
   },
@@ -1942,6 +2020,48 @@ export const CommitInfo: MessageFns<CommitInfo> = {
           message.message = reader.string();
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.isRobotCommit = reader.bool();
+          continue;
+        }
+        case 8: {
+          if (tag === 64) {
+            message.bugId.push(reader.int64().toString());
+
+            continue;
+          }
+
+          if (tag === 66) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.bugId.push(reader.int64().toString());
+            }
+
+            continue;
+          }
+
+          break;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.treeId = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.date = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1959,6 +2079,10 @@ export const CommitInfo: MessageFns<CommitInfo> = {
       committer: isSet(object.committer) ? AccountInfo.fromJSON(object.committer) : undefined,
       subject: isSet(object.subject) ? globalThis.String(object.subject) : undefined,
       message: isSet(object.message) ? globalThis.String(object.message) : undefined,
+      isRobotCommit: isSet(object.isRobotCommit) ? globalThis.Boolean(object.isRobotCommit) : undefined,
+      bugId: globalThis.Array.isArray(object?.bugId) ? object.bugId.map((e: any) => globalThis.String(e)) : [],
+      treeId: isSet(object.treeId) ? globalThis.String(object.treeId) : undefined,
+      date: isSet(object.date) ? globalThis.String(object.date) : undefined,
     };
   },
 
@@ -1982,6 +2106,18 @@ export const CommitInfo: MessageFns<CommitInfo> = {
     if (message.message !== undefined) {
       obj.message = message.message;
     }
+    if (message.isRobotCommit !== undefined) {
+      obj.isRobotCommit = message.isRobotCommit;
+    }
+    if (message.bugId?.length) {
+      obj.bugId = message.bugId;
+    }
+    if (message.treeId !== undefined) {
+      obj.treeId = message.treeId;
+    }
+    if (message.date !== undefined) {
+      obj.date = message.date;
+    }
     return obj;
   },
 
@@ -2000,6 +2136,10 @@ export const CommitInfo: MessageFns<CommitInfo> = {
       : undefined;
     message.subject = object.subject ?? undefined;
     message.message = object.message ?? undefined;
+    message.isRobotCommit = object.isRobotCommit ?? undefined;
+    message.bugId = object.bugId?.map((e) => e) || [];
+    message.treeId = object.treeId ?? undefined;
+    message.date = object.date ?? undefined;
     return message;
   },
 };

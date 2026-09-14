@@ -46,7 +46,7 @@ export interface Actor_WorkplanCreator {
 
 /**
  * External indicates that the edit came from some Actor using an External
- * permission variant (no write token used).
+ * permission variant (no stage attempt or work plan creator token used).
  */
 export interface Actor_External {
 }

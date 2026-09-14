@@ -18,19 +18,19 @@ export const protobufPackage = "turboci.graph.ids.v1";
 export enum IdentifierKind {
   /** IDENTIFIER_KIND_UNKNOWN - Default value. */
   IDENTIFIER_KIND_UNKNOWN = 0,
-  /** IDENTIFIER_KIND_WORK_PLAN - An Identifier.WorkPlan. */
+  /** IDENTIFIER_KIND_WORK_PLAN - Identifies an entire TurboCI WorkPlan. */
   IDENTIFIER_KIND_WORK_PLAN = 1,
-  /** IDENTIFIER_KIND_CHECK - An Identifier.Check. */
+  /** IDENTIFIER_KIND_CHECK - Identifies a Check within a WorkPlan. */
   IDENTIFIER_KIND_CHECK = 2,
-  /** IDENTIFIER_KIND_CHECK_RESULT - An Identifier.CheckResult. */
+  /** IDENTIFIER_KIND_CHECK_RESULT - Identifies a Check Result within a WorkPlan. */
   IDENTIFIER_KIND_CHECK_RESULT = 4,
-  /** IDENTIFIER_KIND_CHECK_EDIT - An Identifier.CheckEdit. */
+  /** IDENTIFIER_KIND_CHECK_EDIT - Identifies a Check Edit within a WorkPlan. */
   IDENTIFIER_KIND_CHECK_EDIT = 6,
-  /** IDENTIFIER_KIND_STAGE - An Identifier.Stage. */
+  /** IDENTIFIER_KIND_STAGE - Identifies a Stage within a WorkPlan. */
   IDENTIFIER_KIND_STAGE = 8,
-  /** IDENTIFIER_KIND_STAGE_ATTEMPT - An Identifier.StageAttempt. */
+  /** IDENTIFIER_KIND_STAGE_ATTEMPT - Identifies a Stage Attempt within a Stage. */
   IDENTIFIER_KIND_STAGE_ATTEMPT = 9,
-  /** IDENTIFIER_KIND_STAGE_EDIT - An Identifier.StageEdit. */
+  /** IDENTIFIER_KIND_STAGE_EDIT - Identifies a Stage Edit within a WorkPlan. */
   IDENTIFIER_KIND_STAGE_EDIT = 10,
 }
 

@@ -24,18 +24,15 @@ export interface ReadWorkPlanRequest {
    * of an empty Workplan.
    *
    * This is in addition to regular RPC authorization.
-   *
-   * If the token is populated:
-   * * If its workplan ID matches the workplan ID in the request, this RPC will
-   *   check that the caller has the relevant 'read' permissions.
-   * * If it doesn't match, this RPC will reject the request.
-   * If the token is not populated, the relevant 'readExternal' permissions will
-   * be checked.
    */
   readonly token?:
     | string
     | undefined;
-  /** The ID of the workplan from which to select nodes to return. */
+  /**
+   * The ID of the workplan from which to select nodes to return. If not
+   * provided and `token` is provided, the workplan ID from the token will be
+   * used. If not provided and not inferable, the request will be rejected.
+   */
   readonly workplanId?:
     | WorkPlan
     | undefined;
@@ -67,13 +64,17 @@ export interface ReadWorkPlanRequest {
     | undefined;
   /**
    * Describes how ValueData messages within the node types matching the query
-   * criteria should be filtered in/out of the response. All other fields of
-   * ValueRef messages will always be included.
+   * criteria should be filtered in/out of the response.
    *
-   * ValueData messages will be included only if:
-   * * Their containing node is included via `included_node_types`
-   * * AND their `type_url` matches the expression in `ValueFilter.wanted`
-   * * AND their containing node type's ValueMask in ValueFilter includes DATA
+   * ValueRefs for included nodes will always be included in the response (even
+   * if the data is not being returned) and will contain:
+   *   * type_url
+   *   * realm
+   *   * digest (unless you do not have read permission)
+   *   * omit_reason (if the data is omitted from the `value_data` map)
+   *
+   * The data for the ValueRef will be included in the response in the
+   * `value_data` map if the ValueRef matches this filter and is not omitted.
    */
   readonly valueFilter?:
     | ValueFilter
@@ -87,8 +88,37 @@ export interface ReadWorkPlanRequest {
    * their values from the first page of this request. Attempting to use a
    * pagination token while changing any other attributes of the request may
    * result in unexpected or inconsistent results.
+   *
+   * Deprecated, please use `page_token` instead.
+   *
+   * @deprecated
    */
-  readonly paginationToken?: string | undefined;
+  readonly paginationToken?:
+    | string
+    | undefined;
+  /**
+   * Maximum page size in ***bytes**.
+   *
+   * * If unspecified, at most 10MB will be returned.
+   * * If specified with a value greater than 10MB, it will be coerced to 10MB.
+   * * If specified with a value that's too small to fit even one piece of data
+   *   (stage, check, value, etc), we would return a larger page size to fit one
+   *   piece of data.
+   */
+  readonly pageSize?:
+    | number
+    | undefined;
+  /**
+   * Pagination token, so this query can resume consuming nodes with the next
+   * node in the stream. If omitted, returns nodes beginning with the first node
+   * in the stream.
+   *
+   * If provided, the other fields of the ReadWorkPlanRequest need to match
+   * their values from the first page of this request. Attempting to use a
+   * pagination token while changing any other attributes of the request may
+   * result in unexpected or inconsistent results.
+   */
+  readonly pageToken?: string | undefined;
 }
 
 function createBaseReadWorkPlanRequest(): ReadWorkPlanRequest {
@@ -99,6 +129,8 @@ function createBaseReadWorkPlanRequest(): ReadWorkPlanRequest {
     sinceVersion: undefined,
     valueFilter: undefined,
     paginationToken: undefined,
+    pageSize: undefined,
+    pageToken: undefined,
   };
 }
 
@@ -121,6 +153,12 @@ export const ReadWorkPlanRequest: MessageFns<ReadWorkPlanRequest> = {
     }
     if (message.paginationToken !== undefined) {
       writer.uint32(50).string(message.paginationToken);
+    }
+    if (message.pageSize !== undefined) {
+      writer.uint32(56).int32(message.pageSize);
+    }
+    if (message.pageToken !== undefined) {
+      writer.uint32(66).string(message.pageToken);
     }
     return writer;
   },
@@ -190,6 +228,22 @@ export const ReadWorkPlanRequest: MessageFns<ReadWorkPlanRequest> = {
           message.paginationToken = reader.string();
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -209,6 +263,8 @@ export const ReadWorkPlanRequest: MessageFns<ReadWorkPlanRequest> = {
       sinceVersion: isSet(object.sinceVersion) ? Revision.fromJSON(object.sinceVersion) : undefined,
       valueFilter: isSet(object.valueFilter) ? ValueFilter.fromJSON(object.valueFilter) : undefined,
       paginationToken: isSet(object.paginationToken) ? globalThis.String(object.paginationToken) : undefined,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : undefined,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : undefined,
     };
   },
 
@@ -232,6 +288,12 @@ export const ReadWorkPlanRequest: MessageFns<ReadWorkPlanRequest> = {
     if (message.paginationToken !== undefined) {
       obj.paginationToken = message.paginationToken;
     }
+    if (message.pageSize !== undefined) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== undefined) {
+      obj.pageToken = message.pageToken;
+    }
     return obj;
   },
 
@@ -252,6 +314,8 @@ export const ReadWorkPlanRequest: MessageFns<ReadWorkPlanRequest> = {
       ? ValueFilter.fromPartial(object.valueFilter)
       : undefined;
     message.paginationToken = object.paginationToken ?? undefined;
+    message.pageSize = object.pageSize ?? undefined;
+    message.pageToken = object.pageToken ?? undefined;
     return message;
   },
 };

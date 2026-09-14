@@ -34,7 +34,7 @@ import {
   BuildCheckOptions,
   Product,
 } from '../proto/turboci/data/build/v1/build_check_options.pb';
-import { BuildCheckResult } from '../proto/turboci/data/build/v1/build_check_results.pb';
+import { BuildCheckResults } from '../proto/turboci/data/build/v1/build_check_results.pb';
 import { DisplayMessage_MessageFormat } from '../proto/turboci/data/common/v1/display_message.pb';
 import {
   AccountInfo,
@@ -101,7 +101,7 @@ const TYPE_URL_GOB_SOURCE_RESULTS =
 const TYPE_URL_BUILD_OPTIONS =
   'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions';
 const TYPE_URL_BUILD_RESULTS =
-  'type.googleapis.com/turboci.data.build.v1.BuildCheckResult';
+  'type.googleapis.com/turboci.data.build.v1.BuildCheckResults';
 const TYPE_URL_TEST_OPTIONS =
   'type.googleapis.com/turboci.data.test.v1.TestCheckDescriptionOption';
 const TYPE_URL_TEST_RESULTS =
@@ -934,7 +934,10 @@ export class FakeGraphGenerator {
           message: faker.lorem.paragraph(),
           author: this.generateFakeAccount(),
           committer: this.generateFakeAccount(),
-          parents: [{ commitId: faker.git.commitSha(), parents: [] }],
+          parents: [
+            { commitId: faker.git.commitSha(), parents: [], bugId: [] },
+          ],
+          bugId: [],
         },
         files: {
           [faker.system.filePath()]: {
@@ -1111,7 +1114,7 @@ export class FakeGraphGenerator {
 
     const buildId = 'P' + faker.string.numeric(8);
 
-    const buildResult: BuildCheckResult = {
+    const buildResult: BuildCheckResults = {
       success: isSuccess,
       displayMessage: {
         message: isSuccess
@@ -1441,11 +1444,11 @@ export class FakeGraphGenerator {
     const digest = computeDigest(payloadObj);
 
     return {
-      valueRef: {
+      valueRef: ValueRef.fromPartial({
         realm: realm,
         typeUrl: typeUrl,
         digest: digest,
-      },
+      }),
       valueData: { json: { value: JSON.stringify(jsonPayload) } },
     };
   }
@@ -1461,11 +1464,11 @@ export class FakeGraphGenerator {
     const deps = dependsOn ? [{ check: dependsOn }] : [];
 
     // Options with omitReason
-    const optionsRef: ValueRef = {
-      typeUrl: 'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions',
+    const optionsRef: ValueRef = ValueRef.fromPartial({
+      typeUrl: TYPE_URL_BUILD_OPTIONS,
       realm: realm,
       omitReason: reason,
-    };
+    });
 
     const resId: CheckResultId = { check: checkId, idx: 1 };
     const resultRef: Check_Result = {
@@ -1474,11 +1477,11 @@ export class FakeGraphGenerator {
       createdAt: finalRev,
       finalizedAt: finalRev,
       data: [
-        {
-          typeUrl: 'type.googleapis.com/turboci.data.build.v1.BuildCheckResult',
+        ValueRef.fromPartial({
+          typeUrl: TYPE_URL_BUILD_RESULTS,
           realm: realm,
           omitReason: reason,
-        },
+        }),
       ],
     };
 
@@ -1511,17 +1514,17 @@ export class FakeGraphGenerator {
     const finalRev = this.nextRevision();
     const deps = dependsOn ? [{ check: dependsOn }] : [];
 
-    const optionsRef: ValueRef = {
-      typeUrl: 'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions',
+    const optionsRef: ValueRef = ValueRef.fromPartial({
+      typeUrl: TYPE_URL_BUILD_OPTIONS,
       realm: realm,
       digest: `digest-opts-fail-${idStr}`,
-    };
+    });
 
-    const resultRefDataRef: ValueRef = {
-      typeUrl: 'type.googleapis.com/turboci.data.build.v1.BuildCheckResult',
+    const resultRefDataRef: ValueRef = ValueRef.fromPartial({
+      typeUrl: TYPE_URL_BUILD_RESULTS,
       realm: realm,
       digest: `digest-res-fail-${idStr}`,
-    };
+    });
 
     const resId: CheckResultId = { check: checkId, idx: 1 };
     const resultRef: Check_Result = {

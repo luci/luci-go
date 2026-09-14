@@ -6,63 +6,19 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { IdentifierKind, identifierKindFromJSON, identifierKindToJSON } from "../../ids/v1/identifier_kind.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /** MethodOptions are method options which apply to RPC method definitions. */
 export interface MethodOptions {
-  /**
-   * Permissions that this RPC will check, including the realms and/or the
-   * conditions under which they are checked.
-   */
-  readonly permission: readonly MethodOptions_Permission[];
-}
-
-/**
- * Which permissions this RPC may check, and under what conditions.
- *
- * This is purely for documentation purposes.
- */
-export interface MethodOptions_Permission {
-  /**
-   * The name of the permission checked for operations in the same
-   * workplan as the token.
-   */
-  readonly internal?:
-    | string
-    | undefined;
-  /**
-   * The name of the permission checked for operations outside the
-   * workplan of the token, or for operations with no token at all.
-   */
-  readonly external?:
-    | string
-    | undefined;
-  /** The node(s) whose realm will be checked. */
-  readonly in: readonly IdentifierKind[];
-  /** The permission is checked in the Value (ValueWrite/ValueRef) realm. */
-  readonly inValueRealm?:
-    | boolean
-    | undefined;
-  /**
-   * Conditional attribute names against which a permission binding may be
-   * granted conditionally.
-   */
-  readonly potentiallyConditionalOn: readonly string[];
-  /** Short description of when this permission is checked. */
-  readonly for: readonly string[];
 }
 
 function createBaseMethodOptions(): MethodOptions {
-  return { permission: [] };
+  return {};
 }
 
 export const MethodOptions: MessageFns<MethodOptions> = {
-  encode(message: MethodOptions, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.permission) {
-      MethodOptions_Permission.encode(v!, writer.uint32(10).fork()).join();
-    }
+  encode(_: MethodOptions, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     return writer;
   },
 
@@ -73,14 +29,6 @@ export const MethodOptions: MessageFns<MethodOptions> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.permission.push(MethodOptions_Permission.decode(reader, reader.uint32()));
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -90,189 +38,20 @@ export const MethodOptions: MessageFns<MethodOptions> = {
     return message;
   },
 
-  fromJSON(object: any): MethodOptions {
-    return {
-      permission: globalThis.Array.isArray(object?.permission)
-        ? object.permission.map((e: any) => MethodOptions_Permission.fromJSON(e))
-        : [],
-    };
+  fromJSON(_: any): MethodOptions {
+    return {};
   },
 
-  toJSON(message: MethodOptions): unknown {
+  toJSON(_: MethodOptions): unknown {
     const obj: any = {};
-    if (message.permission?.length) {
-      obj.permission = message.permission.map((e) => MethodOptions_Permission.toJSON(e));
-    }
     return obj;
   },
 
   create(base?: DeepPartial<MethodOptions>): MethodOptions {
     return MethodOptions.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<MethodOptions>): MethodOptions {
+  fromPartial(_: DeepPartial<MethodOptions>): MethodOptions {
     const message = createBaseMethodOptions() as any;
-    message.permission = object.permission?.map((e) => MethodOptions_Permission.fromPartial(e)) || [];
-    return message;
-  },
-};
-
-function createBaseMethodOptions_Permission(): MethodOptions_Permission {
-  return {
-    internal: undefined,
-    external: undefined,
-    in: [],
-    inValueRealm: undefined,
-    potentiallyConditionalOn: [],
-    for: [],
-  };
-}
-
-export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
-  encode(message: MethodOptions_Permission, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.internal !== undefined) {
-      writer.uint32(10).string(message.internal);
-    }
-    if (message.external !== undefined) {
-      writer.uint32(18).string(message.external);
-    }
-    writer.uint32(26).fork();
-    for (const v of message.in) {
-      writer.int32(v);
-    }
-    writer.join();
-    if (message.inValueRealm !== undefined) {
-      writer.uint32(32).bool(message.inValueRealm);
-    }
-    for (const v of message.potentiallyConditionalOn) {
-      writer.uint32(42).string(v!);
-    }
-    for (const v of message.for) {
-      writer.uint32(50).string(v!);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): MethodOptions_Permission {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMethodOptions_Permission() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.internal = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.external = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag === 24) {
-            message.in.push(reader.int32() as any);
-
-            continue;
-          }
-
-          if (tag === 26) {
-            const end2 = reader.uint32() + reader.pos;
-            while (reader.pos < end2) {
-              message.in.push(reader.int32() as any);
-            }
-
-            continue;
-          }
-
-          break;
-        }
-        case 4: {
-          if (tag !== 32) {
-            break;
-          }
-
-          message.inValueRealm = reader.bool();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.potentiallyConditionalOn.push(reader.string());
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.for.push(reader.string());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): MethodOptions_Permission {
-    return {
-      internal: isSet(object.internal) ? globalThis.String(object.internal) : undefined,
-      external: isSet(object.external) ? globalThis.String(object.external) : undefined,
-      in: globalThis.Array.isArray(object?.in) ? object.in.map((e: any) => identifierKindFromJSON(e)) : [],
-      inValueRealm: isSet(object.inValueRealm) ? globalThis.Boolean(object.inValueRealm) : undefined,
-      potentiallyConditionalOn: globalThis.Array.isArray(object?.potentiallyConditionalOn)
-        ? object.potentiallyConditionalOn.map((e: any) => globalThis.String(e))
-        : [],
-      for: globalThis.Array.isArray(object?.for) ? object.for.map((e: any) => globalThis.String(e)) : [],
-    };
-  },
-
-  toJSON(message: MethodOptions_Permission): unknown {
-    const obj: any = {};
-    if (message.internal !== undefined) {
-      obj.internal = message.internal;
-    }
-    if (message.external !== undefined) {
-      obj.external = message.external;
-    }
-    if (message.in?.length) {
-      obj.in = message.in.map((e) => identifierKindToJSON(e));
-    }
-    if (message.inValueRealm !== undefined) {
-      obj.inValueRealm = message.inValueRealm;
-    }
-    if (message.potentiallyConditionalOn?.length) {
-      obj.potentiallyConditionalOn = message.potentiallyConditionalOn;
-    }
-    if (message.for?.length) {
-      obj.for = message.for;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<MethodOptions_Permission>): MethodOptions_Permission {
-    return MethodOptions_Permission.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<MethodOptions_Permission>): MethodOptions_Permission {
-    const message = createBaseMethodOptions_Permission() as any;
-    message.internal = object.internal ?? undefined;
-    message.external = object.external ?? undefined;
-    message.in = object.in?.map((e) => e) || [];
-    message.inValueRealm = object.inValueRealm ?? undefined;
-    message.potentiallyConditionalOn = object.potentiallyConditionalOn?.map((e) => e) || [];
-    message.for = object.for?.map((e) => e) || [];
     return message;
   },
 };
@@ -284,10 +63,6 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
-
-function isSet(value: any): boolean {
-  return value !== null && value !== undefined;
-}
 
 export interface MessageFns<T> {
   encode(message: T, writer?: BinaryWriter): BinaryWriter;

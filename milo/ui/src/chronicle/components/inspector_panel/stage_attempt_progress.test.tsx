@@ -16,6 +16,7 @@ import { render, screen } from '@testing-library/react';
 
 import { Stage_Attempt_Progress } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 
 import { StageAttemptProgress } from './stage_attempt_progress';
 
@@ -33,10 +34,10 @@ describe('StageAttemptProgress', () => {
         message: 'Task initiated',
         version: { ts: '2026-09-01T12:00:00.000Z' },
         details: [
-          {
+          ValueRef.fromPartial({
             typeUrl: 'type.googleapis.com/test.InitDetails',
             digest: 'digest-1',
-          },
+          }),
         ],
       },
       {

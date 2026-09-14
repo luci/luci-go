@@ -14,7 +14,7 @@ export const protobufPackage = "turboci.data.build.v1";
  * BuildCheckResults represent the output of a build. This is mainly centered around the artifacts
  * generated from the build and their locations.
  */
-export interface BuildCheckResult {
+export interface BuildCheckResults {
   /**
    * Whether the build succeeded or failed. "success = true" means that all required build actions
    * succeeded. Any failed actions result in "success = false". If the build failed, display_message
@@ -34,11 +34,11 @@ export interface BuildCheckResult {
    * namespace.
    */
   readonly androidBuildArtifacts?:
-    | BuildCheckResult_AndroidBuildArtifacts
+    | BuildCheckResults_AndroidBuildArtifacts
     | undefined;
   /** CAS manifest information fully represented in proto form. */
   readonly casManifest?:
-    | BuildCheckResult_CasManifest
+    | BuildCheckResults_CasManifest
     | undefined;
   /**
    * Mapping between a label string and a collection of artifacts in a GCS bucket.
@@ -48,7 +48,7 @@ export interface BuildCheckResult {
    * It is expected that use cases with multiple GCS buckets will likely want to represent
    * the set of known keys for their use case, probably in a custom proto.
    */
-  readonly gcsArtifacts: { [key: string]: BuildCheckResult_GcsArtifacts };
+  readonly gcsArtifacts: { [key: string]: BuildCheckResults_GcsArtifacts };
   /**
    * A redirect URL to the build dashboard showing additional details about the build (eg. logs).
    * Useful to show in tools like Chronicle.
@@ -57,7 +57,7 @@ export interface BuildCheckResult {
 }
 
 /** Build ID, target and attempt which are necessary to query artifacts in ab/ or Android Build API */
-export interface BuildCheckResult_AndroidBuildArtifacts {
+export interface BuildCheckResults_AndroidBuildArtifacts {
   /** Android build ID. */
   readonly buildId?:
     | string
@@ -75,7 +75,7 @@ export interface BuildCheckResult_AndroidBuildArtifacts {
  * artifacts.
  * Eg. http://shortn/_zd9o9GVYT1
  */
-export interface BuildCheckResult_CasManifest {
+export interface BuildCheckResults_CasManifest {
   /**
    * Key (filename), value (CAS digest)
    * Eg.
@@ -102,7 +102,7 @@ export interface BuildCheckResult_CasManifest {
   readonly clientVersion?: string | undefined;
 }
 
-export interface BuildCheckResult_CasManifest_ManifestEntry {
+export interface BuildCheckResults_CasManifest_ManifestEntry {
   readonly key: string;
   readonly value: string;
 }
@@ -112,7 +112,7 @@ export interface BuildCheckResult_CasManifest_ManifestEntry {
  * This serves as an "implicit" manifest. Clients would be expected to have
  * "well-known" artifact names under this directory
  */
-export interface BuildCheckResult_GcsArtifacts {
+export interface BuildCheckResults_GcsArtifacts {
   /**
    * The path prefix in GS under which artifacts for this build will be stored.
    * Format: "gs://bucket/path/to/root/dir/". Trailing slash is *required*.
@@ -124,29 +124,29 @@ export interface BuildCheckResult_GcsArtifacts {
    * Mapping of files in the GCS bucket into different artifact categories
    * Eg. http://shortn/_8eibPJsb7v
    */
-  readonly filesByCategory: { [key: string]: BuildCheckResult_GcsArtifacts_Files };
+  readonly filesByCategory: { [key: string]: BuildCheckResults_GcsArtifacts_Files };
 }
 
 /**
  * Message wrapper to allow repeated files because repeated fields cannot directly
  * be used as a map value.
  */
-export interface BuildCheckResult_GcsArtifacts_Files {
+export interface BuildCheckResults_GcsArtifacts_Files {
   /** Paths to files in the GCS bucket, relative to the root_directory_uri. */
   readonly files: readonly string[];
 }
 
-export interface BuildCheckResult_GcsArtifacts_FilesByCategoryEntry {
+export interface BuildCheckResults_GcsArtifacts_FilesByCategoryEntry {
   readonly key: string;
-  readonly value: BuildCheckResult_GcsArtifacts_Files | undefined;
+  readonly value: BuildCheckResults_GcsArtifacts_Files | undefined;
 }
 
-export interface BuildCheckResult_GcsArtifactsEntry {
+export interface BuildCheckResults_GcsArtifactsEntry {
   readonly key: string;
-  readonly value: BuildCheckResult_GcsArtifacts | undefined;
+  readonly value: BuildCheckResults_GcsArtifacts | undefined;
 }
 
-function createBaseBuildCheckResult(): BuildCheckResult {
+function createBaseBuildCheckResults(): BuildCheckResults {
   return {
     success: undefined,
     displayMessage: undefined,
@@ -157,8 +157,8 @@ function createBaseBuildCheckResult(): BuildCheckResult {
   };
 }
 
-export const BuildCheckResult: MessageFns<BuildCheckResult> = {
-  encode(message: BuildCheckResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const BuildCheckResults: MessageFns<BuildCheckResults> = {
+  encode(message: BuildCheckResults, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.success !== undefined) {
       writer.uint32(8).bool(message.success);
     }
@@ -166,13 +166,13 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
       DisplayMessage.encode(message.displayMessage, writer.uint32(18).fork()).join();
     }
     if (message.androidBuildArtifacts !== undefined) {
-      BuildCheckResult_AndroidBuildArtifacts.encode(message.androidBuildArtifacts, writer.uint32(26).fork()).join();
+      BuildCheckResults_AndroidBuildArtifacts.encode(message.androidBuildArtifacts, writer.uint32(26).fork()).join();
     }
     if (message.casManifest !== undefined) {
-      BuildCheckResult_CasManifest.encode(message.casManifest, writer.uint32(34).fork()).join();
+      BuildCheckResults_CasManifest.encode(message.casManifest, writer.uint32(34).fork()).join();
     }
     Object.entries(message.gcsArtifacts).forEach(([key, value]) => {
-      BuildCheckResult_GcsArtifactsEntry.encode({ key: key as any, value }, writer.uint32(42).fork()).join();
+      BuildCheckResults_GcsArtifactsEntry.encode({ key: key as any, value }, writer.uint32(42).fork()).join();
     });
     if (message.viewUrl !== undefined) {
       writer.uint32(50).string(message.viewUrl);
@@ -180,10 +180,10 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResult {
+  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResults {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuildCheckResult() as any;
+    const message = createBaseBuildCheckResults() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -208,7 +208,7 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
             break;
           }
 
-          message.androidBuildArtifacts = BuildCheckResult_AndroidBuildArtifacts.decode(reader, reader.uint32());
+          message.androidBuildArtifacts = BuildCheckResults_AndroidBuildArtifacts.decode(reader, reader.uint32());
           continue;
         }
         case 4: {
@@ -216,7 +216,7 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
             break;
           }
 
-          message.casManifest = BuildCheckResult_CasManifest.decode(reader, reader.uint32());
+          message.casManifest = BuildCheckResults_CasManifest.decode(reader, reader.uint32());
           continue;
         }
         case 5: {
@@ -224,7 +224,7 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
             break;
           }
 
-          const entry5 = BuildCheckResult_GcsArtifactsEntry.decode(reader, reader.uint32());
+          const entry5 = BuildCheckResults_GcsArtifactsEntry.decode(reader, reader.uint32());
           if (entry5.value !== undefined) {
             message.gcsArtifacts[entry5.key] = entry5.value;
           }
@@ -247,18 +247,18 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
     return message;
   },
 
-  fromJSON(object: any): BuildCheckResult {
+  fromJSON(object: any): BuildCheckResults {
     return {
       success: isSet(object.success) ? globalThis.Boolean(object.success) : undefined,
       displayMessage: isSet(object.displayMessage) ? DisplayMessage.fromJSON(object.displayMessage) : undefined,
       androidBuildArtifacts: isSet(object.androidBuildArtifacts)
-        ? BuildCheckResult_AndroidBuildArtifacts.fromJSON(object.androidBuildArtifacts)
+        ? BuildCheckResults_AndroidBuildArtifacts.fromJSON(object.androidBuildArtifacts)
         : undefined,
-      casManifest: isSet(object.casManifest) ? BuildCheckResult_CasManifest.fromJSON(object.casManifest) : undefined,
+      casManifest: isSet(object.casManifest) ? BuildCheckResults_CasManifest.fromJSON(object.casManifest) : undefined,
       gcsArtifacts: isObject(object.gcsArtifacts)
-        ? Object.entries(object.gcsArtifacts).reduce<{ [key: string]: BuildCheckResult_GcsArtifacts }>(
+        ? Object.entries(object.gcsArtifacts).reduce<{ [key: string]: BuildCheckResults_GcsArtifacts }>(
           (acc, [key, value]) => {
-            acc[key] = BuildCheckResult_GcsArtifacts.fromJSON(value);
+            acc[key] = BuildCheckResults_GcsArtifacts.fromJSON(value);
             return acc;
           },
           {},
@@ -268,7 +268,7 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
     };
   },
 
-  toJSON(message: BuildCheckResult): unknown {
+  toJSON(message: BuildCheckResults): unknown {
     const obj: any = {};
     if (message.success !== undefined) {
       obj.success = message.success;
@@ -277,17 +277,17 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
       obj.displayMessage = DisplayMessage.toJSON(message.displayMessage);
     }
     if (message.androidBuildArtifacts !== undefined) {
-      obj.androidBuildArtifacts = BuildCheckResult_AndroidBuildArtifacts.toJSON(message.androidBuildArtifacts);
+      obj.androidBuildArtifacts = BuildCheckResults_AndroidBuildArtifacts.toJSON(message.androidBuildArtifacts);
     }
     if (message.casManifest !== undefined) {
-      obj.casManifest = BuildCheckResult_CasManifest.toJSON(message.casManifest);
+      obj.casManifest = BuildCheckResults_CasManifest.toJSON(message.casManifest);
     }
     if (message.gcsArtifacts) {
       const entries = Object.entries(message.gcsArtifacts);
       if (entries.length > 0) {
         obj.gcsArtifacts = {};
         entries.forEach(([k, v]) => {
-          obj.gcsArtifacts[k] = BuildCheckResult_GcsArtifacts.toJSON(v);
+          obj.gcsArtifacts[k] = BuildCheckResults_GcsArtifacts.toJSON(v);
         });
       }
     }
@@ -297,27 +297,27 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
     return obj;
   },
 
-  create(base?: DeepPartial<BuildCheckResult>): BuildCheckResult {
-    return BuildCheckResult.fromPartial(base ?? {});
+  create(base?: DeepPartial<BuildCheckResults>): BuildCheckResults {
+    return BuildCheckResults.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<BuildCheckResult>): BuildCheckResult {
-    const message = createBaseBuildCheckResult() as any;
+  fromPartial(object: DeepPartial<BuildCheckResults>): BuildCheckResults {
+    const message = createBaseBuildCheckResults() as any;
     message.success = object.success ?? undefined;
     message.displayMessage = (object.displayMessage !== undefined && object.displayMessage !== null)
       ? DisplayMessage.fromPartial(object.displayMessage)
       : undefined;
     message.androidBuildArtifacts =
       (object.androidBuildArtifacts !== undefined && object.androidBuildArtifacts !== null)
-        ? BuildCheckResult_AndroidBuildArtifacts.fromPartial(object.androidBuildArtifacts)
+        ? BuildCheckResults_AndroidBuildArtifacts.fromPartial(object.androidBuildArtifacts)
         : undefined;
     message.casManifest = (object.casManifest !== undefined && object.casManifest !== null)
-      ? BuildCheckResult_CasManifest.fromPartial(object.casManifest)
+      ? BuildCheckResults_CasManifest.fromPartial(object.casManifest)
       : undefined;
     message.gcsArtifacts = Object.entries(object.gcsArtifacts ?? {}).reduce<
-      { [key: string]: BuildCheckResult_GcsArtifacts }
+      { [key: string]: BuildCheckResults_GcsArtifacts }
     >((acc, [key, value]) => {
       if (value !== undefined) {
-        acc[key] = BuildCheckResult_GcsArtifacts.fromPartial(value);
+        acc[key] = BuildCheckResults_GcsArtifacts.fromPartial(value);
       }
       return acc;
     }, {});
@@ -326,12 +326,12 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
   },
 };
 
-function createBaseBuildCheckResult_AndroidBuildArtifacts(): BuildCheckResult_AndroidBuildArtifacts {
+function createBaseBuildCheckResults_AndroidBuildArtifacts(): BuildCheckResults_AndroidBuildArtifacts {
   return { buildId: undefined, target: undefined, buildAttempt: undefined };
 }
 
-export const BuildCheckResult_AndroidBuildArtifacts: MessageFns<BuildCheckResult_AndroidBuildArtifacts> = {
-  encode(message: BuildCheckResult_AndroidBuildArtifacts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const BuildCheckResults_AndroidBuildArtifacts: MessageFns<BuildCheckResults_AndroidBuildArtifacts> = {
+  encode(message: BuildCheckResults_AndroidBuildArtifacts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.buildId !== undefined) {
       writer.uint32(10).string(message.buildId);
     }
@@ -344,10 +344,10 @@ export const BuildCheckResult_AndroidBuildArtifacts: MessageFns<BuildCheckResult
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResult_AndroidBuildArtifacts {
+  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResults_AndroidBuildArtifacts {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuildCheckResult_AndroidBuildArtifacts() as any;
+    const message = createBaseBuildCheckResults_AndroidBuildArtifacts() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -384,7 +384,7 @@ export const BuildCheckResult_AndroidBuildArtifacts: MessageFns<BuildCheckResult
     return message;
   },
 
-  fromJSON(object: any): BuildCheckResult_AndroidBuildArtifacts {
+  fromJSON(object: any): BuildCheckResults_AndroidBuildArtifacts {
     return {
       buildId: isSet(object.buildId) ? globalThis.String(object.buildId) : undefined,
       target: isSet(object.target) ? globalThis.String(object.target) : undefined,
@@ -392,7 +392,7 @@ export const BuildCheckResult_AndroidBuildArtifacts: MessageFns<BuildCheckResult
     };
   },
 
-  toJSON(message: BuildCheckResult_AndroidBuildArtifacts): unknown {
+  toJSON(message: BuildCheckResults_AndroidBuildArtifacts): unknown {
     const obj: any = {};
     if (message.buildId !== undefined) {
       obj.buildId = message.buildId;
@@ -406,11 +406,11 @@ export const BuildCheckResult_AndroidBuildArtifacts: MessageFns<BuildCheckResult
     return obj;
   },
 
-  create(base?: DeepPartial<BuildCheckResult_AndroidBuildArtifacts>): BuildCheckResult_AndroidBuildArtifacts {
-    return BuildCheckResult_AndroidBuildArtifacts.fromPartial(base ?? {});
+  create(base?: DeepPartial<BuildCheckResults_AndroidBuildArtifacts>): BuildCheckResults_AndroidBuildArtifacts {
+    return BuildCheckResults_AndroidBuildArtifacts.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<BuildCheckResult_AndroidBuildArtifacts>): BuildCheckResult_AndroidBuildArtifacts {
-    const message = createBaseBuildCheckResult_AndroidBuildArtifacts() as any;
+  fromPartial(object: DeepPartial<BuildCheckResults_AndroidBuildArtifacts>): BuildCheckResults_AndroidBuildArtifacts {
+    const message = createBaseBuildCheckResults_AndroidBuildArtifacts() as any;
     message.buildId = object.buildId ?? undefined;
     message.target = object.target ?? undefined;
     message.buildAttempt = object.buildAttempt ?? undefined;
@@ -418,14 +418,14 @@ export const BuildCheckResult_AndroidBuildArtifacts: MessageFns<BuildCheckResult
   },
 };
 
-function createBaseBuildCheckResult_CasManifest(): BuildCheckResult_CasManifest {
+function createBaseBuildCheckResults_CasManifest(): BuildCheckResults_CasManifest {
   return { manifest: {}, casInstance: undefined, casService: undefined, clientVersion: undefined };
 }
 
-export const BuildCheckResult_CasManifest: MessageFns<BuildCheckResult_CasManifest> = {
-  encode(message: BuildCheckResult_CasManifest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const BuildCheckResults_CasManifest: MessageFns<BuildCheckResults_CasManifest> = {
+  encode(message: BuildCheckResults_CasManifest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     Object.entries(message.manifest).forEach(([key, value]) => {
-      BuildCheckResult_CasManifest_ManifestEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
+      BuildCheckResults_CasManifest_ManifestEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
     });
     if (message.casInstance !== undefined) {
       writer.uint32(18).string(message.casInstance);
@@ -439,10 +439,10 @@ export const BuildCheckResult_CasManifest: MessageFns<BuildCheckResult_CasManife
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResult_CasManifest {
+  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResults_CasManifest {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuildCheckResult_CasManifest() as any;
+    const message = createBaseBuildCheckResults_CasManifest() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -451,7 +451,7 @@ export const BuildCheckResult_CasManifest: MessageFns<BuildCheckResult_CasManife
             break;
           }
 
-          const entry1 = BuildCheckResult_CasManifest_ManifestEntry.decode(reader, reader.uint32());
+          const entry1 = BuildCheckResults_CasManifest_ManifestEntry.decode(reader, reader.uint32());
           if (entry1.value !== undefined) {
             message.manifest[entry1.key] = entry1.value;
           }
@@ -490,7 +490,7 @@ export const BuildCheckResult_CasManifest: MessageFns<BuildCheckResult_CasManife
     return message;
   },
 
-  fromJSON(object: any): BuildCheckResult_CasManifest {
+  fromJSON(object: any): BuildCheckResults_CasManifest {
     return {
       manifest: isObject(object.manifest)
         ? Object.entries(object.manifest).reduce<{ [key: string]: string }>((acc, [key, value]) => {
@@ -504,7 +504,7 @@ export const BuildCheckResult_CasManifest: MessageFns<BuildCheckResult_CasManife
     };
   },
 
-  toJSON(message: BuildCheckResult_CasManifest): unknown {
+  toJSON(message: BuildCheckResults_CasManifest): unknown {
     const obj: any = {};
     if (message.manifest) {
       const entries = Object.entries(message.manifest);
@@ -527,11 +527,11 @@ export const BuildCheckResult_CasManifest: MessageFns<BuildCheckResult_CasManife
     return obj;
   },
 
-  create(base?: DeepPartial<BuildCheckResult_CasManifest>): BuildCheckResult_CasManifest {
-    return BuildCheckResult_CasManifest.fromPartial(base ?? {});
+  create(base?: DeepPartial<BuildCheckResults_CasManifest>): BuildCheckResults_CasManifest {
+    return BuildCheckResults_CasManifest.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<BuildCheckResult_CasManifest>): BuildCheckResult_CasManifest {
-    const message = createBaseBuildCheckResult_CasManifest() as any;
+  fromPartial(object: DeepPartial<BuildCheckResults_CasManifest>): BuildCheckResults_CasManifest {
+    const message = createBaseBuildCheckResults_CasManifest() as any;
     message.manifest = Object.entries(object.manifest ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
       if (value !== undefined) {
         acc[key] = globalThis.String(value);
@@ -545,12 +545,15 @@ export const BuildCheckResult_CasManifest: MessageFns<BuildCheckResult_CasManife
   },
 };
 
-function createBaseBuildCheckResult_CasManifest_ManifestEntry(): BuildCheckResult_CasManifest_ManifestEntry {
+function createBaseBuildCheckResults_CasManifest_ManifestEntry(): BuildCheckResults_CasManifest_ManifestEntry {
   return { key: "", value: "" };
 }
 
-export const BuildCheckResult_CasManifest_ManifestEntry: MessageFns<BuildCheckResult_CasManifest_ManifestEntry> = {
-  encode(message: BuildCheckResult_CasManifest_ManifestEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const BuildCheckResults_CasManifest_ManifestEntry: MessageFns<BuildCheckResults_CasManifest_ManifestEntry> = {
+  encode(
+    message: BuildCheckResults_CasManifest_ManifestEntry,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
     if (message.key !== "") {
       writer.uint32(10).string(message.key);
     }
@@ -560,10 +563,10 @@ export const BuildCheckResult_CasManifest_ManifestEntry: MessageFns<BuildCheckRe
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResult_CasManifest_ManifestEntry {
+  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResults_CasManifest_ManifestEntry {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuildCheckResult_CasManifest_ManifestEntry() as any;
+    const message = createBaseBuildCheckResults_CasManifest_ManifestEntry() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -592,14 +595,14 @@ export const BuildCheckResult_CasManifest_ManifestEntry: MessageFns<BuildCheckRe
     return message;
   },
 
-  fromJSON(object: any): BuildCheckResult_CasManifest_ManifestEntry {
+  fromJSON(object: any): BuildCheckResults_CasManifest_ManifestEntry {
     return {
       key: isSet(object.key) ? globalThis.String(object.key) : "",
       value: isSet(object.value) ? globalThis.String(object.value) : "",
     };
   },
 
-  toJSON(message: BuildCheckResult_CasManifest_ManifestEntry): unknown {
+  toJSON(message: BuildCheckResults_CasManifest_ManifestEntry): unknown {
     const obj: any = {};
     if (message.key !== "") {
       obj.key = message.key;
@@ -610,39 +613,39 @@ export const BuildCheckResult_CasManifest_ManifestEntry: MessageFns<BuildCheckRe
     return obj;
   },
 
-  create(base?: DeepPartial<BuildCheckResult_CasManifest_ManifestEntry>): BuildCheckResult_CasManifest_ManifestEntry {
-    return BuildCheckResult_CasManifest_ManifestEntry.fromPartial(base ?? {});
+  create(base?: DeepPartial<BuildCheckResults_CasManifest_ManifestEntry>): BuildCheckResults_CasManifest_ManifestEntry {
+    return BuildCheckResults_CasManifest_ManifestEntry.fromPartial(base ?? {});
   },
   fromPartial(
-    object: DeepPartial<BuildCheckResult_CasManifest_ManifestEntry>,
-  ): BuildCheckResult_CasManifest_ManifestEntry {
-    const message = createBaseBuildCheckResult_CasManifest_ManifestEntry() as any;
+    object: DeepPartial<BuildCheckResults_CasManifest_ManifestEntry>,
+  ): BuildCheckResults_CasManifest_ManifestEntry {
+    const message = createBaseBuildCheckResults_CasManifest_ManifestEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
     return message;
   },
 };
 
-function createBaseBuildCheckResult_GcsArtifacts(): BuildCheckResult_GcsArtifacts {
+function createBaseBuildCheckResults_GcsArtifacts(): BuildCheckResults_GcsArtifacts {
   return { rootDirectoryUri: undefined, filesByCategory: {} };
 }
 
-export const BuildCheckResult_GcsArtifacts: MessageFns<BuildCheckResult_GcsArtifacts> = {
-  encode(message: BuildCheckResult_GcsArtifacts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const BuildCheckResults_GcsArtifacts: MessageFns<BuildCheckResults_GcsArtifacts> = {
+  encode(message: BuildCheckResults_GcsArtifacts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.rootDirectoryUri !== undefined) {
       writer.uint32(10).string(message.rootDirectoryUri);
     }
     Object.entries(message.filesByCategory).forEach(([key, value]) => {
-      BuildCheckResult_GcsArtifacts_FilesByCategoryEntry.encode({ key: key as any, value }, writer.uint32(18).fork())
+      BuildCheckResults_GcsArtifacts_FilesByCategoryEntry.encode({ key: key as any, value }, writer.uint32(18).fork())
         .join();
     });
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResult_GcsArtifacts {
+  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResults_GcsArtifacts {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuildCheckResult_GcsArtifacts() as any;
+    const message = createBaseBuildCheckResults_GcsArtifacts() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -659,7 +662,7 @@ export const BuildCheckResult_GcsArtifacts: MessageFns<BuildCheckResult_GcsArtif
             break;
           }
 
-          const entry2 = BuildCheckResult_GcsArtifacts_FilesByCategoryEntry.decode(reader, reader.uint32());
+          const entry2 = BuildCheckResults_GcsArtifacts_FilesByCategoryEntry.decode(reader, reader.uint32());
           if (entry2.value !== undefined) {
             message.filesByCategory[entry2.key] = entry2.value;
           }
@@ -674,13 +677,13 @@ export const BuildCheckResult_GcsArtifacts: MessageFns<BuildCheckResult_GcsArtif
     return message;
   },
 
-  fromJSON(object: any): BuildCheckResult_GcsArtifacts {
+  fromJSON(object: any): BuildCheckResults_GcsArtifacts {
     return {
       rootDirectoryUri: isSet(object.rootDirectoryUri) ? globalThis.String(object.rootDirectoryUri) : undefined,
       filesByCategory: isObject(object.filesByCategory)
-        ? Object.entries(object.filesByCategory).reduce<{ [key: string]: BuildCheckResult_GcsArtifacts_Files }>(
+        ? Object.entries(object.filesByCategory).reduce<{ [key: string]: BuildCheckResults_GcsArtifacts_Files }>(
           (acc, [key, value]) => {
-            acc[key] = BuildCheckResult_GcsArtifacts_Files.fromJSON(value);
+            acc[key] = BuildCheckResults_GcsArtifacts_Files.fromJSON(value);
             return acc;
           },
           {},
@@ -689,7 +692,7 @@ export const BuildCheckResult_GcsArtifacts: MessageFns<BuildCheckResult_GcsArtif
     };
   },
 
-  toJSON(message: BuildCheckResult_GcsArtifacts): unknown {
+  toJSON(message: BuildCheckResults_GcsArtifacts): unknown {
     const obj: any = {};
     if (message.rootDirectoryUri !== undefined) {
       obj.rootDirectoryUri = message.rootDirectoryUri;
@@ -699,24 +702,24 @@ export const BuildCheckResult_GcsArtifacts: MessageFns<BuildCheckResult_GcsArtif
       if (entries.length > 0) {
         obj.filesByCategory = {};
         entries.forEach(([k, v]) => {
-          obj.filesByCategory[k] = BuildCheckResult_GcsArtifacts_Files.toJSON(v);
+          obj.filesByCategory[k] = BuildCheckResults_GcsArtifacts_Files.toJSON(v);
         });
       }
     }
     return obj;
   },
 
-  create(base?: DeepPartial<BuildCheckResult_GcsArtifacts>): BuildCheckResult_GcsArtifacts {
-    return BuildCheckResult_GcsArtifacts.fromPartial(base ?? {});
+  create(base?: DeepPartial<BuildCheckResults_GcsArtifacts>): BuildCheckResults_GcsArtifacts {
+    return BuildCheckResults_GcsArtifacts.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<BuildCheckResult_GcsArtifacts>): BuildCheckResult_GcsArtifacts {
-    const message = createBaseBuildCheckResult_GcsArtifacts() as any;
+  fromPartial(object: DeepPartial<BuildCheckResults_GcsArtifacts>): BuildCheckResults_GcsArtifacts {
+    const message = createBaseBuildCheckResults_GcsArtifacts() as any;
     message.rootDirectoryUri = object.rootDirectoryUri ?? undefined;
     message.filesByCategory = Object.entries(object.filesByCategory ?? {}).reduce<
-      { [key: string]: BuildCheckResult_GcsArtifacts_Files }
+      { [key: string]: BuildCheckResults_GcsArtifacts_Files }
     >((acc, [key, value]) => {
       if (value !== undefined) {
-        acc[key] = BuildCheckResult_GcsArtifacts_Files.fromPartial(value);
+        acc[key] = BuildCheckResults_GcsArtifacts_Files.fromPartial(value);
       }
       return acc;
     }, {});
@@ -724,22 +727,22 @@ export const BuildCheckResult_GcsArtifacts: MessageFns<BuildCheckResult_GcsArtif
   },
 };
 
-function createBaseBuildCheckResult_GcsArtifacts_Files(): BuildCheckResult_GcsArtifacts_Files {
+function createBaseBuildCheckResults_GcsArtifacts_Files(): BuildCheckResults_GcsArtifacts_Files {
   return { files: [] };
 }
 
-export const BuildCheckResult_GcsArtifacts_Files: MessageFns<BuildCheckResult_GcsArtifacts_Files> = {
-  encode(message: BuildCheckResult_GcsArtifacts_Files, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const BuildCheckResults_GcsArtifacts_Files: MessageFns<BuildCheckResults_GcsArtifacts_Files> = {
+  encode(message: BuildCheckResults_GcsArtifacts_Files, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.files) {
       writer.uint32(10).string(v!);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResult_GcsArtifacts_Files {
+  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResults_GcsArtifacts_Files {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuildCheckResult_GcsArtifacts_Files() as any;
+    const message = createBaseBuildCheckResults_GcsArtifacts_Files() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -760,11 +763,11 @@ export const BuildCheckResult_GcsArtifacts_Files: MessageFns<BuildCheckResult_Gc
     return message;
   },
 
-  fromJSON(object: any): BuildCheckResult_GcsArtifacts_Files {
+  fromJSON(object: any): BuildCheckResults_GcsArtifacts_Files {
     return { files: globalThis.Array.isArray(object?.files) ? object.files.map((e: any) => globalThis.String(e)) : [] };
   },
 
-  toJSON(message: BuildCheckResult_GcsArtifacts_Files): unknown {
+  toJSON(message: BuildCheckResults_GcsArtifacts_Files): unknown {
     const obj: any = {};
     if (message.files?.length) {
       obj.files = message.files;
@@ -772,40 +775,40 @@ export const BuildCheckResult_GcsArtifacts_Files: MessageFns<BuildCheckResult_Gc
     return obj;
   },
 
-  create(base?: DeepPartial<BuildCheckResult_GcsArtifacts_Files>): BuildCheckResult_GcsArtifacts_Files {
-    return BuildCheckResult_GcsArtifacts_Files.fromPartial(base ?? {});
+  create(base?: DeepPartial<BuildCheckResults_GcsArtifacts_Files>): BuildCheckResults_GcsArtifacts_Files {
+    return BuildCheckResults_GcsArtifacts_Files.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<BuildCheckResult_GcsArtifacts_Files>): BuildCheckResult_GcsArtifacts_Files {
-    const message = createBaseBuildCheckResult_GcsArtifacts_Files() as any;
+  fromPartial(object: DeepPartial<BuildCheckResults_GcsArtifacts_Files>): BuildCheckResults_GcsArtifacts_Files {
+    const message = createBaseBuildCheckResults_GcsArtifacts_Files() as any;
     message.files = object.files?.map((e) => e) || [];
     return message;
   },
 };
 
-function createBaseBuildCheckResult_GcsArtifacts_FilesByCategoryEntry(): BuildCheckResult_GcsArtifacts_FilesByCategoryEntry {
+function createBaseBuildCheckResults_GcsArtifacts_FilesByCategoryEntry(): BuildCheckResults_GcsArtifacts_FilesByCategoryEntry {
   return { key: "", value: undefined };
 }
 
-export const BuildCheckResult_GcsArtifacts_FilesByCategoryEntry: MessageFns<
-  BuildCheckResult_GcsArtifacts_FilesByCategoryEntry
+export const BuildCheckResults_GcsArtifacts_FilesByCategoryEntry: MessageFns<
+  BuildCheckResults_GcsArtifacts_FilesByCategoryEntry
 > = {
   encode(
-    message: BuildCheckResult_GcsArtifacts_FilesByCategoryEntry,
+    message: BuildCheckResults_GcsArtifacts_FilesByCategoryEntry,
     writer: BinaryWriter = new BinaryWriter(),
   ): BinaryWriter {
     if (message.key !== "") {
       writer.uint32(10).string(message.key);
     }
     if (message.value !== undefined) {
-      BuildCheckResult_GcsArtifacts_Files.encode(message.value, writer.uint32(18).fork()).join();
+      BuildCheckResults_GcsArtifacts_Files.encode(message.value, writer.uint32(18).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResult_GcsArtifacts_FilesByCategoryEntry {
+  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResults_GcsArtifacts_FilesByCategoryEntry {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuildCheckResult_GcsArtifacts_FilesByCategoryEntry() as any;
+    const message = createBaseBuildCheckResults_GcsArtifacts_FilesByCategoryEntry() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -822,7 +825,7 @@ export const BuildCheckResult_GcsArtifacts_FilesByCategoryEntry: MessageFns<
             break;
           }
 
-          message.value = BuildCheckResult_GcsArtifacts_Files.decode(reader, reader.uint32());
+          message.value = BuildCheckResults_GcsArtifacts_Files.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -834,60 +837,60 @@ export const BuildCheckResult_GcsArtifacts_FilesByCategoryEntry: MessageFns<
     return message;
   },
 
-  fromJSON(object: any): BuildCheckResult_GcsArtifacts_FilesByCategoryEntry {
+  fromJSON(object: any): BuildCheckResults_GcsArtifacts_FilesByCategoryEntry {
     return {
       key: isSet(object.key) ? globalThis.String(object.key) : "",
-      value: isSet(object.value) ? BuildCheckResult_GcsArtifacts_Files.fromJSON(object.value) : undefined,
+      value: isSet(object.value) ? BuildCheckResults_GcsArtifacts_Files.fromJSON(object.value) : undefined,
     };
   },
 
-  toJSON(message: BuildCheckResult_GcsArtifacts_FilesByCategoryEntry): unknown {
+  toJSON(message: BuildCheckResults_GcsArtifacts_FilesByCategoryEntry): unknown {
     const obj: any = {};
     if (message.key !== "") {
       obj.key = message.key;
     }
     if (message.value !== undefined) {
-      obj.value = BuildCheckResult_GcsArtifacts_Files.toJSON(message.value);
+      obj.value = BuildCheckResults_GcsArtifacts_Files.toJSON(message.value);
     }
     return obj;
   },
 
   create(
-    base?: DeepPartial<BuildCheckResult_GcsArtifacts_FilesByCategoryEntry>,
-  ): BuildCheckResult_GcsArtifacts_FilesByCategoryEntry {
-    return BuildCheckResult_GcsArtifacts_FilesByCategoryEntry.fromPartial(base ?? {});
+    base?: DeepPartial<BuildCheckResults_GcsArtifacts_FilesByCategoryEntry>,
+  ): BuildCheckResults_GcsArtifacts_FilesByCategoryEntry {
+    return BuildCheckResults_GcsArtifacts_FilesByCategoryEntry.fromPartial(base ?? {});
   },
   fromPartial(
-    object: DeepPartial<BuildCheckResult_GcsArtifacts_FilesByCategoryEntry>,
-  ): BuildCheckResult_GcsArtifacts_FilesByCategoryEntry {
-    const message = createBaseBuildCheckResult_GcsArtifacts_FilesByCategoryEntry() as any;
+    object: DeepPartial<BuildCheckResults_GcsArtifacts_FilesByCategoryEntry>,
+  ): BuildCheckResults_GcsArtifacts_FilesByCategoryEntry {
+    const message = createBaseBuildCheckResults_GcsArtifacts_FilesByCategoryEntry() as any;
     message.key = object.key ?? "";
     message.value = (object.value !== undefined && object.value !== null)
-      ? BuildCheckResult_GcsArtifacts_Files.fromPartial(object.value)
+      ? BuildCheckResults_GcsArtifacts_Files.fromPartial(object.value)
       : undefined;
     return message;
   },
 };
 
-function createBaseBuildCheckResult_GcsArtifactsEntry(): BuildCheckResult_GcsArtifactsEntry {
+function createBaseBuildCheckResults_GcsArtifactsEntry(): BuildCheckResults_GcsArtifactsEntry {
   return { key: "", value: undefined };
 }
 
-export const BuildCheckResult_GcsArtifactsEntry: MessageFns<BuildCheckResult_GcsArtifactsEntry> = {
-  encode(message: BuildCheckResult_GcsArtifactsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const BuildCheckResults_GcsArtifactsEntry: MessageFns<BuildCheckResults_GcsArtifactsEntry> = {
+  encode(message: BuildCheckResults_GcsArtifactsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.key !== "") {
       writer.uint32(10).string(message.key);
     }
     if (message.value !== undefined) {
-      BuildCheckResult_GcsArtifacts.encode(message.value, writer.uint32(18).fork()).join();
+      BuildCheckResults_GcsArtifacts.encode(message.value, writer.uint32(18).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResult_GcsArtifactsEntry {
+  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResults_GcsArtifactsEntry {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuildCheckResult_GcsArtifactsEntry() as any;
+    const message = createBaseBuildCheckResults_GcsArtifactsEntry() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -904,7 +907,7 @@ export const BuildCheckResult_GcsArtifactsEntry: MessageFns<BuildCheckResult_Gcs
             break;
           }
 
-          message.value = BuildCheckResult_GcsArtifacts.decode(reader, reader.uint32());
+          message.value = BuildCheckResults_GcsArtifacts.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -916,32 +919,32 @@ export const BuildCheckResult_GcsArtifactsEntry: MessageFns<BuildCheckResult_Gcs
     return message;
   },
 
-  fromJSON(object: any): BuildCheckResult_GcsArtifactsEntry {
+  fromJSON(object: any): BuildCheckResults_GcsArtifactsEntry {
     return {
       key: isSet(object.key) ? globalThis.String(object.key) : "",
-      value: isSet(object.value) ? BuildCheckResult_GcsArtifacts.fromJSON(object.value) : undefined,
+      value: isSet(object.value) ? BuildCheckResults_GcsArtifacts.fromJSON(object.value) : undefined,
     };
   },
 
-  toJSON(message: BuildCheckResult_GcsArtifactsEntry): unknown {
+  toJSON(message: BuildCheckResults_GcsArtifactsEntry): unknown {
     const obj: any = {};
     if (message.key !== "") {
       obj.key = message.key;
     }
     if (message.value !== undefined) {
-      obj.value = BuildCheckResult_GcsArtifacts.toJSON(message.value);
+      obj.value = BuildCheckResults_GcsArtifacts.toJSON(message.value);
     }
     return obj;
   },
 
-  create(base?: DeepPartial<BuildCheckResult_GcsArtifactsEntry>): BuildCheckResult_GcsArtifactsEntry {
-    return BuildCheckResult_GcsArtifactsEntry.fromPartial(base ?? {});
+  create(base?: DeepPartial<BuildCheckResults_GcsArtifactsEntry>): BuildCheckResults_GcsArtifactsEntry {
+    return BuildCheckResults_GcsArtifactsEntry.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<BuildCheckResult_GcsArtifactsEntry>): BuildCheckResult_GcsArtifactsEntry {
-    const message = createBaseBuildCheckResult_GcsArtifactsEntry() as any;
+  fromPartial(object: DeepPartial<BuildCheckResults_GcsArtifactsEntry>): BuildCheckResults_GcsArtifactsEntry {
+    const message = createBaseBuildCheckResults_GcsArtifactsEntry() as any;
     message.key = object.key ?? "";
     message.value = (object.value !== undefined && object.value !== null)
-      ? BuildCheckResult_GcsArtifacts.fromPartial(object.value)
+      ? BuildCheckResults_GcsArtifacts.fromPartial(object.value)
       : undefined;
     return message;
   },

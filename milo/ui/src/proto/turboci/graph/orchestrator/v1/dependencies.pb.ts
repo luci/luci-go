@@ -146,23 +146,25 @@ export interface Dependencies_Group {
    */
   readonly groups: readonly Dependencies_Group[];
   /**
+   * Minimum combined number of satisfied `edges` and `groups` needed
+   * to resolve this group.
+   *
    * If unset, all `edges` and `groups` must be satisfied for this Group to
    * be satisfied (effectively 'AND' of edges and groups).
    *
-   * If set, indicates the number of edges and groups needed to resolve this
-   * Group.
-   *
-   * Setting threshold to `1` effectively means 'the first satisfied entry in
-   * edges or groups satisfies this group' (effectively making this an OR).
+   * Setting threshold to `1` means 'this group is satisfied if  at least
+   * one entry in `edges` or `groups` is satisfied' (effectively making
+   * this an OR).
    *
    * A value greater than `1` could be useful if you want to depend on the
-   * first N of multiple possible edges.
+   * first N of multiple possible `edges` or `groups` to be satisfied.
    *
    * For example, if this Group is
    *
    *    { edges: [a, b, c], groups: [GROUP], threshold: 2 }
    *
-   * Then this Group could be satisfied on the first of any:
+   * Then this Group could be satisfied as soon as any of the following
+   * combinations is satisfied:
    *   * a b
    *   * b c
    *   * a c
@@ -170,21 +172,18 @@ export interface Dependencies_Group {
    *   * b GROUP
    *   * c GROUP
    *
-   * This is also equivalent to the much more verbose disjunctive normal form:
+   * This is equivalent to the more verbose disjunctive normal form:
    *
    *   { groups: [
-   *     { edges: [a, b] },
-   *     { edges: [b, c] },
-   *     { edges: [a, c] },
-   *     { edges: [a], groups: [GROUP] },
-   *     { edges: [b], groups: [GROUP] },
-   *     { edges: [c], groups: [GROUP] },
+   *       { edges: [a, b] },
+   *       { edges: [b, c] },
+   *       { edges: [a, c] },
+   *       { edges: [a], groups: [GROUP] },
+   *       { edges: [b], groups: [GROUP] },
+   *       { edges: [c], groups: [GROUP] },
+   *     ],
    *     threshold = 1,
    *   }
-   *
-   * NOTE: It is possible for a Group in `Dependencies.satisfied` to contain
-   * more edges/groups than `threshold` if all of those Edges were satisfied
-   * at the time the Dependencies were resolved.
    *
    * A threshold less than zero is an error.
    * A threshold greater than `len(edges) + len(groups)` is an error.
@@ -204,21 +203,34 @@ export interface Dependencies_Group {
  */
 export interface Dependencies_ResolutionEvent {
   /**
-   * The version of the containing node which included this event.
+   * The version of the containing node (e.g. Stage or Check) which included
+   * this event.
    *
-   * This MAY be substantially after the target of the edge is FINAL, e.g. if
+   * This MAY be substantially after the edge condition was resolved, e.g. if
    * the containing node was created or became PLANNED far after the target
-   * was FINAL.
+   * condition was met.
+   *
+   * See `condition_version` below for the revision of the condition itself.
    */
   readonly version?:
     | Revision
     | undefined;
   /**
-   * Was the criteria for this edge satisfied or not?
+   * Whether the criteria for this Edge was satisfied.
    *
    * Will never be `UNKNOWN`.
    */
-  readonly resolution?: Resolution | undefined;
+  readonly resolution?:
+    | Resolution
+    | undefined;
+  /**
+   * The version of the Edge target when the Edge's condition was originally
+   * resolved.
+   *
+   * This MAY be substantially before `version` (even before the
+   * containing node was created).
+   */
+  readonly conditionVersion?: Revision | undefined;
 }
 
 export interface Dependencies_ResolutionEventsEntry {
@@ -467,7 +479,7 @@ export const Dependencies_Group: MessageFns<Dependencies_Group> = {
 };
 
 function createBaseDependencies_ResolutionEvent(): Dependencies_ResolutionEvent {
-  return { version: undefined, resolution: undefined };
+  return { version: undefined, resolution: undefined, conditionVersion: undefined };
 }
 
 export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEvent> = {
@@ -477,6 +489,9 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
     }
     if (message.resolution !== undefined) {
       writer.uint32(16).int32(message.resolution);
+    }
+    if (message.conditionVersion !== undefined) {
+      Revision.encode(message.conditionVersion, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -504,6 +519,14 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
           message.resolution = reader.int32() as any;
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.conditionVersion = Revision.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -517,6 +540,7 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
     return {
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       resolution: isSet(object.resolution) ? resolutionFromJSON(object.resolution) : undefined,
+      conditionVersion: isSet(object.conditionVersion) ? Revision.fromJSON(object.conditionVersion) : undefined,
     };
   },
 
@@ -527,6 +551,9 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
     }
     if (message.resolution !== undefined) {
       obj.resolution = resolutionToJSON(message.resolution);
+    }
+    if (message.conditionVersion !== undefined) {
+      obj.conditionVersion = Revision.toJSON(message.conditionVersion);
     }
     return obj;
   },
@@ -540,6 +567,9 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
       ? Revision.fromPartial(object.version)
       : undefined;
     message.resolution = object.resolution ?? undefined;
+    message.conditionVersion = (object.conditionVersion !== undefined && object.conditionVersion !== null)
+      ? Revision.fromPartial(object.conditionVersion)
+      : undefined;
     return message;
   },
 };
