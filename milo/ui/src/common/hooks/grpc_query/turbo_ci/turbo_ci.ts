@@ -167,7 +167,7 @@ export const usePaginatedReadWorkPlan = (
           method: 'ReadWorkPlan',
           request: {
             ...request,
-            paginationToken: currentToken,
+            pageToken: currentToken,
           },
           requestMsg: ReadWorkPlanRequest,
           responseMsg: ReadWorkPlanResponse,
@@ -193,7 +193,7 @@ export const usePaginatedReadWorkPlan = (
           version = response.version;
         }
 
-        currentToken = response.paginationToken;
+        currentToken = response.nextPageToken;
       } while (currentToken);
 
       return {
@@ -207,7 +207,7 @@ export const usePaginatedReadWorkPlan = (
         valueData: allValueData,
         currentAttemptState,
         version,
-        paginationToken: '',
+        nextPageToken: '',
       };
     },
   });

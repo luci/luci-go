@@ -75,7 +75,7 @@ describe('usePaginatedReadWorkPlan', () => {
       valueData: {
         'digest-1': ValueData.fromPartial({ json: { value: '{"data": 1}' } }),
       },
-      paginationToken: 'token-page-2',
+      nextPageToken: 'token-page-2',
       currentAttemptState: {
         state: StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE,
       },
@@ -92,7 +92,7 @@ describe('usePaginatedReadWorkPlan', () => {
       valueData: {
         'digest-2': ValueData.fromPartial({ json: { value: '{"data": 2}' } }),
       },
-      paginationToken: '',
+      nextPageToken: '',
       currentAttemptState: {
         state: StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE,
       },
@@ -105,6 +105,7 @@ describe('usePaginatedReadWorkPlan', () => {
 
     const request = ReadWorkPlanRequest.fromPartial({
       workplanId: { id: 'wp-1' },
+      pageSize: 1000,
     });
 
     const { result } = renderHook(
@@ -121,7 +122,8 @@ describe('usePaginatedReadWorkPlan', () => {
       1,
       expect.objectContaining({
         request: expect.objectContaining({
-          paginationToken: undefined,
+          pageSize: 1000,
+          pageToken: undefined,
         }),
       }),
     );
@@ -131,7 +133,8 @@ describe('usePaginatedReadWorkPlan', () => {
       2,
       expect.objectContaining({
         request: expect.objectContaining({
-          paginationToken: 'token-page-2',
+          pageSize: 1000,
+          pageToken: 'token-page-2',
         }),
       }),
     );
