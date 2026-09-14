@@ -274,7 +274,7 @@ describe('<HomePage />', () => {
     );
 
     const errorMessages = await screen.findAllByText('Error loading data');
-    expect(errorMessages.length).toBe(3); // One for each platform
+    expect(errorMessages.length).toBe(4); // One for each platform
   });
 
   it('displays the error state on Android and Pixel cards when android-health-metrics is enabled and health query fails', async () => {
@@ -324,10 +324,10 @@ describe('<HomePage />', () => {
     );
 
     const countElements = await screen.findAllByText('0');
-    expect(countElements.length).toBe(4);
+    expect(countElements.length).toBe(6);
 
     const warningIcons = screen.getAllByTestId('InfoOutlinedIcon');
-    expect(warningIcons.length).toBe(4);
+    expect(warningIcons.length).toBe(6);
   });
 
   it('rounds healthy percentage and applies correct color status', async () => {

@@ -44,14 +44,14 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
       ).toBe(true);
     });
 
-    it('keeps pte-support disabled by default in dev (0% rollout until explicitly toggled)', () => {
+    it('enables pte-support by default in dev (100% rollout)', () => {
       expect(isFlagAvailableInEnvironment(enablePTE, env)).toBe(true);
+      expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(true);
+
+      localStorage.setItem('featureFlag:fleet-console:pte-support', 'off');
       expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(
         false,
       );
-
-      localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
-      expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(true);
     });
 
     it('enables chromeos-health-dashboard by default in dev (100% rollout)', () => {
@@ -123,11 +123,9 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
       ).toBe(false);
     });
 
-    it('prevents pte-support from being available or enabled in prod', () => {
-      expect(isFlagAvailableInEnvironment(enablePTE, env)).toBe(false);
-      expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(
-        false,
-      );
+    it('enables pte-support in prod', () => {
+      expect(isFlagAvailableInEnvironment(enablePTE, env)).toBe(true);
+      expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(true);
     });
 
     it('prevents chromeos-health-dashboard from being available or enabled in prod', () => {

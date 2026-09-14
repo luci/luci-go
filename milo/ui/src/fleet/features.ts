@@ -31,9 +31,9 @@ export const enablePTE = createFeatureFlag({
   description: 'Enables PTE support in the fleet console.',
   namespace: 'fleet-console',
   name: 'pte-support',
-  percentage: 0,
+  percentage: 100,
   trackingBug: '503760268',
-  allowedEnvironments: ['dev'],
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const enableChromeOsRepairsDashboard = createFeatureFlag({
