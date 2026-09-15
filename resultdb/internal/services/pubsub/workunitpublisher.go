@@ -21,7 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
@@ -63,19 +62,13 @@ func (p *workUnitPublisher) handleWorkUnitPublisher(ctx context.Context) (err er
 		return errors.Fmt("read root invocation %q: %w", rootInvID.Name(), err)
 	}
 
-	// 2. Checks StreamingExportState: Only publish if metadata is final.
-	if rootInv.StreamingExportState != pb.RootInvocation_METADATA_FINAL {
-		logging.Infof(ctx, "Root invocation %q is not ready for streaming export, skipping work unit notification", rootInvID.Name())
-		return nil
-	}
-
-	// 3. Fetch service config for URL generation.
+	// 2. Fetch service config for URL generation.
 	cfg, err := config.Service(ctx)
 	if err != nil {
 		return errors.Fmt("fetch service config: %w", err)
 	}
 
-	// 4. Construct the notifications.
+	// 3. Construct the notifications.
 	notifications, err := p.workUnitsNotification(ctx, rootInvID, task.WorkUnitIds, cfg, rootInv)
 	if err != nil {
 		return err

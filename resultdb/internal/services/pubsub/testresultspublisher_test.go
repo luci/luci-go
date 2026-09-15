@@ -237,15 +237,6 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 			assert.Loosely(t, messages[0].Body, should.Match(expectedNotification))
 			assert.Loosely(t, messages[0].Attrs, should.Match(expectedAttrs))
 		})
-		t.Run("StreamingExportState not METADATA_FINAL", func(t *ftt.Test) {
-			update := rootinvocations.NewMutationBuilder(rootInvID)
-			update.UpdateStreamingExportState(pb.RootInvocation_WAIT_FOR_METADATA)
-			testutil.MustApply(ctx, t, update.Build()...)
-
-			messages, err := runTaskAndContinuations(finalizedWorkUnits)
-			assert.NoErr(t, err)
-			assert.Loosely(t, messages, should.HaveLength(0))
-		})
 		t.Run("Single result too large", func(t *ftt.Test) {
 			// This test result is larger than the max size.
 			tr1 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testC", "res1", 10*1024*1024)

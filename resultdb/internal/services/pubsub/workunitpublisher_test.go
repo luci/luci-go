@@ -110,11 +110,6 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 			expectedAttributes   map[string]string
 		}{
 			{
-				name:           "StreamingExportState not METADATA_FINAL",
-				rootInvBuilder: rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED),
-				workUnitIDs:    []string{wuID1.WorkUnitID},
-			},
-			{
 				name:           "Success",
 				rootInvBuilder: rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL),
 				workUnitIDs:    []string{wuID1.WorkUnitID, wuID2.WorkUnitID},

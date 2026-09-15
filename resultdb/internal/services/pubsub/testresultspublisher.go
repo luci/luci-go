@@ -109,13 +109,7 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 		return errors.Fmt("read root invocation %q: %w", rootInvID.Name(), err)
 	}
 
-	// 2. Checks StreamingExportState: Only publish if metadata is final.
-	if rootInv.StreamingExportState != pb.RootInvocation_METADATA_FINAL {
-		logging.Infof(ctx, "Root invocation %q is not ready for streaming export, skipping test result notification", rootInvID.Name())
-		return nil
-	}
-
-	// 3. Checks for existing checkpoint.
+	// 2. Checks for existing checkpoint.
 	checkpointKey, exists, err := p.checkCheckpoint(ctx, rootInvID, rootInv.Realm)
 	if err != nil {
 		return err
@@ -124,23 +118,23 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 		return nil
 	}
 
-	// 4. Collects test results.
+	// 3. Collects test results.
 	collectedResults, nextToken, err := p.collectTestResults(ctx, rootInvID, cfg)
 	if err != nil {
 		return errors.Fmt("collect test results: %w", err)
 	}
 
-	// 5. Partitions test results into notifications.
+	// 4. Partitions test results into notifications.
 	rootInvocationMetadata := masking.RootInvocationMetadata(rootInv, cfg)
 	notifications, err := p.partitionTestResults(ctx, collectedResults, rootInvocationMetadata)
 	if err != nil {
 		return errors.Fmt("partition test results: %w", err)
 	}
 
-	// 6. Constructs the message attributes.
+	// 5. Constructs the message attributes.
 	attrs := generateAttributes(rootInv)
 
-	// 7. Publishes notifications.
+	// 6. Publishes notifications.
 	// We do this before the transaction to ensure that if the transaction fails
 	// and retries, we might send redundant notifications (handled by
 	// deduplication), but we won't lose them if the transaction commits but
@@ -151,7 +145,7 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 		return errors.Fmt("publish test result notifications: %w", err)
 	}
 
-	// 8. Schedules continuation in a single transaction.
+	// 7. Schedules continuation in a single transaction.
 	return p.commitCheckpointAndContinuation(ctx, rootInvID, checkpointKey, nextToken)
 }
 
