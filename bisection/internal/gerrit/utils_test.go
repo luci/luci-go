@@ -50,6 +50,58 @@ func TestGetHost(t *testing.T) {
 		host, err := GetHost(ctx, " https://chromium-test-review.googlesource.com/c/proj/+/1200003\n")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, host, should.Equal("chromium-test-review.googlesource.com"))
+
+		host, err = GetHost(ctx, "https://chrome-internal-review.googlesource.com/c/proj/+/12345")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, host, should.Equal("chrome-internal-review.googlesource.com"))
+	})
+
+	ftt.Run("Disallows non-googlesource hosts", t, func(t *ftt.Test) {
+		host, err := GetHost(ctx, "https://attacker.example/c/proj/+/1200003")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
+	})
+
+	ftt.Run("Disallows host confusion bypass via query", t, func(t *ftt.Test) {
+		host, err := GetHost(ctx, "https://attacker.example?.googlesource.com/c/proj/+/1200003")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
+	})
+
+	ftt.Run("Disallows host confusion bypass via fragment", t, func(t *ftt.Test) {
+		host, err := GetHost(ctx, "https://attacker.example#.googlesource.com/c/proj/+/1200003")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
+	})
+
+	ftt.Run("Disallows fake googlesource domain suffix", t, func(t *ftt.Test) {
+		host, err := GetHost(ctx, "https://fakegooglesource.com/c/proj/+/1200003")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
+	})
+
+	ftt.Run("Disallows bare googlesource.com without subdomain", t, func(t *ftt.Test) {
+		host, err := GetHost(ctx, "https://googlesource.com/c/proj/+/1200003")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
+	})
+
+	ftt.Run("Disallows non-https scheme", t, func(t *ftt.Test) {
+		host, err := GetHost(ctx, "http://chromium-test-review.googlesource.com/c/proj/+/1200003")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
+	})
+
+	ftt.Run("Disallows custom ports", t, func(t *ftt.Test) {
+		host, err := GetHost(ctx, "https://chromium-test-review.googlesource.com:8443/c/proj/+/1200003")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
+	})
+
+	ftt.Run("Disallows userinfo", t, func(t *ftt.Test) {
+		host, err := GetHost(ctx, "https://user:pass@chromium-test-review.googlesource.com/c/proj/+/1200003")
+		assert.Loosely(t, err, should.ErrLike("could not find Gerrit host"))
+		assert.Loosely(t, host, should.BeEmpty)
 	})
 
 	ftt.Run("Only returns allowed hosts", t, func(t *ftt.Test) {

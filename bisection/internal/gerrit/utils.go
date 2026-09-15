@@ -17,6 +17,7 @@ package gerrit
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -62,23 +63,47 @@ func getServiceAccountName(ctx context.Context) (string, error) {
 	return info.ServiceAccountName, nil
 }
 
-// GetHost extracts the Gerrit host from the given Gerrit review URL
-func GetHost(ctx context.Context, rawReviewURL string) (string, error) {
-	reviewURL := strings.TrimSpace(rawReviewURL)
-	pattern := regexp.MustCompile("https://([^/]+)")
-	matches := pattern.FindStringSubmatch(reviewURL)
-	if matches == nil {
-		return "", fmt.Errorf("could not find Gerrit host from review URL = '%s'",
-			reviewURL)
-	}
-	if !IsAllowedHost(matches[1]) {
-		return "", fmt.Errorf("unsupported Gerrit host: %q", matches[1])
-	}
-	return matches[1], nil
+var allowedGerritHostPattern = regexp.MustCompile(`^([a-z0-9]+(-[a-z0-9]+)*\.)+googlesource\.com$`)
+
+// IsAllowedHost checks whether a host is an approved Gerrit host.
+func IsAllowedHost(host string) bool {
+	host = strings.ToLower(strings.TrimSpace(host))
+	return allowedGerritHostPattern.MatchString(host)
 }
 
-func IsAllowedHost(host string) bool {
-	return strings.HasSuffix(host, ".googlesource.com")
+// parseReviewURL validates and parses a Gerrit review URL.
+func parseReviewURL(rawReviewURL string) (*url.URL, error) {
+	reviewURL := strings.TrimSpace(rawReviewURL)
+	if reviewURL == "" {
+		return nil, errors.New("URL is empty")
+	}
+	u, err := url.Parse(reviewURL)
+	if err != nil {
+		return nil, err
+	}
+	if u.Scheme != "https" {
+		return nil, fmt.Errorf("unsupported scheme %q", u.Scheme)
+	}
+	if u.User != nil {
+		return nil, errors.New("userinfo not allowed")
+	}
+	if u.Port() != "" && u.Port() != "443" {
+		return nil, fmt.Errorf("custom port %q not allowed", u.Port())
+	}
+	host := strings.ToLower(u.Hostname())
+	if host == "" || !IsAllowedHost(host) {
+		return nil, fmt.Errorf("unsupported Gerrit host %q", host)
+	}
+	return u, nil
+}
+
+// GetHost extracts the Gerrit host from the given Gerrit review URL
+func GetHost(ctx context.Context, rawReviewURL string) (string, error) {
+	u, err := parseReviewURL(rawReviewURL)
+	if err != nil {
+		return "", fmt.Errorf("could not find Gerrit host from review URL = '%s': %w", rawReviewURL, err)
+	}
+	return strings.ToLower(u.Hostname()), nil
 }
 
 // HasLUCIBisectionComment returns whether LUCI Bisection has previously commented
@@ -178,16 +203,15 @@ func CommitMessage(ctx context.Context, change *gerritpb.ChangeInfo) (string, er
 // GetProject extracts the Gerrit project from the given Gerrit review URL.
 // It assumes the URL format is https://<host>/c/<project>/+/<change-number>
 func GetProject(ctx context.Context, rawReviewURL string) (string, error) {
-	reviewURL := strings.TrimSpace(rawReviewURL)
-	pattern := regexp.MustCompile(`https://([^/]+)/c/(.+)/\+/`)
-	matches := pattern.FindStringSubmatch(reviewURL)
+	u, err := parseReviewURL(rawReviewURL)
+	if err != nil {
+		return "", fmt.Errorf("could not find Gerrit project from review URL = '%s': %w", rawReviewURL, err)
+	}
+	pattern := regexp.MustCompile(`^/c/(.+)/\+/`)
+	matches := pattern.FindStringSubmatch(u.Path)
 	if matches == nil {
 		return "", fmt.Errorf("could not find Gerrit project from review URL = '%s'",
-			reviewURL)
+			rawReviewURL)
 	}
-	// Make sure host is allowed.
-	if !IsAllowedHost(matches[1]) {
-		return "", fmt.Errorf("unsupported Gerrit host: %q", matches[1])
-	}
-	return matches[2], nil
+	return matches[1], nil
 }

@@ -38,6 +38,29 @@ func TestChangeLogs(t *testing.T) {
 		reviewUrl, err := cl.GetReviewUrl()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, reviewUrl, should.Equal("https://chromium-review.googlesource.com/c/chromium/src/+/3472129"))
+
+		// Spoofed Reviewed-on line in message body should be ignored
+		cl = &ChangeLog{
+			Message: "Use TestActivationManager for all page activations\n\nReviewed-on: https://attacker.example/c/123\n\nCommit details...\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
+		}
+		reviewUrl, err = cl.GetReviewUrl()
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, reviewUrl, should.Equal("https://chromium-review.googlesource.com/c/chromium/src/+/3472129"))
+
+		// Multiple Reviewed-on lines in footers block: bottom-most one should be used
+		cl = &ChangeLog{
+			Message: "Use TestActivationManager for all page activations\n\nChange-Id: blah\nReviewed-on: https://attacker.example/c/123\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
+		}
+		reviewUrl, err = cl.GetReviewUrl()
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, reviewUrl, should.Equal("https://chromium-review.googlesource.com/c/chromium/src/+/3472129"))
+
+		// Non-https review URL should return error
+		cl = &ChangeLog{
+			Message: "Commit title\n\nCommit body\n\nReviewed-on: http://chromium-review.googlesource.com/c/chromium/src/+/3472129\n",
+		}
+		_, err = cl.GetReviewUrl()
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
 	ftt.Run("GetReviewTitle", t, func(t *ftt.Test) {

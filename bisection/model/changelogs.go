@@ -17,11 +17,13 @@ package model
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/git/footer"
 )
 
 // ChangeLog represents the changes of a revision
@@ -69,12 +71,16 @@ type ChangeLogResponse struct {
 
 // GetReviewUrl returns the review URL of the changelog.
 func (cl *ChangeLog) GetReviewUrl() (string, error) {
-	pattern := regexp.MustCompile("\\nReviewed-on: (https://.+)\\n")
-	matches := pattern.FindStringSubmatch(cl.Message)
-	if matches == nil {
+	footers := footer.ParseMessage(cl.Message)
+	reviewUrls := footers["Reviewed-On"]
+	if len(reviewUrls) == 0 {
 		return "", fmt.Errorf("Could not find review CL URL. Message: %s", cl.Message)
 	}
-	return matches[1], nil
+	reviewUrl := strings.TrimSpace(reviewUrls[0])
+	if !strings.HasPrefix(reviewUrl, "https://") {
+		return "", fmt.Errorf("Could not find review CL URL. Message: %s", cl.Message)
+	}
+	return reviewUrl, nil
 }
 
 // GetReviewTitle returns the review title from the changelog.
