@@ -416,7 +416,7 @@ func TestTriggerFixforward(t *testing.T) {
 
 	// 3. Mock LLM
 	mockLLM := llm.NewMockClient(ctl)
-	mockResponseJSON := `{"files": [{"path": "src/test.cc", "content": "int main() { return 1; }"}], "message": "Fixed the bug."}`
+	mockResponseJSON := `{"files": [{"path": "src/test.cc", "edits": [{"old_text": "return 0;", "new_text": "return 1;"}]}], "message": "Fixed the bug."}`
 	mockLLM.EXPECT().GenerateContentWithSchema(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockResponseJSON, nil)
 
 	// 4. Set up Datastore
