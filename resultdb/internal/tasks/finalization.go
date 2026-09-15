@@ -178,3 +178,13 @@ func nextMinuteBoundaryWithOffset(ctx context.Context, id rootinvocations.ID) ti
 	}
 	return thisMinuteWithOffset.Add(time.Minute)
 }
+
+// EnqueuePublishWorkUnitsCatchUp transactionally enqueues a PublishWorkUnitsCatchUpTask.
+func EnqueuePublishWorkUnitsCatchUp(ctx context.Context, rootInvID rootinvocations.ID) {
+	tq.MustAddTask(ctx, &tq.Task{
+		Payload: &taskspb.PublishWorkUnitsCatchUpTask{
+			RootInvocationId: string(rootInvID),
+		},
+		Title: fmt.Sprintf("wu-catch-up-%s", rootInvID),
+	})
+}

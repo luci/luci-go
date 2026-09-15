@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
@@ -282,6 +283,13 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 	for _, finalizeBatch := range batches {
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			mutations := []*spanner.Mutation{}
+
+			// Read the streaming export state of the root invocation.
+			state, err := rootinvocations.ReadStreamingExportState(ctx, rootInvID)
+			if err != nil {
+				return err
+			}
+
 			parents := toFinalizeReadyWorkUnitParents(finalizeBatch).NonEmptyIDs()
 			for parent := range parents {
 				// For each work unit being finalized, mark its parent (no matter the finalization state of the parent) as a candidate for the next iteration.
@@ -313,9 +321,9 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 				}
 			}
 
-			// Enqueue tasks to publish test results for the finalized work
-			// units.
-			if len(finalizedWUIDs) > 0 {
+			// Enqueue tasks to publish test results for the finalized work units,
+			// only if StreamingExportState is METADATA_FINAL.
+			if len(finalizedWUIDs) > 0 && state == pb.RootInvocation_METADATA_FINAL {
 				wuIDs := make([]string, len(finalizedWUIDs))
 				for i, wuID := range finalizedWUIDs {
 					wuIDs[i] = wuID.WorkUnitID
@@ -352,6 +360,14 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 					},
 					Title: fmt.Sprintf("ta-pubsub-%s-%d", rootInvID.Name(), time.Now().UnixNano()),
 				})
+
+				// If the root invocation finalized without the client ever setting
+				// StreamingExportState to METADATA_FINAL, the streaming publish above was
+				// never triggered. Enqueue a catch-up task so exports still happen at
+				// finalization, per the streaming_export_state contract.
+				if state != pb.RootInvocation_METADATA_FINAL {
+					tasks.EnqueuePublishWorkUnitsCatchUp(ctx, rootInvID)
+				}
 			}
 
 			span.BufferWrite(ctx, mutations...)

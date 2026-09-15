@@ -90,6 +90,22 @@ func ReadFinalizationState(ctx context.Context, id ID) (state pb.RootInvocation_
 	return state, nil
 }
 
+// ReadStreamingExportState reads the streaming export state of the given root invocation.
+// If the root invocation is not found, returns a NotFound appstatus error.
+// Otherwise returns the internal error.
+func ReadStreamingExportState(ctx context.Context, id ID) (state pb.RootInvocation_StreamingExportState, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadStreamingExportState")
+	defer func() { tracing.End(ts, err) }()
+
+	err = readColumns(ctx, id, map[string]any{
+		"StreamingExportState": &state,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return state, nil
+}
+
 // ReadRealm reads the realm of the given root invocation. If the root invocation
 // is not found, returns a NotFound appstatus error. Otherwise returns the internal
 // error.

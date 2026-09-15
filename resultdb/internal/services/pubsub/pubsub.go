@@ -66,4 +66,9 @@ func InitServer(srv *server.Server, opts Options) {
 		}
 		return p.handleTestAggregationsPublisher(ctx)
 	})
+
+	tasks.WorkUnitsCatchUpPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		// TODO: Implement actual catch-up logic.
+		return nil
+	})
 }

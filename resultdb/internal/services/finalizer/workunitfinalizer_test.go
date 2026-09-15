@@ -160,6 +160,7 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 					publishTACount := 0
 					publishTRCount := 0
 					publishWUCount := 0
+					publishCatchUpCount := 0
 					var trTasks []*taskspb.PublishTestResultsTask
 					var wuTasks []*taskspb.PublishWorkUnitsTask
 					for _, p := range payloads {
@@ -176,12 +177,15 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 						case *taskspb.PublishTestAggregationsTask:
 							publishTACount++
 							assert.Loosely(t, task.RootInvocationId, should.Equal(string(rootInvID)))
+						case *taskspb.PublishWorkUnitsCatchUpTask:
+							publishCatchUpCount++
 						}
 					}
 					assert.Loosely(t, notifyRootInvCount, should.Equal(1))
 					assert.Loosely(t, publishTACount, should.Equal(1))
 					assert.Loosely(t, publishTRCount, should.Equal(3))
 					assert.Loosely(t, publishWUCount, should.Equal(3))
+					assert.Loosely(t, publishCatchUpCount, should.Equal(0))
 
 					// Assert root invocation sweep state was reset
 					taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
@@ -236,6 +240,13 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 						assert.That(t, readRootInv.FinalizationState, should.Equal(pb.RootInvocation_FINALIZING))
 						assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(4)) // 2 PublishTestResultsTask + 2 PublishWorkUnitsTask
+						publishCatchUpCount := 0
+						for _, p := range sched.Tasks().Payloads() {
+							if _, ok := p.(*taskspb.PublishWorkUnitsCatchUpTask); ok {
+								publishCatchUpCount++
+							}
+						}
+						assert.Loosely(t, publishCatchUpCount, should.Equal(0))
 						// Assert root invocation sweep state was reset
 						taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
 						assert.Loosely(t, err, should.BeNil)
@@ -264,6 +275,13 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 						assert.That(t, readRootInv.FinalizationState, should.Equal(pb.RootInvocation_FINALIZING))
 						assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(6)) // 3 PublishTestResultsTask + 3 PublishWorkUnitsTask
+						publishCatchUpCount := 0
+						for _, p := range sched.Tasks().Payloads() {
+							if _, ok := p.(*taskspb.PublishWorkUnitsCatchUpTask); ok {
+								publishCatchUpCount++
+							}
+						}
+						assert.Loosely(t, publishCatchUpCount, should.Equal(0))
 						// Assert root invocation sweep state was reset
 						taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
 						assert.Loosely(t, err, should.BeNil)
@@ -528,6 +546,139 @@ func TestFindWorkUnitsReadyForFinalization(t *testing.T) {
 					{ID: wu1.ID, FinalizerCandidateTime: ct},
 				}))
 			})
+		})
+	})
+}
+
+func TestSweepWorkUnitsForFinalization_MetadataNotFinal(t *testing.T) {
+	ftt.Run("SweepWorkUnitsForFinalization_MetadataNotFinal", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		// Set up a placeholder service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
+
+		ctx, sched := tq.TestingContext(ctx, nil)
+		const seq = int64(2)
+
+		opts := sweepWorkUnitsForFinalizationOptions{writeBatchSizeOverride: 3, readLimitOverride: 10, resultDBHostname: "rdb-host"}
+
+		t.Run("root invocation finalized, metadata not final -> enqueues catch-up", func(t *ftt.Test) {
+			rootInvID := rootinvocations.ID("test-root-inv-not-final-1")
+			rootInv := rootinvocations.NewBuilder(rootInvID).
+				WithFinalizationState(pb.RootInvocation_FINALIZING).
+				WithFinalizerPending(true).
+				WithFinalizerSequence(seq).
+				WithStreamingExportState(pb.RootInvocation_WAIT_FOR_METADATA).
+				Build()
+
+			testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInv)...)
+
+			wuroot := workunits.NewBuilder(rootInvID, "root").WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+			wu1 := workunits.NewBuilder(rootInvID, "wu1").
+				WithFinalizationState(pb.WorkUnit_FINALIZING).
+				WithParentWorkUnitID("root").
+				WithFinalizerCandidateTime(spanner.CommitTimestamp).
+				Build()
+
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				workunits.InsertForTesting(wuroot),
+				workunits.InsertForTesting(wu1),
+			)...)
+			ctx, sched = tq.TestingContext(ctx, nil)
+
+			err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq, opts)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Assert root invocation is finalized.
+			readRootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, readRootInv.FinalizationState, should.Equal(pb.RootInvocation_FINALIZED))
+
+			// Enqueued tasks.
+			payloads := sched.Tasks().Payloads()
+			assert.Loosely(t, payloads, should.HaveLength(3))
+			notifyRootInvCount := 0
+			publishTACount := 0
+			publishCatchUpCount := 0
+			publishTRCount := 0
+			publishWUCount := 0
+
+			for _, p := range payloads {
+				switch task := p.(type) {
+				case *taskspb.PublishRootInvocationTask:
+					notifyRootInvCount++
+				case *taskspb.PublishTestAggregationsTask:
+					publishTACount++
+				case *taskspb.PublishWorkUnitsCatchUpTask:
+					publishCatchUpCount++
+					assert.Loosely(t, task.RootInvocationId, should.Equal(string(rootInvID)))
+				case *taskspb.PublishTestResultsTask:
+					publishTRCount++
+				case *taskspb.PublishWorkUnitsTask:
+					publishWUCount++
+				}
+			}
+			assert.Loosely(t, notifyRootInvCount, should.Equal(1))
+			assert.Loosely(t, publishTACount, should.Equal(1))
+			assert.Loosely(t, publishCatchUpCount, should.Equal(1))
+			assert.Loosely(t, publishTRCount, should.Equal(0))
+			assert.Loosely(t, publishWUCount, should.Equal(0))
+		})
+
+		t.Run("some work units finalized, metadata not final -> no pubsub tasks", func(t *ftt.Test) {
+			rootInvID := rootinvocations.ID("test-root-inv-not-final-2")
+			rootInv := rootinvocations.NewBuilder(rootInvID).
+				WithFinalizationState(pb.RootInvocation_FINALIZING).
+				WithFinalizerPending(true).
+				WithFinalizerSequence(seq).
+				WithStreamingExportState(pb.RootInvocation_WAIT_FOR_METADATA).
+				Build()
+
+			testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInv)...)
+
+			wuroot := workunits.NewBuilder(rootInvID, "root").WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+			wu1 := workunits.NewBuilder(rootInvID, "wu1").
+				WithFinalizationState(pb.WorkUnit_FINALIZING).
+				WithParentWorkUnitID("root").
+				Build()
+			wu11 := workunits.NewBuilder(rootInvID, "wu11").
+				WithFinalizationState(pb.WorkUnit_FINALIZING).
+				WithParentWorkUnitID("wu1").
+				WithFinalizerCandidateTime(spanner.CommitTimestamp).
+				Build()
+			wu2 := workunits.NewBuilder(rootInvID, "wu2").
+				WithFinalizationState(pb.WorkUnit_ACTIVE).
+				WithParentWorkUnitID("root").
+				Build()
+
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				workunits.InsertForTesting(wuroot),
+				workunits.InsertForTesting(wu1),
+				workunits.InsertForTesting(wu11),
+				workunits.InsertForTesting(wu2),
+			)...)
+			ctx, sched = tq.TestingContext(ctx, nil)
+
+			err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq, opts)
+			assert.Loosely(t, err, should.BeNil)
+
+			// wu11 should be finalized.
+			readWU11, err := workunits.Read(span.Single(ctx), wu11.ID, workunits.ExcludeExtendedProperties)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, readWU11.FinalizationState, should.Equal(pb.WorkUnit_FINALIZED))
+
+			// Root invocation is NOT finalized.
+			readRootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, readRootInv.FinalizationState, should.Equal(pb.RootInvocation_FINALIZING))
+
+			// Enqueued tasks should be empty.
+			payloads := sched.Tasks().Payloads()
+			assert.Loosely(t, payloads, should.BeEmpty)
 		})
 	})
 }

@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -109,6 +110,13 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 		// Insert into RootInvocationUpdateRequests table.
 		updateMutations = append(updateMutations, rootinvocations.CreateRootInvocationUpdateRequest(rootInvID, updatedBy, in.RequestId))
 		span.BufferWrite(ctx, updateMutations...)
+
+		// If transitioning to METADATA_FINAL, enqueue a catch-up task.
+		if originalRootInvRow.StreamingExportState != pb.RootInvocation_METADATA_FINAL &&
+			updatedRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
+			tasks.EnqueuePublishWorkUnitsCatchUp(ctx, rootInvID)
+		}
+
 		return nil
 	})
 	if err != nil {

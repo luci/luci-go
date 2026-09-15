@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -46,6 +47,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -318,6 +320,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.
+		ctx, sched := tq.TestingContext(ctx, nil)
 
 		// Set up a placeholder service config.
 		cfg := config.CreatePlaceholderServiceConfig()
@@ -704,6 +707,9 @@ func TestUpdateRootInvocation(t *testing.T) {
 						req.UpdateMask.Paths = []string{"streaming_export_state"}
 						req.RootInvocation.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 
+						// Clear any previous tasks.
+						ctx, sched = tq.TestingContext(ctx, nil)
+
 						ri, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 						expectedRootInv.StreamingExportState = pb.RootInvocation_METADATA_FINAL
@@ -712,6 +718,13 @@ func TestUpdateRootInvocation(t *testing.T) {
 						// Validate spanner records are updated.
 						expectedRootInvRow.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 						assertSpannerRows(expectedRootInvRow)
+
+						// Verify catch-up task is enqueued.
+						payloads := sched.Tasks().Payloads()
+						assert.Loosely(t, payloads, should.HaveLength(1))
+						catchUpTask, ok := payloads[0].(*taskspb.PublishWorkUnitsCatchUpTask)
+						assert.Loosely(t, ok, should.BeTrue)
+						assert.Loosely(t, catchUpTask.RootInvocationId, should.Equal(string(rootInvID)))
 					})
 				})
 
