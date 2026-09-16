@@ -1,0 +1,92 @@
+[
+  {
+    "productCatalogId": "PROD-CAT-001",
+    "gpn": "100-0001",
+    "productName": "Demo alpha Pro Laptop",
+    "descriptiveName": "Simulated demo-model-one Testbed Unit (demo-board-alpha)",
+    "resourceType": "CHROMEBOOK",
+    "fleetPlmStatus": "EOL",
+    "r11n": [
+      "DUT_POOL_QUOTA",
+      "LAB_BENCH"
+    ],
+    "numberOfDevicesPerRack": 24,
+    "unitCost": "$795.00",
+    "productType": "HARDWARE"
+  },
+  {
+    "productCatalogId": "PROD-CAT-002",
+    "gpn": "100-0002",
+    "productName": "Demo beta Pro Laptop",
+    "descriptiveName": "Simulated mock-model-two Testbed Unit (mock-board-beta)",
+    "resourceType": "TABLET",
+    "fleetPlmStatus": "ACTIVE",
+    "r11n": [
+      "DUT_POOL_QUOTA",
+      "LAB_BENCH"
+    ],
+    "numberOfDevicesPerRack": 32,
+    "unitCost": "$840.00",
+    "productType": "HARDWARE"
+  },
+  {
+    "productCatalogId": "PROD-CAT-003",
+    "gpn": "100-0003",
+    "productName": "Demo gamma Pro Laptop",
+    "descriptiveName": "Simulated sim-model-three Testbed Unit (sim-board-gamma)",
+    "resourceType": "TABLET",
+    "fleetPlmStatus": "EOL",
+    "r11n": [
+      "DUT_POOL_QUOTA",
+      "LAB_BENCH"
+    ],
+    "numberOfDevicesPerRack": 16,
+    "unitCost": "$885.00",
+    "productType": "HARDWARE"
+  },
+  {
+    "productCatalogId": "PROD-CAT-004",
+    "gpn": "100-0004",
+    "productName": "Demo delta Pro Laptop",
+    "descriptiveName": "Simulated demo-model-four Testbed Unit (demo-board-delta)",
+    "resourceType": "CONVERTIBLE",
+    "fleetPlmStatus": "ACTIVE",
+    "r11n": [
+      "DUT_POOL_QUOTA",
+      "LAB_BENCH"
+    ],
+    "numberOfDevicesPerRack": 16,
+    "unitCost": "$930.00",
+    "productType": "HARDWARE"
+  },
+  {
+    "productCatalogId": "PROD-CAT-005",
+    "gpn": "100-0005",
+    "productName": "Demo epsilon Pro Laptop",
+    "descriptiveName": "Simulated mock-model-five Testbed Unit (mock-board-epsilon)",
+    "resourceType": "CHROMEBOOK",
+    "fleetPlmStatus": "ACTIVE",
+    "r11n": [
+      "DUT_POOL_QUOTA",
+      "LAB_BENCH"
+    ],
+    "numberOfDevicesPerRack": 32,
+    "unitCost": "$975.00",
+    "productType": "HARDWARE"
+  },
+  {
+    "productCatalogId": "PROD-CAT-006",
+    "gpn": "100-0006",
+    "productName": "Demo zeta Pro Laptop",
+    "descriptiveName": "Simulated sim-model-six Testbed Unit (demo-board-zeta)",
+    "resourceType": "CONVERTIBLE",
+    "fleetPlmStatus": "ACTIVE",
+    "r11n": [
+      "DUT_POOL_QUOTA",
+      "LAB_BENCH"
+    ],
+    "numberOfDevicesPerRack": 32,
+    "unitCost": "$1020.00",
+    "productType": "HARDWARE"
+  }
+]

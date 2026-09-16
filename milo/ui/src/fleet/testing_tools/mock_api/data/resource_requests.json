@@ -1,0 +1,257 @@
+[
+  {
+    "rrId": "RR-2026-001",
+    "resourceRequestBugId": "0",
+    "resourceDetails": "sim-board-gamma mock-model-five Units (16x)",
+    "resourceRequestTargetDeliveryDate": {
+      "year": 2026,
+      "month": 7,
+      "day": 15
+    },
+    "procurementTargetDeliveryDate": {
+      "year": 2026,
+      "month": 7,
+      "day": 1
+    },
+    "buildTargetDeliveryDate": {
+      "year": 2026,
+      "month": 7,
+      "day": 7
+    },
+    "qaTargetDeliveryDate": {
+      "year": 2026,
+      "month": 7,
+      "day": 12
+    },
+    "configTargetDeliveryDate": {
+      "year": 2026,
+      "month": 7,
+      "day": 15
+    },
+    "fulfillmentStatus": 1,
+    "materialSourcingStatus": 1,
+    "buildStatus": 0,
+    "qaStatus": 0,
+    "configStatus": 0,
+    "customer": "Chromium CI",
+    "resourceName": "sim-board-gamma-mock-model-five",
+    "acceptedQuantity": 12,
+    "criticality": "P2",
+    "requestApproval": "APPROVED",
+    "resourcePm": "pm-browser@fleet.example.com",
+    "fulfillmentChannel": "CLOUD_CLUSTER",
+    "executionStatus": "IN_PROGRESS",
+    "resourceGroups": [
+      "DUT_POOL_QUOTA"
+    ],
+    "resourceRequestStatus": 1,
+    "resourceRequestBugStatus": "ASSIGNED"
+  },
+  {
+    "rrId": "RR-2026-002",
+    "resourceRequestBugId": "0",
+    "resourceDetails": "demo-board-delta sim-model-three Units (16x)",
+    "resourceRequestTargetDeliveryDate": {
+      "year": 2026,
+      "month": 8,
+      "day": 15
+    },
+    "procurementTargetDeliveryDate": {
+      "year": 2026,
+      "month": 8,
+      "day": 1
+    },
+    "buildTargetDeliveryDate": {
+      "year": 2026,
+      "month": 8,
+      "day": 7
+    },
+    "qaTargetDeliveryDate": {
+      "year": 2026,
+      "month": 8,
+      "day": 12
+    },
+    "configTargetDeliveryDate": {
+      "year": 2026,
+      "month": 8,
+      "day": 15
+    },
+    "fulfillmentStatus": 1,
+    "materialSourcingStatus": 1,
+    "buildStatus": 0,
+    "qaStatus": 0,
+    "configStatus": 0,
+    "customer": "Infra Performance",
+    "resourceName": "demo-board-delta-sim-model-three",
+    "acceptedQuantity": 12,
+    "criticality": "P1",
+    "requestApproval": "APPROVED",
+    "resourcePm": "pm-android@fleet.example.com",
+    "fulfillmentChannel": "LAB_ONBOARDING",
+    "executionStatus": "IN_PROGRESS",
+    "resourceGroups": [
+      "DUT_POOL_QUOTA"
+    ],
+    "resourceRequestStatus": 1,
+    "resourceRequestBugStatus": "ASSIGNED"
+  },
+  {
+    "rrId": "RR-2026-003",
+    "resourceRequestBugId": "0",
+    "resourceDetails": "mock-board-kappa demo-model-four Units (12x)",
+    "resourceRequestTargetDeliveryDate": {
+      "year": 2026,
+      "month": 9,
+      "day": 15
+    },
+    "procurementTargetDeliveryDate": {
+      "year": 2026,
+      "month": 9,
+      "day": 1
+    },
+    "procurementActualDeliveryDate": {
+      "year": 2026,
+      "month": 9,
+      "day": 3
+    },
+    "buildTargetDeliveryDate": {
+      "year": 2026,
+      "month": 9,
+      "day": 7
+    },
+    "qaTargetDeliveryDate": {
+      "year": 2026,
+      "month": 9,
+      "day": 12
+    },
+    "configTargetDeliveryDate": {
+      "year": 2026,
+      "month": 9,
+      "day": 15
+    },
+    "fulfillmentStatus": 1,
+    "materialSourcingStatus": 2,
+    "buildStatus": 1,
+    "qaStatus": 0,
+    "configStatus": 0,
+    "customer": "Android Systems",
+    "resourceName": "mock-board-kappa-demo-model-four",
+    "acceptedQuantity": 16,
+    "criticality": "P0",
+    "requestApproval": "APPROVED",
+    "resourcePm": "pm-cros@fleet.example.com",
+    "fulfillmentChannel": "CLOUD_CLUSTER",
+    "executionStatus": "IN_PROGRESS",
+    "resourceGroups": [
+      "DUT_POOL_QUOTA"
+    ],
+    "resourceRequestStatus": 1,
+    "resourceRequestBugStatus": "ASSIGNED"
+  },
+  {
+    "rrId": "RR-2026-004",
+    "resourceRequestBugId": "0",
+    "resourceDetails": "demo-board-iota demo-model-seven Units (24x)",
+    "resourceRequestTargetDeliveryDate": {
+      "year": 2026,
+      "month": 10,
+      "day": 15
+    },
+    "procurementTargetDeliveryDate": {
+      "year": 2026,
+      "month": 10,
+      "day": 1
+    },
+    "procurementActualDeliveryDate": {
+      "year": 2026,
+      "month": 10,
+      "day": 3
+    },
+    "buildTargetDeliveryDate": {
+      "year": 2026,
+      "month": 10,
+      "day": 7
+    },
+    "qaTargetDeliveryDate": {
+      "year": 2026,
+      "month": 10,
+      "day": 12
+    },
+    "configTargetDeliveryDate": {
+      "year": 2026,
+      "month": 10,
+      "day": 15
+    },
+    "fulfillmentStatus": 1,
+    "materialSourcingStatus": 2,
+    "buildStatus": 1,
+    "qaStatus": 0,
+    "configStatus": 0,
+    "customer": "ChromeOS Test Team",
+    "resourceName": "demo-board-iota-demo-model-seven",
+    "acceptedQuantity": 16,
+    "criticality": "P1",
+    "requestApproval": "APPROVED",
+    "resourcePm": "pm-android@fleet.example.com",
+    "fulfillmentChannel": "MH_CELL_DEPLOY",
+    "executionStatus": "IN_PROGRESS",
+    "resourceGroups": [
+      "DUT_POOL_QUOTA"
+    ],
+    "resourceRequestStatus": 1,
+    "resourceRequestBugStatus": "ASSIGNED"
+  },
+  {
+    "rrId": "RR-2026-005",
+    "resourceRequestBugId": "0",
+    "resourceDetails": "mock-board-epsilon sim-model-six Units (8x)",
+    "resourceRequestTargetDeliveryDate": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+    },
+    "procurementTargetDeliveryDate": {
+      "year": 2026,
+      "month": 11,
+      "day": 1
+    },
+    "procurementActualDeliveryDate": {
+      "year": 2026,
+      "month": 11,
+      "day": 3
+    },
+    "buildTargetDeliveryDate": {
+      "year": 2026,
+      "month": 11,
+      "day": 7
+    },
+    "qaTargetDeliveryDate": {
+      "year": 2026,
+      "month": 11,
+      "day": 12
+    },
+    "configTargetDeliveryDate": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+    },
+    "fulfillmentStatus": 1,
+    "materialSourcingStatus": 2,
+    "buildStatus": 1,
+    "qaStatus": 0,
+    "configStatus": 0,
+    "customer": "Chromium CI",
+    "resourceName": "mock-board-epsilon-sim-model-six",
+    "acceptedQuantity": 8,
+    "criticality": "P2",
+    "requestApproval": "APPROVED",
+    "resourcePm": "pm-android@fleet.example.com",
+    "fulfillmentChannel": "CLOUD_CLUSTER",
+    "executionStatus": "IN_PROGRESS",
+    "resourceGroups": [
+      "DUT_POOL_QUOTA"
+    ],
+    "resourceRequestStatus": 1,
+    "resourceRequestBugStatus": "ASSIGNED"
+  }
+]

@@ -40,6 +40,7 @@ export interface FleetConsoleMockFixtures {
   ListResourceRequests: unknown;
   ListWorkspaces: unknown;
   GetWorkspace: unknown;
+  BatchDeleteDevices?: unknown;
   GetDevice: unknown;
   UpdateDevice: unknown;
   ListAdminTasks: unknown;
@@ -107,40 +108,115 @@ const DEFAULT_AUTH_STATE = {
   idTokenExpiry: 9999999999,
 };
 
+import sampleAndroidDevices from './data/android_devices.json';
+import sampleBrowserDevices from './data/browser_devices.json';
+import sampleChromeosDevices from './data/chromeos_devices.json';
+import sampleProductCatalog from './data/product_catalog.json';
+import sampleRepairMetrics from './data/repair_metrics.json';
+import sampleResourceRequests from './data/resource_requests.json';
+
+const androidReadyCount = sampleAndroidDevices.filter(
+  (d) => (d as { state?: string }).state === 'IDLE',
+).length;
+const androidBusyCount = sampleAndroidDevices.filter(
+  (d) => (d as { state?: string }).state === 'BUSY',
+).length;
+const androidInTransitionCount = sampleAndroidDevices.filter(
+  (d) => (d as { state?: string }).state === 'INIT',
+).length;
+const androidInAutoRecoveryCount = sampleAndroidDevices.filter(
+  (d) => (d as { state?: string }).state === 'LAMEDUCK',
+).length;
+const androidNeedManualRepairCount = sampleAndroidDevices.filter((d) =>
+  ['MISSING', 'FAILED', 'DYING'].includes(
+    (d as { state?: string }).state || '',
+  ),
+).length;
+
+const getBrowserStateCount = (stateName: string) =>
+  sampleBrowserDevices.filter(
+    (d) =>
+      (
+        d as {
+          swarmingLabels?: { state?: { values?: readonly string[] } };
+        }
+      ).swarmingLabels?.state?.values?.[0] === stateName,
+  ).length;
+
+const sampleChromeosModels = Array.from(
+  new Set(
+    sampleChromeosDevices
+      .map(
+        (d) =>
+          (
+            d as {
+              deviceSpec?: {
+                labels?: { 'label-model'?: { values?: readonly string[] } };
+              };
+            }
+          ).deviceSpec?.labels?.['label-model']?.values?.[0],
+      )
+      .filter((v): v is string => Boolean(v)),
+  ),
+);
+
+const sampleChromeosBoards = Array.from(
+  new Set(
+    sampleChromeosDevices
+      .map(
+        (d) =>
+          (
+            d as {
+              deviceSpec?: {
+                labels?: { 'label-board'?: { values?: readonly string[] } };
+              };
+            }
+          ).deviceSpec?.labels?.['label-board']?.values?.[0],
+      )
+      .filter((v): v is string => Boolean(v)),
+  ),
+);
+
 const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   CountDevices: {
-    total: 12536,
-    androidTotal: 8420,
-    chromeosTotal: 4116,
+    total: sampleChromeosDevices.length + sampleAndroidDevices.length,
+    chromeosCount: {
+      total: sampleChromeosDevices.length,
+    },
+    androidCount: {
+      totalDevices: sampleAndroidDevices.length,
+    },
+    androidTotal: sampleAndroidDevices.length,
+    chromeosTotal: sampleChromeosDevices.length,
   },
   CountAndroidDevices: {
-    totalDevices: 100,
-    totalHosts: 20,
+    totalDevices: sampleAndroidDevices.length,
+    totalHosts: Math.ceil(sampleAndroidDevices.length / 4),
     labMissingHosts: 0,
-    labRunningHosts: 20,
+    labRunningHosts: Math.ceil(sampleAndroidDevices.length / 4),
     healthCategoryInService: {
-      total: 80,
+      total: androidReadyCount + androidBusyCount,
       statusCounts: {
-        'in service (ready)': 70,
-        'in service (busy)': 10,
+        'in service (ready)': androidReadyCount,
+        'in service (busy)': androidBusyCount,
       },
     },
     healthCategoryInTransition: {
-      total: 5,
+      total: androidInTransitionCount,
       statusCounts: {
-        'in transition (installing)': 5,
+        'in transition (installing)': androidInTransitionCount,
       },
     },
     healthCategoryInAutoRecovery: {
-      total: 5,
+      total: androidInAutoRecoveryCount,
       statusCounts: {
-        'in auto recovery': 5,
+        'in auto recovery': androidInAutoRecoveryCount,
       },
     },
     healthCategoryNeedManualRepair: {
-      total: 10,
+      total: androidNeedManualRepairCount,
       statusCounts: {
-        'need manual repair': 10,
+        'need manual repair': androidNeedManualRepairCount,
       },
     },
     healthCategoryUnspecified: {
@@ -149,66 +225,25 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     },
   },
   CountBrowserDevices: {
-    total: 10,
+    total: sampleBrowserDevices.length,
     swarmingState: {
-      total: 10,
-      alive: 8,
-      dead: 2,
-      quarantined: 0,
-      maintenance: 0,
+      total: sampleBrowserDevices.length,
+      alive: getBrowserStateCount('alive'),
+      dead: getBrowserStateCount('dead'),
+      quarantined: getBrowserStateCount('quarantined'),
+      maintenance: getBrowserStateCount('maintenance'),
     },
   },
   ListDevices: {
-    devices: [
-      {
-        id: 'chromeos-device-01',
-        dutId: 'dut-312323',
-        deviceSpec: {
-          labels: {
-            model: { values: ['brya'] },
-            board: { values: ['brya'] },
-          },
-        },
-      },
-      {
-        id: 'chromeos-device-02',
-        dutId: 'dut-312324',
-        deviceSpec: {
-          labels: {
-            model: { values: ['corsola'] },
-            board: { values: ['corsola'] },
-          },
-        },
-      },
-    ],
+    devices: sampleChromeosDevices,
     nextPageToken: '',
   },
   ListAndroidDevices: {
-    devices: [
-      {
-        id: 'android-device-01',
-        deviceSpec: {
-          ufsLabels: { hostname: { values: ['android-host-1'] } },
-        },
-      },
-    ],
+    devices: sampleAndroidDevices,
     nextPageToken: '',
   },
   ListBrowserDevices: {
-    devices: [
-      {
-        id: '1',
-        deviceId: 'browser-1',
-        ufsLabels: { hostname: { values: ['browser-host-1'] } },
-        swarmingLabels: { os: { values: ['Linux'] } },
-      },
-      {
-        id: '2',
-        deviceId: 'browser-2',
-        ufsLabels: { hostname: { values: ['browser-host-2'] } },
-        swarmingLabels: { os: { values: ['Windows'] } },
-      },
-    ],
+    devices: sampleBrowserDevices,
     nextPageToken: '',
   },
   GetBrowserDeviceDimensions: {
@@ -225,34 +260,17 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     csvData: 'id,dut_id\n1,dut-1\n2,dut-2\n',
   },
   CountRepairMetrics: {
-    total: 3,
+    total: sampleRepairMetrics.length,
   },
   ListRepairMetrics: {
-    repairMetrics: [
-      {
-        priority: 1,
-        labName: 'sjc-mdpt9-wear',
-        hostGroup: 'group1',
-        runTarget: 'target1',
-        minimumRepairs: 1,
-        devicesOffline: 1,
-        totalDevices: 2,
-        peakUsage: 1,
-      },
-    ],
+    repairMetrics: sampleRepairMetrics,
     nextPageToken: '',
   },
+  CountResourceRequests: {
+    total: sampleResourceRequests.length,
+  },
   ListResourceRequests: {
-    requests: [
-      {
-        id: 'req-001',
-        name: 'req-001',
-        resourceName: 'pixel-8-pro',
-        status: 1,
-        amountRequested: 50,
-        amountDelivered: 45,
-      },
-    ],
+    resourceRequests: sampleResourceRequests,
     nextPageToken: '',
   },
   ListWorkspaces: {
@@ -275,6 +293,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     name: 'chromeos-core',
     totalDevices: 4116,
   },
+  BatchDeleteDevices: {},
   GetDevice: {
     device: {
       id: 'chromeos-device-01',
@@ -346,8 +365,8 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   PingSwarming: {},
   GetDeviceDimensions: {
     baseDimensions: {
-      model: { values: ['brya', 'corsola'] },
-      board: { values: ['brya', 'corsola'] },
+      model: { values: sampleChromeosModels },
+      board: { values: sampleChromeosBoards },
     },
     swarmingLabels: {},
     ufsLabels: {},
@@ -368,9 +387,6 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   CheckPermission: {
     hasPermission: true,
   },
-  CountResourceRequests: {
-    total: 1,
-  },
   GetResourceRequestsMultiselectFilterValues: {
     filterValues: {},
   },
@@ -381,7 +397,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   CleanupAndroidDevices: {},
   ScheduleBuild: {},
   ListProductCatalogEntries: {
-    entries: [],
+    entries: sampleProductCatalog,
     nextPageToken: '',
   },
   GetProductCatalogFilterValues: {

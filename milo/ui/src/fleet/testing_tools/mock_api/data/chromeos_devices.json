@@ -1,0 +1,2763 @@
+[
+  {
+    "id": "demo-cros-r2-rk1-h2",
+    "dutId": "DEMO-DUT-0001",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r2-rk1-h2.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r2-rk1-h2"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0001"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r2-rk1-h2"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-epsilon"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-nine"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "mock-pool-canary"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_EVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "emmc"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_SMALL"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r2-rk1-h2"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-EPSILON-0001"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000001"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186a1"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_DELTA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-delta"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-01"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-epsilon-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_micro",
+            "servo_pd"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r2-rk1-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r3-rk1-h3",
+    "dutId": "DEMO-DUT-0002",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r3-rk1-h3.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r3-rk1-h3"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0002"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r3-rk1-h3"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "sim-board-gamma"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-six"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "demo-pool-continuous"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_PVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "emmc"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r3-rk1-h3"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-SIM-BOARD-GAMMA-0002"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000002"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186a2"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_MOCK_BETA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "mock-zone-beta"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-01"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "sim-board-gamma-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r3-rk1-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r4-rk1-h4",
+    "dutId": "DEMO-DUT-0003",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r4-rk1-h4.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r4-rk1-h4"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0003"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r4-rk1-h4"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "needs_repair"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "demo-board-iota"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-six"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "mock-pool-canary"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_PVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "emmc"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r4-rk1-h4"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-DEMO-BOARD-IOTA-0003"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000003"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186a3"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_ALPHA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-alpha"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-01"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "demo-board-iota-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "BROKEN"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r4-rk1-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r5-rk1-h5",
+    "dutId": "DEMO-DUT-0004",
+    "state": "DEVICE_STATE_LEASED",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r5-rk1-h5.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r5-rk1-h5"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0004"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r5-rk1-h5"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "sim-board-gamma"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "demo-model-seven"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "mock-pool-canary"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_PVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "nvme"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r5-rk1-h5"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-SIM-BOARD-GAMMA-0004"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000004"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186a4"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_SIM_GAMMA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "sim-zone-gamma"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-01"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "sim-board-gamma-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_micro",
+            "servo_pd"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r5-rk1-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r6-rk1-h6",
+    "dutId": "DEMO-DUT-0005",
+    "state": "DEVICE_STATE_LEASED",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r6-rk1-h6.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r6-rk1-h6"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0005"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r6-rk1-h6"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-theta"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "demo-model-ten"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "sim-pool-unmanaged"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_PVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "nvme"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_MEDIUM"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r6-rk1-h6"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-THETA-0005"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000005"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186a5"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_DELTA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-delta"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-01"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-theta-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1",
+            "ccd_cr50"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r6-rk1-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-labstation-r7-rk1-h7",
+    "dutId": "DEMO-LABSTATION-0006",
+    "state": "DEVICE_STATE_LEASED",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-labstation-r7-rk1-h7.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-labstation-r7-rk1-h7"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-LABSTATION-0006"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-labstation-r7-rk1-h7"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-labstation"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-labstation"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "labstation_main"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_EVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "nvme"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_SMALL"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-labstation-r7-rk1-h7"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-LABSTATION-0006"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000006"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186a6"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_SIM_EPSILON"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "sim-zone-epsilon"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-01"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-labstation-release/R144-16503.0.0"
+          ]
+        },
+        "label-managed_dut": {
+          "values": [
+            "demo-cros-r7-rk1-h8",
+            "demo-cros-r7-rk1-h9"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-satlab-r8-rk1-h8",
+    "dutId": "DEMO-SATLAB-0007",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-satlab-r8-rk1-h8.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-satlab",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-satlab-r8-rk1-h8"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-SATLAB-0007"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-satlab-r8-rk1-h8"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "needs_manual_repair"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-satlab"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-satlab"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "satlab-pool"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_DVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "emmc"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-satlab-r8-rk1-h8"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-SATLAB-0007"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000007"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186a7"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_SIM_EPSILON"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "sim-zone-epsilon"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-01"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-satlab-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1",
+            "ccd_ti50"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r9-rk1-h9",
+    "dutId": "DEMO-DUT-0008",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r9-rk1-h9.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r9-rk1-h9"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0008"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r9-rk1-h9"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "needs_manual_repair"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-epsilon"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-nine"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "sim-pool-unmanaged"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_DVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "nvme"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_SMALL"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r9-rk1-h9"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-EPSILON-0008"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000008"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186a8"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_MOCK_BETA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "mock-zone-beta"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-01"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-epsilon-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1",
+            "ccd_ti50"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r9-rk1-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r10-rk1-h10",
+    "dutId": "DEMO-DUT-0009",
+    "state": "DEVICE_STATE_LEASED",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r10-rk1-h10.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r10-rk1-h10"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0009"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r10-rk1-h10"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-kappa"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "demo-model-one"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "mock-pool-dev"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_EVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "ufs"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_MEDIUM"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r10-rk1-h10"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-KAPPA-0009"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000009"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186a9"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_DELTA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-delta"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-01"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-kappa-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1",
+            "ccd_cr50"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r10-rk1-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r1-rk2-h11",
+    "dutId": "DEMO-DUT-0010",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r1-rk2-h11.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r1-rk2-h11"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0010"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r1-rk2-h11"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "demo-board-delta"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-three"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "sim-pool-unmanaged"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_PVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "ufs"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r1-rk2-h11"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-DEMO-BOARD-DELTA-0010"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000010"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186aa"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_DELTA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-delta"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "demo-board-delta-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1",
+            "ccd_ti50"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r1-rk2-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r2-rk2-h12",
+    "dutId": "DEMO-DUT-0011",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r2-rk2-h12.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r2-rk2-h12"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0011"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r2-rk2-h12"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-kappa"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "demo-model-ten"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "demo-pool-continuous"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_EVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "ufs"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r2-rk2-h12"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-KAPPA-0011"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000011"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186ab"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_DELTA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-delta"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-kappa-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1",
+            "ccd_cr50"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r2-rk2-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-labstation-r3-rk2-h13",
+    "dutId": "DEMO-LABSTATION-0012",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-labstation-r3-rk2-h13.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-labstation-r3-rk2-h13"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-LABSTATION-0012"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-labstation-r3-rk2-h13"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "repair_failed"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-labstation"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-labstation"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "labstation_main"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_PVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "nvme"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-labstation-r3-rk2-h13"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-LABSTATION-0012"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000012"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186ac"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_ALPHA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-alpha"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-labstation-release/R144-16503.0.0"
+          ]
+        },
+        "label-managed_dut": {
+          "values": [
+            "demo-cros-r3-rk2-h14",
+            "demo-cros-r3-rk2-h15"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r4-rk2-h14",
+    "dutId": "DEMO-DUT-0013",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r4-rk2-h14.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r4-rk2-h14"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0013"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r4-rk2-h14"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "needs_manual_repair"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-epsilon"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "demo-model-seven"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "sim-pool-performance"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_DVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "emmc"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_MEDIUM"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r4-rk2-h14"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-EPSILON-0013"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000013"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186ad"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_SIM_GAMMA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "sim-zone-gamma"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-epsilon-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1",
+            "ccd_ti50"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r4-rk2-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-satlab-r5-rk2-h15",
+    "dutId": "DEMO-SATLAB-0014",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-satlab-r5-rk2-h15.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-satlab",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-satlab-r5-rk2-h15"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-SATLAB-0014"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-satlab-r5-rk2-h15"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-satlab"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-satlab"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "satlab-pool"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_PVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "ufs"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-satlab-r5-rk2-h15"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-SATLAB-0014"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000014"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186ae"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_MOCK_BETA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "mock-zone-beta"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-satlab-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1",
+            "ccd_cr50"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r6-rk2-h16",
+    "dutId": "DEMO-DUT-0015",
+    "state": "DEVICE_STATE_LEASED",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r6-rk2-h16.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r6-rk2-h16"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0015"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r6-rk2-h16"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "sim-board-eta"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-three"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "sim-pool-performance"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_DVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "nvme"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NO_RESPONSE"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_MEDIUM"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r6-rk2-h16"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-SIM-BOARD-ETA-0015"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000015"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186af"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_ALPHA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-alpha"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "sim-board-eta-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r6-rk2-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r7-rk2-h17",
+    "dutId": "DEMO-DUT-0016",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r7-rk2-h17.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r7-rk2-h17"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0016"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r7-rk2-h17"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-epsilon"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "mock-model-two"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "mock-pool-dev"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_EVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "emmc"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NO_RESPONSE"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_SMALL"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r7-rk2-h17"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-EPSILON-0016"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000016"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186b0"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_SIM_EPSILON"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "sim-zone-epsilon"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-epsilon-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_micro",
+            "servo_pd"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r7-rk2-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r8-rk2-h18",
+    "dutId": "DEMO-DUT-0017",
+    "state": "DEVICE_STATE_LEASED",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r8-rk2-h18.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r8-rk2-h18"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0017"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r8-rk2-h18"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "demo-board-alpha"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "mock-model-two"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "mock-pool-dev"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_DVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "ufs"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NO_RESPONSE"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_MEDIUM"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r8-rk2-h18"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-DEMO-BOARD-ALPHA-0017"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000017"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186b1"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_ALPHA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-alpha"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "demo-board-alpha-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_v4p1"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r8-rk2-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-labstation-r9-rk2-h19",
+    "dutId": "DEMO-LABSTATION-0018",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-labstation-r9-rk2-h19.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-labstation-r9-rk2-h19"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-LABSTATION-0018"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-labstation-r9-rk2-h19"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "mock-board-labstation"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "sim-model-labstation"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "labstation_tryjob"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_DVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "nvme"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NO_RESPONSE"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-labstation-r9-rk2-h19"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-MOCK-BOARD-LABSTATION-0018"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000018"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186b2"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_SIM_GAMMA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "sim-zone-gamma"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "mock-board-labstation-release/R144-16503.0.0"
+          ]
+        },
+        "label-managed_dut": {
+          "values": [
+            "demo-cros-r9-rk2-h20",
+            "demo-cros-r9-rk2-h21"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r10-rk2-h20",
+    "dutId": "DEMO-DUT-0019",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r10-rk2-h20.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r10-rk2-h20"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0019"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r10-rk2-h20"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "needs_repair"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "demo-board-alpha"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "demo-model-seven"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "sim-pool-unmanaged"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_PVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "nvme"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_LARGE"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r10-rk2-h20"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-DEMO-BOARD-ALPHA-0019"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000019"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186b3"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_DEMO_ALPHA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "demo-zone-alpha"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-02"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "demo-board-alpha-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "BROKEN"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_micro",
+            "servo_pd"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r10-rk2-h1"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "demo-cros-r1-rk3-h21",
+    "dutId": "DEMO-DUT-0020",
+    "state": "DEVICE_STATE_AVAILABLE",
+    "type": "DEVICE_TYPE_PHYSICAL",
+    "address": {
+      "host": "demo-cros-r1-rk3-h21.lab.demo",
+      "port": 22
+    },
+    "realm": "demo:fleet/mock-realm-cros",
+    "deviceSpec": {
+      "labels": {
+        "id": {
+          "values": [
+            "demo-cros-r1-rk3-h21"
+          ]
+        },
+        "dut_id": {
+          "values": [
+            "DEMO-DUT-0020"
+          ]
+        },
+        "dut_name": {
+          "values": [
+            "demo-cros-r1-rk3-h21"
+          ]
+        },
+        "dut_state": {
+          "values": [
+            "ready"
+          ]
+        },
+        "label-board": {
+          "values": [
+            "sim-board-eta"
+          ]
+        },
+        "label-model": {
+          "values": [
+            "mock-model-eight"
+          ]
+        },
+        "label-pool": {
+          "values": [
+            "mock-pool-dev"
+          ]
+        },
+        "label-phase": {
+          "values": [
+            "PHASE_DVT"
+          ]
+        },
+        "label-storage": {
+          "values": [
+            "emmc"
+          ]
+        },
+        "label-wifi_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bluetooth_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-bot_size": {
+          "values": [
+            "BOT_SIZE_MEDIUM"
+          ]
+        },
+        "label-cellular_modem_state": {
+          "values": [
+            "NOT_DETECTED"
+          ]
+        },
+        "bot_id": {
+          "values": [
+            "demo-crossk-demo-cros-r1-rk3-h21"
+          ]
+        },
+        "hwid": {
+          "values": [
+            "DEMO-HWID-SIM-BOARD-ETA-0020"
+          ]
+        },
+        "serial_number": {
+          "values": [
+            "DEMO-SN-000020"
+          ]
+        },
+        "current_task": {
+          "values": [
+            "demo-task-186b4"
+          ]
+        },
+        "ufs_zone": {
+          "values": [
+            "ZONE_SIM_GAMMA"
+          ]
+        },
+        "network_zone": {
+          "values": [
+            "sim-zone-gamma"
+          ]
+        },
+        "rack": {
+          "values": [
+            "rack-03"
+          ]
+        },
+        "version_info_os": {
+          "values": [
+            "sim-board-eta-release/R144-16503.0.0"
+          ]
+        },
+        "label-servo_state": {
+          "values": [
+            "WORKING"
+          ]
+        },
+        "label-servo_usb_state": {
+          "values": [
+            "NORMAL"
+          ]
+        },
+        "label-servo_component": {
+          "values": [
+            "servo_micro",
+            "servo_pd"
+          ]
+        },
+        "label-associated_hostname": {
+          "values": [
+            "demo-cros-labstation-r1-rk3-h1"
+          ]
+        }
+      }
+    }
+  }
+]

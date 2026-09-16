@@ -1,0 +1,1332 @@
+[
+  {
+    "id": "demo-bot-swarm-0001",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0001"
+        ]
+      },
+      "os": {
+        "values": [
+          "Linux"
+        ]
+      },
+      "pool": {
+        "values": [
+          "sim-pool-unmanaged"
+        ]
+      },
+      "state": {
+        "values": [
+          "alive"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "available"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Linux-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "ready"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:54:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "mock-gpu-nebula"
+        ]
+      },
+      "zone": {
+        "values": [
+          "demo-zone-delta"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "32"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0001.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "sim-model-three"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_DEMO_DELTA"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "SERVING"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "true"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00001"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "linux"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo-bot-swarm-0002",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0002"
+        ]
+      },
+      "os": {
+        "values": [
+          "Linux"
+        ]
+      },
+      "pool": {
+        "values": [
+          "sim-pool-unmanaged"
+        ]
+      },
+      "state": {
+        "values": [
+          "alive"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "available"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Linux-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "ready"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:53:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "demo-gpu-vulcan"
+        ]
+      },
+      "zone": {
+        "values": [
+          "demo-zone-delta"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "32"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0002.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "sim-model-nine"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_DEMO_DELTA"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "SERVING"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "true"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00002"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "linux"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo-bot-swarm-0003",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0003"
+        ]
+      },
+      "os": {
+        "values": [
+          "Windows-11"
+        ]
+      },
+      "pool": {
+        "values": [
+          "demo-pool-continuous"
+        ]
+      },
+      "state": {
+        "values": [
+          "alive"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "available"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Windows-11-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "ready"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:52:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "none"
+        ]
+      },
+      "zone": {
+        "values": [
+          "demo-zone-delta"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "8"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0003.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "mock-model-five"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_DEMO_DELTA"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "SERVING"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "true"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00003"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "windows"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo-bot-swarm-0004",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0004"
+        ]
+      },
+      "os": {
+        "values": [
+          "Windows-11"
+        ]
+      },
+      "pool": {
+        "values": [
+          "sim-pool-unmanaged"
+        ]
+      },
+      "state": {
+        "values": [
+          "alive"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "available"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Windows-11-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "ready"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:51:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "none"
+        ]
+      },
+      "zone": {
+        "values": [
+          "demo-zone-alpha"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "32"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0004.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "sim-model-nine"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_DEMO_ALPHA"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "SERVING"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "true"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00004"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "windows"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo-bot-swarm-0005",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0005"
+        ]
+      },
+      "os": {
+        "values": [
+          "Android-14"
+        ]
+      },
+      "pool": {
+        "values": [
+          "sim-pool-unmanaged"
+        ]
+      },
+      "state": {
+        "values": [
+          "dead"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "error"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Android-14-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "needs_repair"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:50:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "none"
+        ]
+      },
+      "zone": {
+        "values": [
+          "mock-zone-beta"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "16"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0005.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "demo-model-seven"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_MOCK_BETA"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "NEEDS_REPAIR"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "false"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00005"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "android"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo-bot-swarm-0006",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0006"
+        ]
+      },
+      "os": {
+        "values": [
+          "Windows-11"
+        ]
+      },
+      "pool": {
+        "values": [
+          "mock-pool-canary"
+        ]
+      },
+      "state": {
+        "values": [
+          "alive"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "available"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Windows-11-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "ready"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:49:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "demo-gpu-vulcan"
+        ]
+      },
+      "zone": {
+        "values": [
+          "mock-zone-beta"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "8"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0006.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "sim-model-three"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_MOCK_BETA"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "SERVING"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "true"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00006"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "windows"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo-bot-swarm-0007",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0007"
+        ]
+      },
+      "os": {
+        "values": [
+          "Mac-14.5"
+        ]
+      },
+      "pool": {
+        "values": [
+          "demo-pool-cq"
+        ]
+      },
+      "state": {
+        "values": [
+          "alive"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "available"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Mac-14.5-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "ready"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:48:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "none"
+        ]
+      },
+      "zone": {
+        "values": [
+          "demo-zone-delta"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "8"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0007.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "demo-model-ten"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_DEMO_DELTA"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "SERVING"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "true"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00007"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "mac"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo-bot-swarm-0008",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0008"
+        ]
+      },
+      "os": {
+        "values": [
+          "Mac-14.5"
+        ]
+      },
+      "pool": {
+        "values": [
+          "sim-pool-performance"
+        ]
+      },
+      "state": {
+        "values": [
+          "alive"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "available"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Mac-14.5-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "ready"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:47:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "mock-gpu-nebula"
+        ]
+      },
+      "zone": {
+        "values": [
+          "sim-zone-epsilon"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "16"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0008.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "sim-model-nine"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_SIM_EPSILON"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "SERVING"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "true"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00008"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "mac"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo-bot-swarm-0009",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0009"
+        ]
+      },
+      "os": {
+        "values": [
+          "Android-14"
+        ]
+      },
+      "pool": {
+        "values": [
+          "demo-pool-cq"
+        ]
+      },
+      "state": {
+        "values": [
+          "alive"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "available"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Android-14-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "ready"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:46:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "mock-gpu-nebula"
+        ]
+      },
+      "zone": {
+        "values": [
+          "mock-zone-beta"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "32"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0009.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "sim-model-six"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_MOCK_BETA"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "SERVING"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "true"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00009"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "android"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo-bot-swarm-0010",
+    "realm": "demo:fleet/mock-realm-browser",
+    "swarmingLabels": {
+      "id": {
+        "values": [
+          "demo-bot-swarm-0010"
+        ]
+      },
+      "os": {
+        "values": [
+          "Android-14"
+        ]
+      },
+      "pool": {
+        "values": [
+          "demo-pool-cq"
+        ]
+      },
+      "state": {
+        "values": [
+          "alive"
+        ]
+      },
+      "device_type": {
+        "values": [
+          "demo-bot-desktop"
+        ]
+      },
+      "device_state": {
+        "values": [
+          "available"
+        ]
+      },
+      "device_os": {
+        "values": [
+          "Android-14-Standard"
+        ]
+      },
+      "dut_state": {
+        "values": [
+          "ready"
+        ]
+      },
+      "current_task": {
+        "values": [
+          "idle"
+        ]
+      },
+      "last_seen": {
+        "values": [
+          "2026-09-01T20:45:04.949Z"
+        ]
+      },
+      "gpu": {
+        "values": [
+          "mock-gpu-nebula"
+        ]
+      },
+      "zone": {
+        "values": [
+          "sim-zone-gamma"
+        ]
+      },
+      "python": {
+        "values": [
+          "3.11.8"
+        ]
+      },
+      "cipd_platform": {
+        "values": [
+          "linux-amd64"
+        ]
+      },
+      "cores": {
+        "values": [
+          "8"
+        ]
+      }
+    },
+    "ufsLabels": {
+      "hostname": {
+        "values": [
+          "demo-browser-host-0010.swarm.demo"
+        ]
+      },
+      "model": {
+        "values": [
+          "mock-model-two"
+        ]
+      },
+      "rack": {
+        "values": [
+          "demo-rack-01"
+        ]
+      },
+      "zone": {
+        "values": [
+          "ZONE_SIM_GAMMA"
+        ]
+      },
+      "resource_state": {
+        "values": [
+          "SERVING"
+        ]
+      },
+      "schedulable": {
+        "values": [
+          "true"
+        ]
+      },
+      "serial_number": {
+        "values": [
+          "DEMO-SN-BOT-00010"
+        ]
+      },
+      "associated_hostname": {
+        "values": [
+          "demo-rack-switch-01"
+        ]
+      },
+      "chrome_platform": {
+        "values": [
+          "android"
+        ]
+      },
+      "swarming_instance": {
+        "values": [
+          "demo-chromium-swarm"
+        ]
+      }
+    }
+  }
+]

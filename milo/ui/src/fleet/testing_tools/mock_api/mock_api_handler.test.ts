@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import sampleAndroidDevices from './data/android_devices.json';
+import sampleChromeosDevices from './data/chromeos_devices.json';
 import { FleetConsoleMockAPI } from './mock_api_handler';
 
 describe('FleetConsoleMockAPI', () => {
@@ -52,7 +54,7 @@ describe('FleetConsoleMockAPI', () => {
     const reset = FleetConsoleMockAPI.getFixture('ListDevices') as {
       devices: Array<{ id: string }>;
     };
-    expect(reset.devices[0].id).toBe('chromeos-device-01');
+    expect(reset.devices[0].id).toBe(sampleChromeosDevices[0].id);
   });
 
   it('prevents cross-test contamination when nested fixture objects are modified', () => {
@@ -87,7 +89,9 @@ describe('FleetConsoleMockAPI', () => {
     expect(text.startsWith(")]}'\n")).toBe(true);
 
     const parsed = JSON.parse(text.replace(")]}'\n", ''));
-    expect(parsed.total).toBe(12536);
+    expect(parsed.total).toBe(
+      sampleChromeosDevices.length + sampleAndroidDevices.length,
+    );
   });
 
   it('intercepts auth state queries offline and allows setting custom auth state', async () => {

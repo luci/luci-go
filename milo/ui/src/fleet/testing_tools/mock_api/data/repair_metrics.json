@@ -1,0 +1,32 @@
+[
+  {
+    "priority": "BREACHED",
+    "labName": "sim-lab-gamma",
+    "hostGroup": "demo-group-alpha",
+    "runTarget": "demo-target-alpha",
+    "minimumRepairs": 6,
+    "devicesOffline": 9,
+    "totalDevices": 24,
+    "peakUsage": 20
+  },
+  {
+    "priority": "BREACHED",
+    "labName": "sim-lab-gamma",
+    "hostGroup": "mock-group-beta",
+    "runTarget": "mock-target-beta",
+    "minimumRepairs": 8,
+    "devicesOffline": 12,
+    "totalDevices": 32,
+    "peakUsage": 27
+  },
+  {
+    "priority": "BREACHED",
+    "labName": "demo-lab-alpha",
+    "hostGroup": "sim-group-gamma",
+    "runTarget": "sim-target-gamma",
+    "minimumRepairs": 8,
+    "devicesOffline": 12,
+    "totalDevices": 32,
+    "peakUsage": 27
+  }
+]

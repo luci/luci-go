@@ -14,6 +14,7 @@
 
 import { FleetConsoleClientImpl } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import sampleChromeosDevices from './data/chromeos_devices.json';
 import { FleetConsoleMockAPI } from './mock_api_handler';
 
 describe('FleetConsoleMockAPI Schema Synchronization Guardrail', () => {
@@ -43,21 +44,24 @@ describe('FleetConsoleMockAPI Schema Synchronization Guardrail', () => {
   it('evaluates in-memory AIP-160 filters dynamically during intercepted calls', async () => {
     FleetConsoleMockAPI.enableBrowserInterceptor();
 
-    // Query with filter for 'brya'
+    const targetDevice = sampleChromeosDevices[0];
+    const targetBoard = targetDevice.deviceSpec.labels['label-board'].values[0];
+
+    // Query with filter for first board
     const filteredResponse = await fetch(
       '/prpc/fleetconsole.FleetConsole/ListDevices',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filter: 'board = "brya"' }),
+        body: JSON.stringify({ filter: `board = "${targetBoard}"` }),
       },
     );
 
     expect(filteredResponse.status).toBe(200);
     const text = await filteredResponse.text();
     const parsed = JSON.parse(text.replace(")]}'\n", ''));
-    expect(parsed.devices).toHaveLength(1);
-    expect(parsed.devices[0].id).toBe('chromeos-device-01');
+    expect(parsed.devices.length).toBeGreaterThan(0);
+    expect(parsed.devices[0].id).toBe(targetDevice.id);
   });
 
   it('paginates mock item collections with token offset handling', async () => {
