@@ -270,7 +270,10 @@ export const useProductCatalogFilters = (
     | Record<string, unknown>
     | undefined;
 
-  const tabColumns = getColumnsForTab(selectedTab);
+  const tabColumns = useMemo(
+    () => getColumnsForTab(selectedTab),
+    [selectedTab],
+  );
 
   const nextFilterOptions = useMemo(() => {
     const hasData =
@@ -361,8 +364,6 @@ export const useProductCatalogFilters = (
     nonVirtualFilterOptionsQuery.data,
     gceFilterOptionsQuery.data,
     tabColumns,
-    nonVirtualData,
-    gceData,
     hasUrlFiltersParam,
   ]);
 

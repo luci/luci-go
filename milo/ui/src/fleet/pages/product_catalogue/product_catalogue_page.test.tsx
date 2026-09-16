@@ -96,6 +96,10 @@ describe('ProductCataloguePage', () => {
     });
   });
 
+  afterEach(() => {
+    FleetConsoleMockAPI.resetFixtures();
+  });
+
   it('should render successfully', async () => {
     renderPage();
 
@@ -138,7 +142,7 @@ describe('ProductCataloguePage', () => {
     expect(link2).toBeInTheDocument();
     expect(link2.tagName).toBe('A');
     expect(link2).toHaveAttribute('href', 'http://go/ngp-npi/r11n/tbd');
-  }, 15000);
+  });
 
   it('should sort client-side by R11N correctly', async () => {
     FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
@@ -318,7 +322,7 @@ describe('ProductCataloguePage', () => {
     expect(
       screen.queryByText('Number of Devices Per Rack'),
     ).toBeInTheDocument();
-  }, 15000);
+  });
 
   it('should render empty fallback message when there are no products', async () => {
     FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
@@ -462,7 +466,7 @@ describe('ProductCataloguePage', () => {
       expect(screen.getByText('Product 12')).toBeInTheDocument();
       expect(screen.queryByText('Product 1')).not.toBeInTheDocument();
     });
-  }, 15000);
+  });
 
   it('should render both non-virtual and GCE entries in unified table on All tab', async () => {
     FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {

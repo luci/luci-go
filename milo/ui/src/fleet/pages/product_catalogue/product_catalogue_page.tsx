@@ -161,6 +161,10 @@ const ProductCatalogueTabPageContent = ({
 
   const [sorting, onSortingChange] = useMrtSortingState();
 
+  const handleApplyFilter = useCallback(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, []);
+
   const {
     filterValues,
     nonVirtualFilter,
@@ -170,9 +174,7 @@ const ProductCatalogueTabPageContent = ({
     onApplyFilter,
     isLoading,
     warnings,
-  } = useProductCatalogFilters(selectedTab, () => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  });
+  } = useProductCatalogFilters(selectedTab, handleApplyFilter);
 
   const query = useQuery({
     ...client.ListProductCatalogEntries.query({ filter: nonVirtualFilter }),
