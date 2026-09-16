@@ -129,9 +129,9 @@ describe('AndroidHealthSummaryHeader', () => {
     expect(await screen.findByText('84.20%')).toBeInTheDocument();
     expect(screen.getByText('81.50%')).toBeInTheDocument();
 
-    // Default collapsed view: no statuses should be shown
-    expect(screen.queryByText('Idle:')).not.toBeInTheDocument();
-    expect(screen.queryByText('Busy:')).not.toBeInTheDocument();
+    // Default collapsed view: Idle and Busy are shown for In Service, but other states hidden
+    expect(screen.getByText('Idle:')).toBeInTheDocument();
+    expect(screen.getByText('Busy:')).toBeInTheDocument();
     expect(screen.queryByText('Lameduck:')).not.toBeInTheDocument();
     expect(screen.queryByText('Dirty:')).not.toBeInTheDocument();
     expect(screen.queryByText('Prepping:')).not.toBeInTheDocument();
@@ -401,13 +401,14 @@ describe('AndroidHealthSummaryHeader', () => {
       </FakeContextProvider>,
     );
 
-    // Initial state: "Show all states" switch is unchecked, states are not visible
+    // Initial state: "Show all states" switch is unchecked, Idle/Busy are visible for In Service, but other states hidden
     const toggleSwitch = await screen.findByRole('checkbox', {
       name: 'Show all states',
     });
     expect(toggleSwitch).toBeInTheDocument();
     expect(toggleSwitch).not.toBeChecked();
-    expect(screen.queryByText('Idle:')).not.toBeInTheDocument();
+    expect(screen.getByText('Idle:')).toBeInTheDocument();
+    expect(screen.getByText('Busy:')).toBeInTheDocument();
     expect(screen.queryByText('Lameduck:')).not.toBeInTheDocument();
 
     // Click switch to show all states
@@ -424,7 +425,8 @@ describe('AndroidHealthSummaryHeader', () => {
     // Click again to hide other states
     fireEvent.click(toggleSwitch);
     expect(toggleSwitch).not.toBeChecked();
-    expect(screen.queryByText('Idle:')).not.toBeInTheDocument();
+    expect(screen.getByText('Idle:')).toBeInTheDocument();
+    expect(screen.getByText('Busy:')).toBeInTheDocument();
     expect(screen.queryByText('Lameduck:')).not.toBeInTheDocument();
     expect(localStorage.getItem(SHOW_ALL_STATES_STORAGE_KEY)).toBe('false');
   });

@@ -153,13 +153,18 @@ export function AndroidHealthSummaryHeader({
   const renderStatusBreakdown = (
     bucket: HealthCategoryBucket | undefined,
     categoryKeys: string[],
+    alwaysShowBreakdown = false,
   ) => {
-    if (!showAllStates) {
+    if (!showAllStates && !alwaysShowBreakdown) {
       return null;
     }
     if (isLoading || !bucket?.statusCounts) {
       if (!isLoading) return null;
-      return PREFERRED_STATUS_ORDER.map((stateKey) => (
+      const statesToRender =
+        !showAllStates && alwaysShowBreakdown
+          ? [androidState.IDLE, androidState.BUSY]
+          : PREFERRED_STATUS_ORDER;
+      return statesToRender.map((stateKey) => (
         <SmallMetricItem
           key={stateKey}
           label={formatStateLabel(stateKey)}
@@ -169,7 +174,7 @@ export function AndroidHealthSummaryHeader({
         />
       ));
     }
-    const entries = Object.entries(bucket.statusCounts).sort(([a], [b]) => {
+    let entries = Object.entries(bucket.statusCounts).sort(([a], [b]) => {
       const indexA = PREFERRED_STATUS_ORDER.indexOf(a.toUpperCase());
       const indexB = PREFERRED_STATUS_ORDER.indexOf(b.toUpperCase());
       if (indexA !== -1 && indexB !== -1) return indexA - indexB;
@@ -177,6 +182,14 @@ export function AndroidHealthSummaryHeader({
       if (indexB !== -1) return 1;
       return a.localeCompare(b);
     });
+
+    if (!showAllStates && alwaysShowBreakdown) {
+      entries = entries.filter(
+        ([k]) =>
+          k.toUpperCase() === androidState.IDLE ||
+          k.toUpperCase() === androidState.BUSY,
+      );
+    }
 
     return entries.map(([stateKey, count]) => (
       <SmallMetricItem
@@ -281,12 +294,14 @@ export function AndroidHealthSummaryHeader({
     bucket: HealthCategoryBucket | undefined;
     icon: React.ReactElement;
     tooltipText: React.ReactNode;
+    alwaysShowBreakdown?: boolean;
   }[] = [
     {
       name: 'In Service',
       categoryKeys: ['HEALTH_CATEGORY_IN_SERVICE'],
       bucket: healthData?.healthCategoryInService,
       icon: <CheckIcon sx={{ color: colors.emerald }} />,
+      alwaysShowBreakdown: true,
       tooltipText: (
         <Typography variant="body2">
           {/* TODO: Update description with final definition. */}
@@ -597,7 +612,7 @@ export function AndroidHealthSummaryHeader({
                       })
                     }
                   />
-                  {showAllStates && (
+                  {(showAllStates || bucketConfig.alwaysShowBreakdown) && (
                     <Box
                       sx={{
                         display: 'flex',
@@ -611,6 +626,7 @@ export function AndroidHealthSummaryHeader({
                       {renderStatusBreakdown(
                         bucketConfig.bucket,
                         bucketConfig.categoryKeys,
+                        bucketConfig.alwaysShowBreakdown,
                       )}
                     </Box>
                   )}
