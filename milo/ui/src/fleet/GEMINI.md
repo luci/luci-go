@@ -33,6 +33,7 @@ A task or frontend CL is complete when:
 
 ### 4. Coding Conventions
 - Rely on TypeScript type inference and narrowing instead of type casting (`as Type`).
+- **Legacy Naming Conventions (`_OLD`)**: Do not copy or extend files or exports with `_OLD` / `_deprecated` naming suffixes.
 
 ### 5. Temporary File Hygiene
 - Do not run `rm` commands to delete temporary files.

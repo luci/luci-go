@@ -17,8 +17,13 @@ export type UrlMapper = (params: URLSearchParams) => URLSearchParams;
 export const VERSION_PARAM_KEY = 'v';
 export const LATEST_VERSION = 2;
 
-// Version 1 to Version 2 mapper.
-// Converts legacy RRI URL format (query string inside 'filters' param) to AIP-160.
+/**
+ * Version 1 to Version 2 mapper.
+ * Converts legacy RRI URL format (query string inside 'filters' param) to AIP-160 (`?filter=...&v=2`).
+ *
+ * Note: URL migration helper maintained for backwards compatibility. For new features,
+ * use direct AIP-160 query strings (`?filter=...`) and `combineAipFilters` / `useFleetMrtState`.
+ */
 export const v1_to_v2: UrlMapper = (
   params: URLSearchParams,
 ): URLSearchParams => {
@@ -87,6 +92,9 @@ export const detectVersion = (params: URLSearchParams): number => {
 /**
  * Maps the URL search parameters transitively from the detected version to the latest version.
  * Returns the migrated parameters and a boolean indicating if any migration occurred.
+ *
+ * Note: URL migration utility for RRI. New pages and components should use
+ * `useParamsAndLocalStorage` or `useFleetMrtState` with direct AIP-160 query strings (`?filter=...`).
  */
 export const mapUrl = (
   params: URLSearchParams,

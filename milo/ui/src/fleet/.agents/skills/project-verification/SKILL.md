@@ -15,9 +15,10 @@ Use this skill before declaring a task complete to ensure no regressions.
 > **At the start of project verification**, you MUST copy the progress checklist below into your very next response to the user, and check off the steps sequentially as you complete them.
 
 Progress:
-- [ ] Step 1: Run linting (`npm run lint-inc` or `npm run lint`)
-- [ ] Step 2: Run tests (`npm test -- ./src/fleet/` or specific spec files)
-- [ ] Step 3: Run type checking (`npm run type-check`)
+- [ ] Step 1: Audit changes to ensure no references to deprecated symbols or *_OLD files were introduced
+- [ ] Step 2: Run linting (`npm run lint-inc` or `npm run lint`)
+- [ ] Step 3: Run tests (`npm test -- ./src/fleet/` or specific spec files)
+- [ ] Step 4: Run type checking (`npm run type-check`)
 
 ## Commands
 

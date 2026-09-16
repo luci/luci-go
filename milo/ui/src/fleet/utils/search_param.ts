@@ -112,6 +112,14 @@ export function combineAipFilters(base: string, clause: string): string {
   return `${base} AND ${clause}`;
 }
 
+/**
+ * Returns a filter query string, falling back to legacy URL parameters (`filter`, `q`, `f`, `search`)
+ * when `filters` is not present, and auto-wrapping bare query tokens into `id = "raw"`.
+ *
+ * Note: Legacy query fallback (`?q=`, `?f=`) is maintained for backwards compatibility
+ * during transition. For all new components and URLs, use `searchParams.get(FILTERS_PARAM_KEY)` or
+ * modern AIP-160 filtering hooks directly.
+ */
 export function getLegacyFilterOrQuery(
   searchParams: URLSearchParams | undefined,
 ): string {
