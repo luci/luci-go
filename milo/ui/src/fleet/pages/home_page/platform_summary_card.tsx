@@ -112,10 +112,13 @@ export function PlatformSummaryCard({
           : 'low'
       : null;
 
+  const hasAnyIcon = Boolean(linkIcon || secondaryLinkIcon);
+
   return (
     <Card
       variant="outlined"
       sx={{
+        containerType: 'inline-size',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
@@ -165,110 +168,157 @@ export function PlatformSummaryCard({
             Error loading data
           </Typography>
         ) : (
-          <>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: 3,
-                mt: 4,
-              }}
-            >
-              {linkIcon && (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: hasAnyIcon
+                ? 'auto minmax(8px, 1fr) auto minmax(8px, 1fr) auto'
+                : '1fr auto',
+              alignItems: 'center',
+              columnGap: hasAnyIcon ? 0 : 3,
+              rowGap: 3,
+              mt: 4,
+              '@container (max-width: 320px)': {
+                gridTemplateColumns: hasAnyIcon ? 'auto 1fr' : '1fr',
+                rowGap: 1.5,
+              },
+            }}
+          >
+            {hasAnyIcon &&
+              (linkIcon ? (
                 <Box
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
                     color: 'text.secondary',
                     '& svg': { fontSize: '2rem' },
+                    gridColumn: 1,
                   }}
                 >
                   {linkIcon}
                 </Box>
-              )}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Button
-                  variant="text"
-                  component={NavLink}
-                  to={linkTo}
-                  sx={{
-                    color: 'inherit',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                  }}
-                >
-                  <Typography
-                    variant="h3"
-                    component="div"
-                    sx={{ mb: 0.5, minWidth: 60 }}
-                  >
-                    {isLoading ? (
-                      <Skeleton variant="text" width="100%" />
-                    ) : (
-                      (total?.toLocaleString('en-US') ?? 0)
-                    )}
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                    }}
-                    aria-label={
-                      totalText
-                        ? `${totalText} in ${title} platform`
-                        : `Total Devices in ${title} platform`
-                    }
-                  >
-                    <Typography color="text.secondary" variant="body2">
-                      {totalText ?? 'Total Devices'}
-                    </Typography>
-                  </Box>
-                </Button>
-                {!isLoading && total === 0 && <PermissionWarningTooltip />}
-              </Box>
-              <Box
+              ) : (
+                <Box sx={{ gridColumn: 1 }} />
+              ))}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                minWidth: 'max-content',
+                gridColumn: hasAnyIcon ? 3 : 1,
+                '@container (max-width: 320px)': {
+                  gridColumn: hasAnyIcon ? 2 : 1,
+                  ml: hasAnyIcon ? 1 : 0,
+                },
+              }}
+            >
+              <Button
+                variant="text"
+                component={NavLink}
+                to={linkTo}
                 sx={{
+                  textTransform: 'none',
+                  color: 'inherit',
                   display: 'flex',
-                  gap: 1,
-                  alignItems: 'center',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  padding: 1,
+                  minWidth: 0,
+                  borderRadius: 1,
                 }}
               >
-                <Button
-                  component={NavLink}
-                  to={linkTo}
-                  variant="outlined"
-                  disableElevation
-                  fullWidth
-                  aria-label={`${linkText} in ${title} platform`}
+                <Typography
+                  variant="h3"
+                  component="div"
+                  sx={{ mb: 0.5, minWidth: 60 }}
                 >
-                  {linkText}
-                </Button>
-              </Box>
+                  {isLoading ? (
+                    <Skeleton variant="text" width="100%" />
+                  ) : (
+                    (total?.toLocaleString('en-US') ?? 0)
+                  )}
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                  aria-label={
+                    totalText
+                      ? `${totalText} in ${title} platform`
+                      : `Total Devices in ${title} platform`
+                  }
+                >
+                  <Typography color="text.secondary" variant="body2" noWrap>
+                    {totalText ?? 'Total Devices'}
+                  </Typography>
+                </Box>
+              </Button>
+              {!isLoading && total === 0 && <PermissionWarningTooltip />}
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1,
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                width: '100%',
+                minWidth: 'max-content',
+                gridColumn: hasAnyIcon ? 5 : 2,
+                '@container (max-width: 320px)': {
+                  gridColumn: '1 / -1',
+                  minWidth: 0,
+                  mb: 1,
+                },
+              }}
+            >
+              <Button
+                component={NavLink}
+                to={linkTo}
+                variant="outlined"
+                disableElevation
+                fullWidth
+                aria-label={`${linkText} in ${title} platform`}
+                sx={{
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {linkText}
+              </Button>
             </Box>
             {secondaryLinkTo && (
-              <Box
-                sx={{
-                  mt: 3,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 3,
-                }}
-              >
-                {secondaryLinkIcon && (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      color: 'text.secondary',
-                      '& svg': { fontSize: '2rem' },
-                    }}
-                  >
-                    {secondaryLinkIcon}
-                  </Box>
-                )}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <>
+                {hasAnyIcon &&
+                  (secondaryLinkIcon ? (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: 'text.secondary',
+                        '& svg': { fontSize: '2rem' },
+                        gridColumn: 1,
+                      }}
+                    >
+                      {secondaryLinkIcon}
+                    </Box>
+                  ) : (
+                    <Box sx={{ gridColumn: 1 }} />
+                  ))}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    minWidth: 'max-content',
+                    gridColumn: hasAnyIcon ? 3 : 1,
+                    '@container (max-width: 320px)': {
+                      gridColumn: hasAnyIcon ? 2 : 1,
+                      ml: hasAnyIcon ? 1 : 0,
+                    },
+                  }}
+                >
                   <Button
                     variant="text"
                     component={NavLink}
@@ -307,7 +357,7 @@ export function PlatformSummaryCard({
                           : `Total Devices in ${title} platform`
                       }
                     >
-                      <Typography color="text.secondary" variant="body2">
+                      <Typography color="text.secondary" variant="body2" noWrap>
                         {secondTotalText ?? 'Total Devices'}
                       </Typography>
                     </Box>
@@ -321,6 +371,15 @@ export function PlatformSummaryCard({
                     display: 'flex',
                     gap: 1,
                     alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    width: '100%',
+                    minWidth: 'max-content',
+                    gridColumn: hasAnyIcon ? 5 : 2,
+                    '@container (max-width: 320px)': {
+                      gridColumn: '1 / -1',
+                      minWidth: 0,
+                      mb: 1,
+                    },
                   }}
                 >
                   <Button
@@ -330,13 +389,16 @@ export function PlatformSummaryCard({
                     disableElevation
                     fullWidth
                     aria-label={`${secondaryLinkText} in ${title} platform`}
+                    sx={{
+                      whiteSpace: 'nowrap',
+                    }}
                   >
                     {secondaryLinkText}
                   </Button>
                 </Box>
-              </Box>
+              </>
             )}
-          </>
+          </Box>
         )}
       </CardContent>
     </Card>
