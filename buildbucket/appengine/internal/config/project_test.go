@@ -57,7 +57,13 @@ func TestValidateProject(t *testing.T) {
 		}
 		configSet := "projects/test"
 		path := "cr-buildbucket.cfg"
-		settingsCfg := &pb.SettingsCfg{}
+		settingsCfg := &pb.SettingsCfg{
+			SwarmingBackends: map[string]string{
+				"example.com":          "swarming://example",
+				"swarming_hostname":    "swarming://swarming-hostname",
+				"swarming.example.com": "swarming://swarming-example",
+			},
+		}
 		assert.Loosely(t, SetTestSettingsCfg(vctx.Context, settingsCfg), should.BeNil)
 
 		t.Run("OK", func(t *ftt.Test) {
@@ -249,6 +255,14 @@ func TestValidateProject(t *testing.T) {
 		vctx := &validation.Context{
 			Context: memory.Use(ctx),
 		}
+		swarmSettingsCfg := &pb.SettingsCfg{
+			SwarmingBackends: map[string]string{
+				"example.com":          "swarming://example",
+				"swarming_hostname":    "swarming://swarming-hostname",
+				"swarming.example.com": "swarming://swarming-example",
+			},
+		}
+		assert.Loosely(t, SetTestSettingsCfg(vctx.Context, swarmSettingsCfg), should.BeNil)
 		wellKnownExperiments := stringset.NewFromSlice("luci.well_known")
 		toBBSwarmingCfg := func(content string) *pb.Swarming {
 			cfg := pb.Swarming{}
@@ -329,7 +343,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 
@@ -348,7 +362,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
 				assert.Loosely(t, ok, should.Equal(true))
 				assert.Loosely(t, len(ve.Errors), should.Equal(1))
@@ -368,7 +382,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
 				assert.Loosely(t, ok, should.Equal(true))
 				assert.Loosely(t, len(ve.Errors), should.Equal(1))
@@ -388,7 +402,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
 				assert.Loosely(t, ok, should.Equal(true))
 				assert.Loosely(t, len(ve.Errors), should.Equal(1))
@@ -409,7 +423,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
 				assert.Loosely(t, ok, should.Equal(true))
 				assert.Loosely(t, len(ve.Errors), should.Equal(1))
@@ -432,7 +446,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+				validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 				ve, ok := vctx.Finalize().(*validation.Error)
 				assert.Loosely(t, ok, should.Equal(true))
 				assert.Loosely(t, len(ve.Errors), should.Equal(1))
@@ -442,7 +456,7 @@ func TestValidateProject(t *testing.T) {
 
 		t.Run("empty builders", func(t *ftt.Test) {
 			content := `builders {}`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(3))
@@ -539,7 +553,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(10))
@@ -586,7 +600,7 @@ func TestValidateProject(t *testing.T) {
 					priority: 300
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(5))
@@ -595,6 +609,25 @@ func TestValidateProject(t *testing.T) {
 			assert.Loosely(t, ve.Errors[2].Error(), should.ContainSubstring("(swarming / builders #1 - meep): name: duplicate"))
 			assert.Loosely(t, ve.Errors[3].Error(), should.ContainSubstring("priority: must be in [20, 255] range; got 300"))
 			assert.Loosely(t, ve.Errors[4].Error(), should.ContainSubstring(`service_account "not an email" doesn't match "^[0-9a-zA-Z_\\-\\.\\+\\%]+@[0-9a-zA-Z_\\-\\.]+$"`))
+		})
+
+		t.Run("unregistered swarming host", func(t *ftt.Test) {
+			content := `
+				builders {
+					name: "b1"
+					swarming_host: "unregistered.example.com"
+					exe {
+						cipd_package: "infra/executable/bar"
+						cipd_version: "refs/heads/main"
+					}
+					properties: "{}"
+				}
+			`
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
+			ve, ok := vctx.Finalize().(*validation.Error)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, len(ve.Errors), should.Equal(1))
+			assert.Loosely(t, ve.Errors[0].Error(), should.ContainSubstring(`swarming_host "unregistered.example.com" is not in the global swarming_backends config`))
 		})
 
 		t.Run("bad caches in builders cfg", func(t *ftt.Test) {
@@ -653,7 +686,7 @@ func TestValidateProject(t *testing.T) {
 					properties: "{}"
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(11))
@@ -702,7 +735,7 @@ func TestValidateProject(t *testing.T) {
 					properties: "{}"
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(4))
@@ -737,7 +770,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(1))
@@ -770,7 +803,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", swarmSettingsCfg)
 			_, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(false))
 		})
@@ -804,7 +837,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			_, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(false))
 		})
@@ -835,7 +868,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(1))
@@ -877,7 +910,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(2))
@@ -909,7 +942,7 @@ func TestValidateProject(t *testing.T) {
 					}
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "myluciproject", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(1))
@@ -949,23 +982,27 @@ func TestValidateProject(t *testing.T) {
 		})
 
 		t.Run("hearbeat_timeout", func(t *ftt.Test) {
-			settingsCfg := &pb.SettingsCfg{Backends: []*pb.BackendSetting{
-				{
-					Target:   "lite://foo-lite",
-					Hostname: "foo_hostname",
-					Mode: &pb.BackendSetting_LiteMode_{
-						LiteMode: &pb.BackendSetting_LiteMode{},
-					},
+			settingsCfg := &pb.SettingsCfg{
+				SwarmingBackends: map[string]string{
+					"swarming_hostname": "swarming://swarming-hostname",
 				},
-				{
-					Target:   "swarming://chromium-swarm",
-					Hostname: "swarming_hostname",
-					Mode: &pb.BackendSetting_FullMode_{
-						FullMode: &pb.BackendSetting_FullMode{
-							PubsubId: "pubsub",
+				Backends: []*pb.BackendSetting{
+					{
+						Target:   "lite://foo-lite",
+						Hostname: "foo_hostname",
+						Mode: &pb.BackendSetting_LiteMode_{
+							LiteMode: &pb.BackendSetting_LiteMode{},
 						},
 					},
-				},
+					{
+						Target:   "swarming://chromium-swarm",
+						Hostname: "swarming_hostname",
+						Mode: &pb.BackendSetting_FullMode_{
+							FullMode: &pb.BackendSetting_FullMode{
+								PubsubId: "pubsub",
+							},
+						},
+					},
 			}}
 			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
 
@@ -1109,7 +1146,7 @@ func TestValidateProject(t *testing.T) {
 					execution_timeout_secs: 172800
 				}
 			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", nil)
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments, "", swarmSettingsCfg)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, len(ve.Errors), should.Equal(3))
@@ -1120,6 +1157,9 @@ func TestValidateProject(t *testing.T) {
 
 		t.Run("custom metrics", func(t *ftt.Test) {
 			settingsCfg := &pb.SettingsCfg{
+				SwarmingBackends: map[string]string{
+					"example.com": "swarming://example",
+				},
 				CustomMetrics: []*pb.CustomMetric{
 					{
 						Name: "chrome/infra/custom/builds/started",
@@ -2773,6 +2813,23 @@ func TestPrepareBuilderMetricsToPut(t *testing.T) {
 				}
 				assert.Loosely(t, newEnt.Metrics, should.Resemble(expected))
 			})
+		})
+	})
+}
+
+func TestValidateSwarmingHost(t *testing.T) {
+	t.Parallel()
+	ftt.Run("ValidateSwarmingHost", t, func(t *ftt.Test) {
+		globalCfg := &pb.SettingsCfg{
+			SwarmingBackends: map[string]string{
+				"registered.com": "swarming://registered",
+			},
+		}
+		t.Run("registered", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateSwarmingHost(globalCfg, "registered.com"), should.BeNil)
+		})
+		t.Run("unregistered", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateSwarmingHost(globalCfg, "unregistered.com"), should.ErrLike(`swarming_host "unregistered.com" is not in the global swarming_backends config`))
 		})
 	})
 }

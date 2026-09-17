@@ -693,6 +693,22 @@ func ValidateTaskBackendTarget(globalCfg *pb.SettingsCfg, target string) error {
 	return errors.New("provided backend target was not in global config")
 }
 
+// ValidateSwarmingHost validates that the swarming_host is registered in the
+// global swarming_backends config.
+func ValidateSwarmingHost(globalCfg *pb.SettingsCfg, host string) error {
+	if _, ok := globalCfg.GetSwarmingBackends()[host]; ok {
+		return nil
+	}
+	return errors.Fmt("swarming_host %q is not in the global swarming_backends config", host)
+}
+
+func validateSwarmingHost(ctx *validation.Context, host string, globalCfg *pb.SettingsCfg) {
+	validateHostname(ctx, "swarming_host", host)
+	if err := ValidateSwarmingHost(globalCfg, host); err != nil {
+		ctx.Errorf("%s", err)
+	}
+}
+
 // validateTaskBackendConfigJson makes an api call to the task backend server's
 // ValidateConfigs RPC. If there are errors with the config it propagates them
 // into the validation context.
@@ -777,7 +793,7 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 	case b.GetBackend() != nil:
 		validateTaskBackend(ctx, b.Backend, project)
 	case b.GetSwarmingHost() != "":
-		validateHostname(ctx, "swarming_host", b.SwarmingHost)
+		validateSwarmingHost(ctx, b.SwarmingHost, globalCfg)
 	default:
 		ctx.Errorf("either swarming host or task backend must be set")
 	}
