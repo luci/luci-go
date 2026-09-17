@@ -102,3 +102,8 @@ export const myRoutes = [
   ```js
   localStorage.setItem('featureFlag:my-feature-area:new-dashboard', 'on');
   ```
+- **URL Parameter Overrides (for sharing feature demos)**: Developers can share direct live links with feature flags enabled or disabled via query parameters without asking users to manually adjust browser settings. URL parameter overrides take top precedence over `localStorage` and percentage rollouts, and automatically persist across page navigations for the active browser session via `sessionStorage`:
+  - `?ff=<flag_name>:<on|off>` (e.g. `?ff=android-health-metrics:on` or `?ff=android-health-metrics:off`)
+  - `?ff=<namespace>:<flag_name>:<on|off>` (e.g. `?ff=fleet-console:android-health-metrics:on`)
+  - `?ff:<flag_name>=<on|off>` (e.g. `?ff:android-health-metrics=on`)
+

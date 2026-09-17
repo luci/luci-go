@@ -122,6 +122,101 @@ export function isFlagAvailableInEnvironment(
   return allowedEnvs.includes(env);
 }
 
+function parseOverrideState(val: string): 'on' | 'off' | null {
+  const lower = val.toLowerCase();
+  if (lower === 'on' || lower === 'true' || lower === '1') {
+    return 'on';
+  }
+  if (lower === 'off' || lower === 'false' || lower === '0') {
+    return 'off';
+  }
+  return null;
+}
+
+/**
+ * Checks URL parameters and sessionStorage for developer feature flag overrides.
+ * Format examples:
+ * - ?ff=android-health-metrics:on
+ * - ?ff=fleet-console:android-health-metrics:on
+ * - ?ff:android-health-metrics=on
+ */
+export function getFeatureFlagUrlOverride(
+  flagOrConfig: FeatureFlag | FeatureFlagConfig,
+): 'on' | 'off' | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const config = 'config' in flagOrConfig ? flagOrConfig.config : flagOrConfig;
+  const fullKey = `${config.namespace}:${config.name}`;
+  const shortName = config.name;
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+
+    // 1. Check ?ff:key=on/off
+    const keyParam =
+      params.get(`ff:${fullKey}`) || params.get(`ff:${shortName}`);
+    if (keyParam) {
+      const status = parseOverrideState(keyParam);
+      if (status) {
+        try {
+          window.sessionStorage.setItem(`ff:${fullKey}`, status);
+        } catch {
+          // Ignore sessionStorage write errors
+        }
+        return status;
+      }
+    }
+
+    // 2. Check ?ff=key:state
+    const ffParams = params.getAll('ff');
+    for (const val of ffParams) {
+      const parts = val.split(':');
+      if (parts.length === 2) {
+        const [name, state] = parts;
+        if (name === fullKey || name === shortName) {
+          const status = parseOverrideState(state);
+          if (status) {
+            try {
+              window.sessionStorage.setItem(`ff:${fullKey}`, status);
+            } catch {
+              // Ignore sessionStorage write errors
+            }
+            return status;
+          }
+        }
+      } else if (parts.length === 3) {
+        const [ns, name, state] = parts;
+        if (`${ns}:${name}` === fullKey) {
+          const status = parseOverrideState(state);
+          if (status) {
+            try {
+              window.sessionStorage.setItem(`ff:${fullKey}`, status);
+            } catch {
+              // Ignore sessionStorage write errors
+            }
+            return status;
+          }
+        }
+      }
+    }
+  } catch {
+    // Ignore URL parsing issues
+  }
+
+  // 3. Fallback to persisted session override
+  try {
+    const sessionVal = window.sessionStorage.getItem(`ff:${fullKey}`);
+    if (sessionVal === 'on' || sessionVal === 'off') {
+      return sessionVal;
+    }
+  } catch {
+    // Ignore sessionStorage read errors
+  }
+
+  return null;
+}
+
 // DO NOT export this symbol as it is used to seal
 // the FeatureFlag interface creation to the `createFeatureFlag` function.
 const ConfigSymbol = Symbol('flags_config');
@@ -269,6 +364,12 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
     if (!isAvailableInEnv) {
       return false;
     }
+    const urlOverride = getFeatureFlagUrlOverride(featureFlagConfig);
+    if (urlOverride === 'on') {
+      return true;
+    } else if (urlOverride === 'off') {
+      return false;
+    }
     if (overrideValue) {
       if (overrideValue === 'on') {
         return true;
@@ -348,6 +449,13 @@ export function getFeatureFlagValue(
   env: FeatureEnvironment = getCurrentEnvironment(),
 ): boolean {
   if (!isFlagAvailableInEnvironment(featureFlag, env)) {
+    return false;
+  }
+
+  const urlOverride = getFeatureFlagUrlOverride(featureFlag);
+  if (urlOverride === 'on') {
+    return true;
+  } else if (urlOverride === 'off') {
     return false;
   }
 

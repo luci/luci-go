@@ -239,6 +239,35 @@ describe('Feature flags', () => {
     expect(getFeatureFlagValue(flag50)).toBe(false);
   });
 
+  it('should evaluate URL parameter feature flag overrides and persist to sessionStorage', () => {
+    const flag = createSampleFlag(0);
+    window.history.pushState({}, '', '/ui/fleet?ff=flagKey:test-flag:on');
+
+    expect(getFeatureFlagValue(flag)).toBe(true);
+    expect(sessionStorage.getItem('ff:flagKey:test-flag')).toBe('on');
+
+    window.history.pushState({}, '', '/');
+    sessionStorage.clear();
+  });
+
+  it('should prioritize URL parameter overrides over local settings in localStorage', () => {
+    const flag = createSampleFlag(100);
+    localStorage.setItem('featureFlag:flagKey:test-flag', 'on');
+    window.history.pushState({}, '', '/ui/fleet?ff=test-flag:off');
+
+    expect(getFeatureFlagValue(flag)).toBe(false);
+
+    window.history.pushState({}, '', '/');
+    sessionStorage.clear();
+  });
+
+  it('should respect explicit user opt-out in localStorage during 100% rollouts', () => {
+    const flag = createSampleFlag(100);
+    localStorage.setItem('featureFlag:flagKey:test-flag', 'off');
+
+    expect(getFeatureFlagValue(flag)).toBe(false);
+  });
+
   it('should safely handle localStorage access exceptions', () => {
     const flag = createSampleFlag(100);
     jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {

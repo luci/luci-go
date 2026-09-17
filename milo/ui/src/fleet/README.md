@@ -150,3 +150,16 @@ For guidance on how to write new CUJs, see [README.md](./docs/cuj/README.md).
 
 ## Sandbox page
 - **Sandbox Page:** `https://ci.chromium.org/ui/fleet/labs/sandbox` for development and experimentation.
+
+## Feature Flags
+
+Fleet Console feature flags can be overridden by developers via URL parameters for testing and demoing unreleased features.
+
+### Developer URL Overrides
+You can override any feature flag state via URL query parameters:
+- `?ff=<flag_name>:<on|off>` (e.g. `?ff=android-health-metrics:on`)
+- `?ff=<namespace>:<flag_name>:<on|off>` (e.g. `?ff=fleet-console:android-health-metrics:on`)
+- `?ff:<flag_name>=<on|off>` (e.g. `?ff:android-health-metrics=on`)
+
+URL parameter overrides take precedence over `localStorage` settings and environment percentage rollouts, and persist automatically across page navigation for your current browser session via `sessionStorage`.
+

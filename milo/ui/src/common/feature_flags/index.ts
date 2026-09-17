@@ -18,6 +18,7 @@ export {
   getEnabledFeatureFlags,
   getFeatureFlagKey,
   getFeatureFlagLocalStorageKey,
+  getFeatureFlagUrlOverride,
   getFeatureFlagValue,
   getFlagRolloutPercentage,
   isFlagAvailableInEnvironment,
