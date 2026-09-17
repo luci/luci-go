@@ -50,7 +50,14 @@ func TestValidateStage(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		assert.NoErr(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{}))
+		assert.NoErr(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			Swarming: &pb.SwarmingSettings{
+				BbagentPackage: &pb.SwarmingSettings_Package{
+					PackageName: "bbagent/${platform}",
+					Version:     "bbagent-version",
+				},
+			},
+		}))
 
 		t.Run("with template_build_id", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{

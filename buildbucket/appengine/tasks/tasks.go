@@ -55,17 +55,6 @@ func init() {
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "cancel-swarming-task-go",
-		Kind:      tq.FollowsContext,
-		Prototype: (*taskdefs.CancelSwarmingTaskGo)(nil),
-		Queue:     "backend-go-default",
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			t := payload.(*taskdefs.CancelSwarmingTaskGo)
-			return HandleCancelSwarmingTask(ctx, t.Hostname, t.TaskId, t.Realm)
-		},
-	})
-
-	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "finalize-resultdb-go",
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.FinalizeResultDBGo)(nil),
@@ -130,17 +119,6 @@ func init() {
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "create-swarming-task-go",
-		Kind:      tq.Transactional,
-		Prototype: (*taskdefs.CreateSwarmingBuildTask)(nil),
-		Queue:     "swarming-build-create-go",
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			t := payload.(*taskdefs.CreateSwarmingBuildTask)
-			return SyncBuild(ctx, t.GetBuildId(), 0)
-		},
-	})
-
-	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "create-backend-task-go",
 		Kind:      tq.FollowsContext,
 		Prototype: (*taskdefs.CreateBackendBuildTask)(nil),
@@ -148,17 +126,6 @@ func init() {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CreateBackendBuildTask)
 			return CreateBackendTask(ctx, t.GetBuildId(), t.GetRequestId(), t.GetDequeueTime())
-		},
-	})
-
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "sync-swarming-task-go",
-		Kind:      tq.NonTransactional,
-		Prototype: (*taskdefs.SyncSwarmingBuildTask)(nil),
-		Queue:     "swarming-build-sync-go",
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			t := payload.(*taskdefs.SyncSwarmingBuildTask)
-			return SyncBuild(ctx, t.GetBuildId(), t.GetGeneration())
 		},
 	})
 
@@ -256,32 +223,6 @@ func CancelBackendTask(ctx context.Context, task *taskdefs.CancelBackendTask) er
 	})
 }
 
-// CancelSwarmingTask enqueues a task queue task to cancel the given Swarming
-// task.
-func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTaskGo) error {
-	switch {
-	case task.GetHostname() == "":
-		return errors.New("hostname is required")
-	case task.TaskId == "":
-		return errors.New("task_id is required")
-	}
-	return tq.AddTask(ctx, &tq.Task{
-		Payload: task,
-	})
-}
-
-// CreateSwarmingBuildTask enqueues a Cloud Tasks task to create a Swarming task
-// from the given build.
-func CreateSwarmingBuildTask(ctx context.Context, task *taskdefs.CreateSwarmingBuildTask) error {
-	if task.GetBuildId() == 0 {
-		return errors.New("build_id is required")
-	}
-	return tq.AddTask(ctx, &tq.Task{
-		Title:   fmt.Sprintf("create-swarming-task-%d", task.BuildId),
-		Payload: task,
-	})
-}
-
 // CreateBackendBuildTask enqueues a Cloud Tasks task to create a backend task
 // from the given build.
 func CreateBackendBuildTask(ctx context.Context, task *taskdefs.CreateBackendBuildTask) error {
@@ -297,23 +238,6 @@ func createBackendBuildTaskWithDedupKey(ctx context.Context, task *taskdefs.Crea
 		Title:            fmt.Sprintf("create-backend-task-%d", task.BuildId),
 		Payload:          task,
 		DeduplicationKey: dedupKey,
-	})
-}
-
-// SyncSwarmingBuildTask enqueues a Cloud Tasks task to sync the Swarming task
-// with the given build.
-func SyncSwarmingBuildTask(ctx context.Context, task *taskdefs.SyncSwarmingBuildTask, delay time.Duration) error {
-	switch {
-	case task.GetBuildId() == 0:
-		return errors.New("build_id is required")
-	case task.GetGeneration() == 0:
-		return errors.New("generation should be larger than 0")
-	}
-	return tq.AddTask(ctx, &tq.Task{
-		Title:            fmt.Sprintf("sync-swarming-task-%d", task.BuildId),
-		Payload:          task,
-		Delay:            delay,
-		DeduplicationKey: fmt.Sprintf("%d-%d", task.BuildId, task.Generation),
 	})
 }
 

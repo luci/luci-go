@@ -280,12 +280,6 @@ func main() {
 				AudienceCheck: openid.AudienceMatchesHost,
 			}),
 		)
-		// swarming-go-pubsub@ is a part of the PubSub Push subscription config.
-		swarmingPusherID := identity.Identity(fmt.Sprintf("user:swarming-go-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
-		srv.Routes.POST("/push-handlers/swarming-go/notify", oidcMW, func(ctx *router.Context) {
-			handlePubSubMessage(ctx, swarmingPusherID, tasks.SubNotify)
-		})
-
 		// task-backend-update-task-push@ is a part of the PubSub Push subscription config.
 		taskBackendPusherID := identity.Identity(fmt.Sprintf("user:task-backend-update-task-push@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
 		srv.Routes.POST("/internal/pubsub/backend/update-build-task", oidcMW, func(ctx *router.Context) {

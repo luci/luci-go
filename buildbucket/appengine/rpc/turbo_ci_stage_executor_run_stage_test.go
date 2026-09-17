@@ -77,6 +77,10 @@ func TestRunStage(t *testing.T) {
 		assert.NoErr(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
 			Swarming: &pb.SwarmingSettings{
 				MiloHostname: "milo.com",
+				BbagentPackage: &pb.SwarmingSettings_Package{
+					PackageName: "bbagent/${platform}",
+					Version:     "bbagent-version",
+				},
 			},
 		}))
 

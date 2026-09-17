@@ -473,8 +473,8 @@ func experimentsMatch(experimentSet stringset.Set, includeOnExperiment, omitOnEx
 
 // setDimensions computes the dimensions from the given request and builder
 // config, setting them in the proto. Mutates the given *pb.Build.
-// build.Infra.Swarming must be set (see setInfra).
-func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build, isTaskBackend bool) {
+// build.Infra.Backend must be set (see setInfra).
+func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build) {
 	// Requested dimensions override dimensions specified in the builder config by wiping out all
 	// same-key dimensions (regardless of expiration time) in the builder config.
 	//
@@ -553,11 +553,7 @@ func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *p
 		taskDims = append(taskDims, d...)
 	}
 	sortRequestedDimension(taskDims)
-	if isTaskBackend {
-		build.Infra.Backend.TaskDimensions = taskDims
-		return
-	}
-	build.Infra.Swarming.TaskDimensions = taskDims
+	build.Infra.Backend.TaskDimensions = taskDims
 }
 
 func sortRequestedDimension(dims []*pb.RequestedDimension) {
@@ -736,24 +732,8 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 }
 
 // defBuilderCacheTimeout is the default value for WaitForWarmCache in the
-// pb.BuildInfra_Swarming_CacheEntry whose Name is "builder" (see setInfra).
+// builder cache entry.
 var defBuilderCacheTimeout = durationpb.New(4 * time.Minute)
-
-// commonCacheToSwarmingCache returns the equivalent
-// []*pb.BuildInfra_Swarming_CacheEntry for the given []*pb.CacheEntry.
-func commonCacheToSwarmingCache(cache []*pb.CacheEntry) []*pb.BuildInfra_Swarming_CacheEntry {
-	var swarmingCache []*pb.BuildInfra_Swarming_CacheEntry
-	for _, c := range cache {
-		cacheEntry := &pb.BuildInfra_Swarming_CacheEntry{
-			EnvVar:           c.GetEnvVar(),
-			Name:             c.GetName(),
-			Path:             c.GetPath(),
-			WaitForWarmCache: c.GetWaitForWarmCache(),
-		}
-		swarmingCache = append(swarmingCache, cacheEntry)
-	}
-	return swarmingCache
-}
 
 // builderCacheToCommonCache returns the equivalent
 // *pb.CacheEntry for the given *pb.BuilderConfig_CacheEntry.
@@ -813,9 +793,40 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 	}
 }
 
-func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build, globalCfg *pb.SettingsCfg) {
+func SetInfraBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build, globalCfg *pb.SettingsCfg) error {
 	experiments := stringset.NewFromSlice(build.GetInput().GetExperiments()...)
-	// constructing common TaskBackend/Swarming task fields
+
+	// Need to configure build.Infra for a backend.
+	backendAltExpIsTrue := experiments.Has(bb.ExperimentBackendAlt)
+	var backendCfg *pb.BuilderConfig_Backend
+	switch {
+	case backendAltExpIsTrue && cfg.GetBackendAlt() != nil:
+		backendCfg = cfg.GetBackendAlt()
+	case cfg.GetBackend() != nil:
+		backendCfg = cfg.GetBackend()
+	default:
+		backendCfg = deriveBackendCfgFromSwarming(cfg, globalCfg)
+		if backendCfg == nil {
+			return appstatus.BadRequest(errors.Fmt("swarming_host %q is not in global config swarming_backends", cfg.GetSwarmingHost()))
+		}
+	}
+
+	config := &structpb.Struct{}
+	if backendCfg.GetConfigJson() != "" { // bypass empty config_json
+		err := json.Unmarshal([]byte(backendCfg.ConfigJson), config)
+		if err != nil {
+			logging.Warningf(ctx, err.Error())
+		}
+	}
+	if config.GetFields() == nil {
+		config.Fields = make(map[string]*structpb.Value)
+	}
+
+	if config.Fields["service_account"].GetStringValue() == "" && cfg.GetServiceAccount() != "" {
+		config.Fields["service_account"] = structpb.NewStringValue(cfg.GetServiceAccount())
+	}
+
+	// constructing common TaskBackend task fields
 	priority := int32(cfg.GetPriority())
 	if priority == 0 {
 		priority = 30
@@ -828,7 +839,21 @@ func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg
 	if experiments.Has(bb.ExperimentNonProduction) && req.GetPriority() == 0 {
 		priority = 255
 	}
-	taskServiceAccount := cfg.GetServiceAccount()
+
+	// If request has a priority, use that
+	// else if backend config_json did not have a priority
+	// we use the builder one (or value 30 if builder was not set)
+	if config.Fields["priority"].GetNumberValue() == 0 || req.GetPriority() > 0 {
+		config.Fields["priority"] = structpb.NewNumberValue(float64(priority))
+	}
+	hostname, err := clients.GetBackendHost(backendCfg.GetTarget(), globalCfg)
+	if err != nil {
+		logging.Warningf(ctx, err.Error())
+	}
+
+	if build.WaitForCapacity {
+		config.Fields["wait_for_capacity"] = structpb.NewBoolValue(true)
+	}
 
 	globalCaches := globalCfg.GetSwarming().GetGlobalCaches()
 	taskCaches := make([]*pb.CacheEntry, len(cfg.GetCaches()), len(cfg.GetCaches())+len(globalCaches))
@@ -858,51 +883,29 @@ func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg
 	sort.Slice(taskCaches, func(i, j int) bool {
 		return taskCaches[i].Path < taskCaches[j].Path
 	})
-	// Need to configure build.Infra for a backend or swarming.
-	isTaskBackend := false
-	backendAltExpIsTrue := experiments.Has(bb.ExperimentBackendAlt)
-	switch {
-	case backendAltExpIsTrue && (cfg.GetBackendAlt() != nil || cfg.GetBackend() != nil):
-		cfgToPass := cfg.GetBackend()
-		if cfg.GetBackendAlt() != nil {
-			cfgToPass = cfg.BackendAlt
-		}
-		setInfraBackend(ctx, globalCfg, build, cfgToPass, taskCaches, taskServiceAccount, priority, req.GetPriority())
-		isTaskBackend = true
-	case backendAltExpIsTrue:
-		// Derive backend settings using swarming info.
-		// This is a temporary solution for raw swarming -> task backend migration,
-		// which allows Buildbucket to do the migration behind the scene without
-		// any change on builder configs.
-		// TODO(crbug.com/1448926): Remove this after the migration is completed and
-		// all builder configs are updated with backend/backend_alt configs.
-		derivedBackendCfg := deriveBackendCfgFromSwarming(cfg, globalCfg)
-		if derivedBackendCfg != nil {
-			setInfraBackend(ctx, globalCfg, build, derivedBackendCfg, taskCaches, taskServiceAccount, priority, req.GetPriority())
-			isTaskBackend = true
-		}
-	}
-	if !isTaskBackend {
-		build.Infra.Swarming = &pb.BuildInfra_Swarming{
-			Caches:             commonCacheToSwarmingCache(taskCaches),
-			Hostname:           cfg.GetSwarmingHost(),
-			ParentRunId:        req.GetSwarming().GetParentRunId(),
-			Priority:           priority,
-			TaskServiceAccount: taskServiceAccount,
-		}
+
+	for _, c := range taskCaches {
+		c.Path = fmt.Sprintf("%s/%s", build.Infra.Bbagent.CacheDir, c.Path)
 	}
 
-	setDimensions(req, cfg, build, isTaskBackend)
+	build.Infra.Backend = &pb.BuildInfra_Backend{
+		Caches: taskCaches,
+		Config: config,
+		Task: &pb.Task{
+			Id: &pb.TaskID{
+				Target: backendCfg.GetTarget(),
+			},
+			UpdateId: 0,
+		},
+		Hostname: hostname,
+	}
+
+	setDimensions(req, cfg, build)
+	return nil
 }
 
 func deriveBackendCfgFromSwarming(cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg) *pb.BuilderConfig_Backend {
-	var target string
-	for host, backend := range globalCfg.SwarmingBackends {
-		if host == cfg.GetSwarmingHost() {
-			target = backend
-			break
-		}
-	}
+	target := globalCfg.GetSwarmingBackends()[cfg.GetSwarmingHost()]
 	if target == "" {
 		return nil
 	}
@@ -1093,8 +1096,10 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setTags(req, b, pRunID)
 	setTimeouts(req, cfg, b)
 	setExperiments(ctx, req, cfg, globalCfg, b, params) // Requires setExecutable, setInfra, setInput.
-	setSwarmingOrBackend(ctx, req, cfg, b, globalCfg)   // Requires setExecutable, setInfra, setInput, setExperiments.
-	if err := setInfraAgent(b, globalCfg); err != nil { // Requires setExecutable, setInfra, setExperiments, setSwarmingOrBackend.
+	if err = SetInfraBackend(ctx, req, cfg, b, globalCfg); err != nil { // Requires setExecutable, setInfra, setInput, setExperiments.
+		return nil, err
+	}
+	if err := setInfraAgent(b, globalCfg); err != nil { // Requires setExecutable, setInfra, setExperiments, SetInfraBackend.
 		// TODO(crbug.com/1266060) bubble up the error after TaskBackend workflow is ready.
 		// The current ScheduleBuild doesn't need this info. Swallow it to not interrupt the normal workflow.
 		logging.Warningf(ctx, "Failed to set build.Infra.Buildbucket.Agent for build %d: %s", b.Id, err)
@@ -1109,7 +1114,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 // setInfraAgent populate the agent info from the given settings.
 // Mutates the given *pb.Build.
 // The build.Builder, build.Canary, build.Exe build.Infra.Buildbucket
-// and one of build.Infra.Swarming or build.Infra.Backend must be set.
+// and build.Infra.Backend must be set.
 func setInfraAgent(build *pb.Build, globalCfg *pb.SettingsCfg) error {
 	build.Infra.Buildbucket.Agent = &pb.BuildInfra_Buildbucket_Agent{}
 	experiments := stringset.NewFromSlice(build.GetInput().GetExperiments()...)
@@ -1291,53 +1296,6 @@ func setInfraBackendConfigAgent(b *pb.Build) {
 	b.Infra.Backend.Config.Fields["agent_binary_cipd_filename"] = structpb.NewStringValue("bbagent${EXECUTABLE_SUFFIX}")
 }
 
-func setInfraBackend(ctx context.Context, globalCfg *pb.SettingsCfg, build *pb.Build, backend *pb.BuilderConfig_Backend, taskCaches []*pb.CacheEntry, taskServiceAccount string, priority, reqPriority int32) {
-	config := &structpb.Struct{}
-	if backend.GetConfigJson() != "" { // bypass empty config_json
-		err := json.Unmarshal([]byte(backend.ConfigJson), config)
-		if err != nil {
-			logging.Warningf(ctx, err.Error())
-		}
-	}
-	if config.GetFields() == nil {
-		config.Fields = make(map[string]*structpb.Value)
-	}
-
-	if config.Fields["service_account"].GetStringValue() == "" && taskServiceAccount != "" {
-		config.Fields["service_account"] = structpb.NewStringValue(taskServiceAccount)
-	}
-
-	// If request has a priority, use that
-	// else if backend config_json did not have a priority
-	// we use the builder one (or value 30 if builder was not set)
-	if config.Fields["priority"].GetNumberValue() == 0 || reqPriority > 0 {
-		config.Fields["priority"] = structpb.NewNumberValue(float64(priority))
-	}
-	hostname, err := clients.GetBackendHost(backend.GetTarget(), globalCfg)
-	if err != nil {
-		logging.Warningf(ctx, err.Error())
-	}
-
-	if build.WaitForCapacity {
-		config.Fields["wait_for_capacity"] = structpb.NewBoolValue(true)
-	}
-
-	for _, c := range taskCaches {
-		c.Path = fmt.Sprintf("%s/%s", build.Infra.Bbagent.CacheDir, c.Path)
-	}
-
-	build.Infra.Backend = &pb.BuildInfra_Backend{
-		Caches: taskCaches,
-		Config: config,
-		Task: &pb.Task{
-			Id: &pb.TaskID{
-				Target: backend.GetTarget(),
-			},
-			UpdateId: 0,
-		},
-		Hostname: hostname,
-	}
-}
 
 // setExperimentsFromProto sets experiments in the model (see model/build.go).
 // build.Proto.Input.Experiments and
@@ -1745,7 +1703,7 @@ func extractCipdVersion(p *pb.SwarmingSettings_Package, b *pb.Build) string {
 }
 
 // setCipdPackagesCache sets the named cache for bbagent downloaded cipd packages.
-// One of build.Infra.Swarming and build.Infra.Backend must be set.
+// build.Infra.Backend must be set.
 func setCipdPackagesCache(build *pb.Build) {
 	sa := taskServiceAccount(build.Infra)
 	build.Infra.Buildbucket.Agent.CipdPackagesCache = &pb.CacheEntry{

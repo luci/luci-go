@@ -72,12 +72,18 @@ func TestSynthesizeBuild(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 
 		assert.Loosely(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			Backends: []*pb.BackendSetting{
+				{
+					Target:   "swarming://host",
+					Hostname: "host",
+				},
+			},
 			Resultdb: &pb.ResultDBSettings{
 				Hostname: "rdbHost",
 			},
 			Swarming: &pb.SwarmingSettings{
 				BbagentPackage: &pb.SwarmingSettings_Package{
-					PackageName: "bbagent",
+					PackageName: "bbagent/${platform}",
 					Version:     "bbagent-version",
 				},
 				KitchenPackage: &pb.SwarmingSettings_Package{
@@ -201,7 +207,10 @@ func TestSynthesizeBuild(t *testing.T) {
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
 				Config: &pb.BuilderConfig{
-					Name:           "builder",
+					Name: "builder",
+					Backend: &pb.BuilderConfig_Backend{
+						Target: "swarming://host",
+					},
 					ServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
 					Dimensions:     []string{"pool:pool1"},
 					Properties:     `{"a":"b","b":"b"}`,
@@ -280,6 +289,14 @@ func TestSynthesizeBuild(t *testing.T) {
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
+								Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+									DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+										Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+											Package: "bbagent/${platform}",
+											Version: "bbagent-version",
+										},
+									},
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -288,18 +305,32 @@ func TestSynthesizeBuild(t *testing.T) {
 						Resultdb: &pb.BuildInfra_ResultDB{
 							Hostname: "rdbHost",
 						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						Backend: &pb.BuildInfra_Backend{
+							Caches: []*pb.CacheEntry{
 								{
 									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
+									Path: "cache/builder",
 									WaitForWarmCache: &durationpb.Duration{
 										Seconds: 240,
 									},
 								},
 							},
-							Priority:           30,
-							TaskServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
+							Config: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"agent_binary_cipd_filename": structpb.NewStringValue("bbagent${EXECUTABLE_SUFFIX}"),
+									"agent_binary_cipd_pkg":      structpb.NewStringValue("bbagent/${platform}"),
+									"agent_binary_cipd_server":   structpb.NewStringValue("https:"),
+									"agent_binary_cipd_vers":     structpb.NewStringValue("bbagent-version"),
+									"priority":                   structpb.NewNumberValue(30),
+									"service_account":            structpb.NewStringValue("sa@chops-service-accounts.iam.gserviceaccount.com"),
+								},
+							},
+							Hostname: "host",
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://host",
+								},
+							},
 							TaskDimensions: []*pb.RequestedDimension{
 								{
 									Key:   "pool",
@@ -392,6 +423,14 @@ func TestSynthesizeBuild(t *testing.T) {
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
+								Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+									DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+										Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+											Package: "bbagent/${platform}",
+											Version: "bbagent-version",
+										},
+									},
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -400,18 +439,32 @@ func TestSynthesizeBuild(t *testing.T) {
 						Resultdb: &pb.BuildInfra_ResultDB{
 							Hostname: "rdbHost",
 						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						Backend: &pb.BuildInfra_Backend{
+							Caches: []*pb.CacheEntry{
 								{
 									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
+									Path: "cache/builder",
 									WaitForWarmCache: &durationpb.Duration{
 										Seconds: 240,
 									},
 								},
 							},
-							Priority:           30,
-							TaskServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
+							Config: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"agent_binary_cipd_filename": structpb.NewStringValue("bbagent${EXECUTABLE_SUFFIX}"),
+									"agent_binary_cipd_pkg":      structpb.NewStringValue("bbagent/${platform}"),
+									"agent_binary_cipd_server":   structpb.NewStringValue("https:"),
+									"agent_binary_cipd_vers":     structpb.NewStringValue("bbagent-version"),
+									"priority":                   structpb.NewNumberValue(30),
+									"service_account":            structpb.NewStringValue("shadow@chops-service-accounts.iam.gserviceaccount.com"),
+								},
+							},
+							Hostname: "host",
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://host",
+								},
+							},
 							TaskDimensions: []*pb.RequestedDimension{
 								{
 									Key:   "pool",
@@ -525,6 +578,14 @@ func TestSynthesizeBuild(t *testing.T) {
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 								},
+								Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+									DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+										Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+											Package: "bbagent/${platform}",
+											Version: "bbagent-version",
+										},
+									},
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -533,18 +594,32 @@ func TestSynthesizeBuild(t *testing.T) {
 						Resultdb: &pb.BuildInfra_ResultDB{
 							Hostname: "rdbHost",
 						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						Backend: &pb.BuildInfra_Backend{
+							Caches: []*pb.CacheEntry{
 								{
 									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
+									Path: "cache/builder",
 									WaitForWarmCache: &durationpb.Duration{
 										Seconds: 240,
 									},
 								},
 							},
-							Priority:           30,
-							TaskServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
+							Config: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"agent_binary_cipd_filename": structpb.NewStringValue("bbagent${EXECUTABLE_SUFFIX}"),
+									"agent_binary_cipd_pkg":      structpb.NewStringValue("bbagent/${platform}"),
+									"agent_binary_cipd_server":   structpb.NewStringValue("https:"),
+									"agent_binary_cipd_vers":     structpb.NewStringValue("bbagent-version"),
+									"priority":                   structpb.NewNumberValue(30),
+									"service_account":            structpb.NewStringValue("shadow@chops-service-accounts.iam.gserviceaccount.com"),
+								},
+							},
+							Hostname: "host",
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://host",
+								},
+							},
 							TaskDimensions: []*pb.RequestedDimension{
 								{
 									Key:   "pool",

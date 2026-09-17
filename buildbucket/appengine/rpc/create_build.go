@@ -811,15 +811,8 @@ func createBuilds(ctx context.Context, builds []*buildToCreate, bldrsMCB strings
 						}); err != nil {
 							return errors.Fmt("failed to enqueue CreateBackendTask: %w", err)
 						}
-					case infra.GetSwarming().GetHostname() == "":
-						return errors.New("failed to create build with missing backend info and swarming host")
 					default:
-						// Otherwise, create a swarming task.
-						if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
-							BuildId: b.ID,
-						}); err != nil {
-							return errors.Fmt("failed to enqueue CreateSwarmingBuildTask: %d: %w", b.ID, err)
-						}
+						return errors.New("failed to create build with missing backend info")
 					}
 
 					if err := tasks.NotifyPubSub(ctx, b); err != nil {

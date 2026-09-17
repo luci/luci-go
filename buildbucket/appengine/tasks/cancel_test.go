@@ -143,62 +143,6 @@ func TestCancelBuild(t *testing.T) {
 			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 		})
 
-		t.Run("swarming task cancellation", func(t *ftt.Test) {
-			assert.Loosely(t, datastore.Put(ctx, &model.Build{
-				Proto: &pb.Build{
-					Id: 1,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				},
-			}), should.BeNil)
-			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
-				Build: datastore.MakeKey(ctx, "Build", 1),
-				Proto: &pb.BuildInfra{
-					Swarming: &pb.BuildInfra_Swarming{
-						Hostname: "example.com",
-						TaskId:   "id",
-					},
-				},
-			}), should.BeNil)
-			assert.Loosely(t, datastore.Put(ctx, &model.BuildStatus{
-				Build:  datastore.MakeKey(ctx, "Build", 1),
-				Status: pb.Status_STARTED,
-			}), should.BeNil)
-			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
-				ID:     "builder",
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				Config: &pb.BuilderConfig{
-					MaxConcurrentBuilds: 2,
-				},
-			}), should.BeNil)
-			bld, err := Cancel(ctx, 1)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
-				Id: 1,
-				Builder: &pb.BuilderID{
-					Project: "project",
-					Bucket:  "bucket",
-					Builder: "builder",
-				},
-				UpdateTime: timestamppb.New(now),
-				EndTime:    timestamppb.New(now),
-				Status:     pb.Status_CANCELED,
-			}))
-			// cancel-swarming-task-go
-			// export-bigquery
-			// notify-pubsub-go-proxy
-			// pop-pending-builds
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
-			bs := &model.BuildStatus{
-				Build: datastore.MakeKey(ctx, "Build", 1),
-			}
-			assert.Loosely(t, datastore.Get(ctx, bs), should.BeNil)
-			assert.Loosely(t, bs.Status, should.Equal(pb.Status_CANCELED))
-		})
-
 		t.Run("backend task cancellation", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{

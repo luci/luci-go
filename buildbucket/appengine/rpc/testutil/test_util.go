@@ -51,8 +51,8 @@ func PutBuilder(ctx context.Context, project, bucket, builder string, mut ...Bui
 		Parent: model.BucketKey(ctx, project, bucket),
 		ID:     builder,
 		Config: &pb.BuilderConfig{
-			Name:         builder,
-			SwarmingHost: "host",
+			Name:    builder,
+			Backend: &pb.BuilderConfig_Backend{Target: "swarming://host"},
 		},
 	}
 

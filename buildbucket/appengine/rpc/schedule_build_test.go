@@ -1293,12 +1293,12 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				b := &pb.Build{
 					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
+						Backend: &pb.BuildInfra_Backend{},
 					},
 				}
 
-				setDimensions(nil, cfg, b, false)
-				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{}))
+				setDimensions(nil, cfg, b)
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{}))
 			})
 
 			t.Run("simple", func(t *ftt.Test) {
@@ -1309,12 +1309,12 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				b := &pb.Build{
 					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
+						Backend: &pb.BuildInfra_Backend{},
 					},
 				}
 
-				setDimensions(nil, cfg, b, false)
-				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
+				setDimensions(nil, cfg, b)
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Key:   "key",
@@ -1332,12 +1332,12 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				b := &pb.Build{
 					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
+						Backend: &pb.BuildInfra_Backend{},
 					},
 				}
 
-				setDimensions(nil, cfg, b, false)
-				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
+				setDimensions(nil, cfg, b)
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Expiration: &durationpb.Duration{
@@ -1369,13 +1369,13 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				b := &pb.Build{
 					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
+						Backend: &pb.BuildInfra_Backend{},
 					},
 				}
 
-				setDimensions(nil, cfg, b, false)
+				setDimensions(nil, cfg, b)
 				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
-					Swarming: &pb.BuildInfra_Swarming{
+					Backend: &pb.BuildInfra_Backend{
 						TaskDimensions: []*pb.RequestedDimension{
 							{
 								Key:   "key",
@@ -1434,12 +1434,12 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				b := &pb.Build{
 					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
+						Backend: &pb.BuildInfra_Backend{},
 					},
 				}
 
-				setDimensions(nil, cfg, b, false)
-				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
+				setDimensions(nil, cfg, b)
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Key:   "builder",
@@ -1459,12 +1459,12 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				b := &pb.Build{
 					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
+						Backend: &pb.BuildInfra_Backend{},
 					},
 				}
 
-				setDimensions(nil, cfg, b, false)
-				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
+				setDimensions(nil, cfg, b)
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
 							Expiration: &durationpb.Duration{
@@ -1487,12 +1487,12 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				b := &pb.Build{
 					Infra: &pb.BuildInfra{
-						Swarming: &pb.BuildInfra_Swarming{},
+						Backend: &pb.BuildInfra_Backend{},
 					},
 				}
 
-				setDimensions(nil, cfg, b, false)
-				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{}))
+				setDimensions(nil, cfg, b)
+				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{}))
 			})
 		})
 
@@ -1510,12 +1510,12 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			b := &pb.Build{
 				Infra: &pb.BuildInfra{
-					Swarming: &pb.BuildInfra_Swarming{},
+					Backend: &pb.BuildInfra_Backend{},
 				},
 			}
 
-			setDimensions(req, nil, b, false)
-			assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
+			setDimensions(req, nil, b)
+			assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 				TaskDimensions: []*pb.RequestedDimension{
 					{
 						Expiration: &durationpb.Duration{
@@ -1565,12 +1565,12 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			b := &pb.Build{
 				Infra: &pb.BuildInfra{
-					Swarming: &pb.BuildInfra_Swarming{},
+					Backend: &pb.BuildInfra_Backend{},
 				},
 			}
 
-			setDimensions(req, cfg, b, false)
-			assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
+			setDimensions(req, cfg, b)
+			assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
 				TaskDimensions: []*pb.RequestedDimension{
 					{
 						Key:   "builder",
@@ -2450,7 +2450,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
-	ftt.Run("setSwarmingOrBackend", t, func(t *ftt.Test) {
+	ftt.Run("setBackend", t, func(t *ftt.Test) {
 		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(1)))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		t.Run("nil", func(t *ftt.Test) {
@@ -2476,34 +2476,10 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setSwarmingOrBackend(ctx, nil, nil, b, nil)
-			assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
-				Bbagent: &pb.BuildInfra_BBAgent{
-					CacheDir:    "cache",
-					PayloadPath: "kitchen-checkout",
-				},
-				Buildbucket: &pb.BuildInfra_Buildbucket{
-					Hostname: "app.appspot.com",
-				},
-				Logdog: &pb.BuildInfra_LogDog{
-					Hostname: "host",
-					Project:  "project",
-				},
-				Resultdb: &pb.BuildInfra_ResultDB{},
-				Swarming: &pb.BuildInfra_Swarming{
-					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-						{
-							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path: "builder",
-							WaitForWarmCache: &durationpb.Duration{
-								Seconds: 240,
-							},
-						},
-					},
-					Priority: 30,
-				},
-			}))
+			err := SetInfraBackend(ctx, nil, nil, b, nil)
+			assert.Loosely(t, err, should.ErrLike(`swarming_host "" is not in global config swarming_backends`))
 		})
+
 		t.Run("priority", func(t *ftt.Test) {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
@@ -2529,16 +2505,30 @@ func TestScheduleBuild(t *testing.T) {
 					Experiments: []string{},
 				},
 			}
+			s := &pb.SettingsCfg{
+				SwarmingBackends: map[string]string{
+					"host": "swarming://chromium-swarm",
+				},
+				Backends: []*pb.BackendSetting{
+					{
+						Target:   "swarming://chromium-swarm",
+						Hostname: "chromium-swarm.appspot.com",
+					},
+				},
+			}
+			cfg := &pb.BuilderConfig{
+				SwarmingHost: "host",
+			}
 			t.Run("default production", func(t *ftt.Test) {
-				setSwarmingOrBackend(ctx, nil, nil, b, nil)
-				assert.Loosely(t, b.Infra.Swarming.Priority, should.Equal(30))
+				assert.Loosely(t, SetInfraBackend(ctx, nil, cfg, b, s), should.BeNil)
+				assert.Loosely(t, b.Infra.Backend.Config.Fields["priority"].GetNumberValue(), should.Equal(float64(30)))
 				assert.Loosely(t, b.Input.Experimental, should.BeFalse)
 			})
 
 			t.Run("non-production", func(t *ftt.Test) {
 				b.Input.Experiments = append(b.Input.Experiments, bb.ExperimentNonProduction)
-				setSwarmingOrBackend(ctx, nil, nil, b, nil)
-				assert.Loosely(t, b.Infra.Swarming.Priority, should.Equal(255))
+				assert.Loosely(t, SetInfraBackend(ctx, nil, cfg, b, s), should.BeNil)
+				assert.Loosely(t, b.Infra.Backend.Config.Fields["priority"].GetNumberValue(), should.Equal(float64(255)))
 				assert.Loosely(t, b.Input.Experimental, should.BeFalse)
 			})
 
@@ -2547,17 +2537,58 @@ func TestScheduleBuild(t *testing.T) {
 				req := &pb.ScheduleBuildRequest{
 					Priority: 1,
 				}
-				setSwarmingOrBackend(ctx, req, nil, b, nil)
-				assert.Loosely(t, b.Infra.Swarming.Priority, should.Equal(1))
+				assert.Loosely(t, SetInfraBackend(ctx, req, cfg, b, s), should.BeNil)
+				assert.Loosely(t, b.Infra.Backend.Config.Fields["priority"].GetNumberValue(), should.Equal(float64(1)))
 			})
 		})
 
 		t.Run("swarming", func(t *ftt.Test) {
+			t.Run("unregistered host", func(t *ftt.Test) {
+				cfg := &pb.BuilderConfig{
+					Priority:       1,
+					ServiceAccount: "account",
+					SwarmingHost:   "unregistered-host",
+				}
+				b := &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							PayloadPath: "kitchen-checkout",
+							CacheDir:    "cache",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{},
+					},
+				}
+				err := SetInfraBackend(ctx, nil, cfg, b, nil)
+				assert.Loosely(t, err, should.ErrLike(`swarming_host "unregistered-host" is not in global config swarming_backends`))
+			})
+
 			t.Run("no dimensions", func(t *ftt.Test) {
 				cfg := &pb.BuilderConfig{
 					Priority:       1,
 					ServiceAccount: "account",
 					SwarmingHost:   "host",
+				}
+				s := &pb.SettingsCfg{
+					SwarmingBackends: map[string]string{
+						"host": "swarming://host",
+					},
+					Backends: []*pb.BackendSetting{
+						{
+							Target:   "swarming://host",
+							Hostname: "host",
+						},
+					},
 				}
 				b := &pb.Build{
 					Builder: &pb.BuilderID{
@@ -2580,37 +2611,46 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setSwarmingOrBackend(ctx, nil, cfg, b, nil)
-				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
-					Bbagent: &pb.BuildInfra_BBAgent{
-						PayloadPath: "kitchen-checkout",
-						CacheDir:    "cache",
+				assert.Loosely(t, SetInfraBackend(ctx, nil, cfg, b, s), should.BeNil)
+				expectedBackendConfig := &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"priority":        structpb.NewNumberValue(1),
+						"service_account": structpb.NewStringValue("account"),
 					},
-					Buildbucket: &pb.BuildInfra_Buildbucket{
-						Hostname: "app.appspot.com",
-					},
-					Logdog: &pb.BuildInfra_LogDog{
-						Project: "project",
-					},
-					Resultdb: &pb.BuildInfra_ResultDB{},
-					Swarming: &pb.BuildInfra_Swarming{
-						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-							{
-								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-								Path: "builder",
-								WaitForWarmCache: &durationpb.Duration{
-									Seconds: 240,
-								},
-							},
+				}
+				assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "cache/builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
-						Hostname:           "host",
-						Priority:           1,
-						TaskServiceAccount: "account",
+					},
+					Config:   expectedBackendConfig,
+					Hostname: "host",
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://host",
+						},
 					},
 				}))
 			})
 
 			t.Run("caches", func(t *ftt.Test) {
+				s := &pb.SettingsCfg{
+					SwarmingBackends: map[string]string{
+						"host": "swarming://host",
+					},
+					Backends: []*pb.BackendSetting{
+						{
+							Target:   "swarming://host",
+							Hostname: "host",
+						},
+					},
+				}
+				cfg := &pb.BuilderConfig{
+					SwarmingHost: "host",
+				}
 				t.Run("nil", func(t *ftt.Test) {
 					b := &pb.Build{
 						Builder: &pb.BuilderID{
@@ -2633,30 +2673,26 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setSwarmingOrBackend(ctx, nil, nil, b, nil)
-					assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
+					assert.Loosely(t, SetInfraBackend(ctx, nil, cfg, b, s), should.BeNil)
+					expectedConfig := &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"priority": structpb.NewNumberValue(30),
 						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{},
-						Swarming: &pb.BuildInfra_Swarming{
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
+					}
+					assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
+						Caches: []*pb.CacheEntry{
+							{
+								Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path:             "cache/builder",
+								WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 							},
-							Priority: 30,
+						},
+						Config:   expectedConfig,
+						Hostname: "host",
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Target: "swarming://host",
+							},
 						},
 					}))
 				})
@@ -2682,50 +2718,46 @@ func TestScheduleBuild(t *testing.T) {
 							Resultdb: &pb.BuildInfra_ResultDB{},
 						},
 					}
-					s := &pb.SettingsCfg{
-						Swarming: &pb.SwarmingSettings{
-							GlobalCaches: []*pb.BuilderConfig_CacheEntry{
-								{
-									Path: "cache",
-								},
+					sWithCaches := proto.Clone(s).(*pb.SettingsCfg)
+					sWithCaches.Swarming = &pb.SwarmingSettings{
+						GlobalCaches: []*pb.BuilderConfig_CacheEntry{
+							{
+								Path: "cache",
 							},
 						},
 					}
 
-					setSwarmingOrBackend(ctx, nil, nil, b, s)
-					assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
+					assert.Loosely(t, SetInfraBackend(ctx, nil, cfg, b, sWithCaches), should.BeNil)
+					expectedConfig := &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"priority": structpb.NewNumberValue(30),
 						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{},
-						Swarming: &pb.BuildInfra_Swarming{
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-								{
-									Name: "cache",
-									Path: "cache",
-								},
+					}
+					assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
+						Caches: []*pb.CacheEntry{
+							{
+								Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path:             "cache/builder",
+								WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 							},
-							Priority: 30,
+							{
+								Name: "cache",
+								Path: "cache/cache",
+							},
+						},
+						Config:   expectedConfig,
+						Hostname: "host",
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Target: "swarming://host",
+							},
 						},
 					}))
 				})
 
 				t.Run("config", func(t *ftt.Test) {
-					cfg := &pb.BuilderConfig{
+					cfgWithCaches := &pb.BuilderConfig{
+						SwarmingHost: "host",
 						Caches: []*pb.BuilderConfig_CacheEntry{
 							{
 								Path: "cache",
@@ -2753,40 +2785,37 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setSwarmingOrBackend(ctx, nil, cfg, b, nil)
-					assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
+					assert.Loosely(t, SetInfraBackend(ctx, nil, cfgWithCaches, b, s), should.BeNil)
+					expectedConfig := &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"priority": structpb.NewNumberValue(30),
 						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{},
-						Swarming: &pb.BuildInfra_Swarming{
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-								{
-									Name: "cache",
-									Path: "cache",
-								},
+					}
+					assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
+						Caches: []*pb.CacheEntry{
+							{
+								Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path:             "cache/builder",
+								WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 							},
-							Priority: 30,
+							{
+								Name: "cache",
+								Path: "cache/cache",
+							},
+						},
+						Config:   expectedConfig,
+						Hostname: "host",
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Target: "swarming://host",
+							},
 						},
 					}))
 				})
 
 				t.Run("config > global", func(t *ftt.Test) {
-					cfg := &pb.BuilderConfig{
+					cfgWithCaches := &pb.BuilderConfig{
+						SwarmingHost: "host",
 						Caches: []*pb.BuilderConfig_CacheEntry{
 							{
 								Name: "builder only name",
@@ -2826,133 +2855,72 @@ func TestScheduleBuild(t *testing.T) {
 							Resultdb: &pb.BuildInfra_ResultDB{},
 						},
 					}
-					s := &pb.SettingsCfg{
-						Swarming: &pb.SwarmingSettings{
-							GlobalCaches: []*pb.BuilderConfig_CacheEntry{
-								{
-									Name: "global only name",
-									Path: "global only path",
-								},
-								{
-									Name: "name",
-									Path: "global path",
-								},
-								{
-									Name: "global name",
-									Path: "path",
-								},
-								{
-									EnvVar: "global env",
-									Path:   "path",
-								},
+					sWithCaches := proto.Clone(s).(*pb.SettingsCfg)
+					sWithCaches.Swarming = &pb.SwarmingSettings{
+						GlobalCaches: []*pb.BuilderConfig_CacheEntry{
+							{
+								Name: "global only name",
+								Path: "global only path",
+							},
+							{
+								Name: "name",
+								Path: "global path",
+							},
+							{
+								Name: "global name",
+								Path: "path",
+							},
+							{
+								EnvVar: "global env",
+								Path:   "path",
 							},
 						},
 					}
 
-					setSwarmingOrBackend(ctx, nil, cfg, b, s)
-					assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
+					assert.Loosely(t, SetInfraBackend(ctx, nil, cfgWithCaches, b, sWithCaches), should.BeNil)
+					expectedConfig := &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"priority": structpb.NewNumberValue(30),
 						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{},
-						Swarming: &pb.BuildInfra_Swarming{
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-								{
-									Name: "builder only name",
-									Path: "builder only path",
-								},
-								{
-									Name: "name",
-									Path: "builder path",
-								},
-								{
-									EnvVar: "builder env",
-									Name:   "env",
-									Path:   "env",
-								},
-								{
-									Name: "global only name",
-									Path: "global only path",
-								},
-								{
-									Name: "builder name",
-									Path: "path",
-								},
+					}
+					assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
+						Caches: []*pb.CacheEntry{
+							{
+								Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+								Path:             "cache/builder",
+								WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 							},
-							Priority: 30,
+							{
+								Name: "builder only name",
+								Path: "cache/builder only path",
+							},
+							{
+								Name: "name",
+								Path: "cache/builder path",
+							},
+							{
+								EnvVar: "builder env",
+								Name:   "env",
+								Path:   "cache/env",
+							},
+							{
+								Name: "global only name",
+								Path: "cache/global only path",
+							},
+							{
+								Name: "builder name",
+								Path: "cache/path",
+							},
+						},
+						Config:   expectedConfig,
+						Hostname: "host",
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Target: "swarming://host",
+							},
 						},
 					}))
 				})
-			})
-
-			t.Run("parent run id", func(t *ftt.Test) {
-				req := &pb.ScheduleBuildRequest{
-					Swarming: &pb.ScheduleBuildRequest_Swarming{
-						ParentRunId: "id",
-					},
-				}
-				b := &pb.Build{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							PayloadPath: "kitchen-checkout",
-							CacheDir:    "cache",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{},
-					},
-				}
-
-				setSwarmingOrBackend(ctx, req, nil, b, nil)
-				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
-					Bbagent: &pb.BuildInfra_BBAgent{
-						CacheDir:    "cache",
-						PayloadPath: "kitchen-checkout",
-					},
-					Buildbucket: &pb.BuildInfra_Buildbucket{
-						Hostname: "app.appspot.com",
-					},
-					Logdog: &pb.BuildInfra_LogDog{
-						Project: "project",
-					},
-					Resultdb: &pb.BuildInfra_ResultDB{},
-					Swarming: &pb.BuildInfra_Swarming{
-						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-							{
-								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-								Path: "builder",
-								WaitForWarmCache: &durationpb.Duration{
-									Seconds: 240,
-								},
-							},
-						},
-						ParentRunId: "id",
-						Priority:    30,
-					},
-				}))
 			})
 
 			t.Run("priority", func(t *ftt.Test) {
@@ -2979,33 +2947,23 @@ func TestScheduleBuild(t *testing.T) {
 						Resultdb: &pb.BuildInfra_ResultDB{},
 					},
 				}
-
-				setSwarmingOrBackend(ctx, req, nil, b, nil)
-				assert.Loosely(t, b.Infra, should.Resemble(&pb.BuildInfra{
-					Bbagent: &pb.BuildInfra_BBAgent{
-						CacheDir:    "cache",
-						PayloadPath: "kitchen-checkout",
+				s := &pb.SettingsCfg{
+					SwarmingBackends: map[string]string{
+						"host": "swarming://host",
 					},
-					Buildbucket: &pb.BuildInfra_Buildbucket{
-						Hostname: "app.appspot.com",
-					},
-					Logdog: &pb.BuildInfra_LogDog{
-						Project: "project",
-					},
-					Resultdb: &pb.BuildInfra_ResultDB{},
-					Swarming: &pb.BuildInfra_Swarming{
-						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-							{
-								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-								Path: "builder",
-								WaitForWarmCache: &durationpb.Duration{
-									Seconds: 240,
-								},
-							},
+					Backends: []*pb.BackendSetting{
+						{
+							Target:   "swarming://host",
+							Hostname: "host",
 						},
-						Priority: 1,
 					},
-				}))
+				}
+				cfg := &pb.BuilderConfig{
+					SwarmingHost: "host",
+				}
+
+				assert.Loosely(t, SetInfraBackend(ctx, req, cfg, b, s), should.BeNil)
+				assert.Loosely(t, b.Infra.Backend.Config.Fields["priority"].GetNumberValue(), should.Equal(float64(1)))
 			})
 		})
 
@@ -3050,13 +3008,13 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			// Need these to be set so that setSwarmingOrBackend can be set.
+			// Need these to be set so that setBackend can be set.
 			setExecutable(nil, bldrCfg, b)
 			assert.NoErr(t, setInput(ctx, nil, bldrCfg, b))
 			setExperiments(ctx, nil, bldrCfg, s, b, nil)
 
 			t.Run("use builder Priority and ServiceAccount", func(t *ftt.Test) {
-				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+				SetInfraBackend(ctx, nil, bldrCfg, b, s)
 
 				expectedBackendConfig := &structpb.Struct{}
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
@@ -3083,7 +3041,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			t.Run("use backend priority and ServiceAccount", func(t *ftt.Test) {
 				bldrCfg.Backend.ConfigJson = "{\"priority\": 2, \"service_account\": \"service_account\"}"
-				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+				SetInfraBackend(ctx, nil, bldrCfg, b, s)
 
 				expectedBackendConfig := &structpb.Struct{}
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
@@ -3110,7 +3068,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			t.Run("use user requested priority", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{Priority: 22}
-				setSwarmingOrBackend(ctx, req, bldrCfg, b, s)
+				SetInfraBackend(ctx, req, bldrCfg, b, s)
 
 				expectedBackendConfig := &structpb.Struct{}
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
@@ -3140,7 +3098,7 @@ func TestScheduleBuild(t *testing.T) {
 					Target: "swarming://chromium-swarm-alt",
 				}
 
-				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+				SetInfraBackend(ctx, nil, bldrCfg, b, s)
 
 				expectedBackendConfig := &structpb.Struct{}
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
@@ -3177,7 +3135,7 @@ func TestScheduleBuild(t *testing.T) {
 				s.SwarmingBackends = map[string]string{
 					"chromium-swarming.appspot.com": "swarming://chromium-swarm",
 				}
-				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+				SetInfraBackend(ctx, nil, bldrCfg, b, s)
 
 				expectedBackendConfig := &structpb.Struct{}
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
@@ -3203,7 +3161,7 @@ func TestScheduleBuild(t *testing.T) {
 				}))
 			})
 
-			t.Run("backend_alt exp is true but no swarming to backend mapping, so use swarming", func(t *ftt.Test) {
+			t.Run("backend_alt exp is true but no swarming to backend mapping, fails closed", func(t *ftt.Test) {
 				bldrCfg := &pb.BuilderConfig{
 					ServiceAccount: "account",
 					Priority:       200,
@@ -3212,52 +3170,18 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
-
-				expectedBackendConfig := &structpb.Struct{}
-				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
-				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
-				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
-
-				assert.Loosely(t, b.Infra.Backend, should.BeNil)
-				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
-					TaskServiceAccount: "account",
-					Priority:           200,
-					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-						{
-							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
-							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
-						},
-					},
-				}))
+				err := SetInfraBackend(ctx, nil, bldrCfg, b, s)
+				assert.Loosely(t, err, should.ErrLike(`swarming_host "" is not in global config swarming_backends`))
 			})
 
-			t.Run("swarming is used", func(t *ftt.Test) {
+			t.Run("no swarming to backend mapping fails closed", func(t *ftt.Test) {
 				bldrCfg := &pb.BuilderConfig{
 					ServiceAccount: "account",
 					Priority:       200,
 				}
 
-				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
-
-				expectedBackendConfig := &structpb.Struct{}
-				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
-				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
-				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
-
-				assert.Loosely(t, b.Infra.Backend, should.BeNil)
-				assert.Loosely(t, b.Infra.Swarming, should.Resemble(&pb.BuildInfra_Swarming{
-					TaskServiceAccount: "account",
-					Priority:           200,
-					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-						{
-							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
-							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
-						},
-					},
-				}))
+				err := SetInfraBackend(ctx, nil, bldrCfg, b, s)
+				assert.Loosely(t, err, should.ErrLike(`swarming_host "" is not in global config swarming_backends`))
 			})
 		})
 	})
@@ -4042,12 +3966,16 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		assert.Loosely(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			SwarmingBackends: map[string]string{
+				"host":                 "swarming://host",
+				"swarming.appspot.com": "swarming://swarming.appspot.com",
+			},
 			Resultdb: &pb.ResultDBSettings{
 				Hostname: "rdbHost",
 			},
 			Swarming: &pb.SwarmingSettings{
 				BbagentPackage: &pb.SwarmingSettings_Package{
-					PackageName: "bbagent",
+					PackageName: "bbagent/${platform}",
 					Version:     "bbagent-version",
 				},
 				KitchenPackage: &pb.SwarmingSettings_Package{
@@ -4311,9 +4239,7 @@ func TestScheduleBuild(t *testing.T) {
 					tasks := sch.Tasks()
 					assert.Loosely(t, tasks, should.HaveLength(2))
 					sortTasksByClassName(tasks)
-					assert.Loosely(t, tasks.Payloads()[0], should.Resemble(&taskdefs.CreateSwarmingBuildTask{
-						BuildId: 9021868963221667745,
-					}))
+					assert.Loosely(t, tasks.Payloads()[0].(*taskdefs.CreateBackendBuildTask).BuildId, should.Equal(9021868963221667745))
 					assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
 						BuildId: 9021868963221667745,
 						Project: "project",
@@ -4327,6 +4253,7 @@ func TestScheduleBuild(t *testing.T) {
 						Config: &pb.BuilderConfig{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
+							SwarmingHost: "host",
 						},
 					}), should.BeNil)
 
@@ -4360,6 +4287,14 @@ func TestScheduleBuild(t *testing.T) {
 									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 									},
+									Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+										DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+											Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+												Package: "bbagent/${platform}",
+												Version: "bbagent-version",
+											},
+										},
+									},
 								},
 								BuildNumber: true,
 							},
@@ -4369,17 +4304,30 @@ func TestScheduleBuild(t *testing.T) {
 							Resultdb: &pb.BuildInfra_ResultDB{
 								Hostname: "rdbHost",
 							},
-							Swarming: &pb.BuildInfra_Swarming{
-								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+							Backend: &pb.BuildInfra_Backend{
+								Caches: []*pb.CacheEntry{
 									{
 										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-										Path: "builder",
+										Path: "cache/builder",
 										WaitForWarmCache: &durationpb.Duration{
 											Seconds: 240,
 										},
 									},
 								},
-								Priority: 30,
+								Config: &structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"agent_binary_cipd_filename": structpb.NewStringValue("bbagent${EXECUTABLE_SUFFIX}"),
+										"agent_binary_cipd_pkg":      structpb.NewStringValue("bbagent/${platform}"),
+										"agent_binary_cipd_server":   structpb.NewStringValue("https:"),
+										"agent_binary_cipd_vers":     structpb.NewStringValue("bbagent-version"),
+										"priority":                   structpb.NewNumberValue(30),
+									},
+								},
+								Task: &pb.Task{
+									Id: &pb.TaskID{
+										Target: "swarming://host",
+									},
+								},
 							},
 						},
 						Exe:               &pb.Executable{Cmd: []string{"recipes"}},
@@ -4680,12 +4628,16 @@ func TestScheduleBuild(t *testing.T) {
 			),
 		})
 		globalCfg := &pb.SettingsCfg{
+			SwarmingBackends: map[string]string{
+				"host":                 "swarming://host",
+				"swarming.appspot.com": "swarming://swarming.appspot.com",
+			},
 			Resultdb: &pb.ResultDBSettings{
 				Hostname: "rdbHost",
 			},
 			Swarming: &pb.SwarmingSettings{
 				BbagentPackage: &pb.SwarmingSettings_Package{
-					PackageName: "bbagent",
+					PackageName: "bbagent/${platform}",
 					Version:     "bbagent-version",
 				},
 				KitchenPackage: &pb.SwarmingSettings_Package{
@@ -4859,12 +4811,16 @@ func TestScheduleBuild(t *testing.T) {
 
 		t.Run("one with custom metrics", func(t *ftt.Test) {
 			globalCfg := &pb.SettingsCfg{
+				SwarmingBackends: map[string]string{
+					"host":                 "swarming://host",
+					"swarming.appspot.com": "swarming://swarming.appspot.com",
+				},
 				Resultdb: &pb.ResultDBSettings{
 					Hostname: "rdbHost",
 				},
 				Swarming: &pb.SwarmingSettings{
 					BbagentPackage: &pb.SwarmingSettings_Package{
-						PackageName: "bbagent",
+						PackageName: "bbagent/${platform}",
 						Version:     "bbagent-version",
 					},
 					KitchenPackage: &pb.SwarmingSettings_Package{
@@ -5425,7 +5381,7 @@ func TestScheduleBuild(t *testing.T) {
 						sum += 2
 					case *taskdefs.PushPendingBuildTask:
 						sum += 4
-					case *taskdefs.CreateSwarmingBuildTask:
+					case *taskdefs.CreateBackendBuildTask:
 						sum += 8
 					default:
 						panic("invalid task payload")

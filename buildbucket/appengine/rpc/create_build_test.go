@@ -1094,6 +1094,35 @@ func TestCreateBuild(t *testing.T) {
 		}), should.BeNil)
 
 		req := validCreateBuildRequest()
+		req.Build.Infra.Swarming = nil
+		req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+			Task: &pb.Task{
+				Id: &pb.TaskID{
+					Target: "swarming://chromium-swarm",
+				},
+			},
+			TaskDimensions: []*pb.RequestedDimension{
+				{
+					Key:   "pool",
+					Value: "example.pool",
+				},
+			},
+			Config: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"priority":        structpb.NewNumberValue(25),
+					"service_account": structpb.NewStringValue("example@account.com"),
+				},
+			},
+			Caches: []*pb.CacheEntry{
+				{
+					Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+					Path: "builder",
+					WaitForWarmCache: &durationpb.Duration{
+						Seconds: 60,
+					},
+				},
+			},
+		}
 
 		t.Run("with parent", func(t *ftt.Test) {
 			t.Run("parent ended", func(t *ftt.Test) {

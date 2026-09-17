@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -230,6 +231,24 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 	}
 	taskReq.BackendConfig.Fields["tags"] = structpb.NewListValue(tagsList)
 	return taskReq, nil
+}
+
+func computeTags(ctx context.Context, build *model.Build) []string {
+	tags := []string{
+		"buildbucket_bucket:" + build.BucketID,
+		fmt.Sprintf("buildbucket_build_id:%d", build.ID),
+		fmt.Sprintf("buildbucket_hostname:%s", build.Proto.GetInfra().GetBuildbucket().GetHostname()),
+		"luci_project:" + build.Project,
+	}
+	if build.Canary {
+		tags = append(tags, "buildbucket_template_canary:1")
+	} else {
+		tags = append(tags, "buildbucket_template_canary:0")
+	}
+
+	tags = append(tags, build.Tags...)
+	sort.Strings(tags)
+	return tags
 }
 
 func createCipdDescribeBootstrapBundleRequest(infra *pb.BuildInfra) *repopb.DescribeBootstrapBundleRequest {

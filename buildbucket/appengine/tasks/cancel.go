@@ -208,15 +208,6 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 			return nil
 		}
 
-		if sw := inf.Proto.GetSwarming(); sw.GetHostname() != "" && sw.TaskId != "" {
-			if err := CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTaskGo{
-				Hostname: sw.Hostname,
-				TaskId:   sw.TaskId,
-				Realm:    bld.Realm(),
-			}); err != nil {
-				return errors.Fmt("failed to enqueue swarming task cancellation task: %d: %w", bld.ID, err)
-			}
-		}
 		if bk := inf.Proto.GetBackend(); bk.GetTask().GetId().GetId() != "" && bk.GetTask().GetId().GetTarget() != "" {
 			if err := CancelBackendTask(ctx, &taskdefs.CancelBackendTask{
 				Target:  bk.Task.Id.Target,
