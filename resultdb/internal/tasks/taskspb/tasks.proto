@@ -103,9 +103,11 @@ message PublishWorkUnitsTask {
 //
 // At most one task should be scheduled per root invocation to avoid duplicate
 // work unit in Pub/Sub messages.
-// Next id: 2
+// Next id: 3
 message PublishWorkUnitsCatchUpTask {
   string root_invocation_id = 1;
+  // The page token for paginating through work units.
+  string page_token = 2;
 }
 
 // PublishTestAggregations defines a task to publish a batch of test

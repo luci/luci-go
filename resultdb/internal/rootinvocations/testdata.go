@@ -259,6 +259,12 @@ func (b *Builder) WithStreamingExportState(state pb.RootInvocation_StreamingExpo
 	return b
 }
 
+// WithMetadataFinalizedTime sets the metadata finalized time.
+func (b *Builder) WithMetadataFinalizedTime(t time.Time) *Builder {
+	b.row.MetadataFinalizedTime = spanner.NullTime{Valid: true, Time: t}
+	return b
+}
+
 // WithBaselineID sets the baseline ID.
 func (b *Builder) WithBaselineID(id string) *Builder {
 	b.row.BaselineID = id

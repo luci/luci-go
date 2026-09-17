@@ -68,7 +68,10 @@ func InitServer(srv *server.Server, opts Options) {
 	})
 
 	tasks.WorkUnitsCatchUpPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
-		// TODO: Implement actual catch-up logic.
-		return nil
+		p := &workUnitsCatchUpPublisher{
+			pageSize: defaultCatchUpPageSize,
+			task:     msg.(*taskspb.PublishWorkUnitsCatchUpTask),
+		}
+		return p.handleWorkUnitsCatchUpPublisher(ctx)
 	})
 }

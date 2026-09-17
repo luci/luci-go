@@ -17,6 +17,7 @@ package workunits
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"go.opentelemetry.io/otel/attribute"
@@ -50,6 +51,17 @@ type Query struct {
 	Mask      ReadMask
 	PageSize  int
 	PageToken string
+
+	// Time range and status filters (optional).
+	// MaxFinalizeTimeStrictlyBefore filters work units with FinalizeTime < MaxFinalizeTimeStrictlyBefore.
+	// Used for catch-up exports after transitioning to METADATA_FINAL (Gap 2),
+	// ensuring mutual exclusivity with work units exported via the direct path (FinalizeTime >= MetadataFinalizedTime).
+	MaxFinalizeTimeStrictlyBefore time.Time
+
+	// OnlyFinalized filters work units to only return those in the FINALIZED state
+	// (wu.FinalizationState = FINALIZED).
+	// Used for catch-up exports (Gap 1 and Gap 2) to ensure unfinalized work units are excluded.
+	OnlyFinalized bool
 
 	// Internal state used to compute the pagination token.
 	lastWorkUnitID string
@@ -147,7 +159,7 @@ func (q *Query) queryAll(ctx context.Context, f func(*WorkUnitRow) error) (pageT
 		return "", errors.New("PageSize < 0")
 	}
 
-	st := spanner.NewStatement(fmt.Sprintf(`
+	sql := fmt.Sprintf(`
 		SELECT %s
 		FROM WorkUnits wu
 		WHERE wu.RootInvocationShardId IN UNNEST(@ids)
@@ -155,16 +167,28 @@ func (q *Query) queryAll(ctx context.Context, f func(*WorkUnitRow) error) (pageT
 				(wu.RootInvocationShardId > @afterRootInvocationShardId) OR
 				(wu.RootInvocationShardId = @afterRootInvocationShardId AND wu.WorkUnitId > @afterWorkUnitId)
 			)
-		ORDER BY wu.RootInvocationShardId, wu.WorkUnitId
-		LIMIT @limit
-	`, columnsToRead("wu", q.Mask)))
+	`, columnsToRead("wu", q.Mask))
 
-	st.Params = map[string]any{
+	params := map[string]any{
 		"ids":                        q.RootInvocationID.AllShardIDs(),
 		"limit":                      q.PageSize,
 		"afterRootInvocationShardId": "",
 		"afterWorkUnitId":            "",
 	}
+
+	if q.OnlyFinalized || !q.MaxFinalizeTimeStrictlyBefore.IsZero() {
+		sql += " AND wu.FinalizationState = @finalizedState"
+		params["finalizedState"] = int64(pb.WorkUnit_FINALIZED)
+	}
+	if !q.MaxFinalizeTimeStrictlyBefore.IsZero() {
+		sql += " AND wu.FinalizeTime < @maxFinalizeTimeStrictlyBefore"
+		params["maxFinalizeTimeStrictlyBefore"] = q.MaxFinalizeTimeStrictlyBefore
+	}
+
+	sql += "\n\t\tORDER BY wu.RootInvocationShardId, wu.WorkUnitId\n\t\tLIMIT @limit"
+
+	st := spanner.NewStatement(sql)
+	st.Params = params
 
 	if q.PageToken != "" {
 		tokens, err := pagination.ParseToken(q.PageToken)

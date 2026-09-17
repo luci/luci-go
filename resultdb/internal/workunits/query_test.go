@@ -17,6 +17,7 @@ package workunits
 import (
 	"sort"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -247,6 +248,110 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, token, should.BeEmpty)
 				assert.That(t, results, should.Match(expectedWUs[1:]))
 			})
+		})
+	})
+}
+
+func TestQueryTimeFilters(t *testing.T) {
+	ftt.Run("Query with time filters", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		rootInvID := rootinvocations.ID("test-root-inv-time")
+		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(
+			rootinvocations.NewBuilder(rootInvID).Build(),
+		)...)
+
+		baseTime := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+		// Note: We use WithMinimalFields to avoid complexity of nested children and extended properties
+		// if they are not needed for this test.
+		wuRoot := NewBuilder(rootInvID, "root").WithFinalizeTime(baseTime).Build()
+		wu1 := NewBuilder(rootInvID, "wu1").WithFinalizeTime(baseTime.Add(1 * time.Hour)).Build()
+		wu2 := NewBuilder(rootInvID, "wu2").WithFinalizeTime(baseTime.Add(2 * time.Hour)).Build()
+		wu3 := NewBuilder(rootInvID, "wu3").WithFinalizeTime(baseTime.Add(3 * time.Hour)).Build()
+		wu4 := NewBuilder(rootInvID, "wu4").WithFinalizeTime(baseTime.Add(4 * time.Hour)).Build()
+		wuActive := NewBuilder(rootInvID, "wu-active").WithMinimalFields().WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+
+		ms := InsertForTesting(wuRoot)
+		ms = append(ms, InsertForTesting(wu1)...)
+		ms = append(ms, InsertForTesting(wu2)...)
+		ms = append(ms, InsertForTesting(wu3)...)
+		ms = append(ms, InsertForTesting(wu4)...)
+		ms = append(ms, InsertForTesting(wuActive)...)
+		testutil.MustApply(ctx, t, ms...)
+
+		// Populate expected ChildWorkUnits for wuRoot
+		wuRoot.ChildWorkUnits = []ID{wuActive.ID, wu1.ID, wu2.ID, wu3.ID, wu4.ID}
+
+		// Clear ExtendedProperties from expected as we use ExcludeExtendedProperties mask
+		wuRoot.ExtendedProperties = nil
+		wu1.ExtendedProperties = nil
+		wu2.ExtendedProperties = nil
+		wu3.ExtendedProperties = nil
+		wu4.ExtendedProperties = nil
+
+		mustQuery := func(q *Query) ([]*WorkUnitRow, string, error) {
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			results := make([]*WorkUnitRow, 0, q.PageSize)
+			token, err := q.Query(ctx, func(wur *WorkUnitRow) error {
+				results = append(results, wur)
+				return nil
+			})
+			if err != nil {
+				return nil, "", err
+			}
+			return results, token, nil
+		}
+
+		q := &Query{
+			RootInvocationID: rootInvID,
+			Mask:             ExcludeExtendedProperties,
+			PageSize:         100,
+		}
+
+		// Sort helper to match Query output order
+		sortWUs := func(wus []*WorkUnitRow) {
+			sort.Slice(wus, func(i, j int) bool {
+				shardI := wus[i].ID.RootInvocationShardID().RowID()
+				shardJ := wus[j].ID.RootInvocationShardID().RowID()
+				if shardI != shardJ {
+					return shardI < shardJ
+				}
+				return wus[i].ID.WorkUnitID < wus[j].ID.WorkUnitID
+			})
+		}
+
+		t.Run("max finalize time strictly before filter", func(t *ftt.Test) {
+			q.MaxFinalizeTimeStrictlyBefore = baseTime.Add(3 * time.Hour)
+			wus, _, err := mustQuery(q)
+			assert.Loosely(t, err, should.BeNil)
+
+			// wu3 has finalize time baseTime + 3h, so strictly before excludes wu3.
+			// wuActive is also excluded because strictly before implies FinalizationState = FINALIZED.
+			expected := []*WorkUnitRow{wuRoot, wu1, wu2}
+			sortWUs(expected)
+			assert.That(t, wus, should.Match(expected))
+		})
+
+		t.Run("only finalized filter", func(t *ftt.Test) {
+			q.MaxFinalizeTimeStrictlyBefore = time.Time{}
+			q.OnlyFinalized = true
+			wus, _, err := mustQuery(q)
+			assert.Loosely(t, err, should.BeNil)
+
+			// All finalized work units are included, wuActive is excluded.
+			expected := []*WorkUnitRow{wuRoot, wu1, wu2, wu3, wu4}
+			sortWUs(expected)
+			assert.That(t, wus, should.Match(expected))
+		})
+
+		t.Run("no matching time", func(t *ftt.Test) {
+			q.OnlyFinalized = false
+			q.MaxFinalizeTimeStrictlyBefore = baseTime
+			wus, _, err := mustQuery(q)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, wus, should.BeEmpty)
 		})
 	})
 }

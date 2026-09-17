@@ -522,12 +522,14 @@ func (x *PublishWorkUnitsTask) GetWorkUnitIds() []string {
 //
 // At most one task should be scheduled per root invocation to avoid duplicate
 // work unit in Pub/Sub messages.
-// Next id: 2
+// Next id: 3
 type PublishWorkUnitsCatchUpTask struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	RootInvocationId string                 `protobuf:"bytes,1,opt,name=root_invocation_id,json=rootInvocationId,proto3" json:"root_invocation_id,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// The page token for paginating through work units.
+	PageToken     string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PublishWorkUnitsCatchUpTask) Reset() {
@@ -563,6 +565,13 @@ func (*PublishWorkUnitsCatchUpTask) Descriptor() ([]byte, []int) {
 func (x *PublishWorkUnitsCatchUpTask) GetRootInvocationId() string {
 	if x != nil {
 		return x.RootInvocationId
+	}
+	return ""
+}
+
+func (x *PublishWorkUnitsCatchUpTask) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
 	}
 	return ""
 }
@@ -1169,9 +1178,11 @@ const file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawD
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"h\n" +
 	"\x14PublishWorkUnitsTask\x12,\n" +
 	"\x12root_invocation_id\x18\x01 \x01(\tR\x10rootInvocationId\x12\"\n" +
-	"\rwork_unit_ids\x18\x02 \x03(\tR\vworkUnitIds\"K\n" +
+	"\rwork_unit_ids\x18\x02 \x03(\tR\vworkUnitIds\"j\n" +
 	"\x1bPublishWorkUnitsCatchUpTask\x12,\n" +
-	"\x12root_invocation_id\x18\x01 \x01(\tR\x10rootInvocationId\"\x89\x02\n" +
+	"\x12root_invocation_id\x18\x01 \x01(\tR\x10rootInvocationId\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\"\x89\x02\n" +
 	"\x17PublishTestAggregations\x12H\n" +
 	"\amessage\x18\x01 \x01(\v2..luci.resultdb.v1.TestAggregationsNotificationR\amessage\x12e\n" +
 	"\n" +
