@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { Duration } from "../../../../../google/protobuf/duration.pb";
 import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { Status } from "../../../../../google/rpc/status.pb";
@@ -622,6 +623,7 @@ export interface ListRepairQueueResponse {
   readonly repairQueueItems: readonly RepairQueueItem[];
   readonly nextPageToken: string;
   readonly totalSize: number;
+  readonly inProgressCount: number;
 }
 
 export interface ClaimRepairTaskRequest {
@@ -704,6 +706,45 @@ export interface SetDefaultQuotaRequest {
 
 export interface SetDefaultQuotaResponse {
   readonly defaultQuota: number;
+}
+
+export interface GetWorkforceActivityRequest {
+  /**
+   * Timeframe window for activity metrics.
+   * Accepted values: "1D", "7D", "30D", "YTD".
+   * If empty or unspecified, defaults to "1D".
+   */
+  readonly timeframe: string;
+}
+
+export interface ClaimedDut {
+  readonly dutId: string;
+  readonly score: number;
+  readonly duration: Duration | undefined;
+}
+
+export interface TechnicianActivity {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly claimedDuts: readonly ClaimedDut[];
+  readonly priorityScoreCleared: number;
+  readonly avgPtsPerDut: number;
+  readonly avgQueuePickupRank: number;
+  readonly pickupRankSum: number;
+  readonly pickupRankLabel: string;
+  readonly isRankSkewed: boolean;
+  readonly completedRepairs: number;
+  readonly avgDuration: Duration | undefined;
+}
+
+export interface GetWorkforceActivityResponse {
+  readonly activeRepairers: number;
+  readonly totalPriorityPointsCleared: number;
+  readonly avgQueuePickupRank: number;
+  readonly inProgressRepairs: number;
+  readonly avgRepairTime: Duration | undefined;
+  readonly technicians: readonly TechnicianActivity[];
 }
 
 export interface SupportRiskIncident {
@@ -5765,7 +5806,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
 };
 
 function createBaseListRepairQueueResponse(): ListRepairQueueResponse {
-  return { repairQueueItems: [], nextPageToken: "", totalSize: 0 };
+  return { repairQueueItems: [], nextPageToken: "", totalSize: 0, inProgressCount: 0 };
 }
 
 export const ListRepairQueueResponse: MessageFns<ListRepairQueueResponse> = {
@@ -5778,6 +5819,9 @@ export const ListRepairQueueResponse: MessageFns<ListRepairQueueResponse> = {
     }
     if (message.totalSize !== 0) {
       writer.uint32(24).int32(message.totalSize);
+    }
+    if (message.inProgressCount !== 0) {
+      writer.uint32(32).int32(message.inProgressCount);
     }
     return writer;
   },
@@ -5813,6 +5857,14 @@ export const ListRepairQueueResponse: MessageFns<ListRepairQueueResponse> = {
           message.totalSize = reader.int32();
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.inProgressCount = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5829,6 +5881,7 @@ export const ListRepairQueueResponse: MessageFns<ListRepairQueueResponse> = {
         : [],
       nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
       totalSize: isSet(object.totalSize) ? globalThis.Number(object.totalSize) : 0,
+      inProgressCount: isSet(object.inProgressCount) ? globalThis.Number(object.inProgressCount) : 0,
     };
   },
 
@@ -5843,6 +5896,9 @@ export const ListRepairQueueResponse: MessageFns<ListRepairQueueResponse> = {
     if (message.totalSize !== 0) {
       obj.totalSize = Math.round(message.totalSize);
     }
+    if (message.inProgressCount !== 0) {
+      obj.inProgressCount = Math.round(message.inProgressCount);
+    }
     return obj;
   },
 
@@ -5854,6 +5910,7 @@ export const ListRepairQueueResponse: MessageFns<ListRepairQueueResponse> = {
     message.repairQueueItems = object.repairQueueItems?.map((e) => RepairQueueItem.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
     message.totalSize = object.totalSize ?? 0;
+    message.inProgressCount = object.inProgressCount ?? 0;
     return message;
   },
 };
@@ -7078,6 +7135,564 @@ export const SetDefaultQuotaResponse: MessageFns<SetDefaultQuotaResponse> = {
   fromPartial(object: DeepPartial<SetDefaultQuotaResponse>): SetDefaultQuotaResponse {
     const message = createBaseSetDefaultQuotaResponse() as any;
     message.defaultQuota = object.defaultQuota ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetWorkforceActivityRequest(): GetWorkforceActivityRequest {
+  return { timeframe: "" };
+}
+
+export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest> = {
+  encode(message: GetWorkforceActivityRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.timeframe !== "") {
+      writer.uint32(10).string(message.timeframe);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetWorkforceActivityRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetWorkforceActivityRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.timeframe = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetWorkforceActivityRequest {
+    return { timeframe: isSet(object.timeframe) ? globalThis.String(object.timeframe) : "" };
+  },
+
+  toJSON(message: GetWorkforceActivityRequest): unknown {
+    const obj: any = {};
+    if (message.timeframe !== "") {
+      obj.timeframe = message.timeframe;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetWorkforceActivityRequest>): GetWorkforceActivityRequest {
+    return GetWorkforceActivityRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetWorkforceActivityRequest>): GetWorkforceActivityRequest {
+    const message = createBaseGetWorkforceActivityRequest() as any;
+    message.timeframe = object.timeframe ?? "";
+    return message;
+  },
+};
+
+function createBaseClaimedDut(): ClaimedDut {
+  return { dutId: "", score: 0, duration: undefined };
+}
+
+export const ClaimedDut: MessageFns<ClaimedDut> = {
+  encode(message: ClaimedDut, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.dutId !== "") {
+      writer.uint32(10).string(message.dutId);
+    }
+    if (message.score !== 0) {
+      writer.uint32(16).int32(message.score);
+    }
+    if (message.duration !== undefined) {
+      Duration.encode(message.duration, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClaimedDut {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClaimedDut() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dutId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.score = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.duration = Duration.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ClaimedDut {
+    return {
+      dutId: isSet(object.dutId) ? globalThis.String(object.dutId) : "",
+      score: isSet(object.score) ? globalThis.Number(object.score) : 0,
+      duration: isSet(object.duration) ? Duration.fromJSON(object.duration) : undefined,
+    };
+  },
+
+  toJSON(message: ClaimedDut): unknown {
+    const obj: any = {};
+    if (message.dutId !== "") {
+      obj.dutId = message.dutId;
+    }
+    if (message.score !== 0) {
+      obj.score = Math.round(message.score);
+    }
+    if (message.duration !== undefined) {
+      obj.duration = Duration.toJSON(message.duration);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ClaimedDut>): ClaimedDut {
+    return ClaimedDut.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ClaimedDut>): ClaimedDut {
+    const message = createBaseClaimedDut() as any;
+    message.dutId = object.dutId ?? "";
+    message.score = object.score ?? 0;
+    message.duration = (object.duration !== undefined && object.duration !== null)
+      ? Duration.fromPartial(object.duration)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTechnicianActivity(): TechnicianActivity {
+  return {
+    id: "",
+    name: "",
+    email: "",
+    claimedDuts: [],
+    priorityScoreCleared: 0,
+    avgPtsPerDut: 0,
+    avgQueuePickupRank: 0,
+    pickupRankSum: 0,
+    pickupRankLabel: "",
+    isRankSkewed: false,
+    completedRepairs: 0,
+    avgDuration: undefined,
+  };
+}
+
+export const TechnicianActivity: MessageFns<TechnicianActivity> = {
+  encode(message: TechnicianActivity, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    if (message.name !== "") {
+      writer.uint32(34).string(message.name);
+    }
+    if (message.email !== "") {
+      writer.uint32(42).string(message.email);
+    }
+    for (const v of message.claimedDuts) {
+      ClaimedDut.encode(v!, writer.uint32(50).fork()).join();
+    }
+    if (message.priorityScoreCleared !== 0) {
+      writer.uint32(56).int32(message.priorityScoreCleared);
+    }
+    if (message.avgPtsPerDut !== 0) {
+      writer.uint32(64).int32(message.avgPtsPerDut);
+    }
+    if (message.avgQueuePickupRank !== 0) {
+      writer.uint32(73).double(message.avgQueuePickupRank);
+    }
+    if (message.pickupRankSum !== 0) {
+      writer.uint32(80).int32(message.pickupRankSum);
+    }
+    if (message.pickupRankLabel !== "") {
+      writer.uint32(90).string(message.pickupRankLabel);
+    }
+    if (message.isRankSkewed !== false) {
+      writer.uint32(96).bool(message.isRankSkewed);
+    }
+    if (message.completedRepairs !== 0) {
+      writer.uint32(104).int32(message.completedRepairs);
+    }
+    if (message.avgDuration !== undefined) {
+      Duration.encode(message.avgDuration, writer.uint32(114).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TechnicianActivity {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTechnicianActivity() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.claimedDuts.push(ClaimedDut.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.priorityScoreCleared = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.avgPtsPerDut = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag !== 73) {
+            break;
+          }
+
+          message.avgQueuePickupRank = reader.double();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.pickupRankSum = reader.int32();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.pickupRankLabel = reader.string();
+          continue;
+        }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.isRankSkewed = reader.bool();
+          continue;
+        }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.completedRepairs = reader.int32();
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.avgDuration = Duration.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TechnicianActivity {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      email: isSet(object.email) ? globalThis.String(object.email) : "",
+      claimedDuts: globalThis.Array.isArray(object?.claimedDuts)
+        ? object.claimedDuts.map((e: any) => ClaimedDut.fromJSON(e))
+        : [],
+      priorityScoreCleared: isSet(object.priorityScoreCleared) ? globalThis.Number(object.priorityScoreCleared) : 0,
+      avgPtsPerDut: isSet(object.avgPtsPerDut) ? globalThis.Number(object.avgPtsPerDut) : 0,
+      avgQueuePickupRank: isSet(object.avgQueuePickupRank) ? globalThis.Number(object.avgQueuePickupRank) : 0,
+      pickupRankSum: isSet(object.pickupRankSum) ? globalThis.Number(object.pickupRankSum) : 0,
+      pickupRankLabel: isSet(object.pickupRankLabel) ? globalThis.String(object.pickupRankLabel) : "",
+      isRankSkewed: isSet(object.isRankSkewed) ? globalThis.Boolean(object.isRankSkewed) : false,
+      completedRepairs: isSet(object.completedRepairs) ? globalThis.Number(object.completedRepairs) : 0,
+      avgDuration: isSet(object.avgDuration) ? Duration.fromJSON(object.avgDuration) : undefined,
+    };
+  },
+
+  toJSON(message: TechnicianActivity): unknown {
+    const obj: any = {};
+    if (message.id !== "") {
+      obj.id = message.id;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.email !== "") {
+      obj.email = message.email;
+    }
+    if (message.claimedDuts?.length) {
+      obj.claimedDuts = message.claimedDuts.map((e) => ClaimedDut.toJSON(e));
+    }
+    if (message.priorityScoreCleared !== 0) {
+      obj.priorityScoreCleared = Math.round(message.priorityScoreCleared);
+    }
+    if (message.avgPtsPerDut !== 0) {
+      obj.avgPtsPerDut = Math.round(message.avgPtsPerDut);
+    }
+    if (message.avgQueuePickupRank !== 0) {
+      obj.avgQueuePickupRank = message.avgQueuePickupRank;
+    }
+    if (message.pickupRankSum !== 0) {
+      obj.pickupRankSum = Math.round(message.pickupRankSum);
+    }
+    if (message.pickupRankLabel !== "") {
+      obj.pickupRankLabel = message.pickupRankLabel;
+    }
+    if (message.isRankSkewed !== false) {
+      obj.isRankSkewed = message.isRankSkewed;
+    }
+    if (message.completedRepairs !== 0) {
+      obj.completedRepairs = Math.round(message.completedRepairs);
+    }
+    if (message.avgDuration !== undefined) {
+      obj.avgDuration = Duration.toJSON(message.avgDuration);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TechnicianActivity>): TechnicianActivity {
+    return TechnicianActivity.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TechnicianActivity>): TechnicianActivity {
+    const message = createBaseTechnicianActivity() as any;
+    message.id = object.id ?? "";
+    message.name = object.name ?? "";
+    message.email = object.email ?? "";
+    message.claimedDuts = object.claimedDuts?.map((e) => ClaimedDut.fromPartial(e)) || [];
+    message.priorityScoreCleared = object.priorityScoreCleared ?? 0;
+    message.avgPtsPerDut = object.avgPtsPerDut ?? 0;
+    message.avgQueuePickupRank = object.avgQueuePickupRank ?? 0;
+    message.pickupRankSum = object.pickupRankSum ?? 0;
+    message.pickupRankLabel = object.pickupRankLabel ?? "";
+    message.isRankSkewed = object.isRankSkewed ?? false;
+    message.completedRepairs = object.completedRepairs ?? 0;
+    message.avgDuration = (object.avgDuration !== undefined && object.avgDuration !== null)
+      ? Duration.fromPartial(object.avgDuration)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGetWorkforceActivityResponse(): GetWorkforceActivityResponse {
+  return {
+    activeRepairers: 0,
+    totalPriorityPointsCleared: 0,
+    avgQueuePickupRank: 0,
+    inProgressRepairs: 0,
+    avgRepairTime: undefined,
+    technicians: [],
+  };
+}
+
+export const GetWorkforceActivityResponse: MessageFns<GetWorkforceActivityResponse> = {
+  encode(message: GetWorkforceActivityResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.activeRepairers !== 0) {
+      writer.uint32(8).int32(message.activeRepairers);
+    }
+    if (message.totalPriorityPointsCleared !== 0) {
+      writer.uint32(16).int32(message.totalPriorityPointsCleared);
+    }
+    if (message.avgQueuePickupRank !== 0) {
+      writer.uint32(25).double(message.avgQueuePickupRank);
+    }
+    if (message.inProgressRepairs !== 0) {
+      writer.uint32(32).int32(message.inProgressRepairs);
+    }
+    if (message.avgRepairTime !== undefined) {
+      Duration.encode(message.avgRepairTime, writer.uint32(42).fork()).join();
+    }
+    for (const v of message.technicians) {
+      TechnicianActivity.encode(v!, writer.uint32(50).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetWorkforceActivityResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetWorkforceActivityResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.activeRepairers = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.totalPriorityPointsCleared = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 25) {
+            break;
+          }
+
+          message.avgQueuePickupRank = reader.double();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.inProgressRepairs = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.avgRepairTime = Duration.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.technicians.push(TechnicianActivity.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetWorkforceActivityResponse {
+    return {
+      activeRepairers: isSet(object.activeRepairers) ? globalThis.Number(object.activeRepairers) : 0,
+      totalPriorityPointsCleared: isSet(object.totalPriorityPointsCleared)
+        ? globalThis.Number(object.totalPriorityPointsCleared)
+        : 0,
+      avgQueuePickupRank: isSet(object.avgQueuePickupRank) ? globalThis.Number(object.avgQueuePickupRank) : 0,
+      inProgressRepairs: isSet(object.inProgressRepairs) ? globalThis.Number(object.inProgressRepairs) : 0,
+      avgRepairTime: isSet(object.avgRepairTime) ? Duration.fromJSON(object.avgRepairTime) : undefined,
+      technicians: globalThis.Array.isArray(object?.technicians)
+        ? object.technicians.map((e: any) => TechnicianActivity.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetWorkforceActivityResponse): unknown {
+    const obj: any = {};
+    if (message.activeRepairers !== 0) {
+      obj.activeRepairers = Math.round(message.activeRepairers);
+    }
+    if (message.totalPriorityPointsCleared !== 0) {
+      obj.totalPriorityPointsCleared = Math.round(message.totalPriorityPointsCleared);
+    }
+    if (message.avgQueuePickupRank !== 0) {
+      obj.avgQueuePickupRank = message.avgQueuePickupRank;
+    }
+    if (message.inProgressRepairs !== 0) {
+      obj.inProgressRepairs = Math.round(message.inProgressRepairs);
+    }
+    if (message.avgRepairTime !== undefined) {
+      obj.avgRepairTime = Duration.toJSON(message.avgRepairTime);
+    }
+    if (message.technicians?.length) {
+      obj.technicians = message.technicians.map((e) => TechnicianActivity.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetWorkforceActivityResponse>): GetWorkforceActivityResponse {
+    return GetWorkforceActivityResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetWorkforceActivityResponse>): GetWorkforceActivityResponse {
+    const message = createBaseGetWorkforceActivityResponse() as any;
+    message.activeRepairers = object.activeRepairers ?? 0;
+    message.totalPriorityPointsCleared = object.totalPriorityPointsCleared ?? 0;
+    message.avgQueuePickupRank = object.avgQueuePickupRank ?? 0;
+    message.inProgressRepairs = object.inProgressRepairs ?? 0;
+    message.avgRepairTime = (object.avgRepairTime !== undefined && object.avgRepairTime !== null)
+      ? Duration.fromPartial(object.avgRepairTime)
+      : undefined;
+    message.technicians = object.technicians?.map((e) => TechnicianActivity.fromPartial(e)) || [];
     return message;
   },
 };

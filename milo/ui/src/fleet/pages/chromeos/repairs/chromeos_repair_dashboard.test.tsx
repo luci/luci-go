@@ -37,6 +37,12 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 import { ChromeOSRepairDashboard } from './chromeos_repair_dashboard';
 import { useRepairQueueColumns } from './use_repair_queue_columns';
 
+const mockNavigate = jest.fn();
+jest.mock('react-router', () => ({
+  ...jest.requireActual('react-router'),
+  useNavigate: () => mockNavigate,
+}));
+
 const mockTrackEvent = jest.fn();
 jest.mock('@/generic_libs/components/google_analytics', () => ({
   ...jest.requireActual('@/generic_libs/components/google_analytics'),
@@ -1143,5 +1149,63 @@ describe('<ChromeOSRepairDashboard />', () => {
         expect(col.enableSorting).toBe(false);
       }
     });
+  });
+
+  it('renders Workforce Activity button with In-Progress chip and navigates when flag is enabled', async () => {
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: MOCK_QUEUE_ITEMS,
+        totalSize: 200,
+        inProgressCount: 5,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    const workforceButton = screen.getByRole('button', {
+      name: /Workforce Activity/i,
+    });
+    expect(workforceButton).toBeInTheDocument();
+    expect(screen.getByText('5 In-Progress')).toBeInTheDocument();
+
+    fireEvent.click(workforceButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/ui/fleet/p/chromeos/repairs/workforce',
+    );
+  });
+
+  it('does not render Workforce Activity button when feature flag is disabled', async () => {
+    localStorage.setItem(
+      'featureFlag:fleet-console:chromeos-workforce-activity',
+      'off',
+    );
+
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: MOCK_QUEUE_ITEMS,
+        totalSize: 2,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    expect(
+      screen.queryByRole('button', {
+        name: /Workforce Activity/i,
+      }),
+    ).not.toBeInTheDocument();
   });
 });

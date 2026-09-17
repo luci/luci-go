@@ -95,6 +95,7 @@ export interface FleetConsoleMockFixtures {
   ListModelQuotaOverrides: unknown;
   SetModelQuotaOverride: unknown;
   DeleteModelQuotaOverride: unknown;
+  GetWorkforceActivity: unknown;
   [method: string]: unknown;
 }
 
@@ -571,6 +572,55 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     },
   },
   DeleteModelQuotaOverride: {},
+  GetWorkforceActivity: {
+    activeRepairers: 4,
+    totalPriorityPointsCleared: 2850,
+    avgQueuePickupRank: 4.7,
+    inProgressRepairs: 2,
+    avgRepairTime: { seconds: '1680', nanos: 0 },
+    technicians: [
+      {
+        id: 'andrew',
+        name: 'Andrew Miller',
+        email: 'andrew@google.com',
+        claimedDuts: [
+          {
+            dutId: 'chromeos1-row2-rack3-host1',
+            score: 250,
+            duration: { seconds: '2700', nanos: 0 },
+          },
+        ],
+        priorityScoreCleared: 680,
+        avgPtsPerDut: 85,
+        avgQueuePickupRank: 1.8,
+        pickupRankSum: 14,
+        pickupRankLabel: 'Top Priority',
+        isRankSkewed: false,
+        completedRepairs: 8,
+        avgDuration: { seconds: '1920', nanos: 0 },
+      },
+      {
+        id: 'beatrice',
+        name: 'Beatrice Chen',
+        email: 'beatrice@google.com',
+        claimedDuts: [
+          {
+            dutId: 'chromeos2-row3-rack1-host2',
+            score: 85,
+            duration: { seconds: '1800', nanos: 0 },
+          },
+        ],
+        priorityScoreCleared: 940,
+        avgPtsPerDut: 85,
+        avgQueuePickupRank: 1.2,
+        pickupRankSum: 13,
+        pickupRankLabel: 'Top Priority',
+        isRankSkewed: true,
+        completedRepairs: 11,
+        avgDuration: { seconds: '1440', nanos: 0 },
+      },
+    ],
+  },
 };
 
 function deepClone<T>(obj: T): T {

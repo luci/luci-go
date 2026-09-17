@@ -20,6 +20,7 @@ import {
   enableAndroidUtilizationMetrics,
   enableChromeOsHealthDashboard,
   enableChromeOsRepairsDashboard,
+  enableChromeOsWorkforceActivity,
   enablePTE,
 } from '@/fleet/features';
 
@@ -44,7 +45,20 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
       ).toBe(true);
     });
 
-    it('enables pte-support by default in dev (100% rollout)', () => {
+    it('enables chromeos-workforce-activity by default in dev', () => {
+      expect(
+        isFlagAvailableInEnvironment(enableChromeOsWorkforceActivity, env),
+      ).toBe(true);
+      expect(
+        getFeatureFlagValue(
+          enableChromeOsWorkforceActivity,
+          'user@google.com',
+          env,
+        ),
+      ).toBe(true);
+    });
+
+    it('keeps pte-support disabled by default in dev (0% rollout until explicitly toggled)', () => {
       expect(isFlagAvailableInEnvironment(enablePTE, env)).toBe(true);
       expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(true);
 
@@ -104,6 +118,18 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
           env,
         ),
       ).toBe(false);
+
+      localStorage.setItem(
+        'featureFlag:fleet-console:chromeos-workforce-activity',
+        'off',
+      );
+      expect(
+        getFeatureFlagValue(
+          enableChromeOsWorkforceActivity,
+          'user@google.com',
+          env,
+        ),
+      ).toBe(false);
     });
   });
 
@@ -117,6 +143,19 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
       expect(
         getFeatureFlagValue(
           enableChromeOsRepairsDashboard,
+          'user@google.com',
+          env,
+        ),
+      ).toBe(false);
+    });
+
+    it('prevents chromeos-workforce-activity from being available or enabled in prod', () => {
+      expect(
+        isFlagAvailableInEnvironment(enableChromeOsWorkforceActivity, env),
+      ).toBe(false);
+      expect(
+        getFeatureFlagValue(
+          enableChromeOsWorkforceActivity,
           'user@google.com',
           env,
         ),

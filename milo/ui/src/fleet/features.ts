@@ -69,3 +69,15 @@ export const enableChromeOsHealthDashboard = createFeatureFlag({
   trackingBug: '537909853',
   allowedEnvironments: ['dev'],
 });
+
+export const enableChromeOsWorkforceActivity = createFeatureFlag({
+  description:
+    'Displays the ChromeOS Workforce Activity monitoring view in repairs.',
+  namespace: 'fleet-console',
+  name: 'chromeos-workforce-activity',
+  percentage: {
+    dev: 100,
+    prod: 0,
+  },
+  allowedEnvironments: ['dev'],
+});

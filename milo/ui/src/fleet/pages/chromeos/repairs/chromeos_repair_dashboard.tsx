@@ -12,18 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Divider, Typography } from '@mui/material';
+import GroupIcon from '@mui/icons-material/Group';
+import { Box, Button, Chip, Divider, Typography } from '@mui/material';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useFeatureFlag } from '@/common/feature_flags';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import {
+  CHROMEOS_PLATFORM,
+  generateRepairsWorkforceURL,
+  platformToURL,
+} from '@/fleet/constants/paths';
+import { enableChromeOsWorkforceActivity } from '@/fleet/features';
+import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import { ListRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { ActiveIrmTable } from './active_irm_table';
 import { ChromeOSRepairTable } from './chromeos_repair_table';
 import { PriorityRulesPanel } from './priority_rules_panel';
+import { useRepairQueue } from './use_repair_queue';
 
 export const ChromeOSRepairDashboard = () => {
+  const navigate = useNavigate();
+  const currentPlatform = useCurrentPlatform();
+  const isWorkforceEnabled = useFeatureFlag(enableChromeOsWorkforceActivity);
+
+  const request = useMemo(
+    () =>
+      ListRepairQueueRequest.fromPartial({
+        pageSize: 100,
+        pageToken: '',
+      }),
+    [],
+  );
+
+  const queueQuery = useRepairQueue(request);
+
+  const inProgressCount = queueQuery.data?.inProgressCount ?? 0;
+
   return (
     <div
       css={{
@@ -31,13 +61,64 @@ export const ChromeOSRepairDashboard = () => {
         paddingBottom: '40px',
       }}
     >
-      <div css={{ marginBottom: '16px' }}>
-        <Typography variant="h4">ChromeOS Manual Repair Dashboard</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Rule-based Priority Scoring using dynamic interactive FCon filter Bars
-          with Range Filters.
-        </Typography>
-      </div>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: 2,
+          mb: 2,
+        }}
+      >
+        <div>
+          <Typography variant="h4">ChromeOS Manual Repair Dashboard</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Rule-based Priority Scoring using dynamic interactive FCon filter
+            Bars with Range Filters.
+          </Typography>
+        </div>
+
+        {isWorkforceEnabled && (
+          <Button
+            variant="outlined"
+            onClick={() =>
+              navigate(
+                generateRepairsWorkforceURL(
+                  currentPlatform
+                    ? platformToURL(currentPlatform)
+                    : CHROMEOS_PLATFORM,
+                ),
+              )
+            }
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              borderRadius: '8px',
+              px: 2,
+              py: 0.75,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <GroupIcon sx={{ fontSize: 20 }} />
+            <span>Workforce Activity</span>
+            <Chip
+              label={`${inProgressCount} In-Progress`}
+              size="small"
+              sx={{
+                ml: 0.5,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                fontWeight: 600,
+                height: 22,
+                fontSize: '0.75rem',
+              }}
+            />
+          </Button>
+        )}
+      </Box>
 
       <Box
         sx={{

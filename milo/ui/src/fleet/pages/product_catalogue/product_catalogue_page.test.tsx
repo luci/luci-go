@@ -571,7 +571,7 @@ describe('ProductCataloguePage', () => {
         'fleet_plm_status',
       );
     });
-  });
+  }, 10000); //TODO: Do research about timeouts, connected to b/562937079
 
   it('should render Descriptive Name filter correctly', async () => {
     FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {

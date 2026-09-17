@@ -62,14 +62,28 @@ export const useRepairQueueOptimisticMutation = <
           if (!oldData || !oldData.repairQueueItems) {
             return oldData;
           }
+          let inProgressDelta = 0;
+          const updatedItems = oldData.repairQueueItems.map((item) => {
+            if (item.taskId === targetTaskId) {
+              const wasClaimed = Boolean(item.claimedBy?.trim());
+              const updated = updateItem(item, variables);
+              const isClaimed = Boolean(updated.claimedBy?.trim());
+              if (!wasClaimed && isClaimed) {
+                inProgressDelta = 1;
+              } else if (wasClaimed && !isClaimed) {
+                inProgressDelta = -1;
+              }
+              return updated;
+            }
+            return item;
+          });
           return {
             ...oldData,
-            repairQueueItems: oldData.repairQueueItems.map((item) => {
-              if (item.taskId === targetTaskId) {
-                return updateItem(item, variables);
-              }
-              return item;
-            }),
+            repairQueueItems: updatedItems,
+            inProgressCount: Math.max(
+              0,
+              (oldData.inProgressCount ?? 0) + inProgressDelta,
+            ),
           };
         },
       );

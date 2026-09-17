@@ -19,6 +19,7 @@ import { getFeatureFlagValue } from '@/common/feature_flags';
 import {
   enableChromeOsHealthDashboard,
   enableChromeOsRepairsDashboard,
+  enableChromeOsWorkforceActivity,
 } from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -59,21 +60,46 @@ export const platformRoutes: RouteObject[] = [
 
   {
     path: 'repairs',
-    element: (
-      <PlatformDependentPage
-        pageComponentMap={{
-          [Platform.ANDROID]: <AndroidRepairsPage workspace="Android" />,
-          [Platform.PIXEL]: <AndroidRepairsPage workspace="Pixel" />,
-          ...(getFeatureFlagValue(enableChromeOsRepairsDashboard)
-            ? {
-                [Platform.CHROMEOS]: lazy(
-                  () => import('@/fleet/pages/chromeos/repairs'),
-                ),
-              }
-            : {}),
-        }}
-      />
-    ),
+    children: [
+      {
+        index: true,
+        element: (
+          <PlatformDependentPage
+            pageComponentMap={{
+              [Platform.ANDROID]: <AndroidRepairsPage workspace="Android" />,
+              [Platform.PIXEL]: <AndroidRepairsPage workspace="Pixel" />,
+              ...(getFeatureFlagValue(enableChromeOsRepairsDashboard)
+                ? {
+                    [Platform.CHROMEOS]: lazy(
+                      () => import('@/fleet/pages/chromeos/repairs'),
+                    ),
+                  }
+                : {}),
+            }}
+          />
+        ),
+      },
+      {
+        path: 'workforce',
+        element: (
+          <PlatformDependentPage
+            pageComponentMap={{
+              ...(getFeatureFlagValue(enableChromeOsRepairsDashboard) &&
+              getFeatureFlagValue(enableChromeOsWorkforceActivity)
+                ? {
+                    [Platform.CHROMEOS]: lazy(
+                      () =>
+                        import(
+                          '@/fleet/pages/chromeos/repairs/workforce_activity_view'
+                        ),
+                    ),
+                  }
+                : {}),
+            }}
+          />
+        ),
+      },
+    ],
   },
 
   {

@@ -65,6 +65,8 @@ import {
   GetRepairMetricsDimensionsResponse,
   GetSmartRepairRequest,
   GetSmartRepairResponse,
+  GetWorkforceActivityRequest,
+  GetWorkforceActivityResponse,
   ListDevicesRequest,
   ListDevicesResponse,
   ListIrmIncidentsRequest,
@@ -393,6 +395,7 @@ export interface FleetConsole {
   ListCustomerSlos(request: ListCustomerSlosRequest): Promise<ListCustomerSlosResponse>;
   GetDefaultQuota(request: GetDefaultQuotaRequest): Promise<GetDefaultQuotaResponse>;
   SetDefaultQuota(request: SetDefaultQuotaRequest): Promise<SetDefaultQuotaResponse>;
+  GetWorkforceActivity(request: GetWorkforceActivityRequest): Promise<GetWorkforceActivityResponse>;
   ListSupportRiskIncidents(request: ListSupportRiskIncidentsRequest): Promise<ListSupportRiskIncidentsResponse>;
   SetModelQuotaOverride(request: SetModelQuotaOverrideRequest): Promise<SetModelQuotaOverrideResponse>;
   DeleteModelQuotaOverride(request: DeleteModelQuotaOverrideRequest): Promise<DeleteModelQuotaOverrideResponse>;
@@ -461,6 +464,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ListCustomerSlos = this.ListCustomerSlos.bind(this);
     this.GetDefaultQuota = this.GetDefaultQuota.bind(this);
     this.SetDefaultQuota = this.SetDefaultQuota.bind(this);
+    this.GetWorkforceActivity = this.GetWorkforceActivity.bind(this);
     this.ListSupportRiskIncidents = this.ListSupportRiskIncidents.bind(this);
     this.SetModelQuotaOverride = this.SetModelQuotaOverride.bind(this);
     this.DeleteModelQuotaOverride = this.DeleteModelQuotaOverride.bind(this);
@@ -798,6 +802,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = SetDefaultQuotaRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "SetDefaultQuota", data);
     return promise.then((data) => SetDefaultQuotaResponse.fromJSON(data));
+  }
+
+  GetWorkforceActivity(request: GetWorkforceActivityRequest): Promise<GetWorkforceActivityResponse> {
+    const data = GetWorkforceActivityRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetWorkforceActivity", data);
+    return promise.then((data) => GetWorkforceActivityResponse.fromJSON(data));
   }
 
   ListSupportRiskIncidents(request: ListSupportRiskIncidentsRequest): Promise<ListSupportRiskIncidentsResponse> {

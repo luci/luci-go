@@ -16,7 +16,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import RemoveIcon from '@mui/icons-material/Remove';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Avatar, Box, Button, Link, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Link, Tooltip, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 
@@ -34,6 +34,7 @@ import {
   useClaimRepairTask,
   useUnclaimRepairTask,
 } from './use_claim_repair_task';
+import { UserAvatar } from './user_avatar';
 
 export type RepairQueueRow = RepairQueueItem;
 export type RepairQueueColumnDef = MRT_ColumnDef<RepairQueueRow>;
@@ -291,8 +292,6 @@ export const useRepairQueueColumns = ({
               ? 'Assigned to you (click to unclaim)'
               : `Assigned to ${displayClaimedBy} (click to assign to yourself)`;
 
-            const initial = displayClaimedBy.charAt(0).toUpperCase();
-
             const handleClick = () => {
               if (isPending) return;
               if (isSelf) {
@@ -311,13 +310,13 @@ export const useRepairQueueColumns = ({
                 }}
               >
                 <Tooltip title={tooltipTitle}>
-                  <Avatar
+                  <UserAvatar
+                    email={displayClaimedBy}
                     onClick={handleClick}
                     sx={{
                       width: 26,
                       height: 26,
                       fontSize: '0.85rem',
-                      bgcolor: '#0F9D58',
                       cursor: isPending ? 'not-allowed' : 'pointer',
                       opacity: isPending ? 0.6 : 1,
                       pointerEvents: isPending ? 'none' : 'auto',
@@ -325,9 +324,7 @@ export const useRepairQueueColumns = ({
                         opacity: isPending ? 0.6 : 0.8,
                       },
                     }}
-                  >
-                    {initial}
-                  </Avatar>
+                  />
                 </Tooltip>
               </Box>
             );

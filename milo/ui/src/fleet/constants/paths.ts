@@ -21,6 +21,7 @@ export const FLEET_CONSOLE_BASE_URL = '/ui/fleet';
 export const PLATFORM_SUBROUTE = 'p/:platform';
 export const DEVICES_SUBROUTE = 'devices';
 export const REPAIRS_SUBROUTE = 'repairs';
+export const WORKFORCE_SUBROUTE = 'workforce';
 export const ADMIN_TASKS_SUBROUTE = 'admin-tasks';
 export const HEALTH_SUBROUTE = 'health';
 export const REQUESTS_SUBROUTE = 'requests';
@@ -29,6 +30,7 @@ export const PLATFORM_PATH = `${FLEET_CONSOLE_BASE_URL}/${PLATFORM_SUBROUTE}`;
 export const DEVICE_LIST_PATH = `${PLATFORM_PATH}/${DEVICES_SUBROUTE}`;
 export const DEVICE_DETAILS_PATH = `${PLATFORM_PATH}/${DEVICES_SUBROUTE}/:id`;
 export const REPAIRS_PATH = `${PLATFORM_PATH}/${REPAIRS_SUBROUTE}`;
+export const REPAIRS_WORKFORCE_PATH = `${REPAIRS_PATH}/${WORKFORCE_SUBROUTE}`;
 export const ADMIN_TASKS_PATH = `${PLATFORM_PATH}/${ADMIN_TASKS_SUBROUTE}`;
 export const HEALTH_PATH = `${PLATFORM_PATH}/${HEALTH_SUBROUTE}`;
 
@@ -58,6 +60,10 @@ export const generateRepairsURL = (platform: string) => {
   return `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${REPAIRS_SUBROUTE}`;
 };
 
+export const generateRepairsWorkforceURL = (platform: string) => {
+  return `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${REPAIRS_SUBROUTE}/${WORKFORCE_SUBROUTE}`;
+};
+
 export const generateAdminTasksURL = (platform: string) => {
   return `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${ADMIN_TASKS_SUBROUTE}`;
 };
@@ -84,9 +90,15 @@ export const generateAnotherPlatformCorrespondingURL = (
   else if (
     currentUrl.includes(`/${REPAIRS_SUBROUTE}/`) ||
     currentUrl.endsWith(`/${REPAIRS_SUBROUTE}`)
-  )
-    return generateRepairsURL(Platform[newPlatform].toLowerCase());
-  else if (
+  ) {
+    if (
+      newPlatform === Platform.CHROMEOS &&
+      currentUrl.includes(`/${WORKFORCE_SUBROUTE}`)
+    ) {
+      return generateRepairsWorkforceURL(platformToURL(newPlatform));
+    }
+    return generateRepairsURL(platformToURL(newPlatform));
+  } else if (
     currentUrl.includes(`/${ADMIN_TASKS_SUBROUTE}/`) ||
     currentUrl.endsWith(`/${ADMIN_TASKS_SUBROUTE}`)
   ) {

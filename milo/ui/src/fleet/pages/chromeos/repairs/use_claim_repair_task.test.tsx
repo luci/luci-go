@@ -110,11 +110,12 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
   };
 
   describe('useClaimRepairTask', () => {
-    it('optimistically updates matching item on claim mutation', async () => {
+    it('optimistically updates matching item and increments inProgressCount on claim mutation', async () => {
       const initialData: ListRepairQueueResponse = {
         repairQueueItems: [...MOCK_ITEMS],
         nextPageToken: '',
         totalSize: 2,
+        inProgressCount: 1,
       };
 
       const queryKey = [...REPAIR_QUEUE_QUERY_KEY, { pageSize: 100 }];
@@ -148,6 +149,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
         expect(cachedData?.repairQueueItems[1].claimedBy).toBe(
           'other_tech@google.com',
         );
+        expect(cachedData?.inProgressCount).toBe(2);
       });
 
       // Resolve the mutation
@@ -163,11 +165,61 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
     });
 
+    it('does not increment inProgressCount when stealing an already-claimed task', async () => {
+      const initialData: ListRepairQueueResponse = {
+        repairQueueItems: [...MOCK_ITEMS],
+        nextPageToken: '',
+        totalSize: 2,
+        inProgressCount: 1,
+      };
+
+      const queryKey = [...REPAIR_QUEUE_QUERY_KEY, { pageSize: 100 }];
+      queryClient.setQueryData(queryKey, initialData);
+
+      let resolvePromise: (value: unknown) => void = () => {};
+      mockClaimRepairTask.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolvePromise = resolve;
+          }),
+      );
+
+      const { result } = renderHook(() => useClaimRepairTask(), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        // Task 102 is already claimed by other_tech@google.com
+        result.current.mutate({ taskId: '102' });
+      });
+
+      await waitFor(() => {
+        const cachedData =
+          queryClient.getQueryData<ListRepairQueueResponse>(queryKey);
+        expect(cachedData?.repairQueueItems[1].claimedBy).toBe(
+          'user@example.com',
+        );
+        expect(cachedData?.inProgressCount).toBe(1);
+      });
+
+      act(() => {
+        resolvePromise({
+          repairQueueItem: {
+            ...MOCK_ITEMS[1],
+            claimedBy: 'user@example.com',
+          },
+        });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    });
+
     it('rolls back optimistic update on mutation error', async () => {
       const initialData: ListRepairQueueResponse = {
         repairQueueItems: [...MOCK_ITEMS],
         nextPageToken: '',
         totalSize: 2,
+        inProgressCount: 1,
       };
 
       const queryKey = [...REPAIR_QUEUE_QUERY_KEY, { pageSize: 100 }];
@@ -189,6 +241,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       const cachedData =
         queryClient.getQueryData<ListRepairQueueResponse>(queryKey);
       expect(cachedData?.repairQueueItems[0].claimedBy).toBe('');
+      expect(cachedData?.inProgressCount).toBe(1);
     });
 
     it('invalidates queries on settled', async () => {
@@ -233,6 +286,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
         ],
         nextPageToken: '',
         totalSize: 1,
+        inProgressCount: 0,
       };
 
       const queryKey = [...REPAIR_QUEUE_QUERY_KEY, { pageSize: 100 }];
@@ -253,6 +307,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
           queryClient.getQueryData<ListRepairQueueResponse>(queryKey);
         expect(cachedData?.repairQueueItems[0].claimedBy).toBeDefined();
         expect(cachedData?.repairQueueItems[0].claimedBy).not.toBe('');
+        expect(cachedData?.inProgressCount).toBe(1);
       });
     });
 
@@ -261,6 +316,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
         repairQueueItems: [...MOCK_ITEMS],
         nextPageToken: '',
         totalSize: 2,
+        inProgressCount: 1,
       };
 
       const queryKey = [...REPAIR_QUEUE_QUERY_KEY, { pageSize: 100 }];
@@ -295,6 +351,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
         repairQueueItems: [...MOCK_ITEMS],
         nextPageToken: '',
         totalSize: 2,
+        inProgressCount: 1,
       };
 
       const queryKey = [...REPAIR_QUEUE_QUERY_KEY, { pageSize: 100 }];
@@ -317,16 +374,18 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
         expect(cachedData?.repairQueueItems[1].claimedBy).toBe(
           'other_tech@google.com',
         );
+        expect(cachedData?.inProgressCount).toBe(1);
       });
     });
   });
 
   describe('useUnclaimRepairTask', () => {
-    it('optimistically clears claimedBy on unclaim mutation', async () => {
+    it('optimistically clears claimedBy and decrements inProgressCount on unclaim mutation', async () => {
       const initialData: ListRepairQueueResponse = {
         repairQueueItems: [...MOCK_ITEMS],
         nextPageToken: '',
         totalSize: 2,
+        inProgressCount: 1,
       };
 
       const queryKey = [...REPAIR_QUEUE_QUERY_KEY, { pageSize: 100 }];
@@ -354,6 +413,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
           queryClient.getQueryData<ListRepairQueueResponse>(queryKey);
         expect(cachedData?.repairQueueItems[1].claimedBy).toBe('');
         expect(cachedData?.repairQueueItems[1].claimedAt).toBeUndefined();
+        expect(cachedData?.inProgressCount).toBe(0);
       });
 
       // Resolve the mutation
@@ -374,6 +434,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
         repairQueueItems: [...MOCK_ITEMS],
         nextPageToken: '',
         totalSize: 2,
+        inProgressCount: 1,
       };
 
       const queryKey = [...REPAIR_QUEUE_QUERY_KEY, { pageSize: 100 }];
@@ -400,6 +461,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       expect(cachedData?.repairQueueItems[1].claimedAt).toBe(
         '2026-08-19T10:00:00Z',
       );
+      expect(cachedData?.inProgressCount).toBe(1);
     });
 
     it('invalidates queries on unclaim settled', async () => {
@@ -430,6 +492,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
     mockListRepairQueue.mockResolvedValue({
       repairQueueItems: MOCK_ITEMS,
       totalSize: 2,
+      inProgressCount: 1,
       nextPageToken: '',
     });
 
