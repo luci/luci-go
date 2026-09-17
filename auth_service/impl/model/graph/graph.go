@@ -379,7 +379,7 @@ func (g *Graph) traverse(group string, s *Subgraph) int32 {
 
 // ConvertPrincipal handles the conversion of rpcpb.Principal -> graph.NodeKey.
 func ConvertPrincipal(p *rpcpb.Principal) (NodeKey, error) {
-	if p.Name == "" {
+	if p == nil || p.Name == "" {
 		return NodeKey{}, ErrInvalidPrincipalValue
 	}
 

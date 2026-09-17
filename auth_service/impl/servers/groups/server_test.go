@@ -1326,6 +1326,30 @@ func TestGroupsServer(t *testing.T) {
 
 			_, err := srv.GetSubgraph(ctx, &request)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid principal kind"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+		})
+
+		t.Run("Empty principal name returns InvalidArgument", func(t *ftt.Test) {
+			request := rpcpb.GetSubgraphRequest{
+				Principal: &rpcpb.Principal{
+					Kind: rpcpb.PrincipalKind_IDENTITY,
+					Name: "",
+				},
+			}
+
+			_, err := srv.GetSubgraph(ctx, &request)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid principal value"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+		})
+
+		t.Run("Nil principal returns InvalidArgument", func(t *ftt.Test) {
+			request := rpcpb.GetSubgraphRequest{
+				Principal: nil,
+			}
+
+			_, err := srv.GetSubgraph(ctx, &request)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid principal value"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("Group principal not in groups graph", func(t *ftt.Test) {

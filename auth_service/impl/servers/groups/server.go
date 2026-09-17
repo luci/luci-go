@@ -268,7 +268,7 @@ func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRe
 
 	principal, err := graph.ConvertPrincipal(request.Principal)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal,
+		return nil, status.Errorf(codes.InvalidArgument,
 			"issue parsing the principal from the request: %s", err)
 	}
 
