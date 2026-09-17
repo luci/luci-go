@@ -34,7 +34,7 @@ import (
 // It checks if the culprit is a tree closer before notifying.
 func NotifyRevertLanded(ctx context.Context, treeName string, culpritModel *model.Suspect, revertURL string) error {
 	// Check if this culprit is a tree closer
-	isTreeCloser, err := isCulpritTreeCloser(ctx, culpritModel)
+	isTreeCloser, err := isCulpritTreeCloser(ctx, treeName, culpritModel)
 	if err != nil {
 		// Log the error but don't fail the revert flow
 		logging.Warningf(ctx, "Failed to check if culprit is tree closer: %v", err)
@@ -46,13 +46,21 @@ func NotifyRevertLanded(ctx context.Context, treeName string, culpritModel *mode
 		return nil
 	}
 
+	// Propagate actual revert creation/commit timestamp instead of synthetic current time
+	revertTime := time.Now()
+	if !culpritModel.ActionDetails.RevertCommitTime.IsZero() {
+		revertTime = culpritModel.ActionDetails.RevertCommitTime
+	} else if !culpritModel.ActionDetails.RevertCreateTime.IsZero() {
+		revertTime = culpritModel.ActionDetails.RevertCreateTime
+	}
+
 	// Culprit is a tree closer, notify LUCI Notify about the revert
-	logging.Infof(ctx, "Culprit is a tree closer, notifying LUCI Notify about revert for tree %s", treeName)
+	logging.Infof(ctx, "Culprit is a tree closer, notifying LUCI Notify about revert for tree %s at %v", treeName, revertTime)
 
 	// Notify LUCI Notify that the revert has landed
 	// LUCI Notify's tree status cron will consider this event and decide whether to reopen the tree
 	// based on whether the revert landed after all currently-failing builds started.
-	err = lucinotify.NotifyRevertLanded(ctx, treeName, time.Now(), culpritModel.ReviewUrl, revertURL)
+	err = lucinotify.NotifyRevertLanded(ctx, treeName, revertTime, culpritModel.ReviewUrl, revertURL)
 	if err != nil {
 		return errors.Fmt("notifying LUCI Notify about revert for tree %s: %w", treeName, err)
 	}
@@ -61,10 +69,25 @@ func NotifyRevertLanded(ctx context.Context, treeName string, culpritModel *mode
 	return nil
 }
 
-// isCulpritTreeCloser checks if a suspect is associated with any tree closer analysis.
+// isCulpritTreeCloser checks if a suspect is associated with any tree closer analysis for treeName.
 // It queries all suspects with the same commit hash and checks if any of their
-// associated CompileFailureAnalysis has IsTreeCloser set to true.
-func isCulpritTreeCloser(ctx context.Context, culprit *model.Suspect) (bool, error) {
+// associated CompileFailureAnalysis has IsTreeCloser set to true for treeName.
+func isCulpritTreeCloser(ctx context.Context, treeName string, culprit *model.Suspect) (bool, error) {
+	if culprit.GitilesCommit.Id == "" {
+		return false, nil
+	}
+
+	// Direct check if suspect's parent analysis is available
+	if culprit.ParentAnalysis != nil && culprit.ParentAnalysis.Parent() != nil {
+		analysisID := culprit.ParentAnalysis.Parent().IntID()
+		cfa, err := datastoreutil.GetCompileFailureAnalysis(ctx, analysisID)
+		if err != nil {
+			logging.Warningf(ctx, "Failed to get CompileFailureAnalysis %d: %v", analysisID, err)
+		} else if cfa != nil && cfa.IsTreeCloser && cfa.Project == treeName {
+			return true, nil
+		}
+	}
+
 	// Step 1: Query all suspects with the same commit hash
 	// The GitilesCommit struct is embedded, so we access its Id field directly
 	q := datastore.NewQuery("Suspect").Eq("Id", culprit.GitilesCommit.Id)
@@ -80,6 +103,11 @@ func isCulpritTreeCloser(ctx context.Context, culprit *model.Suspect) (bool, err
 		if suspect.AnalysisType != pb.AnalysisType_COMPILE_FAILURE_ANALYSIS {
 			continue
 		}
+		// Match Gitiles commit host and project
+		if suspect.GitilesCommit.Host != culprit.GitilesCommit.Host ||
+			suspect.GitilesCommit.Project != culprit.GitilesCommit.Project {
+			continue
+		}
 		// Get the CompileFailureAnalysis ID from the suspect's parent analysis
 		if suspect.ParentAnalysis != nil && suspect.ParentAnalysis.Parent() != nil {
 			analysisID := suspect.ParentAnalysis.Parent().IntID()
@@ -87,7 +115,7 @@ func isCulpritTreeCloser(ctx context.Context, culprit *model.Suspect) (bool, err
 		}
 	}
 
-	// Step 3: Check if any CompileFailureAnalysis has IsTreeCloser set to true
+	// Step 3: Check if any CompileFailureAnalysis has IsTreeCloser set to true for treeName
 	for analysisID := range analysisIDs {
 		cfa, err := datastoreutil.GetCompileFailureAnalysis(ctx, analysisID)
 		if err != nil {
@@ -95,7 +123,7 @@ func isCulpritTreeCloser(ctx context.Context, culprit *model.Suspect) (bool, err
 			logging.Warningf(ctx, "Failed to get CompileFailureAnalysis %d: %v", analysisID, err)
 			continue
 		}
-		if cfa.IsTreeCloser {
+		if cfa.IsTreeCloser && cfa.Project == treeName {
 			return true, nil
 		}
 	}

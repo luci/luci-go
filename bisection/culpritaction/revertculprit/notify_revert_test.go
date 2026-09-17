@@ -17,6 +17,7 @@ package revertculprit
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -65,6 +66,7 @@ func TestNotifyRevertLanded(t *testing.T) {
 
 			culpritModel.ParentAnalysis = datastore.KeyForObj(ctx, nsa)
 			culpritModel.GitilesCommit.Id = "abc123"
+			culpritModel.ActionDetails.RevertCommitTime = time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
 			assert.Loosely(t, datastore.Put(ctx, culpritModel), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -81,7 +83,7 @@ func TestNotifyRevertLanded(t *testing.T) {
 					assert.Loosely(t, req.TreeName, should.Equal(treeName))
 					assert.Loosely(t, req.CulpritReviewUrl, should.Equal(culpritModel.ReviewUrl))
 					assert.Loosely(t, req.RevertReviewUrl, should.Equal(revertURL))
-					assert.Loosely(t, req.RevertLandTime, should.NotBeNil)
+					assert.Loosely(t, req.RevertLandTime.AsTime(), should.Match(culpritModel.ActionDetails.RevertCommitTime))
 					return &emptypb.Empty{}, nil
 				})
 
@@ -177,7 +179,7 @@ func TestIsCulpritTreeCloser(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, culprit), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			isTreeCloser, err := isCulpritTreeCloser(ctx, culprit)
+			isTreeCloser, err := isCulpritTreeCloser(ctx, "chromium", culprit)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, isTreeCloser, should.BeTrue)
 		})
@@ -202,7 +204,44 @@ func TestIsCulpritTreeCloser(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, culprit), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			isTreeCloser, err := isCulpritTreeCloser(ctx, culprit)
+			isTreeCloser, err := isCulpritTreeCloser(ctx, "chromium", culprit)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isTreeCloser, should.BeFalse)
+		})
+
+		t.Run("tree closer from different project does not match", func(t *ftt.Test) {
+			_, _, analysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
+				ctx, t, 88128398584955, "chrome", 455)
+			analysis.IsTreeCloser = true
+			assert.Loosely(t, datastore.Put(ctx, analysis), should.BeNil)
+
+			nsa := &model.CompileNthSectionAnalysis{
+				ParentAnalysis: datastore.KeyForObj(ctx, analysis),
+			}
+			assert.Loosely(t, datastore.Put(ctx, nsa), should.BeNil)
+
+			culprit := &model.Suspect{
+				Type:           model.SuspectType_NthSection,
+				AnalysisType:   pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+				ParentAnalysis: datastore.KeyForObj(ctx, nsa),
+			}
+			culprit.GitilesCommit.Id = "commit555"
+			assert.Loosely(t, datastore.Put(ctx, culprit), should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// treeName is "chromium", but analysis is for "chrome"
+			isTreeCloser, err := isCulpritTreeCloser(ctx, "chromium", culprit)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isTreeCloser, should.BeFalse)
+		})
+
+		t.Run("empty commit ID is rejected", func(t *ftt.Test) {
+			culprit := &model.Suspect{
+				Type:         model.SuspectType_NthSection,
+				AnalysisType: pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+			}
+			culprit.GitilesCommit.Id = ""
+			isTreeCloser, err := isCulpritTreeCloser(ctx, "chromium", culprit)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, isTreeCloser, should.BeFalse)
 		})
@@ -246,7 +285,7 @@ func TestIsCulpritTreeCloser(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, culprit1, culprit2), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			isTreeCloser, err := isCulpritTreeCloser(ctx, culprit1)
+			isTreeCloser, err := isCulpritTreeCloser(ctx, "chromium", culprit1)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, isTreeCloser, should.BeTrue)
 		})
@@ -288,7 +327,7 @@ func TestIsCulpritTreeCloser(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, culprit1, culprit2), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			isTreeCloser, err := isCulpritTreeCloser(ctx, culprit1)
+			isTreeCloser, err := isCulpritTreeCloser(ctx, "chromium", culprit1)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, isTreeCloser, should.BeFalse)
 		})
@@ -302,7 +341,7 @@ func TestIsCulpritTreeCloser(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, culprit), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			isTreeCloser, err := isCulpritTreeCloser(ctx, culprit)
+			isTreeCloser, err := isCulpritTreeCloser(ctx, "chromium", culprit)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, isTreeCloser, should.BeFalse)
 		})
@@ -317,7 +356,7 @@ func TestIsCulpritTreeCloser(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, culprit), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			isTreeCloser, err := isCulpritTreeCloser(ctx, culprit)
+			isTreeCloser, err := isCulpritTreeCloser(ctx, "chromium", culprit)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, isTreeCloser, should.BeFalse)
 		})

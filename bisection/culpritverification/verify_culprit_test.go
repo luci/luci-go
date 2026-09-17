@@ -290,6 +290,11 @@ func TestVerifySuspect(t *testing.T) {
 				ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysisOther),
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				ReviewUrl:          "review_url",
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "3425",
+				},
 				ActionDetails: model.ActionDetails{
 					IsRevertCreated: true,
 					RevertURL:       "revert_url",
@@ -569,5 +574,119 @@ func TestCheckSuspectWithSameCommitExist(t *testing.T) {
 		exist, err = checkSuspectWithSameCommitExist(c, cfa, suspect)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, exist, should.BeTrue)
+	})
+}
+
+func TestSkipVerificationIfConfirmed_SecurityScoping(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
+
+	ftt.Run("skipVerificationIfConfirmed security checks", t, func(t *ftt.Test) {
+		// Setup existing confirmed suspect under "chrome" project
+		_, _, cfaOther := testutil.CreateCompileFailureAnalysisAnalysisChain(c, t, 9000, "chrome", 100)
+		genaiOther := &model.CompileGenAIAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfaOther),
+		}
+		assert.Loosely(t, datastore.Put(c, genaiOther), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspectOther := &model.Suspect{
+			ParentAnalysis:     datastore.KeyForObj(c, genaiOther),
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			ReviewUrl:          "https://chromium-review.googlesource.com/c/chromium/src/+/12345",
+			GitilesCommit: bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Id:      "commitA",
+			},
+			ActionDetails: model.ActionDetails{
+				IsRevertCreated: true,
+				RevertURL:       "https://chrome-internal-review.googlesource.com/c/chrome/src-internal/+/9999",
+			},
+		}
+		assert.Loosely(t, datastore.Put(c, suspectOther), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Setup current analysis under "chromium" project
+		_, _, cfaCurrent := testutil.CreateCompileFailureAnalysisAnalysisChain(c, t, 9001, "chromium", 101)
+		cfaCurrent.IsTreeCloser = true
+		assert.Loosely(t, datastore.Put(c, cfaCurrent), should.BeNil)
+		genaiCurrent := &model.CompileGenAIAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfaCurrent),
+		}
+		assert.Loosely(t, datastore.Put(c, genaiCurrent), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		t.Run("cross-project suspect match is rejected", func(t *ftt.Test) {
+			suspectCurrent := &model.Suspect{
+				ParentAnalysis: datastore.KeyForObj(c, genaiCurrent),
+				ReviewUrl:      "https://chromium-review.googlesource.com/c/chromium/src/+/12345",
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "commitA",
+				},
+			}
+			assert.Loosely(t, datastore.Put(c, suspectCurrent), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			fastTracked, err := skipVerificationIfConfirmed(c, "chromium", suspectCurrent, cfaCurrent, 101)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fastTracked, should.BeFalse)
+		})
+
+		t.Run("commit ID mismatch is rejected", func(t *ftt.Test) {
+			// Change cfaOther to same project "chromium" to isolate commit ID check
+			cfaOther.Project = "chromium"
+			assert.Loosely(t, datastore.Put(c, cfaOther), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			suspectCurrent := &model.Suspect{
+				ParentAnalysis: datastore.KeyForObj(c, genaiCurrent),
+				ReviewUrl:      "https://chromium-review.googlesource.com/c/chromium/src/+/12345",
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "commitB", // Different commit ID
+				},
+			}
+			assert.Loosely(t, datastore.Put(c, suspectCurrent), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			fastTracked, err := skipVerificationIfConfirmed(c, "chromium", suspectCurrent, cfaCurrent, 101)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fastTracked, should.BeFalse)
+		})
+
+		t.Run("empty review URL is rejected", func(t *ftt.Test) {
+			suspectCurrent := &model.Suspect{
+				ParentAnalysis: datastore.KeyForObj(c, genaiCurrent),
+				ReviewUrl:      "",
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "commitA",
+				},
+			}
+			fastTracked, err := skipVerificationIfConfirmed(c, "chromium", suspectCurrent, cfaCurrent, 101)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fastTracked, should.BeFalse)
+		})
+
+		t.Run("empty commit ID is rejected", func(t *ftt.Test) {
+			suspectCurrent := &model.Suspect{
+				ParentAnalysis: datastore.KeyForObj(c, genaiCurrent),
+				ReviewUrl:      "https://chromium-review.googlesource.com/c/chromium/src/+/12345",
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "",
+				},
+			}
+			fastTracked, err := skipVerificationIfConfirmed(c, "chromium", suspectCurrent, cfaCurrent, 101)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fastTracked, should.BeFalse)
+		})
 	})
 }

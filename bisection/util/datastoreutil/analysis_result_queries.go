@@ -18,6 +18,7 @@ package datastoreutil
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -233,6 +234,9 @@ func GetCompileFailureAnalysis(c context.Context, analysisID int64) (*model.Comp
 // that has the same reviewURL as this suspect.
 // It is meant to check if the same CL is the suspects for multiple failures.
 func GetOtherSuspectsWithSameCL(c context.Context, suspect *model.Suspect) ([]*model.Suspect, error) {
+	if strings.TrimSpace(suspect.ReviewUrl) == "" {
+		return nil, nil
+	}
 	q := datastore.NewQuery("Suspect").Eq("review_url", suspect.ReviewUrl)
 	suspects, err := datastore.RunQuery[*model.Suspect](c, q).AsSlice()
 	if err != nil {

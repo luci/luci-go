@@ -222,6 +222,10 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 // If so, it skips verification, notifies LUCI Notify to reopen the tree if a revert was created,
 // schedules a revert action task, and returns true.
 func skipVerificationIfConfirmed(c context.Context, project string, suspect *model.Suspect, cfa *model.CompileFailureAnalysis, analysisID int64) (bool, error) {
+	if strings.TrimSpace(suspect.ReviewUrl) == "" || suspect.GitilesCommit.Id == "" {
+		return false, nil
+	}
+
 	otherSuspects, err := datastoreutil.GetOtherSuspectsWithSameCL(c, suspect)
 	if err != nil {
 		logging.Errorf(c, "Failed to GetOtherSuspectsWithSameCL: %v", err)
@@ -229,64 +233,96 @@ func skipVerificationIfConfirmed(c context.Context, project string, suspect *mod
 	}
 
 	for _, s := range otherSuspects {
-		if s.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
-			logging.Infof(c, "Suspect %d is already confirmed in analysis %d. Fast-tracking.",
-				suspect.Id, s.ParentAnalysis.Parent().IntID())
-
-			// Only notify tree reopen if a revert was actually created
-			if s.ActionDetails.IsRevertCreated {
-				// Notify LUCI Notify to reopen the tree
-				err = revertculprit.NotifyRevertLanded(c, project, suspect, s.ActionDetails.RevertURL)
-				if err != nil {
-					logging.Errorf(c, "Failed to notify LUCI Notify about revert: %v", err)
-				}
-			}
-
-			// Fast-track the suspect and analysis
-			err = datastore.RunInTransaction(c, func(ctx context.Context) error {
-				// Update suspect status
-				e := datastore.Get(ctx, suspect)
-				if e != nil {
-					return e
-				}
-				suspect.VerificationStatus = model.SuspectVerificationStatus_ConfirmedCulprit
-				e = datastore.Put(ctx, suspect)
-				if e != nil {
-					return e
-				}
-
-				// Update analysis verified culprits
-				e = datastore.Get(ctx, cfa)
-				if e != nil {
-					return e
-				}
-				cfa.VerifiedCulprits = append(cfa.VerifiedCulprits, datastore.KeyForObj(ctx, suspect))
-				return datastore.Put(ctx, cfa)
-			}, nil)
-			if err != nil {
-				return false, errors.Fmt("failed to update datastore for fast-track suspect: %w", err)
-			}
-
-			// Update analysis status
-			err = statusupdater.UpdateAnalysisStatus(c, cfa)
-			if err != nil {
-				logging.Errorf(c, "Failed to update analysis status: %v", err)
-			}
-
-			// Add task to take action (revert/comment)
-			err = tq.AddTask(c, &tq.Task{
-				Title: fmt.Sprintf("revert_culprit_%d_%d", suspect.Id, analysisID),
-				Payload: &taskpb.RevertCulpritTask{
-					AnalysisId: analysisID,
-					CulpritId:  suspect.Id,
-				},
-			})
-			if err != nil {
-				return false, errors.Fmt("failed to schedule revert task: %w", err)
-			}
-
-			return true, nil // Fast-tracked
+		if s.VerificationStatus != model.SuspectVerificationStatus_ConfirmedCulprit {
+			continue
 		}
+
+		// Verify Gitiles commit identity matches (Host, Project, and ID)
+		if s.GitilesCommit.Id == "" ||
+			s.GitilesCommit.Id != suspect.GitilesCommit.Id ||
+			s.GitilesCommit.Host != suspect.GitilesCommit.Host ||
+			s.GitilesCommit.Project != suspect.GitilesCommit.Project {
+			logging.Warningf(c, "Suspect %d matches review URL %s but Gitiles commit does not match (%+v vs %+v)",
+				s.Id, suspect.ReviewUrl, s.GitilesCommit, suspect.GitilesCommit)
+			continue
+		}
+
+		// Verify the historical suspect's analysis belongs to the same project
+		otherProject, err := datastoreutil.GetProjectForSuspect(c, s)
+		if err != nil {
+			// Fallback: if AnalysisType was not populated on historical compile failure suspect, check parent analysis
+			if s.ParentAnalysis != nil && s.ParentAnalysis.Parent() != nil {
+				if otherCfa, cfaErr := datastoreutil.GetCompileFailureAnalysis(c, s.ParentAnalysis.Parent().IntID()); cfaErr == nil && otherCfa != nil {
+					otherProject = otherCfa.Project
+					err = nil
+				}
+			}
+		}
+		if err != nil {
+			logging.Warningf(c, "Failed to get project for suspect %d: %v", s.Id, err)
+			continue
+		}
+		if otherProject != project {
+			logging.Warningf(c, "Suspect %d matches review URL %s but belongs to project %q, expected %q",
+				s.Id, suspect.ReviewUrl, otherProject, project)
+			continue
+		}
+
+		logging.Infof(c, "Suspect %d is already confirmed. Fast-tracking.", suspect.Id)
+
+		// Only notify tree reopen if a revert was actually created
+		if s.ActionDetails.IsRevertCreated {
+			// Notify LUCI Notify to reopen the tree
+			err = revertculprit.NotifyRevertLanded(c, project, suspect, s.ActionDetails.RevertURL)
+			if err != nil {
+				logging.Errorf(c, "Failed to notify LUCI Notify about revert: %v", err)
+			}
+		}
+
+		// Fast-track the suspect and analysis
+		err = datastore.RunInTransaction(c, func(ctx context.Context) error {
+			// Update suspect status
+			e := datastore.Get(ctx, suspect)
+			if e != nil {
+				return e
+			}
+			suspect.VerificationStatus = model.SuspectVerificationStatus_ConfirmedCulprit
+			e = datastore.Put(ctx, suspect)
+			if e != nil {
+				return e
+			}
+
+			// Update analysis verified culprits
+			e = datastore.Get(ctx, cfa)
+			if e != nil {
+				return e
+			}
+			cfa.VerifiedCulprits = append(cfa.VerifiedCulprits, datastore.KeyForObj(ctx, suspect))
+			return datastore.Put(ctx, cfa)
+		}, nil)
+		if err != nil {
+			return false, errors.Fmt("failed to update datastore for fast-track suspect: %w", err)
+		}
+
+		// Update analysis status
+		err = statusupdater.UpdateAnalysisStatus(c, cfa)
+		if err != nil {
+			logging.Errorf(c, "Failed to update analysis status: %v", err)
+		}
+
+		// Add task to take action (revert/comment)
+		err = tq.AddTask(c, &tq.Task{
+			Title: fmt.Sprintf("revert_culprit_%d_%d", suspect.Id, analysisID),
+			Payload: &taskpb.RevertCulpritTask{
+				AnalysisId: analysisID,
+				CulpritId:  suspect.Id,
+			},
+		})
+		if err != nil {
+			return false, errors.Fmt("failed to schedule revert task: %w", err)
+		}
+
+		return true, nil // Fast-tracked
 	}
 
 	return false, nil // Not fast-tracked
