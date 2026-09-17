@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,6 +47,36 @@ import (
 )
 
 const smallFileThreshold = 16 * 1024 // 16KiB
+
+// checkContained checks whether target is equal to or a descendant of root.
+func checkContained(root, target string) error {
+	cleanRoot := filepath.Clean(root)
+	cleanTarget := filepath.Clean(target)
+	rel, err := filepath.Rel(cleanRoot, cleanTarget)
+	if err != nil {
+		return errors.Fmt("failed to compute relative path: %w", err)
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return errors.Fmt("path %q escapes root %q", target, root)
+	}
+	return nil
+}
+
+// validateOutputPath validates that a path from a CAS tree is relative and
+// resolves strictly within root.
+func validateOutputPath(root, p string, output *client.TreeOutput) error {
+	if filepath.IsAbs(p) || filepath.VolumeName(p) != "" || (len(p) > 0 && os.IsPathSeparator(p[0])) {
+		return errors.Fmt("path %q is absolute or contains volume name", p)
+	}
+	clean := filepath.Clean(p)
+	if clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+		return errors.Fmt("path %q contains directory traversal", p)
+	}
+	if output != nil && !output.IsEmptyDirectory && clean == "." {
+		return errors.Fmt("file path %q resolves to destination root %q", p, root)
+	}
+	return nil
+}
 
 // CmdDownload returns an object for the `download` subcommand.
 func CmdDownload(authFlags AuthFlags) *subcommands.Command {
@@ -166,7 +197,11 @@ func createDirectories(ctx context.Context, root string, outputs map[string]*cli
 	}
 
 	for _, dir := range dirs {
-		if err := os.Mkdir(filepath.Join(root, dir), 0o700); err != nil && !os.IsExist(err) {
+		target := filepath.Join(root, dir)
+		if err := checkContained(root, target); err != nil {
+			return errors.Fmt("directory path %q escapes root %q: %w", dir, root, err)
+		}
+		if err := os.Mkdir(target, 0o700); err != nil && !os.IsExist(err) {
 			return errors.Fmt("failed to create directory: %w", err)
 		}
 	}
@@ -183,7 +218,20 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 	ch := make(chan struct{}, runtime.NumCPU())
 
 	for _, dst := range dsts {
-		src := srcs[dst.Digest]
+		src, ok := srcs[dst.Digest]
+		if !ok || src == nil {
+			return errors.Fmt("missing source file for digest %s", dst.Digest)
+		}
+
+		srcPath := filepath.Join(root, src.Path)
+		dstPath := filepath.Join(root, dst.Path)
+		if err := checkContained(root, srcPath); err != nil {
+			return errors.Fmt("source file path %q escapes root %q: %w", src.Path, root, err)
+		}
+		if err := checkContained(root, dstPath); err != nil {
+			return errors.Fmt("destination file path %q escapes root %q: %w", dst.Path, root, err)
+		}
+
 		ch <- struct{}{}
 		eg.Go(func() (err error) {
 			defer func() { <-ch }()
@@ -192,7 +240,7 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 				mode = 0o700
 			}
 
-			if err := filesystem.Copy(filepath.Join(root, dst.Path), filepath.Join(root, src.Path), os.FileMode(mode)); err != nil {
+			if err := filesystem.Copy(dstPath, srcPath, os.FileMode(mode)); err != nil {
 				return errors.Fmt("failed to copy file from '%s' to '%s': %w", src.Path, dst.Path, err)
 			}
 
@@ -261,11 +309,15 @@ func cacheSmallFiles(ctx context.Context, kvs smallFileCache, rootDir string, ou
 		var eg errgroup.Group
 
 		for _, output := range outputs {
+			filePath := filepath.Join(rootDir, output.Path)
+			if err := checkContained(rootDir, filePath); err != nil {
+				return errors.Fmt("file path %q escapes root %q: %w", output.Path, rootDir, err)
+			}
 			eg.Go(func() error {
 				b, err := func() ([]byte, error) {
 					ch <- struct{}{}
 					defer func() { <-ch }()
-					return os.ReadFile(filepath.Join(rootDir, output.Path))
+					return os.ReadFile(filePath)
 				}()
 
 				if err != nil {
@@ -311,7 +363,11 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFile
 
 	start := time.Now()
 	for _, output := range largeOutputs {
-		if err := diskcache.AddFileWithoutValidation(ctx, cache.HexDigest(output.Digest.Hash), filepath.Join(rootDir, output.Path)); err != nil {
+		filePath := filepath.Join(rootDir, output.Path)
+		if err := checkContained(rootDir, filePath); err != nil {
+			return errors.Fmt("file path %q escapes root %q: %w", output.Path, rootDir, err)
+		}
+		if err := diskcache.AddFileWithoutValidation(ctx, cache.HexDigest(output.Digest.Hash), filePath); err != nil {
 			return errors.Fmt("failed to add cache; path=%s digest=%s: %w", output.Path, output.Digest, err)
 		}
 	}
@@ -378,6 +434,15 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 			return errors.Fmt("failed to write json file: %w", err)
 		}
 		return errors.Fmt("failed to call FlattenTree: %w", err)
+	}
+
+	for path, output := range outputs {
+		if err := validateOutputPath(r.dir, path, output); err != nil {
+			if err := writeExitResult(r.dumpJSON, ArgumentsInvalid, ""); err != nil {
+				return errors.Fmt("failed to write json file: %w", err)
+			}
+			return errors.Fmt("invalid path %q in CAS tree: %w", path, err)
+		}
 	}
 
 	to := make(map[digest.Digest]*client.TreeOutput)
@@ -447,7 +512,14 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		}
 
 		if output.SymlinkTarget != "" {
-			if err := os.Symlink(output.SymlinkTarget, filepath.Join(r.dir, path)); err != nil {
+			symlinkPath := filepath.Join(r.dir, path)
+			if err := checkContained(r.dir, symlinkPath); err != nil {
+				if err := writeExitResult(r.dumpJSON, ArgumentsInvalid, ""); err != nil {
+					return errors.Fmt("failed to write json file: %w", err)
+				}
+				return errors.Fmt("symlink path %q escapes destination dir %q: %w", path, r.dir, err)
+			}
+			if err := os.Symlink(output.SymlinkTarget, symlinkPath); err != nil {
 				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 					return errors.Fmt("failed to write json file: %w", err)
 				}
@@ -462,12 +534,19 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		}
 
 		if diskcache != nil && diskcache.Touch(cache.HexDigest(output.Digest.Hash)) {
+			destPath := filepath.Join(r.dir, path)
+			if err := checkContained(r.dir, destPath); err != nil {
+				if err := writeExitResult(r.dumpJSON, ArgumentsInvalid, ""); err != nil {
+					return errors.Fmt("failed to write json file: %w", err)
+				}
+				return errors.Fmt("hardlink destination path %q escapes destination dir %q: %w", path, r.dir, err)
+			}
 			mode := 0o600
 			if output.IsExecutable {
 				mode = 0o700
 			}
 
-			if err := diskcache.Hardlink(cache.HexDigest(output.Digest.Hash), filepath.Join(r.dir, path), os.FileMode(mode)); err != nil {
+			if err := diskcache.Hardlink(cache.HexDigest(output.Digest.Hash), destPath, os.FileMode(mode)); err != nil {
 				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 					return errors.Fmt("failed to write json file: %w", err)
 				}
