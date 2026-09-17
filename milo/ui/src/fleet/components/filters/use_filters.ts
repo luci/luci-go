@@ -60,6 +60,7 @@ export const useFilterState = <
   filterValues: FilterValuesFromBuilders<T> | undefined;
   aip160: () => string;
   warnings: string[];
+  filterErrors: string[];
   setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
   const { areFilterValuesLoading = false } = options;
@@ -153,6 +154,7 @@ export const useFilterState = <
     filterValues,
     aip160,
     warnings,
+    filterErrors: warningsFromBuilder,
     setFiltersBatch,
   };
 };
@@ -169,6 +171,7 @@ export const useFilters = <
   filterValues: FilterValuesFromBuilders<T> | undefined;
   aip160: () => string;
   warnings: string[];
+  filterErrors: string[];
   setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
   const { areFilterValuesLoading = false, onFilterChange } = options;

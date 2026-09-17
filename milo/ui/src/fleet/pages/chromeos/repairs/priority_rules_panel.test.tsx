@@ -24,8 +24,8 @@ import userEvent from '@testing-library/user-event';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import * as UsePriorityRulesModule from '@/fleet/pages/chromeos/repairs/use_priority_rules';
-import { ChromeOSFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
-import * as UseChromeOSFiltersModule from '@/fleet/pages/device_list_page/chromeos/use_chromeos_filters';
+import { RepairQueueFilterKey } from '@/fleet/pages/chromeos/repairs/use_repair_queue_filter_builders';
+import * as UseRepairQueueFilterBuildersModule from '@/fleet/pages/chromeos/repairs/use_repair_queue_filter_builders';
 import { PriorityRule } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -72,10 +72,13 @@ const createMockFilterBuilders = () =>
     lab: new StringListFilterCategoryBuilder()
       .setLabel('Lab')
       .setOptions([{ label: 'MTV', value: 'MTV' }]),
-    state: new StringListFilterCategoryBuilder()
+    dut_state: new StringListFilterCategoryBuilder()
       .setLabel('State')
       .setOptions([{ label: 'READY', value: 'READY' }]),
-  }) as unknown as Record<ChromeOSFilterKey, StringListFilterCategoryBuilder>;
+  }) as unknown as Record<
+    RepairQueueFilterKey,
+    StringListFilterCategoryBuilder
+  >;
 
 describe('<PriorityRulesPanel />', () => {
   const mockCreateRule = jest.fn();
@@ -89,7 +92,7 @@ describe('<PriorityRulesPanel />', () => {
     mockDeleteRule.mockResolvedValue({});
 
     jest
-      .spyOn(UseChromeOSFiltersModule, 'useChromeOSFilterBuilders')
+      .spyOn(UseRepairQueueFilterBuildersModule, 'useRepairQueueFilterBuilders')
       .mockReturnValue({
         filterBuilders: createMockFilterBuilders(),
         isLoading: false,
@@ -213,6 +216,46 @@ describe('<PriorityRulesPanel />', () => {
     });
   });
 
+  it('swaps the delete button for Apply while a row is dirty', () => {
+    setupMockHook(MOCK_RULES.slice(0, 1));
+    renderPanel();
+
+    // Pristine: delete only. Apply shares the same slot, so showing both
+    // would push the Pts field sideways on the first keystroke.
+    expect(screen.getByTestId('rule-delete-button-1')).toBeInTheDocument();
+    expect(screen.queryByTestId('rule-apply-button-1')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId('rule-weight-input-1'), {
+      target: { value: '300' },
+    });
+
+    expect(screen.getByTestId('rule-apply-button-1')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('rule-delete-button-1'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps the delete button on a draft that has no filter yet', () => {
+    setupMockHook(MOCK_RULES.slice(0, 1));
+    renderPanel();
+
+    fireEvent.click(screen.getByTestId('add-priority-rule-button'));
+
+    const draftRow = screen.getByTestId(/^priority-rule-row-draft-/);
+    const draftId = draftRow
+      .getAttribute('data-testid')!
+      .replace('priority-rule-row-', '');
+
+    // A draft is dirty from birth, so swapping on `dirty` alone would strand
+    // it with no way to back out. Nothing to apply yet, so delete stays.
+    expect(
+      screen.getByTestId(`rule-delete-button-${draftId}`),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId(`rule-apply-button-${draftId}`),
+    ).not.toBeInTheDocument();
+  });
+
   it('shows Apply button when filter chip is removed in FilterBar', async () => {
     setupMockHook(MOCK_RULES.slice(0, 1));
     renderPanel();
@@ -241,7 +284,7 @@ describe('<PriorityRulesPanel />', () => {
     expect(rowDraft).toBeInTheDocument();
 
     const searchInput = within(rowDraft).getByPlaceholderText(
-      'Add rule filter (e.g. pool, board, model)...',
+      'Add rule filter (e.g. pool, board, model, dut_state)...',
     );
     expect(searchInput).toBeInTheDocument();
 
@@ -421,7 +464,7 @@ describe('<PriorityRulesPanel />', () => {
 
     const rowDraft = screen.getAllByTestId(/^priority-rule-row-draft-/)[0];
     const draftSearchInput = within(rowDraft).getByPlaceholderText(
-      'Add rule filter (e.g. pool, board, model)...',
+      'Add rule filter (e.g. pool, board, model, dut_state)...',
     );
     await user.type(draftSearchInput, 'model:brya');
     await user.keyboard('{Enter}');
@@ -620,5 +663,94 @@ describe('<PriorityRulesPanel />', () => {
       ),
     ).toBeInTheDocument();
     expect(mockUpdateRule).not.toHaveBeenCalled();
+  });
+
+  it('displays an error alert when a rule uses an invalid filter key like "id"', async () => {
+    setupMockHook([
+      {
+        id: '17',
+        expressionAip160: 'id = "chrome-clank-chromeos8-row"',
+        weight: '123',
+      },
+    ]);
+    renderPanel();
+
+    const alert = await screen.findByTestId('priority-rule-error-17');
+    expect(alert).toBeInTheDocument();
+    expect(alert).toHaveTextContent(
+      'Invalid rule expression "id = "chrome-clank-chromeos8-row"": ' +
+        '"id" is not a valid filter field for repair tasks (use "dut_id" for device hostnames)',
+    );
+  });
+
+  it('displays an error alert when a rule uses unsupported OR between different fields', async () => {
+    setupMockHook([
+      {
+        id: '15',
+        expressionAip160:
+          'id = "chromeos1-sinclair-test-host1" OR dut_id = "575450c3-3fbd-4d98-9ec1-dummy"',
+        weight: '233',
+      },
+    ]);
+    renderPanel();
+
+    const alert = await screen.findByTestId('priority-rule-error-15');
+    expect(alert).toBeInTheDocument();
+    expect(alert).toHaveTextContent(
+      'OR operations between different filter fields are not supported',
+    );
+  });
+
+  it('displays an error alert when a rule has unparseable AIP-160 syntax', async () => {
+    setupMockHook([
+      {
+        id: '99',
+        expressionAip160: '=== syntax error ===',
+        weight: '50',
+      },
+    ]);
+    renderPanel();
+
+    const alert = await screen.findByTestId('priority-rule-error-99');
+    expect(alert).toBeInTheDocument();
+    expect(alert).toHaveTextContent(
+      'Invalid rule expression "=== syntax error ==="',
+    );
+  });
+
+  it('does not confuse fields ending in "id" like "fluid" with "id"', async () => {
+    setupMockHook([
+      {
+        id: '18',
+        expressionAip160: 'fluid = "test"',
+        weight: '100',
+      },
+    ]);
+    renderPanel();
+
+    const alert = await screen.findByTestId('priority-rule-error-18');
+    expect(alert).toBeInTheDocument();
+    expect(alert).not.toHaveTextContent('use "dut_id" for device hostnames');
+    expect(alert).toHaveTextContent('fluid is not a valid filter');
+  });
+
+  it('disables the Apply button when a rule has an error', async () => {
+    setupMockHook([
+      {
+        id: '17',
+        expressionAip160: 'id = "chrome-clank-chromeos8-row"',
+        weight: '123',
+      },
+    ]);
+    renderPanel();
+
+    await screen.findByTestId('priority-rule-error-17');
+
+    const weightInput = screen.getByTestId('rule-weight-input-17');
+    fireEvent.change(weightInput, { target: { value: '456' } });
+
+    const applyButton = screen.getByTestId('rule-apply-button-17');
+    expect(applyButton).toBeInTheDocument();
+    expect(applyButton).toBeDisabled();
   });
 });

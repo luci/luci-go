@@ -76,7 +76,7 @@ export const ChromeOSRepairDashboard = () => {
       </Typography>
 
       <div css={{ marginTop: 16 }}>
-        <ChromeOSRepairTable filter={''} />
+        <ChromeOSRepairTable />
       </div>
     </div>
   );

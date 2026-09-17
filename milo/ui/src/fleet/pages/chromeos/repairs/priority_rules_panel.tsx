@@ -34,11 +34,11 @@ import {
   FilterCategoryBuilder,
   useFilterState,
 } from '@/fleet/components/filters/use_filters';
-import { useChromeOSFilterBuilders } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_filters';
 import { colors } from '@/fleet/theme/colors';
 import { PriorityRule } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { usePriorityRules } from './use_priority_rules';
+import { useRepairQueueFilterBuilders } from './use_repair_queue_filter_builders';
 
 const MAX_PRIORITY_RULES = 5;
 const DEFAULT_VISIBLE_RULES = 3;
@@ -86,6 +86,30 @@ interface PriorityRuleRowProps {
   readonly onApply: (row: EditableRuleRow) => void;
   readonly onDelete: (row: EditableRuleRow) => void;
 }
+const formatPriorityRuleError = (
+  expressionAip160: string,
+  filterErrors: readonly string[] | undefined,
+): string | null => {
+  if (filterErrors && filterErrors.length > 0) {
+    const formattedErrors = filterErrors.map((err) => {
+      if (/\bid\b is not a valid filter/i.test(err)) {
+        return '"id" is not a valid filter field for repair tasks (use "dut_id" for device hostnames)';
+      }
+      if (err.includes('OR between filters is not supported yet')) {
+        return 'OR operations between different filter fields are not supported';
+      }
+      return err;
+    });
+
+    const trimmedExpr = expressionAip160.trim();
+    if (trimmedExpr) {
+      return `Invalid rule expression "${trimmedExpr}": ${formattedErrors.join('; ')}`;
+    }
+    return formattedErrors.join('; ');
+  }
+
+  return null;
+};
 
 const PriorityRuleRow = ({
   row,
@@ -106,7 +130,7 @@ const PriorityRuleRow = ({
     [onFilterChange, row.id],
   );
 
-  const { filterValues } = useFilterState(
+  const { filterValues, filterErrors } = useFilterState(
     filterBuilders,
     row.expressionAip160,
     handleFilterChange,
@@ -120,73 +144,132 @@ const PriorityRuleRow = ({
     [filterValues],
   );
 
+  const ruleError = useMemo(() => {
+    if (isBuildersLoading) {
+      return null;
+    }
+    return formatPriorityRuleError(row.expressionAip160, filterErrors);
+  }, [isBuildersLoading, row.expressionAip160, filterErrors]);
+
   const dirty = isRowDirty(row);
+
+  // A draft counts as dirty from the moment it is created, so a plain
+  // `dirty` swap would leave a brand new row with no way to back out of it.
+  // Until the draft has a filter there is nothing to apply anyway, so it
+  // keeps the delete button and Apply takes over once the row means
+  // something. Clearing the last chip brings delete back.
+  const isUntouchedDraft = row.isDraft && row.expressionAip160.trim() === '';
+  const showApply = dirty && !isUntouchedDraft;
 
   return (
     <Box
       data-testid={`priority-rule-row-${row.id}`}
       sx={{
         display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
+        flexDirection: 'column',
+        gap: 0.75,
         width: '100%',
       }}
     >
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <FilterBar
-          filterCategoryDatas={filterCategoryDatas}
-          isLoading={isBuildersLoading}
-          searchPlaceholder="Add rule filter (e.g. pool, board, model)..."
-          disableShortcut
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          width: '100%',
+        }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <FilterBar
+            filterCategoryDatas={filterCategoryDatas}
+            isLoading={isBuildersLoading}
+            searchPlaceholder="Add rule filter (e.g. pool, board, model, dut_state)..."
+            disableShortcut
+          />
+        </Box>
+
+        <TextField
+          label="Pts"
+          type="number"
+          value={row.weight}
+          onChange={(e) => onWeightChange(row.id, e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !isSubmitting && !ruleError) {
+              e.preventDefault();
+              onApply(row);
+            }
+          }}
+          size="small"
+          disabled={isBusy}
+          sx={{ width: 100, flexShrink: 0 }}
+          inputProps={{
+            min: MIN_RULE_WEIGHT,
+            max: MAX_RULE_WEIGHT,
+            'data-testid': `rule-weight-input-${row.id}`,
+            'aria-label': `Rule ${index + 1} points weight`,
+          }}
         />
+
+        {/*
+          One fixed-width slot holding a single control. Apply takes over the
+          delete slot while the row is dirty rather than appearing beside it,
+          because inserting a button mid-row shifted the Pts field sideways on
+          every keystroke. The width is pinned so swapping a text button for an
+          icon button does not move anything either.
+        */}
+        <Box
+          sx={{
+            width: 72,
+            flexShrink: 0,
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          {showApply ? (
+            <Button
+              variant="contained"
+              color="primary"
+              size="small"
+              onClick={() => onApply(row)}
+              disabled={isSubmitting || !!ruleError}
+              data-testid={`rule-apply-button-${row.id}`}
+              sx={{ minWidth: 64, height: 40 }}
+            >
+              {isBusy ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                'Apply'
+              )}
+            </Button>
+          ) : (
+            <IconButton
+              aria-label={`delete rule ${row.id}`}
+              size="small"
+              onClick={() => onDelete(row)}
+              disabled={isSubmitting}
+              data-testid={`rule-delete-button-${row.id}`}
+              sx={{ color: '#d32f2f' }}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
       </Box>
 
-      <TextField
-        label="Pts"
-        type="number"
-        value={row.weight}
-        onChange={(e) => onWeightChange(row.id, e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !isSubmitting) {
-            e.preventDefault();
-            onApply(row);
-          }
-        }}
-        size="small"
-        disabled={isBusy}
-        sx={{ width: 100, flexShrink: 0 }}
-        inputProps={{
-          min: MIN_RULE_WEIGHT,
-          max: MAX_RULE_WEIGHT,
-          'data-testid': `rule-weight-input-${row.id}`,
-          'aria-label': `Rule ${index + 1} points weight`,
-        }}
-      />
-
-      {dirty && (
-        <Button
-          variant="contained"
-          color="primary"
-          size="small"
-          onClick={() => onApply(row)}
-          disabled={isSubmitting}
-          data-testid={`rule-apply-button-${row.id}`}
-          sx={{ minWidth: 64, height: 40, flexShrink: 0 }}
+      {ruleError && (
+        <Alert
+          severity="error"
+          sx={{
+            py: 0.25,
+            px: 1.5,
+            fontSize: '0.8125rem',
+            '& .MuiAlert-icon': { py: 0.5 },
+          }}
+          data-testid={`priority-rule-error-${row.id}`}
         >
-          {isBusy ? <CircularProgress size={20} color="inherit" /> : 'Apply'}
-        </Button>
+          {ruleError}
+        </Alert>
       )}
-
-      <IconButton
-        aria-label={`delete rule ${row.id}`}
-        size="small"
-        onClick={() => onDelete(row)}
-        disabled={isSubmitting}
-        data-testid={`rule-delete-button-${row.id}`}
-        sx={{ color: '#d32f2f', flexShrink: 0 }}
-      >
-        <DeleteOutlineIcon fontSize="small" />
-      </IconButton>
     </Box>
   );
 };
@@ -206,7 +289,7 @@ export const PriorityRulesPanel = () => {
   } = usePriorityRules();
 
   const { filterBuilders, isLoading: isBuildersLoading } =
-    useChromeOSFilterBuilders();
+    useRepairQueueFilterBuilders();
 
   const [rows, setRows] = useState<readonly EditableRuleRow[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

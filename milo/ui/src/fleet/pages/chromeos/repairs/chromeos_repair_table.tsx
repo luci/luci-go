@@ -39,37 +39,33 @@ const CHROMEOS_REPAIRS_LOCAL_STORAGE_KEY = 'fleet_chromeos_repairs_table';
 
 interface ChromeOSRepairTableProps {
   columns?: RepairQueueColumnDef[];
-  filter: string;
 }
 
 export const ChromeOSRepairTable = ({
   columns: propColumns,
-  filter,
 }: ChromeOSRepairTableProps) => {
-  const { columns: defaultColumns } = useRepairQueueColumns();
-  const columns = propColumns || defaultColumns;
-
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100],
     defaultPageSize: 100,
   });
 
-  const { pageSize, pageToken } = usePager(pagerCtx);
+  const { pageSize, pageToken, pageIndex } = usePager(pagerCtx);
 
-  const [sorting, onSortingChange, orderByParam] = useMrtSortingState(
-    columns,
-    pagerCtx,
-  );
+  const { columns: defaultColumns } = useRepairQueueColumns({
+    pageIndex,
+    pageSize,
+  });
+  const columns = propColumns || defaultColumns;
+
+  const [sorting, onSortingChange] = useMrtSortingState(columns, pagerCtx);
 
   const request = useMemo(
     () =>
       ListRepairQueueRequest.fromPartial({
         pageSize,
         pageToken,
-        orderBy: orderByParam,
-        filter,
       }),
-    [pageSize, pageToken, orderByParam, filter],
+    [pageSize, pageToken],
   );
 
   const queueQuery = useRepairQueue(request);
@@ -79,7 +75,6 @@ export const ChromeOSRepairTable = ({
     nextPageToken = '',
     totalSize = 0,
   } = queueQuery.data || {};
-
   const { columnSizing, onColumnSizingChange } = useMrtColumnSizing(
     CHROMEOS_REPAIRS_LOCAL_STORAGE_KEY,
   );
@@ -88,7 +83,7 @@ export const ChromeOSRepairTable = ({
     () => ({
       columns,
       data: repairQueueItems,
-      enableRowSelection: false,
+      enableRowSelection: true,
       positionToolbarAlertBanner: 'none',
       renderBottomToolbarCustomActions: ({ table }) => (
         <FleetBottomToolbar
@@ -100,6 +95,7 @@ export const ChromeOSRepairTable = ({
       ),
       getRowId: (row: RepairQueueRow) => row.taskId,
       onSortingChange,
+      enableSorting: false,
       enablePagination: false,
       enableTopToolbar: false,
       enableColumnVirtualization: process.env.NODE_ENV !== 'test',

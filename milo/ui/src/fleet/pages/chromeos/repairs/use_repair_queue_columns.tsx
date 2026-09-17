@@ -39,16 +39,26 @@ export type RepairQueueRow = RepairQueueItem;
 export type RepairQueueColumnDef = MRT_ColumnDef<RepairQueueRow>;
 
 export const REPAIR_QUEUE_COLUMN_IDS = [
+  'rank',
   'dut_id',
   'label-pool',
   'label-model',
   'pool_model_health',
   'dut_state',
+  'priority_score',
   'peripherals',
   'assignee',
 ] as const;
 
-export const useRepairQueueColumns = () => {
+export interface UseRepairQueueColumnsOptions {
+  pageIndex?: number;
+  pageSize?: number;
+}
+
+export const useRepairQueueColumns = ({
+  pageIndex = 0,
+  pageSize = 100,
+}: UseRepairQueueColumnsOptions = {}) => {
   const { mutate: claimTask, isPending: isClaimPending } = useClaimRepairTask();
   const { mutate: unclaimTask, isPending: isUnclaimPending } =
     useUnclaimRepairTask();
@@ -60,12 +70,23 @@ export const useRepairQueueColumns = () => {
   const columns: RepairQueueColumnDef[] = useMemo(() => {
     return [
       {
+        id: 'rank',
+        header: 'Rank',
+        size: 60,
+        minSize: 50,
+        maxSize: 80,
+        enableSorting: false,
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
+          return String(pageIndex * pageSize + row.index + 1);
+        },
+      },
+      {
         id: 'dut_id',
         header: 'Dut ID',
         accessorKey: 'dutId',
         minSize: 70,
         maxSize: 700,
-        enableSorting: true,
+        enableSorting: false,
         Cell: ({ cell }: FC_CellProps<RepairQueueRow>) => (
           <EllipsisTooltip>{cell.getValue<string>()}</EllipsisTooltip>
         ),
@@ -76,7 +97,7 @@ export const useRepairQueueColumns = () => {
         accessorFn: (row) => labelValuesToString(row.pools || []),
         minSize: 70,
         maxSize: 700,
-        enableSorting: true,
+        enableSorting: false,
         Cell: ({ cell }: FC_CellProps<RepairQueueRow>) => (
           <EllipsisTooltip>{cell.getValue<string>()}</EllipsisTooltip>
         ),
@@ -87,7 +108,7 @@ export const useRepairQueueColumns = () => {
         accessorKey: 'model',
         minSize: 70,
         maxSize: 700,
-        enableSorting: true,
+        enableSorting: false,
         Cell: ({ cell }: FC_CellProps<RepairQueueRow>) => (
           <EllipsisTooltip>{cell.getValue<string>()}</EllipsisTooltip>
         ),
@@ -95,6 +116,7 @@ export const useRepairQueueColumns = () => {
       {
         id: 'pool_model_health',
         header: 'Pool / Model Health',
+        enableSorting: false,
         Header: () => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <span>Pool / Model Health</span>
@@ -131,14 +153,32 @@ export const useRepairQueueColumns = () => {
         accessorKey: 'state',
         minSize: 70,
         maxSize: 700,
-        enableSorting: true,
+        enableSorting: false,
         Cell: ({ cell }: FC_CellProps<RepairQueueRow>) => (
           <DutStateCell state={cell.getValue<string>()} />
         ),
       },
       {
+        id: 'priority_score',
+        header: 'Priority Score',
+        size: 140,
+        minSize: 120,
+        maxSize: 180,
+        enableSorting: false,
+        meta: {
+          infoTooltip:
+            'Devices are ranked in real time by summing active rule weights. Higher score = higher priority.',
+        },
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
+          <Typography sx={{ fontWeight: 600 }}>
+            {row.original.priorityScore || '0'}
+          </Typography>
+        ),
+      },
+      {
         id: 'peripherals',
         header: 'Peripherals (W / B / S)',
+        enableSorting: false,
         Header: () => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <span>Peripherals (W / B / S)</span>
@@ -222,6 +262,7 @@ export const useRepairQueueColumns = () => {
       {
         id: 'assignee',
         header: 'Assignee',
+        enableSorting: false,
         muiTableHeadCellProps: {
           align: 'center',
         },
@@ -315,7 +356,7 @@ export const useRepairQueueColumns = () => {
         },
       },
     ];
-  }, [claimTask, unclaimTask, currentUser, isPending]);
+  }, [claimTask, unclaimTask, currentUser, isPending, pageIndex, pageSize]);
 
   return { columns };
 };
