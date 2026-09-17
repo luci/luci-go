@@ -23,9 +23,11 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/resultdb/internal/checkpoints"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -61,7 +63,7 @@ func TestHandleWorkUnitsCatchUpPublisher(t *testing.T) {
 			return res
 		}
 
-		t.Run("Happy Path - Enqueues Tasks", func(t *ftt.Test) {
+		t.Run("Happy Path - Enqueues Tasks and Records Checkpoint", func(t *ftt.Test) {
 			rootInvID := rootinvocations.ID("test-root-inv-catchup")
 			cutoffTime := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 
@@ -102,6 +104,45 @@ func TestHandleWorkUnitsCatchUpPublisher(t *testing.T) {
 			trPayload := trTasks[0].Payload.(*taskspb.PublishTestResultsTask)
 			assert.Loosely(t, trPayload.RootInvocationId, should.Equal(string(rootInvID)))
 			assert.Loosely(t, trPayload.WorkUnitIds, should.HaveLength(3))
+
+			// Verify checkpoint was recorded.
+			exists, err := checkpoints.Exists(span.Single(ctx), checkpoints.Key{
+				Project:    "testproject",
+				ResourceID: string(rootInvID),
+				ProcessID:  WorkUnitsCatchUpProcessID,
+				Uniquifier: "start",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, exists, should.BeTrue)
+		})
+
+		t.Run("Checkpoint Deduplication - Skips if already processed", func(t *ftt.Test) {
+			rootInvID := rootinvocations.ID("test-root-inv-catchup-dedup")
+			cutoffTime := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+
+			rootInv := rootinvocations.NewBuilder(rootInvID).
+				WithFinalizationState(pb.RootInvocation_ACTIVE).
+				WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).
+				WithMetadataFinalizedTime(cutoffTime).
+				Build()
+			muts := rootinvocations.InsertForTesting(rootInv)
+
+			rootWU := workunits.NewBuilder(rootInvID, "root").WithMinimalFields().WithFinalizationState(pb.WorkUnit_FINALIZED).WithFinalizeTime(cutoffTime.Add(-2 * time.Hour)).Build()
+			muts = append(muts, workunits.InsertForTesting(rootWU)...)
+
+			// Pre-insert checkpoint for this page.
+			checkpointKey := checkpoints.Key{
+				Project:    "testproject",
+				ResourceID: string(rootInvID),
+				ProcessID:  WorkUnitsCatchUpProcessID,
+				Uniquifier: "start",
+			}
+			muts = append(muts, checkpoints.Insert(ctx, checkpointKey, CheckpointTTL))
+			testutil.MustApply(ctx, t, muts...)
+
+			err := runCatchUp(rootInvID, 10)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(sched.Tasks()), should.BeZero)
 		})
 
 		t.Run("Gap 1 - Finalized with WAIT_FOR_METADATA", func(t *ftt.Test) {

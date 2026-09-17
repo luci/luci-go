@@ -242,7 +242,7 @@ func (p *testAggregationsPublisher) enqueueContinuationTask(ctx context.Context,
 	}
 	// Use level index and page token in task title for uniqueness and debugging.
 	if err := tq.AddTask(ctx, &tq.Task{
-		Title:   fmt.Sprintf("pubsub-ta-rootInvocations/%s/level/%d/pageTokens/%s", rootInvID, nextToken.levelIndex, nextToken.pageToken),
+		Title:   fmt.Sprintf("ta-pubsub-cont-%s-%d-%s", rootInvID, nextToken.levelIndex, tokenHash(nextToken.pageToken)),
 		Payload: payload,
 	}); err != nil {
 		return errors.Fmt("schedule continuation task for page: %w", err)

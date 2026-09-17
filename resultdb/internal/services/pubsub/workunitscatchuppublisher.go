@@ -21,9 +21,12 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/checkpoints"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/tracing"
@@ -38,6 +41,9 @@ const (
 	// Carrying standard list of WorkUnit IDs downstream requires keeping it approx
 	// ~1000 to remain safe in enqueued task payloads.
 	defaultCatchUpPageSize = 1000
+
+	// WorkUnitsCatchUpProcessID is the process ID for work units catch-up publisher checkpoints.
+	WorkUnitsCatchUpProcessID = "work-units-catch-up-publisher"
 )
 
 // workUnitsCatchUpPublisher is a helper struct for catching up on publishing work units and test results.
@@ -78,6 +84,24 @@ func (p *workUnitsCatchUpPublisher) handleWorkUnitsCatchUpPublisher(ctx context.
 			rootInvID.Name(), rootInv.StreamingExportState, rootInv.FinalizationState))
 	}
 
+	// 3. Check for existing checkpoint.
+	project, _ := realms.Split(rootInv.Realm)
+	pageTokenStr := tokenHash(task.PageToken)
+	checkpointKey := checkpoints.Key{
+		Project:    project,
+		ResourceID: string(rootInvID),
+		ProcessID:  WorkUnitsCatchUpProcessID,
+		Uniquifier: pageTokenStr,
+	}
+	exists, err := checkpoints.Exists(span.Single(ctx), checkpointKey)
+	if err != nil {
+		return errors.Fmt("check checkpoint existence %q: %w", checkpointKey, err)
+	}
+	if exists {
+		logging.Infof(ctx, "Checkpoint already exists for root invocation %q and page token %q, skipping", rootInvID.Name(), pageTokenStr)
+		return nil
+	}
+
 	q := &workunits.Query{
 		RootInvocationID: rootInvID,
 		Mask:             workunits.ExcludeExtendedProperties,
@@ -108,7 +132,7 @@ func (p *workUnitsCatchUpPublisher) handleWorkUnitsCatchUpPublisher(ctx context.
 		// the root invocation need to be caught up, without needing a FinalizeTime cutoff.
 	}
 
-	// 3. Query work units.
+	// 4. Query work units.
 	var wuIDs []string
 	roCtx, cancel := span.ReadOnlyTransaction(ctx)
 	nextPageToken, err := q.Query(roCtx, func(wu *workunits.WorkUnitRow) error {
@@ -124,9 +148,18 @@ func (p *workUnitsCatchUpPublisher) handleWorkUnitsCatchUpPublisher(ctx context.
 		return nil
 	}
 
-	// 4. Enqueue tasks in a transaction.
+	// 5. Commit checkpoint and enqueue tasks in a transaction.
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		pageTokenStr := tokenHash(task.PageToken)
+		// Re-check checkpoint within transaction.
+		exists, err := checkpoints.Exists(ctx, checkpointKey)
+		if err != nil {
+			return errors.Fmt("check checkpoint existence in transaction: %w", err)
+		}
+		if exists {
+			return nil
+		}
+
+		span.BufferWrite(ctx, checkpoints.Insert(ctx, checkpointKey, CheckpointTTL))
 
 		if len(wuIDs) > 0 {
 			// Enqueue PublishWorkUnitsTask
@@ -148,7 +181,7 @@ func (p *workUnitsCatchUpPublisher) handleWorkUnitsCatchUpPublisher(ctx context.
 			})
 		}
 
-		// 5. Schedule continuation if necessary.
+		// 6. Schedule continuation if necessary.
 		if nextPageToken != "" {
 			tq.MustAddTask(ctx, &tq.Task{
 				Payload: &taskspb.PublishWorkUnitsCatchUpTask{

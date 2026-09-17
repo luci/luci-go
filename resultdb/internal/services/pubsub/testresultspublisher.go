@@ -365,7 +365,7 @@ func (p *testResultsPublisher) enqueueContinuationTask(ctx context.Context, root
 	}
 	wuID := p.task.WorkUnitIds[nextToken.workUnitIndex]
 	if err := tq.AddTask(ctx, &tq.Task{
-		Title:   fmt.Sprintf("pubsub-tr-rootInvocations/%s/workUnits/%s/pageTokens/%s", rootInvID, wuID, nextToken.pageToken),
+		Title:   fmt.Sprintf("tr-pubsub-cont-%s-%s-%d-%s", rootInvID, wuID, nextToken.workUnitIndex, tokenHash(nextToken.pageToken)),
 		Payload: payload,
 	}); err != nil {
 		return errors.Fmt("schedule continuation task for page: %w", err)
