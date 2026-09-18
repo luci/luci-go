@@ -59,9 +59,10 @@ type unresolvedVer struct {
 	ver string
 }
 
-// AddVersion adds (or overrides) an instance ID mapped to the given version.
+// AddVersion adds an instance ID mapped to the given version.
 //
-// Returns an error if any of the arguments is invalid.
+// Returns an error if any of the arguments is invalid, or if the package+tag
+// is already defined in the version file as a different instance id.
 //
 // If 'ver' is already an instance ID, just checks if it is equal to 'iid' and
 // silently doesn't modify the map.
@@ -84,7 +85,20 @@ func (v VersionsFile) AddVersion(pkg, ver, iid string) error {
 		return nil
 	}
 
-	v[unresolvedVer{pkg, ver}] = iid
+	return v.addVerifiedVersion(pkg, ver, iid)
+}
+
+// addVerifiedVersion adds the version after all inputs have been validated
+// for syntactic correctness.
+//
+// Will return an error if pkg+ver already maps to a different iid.
+func (v VersionsFile) addVerifiedVersion(pkg, ver, iid string) error {
+	key := unresolvedVer{pkg, ver}
+	if cur, has := v[key]; has && cur != iid {
+		return cipderr.InvalidVersion.Apply(errors.Fmt("instance id given (%q) conflicts with previous value %q", iid, cur))
+	}
+
+	v[key] = iid
 	return nil
 }
 
@@ -218,8 +232,8 @@ func ParseVersionsFile(r io.Reader) (VersionsFile, error) {
 			if err := common.ValidateInstanceID(iid, common.AnyHash); err != nil {
 				return nil, makeError("%s", err)
 			}
-			if err := res.AddVersion(pkg, ver, iid); err != nil {
-				panic(err) // impossible, everything has been validated already
+			if err := res.addVerifiedVersion(pkg, ver, iid); err != nil {
+				return nil, makeError("%s", err)
 			}
 			pkg, ver, iid = "", "", ""
 			state = stWaitingNL
