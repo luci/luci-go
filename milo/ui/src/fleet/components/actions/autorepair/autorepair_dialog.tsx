@@ -36,10 +36,13 @@ import { isPartnerNamespace } from '@/fleet/utils/devices';
 import { ScheduleAutorepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import CodeSnippet from '../../code_snippet/code_snippet';
+import { MarkdownSnippet } from '../../code_snippet/markdown_snippet';
+
+import { generateAutorepairBugMarkdown } from './autorepair_utils';
 
 export interface SessionInfo {
   sessionId?: string;
-  results?: ScheduleAutorepairResult[];
+  results?: readonly ScheduleAutorepairResult[];
   dutNames?: string[];
   namespaces?: (string | readonly string[])[];
 }
@@ -97,6 +100,7 @@ export default function AutorepairDialog({
   } ${dutNames.join(' ')}`;
 
   const satlabCommand = `satlab repair dut ${dutNames.join(' ')}`;
+  const bugMarkdown = generateAutorepairBugMarkdown(results, sessionId);
 
   const loadingScreen = (
     <>
@@ -309,6 +313,12 @@ export default function AutorepairDialog({
             on Milo.
           </i>
         </p>
+        <MarkdownSnippet
+          label="Autorepair results (Markdown for Buganizer):"
+          markdown={bugMarkdown}
+          copyKind="autorepair_results_markdown"
+          collapsible
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} variant="contained">

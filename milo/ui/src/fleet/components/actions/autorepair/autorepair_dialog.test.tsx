@@ -13,10 +13,13 @@
 // limitations under the License.
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
+import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
 import AutorepairDialog, { AutorepairDialogProps } from './autorepair_dialog';
+import { generateAutorepairBugMarkdown } from './autorepair_utils';
 
 describe('<AutorepairDialog />', () => {
   let handleCloseMock: jest.Mock;
@@ -291,5 +294,93 @@ describe('<AutorepairDialog />', () => {
     expect(
       screen.getByText('Failed to schedule autorepair: it broke'),
     ).toBeVisible();
+  });
+
+  it('renders collapsible bug markdown snippet collapsed by default and copies on button click', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{
+            results: [
+              {
+                unitName: 'test-dut-1',
+                taskUrl:
+                  'https://ci.chromium.org/ui/p/chromeos/builders/repair/b1337',
+              },
+              {
+                unitName: 'test-dut-2',
+                errorMessage: 'device locked',
+              },
+            ],
+            sessionId: 'session-123',
+          }}
+        />
+      </FakeAuthStateProvider>,
+    );
+
+    const expandBtn = screen.getByRole('button', {
+      name: 'Autorepair results (Markdown for Buganizer):',
+    });
+    expect(expandBtn).toBeVisible();
+    expect(expandBtn).toHaveAttribute('aria-expanded', 'false');
+
+    // Expand the collapsible section
+    await user.click(expandBtn);
+    expect(expandBtn).toHaveAttribute('aria-expanded', 'true');
+
+    const copyBtn = screen.getByRole('button', { name: 'Copy markdown' });
+    expect(copyBtn).toBeVisible();
+
+    await user.click(copyBtn);
+
+    const expectedMarkdown = generateAutorepairBugMarkdown(
+      [
+        {
+          unitName: 'test-dut-1',
+          taskUrl:
+            'https://ci.chromium.org/ui/p/chromeos/builders/repair/b1337',
+        },
+        {
+          unitName: 'test-dut-2',
+          errorMessage: 'device locked',
+        },
+      ],
+      'session-123',
+    );
+
+    expect(await navigator.clipboard.readText()).toBe(expectedMarkdown);
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeVisible();
+  });
+});
+
+describe('generateAutorepairBugMarkdown', () => {
+  it('formats successful tasks, failed tasks, and swarming session link', () => {
+    const md = generateAutorepairBugMarkdown(
+      [
+        {
+          unitName: 'dut-a',
+          taskUrl: 'https://ci.chromium.org/b/111',
+        },
+        {
+          unitName: 'dut-b',
+          errorMessage: 'RPC timeout',
+        },
+      ],
+      'sess-abc',
+    );
+
+    expect(md).toContain('**Autorepair results:**');
+    expect(md).toContain(
+      '* [dut-a](http://localhost/ui/fleet/p/chromeos/devices/dut-a): [View in Milo](https://ci.chromium.org/b/111)',
+    );
+    expect(md).toContain(
+      '* [dut-b](http://localhost/ui/fleet/p/chromeos/devices/dut-b): Failed to schedule autorepair: RPC timeout',
+    );
+    expect(md).toContain(
+      `[View tasks in Swarming](https://${FLEET_BUILDS_SWARMING_HOST}/tasklist?f=admin-session:sess-abc)`,
+    );
   });
 });
