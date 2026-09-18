@@ -252,7 +252,9 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       os: { values: ['Linux', 'Windows'] },
     },
     swarmingLabels: {},
-    ufsLabels: {},
+    ufsLabels: {
+      'ufs.location_tag': { values: ['atl_rack_42', 'lab_rack_1'] },
+    },
   },
   ExportBrowserDevicesToCSV: {
     csvData: 'id,device_id\n1,browser-1\n2,browser-2\n',
@@ -370,7 +372,10 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       board: { values: sampleChromeosBoards },
     },
     swarmingLabels: {},
-    ufsLabels: {},
+    ufsLabels: {
+      location_tag: { values: ['atl_rack_42', 'chromeos6_rack_10'] },
+      'ufs.location_tag': { values: ['atl_rack_42', 'lab_rack_1'] },
+    },
   },
   RepopulateCache: {},
   RepopulateBrowserCache: {},

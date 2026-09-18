@@ -300,4 +300,35 @@ describe('useChromeOSColumns', () => {
       'Time when UFS last synced state for this device',
     );
   });
+
+  it('should generate proper order_by_field, header, and filterKey for location_tag column', () => {
+    (useChromeOSFields as jest.Mock).mockReturnValue({
+      availableFields: [
+        {
+          id: 'location_tag',
+          columnDef: getFieldDefinition('location_tag').columnDef,
+        },
+      ],
+      isLoading: false,
+    });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(
+      () => useChromeOSColumns(undefined, false, false),
+      { wrapper },
+    );
+
+    const columns = result.current.mrtColumnManager.columns;
+    const locationTagCol = columns.find((c) => c.id === 'location_tag');
+
+    expect(locationTagCol).toBeDefined();
+    expect(locationTagCol?.header).toBe('location_tag');
+    expect(locationTagCol?.orderByField).toBe('labels.location_tag');
+    expect(locationTagCol?.filterKey).toBe('labels."location_tag"');
+  });
 });

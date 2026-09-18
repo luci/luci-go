@@ -22,6 +22,7 @@ import { Link } from 'react-router';
 
 import { getEnabledFeatureFlags } from '@/common/feature_flags';
 import { genFeedbackUrl } from '@/common/tools/utils';
+import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import {
@@ -288,6 +289,21 @@ export const getAndroidColumnOverrides: (
           </Tooltip>
         </div>
       );
+    },
+  },
+  location_tag: {
+    header: 'location_tag',
+    orderByField: 'labels.location_tag',
+    filterKey: 'labels."location_tag"',
+    accessorFn: (device) => {
+      const labels =
+        device.omnilabSpec?.labels?.['location_tag']?.values ??
+        device.omnilabSpec?.labels?.['ufs.location_tag']?.values;
+      if (!labels) return undefined;
+      return labelValuesToString(labels);
+    },
+    meta: {
+      infoTooltip: 'Location tag / location group tag from UFS',
     },
   },
   'ufs.last_sync': {

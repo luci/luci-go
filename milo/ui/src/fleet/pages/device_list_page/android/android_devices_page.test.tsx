@@ -122,7 +122,12 @@ describe('<AndroidDevicesPage /> Integration', () => {
       GetDeviceDimensions: {
         query: () => ({
           queryKey: ['GetDeviceDimensions'],
-          queryFn: async () => ({ baseDimensions: {}, labels: {} }),
+          queryFn: async () => ({
+            baseDimensions: {},
+            labels: {
+              location_tag: { values: ['atl_rack_42'] },
+            },
+          }),
         }),
       },
     });
@@ -234,5 +239,24 @@ describe('<AndroidDevicesPage /> Integration', () => {
     fireEvent.click(inServiceBtn);
 
     expect(screen.getByText('In Service')).toBeInTheDocument();
+  });
+
+  it('renders Location Tag column header when ufs.location_tag is requested in URL params', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/p/:platform/devices"
+        routerOptions={{
+          initialEntries: ['/p/android/devices?c=id&c=location_tag'],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <AndroidDevicesPage workspace="Android" />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(await screen.findByText('location_tag')).toBeInTheDocument();
   });
 });

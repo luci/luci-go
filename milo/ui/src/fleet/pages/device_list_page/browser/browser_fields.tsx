@@ -283,6 +283,26 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       }
     },
   },
+  [`${BROWSER_UFS_SOURCE}.location_tag`]: {
+    orderByField: 'ufs.location_tag',
+    filterKey: 'ufs."location_tag"',
+    accessorFn: (row) => {
+      const values =
+        row.ufsLabels?.['location_tag']?.values ??
+        row.ufsLabels?.['ufs.location_tag']?.values;
+      return values ? labelValuesToString(values) : undefined;
+    },
+  },
+  location_tag: {
+    orderByField: 'ufs.location_tag',
+    filterKey: 'ufs."location_tag"',
+    accessorFn: (row) => {
+      const values =
+        row.ufsLabels?.['location_tag']?.values ??
+        row.ufsLabels?.['ufs.location_tag']?.values;
+      return values ? labelValuesToString(values) : undefined;
+    },
+  },
   [`${BROWSER_UFS_SOURCE}.last_sync`]: {
     Cell: (params) => renderTimestampCell({ value: params.cell.getValue() }),
   },

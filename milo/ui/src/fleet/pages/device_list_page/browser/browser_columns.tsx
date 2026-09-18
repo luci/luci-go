@@ -78,6 +78,7 @@ export const getBrowserColumnIds = (
 
   ids.push(...Object.keys(CUSTOM_COLUMNS));
   ids.push('realm');
+  ids.push(`${BROWSER_UFS_SOURCE}.location_tag`);
   ids.push(...extraColumns);
   return _.uniq(ids);
 };

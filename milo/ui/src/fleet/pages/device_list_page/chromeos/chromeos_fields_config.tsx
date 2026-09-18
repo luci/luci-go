@@ -306,6 +306,11 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
       }),
     }),
   },
+  location_tag: {
+    type: 'label',
+    header: 'location_tag',
+    filterKey: 'labels."location_tag"',
+  },
   'ufs.last_sync': {
     type: 'label',
     orderByField: 'labels.ufs.last_sync',

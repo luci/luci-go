@@ -28,6 +28,7 @@ import { useOptionalInventoryForm } from '../form/InventoryFormContext';
 export interface PhysicalLocationCardProps {
   zone?: string | null;
   rack?: string | null;
+  locationTag?: string | null;
   editable?: boolean;
   isEditing?: boolean;
   onEdit?: () => void;
@@ -36,6 +37,7 @@ export interface PhysicalLocationCardProps {
 export const PhysicalLocationCard = ({
   zone,
   rack,
+  locationTag,
   editable = false,
   isEditing = false,
   onEdit,
@@ -50,7 +52,7 @@ export const PhysicalLocationCard = ({
 
   const currentZone = form?.draftLse?.zone ?? zone;
   const currentRack = form?.draftLse?.rack ?? rack;
-  const hasData = Boolean(currentZone || currentRack);
+  const hasData = Boolean(currentZone || currentRack || locationTag);
 
   if (form) {
     return (
@@ -87,6 +89,7 @@ export const PhysicalLocationCard = ({
       <Grid container spacing={2}>
         <PropertyField label="Zone" value={zone} />
         <PropertyField label="Rack" value={rack} />
+        <PropertyField label="location_tag" value={locationTag} />
       </Grid>
     </InventoryDataCard>
   );
