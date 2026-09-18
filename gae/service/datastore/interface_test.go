@@ -177,6 +177,73 @@ func TestRunQuery(t *testing.T) {
 		assert.Loosely(t, got2[0].Value, should.Equal("val_b"))
 	})
 
+	t.Run("CurrentCursor", func(t *testing.T) {
+		t.Run("ErrNoCurrentCursor before iteration", func(t *testing.T) {
+			q := datastore.NewQuery("TestIterRecord")
+			it := datastore.RunQuery[*TestIterRecord](ctx, q)
+			_, err := it.CurrentCursor()
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoCurrentCursor))
+		})
+
+		t.Run("ErrNoCurrentCursor on empty query", func(t *testing.T) {
+			q := datastore.NewQuery("NonExistentKind")
+			it := datastore.RunQuery[*TestIterRecord](ctx, q)
+			for _, err := range it.Results {
+				assert.NoErr(t, err)
+			}
+			_, err := it.CurrentCursor()
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoCurrentCursor))
+		})
+
+		t.Run("Step by step cursor vs current cursor", func(t *testing.T) {
+			q := datastore.NewQuery("TestIterRecord")
+			it := datastore.RunQuery[*TestIterRecord](ctx, q)
+			count := 0
+			for r, err := range it.Results {
+				assert.NoErr(t, err)
+				count++
+				curCur, err := it.CurrentCursor()
+				assert.NoErr(t, err)
+				assert.Loosely(t, curCur, should.NotBeNil)
+
+				nextCur, err := it.Cursor()
+				assert.NoErr(t, err)
+				assert.Loosely(t, nextCur, should.NotBeNil)
+
+				// Resume from CurrentCursor: starts from current item (r.Value).
+				qFromCurrent := datastore.NewQuery("TestIterRecord").Start(curCur)
+				resCurrent, err := datastore.RunQuery[*TestIterRecord](ctx, qFromCurrent).AsSlice()
+				assert.NoErr(t, err)
+				assert.Loosely(t, resCurrent[0].Value, should.Equal(r.Value))
+
+				// Resume from Cursor: starts from next item (skips r.Value).
+				qFromNext := datastore.NewQuery("TestIterRecord").Start(nextCur)
+				resNext, err := datastore.RunQuery[*TestIterRecord](ctx, qFromNext).AsSlice()
+				assert.NoErr(t, err)
+				assert.Loosely(t, len(resNext), should.Equal(2-count))
+			}
+			assert.Loosely(t, count, should.Equal(2))
+
+			// After iteration finishes, CurrentCursor still points to the last item ("val_b").
+			lastCur, err := it.CurrentCursor()
+			assert.NoErr(t, err)
+			resLast, err := datastore.RunQuery[*TestIterRecord](ctx, datastore.NewQuery("TestIterRecord").Start(lastCur)).AsSlice()
+			assert.NoErr(t, err)
+			assert.Loosely(t, len(resLast), should.Equal(1))
+			assert.Loosely(t, resLast[0].Value, should.Equal("val_b"))
+		})
+	})
+
+	t.Run("RawQueryIterStub CurrentCursor", func(t *testing.T) {
+		stubNil := datastore.RawQueryIterStub(nil)
+		_, err := stubNil.CurrentCursor()
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoCurrentCursor))
+
+		stubErr := datastore.RawQueryIterStub(datastore.ErrLimitExceeded)
+		_, err = stubErr.CurrentCursor()
+		assert.Loosely(t, err, should.Equal(datastore.ErrLimitExceeded))
+	})
+
 	t.Run("PropertyMap", func(t *testing.T) {
 		q := datastore.NewQuery("TestIterRecord")
 		it := datastore.RunQuery[datastore.PropertyMap](ctx, q)

@@ -104,6 +104,42 @@ func TestCursorSerialization(t *testing.T) {
 		assert.Loosely(t, decoded, should.HaveLength(2))
 	})
 
+	t.Run("CurrentCursor round-trip", func(t *testing.T) {
+		q := datastore.NewQuery("TestIterRecord")
+		it := datastore.RunQuery[*TestIterRecord](ctx, q)
+		count := 0
+		var curCur datastore.Cursor
+		for _, err := range it.Results {
+			assert.NoErr(t, err)
+			count++
+			if count == 2 {
+				var curErr error
+				curCur, curErr = it.CurrentCursor()
+				assert.NoErr(t, curErr)
+				break
+			}
+		}
+		assert.Loosely(t, len(curCur), should.Equal(1))
+		curStr := curCur.String()
+		assert.Loosely(t, curStr, should.NotBeEmpty)
+
+		// Decode cursor
+		decoded, err := datastore.DecodeCursor(ctx, curStr)
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(decoded), should.Equal(1))
+		assert.Loosely(t, decoded[0].String(), should.Equal(curCur[0].String()))
+
+		// Resume query from decoded cursor starts at item 2 ("b")
+		qResumed := datastore.NewQuery("TestIterRecord").Start(decoded)
+		itResumed := datastore.RunQuery[*TestIterRecord](ctx, qResumed)
+		var remaining []string
+		for r, err := range itResumed.Results {
+			assert.NoErr(t, err)
+			remaining = append(remaining, r.ID)
+		}
+		assert.Loosely(t, remaining, should.Resemble([]string{"b", "c", "d", "e"}))
+	})
+
 	t.Run("Multi cursor with nil elements round-trip", func(t *testing.T) {
 		q := datastore.NewQuery("TestIterRecord")
 		it := datastore.RunQuery[*TestIterRecord](ctx, q)

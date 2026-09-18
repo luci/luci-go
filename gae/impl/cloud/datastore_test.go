@@ -546,6 +546,37 @@ func TestDatastore(t *testing.T) {
 					}))
 				})
 
+				t.Run(`CurrentCursor`, func(t *ftt.Test) {
+					q := ds.NewQuery("Test").Gt("__key__", ds.MakeKey(c, "Test", "baz"))
+					it := ds.RunQuery[ds.PropertyMap](c, q)
+
+					// Before pulling results, CurrentCursor returns ErrNoCurrentCursor
+					_, err := it.CurrentCursor()
+					assert.Loosely(t, err, should.Equal(ds.ErrNoCurrentCursor))
+
+					count := 0
+					var curCur ds.Cursor
+					for _, err := range it.Results {
+						assert.Loosely(t, err, should.BeNil)
+						count++
+						if count == 2 {
+							curCur, err = it.CurrentCursor()
+							assert.Loosely(t, err, should.BeNil)
+							break
+						}
+					}
+					assert.Loosely(t, count, should.Equal(2))
+
+					// Resuming from curCur yields item 2 ("quuz") and remaining items.
+					resumed, err := ds.RunQuery[ds.PropertyMap](c, q.Start(curCur)).AsSlice()
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, resumed, should.Match([]ds.PropertyMap{
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))}),
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)}),
+						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "qux"))}),
+					}))
+				})
+
 				t.Run(`Can use IN in queries`, func(t *ftt.Test) {
 					// TODO(vadimsh): Unfortunately Cloud Datastore emulator doesn't
 					// support IN queries, see https://cloud.google.com/datastore/docs/tools/datastore-emulator#known_issues

@@ -59,6 +59,7 @@ func TestCheckFilter(t *testing.T) {
 
 		t.Run("RunQuery", func(t *ftt.Test) {
 			assert.Loosely(t, rds.RunQuery(nil).Cursor, should.NotBeNil)
+			assert.Loosely(t, rds.RunQuery(nil).CurrentCursor, should.NotBeNil)
 			fq, err := NewQuery("sup").Finalize()
 			assert.Loosely(t, err, should.BeNil)
 

@@ -52,7 +52,8 @@ func (r *dsCounter) DecodeCursor(s string) (ds.RawCursor, error) {
 func (r *dsCounter) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 	it := r.ds.RunQuery(q)
 	return ds.RawQueryIter{
-		Cursor: it.Cursor,
+		Cursor:        it.Cursor,
+		CurrentCursor: it.CurrentCursor,
 		Results: func(yield func(ds.PropertyMap, error) bool) {
 			var err error
 			defer func() {

@@ -161,7 +161,8 @@ func (d *dataStoreData) stripSpecialPropsIter(it ds.RawQueryIter) ds.RawQueryIte
 	}
 
 	return ds.RawQueryIter{
-		Cursor: it.Cursor,
+		Cursor:        it.Cursor,
+		CurrentCursor: it.CurrentCursor,
 		Results: func(yield func(ds.PropertyMap, error) bool) {
 			for pm, err := range it.Results {
 				if err == nil {

@@ -44,6 +44,10 @@ var (
 	// ErrLimitExceeded is used to indicate the iteration limit has been exceeded.
 	ErrLimitExceeded = limitExceeded{}
 
+	// ErrNoCurrentCursor is used to indicate that CurrentCursor cannot be called
+	// yet, because the iterator hasn't yielded any items.
+	ErrNoCurrentCursor = errors.New("no current cursor")
+
 	// ErrCursorNotImplemented is used to indicate that something in the RunQuery
 	// filter/implementation stack does not support cursors.
 	ErrCursorNotImplemented = errors.New("cursor not implemented")

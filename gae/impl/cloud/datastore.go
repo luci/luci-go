@@ -105,15 +105,30 @@ func (bds *boundDatastore) DecodeCursor(s string) (ds.RawCursor, error) {
 
 func (bds *boundDatastore) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 	it := bds.client.Run(bds, bds.prepareNativeQuery(q))
+	var curCursor ds.RawCursor
 	return ds.RawQueryIter{
 		Cursor: func() (ds.RawCursor, error) {
 			return it.Cursor()
+		},
+		CurrentCursor: func() (ds.RawCursor, error) {
+			if curCursor == nil {
+				return nil, ds.ErrNoCurrentCursor
+			}
+			return curCursor, nil
 		},
 		Results: func(yield func(ds.PropertyMap, error) bool) {
 			for {
 				var npl *nativePropertyLoader
 				if !q.KeysOnly() {
 					npl = &nativePropertyLoader{kc: bds.kc}
+				}
+				var err error
+				// The implementation of Cursor on cloud is quite cheap, so just use
+				// it directly in order to facilitate CurrentCursor.
+				curCursorBuf, err := it.Cursor()
+				if err != nil {
+					yield(nil, normalizeError(err))
+					return
 				}
 				nativeKey, err := it.Next(npl)
 				if err != nil {
@@ -124,6 +139,7 @@ func (bds *boundDatastore) RunQuery(q *ds.FinalizedQuery) ds.RawQueryIter {
 					return
 				}
 
+				curCursor = curCursorBuf
 				var pmap ds.PropertyMap
 				if npl != nil {
 					pmap = npl.pmap

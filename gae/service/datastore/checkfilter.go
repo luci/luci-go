@@ -44,7 +44,8 @@ func (tcf *checkFilter) RunQuery(fq *FinalizedQuery) RawQueryIter {
 	}
 	it := tcf.RawInterface.RunQuery(fq)
 	return RawQueryIter{
-		Cursor: it.Cursor,
+		Cursor:        it.Cursor,
+		CurrentCursor: it.CurrentCursor,
 		Results: func(yield func(PropertyMap, error) bool) {
 			for pm, err := range it.Results {
 				if err := tcf.checkCtxDone(err); err != nil {

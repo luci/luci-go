@@ -208,7 +208,8 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, head memStor
 
 	kc.Namespace = ""
 	return ds.RawQueryIter{
-		Cursor: func() (ds.RawCursor, error) { return nil, cursErr },
+		Cursor:        func() (ds.RawCursor, error) { return nil, cursErr },
+		CurrentCursor: func() (ds.RawCursor, error) { return nil, cursErr },
 		Results: func(yield func(ds.PropertyMap, error) bool) {
 			for _, ns := range namespaces(head) {
 				if hasOffset && offset > 0 {
@@ -286,7 +287,19 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, data *dataStoreData, 
 	var lastSuffix []byte
 	return ds.RawQueryIter{
 		Cursor: func() (ds.RawCursor, error) {
+			if len(lastSuffix) == 0 {
+				if start, _ := fq.Bounds(); start != nil {
+					return start, nil
+				}
+				return queryCursor(cursorPrefix), nil
+			}
 			return queryCursor(cmpbin.ConcatBytes(cursorPrefix, increment(bytes.Clone(lastSuffix)))), nil
+		},
+		CurrentCursor: func() (ds.RawCursor, error) {
+			if lastSuffix == nil {
+				return nil, ds.ErrNoCurrentCursor
+			}
+			return queryCursor(cmpbin.ConcatBytes(cursorPrefix, bytes.Clone(lastSuffix))), nil
 		},
 		Results: func(yield func(ds.PropertyMap, error) bool) {
 			for curSuffix := range multiIterate(idxs) {

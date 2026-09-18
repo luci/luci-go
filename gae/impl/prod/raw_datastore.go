@@ -269,9 +269,28 @@ func (d *rdsImpl) RunQuery(fq *ds.FinalizedQuery) ds.RawQueryIter {
 
 	t := q.Run(d.aeCtx)
 
+	// pos is tracked in order to calculate CurrentCursor.
+	pos := 0
+
 	return ds.RawQueryIter{
 		Cursor: func() (ds.RawCursor, error) {
 			return t.Cursor()
+		},
+		CurrentCursor: func() (ds.RawCursor, error) {
+			if pos == 0 {
+				return nil, ds.ErrNoCurrentCursor
+			}
+			// Re-issue the original query with an offset.
+			// This is about the best we can do via this appengine API.
+			origOffset, _ := fq.Offset()
+			q := fq.Original().Offset(origOffset + int32(pos) - 1)
+			q = q.Limit(0)
+			q = q.KeysOnly(len(fq.Project()) == 0)
+			ccfq, err := q.Finalize()
+			if err != nil {
+				return nil, errors.Fmt("constructing CurrentCursor query: %w", err)
+			}
+			return d.RunQuery(ccfq).Cursor()
 		},
 		Results: func(yield func(ds.PropertyMap, error) bool) {
 			tf := typeFilter{}
@@ -284,6 +303,7 @@ func (d *rdsImpl) RunQuery(fq *ds.FinalizedQuery) ds.RawQueryIter {
 					yield(nil, err)
 					return
 				}
+				pos++
 				pm := tf.pm
 				if pm == nil {
 					pm = make(ds.PropertyMap, 1)

@@ -185,6 +185,9 @@ func (f *queryBatchingFilter) RunQuery(fq *FinalizedQuery) RawQueryIter {
 		Cursor: func() (RawCursor, error) {
 			return nil, errors.Fmt("queryBatchingFilter: %w", ErrCursorNotImplemented)
 		},
+		CurrentCursor: func() (RawCursor, error) {
+			return nil, errors.Fmt("queryBatchingFilter: %w", ErrCursorNotImplemented)
+		},
 		Results: func(yield func(PropertyMap, error) bool) {
 			var buffer []PropertyMap
 			var nextCursor RawCursor

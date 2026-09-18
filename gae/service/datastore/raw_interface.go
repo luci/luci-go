@@ -42,6 +42,15 @@ type RawQueryIter struct {
 	// implemented.
 	Cursor RawCursorCB
 
+	// Returns a cursor to the *current* item which was yielded by Results.
+	//
+	// Not safe to call before pulling anything from Results. If it is, it must
+	// return [ErrNoCurrentCursor].
+	//
+	// Must be defined and return ErrCursorNotImplemented if cursors are not
+	// implemented.
+	CurrentCursor RawCursorCB
+
 	// Yields query results in order.
 	//
 	// Each PropertyMap will always contain the "key" metadata as a *Key.
@@ -64,6 +73,12 @@ func mustGetKeyFromPM(pm PropertyMap) *Key {
 func RawQueryIterStub(err error) RawQueryIter {
 	return RawQueryIter{
 		Cursor: func() (RawCursor, error) { return nil, err },
+		CurrentCursor: func() (RawCursor, error) {
+			if err != nil {
+				return nil, err
+			}
+			return nil, ErrNoCurrentCursor
+		},
 		Results: func(yield func(PropertyMap, error) bool) {
 			if err != nil {
 				yield(nil, err)

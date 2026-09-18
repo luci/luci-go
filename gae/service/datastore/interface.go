@@ -376,6 +376,25 @@ func (q *QueryIter[V]) Cursor() (Cursor, error) {
 	return Cursor{single}, nil
 }
 
+// CurrentCursor returns a cursor to the *current* item which was just yielded
+// by Results.
+//
+// Not safe to call before pulling anything from Results. If it is, it must
+// return [ErrNoCurrentCursor].
+func (q *QueryIter[V]) CurrentCursor() (Cursor, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.ensureFinalizedLocked()
+	single, err := q.raw.CurrentCursor()
+	if err != nil {
+		return nil, err
+	}
+	if mc, ok := single.(Cursor); ok {
+		return mc, nil
+	}
+	return Cursor{single}, nil
+}
+
 // Results is an `iter.Seq2[V, error]` which yields query results in order.
 //
 // If an error is encountered, it is yielded and iteration stops.
@@ -740,6 +759,9 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		raw: &RawQueryIter{
 			Results: results,
 			Cursor:  cursorCB,
+			CurrentCursor: func() (RawCursor, error) {
+				return nil, ErrCursorNotImplemented
+			},
 		},
 	}
 	ret.populateMat()

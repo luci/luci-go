@@ -709,6 +709,90 @@ func TestQueryExecution(t *testing.T) {
 		assert.Loosely(t, err, shouldBeSuccessful)
 		assert.Loosely(t, count, should.Equal(2))
 	})
+
+	ftt.Run("Test CurrentCursor", t, func(t *ftt.Test) {
+		c, err := info.Namespace(Use(context.Background()), "ns")
+		if err != nil {
+			panic(err)
+		}
+
+		testing := ds.GetTestable(c)
+		testing.Consistent(true)
+		testing.AutoIndex(true)
+
+		for i := 1; i <= 5; i++ {
+			assert.Loosely(t, ds.Put(c, pmap("$key", key("Item", int64(i)), Next, "Val", int64(i*10))), shouldBeSuccessful)
+		}
+
+		t.Run("ErrNoCurrentCursor before iteration", func(t *ftt.Test) {
+			q := nq("Item").Order("Val")
+			it := ds.RunQuery[ds.PropertyMap](c, q)
+			_, err := it.CurrentCursor()
+			assert.Loosely(t, err, should.Equal(ds.ErrNoCurrentCursor))
+		})
+
+		t.Run("ErrNoCurrentCursor on empty query", func(t *ftt.Test) {
+			q := nq("NonExistent").Order("Val")
+			it := ds.RunQuery[ds.PropertyMap](c, q)
+			for range it.Results {
+			}
+			_, err := it.CurrentCursor()
+			assert.Loosely(t, err, should.Equal(ds.ErrNoCurrentCursor))
+		})
+
+		t.Run("Step by step CurrentCursor and resuming", func(t *ftt.Test) {
+			q := nq("Item").Order("Val")
+			it := ds.RunQuery[ds.PropertyMap](c, q)
+			idx := 0
+			for pm, err := range it.Results {
+				assert.Loosely(t, err, shouldBeSuccessful)
+				idx++
+
+				curCur, err := it.CurrentCursor()
+				assert.Loosely(t, err, shouldBeSuccessful)
+				assert.Loosely(t, curCur, should.NotBeNil)
+
+				nextCur, err := it.Cursor()
+				assert.Loosely(t, err, shouldBeSuccessful)
+				assert.Loosely(t, nextCur, should.NotBeNil)
+
+				// Resuming from curCur starts with the current item (index idx).
+				resCurrent, err := ds.RunQuery[ds.PropertyMap](c, q.Start(curCur)).AsSlice()
+				assert.Loosely(t, err, shouldBeSuccessful)
+				assert.Loosely(t, len(resCurrent), should.Equal(5-idx+1))
+				assert.Loosely(t, resCurrent[0].Slice("Val")[0].Value(), should.Equal(int64(idx*10)))
+
+				// Resuming from nextCur starts with the next item (skipping index idx).
+				resNext, err := ds.RunQuery[ds.PropertyMap](c, q.Start(nextCur)).AsSlice()
+				assert.Loosely(t, err, shouldBeSuccessful)
+				assert.Loosely(t, len(resNext), should.Equal(5-idx))
+				if len(resNext) > 0 {
+					assert.Loosely(t, resNext[0].Slice("Val")[0].Value(), should.Equal(int64((idx+1)*10)))
+				}
+				_ = pm
+			}
+			assert.Loosely(t, idx, should.Equal(5))
+
+			// After iteration complete, CurrentCursor still points to the 5th item.
+			lastCur, err := it.CurrentCursor()
+			assert.Loosely(t, err, shouldBeSuccessful)
+			resLast, err := ds.RunQuery[ds.PropertyMap](c, q.Start(lastCur)).AsSlice()
+			assert.Loosely(t, err, shouldBeSuccessful)
+			assert.Loosely(t, len(resLast), should.Equal(1))
+			assert.Loosely(t, resLast[0].Slice("Val")[0].Value(), should.Equal(int64(50)))
+		})
+
+		t.Run("__namespace__ query returns cursor error", func(t *ftt.Test) {
+			q := nq("__namespace__")
+			it := ds.RunQuery[ds.PropertyMap](c, q)
+			for range it.Results {
+				_, err := it.CurrentCursor()
+				assert.Loosely(t, err, should.ErrLike("cursors not supported"))
+				_, err = it.Cursor()
+				assert.Loosely(t, err, should.ErrLike("cursors not supported"))
+			}
+		})
+	})
 }
 
 func shouldBeSuccessful(expected error) *failure.Summary {
