@@ -86,3 +86,15 @@ export function md(
   }
   return result;
 }
+
+/**
+ * Converts a relative path or URL string into a full absolute URL using the
+ * current window origin. Returns the original string if URL parsing fails.
+ */
+export function toFullUrl(url: string): string {
+  try {
+    return new URL(url, window.location.origin).toString();
+  } catch {
+    return url;
+  }
+}

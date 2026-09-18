@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { escapeMarkdown, md, rawMd } from './markdown_utils';
+import { escapeMarkdown, md, rawMd, toFullUrl } from './markdown_utils';
 
 describe('markdown_utils', () => {
   describe('md tagged template literal', () => {
@@ -121,6 +121,17 @@ describe('markdown_utils', () => {
       const row = md`| ${machineCell} | ${status} |`;
       expect(row).toBe(
         '| [chrome\\-win10\\-001](https://ci.chromium.org/ui/fleet/devices/123) | ready |',
+      );
+    });
+  });
+
+  describe('toFullUrl', () => {
+    it('resolves relative paths against window.location.origin and preserves absolute URLs', () => {
+      expect(toFullUrl('/ui/fleet/devices/dut-1')).toBe(
+        'http://localhost/ui/fleet/devices/dut-1',
+      );
+      expect(toFullUrl('https://ci.chromium.org/b/123')).toBe(
+        'https://ci.chromium.org/b/123',
       );
     });
   });
