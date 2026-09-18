@@ -284,14 +284,21 @@ func TestSinkHardening(t *testing.T) {
 		downloadDir := filepath.Join(testParentDir, "download_target")
 		assert.NoErr(t, os.Mkdir(downloadDir, 0o700))
 
-		outputs := map[string]*client.TreeOutput{
-			"../evil_dir": {
-				IsEmptyDirectory: true,
-			},
-		}
+		t.Run(`empty directory`, func(t *ftt.Test) {
+			outputs := map[string]*client.TreeOutput{
+				"../evil_dir": {IsEmptyDirectory: true},
+			}
+			err := createDirectories(t.Context(), downloadDir, outputs)
+			assert.ErrIsLike(t, err, "escapes root")
+		})
 
-		err := createDirectories(t.Context(), downloadDir, outputs)
-		assert.ErrIsLike(t, err, "escapes root")
+		t.Run(`file parent directory`, func(t *ftt.Test) {
+			outputs := map[string]*client.TreeOutput{
+				"../evil_dir/file.txt": {IsEmptyDirectory: false},
+			}
+			err := createDirectories(t.Context(), downloadDir, outputs)
+			assert.ErrIsLike(t, err, "escapes root")
+		})
 
 		entries, err := os.ReadDir(testParentDir)
 		assert.NoErr(t, err)
