@@ -35,6 +35,7 @@ import {
 } from '@mui/material';
 
 import CodeSnippet from '@/fleet/components/code_snippet/code_snippet';
+import { MarkdownSnippet } from '@/fleet/components/code_snippet/markdown_snippet';
 import { Status } from '@/proto/google/rpc/status.pb';
 
 import {
@@ -269,26 +270,11 @@ export const SaveDiffDialog = ({
             </Alert>
           )}
 
-          {changelogMarkdown && (
-            <Box
-              sx={{
-                mt: 2,
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-              }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                Changelog (Markdown for Buganizer):
-              </Typography>
-              <CodeSnippet
-                displayText={changelogMarkdown}
-                copyText={changelogMarkdown}
-                copyKind="changelog"
-              />
-            </Box>
-          )}
+          <MarkdownSnippet
+            label="Changelog (Markdown for Buganizer):"
+            markdown={changelogMarkdown}
+            copyKind="changelog"
+          />
 
           <Box sx={{ mt: 2 }}>
             <Button onClick={onClose} variant="contained" color="primary">
