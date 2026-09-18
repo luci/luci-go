@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -804,8 +805,12 @@ func asUserHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*o
 		return nil, nil, errors.Fmt("failed to get own access token: %w", err)
 	}
 
+	fp, err := delegation.TokenFingerprint(delegationToken)
+	if err != nil {
+		fp = fmt.Sprintf("malformed (%s)", err)
+	}
 	logging.Fields{
-		"fingerprint": tokenFingerprint(delegationToken),
+		"fingerprint": fp,
 	}.Debugf(ctx, "auth: Sending delegation token")
 	return oauthTok, map[string]string{delegation.HTTPHeaderName: delegationToken}, nil
 }

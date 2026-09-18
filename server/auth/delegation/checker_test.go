@@ -16,7 +16,9 @@ package delegation
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"os"
 	"strings"
 	"testing"
@@ -181,6 +183,81 @@ func TestCheckToken(t *testing.T) {
 			OwnServiceIdentity:   "service:service-id",
 		})
 		assert.Loosely(t, err, should.Equal(ErrForbiddenDelegationToken))
+	})
+
+	ftt.Run("Unknown fields in envelope rejected", t, func(t *ftt.Test) {
+		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
+		raw, err := base64.RawURLEncoding.DecodeString(tok)
+		assert.Loosely(t, err, should.BeNil)
+
+		// Append unknown field tag: field 99, length 4: [0x9a, 0x06, 0x04, 't', 'e', 's', 't']
+		mutated := append(raw, 0x9a, 0x06, 0x04, 't', 'e', 's', 't')
+		mutatedTok := base64.RawURLEncoding.EncodeToString(mutated)
+
+		_, err = CheckToken(c, CheckTokenParams{
+			Token:                mutatedTok,
+			PeerID:               "user:to@example.com",
+			CertificatesProvider: minter,
+			GroupsChecker:        &fakeGroups{},
+			OwnServiceIdentity:   "service:service-id",
+		})
+		assert.Loosely(t, err, should.Equal(ErrMalformedDelegationToken))
+	})
+
+	ftt.Run("Non-strict base64 rejected", t, func(t *ftt.Test) {
+		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
+		// Add trailing whitespace or invalid strict padding
+		_, err := CheckToken(c, CheckTokenParams{
+			Token:                tok + " ",
+			PeerID:               "user:to@example.com",
+			CertificatesProvider: minter,
+			GroupsChecker:        &fakeGroups{},
+			OwnServiceIdentity:   "service:service-id",
+		})
+		assert.Loosely(t, err, should.Equal(ErrMalformedDelegationToken))
+	})
+
+	ftt.Run("Missing serialized_subtoken rejected", t, func(t *ftt.Test) {
+		env := &messages.DelegationToken{
+			SignerId:       "service:fake-signer",
+			SigningKeyId:   "key",
+			Pkcs1Sha256Sig: []byte("sig"),
+		}
+		raw, _ := proto.Marshal(env)
+		tok := base64.RawURLEncoding.EncodeToString(raw)
+
+		_, err := CheckToken(c, CheckTokenParams{
+			Token:                tok,
+			PeerID:               "user:to@example.com",
+			CertificatesProvider: minter,
+			GroupsChecker:        &fakeGroups{},
+			OwnServiceIdentity:   "service:service-id",
+		})
+		assert.Loosely(t, err, should.Equal(ErrMalformedDelegationToken))
+	})
+
+	ftt.Run("TokenFingerprint and EnvelopeFingerprint work", t, func(t *ftt.Test) {
+		sub := subtoken(c, "user:from@example.com", "user:to@example.com")
+		subBytes, err := proto.Marshal(sub)
+		assert.Loosely(t, err, should.BeNil)
+		digest := sha256.Sum256(subBytes)
+		expectedFP := hex.EncodeToString(digest[:16])
+
+		tok := minter.mintToken(c, sub)
+		fp, err := TokenFingerprint(tok)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fp, should.Equal(expectedFP))
+
+		// Unknown fields rejected by TokenFingerprint.
+		raw, _ := base64.RawURLEncoding.DecodeString(tok)
+		mutated := append(raw, 0x9a, 0x06, 0x04, 't', 'e', 's', 't')
+		mutatedTok := base64.RawURLEncoding.EncodeToString(mutated)
+		_, err = TokenFingerprint(mutatedTok)
+		assert.Loosely(t, err, should.ErrLike("unknown fields"))
+
+		// Non-strict base64 rejected by TokenFingerprint.
+		_, err = TokenFingerprint(tok + "=")
+		assert.Loosely(t, err, should.ErrLike("illegal base64"))
 	})
 }
 

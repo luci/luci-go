@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	authdelegation "go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/delegation/messages"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -34,6 +35,22 @@ func TestMintedTokenInfo(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("produces correct row map", t, func(t *ftt.Test) {
+		subtok := &messages.Subtoken{
+			Kind:              messages.Subtoken_BEARER_DELEGATION_TOKEN,
+			SubtokenId:        1234,
+			DelegatedIdentity: "user:delegated@example.com",
+			RequestorIdentity: "user:requestor@example.com",
+			CreationTime:      1422936306,
+			ValidityDuration:  3600,
+			Audience:          []string{"user:audience@example.com"},
+			Services:          []string{"*"},
+			Tags:              []string{"k:v"},
+		}
+		tok, err := SignToken(testingContext(), testingSigner(), subtok)
+		assert.Loosely(t, err, should.BeNil)
+		expectedFP, err := authdelegation.TokenFingerprint(tok)
+		assert.Loosely(t, err, should.BeNil)
+
 		info := MintedTokenInfo{
 			Request: &minter.MintDelegationTokenRequest{
 				ValidityDuration: 3600,
@@ -41,19 +58,9 @@ func TestMintedTokenInfo(t *testing.T) {
 				Tags:             []string{"k:v"},
 			},
 			Response: &minter.MintDelegationTokenResponse{
-				Token:          "blah",
-				ServiceVersion: "unit-tests/mocked-ver",
-				DelegationSubtoken: &messages.Subtoken{
-					Kind:              messages.Subtoken_BEARER_DELEGATION_TOKEN,
-					SubtokenId:        1234,
-					DelegatedIdentity: "user:delegated@example.com",
-					RequestorIdentity: "user:requestor@example.com",
-					CreationTime:      1422936306,
-					ValidityDuration:  3600,
-					Audience:          []string{"user:audience@example.com"},
-					Services:          []string{"*"},
-					Tags:              []string{"k:v"},
-				},
+				Token:              tok,
+				ServiceVersion:     "unit-tests/mocked-ver",
+				DelegationSubtoken: subtok,
 			},
 			ConfigRev: "config-rev",
 			Rule: &admin.DelegationRule{
@@ -70,7 +77,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			ConfigRule:        "rule-name",
 			DelegatedIdentity: "user:delegated@example.com",
 			Expiration:        &timestamppb.Timestamp{Seconds: 1422939906},
-			Fingerprint:       "8b7df143d91c716ecfa5fc1730022f6b",
+			Fingerprint:       expectedFP,
 			GaeRequestId:      "gae-request-id",
 			IssuedAt:          &timestamppb.Timestamp{Seconds: 1422936306},
 			PeerIp:            "127.10.10.10",

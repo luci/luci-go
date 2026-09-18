@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
+	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/auth/internal/tracing"
 )
@@ -307,8 +308,12 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (_ *Token
 			}
 
 			// Log details about the new token.
+			fp, err := delegation.TokenFingerprint(resp.Token)
+			if err != nil {
+				fp = fmt.Sprintf("malformed (%s)", err)
+			}
 			logging.Fields{
-				"fingerprint": tokenFingerprint(resp.Token),
+				"fingerprint": fp,
 				"subtokenID":  subtoken.SubtokenId,
 				"validity":    time.Duration(subtoken.ValidityDuration) * time.Second,
 			}.Debugf(ctx, "Minted new delegation token")

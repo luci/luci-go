@@ -16,6 +16,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 
@@ -651,10 +652,14 @@ func checkEndUserIP(ctx context.Context, cfg *Config, db authdb.DB, r RequestMet
 // checkDelegationToken checks correctness of a delegation token and returns
 // a delegated *User.
 func checkDelegationToken(ctx context.Context, cfg *Config, db authdb.DB, token string, peerID identity.Identity) (*User, error) {
-	// Log the token fingerprint (even before parsing the token), it can be used
+	// Log the token fingerprint (even before checking constraints), it can be used
 	// to grab the info about the token from the token server logs.
+	fp, err := delegation.TokenFingerprint(token)
+	if err != nil {
+		fp = fmt.Sprintf("malformed (%s)", err)
+	}
 	logging.Fields{
-		"fingerprint": tokenFingerprint(token),
+		"fingerprint": fp,
 	}.Debugf(ctx, "auth: Received delegation token")
 
 	if !cfg.AllowDelegationTokens {

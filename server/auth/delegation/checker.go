@@ -16,7 +16,9 @@ package delegation
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -122,9 +124,27 @@ func CheckToken(ctx context.Context, params CheckTokenParams) (_ identity.Identi
 	return checkSubtoken(ctx, subtoken, &params)
 }
 
+// EnvelopeFingerprint returns the first 16 bytes of SHA256 of the serialized
+// subtoken inside the envelope, hex-encoded.
+func EnvelopeFingerprint(env *messages.DelegationToken) string {
+	digest := sha256.Sum256(env.SerializedSubtoken)
+	return hex.EncodeToString(digest[:16])
+}
+
+// TokenFingerprint deserializes the delegation token envelope and returns its
+// fingerprint (the first 16 bytes of SHA256 of the serialized subtoken,
+// hex-encoded).
+func TokenFingerprint(token string) (string, error) {
+	tok, err := deserializeToken(token)
+	if err != nil {
+		return "", err
+	}
+	return EnvelopeFingerprint(tok), nil
+}
+
 // deserializeToken deserializes DelegationToken proto message.
 func deserializeToken(token string) (*messages.DelegationToken, error) {
-	blob, err := base64.RawURLEncoding.DecodeString(token)
+	blob, err := base64.RawURLEncoding.Strict().DecodeString(token)
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +154,12 @@ func deserializeToken(token string) (*messages.DelegationToken, error) {
 	tok := &messages.DelegationToken{}
 	if err = proto.Unmarshal(blob, tok); err != nil {
 		return nil, err
+	}
+	if len(tok.ProtoReflect().GetUnknown()) > 0 {
+		return nil, fmt.Errorf("the delegation token envelope contains unknown fields")
+	}
+	if len(tok.SerializedSubtoken) == 0 {
+		return nil, fmt.Errorf("the delegation token is missing serialized_subtoken")
 	}
 	return tok, nil
 }

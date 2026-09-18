@@ -21,10 +21,11 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	authdelegation "go.chromium.org/luci/server/auth/delegation"
+
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
-	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )
 
@@ -49,9 +50,13 @@ type MintedTokenInfo struct {
 // toBigQueryMessage returns a message to upload to BigQuery.
 func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.DelegationToken {
 	subtok := i.Response.DelegationSubtoken
+	fp, err := authdelegation.TokenFingerprint(i.Response.Token)
+	if err != nil {
+		panic(fmt.Sprintf("invalid minted delegation token: %s", err))
+	}
 	return &bqpb.DelegationToken{
 		// Information about the produced token.
-		Fingerprint:       utils.TokenFingerprint(i.Response.Token),
+		Fingerprint:       fp,
 		TokenKind:         subtok.Kind,
 		TokenId:           fmt.Sprintf("%d", subtok.SubtokenId),
 		DelegatedIdentity: subtok.DelegatedIdentity,
