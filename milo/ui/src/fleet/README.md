@@ -65,14 +65,16 @@ The source code is located in the `src/fleet` directory.
 
 ```text
 src/fleet
-├── components/  # Reusable React components (e.g., DeviceTable).
+├── components/  # Reusable React components (see components/README.md).
 ├── config/      # Configuration files for customizable settings.
 ├── hooks/       # Custom React hooks.
 ├── pages/       # Top-level components representing a full page/view.
 ├── layouts/     # Code for our shared Fleet Console layout.
-├── utils/       # General shared code helpers.
+├── utils/       # General shared code helpers (markdown_utils, aip160, dates, builds, etc.).
 ├── routes.ts    # Defines the routes for the project.
 ```
+
+See [components/README.md](./components/README.md) for shared UI component organization and reuse conventions.
 
 ## Local Setup and Running
 
