@@ -39,6 +39,18 @@ var textPBMultiline = prototext.MarshalOptions{
 	Multiline: true,
 }
 
+func disableGerritActions(cfg *configpb.ProjectConfig) *configpb.ProjectConfig {
+	cfg.CompileAnalysisConfig.GerritConfig.ActionsEnabled = false
+	cfg.CompileAnalysisConfig.GerritConfig.CreateRevertSettings.Enabled = false
+	cfg.CompileAnalysisConfig.GerritConfig.SubmitRevertSettings.Enabled = false
+	cfg.CompileAnalysisConfig.GerritConfig.NthsectionSettings.Enabled = false
+	cfg.TestAnalysisConfig.GerritConfig.ActionsEnabled = false
+	cfg.TestAnalysisConfig.GerritConfig.CreateRevertSettings.Enabled = false
+	cfg.TestAnalysisConfig.GerritConfig.SubmitRevertSettings.Enabled = false
+	cfg.TestAnalysisConfig.GerritConfig.NthsectionSettings.Enabled = false
+	return cfg
+}
+
 func TestProjectConfig(t *testing.T) {
 	t.Parallel()
 
@@ -58,8 +70,8 @@ func TestProjectConfig(t *testing.T) {
 	})
 
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
-		projectA := CreatePlaceholderProjectConfig()
-		projectB := CreatePlaceholderProjectConfig()
+		projectA := disableGerritActions(CreatePlaceholderProjectConfig())
+		projectB := disableGerritActions(CreatePlaceholderProjectConfig())
 		projectB.TestAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{
 			ExcludedBuckets: []string{"try"},
 		}
@@ -93,8 +105,8 @@ func TestProjectConfig(t *testing.T) {
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Real update.
-			projectC := CreatePlaceholderProjectConfig()
-			newProjectB := CreatePlaceholderProjectConfig()
+			projectC := disableGerritActions(CreatePlaceholderProjectConfig())
+			newProjectB := disableGerritActions(CreatePlaceholderProjectConfig())
 			newProjectB.TestAnalysisConfig.FailureIngestionFilter = &configpb.FailureIngestionFilter{
 				ExcludedBuckets: []string{"try2"},
 			}
@@ -142,7 +154,7 @@ func TestProjectConfig(t *testing.T) {
 			assert.Loosely(t, projects["c"], should.Match(projectC))
 
 			// Update with milestone project should be ignored.
-			milestoneProject := CreatePlaceholderProjectConfig()
+			milestoneProject := disableGerritActions(CreatePlaceholderProjectConfig())
 			configs["projects/chromium-m110"] = cfgmem.Files{
 				"${appid}.cfg": textPBMultiline.Format(milestoneProject),
 			}
@@ -192,10 +204,10 @@ func TestProjectConfig(t *testing.T) {
 			assert.Loosely(t, projects["b"], should.Match(projectB))
 
 			// Attempt to update with an invalid config for project B.
-			newProjectA := CreatePlaceholderProjectConfig()
-			assert.Loosely(t, newProjectA.GetTestAnalysisConfig().GerritConfig.ActionsEnabled, should.BeTrue)
-			newProjectA.GetTestAnalysisConfig().GerritConfig.ActionsEnabled = false
-			newProjectB := CreatePlaceholderProjectConfig()
+			newProjectA := disableGerritActions(CreatePlaceholderProjectConfig())
+			assert.Loosely(t, newProjectA.GetTestAnalysisConfig().DailyLimit, should.Equal(10))
+			newProjectA.GetTestAnalysisConfig().DailyLimit = 20
+			newProjectB := disableGerritActions(CreatePlaceholderProjectConfig())
 			assert.Loosely(t, newProjectB.GetTestAnalysisConfig().GerritConfig.MaxRevertibleCulpritAge, should.Equal(1))
 			newProjectB.GetTestAnalysisConfig().GerritConfig.MaxRevertibleCulpritAge = 0
 			configs["projects/a"]["${appid}.cfg"] = textPBMultiline.Format(newProjectA)

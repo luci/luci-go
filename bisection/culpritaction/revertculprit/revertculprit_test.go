@@ -271,6 +271,56 @@ func TestRevertCulprit(t *testing.T) {
 			}))
 		})
 
+		t.Run("unauthorized project has Gerrit actions disabled", func(t *ftt.Test) {
+			_, _, webrtcAnalysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
+				ctx, t, 88128398584904, "webrtc", 445)
+			webrtcGenAIAnalysis := &model.CompileGenAIAnalysis{
+				ParentAnalysis: datastore.KeyForObj(ctx, webrtcAnalysis),
+			}
+			assert.Loosely(t, datastore.Put(ctx, webrtcGenAIAnalysis), should.BeNil)
+
+			genaiSuspect := &model.Suspect{
+				Id:             200,
+				Type:           model.SuspectType_GenAI,
+				Score:          10,
+				ParentAnalysis: datastore.KeyForObj(ctx, webrtcGenAIAnalysis),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12ab34cd56ef",
+				},
+				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+			}
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Even if ActionsEnabled is true in config for webrtc, actions should be disabled.
+			gerritConfig.ActionsEnabled = true
+			projectCfg := config.CreatePlaceholderProjectConfig()
+			projectCfg.CompileAnalysisConfig.GerritConfig = gerritConfig
+			cfg := map[string]*configpb.ProjectConfig{"webrtc": projectCfg}
+			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
+
+			err := TakeCulpritAction(ctx, genaiSuspect)
+			assert.Loosely(t, err, should.BeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+				InactionReason:          pb.CulpritInactionReason_ACTIONS_DISABLED,
+			}))
+		})
+
 		t.Run("already reverted", func(t *ftt.Test) {
 			// Setup suspect in datastore
 			genaiSuspect := &model.Suspect{

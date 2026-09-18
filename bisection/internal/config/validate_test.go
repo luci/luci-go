@@ -29,9 +29,9 @@ import (
 func TestValidateProjectConfig(t *testing.T) {
 	t.Parallel()
 
-	validate := func(cfg *configpb.ProjectConfig) error {
+	validate := func(project string, cfg *configpb.ProjectConfig) error {
 		ctx := validation.Context{Context: context.Background()}
-		validateProjectConfig(&ctx, cfg)
+		validateProjectConfig(&ctx, project, cfg)
 		return ctx.Finalize()
 	}
 
@@ -40,7 +40,7 @@ func TestValidateProjectConfig(t *testing.T) {
 			GerritConfig: createPlaceHolderGerritConfig(),
 			BuildConfig:  createPlaceHolderCompileBuildConfig(),
 		}}
-		assert.Loosely(t, validate(cfg), should.ErrLike("missing test analysis config"))
+		assert.Loosely(t, validate("chromium", cfg), should.ErrLike("missing test analysis config"))
 	})
 
 	ftt.Run("missing compile analysis config", t, func(t *ftt.Test) {
@@ -48,7 +48,20 @@ func TestValidateProjectConfig(t *testing.T) {
 			GerritConfig: createPlaceHolderGerritConfig(),
 			BuildConfig:  createPlaceHolderTestBuildConfig(),
 		}}
-		assert.Loosely(t, validate(cfg), should.ErrLike("missing compile analysis config"))
+		assert.Loosely(t, validate("chromium", cfg), should.ErrLike("missing compile analysis config"))
+	})
+
+	ftt.Run("unauthorized project cannot enable gerrit actions", t, func(t *ftt.Test) {
+		cfg := CreatePlaceholderProjectConfig()
+		cfg.CompileAnalysisConfig.GerritConfig.ActionsEnabled = true
+		assert.Loosely(t, validate("unauthorized", cfg), should.ErrLike("project \"unauthorized\" is not authorized to enable Gerrit actions"))
+	})
+
+	ftt.Run("authorized project can enable gerrit actions", t, func(t *ftt.Test) {
+		cfg := CreatePlaceholderProjectConfig()
+		cfg.CompileAnalysisConfig.GerritConfig.ActionsEnabled = true
+		cfg.TestAnalysisConfig.GerritConfig.ActionsEnabled = true
+		assert.Loosely(t, validate("chromium", cfg), should.BeNil)
 	})
 }
 
@@ -100,16 +113,16 @@ func TestValidateBuildConfig(t *testing.T) {
 func TestValidateGerritConfig(t *testing.T) {
 	t.Parallel()
 
-	validate := func(cfg *configpb.GerritConfig) error {
+	validate := func(project string, cfg *configpb.GerritConfig) error {
 		ctx := validation.Context{Context: context.Background()}
-		validateGerritConfig(&ctx, cfg)
+		validateGerritConfig(&ctx, project, cfg)
 		return ctx.Finalize()
 	}
 
 	ftt.Run("Gerrit config structure", t, func(t *ftt.Test) {
 		t.Run("must not be empty", func(t *ftt.Test) {
 			cfg := &configpb.GerritConfig{}
-			assert.Loosely(t, validate(cfg), should.ErrLike("missing config for"))
+			assert.Loosely(t, validate("chromium", cfg), should.ErrLike("missing config for"))
 		})
 
 		t.Run("missing create revert settings is invalid", func(t *ftt.Test) {
@@ -117,7 +130,7 @@ func TestValidateGerritConfig(t *testing.T) {
 				MaxRevertibleCulpritAge: 21600,
 				SubmitRevertSettings:    &configpb.GerritConfig_RevertActionSettings{},
 			}
-			assert.Loosely(t, validate(cfg), should.ErrLike("missing config for creating reverts"))
+			assert.Loosely(t, validate("chromium", cfg), should.ErrLike("missing config for creating reverts"))
 		})
 
 		t.Run("missing submit revert settings is invalid", func(t *ftt.Test) {
@@ -125,7 +138,7 @@ func TestValidateGerritConfig(t *testing.T) {
 				MaxRevertibleCulpritAge: 21600,
 				CreateRevertSettings:    &configpb.GerritConfig_RevertActionSettings{},
 			}
-			assert.Loosely(t, validate(cfg), should.ErrLike("missing config for submitting reverts"))
+			assert.Loosely(t, validate("chromium", cfg), should.ErrLike("missing config for submitting reverts"))
 		})
 	})
 
@@ -139,18 +152,65 @@ func TestValidateGerritConfig(t *testing.T) {
 		t.Run("max revertible culprit age", func(t *ftt.Test) {
 			t.Run("cannot be 0", func(t *ftt.Test) {
 				cfg.MaxRevertibleCulpritAge = 0
-				assert.Loosely(t, validate(cfg), should.ErrLike("invalid - must be positive number of seconds"))
+				assert.Loosely(t, validate("chromium", cfg), should.ErrLike("invalid - must be positive number of seconds"))
 			})
 
 			t.Run("cannot be negative", func(t *ftt.Test) {
 				cfg.MaxRevertibleCulpritAge = -21600
-				assert.Loosely(t, validate(cfg), should.ErrLike("invalid - must be positive number of seconds"))
+				assert.Loosely(t, validate("chromium", cfg), should.ErrLike("invalid - must be positive number of seconds"))
 			})
 
 			t.Run("can be positive", func(t *ftt.Test) {
 				cfg.MaxRevertibleCulpritAge = 21600
-				assert.Loosely(t, validate(cfg), should.BeNil)
+				assert.Loosely(t, validate("chromium", cfg), should.BeNil)
 			})
+		})
+	})
+
+	ftt.Run("Gerrit config project authorization", t, func(t *ftt.Test) {
+		cfg := &configpb.GerritConfig{
+			MaxRevertibleCulpritAge: 21600,
+			CreateRevertSettings:    &configpb.GerritConfig_RevertActionSettings{},
+			SubmitRevertSettings:    &configpb.GerritConfig_RevertActionSettings{},
+		}
+
+		t.Run("unauthorized project with actions enabled is invalid", func(t *ftt.Test) {
+			cfg.ActionsEnabled = true
+			assert.Loosely(t, validate("unauthorized", cfg), should.ErrLike("project \"unauthorized\" is not authorized to enable Gerrit actions"))
+		})
+
+		t.Run("unauthorized project with create revert enabled is invalid", func(t *ftt.Test) {
+			cfg.ActionsEnabled = false
+			cfg.CreateRevertSettings.Enabled = true
+			assert.Loosely(t, validate("unauthorized", cfg), should.ErrLike("project \"unauthorized\" is not authorized to enable Gerrit actions"))
+		})
+
+		t.Run("unauthorized project with submit revert enabled is invalid", func(t *ftt.Test) {
+			cfg.ActionsEnabled = false
+			cfg.SubmitRevertSettings.Enabled = true
+			assert.Loosely(t, validate("unauthorized", cfg), should.ErrLike("project \"unauthorized\" is not authorized to enable Gerrit actions"))
+		})
+
+		t.Run("unauthorized project with nthsection enabled is invalid", func(t *ftt.Test) {
+			cfg.ActionsEnabled = false
+			cfg.NthsectionSettings = &configpb.GerritConfig_NthSectionSettings{Enabled: true}
+			assert.Loosely(t, validate("unauthorized", cfg), should.ErrLike("project \"unauthorized\" is not authorized to enable Gerrit actions"))
+		})
+
+		t.Run("unauthorized project with all actions disabled is valid", func(t *ftt.Test) {
+			cfg.ActionsEnabled = false
+			cfg.CreateRevertSettings.Enabled = false
+			cfg.SubmitRevertSettings.Enabled = false
+			cfg.NthsectionSettings = &configpb.GerritConfig_NthSectionSettings{Enabled: false}
+			assert.Loosely(t, validate("unauthorized", cfg), should.BeNil)
+		})
+
+		t.Run("authorized project with actions enabled is valid", func(t *ftt.Test) {
+			cfg.ActionsEnabled = true
+			cfg.CreateRevertSettings.Enabled = true
+			cfg.SubmitRevertSettings.Enabled = true
+			assert.Loosely(t, validate("chromium", cfg), should.BeNil)
+			assert.Loosely(t, validate("chrome", cfg), should.BeNil)
 		})
 	})
 }

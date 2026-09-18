@@ -198,13 +198,14 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 	if err != nil {
 		return errors.Fmt("get project for suspect: %w", err)
 	}
+
 	// Get gerrit config.
 	gerritConfig, err := config.GetGerritCfgForSuspect(ctx, culpritModel, project)
 	if err != nil {
 		return errors.Fmt("get gerrit config for suspect: %w", err)
 	}
 	// Check if Gerrit actions are disabled
-	if !gerritConfig.ActionsEnabled {
+	if !gerritConfig.ActionsEnabled || !config.IsProjectAuthorizedForGerritActions(project) {
 		logging.Infof(ctx, "Gerrit actions have been disabled")
 		saveInactionReason(ctx, culpritModel, pb.CulpritInactionReason_ACTIONS_DISABLED)
 		return nil

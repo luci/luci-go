@@ -22,18 +22,28 @@ import (
 	configpb "go.chromium.org/luci/bisection/proto/config"
 )
 
-func validateTestAnalysisConfig(ctx *validation.Context, testAnalysisConfig *configpb.TestAnalysisConfig) {
+// IsProjectAuthorizedForGerritActions returns true if the project is authorized
+// to configure and perform Gerrit actions (e.g. creating/submitting reverts).
+// Currently only "chromium" and "chrome" are authorized.
+func IsProjectAuthorizedForGerritActions(project string) bool {
+	if project == "chromium" || project == "chrome" {
+		return true
+	}
+	return false
+}
+
+func validateTestAnalysisConfig(ctx *validation.Context, project string, testAnalysisConfig *configpb.TestAnalysisConfig) {
 	ctx.Enter("test_analysis_config")
 	defer ctx.Exit()
 	if testAnalysisConfig == nil {
 		ctx.Errorf("missing test analysis config")
 		return
 	}
-	validateGerritConfig(ctx, testAnalysisConfig.GerritConfig)
+	validateGerritConfig(ctx, project, testAnalysisConfig.GerritConfig)
 	validateBuildConfig(ctx, testAnalysisConfig.BuildConfig)
 }
 
-func validateCompileAnalysisConfig(ctx *validation.Context, compileAnalysisConfig *configpb.CompileAnalysisConfig) {
+func validateCompileAnalysisConfig(ctx *validation.Context, project string, compileAnalysisConfig *configpb.CompileAnalysisConfig) {
 	ctx.Enter("compile_analysis_config")
 	defer ctx.Exit()
 	if compileAnalysisConfig == nil {
@@ -41,7 +51,7 @@ func validateCompileAnalysisConfig(ctx *validation.Context, compileAnalysisConfi
 		return
 	}
 	validateBuildConfig(ctx, compileAnalysisConfig.BuildConfig)
-	validateGerritConfig(ctx, compileAnalysisConfig.GerritConfig)
+	validateGerritConfig(ctx, project, compileAnalysisConfig.GerritConfig)
 }
 
 func validateBuildConfig(ctx *validation.Context, cfg *configpb.BuildConfig) {
@@ -74,7 +84,7 @@ func validateBuilder(ctx *validation.Context, cfg *configpb.Builder) {
 }
 
 // Validates the settings in a GerritConfig
-func validateGerritConfig(ctx *validation.Context, cfg *configpb.GerritConfig) {
+func validateGerritConfig(ctx *validation.Context, project string, cfg *configpb.GerritConfig) {
 	ctx.Enter("gerrit_config")
 	defer ctx.Exit()
 
@@ -88,6 +98,14 @@ func validateGerritConfig(ctx *validation.Context, cfg *configpb.GerritConfig) {
 	}
 	validateCulpritAge(ctx, cfg.MaxRevertibleCulpritAge)
 	// TODO (nqmtuan): validate nthsection_config when we have it
+
+	hasActionsEnabled := cfg.ActionsEnabled ||
+		(cfg.CreateRevertSettings != nil && cfg.CreateRevertSettings.Enabled) ||
+		(cfg.SubmitRevertSettings != nil && cfg.SubmitRevertSettings.Enabled) ||
+		(cfg.NthsectionSettings != nil && cfg.NthsectionSettings.Enabled)
+	if hasActionsEnabled && !IsProjectAuthorizedForGerritActions(project) {
+		ctx.Errorf("project %q is not authorized to enable Gerrit actions", project)
+	}
 }
 
 // Helper to validate the maximum revertible culprit age in a GerritConfig
@@ -112,11 +130,11 @@ func validateProjectConfigRaw(ctx *validation.Context, project, content string) 
 		ctx.Errorf("failed to unmarshal as text proto: %s", err)
 		return nil
 	}
-	validateProjectConfig(ctx, msg)
+	validateProjectConfig(ctx, project, msg)
 	return msg
 }
 
-func validateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig) {
-	validateTestAnalysisConfig(ctx, cfg.TestAnalysisConfig)
-	validateCompileAnalysisConfig(ctx, cfg.CompileAnalysisConfig)
+func validateProjectConfig(ctx *validation.Context, project string, cfg *configpb.ProjectConfig) {
+	validateTestAnalysisConfig(ctx, project, cfg.TestAnalysisConfig)
+	validateCompileAnalysisConfig(ctx, project, cfg.CompileAnalysisConfig)
 }
