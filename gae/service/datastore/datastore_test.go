@@ -1965,24 +1965,24 @@ indexes:
 	})
 }
 
-func TestIteratorHeap(t *testing.T) {
+func TestSubqueryHeap(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("iteratorHeap", t, func(t *ftt.Test) {
-		h := &iteratorHeap{}
+	ftt.Run("subqueryHeap", t, func(t *ftt.Test) {
+		h := &subqueryHeap{}
 
 		heap.Init(h)
-		heap.Push(h, &queryIterator{currentItemOrderCache: "bb"})
-		heap.Push(h, &queryIterator{currentItemOrderCache: "aa"})
+		heap.Push(h, &subqueryState{orderStr: "bb", idx: 1})
+		heap.Push(h, &subqueryState{orderStr: "aa", idx: 0})
 		assert.Loosely(t, h.Len(), should.Equal(2))
 
-		var res []*queryIterator
+		var res []*subqueryState
 		for h.Len() > 0 {
-			res = append(res, heap.Pop(h).(*queryIterator))
+			res = append(res, heap.Pop(h).(*subqueryState))
 		}
-		assert.Loosely(t, res, should.Resemble([]*queryIterator{
-			{currentItemOrderCache: "aa"},
-			{currentItemOrderCache: "bb"},
+		assert.Loosely(t, res, should.Resemble([]*subqueryState{
+			{orderStr: "aa", idx: 0},
+			{orderStr: "bb", idx: 1},
 		}))
 	})
 }
