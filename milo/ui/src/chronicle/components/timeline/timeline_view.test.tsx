@@ -17,7 +17,11 @@ import React from 'react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { COLORS } from '@/chronicle/utils/styles';
-import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import {
+  Stage,
+  Stage_Attempt,
+} from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { StageAttemptState } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import { StageConcludedReason } from '@/proto/turboci/graph/orchestrator/v1/stage_concluded_reason.pb';
 import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
@@ -76,6 +80,7 @@ interface CreateTestStageOptions {
   state?: StageState;
   startTime?: string;
   endTime?: string;
+  attempts?: Stage_Attempt[];
 }
 
 function createTestStage(options: CreateTestStageOptions = {}): Stage {
@@ -86,6 +91,7 @@ function createTestStage(options: CreateTestStageOptions = {}): Stage {
     state = StageState.STAGE_STATE_FINAL,
     startTime = '2026-07-23T10:00:00Z',
     endTime = '2026-07-23T10:05:00Z',
+    attempts,
   } = options;
 
   return Stage.create({
@@ -107,6 +113,7 @@ function createTestStage(options: CreateTestStageOptions = {}): Stage {
         version: { ts: endTime },
       },
     ],
+    attempts: attempts ?? [],
   });
 }
 
@@ -336,5 +343,64 @@ describe('TimelineView', () => {
     expect(rects[0]).toHaveAttribute('stroke', SELECTED_BAR_STYLE.stroke);
     expect(rects[1]).toHaveAttribute('fill', SELECTED_BAR_STYLE.fill);
     expect(rects[1]).toHaveAttribute('stroke', SELECTED_BAR_STYLE.stroke);
+  });
+
+  it('renders segmented progress bars with tooltip and labels when progress is present', () => {
+    const stage = createTestStage({
+      attempts: [
+        Stage_Attempt.fromPartial({
+          state: StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE,
+          stateHistory: [
+            {
+              state: StageAttemptState.STAGE_ATTEMPT_STATE_RUNNING,
+              version: { ts: '2026-07-23T10:00:00Z' },
+            },
+            {
+              state: StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE,
+              version: { ts: '2026-07-23T10:05:00Z' },
+            },
+          ],
+          progress: [
+            {
+              message: 'Build foo for node N1 sync',
+              version: { ts: '2026-07-23T10:01:00Z' },
+            },
+            {
+              message: 'Build foo for node N1 compile',
+              version: { ts: '2026-07-23T10:03:00Z' },
+            },
+          ],
+        }),
+      ],
+    });
+    const valueDataMap = createTestValueDataMap();
+    const graph: WorkPlan = WorkPlan.create({
+      identifier: { id: 'demo' },
+      stages: [stage],
+      checks: [],
+    });
+
+    const { container } = render(
+      <FakeContextProvider>
+        <VirtuosoMockContext.Provider
+          value={{ viewportHeight: 800, itemHeight: 30 }}
+        >
+          <ChronicleContext.Provider
+            value={{ ...mockContext, graph, valueDataMap }}
+          >
+            <TimelineView />
+          </ChronicleContext.Provider>
+        </VirtuosoMockContext.Provider>
+      </FakeContextProvider>,
+    );
+
+    // Segment tooltip titles should exist
+    const titles = Array.from(container.querySelectorAll('title')).map(
+      (t) => t.textContent,
+    );
+    expect(titles).toContain('Attempt 1: Build foo for node N1 sync (3 min)');
+    expect(titles).toContain(
+      'Attempt 1: Build foo for node N1 compile (2 min)',
+    );
   });
 });

@@ -17,6 +17,8 @@ import { DateTime } from 'luxon';
 import { StageResultStatus } from '@/chronicle/utils/check_utils';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 
+import { ProgressSegment } from './segments';
+
 export interface TimelineItem {
   id: string;
   label: string;
@@ -24,11 +26,15 @@ export interface TimelineItem {
   end: DateTime;
   stage: Stage;
   resultStatus: StageResultStatus;
+  segments?: ProgressSegment[];
 }
 
 export const ROW_HEIGHT = 30;
 export const BAR_HEIGHT = 24;
 export const STAGE_COLUMN_WIDTH = 300;
+
+export const BAR_BORDER_RADIUS = 2;
+export const SEGMENT_LABEL_MIN_WIDTH_PX = 28;
 
 export const SELECTED_BAR_STYLE = {
   fill: '#e3f2fd',

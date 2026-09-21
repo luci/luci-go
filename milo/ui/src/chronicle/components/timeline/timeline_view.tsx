@@ -45,6 +45,7 @@ import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb
 import { ChronicleContext } from '../context';
 import { InspectorPanel } from '../inspector_panel/inspector_panel';
 
+import { buildProgressSegments } from './segments';
 import { StageRow } from './stage_row';
 import { StageTimelineBar } from './stage_timeline_bar';
 import { ROW_HEIGHT, STAGE_COLUMN_WIDTH, TimelineItem } from './types';
@@ -119,6 +120,8 @@ function TimelineView() {
         minMs = Math.min(minMs, start.toMillis());
         maxMs = Math.max(maxMs, end.toMillis());
 
+        const segments = buildProgressSegments(sv, valueDataMap, end);
+
         return {
           id: sv.identifier.id,
           label: getStageLabel(sv, valueDataMap),
@@ -126,6 +129,7 @@ function TimelineView() {
           end,
           stage: sv,
           resultStatus: getStageResultStatus(sv, valueDataMap),
+          segments,
         };
       })
       .filter((item): item is TimelineItem => !!item)
