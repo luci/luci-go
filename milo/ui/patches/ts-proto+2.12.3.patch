@@ -1,5 +1,5 @@
 diff --git a/node_modules/ts-proto/build/src/generate-services.js b/node_modules/ts-proto/build/src/generate-services.js
-index bba3120..032a3a5 100644
+index 8428889..b0d86a8 100644
 --- a/node_modules/ts-proto/build/src/generate-services.js
 +++ b/node_modules/ts-proto/build/src/generate-services.js
 @@ -100,7 +100,10 @@ function generateRegularRpcMethod(ctx, methodDesc) {
@@ -40,7 +40,7 @@ index bba3120..032a3a5 100644
      chunks.push((0, ts_poet_1.code) `private readonly rpc: ${rpcType};`);
      chunks.push((0, ts_poet_1.code) `private readonly service: string;`);
      chunks.push((0, ts_poet_1.code) `constructor(rpc: ${rpcType}, opts?: {service?: string}) {`);
-@@ -295,12 +304,16 @@ function generateCachingRpcMethod(ctx, fileDesc, serviceDesc, methodDesc) {
+@@ -298,12 +307,16 @@ function generateCachingRpcMethod(ctx, fileDesc, serviceDesc, methodDesc) {
      const outputType = (0, types_1.responseType)(ctx, methodDesc);
      const uniqueIdentifier = `${(0, utils_1.maybePrefixPackage)(fileDesc, serviceDesc.name)}.${methodDesc.name}`;
      const BinaryReader = (0, ts_poet_1.imp)("BinaryReader@@bufbuild/protobuf/wire");
@@ -59,7 +59,7 @@ index bba3120..032a3a5 100644
        });
        return Promise.all(responses);
      }
-@@ -340,7 +353,9 @@ function generateRpcType(ctx, hasStreamingMethods) {
+@@ -343,7 +356,9 @@ function generateRpcType(ctx, hasStreamingMethods) {
      const maybeContextParam = options.context ? "ctx: Context," : "";
      const maybeMetadataParam = options.metadataType || options.addGrpcMetadata ? `metadata?: ${metadataType},` : "";
      const maybeAbortSignalParam = options.useAbortSignal ? "abortSignal?: AbortSignal," : "";

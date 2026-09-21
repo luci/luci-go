@@ -14,40 +14,47 @@
 
 import { redirectionLoader } from './redirection_loader';
 
+// react-router >= 7.10 added required `url` and `pattern` fields to
+// LoaderFunctionArgs. `url` mirrors `request.url`, which is react-router's
+// documented default, and `redirectionLoader` only reads `request`, so neither
+// field changes what these tests exercise.
+function loaderArgs(href: string) {
+  const request = new Request(href);
+  return {
+    request,
+    url: new URL(request.url),
+    pattern: '/ui/bisection/*',
+    params: {},
+    context: '',
+  };
+}
+
 describe('redirectionLoader', () => {
   describe('list table', () => {
     it('base page', () => {
-      const response = redirectionLoader({
-        request: new Request('https://luci-milo-dev.appspot.com/ui/bisection'),
-        params: {},
-        context: '',
-      });
+      const response = redirectionLoader(
+        loaderArgs('https://luci-milo-dev.appspot.com/ui/bisection'),
+      );
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
         '/ui/p/chromium/bisection',
       );
     });
     it('compile failure page', () => {
-      const response = redirectionLoader({
-        request: new Request(
-          'https://luci-milo-dev.appspot.com/ui/bisection/analysis',
-        ),
-        params: {},
-        context: '',
-      });
+      const response = redirectionLoader(
+        loaderArgs('https://luci-milo-dev.appspot.com/ui/bisection/analysis'),
+      );
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
         '/ui/p/chromium/bisection/compile-analysis',
       );
     });
     it('test failure page', () => {
-      const response = redirectionLoader({
-        request: new Request(
+      const response = redirectionLoader(
+        loaderArgs(
           'https://luci-milo-dev.appspot.com/ui/bisection/test-analysis',
         ),
-        params: {},
-        context: '',
-      });
+      );
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
         '/ui/p/chromium/bisection/test-analysis',
@@ -56,26 +63,22 @@ describe('redirectionLoader', () => {
   });
   describe('detail table', () => {
     it('compile failure page', () => {
-      const response = redirectionLoader({
-        request: new Request(
+      const response = redirectionLoader(
+        loaderArgs(
           'https://luci-milo-dev.appspot.com/ui/bisection/analysis/b/123',
         ),
-        params: {},
-        context: '',
-      });
+      );
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
         '/ui/p/chromium/bisection/compile-analysis/b/123',
       );
     });
     it('test failure page', () => {
-      const response = redirectionLoader({
-        request: new Request(
+      const response = redirectionLoader(
+        loaderArgs(
           'https://luci-milo-dev.appspot.com/ui/bisection/test-analysis/b/123',
         ),
-        params: {},
-        context: '',
-      });
+      );
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
         '/ui/p/chromium/bisection/test-analysis/b/123',

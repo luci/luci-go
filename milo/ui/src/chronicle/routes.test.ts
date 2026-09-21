@@ -14,6 +14,21 @@
 
 import { chronicleRoutes } from './routes';
 
+// react-router >= 7.10 added required `url` and `pattern` fields to
+// LoaderFunctionArgs. `url` mirrors `request.url`, which is react-router's
+// documented default, and the loader under test only reads `params` and
+// `request`, so neither field changes what these tests exercise.
+function loaderArgs(workplanId: string, href: string) {
+  const request = new Request(href);
+  return {
+    params: { workplanId },
+    request,
+    url: new URL(request.url),
+    pattern: ':workplanId',
+    context: undefined,
+  };
+}
+
 describe('chronicleRoutes redirect loader', () => {
   const canonicalRoute = chronicleRoutes.find((r) => r.path === ':workplanId');
   const loader =
@@ -32,13 +47,12 @@ describe('chronicleRoutes redirect loader', () => {
   });
 
   it('should redirect full node ID to workplan ID and query param', async () => {
-    const response = (await loader!({
-      params: { workplanId: 'Lworkplan123:Nstage456' },
-      request: new Request(
+    const response = (await loader!(
+      loaderArgs(
+        'Lworkplan123:Nstage456',
         'https://luci-milo.appspot.com/ui/chronicle/Lworkplan123:Nstage456/graph?param1=abc#hash',
       ),
-      context: undefined,
-    })) as Response;
+    )) as Response;
 
     expect(response).toBeInstanceOf(Response);
     expect(response.status).toBe(302);
@@ -48,13 +62,12 @@ describe('chronicleRoutes redirect loader', () => {
   });
 
   it('should redirect workplan ID starting with L', async () => {
-    const response = (await loader!({
-      params: { workplanId: 'Lworkplan123' },
-      request: new Request(
+    const response = (await loader!(
+      loaderArgs(
+        'Lworkplan123',
         'https://luci-milo.appspot.com/ui/chronicle/Lworkplan123/graph?param1=abc',
       ),
-      context: undefined,
-    })) as Response;
+    )) as Response;
 
     expect(response).toBeInstanceOf(Response);
     expect(response.status).toBe(302);
@@ -64,13 +77,12 @@ describe('chronicleRoutes redirect loader', () => {
   });
 
   it('should redirect percent-encoded full node ID correctly', async () => {
-    const response = (await loader!({
-      params: { workplanId: 'L85400030111500308:S$init' },
-      request: new Request(
+    const response = (await loader!(
+      loaderArgs(
+        'L85400030111500308:S$init',
         'https://luci-milo.appspot.com/ui/chronicle/L85400030111500308%3AS%24init/graph?param1=abc#hash',
       ),
-      context: undefined,
-    })) as Response;
+    )) as Response;
 
     expect(response).toBeInstanceOf(Response);
     expect(response.status).toBe(302);
@@ -80,13 +92,12 @@ describe('chronicleRoutes redirect loader', () => {
   });
 
   it('should redirect StageAttempt full node ID correctly', async () => {
-    const response = (await loader!({
-      params: { workplanId: 'L85400030111500308:S$init:A1' },
-      request: new Request(
+    const response = (await loader!(
+      loaderArgs(
+        'L85400030111500308:S$init:A1',
         'https://luci-milo.appspot.com/ui/chronicle/L85400030111500308%3AS%24init%3AA1/graph?param1=abc#hash',
       ),
-      context: undefined,
-    })) as Response;
+    )) as Response;
 
     expect(response).toBeInstanceOf(Response);
     expect(response.status).toBe(302);
@@ -96,13 +107,12 @@ describe('chronicleRoutes redirect loader', () => {
   });
 
   it('should not redirect standard workplan ID', async () => {
-    const response = await loader!({
-      params: { workplanId: '12345' },
-      request: new Request(
+    const response = await loader!(
+      loaderArgs(
+        '12345',
         'https://luci-milo.appspot.com/ui/chronicle/12345/graph?param1=abc',
       ),
-      context: undefined,
-    });
+    );
 
     expect(response).toBeNull();
   });
