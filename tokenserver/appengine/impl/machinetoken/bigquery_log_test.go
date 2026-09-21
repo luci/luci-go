@@ -30,11 +30,25 @@ import (
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/auth/machine"
 )
 
 func TestMintedTokenInfo(t *testing.T) {
 	ftt.Run("produces correct row map", t, func(t *ftt.Test) {
 		ctx := testingContext(testingCA)
+
+		body := &tokenserver.MachineTokenBody{
+			MachineFqdn: "luci-token-server-test-1.fake.domain",
+			IssuedBy:    "signer@testing.host",
+			IssuedAt:    1422936306,
+			Lifetime:    3600,
+			CaId:        123,
+			CertSn:      big.NewInt(4096).Bytes(),
+		}
+		tok, err := SignToken(ctx, testingSigner(), body)
+		assert.Loosely(t, err, should.BeNil)
+		expectedFP, err := machine.TokenFingerprint(tok)
+		assert.Loosely(t, err, should.BeNil)
 
 		info := MintedTokenInfo{
 			Request: testingRawRequest(ctx),
@@ -42,19 +56,12 @@ func TestMintedTokenInfo(t *testing.T) {
 				ServiceVersion: "unit-tests/mocked-ver",
 				TokenType: &minter.MachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &minter.LuciMachineToken{
-						MachineToken: "zzzz",
+						MachineToken: tok,
 						Expiry:       timestamppb.New(clock.Now(ctx).Add(time.Hour)),
 					},
 				},
 			},
-			TokenBody: &tokenserver.MachineTokenBody{
-				MachineFqdn: "luci-token-server-test-1.fake.domain",
-				IssuedBy:    "signer@testing.host",
-				IssuedAt:    1422936306,
-				Lifetime:    3600,
-				CaId:        123,
-				CertSn:      big.NewInt(4096).Bytes(),
-			},
+			TokenBody: body,
 			CA:        &testingCA,
 			PeerIP:    net.ParseIP("127.10.10.10"),
 			RequestID: "gae-request-id",
@@ -65,7 +72,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			CaConfigRev:        "cfg-updated-rev",
 			CertSerialNumber:   "4096",
 			Expiration:         &timestamppb.Timestamp{Seconds: 1422939906},
-			Fingerprint:        "2d6ccd34ad7af363159ed4bbe18c0e43",
+			Fingerprint:        expectedFP,
 			GaeRequestId:       "gae-request-id",
 			IssuedAt:           &timestamppb.Timestamp{Seconds: 1422936306},
 			MachineFqdn:        "luci-token-server-test-1.fake.domain",

@@ -16,6 +16,7 @@ package machinetoken
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"net"
 
@@ -25,8 +26,8 @@ import (
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
-	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
+	"go.chromium.org/luci/tokenserver/auth/machine"
 )
 
 func init() {
@@ -52,9 +53,13 @@ func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.MachineToken {
 	if i.Request.TokenType != tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN {
 		panic("unknown token type")
 	}
+	fp, err := machine.TokenFingerprint(i.Response.GetLuciMachineToken().MachineToken)
+	if err != nil {
+		panic(fmt.Sprintf("invalid minted machine token: %s", err))
+	}
 	return &bqpb.MachineToken{
 		// Identifier of the token body.
-		Fingerprint: utils.TokenFingerprint(i.Response.GetLuciMachineToken().MachineToken),
+		Fingerprint: fp,
 
 		// Information about the token.
 		MachineFqdn:        i.TokenBody.MachineFqdn,

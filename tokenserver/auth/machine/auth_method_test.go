@@ -16,12 +16,15 @@ package machine
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
@@ -134,6 +137,48 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 			assert.Loosely(t, hasLog("Failed to deserialize the token"), should.BeTrue)
 		})
 
+		t.Run("envelope with unknown fields is rejected", func(t *ftt.Test) {
+			body, _ := proto.Marshal(&tokenserverpb.MachineTokenBody{
+				MachineFqdn: "some-machine.location",
+				IssuedBy:    "valid-signer@example.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()),
+				Lifetime:    3600,
+			})
+			keyID, validSig, _ := signer.SignBytes(ctx, body)
+			envelope, _ := proto.Marshal(&tokenserverpb.MachineTokenEnvelope{
+				TokenBody: body,
+				KeyId:     keyID,
+				RsaSha256: validSig,
+			})
+			unknownField := protowire.AppendTag(nil, 99999, protowire.VarintType)
+			unknownField = protowire.AppendVarint(unknownField, 1)
+			mutatedEnvelope := append(envelope, unknownField...)
+			tok := base64.RawStdEncoding.EncodeToString(mutatedEnvelope)
+			_, err := call(tok)
+			assert.Loosely(t, err, should.Equal(ErrBadToken))
+			assert.Loosely(t, hasLog("Failed to deserialize the token"), should.BeTrue)
+		})
+
+		t.Run("envelope with padded base64 is rejected", func(t *ftt.Test) {
+			body, _ := proto.Marshal(&tokenserverpb.MachineTokenBody{
+				MachineFqdn: "some-machine.location",
+				IssuedBy:    "valid-signer@example.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()),
+				Lifetime:    3600,
+			})
+			keyID, validSig, _ := signer.SignBytes(ctx, body)
+			envelope, _ := proto.Marshal(&tokenserverpb.MachineTokenEnvelope{
+				TokenBody: body,
+				KeyId:     keyID,
+				RsaSha256: validSig,
+			})
+			padded := base64.StdEncoding.EncodeToString(envelope)
+			assert.Loosely(t, strings.HasSuffix(padded, "="), should.BeTrue)
+			_, err := call(padded)
+			assert.Loosely(t, err, should.Equal(ErrBadToken))
+			assert.Loosely(t, hasLog("Failed to deserialize the token"), should.BeTrue)
+		})
+
 		t.Run("bad signer ID", func(t *ftt.Test) {
 			_, err := call(mint(&tokenserverpb.MachineTokenBody{
 				MachineFqdn: "some-machine.location",
@@ -198,6 +243,36 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 			}, nil))
 			assert.Loosely(t, err, should.Equal(ErrBadToken))
 			assert.Loosely(t, hasLog("Bad machine_fqdn"), should.BeTrue)
+		})
+
+		t.Run("TokenFingerprint and EnvelopeFingerprint work", func(t *ftt.Test) {
+			tb := &tokenserverpb.MachineTokenBody{
+				MachineFqdn: "some-machine.location",
+				IssuedBy:    "valid-signer@example.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()),
+				Lifetime:    3600,
+			}
+			bodyBytes, _ := proto.Marshal(tb)
+			digest := sha256.Sum256(bodyBytes)
+			expectedFP := hex.EncodeToString(digest[:16])
+
+			tok := mint(tb, nil)
+			fp, err := TokenFingerprint(tok)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fp, should.Equal(expectedFP))
+
+			// Unknown fields rejected by TokenFingerprint.
+			raw, _ := base64.RawStdEncoding.DecodeString(tok)
+			unknownField := protowire.AppendTag(nil, 99999, protowire.VarintType)
+			unknownField = protowire.AppendVarint(unknownField, 1)
+			mutated := append(raw, unknownField...)
+			mutatedTok := base64.RawStdEncoding.EncodeToString(mutated)
+			_, err = TokenFingerprint(mutatedTok)
+			assert.Loosely(t, err, should.ErrLike("unknown fields"))
+
+			// Non-strict base64 rejected by TokenFingerprint.
+			_, err = TokenFingerprint(tok + "=")
+			assert.Loosely(t, err, should.ErrLike("illegal base64"))
 		})
 	})
 }

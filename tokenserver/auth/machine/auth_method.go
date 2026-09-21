@@ -17,6 +17,7 @@ package machine
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -188,15 +189,39 @@ func logTokenError(ctx context.Context, tok *tokenserverpb.MachineTokenBody, msg
 	fields.Warningf(ctx, msg, args...)
 }
 
+// EnvelopeFingerprint returns the first 16 bytes of SHA256 of the serialized
+// token body inside the envelope, hex-encoded.
+func EnvelopeFingerprint(env *tokenserverpb.MachineTokenEnvelope) string {
+	digest := sha256.Sum256(env.TokenBody)
+	return hex.EncodeToString(digest[:16])
+}
+
+// TokenFingerprint deserializes the machine token envelope and returns its
+// fingerprint (the first 16 bytes of SHA256 of the serialized token body,
+// hex-encoded).
+func TokenFingerprint(token string) (string, error) {
+	env, _, err := deserialize(token)
+	if err != nil {
+		return "", err
+	}
+	return EnvelopeFingerprint(env), nil
+}
+
 // deserialize parses MachineTokenEnvelope and MachineTokenBody.
 func deserialize(token string) (*tokenserverpb.MachineTokenEnvelope, *tokenserverpb.MachineTokenBody, error) {
-	tokenBinBlob, err := base64.RawStdEncoding.DecodeString(token)
+	tokenBinBlob, err := base64.RawStdEncoding.Strict().DecodeString(token)
 	if err != nil {
 		return nil, nil, err
 	}
 	envelope := &tokenserverpb.MachineTokenEnvelope{}
 	if err := proto.Unmarshal(tokenBinBlob, envelope); err != nil {
 		return nil, nil, err
+	}
+	if len(envelope.ProtoReflect().GetUnknown()) > 0 {
+		return nil, nil, fmt.Errorf("machine token envelope contains unknown fields")
+	}
+	if len(envelope.TokenBody) == 0 {
+		return nil, nil, fmt.Errorf("machine token is missing token_body")
 	}
 	body := &tokenserverpb.MachineTokenBody{}
 	if err := proto.Unmarshal(envelope.TokenBody, body); err != nil {
