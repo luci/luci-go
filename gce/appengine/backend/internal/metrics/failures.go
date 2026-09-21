@@ -32,10 +32,39 @@ var (
 		field.String("prefix"),
 		field.String("project"),
 		field.String("zone"),
+		field.String("reason"),
+	)
+
+	zoneFallbacks = metric.NewCounter(
+		"gce/instances/zone_fallbacks",
+		"The number of GCE instance creation attempts that fell back to an alternative zone.",
+		nil,
+		field.String("prefix"),
+		field.String("project"),
+		field.String("from_zone"),
+		field.String("to_zone"),
+		field.String("reason"),
 	)
 )
 
-// UpdateFailures increments failure counters.
-func UpdateFailures(c context.Context, code int, vm *model.VM) {
-	creationFailures.Add(c, int64(1), code, vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone())
+// DefaultFailureReason is the fallback failure reason recorded when a specific
+// GCP API or operation error code is unavailable.
+const DefaultFailureReason = "UNKNOWN"
+
+// UpdateFailures increments creation failure counters with the HTTP status code
+// and specific GCP error reason (e.g. ZONE_RESOURCE_POOL_EXHAUSTED, QUOTA_EXCEEDED).
+func UpdateFailures(c context.Context, code int, reason string, vm *model.VM) {
+	if reason == "" {
+		reason = DefaultFailureReason
+	}
+	creationFailures.Add(c, int64(1), code, vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone(), reason)
+}
+
+// UpdateZoneFallback increments the zone fallback counter when instance creation
+// switches from an exhausted or failing primary zone to a fallback zone.
+func UpdateZoneFallback(c context.Context, vm *model.VM, fromZone, toZone, reason string) {
+	if reason == "" {
+		reason = DefaultFailureReason
+	}
+	zoneFallbacks.Add(c, int64(1), vm.Prefix, vm.Attributes.GetProject(), fromZone, toZone, reason)
 }

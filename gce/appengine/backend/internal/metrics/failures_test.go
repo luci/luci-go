@@ -38,26 +38,28 @@ func TestFailures(t *testing.T) {
 		datastore.GetTestable(c).Consistent(true)
 		s := tsmon.Store(c)
 
-		fields := []any{400, "prefix", "project", "zone"}
-
-		UpdateFailures(c, 400, &model.VM{
+		vm := &model.VM{
 			Attributes: config.VM{
 				Project: "project",
-				Zone:    "zone",
+				Zone:    "us-central1-b",
 			},
 			Hostname: "name-1",
 			Prefix:   "prefix",
-		})
-		assert.Loosely(t, s.Get(c, creationFailures, fields).(int64), should.Equal(1))
+		}
 
-		UpdateFailures(c, 400, &model.VM{
-			Attributes: config.VM{
-				Project: "project",
-				Zone:    "zone",
-			},
-			Hostname: "name-1",
-			Prefix:   "prefix",
-		})
-		assert.Loosely(t, s.Get(c, creationFailures, fields).(int64), should.Equal(2))
+		exhaustedFields := []any{200, "prefix", "project", "us-central1-b", "ZONE_RESOURCE_POOL_EXHAUSTED"}
+		UpdateFailures(c, 200, "ZONE_RESOURCE_POOL_EXHAUSTED", vm)
+		assert.Loosely(t, s.Get(c, creationFailures, exhaustedFields).(int64), should.Equal(1))
+
+		UpdateFailures(c, 200, "ZONE_RESOURCE_POOL_EXHAUSTED", vm)
+		assert.Loosely(t, s.Get(c, creationFailures, exhaustedFields).(int64), should.Equal(2))
+
+		unknownFields := []any{400, "prefix", "project", "us-central1-b", DefaultFailureReason}
+		UpdateFailures(c, 400, "", vm)
+		assert.Loosely(t, s.Get(c, creationFailures, unknownFields).(int64), should.Equal(1))
+
+		fallbackFields := []any{"prefix", "project", "us-central1-b", "us-central1-f", "ZONE_RESOURCE_POOL_EXHAUSTED"}
+		UpdateZoneFallback(c, vm, "us-central1-b", "us-central1-f", "ZONE_RESOURCE_POOL_EXHAUSTED")
+		assert.Loosely(t, s.Get(c, zoneFallbacks, fallbackFields).(int64), should.Equal(1))
 	})
 }
