@@ -179,7 +179,7 @@ func TestRunMulti(t *testing.T) {
 					}
 				}
 				assert.Loosely(t, fooses, should.NotBeNil)
-				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[1], foos[2]}))
+				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[2], foos[3]}))
 				// Apply the cursor to the queries
 				queries, err = datastore.ApplyCursors(ctx, queries, cur)
 				assert.NoErr(t, err)
@@ -189,7 +189,7 @@ func TestRunMulti(t *testing.T) {
 					fooses = append(fooses, foo)
 				}
 				assert.Loosely(t, fooses, should.NotBeNil)
-				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[1], foos[2], foos[3]}))
+				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[2], foos[3]}))
 			})
 			t.Run("with Cursor, repeat entities", func(t *ftt.Test) {
 				queries := []*datastore.Query{

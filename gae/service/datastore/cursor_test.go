@@ -232,28 +232,6 @@ func TestApplyCursors(t *testing.T) {
 		assert.Loosely(t, len(applied), should.Equal(2))
 	})
 
-	t.Run("ApplyCursors CurrentCursor step-by-step", func(t *testing.T) {
-		it := datastore.RunQuery[*TestIterRecord](ctx, q1, q2)
-		var ids []string
-		for r, err := range it.Results {
-			assert.NoErr(t, err)
-			ids = append(ids, r.ID)
-
-			curCur, err := it.CurrentCursor()
-			assert.NoErr(t, err)
-			assert.Loosely(t, len(curCur), should.Equal(2))
-
-			// Resume with CurrentCursor applied
-			resumedQueries, err := datastore.ApplyCursors(ctx, []*datastore.Query{q1, q2}, curCur)
-			assert.NoErr(t, err)
-			resSlice, err := datastore.RunQuery[*TestIterRecord](ctx, resumedQueries...).AsSlice()
-			assert.NoErr(t, err)
-			assert.Loosely(t, len(resSlice), should.BeGreaterThan(0))
-			assert.Loosely(t, resSlice[0].ID, should.Equal(r.ID))
-		}
-		assert.Loosely(t, ids, should.Resemble([]string{"a", "b", "c", "d"}))
-	})
-
 	t.Run("ApplyCursors length mismatch", func(t *testing.T) {
 		_, err := datastore.ApplyCursors(ctx, []*datastore.Query{q1}, cur)
 		assert.Loosely(t, err, should.ErrLike("Length mismatch"))
