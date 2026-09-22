@@ -38,6 +38,16 @@ var (
 		field.String("scaling_type"),
 	)
 
+	uncreatedInstances = metric.NewInt(
+		"gce/instances/uncreated",
+		"The number of configured GCE instances not yet created (unique missing VM slots).",
+		nil,
+		field.String("prefix"),
+		field.String("project"),
+		field.String("resource_group"),
+		field.String("scaling_type"),
+	)
+
 	createdInstances = metric.NewInt(
 		"gce/instances/created",
 		"The number of GCE instances created.",
@@ -208,11 +218,15 @@ func updateInstances(c context.Context) {
 			}
 			continue
 		}
-		for _, conf := range ic.Configured {
-			configuredInstances.Set(c, int64(conf.Count), ic.Prefix, conf.Project, ic.ResourceGroup, ic.ScalingType)
-		}
+		createdByProject := make(map[string]int, len(ic.Configured))
 		for _, crea := range ic.Created {
 			createdInstances.Set(c, int64(crea.Count), ic.Prefix, crea.Project, ic.ScalingType, crea.Zone)
+			createdByProject[crea.Project] += crea.Count
+		}
+		for _, conf := range ic.Configured {
+			configuredInstances.Set(c, int64(conf.Count), ic.Prefix, conf.Project, ic.ResourceGroup, ic.ScalingType)
+			uncreated := max(0, conf.Count-createdByProject[conf.Project])
+			uncreatedInstances.Set(c, int64(uncreated), ic.Prefix, conf.Project, ic.ResourceGroup, ic.ScalingType)
 		}
 		for _, conn := range ic.Connected {
 			connectedInstances.Set(c, int64(conn.Count), ic.Prefix, conn.Project, ic.ScalingType, ic.ResourceGroup, conn.Server, conn.Zone)
@@ -221,5 +235,5 @@ func updateInstances(c context.Context) {
 }
 
 func init() {
-	tsmon.RegisterGlobalCallback(updateInstances, configuredInstances, connectedInstances, createdInstances)
+	tsmon.RegisterGlobalCallback(updateInstances, configuredInstances, uncreatedInstances, connectedInstances, createdInstances)
 }
