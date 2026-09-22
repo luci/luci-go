@@ -135,6 +135,21 @@ def CheckGoogleapisInSync(input_api, output_api):
   ])
 
 
+def CheckGoVersionInSync(input_api, output_api):
+  root = input_api.change.RepositoryRoot()
+  return input_api.RunTests([
+    input_api.Command(
+      name='Assert GO_VERSION is in sync',
+      cmd=[
+        input_api.python3_executable,
+        os.path.join(root, 'scripts', 'check_go_version_in_sync.py'),
+        root,
+      ],
+      kwargs={},
+      message=output_api.PresubmitError)
+  ])
+
+
 def CommonChecks(input_api, output_api):
   results = []
   results.extend(
