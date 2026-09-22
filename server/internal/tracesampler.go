@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -71,7 +70,7 @@ func BaseSampler(spec string) (trace.Sampler, error) {
 //
 // If the callback returns true, the decision will be handed over to the given
 // base sampler.
-func GateSampler(base trace.Sampler, cb func(context.Context) bool) trace.Sampler {
+func GateSampler(base trace.Sampler, cb func(trace.SamplingParameters) bool) trace.Sampler {
 	return &gateSampler{base, cb}
 }
 
@@ -130,11 +129,11 @@ func (s *qpsSampler) randomDurationLocked(min, max time.Duration) time.Duration 
 // should be sampled.
 type gateSampler struct {
 	base trace.Sampler
-	cb   func(context.Context) bool
+	cb   func(trace.SamplingParameters) bool
 }
 
 func (s *gateSampler) ShouldSample(p trace.SamplingParameters) trace.SamplingResult {
-	if !s.cb(p.ParentContext) {
+	if !s.cb(p) {
 		return trace.SamplingResult{
 			Decision:   trace.Drop,
 			Tracestate: oteltrace.SpanContextFromContext(p.ParentContext).TraceState(),

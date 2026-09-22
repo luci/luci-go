@@ -298,6 +298,13 @@ var cloudRegionFromGAERegion = map[string]string{
 // Context key of *incomingRequest{...}, see httpRoot(...) and grpcRoot{...}.
 var incomingRequestKey = "go.chromium.org/luci/server.incomingRequest"
 
+// These spans are known to introduce a lot of spam in the traces.
+//
+// They are currently skipped entirely.
+var spammySpans = map[string]struct{}{
+	"cloud.google.com/go/datastore.Query.Cursor": {},
+}
+
 // Main initializes the server and runs its serving loop until SIGTERM.
 //
 // Registers all options in the default flag set and uses `flag.Parse` to parse
@@ -2886,8 +2893,8 @@ func (s *Server) otelSampler(ctx context.Context, enableExporter bool) (trace.Sa
 	// lots and lots of non-informative disconnected top-level spans.
 	//
 	// Also skip sampling health check requests, they end up being spammy as well.
-	sampler = internal.GateSampler(sampler, func(ctx context.Context) bool {
-		req, _ := ctx.Value(&incomingRequestKey).(*incomingRequest)
+	sampler = internal.GateSampler(sampler, func(sp trace.SamplingParameters) bool {
+		req, _ := sp.ParentContext.Value(&incomingRequestKey).(*incomingRequest)
 		return req != nil && !req.healthCheck
 	})
 
@@ -2904,7 +2911,10 @@ func (s *Server) otelSampler(ctx context.Context, enableExporter bool) (trace.Sa
 	// backends does occasionally trace requests, and we actually totally rely on
 	// it to make sampling decisions for us (see the check above).
 	return trace.ParentBased(sampler, // used if there's no trace context
-		trace.WithLocalParentSampled(trace.AlwaysSample()),
+		trace.WithLocalParentSampled(internal.GateSampler(trace.AlwaysSample(), func(sp trace.SamplingParameters) bool {
+			_, spammy := spammySpans[sp.Name]
+			return !spammy
+		})),
 		trace.WithLocalParentNotSampled(trace.NeverSample()),
 		trace.WithRemoteParentSampled(trace.AlwaysSample()), // TODO: rate limit?
 		trace.WithRemoteParentNotSampled(sampler),
