@@ -124,7 +124,7 @@ def CheckGoogleapisInSync(input_api, output_api):
   root = input_api.change.RepositoryRoot()
   return input_api.RunTests([
     input_api.Command(
-      name='Assert googleapis librariy is in sync',
+      name='Assert googleapis library is in sync',
       cmd=[
         input_api.python3_executable,
         os.path.join(root, 'scripts', 'check_googleapis_in_sync.py'),
