@@ -517,6 +517,32 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("test ID exceeds 512 bytes in encoded form"))
 				})
 			})
+			t.Run("Higher limits", func(t *ftt.Test) {
+				// 300 bytes (module name, 150 ':' -> 300 escaped) + 7 (scheme) + 349 (coarse, 1 + 174 '!' -> 349 escaped) + 300 (fine) + 6039 (case, 5961 + 39 '#' -> 6039 escaped) + 5 for ":!::#" = 7000 bytes
+				id.ModuleName = strings.Repeat(":", 150)                          // 150 bytes raw, 300 bytes when escaped
+				id.ModuleScheme = "scheme1"                                       // 7 bytes
+				id.CoarseName = "a" + strings.Repeat("!", 174)                    // 175 bytes raw, 349 bytes when escaped
+				id.FineName = "b" + strings.Repeat("c", 299)                      // 300 bytes raw, 300 bytes when escaped
+				id.CaseName = strings.Repeat("d", 5961) + strings.Repeat("#", 39) // 6000 bytes raw, 6039 bytes when escaped
+				t.Run("Not too long", func(t *ftt.Test) {
+					assert.Loosely(t, len(id.CaseName), should.Equal(6000))
+					assert.Loosely(t, sizeEscapedTestID(id), should.Equal(7000))
+					assert.Loosely(t, len(EncodeTestID(id)), should.Equal(7000))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id, QuerySideTestIDLimitCallback), should.BeNil)
+				})
+				t.Run("Case name too long", func(t *ftt.Test) {
+					id.CaseName = strings.Repeat("d", 6001)
+					assert.Loosely(t, ValidateBaseTestIdentifier(id, QuerySideTestIDLimitCallback), should.ErrLike("case_name: longer than 6000 bytes"))
+				})
+				t.Run("Total length too long", func(t *ftt.Test) {
+					// Keep len(id.CaseName) == 6000, but replace one 'd' with '#' so escaped length increases by 1 byte to 7001.
+					id.CaseName = strings.Repeat("d", 5960) + strings.Repeat("#", 40)
+					assert.Loosely(t, len(id.CaseName), should.Equal(6000))
+					assert.Loosely(t, sizeEscapedTestID(id), should.Equal(7001))
+					assert.Loosely(t, len(EncodeTestID(id)), should.Equal(7001))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id, QuerySideTestIDLimitCallback), should.ErrLike("test ID exceeds 7000 bytes in encoded form"))
+				})
+			})
 		})
 	})
 }

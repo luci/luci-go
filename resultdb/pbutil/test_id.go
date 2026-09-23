@@ -66,13 +66,18 @@ var DefaultTestIDValidationLimits = TestIDValidationLimits{
 	MaxTotalLength:      512,
 }
 
-// HigherTestIDValidationLimits are the relaxed limits for allowlisted tests.
+// HigherTestIDValidationLimits are the relaxed limits for allowlisted tests
 // (grandfathered AnTS tests).
+// MaxCaseNameLength is capped at 6,000 bytes and MaxTotalLength at 7,000 bytes
+// (accounting for up to ~1,000 bytes of module/scheme/coarse/fine overhead) so
+// that the composite Primary Key in Cloud Spanner (TestResults and
+// TestResultsV2) always remains safely under Cloud Spanner's hard 8,192-byte
+// Primary Key limit (b/565144098).
 var HigherTestIDValidationLimits = TestIDValidationLimits{
 	MaxCoarseNameLength: 350,
 	MaxFineNameLength:   300,
-	MaxCaseNameLength:   15000,
-	MaxTotalLength:      15000,
+	MaxCaseNameLength:   6000,
+	MaxTotalLength:      7000,
 }
 
 // TestIDValidationLimitsCallback is a callback function that returns the validation limits

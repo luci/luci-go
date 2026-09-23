@@ -47,8 +47,8 @@ message Config {
   // Tests that are allowed to use higher length limits for their test IDs.
   // Default limits are 300 bytes for coarse name, and 512 bytes for case name
   // and full encoded test ID.
-  // Allowed tests can use up to 350 bytes for coarse name, and 15000 bytes for
-  // case name and full encoded test ID.
+  // Allowed tests can use up to 350 bytes for coarse name, 6000 bytes for
+  // case name, and 7000 bytes for full encoded test ID.
   //
   // Use exact matching for all specified fields. An empty field means it matches
   // all values for that component.
