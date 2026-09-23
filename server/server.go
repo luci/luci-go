@@ -2858,18 +2858,25 @@ func (s *Server) otelErrorHandler(ctx context.Context) otel.ErrorHandlerFunc {
 
 // otelSampler prepares a sampler based on CLI flags and environment.
 func (s *Server) otelSampler(ctx context.Context, enableExporter bool) (trace.Sampler, error) {
+	nonSpammyLocalParent := trace.WithLocalParentSampled(
+		internal.GateSampler(trace.AlwaysSample(), func(sp trace.SamplingParameters) bool {
+			_, spammy := spammySpans[sp.Name]
+			return !spammy
+		}),
+	)
+
 	// On GCP Serverless let the GCP load balancer make decisions about
 	// sampling. If it decides to sample a trace, it will let us know through
 	// options of the parent span in X-Cloud-Trace-Context. We will collect only
 	// traces from requests that GCP wants to sample itself. Traces without
 	// a parent context are never sampled. This also means traces from random
 	// background goroutines aren't sampled either (i.e. we don't need GateSampler
-	// as used below).
+	// for `sampler` as used below).
 	if s.Options.Serverless.IsGCP() {
 		if enableExporter {
 			logging.Infof(ctx, "Setting up Cloud Trace exports to %q using GCP Serverless sampling strategy", s.Options.CloudProject)
 		}
-		return trace.ParentBased(trace.NeverSample()), nil
+		return trace.ParentBased(trace.NeverSample(), nonSpammyLocalParent), nil
 	}
 
 	// Parse -trace-sampling spec to get the base sampler.
@@ -2898,8 +2905,9 @@ func (s *Server) otelSampler(ctx context.Context, enableExporter bool) (trace.Sa
 		return req != nil && !req.healthCheck
 	})
 
-	// Inherit the sampling decision as is (ignoring `sampler`) from local
-	// parents. That way traces from a single request handler will have no gaps.
+	// Inherit the sampling decision (except for `spammySpans`, ignoring `sampler`)
+	// from local parents. That way traces from a single request handler will have
+	// no gaps.
 	// If the parent is remote, then agree with it if it wants sampling (to avoid
 	// gaps in the parent's span tree), but use our own sampling rate if it
 	// doesn't want sampling. This is important when running behind the GCLB,
@@ -2911,10 +2919,7 @@ func (s *Server) otelSampler(ctx context.Context, enableExporter bool) (trace.Sa
 	// backends does occasionally trace requests, and we actually totally rely on
 	// it to make sampling decisions for us (see the check above).
 	return trace.ParentBased(sampler, // used if there's no trace context
-		trace.WithLocalParentSampled(internal.GateSampler(trace.AlwaysSample(), func(sp trace.SamplingParameters) bool {
-			_, spammy := spammySpans[sp.Name]
-			return !spammy
-		})),
+		nonSpammyLocalParent,
 		trace.WithLocalParentNotSampled(trace.NeverSample()),
 		trace.WithRemoteParentSampled(trace.AlwaysSample()), // TODO: rate limit?
 		trace.WithRemoteParentNotSampled(sampler),
