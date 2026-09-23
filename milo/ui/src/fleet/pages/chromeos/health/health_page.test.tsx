@@ -17,16 +17,58 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import {
   GetDefaultQuotaResponse,
+  GetFleetAvailabilityTrendsResponse,
   ListSupportRiskIncidentsResponse,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { HealthPage } from './health_page';
 import * as UseDefaultQuotaModule from './use_default_quota';
+import * as UseFleetAvailabilityTrendsModule from './use_fleet_availability_trends';
+import * as UseModelQuotaOverridesModule from './use_model_quota_overrides';
 import * as UseSupportRiskIncidentsModule from './use_support_risk_incidents';
 
 describe('HealthPage', () => {
   beforeEach(() => {
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: { series: [], metricType: 'health' },
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    jest
+      .spyOn(UseModelQuotaOverridesModule, 'useModelQuotaOverrides')
+      .mockReturnValue({
+        overridesQuery: {
+          data: { overrides: [] },
+          isPending: false,
+          isError: false,
+          error: null,
+        } as unknown as ReturnType<
+          typeof UseModelQuotaOverridesModule.useModelQuotaOverrides
+        >['overridesQuery'],
+        setOverrideMutation: {
+          mutateAsync: jest.fn(),
+          isPending: false,
+        } as unknown as ReturnType<
+          typeof UseModelQuotaOverridesModule.useModelQuotaOverrides
+        >['setOverrideMutation'],
+        deleteOverrideMutation: {
+          mutateAsync: jest.fn(),
+          isPending: false,
+        } as unknown as ReturnType<
+          typeof UseModelQuotaOverridesModule.useModelQuotaOverrides
+        >['deleteOverrideMutation'],
+        canEdit: true,
+        isPermissionLoading: false,
+      });
+
     jest.spyOn(UseDefaultQuotaModule, 'useDefaultQuota').mockReturnValue({
       quotaQuery: {
         data: {

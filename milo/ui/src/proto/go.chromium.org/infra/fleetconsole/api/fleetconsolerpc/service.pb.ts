@@ -61,6 +61,8 @@ import {
   GetDefaultQuotaResponse,
   GetDeviceDimensionsRequest,
   GetDeviceDimensionsResponse,
+  GetFleetAvailabilityTrendsRequest,
+  GetFleetAvailabilityTrendsResponse,
   GetRepairMetricsDimensionsRequest,
   GetRepairMetricsDimensionsResponse,
   GetSmartRepairRequest,
@@ -400,6 +402,7 @@ export interface FleetConsole {
   SetModelQuotaOverride(request: SetModelQuotaOverrideRequest): Promise<SetModelQuotaOverrideResponse>;
   DeleteModelQuotaOverride(request: DeleteModelQuotaOverrideRequest): Promise<DeleteModelQuotaOverrideResponse>;
   ListModelQuotaOverrides(request: ListModelQuotaOverridesRequest): Promise<ListModelQuotaOverridesResponse>;
+  GetFleetAvailabilityTrends(request: GetFleetAvailabilityTrendsRequest): Promise<GetFleetAvailabilityTrendsResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -469,6 +472,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.SetModelQuotaOverride = this.SetModelQuotaOverride.bind(this);
     this.DeleteModelQuotaOverride = this.DeleteModelQuotaOverride.bind(this);
     this.ListModelQuotaOverrides = this.ListModelQuotaOverrides.bind(this);
+    this.GetFleetAvailabilityTrends = this.GetFleetAvailabilityTrends.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -832,6 +836,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ListModelQuotaOverridesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListModelQuotaOverrides", data);
     return promise.then((data) => ListModelQuotaOverridesResponse.fromJSON(data));
+  }
+
+  GetFleetAvailabilityTrends(request: GetFleetAvailabilityTrendsRequest): Promise<GetFleetAvailabilityTrendsResponse> {
+    const data = GetFleetAvailabilityTrendsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetFleetAvailabilityTrends", data);
+    return promise.then((data) => GetFleetAvailabilityTrendsResponse.fromJSON(data));
   }
 }
 

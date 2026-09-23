@@ -130,6 +130,89 @@ export function peripheralStateToJSON(object: PeripheralState): string {
   }
 }
 
+/** Grouping strategy for historical trendlines. */
+export enum TrendlineGrouping {
+  TRENDLINE_GROUPING_UNSPECIFIED = 0,
+  /** GROUP_BY_OVERALL - Aggregate across the entire fleet. */
+  GROUP_BY_OVERALL = 1,
+  /** GROUP_BY_MODEL - Group trendlines by device model. */
+  GROUP_BY_MODEL = 2,
+  /** GROUP_BY_POOL - Group trendlines by device pool. */
+  GROUP_BY_POOL = 3,
+}
+
+export function trendlineGroupingFromJSON(object: any): TrendlineGrouping {
+  switch (object) {
+    case 0:
+    case "TRENDLINE_GROUPING_UNSPECIFIED":
+      return TrendlineGrouping.TRENDLINE_GROUPING_UNSPECIFIED;
+    case 1:
+    case "GROUP_BY_OVERALL":
+      return TrendlineGrouping.GROUP_BY_OVERALL;
+    case 2:
+    case "GROUP_BY_MODEL":
+      return TrendlineGrouping.GROUP_BY_MODEL;
+    case 3:
+    case "GROUP_BY_POOL":
+      return TrendlineGrouping.GROUP_BY_POOL;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TrendlineGrouping");
+  }
+}
+
+export function trendlineGroupingToJSON(object: TrendlineGrouping): string {
+  switch (object) {
+    case TrendlineGrouping.TRENDLINE_GROUPING_UNSPECIFIED:
+      return "TRENDLINE_GROUPING_UNSPECIFIED";
+    case TrendlineGrouping.GROUP_BY_OVERALL:
+      return "GROUP_BY_OVERALL";
+    case TrendlineGrouping.GROUP_BY_MODEL:
+      return "GROUP_BY_MODEL";
+    case TrendlineGrouping.GROUP_BY_POOL:
+      return "GROUP_BY_POOL";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TrendlineGrouping");
+  }
+}
+
+/** Metric type represented by the trendline series. */
+export enum TrendlineMetricType {
+  TRENDLINE_METRIC_TYPE_UNSPECIFIED = 0,
+  /** HEALTH - Fleet health score. */
+  HEALTH = 1,
+  /** AVAILABILITY - Fleet availability ratio against quota. */
+  AVAILABILITY = 2,
+}
+
+export function trendlineMetricTypeFromJSON(object: any): TrendlineMetricType {
+  switch (object) {
+    case 0:
+    case "TRENDLINE_METRIC_TYPE_UNSPECIFIED":
+      return TrendlineMetricType.TRENDLINE_METRIC_TYPE_UNSPECIFIED;
+    case 1:
+    case "HEALTH":
+      return TrendlineMetricType.HEALTH;
+    case 2:
+    case "AVAILABILITY":
+      return TrendlineMetricType.AVAILABILITY;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TrendlineMetricType");
+  }
+}
+
+export function trendlineMetricTypeToJSON(object: TrendlineMetricType): string {
+  switch (object) {
+    case TrendlineMetricType.TRENDLINE_METRIC_TYPE_UNSPECIFIED:
+      return "TRENDLINE_METRIC_TYPE_UNSPECIFIED";
+    case TrendlineMetricType.HEALTH:
+      return "HEALTH";
+    case TrendlineMetricType.AVAILABILITY:
+      return "AVAILABILITY";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TrendlineMetricType");
+  }
+}
+
 export interface Device {
   readonly id: string;
   readonly dutId: string;
@@ -788,6 +871,48 @@ export interface ListModelQuotaOverridesRequest {
 
 export interface ListModelQuotaOverridesResponse {
   readonly overrides: readonly ModelQuotaOverride[];
+}
+
+/** Request message for GetFleetAvailabilityTrends. */
+export interface GetFleetAvailabilityTrendsRequest {
+  /** How trendline data should be grouped. */
+  readonly grouping: TrendlineGrouping;
+  /** Start of the time window (inclusive). */
+  readonly startTime:
+    | string
+    | undefined;
+  /** End of the time window (inclusive). */
+  readonly endTime:
+    | string
+    | undefined;
+  /** Optional filter expression (currently unsupported). */
+  readonly filter: string;
+}
+
+/** A single data point in a trendline series. */
+export interface TrendlinePoint {
+  /** Timestamp representing the metric hour for this data point. */
+  readonly timestamp:
+    | string
+    | undefined;
+  /** Metric value at this timestamp. */
+  readonly value: number;
+}
+
+/** A named sequence of trendline points representing a time series. */
+export interface TrendlineSeries {
+  /** Name or identifier of the series (e.g. "Overall", model name, or pool name). */
+  readonly name: string;
+  /** Sequential data points belonging to this series. */
+  readonly points: readonly TrendlinePoint[];
+}
+
+/** Response message for GetFleetAvailabilityTrends. */
+export interface GetFleetAvailabilityTrendsResponse {
+  /** Trendline series matching the requested grouping and time range. */
+  readonly series: readonly TrendlineSeries[];
+  /** The type of metric represented in the series. */
+  readonly metricType: TrendlineMetricType;
 }
 
 function createBaseDevice(): Device {
@@ -8344,6 +8469,344 @@ export const ListModelQuotaOverridesResponse: MessageFns<ListModelQuotaOverrides
   fromPartial(object: DeepPartial<ListModelQuotaOverridesResponse>): ListModelQuotaOverridesResponse {
     const message = createBaseListModelQuotaOverridesResponse() as any;
     message.overrides = object.overrides?.map((e) => ModelQuotaOverride.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetFleetAvailabilityTrendsRequest(): GetFleetAvailabilityTrendsRequest {
+  return { grouping: 0, startTime: undefined, endTime: undefined, filter: "" };
+}
+
+export const GetFleetAvailabilityTrendsRequest: MessageFns<GetFleetAvailabilityTrendsRequest> = {
+  encode(message: GetFleetAvailabilityTrendsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.grouping !== 0) {
+      writer.uint32(8).int32(message.grouping);
+    }
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(18).fork()).join();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(26).fork()).join();
+    }
+    if (message.filter !== "") {
+      writer.uint32(34).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetFleetAvailabilityTrendsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetFleetAvailabilityTrendsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.grouping = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetFleetAvailabilityTrendsRequest {
+    return {
+      grouping: isSet(object.grouping) ? trendlineGroupingFromJSON(object.grouping) : 0,
+      startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
+      endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: GetFleetAvailabilityTrendsRequest): unknown {
+    const obj: any = {};
+    if (message.grouping !== 0) {
+      obj.grouping = trendlineGroupingToJSON(message.grouping);
+    }
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime;
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetFleetAvailabilityTrendsRequest>): GetFleetAvailabilityTrendsRequest {
+    return GetFleetAvailabilityTrendsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetFleetAvailabilityTrendsRequest>): GetFleetAvailabilityTrendsRequest {
+    const message = createBaseGetFleetAvailabilityTrendsRequest() as any;
+    message.grouping = object.grouping ?? 0;
+    message.startTime = object.startTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseTrendlinePoint(): TrendlinePoint {
+  return { timestamp: undefined, value: 0 };
+}
+
+export const TrendlinePoint: MessageFns<TrendlinePoint> = {
+  encode(message: TrendlinePoint, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.timestamp !== undefined) {
+      Timestamp.encode(toTimestamp(message.timestamp), writer.uint32(10).fork()).join();
+    }
+    if (message.value !== 0) {
+      writer.uint32(17).double(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TrendlinePoint {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTrendlinePoint() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.timestamp = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.value = reader.double();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TrendlinePoint {
+    return {
+      timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : undefined,
+      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+    };
+  },
+
+  toJSON(message: TrendlinePoint): unknown {
+    const obj: any = {};
+    if (message.timestamp !== undefined) {
+      obj.timestamp = message.timestamp;
+    }
+    if (message.value !== 0) {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TrendlinePoint>): TrendlinePoint {
+    return TrendlinePoint.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TrendlinePoint>): TrendlinePoint {
+    const message = createBaseTrendlinePoint() as any;
+    message.timestamp = object.timestamp ?? undefined;
+    message.value = object.value ?? 0;
+    return message;
+  },
+};
+
+function createBaseTrendlineSeries(): TrendlineSeries {
+  return { name: "", points: [] };
+}
+
+export const TrendlineSeries: MessageFns<TrendlineSeries> = {
+  encode(message: TrendlineSeries, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    for (const v of message.points) {
+      TrendlinePoint.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TrendlineSeries {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTrendlineSeries() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.points.push(TrendlinePoint.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TrendlineSeries {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      points: globalThis.Array.isArray(object?.points) ? object.points.map((e: any) => TrendlinePoint.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: TrendlineSeries): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.points?.length) {
+      obj.points = message.points.map((e) => TrendlinePoint.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TrendlineSeries>): TrendlineSeries {
+    return TrendlineSeries.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TrendlineSeries>): TrendlineSeries {
+    const message = createBaseTrendlineSeries() as any;
+    message.name = object.name ?? "";
+    message.points = object.points?.map((e) => TrendlinePoint.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseGetFleetAvailabilityTrendsResponse(): GetFleetAvailabilityTrendsResponse {
+  return { series: [], metricType: 0 };
+}
+
+export const GetFleetAvailabilityTrendsResponse: MessageFns<GetFleetAvailabilityTrendsResponse> = {
+  encode(message: GetFleetAvailabilityTrendsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.series) {
+      TrendlineSeries.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.metricType !== 0) {
+      writer.uint32(16).int32(message.metricType);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetFleetAvailabilityTrendsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetFleetAvailabilityTrendsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.series.push(TrendlineSeries.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.metricType = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetFleetAvailabilityTrendsResponse {
+    return {
+      series: globalThis.Array.isArray(object?.series)
+        ? object.series.map((e: any) => TrendlineSeries.fromJSON(e))
+        : [],
+      metricType: isSet(object.metricType) ? trendlineMetricTypeFromJSON(object.metricType) : 0,
+    };
+  },
+
+  toJSON(message: GetFleetAvailabilityTrendsResponse): unknown {
+    const obj: any = {};
+    if (message.series?.length) {
+      obj.series = message.series.map((e) => TrendlineSeries.toJSON(e));
+    }
+    if (message.metricType !== 0) {
+      obj.metricType = trendlineMetricTypeToJSON(message.metricType);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetFleetAvailabilityTrendsResponse>): GetFleetAvailabilityTrendsResponse {
+    return GetFleetAvailabilityTrendsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetFleetAvailabilityTrendsResponse>): GetFleetAvailabilityTrendsResponse {
+    const message = createBaseGetFleetAvailabilityTrendsResponse() as any;
+    message.series = object.series?.map((e) => TrendlineSeries.fromPartial(e)) || [];
+    message.metricType = object.metricType ?? 0;
     return message;
   },
 };

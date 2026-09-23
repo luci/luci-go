@@ -125,7 +125,6 @@ describe('<BrowserDevicesPage />', () => {
         </SettingsProvider>
       </FakeContextProvider>,
     );
-
     // Wait for row checkbox to load and appear
     const rowCheckbox = await screen.findByTestId('select-checkbox-1');
     expect(rowCheckbox).toBeInTheDocument();
@@ -133,11 +132,10 @@ describe('<BrowserDevicesPage />', () => {
     // Select the first row
     fireEvent.click(rowCheckbox);
 
-    const repairButton = await screen.findByRole('button', {
-      name: /request repair/i,
-    });
+    const repairButton = await screen.findByTestId('file-repair-bug-button');
     expect(repairButton).toBeVisible();
-  }, 15000);
+    expect(repairButton).toHaveTextContent(/request repair/i);
+  });
 
   it('should allow customizing columns', async () => {
     render(
@@ -187,7 +185,7 @@ describe('<BrowserDevicesPage />', () => {
     );
 
     // Wait for the Export button to appear
-    const exportButton = await screen.findByRole('button', { name: /export/i });
+    const exportButton = await screen.findByText('Export');
     fireEvent.click(exportButton);
 
     // Find and click "Export all (CSV)" menu item

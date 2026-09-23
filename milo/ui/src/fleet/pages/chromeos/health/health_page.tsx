@@ -19,6 +19,7 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ExpectedQuotaCard } from './expected_quota_card';
+import { HistoricalAvailabilityTrendsChart } from './historical_availability_trends_chart';
 import { ManualQuotaOverridesCard } from './manual_quota_overrides_card';
 import { SupportRiskIncidentsPanel } from './support_risk_incidents_panel';
 
@@ -109,8 +110,9 @@ export const HealthPage = () => {
                 alignItems: 'flex-start',
               }}
             >
-              {/* Placeholder container reserving space for main health metrics & trendline charts */}
-              <Box sx={{ flex: 1, width: '100%' }} />
+              <Box sx={{ flex: 1, width: '100%', minWidth: 0 }}>
+                <HistoricalAvailabilityTrendsChart />
+              </Box>
               <Box sx={{ width: { xs: '100%', lg: 440 }, flexShrink: 0 }}>
                 <SupportRiskIncidentsPanel />
               </Box>

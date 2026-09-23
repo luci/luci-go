@@ -96,6 +96,7 @@ export interface FleetConsoleMockFixtures {
   SetModelQuotaOverride: unknown;
   DeleteModelQuotaOverride: unknown;
   GetWorkforceActivity: unknown;
+  GetFleetAvailabilityTrends: unknown;
   [method: string]: unknown;
 }
 
@@ -625,6 +626,10 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
         avgDuration: { seconds: '1440', nanos: 0 },
       },
     ],
+  },
+  GetFleetAvailabilityTrends: {
+    series: [],
+    metricType: 0,
   },
 };
 

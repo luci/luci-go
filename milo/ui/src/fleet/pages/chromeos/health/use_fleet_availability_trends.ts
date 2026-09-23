@@ -12,4 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { HealthPage, Component, default } from './health_page';
+import { useQuery } from '@tanstack/react-query';
+
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { GetFleetAvailabilityTrendsRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+export const useFleetAvailabilityTrends = (
+  request: GetFleetAvailabilityTrendsRequest,
+) => {
+  const client = useFleetConsoleClient();
+  return useQuery(client.GetFleetAvailabilityTrends.query(request));
+};
