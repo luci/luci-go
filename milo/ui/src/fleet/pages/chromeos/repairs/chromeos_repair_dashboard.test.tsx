@@ -30,12 +30,17 @@ import * as UsePriorityRulesModule from '@/fleet/pages/chromeos/repairs/use_prio
 import * as UseRepairQueueModule from '@/fleet/pages/chromeos/repairs/use_repair_queue';
 import {
   PeripheralState,
+  PriorityRule,
   RepairQueueItem,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSRepairDashboard } from './chromeos_repair_dashboard';
-import { useRepairQueueColumns } from './use_repair_queue_columns';
+import {
+  formatPriorityScore,
+  formatRuleWeight,
+  useRepairQueueColumns,
+} from './use_repair_queue_columns';
 
 const mockNavigate = jest.fn();
 jest.mock('react-router', () => ({
@@ -66,6 +71,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     poolHealthPct: 0.824,
     modelHealthPct: 0.95,
     priorityScore: '650',
+    matchedRuleIds: [],
   },
   {
     taskId: '102',
@@ -81,6 +87,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     poolHealthPct: 0.45,
     modelHealthPct: 0.7,
     priorityScore: '500',
+    matchedRuleIds: [],
   },
 ];
 
@@ -199,6 +206,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         modelHealthPct: 0.95,
         priorityScore: '400',
+        matchedRuleIds: [],
       },
       {
         taskId: '104',
@@ -211,6 +219,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         poolHealthPct: 0.85,
         priorityScore: '300',
+        matchedRuleIds: [],
       },
       {
         taskId: '105',
@@ -222,6 +231,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         wifiState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         priorityScore: '200',
+        matchedRuleIds: [],
       },
       {
         taskId: '106',
@@ -235,6 +245,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         poolHealthPct: 0.0,
         modelHealthPct: 0.0,
         priorityScore: '100',
+        matchedRuleIds: [],
       },
     ];
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -267,7 +278,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     const row1 = screen.getByText('chromeos15-row2-rack3-host4').closest('tr');
     expect(row1).not.toBeNull();
     expect(within(row1!).getByText('1')).toBeInTheDocument();
-    expect(within(row1!).getByText('650')).toBeInTheDocument();
+    expect(within(row1!).getByText('+650 pts')).toBeInTheDocument();
 
     expect(screen.getByText('chromeos15-row2-rack3-host5')).toBeInTheDocument();
     expect(screen.getAllByText('faft-cr50').length).toBeGreaterThanOrEqual(1);
@@ -288,7 +299,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     const row2 = screen.getByText('chromeos15-row2-rack3-host5').closest('tr');
     expect(row2).not.toBeNull();
     expect(within(row2!).getByText('2')).toBeInTheDocument();
-    expect(within(row2!).getByText('500')).toBeInTheDocument();
+    expect(within(row2!).getByText('+500 pts')).toBeInTheDocument();
 
     expect(screen.getByText('chromeos15-row2-rack3-host6')).toBeInTheDocument();
     expect(screen.getByText('- / 95%')).toBeInTheDocument();
@@ -355,6 +366,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         wifiState: 0,
         bluetoothState: 0,
         priorityScore: '0',
+        matchedRuleIds: [],
       },
       {
         dutId: 'fallback-dut-2',
@@ -366,6 +378,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         wifiState: 0,
         bluetoothState: 0,
         priorityScore: '100',
+        matchedRuleIds: [],
       },
       {
         dutId: 'fallback-dut-3',
@@ -377,6 +390,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         wifiState: 0,
         bluetoothState: 0,
         priorityScore: '',
+        matchedRuleIds: [],
       },
       {
         dutId: 'fallback-dut-4',
@@ -388,6 +402,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         wifiState: 0,
         bluetoothState: 0,
         priorityScore: undefined,
+        matchedRuleIds: [],
       },
     ];
 
@@ -409,22 +424,22 @@ describe('<ChromeOSRepairDashboard />', () => {
     const row1 = (await screen.findByText('fallback-dut-1')).closest('tr');
     expect(row1).not.toBeNull();
     expect(within(row1!).getByText('1')).toBeInTheDocument();
-    expect(within(row1!).getByText('0')).toBeInTheDocument();
+    expect(within(row1!).getByText('0 pts')).toBeInTheDocument();
 
     const row2 = (await screen.findByText('fallback-dut-2')).closest('tr');
     expect(row2).not.toBeNull();
     expect(within(row2!).getByText('2')).toBeInTheDocument();
-    expect(within(row2!).getByText('100')).toBeInTheDocument();
+    expect(within(row2!).getByText('+100 pts')).toBeInTheDocument();
 
     const row3 = (await screen.findByText('fallback-dut-3')).closest('tr');
     expect(row3).not.toBeNull();
     expect(within(row3!).getByText('3')).toBeInTheDocument();
-    expect(within(row3!).getByText('0')).toBeInTheDocument();
+    expect(within(row3!).getByText('0 pts')).toBeInTheDocument();
 
     const row4 = (await screen.findByText('fallback-dut-4')).closest('tr');
     expect(row4).not.toBeNull();
     expect(within(row4!).getByText('4')).toBeInTheDocument();
-    expect(within(row4!).getByText('0')).toBeInTheDocument();
+    expect(within(row4!).getByText('0 pts')).toBeInTheDocument();
   });
 
   it('falls back to "0" when priorityScore is empty string or undefined', async () => {
@@ -441,6 +456,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         wifiState: 0,
         bluetoothState: 0,
         priorityScore: '',
+        matchedRuleIds: [],
       },
       {
         dutId: 'score-undefined-dut',
@@ -452,6 +468,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         wifiState: 0,
         bluetoothState: 0,
         priorityScore: undefined,
+        matchedRuleIds: [],
       },
     ];
 
@@ -472,13 +489,13 @@ describe('<ChromeOSRepairDashboard />', () => {
 
     const rowEmpty = (await screen.findByText('score-empty-dut')).closest('tr');
     expect(rowEmpty).not.toBeNull();
-    expect(within(rowEmpty!).getByText('0')).toBeInTheDocument();
+    expect(within(rowEmpty!).getByText('0 pts')).toBeInTheDocument();
 
     const rowUndefined = (
       await screen.findByText('score-undefined-dut')
     ).closest('tr');
     expect(rowUndefined).not.toBeNull();
-    expect(within(rowUndefined!).getByText('0')).toBeInTheDocument();
+    expect(within(rowUndefined!).getByText('0 pts')).toBeInTheDocument();
   });
 
   it('renders Claim button for unclaimed item and Avatar for claimed item', async () => {
@@ -494,6 +511,8 @@ describe('<ChromeOSRepairDashboard />', () => {
             state: 'needs_repair',
             claimedBy: '   ',
             claimedAt: undefined,
+            priorityScore: '0',
+            matchedRuleIds: [],
           },
         ],
         totalSize: 3,
@@ -579,6 +598,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       wifiState: PeripheralState.PERIPHERAL_STATE_OK,
       bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
       priorityScore: '0',
+      matchedRuleIds: [],
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -712,6 +732,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       wifiState: PeripheralState.PERIPHERAL_STATE_OK,
       bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
       priorityScore: '0',
+      matchedRuleIds: [],
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -831,6 +852,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           wifiState: 0,
           bluetoothState: 0,
           priorityScore: '120',
+          matchedRuleIds: [],
         },
         {
           dutId: 'chromeos15-p2-item2',
@@ -842,6 +864,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           wifiState: 0,
           bluetoothState: 0,
           priorityScore: '90',
+          matchedRuleIds: [],
         },
       ];
 
@@ -866,12 +889,12 @@ describe('<ChromeOSRepairDashboard />', () => {
       const row1 = screen.getByText('chromeos15-p2-item1').closest('tr');
       expect(row1).not.toBeNull();
       expect(within(row1!).getByText('51')).toBeInTheDocument();
-      expect(within(row1!).getByText('120')).toBeInTheDocument();
+      expect(within(row1!).getByText('+120 pts')).toBeInTheDocument();
 
       const row2 = screen.getByText('chromeos15-p2-item2').closest('tr');
       expect(row2).not.toBeNull();
       expect(within(row2!).getByText('52')).toBeInTheDocument();
-      expect(within(row2!).getByText('90')).toBeInTheDocument();
+      expect(within(row2!).getByText('+90 pts')).toBeInTheDocument();
     });
 
     it('cleanly renders negative priority scores, MaxInt64, MinInt64, and zero scores', async () => {
@@ -889,6 +912,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           wifiState: 0,
           bluetoothState: 0,
           priorityScore: maxInt64,
+          matchedRuleIds: [],
         },
         {
           dutId: 'dut-extreme-min',
@@ -900,6 +924,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           wifiState: 0,
           bluetoothState: 0,
           priorityScore: minInt64,
+          matchedRuleIds: [],
         },
         {
           dutId: 'dut-negative-score',
@@ -911,6 +936,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           wifiState: 0,
           bluetoothState: 0,
           priorityScore: '-75',
+          matchedRuleIds: [],
         },
         {
           dutId: 'dut-zero-score',
@@ -922,6 +948,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           wifiState: 0,
           bluetoothState: 0,
           priorityScore: '0',
+          matchedRuleIds: [],
         },
       ];
 
@@ -942,24 +969,24 @@ describe('<ChromeOSRepairDashboard />', () => {
 
       const rowMax = (await screen.findByText('dut-extreme-max')).closest('tr');
       expect(rowMax).not.toBeNull();
-      expect(within(rowMax!).getByText(maxInt64)).toBeInTheDocument();
+      expect(within(rowMax!).getByText(`+${maxInt64} pts`)).toBeInTheDocument();
       expect(within(rowMax!).getByText('1')).toBeInTheDocument();
 
       const rowMin = (await screen.findByText('dut-extreme-min')).closest('tr');
       expect(rowMin).not.toBeNull();
-      expect(within(rowMin!).getByText(minInt64)).toBeInTheDocument();
+      expect(within(rowMin!).getByText(`${minInt64} pts`)).toBeInTheDocument();
       expect(within(rowMin!).getByText('2')).toBeInTheDocument();
 
       const rowNeg = (await screen.findByText('dut-negative-score')).closest(
         'tr',
       );
       expect(rowNeg).not.toBeNull();
-      expect(within(rowNeg!).getByText('-75')).toBeInTheDocument();
+      expect(within(rowNeg!).getByText('-75 pts')).toBeInTheDocument();
       expect(within(rowNeg!).getByText('3')).toBeInTheDocument();
 
       const rowZero = (await screen.findByText('dut-zero-score')).closest('tr');
       expect(rowZero).not.toBeNull();
-      expect(within(rowZero!).getByText('0')).toBeInTheDocument();
+      expect(within(rowZero!).getByText('0 pts')).toBeInTheDocument();
       expect(within(rowZero!).getByText('4')).toBeInTheDocument();
     });
 
@@ -1092,6 +1119,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           wifiState: 0,
           bluetoothState: 0,
           priorityScore: '100',
+          matchedRuleIds: [],
         },
       ];
 
@@ -1207,5 +1235,374 @@ describe('<ChromeOSRepairDashboard />', () => {
         name: /Workforce Activity/i,
       }),
     ).not.toBeInTheDocument();
+  });
+
+  describe('Priority Score formatting and tooltip breakdown', () => {
+    describe('formatPriorityScore helper', () => {
+      it('formats positive scores with + and pts', () => {
+        expect(formatPriorityScore('350')).toBe('+350 pts');
+        expect(formatPriorityScore('+350')).toBe('+350 pts');
+        expect(formatPriorityScore('1')).toBe('+1 pts');
+      });
+
+      it('formats negative scores with - and pts', () => {
+        expect(formatPriorityScore('-50')).toBe('-50 pts');
+        expect(formatPriorityScore('-9223372036854775808')).toBe(
+          '-9223372036854775808 pts',
+        );
+      });
+
+      it('formats zero scores as "0 pts"', () => {
+        expect(formatPriorityScore('0')).toBe('0 pts');
+        expect(formatPriorityScore('-0')).toBe('0 pts');
+      });
+
+      it('handles empty or non-numeric strings safely', () => {
+        expect(formatPriorityScore('')).toBe('0 pts');
+        expect(formatPriorityScore(undefined)).toBe('0 pts');
+        expect(formatPriorityScore(350)).toBe('+350 pts');
+        expect(formatPriorityScore(-50)).toBe('-50 pts');
+      });
+    });
+
+    describe('formatRuleWeight helper', () => {
+      it('formats positive numeric and string weights with + and pts', () => {
+        expect(formatRuleWeight(300)).toBe('+300 pts');
+        expect(formatRuleWeight('300')).toBe('+300 pts');
+        expect(formatRuleWeight('+300')).toBe('+300 pts');
+      });
+
+      it('formats negative numeric and string weights with - and pts', () => {
+        expect(formatRuleWeight(-50)).toBe('-50 pts');
+        expect(formatRuleWeight('-50')).toBe('-50 pts');
+      });
+
+      it('formats zero weights as "0 pts"', () => {
+        expect(formatRuleWeight(0)).toBe('0 pts');
+        expect(formatRuleWeight('0')).toBe('0 pts');
+      });
+    });
+
+    describe('PriorityScoreCell tooltip interaction in dashboard table', () => {
+      const mockRules: readonly PriorityRule[] = [
+        {
+          id: 'rule-1',
+          expressionAip160: 'model = "volteer"',
+          weight: '300',
+        },
+        {
+          id: 'rule-2',
+          expressionAip160: 'pool = "DUT_POOL_QUOTA"',
+          weight: '350',
+        },
+        {
+          id: 'rule-3',
+          expressionAip160: 'dut_id = "demoted-dut"',
+          weight: '-50',
+        },
+      ];
+
+      it('renders itemized tooltip with flipped order and score total on hover', async () => {
+        jest.spyOn(UsePriorityRulesModule, 'usePriorityRules').mockReturnValue({
+          rules: mockRules,
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: jest.fn(),
+          createRule: jest.fn(),
+          isCreating: false,
+          createError: null,
+          updateRule: jest.fn(),
+          isUpdating: false,
+          updateError: null,
+          deleteRule: jest.fn(),
+          isDeleting: false,
+          deleteError: null,
+        } as unknown as ReturnType<
+          typeof UsePriorityRulesModule.usePriorityRules
+        >);
+
+        const items: readonly RepairQueueItem[] = [
+          {
+            dutId: 'dut-multi-match',
+            pools: ['DUT_POOL_QUOTA'],
+            model: 'volteer',
+            state: 'needs_repair',
+            taskId: 'task-multi',
+            servoState: 0,
+            wifiState: 0,
+            bluetoothState: 0,
+            priorityScore: '650',
+            matchedRuleIds: ['rule-1', 'rule-2'],
+          },
+        ];
+
+        jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+          data: {
+            repairQueueItems: items,
+            totalSize: 1,
+            nextPageToken: '',
+          },
+          isPending: false,
+          isError: false,
+          isFetching: false,
+          isLoading: false,
+          isPlaceholderData: false,
+        } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+        renderDashboard();
+
+        const scoreCell = await screen.findByText('+650 pts');
+        expect(scoreCell).toBeInTheDocument();
+
+        // Hover over the score cell to trigger MUI Tooltip
+        fireEvent.mouseOver(scoreCell);
+
+        // Expression and points are separate grid cells so the points column
+        // can right-align; assert each independently.
+        expect(
+          await screen.findByText('model = "volteer"'),
+        ).toBeInTheDocument();
+        expect(screen.getByText('+300 pts')).toBeInTheDocument();
+        expect(screen.getByText('pool = "DUT_POOL_QUOTA"')).toBeInTheDocument();
+        expect(screen.getByText('+350 pts')).toBeInTheDocument();
+        // Summary line
+        expect(screen.getByText('= 650 pts')).toBeInTheDocument();
+      });
+
+      it('renders demoted/negative weight rule in tooltip correctly', async () => {
+        jest.spyOn(UsePriorityRulesModule, 'usePriorityRules').mockReturnValue({
+          rules: mockRules,
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: jest.fn(),
+          createRule: jest.fn(),
+          isCreating: false,
+          createError: null,
+          updateRule: jest.fn(),
+          isUpdating: false,
+          updateError: null,
+          deleteRule: jest.fn(),
+          isDeleting: false,
+          deleteError: null,
+        } as unknown as ReturnType<
+          typeof UsePriorityRulesModule.usePriorityRules
+        >);
+
+        const items: readonly RepairQueueItem[] = [
+          {
+            dutId: 'dut-demoted',
+            pools: [],
+            model: 'volteer',
+            state: 'needs_repair',
+            taskId: 'task-demoted',
+            servoState: 0,
+            wifiState: 0,
+            bluetoothState: 0,
+            priorityScore: '-50',
+            matchedRuleIds: ['rule-3'],
+          },
+        ];
+
+        jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+          data: {
+            repairQueueItems: items,
+            totalSize: 1,
+            nextPageToken: '',
+          },
+          isPending: false,
+          isError: false,
+          isFetching: false,
+          isLoading: false,
+          isPlaceholderData: false,
+        } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+        renderDashboard();
+
+        const scoreCell = await screen.findByText('-50 pts');
+        expect(scoreCell).toBeInTheDocument();
+
+        fireEvent.mouseOver(scoreCell);
+
+        expect(
+          await screen.findByText('dut_id = "demoted-dut"'),
+        ).toBeInTheDocument();
+        // '-50 pts' appears twice: once in the trigger cell, once as the
+        // rule's right-aligned weight. The demotion keeps its minus sign.
+        expect(screen.getAllByText('-50 pts')).toHaveLength(2);
+        expect(screen.getByText('= -50 pts')).toBeInTheDocument();
+      });
+
+      it('renders "No matched priority rules (0 pts)" tooltip when matchedRuleIds is empty', async () => {
+        const items: readonly RepairQueueItem[] = [
+          {
+            dutId: 'dut-no-match',
+            pools: [],
+            model: 'volteer',
+            state: 'needs_repair',
+            taskId: 'task-no-match',
+            servoState: 0,
+            wifiState: 0,
+            bluetoothState: 0,
+            priorityScore: '0',
+            matchedRuleIds: [],
+          },
+        ];
+
+        jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+          data: {
+            repairQueueItems: items,
+            totalSize: 1,
+            nextPageToken: '',
+          },
+          isPending: false,
+          isError: false,
+          isFetching: false,
+          isLoading: false,
+          isPlaceholderData: false,
+        } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+        renderDashboard();
+
+        const scoreCell = await screen.findByText('0 pts');
+        expect(scoreCell).toBeInTheDocument();
+
+        fireEvent.mouseOver(scoreCell);
+
+        expect(
+          await screen.findByText('No matched priority rules (0 pts)'),
+        ).toBeInTheDocument();
+      });
+
+      it('gracefully falls back to "Rule #<id>" if matched rule ID is missing from rules cache', async () => {
+        jest.spyOn(UsePriorityRulesModule, 'usePriorityRules').mockReturnValue({
+          rules: [], // Empty cached rules (e.g. rule was deleted)
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: jest.fn(),
+          createRule: jest.fn(),
+          isCreating: false,
+          createError: null,
+          updateRule: jest.fn(),
+          isUpdating: false,
+          updateError: null,
+          deleteRule: jest.fn(),
+          isDeleting: false,
+          deleteError: null,
+        } as unknown as ReturnType<
+          typeof UsePriorityRulesModule.usePriorityRules
+        >);
+
+        const items: readonly RepairQueueItem[] = [
+          {
+            dutId: 'dut-orphan-rule',
+            pools: [],
+            model: 'volteer',
+            state: 'needs_repair',
+            taskId: 'task-orphan',
+            servoState: 0,
+            wifiState: 0,
+            bluetoothState: 0,
+            priorityScore: '100',
+            matchedRuleIds: ['rule-999'],
+          },
+        ];
+
+        jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+          data: {
+            repairQueueItems: items,
+            totalSize: 1,
+            nextPageToken: '',
+          },
+          isPending: false,
+          isError: false,
+          isFetching: false,
+          isLoading: false,
+          isPlaceholderData: false,
+        } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+        renderDashboard();
+
+        const scoreCell = await screen.findByText('+100 pts');
+        expect(scoreCell).toBeInTheDocument();
+
+        fireEvent.mouseOver(scoreCell);
+
+        expect(await screen.findByText('Rule #rule-999')).toBeInTheDocument();
+        expect(screen.getByText('= 100 pts')).toBeInTheDocument();
+      });
+
+      it('truncates a long AIP-160 expression but keeps the full text in the title attribute', async () => {
+        const longExpression =
+          'model = "a-very-long-chromeos-board-name" AND pool = "DUT_POOL_QUOTA" ' +
+          'AND dut_state = "needs_manual_repair" AND labels.tier = "critical"';
+
+        jest.spyOn(UsePriorityRulesModule, 'usePriorityRules').mockReturnValue({
+          rules: [
+            {
+              id: 'rule-long',
+              expressionAip160: longExpression,
+              weight: '25',
+            },
+          ],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: jest.fn(),
+          createRule: jest.fn(),
+          isCreating: false,
+          createError: null,
+          updateRule: jest.fn(),
+          isUpdating: false,
+          updateError: null,
+          deleteRule: jest.fn(),
+          isDeleting: false,
+          deleteError: null,
+        } as unknown as ReturnType<
+          typeof UsePriorityRulesModule.usePriorityRules
+        >);
+
+        const items: readonly RepairQueueItem[] = [
+          {
+            dutId: 'dut-long-rule',
+            pools: [],
+            model: 'volteer',
+            state: 'needs_repair',
+            taskId: 'task-long',
+            servoState: 0,
+            wifiState: 0,
+            bluetoothState: 0,
+            priorityScore: '25',
+            matchedRuleIds: ['rule-long'],
+          },
+        ];
+
+        jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+          data: {
+            repairQueueItems: items,
+            totalSize: 1,
+            nextPageToken: '',
+          },
+          isPending: false,
+          isError: false,
+          isFetching: false,
+          isLoading: false,
+          isPlaceholderData: false,
+        } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+        renderDashboard();
+
+        const scoreCell = await screen.findByText('+25 pts');
+        fireEvent.mouseOver(scoreCell);
+
+        // The expression is never cut off in the DOM: CSS clamps the rendered
+        // width and the title attribute exposes the untruncated text on hover.
+        const exprCell = await screen.findByText(longExpression);
+        expect(exprCell).toHaveAttribute('title', longExpression);
+        expect(exprCell).toHaveStyle({ textOverflow: 'ellipsis' });
+      });
+    });
   });
 });

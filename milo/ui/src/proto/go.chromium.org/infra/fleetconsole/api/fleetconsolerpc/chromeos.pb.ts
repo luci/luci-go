@@ -700,6 +700,7 @@ export interface RepairQueueItem {
   readonly poolHealthPct?: number | undefined;
   readonly modelHealthPct?: number | undefined;
   readonly priorityScore: string;
+  readonly matchedRuleIds: readonly string[];
 }
 
 export interface ListRepairQueueResponse {
@@ -5679,6 +5680,7 @@ function createBaseRepairQueueItem(): RepairQueueItem {
     poolHealthPct: undefined,
     modelHealthPct: undefined,
     priorityScore: "0",
+    matchedRuleIds: [],
   };
 }
 
@@ -5722,6 +5724,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     if (message.priorityScore !== "0") {
       writer.uint32(104).int64(message.priorityScore);
+    }
+    for (const v of message.matchedRuleIds) {
+      writer.uint32(112).int64(v);
     }
     return writer;
   },
@@ -5837,6 +5842,23 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
           message.priorityScore = reader.int64().toString();
           continue;
         }
+        case 14: {
+          if (tag === 112) {
+            message.matchedRuleIds.push(reader.int64().toString());
+            continue;
+          }
+
+          if (tag === 114) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.matchedRuleIds.push(reader.int64().toString());
+            }
+
+            continue;
+          }
+
+          break;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5861,6 +5883,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
       poolHealthPct: isSet(object.poolHealthPct) ? globalThis.Number(object.poolHealthPct) : undefined,
       modelHealthPct: isSet(object.modelHealthPct) ? globalThis.Number(object.modelHealthPct) : undefined,
       priorityScore: isSet(object.priorityScore) ? globalThis.String(object.priorityScore) : "0",
+      matchedRuleIds: globalThis.Array.isArray(object?.matchedRuleIds)
+        ? object.matchedRuleIds.map((e: unknown) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -5905,6 +5930,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.priorityScore !== "0") {
       obj.priorityScore = message.priorityScore;
     }
+    if (message.matchedRuleIds?.length) {
+      obj.matchedRuleIds = message.matchedRuleIds;
+    }
     return obj;
   },
 
@@ -5926,6 +5954,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.poolHealthPct = object.poolHealthPct ?? undefined;
     message.modelHealthPct = object.modelHealthPct ?? undefined;
     message.priorityScore = object.priorityScore ?? "0";
+    message.matchedRuleIds = object.matchedRuleIds?.map((e) => e) || [];
     return message;
   },
 };

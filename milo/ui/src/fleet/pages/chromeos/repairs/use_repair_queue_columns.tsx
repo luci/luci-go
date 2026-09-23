@@ -16,25 +16,56 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import RemoveIcon from '@mui/icons-material/Remove';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Box, Button, Link, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Divider, Link, Tooltip, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
+import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
 import { DutStateCell } from '@/fleet/pages/device_list_page/chromeos/dut_state_cell';
 import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
-import { RepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  PriorityRule,
+  RepairQueueItem,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { PeripheralsCell } from './peripheral_state_indicator';
 import {
   useClaimRepairTask,
   useUnclaimRepairTask,
 } from './use_claim_repair_task';
+import { usePriorityRules } from './use_priority_rules';
 import { UserAvatar } from './user_avatar';
+
+export const formatPriorityScore = (score?: string | number): string => {
+  const scoreStr = typeof score === 'number' ? String(score) : score || '0';
+  if (!scoreStr || scoreStr === '0' || scoreStr === '-0') {
+    return '0 pts';
+  }
+  if (scoreStr.startsWith('-')) {
+    const absVal = scoreStr.slice(1);
+    return `-${absVal} pts`;
+  }
+  const clean = scoreStr.startsWith('+') ? scoreStr.slice(1) : scoreStr;
+  return `+${clean} pts`;
+};
+
+export const formatRuleWeight = (weight?: string | number): string => {
+  const weightStr = typeof weight === 'number' ? String(weight) : weight || '0';
+  if (!weightStr || weightStr === '0' || weightStr === '-0') {
+    return '0 pts';
+  }
+  if (weightStr.startsWith('-')) {
+    const absVal = weightStr.slice(1);
+    return `-${absVal} pts`;
+  }
+  const clean = weightStr.startsWith('+') ? weightStr.slice(1) : weightStr;
+  return `+${clean} pts`;
+};
 
 export type RepairQueueRow = RepairQueueItem;
 export type RepairQueueColumnDef = MRT_ColumnDef<RepairQueueRow>;
@@ -56,6 +87,113 @@ export interface UseRepairQueueColumnsOptions {
   pageSize?: number;
 }
 
+/**
+ * Caps how wide a rule's AIP-160 expression may grow inside the breakdown
+ * tooltip. Longer expressions are truncated with an ellipsis so that a single
+ * verbose rule cannot stretch the tooltip across the viewport, and so the
+ * points column stays anchored on the right.
+ */
+const RULE_EXPRESSION_MAX_WIDTH = 300;
+
+const PriorityScoreCell = ({
+  item,
+  rulesById,
+}: {
+  item: RepairQueueRow;
+  rulesById: Map<string, PriorityRule>;
+}) => {
+  const scoreStr = item.priorityScore || '0';
+  const formattedScore = formatPriorityScore(scoreStr);
+  const matchedIds = item.matchedRuleIds || [];
+
+  let tooltipContent: React.ReactNode;
+  if (matchedIds.length === 0) {
+    tooltipContent = (
+      <Typography variant="body2">No matched priority rules (0 pts)</Typography>
+    );
+  } else {
+    const cleanScore = scoreStr.replace(/^\+/, '');
+    tooltipContent = (
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          columnGap: 3,
+          rowGap: 0.5,
+          alignItems: 'baseline',
+        }}
+      >
+        {matchedIds.map((id) => {
+          const rule = rulesById.get(id);
+          const expr = rule?.expressionAip160 ?? `Rule #${id}`;
+          const weightStr = rule ? formatRuleWeight(rule.weight) : '';
+          return (
+            <Fragment key={id}>
+              <Typography
+                variant="body2"
+                title={expr}
+                sx={{
+                  maxWidth: RULE_EXPRESSION_MAX_WIDTH,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {expr}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  textAlign: 'right',
+                  whiteSpace: 'nowrap',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {weightStr}
+              </Typography>
+            </Fragment>
+          );
+        })}
+        <Divider sx={{ gridColumn: '1 / -1', my: 0.5 }} />
+        <Typography
+          variant="body2"
+          sx={{
+            gridColumn: 2,
+            textAlign: 'right',
+            whiteSpace: 'nowrap',
+            fontWeight: 600,
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {`= ${cleanScore} pts`}
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Tooltip
+      title={tooltipContent}
+      enterDelay={100}
+      placement="bottom-start"
+      slotProps={{ tooltip: { sx: INFO_TOOLTIP_PAPER_SX } }}
+    >
+      <Typography
+        component="span"
+        sx={{
+          fontWeight: 600,
+          cursor: 'help',
+          display: 'inline-block',
+          textDecoration: 'underline dotted',
+          textUnderlineOffset: '3px',
+        }}
+      >
+        {formattedScore}
+      </Typography>
+    </Tooltip>
+  );
+};
+
 export const useRepairQueueColumns = ({
   pageIndex = 0,
   pageSize = 100,
@@ -67,6 +205,15 @@ export const useRepairQueueColumns = ({
 
   const authState = useAuthState();
   const currentUser = (authState.email || authState.identity || '').trim();
+
+  const { rules } = usePriorityRules();
+  const rulesById = useMemo(() => {
+    const map = new Map<string, PriorityRule>();
+    for (const r of rules) {
+      map.set(r.id, r);
+    }
+    return map;
+  }, [rules]);
 
   const columns: RepairQueueColumnDef[] = useMemo(() => {
     return [
@@ -171,9 +318,7 @@ export const useRepairQueueColumns = ({
             'Devices are ranked in real time by summing active rule weights. Higher score = higher priority.',
         },
         Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
-          <Typography sx={{ fontWeight: 600 }}>
-            {row.original.priorityScore || '0'}
-          </Typography>
+          <PriorityScoreCell item={row.original} rulesById={rulesById} />
         ),
       },
       {
@@ -353,7 +498,15 @@ export const useRepairQueueColumns = ({
         },
       },
     ];
-  }, [claimTask, unclaimTask, currentUser, isPending, pageIndex, pageSize]);
+  }, [
+    claimTask,
+    unclaimTask,
+    currentUser,
+    isPending,
+    pageIndex,
+    pageSize,
+    rulesById,
+  ]);
 
   return { columns };
 };

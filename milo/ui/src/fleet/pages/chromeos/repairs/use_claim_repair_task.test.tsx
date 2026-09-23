@@ -43,6 +43,7 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     wifiState: PeripheralState.PERIPHERAL_STATE_OK,
     bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
     priorityScore: '0',
+    matchedRuleIds: [],
   },
   {
     taskId: '102',
@@ -56,6 +57,7 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     wifiState: PeripheralState.PERIPHERAL_STATE_OK,
     bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
     priorityScore: '0',
+    matchedRuleIds: [],
   },
 ];
 
@@ -282,6 +284,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
             wifiState: PeripheralState.PERIPHERAL_STATE_OK,
             bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
             priorityScore: '0',
+            matchedRuleIds: [],
           },
         ],
         nextPageToken: '',

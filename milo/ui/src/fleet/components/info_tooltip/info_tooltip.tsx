@@ -17,6 +17,8 @@ import { InfoOutlined } from '@mui/icons-material';
 import { Tooltip, Typography } from '@mui/material';
 import React from 'react';
 
+import { INFO_TOOLTIP_PAPER_SX } from './info_tooltip_styles';
+
 export interface InfoTooltipProps
   extends React.HTMLAttributes<HTMLSpanElement> {
   infoCss?: CSSObject;
@@ -59,19 +61,7 @@ export function InfoTooltip({
       placement="bottom-start"
       slotProps={{
         tooltip: {
-          sx: [
-            {
-              bgcolor: 'background.paper',
-              color: 'text.primary',
-              p: 2,
-              border: (theme) => `1px solid ${theme.palette.divider}`,
-              boxShadow: 3,
-              maxWidth: 450,
-              pointerEvents: 'auto',
-              fontSize: '0.875rem',
-            },
-            paperCss,
-          ],
+          sx: [INFO_TOOLTIP_PAPER_SX, paperCss],
         },
       }}
     >
