@@ -508,6 +508,104 @@ describe('check_utils', () => {
         'very-long-build-target-name-that-exceeds-sixty-characters-in-total-length',
       );
     });
+
+    it('indexes Stage ValueRef payloads from valueDataMap including WorkNode workParameters', () => {
+      const stage = Stage.fromPartial({
+        identifier: { id: 'S52000030948763694', isWorknode: true },
+        args: { digest: 'digest-worknode' },
+        legacy: { worknode: { digest: 'digest-worknode' } },
+        attempts: [
+          {
+            details: [{ digest: 'digest-attempt-detail' }],
+            progress: [{ details: [{ digest: 'digest-progress-detail' }] }],
+          },
+        ],
+      });
+      const valueDataMap = new Map<string, ValueData>([
+        [
+          'digest-worknode',
+          ValueData.fromPartial({
+            json: {
+              value: JSON.stringify({
+                workExecutorType: 'PENDING_CHANGE_BUILD',
+                workParameters: {
+                  pendingChangeBuild: {
+                    changes: [
+                      {
+                        changeNumber: '36481920',
+                        patchset: 4,
+                        host: 'googleplex-android-review.googlesource.com',
+                      },
+                    ],
+                  },
+                },
+              }),
+            },
+          }),
+        ],
+        [
+          'digest-attempt-detail',
+          ValueData.fromPartial({
+            json: {
+              value: JSON.stringify({ buildId: 'P987654321' }),
+            },
+          }),
+        ],
+        [
+          'digest-progress-detail',
+          ValueData.fromPartial({
+            json: {
+              value: JSON.stringify({ stepName: 'compile_target_xyz' }),
+            },
+          }),
+        ],
+      ]);
+
+      const index = getNodeSearchIndex(
+        'S52000030948763694',
+        'Pending Change Build',
+        stage,
+        valueDataMap,
+      );
+      expect(index).toContain('36481920');
+      expect(index).toContain('p987654321');
+      expect(index).toContain('compile_target_xyz');
+    });
+
+    it('indexes Check ValueRef payloads from valueDataMap including options and results', () => {
+      const check = Check.fromPartial({
+        identifier: { id: 'check-1' },
+        options: [{ digest: 'digest-check-opt' }],
+        results: [{ data: [{ digest: 'digest-check-res' }] }],
+      });
+      const valueDataMap = new Map<string, ValueData>([
+        [
+          'digest-check-opt',
+          ValueData.fromPartial({
+            json: {
+              value: JSON.stringify({ targetBranch: 'git_main' }),
+            },
+          }),
+        ],
+        [
+          'digest-check-res',
+          ValueData.fromPartial({
+            json: {
+              value: JSON.stringify({ testModule: 'CtsMediaTestCases' }),
+            },
+          }),
+        ],
+      ]);
+
+      const index = getNodeSearchIndex(
+        'check-1',
+        'Check 1',
+        check,
+        valueDataMap,
+      );
+      expect(index).toContain('git_main');
+      expect(index).toContain('ctsmediatestcases');
+    });
   });
 
   describe('getStageResultStatus', () => {

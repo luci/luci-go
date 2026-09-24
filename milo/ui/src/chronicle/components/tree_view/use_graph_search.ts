@@ -14,6 +14,8 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
 import { getNodeSearchIndex } from '../../utils/check_utils';
 
 import { Graph, transitiveDescendants } from './build_tree';
@@ -22,18 +24,23 @@ import { Graph, transitiveDescendants } from './build_tree';
  * Hook for providing matched and filtered nodes for a typed query.
  * @param graph The graph
  * @param searchQuery The typed filter query
+ * @param valueDataMap Map of ValueRef digests to ValueData payloads
  * @returns Nodes which match the query, and all "filtered" nodes (which are
  *   upstream/downstream of matches)
  */
-export function useGraphSearch(graph: Graph, searchQuery: string) {
+export function useGraphSearch(
+  graph: Graph,
+  searchQuery: string,
+  valueDataMap?: ReadonlyMap<string, ValueData>,
+) {
   // Lazy cache for full-text search strings of nodes.
   // Only populated when a search is first initiated.
   const searchIndexRef = useRef<Record<string, string> | null>(null);
 
-  // Reset search index if the graph data itself changes entirely
+  // Reset search index if the graph data or valueDataMap changes
   useEffect(() => {
     searchIndexRef.current = null;
-  }, [graph]);
+  }, [graph, valueDataMap]);
 
   // 1. Find all nodes that directly match the query (searching raw JSON data)
   const directMatches = useMemo(() => {
@@ -50,6 +57,7 @@ export function useGraphSearch(graph: Graph, searchQuery: string) {
           node.id,
           node.label,
           node.raw,
+          valueDataMap,
         );
       }
     }
@@ -62,7 +70,7 @@ export function useGraphSearch(graph: Graph, searchQuery: string) {
       }
     }
     return matches;
-  }, [graph, searchQuery]);
+  }, [graph, searchQuery, valueDataMap]);
 
   // 2. Expand matches to include necessary context (ancestors) and results (subtree)
   const filteredNodeSet = useMemo(() => {

@@ -14,6 +14,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
 import { Graph } from './build_tree';
 import { useFlattenedGraph } from './use_flattened_graph';
 import { useGraphSearch } from './use_graph_search';
@@ -22,6 +24,7 @@ import { useKeyboardNavigation } from './use_keyboard_navigation';
 export interface UseTreeProps {
   graph: Graph;
   defaultExpandedDepth?: number;
+  valueDataMap?: ReadonlyMap<string, ValueData>;
 }
 
 /**
@@ -29,7 +32,11 @@ export interface UseTreeProps {
  graph. It handles expansion/collapse, keyboard navigation, and
  search/filtering.
  */
-export function useTree({ graph, defaultExpandedDepth = 2 }: UseTreeProps) {
+export function useTree({
+  graph,
+  defaultExpandedDepth = 2,
+  valueDataMap,
+}: UseTreeProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,7 +58,11 @@ export function useTree({ graph, defaultExpandedDepth = 2 }: UseTreeProps) {
     setExpandedIds(initialExpanded);
   }
 
-  const { directMatches, filteredNodeSet } = useGraphSearch(graph, searchQuery);
+  const { directMatches, filteredNodeSet } = useGraphSearch(
+    graph,
+    searchQuery,
+    valueDataMap,
+  );
 
   // Auto-expand relevant nodes when searching
   useEffect(() => {

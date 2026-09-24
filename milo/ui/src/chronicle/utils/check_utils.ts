@@ -347,14 +347,48 @@ function createIndexableObject(view: Check | Stage): Partial<Check | Stage> {
 }
 
 /**
+ * Collects all unique ValueRef digests referenced by a Stage or Check so their
+ * externalized ValueData payloads (such as WorkNode workParameters and workOutput)
+ * can be included in the node's full-text search index.
+ */
+function collectValueRefDigests(view: Check | Stage): Set<string> {
+  const digests = new Set<string>();
+  const addDigest = (digest?: string) => {
+    if (digest) {
+      digests.add(digest);
+    }
+  };
+
+  if (isStage(view)) {
+    addDigest(view.args?.digest);
+    addDigest(view.legacy?.worknode?.digest);
+    view.attempts?.forEach((attempt) => {
+      attempt.details?.forEach((detail) => addDigest(detail.digest));
+      attempt.progress?.forEach((prog) => {
+        prog.details?.forEach((detail) => addDigest(detail.digest));
+      });
+    });
+  } else {
+    view.options?.forEach((opt) => addDigest(opt.digest));
+    view.results?.forEach((res) => {
+      res.data?.forEach((d) => addDigest(d.digest));
+    });
+  }
+
+  return digests;
+}
+
+/**
  * Builds a normalized, lowercase full-text search string for a node by combining its
- * ID, canonical identifier format, label, and serialized metadata, while excluding
- * connection fields (assignments and dependencies) to prevent false-positive matches.
+ * ID, canonical identifier format, label, serialized metadata, and any externalized
+ * ValueData payloads from valueDataMap, while excluding connection fields
+ * (assignments and dependencies) to prevent false-positive matches.
  */
 export function getNodeSearchIndex(
   id: string,
   label: string,
   view?: Check | Stage,
+  valueDataMap?: ReadonlyMap<string, ValueData>,
 ): string {
   const parts: string[] = [id, label];
   if (view) {
@@ -366,6 +400,16 @@ export function getNodeSearchIndex(
     }
     const objToSerialize = createIndexableObject(view);
     parts.push(JSON.stringify(objToSerialize));
+
+    if (valueDataMap) {
+      const digests = collectValueRefDigests(view);
+      digests.forEach((digest) => {
+        const jsonValue = valueDataMap.get(digest)?.json?.value;
+        if (jsonValue) {
+          parts.push(jsonValue);
+        }
+      });
+    }
   }
   return parts.join(' ').toLowerCase();
 }

@@ -304,6 +304,7 @@ function Graph() {
           node.id,
           node.data.fullLabel,
           node.data.view,
+          valueDataMap,
         );
         const nodeMatch = indexText.includes(query);
 
@@ -341,6 +342,7 @@ function Graph() {
     baseLayout,
     selectedNodeId,
     debouncedSearchQuery,
+    valueDataMap,
     setNodes,
     setEdges,
     autoFitSelection,

@@ -14,6 +14,9 @@
 
 import { renderHook } from '@testing-library/react';
 
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
 import { Graph } from './build_tree';
 import { useGraphSearch } from './use_graph_search';
 
@@ -26,6 +29,10 @@ const graph: Graph = {
       status: 'FINAL',
       children: new Set(['child1', 'child2']),
       parents: new Set(),
+      raw: Stage.fromPartial({
+        identifier: { id: 'root', isWorknode: true },
+        legacy: { worknode: { digest: 'digest-root-worknode' } },
+      }),
     },
     child1: {
       id: 'child1',
@@ -74,5 +81,33 @@ describe('useGraphSearch', () => {
     const { result } = renderHook(() => useGraphSearch(graph, 'no-match'));
     expect(result.current.directMatches).toEqual(new Set());
     expect(result.current.filteredNodeSet).toEqual(new Set());
+  });
+
+  it('should match stage worknode parameters resolved via valueDataMap', () => {
+    const valueDataMap = new Map<string, ValueData>([
+      [
+        'digest-root-worknode',
+        ValueData.fromPartial({
+          json: {
+            value: JSON.stringify({
+              workExecutorType: 'PENDING_CHANGE_BUILD',
+              workParameters: {
+                pendingChangeBuild: {
+                  changes: [{ changeNumber: '36481920' }],
+                },
+              },
+            }),
+          },
+        }),
+      ],
+    ]);
+
+    const { result } = renderHook(() =>
+      useGraphSearch(graph, '36481920', valueDataMap),
+    );
+    expect(result.current.directMatches).toEqual(new Set(['root']));
+    expect(result.current.filteredNodeSet).toEqual(
+      new Set(['root', 'child1', 'child2', 'grandchild']),
+    );
   });
 });

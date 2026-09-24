@@ -399,7 +399,7 @@ function Tree() {
     handleKeyDown,
     searchQuery,
     setSearchQuery,
-  } = useTree({ graph });
+  } = useTree({ graph, valueDataMap });
 
   // Virtualizes the flattened tree list so only nodes currently in (or near) the viewport are mounted into the DOM.
   const rowVirtualizer = useVirtualizer({
