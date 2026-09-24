@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,59 +13,14 @@
 // limitations under the License.
 
 import { Tooltip } from '@mui/material';
-import _ from 'lodash';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 
-export const EllipsisTooltip = ({
-  children,
-  tooltip,
-}: {
-  children: ReactNode;
-  tooltip?: ReactNode;
-}) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isOverflowing, setIsOverflowing] = useState(false);
+interface EllipsisTooltipProps {
+  children: React.ReactNode;
+  tooltip?: React.ReactNode;
+}
 
-  // Usually the tooltip can automatically mange its own open state but when
-  // using custom children components this breaks and we have to do it ourselves
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    setIsOverflowing(checkIsOverflowing(element));
-
-    const observer = new ResizeObserver(() =>
-      setIsOverflowing(checkIsOverflowing(element)),
-    );
-    observer.observe(element);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <Tooltip title={tooltip ?? children} open={isOverflowing && open}>
-      <div
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        ref={ref}
-        css={{
-          overflowX: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {children}
-      </div>
-    </Tooltip>
-  );
-};
-
-// Checks if the element (or any of its descendants) is overflowing
-const checkIsOverflowing = (element: HTMLElement): boolean => {
+function checkIsOverflowing(element: HTMLElement): boolean {
   if (element.scrollWidth > element.clientWidth) return true;
 
   for (let i = 0; i < element.children.length; i++) {
@@ -74,4 +29,47 @@ const checkIsOverflowing = (element: HTMLElement): boolean => {
   }
 
   return false;
-};
+}
+
+export function EllipsisTooltip({ children, tooltip }: EllipsisTooltipProps) {
+  const textRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => {
+    const el = textRef.current;
+    if (el && checkIsOverflowing(el)) {
+      setOpen(true);
+    }
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  return (
+    <Tooltip
+      title={tooltip ?? children}
+      open={open}
+      onOpen={handleOpen}
+      onClose={handleClose}
+      enterDelay={400}
+    >
+      <div
+        ref={textRef}
+        onMouseEnter={handleOpen}
+        onMouseLeave={handleClose}
+        onFocus={handleOpen}
+        onBlur={handleClose}
+        style={{
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          maxWidth: '100%',
+          display: 'block',
+        }}
+      >
+        {children}
+      </div>
+    </Tooltip>
+  );
+}
