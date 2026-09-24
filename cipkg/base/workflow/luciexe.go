@@ -22,9 +22,10 @@ import (
 	"slices"
 	"sync"
 
+	"go.chromium.org/luci/luciexe/build"
+
 	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/core"
-	"go.chromium.org/luci/luciexe/build"
 )
 
 type SubstepFn func(ctx context.Context, root *build.Step) error

@@ -99,9 +99,8 @@ message Action {
     // cautious.
     bool untrusted = 4;
 
-    // non_relocatable, if true, indicate the package can't be reused if
-    // storage path moved.
-    bool non_relocatable = 5;
+    // cache_id is the unique id for caching.
+    string cache_id = 5;
 
     // context_info can be used to indicate what this action related to - this
     // can help e.g. differentiate action with same content but comes from
