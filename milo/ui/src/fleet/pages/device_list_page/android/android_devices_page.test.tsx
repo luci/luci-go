@@ -192,6 +192,11 @@ describe('<AndroidDevicesPage /> Integration', () => {
   });
 
   it('renders legacy summary header when android-health-metrics flag is disabled', async () => {
+    localStorage.setItem(
+      'featureFlag:fleet-console:android-health-metrics',
+      'off',
+    );
+
     render(
       <FakeContextProvider
         mountedPath="/p/:platform/devices"

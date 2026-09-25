@@ -211,7 +211,7 @@ describe('<HomePage />', () => {
         '/ui/fleet/p/android/repairs',
       );
       expect(
-        within(androidCard).getByText('Devices offline').closest('a'),
+        within(androidCard).getByText('Need manual repair').closest('a'),
       ).toHaveAttribute('href', '/ui/fleet/p/android/repairs');
 
       const pixelCard = screen

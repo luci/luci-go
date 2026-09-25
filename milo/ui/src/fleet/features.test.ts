@@ -17,6 +17,7 @@ import {
   isFlagAvailableInEnvironment,
 } from '@/common/feature_flags';
 import {
+  enableAndroidHealthMetrics,
   enableAndroidUtilizationMetrics,
   enableChromeOsHealthDashboard,
   enableChromeOsRepairsDashboard,
@@ -91,6 +92,15 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
           env,
         ),
       ).toBe(false);
+    });
+
+    it('enables android-health-metrics by default in dev', () => {
+      expect(
+        isFlagAvailableInEnvironment(enableAndroidHealthMetrics, env),
+      ).toBe(true);
+      expect(
+        getFeatureFlagValue(enableAndroidHealthMetrics, 'user@google.com', env),
+      ).toBe(true);
     });
 
     it('enables android-utilization-metrics by default in dev', () => {
@@ -178,6 +188,15 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
           env,
         ),
       ).toBe(false);
+    });
+
+    it('enables android-health-metrics by default in prod', () => {
+      expect(
+        isFlagAvailableInEnvironment(enableAndroidHealthMetrics, env),
+      ).toBe(true);
+      expect(
+        getFeatureFlagValue(enableAndroidHealthMetrics, 'user@google.com', env),
+      ).toBe(true);
     });
 
     it('disables android-utilization-metrics by default in prod', () => {

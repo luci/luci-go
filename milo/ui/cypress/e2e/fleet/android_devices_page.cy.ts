@@ -46,22 +46,17 @@ describe('Android Devices Page', () => {
     );
 
     mockPrpcEndpoint(
-      'CountDevices',
+      'CountAndroidDevices',
       {
-        androidCount: {
-          totalDevices: 1,
-          totalHosts: 1,
-          idleDevices: 0,
-          busyDevices: 0,
-          missingDevices: 0,
-          failedDevices: 0,
-          dirtyDevices: 0,
-          preppingDevices: 0,
-          dyingDevices: 0,
-          initDevices: 0,
-          lameduckDevices: 1,
-          labRunningHosts: 1,
-          labMissingHosts: 0,
+        totalDevices: 1,
+        totalHosts: 1,
+        labRunningHosts: 1,
+        labMissingHosts: 0,
+        healthCategoryInAutoRecovery: {
+          total: 1,
+          statusCounts: {
+            LAMEDUCK: 1,
+          },
         },
       },
       'countDevices',

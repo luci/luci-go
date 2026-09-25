@@ -53,7 +53,7 @@ export const enableAndroidHealthMetrics = createFeatureFlag({
     'Displays unified Android device health metrics based on health categories.',
   namespace: 'fleet-console',
   name: 'android-health-metrics',
-  percentage: 0,
+  percentage: 100,
   trackingBug: '537412303',
   allowedEnvironments: ['dev', 'prod'],
 });

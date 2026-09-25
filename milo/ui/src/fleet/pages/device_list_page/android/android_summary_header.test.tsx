@@ -31,6 +31,11 @@ describe('AndroidSummaryHeader (Switcher)', () => {
   });
 
   it('renders AndroidLegacySummaryHeader when feature flag is disabled', async () => {
+    localStorage.setItem(
+      'featureFlag:fleet-console:android-health-metrics',
+      'off',
+    );
+
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
     mockUseFleetConsoleClient.mockReturnValue({
       CountDevices: {
