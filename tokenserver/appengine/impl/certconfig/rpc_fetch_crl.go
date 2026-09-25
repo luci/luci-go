@@ -17,6 +17,7 @@ package certconfig
 import (
 	"context"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
 	"io"
@@ -204,6 +205,15 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 
 // validateAndStoreCRL handles incoming CRL blob fetched by 'fetchCRL'.
 func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *CA, prev *CRL) (*CRL, error) {
+	parsedCRL, err := parseAndVerifyCRL(c, crlDer, ca, prev)
+	if err != nil {
+		return nil, err
+	}
+	return storeCRL(c, parsedCRL, etag, ca, prev)
+}
+
+// parseAndVerifyCRL parses CRL DER blob and verifies its signature, rollback, and expiration.
+func parseAndVerifyCRL(c context.Context, crlDer []byte, ca *CA, prev *CRL) (*pkix.CertificateList, error) {
 	// Make sure it is signed by the CA.
 	caCert, err := x509.ParseCertificate(ca.Cert)
 	if err != nil {
@@ -227,10 +237,15 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *CA, 
 		return nil, fmt.Errorf("CRL is expired: NextUpdate %s is in the past", crl.TBSCertList.NextUpdate)
 	}
 
+	return crl, nil
+}
+
+// storeCRL stores verified CRL into datastore shards and updates the CRL entity.
+func storeCRL(c context.Context, crl *pkix.CertificateList, etag string, ca *CA, prev *CRL) (*CRL, error) {
 	// The CRL is peachy. Update a sharded set of all revoked certs.
 	logging.Infof(c, "CRL last updated %s", crl.TBSCertList.ThisUpdate)
 	logging.Infof(c, "Found %d entries in the CRL", len(crl.TBSCertList.RevokedCertificates))
-	if err = UpdateCRLSet(c, ca.CN, CRLShardCount, crl); err != nil {
+	if err := UpdateCRLSet(c, ca.CN, CRLShardCount, crl); err != nil {
 		return nil, err
 	}
 	logging.Infof(c, "All CRL entries stored")
@@ -238,7 +253,7 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *CA, 
 	// Update the CRL entity. Use EntityVersion to make sure we are not
 	// overwriting someone else's changes.
 	var updated *CRL
-	err = ds.RunInTransaction(c, func(c context.Context) error {
+	err := ds.RunInTransaction(c, func(c context.Context) error {
 		entity := *prev
 		if err := ds.Get(c, &entity); err != nil && err != ds.ErrNoSuchEntity {
 			return err
