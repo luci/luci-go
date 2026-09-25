@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -77,6 +78,10 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *emptypb.Empty
 			return nil, status.Errorf(codes.Internal, "duplicate entries in the config")
 		}
 		seenCAs.Add(ca.Cn)
+		// Check CRL URL if provided.
+		if err := validateCRLURL(ca.CrlUrl); err != nil {
+			return nil, status.Errorf(codes.Internal, "%s", err)
+		}
 		// Check unique ID is not being reused.
 		if existing, seen := seenIDs[ca.UniqueId]; seen {
 			if existing != ca.Cn {
@@ -245,8 +250,29 @@ func validateCAConfigs(ctx *validation.Context, cfg *admin.TokenServerConfig, id
 		} else {
 			seenIDs[ca.UniqueId] = ca.Cn
 		}
+		if err := validateCRLURL(ca.CrlUrl); err != nil {
+			ctx.Errorf("%s", err)
+		}
 		ctx.Exit()
 	}
+}
+
+// validateCRLURL checks that crlURL (if non-empty) is a valid https URL with a host.
+func validateCRLURL(crlURL string) error {
+	if crlURL == "" {
+		return nil
+	}
+	u, err := url.Parse(crlURL)
+	if err != nil {
+		return fmt.Errorf("crl_url %q is not a valid URL - %s", crlURL, err)
+	}
+	if u.Scheme != "https" {
+		return fmt.Errorf("crl_url must have 'https' scheme, got %q", crlURL)
+	}
+	if u.Host == "" {
+		return fmt.Errorf("crl_url must have a host, got %q", crlURL)
+	}
+	return nil
 }
 
 // importCA imports CA definition from the config (or updates an existing one).

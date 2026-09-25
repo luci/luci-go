@@ -174,10 +174,21 @@ func TestImportCAConfigsRPC(t *testing.T) {
 				certificate_authority {
 					cn: "Puppet CA: fake.ca"
 					cert_path: "certs/fake.ca.crt"
-					crl_url: "http://blah"
+					crl_url: "https://blah"
 				}
 			`)
 			assert.Loosely(t, err, should.ErrLike("duplicate entries in the config"))
+		})
+
+		t.Run("rejects insecure crl_url", func(t *ftt.Test) {
+			_, err := callImport(`
+				certificate_authority {
+					cn: "Puppet CA: fake.ca"
+					cert_path: "certs/fake.ca.crt"
+					crl_url: "http://insecure.example.com/crl.der"
+				}
+			`)
+			assert.Loosely(t, err, should.ErrLike("crl_url must have 'https' scheme"))
 		})
 
 		t.Run("rejects wrong CN", func(t *ftt.Test) {
@@ -237,6 +248,42 @@ func TestImportCAConfigsRPC(t *testing.T) {
 				`)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, vctx.Finalize(), should.ErrLike("unique_id 10 has already been used"))
+			})
+
+			t.Run("bad config (http CRL URL)", func(t *ftt.Test) {
+				err := validateCfg(`
+					certificate_authority {
+						unique_id: 20
+						cn: "Some CA: http.example.com"
+						crl_url: "http://example.com/crl.der"
+					}
+				`)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.ErrLike("crl_url must have 'https' scheme"))
+			})
+
+			t.Run("bad config (no host CRL URL)", func(t *ftt.Test) {
+				err := validateCfg(`
+					certificate_authority {
+						unique_id: 21
+						cn: "Some CA: nohost.example.com"
+						crl_url: "https://"
+					}
+				`)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.ErrLike("crl_url must have a host"))
+			})
+
+			t.Run("good config with https CRL URL", func(t *ftt.Test) {
+				err := validateCfg(`
+					certificate_authority {
+						unique_id: 22
+						cn: "Some CA: https.example.com"
+						crl_url: "https://example.com/crl.der"
+					}
+				`)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 
 			t.Run("good cert", func(t *ftt.Test) {

@@ -19,6 +19,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
@@ -47,7 +48,9 @@ func TestFetchCRLRPC(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, time.Date(2016, 3, 16, 0, 0, 0, 0, time.UTC))
 		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
-				return http.DefaultTransport // mock URLFetch service
+				return &http.Transport{
+					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				}
 			}
 			return cfg
 		})
@@ -220,7 +223,7 @@ type crlServer struct {
 // serveCRL starts a test server that serves CRL file.
 func serveCRL() *crlServer {
 	s := &crlServer{}
-	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.Server = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Lock.Lock()
 		defer s.Lock.Unlock()
 
