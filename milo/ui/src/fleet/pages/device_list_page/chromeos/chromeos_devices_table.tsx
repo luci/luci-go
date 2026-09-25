@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Alert, AlertTitle } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import {
   MaterialReactTable,
   MRT_RowSelectionState,
@@ -51,10 +50,9 @@ import {
 } from '@/fleet/utils/invalid-page-token-alert';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
-  CountDevicesRequest,
+  ExportDevicesToCSVRequest,
   ListDevicesRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
-import { ExportDevicesToCSVRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
 import { getLabelValue, getLabelValues } from './chromeos_fields_config';
@@ -136,20 +134,10 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
     pagerCtx,
   );
 
-  const client = useFleetConsoleClient();
   const [_, setSearchParams] = useSyncedSearchParams();
   const filterCategoryDatas = useChromeOSFilters((searchParams) =>
     emptyPageTokenUpdater(pagerCtx)(searchParams),
   );
-
-  const countQuery = useQuery({
-    ...client.CountDevices.query(
-      CountDevicesRequest.fromPartial({
-        filter: filterCategoryDatas.aip160(),
-        platform: Platform.CHROMEOS,
-      }),
-    ),
-  });
 
   const aip160Filter = filterCategoryDatas.aip160();
 
@@ -236,7 +224,7 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
       renderBottomToolbarCustomActions: ({ table }) => (
         <FleetBottomToolbar
           table={table}
-          totalSize={countQuery?.data?.total}
+          totalSize={devicesQuery.data?.totalSize}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
         />
@@ -275,7 +263,7 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
       devicesQuery.isPending,
       devicesQuery.isPlaceholderData,
       devicesQuery.isFetching,
-      countQuery?.data?.total,
+      devicesQuery.data?.totalSize,
       nextPageToken,
       pagerCtx,
       columnSizing,
@@ -287,13 +275,9 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
 
   const table = useFCDataTable({
     ...tableOptions,
-    error:
-      devicesQuery.error || countQuery.error
-        ? getErrorMessage(
-            devicesQuery.error || countQuery.error,
-            'fetch devices',
-          )
-        : undefined,
+    error: devicesQuery.error
+      ? getErrorMessage(devicesQuery.error, 'fetch devices')
+      : undefined,
   });
 
   if (devicesQuery.isError) {
