@@ -37,7 +37,7 @@
   'WATCHLISTS': {
     'analysis': ['android-build-dx-changes@google.com'],
     'bisection': ['android-build-dx-changes@google.com' ],
-    'fleet_console_client': ['fleet-console-reviews+client@google.com'],
+    'fleet_console_client': ['fcon-firehose+client@google.com'],
     'logdog': ['android-build-dx-changes@google.com'],
     'luci_notify': ['android-build-dx-changes@google.com'],
     'milo': ['android-build-dx-changes@google.com'],
