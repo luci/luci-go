@@ -36,8 +36,6 @@ jest.mock('../common/admin_tasks_alert', () => ({
 }));
 
 describe('<BrowserDevicesPage />', () => {
-  jest.setTimeout(30000);
-
   let originalCreateObjectURL: typeof window.URL.createObjectURL;
   let originalRevokeObjectURL: typeof window.URL.revokeObjectURL;
 
@@ -183,6 +181,9 @@ describe('<BrowserDevicesPage />', () => {
         </SettingsProvider>
       </FakeContextProvider>,
     );
+
+    // Wait for dimensions and URL filters to initialize before clicking Export
+    await screen.findByTestId('filter-chip');
 
     // Wait for the Export button to appear
     const exportButton = await screen.findByText('Export');

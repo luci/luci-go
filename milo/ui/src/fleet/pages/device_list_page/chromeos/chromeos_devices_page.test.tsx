@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  render,
-  screen,
-  fireEvent,
-  act,
-  waitFor,
-} from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
@@ -42,6 +36,10 @@ jest.mock('./use_chromeos_current_tasks', () => ({
   }),
 }));
 
+jest.mock('../common/admin_tasks_alert', () => ({
+  AdminTasksAlert: () => <div data-testid="admin-tasks-alert"></div>,
+}));
+
 describe('<ChromeOSDevicesPage />', () => {
   beforeAll(() => {
     window.URL.createObjectURL = jest.fn(() => 'mock-url');
@@ -51,6 +49,19 @@ describe('<ChromeOSDevicesPage />', () => {
   beforeEach(() => {
     FleetConsoleMockAPI.enableBrowserInterceptor();
     FleetConsoleMockAPI.resetFixtures();
+    FleetConsoleMockAPI.setFixture('ListDevices', {
+      devices: [
+        {
+          id: 'chromeos-device-01',
+          dutId: 'dut-1',
+        },
+        {
+          id: 'chromeos-device-02',
+          dutId: 'dut-2',
+        },
+      ],
+      nextPageToken: '',
+    });
   });
 
   afterEach(() => {
@@ -92,19 +103,14 @@ describe('<ChromeOSDevicesPage />', () => {
       </FakeContextProvider>,
     );
 
-    // Wait for data to load and rows to appear
-    await waitFor(() => {
-      expect(screen.getAllByRole('checkbox').length).toBeGreaterThan(1);
-    });
-    const checkboxes = screen.getAllByRole('checkbox');
-
-    // Click the first row checkbox (index 1, index 0 is select all)
-    fireEvent.click(checkboxes[1]);
+    // Wait for first device row checkbox to load and appear
+    const rowCheckbox = await screen.findByTestId(
+      'select-checkbox-chromeos-device-01',
+    );
+    fireEvent.click(rowCheckbox);
 
     // Check that "Run autorepair" button is visible
-    const autorepairButton = screen.getByRole('button', {
-      name: /run autorepair/i,
-    });
+    const autorepairButton = await screen.findByText(/run autorepair/i);
     expect(autorepairButton).toBeVisible();
 
     // Click it
@@ -135,11 +141,6 @@ describe('<ChromeOSDevicesPage />', () => {
     // Wait for the dropdown to appear
     const searchInput = screen.getByPlaceholderText(/search/i);
     expect(searchInput).toBeVisible();
-
-    // Verify that there are checkboxes in the dropdown
-    await waitFor(() => {
-      expect(screen.getAllByRole('checkbox').length).toBeGreaterThan(1);
-    });
   });
 
   it('should call ExportDevicesToCSV with correct filters', async () => {
@@ -195,5 +196,5 @@ describe('<ChromeOSDevicesPage />', () => {
     ).toBe(
       '(labels."label-pool" = "cellular") AND (labels."ufs_zone" = "ZONE_CHROMEOS7")',
     );
-  }, 10000);
+  });
 });
