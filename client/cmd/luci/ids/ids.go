@@ -594,6 +594,9 @@ func extractArtifactSuffix(clean string, extracted *ExtractedIDs) string {
 		if idx := strings.IndexAny(artID, "/?#"); idx != -1 {
 			artID = artID[:idx]
 		}
+		if unescaped, err := url.PathUnescape(artID); err == nil {
+			artID = unescaped
+		}
 		if artID != "" && extracted.ArtifactID == "" {
 			extracted.ArtifactID = artID
 		}

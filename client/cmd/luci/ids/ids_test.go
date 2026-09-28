@@ -760,5 +760,20 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, out, should.NotContainSubstring(`"builder"`))
 			assert.Loosely(t, out, should.NotContainSubstring(`"build_number"`))
 		})
+
+		t.Run(`ExtractIDs unescapes '#' and '/' in canonical artifact resource names and URLs`, func(t *ftt.Test) {
+			ctx := context.Background()
+			escapedURL := "https://results.usercontent.cr.dev/invocations/build-8674628400464446193/artifacts/tradefed%2Fpkg.Class%23Method-screenshot.png?token=abc"
+			ids, err := ExtractIDs(ctx, nil, nil, escapedURL, true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids.InvocationID, should.Equal("build-8674628400464446193"))
+			assert.Loosely(t, ids.ArtifactID, should.Equal("tradefed/pkg.Class#Method-screenshot.png"))
+
+			escapedResourceName := "invocations/build-8674628400464446193/artifacts/tradefed%2Fpkg.Class%23Method-screenshot.png"
+			ids2, err := ExtractIDs(ctx, nil, nil, escapedResourceName, true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids2.InvocationID, should.Equal("build-8674628400464446193"))
+			assert.Loosely(t, ids2.ArtifactID, should.Equal("tradefed/pkg.Class#Method-screenshot.png"))
+		})
 	})
 }

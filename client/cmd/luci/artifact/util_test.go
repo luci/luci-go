@@ -53,6 +53,9 @@ func TestFormatArtifactNames(t *testing.T) {
 
 		nameRoot := FormatInvocationArtifactName("build-123", "minidump", false)
 		assert.Loosely(t, nameRoot, should.Equal("rootInvocations/build-123/artifacts/minidump"))
+
+		nameSpecial := FormatInvocationArtifactName("build-123", "tradefed/pkg.Class#Method [0]?foo=bar.png", true)
+		assert.Loosely(t, nameSpecial, should.Equal("invocations/build-123/artifacts/tradefed%2Fpkg.Class%23Method%20%5B0%5D%3Ffoo=bar.png"))
 	})
 }
 

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -133,7 +134,7 @@ func ResolveArtifactResourceName(ctx context.Context, client pb.ResultDBClient, 
 	if err != nil {
 		return "", err
 	}
-	return targetName + "/artifacts/" + artID, nil
+	return targetName + "/artifacts/" + url.PathEscape(artID), nil
 }
 
 func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile string, parentType ParentType, invID, wuID, testID, resultID, artID string, legacy bool, fetcher artifactFetcher) int {
@@ -185,17 +186,17 @@ func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputF
 
 // FormatTestResultArtifactName formats canonical test result artifact resource name.
 func FormatTestResultArtifactName(inv, testID, resultID, artID string) string {
-	return base.FormatTestResultResourceName(inv, testID, resultID) + "/artifacts/" + artID
+	return base.FormatTestResultResourceName(inv, testID, resultID) + "/artifacts/" + url.PathEscape(artID)
 }
 
 // FormatTestResultWorkUnitArtifactName formats canonical test result artifact resource name under a work unit.
 func FormatTestResultWorkUnitArtifactName(inv, wuID, testID, resultID, artID string) string {
-	return base.FormatTestResultWorkUnitResourceName(inv, wuID, testID, resultID) + "/artifacts/" + artID
+	return base.FormatTestResultWorkUnitResourceName(inv, wuID, testID, resultID) + "/artifacts/" + url.PathEscape(artID)
 }
 
 // FormatWorkUnitArtifactName formats canonical work unit artifact resource name.
 func FormatWorkUnitArtifactName(inv, wuID, artID string) string {
-	return base.FormatWorkUnitResourceName(inv, wuID) + "/artifacts/" + artID
+	return base.FormatWorkUnitResourceName(inv, wuID) + "/artifacts/" + url.PathEscape(artID)
 }
 
 // FetchHTTPByteRange downloads a byte range (or full content if byteRange is nil) from fetchURL directly into out.
@@ -262,9 +263,9 @@ func FetchHTTPByteRange(ctx context.Context, httpClient *http.Client, fetchURL s
 // FormatInvocationArtifactName formats canonical invocation artifact resource name.
 func FormatInvocationArtifactName(inv, artID string, legacy bool) string {
 	if legacy {
-		return "invocations/" + base.NormalizeInvocation(inv) + "/artifacts/" + artID
+		return "invocations/" + base.NormalizeInvocation(inv) + "/artifacts/" + url.PathEscape(artID)
 	}
-	return "rootInvocations/" + base.NormalizeInvocation(inv) + "/artifacts/" + artID
+	return "rootInvocations/" + base.NormalizeInvocation(inv) + "/artifacts/" + url.PathEscape(artID)
 }
 
 // ParentType indicates whether an artifact operation is scoped to a Test Result, Work Unit, or Invocation.

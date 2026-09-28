@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -133,16 +134,17 @@ func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpCli
 			return fmt.Sprintf("[Embedded Artifact: %s (pass --show-artifacts to view)]", artID)
 		}
 		isInvLevel := strings.Contains(attrs, "inv-level")
+		encodedArtID := url.PathEscape(artID)
 		var artName string
 		if isInvLevel {
 			idx := strings.Index(resName, "/tests/")
 			if idx != -1 {
-				artName = resName[:idx] + "/artifacts/" + artID
+				artName = resName[:idx] + "/artifacts/" + encodedArtID
 			} else {
-				artName = resName + "/artifacts/" + artID
+				artName = resName + "/artifacts/" + encodedArtID
 			}
 		} else {
-			artName = resName + "/artifacts/" + artID
+			artName = resName + "/artifacts/" + encodedArtID
 		}
 		body, err := FetchArtifact(ctx, rdbClient, httpClient, artName)
 		if err != nil {
