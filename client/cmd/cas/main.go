@@ -79,6 +79,7 @@ func getApplication() *cli.Application {
 
 			casimpl.CmdArchive(af),
 			casimpl.CmdDownload(af),
+			casimpl.CmdTree(af),
 
 			authcli.SubcommandInfo(authOpts, "whoami", false),
 			authcli.SubcommandLogin(authOpts, "login", false),
