@@ -37,6 +37,21 @@ var ClosedStatuses = map[issuetracker.Issue_Status]struct{}{
 	issuetracker.Issue_NOT_REPRODUCIBLE:  {},
 	issuetracker.Issue_INFEASIBLE:        {},
 	issuetracker.Issue_INTENDED_BEHAVIOR: {},
+	issuetracker.Issue_OBSOLETE:          {},
+}
+
+func toBugStatus(status issuetracker.Issue_Status) bugs.BugStatus {
+	switch status {
+	case issuetracker.Issue_NEW, issuetracker.Issue_ASSIGNED, issuetracker.Issue_ACCEPTED:
+		return bugs.BugStatusOpen
+	case issuetracker.Issue_FIXED:
+		return bugs.BugStatusFixed
+	case issuetracker.Issue_VERIFIED:
+		return bugs.BugStatusVerified
+	default:
+		// Includes NOT_REPRODUCIBLE, INTENDED_BEHAVIOR, OBSOLETE, INFEASIBLE, DUPLICATE, INACTIVE.
+		return bugs.BugStatusClosedOther
+	}
 }
 
 // This maps the configpb priorities to issuetracker package priorities.
@@ -273,7 +288,7 @@ func (rg *RequestGenerator) NeedsPriorityOrVerifiedUpdate(bms *bugspb.BugManagem
 		State:              bms,
 		IsManagingPriority: isManagingBugPriority,
 		ExistingPriority:   fromBuganizerPriority(issue.IssueState.Priority),
-		ExistingVerified:   issue.IssueState.Status == issuetracker.Issue_VERIFIED,
+		Status:             toBugStatus(issue.IssueState.Status),
 	}
 	return rg.policyApplyer.NeedsPriorityOrVerifiedUpdate(opts)
 }
@@ -324,7 +339,7 @@ func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(options MakeUpdateOptio
 		State:              options.BugManagementState,
 		IsManagingPriority: options.IsManagingBugPriority && !options.HasManuallySetPriority,
 		ExistingPriority:   fromBuganizerPriority(options.Issue.IssueState.Priority),
-		ExistingVerified:   options.Issue.IssueState.Status == issuetracker.Issue_VERIFIED,
+		Status:             toBugStatus(options.Issue.IssueState.Status),
 	}
 
 	change, err := rg.policyApplyer.PreparePriorityAndVerifiedChange(opts, rg.uiBaseURL)

@@ -307,8 +307,6 @@ func TestBugStateMachine(t *testing.T) {
 			})
 
 			t.Run("Policies remain active (>= 1 day since resolved, using testclock) -> invalidates bug closure", func(t *ftt.Test) {
-				t.Skip("TODO(b/564445116): Enable once manager.go uses clock.Now(ctx) instead of time.Since")
-
 				tc.Add(25 * time.Hour)
 				bugsToUpdate[0].InvalidationStatus = bugs.BugClosureInvalidationStatus{
 					OneDay: bugs.BugClosureInvalidationResult{
@@ -337,8 +335,6 @@ func TestBugStateMachine(t *testing.T) {
 			})
 
 			t.Run("All policies deactivate (single step) -> transitions FIXED to VERIFIED with delta explanation", func(t *ftt.Test) {
-				t.Skip("TODO(b/564445116): Enable once FIXED -> VERIFIED transition is restored")
-
 				state.PolicyState["policy-a"].IsActive = false
 				state.PolicyState["policy-a"].LastDeactivationTime = timestamppb.New(activationTime.Add(time.Hour))
 				state.PolicyState["policy-c"].IsActive = false
@@ -359,8 +355,6 @@ func TestBugStateMachine(t *testing.T) {
 			})
 
 			t.Run("All policies deactivate across multiple steps while FIXED (P1 stops day 1, P4 stops day 3) -> transitions FIXED to VERIFIED with 'all problems have stopped' explanation", func(t *ftt.Test) {
-				t.Skip("TODO(b/564445116): Enable once FIXED -> VERIFIED transition is restored")
-
 				// Day 1: policy-c (P1) deactivated while the bug was FIXED (so bug priority stayed P1).
 				state.PolicyState["policy-c"].IsActive = false
 				state.PolicyState["policy-c"].LastDeactivationTime = timestamppb.New(activationTime.Add(24 * time.Hour))
@@ -383,8 +377,6 @@ func TestBugStateMachine(t *testing.T) {
 			})
 
 			t.Run("User manually changed priority and marked FIXED, then all policies deactivate -> transitions FIXED to VERIFIED without manual-priority warning", func(t *ftt.Test) {
-				t.Skip("TODO(b/564445116): Enable once FIXED -> VERIFIED transition ignores manual priority updates")
-
 				fakeStore.Issues[1].Issue.IssueState.Priority = issuetracker.Issue_P2
 				fakeStore.Issues[1].IssueUpdates = append(fakeStore.Issues[1].IssueUpdates, &issuetracker.IssueUpdate{
 					Author:    &issuetracker.User{EmailAddress: "owner@google.com"},
@@ -410,8 +402,6 @@ func TestBugStateMachine(t *testing.T) {
 			})
 
 			t.Run("Resolved >= 30 days ago with all policies already inactive (backlog cleanup) -> silently archives rule without commenting on bug", func(t *ftt.Test) {
-				t.Skip("TODO(b/564445116): Enable once shouldArchiveRule archives stale FIXED bugs with no active policies")
-
 				state.PolicyState["policy-a"].IsActive = false
 				state.PolicyState["policy-a"].LastDeactivationTime = timestamppb.New(activationTime.Add(time.Hour))
 				state.PolicyState["policy-c"].IsActive = false
@@ -450,8 +440,6 @@ func TestBugStateMachine(t *testing.T) {
 					fakeStore.Issues[1].Issue.ResolvedTime = timestamppb.New(tc.Now())
 
 					t.Run("Policies active and priority changes -> does not update priority or comment", func(t *ftt.Test) {
-						t.Skip("TODO(b/564445116): Enable once ClosedOther statuses are excluded from priority updates")
-
 						state.PolicyState["policy-b"].IsActive = true
 						state.PolicyState["policy-b"].LastActivationTime = timestamppb.New(activationTime.Add(time.Hour))
 						state.PolicyState["policy-b"].ActivationNotified = true
@@ -460,8 +448,6 @@ func TestBugStateMachine(t *testing.T) {
 					})
 
 					t.Run("All policies deactivate -> does not overwrite status with VERIFIED", func(t *ftt.Test) {
-						t.Skip("TODO(b/564445116): Enable once ClosedOther statuses are excluded from VERIFIED transition")
-
 						state.PolicyState["policy-a"].IsActive = false
 						state.PolicyState["policy-a"].LastDeactivationTime = timestamppb.New(activationTime.Add(time.Hour))
 						state.PolicyState["policy-c"].IsActive = false
@@ -472,8 +458,6 @@ func TestBugStateMachine(t *testing.T) {
 					})
 
 					t.Run("Resolved >= 30 days ago -> archives rule even when IsManagingBug is true", func(t *ftt.Test) {
-						t.Skip("TODO(b/564445116): Enable once shouldArchiveRule archives ClosedOther bugs after 30 days")
-
 						tc.Add(30 * 24 * time.Hour)
 
 						res, err := bm.Update(ctx, bugsToUpdate)

@@ -944,7 +944,7 @@ func TestUpdate(t *testing.T) {
 						t.Run("create new bug if bug closure is invalidated", func(t *ftt.Test) {
 							assert.Loosely(t, len(buganizerStore.Issues), should.Equal(4))
 							buganizerStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_FIXED
-							now := time.Now()
+							now := clock.Now(ctx)
 							twentyFiveHoursAgo := now.Add(-25 * time.Hour)
 							buganizerStore.Issues[1].Issue.ResolvedTime = timestamppb.New(twentyFiveHoursAgo)
 							expectedRules[0].IsActive = true

@@ -887,7 +887,7 @@ func TestBugManager(t *testing.T) {
 			t.Run("Falsify a bug closure after a user marks a bug as fixed", func(t *ftt.Test) {
 				assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_FIXED
-				now := time.Now()
+				now := clock.Now(ctx)
 				twentyFiveHoursAgo := now.Add(-25 * time.Hour)
 				fakeStore.Issues[1].Issue.ResolvedTime = timestamppb.New(twentyFiveHoursAgo)
 				bugsToUpdate := []bugs.BugUpdateRequest{

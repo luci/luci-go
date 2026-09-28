@@ -360,7 +360,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 		return response
 	}
 
-	response.ShouldArchive = shouldArchiveRule(ctx, issue, request.IsManagingBug)
+	response.ShouldArchive = shouldArchiveRule(ctx, issue, request.IsManagingBug, request.BugManagementState)
 	if issue.IssueState.Status == issuetracker.Issue_DUPLICATE {
 		response.IsDuplicate = true
 		response.IsDuplicateAndAssigned = issue.IssueState.Assignee != nil
@@ -395,41 +395,23 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 	}
 
 	if issue.GetIssueState().GetStatus() == issuetracker.Issue_FIXED {
-		// get largest time interval since bug closed
-		if resolvedTime := issue.GetResolvedTime(); resolvedTime != nil {
-			// Because the threshold is considered satisfied if any of the individual metric
-			// thresholds is met or exceeded, thresholds being met on shorter time intervals
-			// implies thresholds being met on longer time intervals for bug closure invalidation.
-			timeDiffInDays := time.Since(resolvedTime.AsTime()).Hours() / 24
-			if timeDiffInDays >= 1 && timeDiffInDays < 3 {
-				if request.InvalidationStatus.OneDay.IsInvalidated {
-					response.BugClosureValidationResult.IsInvalidated = true
-					response.BugClosureValidationResult.ActivePolicyIDs = request.InvalidationStatus.OneDay.ActivePolicyIDs
-				}
-			} else if timeDiffInDays >= 3 && timeDiffInDays < 7 {
-				if request.InvalidationStatus.ThreeDay.IsInvalidated {
-					response.BugClosureValidationResult.IsInvalidated = true
-					response.BugClosureValidationResult.ActivePolicyIDs = request.InvalidationStatus.ThreeDay.ActivePolicyIDs
-				}
-			} else if timeDiffInDays >= 7 {
-				if request.InvalidationStatus.SevenDay.IsInvalidated {
-					response.BugClosureValidationResult.IsInvalidated = true
-					response.BugClosureValidationResult.ActivePolicyIDs = request.InvalidationStatus.SevenDay.ActivePolicyIDs
-				}
+		response.BugClosureValidationResult = evaluateBugClosureInvalidation(ctx, issue, request.InvalidationStatus)
+	}
+	if request.IsManagingBug && bm.requestGenerator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority) {
+		var hasManuallySetPriority bool
+		if toBugStatus(issue.GetIssueState().GetStatus()) != bugs.BugStatusFixed {
+			// List issue updates.
+			listUpdatesRequest := &issuetracker.ListIssueUpdatesRequest{
+				IssueId: issue.IssueId,
 			}
-		}
-	} else if request.IsManagingBug && bm.requestGenerator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority) {
-		// List issue updates.
-		listUpdatesRequest := &issuetracker.ListIssueUpdatesRequest{
-			IssueId: issue.IssueId,
-		}
-		it := bm.client.ListIssueUpdates(ctx, listUpdatesRequest)
+			it := bm.client.ListIssueUpdates(ctx, listUpdatesRequest)
 
-		// Determine if bug priority manually set. This involves listing issue comments.
-		hasManuallySetPriority, err := bm.hasManuallySetPriority(it, bm.selfEmail, request.IsManagingBugPriorityLastUpdated)
-		if err != nil {
-			response.Error = errors.Fmt("determine if priority manually set: %w", err)
-			return response
+			// Determine if bug priority manually set. This involves listing issue comments.
+			hasManuallySetPriority, err = bm.hasManuallySetPriority(it, bm.selfEmail, request.IsManagingBugPriorityLastUpdated)
+			if err != nil {
+				response.Error = errors.Fmt("determine if priority manually set: %w", err)
+				return response
+			}
 		}
 		mur, err := bm.requestGenerator.MakePriorityOrVerifiedUpdate(MakeUpdateOptions{
 			RuleID:                 request.RuleID,
@@ -451,17 +433,19 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 	}
 
 	// Hotlists
-	// Find all hotlists specified on active policies.
-	hotlistsIDsToAdd := bm.requestGenerator.ExpectedHotlistIDs(bugs.ActivePolicies(request.BugManagementState))
+	if toBugStatus(issue.GetIssueState().GetStatus()) != bugs.BugStatusClosedOther {
+		// Find all hotlists specified on active policies.
+		hotlistsIDsToAdd := bm.requestGenerator.ExpectedHotlistIDs(bugs.ActivePolicies(request.BugManagementState))
 
-	// Subtract the hotlists already on the bug.
-	for _, hotlistID := range issue.IssueState.HotlistIds {
-		delete(hotlistsIDsToAdd, hotlistID)
-	}
+		// Subtract the hotlists already on the bug.
+		for _, hotlistID := range issue.IssueState.HotlistIds {
+			delete(hotlistsIDsToAdd, hotlistID)
+		}
 
-	if err := bm.insertIntoHotlists(ctx, hotlistsIDsToAdd, issue.IssueId); err != nil {
-		response.Error = errors.Fmt("insert issue into hotlists: %w", err)
-		return response
+		if err := bm.insertIntoHotlists(ctx, hotlistsIDsToAdd, issue.IssueId); err != nil {
+			response.Error = errors.Fmt("insert issue into hotlists: %w", err)
+			return response
+		}
 	}
 	return response
 }
@@ -515,7 +499,34 @@ func (bm *BugManager) hasManuallySetPriority(
 	return false, nil
 }
 
-func shouldArchiveRule(ctx context.Context, issue *issuetracker.Issue, isManaging bool) bool {
+func evaluateBugClosureInvalidation(ctx context.Context, issue *issuetracker.Issue, invalidationStatus bugs.BugClosureInvalidationStatus) bugs.BugClosureInvalidationResult {
+	var result bugs.BugClosureInvalidationResult
+	if resolvedTime := issue.GetResolvedTime(); resolvedTime != nil {
+		// Because the threshold is considered satisfied if any of the individual metric
+		// thresholds is met or exceeded, thresholds being met on shorter time intervals
+		// implies thresholds being met on longer time intervals for bug closure invalidation.
+		timeDiffInDays := clock.Now(ctx).Sub(resolvedTime.AsTime()).Hours() / 24
+		if timeDiffInDays >= 1 && timeDiffInDays < 3 {
+			if invalidationStatus.OneDay.IsInvalidated {
+				result.IsInvalidated = true
+				result.ActivePolicyIDs = invalidationStatus.OneDay.ActivePolicyIDs
+			}
+		} else if timeDiffInDays >= 3 && timeDiffInDays < 7 {
+			if invalidationStatus.ThreeDay.IsInvalidated {
+				result.IsInvalidated = true
+				result.ActivePolicyIDs = invalidationStatus.ThreeDay.ActivePolicyIDs
+			}
+		} else if timeDiffInDays >= 7 {
+			if invalidationStatus.SevenDay.IsInvalidated {
+				result.IsInvalidated = true
+				result.ActivePolicyIDs = invalidationStatus.SevenDay.ActivePolicyIDs
+			}
+		}
+	}
+	return result
+}
+
+func shouldArchiveRule(ctx context.Context, issue *issuetracker.Issue, isManaging bool, bms *bugspb.BugManagementState) bool {
 	// If the bug is set to a status like "Archived", immediately archive
 	// the rule as well. We should not re-open such a bug.
 	if issue.IsArchived {
@@ -523,11 +534,30 @@ func shouldArchiveRule(ctx context.Context, issue *issuetracker.Issue, isManagin
 	}
 	now := clock.Now(ctx)
 	if isManaging {
-		// If LUCI Analysis is managing the bug,
-		// more than 30 days since the issue was verified.
-		return issue.IssueState.Status == issuetracker.Issue_VERIFIED &&
-			issue.VerifiedTime.IsValid() &&
-			now.Sub(issue.VerifiedTime.AsTime()).Hours() >= 30*24
+		switch toBugStatus(issue.IssueState.Status) {
+		case bugs.BugStatusVerified:
+			// If LUCI Analysis is managing the bug,
+			// more than 30 days since the issue was verified.
+			return issue.VerifiedTime.IsValid() &&
+				now.Sub(issue.VerifiedTime.AsTime()).Hours() >= 30*24
+		case bugs.BugStatusClosedOther:
+			// If the user closed the bug in a terminal non-Fixed state
+			// (e.g. Intended Behavior, Not Reproducible, Infeasible, Obsolete),
+			// archive the rule 30 days after resolution.
+			return issue.ResolvedTime.IsValid() &&
+				now.Sub(issue.ResolvedTime.AsTime()).Hours() >= 30*24
+		case bugs.BugStatusFixed:
+			// Normally a FIXED bug transitions to VERIFIED once all policies
+			// deactivate. However, if a bug has already been FIXED for >= 30 days
+			// and all policies are already inactive (e.g. historical backlog),
+			// archive the rule directly rather than commenting on an old closed bug.
+			return len(bms.GetPolicyState()) > 0 &&
+				len(bugs.ActivePolicies(bms)) == 0 &&
+				issue.ResolvedTime.IsValid() &&
+				now.Sub(issue.ResolvedTime.AsTime()).Hours() >= 30*24
+		default:
+			return false
+		}
 	} else {
 		// If the user is managing the bug,
 		// more than 30 days since the issue was closed.

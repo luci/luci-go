@@ -130,6 +130,24 @@ func (p PolicyApplyer) RecommendedPriorityAndVerified(activePolicyIDs map[Policy
 	return result, isVerified
 }
 
+// BugStatus represents the lifecycle status category of a bug for bug management.
+type BugStatus int
+
+const (
+	// BugStatusOpen indicates the bug is open and active (e.g. NEW, ASSIGNED, ACCEPTED).
+	BugStatusOpen BugStatus = iota
+	// BugStatusFixed indicates the bug has been marked Fixed by a user and is awaiting
+	// verification once all active policies deactivate.
+	BugStatusFixed
+	// BugStatusVerified indicates the bug has been verified closed (VERIFIED).
+	// LUCI Analysis will re-open it if any policy activates.
+	BugStatusVerified
+	// BugStatusClosedOther indicates the bug was closed by a user in a terminal
+	// non-Fixed state (e.g. INTENDED_BEHAVIOR, NOT_REPRODUCIBLE, INFEASIBLE, OBSOLETE, DUPLICATE).
+	// LUCI Analysis should not modify priority or status on such bugs.
+	BugStatusClosedOther
+)
+
 type BugOptions struct {
 	// The current bug management state.
 	State *bugspb.BugManagementState
@@ -137,31 +155,62 @@ type BugOptions struct {
 	IsManagingPriority bool
 	// The current priority of the bug.
 	ExistingPriority configpb.BuganizerPriority
-	// Whether the bug is currently verified.
-	ExistingVerified bool
+	// The current lifecycle status of the bug.
+	Status BugStatus
 }
 
-// NeedsPriorityOrVerifiedUpdate returns whether a bug needs to have its
-// priority or verified status updated, based on the current active policies.
-func (p PolicyApplyer) NeedsPriorityOrVerifiedUpdate(opts BugOptions) bool {
+type bugTransition struct {
+	isChangingPriority  bool
+	recommendedPriority configpb.BuganizerPriority
+	isChangingVerified  bool
+	recommendedVerified bool
+}
+
+func (p PolicyApplyer) evaluateTransition(opts BugOptions) bugTransition {
 	// If policy state is completely empty, it means this rule has never
 	// been evaluated against cluster metrics (e.g. reclustering is still
 	// pending for a newly created or split rule, or the project has not
 	// defined any bug management policies). It is unsafe to make bug
 	// management decisions (like verifying the bug) in this state.
-	if len(opts.State.PolicyState) == 0 {
-		return false
+	if len(opts.State.GetPolicyState()) == 0 {
+		return bugTransition{}
+	}
+	// Terminal user-closed states (e.g. Won't Fix / Obsolete) are never modified.
+	if opts.Status == BugStatusClosedOther {
+		return bugTransition{}
 	}
 
 	recommendedPriority, recommendedVerified := p.RecommendedPriorityAndVerified(ActivePolicies(opts.State))
 
 	// Priority updates are only considered if:
 	// - We are managing the bug priority
-	// - The bug is not verified / transitioning to verified.
-	needsPriorityUpdate := opts.IsManagingPriority && !recommendedVerified && recommendedPriority != opts.ExistingPriority
+	// - At least one policy is active (!recommendedVerified)
+	// - The bug is currently Open, or is being re-opened from Verified
+	//   (we do not churn priority on bugs that a user has already marked Fixed).
+	isChangingPriority := opts.IsManagingPriority &&
+		!recommendedVerified &&
+		(opts.Status == BugStatusOpen || opts.Status == BugStatusVerified) &&
+		recommendedPriority != opts.ExistingPriority
 
-	needsVerifiedUpdate := recommendedVerified != opts.ExistingVerified
-	return needsPriorityUpdate || needsVerifiedUpdate
+	// Verified status updates occur when:
+	// - All policies are inactive (recommendedVerified) and the bug is Open or Fixed -> transition to Verified.
+	// - At least one policy is active (!recommendedVerified) and the bug is Verified -> re-open to Open.
+	isChangingVerified := (recommendedVerified && (opts.Status == BugStatusOpen || opts.Status == BugStatusFixed)) ||
+		(!recommendedVerified && opts.Status == BugStatusVerified)
+
+	return bugTransition{
+		isChangingPriority:  isChangingPriority,
+		recommendedPriority: recommendedPriority,
+		isChangingVerified:  isChangingVerified,
+		recommendedVerified: recommendedVerified,
+	}
+}
+
+// NeedsPriorityOrVerifiedUpdate returns whether a bug needs to have its
+// priority or verified status updated, based on the current active policies.
+func (p PolicyApplyer) NeedsPriorityOrVerifiedUpdate(opts BugOptions) bool {
+	t := p.evaluateTransition(opts)
+	return t.isChangingPriority || t.isChangingVerified
 }
 
 type BugChange struct {
@@ -191,11 +240,13 @@ func (p PolicyApplyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseU
 	changes := lastPolicyActivationChanges(opts.State)
 	previousActive := previouslyActivePolicies(opts.State)
 
-	recommendedPriority, recommendedVerified := p.RecommendedPriorityAndVerified(currentActive)
 	previousRecommendedPriority, previousRecommendedVerified := p.RecommendedPriorityAndVerified(previousActive)
 
-	isChangingPriority := opts.IsManagingPriority && !recommendedVerified && recommendedPriority != opts.ExistingPriority
-	isChangingVerified := recommendedVerified != opts.ExistingVerified
+	transition := p.evaluateTransition(opts)
+	isChangingPriority := transition.isChangingPriority
+	recommendedPriority := transition.recommendedPriority
+	isChangingVerified := transition.isChangingVerified
+	recommendedVerified := transition.recommendedVerified
 
 	if !isChangingPriority && !isChangingVerified {
 		// No change is required.
@@ -207,6 +258,8 @@ func (p PolicyApplyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseU
 			ShouldBeVerified: recommendedVerified,
 		}, nil
 	}
+
+	existingVerified := opts.Status == BugStatusVerified
 
 	// We generalise the notion of priority here to be over both bug
 	// priority and verified status.
@@ -220,8 +273,8 @@ func (p PolicyApplyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseU
 	// For example, going from (Verified, P1) to
 	// (Not verified, P2) is a priority increase, as is
 	// going from (Not verified, P2) to (Not verified, P1).
-	isPriorityIncreasing := (isChangingPriority && !opts.ExistingVerified && recommendedPriority < opts.ExistingPriority) || (isChangingVerified && !recommendedVerified)
-	isPriorityDecreasing := (isChangingPriority && !opts.ExistingVerified && recommendedPriority > opts.ExistingPriority) || (isChangingVerified && recommendedVerified)
+	isPriorityIncreasing := (isChangingPriority && !existingVerified && recommendedPriority < opts.ExistingPriority) || (isChangingVerified && !recommendedVerified)
+	isPriorityDecreasing := (isChangingPriority && !existingVerified && recommendedPriority > opts.ExistingPriority) || (isChangingVerified && recommendedVerified)
 
 	if isPriorityIncreasing == isPriorityDecreasing {
 		// This should never happen. Exactly one of
@@ -235,7 +288,7 @@ func (p PolicyApplyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseU
 
 	// If the previous recommendations match the current bug state, then the changes in policy activation explains updates to the bug.
 	if (!opts.IsManagingPriority || previousRecommendedVerified || !previousRecommendedVerified && previousRecommendedPriority == opts.ExistingPriority) &&
-		(previousRecommendedVerified == opts.ExistingVerified) {
+		(previousRecommendedVerified == existingVerified) {
 		// We want to show policy activations and deactivations that are:
 		// - Consistent with the direction of the policy change (e.g. if we are dropping the
 		//   policy priority, we only care about policies which deactivated).
