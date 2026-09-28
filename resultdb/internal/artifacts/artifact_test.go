@@ -184,5 +184,29 @@ func TestRead(t *testing.T) {
 				HasLines:    true,
 			}))
 		})
+
+		t.Run(`Canonicalizes unescaped special characters in Name`, func(t *ftt.Test) {
+			const artID = "tradefed/pkg.Class#Method [0].png"
+			testutil.MustApply(ctx, t,
+				insert.Artifact("inv", "", artID, map[string]any{
+					"ContentType": "image/png",
+					"Size":        "128",
+				}),
+				insert.Artifact(wuID.LegacyInvocationID(), "", artID, map[string]any{
+					"ContentType": "image/png",
+					"Size":        "128",
+				}),
+			)
+
+			aLegacy, err := Read(ctx, "invocations/inv/artifacts/"+artID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, aLegacy.Artifact.Name, should.Equal("invocations/inv/artifacts/tradefed%2Fpkg.Class%23Method%20%5B0%5D.png"))
+			assert.Loosely(t, aLegacy.Artifact.ArtifactId, should.Equal(artID))
+
+			aV2, err := Read(ctx, "rootInvocations/root-inv-id/workUnits/work-unit-id/artifacts/"+artID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, aV2.Artifact.Name, should.Equal("rootInvocations/root-inv-id/workUnits/work-unit-id/artifacts/tradefed%2Fpkg.Class%23Method%20%5B0%5D.png"))
+			assert.Loosely(t, aV2.Artifact.ArtifactId, should.Equal(artID))
+		})
 	})
 }

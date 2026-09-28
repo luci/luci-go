@@ -118,6 +118,24 @@ func TestGetArtifact(t *testing.T) {
 			assert.Loosely(t, strings.HasPrefix(art.FetchUrl, "https://signed-url.example.com/invocations/inv/artifacts/a"), should.BeTrue)
 		})
 
+		t.Run(`Exists with unescaped special characters in request name`, func(t *ftt.Test) {
+			const artID = "tradefed/pkg.Class#Method [0].png"
+			testutil.MustApply(ctx, t,
+				insert.Invocation("inv-special", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-special", "", artID, nil),
+			)
+			req := &pb.GetArtifactRequest{Name: "invocations/inv-special/artifacts/" + artID}
+			art, err := srv.GetArtifact(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, art.Name, should.Equal("invocations/inv-special/artifacts/tradefed%2Fpkg.Class%23Method%20%5B0%5D.png"))
+			assert.Loosely(t, art.ArtifactId, should.Equal(artID))
+
+			fetchURL, err := url.Parse(art.FetchUrl)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetchURL.Query().Get("token"), should.NotBeEmpty)
+			assert.Loosely(t, fetchURL.EscapedPath(), should.Equal("/"+art.Name))
+		})
+
 		t.Run(`Exists with gcsURI`, func(t *ftt.Test) {
 			const realm = "testrealm"
 			const project = "testproject"

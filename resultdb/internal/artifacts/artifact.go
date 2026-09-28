@@ -115,6 +115,7 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 func Read(ctx context.Context, name string) (*Artifact, error) {
 	var invID invocations.ID
 	var testID, resultID, artifactID string
+	var canonicalName string
 	var err error
 	if pbutil.IsLegacyArtifactName(name) {
 		var invIDStr string
@@ -123,6 +124,11 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 			return nil, err
 		}
 		invID = invocations.ID(invIDStr)
+		if testID == "" {
+			canonicalName = pbutil.LegacyInvocationArtifactName(invIDStr, artifactID)
+		} else {
+			canonicalName = pbutil.LegacyTestResultArtifactName(invIDStr, testID, resultID, artifactID)
+		}
 	} else {
 		var wuID workunits.ID
 		wuID, testID, resultID, artifactID, err = ParseName(name)
@@ -130,13 +136,18 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 			return nil, err
 		}
 		invID = wuID.LegacyInvocationID()
+		if testID == "" {
+			canonicalName = pbutil.WorkUnitArtifactName(string(wuID.RootInvocationID), wuID.WorkUnitID, artifactID)
+		} else {
+			canonicalName = pbutil.TestResultArtifactName(string(wuID.RootInvocationID), wuID.WorkUnitID, testID, resultID, artifactID)
+		}
 	}
 
 	parentID := ParentID(testID, resultID)
 
 	ret := &Artifact{
 		Artifact: &pb.Artifact{
-			Name:       name,
+			Name:       canonicalName,
 			ArtifactId: artifactID,
 		},
 	}
