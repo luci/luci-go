@@ -62,323 +62,213 @@ func TestDatastoreQueries(t *testing.T) {
 	})
 }
 
-func TestDatastoreQueriesLess(t *testing.T) {
-	ftt.Run("Datastore Query ordering", t, func(t *ftt.Test) {
-		t.Run("Compare kind", func(t *ftt.Test) {
-			q := NewQuery("Foo")
-			q1 := NewQuery("Foo1")
+func TestDatastoreQueriesCompare(t *testing.T) {
+	t.Parallel()
 
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
+	tests := []struct {
+		name       string
+		less, more *Query
+	}{
+		{
+			name: "kind",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo1"),
+		},
+		{
+			name: "firestore mode",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo").FirestoreMode(true),
+		},
+		{
+			name: "eventual consistency",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo").EventualConsistency(true),
+		},
+		{
+			name: "keys only",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo").KeysOnly(true),
+		},
+		{
+			name: "distinct",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo").Distinct(true),
+		},
+		{
+			name: "limit",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo").Limit(20),
+		},
+		{
+			name: "offset",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo").Offset(20),
+		},
+		{
+			name: "order [] vs [conrad]",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo").Order("conrad"),
+		},
+		{
+			name: "order [conrad] vs [turanga]",
+			less: NewQuery("Foo").Order("conrad"),
+			more: NewQuery("Foo").Order("turanga"),
+		},
+		{
+			name: "order [conrad] vs [conrad, turanga]",
+			less: NewQuery("Foo").Order("conrad"),
+			more: NewQuery("Foo").Order("conrad", "turanga"),
+		},
+		{
+			name: "projection [] vs [conrad]",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo").Project("conrad"),
+		},
+		{
+			name: "projection [conrad] vs [turanga]",
+			less: NewQuery("Foo").Project("conrad"),
+			more: NewQuery("Foo").Project("turanga"),
+		},
+		{
+			name: "projection [turanga] vs [conrad, turanga]",
+			less: NewQuery("Foo").Project("turanga"),
+			more: NewQuery("Foo").Project("conrad").Project("turanga"),
+		},
+		{
+			name: "projection [conrad, turanga] vs [turanga, zoidberg]",
+			less: NewQuery("Foo").Project("conrad").Project("turanga"),
+			more: NewQuery("Foo").Project("turanga").Project("zoidberg"),
+		},
+		{
+			name: "equality turanga == 10 vs turanga == 24",
+			less: NewQuery("Foo").Eq("turanga", "10"),
+			more: NewQuery("Foo").Eq("turanga", "24"),
+		},
+		{
+			name: "equality zoidberg == 10 vs turanga == 10",
+			less: NewQuery("Foo").Eq("zoidberg", "10"),
+			more: NewQuery("Foo").Eq("turanga", "10"),
+		},
+		{
+			name: "equality turanga == 10 vs turanga == 10 && turanga == 20",
+			less: NewQuery("Foo").Eq("turanga", "10"),
+			more: NewQuery("Foo").Eq("turanga", "10", "20"),
+		},
+		{
+			name: "equality none vs turanga == 10",
+			less: NewQuery("Foo"),
+			more: NewQuery("Foo").Eq("turanga", "10"),
+		},
+		{
+			name: "in filter value",
+			less: NewQuery("Foo").In("prop", "a"),
+			more: NewQuery("Foo").In("prop", "b"),
+		},
+		{
+			name: "in filter slice length",
+			less: NewQuery("Foo").In("prop", "a"),
+			more: NewQuery("Foo").In("prop", "a", "b"),
+		},
+		{
+			name: "in filter clauses length",
+			less: NewQuery("Foo").In("prop", "a"),
+			more: NewQuery("Foo").In("prop", "a").In("prop", "b"),
+		},
+		{
+			name: "in filter map length",
+			less: NewQuery("Foo").In("prop", "a"),
+			more: NewQuery("Foo").In("prop", "a").In("another", "a"),
+		},
+		{
+			name: "inequality turanga < 10 vs turanga < 24",
+			less: NewQuery("Foo").Lt("turanga", "10"),
+			more: NewQuery("Foo").Lt("turanga", "24"),
+		},
+		{
+			name: "inequality turanga < 10 vs zoidberg < 10",
+			less: NewQuery("Foo").Lt("turanga", "10"),
+			more: NewQuery("Foo").Lt("zoidberg", "10"),
+		},
+		{
+			name: "inequality turanga <= 10 vs turanga <= 24",
+			less: NewQuery("Foo").Lte("turanga", "10"),
+			more: NewQuery("Foo").Lte("turanga", "24"),
+		},
+		{
+			name: "inequality turanga <= 10 vs zoidberg <= 10",
+			less: NewQuery("Foo").Lte("turanga", "10"),
+			more: NewQuery("Foo").Lte("zoidberg", "10"),
+		},
+		{
+			name: "inequality turanga < 10 vs turanga <= 10",
+			less: NewQuery("Foo").Lt("turanga", "10"),
+			more: NewQuery("Foo").Lte("turanga", "10"),
+		},
+		{
+			name: "inequality turanga < 10 vs turanga > 10",
+			less: NewQuery("Foo").Lt("turanga", "10"),
+			more: NewQuery("Foo").Gt("turanga", "10"),
+		},
+		{
+			name: "inequality turanga <= 10 vs turanga >= 10",
+			less: NewQuery("Foo").Lte("turanga", "10"),
+			more: NewQuery("Foo").Gte("turanga", "10"),
+		},
+		{
+			name: "inequality turanga > 10 vs turanga > 24",
+			less: NewQuery("Foo").Gt("turanga", "10"),
+			more: NewQuery("Foo").Gt("turanga", "24"),
+		},
+		{
+			name: "inequality turanga > 10 vs zoidberg > 10",
+			less: NewQuery("Foo").Gt("turanga", "10"),
+			more: NewQuery("Foo").Gt("zoidberg", "10"),
+		},
+		{
+			name: "inequality turanga >= 10 vs turanga >= 24",
+			less: NewQuery("Foo").Gte("turanga", "10"),
+			more: NewQuery("Foo").Gte("turanga", "24"),
+		},
+		{
+			name: "inequality turanga >= 10 vs zoidberg >= 10",
+			less: NewQuery("Foo").Gte("turanga", "10"),
+			more: NewQuery("Foo").Gte("zoidberg", "10"),
+		},
+		{
+			name: "inequality turanga > 10 vs turanga >= 10",
+			less: NewQuery("Foo").Gt("turanga", "10"),
+			more: NewQuery("Foo").Gte("turanga", "10"),
+		},
+		{
+			name: "composite project and distinct",
+			less: NewQuery("Foo").Project("conrad").Distinct(false),
+			more: NewQuery("Foo").Project("conrad").Distinct(true),
+		},
+		{
+			name: "composite eq and offset",
+			less: NewQuery("Foo").Eq("Prop", "val").Offset(100),
+			more: NewQuery("Foo").Eq("Prop", "val").Offset(200),
+		},
+	}
 
-			q2 := NewQuery("Foo")
-
-			assert.Loosely(t, q.Less(q2), should.BeFalse)
-			assert.Loosely(t, q2.Less(q), should.BeFalse)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Run("less+more", func(t *testing.T) {
+				assert.That(t, tc.less.Compare(tc.more), should.BeLessThan(0))
+				assert.That(t, tc.more.Compare(tc.less), should.BeGreaterThan(0))
+			})
+			t.Run("equal", func(t *testing.T) {
+				assert.That(t, tc.less.Compare(tc.less), should.Equal(0))
+				assert.That(t, tc.more.Compare(tc.more), should.Equal(0))
+			})
 		})
-		t.Run("Compare firestore mode", func(t *ftt.Test) {
-			q := NewQuery("Foo")
-			q1 := NewQuery("Foo").FirestoreMode(true)
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			q = q.FirestoreMode(true)
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-		})
-		t.Run("Compare eventual consistency", func(t *ftt.Test) {
-			q := NewQuery("Foo")
-			q1 := NewQuery("Foo").EventualConsistency(true)
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			q = q.EventualConsistency(true)
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-		})
-		t.Run("Compare keys only", func(t *ftt.Test) {
-			q := NewQuery("Foo")
-			q1 := NewQuery("Foo").KeysOnly(true)
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			q = q.KeysOnly(true)
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-		})
-		t.Run("Compare distinct", func(t *ftt.Test) {
-			q := NewQuery("Foo")
-			q1 := NewQuery("Foo").Distinct(true)
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			q = q.Distinct(true)
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-		})
-		t.Run("Compare limit", func(t *ftt.Test) {
-			q := NewQuery("Foo")
-			q1 := NewQuery("Foo").Limit(20)
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			q = q.Limit(20)
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-		})
-		t.Run("Compare offset", func(t *ftt.Test) {
-			q := NewQuery("Foo")
-			q1 := NewQuery("Foo").Offset(20)
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			q = q.Offset(20)
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-		})
-		t.Run("Compare order", func(t *ftt.Test) {
-			q := NewQuery("Foo")
-			q1 := NewQuery("Foo").Order("conrad")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			q = q.Order("turanga")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeTrue)
-
-			q = q.ClearOrder().Order("conrad", "turanga")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeTrue)
-		})
-		t.Run("Compare projection", func(t *ftt.Test) {
-			q := NewQuery("Foo")
-			q1 := NewQuery("Foo").Project("conrad")
-
-			// [] vs ["conrad"]
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			q = q.Project("turanga")
-
-			// ["turanga"] vs ["conrad"]
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeTrue)
-
-			q1 = q1.Project("turanga")
-
-			// ["turanga"] vs ["conrad", "turanga"]
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			q = q.Project("zoidberg")
-
-			// ["turanga", "zoidberg"] vs ["conrad", "turanga"]
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeTrue)
-		})
-		t.Run("Compare equality", func(t *ftt.Test) {
-			// "... turanga == 10 ..." compare "... turanga == 24 ..."
-			q := NewQuery("Foo").Eq("turanga", "10")
-			q1 := NewQuery("Foo").Eq("turanga", "24")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga == 10 ..." compare "... turanga == 10 ..."
-			q = NewQuery("Foo").Eq("turanga", "10")
-			q1 = NewQuery("Foo").Eq("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga == 10 ..." compare "... zoidberg == 10 ..."
-			q = NewQuery("Foo").Eq("turanga", "10")
-			q1 = NewQuery("Foo").Eq("zoidberg", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeTrue)
-
-			// "... turanga == 10 && turanga == 20 ..." compare "... turanga == 10 ..."
-			q = NewQuery("Foo").Eq("turanga", "10", "20")
-			q1 = NewQuery("Foo").Eq("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeTrue)
-
-			// "... turanga == 10 ..." compare "..."
-			q = NewQuery("Foo").Eq("turanga", "10")
-			q1 = NewQuery("Foo")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeTrue)
-		})
-		t.Run("Compare In filter", func(t *ftt.Test) {
-			// Equal. Order of filter and values doesn't matter.
-			q1 := NewQuery("Foo").In("p2", "x", "y").In("p1", "a", "b")
-			q2 := NewQuery("Foo").In("p1", "a", "b").In("p2", "y", "x")
-			assert.Loosely(t, q1.Less(q2), should.BeFalse)
-			assert.Loosely(t, q2.Less(q1), should.BeFalse)
-
-			q1 = NewQuery("Foo").In("prop", "a")
-			q2 = NewQuery("Foo").In("prop", "b")
-			assert.Loosely(t, q1.Less(q2), should.BeTrue)
-			assert.Loosely(t, q2.Less(q1), should.BeFalse)
-
-			q1 = NewQuery("Foo").In("prop", "a")
-			q2 = NewQuery("Foo").In("prop", "a", "b")
-			assert.Loosely(t, q1.Less(q2), should.BeTrue)
-			assert.Loosely(t, q2.Less(q1), should.BeFalse)
-
-			q1 = NewQuery("Foo").In("prop", "a")
-			q2 = NewQuery("Foo").In("prop", "a").In("prop", "b")
-			assert.Loosely(t, q1.Less(q2), should.BeTrue)
-			assert.Loosely(t, q2.Less(q1), should.BeFalse)
-
-			q1 = NewQuery("Foo").In("prop", "a")
-			q2 = NewQuery("Foo").In("prop", "a").In("another", "a")
-			assert.Loosely(t, q1.Less(q2), should.BeTrue)
-			assert.Loosely(t, q2.Less(q1), should.BeFalse)
-		})
-		t.Run("Compare inequality", func(t *ftt.Test) {
-			// "... turanga < 10 ..." compare "... turanga < 24 ..."
-			q := NewQuery("Foo").Lt("turanga", "10")
-			q1 := NewQuery("Foo").Lt("turanga", "24")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga < 10 ..." compare "... turanga < 10 ..."
-			q = NewQuery("Foo").Lt("turanga", "10")
-			q1 = NewQuery("Foo").Lt("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga < 10 ..." compare "... zoidberg < 10 ..."
-			q = NewQuery("Foo").Lt("turanga", "10")
-			q1 = NewQuery("Foo").Lt("zoidberg", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga <= 10 ..." compare "... turanga <= 24 ..."
-			q = NewQuery("Foo").Lte("turanga", "10")
-			q1 = NewQuery("Foo").Lte("turanga", "24")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga <= 10 ..." compare "... turanga <= 10 ..."
-			q = NewQuery("Foo").Lte("turanga", "10")
-			q1 = NewQuery("Foo").Lte("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga <= 10 ..." compare "... zoidberg <= 10 ..."
-			q = NewQuery("Foo").Lte("turanga", "10")
-			q1 = NewQuery("Foo").Lte("zoidberg", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga < 10 ..." compare "... turanga <= 10 ..."
-			q = NewQuery("Foo").Lt("turanga", "10")
-			q1 = NewQuery("Foo").Lte("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga < 10 ..." compare "... turanga > 10 ..."
-			q = NewQuery("Foo").Lt("turanga", "10")
-			q1 = NewQuery("Foo").Gt("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga <= 10 ..." compare "... turanga >= 10 ..."
-			q = NewQuery("Foo").Lte("turanga", "10")
-			q1 = NewQuery("Foo").Gte("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga > 10 ..." compare "... turanga > 24 ..."
-			q = NewQuery("Foo").Gt("turanga", "10")
-			q1 = NewQuery("Foo").Gt("turanga", "24")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga > 10 ..." compare "... turanga > 10 ..."
-			q = NewQuery("Foo").Gt("turanga", "10")
-			q1 = NewQuery("Foo").Gt("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga > 10 ..." compare "... zoidberg > 10 ..."
-			q = NewQuery("Foo").Gt("turanga", "10")
-			q1 = NewQuery("Foo").Gt("zoidberg", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga >= 10 ..." compare "... zoidberg >= 24 ..."
-			q = NewQuery("Foo").Gte("turanga", "10")
-			q1 = NewQuery("Foo").Gte("turanga", "24")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga >= 10 ..." compare "... turanga >= 10 ..."
-			q = NewQuery("Foo").Gte("turanga", "10")
-			q1 = NewQuery("Foo").Gte("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeFalse)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga >= 10 ..." compare "... zoidberg >= 10 ..."
-			q = NewQuery("Foo").Gte("turanga", "10")
-			q1 = NewQuery("Foo").Gte("zoidberg", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-
-			// "... turanga > 10 ..." compare "... turanga >= 10 ..."
-			q = NewQuery("Foo").Gt("turanga", "10")
-			q1 = NewQuery("Foo").Gte("turanga", "10")
-
-			assert.Loosely(t, q.Less(q1), should.BeTrue)
-			assert.Loosely(t, q1.Less(q), should.BeFalse)
-		})
-
-		t.Run("Composite comparison", func(t *ftt.Test) {
-			a := NewQuery("Foo").Project("conrad").Distinct(false)
-			b := NewQuery("Foo").Project("conrad").Distinct(true)
-			assert.Loosely(t, a.Less(b), should.BeTrue)
-			assert.Loosely(t, b.Less(a), should.BeFalse)
-
-			a = NewQuery("Foo").Eq("Prop", "val").Offset(100)
-			b = NewQuery("Foo").Eq("Prop", "val").Offset(200)
-			assert.Loosely(t, a.Less(b), should.BeTrue)
-			assert.Loosely(t, b.Less(a), should.BeFalse)
-		})
+	}
+
+	t.Run("in filter equal regardless of order", func(t *testing.T) {
+		q1 := NewQuery("Foo").In("p2", "x", "y").In("p1", "a", "b")
+		q2 := NewQuery("Foo").In("p1", "a", "b").In("p2", "y", "x")
+		assert.That(t, q1.Compare(q2), should.Equal(0))
+		assert.That(t, q2.Compare(q1), should.Equal(0))
 	})
 }
 

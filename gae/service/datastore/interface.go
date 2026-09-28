@@ -642,7 +642,7 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 		sort.Slice(iters, func(i, j int) bool {
 			queryI := iters[i].Query()
 			queryJ := iters[j].Query()
-			return queryI.Less(queryJ)
+			return queryI.Compare(queryJ) < 0
 		})
 
 		// Create the cursor. It points to all items currently sitting in heap.

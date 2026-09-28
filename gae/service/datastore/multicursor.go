@@ -74,7 +74,7 @@ func ApplyCursors(ctx context.Context, queries []*Query, cursor Cursor) ([]*Quer
 	}
 	// Sort queries and store the order in sortedOrder
 	sort.Slice(sortedOrder, func(i, j int) bool {
-		return queries[sortedOrder[i]].Less(queries[sortedOrder[j]])
+		return queries[sortedOrder[i]].Compare(queries[sortedOrder[j]]) < 0
 	})
 	// Assign the cursors in sorted order
 	for idx, qIdx := range sortedOrder {

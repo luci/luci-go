@@ -1141,68 +1141,66 @@ func cmpCursor(a, b RawCursor) int {
 	return cmpStr(astr, bstr)
 }
 
-// Less returns true if a < b. It is used for local sorting of lists of queries,
+// Compare is a standard comparison function (e.g. -1 if a<b, 0 if a == b, 1 if a>b)
 // there is nothing datastore specific about this.
-func (a *Query) Less(b *Query) bool {
+func (a *Query) Compare(b *Query) int {
 	// For concreteness compare query components in the same order they would
 	// appear in a GQL query string. Things that do not show up in GQL are
 	// compared last. Note this should cover every field in queryFields struct.
 	//
 	// See https://cloud.google.com/datastore/docs/reference/gql_reference
+
+	// NOTE: we would use cmp.Or but some of these comparisons do allocations.
 	if cmp := cmpStringSet(a.project, b.project); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpStr(a.kind, b.kind); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpBoolean(a.distinct, b.distinct); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpEqFilters(a.eqFilts, b.eqFilts); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpInFilters(a.inFilts, b.inFilts); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpStr(a.ineqFiltProp, b.ineqFiltProp); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpIneqOp(
 		&a.ineqFiltLow, a.ineqFiltLowIncl, a.ineqFiltLowSet,
 		&b.ineqFiltLow, b.ineqFiltLowIncl, b.ineqFiltLowSet,
 	); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpIneqOp(
 		&a.ineqFiltHigh, a.ineqFiltHighIncl, a.ineqFiltHighSet,
 		&b.ineqFiltHigh, b.ineqFiltHighIncl, b.ineqFiltHighSet,
 	); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpIndexColumnList(a.order, b.order); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpOptionalInt32(a.limit, b.limit); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpOptionalInt32(a.offset, b.offset); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpCursor(a.start, b.start); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpCursor(a.end, b.end); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpBoolean(a.keysOnly, b.keysOnly); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
 	if cmp := cmpBoolean(a.firestoreMode, b.firestoreMode); cmp != 0 {
-		return cmp < 0
+		return cmp
 	}
-	if cmp := cmpBoolean(a.eventualConsistency, b.eventualConsistency); cmp != 0 {
-		return cmp < 0
-	}
-	// They are equal, which means `a < b` is false.
-	return false
+	return cmpBoolean(a.eventualConsistency, b.eventualConsistency)
 }
