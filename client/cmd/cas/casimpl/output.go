@@ -17,7 +17,11 @@ package casimpl
 import (
 	"encoding/json"
 	"os"
+	"regexp"
 	"sort"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/packedintset"
 	"go.chromium.org/luci/common/errors"
@@ -81,6 +85,25 @@ func writeExitResult(path string, statusCode StatusCode, digest string) error {
 		return errors.Fmt("failed to write json: %w", err)
 	}
 	return nil
+}
+
+var notFoundDigestRE = regexp.MustCompile(`Digest ([0-9a-z]*/\d*) not found in the CAS`)
+
+func extractErrorCode(err error) (StatusCode, string) {
+	errorCode := RPCError
+	digest := ""
+	if e, ok := status.FromError(err); ok {
+		if e.Code() == codes.PermissionDenied {
+			errorCode = AuthenticationError
+		} else if e.Code() == codes.NotFound {
+			errorCode = DigestInvalid
+		}
+		parts := notFoundDigestRE.FindStringSubmatch(e.Message())
+		if parts != nil {
+			digest = parts[1]
+		}
+	}
+	return errorCode, digest
 }
 
 // writeStats writes cache stats in packed format.

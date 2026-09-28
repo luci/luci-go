@@ -139,12 +139,9 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		is.Inputs = append(is.Inputs, path)
 	}
 
-	client, err := c.authFlags.NewRBEClient(ctx, c.casFlags.Addr, c.casFlags.Instance, false)
+	client, err := c.newRBEClient(ctx, c.dumpJSON, false)
 	if err != nil {
-		if err := writeExitResult(c.dumpJSON, ClientError, ""); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return errors.Fmt("failed to create cas client: %w", err)
+		return err
 	}
 	defer client.Close()
 

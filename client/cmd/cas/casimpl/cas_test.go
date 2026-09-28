@@ -19,6 +19,7 @@ import (
 	"crypto"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"flag"
 	"os"
 	"path/filepath"
@@ -131,6 +132,26 @@ func TestArchiveDownload(t *testing.T) {
 			err = dr.doDownload(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			check(t)
+		})
+
+		t.Run("cache init failure writes dumpJSON", func(t *ftt.Test) {
+			filePath := filepath.Join(t.TempDir(), "not_a_dir")
+			assert.Loosely(t, os.WriteFile(filePath, []byte("data"), 0600), should.BeNil)
+			dumpJSON := filepath.Join(t.TempDir(), "exit.json")
+
+			dr.cacheDir = filePath
+			dr.dumpJSON = dumpJSON
+			err = dr.doDownload(ctx)
+			assert.Loosely(t, err, should.NotBeNil)
+
+			data, err := os.ReadFile(dumpJSON)
+			assert.Loosely(t, err, should.BeNil)
+
+			var result struct {
+				Result string `json:"result"`
+			}
+			assert.Loosely(t, json.Unmarshal(data, &result), should.BeNil)
+			assert.Loosely(t, result.Result, should.Equal("io_error"))
 		})
 	})
 }

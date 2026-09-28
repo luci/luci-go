@@ -16,11 +16,9 @@ package casimpl
 
 import (
 	"context"
-	"crypto"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -29,12 +27,9 @@ import (
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
-	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"github.com/google/safeopen"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/cli"
@@ -137,24 +132,6 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 	r.dir = absDir
 
 	return nil
-}
-
-func extractErrorCode(err error) (StatusCode, string) {
-	errorCode := RPCError
-	digest := ""
-	if e, ok := status.FromError(err); ok {
-		if e.Code() == codes.PermissionDenied {
-			errorCode = AuthenticationError
-		} else if e.Code() == codes.NotFound {
-			errorCode = DigestInvalid
-		}
-		re := regexp.MustCompile(`Digest ([0-9a-z]*/\d*) not found in the CAS`)
-		parts := re.FindStringSubmatch(e.Message())
-		if parts != nil {
-			digest = parts[1]
-		}
-	}
-	return errorCode, digest
 }
 
 func createDirectories(ctx context.Context, root string, outputs map[string]*client.TreeOutput) error {
@@ -394,47 +371,19 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		return errors.Fmt("failed to parse digest: %s: %w", r.digest, err)
 	}
 
-	c, err := r.authFlags.NewRBEClient(ctx, r.casFlags.Addr, r.casFlags.Instance, true)
+	c, err := r.newRBEClient(ctx, r.dumpJSON, true)
 	if err != nil {
-		if err := writeExitResult(r.dumpJSON, ClientError, ""); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
 		return err
 	}
-	rootDir := &repb.Directory{}
-	if _, err := c.ReadProto(ctx, d, rootDir); err != nil {
-		errorCode, digest := extractErrorCode(err)
-		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return errors.Fmt("failed to read root directory proto: %w", err)
+	defer c.Close()
+
+	outputs, err := fetchAndFlattenTree(ctx, c, d, r.dumpJSON)
+	if err != nil {
+		return err
 	}
 
-	start := time.Now()
-	dirs, err := c.GetDirectoryTree(ctx, d.ToProto())
-	if err != nil {
-		if err := writeExitResult(r.dumpJSON, RPCError, ""); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return errors.Fmt("failed to call GetDirectoryTree: %w", err)
-	}
 	logger := logging.Get(ctx)
-	logger.Infof("finished GetDirectoryTree api call: %d, took %s", len(dirs), time.Since(start))
-
-	start = time.Now()
-	t := &repb.Tree{
-		Root:     rootDir,
-		Children: dirs,
-	}
-
-	outputs, err := c.FlattenTree(t, "")
-	if err != nil {
-		errorCode, digest := extractErrorCode(err)
-		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return errors.Fmt("failed to call FlattenTree: %w", err)
-	}
+	start := time.Now()
 
 	for path, output := range outputs {
 		if err := validateOutputPath(r.dir, path, output); err != nil {
@@ -447,7 +396,6 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	to := make(map[digest.Digest]*client.TreeOutput)
 
-	var diskcache *cache.Cache
 	if r.cacheDir != "" {
 		// Increase free space with to be downloaded file size.
 		for _, output := range outputs {
@@ -456,14 +404,13 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 			}
 			r.cachePolicies.MinFreeSpace += units.Size(output.Digest.Size)
 		}
+	}
 
-		diskcache, err = cache.New(r.cachePolicies, r.cacheDir, crypto.SHA256)
-		if err != nil {
-			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-				return errors.Fmt("failed to write json file: %w", err)
-			}
-			return errors.Fmt("failed to create initialize cache: %w", err)
-		}
+	diskcache, err := initCache(r.cacheDir, r.cachePolicies, r.dumpJSON)
+	if err != nil {
+		return err
+	}
+	if diskcache != nil {
 		defer diskcache.Close()
 	}
 
