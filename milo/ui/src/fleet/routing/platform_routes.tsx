@@ -53,6 +53,7 @@ export const platformRoutes: RouteObject[] = [
           [Platform.ANDROID]: <Navigate to={'repairs'} />,
           [Platform.PIXEL]: <Navigate to={'devices'} />,
           [Platform.CHROMEOS]: <Navigate to={'devices'} />,
+          [Platform.CHROMIUM]: <Navigate to={'devices'} />,
         }}
       />
     ),
