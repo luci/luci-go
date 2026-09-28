@@ -589,12 +589,29 @@ func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
 	overallKind := ""
 	overallOrder := ""
 	for i, q := range queries {
-		if isKey {
+		if isKey && q.project.Len() == 0 {
 			q = q.KeysOnly(true)
 		}
 		fq, err := q.Finalize()
 		if err != nil {
 			return queryIterStub[V](err)
+		}
+		// If we have more than one query (multi-query), AND this query is not
+		// loading the full entity (e.g. keys-only or projection) AND we have more
+		// than one sort order, we need to project all the sort order columns into
+		// our result in order to be able to correctly order the queries in the
+		// heap.
+		if len(queries) > 1 && (fq.KeysOnly() || len(fq.project) > 0) && len(fq.orders) > 1 {
+			proj := make([]string, 0, len(fq.orders)-1)
+			for _, col := range fq.orders {
+				if col.Property != "__key__" {
+					proj = append(proj, col.Property)
+				}
+			}
+			fq, err = q.KeysOnly(false).Project(proj...).Finalize()
+			if err != nil {
+				return queryIterStub[V](err)
+			}
 		}
 		finalized[i] = fq
 		// Build a string identifying ordering of this query, e.g.

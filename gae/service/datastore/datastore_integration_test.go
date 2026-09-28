@@ -79,11 +79,8 @@ func TestRunMulti(t *testing.T) {
 				queries := []*datastore.Query{
 					datastore.NewQuery("Foo").Gte("__key__", datastore.KeyForObj(ctx, &Foo{ID: 1})),
 				}
-				var res []*Foo
-				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
-					assert.NoErr(t, err)
-					res = append(res, foo)
-				}
+				res, err := datastore.RunMultiQuery[*Foo](ctx, queries).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(foos))
 			})
 
@@ -92,15 +89,44 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Eq("multi_vals", "m2"),
 					datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
 				}
-				var keys []*datastore.Key
-				for k, err := range datastore.RunMultiQuery[*datastore.Key](ctx, queries).Results {
-					assert.NoErr(t, err)
-					keys = append(keys, k)
-				}
+				keys, err := datastore.RunMultiQuery[*datastore.Key](ctx, queries).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, keys, should.Resemble([]*datastore.Key{
 					datastore.KeyForObj(ctx, foos[0]),
 					datastore.KeyForObj(ctx, foos[1]),
 					datastore.KeyForObj(ctx, foos[2]),
+				}))
+			})
+
+			t.Run("querying key only with extra order columns", func(t *ftt.Test) {
+				// We need to convert these queries under the hood into projection
+				// queries in order to properly generate the internal sort order key.
+				//
+				// If we just convert to keys-only, then we won't have ANY propertymap
+				// content to calculate our sort keys.
+				queries := []*datastore.Query{
+					datastore.NewQuery("Foo").Eq("multi_vals", "m2").Order("-single_val", "status"),
+					datastore.NewQuery("Foo").Eq("multi_vals", "m3").Order("-single_val", "status"),
+				}
+				keys, err := datastore.RunMultiQuery[*datastore.Key](ctx, queries).AsSlice()
+				assert.NoErr(t, err)
+				assert.Loosely(t, keys, should.Resemble([]*datastore.Key{
+					datastore.KeyForObj(ctx, foos[2]),
+					datastore.KeyForObj(ctx, foos[1]),
+					datastore.KeyForObj(ctx, foos[0]),
+				}))
+
+				// Also works when the query already projects a subset of the order columns.
+				queries = []*datastore.Query{
+					datastore.NewQuery("Foo").Eq("multi_vals", "m2").Project("status").Order("-single_val"),
+					datastore.NewQuery("Foo").Eq("multi_vals", "m3").Project("status").Order("-single_val"),
+				}
+				keys, err = datastore.RunMultiQuery[*datastore.Key](ctx, queries).AsSlice()
+				assert.NoErr(t, err)
+				assert.Loosely(t, keys, should.Resemble([]*datastore.Key{
+					datastore.KeyForObj(ctx, foos[2]),
+					datastore.KeyForObj(ctx, foos[1]),
+					datastore.KeyForObj(ctx, foos[0]),
 				}))
 			})
 
@@ -109,11 +135,8 @@ func TestRunMulti(t *testing.T) {
 					datastore.NewQuery("Foo").Eq("multi_vals", "m2").Order("-single_val", "status"),
 					datastore.NewQuery("Foo").Eq("multi_vals", "m3").Order("-single_val", "status"),
 				}
-				var res []*Foo
-				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
-					assert.NoErr(t, err)
-					res = append(res, foo)
-				}
+				res, err := datastore.RunMultiQuery[*Foo](ctx, queries).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble([]*Foo{foos[2], foos[1], foos[0]}))
 			})
 
@@ -137,13 +160,11 @@ func TestRunMulti(t *testing.T) {
 				queries := []*datastore.Query{
 					datastore.NewQuery("Foo").Eq("single_val", "non-existent"),
 				}
-				var res []*Foo
-				for foo, err := range datastore.RunMultiQuery[*Foo](ctx, queries).Results {
-					assert.NoErr(t, err)
-					res = append(res, foo)
-				}
+				res, err := datastore.RunMultiQuery[*Foo](ctx, queries).AsSlice()
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.BeNil)
 			})
+
 			t.Run("with Cursor", func(t *ftt.Test) {
 				queries := []*datastore.Query{
 					datastore.NewQuery("Foo").Eq("single_val", "s1"),
@@ -191,6 +212,7 @@ func TestRunMulti(t *testing.T) {
 				assert.Loosely(t, fooses, should.NotBeNil)
 				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[2], foos[3]}))
 			})
+
 			t.Run("with Cursor, repeat entities", func(t *ftt.Test) {
 				queries := []*datastore.Query{
 					datastore.NewQuery("Foo").Eq("multi_vals", "m2"),
