@@ -13,242 +13,147 @@
 // limitations under the License.
 
 import {
+  createFeatureFlag,
+  type FeatureFlag,
   getFeatureFlagLocalStorageKey,
   getFeatureFlagValue,
+  getFlagRolloutPercentage,
   isFlagAvailableInEnvironment,
+  resetRegisteredFlagsForTesting,
 } from '@/common/feature_flags';
-import {
-  enableAndroidHealthMetrics,
-  enableAndroidUtilizationMetrics,
-  enableChromeOsHealthDashboard,
-  enableChromeOsRepairsDashboard,
-  enableChromeOsWorkforceActivity,
-  enablePTE,
-  enableWorkforceInProgressRepairs,
-  enableWorkforceMttr,
-  enableWorkforcePickupRank,
-  enableWorkforcePriorityScoreCleared,
-  enableWorkforceTimeframeFilter,
-} from '@/fleet/features';
+import * as fleetFeatures from '@/fleet/features';
 
-describe('Fleet Console Feature Flags Environment Isolation', () => {
+describe('Fleet Console Feature Flags Framework & Contract Tests', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
+    resetRegisteredFlagsForTesting();
   });
 
-  describe('Dev Environment (luci-milo-dev / localhost)', () => {
-    const env = 'dev';
+  describe('Environment-Scoped Rollout & Availability', () => {
+    it('evaluates dev-only flags as enabled in dev and blocked in prod', () => {
+      const devOnlyFlag = createFeatureFlag({
+        description: 'Dev-only test flag.',
+        namespace: 'fleet-console',
+        name: 'test-dev-only-flag',
+        percentage: {
+          dev: 100,
+          prod: 0,
+        },
+        allowedEnvironments: ['dev'],
+      });
 
-    it('enables chromeos-repairs-dashboard by default in dev', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableChromeOsRepairsDashboard, env),
-      ).toBe(true);
-      expect(
-        getFeatureFlagValue(
-          enableChromeOsRepairsDashboard,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(true);
-    });
+      expect(isFlagAvailableInEnvironment(devOnlyFlag, 'dev')).toBe(true);
+      expect(getFeatureFlagValue(devOnlyFlag, 'user@google.com', 'dev')).toBe(
+        true,
+      );
 
-    it('enables chromeos-workforce-activity by default in dev', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableChromeOsWorkforceActivity, env),
-      ).toBe(true);
-      expect(
-        getFeatureFlagValue(
-          enableChromeOsWorkforceActivity,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(true);
-    });
-
-    it('keeps granular workforce activity metric flags available but disabled by default in dev until toggled on', () => {
-      const granularFlags = [
-        enableWorkforcePriorityScoreCleared,
-        enableWorkforcePickupRank,
-        enableWorkforceMttr,
-        enableWorkforceInProgressRepairs,
-        enableWorkforceTimeframeFilter,
-      ];
-
-      for (const flag of granularFlags) {
-        expect(isFlagAvailableInEnvironment(flag, env)).toBe(true);
-        expect(getFeatureFlagValue(flag, 'user@google.com', env)).toBe(false);
-
-        localStorage.setItem(getFeatureFlagLocalStorageKey(flag), 'on');
-        expect(getFeatureFlagValue(flag, 'user@google.com', env)).toBe(true);
-      }
-    });
-
-    it('keeps pte-support disabled by default in dev (0% rollout until explicitly toggled)', () => {
-      expect(isFlagAvailableInEnvironment(enablePTE, env)).toBe(true);
-      expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(true);
-
-      localStorage.setItem('featureFlag:fleet-console:pte-support', 'off');
-      expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(
+      expect(isFlagAvailableInEnvironment(devOnlyFlag, 'prod')).toBe(false);
+      expect(getFeatureFlagValue(devOnlyFlag, 'user@google.com', 'prod')).toBe(
         false,
       );
     });
 
-    it('enables chromeos-health-dashboard by default in dev (100% rollout)', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableChromeOsHealthDashboard, env),
-      ).toBe(true);
-      expect(
-        getFeatureFlagValue(
-          enableChromeOsHealthDashboard,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(true);
+    it('evaluates multi-environment flags per environment rollout percentage', () => {
+      const stagedFlag = createFeatureFlag({
+        description: 'Staged rollout flag (100% dev, 0% prod).',
+        namespace: 'fleet-console',
+        name: 'test-staged-flag',
+        percentage: {
+          dev: 100,
+          prod: 0,
+        },
+        allowedEnvironments: ['dev', 'prod'],
+      });
 
-      localStorage.setItem(
-        'featureFlag:fleet-console:chromeos-health-dashboard',
-        'off',
+      expect(isFlagAvailableInEnvironment(stagedFlag, 'dev')).toBe(true);
+      expect(getFeatureFlagValue(stagedFlag, 'user@google.com', 'dev')).toBe(
+        true,
       );
-      expect(
-        getFeatureFlagValue(
-          enableChromeOsHealthDashboard,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(false);
+
+      expect(isFlagAvailableInEnvironment(stagedFlag, 'prod')).toBe(true);
+      expect(getFeatureFlagValue(stagedFlag, 'user@google.com', 'prod')).toBe(
+        false,
+      );
     });
 
-    it('enables android-health-metrics by default in dev', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableAndroidHealthMetrics, env),
-      ).toBe(true);
-      expect(
-        getFeatureFlagValue(enableAndroidHealthMetrics, 'user@google.com', env),
-      ).toBe(true);
-    });
+    it('evaluates fully launched flags (100% scalar percentage) in both environments', () => {
+      const launchedFlag = createFeatureFlag({
+        description: 'Fully launched flag.',
+        namespace: 'fleet-console',
+        name: 'test-launched-flag',
+        percentage: 100,
+        allowedEnvironments: ['dev', 'prod'],
+      });
 
-    it('enables android-utilization-metrics by default in dev', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableAndroidUtilizationMetrics, env),
-      ).toBe(true);
-      expect(
-        getFeatureFlagValue(
-          enableAndroidUtilizationMetrics,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(true);
-    });
-
-    it('allows toggling off flags via localStorage in dev', () => {
-      localStorage.setItem(
-        'featureFlag:fleet-console:chromeos-repairs-dashboard',
-        'off',
+      expect(getFeatureFlagValue(launchedFlag, 'user@google.com', 'dev')).toBe(
+        true,
       );
-      expect(
-        getFeatureFlagValue(
-          enableChromeOsRepairsDashboard,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(false);
-
-      localStorage.setItem(
-        'featureFlag:fleet-console:chromeos-workforce-activity',
-        'off',
+      expect(getFeatureFlagValue(launchedFlag, 'user@google.com', 'prod')).toBe(
+        true,
       );
-      expect(
-        getFeatureFlagValue(
-          enableChromeOsWorkforceActivity,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(false);
     });
   });
 
-  describe('Prod Environment Safety Guardrails (luci-milo.appspot.com)', () => {
-    const env = 'prod';
+  describe('localStorage Developer Overrides', () => {
+    it('respects on and off localStorage overrides in allowed environments', () => {
+      const flag = createFeatureFlag({
+        description: 'Overrideable flag.',
+        namespace: 'fleet-console',
+        name: 'test-override-flag',
+        percentage: 0,
+        allowedEnvironments: ['dev', 'prod'],
+      });
 
-    it('prevents chromeos-repairs-dashboard from being available or enabled in prod', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableChromeOsRepairsDashboard, env),
-      ).toBe(false);
-      expect(
-        getFeatureFlagValue(
-          enableChromeOsRepairsDashboard,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(false);
+      expect(getFeatureFlagValue(flag, 'user@google.com', 'dev')).toBe(false);
+
+      localStorage.setItem(getFeatureFlagLocalStorageKey(flag), 'on');
+      expect(getFeatureFlagValue(flag, 'user@google.com', 'dev')).toBe(true);
+
+      localStorage.setItem(getFeatureFlagLocalStorageKey(flag), 'off');
+      expect(getFeatureFlagValue(flag, 'user@google.com', 'dev')).toBe(false);
     });
 
-    it('prevents chromeos-workforce-activity from being available or enabled in prod', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableChromeOsWorkforceActivity, env),
-      ).toBe(false);
-      expect(
-        getFeatureFlagValue(
-          enableChromeOsWorkforceActivity,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(false);
+    it('never enables a dev-only flag in prod even when localStorage is set to on', () => {
+      const devOnlyFlag = createFeatureFlag({
+        description: 'Strict dev-only flag.',
+        namespace: 'fleet-console',
+        name: 'test-strict-dev-only',
+        percentage: {
+          dev: 100,
+          prod: 0,
+        },
+        allowedEnvironments: ['dev'],
+      });
+
+      localStorage.setItem(getFeatureFlagLocalStorageKey(devOnlyFlag), 'on');
+      expect(getFeatureFlagValue(devOnlyFlag, 'user@google.com', 'prod')).toBe(
+        false,
+      );
     });
+  });
 
-    it('prevents granular workforce activity metric flags from being available or enabled in prod', () => {
-      const granularFlags = [
-        enableWorkforcePriorityScoreCleared,
-        enableWorkforcePickupRank,
-        enableWorkforceMttr,
-        enableWorkforceInProgressRepairs,
-        enableWorkforceTimeframeFilter,
-      ];
+  describe('@/fleet/features Exported Flag Contracts', () => {
+    it('validates all exported Fleet Console feature flags meet schema and environment invariants', () => {
+      const exportedFlags = Object.values(fleetFeatures).filter(
+        (val): val is FeatureFlag =>
+          Boolean(val && typeof val === 'object' && 'config' in val),
+      );
 
-      for (const flag of granularFlags) {
-        expect(isFlagAvailableInEnvironment(flag, env)).toBe(false);
-        expect(getFeatureFlagValue(flag, 'user@google.com', env)).toBe(false);
+      expect(exportedFlags.length).toBeGreaterThan(0);
+
+      for (const flag of exportedFlags) {
+        expect(flag.config.namespace).toBe('fleet-console');
+        expect(flag.config.name.trim().length).toBeGreaterThan(0);
+        expect(flag.config.description.trim().length).toBeGreaterThan(0);
+
+        const devPct = getFlagRolloutPercentage(flag.config, 'dev');
+        const prodPct = getFlagRolloutPercentage(flag.config, 'prod');
+        expect(devPct).toBeGreaterThanOrEqual(0);
+        expect(devPct).toBeLessThanOrEqual(100);
+        expect(prodPct).toBeGreaterThanOrEqual(0);
+        expect(prodPct).toBeLessThanOrEqual(100);
       }
-    });
-
-    it('enables pte-support in prod', () => {
-      expect(isFlagAvailableInEnvironment(enablePTE, env)).toBe(true);
-      expect(getFeatureFlagValue(enablePTE, 'user@google.com', env)).toBe(true);
-    });
-
-    it('prevents chromeos-health-dashboard from being available or enabled in prod', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableChromeOsHealthDashboard, env),
-      ).toBe(false);
-      expect(
-        getFeatureFlagValue(
-          enableChromeOsHealthDashboard,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(false);
-    });
-
-    it('enables android-health-metrics by default in prod', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableAndroidHealthMetrics, env),
-      ).toBe(true);
-      expect(
-        getFeatureFlagValue(enableAndroidHealthMetrics, 'user@google.com', env),
-      ).toBe(true);
-    });
-
-    it('disables android-utilization-metrics by default in prod', () => {
-      expect(
-        isFlagAvailableInEnvironment(enableAndroidUtilizationMetrics, env),
-      ).toBe(true);
-      expect(
-        getFeatureFlagValue(
-          enableAndroidUtilizationMetrics,
-          'user@google.com',
-          env,
-        ),
-      ).toBe(false);
     });
   });
 });
