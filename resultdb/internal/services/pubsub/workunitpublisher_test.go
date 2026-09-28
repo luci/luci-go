@@ -15,7 +15,10 @@
 package pubsub
 
 import (
+	"context"
+	"strings"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
@@ -25,9 +28,11 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/resultdb/internal/checkpoints"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
@@ -101,6 +106,21 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 			},
 		}
 
+		expectedDetails := []*pb.WorkUnitsNotification_WorkUnitDetails{
+			{
+				WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID1.WorkUnitID),
+				HasArtifacts:              true,
+				MergedInheritedProperties: expectedWU1Props,
+				WorkUnit:                  masking.WorkUnit(wu1, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg),
+			},
+			{
+				WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID2.WorkUnitID),
+				HasArtifacts:              false,
+				MergedInheritedProperties: expectedWU2Props,
+				WorkUnit:                  masking.WorkUnit(wu2, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg),
+			},
+		}
+
 		testCases := []struct {
 			name                 string
 			rootInvBuilder       *rootinvocations.Builder
@@ -115,22 +135,10 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 				workUnitIDs:    []string{wuID1.WorkUnitID, wuID2.WorkUnitID},
 				extraMutations: successMutations,
 				expectedNotification: &pb.WorkUnitsNotification{
-					ResultdbHost: rdbHost,
-					WorkUnits: []*pb.WorkUnitsNotification_WorkUnitDetails{
-						{
-							WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID1.WorkUnitID),
-							HasArtifacts:              true,
-							MergedInheritedProperties: expectedWU1Props,
-							WorkUnit:                  masking.WorkUnit(wu1, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg),
-						},
-						{
-							WorkUnitName:              pbutil.WorkUnitName(string(rootInvID), wuID2.WorkUnitID),
-							HasArtifacts:              false,
-							MergedInheritedProperties: expectedWU2Props,
-							WorkUnit:                  masking.WorkUnit(wu2, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg),
-						},
-					},
+					ResultdbHost:           rdbHost,
+					WorkUnits:              expectedDetails,
 					RootInvocationMetadata: masking.RootInvocationMetadata(rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).Build(), compiledCfg),
+					DeduplicationKey:       generateWorkUnitsDeduplicationKey(expectedDetails),
 				},
 				expectedAttributes: map[string]string{
 					"luci_project":                 "testproject",
@@ -138,6 +146,20 @@ func TestHandleWorkUnitPublisher(t *testing.T) {
 					"primary_build_android_branch": "git_main",
 					"primary_build_android_target": "some-target",
 				},
+			},
+			{
+				name:           "Task State Checkpoint Idempotency - Skips if task index already processed",
+				rootInvBuilder: rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL),
+				workUnitIDs:    []string{wuID1.WorkUnitID, wuID2.WorkUnitID},
+				extraMutations: append(append([]*spanner.Mutation{}, successMutations...),
+					checkpoints.Insert(context.Background(), checkpoints.Key{
+						Project:    "testproject",
+						ResourceID: string(rootInvID),
+						ProcessID:  WorkUnitsTaskStateProcessID,
+						Uniquifier: "workUnits/wu1/indices/0",
+					}, time.Hour),
+				),
+				expectedNotification: nil,
 			},
 		}
 
@@ -216,6 +238,7 @@ func TestHandleWorkUnitPublisher_SizeBasedSplitting(t *testing.T) {
 	baseNotification := &pb.WorkUnitsNotification{
 		ResultdbHost:           rdbHost,
 		RootInvocationMetadata: masking.RootInvocationMetadata(rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).Build(), compiledCfg),
+		DeduplicationKey:       strings.Repeat("0", 64),
 	}
 	baseSize := proto.Size(baseNotification)
 
@@ -249,9 +272,11 @@ func TestHandleWorkUnitPublisher_SizeBasedSplitting(t *testing.T) {
 	testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInv)...)
 	testutil.MustApply(ctx, t, muts...)
 
+	// Step 1: Run initial task starting at index 0.
 	task := &taskspb.PublishWorkUnitsTask{
-		RootInvocationId: string(rootInvID),
-		WorkUnitIds:      []string{"wu1", "wu2"},
+		RootInvocationId:     string(rootInvID),
+		WorkUnitIds:          []string{"wu1", "wu2"},
+		CurrentWorkUnitIndex: 0,
 	}
 	p := &workUnitPublisher{
 		task:             task,
@@ -262,31 +287,96 @@ func TestHandleWorkUnitPublisher_SizeBasedSplitting(t *testing.T) {
 
 	allTasks := sched.Tasks()
 	var notifyTasks tqtesting.TaskList
-	for _, task := range allTasks {
-		if task.Class == "notify-work-units" {
-			notifyTasks = append(notifyTasks, task)
+	var continuationTasks tqtesting.TaskList
+	for _, tsk := range allTasks {
+		switch tsk.Class {
+		case "notify-work-units":
+			notifyTasks = append(notifyTasks, tsk)
+		case "publish-work-units":
+			continuationTasks = append(continuationTasks, tsk)
 		}
 	}
 
-	// Should be split into 2 tasks.
+	// First batch should emit 1 notification (wu1) and 1 continuation task (starting at index 1).
+	assert.Loosely(t, notifyTasks, should.HaveLength(1))
+	msg1 := notifyTasks[0].Payload.(*taskspb.PublishWorkUnits).Message
+	assert.Loosely(t, msg1.WorkUnits, should.HaveLength(1))
+	assert.Loosely(t, msg1.WorkUnits[0].WorkUnitName, should.Equal(pbutil.WorkUnitName(string(rootInvID), "wu1")))
+	assert.Loosely(t, msg1.DeduplicationKey, should.NotBeEmpty)
+
+	assert.Loosely(t, continuationTasks, should.HaveLength(1))
+	contPayload := continuationTasks[0].Payload.(*taskspb.PublishWorkUnitsTask)
+	assert.Loosely(t, contPayload.CurrentWorkUnitIndex, should.Equal(int32(1)))
+	assert.Loosely(t, contPayload.WorkUnitIds, should.Match([]string{"wu1", "wu2"}))
+
+	// Verify Spanner task state checkpoint for Step 1.
+	exists, err := checkpoints.Exists(span.Single(ctx), checkpoints.Key{
+		Project:    "testproject",
+		ResourceID: string(rootInvID),
+		ProcessID:  WorkUnitsTaskStateProcessID,
+		Uniquifier: "workUnits/wu1/indices/0",
+	})
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, exists, should.BeTrue)
+
+	// Step 2: Run the continuation task starting at index 1.
+	p2 := &workUnitPublisher{
+		task:             contPayload,
+		resultDBHostname: rdbHost,
+	}
+	err = p2.handleWorkUnitPublisher(ctx)
+	assert.Loosely(t, err, should.BeNil)
+
+	allTasks = sched.Tasks()
+	notifyTasks = nil
+	continuationTasks = nil
+	for _, tsk := range allTasks {
+		switch tsk.Class {
+		case "notify-work-units":
+			notifyTasks = append(notifyTasks, tsk)
+		case "publish-work-units":
+			continuationTasks = append(continuationTasks, tsk)
+		}
+	}
+
+	// Now total notifications should be 2 (wu1 and wu2), and no new continuation task.
 	assert.Loosely(t, notifyTasks, should.HaveLength(2))
+	assert.Loosely(t, continuationTasks, should.HaveLength(1)) // Still just the 1 from Step 1.
+	msg2 := notifyTasks[1].Payload.(*taskspb.PublishWorkUnits).Message
+	assert.Loosely(t, msg2.WorkUnits, should.HaveLength(1))
+	assert.Loosely(t, msg2.WorkUnits[0].WorkUnitName, should.Equal(pbutil.WorkUnitName(string(rootInvID), "wu2")))
+	assert.Loosely(t, msg2.DeduplicationKey, should.NotBeEmpty)
+	assert.Loosely(t, msg1.DeduplicationKey, should.NotEqual(msg2.DeduplicationKey))
+}
 
-	// Verify content of tasks.
-	// Order might not be guaranteed, so sort or identify by WorkUnitName.
-	wuNames := []string{
-		notifyTasks[0].Payload.(*taskspb.PublishWorkUnits).Message.WorkUnits[0].WorkUnitName,
-		notifyTasks[1].Payload.(*taskspb.PublishWorkUnits).Message.WorkUnits[0].WorkUnitName,
-	}
-	expectedNames := []string{
-		pbutil.WorkUnitName(string(rootInvID), "wu1"),
-		pbutil.WorkUnitName(string(rootInvID), "wu2"),
-	}
+func TestGenerateWorkUnitsDeduplicationKey(t *testing.T) {
+	t.Run("GenerateWorkUnitsDeduplicationKey", func(t *testing.T) {
+		t.Run("Empty input", func(t *testing.T) {
+			assert.Loosely(t, generateWorkUnitsDeduplicationKey(nil), should.BeEmpty)
+		})
 
-	// We expect one of each.
-	assert.Loosely(t, wuNames, should.Contain(expectedNames[0]))
-	assert.Loosely(t, wuNames, should.Contain(expectedNames[1]))
+		t.Run("Single work unit", func(t *testing.T) {
+			batch := []*pb.WorkUnitsNotification_WorkUnitDetails{
+				{WorkUnitName: "rootInvocations/inv1/workUnits/wu1"},
+			}
+			key1 := generateWorkUnitsDeduplicationKey(batch)
+			key2 := generateWorkUnitsDeduplicationKey(batch)
+			assert.Loosely(t, key1, should.NotBeEmpty)
+			assert.Loosely(t, key1, should.Equal(key2))
+		})
 
-	// Both should have length 1.
-	assert.Loosely(t, notifyTasks[0].Payload.(*taskspb.PublishWorkUnits).Message.WorkUnits, should.HaveLength(1))
-	assert.Loosely(t, notifyTasks[1].Payload.(*taskspb.PublishWorkUnits).Message.WorkUnits, should.HaveLength(1))
+		t.Run("Multiple work units and order sensitivity", func(t *testing.T) {
+			batch1 := []*pb.WorkUnitsNotification_WorkUnitDetails{
+				{WorkUnitName: "rootInvocations/inv1/workUnits/wu1"},
+				{WorkUnitName: "rootInvocations/inv1/workUnits/wu2"},
+			}
+			batch2 := []*pb.WorkUnitsNotification_WorkUnitDetails{
+				{WorkUnitName: "rootInvocations/inv1/workUnits/wu2"},
+				{WorkUnitName: "rootInvocations/inv1/workUnits/wu1"},
+			}
+			key1 := generateWorkUnitsDeduplicationKey(batch1)
+			key2 := generateWorkUnitsDeduplicationKey(batch2)
+			assert.Loosely(t, key1, should.NotEqual(key2))
+		})
+	})
 }

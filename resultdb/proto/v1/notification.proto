@@ -186,7 +186,7 @@ message TestResultsNotification {
 // The message is sent over the `v1.work_units` Cloud Pub/Sub topic in
 // binary-serialized form.
 //
-// Next id: 4
+// Next id: 5
 message WorkUnitsNotification {
     // A message representing the work unit details.
     // Next id: 5
@@ -218,6 +218,10 @@ message WorkUnitsNotification {
 
     // Details of the root invocation.
     RootInvocationMetadata root_invocation_metadata = 3;
+
+    // A deduplication key identifying this batch of work units within the
+    // same root invocation.
+    string deduplication_key = 4;
 }
 
 // A message notifying that test aggregations are available.

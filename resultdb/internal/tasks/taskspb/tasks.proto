@@ -92,9 +92,13 @@ message PublishWorkUnits {
 
 // PublishWorkUnitsTask defines a task to query and publish work units for
 // a set of work units.
+// Next id: 4
 message PublishWorkUnitsTask {
   string root_invocation_id = 1;
   repeated string work_unit_ids = 2;
+
+  // The start index of the work unit in work_unit_ids to be processed by this task.
+  int32 current_work_unit_index = 3;
 }
 
 // PublishWorkUnitsCatchUpTask catches up on publishing work units and test results

@@ -464,12 +464,15 @@ func (x *PublishWorkUnits) GetAttributes() map[string]string {
 
 // PublishWorkUnitsTask defines a task to query and publish work units for
 // a set of work units.
+// Next id: 4
 type PublishWorkUnitsTask struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	RootInvocationId string                 `protobuf:"bytes,1,opt,name=root_invocation_id,json=rootInvocationId,proto3" json:"root_invocation_id,omitempty"`
 	WorkUnitIds      []string               `protobuf:"bytes,2,rep,name=work_unit_ids,json=workUnitIds,proto3" json:"work_unit_ids,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// The start index of the work unit in work_unit_ids to be processed by this task.
+	CurrentWorkUnitIndex int32 `protobuf:"varint,3,opt,name=current_work_unit_index,json=currentWorkUnitIndex,proto3" json:"current_work_unit_index,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *PublishWorkUnitsTask) Reset() {
@@ -514,6 +517,13 @@ func (x *PublishWorkUnitsTask) GetWorkUnitIds() []string {
 		return x.WorkUnitIds
 	}
 	return nil
+}
+
+func (x *PublishWorkUnitsTask) GetCurrentWorkUnitIndex() int32 {
+	if x != nil {
+		return x.CurrentWorkUnitIndex
+	}
+	return 0
 }
 
 // PublishWorkUnitsCatchUpTask catches up on publishing work units and test results
@@ -1175,10 +1185,11 @@ const file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawD
 	"attributes\x1a=\n" +
 	"\x0fAttributesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"h\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9f\x01\n" +
 	"\x14PublishWorkUnitsTask\x12,\n" +
 	"\x12root_invocation_id\x18\x01 \x01(\tR\x10rootInvocationId\x12\"\n" +
-	"\rwork_unit_ids\x18\x02 \x03(\tR\vworkUnitIds\"j\n" +
+	"\rwork_unit_ids\x18\x02 \x03(\tR\vworkUnitIds\x125\n" +
+	"\x17current_work_unit_index\x18\x03 \x01(\x05R\x14currentWorkUnitIndex\"j\n" +
 	"\x1bPublishWorkUnitsCatchUpTask\x12,\n" +
 	"\x12root_invocation_id\x18\x01 \x01(\tR\x10rootInvocationId\x12\x1d\n" +
 	"\n" +
