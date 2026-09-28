@@ -17,7 +17,6 @@ package datastore
 import (
 	"bytes"
 	"context"
-	"sort"
 
 	"golang.org/x/sync/errgroup"
 
@@ -174,13 +173,17 @@ func (qi *queryIterator) CurrentItemOrder() string {
 			panicIf(Serialize.Key(invBuf, qi.currentQueryResult.key))
 			continue
 		}
-		columnData := qi.currentQueryResult.data[column.Property].Slice()
-		sort.Sort(columnData)
+		var value Property
+		var ok bool
 		if column.Descending {
-			panicIf(Serialize.Property(invBuf, columnData[columnData.Len()-1]))
+			value, ok = qi.currentQueryResult.data[column.Property].Largest(true)
 		} else {
-			panicIf(Serialize.Property(invBuf, columnData[0]))
+			value, ok = qi.currentQueryResult.data[column.Property].Smallest(true)
 		}
+		if !ok {
+			panic("impossible: query result has no indexed data in orderby column")
+		}
+		panicIf(Serialize.Property(invBuf, value))
 	}
 	qi.currentItemOrderCache = invBuf.String()
 	return qi.currentItemOrderCache

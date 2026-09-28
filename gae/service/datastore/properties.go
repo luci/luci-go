@@ -384,6 +384,22 @@ func (p Property) estimateSize() int64 { return p.EstimateSize() }
 // Slice implements the PropertyData interface.
 func (p Property) Slice() PropertySlice { return PropertySlice{p} }
 
+// Smallest implements the PropertyData interface.
+func (p Property) Smallest(onlyIndexed bool) (Property, bool) {
+	if onlyIndexed && p.indexSetting == NoIndex {
+		return Property{}, false
+	}
+	return p, true
+}
+
+// Largest implements the PropertyData interface.
+func (p Property) Largest(onlyIndexed bool) (Property, bool) {
+	if onlyIndexed && p.indexSetting == NoIndex {
+		return Property{}, false
+	}
+	return p, true
+}
+
 // Clone implements the PropertyData interface.
 func (p Property) Clone() PropertyData { return p }
 
@@ -820,6 +836,34 @@ func (s PropertySlice) Slice() PropertySlice {
 	return append(make(PropertySlice, 0, len(s)), s...)
 }
 
+// Smallest implements the PropertyData interface.
+func (s PropertySlice) Smallest(onlyIndexed bool) (ret Property, ok bool) {
+	for _, p := range s {
+		if onlyIndexed && p.indexSetting == NoIndex {
+			continue
+		}
+		if !ok || p.Less(&ret) {
+			ok = true
+			ret = p
+		}
+	}
+	return ret, ok
+}
+
+// Largest implements the PropertyData interface.
+func (s PropertySlice) Largest(onlyIndexed bool) (ret Property, ok bool) {
+	for _, p := range s {
+		if onlyIndexed && p.indexSetting == NoIndex {
+			continue
+		}
+		if !ok || !p.Less(&ret) {
+			ok = true
+			ret = p
+		}
+	}
+	return ret, ok
+}
+
 // IsZero implements the PropertyData interface.
 func (s PropertySlice) IsZero() bool {
 	return len(s) == 0
@@ -972,6 +1016,20 @@ type PropertyData interface {
 	// Property-modifying methods such as SetValue should NOT be
 	// called on the results.
 	Slice() PropertySlice
+
+	// Smallest returns the Property from this PropertyData which has the
+	// smallest value (according to Property.Less). Returns ({}, false) if this
+	// PropertyData is empty.
+	//
+	// If onlyIndexed is true, only considers Properties marked for indexing.
+	Smallest(onlyIndexed bool) (Property, bool)
+
+	// Largest returns the Property from this PropertyData which has the largest
+	// value (according to Property.Less). Returns ({}, false) if this
+	// PropertyData is empty.
+	//
+	// If onlyIndexed is true, only considers Properties marked for indexing.
+	Largest(onlyIndexed bool) (Property, bool)
 
 	// estimateSize estimates the aggregate size of the property data.
 	estimateSize() int64

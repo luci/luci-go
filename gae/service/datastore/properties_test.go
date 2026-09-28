@@ -246,6 +246,72 @@ func TestProperties(t *testing.T) {
 				assert.Loosely(t, a.Equal(&b), should.BeTrue)
 			})
 		})
+
+		t.Run("Smallest and Largest", func(t *ftt.Test) {
+			t.Run("single Property", func(t *ftt.Test) {
+				idxProp := MkProperty(10)
+				p, ok := idxProp.Smallest(true)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, p, should.Match(idxProp))
+				p, ok = idxProp.Largest(true)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, p, should.Match(idxProp))
+
+				noIdxProp := MkPropertyNI(10)
+				p, ok = noIdxProp.Smallest(true)
+				assert.That(t, ok, should.BeFalse)
+				assert.That(t, p, should.Match(Property{}))
+				p, ok = noIdxProp.Largest(true)
+				assert.That(t, ok, should.BeFalse)
+				assert.That(t, p, should.Match(Property{}))
+
+				p, ok = noIdxProp.Smallest(false)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, p, should.Match(noIdxProp))
+				p, ok = noIdxProp.Largest(false)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, p, should.Match(noIdxProp))
+			})
+
+			t.Run("PropertySlice", func(t *ftt.Test) {
+				var empty PropertySlice
+				p, ok := empty.Smallest(false)
+				assert.That(t, ok, should.BeFalse)
+				assert.That(t, p, should.Match(Property{}))
+				p, ok = empty.Largest(false)
+				assert.That(t, ok, should.BeFalse)
+				assert.That(t, p, should.Match(Property{}))
+
+				allNoIdx := PropertySlice{MkPropertyNI(1), MkPropertyNI(2)}
+				p, ok = allNoIdx.Smallest(true)
+				assert.That(t, ok, should.BeFalse)
+				assert.That(t, p, should.Match(Property{}))
+				p, ok = allNoIdx.Largest(true)
+				assert.That(t, ok, should.BeFalse)
+				assert.That(t, p, should.Match(Property{}))
+
+				mixed := PropertySlice{
+					MkPropertyNI(1),
+					MkProperty(10),
+					MkProperty(20),
+					MkPropertyNI(100),
+				}
+				p, ok = mixed.Smallest(true)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, p, should.Match(MkProperty(10)))
+				p, ok = mixed.Largest(true)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, p, should.Match(MkProperty(20)))
+
+				// Property.Less orders ShouldIndex before NoIndex.
+				p, ok = mixed.Smallest(false)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, p, should.Match(MkProperty(10)))
+				p, ok = mixed.Largest(false)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, p, should.Match(MkPropertyNI(100)))
+			})
+		})
 	})
 }
 
