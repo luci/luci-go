@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  getFeatureFlagLocalStorageKey,
   getFeatureFlagValue,
   isFlagAvailableInEnvironment,
 } from '@/common/feature_flags';
@@ -23,6 +24,11 @@ import {
   enableChromeOsRepairsDashboard,
   enableChromeOsWorkforceActivity,
   enablePTE,
+  enableWorkforceInProgressRepairs,
+  enableWorkforceMttr,
+  enableWorkforcePickupRank,
+  enableWorkforcePriorityScoreCleared,
+  enableWorkforceTimeframeFilter,
 } from '@/fleet/features';
 
 describe('Fleet Console Feature Flags Environment Isolation', () => {
@@ -57,6 +63,24 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
           env,
         ),
       ).toBe(true);
+    });
+
+    it('keeps granular workforce activity metric flags available but disabled by default in dev until toggled on', () => {
+      const granularFlags = [
+        enableWorkforcePriorityScoreCleared,
+        enableWorkforcePickupRank,
+        enableWorkforceMttr,
+        enableWorkforceInProgressRepairs,
+        enableWorkforceTimeframeFilter,
+      ];
+
+      for (const flag of granularFlags) {
+        expect(isFlagAvailableInEnvironment(flag, env)).toBe(true);
+        expect(getFeatureFlagValue(flag, 'user@google.com', env)).toBe(false);
+
+        localStorage.setItem(getFeatureFlagLocalStorageKey(flag), 'on');
+        expect(getFeatureFlagValue(flag, 'user@google.com', env)).toBe(true);
+      }
     });
 
     it('keeps pte-support disabled by default in dev (0% rollout until explicitly toggled)', () => {
@@ -170,6 +194,21 @@ describe('Fleet Console Feature Flags Environment Isolation', () => {
           env,
         ),
       ).toBe(false);
+    });
+
+    it('prevents granular workforce activity metric flags from being available or enabled in prod', () => {
+      const granularFlags = [
+        enableWorkforcePriorityScoreCleared,
+        enableWorkforcePickupRank,
+        enableWorkforceMttr,
+        enableWorkforceInProgressRepairs,
+        enableWorkforceTimeframeFilter,
+      ];
+
+      for (const flag of granularFlags) {
+        expect(isFlagAvailableInEnvironment(flag, env)).toBe(false);
+        expect(getFeatureFlagValue(flag, 'user@google.com', env)).toBe(false);
+      }
     });
 
     it('enables pte-support in prod', () => {

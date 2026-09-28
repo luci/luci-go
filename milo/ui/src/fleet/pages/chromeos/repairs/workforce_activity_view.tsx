@@ -56,14 +56,24 @@ import {
   generateRepairsURL,
   platformToURL,
 } from '@/fleet/constants/paths';
-import { enableChromeOsWorkforceActivity } from '@/fleet/features';
+import {
+  enableChromeOsWorkforceActivity,
+  enableWorkforceInProgressRepairs,
+  enableWorkforceMttr,
+  enableWorkforcePickupRank,
+  enableWorkforcePriorityScoreCleared,
+  enableWorkforceTimeframeFilter,
+} from '@/fleet/features';
 import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { PageNotFoundPage } from '@/fleet/pages/not_found_page';
 import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { GetWorkforceActivityRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  GetWorkforceActivityRequest,
+  TechnicianActivity,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { Duration as ProtoDuration } from '@/proto/google/protobuf/duration.pb';
 
 import { useWorkforceActivity } from './use_workforce_activity';
@@ -92,6 +102,13 @@ export interface WorkforceActivityViewProps {
   onBackToQueue?: () => void;
 }
 
+interface WorkforceColumn {
+  id: string;
+  align?: 'center';
+  header: React.ReactNode;
+  renderCell: (tech: TechnicianActivity) => React.ReactNode;
+}
+
 export const WorkforceActivityView = ({
   inProgressCount = 0,
   onBackToQueue,
@@ -100,6 +117,16 @@ export const WorkforceActivityView = ({
   const currentPlatform = useCurrentPlatform();
   const [timeframe, setTimeframe] = useState<TimeframeOption>('1D');
   const [unclaimedDuts, setUnclaimedDuts] = useState<Set<string>>(new Set());
+
+  const showPriorityScoreCleared = useFeatureFlag(
+    enableWorkforcePriorityScoreCleared,
+  );
+  const showPickupRank = useFeatureFlag(enableWorkforcePickupRank);
+  const showMttr = useFeatureFlag(enableWorkforceMttr);
+  const showInProgressRepairs = useFeatureFlag(
+    enableWorkforceInProgressRepairs,
+  );
+  const showTimeframeFilter = useFeatureFlag(enableWorkforceTimeframeFilter);
 
   const handleBackToQueue = () => {
     if (onBackToQueue) {
@@ -143,6 +170,167 @@ export const WorkforceActivityView = ({
       return next;
     });
   };
+
+  const getColumns = (): WorkforceColumn[] => {
+    const allColumns: (WorkforceColumn | false)[] = [
+      {
+        id: 'technician',
+        header: 'Technician',
+        renderCell: (tech) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <UserAvatar
+              name={tech.name}
+              email={tech.email}
+              id={tech.id}
+              sx={{
+                width: 36,
+                height: 36,
+                fontSize: '0.95rem',
+              }}
+            />
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {tech.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {tech.email}
+              </Typography>
+            </Box>
+          </Box>
+        ),
+      },
+      showInProgressRepairs && {
+        id: 'inProgressRepairs',
+        header: 'Currently Claimed DUTs (In-Progress)',
+        renderCell: (tech) =>
+          tech.claimedDuts.length > 0 ? (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {tech.claimedDuts.map((dut) => (
+                <Chip
+                  key={dut.dutId}
+                  icon={<PersonIcon sx={{ fontSize: 16 }} />}
+                  label={`${dut.dutId} (Score: ${dut.score} | ${formatDuration(dut.duration)})`}
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                  onDelete={() => handleUnclaimDut(tech.id, dut.dutId)}
+                  sx={{
+                    fontFamily: 'monospace',
+                    fontSize: '0.75rem',
+                    bgcolor: colors.blue[50],
+                  }}
+                />
+              ))}
+            </Box>
+          ) : (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontStyle: 'italic' }}
+            >
+              No active devices claimed
+            </Typography>
+          ),
+      },
+      showPriorityScoreCleared && {
+        id: 'priorityScoreCleared',
+        align: 'center',
+        header: `Priority Score Cleared (${timeframe})`,
+        renderCell: (tech) => (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+          >
+            <Chip
+              label={`${tech.priorityScoreCleared} pts`}
+              size="small"
+              sx={{
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                fontWeight: 700,
+                height: 24,
+              }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              avg {tech.avgPtsPerDut} pts/DUT
+            </Typography>
+          </Box>
+        ),
+      },
+      showPickupRank && {
+        id: 'pickupRank',
+        align: 'center',
+        header: (
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+          >
+            <span>Avg Queue Pickup Rank ({timeframe})</span>
+            <Tooltip title="Average position of tasks in the priority queue when claimed by the technician.">
+              <HelpOutlineIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            </Tooltip>
+          </Box>
+        ),
+        renderCell: (tech) => (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+          >
+            <Chip
+              label={`#${tech.avgQueuePickupRank}`}
+              size="small"
+              sx={{
+                bgcolor: tech.isRankSkewed
+                  ? colors.yellow[700]
+                  : colors.green[700],
+                color: colors.white,
+                fontWeight: 700,
+                height: 24,
+              }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              Sum: {tech.pickupRankSum} | {tech.pickupRankLabel}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        id: 'completedRepairs',
+        align: 'center',
+        header: `Completed Repairs (${timeframe})`,
+        renderCell: (tech) => (
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+            {tech.completedRepairs} devices
+          </Typography>
+        ),
+      },
+      showMttr && {
+        id: 'mttr',
+        align: 'center',
+        header: 'Avg Duration (MTTR)',
+        renderCell: (tech) => (
+          <Typography variant="body2" color="text.secondary">
+            {formatDuration(tech.avgDuration)}
+          </Typography>
+        ),
+      },
+    ];
+
+    return allColumns.filter((col): col is WorkforceColumn => Boolean(col));
+  };
+
+  const columns = getColumns();
 
   return (
     <Box sx={{ containerType: 'inline-size' }}>
@@ -211,58 +399,60 @@ export const WorkforceActivityView = ({
             Prioritized Manual Repair Queue
           </Button>
 
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 1,
-              '@container (max-width: 730px)': {
-                gap: '6px !important',
-              },
-            }}
-          >
-            <Typography
-              variant="body2"
-              color="text.secondary"
+          {showTimeframeFilter && (
+            <Box
               sx={{
-                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 1,
                 '@container (max-width: 730px)': {
-                  fontSize: '0.75rem !important',
+                  gap: '6px !important',
                 },
               }}
             >
-              Timeframe:
-            </Typography>
-            <ToggleButtonGroup
-              value={timeframe}
-              exclusive
-              size="small"
-              onChange={(_, newValue: TimeframeOption | null) => {
-                if (newValue) setTimeframe(newValue);
-              }}
-              sx={{
-                '& .MuiToggleButton-root': {
-                  textTransform: 'none',
-                  px: 1.25,
-                  py: 0.5,
-                  fontSize: '0.8125rem',
-                  whiteSpace: 'nowrap',
-                },
-                '@container (max-width: 730px)': {
-                  '& .MuiToggleButton-root': {
-                    padding: '3px 6px !important',
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  fontWeight: 600,
+                  '@container (max-width: 730px)': {
                     fontSize: '0.75rem !important',
                   },
-                },
-              }}
-            >
-              <ToggleButton value="1D">Last Day (1D)</ToggleButton>
-              <ToggleButton value="7D">Last Week (7D)</ToggleButton>
-              <ToggleButton value="30D">Last Month (30D)</ToggleButton>
-              <ToggleButton value="YTD">YTD</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
+                }}
+              >
+                Timeframe:
+              </Typography>
+              <ToggleButtonGroup
+                value={timeframe}
+                exclusive
+                size="small"
+                onChange={(_, newValue: TimeframeOption | null) => {
+                  if (newValue) setTimeframe(newValue);
+                }}
+                sx={{
+                  '& .MuiToggleButton-root': {
+                    textTransform: 'none',
+                    px: 1.25,
+                    py: 0.5,
+                    fontSize: '0.8125rem',
+                    whiteSpace: 'nowrap',
+                  },
+                  '@container (max-width: 730px)': {
+                    '& .MuiToggleButton-root': {
+                      padding: '3px 6px !important',
+                      fontSize: '0.75rem !important',
+                    },
+                  },
+                }}
+              >
+                <ToggleButton value="1D">Last Day (1D)</ToggleButton>
+                <ToggleButton value="7D">Last Week (7D)</ToggleButton>
+                <ToggleButton value="30D">Last Month (30D)</ToggleButton>
+                <ToggleButton value="YTD">YTD</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          )}
         </Box>
       </Box>
 
@@ -354,194 +544,202 @@ export const WorkforceActivityView = ({
         </Paper>
 
         {/* Total Priority Points Cleared */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            borderRadius: '8px',
-            border: `1px solid ${colors.grey[300]}`,
-          }}
-        >
-          <Box
+        {showPriorityScoreCleared && (
+          <Paper
+            elevation={0}
             sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 1,
+              p: 2,
+              borderRadius: '8px',
+              border: `1px solid ${colors.grey[300]}`,
             }}
           >
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontWeight: 600 }}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 1,
+              }}
             >
-              Total Priority Points Cleared
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
+                Total Priority Points Cleared
+              </Typography>
+              <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+            </Box>
+            {loading ? (
+              <Skeleton
+                variant="text"
+                width={100}
+                height={42}
+                sx={{ mb: 0.5 }}
+                data-testid="kpi-skeleton"
+              />
+            ) : (
+              <Typography
+                variant="h4"
+                sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
+              >
+                {(data?.totalPriorityPointsCleared ?? 0).toLocaleString()} pts
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary">
+              High-impact score restored (today)
             </Typography>
-            <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-          </Box>
-          {loading ? (
-            <Skeleton
-              variant="text"
-              width={100}
-              height={42}
-              sx={{ mb: 0.5 }}
-              data-testid="kpi-skeleton"
-            />
-          ) : (
-            <Typography
-              variant="h4"
-              sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
-            >
-              {(data?.totalPriorityPointsCleared ?? 0).toLocaleString()} pts
-            </Typography>
-          )}
-          <Typography variant="caption" color="text.secondary">
-            High-impact score restored (today)
-          </Typography>
-        </Paper>
+          </Paper>
+        )}
 
         {/* Avg Queue Pickup Rank */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            borderRadius: '8px',
-            border: `1px solid ${colors.grey[300]}`,
-          }}
-        >
-          <Box
+        {showPickupRank && (
+          <Paper
+            elevation={0}
             sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 1,
+              p: 2,
+              borderRadius: '8px',
+              border: `1px solid ${colors.grey[300]}`,
             }}
           >
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontWeight: 600 }}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 1,
+              }}
             >
-              Avg Queue Pickup Rank
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
+                Avg Queue Pickup Rank
+              </Typography>
+              <FormatListBulletedIcon
+                sx={{ color: 'primary.main', fontSize: 20 }}
+              />
+            </Box>
+            {loading ? (
+              <Skeleton
+                variant="text"
+                width={70}
+                height={42}
+                sx={{ mb: 0.5 }}
+                data-testid="kpi-skeleton"
+              />
+            ) : (
+              <Typography
+                variant="h4"
+                sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
+              >
+                #{data?.avgQueuePickupRank ?? 0}
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary">
+              Mean pickup position (Anti-skew)
             </Typography>
-            <FormatListBulletedIcon
-              sx={{ color: 'primary.main', fontSize: 20 }}
-            />
-          </Box>
-          {loading ? (
-            <Skeleton
-              variant="text"
-              width={70}
-              height={42}
-              sx={{ mb: 0.5 }}
-              data-testid="kpi-skeleton"
-            />
-          ) : (
-            <Typography
-              variant="h4"
-              sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
-            >
-              #{data?.avgQueuePickupRank ?? 0}
-            </Typography>
-          )}
-          <Typography variant="caption" color="text.secondary">
-            Mean pickup position (Anti-skew)
-          </Typography>
-        </Paper>
+          </Paper>
+        )}
 
         {/* In-Progress Repairs */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            borderRadius: '8px',
-            border: `1px solid ${colors.grey[300]}`,
-          }}
-        >
-          <Box
+        {showInProgressRepairs && (
+          <Paper
+            elevation={0}
             sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 1,
+              p: 2,
+              borderRadius: '8px',
+              border: `1px solid ${colors.grey[300]}`,
             }}
           >
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontWeight: 600 }}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 1,
+              }}
             >
-              In-Progress Repairs
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
+                In-Progress Repairs
+              </Typography>
+              <HowToRegIcon sx={{ color: colors.orange[600], fontSize: 20 }} />
+            </Box>
+            {loading ? (
+              <Skeleton
+                variant="text"
+                width={60}
+                height={42}
+                sx={{ mb: 0.5 }}
+                data-testid="kpi-skeleton"
+              />
+            ) : (
+              <Typography
+                variant="h4"
+                sx={{ fontWeight: 700, color: colors.orange[600], mb: 0.5 }}
+              >
+                {data?.inProgressRepairs ?? inProgressCount}
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary">
+              Currently claimed physical DUTs
             </Typography>
-            <HowToRegIcon sx={{ color: colors.orange[600], fontSize: 20 }} />
-          </Box>
-          {loading ? (
-            <Skeleton
-              variant="text"
-              width={60}
-              height={42}
-              sx={{ mb: 0.5 }}
-              data-testid="kpi-skeleton"
-            />
-          ) : (
-            <Typography
-              variant="h4"
-              sx={{ fontWeight: 700, color: colors.orange[600], mb: 0.5 }}
-            >
-              {data?.inProgressRepairs ?? inProgressCount}
-            </Typography>
-          )}
-          <Typography variant="caption" color="text.secondary">
-            Currently claimed physical DUTs
-          </Typography>
-        </Paper>
+          </Paper>
+        )}
 
         {/* Avg Repair Time (MTTR) */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            borderRadius: '8px',
-            border: `1px solid ${colors.grey[300]}`,
-          }}
-        >
-          <Box
+        {showMttr && (
+          <Paper
+            elevation={0}
             sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 1,
+              p: 2,
+              borderRadius: '8px',
+              border: `1px solid ${colors.grey[300]}`,
             }}
           >
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontWeight: 600 }}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 1,
+              }}
             >
-              Avg Repair Time (MTTR)
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
+                Avg Repair Time (MTTR)
+              </Typography>
+              <TimerIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+            </Box>
+            {loading ? (
+              <Skeleton
+                variant="text"
+                width={90}
+                height={42}
+                sx={{ mb: 0.5 }}
+                data-testid="kpi-skeleton"
+              />
+            ) : (
+              <Typography
+                variant="h4"
+                sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
+              >
+                {formatDuration(data?.avgRepairTime)}
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary">
+              Mean elapsed time ({timeframe})
             </Typography>
-            <TimerIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-          </Box>
-          {loading ? (
-            <Skeleton
-              variant="text"
-              width={90}
-              height={42}
-              sx={{ mb: 0.5 }}
-              data-testid="kpi-skeleton"
-            />
-          ) : (
-            <Typography
-              variant="h4"
-              sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
-            >
-              {formatDuration(data?.avgRepairTime)}
-            </Typography>
-          )}
-          <Typography variant="caption" color="text.secondary">
-            Mean elapsed time ({timeframe})
-          </Typography>
-        </Paper>
+          </Paper>
+        )}
       </Box>
 
       {/* Technicians Table */}
@@ -556,56 +754,22 @@ export const WorkforceActivityView = ({
         <Table>
           <TableHead sx={{ bgcolor: colors.grey[50] }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>
-                Technician
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>
-                Currently Claimed DUTs (In-Progress)
-              </TableCell>
-              <TableCell
-                align="center"
-                sx={{ fontWeight: 700, color: 'text.secondary' }}
-              >
-                Priority Score Cleared ({timeframe})
-              </TableCell>
-              <TableCell
-                align="center"
-                sx={{ fontWeight: 700, color: 'text.secondary' }}
-              >
-                <Box
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                  }}
+              {columns.map((col) => (
+                <TableCell
+                  key={col.id}
+                  align={col.align}
+                  sx={{ fontWeight: 700, color: 'text.secondary' }}
                 >
-                  <span>Avg Queue Pickup Rank ({timeframe})</span>
-                  <Tooltip title="Average position of tasks in the priority queue when claimed by the technician.">
-                    <HelpOutlineIcon
-                      sx={{ fontSize: 16, color: 'text.secondary' }}
-                    />
-                  </Tooltip>
-                </Box>
-              </TableCell>
-              <TableCell
-                align="center"
-                sx={{ fontWeight: 700, color: 'text.secondary' }}
-              >
-                Completed Repairs ({timeframe})
-              </TableCell>
-              <TableCell
-                align="center"
-                sx={{ fontWeight: 700, color: 'text.secondary' }}
-              >
-                Avg Duration (MTTR)
-              </TableCell>
+                  {col.header}
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={columns.length}
                   align="center"
                   sx={{ py: 6 }}
                   data-testid="workforce-loading-spinner"
@@ -616,7 +780,7 @@ export const WorkforceActivityView = ({
             ) : isError ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={columns.length}
                   align="center"
                   sx={{ color: 'text.secondary', py: 4 }}
                   data-testid="workforce-error-table"
@@ -627,7 +791,7 @@ export const WorkforceActivityView = ({
             ) : technicians.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={columns.length}
                   align="center"
                   sx={{ color: 'text.secondary', py: 4 }}
                   data-testid="workforce-empty-table"
@@ -639,133 +803,11 @@ export const WorkforceActivityView = ({
             ) : (
               technicians.map((tech) => (
                 <TableRow key={tech.id} hover>
-                  {/* Technician */}
-                  <TableCell>
-                    <Box
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
-                    >
-                      <UserAvatar
-                        name={tech.name}
-                        email={tech.email}
-                        id={tech.id}
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          fontSize: '0.95rem',
-                        }}
-                      />
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          {tech.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {tech.email}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </TableCell>
-
-                  {/* Currently Claimed DUTs */}
-                  <TableCell>
-                    {tech.claimedDuts.length > 0 ? (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {tech.claimedDuts.map((dut) => (
-                          <Chip
-                            key={dut.dutId}
-                            icon={<PersonIcon sx={{ fontSize: 16 }} />}
-                            label={`${dut.dutId} (Score: ${dut.score} | ${formatDuration(dut.duration)})`}
-                            variant="outlined"
-                            color="primary"
-                            size="small"
-                            onDelete={() =>
-                              handleUnclaimDut(tech.id, dut.dutId)
-                            }
-                            sx={{
-                              fontFamily: 'monospace',
-                              fontSize: '0.75rem',
-                              bgcolor: colors.blue[50],
-                            }}
-                          />
-                        ))}
-                      </Box>
-                    ) : (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ fontStyle: 'italic' }}
-                      >
-                        No active devices claimed
-                      </Typography>
-                    )}
-                  </TableCell>
-
-                  {/* Priority Score Cleared */}
-                  <TableCell align="center">
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 0.5,
-                      }}
-                    >
-                      <Chip
-                        label={`${tech.priorityScoreCleared} pts`}
-                        size="small"
-                        sx={{
-                          bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                          fontWeight: 700,
-                          height: 24,
-                        }}
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        avg {tech.avgPtsPerDut} pts/DUT
-                      </Typography>
-                    </Box>
-                  </TableCell>
-
-                  {/* Avg Queue Pickup Rank */}
-                  <TableCell align="center">
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 0.5,
-                      }}
-                    >
-                      <Chip
-                        label={`#${tech.avgQueuePickupRank}`}
-                        size="small"
-                        sx={{
-                          bgcolor: tech.isRankSkewed
-                            ? colors.yellow[700]
-                            : colors.green[700],
-                          color: colors.white,
-                          fontWeight: 700,
-                          height: 24,
-                        }}
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        Sum: {tech.pickupRankSum} | {tech.pickupRankLabel}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-
-                  {/* Completed Repairs */}
-                  <TableCell align="center">
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {tech.completedRepairs} devices
-                    </Typography>
-                  </TableCell>
-
-                  {/* Avg Duration (MTTR) */}
-                  <TableCell align="center">
-                    <Typography variant="body2" color="text.secondary">
-                      {formatDuration(tech.avgDuration)}
-                    </Typography>
-                  </TableCell>
+                  {columns.map((col) => (
+                    <TableCell key={col.id} align={col.align}>
+                      {col.renderCell(tech)}
+                    </TableCell>
+                  ))}
                 </TableRow>
               ))
             )}

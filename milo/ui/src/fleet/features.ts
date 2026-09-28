@@ -81,3 +81,63 @@ export const enableChromeOsWorkforceActivity = createFeatureFlag({
   },
   allowedEnvironments: ['dev'],
 });
+
+export const enableWorkforcePriorityScoreCleared = createFeatureFlag({
+  description:
+    'Displays the Priority Score Cleared metric and table column in ChromeOS Workforce Activity.',
+  namespace: 'fleet-console',
+  name: 'workforce-priority-score-cleared',
+  percentage: {
+    dev: 0,
+    prod: 0,
+  },
+  allowedEnvironments: ['dev'],
+});
+
+export const enableWorkforcePickupRank = createFeatureFlag({
+  description:
+    'Displays the Avg Queue Pickup Rank metric and table column in ChromeOS Workforce Activity.',
+  namespace: 'fleet-console',
+  name: 'workforce-avg-queue-pickup-rank',
+  percentage: {
+    dev: 0,
+    prod: 0,
+  },
+  allowedEnvironments: ['dev'],
+});
+
+export const enableWorkforceMttr = createFeatureFlag({
+  description:
+    'Displays the Avg Duration / MTTR metric and table column in ChromeOS Workforce Activity.',
+  namespace: 'fleet-console',
+  name: 'workforce-avg-duration-mttr',
+  percentage: {
+    dev: 0,
+    prod: 0,
+  },
+  allowedEnvironments: ['dev'],
+});
+
+export const enableWorkforceInProgressRepairs = createFeatureFlag({
+  description:
+    'Displays the Currently Claimed DUTs / In-Progress Repairs metric and table column in ChromeOS Workforce Activity.',
+  namespace: 'fleet-console',
+  name: 'workforce-in-progress-repairs',
+  percentage: {
+    dev: 0,
+    prod: 0,
+  },
+  allowedEnvironments: ['dev'],
+});
+
+export const enableWorkforceTimeframeFilter = createFeatureFlag({
+  description:
+    'Displays the timeframe picker (1D/7D/30D/YTD) in ChromeOS Workforce Activity.',
+  namespace: 'fleet-console',
+  name: 'workforce-timeframe-filter',
+  percentage: {
+    dev: 0,
+    prod: 0,
+  },
+  allowedEnvironments: ['dev'],
+});

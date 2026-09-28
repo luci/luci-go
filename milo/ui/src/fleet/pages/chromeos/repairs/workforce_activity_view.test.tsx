@@ -15,8 +15,16 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { getFeatureFlagLocalStorageKey } from '@/common/feature_flags';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
+import {
+  enableWorkforceInProgressRepairs,
+  enableWorkforceMttr,
+  enableWorkforcePickupRank,
+  enableWorkforcePriorityScoreCleared,
+  enableWorkforceTimeframeFilter,
+} from '@/fleet/features';
 import * as UseWorkforceActivityModule from '@/fleet/pages/chromeos/repairs/use_workforce_activity';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -100,10 +108,34 @@ const MOCK_WORKFORCE_DATA = {
   ],
 };
 
+const enableAllMetricFlags = () => {
+  localStorage.setItem(
+    getFeatureFlagLocalStorageKey(enableWorkforcePriorityScoreCleared),
+    'on',
+  );
+  localStorage.setItem(
+    getFeatureFlagLocalStorageKey(enableWorkforcePickupRank),
+    'on',
+  );
+  localStorage.setItem(
+    getFeatureFlagLocalStorageKey(enableWorkforceMttr),
+    'on',
+  );
+  localStorage.setItem(
+    getFeatureFlagLocalStorageKey(enableWorkforceInProgressRepairs),
+    'on',
+  );
+  localStorage.setItem(
+    getFeatureFlagLocalStorageKey(enableWorkforceTimeframeFilter),
+    'on',
+  );
+};
+
 describe('<WorkforceActivityView />', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    localStorage.clear();
     mockNavigate.mockReset();
     queryClient = new QueryClient({
       defaultOptions: {
@@ -136,7 +168,70 @@ describe('<WorkforceActivityView />', () => {
       </QueryClientProvider>,
     );
 
-  it('renders header, info banner, and KPI summary cards correctly', () => {
+  it('hides unimplemented metrics from KPI cards and table columns by default', () => {
+    jest
+      .spyOn(UseWorkforceActivityModule, 'useWorkforceActivity')
+      .mockReturnValue({
+        data: MOCK_WORKFORCE_DATA,
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<
+        typeof UseWorkforceActivityModule.useWorkforceActivity
+      >);
+
+    renderWorkforceView();
+
+    expect(
+      screen.getByText('Workforce & Technician Monitoring'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Active Repairers')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('Technician')).toBeInTheDocument();
+    expect(screen.getByText('Completed Repairs (1D)')).toBeInTheDocument();
+    expect(screen.getByText('Andrew Miller')).toBeInTheDocument();
+    expect(screen.getByText('8 devices')).toBeInTheDocument();
+
+    // Unimplemented KPI cards are hidden by default
+    expect(
+      screen.queryByText('Total Priority Points Cleared'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('2,850 pts')).not.toBeInTheDocument();
+    expect(screen.queryByText('Avg Queue Pickup Rank')).not.toBeInTheDocument();
+    expect(screen.queryByText('#4.7')).not.toBeInTheDocument();
+    expect(screen.queryByText('In-Progress Repairs')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Avg Repair Time (MTTR)'),
+    ).not.toBeInTheDocument();
+
+    // Unimplemented table headers and cells are hidden by default
+    expect(
+      screen.queryByText('Currently Claimed DUTs (In-Progress)'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/chromeos1-row2-rack3-host1/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Priority Score Cleared (1D)'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('680 pts')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Avg Queue Pickup Rank (1D)'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('#1.8')).not.toBeInTheDocument();
+    expect(screen.queryByText('Avg Duration (MTTR)')).not.toBeInTheDocument();
+
+    // Timeframe picker is hidden by default
+    expect(screen.queryByText('Timeframe:')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Last Week \(7D\)/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders header, info banner, and KPI summary cards when metric feature flags are enabled', () => {
+    enableAllMetricFlags();
     jest
       .spyOn(UseWorkforceActivityModule, 'useWorkforceActivity')
       .mockReturnValue({
@@ -171,7 +266,8 @@ describe('<WorkforceActivityView />', () => {
     expect(screen.getByText('Avg Repair Time (MTTR)')).toBeInTheDocument();
   });
 
-  it('renders technician table rows with details, avatars, and metrics', () => {
+  it('renders technician table rows with details, avatars, and metrics when metric feature flags are enabled', () => {
+    enableAllMetricFlags();
     jest
       .spyOn(UseWorkforceActivityModule, 'useWorkforceActivity')
       .mockReturnValue({
@@ -202,7 +298,11 @@ describe('<WorkforceActivityView />', () => {
     expect(screen.getByText('No active devices claimed')).toBeInTheDocument();
   });
 
-  it('allows unclaiming a claimed DUT from the technician row', () => {
+  it('allows unclaiming a claimed DUT from the technician row when in-progress flag is enabled', () => {
+    localStorage.setItem(
+      getFeatureFlagLocalStorageKey(enableWorkforceInProgressRepairs),
+      'on',
+    );
     jest
       .spyOn(UseWorkforceActivityModule, 'useWorkforceActivity')
       .mockReturnValue({
@@ -229,6 +329,10 @@ describe('<WorkforceActivityView />', () => {
   });
 
   it('changes timeframe when toggle buttons are clicked', () => {
+    localStorage.setItem(
+      getFeatureFlagLocalStorageKey(enableWorkforceTimeframeFilter),
+      'on',
+    );
     const useWorkforceSpy = jest
       .spyOn(UseWorkforceActivityModule, 'useWorkforceActivity')
       .mockReturnValue({
@@ -323,7 +427,7 @@ describe('<WorkforceActivityView />', () => {
     renderWorkforceView();
 
     const skeletons = screen.getAllByTestId('kpi-skeleton');
-    expect(skeletons).toHaveLength(5);
+    expect(skeletons).toHaveLength(1);
     expect(screen.getByTestId('workforce-loading-spinner')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     expect(screen.queryByText('Andrew Miller')).not.toBeInTheDocument();
