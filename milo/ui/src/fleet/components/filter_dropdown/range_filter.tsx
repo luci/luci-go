@@ -59,11 +59,11 @@ export const RangeFilter = forwardRef(function RangeFilter(
   const isTextFieldValueValid = () => {
     const val0 =
       typeof textFieldValue[0] === 'string'
-        ? parseInt(textFieldValue[0])
+        ? parseFloat(textFieldValue[0])
         : textFieldValue[0];
     const val1 =
       typeof textFieldValue[1] === 'string'
-        ? parseInt(textFieldValue[1])
+        ? parseFloat(textFieldValue[1])
         : textFieldValue[1];
 
     if (
@@ -134,7 +134,7 @@ export const RangeFilter = forwardRef(function RangeFilter(
           }}
           onChange={(e) => {
             const rawValue = e.target.value;
-            const parsed = parseInt(rawValue);
+            const parsed = parseFloat(rawValue);
 
             if (rawValue === '') {
               setTextFieldValue(['', textFieldValue[1]]);
@@ -168,7 +168,7 @@ export const RangeFilter = forwardRef(function RangeFilter(
           }}
           onChange={(e) => {
             const rawValue = e.target.value;
-            const parsed = parseInt(rawValue);
+            const parsed = parseFloat(rawValue);
 
             if (rawValue === '') {
               setTextFieldValue([textFieldValue[0], '']);

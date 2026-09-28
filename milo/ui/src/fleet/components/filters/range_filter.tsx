@@ -21,11 +21,20 @@ import { RangeFilter, RangeFilterValue } from '../filter_dropdown/range_filter';
 import { Footer } from '../options_dropdown/footer';
 
 import { filterDropdownKeyDown } from './filter_dropdown_keydown';
+import { normalizeFilterKey } from './normalize_filter_key';
 import {
   BuildResult,
   FilterCategory,
   FilterCategoryBuilder,
 } from './use_filters';
+
+// Utilization filter metrics (e.g. 7-day and 30-day average utilization) are stored
+// as decimal proportions [0.0, 1.0] in the backend API but presented as percentages [0, 100] in the UI.
+export const UTILIZATION_FILTER_KEYS: readonly string[] = [
+  'average_7d',
+  'average_30d',
+];
+export const DEFAULT_UTILIZATION_SCALE_FACTOR = 0.01;
 
 export class RangeFilterCategory implements FilterCategory {
   public value: RangeFilterValue;
@@ -34,6 +43,7 @@ export class RangeFilterCategory implements FilterCategory {
   public key: string;
   public min: number;
   public max: number;
+  public scaleFactor: number;
   private reRender: () => void;
 
   private constructor(
@@ -42,12 +52,14 @@ export class RangeFilterCategory implements FilterCategory {
     min: number,
     max: number,
     value: RangeFilterValue,
+    scaleFactor: number,
     reRender: (newFilter: RangeFilterCategory) => void,
   ) {
     this.label = label;
     this.key = key;
     this.min = min;
     this.max = max;
+    this.scaleFactor = scaleFactor;
     this.value = value;
     this.reRender = () => {
       reRender(this);
@@ -61,8 +73,15 @@ export class RangeFilterCategory implements FilterCategory {
     max: number,
     reRender: (newFilter: RangeFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
+    scaleFactor?: number,
   ): BuildResult<RangeFilterCategory> {
     const value: RangeFilterValue = {};
+    const normKey = normalizeFilterKey(key).toLowerCase();
+    const effectiveScaleFactor =
+      scaleFactor ??
+      (UTILIZATION_FILTER_KEYS.includes(normKey)
+        ? DEFAULT_UTILIZATION_SCALE_FACTOR
+        : 1);
 
     if (terms !== null) {
       for (const term of terms) {
@@ -75,9 +94,13 @@ export class RangeFilterCategory implements FilterCategory {
         }
 
         const valStr = term.simple.arg.member.value.value;
-        const num = parseInt(valStr, 10);
+        let num = parseFloat(valStr);
         if (isNaN(num)) {
           continue;
+        }
+
+        if (effectiveScaleFactor !== 1 && num <= max * effectiveScaleFactor) {
+          num = +(num / effectiveScaleFactor).toFixed(6);
         }
 
         const comparator = term.simple.comparator;
@@ -98,6 +121,7 @@ export class RangeFilterCategory implements FilterCategory {
       min,
       max,
       value,
+      effectiveScaleFactor,
       reRender,
     );
     return { isError: false, value: filter, warnings: [] };
@@ -113,10 +137,18 @@ export class RangeFilterCategory implements FilterCategory {
     const parts: string[] = [];
     const safeKey = this.key.trim();
     if (this.value.min !== undefined) {
-      parts.push(`${safeKey} >= ${this.value.min}`);
+      const scaledMin =
+        this.scaleFactor !== 1
+          ? +(this.value.min * this.scaleFactor).toFixed(6)
+          : this.value.min;
+      parts.push(`${safeKey} >= ${scaledMin}`);
     }
     if (this.value.max !== undefined) {
-      parts.push(`${safeKey} <= ${this.value.max}`);
+      const scaledMax =
+        this.scaleFactor !== 1
+          ? +(this.value.max * this.scaleFactor).toFixed(6)
+          : this.value.max;
+      parts.push(`${safeKey} <= ${scaledMax}`);
     }
     return parts.join(' AND ');
   }
@@ -223,6 +255,7 @@ export class RangeFilterCategoryBuilder
   public label: string | undefined;
   public min: number | undefined;
   public max: number | undefined;
+  public scaleFactor: number | undefined;
 
   constructor() {}
 
@@ -241,6 +274,11 @@ export class RangeFilterCategoryBuilder
     return this;
   }
 
+  public setScaleFactor(scaleFactor: number) {
+    this.scaleFactor = scaleFactor;
+    return this;
+  }
+
   public isFilledIn(): boolean {
     return (
       this.label !== undefined &&
@@ -254,7 +292,7 @@ export class RangeFilterCategoryBuilder
     reRender: (newFilter: RangeFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ): BuildResult<RangeFilterCategory> {
-    const { label, min, max } = this;
+    const { label, min, max, scaleFactor } = this;
     if (label === undefined || min === undefined || max === undefined) {
       return {
         isError: true,
@@ -262,6 +300,14 @@ export class RangeFilterCategoryBuilder
       };
     }
 
-    return RangeFilterCategory.create(label, key, min, max, reRender, terms);
+    return RangeFilterCategory.create(
+      label,
+      key,
+      min,
+      max,
+      reRender,
+      terms,
+      scaleFactor,
+    );
   }
 }
