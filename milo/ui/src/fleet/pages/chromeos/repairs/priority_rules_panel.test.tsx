@@ -21,11 +21,12 @@ import {
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import * as UsePriorityRulesModule from '@/fleet/pages/chromeos/repairs/use_priority_rules';
-import { RepairQueueFilterKey } from '@/fleet/pages/chromeos/repairs/use_repair_queue_filter_builders';
-import * as UseRepairQueueFilterBuildersModule from '@/fleet/pages/chromeos/repairs/use_repair_queue_filter_builders';
+import { ChromeOSFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
+import * as UseChromeOSFiltersModule from '@/fleet/pages/device_list_page/chromeos/use_chromeos_filters';
 import { PriorityRule } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -72,27 +73,43 @@ const createMockFilterBuilders = () =>
     lab: new StringListFilterCategoryBuilder()
       .setLabel('Lab')
       .setOptions([{ label: 'MTV', value: 'MTV' }]),
-    dut_state: new StringListFilterCategoryBuilder()
+    state: new StringListFilterCategoryBuilder()
       .setLabel('State')
       .setOptions([{ label: 'READY', value: 'READY' }]),
-  }) as unknown as Record<
-    RepairQueueFilterKey,
-    StringListFilterCategoryBuilder
-  >;
+  }) as unknown as Record<ChromeOSFilterKey, StringListFilterCategoryBuilder>;
 
 describe('<PriorityRulesPanel />', () => {
   const mockCreateRule = jest.fn();
   const mockUpdateRule = jest.fn();
   const mockDeleteRule = jest.fn();
+  const mockFetchPermissions = jest.fn();
+
+  const setupMockPermissions = (
+    hasPermission: boolean | null = true,
+    fetchResult: { hasPermission: boolean } = {
+      hasPermission: hasPermission === true,
+    },
+  ) => {
+    mockFetchPermissions.mockResolvedValue(fetchResult);
+    jest
+      .spyOn(UseAdminTaskPermissionModule, 'usePriorityRulesPermission')
+      .mockReturnValue({
+        hasPermission,
+        fetchPermissions: mockFetchPermissions,
+        isError: false,
+        error: null,
+      });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockCreateRule.mockResolvedValue({});
     mockUpdateRule.mockResolvedValue({});
     mockDeleteRule.mockResolvedValue({});
+    setupMockPermissions(true);
 
     jest
-      .spyOn(UseRepairQueueFilterBuildersModule, 'useRepairQueueFilterBuilders')
+      .spyOn(UseChromeOSFiltersModule, 'useChromeOSFilterBuilders')
       .mockReturnValue({
         filterBuilders: createMockFilterBuilders(),
         isLoading: false,
@@ -216,46 +233,6 @@ describe('<PriorityRulesPanel />', () => {
     });
   });
 
-  it('swaps the delete button for Apply while a row is dirty', () => {
-    setupMockHook(MOCK_RULES.slice(0, 1));
-    renderPanel();
-
-    // Pristine: delete only. Apply shares the same slot, so showing both
-    // would push the Pts field sideways on the first keystroke.
-    expect(screen.getByTestId('rule-delete-button-1')).toBeInTheDocument();
-    expect(screen.queryByTestId('rule-apply-button-1')).not.toBeInTheDocument();
-
-    fireEvent.change(screen.getByTestId('rule-weight-input-1'), {
-      target: { value: '300' },
-    });
-
-    expect(screen.getByTestId('rule-apply-button-1')).toBeInTheDocument();
-    expect(
-      screen.queryByTestId('rule-delete-button-1'),
-    ).not.toBeInTheDocument();
-  });
-
-  it('keeps the delete button on a draft that has no filter yet', () => {
-    setupMockHook(MOCK_RULES.slice(0, 1));
-    renderPanel();
-
-    fireEvent.click(screen.getByTestId('add-priority-rule-button'));
-
-    const draftRow = screen.getByTestId(/^priority-rule-row-draft-/);
-    const draftId = draftRow
-      .getAttribute('data-testid')!
-      .replace('priority-rule-row-', '');
-
-    // A draft is dirty from birth, so swapping on `dirty` alone would strand
-    // it with no way to back out. Nothing to apply yet, so delete stays.
-    expect(
-      screen.getByTestId(`rule-delete-button-${draftId}`),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByTestId(`rule-apply-button-${draftId}`),
-    ).not.toBeInTheDocument();
-  });
-
   it('shows Apply button when filter chip is removed in FilterBar', async () => {
     setupMockHook(MOCK_RULES.slice(0, 1));
     renderPanel();
@@ -280,11 +257,11 @@ describe('<PriorityRulesPanel />', () => {
     fireEvent.click(addRuleButton);
 
     // New draft row rendered with FilterBar search input
-    const rowDraft = screen.getAllByTestId(/^priority-rule-row-draft-/)[0];
+    const rowDraft = await screen.findByTestId(/^priority-rule-row-draft-/);
     expect(rowDraft).toBeInTheDocument();
 
     const searchInput = within(rowDraft).getByPlaceholderText(
-      'Add rule filter (e.g. pool, board, model, dut_state)...',
+      'Add rule filter (e.g. pool, board, model)...',
     );
     expect(searchInput).toBeInTheDocument();
 
@@ -351,7 +328,9 @@ describe('<PriorityRulesPanel />', () => {
 
     // Add draft
     fireEvent.click(screen.getByTestId('add-priority-rule-button'));
-    expect(screen.getByTestId(/^priority-rule-row-draft-/)).toBeInTheDocument();
+    expect(
+      await screen.findByTestId(/^priority-rule-row-draft-/),
+    ).toBeInTheDocument();
 
     // Delete draft
     const deleteButtons = screen.getAllByLabelText(/delete rule/i);
@@ -462,9 +441,9 @@ describe('<PriorityRulesPanel />', () => {
     const addRuleButton = screen.getByTestId('add-priority-rule-button');
     fireEvent.click(addRuleButton);
 
-    const rowDraft = screen.getAllByTestId(/^priority-rule-row-draft-/)[0];
+    const rowDraft = await screen.findByTestId(/^priority-rule-row-draft-/);
     const draftSearchInput = within(rowDraft).getByPlaceholderText(
-      'Add rule filter (e.g. pool, board, model, dut_state)...',
+      'Add rule filter (e.g. pool, board, model)...',
     );
     await user.type(draftSearchInput, 'model:brya');
     await user.keyboard('{Enter}');
@@ -665,92 +644,118 @@ describe('<PriorityRulesPanel />', () => {
     expect(mockUpdateRule).not.toHaveBeenCalled();
   });
 
-  it('displays an error alert when a rule uses an invalid filter key like "id"', async () => {
-    setupMockHook([
-      {
-        id: '17',
-        expressionAip160: 'id = "chrome-clank-chromeos8-row"',
-        weight: '123',
-      },
-    ]);
-    renderPanel();
+  describe('permission checks', () => {
+    it('renders fields as immutable and hides add/delete buttons when user lacks permission', () => {
+      setupMockPermissions(false);
+      setupMockHook(MOCK_RULES.slice(0, 2));
+      renderPanel();
 
-    const alert = await screen.findByTestId('priority-rule-error-17');
-    expect(alert).toBeInTheDocument();
-    expect(alert).toHaveTextContent(
-      'Invalid rule expression "id = "chrome-clank-chromeos8-row"": ' +
-        '"id" is not a valid filter field for repair tasks (use "dut_id" for device hostnames)',
-    );
-  });
+      // No "+ Add rule" button
+      expect(
+        screen.queryByTestId('add-priority-rule-button'),
+      ).not.toBeInTheDocument();
 
-  it('displays an error alert when a rule uses unsupported OR between different fields', async () => {
-    setupMockHook([
-      {
-        id: '15',
-        expressionAip160:
-          'id = "chromeos1-sinclair-test-host1" OR dut_id = "575450c3-3fbd-4d98-9ec1-dummy"',
-        weight: '233',
-      },
-    ]);
-    renderPanel();
+      // No delete buttons
+      expect(
+        screen.queryByTestId('rule-delete-button-1'),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('rule-delete-button-2'),
+      ).not.toBeInTheDocument();
 
-    const alert = await screen.findByTestId('priority-rule-error-15');
-    expect(alert).toBeInTheDocument();
-    expect(alert).toHaveTextContent(
-      'OR operations between different filter fields are not supported',
-    );
-  });
+      // Weight inputs are disabled and readOnly
+      const weightInput1 = screen.getByTestId('rule-weight-input-1');
+      expect(weightInput1).toBeDisabled();
+      expect(weightInput1).toHaveAttribute('readonly');
 
-  it('displays an error alert when a rule has unparseable AIP-160 syntax', async () => {
-    setupMockHook([
-      {
-        id: '99',
-        expressionAip160: '=== syntax error ===',
-        weight: '50',
-      },
-    ]);
-    renderPanel();
+      const weightInput2 = screen.getByTestId('rule-weight-input-2');
+      expect(weightInput2).toBeDisabled();
+      expect(weightInput2).toHaveAttribute('readonly');
 
-    const alert = await screen.findByTestId('priority-rule-error-99');
-    expect(alert).toBeInTheDocument();
-    expect(alert).toHaveTextContent(
-      'Invalid rule expression "=== syntax error ==="',
-    );
-  });
+      // No apply buttons
+      expect(
+        screen.queryByTestId('rule-apply-button-1'),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('rule-apply-button-2'),
+      ).not.toBeInTheDocument();
 
-  it('does not confuse fields ending in "id" like "fluid" with "id"', async () => {
-    setupMockHook([
-      {
-        id: '18',
-        expressionAip160: 'fluid = "test"',
-        weight: '100',
-      },
-    ]);
-    renderPanel();
+      // No AdminAccessRequiredDialog modal
+      expect(
+        screen.queryByRole('heading', { name: 'Admin access required' }),
+      ).not.toBeInTheDocument();
+    });
 
-    const alert = await screen.findByTestId('priority-rule-error-18');
-    expect(alert).toBeInTheDocument();
-    expect(alert).not.toHaveTextContent('use "dut_id" for device hostnames');
-    expect(alert).toHaveTextContent('fluid is not a valid filter');
-  });
+    it('renders immutable state without add button when permissions are loading (null)', () => {
+      setupMockPermissions(null);
+      setupMockHook(MOCK_RULES.slice(0, 1));
+      renderPanel();
 
-  it('disables the Apply button when a rule has an error', async () => {
-    setupMockHook([
-      {
-        id: '17',
-        expressionAip160: 'id = "chrome-clank-chromeos8-row"',
-        weight: '123',
-      },
-    ]);
-    renderPanel();
+      // No "+ Add rule" button
+      expect(
+        screen.queryByTestId('add-priority-rule-button'),
+      ).not.toBeInTheDocument();
 
-    await screen.findByTestId('priority-rule-error-17');
+      // No delete button
+      expect(
+        screen.queryByTestId('rule-delete-button-1'),
+      ).not.toBeInTheDocument();
 
-    const weightInput = screen.getByTestId('rule-weight-input-17');
-    fireEvent.change(weightInput, { target: { value: '456' } });
+      // Weight input disabled and readOnly
+      const weightInput = screen.getByTestId('rule-weight-input-1');
+      expect(weightInput).toBeDisabled();
+      expect(weightInput).toHaveAttribute('readonly');
 
-    const applyButton = screen.getByTestId('rule-apply-button-17');
-    expect(applyButton).toBeInTheDocument();
-    expect(applyButton).toBeDisabled();
+      // No apply button
+      expect(
+        screen.queryByTestId('rule-apply-button-1'),
+      ).not.toBeInTheDocument();
+
+      // No AdminAccessRequiredDialog modal
+      expect(
+        screen.queryByRole('heading', { name: 'Admin access required' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('renders read-only empty state text when user lacks permission and there are no rules', () => {
+      setupMockPermissions(false);
+      setupMockHook([]);
+      renderPanel();
+
+      expect(
+        screen.getByText('No priority scoring rules configured.'),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText(/click “\+ add rule”/i),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('add-priority-rule-button'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('renders editable fields, delete buttons, and add button when user has permission', () => {
+      setupMockPermissions(true);
+      setupMockHook(MOCK_RULES.slice(0, 1));
+      renderPanel();
+
+      // Add rule button present and enabled
+      const addRuleButton = screen.getByTestId('add-priority-rule-button');
+      expect(addRuleButton).toBeInTheDocument();
+      expect(addRuleButton).toBeEnabled();
+
+      // Delete button present and enabled
+      const deleteButton = screen.getByTestId('rule-delete-button-1');
+      expect(deleteButton).toBeInTheDocument();
+      expect(deleteButton).toBeEnabled();
+
+      // Weight input enabled and editable
+      const weightInput = screen.getByTestId('rule-weight-input-1');
+      expect(weightInput).toBeEnabled();
+      expect(weightInput).not.toHaveAttribute('readonly');
+
+      // Modifying weight shows apply button
+      fireEvent.change(weightInput, { target: { value: '450' } });
+      expect(screen.getByTestId('rule-apply-button-1')).toBeInTheDocument();
+    });
   });
 });

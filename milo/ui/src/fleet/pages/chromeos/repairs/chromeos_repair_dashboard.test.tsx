@@ -22,6 +22,7 @@ import {
   within,
 } from '@testing-library/react';
 
+import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
 import * as UsePagerModule from '@/fleet/hooks/use_pager';
@@ -119,6 +120,15 @@ describe('<ChromeOSRepairDashboard />', () => {
       isDeleting: false,
       deleteError: null,
     } as unknown as ReturnType<typeof UsePriorityRulesModule.usePriorityRules>);
+
+    jest
+      .spyOn(UseAdminTaskPermissionModule, 'usePriorityRulesPermission')
+      .mockReturnValue({
+        hasPermission: true,
+        fetchPermissions: jest.fn().mockResolvedValue({ hasPermission: true }),
+        isError: false,
+        error: null,
+      });
   });
 
   afterEach(() => {
@@ -828,6 +838,42 @@ describe('<ChromeOSRepairDashboard />', () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByTestId('add-priority-rule-button')).toBeInTheDocument();
+  });
+
+  it('hides add priority rule button when user does not have permission', async () => {
+    jest
+      .spyOn(UseAdminTaskPermissionModule, 'usePriorityRulesPermission')
+      .mockReturnValue({
+        hasPermission: false,
+        fetchPermissions: jest.fn().mockResolvedValue({ hasPermission: false }),
+        isError: false,
+        error: null,
+      });
+
+    jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+      data: {
+        repairQueueItems: MOCK_QUEUE_ITEMS,
+        totalSize: 2,
+        nextPageToken: '',
+      },
+      isPending: false,
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      isPlaceholderData: false,
+    } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+    renderDashboard();
+
+    expect(
+      screen.getByRole('heading', {
+        level: 6,
+        name: /Priority Scoring Rules/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('add-priority-rule-button'),
+    ).not.toBeInTheDocument();
   });
 
   describe('Adversarial Coverage: multi-page ranks, extreme scores, loading, errors, selection', () => {

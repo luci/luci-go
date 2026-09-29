@@ -60,3 +60,10 @@ export function usePermission(group: string) {
 export function useAdminTaskPermission() {
   return usePermission('mdb/fleet-console-admin-tasks-policy');
 }
+
+export const PRIORITY_RULES_ADMINS_GROUP =
+  'fleet-console-priority-rules-admins';
+
+export function usePriorityRulesPermission() {
+  return usePermission(`mdb/${PRIORITY_RULES_ADMINS_GROUP}`);
+}
