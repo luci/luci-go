@@ -264,6 +264,11 @@ func storeCRL(c context.Context, crl *pkix.CertificateList, etag string, ca *CA,
 		entity.EntityVersion++
 		entity.LastUpdateTime = crl.TBSCertList.ThisUpdate.UTC()
 		entity.LastFetchTime = clock.Now(c).UTC()
+		if !crl.TBSCertList.NextUpdate.IsZero() {
+			entity.NextUpdateTime = crl.TBSCertList.NextUpdate.UTC()
+		} else {
+			entity.NextUpdateTime = time.Time{}
+		}
 		entity.LastFetchETag = etag
 		entity.RevokedCertsCount = len(crl.TBSCertList.RevokedCertificates)
 

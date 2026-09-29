@@ -26,6 +26,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -37,14 +38,20 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/shards"
 )
 
-// CRLShardCount is a number of shards to use for storing CRL in the datastore.
-//
-// Each shard can hold ~2 MB of data (taking into account zlib compression),
-// so 16 shards ~= 32 MB. Good enough for a foreseeable future.
-//
-// Changing this value requires rerunning of Admin.FetchCRL RPC to rebuild
-// the entities.
-const CRLShardCount = 16
+const (
+	// CRLShardCount is a number of shards to use for storing CRL in the datastore.
+	//
+	// Each shard can hold ~2 MB of data (taking into account zlib compression),
+	// so 16 shards ~= 32 MB. Good enough for a foreseeable future.
+	//
+	// Changing this value requires rerunning of Admin.FetchCRL RPC to rebuild
+	// the entities.
+	CRLShardCount = 16
+
+	// MaxCRLStaleness is the maximum age of a cached CRL since its last
+	// successful cryptographic fetch before it is considered stale.
+	MaxCRLStaleness = 2 * time.Hour
+)
 
 // CRL represents a parsed Certificate Revocation List of some CA.
 //
@@ -77,6 +84,12 @@ type CRL struct {
 
 	// RevokedCertsCount is a number of revoked certificates in CRL. FYI only.
 	RevokedCertsCount int `gae:",noindex"`
+
+	// NextUpdateTime is extracted from corresponding field of CRL.
+	//
+	// It indicates a time when the next CRL will be issued by the CA.
+	// May be zero if not specified by the CA.
+	NextUpdateTime time.Time `gae:",noindex"`
 }
 
 // GetStatusProto returns populated CRLStatus proto message.
@@ -223,6 +236,7 @@ type CRLChecker struct {
 	cn            string                      // name of CA to check a CRL of
 	shardCount    int                         // a total number of shards
 	shards        []lazyslot.Slot[shardCache] // per-shard local state, len(shards) == shardCount
+	crl           lazyslot.Slot[*CRL]         // cached CRL metadata entity
 	cacheDuration time.Duration               // how often to refetch shards from datastore
 }
 
@@ -254,12 +268,52 @@ func (ch *CRLChecker) IsRevokedSN(c context.Context, sn *big.Int) (bool, error) 
 	if err != nil {
 		return false, err
 	}
+	ch.checkFreshness(c)
 	shard, err := ch.shard(c, shards.ShardIndex(snBlob, ch.shardCount))
 	if err != nil {
 		return false, err
 	}
 	_, revoked := shard[string(snBlob)]
 	return revoked, nil
+}
+
+// checkFreshness logs warnings if the cached CRL entity is expired or stale.
+func (ch *CRLChecker) checkFreshness(c context.Context) {
+	crl, err := ch.crl.Get(c, func(c context.Context, _ *CRL) (*CRL, time.Duration, error) {
+		crl, err := ch.refetchCRL(c)
+		return crl, ch.cacheDuration, err
+	})
+	if err != nil {
+		logging.Warningf(c, "Failed to fetch CRL entity for CA %q: %s", ch.cn, err)
+		return
+	}
+	if crl == nil {
+		return
+	}
+
+	now := clock.Now(c)
+	if !crl.NextUpdateTime.IsZero() && now.After(crl.NextUpdateTime) {
+		logging.Warningf(c, "CRL of CA %q expired at %s", ch.cn, crl.NextUpdateTime)
+	}
+	if !crl.LastFetchTime.IsZero() && now.Sub(crl.LastFetchTime) > MaxCRLStaleness {
+		logging.Warningf(c, "CRL of CA %q is stale: last fetch was %s", ch.cn, crl.LastFetchTime)
+	} else if crl.LastFetchTime.IsZero() && !crl.LastUpdateTime.IsZero() && now.Sub(crl.LastUpdateTime) > MaxCRLStaleness {
+		logging.Warningf(c, "CRL of CA %q is stale: last update was %s", ch.cn, crl.LastUpdateTime)
+	}
+}
+
+func (ch *CRLChecker) refetchCRL(c context.Context) (*CRL, error) {
+	crl := &CRL{
+		Parent: ds.NewKey(c, "CA", ch.cn, 0, nil),
+	}
+	switch err := ds.Get(c, crl); {
+	case err == ds.ErrNoSuchEntity:
+		return nil, nil
+	case err != nil:
+		return nil, transient.Tag.Apply(err)
+	default:
+		return crl, nil
+	}
 }
 
 // shard returns a shard given its index.

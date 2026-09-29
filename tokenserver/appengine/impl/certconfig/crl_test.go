@@ -21,10 +21,14 @@ import (
 	"time"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/shards"
@@ -143,5 +147,59 @@ func TestCRL(t *testing.T) {
 		revoked, err = checker.IsRevokedSN(ctx, big.NewInt(2))
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, revoked, should.BeTrue)
+	})
+
+	ftt.Run("CRL freshness warnings work", t, func(t *ftt.Test) {
+		caName := "CA"
+		shardCount := 1
+		cachingTime := 10 * time.Second
+
+		ctx := gaetesting.TestingContext()
+		ctx, clk := testclock.UseTime(ctx, testclock.TestTimeUTC)
+		ctx = memlogger.Use(ctx)
+		logs := logging.Get(ctx).(*memlogger.MemLogger)
+
+		assert.Loosely(t, UpdateCRLSet(ctx, caName, shardCount, &pkix.CertificateList{}), should.BeNil)
+
+		crlEntity := CRL{
+			Parent:         ds.NewKey(ctx, "CA", caName, 0, nil),
+			LastFetchTime:  clock.Now(ctx).UTC(),
+			LastUpdateTime: clock.Now(ctx).UTC(),
+			NextUpdateTime: clock.Now(ctx).Add(24 * time.Hour).UTC(),
+		}
+		assert.Loosely(t, ds.Put(ctx, &crlEntity), should.BeNil)
+
+		checker := NewCRLChecker(caName, shardCount, cachingTime)
+
+		// Fresh CRL logs no warnings.
+		logs.Reset()
+		revoked, err := checker.IsRevokedSN(ctx, big.NewInt(1))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, revoked, should.BeFalse)
+		assert.Loosely(t, memlogger.ShouldNotHaveLog(logs, logging.Warning, ""), should.BeEmpty)
+
+		// Expired CRL logs a warning without failing IsRevokedSN.
+		crlEntity.NextUpdateTime = clock.Now(ctx).Add(-1 * time.Minute).UTC()
+		crlEntity.LastFetchTime = clock.Now(ctx).UTC()
+		assert.Loosely(t, ds.Put(ctx, &crlEntity), should.BeNil)
+		clk.Add(cachingTime + time.Second)
+
+		logs.Reset()
+		revoked, err = checker.IsRevokedSN(ctx, big.NewInt(1))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, revoked, should.BeFalse)
+		assert.Loosely(t, memlogger.ShouldHaveLog(logs, logging.Warning, "expired at"), should.BeEmpty)
+
+		// Stale CRL logs a warning without failing IsRevokedSN.
+		crlEntity.NextUpdateTime = clock.Now(ctx).Add(24 * time.Hour).UTC()
+		crlEntity.LastFetchTime = clock.Now(ctx).Add(-3 * time.Hour).UTC()
+		assert.Loosely(t, ds.Put(ctx, &crlEntity), should.BeNil)
+		clk.Add(cachingTime + time.Second)
+
+		logs.Reset()
+		revoked, err = checker.IsRevokedSN(ctx, big.NewInt(1))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, revoked, should.BeFalse)
+		assert.Loosely(t, memlogger.ShouldHaveLog(logs, logging.Warning, "is stale"), should.BeEmpty)
 	})
 }
