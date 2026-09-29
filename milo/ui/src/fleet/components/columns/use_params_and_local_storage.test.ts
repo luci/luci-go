@@ -49,6 +49,39 @@ describe('useParamsAndLocalStorage', () => {
 
       expect(out).toEqual(['col1', 'col2', 'col3']);
     });
+    it('Should parse comma-separated search parameters', () => {
+      const out = getInitialValue(
+        new URLSearchParams([['c', 'col1,col2,col3']]),
+        'c',
+        ['col8', 'col9'],
+        ['default'],
+      );
+
+      expect(out).toEqual(['col1', 'col2', 'col3']);
+    });
+    it('Should parse mixed comma-separated and repeated search parameters', () => {
+      const out = getInitialValue(
+        new URLSearchParams([
+          ['c', 'col1,col2'],
+          ['c', 'col3'],
+        ]),
+        'c',
+        ['col8', 'col9'],
+        ['default'],
+      );
+
+      expect(out).toEqual(['col1', 'col2', 'col3']);
+    });
+    it('Should fall back to local storage if search parameters are only empty commas', () => {
+      const out = getInitialValue(
+        new URLSearchParams([['c', ',,']]),
+        'c',
+        ['col8', 'col9'],
+        ['default'],
+      );
+
+      expect(out).toEqual(['col8', 'col9']);
+    });
     it('Should priorities local storage after search parameters', () => {
       const out = getInitialValue(
         new URLSearchParams([]),

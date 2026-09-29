@@ -178,8 +178,15 @@ export const getInitialValue = (
   defaultValue: string[],
 ) => {
   const searchParamValues = searchParams.getAll(searchParamsKey);
-  if (searchParamValues && searchParamValues.length > 0)
-    return searchParamValues;
+  if (searchParamValues && searchParamValues.length > 0) {
+    const flattened = searchParamValues
+      .flatMap((p) => p.split(','))
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (flattened.length > 0) {
+      return flattened;
+    }
+  }
 
   if (localStorage && localStorage.length > 0) {
     return localStorage;
