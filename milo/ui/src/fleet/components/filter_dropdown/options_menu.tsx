@@ -14,7 +14,12 @@
 
 import { Button, Checkbox, colors, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import React, { useRef, forwardRef, useImperativeHandle } from 'react';
+import React, {
+  useRef,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { OptionValue } from '@/fleet/types/option';
@@ -48,6 +53,7 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
     ref,
   ) {
     const parentRef = useRef<HTMLDivElement>(null);
+    const [isKeyboardNav, setIsKeyboardNav] = useState(false);
 
     const virtualizer = useVirtualizer({
       count: elements.length,
@@ -79,9 +85,11 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
 
     useImperativeHandle(ref, () => ({
       focusFirst: () => {
+        setIsKeyboardNav(true);
         focusIndexResilient(0);
       },
       focusLast: () => {
+        setIsKeyboardNav(true);
         focusIndexResilient(elements.length - 1);
       },
     }));
@@ -104,7 +112,13 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
     return (
       <div
         role="menu"
+        tabIndex={-1}
         ref={parentRef}
+        onMouseMove={() => {
+          if (isKeyboardNav) {
+            setIsKeyboardNav(false);
+          }
+        }}
         css={{
           overflow: 'auto',
           maxHeight: 'inherit',
@@ -153,6 +167,7 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
                       (e.key === 'k' && (e.metaKey || e.ctrlKey));
 
                     if (isDown) {
+                      setIsKeyboardNav(true);
                       const nextIndex = virtualRow.index + 1;
                       const targetIndex =
                         nextIndex >= elements.length ? 0 : nextIndex;
@@ -162,6 +177,7 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
                     }
 
                     if (isUp) {
+                      setIsKeyboardNav(true);
                       const prevIndex = virtualRow.index - 1;
                       const targetIndex =
                         prevIndex < 0 ? elements.length - 1 : prevIndex;
@@ -185,7 +201,18 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
                     ...(item.el.isSignificant === false && {
                       color: colors.grey[500],
                     }),
-                    '&:hover .only-button': {
+                    ...(isKeyboardNav && {
+                      '&:hover:not(:focus):not(.Mui-focusVisible)': {
+                        backgroundColor: 'transparent',
+                      },
+                    }),
+                    ...(!isKeyboardNav && {
+                      '&:hover .only-button': {
+                        opacity: 1,
+                        visibility: 'visible',
+                      },
+                    }),
+                    '&:focus .only-button, &.Mui-focusVisible .only-button': {
                       opacity: 1,
                       visibility: 'visible',
                     },
