@@ -18,56 +18,90 @@ Progress:
 - [ ] Step 0: Branch Safety Check
 - [ ] Step 1: Verification
 - [ ] Step 2: Commit Changes
-- [ ] Step 3: Upload UI Demo (Optional/Conditional)
+- [ ] Step 3: Deploy App Engine UI Demo & Attach Before/After Screenshots (Mandatory for UI/Visual CLs)
 - [ ] Step 4: CL Upload
 
 ## Procedures
 
-0. **Branch Safety Check**:
-   - **Sync Before Branching**: Before creating a new task branch, you MUST run `git fetch origin` to update your local repository refs. Always create the branch off the updated remote main: `git checkout -b <branch-name> origin/main`. Creating branches from stale local representations of `origin/main` is a major cause of early merge conflicts on Gerrit.
-   - **New Task Branching**: Generally start a new branch when starting a new task.
-   - **Check Active CL Tracking**: When resuming or editing an existing CL, you MUST run `git cl status` or `git branch -vv` to verify that the active local branch is tracking the correct Gerrit CL ID.
-   - **Check for Unrelated Changes**: Double check that the branch you're currently on doesn't have unrelated changes before you upload a CL. Run `git log origin/main..HEAD` to see the commits on your branch relative to main, and ensure they are all related to the current task.
-
 1. **Verification**:
-   - Format modified source files: `git cl format`.
-   - Strip trailing whitespaces from modified Markdown/text files. Run this Python command on changed files:
+   - Ensure you are in the `milo/ui` directory.
+   - Run the linter to catch formatting and style issues:
      ```bash
-     python3 -c "
-     import sys
-     for x in sys.argv[1:]:
-         with open(x, 'r') as f:
-             lines = f.readlines()
-         with open(x, 'w') as f:
-             f.writelines(l.rstrip() + '\n' for l in lines)
-     " <modified_files>
+     npm run lint
      ```
-   - Run the [project-verification](../project-verification/SKILL.md) skill (lint, test, type-check) to ensure no regressions. Alternatively, run targeted checks:
-     - Lint changed files: `npm run lint -- <changed_file_paths>`
-     - Run unit tests: `npm run test -- <test_file_paths>`
-     - Run type checks: `npm run type-check`
-   - Run local presubmits to check licenses, syntax, and static analysis: `git cl presubmit`.
-   - Run the [senior-reviewer](../senior-reviewer/SKILL.md) skill to get a self-review and address feedback.
+   - Run TypeScript type checking:
+     ```bash
+     npm run type-check
+     ```
+   - Run relevant Jest unit tests for the modified components/hooks:
+     ```bash
+     npm test -- <path_to_test_file>
+     ```
+   - *Note*: Do not proceed until all checks pass with zero errors and zero warnings.
 
 2. **Commit Changes**:
    - Run `git status` to see modified files.
    - Stage changes: `git add <files>`.
    - Commit changes with a descriptive message.
-     - **Commit Message Guidelines**:
-       - Title: Short, descriptive summary (<72 chars).
-       - Body: Explain what changed and why (<72 chars per wrapped line). Include business or design context (e.g., "This is needed to support the new Android health layout..."). If it fixes a bug, explain the fix.
-       - Footer: If the change fixes a bug, include reference in the format `Bug: b/XXXXXXX` (note the `b/` prefix). Only include `Bypass-Check-License: <reason>` if touching third-party files where copyright statements cannot be modified; for first-party Chromium/LUCI code failing license checks, always update the header year (`2026`).
-       - `Change-Id`: When committing a brand new branch for the first time (`-F`), **omit `Change-Id:` from the message file entirely** so Gerrit's `commit-msg` hook generates a unique SHA-1 hash. Only include `Change-Id:` when amending (`--amend`) an existing uploaded CL.
-     - Example: `git commit -m "[fleet console] Fix CSV export missing columns by preserving URL columns\n\n... details ...\n\nBug: b/515102813"`
+     - **Commit Message Guidelines (3-Second Visual Review & 1-CL Fix Standard)**:
+       - **Title**: Short, imperative summary (`<72` chars), e.g., `[fleet] Unify sentence-case status chips and raw filter search`.
+       - **1. Visual Evidence First (`Screenshots:` & `Demo:` Immediately Below Title)**:
+         Place the **Interactive Before/After Overlay Toggle (`http://go/zhangtiff-labs/before-after?before=<before_id>&after=<after_id>`)**, individual full-resolution `Before:` and `After:` screenshot links, and the **App Engine Live Demo (`luci-milo-dev.appspot.com`)** deep link at the **very top** of the commit message (before `TL;DR / Why:` or `Context:`).
+         - **Multi-Page / Multi-Workflow Coverage**: Whenever a CL modifies visual elements across multiple pages or workflows (e.g., status chips across ChromeOS Devices, Repair Queue, Device Details, Android, and Browser), capture and list `Before` and `After` screenshots (plus `/before-after` toggle links) for **each major workflow that changed**:
+         ```text
+         [fleet] Unify sentence-case status chips and raw filter search
 
-3. **Upload UI Demo**:
-   - For UI changes, you **MUST** upload a demo to the App Engine development environment and include the demo link in the CL description for reviewer verification, unless deployment is blocked by infrastructure/authentication issues.
-   - For detailed build and deployment procedures (including DNS limits, `.gcloudignore` setups, and VPC workarounds), run the [deploy-ui-demo](../deploy-ui-demo/SKILL.md) skill.
-   - **Accessing the Demo**:
-     - Once deployed, the staging instance is accessible at the standard unified URL structure:
-       `https://<short-name>-dot-luci-milo-dev.appspot.com/ui/fleet/devices`
-     - Place this demo link at the top of the CL description (immediately after the title line). Make sure it points directly to the affected page(s).
-   - *Note*: If deployment fails with auth errors (e.g., `Login first using 'gcloud auth login'`), notify the developer and ask them to run it on your behalf. Do not block the task on this failure.
+         Before / After (all pages):
+         http://go/zhangtiff-labs/before-after?before=<b1>&after=<a1>&views=ChromeOS+Devices:<b1>:<a1>,Repair+Queue:<b2>:<a2>
+
+         Screenshots (Before -> After):
+         - ChromeOS Devices: https://screenshot.googleplex.com/<b1> -> https://screenshot.googleplex.com/<a1>
+         - Repair Queue:     https://screenshot.googleplex.com/<b2> -> https://screenshot.googleplex.com/<a2>
+         Demo: https://<short-version>-dot-luci-milo-dev.appspot.com/ui/fleet/p/chromeos/devices
+
+         TL;DR / Why:
+         Device tables across ChromeOS, Android, and Browser previously showed
+         status badges in raw uppercase code strings (like NEEDS_REPAIR) with
+         inconsistent backgrounds. This change updates all status chips and
+         filter menus to use clean, readable labels ("Needs repair", "Ready")
+         with action-based color coding (orange for automated recovery, red for
+         manual repair), while still matching both readable and raw names in
+         filter search.
+
+         Context:
+         - Formats status chips in DutStateCell, renderChipCell (Android and
+           Browser), and ResourceStateChip using sentence-case labels and
+           semantic tonal fills.
+         - Updates StringListFilterCategory search and selection to match both
+           display labels and raw enum values while emitting raw values in
+           AIP-160 filter queries.
+
+         Bug: b/444677406
+         ```
+       - **2. Plain-English `TL;DR / Why:` (No Code Jargon)**: Write 1-2 plain-English sentences describing the user-facing visual problem and benefit. Do **not** put `.tsx` filenames, CSS properties, or React hook names in `TL;DR / Why:`.
+       - **3. Technical `Context:`**: Keep component names, file paths, and preserved workflow invariants (row height, URL filter compatibility) in a brief `Context:` section below `TL;DR / Why:`.
+       - **Footer**: Include `Bug: b/XXXXXXX` (with the `b/` prefix). Always update modified first-party file headers to `// Copyright 2026 The LUCI Authors.`.
+       - `Change-Id`: When committing a brand new branch for the first time (`-F`), **omit `Change-Id:` from the message file entirely** so Gerrit's `commit-msg` hook generates a unique SHA-1 hash. Only include `Change-Id:` when amending (`--amend`) an existing uploaded CL.
+
+3. **Deploy App Engine UI Demo & Attach Before/After Screenshots (Mandatory for UI/Visual CLs)**:
+   - **App Engine Live Demo vs. Static Easy Mock Rule**:
+     - Whenever new or modified code is being added live to production in a CL, **always** use the **App Engine Live Demo (`luci-milo-dev.appspot.com`)** workflow ([deploy-ui-demo](../deploy-ui-demo/SKILL.md)).
+     - Never substitute static Easy Mock links on a production Gerrit CL; Easy Mock prototypes are strictly for **longer-term ideas that are not yet at the CL stage**.
+   - **3a. Deploy App Engine Live Demo (`luci-milo-dev`)**:
+     - Follow [deploy-ui-demo](../deploy-ui-demo/SKILL.md) to deploy both `default` and `ui-new` services to `luci-milo-dev` under `--target-version=${MY_VERSION}`.
+     - Construct a deep link pointing directly to the affected route, columns, and filters:
+       `https://<short-version>-dot-luci-milo-dev.appspot.com/ui/fleet/p/chromeos/devices?c=id&c=dut_state`
+   - **3b. Capture Individual Full-Resolution `Before` and `After` Screenshots & Build `/before-after` Toggle Link**:
+     - Capture full-resolution `before.png` and `after.png` (`1440x1260`) for **each page or workflow where visual elements changed** (do not stitch squished side-by-side images).
+     - **Uploading Screenshots (Googlers vs. Open-Source Contributors)**:
+       - **Googlers**: Upload each `Before` and `After` PNG using the internal `http://go/screenshot` (`snipit`) CLI:
+         ```bash
+         /google/bin/releases/gemini-agents-snipit-cli/snipit            --file="milo/ui/.tmp/before.png"            --title="Before - ChromeOS Devices"
+         /google/bin/releases/gemini-agents-snipit-cli/snipit            --file="milo/ui/.tmp/after.png"            --title="After - ChromeOS Devices"
+         ```
+         Then construct the 1-click full-resolution overlay toggle URL using `http://go/zhangtiff-labs/before-after?before=<before_id>&after=<after_id>` (and add `&views=Label1:b1:a1,Label2:b2:a2` when the CL spans multiple pages).
+       - **External / Open-Source Contributors**: Attach the `Before` and `After` screenshots to the linked issue tracker (`b/...` or Monorail/GitHub issue) and paste the attachment URLs under `Screenshots:` at the top of the CL description.
+   - *Note*: If App Engine deployment fails with `gcloud` auth errors in a headless environment, notify the developer with the exact one-line deploy command and still place the `Screenshots:` block at the top of the CL description.
 
 4. **CL Upload**:
    - Run the upload non-interactively in Work In Progress (WIP) mode. For detailed flags and procedures on bypassing prompts and editor popups, refer to the [bypassing-interactive-prompts](../bypassing-interactive-prompts/SKILL.md) skill.

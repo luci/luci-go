@@ -17,14 +17,21 @@ For code changes, add verification steps to your `task.md` checklist. Before dec
 - **Testing**: `npm test -- <path_to_test_file>` (or `npm test -- ./src/fleet` for all Fleet tests).
 - **Type Checking**: `npm run type-check`.
 
-### 2. Definition of Done
-A task or frontend CL is complete when:
+### 2. Definition of Done & 3-Second Visual Review Package
+A task or frontend CL (including autonomous 1-CL fixes) is complete when:
 - **Self-Review**: You run [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md) and resolve all critical feedback.
 - **UX & PM Review**: For visual or flow changes, you run [ux-pm-review](./.agents/skills/ux-pm-review/SKILL.md) to check PM alignment, Orwell writing rules, and UX principles.
-- **Verification**: Tests, lints (`npm run lint`), and type checks (`npm run type-check`) pass cleanly.
-- **UI Demo**: You upload a demo for visual or structural UI changes and include testing steps in the commit message.
-- **Commit Message**: Explains the change and references relevant bugs (see [prepare-cl](./.agents/skills/prepare-cl/SKILL.md)).
+- **Verification**: Tests, lints (`npm run lint`), and type checks (`npm run type-check`) pass cleanly with 0 errors and 0 warnings.
+- **Visual Proof Front-and-Center (`Screenshots:` & `Demo:` First)**: For any UI or visual change, place `Screenshots:` (with an interactive **Before/After Overlay Toggle** link `http://go/zhangtiff-labs/before-after?before=<before_id>&after=<after_id>` plus full-resolution `Before:` and `After:` links) and `Demo:` (a real App Engine `luci-milo-dev` URL via [deploy-ui-demo](./.agents/skills/deploy-ui-demo/SKILL.md)) **at the very top of the CL description immediately after the title line**. When a visual CL spans multiple pages or workflows, include `Before` and `After` screenshots for **each major workflow that changed**. Googlers can upload screenshots using `http://go/screenshot` (`snipit`), while external / open-source contributors can attach screenshots on the linked issue tracker (`b/...`) and link them in `Screenshots:`.
+- **Plain-English `TL;DR / Why:` (Zero Code Jargon)**: Write a 1-2 sentence plain-English `TL;DR / Why:` explaining what visual problem users see today and how the change makes the UI cleaner or easier to scan—without citing `.tsx` filenames, CSS properties, or hook names. Place technical implementation details in `Context:` below (see [prepare-cl](./.agents/skills/prepare-cl/SKILL.md)).
 - **Direct Upload**: Upload the CL to Gerrit directly via `git cl upload`.
+
+### 2b. When to Use an App Engine Live Demo (`luci-milo-dev`) vs. a Static Easy Mock Prototype
+
+| Workflow Path | When to Use | Deliverable & Verification Package |
+| :--- | :--- | :--- |
+| **App Engine Live Demo (`luci-milo-dev.appspot.com`) + Interactive Before/After Screenshots** *(Preferred whenever code is being added live to prod)* | All Gerrit CLs adding or updating live production UI code—including small UX fixes, visual polish/beautification, chip/typography formatting, new columns/filters, bug fixes, and autonomous 1-CL fixes (`<= 150` prod LOC). | Standard Gerrit CL on `luci-go` with: (1) Interactive Before/After overlay toggle (`http://go/zhangtiff-labs/before-after?before=<id>&after=<id>`) + individual `Before`/`After` screenshots for each affected page/workflow and a deep-linked `https://<short-version>-dot-luci-milo-dev.appspot.com/ui/fleet/...` live demo at the very top of the description, and (2) plain-English `TL;DR / Why:` + `Context:`. Never substitute a static Easy Mock link for an App Engine demo on a production CL. |
+| **Static Easy Mock Prototype ([ux-prototyping](./.agents/skills/ux-prototyping/SKILL.md))** *(Strictly for longer-term ideas not yet at the CL stage)* | Longer-term product ideas that are **not yet at the CL stage**: early PM/UX ideation, multi-option [design-tournament](./.agents/skills/design-tournament/SKILL.md) explorations, or net-new multi-page concepts requiring mocked backend RPCs that do not exist yet. | Self-contained static mock bundle with client-side mock pRPC fixtures (`settings.js`) for early stakeholder exploration before writing production CLs. |
 
 ### 3. Self-Review & UX/PM Audits
 - Run [senior-reviewer](./.agents/skills/senior-reviewer/SKILL.md) to review diffs before uploading CLs.

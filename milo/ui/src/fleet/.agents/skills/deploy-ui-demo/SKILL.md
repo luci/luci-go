@@ -7,7 +7,12 @@ description: Builds and deploys UI demos/mocks for the ChromeOS Fleet Console/Mi
 
 > **Note**: This document contains instructions for AI code assistants working in this repository. Human developers can use it as a reference.
 
-Use this skill when you need to deploy local UI changes to the App Engine development environment (`luci-milo-dev`) for manual verification or demo purposes.
+Use this skill when you need to deploy local UI changes to the App Engine development environment (`luci-milo-dev`) for manual verification or Gerrit CL review.
+
+> [!IMPORTANT]
+> **App Engine Live Demo (`luci-milo-dev`) vs. Static Easy Mock Prototypes**:
+> - **App Engine Live Demo (`luci-milo-dev.appspot.com`)** is the **preferred demo mechanism for all Gerrit CLs where new or updated code is being added live to production** (including small UX fixes, visual polish, and 1-CL fixes).
+> - **Static Easy Mock Prototypes** are strictly for **longer-term ideas that are not yet at the CL stage** (early PM/UX ideation or multi-direction design exploration before writing production CLs). Never put a static Easy Mock link in `Demo:` on a production Gerrit CL.
 
 ## Gotchas & Critical Constraints
 
@@ -121,9 +126,8 @@ export PATH=$PATH:~/depot_tools
 
 *Note: The command may fail at the very end when trying to update datastore indexes or cron jobs due to IAM permissions. This is expected and can be ignored if the services themselves were deployed.*
 
-### Step 5: Verify the Deployment
-Verify that the deployed version is serving.
-
+### Step 5: Verify the Deployment, Deep-Link the Route & Capture Side-by-Side Screenshot
+1. Verify that the deployed version is serving:
 ```bash
 # Check version status
 gcloud app versions list --project luci-milo-dev --filter="id=${MY_VERSION}"
@@ -131,6 +135,17 @@ gcloud app versions list --project luci-milo-dev --filter="id=${MY_VERSION}"
 # Verify endpoint responds with HTTP 200
 curl -s -o /dev/null -w "%{http_code}" https://${MY_VERSION}-dot-luci-milo-dev.appspot.com/ui/fleet/devices
 ```
+2. **Construct a Direct Action Deep Link**: Include the exact route and query parameters (`?c=<col>&filters=<aip160>&ff=<flag>:on`) so the reviewer sees the UI element in action immediately on click.
+3. **Capture & Upload Side-by-Side Screenshot**:
+   Render a Side-by-Side (`Before | After`) comparison image into `milo/ui/.tmp/sbs.png` using headless Chrome (`--window-size=2600,1320`).
+   - **Googlers**: Upload via the internal `http://go/screenshot` (`snipit`) CLI:
+     ```bash
+     /google/bin/releases/gemini-agents-snipit-cli/snipit \
+       --file="milo/ui/.tmp/sbs.png" \
+       --title="Fleet Console Demo (${MY_VERSION} - Before vs. After)"
+     ```
+   - **External / Open-Source Contributors**: Attach the screenshot on the linked issue tracker and paste the URL in the CL description.
+   Place `Screenshots:` and `Demo:` at the **very top** of the Gerrit CL description immediately below the title line (see [prepare-cl](../prepare-cl/SKILL.md)).
 
 ### Step 6: Workspace Cleanup (CRITICAL)
 

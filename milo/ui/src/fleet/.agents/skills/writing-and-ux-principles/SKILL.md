@@ -69,7 +69,10 @@ Follow the official [Material 3 Content Design Guide](https://m3.material.io/fou
 - **Useful**: Provide actionable next steps and clearly state what happens when users perform an action.
 
 ### B. UI Copy Rules
-- **Sentence Case**: Use sentence case for all UI elements including page titles, section headers, dialog titles, table column headers, form labels, tooltips, and button text (e.g., *Device details*, *Admin access required*, *Resource name*). Reserve uppercase exclusively for small overline category tags.
+- **Sentence Case**: Use sentence case for all UI elements including page titles, section headers, dialog titles, table column headers, form labels, tooltips, status/state chips, and button text (e.g., *Device details*, *Admin access required*, *Resource name*, *Needs repair*, *Ready*). Reserve uppercase exclusively for small overline category tags.
+- **Unified Status Chips, Action-Based Color Semantics & Raw Filter Search Compatibility**:
+  - Format all device table and detail status/state chips across ChromeOS (`dut_state`), Repair Queue (`dut_state`), Android (`state`, `dut_state`), Browser (`sw.dut_state`, `sw.state`), and Device Details (`ResourceStateChip`) in sentence case (`formatDeviceStateLabel`: `NEEDS_REPAIR` -> `Needs repair`, `REPAIR_FAILED` -> `Repair failed`, `NEEDS_MANUAL_REPAIR` -> `Needs manual repair`, `READY` -> `Ready`, `IDLE` -> `Idle`) with action-based tonal pill backgrounds: use `orange[100]` for automated recovery states (`Needs repair`, `Repair failed` — where automation typically recovers without human intervention), reserve `red[100]` strictly for human-action-required / broken states (`Needs manual repair`, `Failed`, `Dead`, `Missing`), and use `green[100]` for healthy serving states (`Ready`, `Idle`, `Alive`).
+  - Use the same pretty display labels in filter dropdowns (`use_chromeos_filters.ts`, `use_repair_queue_filter_builders.ts`, `android_filters.tsx`, `browser/alias.ts`) while ensuring `StringListFilterCategory` search and selection match **both** the pretty display label (`Needs repair`) and the raw enum value (`NEEDS_REPAIR`, `needs_repair`) and emit the canonical raw value in AIP-160 filter queries.
 - **Imperative Action Verbs**: Use direct imperative action verbs for interactive buttons and menu items:
   - *Sign in* (not *User Login*)
   - *Sign out* (not *Logout*)

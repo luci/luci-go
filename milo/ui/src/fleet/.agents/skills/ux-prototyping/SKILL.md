@@ -11,6 +11,11 @@ Use this skill when creating new UI views, modifying existing layouts, or perfor
 
 ---
 
+> [!IMPORTANT]
+> **When to Use Static Easy Mock Prototyping vs. App Engine Live Demo (`luci-milo-dev`)**:
+> - **App Engine Live Demo ([deploy-ui-demo](../deploy-ui-demo/SKILL.md)) + Interactive Before/After Screenshots ([prepare-cl](../prepare-cl/SKILL.md))** is **preferred for all CLs where new code is being added live to production** (including small UX fixes, visual polish/beautification, chip/typography updates, new columns/filters, and 1-CL fixes).
+> - **Static Easy Mock Prototyping** is strictly for **longer-term ideas that are not yet at the CL stage** (early directional ideation, multi-option [design-tournament](../design-tournament/SKILL.md) explorations, or net-new multi-page concepts requiring mocked backend RPCs that do not exist yet).
+
 ## Workflow
 
 > [!IMPORTANT]
