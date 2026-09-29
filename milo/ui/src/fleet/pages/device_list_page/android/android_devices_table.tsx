@@ -54,9 +54,8 @@ import { combineAipFilters } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   AndroidDevice,
-  ListDevicesRequest,
+  ListAndroidDevicesRequest,
   ExportAndroidDevicesToCSVRequest,
-  Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AndroidPageWorkspace, workspaces } from '../../../workspaces';
@@ -115,12 +114,11 @@ export const AndroidDevicesTable = ({
 
   const request = useMemo(
     () =>
-      ListDevicesRequest.fromPartial({
+      ListAndroidDevicesRequest.fromPartial({
         pageSize,
         pageToken,
         orderBy: orderByParam,
         filter: combinedAip160,
-        platform: Platform.ANDROID,
       }),
     [pageSize, pageToken, orderByParam, combinedAip160],
   );
