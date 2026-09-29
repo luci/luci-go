@@ -137,6 +137,28 @@ func mockOwnerCtx(ctx context.Context, realm string) context.Context {
 			authtest.MockPermission("user:owner@example.com", realm, PermJobsResume),
 			authtest.MockPermission("user:owner@example.com", realm, PermJobsAbort),
 			authtest.MockPermission("user:owner@example.com", realm, PermJobsTrigger),
+			authtest.MockPermission("user:owner@example.com", realm, PermJobsTriggerWithParams),
+		),
+	})
+}
+
+func mockTrustedTriggererCtx(ctx context.Context, realm string) context.Context {
+	return auth.WithState(ctx, &authtest.FakeState{
+		Identity: "user:triggerer@example.com",
+		FakeDB: authtest.NewFakeDB(
+			authtest.MockPermission("user:triggerer@example.com", realm, PermJobsGet),
+			authtest.MockPermission("user:triggerer@example.com", realm, PermJobsTrigger),
+			authtest.MockPermission("user:triggerer@example.com", realm, PermJobsTriggerWithParams),
+		),
+	})
+}
+
+func mockRestrictedTriggererCtx(ctx context.Context, realm string) context.Context {
+	return auth.WithState(ctx, &authtest.FakeState{
+		Identity: "user:triggerer@example.com",
+		FakeDB: authtest.NewFakeDB(
+			authtest.MockPermission("user:triggerer@example.com", realm, PermJobsGet),
+			authtest.MockPermission("user:triggerer@example.com", realm, PermJobsTrigger),
 		),
 	})
 }

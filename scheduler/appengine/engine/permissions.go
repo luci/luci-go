@@ -25,11 +25,12 @@ import (
 const adminGroup = "administrators"
 
 var (
-	PermJobsGet     = realms.RegisterPermission("scheduler.jobs.get")
-	PermJobsPause   = realms.RegisterPermission("scheduler.jobs.pause")
-	PermJobsResume  = realms.RegisterPermission("scheduler.jobs.resume")
-	PermJobsAbort   = realms.RegisterPermission("scheduler.jobs.abort")
-	PermJobsTrigger = realms.RegisterPermission("scheduler.jobs.trigger")
+	PermJobsGet               = realms.RegisterPermission("scheduler.jobs.get")
+	PermJobsPause             = realms.RegisterPermission("scheduler.jobs.pause")
+	PermJobsResume            = realms.RegisterPermission("scheduler.jobs.resume")
+	PermJobsAbort             = realms.RegisterPermission("scheduler.jobs.abort")
+	PermJobsTrigger           = realms.RegisterPermission("scheduler.jobs.trigger")
+	PermJobsTriggerWithParams = realms.RegisterPermission("scheduler.jobs.triggerWithParams")
 )
 
 // CheckPermission returns nil if the caller has the given permission for the

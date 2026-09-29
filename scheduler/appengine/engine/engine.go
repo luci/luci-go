@@ -485,12 +485,30 @@ func (e *engineImpl) AbortInvocation(c context.Context, job *Job, invID int64) e
 // EmitTriggers puts one or more triggers into pending trigger queues of the
 // specified jobs.
 func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal.Trigger) error {
+	perms := make([]realms.Permission, 0, 2)
+	perms = append(perms, PermJobsTrigger)
+
+	// If any of the triggers contain non-trivial payload, require an extra
+	// permission. This is because such payloads can affect what ends up running,
+	// sometimes in significant way. Automations rely on that, but humans rarely
+	// need this ability (they mostly click buttons in UI, which submit trivial
+	// triggers). This extra permission should be given mostly to automations,
+	// rarely to humans.
+	for _, triggers := range perJob {
+		for _, trigger := range triggers {
+			if !internal.IsTrivialTrigger(trigger) {
+				perms = append(perms, PermJobsTriggerWithParams)
+				break
+			}
+		}
+	}
+
 	// Make sure the caller has permissions to add triggers to all jobs.
 	jobs := make([]*Job, 0, len(perJob))
 	for j := range perJob {
 		jobs = append(jobs, j)
 	}
-	switch filtered, err := e.filterByPerm(c, jobs, PermJobsTrigger); {
+	switch filtered, err := e.filterByPerm(c, jobs, perms...); {
 	case err != nil:
 		return errors.Fmt("transient error when checking permissions: %w", err)
 	case len(filtered) != len(jobs):
@@ -860,19 +878,33 @@ func (e *engineImpl) queryEnabledVisibleJobs(c context.Context, q *ds.Query) ([]
 	return e.filterByPerm(c, enabled, PermJobsGet)
 }
 
-// filterByPerm returns jobs for which caller has the given permission.
+// filterByPerm returns jobs for which caller has all of the given permissions.
 //
 // May return transient errors.
-func (e *engineImpl) filterByPerm(c context.Context, jobs []*Job, perm realms.Permission) ([]*Job, error) {
-	// TODO(tandrii): improve batch ACLs check here to take advantage of likely
-	// shared ACLs between most jobs of the same project.
+func (e *engineImpl) filterByPerm(c context.Context, jobs []*Job, perms ...realms.Permission) ([]*Job, error) {
+	if len(perms) == 0 {
+		panic("at least one permission is expected")
+	}
+
+	hasAllPerms := func(job *Job) (bool, error) {
+		for _, perm := range perms {
+			switch err := CheckPermission(c, job, perm); {
+			case err == ErrNoPermission:
+				return false, nil
+			case err != nil:
+				return false, err // a transient error when checking
+			}
+		}
+		return true, nil
+	}
+
 	filtered := make([]*Job, 0, len(jobs))
 	for _, job := range jobs {
-		switch err := CheckPermission(c, job, perm); {
-		case err == nil:
-			filtered = append(filtered, job)
-		case err != ErrNoPermission:
+		switch hasAll, err := hasAllPerms(job); {
+		case err != nil:
 			return nil, err // a transient error when checking
+		case hasAll:
+			filtered = append(filtered, job)
 		}
 	}
 	return filtered, nil

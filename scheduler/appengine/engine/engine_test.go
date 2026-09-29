@@ -1368,16 +1368,97 @@ func TestEmitTriggers(t *testing.T) {
 			assert.Loosely(t, incomingTriggers, should.Resemble(emittedTriggers))
 		})
 
-		t.Run("no scheduler.jobs.trigger permission", func(t *ftt.Test) {
+		t.Run("Trigger ACL", func(t *ftt.Test) {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				ctl.State().Status = task.StatusSucceeded
+				return nil
+			}
 			job, err := e.getJob(c, testingJob)
 			assert.Loosely(t, err, should.BeNil)
 
-			err = e.EmitTriggers(mockReaderCtx(c, realmID), map[*Job][]*internal.Trigger{
-				job: {
-					{Id: "t1"},
+			trivialTriggers := []*internal.Trigger{
+				{
+					Id:           "t1",
+					OrderInBatch: 1,
+					Payload: &internal.Trigger_Webui{
+						Webui: &api.WebUITrigger{},
+					},
 				},
-			})
-			assert.Loosely(t, err, should.Equal(ErrNoPermission))
+				{
+					Id:           "t2",
+					OrderInBatch: 2,
+					Payload: &internal.Trigger_Webui{
+						Webui: &api.WebUITrigger{},
+					},
+				},
+			}
+
+			nonTrivialTriggers := []*internal.Trigger{
+				{
+					Id:           "t1",
+					OrderInBatch: 1,
+					Payload: &internal.Trigger_Webui{
+						Webui: &api.WebUITrigger{},
+					},
+				},
+				{
+					Id:           "t2",
+					OrderInBatch: 2,
+					Payload: &internal.Trigger_Gitiles{
+						Gitiles: &api.GitilesTrigger{},
+					},
+				},
+			}
+
+			cases := []struct {
+				name      string
+				triggers  []*internal.Trigger
+				callerCtx func(context.Context, string) context.Context
+				wantErr   error
+			}{
+				{
+					name:      "restricted_caller_trivial_triggers",
+					triggers:  trivialTriggers,
+					callerCtx: mockRestrictedTriggererCtx,
+				},
+				{
+					name:      "restricted_caller_non_trivial_triggers",
+					triggers:  nonTrivialTriggers,
+					callerCtx: mockRestrictedTriggererCtx,
+					wantErr:   ErrNoPermission,
+				},
+				{
+					name:      "trusted_caller_trivial_triggers",
+					triggers:  trivialTriggers,
+					callerCtx: mockTrustedTriggererCtx,
+				},
+				{
+					name:      "trusted_caller_non_trivial_triggers",
+					triggers:  nonTrivialTriggers,
+					callerCtx: mockTrustedTriggererCtx,
+				},
+				{
+					name:      "non_triggerer_caller_trivial_triggers",
+					triggers:  trivialTriggers,
+					callerCtx: mockReaderCtx,
+					wantErr:   ErrNoPermission,
+				},
+				{
+					name:      "non_triggerer_caller_non_trivial_triggers",
+					triggers:  nonTrivialTriggers,
+					callerCtx: mockReaderCtx,
+					wantErr:   ErrNoPermission,
+				},
+			}
+
+			for _, cs := range cases {
+				t.Run(cs.name, func(t *ftt.Test) {
+					err := e.EmitTriggers(cs.callerCtx(c, realmID), map[*Job][]*internal.Trigger{
+						job: cs.triggers,
+					})
+					assert.Loosely(t, err, should.Equal(cs.wantErr))
+				})
+			}
 		})
 
 		t.Run("paused job ignores triggers", func(t *ftt.Test) {

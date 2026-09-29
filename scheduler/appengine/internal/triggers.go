@@ -15,7 +15,9 @@
 package internal
 
 import (
-	fmt "fmt"
+	"fmt"
+
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 )
@@ -44,4 +46,25 @@ func ToPublicTrigger(t *Trigger) *scheduler.Trigger {
 	}
 
 	return ret
+}
+
+// IsTrivialTrigger is true if the trigger's payload doesn't have any tweakable
+// parts that can affect what ends up running when the trigger is consumed.
+func IsTrivialTrigger(t *Trigger) bool {
+	switch p := t.GetPayload().(type) {
+	case nil:
+		return true
+	case *Trigger_Cron:
+		return false
+	case *Trigger_Buildbucket:
+		return proto.Equal(p.Buildbucket, &scheduler.BuildbucketTrigger{})
+	case *Trigger_Gitiles:
+		return false
+	case *Trigger_Noop:
+		return true
+	case *Trigger_Webui:
+		return true
+	default:
+		panic(fmt.Sprintf("unexpected payload type %T: %s", p, p))
+	}
 }
