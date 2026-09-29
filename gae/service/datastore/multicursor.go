@@ -17,7 +17,6 @@ package datastore
 
 import (
 	"context"
-	"sort"
 
 	"google.golang.org/protobuf/proto"
 
@@ -63,27 +62,16 @@ func IsMultiCursorString(cursor string) bool {
 // the queries don't match the behavior is undefined. The order for the queries is not
 // important as they will be sorted before use.
 func ApplyCursors(ctx context.Context, queries []*Query, cursor Cursor) ([]*Query, error) {
-	if len(queries) != len(cursor) {
+	sortedQueries := sortAndCompactQueries(queries)
+	if len(sortedQueries) != len(cursor) {
 		return nil, errors.New("Length mismatch. Cannot apply this cursor to the queries")
 	}
-	// sortedOrder will contain the sorted order for queries. This allows
-	// for updating the queries in order.
-	sortedOrder := make([]int, len(queries))
-	for idx := range sortedOrder {
-		sortedOrder[idx] = idx
-	}
-	// Sort queries and store the order in sortedOrder
-	sort.Slice(sortedOrder, func(i, j int) bool {
-		return queries[sortedOrder[i]].Compare(queries[sortedOrder[j]]) < 0
-	})
-	// Assign the cursors in sorted order
-	for idx, qIdx := range sortedOrder {
-		if cursor[idx] != nil {
-			queries[qIdx] = queries[qIdx].Start(cursor[idx])
+	for idx, c := range cursor {
+		if c != nil {
+			sortedQueries[idx] = sortedQueries[idx].Start(c)
 		}
 	}
-	// Return the queries in the order received
-	return queries, nil
+	return sortedQueries, nil
 }
 
 // ApplyCursorString applies the cursors represented by the string and returns the new

@@ -1965,26 +1965,24 @@ indexes:
 	})
 }
 
-func TestIteratorHeap(t *testing.T) {
+func TestSubqueryHeap(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("iteratorHeap", t, func(t *ftt.Test) {
-		h := &iteratorHeap{}
+	h := &rawQueryPullIterHeap{}
 
-		heap.Init(h)
-		heap.Push(h, &queryIterator{currentItemOrderCache: "bb"})
-		heap.Push(h, &queryIterator{currentItemOrderCache: "aa"})
-		assert.Loosely(t, h.Len(), should.Equal(2))
+	heap.Init(h)
+	heap.Push(h, &rawQueryPullIter{curItemSortKey: "bb"})
+	heap.Push(h, &rawQueryPullIter{curItemSortKey: "aa"})
+	assert.Loosely(t, h.Len(), should.Equal(2))
 
-		var res []*queryIterator
-		for h.Len() > 0 {
-			res = append(res, heap.Pop(h).(*queryIterator))
-		}
-		assert.Loosely(t, res, should.Resemble([]*queryIterator{
-			{currentItemOrderCache: "aa"},
-			{currentItemOrderCache: "bb"},
-		}))
-	})
+	var res []*rawQueryPullIter
+	for h.Len() > 0 {
+		res = append(res, heap.Pop(h).(*rawQueryPullIter))
+	}
+	assert.Loosely(t, res, should.Resemble([]*rawQueryPullIter{
+		{curItemSortKey: "aa"},
+		{curItemSortKey: "bb"},
+	}))
 }
 
 // fakeDatastore2 extends the fakeDatastore but overrides the `raw.Run()` method for the `ds.RunMulti()` usage.
@@ -2119,15 +2117,19 @@ func (f *fakeDatastore2) RunQuery(fq *FinalizedQuery) RawQueryIter {
 func TestCountMulti(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("Test CountMulti", t, func(t *ftt.Test) {
-		c := info.Set(context.Background(), fakeInfo{})
-		fds2 := fakeDatastore2{}
-		c = SetRawFactory(c, fds2.factory())
-		count, err := CountMulti(c, []*Query{
-			NewQuery("Foo").Eq("values", "aa"),
-			NewQuery("Foo").Eq("values", "cc"),
-		})
-		assert.NoErr(t, err)
-		assert.Loosely(t, count, should.Equal(3))
+	c := info.Set(context.Background(), fakeInfo{})
+	fds2 := fakeDatastore2{}
+	c = SetRawFactory(c, fds2.factory())
+	count, err := CountMulti(c, []*Query{
+		NewQuery("Foo").Eq("values", "aa"),
+		NewQuery("Foo").Eq("values", "cc"),
 	})
+	assert.NoErr(t, err)
+	assert.Loosely(t, count, should.Equal(3))
+
+	_, err = CountMulti(c, []*Query{
+		NewQuery("Foo").Eq("values", "aa"),
+		NewQuery("Foo").Eq("@err_single", "fail"),
+	})
+	assert.ErrIsLike(t, err, "errors in fakeDatastore")
 }

@@ -140,6 +140,26 @@ func TestRunMulti(t *testing.T) {
 				assert.Loosely(t, res, should.Resemble([]*Foo{foos[2], foos[1], foos[0]}))
 			})
 
+			t.Run("multi-valued property orders", func(t *ftt.Test) {
+				datastore.GetTestable(ctx).AutoIndex(true)
+
+				ascQueries := []*datastore.Query{
+					datastore.NewQuery("Foo").Eq("single_val", "s1").Order("multi_vals"),
+					datastore.NewQuery("Foo").Eq("single_val", "s2").Order("multi_vals"),
+				}
+				resAsc, err := datastore.RunQuery[*Foo](ctx, ascQueries...).AsSlice()
+				assert.NoErr(t, err)
+				assert.Loosely(t, resAsc, should.Resemble([]*Foo{foos[0], foos[1], foos[2], foos[3]}))
+
+				descQueries := []*datastore.Query{
+					datastore.NewQuery("Foo").Eq("single_val", "s1").Order("-multi_vals"),
+					datastore.NewQuery("Foo").Eq("single_val", "s2").Order("-multi_vals"),
+				}
+				resDesc, err := datastore.RunQuery[*Foo](ctx, descQueries...).AsSlice()
+				assert.NoErr(t, err)
+				assert.Loosely(t, resDesc, should.Resemble([]*Foo{foos[3], foos[2], foos[1], foos[0]}))
+			})
+
 			t.Run("break in loop", func(t *ftt.Test) {
 				queries := []*datastore.Query{
 					datastore.NewQuery("Foo").Eq("multi_vals", "m2"),
@@ -200,7 +220,7 @@ func TestRunMulti(t *testing.T) {
 					}
 				}
 				assert.Loosely(t, fooses, should.NotBeNil)
-				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[2], foos[3]}))
+				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[1], foos[2]}))
 				// Apply the cursor to the queries
 				queries, err = datastore.ApplyCursors(ctx, queries, cur)
 				assert.NoErr(t, err)
@@ -210,7 +230,7 @@ func TestRunMulti(t *testing.T) {
 					fooses = append(fooses, foo)
 				}
 				assert.Loosely(t, fooses, should.NotBeNil)
-				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[2], foos[3]}))
+				assert.Loosely(t, fooses, should.Resemble([]*Foo{foos[0], foos[1], foos[2], foos[3]}))
 			})
 
 			t.Run("with Cursor, repeat entities", func(t *ftt.Test) {

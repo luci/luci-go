@@ -15,17 +15,12 @@
 package datastore
 
 import (
-	"container/heap"
 	"context"
 	"fmt"
 	"reflect"
 	"slices"
-	"sort"
 	"sync"
 
-	"golang.org/x/sync/errgroup"
-
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -245,8 +240,8 @@ func RunInTransaction(ctx context.Context, f func(ctx context.Context) error, op
 //     raw query, but will apply other QueryIter level features).
 //   - *Key (implies a keys-only query)
 type QueryIter[V any] struct {
-	ctx context.Context
-	q   *Query
+	ctx     context.Context
+	queries []*Query
 
 	mat           *multiArgType
 	isKey         bool
@@ -284,24 +279,116 @@ func (q *QueryIter[V]) ensureFinalizedLocked() RawQueryIter {
 		return *q.raw
 	}
 
-	if q.err != nil || q.q == nil {
+	if q.err != nil {
 		raw := RawQueryIterStub(q.err)
 		q.raw = &raw
 		return raw
 	}
 
-	qCopy := q.q
-	if q.isKey && len(qCopy.project) == 0 {
-		qCopy = qCopy.KeysOnly(true)
-	}
-	fq, err := qCopy.Finalize()
-
 	var raw RawQueryIter
-	if err != nil {
+	finalized, err := prepareQueries(q.isKey, q.queries)
+	if err != nil || len(finalized) == 0 {
 		raw = RawQueryIterStub(err)
+	} else if len(finalized) == 1 {
+		raw = Raw(q.ctx).RunQuery(finalized[0])
 	} else {
-		raw = Raw(q.ctx).RunQuery(fq)
+		state := &multiQueryState{
+			seenKey: makeMultiQuerySeenKeys(finalized),
+		}
+		// ordered keeps pointers to pull iters in order of `finalized` so we can
+		// mint a multi-cursor which maps back to the same order as `finalized`.
+		ordered := make([]*rawQueryPullIter, len(finalized))
+		rawIface := Raw(q.ctx)
+		for i, fq := range finalized {
+			it := rawIface.RunQuery(fq)
+			ordered[i] = &rawQueryPullIter{
+				orders: fq.orders,
+				it:     it,
+			}
+		}
+		// Now put all the pull iters into state.live, so they can be initialized
+		// into a heap in state.initialize().
+		state.live = slices.Clone(ordered)
+
+		// hasStarted indicates if we have started the results iterator.
+		hasStarted := false
+
+		raw = RawQueryIter{
+			Results: func(yield func(PropertyMap, error) bool) {
+				// This will actually convert the underlying queries to pull iterators,
+				// populate their first item(s), and then initialize the heap.
+				//
+				// It's important to do this only in Results here (and not in the outer
+				// function) because we MUST call `stop` for all pull iterators. If we
+				// convert to pull iterators in the outer function, this may end up
+				// leaking coroutines in the event that the caller never consumes from
+				// this Results iterator at all.
+				//
+				// We do need the partial initialization outside of Results (rather than
+				// doing EVERYTHING here), however, because we need `Cursor` to function
+				// properly. It's allowed to "run" a multiquery, capture the cursor, then
+				// abandon it.
+				state.initialize()
+				defer state.stop()
+
+				for {
+					top := state.top()
+					if top == nil {
+						return
+					}
+					if top.err == nil {
+						hasStarted = true
+					}
+					// NOTE: TECHNICALLY, there is a small opportunity for extra
+					// parallelism here, where we could start `state.advance()` before
+					// yielding and then synchronize to it after yielding. However, this
+					// has a very complicated interaction with cursors, and it's not clear
+					// that the launch + synchronization overhead is worth it, when we
+					// expect the average latency of `state.advance` to be quite low (e.g.
+					// cloud impl is actually buffering mini-pages of results under the
+					// hood so there is not a 1:1 correlation of advance to an RPC).
+					if !yield(top.curItem, top.err) || top.err != nil {
+						return
+					}
+					state.advance()
+				}
+			},
+
+			Cursor: func() (RawCursor, error) {
+				ret := make(Cursor, len(ordered))
+				top := state.top()
+				for i, it := range ordered {
+					var err error
+					if !hasStarted || it == top {
+						ret[i], err = it.it.Cursor()
+					} else {
+						ret[i], err = it.currentCursor()
+					}
+					if err != nil {
+						return nil, err
+					}
+				}
+				return ret, nil
+			},
+
+			CurrentCursor: func() (RawCursor, error) {
+				if !hasStarted {
+					return nil, ErrNoCurrentCursor
+				}
+
+				ret := make(Cursor, len(ordered))
+				for i, it := range ordered {
+					var err error
+					ret[i], err = it.currentCursor()
+					if err != nil {
+						return nil, err
+					}
+				}
+				return ret, nil
+			},
+		}
 	}
+
 	q.raw = &raw
 	return raw
 }
@@ -367,7 +454,7 @@ func (q *QueryIter[V]) Cursor() (Cursor, error) {
 	defer q.mu.Unlock()
 	q.ensureFinalizedLocked()
 	single, err := q.raw.Cursor()
-	if err != nil {
+	if err != nil || single == nil {
 		return nil, err
 	}
 	if mc, ok := single.(Cursor); ok {
@@ -538,8 +625,10 @@ func QueryIterFromRaw[V any](raw RawQueryIter) *QueryIter[V] {
 	return ret
 }
 
-// RunQuery starts the given query, and returns the [*QueryIter[V]] which will
-// yield the results.
+// RunQuery starts the given query or queries, and returns the [*QueryIter[V]]
+// which will yield the results. If multiple queries are provided, they are run
+// concurrently and merged in sort order with key deduplication (i.e. they are
+// logically OR'd).
 //
 // By default, datastore applies a short (~5s) timeout to queries. This can be
 // increased, usually to around several minutes, by explicitly setting a
@@ -555,234 +644,17 @@ func QueryIterFromRaw[V any](raw RawQueryIter) *QueryIter[V] {
 // RunQuery will stop on the first datastore error encountered, which can occur
 // due to flakiness, timeout, etc. If it encounters such an error, it will be
 // yielded and the iterator stopped.
-func RunQuery[V any](ctx context.Context, q *Query) *QueryIter[V] {
-	ret := &QueryIter[V]{ctx: ctx, q: q}
+func RunQuery[V any](ctx context.Context, q ...*Query) *QueryIter[V] {
+	ret := &QueryIter[V]{ctx: ctx, queries: q}
 	ret.populateMat()
 	return ret
 }
 
-// RunMultiQuery executes the logical OR of multiple queries, returning a QueryIter[V]
-// containing a Cursor function and an iter.Seq2[V, error] of results typed as V.
-// Results will be returned in the order of the provided queries; All queries must
-// have matching Orders.
+// RunMultiQuery executes the logical OR of multiple queries, returning a QueryIter[V].
 //
-// The cursor returned by Cursor() cannot be used on a single query by doing
-// `query.Start(cursor)` (in some cases it may not even complain when you try to
-// do this, but the results are undefined). Apply the cursor to the same list of
-// queries using ApplyCursors.
-//
-// Note: projection queries are not supported, as they are non-trivial in
-// complexity and haven't been needed yet.
-//
-// DANGER: Cursors are buggy when using Cloud Datastore production backend.
-// Paginated queries skip entities sitting on page boundaries. This doesn't
-// happen when using `impl/memory` and thus hard to spot in unit tests. See
-// queryIterator doc for more details.
+// Deprecated: Use RunQuery(ctx, queries...) instead.
 func RunMultiQuery[V any](ctx context.Context, queries []*Query) *QueryIter[V] {
-	var zero V
-	_, isKey := any(zero).(*Key)
-
-	// Finalize queries and do some basic validation. At very least queries must
-	// use the same kind and ordering, otherwise putting their results in a single
-	// sorted heap makes no sense.
-	finalized := make([]*FinalizedQuery, len(queries))
-	overallKind := ""
-	overallOrder := ""
-	for i, q := range queries {
-		if isKey && q.project.Len() == 0 {
-			q = q.KeysOnly(true)
-		}
-		fq, err := q.Finalize()
-		if err != nil {
-			return queryIterStub[V](err)
-		}
-		// If we have more than one query (multi-query), AND this query is not
-		// loading the full entity (e.g. keys-only or projection) AND we have more
-		// than one sort order, we need to project all the sort order columns into
-		// our result in order to be able to correctly order the queries in the
-		// heap.
-		if len(queries) > 1 && (fq.KeysOnly() || len(fq.project) > 0) && len(fq.orders) > 1 {
-			proj := make([]string, 0, len(fq.orders)-1)
-			for _, col := range fq.orders {
-				if col.Property != "__key__" {
-					proj = append(proj, col.Property)
-				}
-			}
-			fq, err = q.KeysOnly(false).Project(proj...).Finalize()
-			if err != nil {
-				return queryIterStub[V](err)
-			}
-		}
-		finalized[i] = fq
-		// Build a string identifying ordering of this query, e.g.
-		// "-field1,field2,__key__".
-		order := ""
-		for j, col := range fq.orders {
-			if j != 0 {
-				order += ","
-			}
-			order += col.String()
-		}
-		switch {
-		case i == 0:
-			overallKind = fq.kind
-			overallOrder = order
-		case fq.kind != overallKind:
-			return queryIterStub[V](fmt.Errorf("all RunMultiQuery queries should query the same kind, but got %q and %q", fq.kind, overallKind))
-		case order != overallOrder:
-			return queryIterStub[V](fmt.Errorf("all RunMultiQuery queries should use the same order, but got %q and %q", order, overallOrder))
-		}
-	}
-
-	// No queries to run => no results to return. This is an edge case.
-	if len(finalized) == 0 {
-		return queryIterStub[V](nil)
-	}
-
-	if len(queries) == 1 {
-		return RunQuery[V](ctx, queries[0])
-	}
-
-	var iterators []*queryIterator
-	var iteratorsMu sync.Mutex
-
-	cursorCB := func() (RawCursor, error) {
-		iteratorsMu.Lock()
-		iters := slices.Clone(iterators)
-		iteratorsMu.Unlock()
-		if len(iters) == 0 {
-			return nil, errors.New("no cursor available")
-		}
-
-		// Sort the list of queries. It is OK to update `iterators` in-place here.
-		// It is only used in the defer, the order doesn't matter there.
-		sort.Slice(iters, func(i, j int) bool {
-			queryI := iters[i].Query()
-			queryJ := iters[j].Query()
-			return queryI.Compare(queryJ) < 0
-		})
-
-		// Create the cursor. It points to all items currently sitting in heap.
-		// We'll need to refetch them all again to repopulate the heap when
-		// resuming the query.
-		ret := make(Cursor, len(iters))
-		for i, iter := range iters {
-			cur, err := iter.CurrentCursor()
-			if err != nil {
-				return nil, err
-			}
-			ret[i] = cur
-		}
-		return ret, nil
-	}
-
-	results := func(yield func(PropertyMap, error) bool) {
-		// All iterators (active and exhausted) in some arbitrary order.
-		iters := make([]*queryIterator, 0, len(finalized))
-		cCtx, cancel := context.WithCancel(ctx)
-		eg, ectx := errgroup.WithContext(cCtx)
-
-		// Make sure all spawned goroutines have fully stopped before returning.
-		defer func() {
-			// Signal all iterators to stop ASAP.
-			cancel()
-			// Wait for all of them to stop. Calling Next makes sure internal goroutines
-			// are not getting stuck trying to write to a channel that nothing is
-			// reading from (this blocks forever).
-			for _, iter := range iters {
-				for done := false; !done; done, _ = iter.Next() {
-				}
-			}
-			// All goroutines should be stopping now. Wait until they are fully stopped.
-			_ = eg.Wait()
-		}()
-
-		// Launch all queries in parallel. Do it before ordering them as a heap, since
-		// to build a heap we need to have the first result from each query. We want
-		// all such first results to be fetched *in parallel*.
-		for _, fq := range finalized {
-			iters = append(iters, startQueryIterator(ectx, eg, fq))
-		}
-
-		iteratorsMu.Lock()
-		iterators = iters
-		iteratorsMu.Unlock()
-
-		// Wait for first items from all iterators. Gather all non-exhausted iterators
-		// to make a sorted heap out of them.
-		iHeap := make(iteratorHeap, 0, len(iters))
-		for _, iter := range iters {
-			switch done, err := iter.Next(); {
-			case err != nil:
-				yield(nil, err)
-				return
-			case !done:
-				iHeap = append(iHeap, iter)
-			}
-		}
-		heap.Init(&iHeap)
-
-		// If queries are ordered only by key, all duplicates will be returned from
-		// the heap one after another and we can use a simple check to skip them. This
-		// is important for CountMulti(...) that can be visiting tens of thousands
-		// of entities: storing them all in a hash map for deduplication is a waste of
-		// memory.
-		//
-		// Use a hash map for any other ordering. There may be weird results if this
-		// is running non-transactionally and two different subqueries see two
-		// different versions of the same entity (with different values of fields
-		// affecting the order). Such entity will appear twice in the output, with
-		// some other entities in between these appearances. A simple check will not
-		// detect such deduplication.
-		var seenKey func(keyStr string) bool
-		if overallOrder == "__key__" || overallOrder == "-__key__" {
-			lastSeen := ""
-			seenKey = func(keyStr string) bool {
-				if lastSeen == keyStr {
-					return true
-				}
-				lastSeen = keyStr
-				return false
-			}
-		} else {
-			seenKeys := stringset.New(128)
-			seenKey = func(keyStr string) bool {
-				return !seenKeys.Add(keyStr)
-			}
-		}
-
-		// Merge query results.
-		for iHeap.Len() > 0 {
-			pm, key, keyStr, err := iHeap.nextData()
-			if err != nil {
-				if !yield(nil, err) {
-					return
-				}
-				continue
-			}
-			if !seenKey(keyStr) {
-				if pm == nil {
-					pm = make(PropertyMap, 1)
-				}
-				pm.SetMeta("key", key)
-				if !yield(pm, nil) {
-					return
-				}
-			}
-		}
-	}
-
-	ret := &QueryIter[V]{
-		raw: &RawQueryIter{
-			Results: results,
-			Cursor:  cursorCB,
-			CurrentCursor: func() (RawCursor, error) {
-				return nil, ErrCursorNotImplemented
-			},
-		},
-	}
-	ret.populateMat()
-	return ret
+	return RunQuery[V](ctx, queries...)
 }
 
 // Count executes the given query and returns the number of entries which
@@ -1106,54 +978,4 @@ func filterStop(err error) error {
 		err = nil
 	}
 	return err
-}
-
-// a min heap for a slice of queryIterator.
-//
-// All iterators are in "not done" state.
-type iteratorHeap []*queryIterator
-
-var _ heap.Interface = &iteratorHeap{}
-
-func (h iteratorHeap) Len() int { return len(h) }
-
-func (h iteratorHeap) Less(i, j int) bool { return h[i].CurrentItemOrder() < h[j].CurrentItemOrder() }
-
-func (h iteratorHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-
-func (h *iteratorHeap) Push(x any) {
-	*h = append(*h, x.(*queryIterator))
-}
-
-func (h *iteratorHeap) Pop() any {
-	old := *h
-	n := len(old)
-	item := old[n-1]
-	*h = old[0 : n-1]
-	return item
-}
-
-// nextData returns data of the peak queryIterator, advances the queryIterator
-// and either removes it from the heap (if it has no results left) or adjusts
-// its position in the heap.
-//
-// Must be called only with a non-empty heap.
-func (h *iteratorHeap) nextData() (pm PropertyMap, key *Key, keyStr string, err error) {
-	if len(*h) == 0 {
-		panic("the heap is empty")
-	}
-
-	qi := (*h)[0]
-	key, pm = qi.CurrentItem()
-	keyStr = qi.CurrentItemKey()
-
-	var done bool
-	done, err = qi.Next()
-	if !done {
-		heap.Fix(h, 0)
-	} else {
-		heap.Remove(h, 0)
-	}
-
-	return
 }

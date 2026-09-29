@@ -39,8 +39,7 @@ type SimpleRecord struct {
 func TestAsSlice_Empty(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	ctx = memory.Use(ctx)
+	ctx := memory.Use(t.Context())
 	datastore.GetTestable(ctx).Consistent(true)
 
 	q := datastore.NewQuery(SimpleRecordKind).Limit(1)
@@ -52,8 +51,7 @@ func TestAsSlice_Empty(t *testing.T) {
 func TestAsSlice_Singleton(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	ctx = memory.Use(ctx)
+	ctx := memory.Use(t.Context())
 	datastore.GetTestable(ctx).Consistent(true)
 
 	err := datastore.Put(ctx, &SimpleRecord{key: "a", Value: "b"})
@@ -70,8 +68,7 @@ func TestAsSlice_Singleton(t *testing.T) {
 func TestAsSlice_Doubleton(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	ctx = memory.Use(ctx)
+	ctx := memory.Use(t.Context())
 	datastore.GetTestable(ctx).Consistent(true)
 
 	err := datastore.Put(ctx, &SimpleRecord{key: "a", Value: "b"})
@@ -182,7 +179,7 @@ func TestRunQuery(t *testing.T) {
 			q := datastore.NewQuery("TestIterRecord")
 			it := datastore.RunQuery[*TestIterRecord](ctx, q)
 			_, err := it.CurrentCursor()
-			assert.Loosely(t, err, should.Equal(datastore.ErrNoCurrentCursor))
+			assert.ErrIsLike(t, err, datastore.ErrNoCurrentCursor)
 		})
 
 		t.Run("ErrNoCurrentCursor on empty query", func(t *testing.T) {
@@ -192,7 +189,7 @@ func TestRunQuery(t *testing.T) {
 				assert.NoErr(t, err)
 			}
 			_, err := it.CurrentCursor()
-			assert.Loosely(t, err, should.Equal(datastore.ErrNoCurrentCursor))
+			assert.ErrIsLike(t, err, datastore.ErrNoCurrentCursor)
 		})
 
 		t.Run("Step by step cursor vs current cursor", func(t *testing.T) {
@@ -237,11 +234,11 @@ func TestRunQuery(t *testing.T) {
 	t.Run("RawQueryIterStub CurrentCursor", func(t *testing.T) {
 		stubNil := datastore.RawQueryIterStub(nil)
 		_, err := stubNil.CurrentCursor()
-		assert.Loosely(t, err, should.Equal(datastore.ErrNoCurrentCursor))
+		assert.ErrIsLike(t, err, datastore.ErrNoCurrentCursor)
 
 		stubErr := datastore.RawQueryIterStub(datastore.ErrLimitExceeded)
 		_, err = stubErr.CurrentCursor()
-		assert.Loosely(t, err, should.Equal(datastore.ErrLimitExceeded))
+		assert.ErrIsLike(t, err, datastore.ErrLimitExceeded)
 	})
 
 	t.Run("PropertyMap", func(t *testing.T) {
@@ -477,11 +474,265 @@ func TestRunMultiQuery(t *testing.T) {
 	})
 }
 
-func TestRunQuery_MultipleUses(t *testing.T) {
+func TestRunQuery_Variadic(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 	ctx = memory.Use(ctx)
+	datastore.GetTestable(ctx).Consistent(true)
+
+	err := datastore.Put(ctx, &TestIterRecord{ID: "a", Value: "val_a"})
+	assert.NoErr(t, err)
+	err = datastore.Put(ctx, &TestIterRecord{ID: "b", Value: "val_b"})
+	assert.NoErr(t, err)
+	err = datastore.Put(ctx, &TestIterRecord{ID: "c", Value: "val_c"})
+	assert.NoErr(t, err)
+
+	q1 := datastore.NewQuery("TestIterRecord").Eq("value", "val_a")
+	q2 := datastore.NewQuery("TestIterRecord").Eq("value", "val_b")
+	q3 := datastore.NewQuery("TestIterRecord").Eq("value", "val_c")
+
+	t.Run("Zero queries", func(t *testing.T) {
+		it := datastore.RunQuery[*TestIterRecord](ctx)
+		slice, err := it.AsSlice()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(slice), should.Equal(0))
+
+		cur, err := it.Cursor()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(cur), should.Equal(0))
+
+		_, err = it.CurrentCursor()
+		assert.ErrIsLike(t, err, datastore.ErrNoCurrentCursor)
+	})
+
+	t.Run("Single query variadic", func(t *testing.T) {
+		slice, err := datastore.RunQuery[*TestIterRecord](ctx, q1).AsSlice()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(slice), should.Equal(1))
+		assert.Loosely(t, slice[0].Value, should.Equal("val_a"))
+	})
+
+	t.Run("Multiple queries AsSlice", func(t *testing.T) {
+		slice, err := datastore.RunQuery[*TestIterRecord](ctx, q1, q2, q3).AsSlice()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(slice), should.Equal(3))
+		assert.Loosely(t, slice[0].Value, should.Equal("val_a"))
+		assert.Loosely(t, slice[1].Value, should.Equal("val_b"))
+		assert.Loosely(t, slice[2].Value, should.Equal("val_c"))
+	})
+
+	t.Run("Multiple queries AddFilter", func(t *testing.T) {
+		it := datastore.RunQuery[*TestIterRecord](ctx, q1, q2, q3)
+		it.AddFilter(func(r *TestIterRecord) (bool, error) {
+			return r.Value != "val_b", nil
+		})
+		slice, err := it.AsSlice()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(slice), should.Equal(2))
+		assert.Loosely(t, slice[0].Value, should.Equal("val_a"))
+		assert.Loosely(t, slice[1].Value, should.Equal("val_c"))
+	})
+
+	t.Run("Multiple queries SetSizeLimit", func(t *testing.T) {
+		it := datastore.RunQuery[*TestIterRecord](ctx, q1, q2, q3)
+		it.SetSizeLimit(1)
+		_, err := it.AsSlice()
+		assert.Loosely(t, err, should.Equal(datastore.ErrLimitExceeded))
+	})
+
+	t.Run("Multiple queries Cursor before iteration", func(t *testing.T) {
+		it := datastore.RunQuery[*TestIterRecord](ctx, q1, q2)
+		cur, err := it.Cursor()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(cur), should.Equal(2))
+
+		_, err = it.CurrentCursor()
+		assert.ErrIsLike(t, err, datastore.ErrNoCurrentCursor)
+
+		resumedQ, err := datastore.ApplyCursors(ctx, []*datastore.Query{q1, q2}, cur)
+		assert.NoErr(t, err)
+		res, err := datastore.RunQuery[*TestIterRecord](ctx, resumedQ...).AsSlice()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(res), should.Equal(2))
+		assert.Loosely(t, res[0].Value, should.Equal("val_a"))
+		assert.Loosely(t, res[1].Value, should.Equal("val_b"))
+	})
+
+	t.Run("Multiple queries Step by step Cursor vs CurrentCursor", func(t *testing.T) {
+		// Use our own datastore instance because we want to mutate it after
+		// exhausting the query.
+		ctx := memory.Use(t.Context())
+		datastore.GetTestable(ctx).Consistent(true)
+
+		err := datastore.Put(ctx, &TestIterRecord{ID: "a", Value: "val_a"})
+		assert.NoErr(t, err)
+		err = datastore.Put(ctx, &TestIterRecord{ID: "b", Value: "val_b"})
+		assert.NoErr(t, err)
+		err = datastore.Put(ctx, &TestIterRecord{ID: "c", Value: "val_c"})
+		assert.NoErr(t, err)
+
+		it := datastore.RunQuery[*TestIterRecord](ctx, q1, q2, q3)
+		count := 0
+		for r, err := range it.Results {
+			assert.NoErr(t, err)
+			count++
+
+			curCur, err := it.CurrentCursor()
+			assert.NoErr(t, err)
+			assert.Loosely(t, len(curCur), should.Equal(3))
+
+			nextCur, err := it.Cursor()
+			assert.NoErr(t, err)
+			assert.Loosely(t, len(nextCur), should.Equal(3))
+
+			// Resume from CurrentCursor: starts with the current item
+			resumedQCur, err := datastore.ApplyCursors(ctx, []*datastore.Query{q1, q2, q3}, curCur)
+			assert.NoErr(t, err)
+			resCur, err := datastore.RunQuery[*TestIterRecord](ctx, resumedQCur...).AsSlice()
+			assert.NoErr(t, err)
+			assert.Loosely(t, resCur[0].Value, should.Equal(r.Value))
+
+			// Resume from Cursor: skips the current item
+			resumedQNext, err := datastore.ApplyCursors(ctx, []*datastore.Query{q1, q2, q3}, nextCur)
+			assert.NoErr(t, err)
+			resNext, err := datastore.RunQuery[*TestIterRecord](ctx, resumedQNext...).AsSlice()
+			assert.NoErr(t, err)
+			assert.Loosely(t, len(resNext), should.Equal(3-count))
+		}
+		assert.Loosely(t, count, should.Equal(3))
+
+		// Cursor after exhausting all subqueries
+		endCur, err := it.Cursor()
+		assert.NoErr(t, err)
+		assert.That(t, len(endCur), should.Equal(3))
+		resumedEnd, err := datastore.ApplyCursors(ctx, []*datastore.Query{q1, q2, q3}, endCur)
+		assert.NoErr(t, err)
+
+		// This will be the next item matched by q3.
+		err = datastore.Put(ctx, &TestIterRecord{ID: "d", Value: "val_c"})
+		assert.NoErr(t, err)
+
+		resEnd, err := datastore.RunQuery[*TestIterRecord](ctx, resumedEnd...).AsSlice()
+		assert.NoErr(t, err)
+		assert.That(t, len(resEnd), should.Equal(1))
+		assert.That(t, resEnd, should.Match([]*TestIterRecord{
+			{Kind: "TestIterRecord", ID: "d", Value: "val_c"},
+		}))
+	})
+
+	t.Run("Multiple queries Empty results", func(t *testing.T) {
+		empty1 := datastore.NewQuery("TestIterRecord").Eq("value", "nonexistent_1")
+		empty2 := datastore.NewQuery("TestIterRecord").Eq("value", "nonexistent_2")
+		it := datastore.RunQuery[*TestIterRecord](ctx, empty1, empty2)
+
+		slice, err := it.AsSlice()
+		assert.NoErr(t, err)
+		assert.That(t, len(slice), should.Equal(0))
+
+		_, err = it.CurrentCursor()
+		assert.ErrIsLike(t, err, datastore.ErrNoCurrentCursor)
+
+		cur, err := it.Cursor()
+		assert.NoErr(t, err)
+		assert.That(t, len(cur), should.Equal(2))
+
+		resumedQ, err := datastore.ApplyCursors(ctx, []*datastore.Query{empty1, empty2}, cur)
+		assert.NoErr(t, err)
+		res, err := datastore.RunQuery[*TestIterRecord](ctx, resumedQ...).AsSlice()
+		assert.NoErr(t, err)
+		assert.That(t, len(res), should.Equal(0))
+	})
+
+	t.Run("Multiple queries Duplicate first item", func(t *testing.T) {
+		// Key-only ordering with two distinct queries matching the same first item
+		qA2 := datastore.NewQuery("TestIterRecord").Lte("__key__", datastore.MakeKey(ctx, "TestIterRecord", "b"))
+		slice, err := datastore.RunQuery[*TestIterRecord](ctx, q1, qA2).AsSlice()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(slice), should.Equal(2))
+		assert.Loosely(t, slice[0].Value, should.Equal("val_a"))
+		assert.Loosely(t, slice[1].Value, should.Equal("val_b"))
+
+		// Duplicate queries are compacted and work with ApplyCursors
+		dupQueries := []*datastore.Query{q1, q1, q2}
+		itDup := datastore.RunQuery[*TestIterRecord](ctx, dupQueries...)
+		for _, err := range itDup.Results {
+			assert.NoErr(t, err)
+			break
+		}
+		dupCur, err := itDup.Cursor()
+		assert.NoErr(t, err)
+		resumedDup, err := datastore.ApplyCursors(ctx, dupQueries, dupCur)
+		assert.NoErr(t, err)
+		remDup, err := datastore.RunQuery[*TestIterRecord](ctx, resumedDup...).AsSlice()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(remDup), should.Equal(1))
+		assert.Loosely(t, remDup[0].Value, should.Equal("val_b"))
+
+		// Non-key ordering with two distinct queries matching the same first item
+		q1Ord := datastore.NewQuery("TestIterRecord").Gte("value", "val_a").Order("value")
+		q2Ord := datastore.NewQuery("TestIterRecord").Lte("value", "val_c").Order("value")
+		sliceOrd, err := datastore.RunQuery[*TestIterRecord](ctx, q1Ord, q2Ord).AsSlice()
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(sliceOrd), should.Equal(3))
+		assert.Loosely(t, sliceOrd[0].Value, should.Equal("val_a"))
+		assert.Loosely(t, sliceOrd[1].Value, should.Equal("val_b"))
+		assert.Loosely(t, sliceOrd[2].Value, should.Equal("val_c"))
+	})
+
+	t.Run("Multiple queries Subquery Finalize error", func(t *testing.T) {
+		badQ := datastore.NewQuery("TestIterRecord").Eq("", "bad")
+		it := datastore.RunQuery[*TestIterRecord](ctx, q1, badQ)
+		_, err := it.AsSlice()
+		assert.ErrIsLike(t, err, `cannot filter/project on: ""`)
+	})
+
+	t.Run("Multiple queries Subquery error on initial pull", func(t *testing.T) {
+		goodOrd := datastore.NewQuery("TestIterRecord").Order("value")
+		needCompositeIdx := datastore.NewQuery("TestIterRecord").Eq("missing_idx_prop", "x").Order("value")
+		it := datastore.RunQuery[*TestIterRecord](ctx, goodOrd, needCompositeIdx)
+		_, err := it.AsSlice()
+		assert.ErrIsLike(t, err, "Insufficient indexes")
+		_, curErr := it.CurrentCursor()
+		assert.ErrIsLike(t, curErr, datastore.ErrNoCurrentCursor)
+	})
+
+	t.Run("Multiple queries Underlying Cursor error", func(t *testing.T) {
+		nsQ1 := datastore.NewQuery("__namespace__")
+		nsQ2 := datastore.NewQuery("__namespace__").Limit(10)
+		it := datastore.RunQuery[*datastore.Key](ctx, nsQ1, nsQ2)
+
+		_, err := it.Cursor()
+		assert.ErrIsLike(t, err, "cursors not supported")
+
+		for _, err := range it.Results {
+			assert.NoErr(t, err)
+			_, curErr := it.CurrentCursor()
+			assert.ErrIsLike(t, curErr, "cursors not supported")
+		}
+	})
+
+	t.Run("Multiple queries Mismatched Kind", func(t *testing.T) {
+		badQ := datastore.NewQuery("OtherKind")
+		it := datastore.RunQuery[*TestIterRecord](ctx, q1, badQ)
+		for _, err := range it.Results {
+			assert.Loosely(t, err, should.ErrLike("should query the same kind"))
+		}
+	})
+
+	t.Run("Multiple queries Mismatched Order", func(t *testing.T) {
+		badQ := datastore.NewQuery("TestIterRecord").Order("-value")
+		it := datastore.RunQuery[*TestIterRecord](ctx, q1, badQ)
+		for _, err := range it.Results {
+			assert.Loosely(t, err, should.ErrLike("should use the same order"))
+		}
+	})
+}
+
+func TestRunQuery_MultipleUses(t *testing.T) {
+	t.Parallel()
+
+	ctx := memory.Use(t.Context())
 	datastore.GetTestable(ctx).Consistent(true)
 
 	err := datastore.Put(ctx, &TestIterRecord{ID: "a", Value: "val_a"})
@@ -743,8 +994,7 @@ func TestRunQuery_MultipleUses(t *testing.T) {
 func TestQueryIter_InvalidTypes(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	ctx = memory.Use(ctx)
+	ctx := memory.Use(t.Context())
 
 	t.Run("Non-PLS primitive", func(t *testing.T) {
 		assert.Loosely(t, func() {
