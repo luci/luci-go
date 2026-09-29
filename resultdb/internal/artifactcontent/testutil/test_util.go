@@ -31,13 +31,32 @@ type FakeCASReader struct {
 	ResErr      error
 	ResErrIndex int
 
-	ReadLimit int
-	nRead     int
+	ReadOffset int
+	ReadLimit  int
+	nSkipped   int
+	nRead      int
 }
 
 func (r *FakeCASReader) Recv() (*bytestream.ReadResponse, error) {
 	if r.ResErr != nil && r.ResErrIndex == r.ResIndex {
 		return nil, r.ResErr
+	}
+
+	for r.nSkipped < r.ReadOffset && r.ResIndex < len(r.Res) {
+		res := r.Res[r.ResIndex]
+		rem := len(res.Data) - r.ResDataPos
+		toSkip := r.ReadOffset - r.nSkipped
+		if toSkip >= rem {
+			r.nSkipped += rem
+			r.ResDataPos = 0
+			r.ResIndex++
+		} else {
+			r.nSkipped += toSkip
+			r.ResDataPos += toSkip
+		}
+		if r.ResErr != nil && r.ResErrIndex == r.ResIndex {
+			return nil, r.ResErr
+		}
 	}
 
 	limitAvail := r.ReadLimit - r.nRead

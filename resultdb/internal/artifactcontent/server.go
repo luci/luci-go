@@ -109,9 +109,20 @@ func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
 	h.Add("Access-Control-Allow-Credentials", "false")
 
 	if preflight {
-		h.Add("Access-Control-Allow-Headers", "Origin, Authorization")
+		h.Add("Access-Control-Allow-Headers", "Origin, Authorization, Range")
 		h.Add("Access-Control-Allow-Methods", "OPTIONS, GET")
+	} else {
+		h.Add("Access-Control-Expose-Headers", "Content-Range, Content-Length, Accept-Ranges")
 	}
+}
+
+type byteRangeSpec struct {
+	// start is the 0-based inclusive start byte offset, or -1 if suffix range ("bytes=-N").
+	start int64
+	// end is the 0-based inclusive end byte offset, or -1 if open-ended ("bytes=N-") or suffix range.
+	end int64
+	// suffixLen is the number of trailing bytes requested when start == -1 ("bytes=-N").
+	suffixLen int64
 }
 
 type contentRequest struct {
@@ -126,12 +137,37 @@ type contentRequest struct {
 
 	parentID   string
 	artifactID string
-	limit      int64 // Maximum size of the artifact, in bytes.
+	offset     int64 // Start offset of the artifact content, in bytes.
+	limit      int64 // Maximum size of the artifact content to return, in bytes.
+
+	rangeSpec        *byteRangeSpec
+	isPartialContent bool
+	rangeStart       int64
+	rangeEnd         int64
 
 	contentType spanner.NullString
 	size        spanner.NullInt64
 }
 
+// handle serves artifact content requests.
+//
+// Partial artifact reads are supported via two mutually exclusive mechanisms
+// (combining both in the same request returns 400 Bad Request):
+//
+//  1. Query Parameters (?offset=<start>&n=<limit>):
+//     - Success Status:   200 OK
+//     - Response Headers: Content-Length: <sliced_len>, Accept-Ranges: bytes
+//     - Out of range:     If offset >= size, returns 200 OK with an empty body
+//     (Content-Length: 0).
+//
+//  2. HTTP Range Header (Range: bytes=<start>-<end>, bytes=<start>-, or
+//     bytes=-<suffixLen>):
+//     - Success Status:   206 Partial Content
+//     - Response Headers: Content-Range: bytes <start>-<end>/<size>,
+//     Content-Length: <end-start+1>, Accept-Ranges: bytes
+//     - Out of range:     If start >= size, suffixLen == 0, or size == 0, returns
+//     416 Range Not Satisfiable with
+//     Content-Range: bytes */<size>.
 func (r *contentRequest) handle(c *router.Context) {
 	r.setAccessControlHeaders(c, false)
 
@@ -173,7 +209,12 @@ func (r *contentRequest) handle(c *router.Context) {
 
 	case rbeCASHash.Valid && rbeCASHash.StringVal != "":
 		mw := NewMetricsWriter(c)
+		r.w = c.Writer
 		defer mw.Download(ctx, r.size.Int64)
+		if !r.resolveRange() {
+			r.sendRangeNotSatisfiable()
+			return
+		}
 		r.handleRBECASContent(c, rbeCASHash.StringVal)
 
 	case rbeURI.Valid && rbeURI.StringVal != "":
@@ -184,7 +225,12 @@ func (r *contentRequest) handle(c *router.Context) {
 		}
 
 		mw := NewMetricsWriter(c)
+		r.w = c.Writer
 		defer mw.Download(ctx, r.size.Int64)
+		if !r.resolveRange() {
+			r.sendRangeNotSatisfiable()
+			return
+		}
 		r.handleRBECASContentWithURI(c, rbeURI.StringVal, project)
 
 	default:
@@ -216,20 +262,128 @@ func (r *contentRequest) parseRequest(req *http.Request) error {
 		r.artifactID = artifactID
 	}
 
-	limitStr := req.URL.Query().Get("n")
-	if limitStr == "" {
-		return nil
+	query := req.URL.Query()
+	offsetStr := query.Get("offset")
+	if offsetStr != "" {
+		var err error
+		r.offset, err = strconv.ParseInt(offsetStr, 10, 64)
+		if err != nil {
+			return errors.Fmt("query parameter offset must be an integer, but got %q: %w", offsetStr, err)
+		}
+		if r.offset < 0 {
+			return errors.Fmt("query parameter offset must be >= 0, got %q", offsetStr)
+		}
 	}
 
-	var err error
-	r.limit, err = strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		return errors.Fmt("query parmeter n must be an integer, but got %q: %w", limitStr, err)
+	limitStr := query.Get("n")
+	if limitStr != "" {
+		var err error
+		r.limit, err = strconv.ParseInt(limitStr, 10, 64)
+		if err != nil {
+			return errors.Fmt("query parmeter n must be an integer, but got %q: %w", limitStr, err)
+		}
+		if r.limit < 0 {
+			return errors.Fmt("query parmeter n must be >= 0, got %q", limitStr)
+		}
 	}
-	if r.limit < 0 {
-		return errors.Fmt("query parmeter n must be >= 0, got %q", limitStr)
+
+	rangeHeader := strings.TrimSpace(req.Header.Get("Range"))
+	if rangeHeader != "" {
+		if offsetStr != "" || limitStr != "" {
+			return errors.New("cannot specify both Range header and query parameters offset or n")
+		}
+		spec, err := parseRangeHeader(rangeHeader)
+		if err != nil {
+			return err
+		}
+		r.rangeSpec = spec
 	}
 	return nil
+}
+
+func parseRangeHeader(rangeHeader string) (*byteRangeSpec, error) {
+	if !strings.HasPrefix(rangeHeader, "bytes=") {
+		return nil, errors.Fmt("invalid Range header %q: must start with \"bytes=\"", rangeHeader)
+	}
+	spec := strings.TrimSpace(strings.TrimPrefix(rangeHeader, "bytes="))
+	if strings.Contains(spec, ",") {
+		return nil, errors.Fmt("invalid Range header %q: multiple ranges are not supported", rangeHeader)
+	}
+	parts := strings.SplitN(spec, "-", 2)
+	if len(parts) != 2 || (parts[0] == "" && parts[1] == "") {
+		return nil, errors.Fmt("invalid Range header %q", rangeHeader)
+	}
+	if parts[0] == "" {
+		suffixLen, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil || suffixLen < 0 {
+			return nil, errors.Fmt("invalid Range header %q", rangeHeader)
+		}
+		return &byteRangeSpec{start: -1, end: -1, suffixLen: suffixLen}, nil
+	}
+	start, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil || start < 0 {
+		return nil, errors.Fmt("invalid Range header %q", rangeHeader)
+	}
+	if parts[1] == "" {
+		return &byteRangeSpec{start: start, end: -1}, nil
+	}
+	end, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil || end < start {
+		return nil, errors.Fmt("invalid Range header %q", rangeHeader)
+	}
+	return &byteRangeSpec{start: start, end: end}, nil
+}
+
+// resolveRange resolves r.rangeSpec against r.size into r.offset, r.limit,
+// r.rangeStart, r.rangeEnd, and r.isPartialContent.
+// Returns false if the requested range is not satisfiable (HTTP 416).
+func (r *contentRequest) resolveRange() bool {
+	if r.rangeSpec == nil {
+		return true
+	}
+	if !r.size.Valid || r.size.Int64 <= 0 {
+		return false
+	}
+	size := r.size.Int64
+
+	var start, end int64
+	if r.rangeSpec.start == -1 {
+		if r.rangeSpec.suffixLen <= 0 {
+			return false
+		}
+		if r.rangeSpec.suffixLen >= size {
+			start = 0
+		} else {
+			start = size - r.rangeSpec.suffixLen
+		}
+		end = size - 1
+	} else {
+		if r.rangeSpec.start >= size {
+			return false
+		}
+		start = r.rangeSpec.start
+		if r.rangeSpec.end == -1 || r.rangeSpec.end >= size {
+			end = size - 1
+		} else {
+			end = r.rangeSpec.end
+		}
+	}
+
+	r.offset = start
+	r.limit = end - start + 1
+	r.rangeStart = start
+	r.rangeEnd = end
+	r.isPartialContent = true
+	return true
+}
+
+func (r *contentRequest) sendRangeNotSatisfiable() {
+	var size int64
+	if r.size.Valid && r.size.Int64 > 0 {
+		size = r.size.Int64
+	}
+	r.w.Header().Set("Content-Range", fmt.Sprintf("bytes */%d", size))
+	http.Error(r.w, "Requested range not satisfiable", http.StatusRequestedRangeNotSatisfiable)
 }
 
 // checkAccess ensures that the requester has access to the artifact content and
@@ -272,12 +426,24 @@ func (r *contentRequest) writeContentHeaders() {
 	if r.contentType.Valid {
 		r.w.Header().Set("Content-Type", r.contentType.StringVal)
 	}
+	r.w.Header().Set("Accept-Ranges", "bytes")
 	if r.size.Valid {
-		length := r.size.Int64
+		length := r.size.Int64 - r.offset
+		if length < 0 {
+			length = 0
+		}
 		if r.limit > 0 && r.limit < length {
 			length = r.limit
 		}
 		r.w.Header().Set("Content-Length", strconv.FormatInt(length, 10))
+		if r.isPartialContent {
+			r.w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", r.rangeStart, r.rangeEnd, r.size.Int64))
+		}
+	}
+	if r.isPartialContent {
+		r.w.WriteHeader(http.StatusPartialContent)
+	} else {
+		r.w.WriteHeader(http.StatusOK)
 	}
 }
 

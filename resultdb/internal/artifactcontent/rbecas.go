@@ -84,11 +84,16 @@ func RegisterRBEInstanceFlag(fs *flag.FlagSet, target *string) {
 
 // handleRBECASContent serves artifact content stored in RBE-CAS via blob hash.
 func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
+	if r.size.Valid && r.offset > 0 && r.offset >= r.size.Int64 {
+		r.writeContentHeaders()
+		return
+	}
 	resourceName := ResourceName(r.RBECASInstanceName, hash, r.size.Int64)
 	stream, err := r.ReadCASBlob(
 		c.Request.Context(),
 		&bytestream.ReadRequest{
 			ResourceName: resourceName,
+			ReadOffset:   r.offset,
 			ReadLimit:    r.limit,
 		})
 	if err != nil {
@@ -111,10 +116,15 @@ func (r *contentRequest) handleRBECASContentWithURI(c *router.Context, rbeURI, p
 		r.sendError(c.Request.Context(), appstatus.BadRequest(err))
 		return
 	}
+	if r.size.Valid && r.offset > 0 && r.offset >= r.size.Int64 {
+		r.writeContentHeaders()
+		return
+	}
 	stream, err := r.ReadCASBlobByProject(
 		c.Request.Context(),
 		&bytestream.ReadRequest{
 			ResourceName: resourceName,
+			ReadOffset:   r.offset,
 			ReadLimit:    r.limit,
 		},
 		project)
@@ -149,6 +159,9 @@ func (r *contentRequest) handleContent(c *router.Context, resourceName string, s
 
 		switch {
 		case err == io.EOF:
+			if !wroteHeader {
+				r.writeContentHeaders()
+			}
 			// We are done.
 			return
 

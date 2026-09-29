@@ -124,6 +124,7 @@ func TestServeContent(t *testing.T) {
 			},
 			RBECASInstanceName: "projects/example/instances/artifacts",
 			ReadCASBlob: func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error) {
+				casReader.ReadOffset = int(req.ReadOffset)
 				casReader.ReadLimit = int(req.ReadLimit)
 				return casReader, casReadErr
 			},
@@ -132,6 +133,7 @@ func TestServeContent(t *testing.T) {
 		var casReadByProjectErr error
 		var projectFromReader string
 		s.ReadCASBlobByProject = func(ctx context.Context, req *bytestream.ReadRequest, project string) (bytestream.ByteStream_ReadClient, error) {
+			casReader.ReadOffset = int(req.ReadOffset)
 			casReader.ReadLimit = int(req.ReadLimit)
 			projectFromReader = project
 			return casReader, casReadByProjectErr
@@ -141,9 +143,12 @@ func TestServeContent(t *testing.T) {
 			Identity: identity.AnonymousIdentity,
 		})
 
-		fetch := func(t testing.TB, rawurl string) (res *http.Response, contents string) {
+		fetchWithHeaders := func(t testing.TB, rawurl string, headers map[string]string) (res *http.Response, contents string) {
 			req, err := http.NewRequest("GET", rawurl, nil)
 			assert.Loosely(t, err, should.BeNil)
+			for k, v := range headers {
+				req.Header.Set(k, v)
+			}
 			rec := httptest.NewRecorder()
 			s.handleGET(&router.Context{
 				Request: req.WithContext(ctx),
@@ -154,6 +159,10 @@ func TestServeContent(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			defer res.Body.Close()
 			return res, string(rawContents)
+		}
+
+		fetch := func(t testing.TB, rawurl string) (res *http.Response, contents string) {
+			return fetchWithHeaders(t, rawurl, nil)
 		}
 
 		newArt := func(parentID, artID, hash string, datas ...[]byte) {
@@ -289,6 +298,146 @@ func TestServeContent(t *testing.T) {
 			})
 		})
 
+		t.Run(`offset`, func(t *ftt.Test) {
+			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/a", nil)
+			assert.Loosely(t, err, should.BeNil)
+
+			t.Run(`empty`, func(t *ftt.Test) {
+				res, body := fetch(t, u+"&offset=")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("contents"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("contents")))
+			})
+
+			t.Run(`0`, func(t *ftt.Test) {
+				res, body := fetch(t, u+"&offset=0")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("contents"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("contents")))
+			})
+
+			t.Run("offset < art_size", func(t *ftt.Test) {
+				res, body := fetch(t, u+"&offset=2")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("ntents"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("ntents")))
+			})
+
+			t.Run("offset and limit < art_size", func(t *ftt.Test) {
+				res, body := fetch(t, u+"&offset=2&n=3")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("nte"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("nte")))
+			})
+
+			t.Run("offset and limit > art_size", func(t *ftt.Test) {
+				res, body := fetch(t, u+"&offset=6&n=10")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("ts"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("ts")))
+			})
+
+			t.Run("offset >= art_size", func(t *ftt.Test) {
+				res, body := fetch(t, u+"&offset=8&n=5")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.BeEmpty)
+				assert.Loosely(t, res.ContentLength, should.Equal(0))
+			})
+
+			t.Run(`negative`, func(t *ftt.Test) {
+				res, _ := fetch(t, u+"&offset=-1")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+			})
+
+			t.Run(`invalid`, func(t *ftt.Test) {
+				res, _ := fetch(t, u+"&offset=abc")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+			})
+		})
+
+		t.Run(`Range header`, func(t *ftt.Test) {
+			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/a", nil)
+			assert.Loosely(t, err, should.BeNil)
+
+			t.Run(`start and end`, func(t *ftt.Test) {
+				res, body := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=2-4"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusPartialContent))
+				assert.Loosely(t, body, should.Equal("nte"))
+				assert.Loosely(t, res.ContentLength, should.Equal(3))
+				assert.Loosely(t, res.Header.Get("Content-Range"), should.Equal("bytes 2-4/8"))
+				assert.Loosely(t, res.Header.Get("Accept-Ranges"), should.Equal("bytes"))
+			})
+
+			t.Run(`open-ended`, func(t *ftt.Test) {
+				res, body := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=2-"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusPartialContent))
+				assert.Loosely(t, body, should.Equal("ntents"))
+				assert.Loosely(t, res.ContentLength, should.Equal(6))
+				assert.Loosely(t, res.Header.Get("Content-Range"), should.Equal("bytes 2-7/8"))
+			})
+
+			t.Run(`end >= art_size`, func(t *ftt.Test) {
+				res, body := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=2-100"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusPartialContent))
+				assert.Loosely(t, body, should.Equal("ntents"))
+				assert.Loosely(t, res.ContentLength, should.Equal(6))
+				assert.Loosely(t, res.Header.Get("Content-Range"), should.Equal("bytes 2-7/8"))
+			})
+
+			t.Run(`suffix range`, func(t *ftt.Test) {
+				res, body := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=-3"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusPartialContent))
+				assert.Loosely(t, body, should.Equal("nts"))
+				assert.Loosely(t, res.ContentLength, should.Equal(3))
+				assert.Loosely(t, res.Header.Get("Content-Range"), should.Equal("bytes 5-7/8"))
+			})
+
+			t.Run(`suffix range >= art_size`, func(t *ftt.Test) {
+				res, body := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=-100"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusPartialContent))
+				assert.Loosely(t, body, should.Equal("contents"))
+				assert.Loosely(t, res.ContentLength, should.Equal(8))
+				assert.Loosely(t, res.Header.Get("Content-Range"), should.Equal("bytes 0-7/8"))
+			})
+
+			t.Run(`unsatisfiable start >= art_size`, func(t *ftt.Test) {
+				res, _ := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=8-10"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusRequestedRangeNotSatisfiable))
+				assert.Loosely(t, res.Header.Get("Content-Range"), should.Equal("bytes */8"))
+			})
+
+			t.Run(`unsatisfiable suffix 0`, func(t *ftt.Test) {
+				res, _ := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=-0"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusRequestedRangeNotSatisfiable))
+				assert.Loosely(t, res.Header.Get("Content-Range"), should.Equal("bytes */8"))
+			})
+
+			t.Run(`invalid unit`, func(t *ftt.Test) {
+				res, _ := fetchWithHeaders(t, u, map[string]string{"Range": "items=0-5"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+			})
+
+			t.Run(`invalid end < start`, func(t *ftt.Test) {
+				res, _ := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=5-2"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+			})
+
+			t.Run(`multiple ranges unsupported`, func(t *ftt.Test) {
+				res, _ := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=0-1, 3-4"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+			})
+
+			t.Run(`combined with query params rejected`, func(t *ftt.Test) {
+				res, _ := fetchWithHeaders(t, u+"&n=5", map[string]string{"Range": "bytes=0-4"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+
+				res, _ = fetchWithHeaders(t, u+"&offset=2", map[string]string{"Range": "bytes=2-4"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+			})
+		})
+
 		t.Run(`E2E with RBE-CAS`, func(t *ftt.Test) {
 			newArt("", "rbe", "sha256:deadbeef", []byte("first "), []byte("second"))
 			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/artifacts/rbe", nil)
@@ -320,6 +469,14 @@ func TestServeContent(t *testing.T) {
 				assert.Loosely(t, res.Header.Get("Content-Type"), should.Equal("text/plain"))
 				assert.Loosely(t, res.ContentLength, should.Equal(len("first second")))
 			})
+
+			t.Run("Succeeds with byte range across chunks", func(t *ftt.Test) {
+				res, body := fetchWithHeaders(t, u, map[string]string{"Range": "bytes=4-8"})
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusPartialContent))
+				assert.Loosely(t, body, should.Equal("t sec"))
+				assert.Loosely(t, res.Header.Get("Content-Range"), should.Equal("bytes 4-8/12"))
+				assert.Loosely(t, res.ContentLength, should.Equal(5))
+			})
 		})
 
 		t.Run(`E2E with RBE-CAS URI`, func(t *ftt.Test) {
@@ -333,6 +490,14 @@ func TestServeContent(t *testing.T) {
 				assert.Loosely(t, body, should.Equal("first second"))
 				assert.Loosely(t, res.Header.Get("Content-Type"), should.Equal("text/plain"))
 				assert.Loosely(t, res.ContentLength, should.Equal(len("first second")))
+				assert.Loosely(t, projectFromReader, should.Equal("test-project"))
+			})
+
+			t.Run("Succeeds with offset and limit", func(t *ftt.Test) {
+				res, body := fetch(t, u+"&offset=4&n=5")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("t sec"))
+				assert.Loosely(t, res.ContentLength, should.Equal(5))
 				assert.Loosely(t, projectFromReader, should.Equal("test-project"))
 			})
 
