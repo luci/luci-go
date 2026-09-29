@@ -67,7 +67,7 @@ export const enableChromeOsHealthDashboard = createFeatureFlag({
     prod: 0,
   },
   trackingBug: '537909853',
-  allowedEnvironments: ['dev'],
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const enableChromeOsWorkforceActivity = createFeatureFlag({
