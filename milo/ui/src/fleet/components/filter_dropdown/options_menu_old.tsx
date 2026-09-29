@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { Checkbox, MenuItem, colors } from '@mui/material';
+import { Box, Checkbox, MenuItem, colors } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   forwardRef,
@@ -92,8 +92,8 @@ export const OptionsMenuOld = forwardRef(function OptionsMenuOld(
     <div
       ref={parentRef}
       css={{
-        overflowY: 'hidden',
-        overflow: 'auto',
+        overflowY: 'auto',
+        overflowX: 'hidden',
         maxHeight: 'inherit',
         minWidth: '100%',
         width: '100%',
@@ -165,18 +165,20 @@ export const OptionsMenuOld = forwardRef(function OptionsMenuOld(
                   }
                   tabIndex={-1}
                 />
-                <EllipsisTooltip tooltip={item.el.label}>
-                  <HighlightCharacter
-                    variant="body2"
-                    truncate="middle"
-                    highlightIndexes={item.matches}
-                    sx={{
-                      flexGrow: 1,
-                    }}
-                  >
-                    {item.el.label}
-                  </HighlightCharacter>
-                </EllipsisTooltip>
+                <Box sx={{ minWidth: 0, flexGrow: 1, overflow: 'hidden' }}>
+                  <EllipsisTooltip tooltip={item.el.label}>
+                    <HighlightCharacter
+                      variant="body2"
+                      truncate="middle"
+                      highlightIndexes={item.matches}
+                      sx={{
+                        flexGrow: 1,
+                      }}
+                    >
+                      {item.el.label}
+                    </HighlightCharacter>
+                  </EllipsisTooltip>
+                </Box>
               </MenuItem>
             );
           })}

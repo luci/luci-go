@@ -20,7 +20,8 @@ import {
   buildValueAxisTicks,
   computeMaxYScale,
   findFreeColorSlot,
-  MAX_VISIBLE_SERIES,
+  getSeriesColor,
+  PALETTE,
 } from './trends_chart_data';
 
 const at = (hour: number, minute = 0) =>
@@ -167,11 +168,28 @@ describe('findFreeColorSlot', () => {
     expect(findFreeColorSlot({ a: 0, c: 2 })).toBe(1);
   });
 
-  it('reports exhaustion once every palette slot is taken', () => {
+  it('continues allocating slots beyond palette length without exhaustion', () => {
     const full = Object.fromEntries(
-      Array.from({ length: MAX_VISIBLE_SERIES }, (_, i) => [`s${i}`, i]),
+      Array.from({ length: 20 }, (_, i) => [`s${i}`, i]),
     );
-    expect(findFreeColorSlot(full)).toBeUndefined();
+    expect(findFreeColorSlot(full)).toBe(20);
+  });
+});
+
+describe('getSeriesColor', () => {
+  it('returns predefined palette color for slots within palette', () => {
+    expect(getSeriesColor(0)).toBe(PALETTE[0]);
+    expect(getSeriesColor(PALETTE.length - 1)).toBe(
+      PALETTE[PALETTE.length - 1],
+    );
+  });
+
+  it('generates distinct hex color using HSV for slots beyond palette', () => {
+    const color = getSeriesColor(PALETTE.length);
+    expect(color).toMatch(/^#[0-9a-f]{6}$/i);
+    const nextColor = getSeriesColor(PALETTE.length + 1);
+    expect(nextColor).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(color).not.toBe(nextColor);
   });
 });
 

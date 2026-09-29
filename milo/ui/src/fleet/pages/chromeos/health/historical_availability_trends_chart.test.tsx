@@ -79,16 +79,6 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     metricType: TrendlineMetricType.AVAILABILITY,
   };
 
-  const mockPoolData: GetFleetAvailabilityTrendsResponse = {
-    series: [
-      {
-        name: 'DUT_POOL_QUOTA',
-        points: [{ timestamp: t0, value: 0.96 }],
-      },
-    ],
-    metricType: TrendlineMetricType.HEALTH,
-  };
-
   /**
    * Gives every element a non-zero box. Recharts locates the pointer from
    * `getBoundingClientRect`, and divides that width by `offsetWidth` to work
@@ -311,7 +301,8 @@ describe('HistoricalAvailabilityTrendsChart', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'By Model' }));
 
-    expect(screen.getByText('SELECT SERIES TO DISPLAY:')).toBeInTheDocument();
+    expect(screen.getByLabelText('Select all series')).toBeInTheDocument();
+    expect(screen.getByText('Select all')).toBeInTheDocument();
     expect(screen.getByLabelText('brya')).toBeChecked();
     expect(screen.getByLabelText('volteer')).toBeChecked();
     expect(isPlotted('brya')).toBe(true);
@@ -324,13 +315,21 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     expect(isPlotted('volteer')).toBe(true);
   });
 
-  it('switches to By Pool tab and displays pool series', () => {
+  it('switches to By Pool tab and selects 2 pools by default', () => {
+    const multiPoolData: GetFleetAvailabilityTrendsResponse = {
+      series: [
+        { name: 'pool-1', points: [{ timestamp: t0, value: 0.96 }] },
+        { name: 'pool-2', points: [{ timestamp: t0, value: 0.94 }] },
+        { name: 'pool-3', points: [{ timestamp: t0, value: 0.92 }] },
+      ],
+      metricType: TrendlineMetricType.HEALTH,
+    };
     jest
       .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
       .mockImplementation((req) => {
         if (req.grouping === TrendlineGrouping.GROUP_BY_POOL) {
           return {
-            data: mockPoolData,
+            data: multiPoolData,
             isLoading: false,
             isError: false,
             error: null,
@@ -361,8 +360,12 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     expect(
       screen.getByText('Historical health percentage trendlines across pools.'),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText('DUT_POOL_QUOTA')).toBeChecked();
-    expect(isPlotted('DUT_POOL_QUOTA')).toBe(true);
+    expect(screen.getByLabelText('pool-1')).toBeChecked();
+    expect(screen.getByLabelText('pool-2')).toBeChecked();
+    expect(screen.getByLabelText('pool-3')).not.toBeChecked();
+    expect(isPlotted('pool-1')).toBe(true);
+    expect(isPlotted('pool-2')).toBe(true);
+    expect(isPlotted('pool-3')).toBe(false);
   });
 
   it('shows tooltip on mouse hover over the chart', () => {
@@ -673,8 +676,8 @@ describe('HistoricalAvailabilityTrendsChart', () => {
       expect(isPlotted('kevin')).toBe(false);
     });
 
-    it('plots at most eight series, each in its own color', () => {
-      const manyModels = Array.from({ length: 10 }, (_, i) => ({
+    it('allows selecting more than eight series and deselecting all series', () => {
+      const manyModels = Array.from({ length: 15 }, (_, i) => ({
         name: `model-${i}`,
         points: [
           { timestamp: t0, value: 0.9 },
@@ -697,29 +700,49 @@ describe('HistoricalAvailabilityTrendsChart', () => {
       );
       fireEvent.click(screen.getByRole('button', { name: 'By Model' }));
 
-      // Five are selected by default, leaving room for three more.
+      // Five are selected by default; master checkbox is indeterminate.
+      expect(screen.getByText('5 of 15')).toBeInTheDocument();
       expect(screen.getByLabelText('model-4')).toBeChecked();
       expect(screen.getByLabelText('model-5')).not.toBeChecked();
-      expect(screen.getByLabelText('model-5')).toBeEnabled();
 
-      fireEvent.click(screen.getByLabelText('model-5'));
-      fireEvent.click(screen.getByLabelText('model-6'));
-      fireEvent.click(screen.getByLabelText('model-7'));
+      const masterCheckbox = screen.getByLabelText(
+        'Select all series',
+      ) as HTMLInputElement;
+      expect(masterCheckbox).toHaveAttribute('data-indeterminate', 'true');
+      expect(masterCheckbox).not.toBeChecked();
 
-      const plottedColors = manyModels
-        .slice(0, 8)
-        .map((series) => colorOf(series.name));
-      expect(plottedColors.every((color) => color)).toBe(true);
-      expect(new Set(plottedColors).size).toBe(8);
+      // Checkboxes beyond 8 are still enabled and selectable
+      for (let i = 5; i < 15; i++) {
+        expect(screen.getByLabelText(`model-${i}`)).toBeEnabled();
+        fireEvent.click(screen.getByLabelText(`model-${i}`));
+        expect(screen.getByLabelText(`model-${i}`)).toBeChecked();
+      }
 
-      // The palette is exhausted, so the remaining models cannot be added.
-      expect(screen.getByText(/the maximum/)).toBeInTheDocument();
-      expect(screen.getByLabelText('model-8')).toBeDisabled();
+      // When all are selected, master checkbox is checked and not indeterminate.
+      expect(screen.getByText('15 of 15')).toBeInTheDocument();
+      expect(masterCheckbox).toBeChecked();
+      expect(masterCheckbox).not.toHaveAttribute('data-indeterminate', 'true');
 
-      // Clearing one frees its color for another series.
-      fireEvent.click(screen.getByLabelText('model-0'));
-      expect(screen.getByLabelText('model-8')).toBeEnabled();
-      expect(isPlotted('model-0')).toBe(false);
+      // All 15 models are plotted with distinct colors
+      const plottedColors = manyModels.map((s) => colorOf(s.name));
+      expect(plottedColors.every((color) => Boolean(color))).toBe(true);
+      expect(new Set(plottedColors).size).toBe(15);
+
+      // Clicking checked master checkbox deselects all series
+      fireEvent.click(masterCheckbox);
+      expect(screen.getByText('0 of 15')).toBeInTheDocument();
+      expect(masterCheckbox).not.toBeChecked();
+      expect(masterCheckbox).not.toHaveAttribute('data-indeterminate', 'true');
+      expect(screen.getByLabelText('model-0')).not.toBeChecked();
+      expect(screen.getByLabelText('model-14')).not.toBeChecked();
+
+      // Clicking unchecked master checkbox selects all series again
+      fireEvent.click(masterCheckbox);
+      expect(screen.getByText('15 of 15')).toBeInTheDocument();
+      expect(masterCheckbox).toBeChecked();
+      expect(masterCheckbox).not.toHaveAttribute('data-indeterminate', 'true');
+      expect(screen.getByLabelText('model-0')).toBeChecked();
+      expect(screen.getByLabelText('model-14')).toBeChecked();
     });
   });
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Button, Checkbox, colors, MenuItem } from '@mui/material';
+import { Box, Button, Checkbox, colors, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import React, {
   useRef,
@@ -120,7 +120,8 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
           }
         }}
         css={{
-          overflow: 'auto',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           maxHeight: 'inherit',
           width: '100%',
         }}
@@ -243,20 +244,22 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
                     }}
                     checkedIcon={checkedIcon}
                   />
-                  <EllipsisTooltip tooltip={item.el.label}>
-                    <HighlightCharacter
-                      variant="body2"
-                      truncate="middle"
-                      highlightIndexes={
-                        item.el.isSignificant === false ? [] : item.matches
-                      }
-                      sx={{
-                        flexGrow: 1,
-                      }}
-                    >
-                      {item.el.label}
-                    </HighlightCharacter>
-                  </EllipsisTooltip>
+                  <Box sx={{ minWidth: 0, flexGrow: 1, overflow: 'hidden' }}>
+                    <EllipsisTooltip tooltip={item.el.label}>
+                      <HighlightCharacter
+                        variant="body2"
+                        truncate="middle"
+                        highlightIndexes={
+                          item.el.isSignificant === false ? [] : item.matches
+                        }
+                        sx={{
+                          flexGrow: 1,
+                        }}
+                      >
+                        {item.el.label}
+                      </HighlightCharacter>
+                    </EllipsisTooltip>
+                  </Box>
                   {selectOnly && (
                     <Button
                       className="only-button"

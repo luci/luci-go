@@ -51,13 +51,13 @@ import {
   buildValueAxisTicks,
   BUCKET_INTERVAL_MS,
   computeMaxYScale,
-  DEFAULT_VISIBLE_SERIES,
+  DEFAULT_VISIBLE_SERIES_MODEL,
+  DEFAULT_VISIBLE_SERIES_POOL,
   findFreeColorSlot,
   formatPercentTick,
   formatTickLabel,
   formatTooltipDate,
-  MAX_VISIBLE_SERIES,
-  PALETTE,
+  getSeriesColor,
   SeriesColorSlots,
   TrendsChartRow,
 } from './trends_chart_data';
@@ -227,8 +227,12 @@ export const HistoricalAvailabilityTrendsChart = ({
 
     if (seededQueryKey.current !== currentQueryKey) {
       seededQueryKey.current = currentQueryKey;
+      const count =
+        viewBy === TrendlineGrouping.GROUP_BY_POOL
+          ? DEFAULT_VISIBLE_SERIES_POOL
+          : DEFAULT_VISIBLE_SERIES_MODEL;
       const initial: SeriesColorSlots = {};
-      seriesList.slice(0, DEFAULT_VISIBLE_SERIES).forEach((series, idx) => {
+      seriesList.slice(0, count).forEach((series, idx) => {
         initial[series.name] = idx;
       });
       setColorSlots(initial);
@@ -244,13 +248,37 @@ export const HistoricalAvailabilityTrendsChart = ({
       }
 
       const slot = findFreeColorSlot(prev);
-      // Every color is in use. The checkbox is disabled in this state, so this
-      // is only reachable via a race; ignoring it is better than plotting two
-      // series in the same color.
-      if (slot === undefined) return prev;
-
       return { ...prev, [name]: slot };
     });
+  };
+
+  const handleSelectAll = () => {
+    setColorSlots((prev) => {
+      const next = { ...prev };
+      seriesList.forEach((series) => {
+        if (!(series.name in next)) {
+          next[series.name] = findFreeColorSlot(next);
+        }
+      });
+      return next;
+    });
+  };
+
+  const activeCount = useMemo(
+    () => seriesList.filter((series) => series.name in colorSlots).length,
+    [seriesList, colorSlots],
+  );
+
+  const isAllSelected =
+    seriesList.length > 0 && activeCount === seriesList.length;
+  const isIndeterminate = activeCount > 0 && activeCount < seriesList.length;
+
+  const handleToggleMaster = () => {
+    if (isAllSelected) {
+      setColorSlots({});
+    } else {
+      handleSelectAll();
+    }
   };
 
   const activeSeries = useMemo(() => {
@@ -259,8 +287,6 @@ export const HistoricalAvailabilityTrendsChart = ({
     }
     return seriesList.filter((series) => series.name in colorSlots);
   }, [viewBy, seriesList, colorSlots]);
-
-  const isChartFull = Object.keys(colorSlots).length >= MAX_VISIBLE_SERIES;
 
   const rows = useMemo(
     () => buildTrendsChartRows(activeSeries),
@@ -272,8 +298,8 @@ export const HistoricalAvailabilityTrendsChart = ({
       activeSeries.map((series) => ({
         name: series.name,
         // Overall has no selector and therefore no slot, so it falls back to
-        // the first palette entry.
-        color: PALETTE[colorSlots[series.name] ?? 0],
+        // slot 0.
+        color: getSeriesColor(colorSlots[series.name] ?? 0),
       })),
     [activeSeries, colorSlots],
   );
@@ -416,7 +442,7 @@ export const HistoricalAvailabilityTrendsChart = ({
         }
       />
       <Divider />
-      <CardContent sx={{ p: 2 }}>
+      <CardContent sx={{ p: 2, pb: 1, '&:last-child': { pb: 1 } }}>
         {isLoading && (
           <Box
             data-testid="trends-loading"
@@ -457,67 +483,110 @@ export const HistoricalAvailabilityTrendsChart = ({
             {viewBy !== TrendlineGrouping.GROUP_BY_OVERALL && (
               <Box
                 sx={{
-                  maxHeight: 280,
-                  overflowY: 'auto',
-                  pr: 1,
-                  '&::-webkit-scrollbar': { width: '4px' },
-                  '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: 'divider',
-                    borderRadius: '4px',
-                  },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: CHART_HEIGHT,
                 }}
               >
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}
-                >
-                  SELECT SERIES TO DISPLAY:
-                </Typography>
-
-                {isChartFull && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mb: 1, display: 'block' }}
+                {/* Fixed Header with Tristate Checkbox (never scrolls away) */}
+                <Box sx={{ pb: 0.5, flexShrink: 0 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
                   >
-                    Showing {MAX_VISIBLE_SERIES} series, the maximum. Clear one
-                    to add another.
-                  </Typography>
-                )}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={isAllSelected}
+                          indeterminate={isIndeterminate}
+                          onChange={handleToggleMaster}
+                          slotProps={{
+                            input: {
+                              'aria-label': 'Select all series',
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Select all
+                        </Typography>
+                      }
+                      sx={{ mr: 0 }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.secondary',
+                        bgcolor: 'action.hover',
+                        px: 0.75,
+                        py: 0.2,
+                        borderRadius: 1,
+                        fontSize: 11,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {activeCount} of {seriesList.length}
+                    </Typography>
+                  </Box>
+                </Box>
 
-                <FormGroup>
-                  {seriesList.map((series) => {
-                    const slot = colorSlots[series.name];
-                    const isChecked = slot !== undefined;
-                    return (
-                      <FormControlLabel
-                        key={series.name}
-                        disabled={!isChecked && isChartFull}
-                        control={
-                          <Checkbox
-                            size="small"
-                            checked={isChecked}
-                            onChange={() => handleToggleSeries(series.name)}
-                            sx={
-                              isChecked
-                                ? {
-                                    color: PALETTE[slot],
-                                    '&.Mui-checked': {
-                                      color: PALETTE[slot],
-                                    },
-                                  }
-                                : undefined
-                            }
-                          />
-                        }
-                        label={
-                          <Typography variant="body2">{series.name}</Typography>
-                        }
-                      />
-                    );
-                  })}
-                </FormGroup>
+                <Divider sx={{ my: 0.75, flexShrink: 0 }} />
+
+                {/* Scrollable Checkbox List */}
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    overflowY: 'auto',
+                    pr: 1,
+                    '&::-webkit-scrollbar': { width: '4px' },
+                    '&::-webkit-scrollbar-thumb': {
+                      backgroundColor: 'divider',
+                      borderRadius: '4px',
+                    },
+                  }}
+                >
+                  <FormGroup>
+                    {seriesList.map((series) => {
+                      const slot = colorSlots[series.name];
+                      const isChecked = slot !== undefined;
+                      const color = isChecked
+                        ? getSeriesColor(slot)
+                        : undefined;
+                      return (
+                        <FormControlLabel
+                          key={series.name}
+                          control={
+                            <Checkbox
+                              size="small"
+                              checked={isChecked}
+                              onChange={() => handleToggleSeries(series.name)}
+                              sx={
+                                isChecked
+                                  ? {
+                                      color,
+                                      '&.Mui-checked': {
+                                        color,
+                                      },
+                                    }
+                                  : undefined
+                              }
+                            />
+                          }
+                          label={
+                            <Typography variant="body2">
+                              {series.name}
+                            </Typography>
+                          }
+                        />
+                      );
+                    })}
+                  </FormGroup>
+                </Box>
               </Box>
             )}
 
@@ -565,7 +634,7 @@ export const HistoricalAvailabilityTrendsChart = ({
                     <LineChart
                       // Trust that the chart will not modify readonly data.
                       data={rows as TrendsChartRow[]}
-                      margin={{ top: 16, right: 24, bottom: 8, left: 0 }}
+                      margin={{ top: 16, right: 24, bottom: 0, left: 0 }}
                     >
                       <CartesianGrid
                         vertical={false}
