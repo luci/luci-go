@@ -16,7 +16,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import RemoveIcon from '@mui/icons-material/Remove';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Box, Button, Divider, Link, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Divider, Tooltip, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { Fragment, useMemo } from 'react';
 
@@ -75,11 +75,11 @@ export const REPAIR_QUEUE_COLUMN_IDS = [
   'dut_id',
   'label-pool',
   'label-model',
-  'pool_model_health',
   'dut_state',
-  'priority_score',
-  'peripherals',
   'assignee',
+  'peripherals',
+  'pool_model_health',
+  'priority_score',
 ] as const;
 
 export interface UseRepairQueueColumnsOptions {
@@ -180,7 +180,9 @@ const PriorityScoreCell = ({
     >
       <Typography
         component="span"
+        variant="body2"
         sx={{
+          fontSize: '13px',
           fontWeight: 600,
           cursor: 'help',
           display: 'inline-block',
@@ -220,9 +222,9 @@ export const useRepairQueueColumns = ({
       {
         id: 'rank',
         header: 'Rank',
-        size: 60,
-        minSize: 50,
-        maxSize: 80,
+        size: 25,
+        minSize: 25,
+        maxSize: 60,
         enableSorting: false,
         Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
           return String(pageIndex * pageSize + row.index + 1);
@@ -232,6 +234,7 @@ export const useRepairQueueColumns = ({
         id: 'dut_id',
         header: 'Dut ID',
         accessorKey: 'dutId',
+        size: 100,
         minSize: 70,
         maxSize: 700,
         enableSorting: false,
@@ -243,6 +246,7 @@ export const useRepairQueueColumns = ({
         id: 'label-pool',
         header: 'Pool',
         accessorFn: (row) => labelValuesToString(row.pools || []),
+        size: 90,
         minSize: 70,
         maxSize: 700,
         enableSorting: false,
@@ -254,6 +258,7 @@ export const useRepairQueueColumns = ({
         id: 'label-model',
         header: 'Model',
         accessorKey: 'model',
+        size: 85,
         minSize: 70,
         maxSize: 700,
         enableSorting: false,
@@ -262,43 +267,10 @@ export const useRepairQueueColumns = ({
         ),
       },
       {
-        id: 'pool_model_health',
-        header: 'Pool / Model Health',
-        enableSorting: false,
-        Header: () => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <span>Pool / Model Health</span>
-            <InfoTooltip fontSize="1rem">
-              Percentage of devices in the assigned pool(s) and model(s) that
-              are healthy (not in manual repair or repair failed). For devices
-              with multiple pools or models, the lowest percentage is shown.
-            </InfoTooltip>
-          </Box>
-        ),
-        size: 60,
-        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
-          const poolHealth = row.original.poolHealthPct;
-          const modelHealth = row.original.modelHealthPct;
-          const poolStr =
-            poolHealth !== undefined && poolHealth !== null
-              ? `${Math.round(poolHealth * 100)}%`
-              : '-';
-          const modelStr =
-            modelHealth !== undefined && modelHealth !== null
-              ? `${Math.round(modelHealth * 100)}%`
-              : '-';
-          return (
-            <Typography
-              variant="body2"
-              sx={{ fontSize: '13px' }}
-            >{`${poolStr} / ${modelStr}`}</Typography>
-          );
-        },
-      },
-      {
         id: 'dut_state',
         header: 'State',
         accessorKey: 'state',
+        size: 80,
         minSize: 70,
         maxSize: 700,
         enableSorting: false,
@@ -307,107 +279,11 @@ export const useRepairQueueColumns = ({
         ),
       },
       {
-        id: 'priority_score',
-        header: 'Priority Score',
-        size: 140,
-        minSize: 120,
-        maxSize: 180,
-        enableSorting: false,
-        meta: {
-          infoTooltip:
-            'Devices are ranked in real time by summing active rule weights. Higher score = higher priority.',
-        },
-        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
-          <PriorityScoreCell item={row.original} rulesById={rulesById} />
-        ),
-      },
-      {
-        id: 'peripherals',
-        header: 'Peripherals (W / B / S)',
-        enableSorting: false,
-        Header: () => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <span>Peripherals (W / B / S)</span>
-            <InfoTooltip paperCss={{ maxWidth: 360, p: 2 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                Peripheral Health States
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mb: 1.5 }}
-              >
-                Tracks Wi-Fi (W), Bluetooth (B), and Servo (S) status:
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1,
-                  mb: 1.5,
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CheckCircleIcon
-                    sx={{ color: colors.green[500], fontSize: 18 }}
-                  />
-                  <Typography variant="body2">
-                    <strong>OK</strong> &mdash; Healthy &amp; responsive
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <WarningIcon sx={{ color: colors.red[600], fontSize: 18 }} />
-                  <Typography variant="body2">
-                    <strong>Broken</strong> &mdash; Hardware failure
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <WarningIcon
-                    sx={{ color: colors.orange[600], fontSize: 18 }}
-                  />
-                  <Typography variant="body2">
-                    <strong>Missing</strong> &mdash; Disconnected / unplugged
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <RemoveIcon sx={{ color: colors.grey[500], fontSize: 18 }} />
-                  <Typography variant="body2">
-                    <strong>N/A</strong> &mdash; Not applicable to this DUT
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HelpOutlineIcon
-                    sx={{ color: colors.grey[500], fontSize: 18 }}
-                  />
-                  <Typography variant="body2">
-                    <strong>Unknown</strong> &mdash; State indeterminate /
-                    unrecorded
-                  </Typography>
-                </Box>
-              </Box>
-              <Link
-                href="http://go/fleet-console#peripherals"
-                target="_blank"
-                rel="noopener"
-                variant="body2"
-                sx={{ fontWeight: 500 }}
-              >
-                Learn more at go/fleet-console
-              </Link>
-            </InfoTooltip>
-          </Box>
-        ),
-        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
-          <PeripheralsCell
-            wifiState={row.original.wifiState}
-            bluetoothState={row.original.bluetoothState}
-            servoState={row.original.servoState}
-          />
-        ),
-      },
-      {
         id: 'assignee',
         header: 'Assignee',
+        size: 70,
+        minSize: 60,
+        maxSize: 700,
         enableSorting: false,
         muiTableHeadCellProps: {
           align: 'center',
@@ -496,6 +372,134 @@ export const useRepairQueueColumns = ({
             </Box>
           );
         },
+      },
+      {
+        id: 'peripherals',
+        header: 'Peripherals (W / B / S)',
+        size: 85,
+        minSize: 70,
+        maxSize: 700,
+        enableSorting: false,
+        Header: () => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <span>Peripherals (W / B / S)</span>
+            <InfoTooltip paperCss={{ maxWidth: 360, p: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                Peripheral Health States
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 1.5 }}
+              >
+                Tracks Wi-Fi (W), Bluetooth (B), and Servo (S) status:
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CheckCircleIcon
+                    sx={{ color: colors.green[500], fontSize: 18 }}
+                  />
+                  <Typography variant="body2">
+                    <strong>OK</strong> &mdash; Healthy &amp; responsive
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <WarningIcon sx={{ color: colors.red[600], fontSize: 18 }} />
+                  <Typography variant="body2">
+                    <strong>Broken</strong> &mdash; Hardware failure
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <WarningIcon
+                    sx={{ color: colors.orange[600], fontSize: 18 }}
+                  />
+                  <Typography variant="body2">
+                    <strong>Missing</strong> &mdash; Disconnected / unplugged
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <RemoveIcon sx={{ color: colors.grey[500], fontSize: 18 }} />
+                  <Typography variant="body2">
+                    <strong>N/A</strong> &mdash; Not applicable to this DUT
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HelpOutlineIcon
+                    sx={{ color: colors.grey[500], fontSize: 18 }}
+                  />
+                  <Typography variant="body2">
+                    <strong>Unknown</strong> &mdash; State indeterminate /
+                    unrecorded
+                  </Typography>
+                </Box>
+              </Box>
+            </InfoTooltip>
+          </Box>
+        ),
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
+          <PeripheralsCell
+            wifiState={row.original.wifiState}
+            bluetoothState={row.original.bluetoothState}
+            servoState={row.original.servoState}
+          />
+        ),
+      },
+      {
+        id: 'pool_model_health',
+        header: 'Pool / Model Health',
+        size: 85,
+        minSize: 70,
+        maxSize: 700,
+        enableSorting: false,
+        Header: () => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <span>Pool / Model Health</span>
+            <InfoTooltip fontSize="1rem">
+              Percentage of devices in the assigned pool(s) and model(s) that
+              are healthy (not in manual repair or repair failed). For devices
+              with multiple pools or models, the lowest percentage is shown.
+            </InfoTooltip>
+          </Box>
+        ),
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
+          const poolHealth = row.original.poolHealthPct;
+          const modelHealth = row.original.modelHealthPct;
+          const poolStr =
+            poolHealth !== undefined && poolHealth !== null
+              ? `${Math.round(poolHealth * 100)}%`
+              : '-';
+          const modelStr =
+            modelHealth !== undefined && modelHealth !== null
+              ? `${Math.round(modelHealth * 100)}%`
+              : '-';
+          return (
+            <Typography
+              variant="body2"
+              sx={{ fontSize: '13px' }}
+            >{`${poolStr} / ${modelStr}`}</Typography>
+          );
+        },
+      },
+      {
+        id: 'priority_score',
+        header: 'Priority Score',
+        size: 65,
+        minSize: 60,
+        maxSize: 180,
+        enableSorting: false,
+        meta: {
+          infoTooltip:
+            'Devices are ranked in real time by summing active rule weights. Higher score = higher priority.',
+        },
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
+          <PriorityScoreCell item={row.original} rulesById={rulesById} />
+        ),
       },
     ];
   }, [

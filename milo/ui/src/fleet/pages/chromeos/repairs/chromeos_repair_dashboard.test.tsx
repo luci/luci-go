@@ -172,9 +172,19 @@ describe('<ChromeOSRepairDashboard />', () => {
     expect(
       screen.getByText('ChromeOS Manual Repair Dashboard'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Configure rules and assign points to prioritize devices in the repair queue.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Devices ranked by total priority score. Hover over a score to view matching rules.',
+      ),
+    ).toBeInTheDocument();
   });
 
-  it('renders all 9 columns: Rank, Dut ID, Pool, Model, Pool / Model Health, State, Priority Score, Peripherals, Assignee', async () => {
+  it('renders all 9 columns in the expected order', async () => {
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
       data: {
         repairQueueItems: MOCK_QUEUE_ITEMS,
@@ -190,16 +200,25 @@ describe('<ChromeOSRepairDashboard />', () => {
 
     renderDashboard();
 
-    expect(screen.getByText('Rank')).toBeInTheDocument();
-    expect(screen.getByText('Dut ID')).toBeInTheDocument();
-    expect(screen.getByText('Pool')).toBeInTheDocument();
-    expect(screen.getByText('Model')).toBeInTheDocument();
-    expect(screen.getByText('Pool / Model Health')).toBeInTheDocument();
+    const columnHeaders = screen.getAllByRole('columnheader');
+    const expectedHeaders = [
+      'Rank',
+      'Dut ID',
+      'Pool',
+      'Model',
+      'State',
+      'Assignee',
+      'Peripherals (W / B / S)',
+      'Pool / Model Health',
+      'Priority Score',
+    ];
+    expect(columnHeaders).toHaveLength(expectedHeaders.length);
+    expectedHeaders.forEach((headerText, index) => {
+      expect(
+        within(columnHeaders[index]).getByText(headerText),
+      ).toBeInTheDocument();
+    });
     expect(screen.getAllByTestId('InfoOutlinedIcon')).toHaveLength(3);
-    expect(screen.getByText('State')).toBeInTheDocument();
-    expect(screen.getByText('Priority Score')).toBeInTheDocument();
-    expect(screen.getByText('Peripherals (W / B / S)')).toBeInTheDocument();
-    expect(screen.getByText('Assignee')).toBeInTheDocument();
   });
 
   it('populates device rows and health metrics correctly with mock data including rank and priority score', async () => {
@@ -1153,7 +1172,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       ).toBeInTheDocument();
     });
 
-    it('verifies row selection checkboxes precede Rank column and are interactive', async () => {
+    it('does not render row selection checkboxes and starts rows with Rank and Dut ID', async () => {
       const queueItems: readonly RepairQueueItem[] = [
         {
           dutId: 'dut-select-1',
@@ -1187,27 +1206,22 @@ describe('<ChromeOSRepairDashboard />', () => {
       const row = (await screen.findByText('dut-select-1')).closest('tr');
       expect(row).not.toBeNull();
 
-      // Check for row checkbox
-      const checkbox = within(row!).getByRole('checkbox');
-      expect(checkbox).toBeInTheDocument();
-      expect(checkbox).not.toBeChecked();
+      // Row selection checkboxes should be disabled
+      expect(within(row!).queryByRole('checkbox')).not.toBeInTheDocument();
 
-      // Verify clicking the checkbox toggles selection state
-      fireEvent.click(checkbox);
-      expect(checkbox).toBeChecked();
-
-      // Verify cells in row: column 0 = checkbox, column 1 = Rank, column 2 = Dut ID
+      // Verify cells in row: column 0 = Rank, column 1 = Dut ID
       const cells = within(row!).getAllByRole('cell');
-      expect(cells.length).toBeGreaterThanOrEqual(3);
-      // Cell 0 contains checkbox
-      expect(within(cells[0]).getByRole('checkbox')).toBeInTheDocument();
-      // Cell 1 contains Rank '1'
-      expect(within(cells[1]).getByText('1')).toBeInTheDocument();
-      // Cell 2 contains Dut ID 'dut-select-1'
-      expect(within(cells[2]).getByText('dut-select-1')).toBeInTheDocument();
+      expect(cells).toHaveLength(9);
+      // Cell 0 contains Rank '1'
+      expect(within(cells[0]).getByText('1')).toBeInTheDocument();
+      // Cell 1 contains Dut ID 'dut-select-1'
+      expect(within(cells[1]).getByText('dut-select-1')).toBeInTheDocument();
+      // Cell 8 contains Priority Score '+100 pts' with 13px font size
+      const scoreText = within(cells[8]).getByText('+100 pts');
+      expect(scoreText).toHaveStyle({ fontSize: '13px' });
     });
 
-    it('disables sorting on all repair queue table columns', () => {
+    it('configures columns in expected order with compact rank and priority score sizes and sorting disabled', () => {
       const { result } = renderHook(() => useRepairQueueColumns(), {
         wrapper: ({ children }: { children: React.ReactNode }) => (
           <FakeContextProvider>
@@ -1218,7 +1232,21 @@ describe('<ChromeOSRepairDashboard />', () => {
         ),
       });
 
-      expect(result.current.columns.length).toBeGreaterThan(0);
+      expect(result.current.columns.map((col) => col.id)).toEqual([
+        'rank',
+        'dut_id',
+        'label-pool',
+        'label-model',
+        'dut_state',
+        'assignee',
+        'peripherals',
+        'pool_model_health',
+        'priority_score',
+      ]);
+      expect(result.current.columns[0].size).toBe(25);
+      expect(result.current.columns[0].minSize).toBe(25);
+      expect(result.current.columns[8].size).toBe(65);
+      expect(result.current.columns[8].minSize).toBe(60);
       for (const col of result.current.columns) {
         expect(col.enableSorting).toBe(false);
       }

@@ -74,8 +74,8 @@ export const ChromeOSRepairDashboard = () => {
         <div>
           <Typography variant="h4">ChromeOS Manual Repair Dashboard</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Rule-based Priority Scoring using dynamic interactive FCon filter
-            Bars with Range Filters.
+            Configure rules and assign points to prioritize devices in the
+            repair queue.
           </Typography>
         </div>
 
@@ -152,8 +152,8 @@ export const ChromeOSRepairDashboard = () => {
         Prioritized Manual Repair Queue
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-        Calculated per-device queue, automatically sorted by total score. Hover
-        over the score to see exact matched filters breakdown.
+        Devices ranked by total priority score. Hover over a score to view
+        matching rules.
       </Typography>
 
       <div css={{ marginTop: 16 }}>

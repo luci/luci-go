@@ -83,7 +83,7 @@ export const ChromeOSRepairTable = ({
     () => ({
       columns,
       data: repairQueueItems,
-      enableRowSelection: true,
+      enableRowSelection: false,
       positionToolbarAlertBanner: 'none',
       renderBottomToolbarCustomActions: ({ table }) => (
         <FleetBottomToolbar
@@ -102,6 +102,7 @@ export const ChromeOSRepairTable = ({
       state: {
         sorting,
         columnSizing,
+        columnOrder: columns.map((col) => col.id || ''),
         isLoading: queueQuery.isPending && !queueQuery.isPlaceholderData,
         showProgressBars: queueQuery.isFetching,
       },
