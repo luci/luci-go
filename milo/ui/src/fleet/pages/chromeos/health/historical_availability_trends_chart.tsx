@@ -178,7 +178,13 @@ const TrendsTooltip = ({
   );
 };
 
-export const HistoricalAvailabilityTrendsChart = () => {
+export interface HistoricalAvailabilityTrendsChartProps {
+  filter?: string;
+}
+
+export const HistoricalAvailabilityTrendsChart = ({
+  filter = '',
+}: HistoricalAvailabilityTrendsChartProps) => {
   const theme = useTheme();
   const [viewBy, setViewBy] = useState<TrendlineGrouping>(
     TrendlineGrouping.GROUP_BY_OVERALL,
@@ -190,9 +196,9 @@ export const HistoricalAvailabilityTrendsChart = () => {
       grouping: viewBy,
       startTime: undefined,
       endTime: undefined,
-      filter: '',
+      filter,
     }),
-    [viewBy],
+    [viewBy, filter],
   );
 
   const { data, isLoading, isError, error } =
@@ -200,33 +206,34 @@ export const HistoricalAvailabilityTrendsChart = () => {
 
   const seriesList = useMemo(() => data?.series ?? [], [data?.series]);
 
-  // The default selection is seeded once per grouping, as soon as that
-  // grouping's first response arrives. It deliberately does not re-run on
-  // later renders: `seriesList` is a new array after every background refetch,
-  // and reseeding from it would both discard the user's selection and reassign
-  // colors.
-  const seededGrouping = useRef<TrendlineGrouping | null>(null);
+  // The default selection is seeded once per query key (grouping + filter), as soon as that
+  // query's first response arrives. It deliberately does not re-run on background refetches
+  // with unchanged query parameters to preserve manual user selections and color assignments.
+  const seededQueryKey = useRef<string | null>(null);
+  const currentQueryKey = `${viewBy}::${filter}`;
 
   useEffect(() => {
-    if (seededGrouping.current === viewBy) return;
-
     // Overall is a single unselectable series, so it needs no slots.
     if (viewBy === TrendlineGrouping.GROUP_BY_OVERALL) {
-      seededGrouping.current = viewBy;
-      setColorSlots({});
+      if (seededQueryKey.current !== currentQueryKey) {
+        seededQueryKey.current = currentQueryKey;
+        setColorSlots({});
+      }
       return;
     }
 
-    // Wait for the first response before choosing defaults.
-    if (seriesList.length === 0) return;
+    // Wait for the response before choosing defaults.
+    if (isLoading) return;
 
-    seededGrouping.current = viewBy;
-    const initial: SeriesColorSlots = {};
-    seriesList.slice(0, DEFAULT_VISIBLE_SERIES).forEach((series, idx) => {
-      initial[series.name] = idx;
-    });
-    setColorSlots(initial);
-  }, [viewBy, seriesList]);
+    if (seededQueryKey.current !== currentQueryKey) {
+      seededQueryKey.current = currentQueryKey;
+      const initial: SeriesColorSlots = {};
+      seriesList.slice(0, DEFAULT_VISIBLE_SERIES).forEach((series, idx) => {
+        initial[series.name] = idx;
+      });
+      setColorSlots(initial);
+    }
+  }, [viewBy, isLoading, seriesList, currentQueryKey]);
 
   const handleToggleSeries = (name: string) => {
     setColorSlots((prev) => {

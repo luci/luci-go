@@ -722,4 +722,145 @@ describe('HistoricalAvailabilityTrendsChart', () => {
       expect(isPlotted('model-0')).toBe(false);
     });
   });
+
+  describe('filtering', () => {
+    const asQueryResult = (data: GetFleetAvailabilityTrendsResponse) =>
+      ({
+        data,
+        isLoading: false,
+        isError: false,
+        error: null,
+      }) as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >;
+
+    it('passes filter prop to useFleetAvailabilityTrends request', () => {
+      const spy = jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(asQueryResult(mockOverallData));
+
+      render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart filter={'model = "volteer"'} />
+        </FakeContextProvider>,
+      );
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filter: 'model = "volteer"',
+        }),
+      );
+    });
+
+    it('reseeds series selection when filter changes in By Model view', () => {
+      const initialModels = ['brya', 'corsola'].map((name) => ({
+        name,
+        points: [{ timestamp: t0, value: 0.9 }],
+      }));
+      const filteredModel = [
+        {
+          name: 'volteer',
+          points: [{ timestamp: t0, value: 0.95 }],
+        },
+      ];
+
+      const spy = jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(
+          asQueryResult({
+            series: initialModels,
+            metricType: TrendlineMetricType.AVAILABILITY,
+          }),
+        );
+
+      const { rerender } = render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart filter="" />
+        </FakeContextProvider>,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'By Model' }));
+      expect(screen.getByLabelText('brya')).toBeChecked();
+
+      // Change filter prop
+      spy.mockReturnValue(
+        asQueryResult({
+          series: filteredModel,
+          metricType: TrendlineMetricType.AVAILABILITY,
+        }),
+      );
+
+      rerender(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart filter={'model = "volteer"'} />
+        </FakeContextProvider>,
+      );
+
+      // volteer should now be automatically selected and plotted
+      expect(screen.getByLabelText('volteer')).toBeChecked();
+      expect(isPlotted('volteer')).toBe(true);
+      expect(screen.queryByText(/no series selected/i)).not.toBeInTheDocument();
+    });
+
+    it('clears series selection and updates seeded key when a filter returns empty series', () => {
+      const initialModels = ['brya', 'corsola'].map((name) => ({
+        name,
+        points: [{ timestamp: t0, value: 0.9 }],
+      }));
+
+      const spy = jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(
+          asQueryResult({
+            series: initialModels,
+            metricType: TrendlineMetricType.AVAILABILITY,
+          }),
+        );
+
+      const { rerender } = render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart filter="" />
+        </FakeContextProvider>,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'By Model' }));
+      expect(screen.getByLabelText('brya')).toBeChecked();
+
+      // Change filter to one that returns empty series
+      spy.mockReturnValue(
+        asQueryResult({
+          series: [],
+          metricType: TrendlineMetricType.AVAILABILITY,
+        }),
+      );
+
+      rerender(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart filter={'model = "nonexistent"'} />
+        </FakeContextProvider>,
+      );
+
+      expect(
+        screen.getByText('No trend data available for the last 72 hours.'),
+      ).toBeInTheDocument();
+
+      // Switch back to initial filter - should re-seed correctly
+      spy.mockReturnValue(
+        asQueryResult({
+          series: initialModels,
+          metricType: TrendlineMetricType.AVAILABILITY,
+        }),
+      );
+
+      rerender(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart filter="" />
+        </FakeContextProvider>,
+      );
+
+      expect(screen.getByLabelText('brya')).toBeChecked();
+      expect(isPlotted('brya')).toBe(true);
+    });
+  });
 });

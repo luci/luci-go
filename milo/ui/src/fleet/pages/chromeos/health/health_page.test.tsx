@@ -15,9 +15,12 @@
 import { UseQueryResult } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
+import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import {
   GetDefaultQuotaResponse,
   GetFleetAvailabilityTrendsResponse,
+  GetDeviceDimensionsResponse,
   ListSupportRiskIncidentsResponse,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -30,6 +33,21 @@ import * as UseSupportRiskIncidentsModule from './use_support_risk_incidents';
 
 describe('HealthPage', () => {
   beforeEach(() => {
+    jest
+      .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
+      .mockReturnValue({
+        data: {
+          baseDimensions: {
+            model: { values: ['volteer', 'brya'] },
+          },
+          labels: {},
+        } as unknown as GetDeviceDimensionsResponse,
+        isPending: false,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<GetDeviceDimensionsResponse, Error>);
+
     jest
       .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
       .mockReturnValue({
@@ -91,7 +109,16 @@ describe('HealthPage', () => {
     jest
       .spyOn(UseSupportRiskIncidentsModule, 'useSupportRiskIncidents')
       .mockReturnValue({
-        data: { incidents: [] } as ListSupportRiskIncidentsResponse,
+        data: {
+          incidents: [
+            {
+              id: '1',
+              model: 'volteer',
+              title: 'Battery controller defect',
+              buganizerId: 'b/312456789',
+            },
+          ],
+        } as unknown as ListSupportRiskIncidentsResponse,
         isLoading: false,
         isError: false,
         error: null,
@@ -102,10 +129,12 @@ describe('HealthPage', () => {
     jest.restoreAllMocks();
   });
 
-  it('renders overview page with header, Configuration button, and Support Risk Incidents panel', () => {
+  it('renders overview page with header, Configuration button, FilterBar, and Support Risk Incidents panel', () => {
     render(
       <FakeContextProvider>
-        <HealthPage />
+        <ShortcutProvider>
+          <HealthPage />
+        </ShortcutProvider>
       </FakeContextProvider>,
     );
 
@@ -121,6 +150,9 @@ describe('HealthPage', () => {
       screen.getByRole('button', { name: /^configuration$/i }),
     ).toBeInTheDocument();
     expect(
+      screen.getByPlaceholderText('Add a filter (e.g. model:volteer)'),
+    ).toBeInTheDocument();
+    expect(
       screen.getByText('Active Support Risk Incidents'),
     ).toBeInTheDocument();
     expect(
@@ -128,10 +160,26 @@ describe('HealthPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('applies model filter when Show button on Support Risk incident is clicked', () => {
+    render(
+      <FakeContextProvider>
+        <ShortcutProvider>
+          <HealthPage />
+        </ShortcutProvider>
+      </FakeContextProvider>,
+    );
+
+    const showButton = screen.getByRole('button', { name: /^show$/i });
+    expect(showButton).toBeInTheDocument();
+    fireEvent.click(showButton);
+  });
+
   it('navigates to Configuration view showing the quota card and returns on Back', () => {
     render(
       <FakeContextProvider>
-        <HealthPage />
+        <ShortcutProvider>
+          <HealthPage />
+        </ShortcutProvider>
       </FakeContextProvider>,
     );
 

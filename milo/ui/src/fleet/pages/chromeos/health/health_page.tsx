@@ -14,19 +14,40 @@
 
 import { ArrowBack, Settings } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
+import { useCallback, useMemo } from 'react';
 
+import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ExpectedQuotaCard } from './expected_quota_card';
+import { HEALTH_FILTER_CONFIGS } from './filter_constants';
 import { HistoricalAvailabilityTrendsChart } from './historical_availability_trends_chart';
 import { ManualQuotaOverridesCard } from './manual_quota_overrides_card';
 import { SupportRiskIncidentsPanel } from './support_risk_incidents_panel';
+import { useHealthFilters } from './use_health_filters';
 
 export const HealthPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const pageTab: 'overview' | 'configuration' =
     searchParams.get('tab') === 'configuration' ? 'configuration' : 'overview';
+
+  const { filterValues, aip160, isLoading, warnings, setFiltersBatch } =
+    useHealthFilters();
+  const activeFilter = aip160();
+
+  const filterCategoryDatas = useMemo(
+    () => (filterValues ? Object.values(filterValues) : []),
+    [filterValues],
+  );
+
+  const handleShowModel = useCallback(
+    (model: string) => {
+      setFiltersBatch({ [HEALTH_FILTER_CONFIGS.MODEL.key]: [model] });
+    },
+    [setFiltersBatch],
+  );
 
   const setPageTab = (newTab: 'overview' | 'configuration') => {
     setSearchParams((prev) => {
@@ -51,6 +72,7 @@ export const HealthPage = () => {
         {/* Initial Dashboard View: Title, Subtitle, Configuration Button, and Side Panel */}
         {pageTab === 'overview' && (
           <>
+            <WarningNotifications warnings={warnings} />
             <Box
               sx={{
                 mb: 4,
@@ -101,6 +123,15 @@ export const HealthPage = () => {
               </Box>
             </Box>
 
+            {/* Global Filter Bar */}
+            <Box sx={{ mb: 4 }}>
+              <FilterBar
+                filterCategoryDatas={filterCategoryDatas}
+                isLoading={isLoading || filterValues === undefined}
+                searchPlaceholder="Add a filter (e.g. model:volteer)"
+              />
+            </Box>
+
             {/* Dashboard Layout */}
             <Box
               sx={{
@@ -111,10 +142,10 @@ export const HealthPage = () => {
               }}
             >
               <Box sx={{ flex: 1, width: '100%', minWidth: 0 }}>
-                <HistoricalAvailabilityTrendsChart />
+                <HistoricalAvailabilityTrendsChart filter={activeFilter} />
               </Box>
               <Box sx={{ width: { xs: '100%', lg: 440 }, flexShrink: 0 }}>
-                <SupportRiskIncidentsPanel />
+                <SupportRiskIncidentsPanel onShowModel={handleShowModel} />
               </Box>
             </Box>
           </>
