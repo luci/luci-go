@@ -19,31 +19,12 @@ import {
   FilterCategory,
   useFilters,
 } from '@/fleet/components/filters/use_filters';
-import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
+import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
-import {
-  GetDeviceDimensionsResponse,
-  Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { HEALTH_FILTER_CONFIGS, HealthFilterKey } from './filter_constants';
 
 export { HEALTH_FILTER_CONFIGS, type HealthFilterKey };
-
-const getDimensionValues = (
-  dimensions: GetDeviceDimensionsResponse,
-  dimensionSources: readonly string[],
-): readonly string[] => {
-  for (const key of dimensionSources) {
-    const values =
-      dimensions.baseDimensions?.[key]?.values ||
-      dimensions.labels?.[key]?.values;
-    if (values && values.length > 0) {
-      return values;
-    }
-  }
-  return [];
-};
 
 export const useHealthFilterBuilders = (): {
   filterBuilders:
@@ -51,38 +32,62 @@ export const useHealthFilterBuilders = (): {
     | undefined;
   isLoading: boolean;
 } => {
-  const dimensionsQuery = useDeviceDimensions({ platform: Platform.CHROMEOS });
+  const { availableFields, getValues, isLoading } = useChromeOSFields();
 
   const filterBuilders = useMemo(() => {
-    if (dimensionsQuery.isPending || !dimensionsQuery.data) {
+    if (isLoading) {
       return undefined;
     }
 
-    const builders = {} as Record<
-      HealthFilterKey,
-      StringListFilterCategoryBuilder
-    >;
+    const builders: Record<string, StringListFilterCategoryBuilder> = {};
 
+    // 1. Core health filters (Model, Pool)
     for (const config of Object.values(HEALTH_FILTER_CONFIGS)) {
-      const rawValues = getDimensionValues(
-        dimensionsQuery.data,
-        config.dimensionSources,
-      );
+      const rawValues = getValues(config.dimensionSource);
 
       builders[config.key] = new StringListFilterCategoryBuilder()
         .setLabel(config.label)
         .setOptions(rawValues.map((v) => ({ label: v, value: v })));
     }
 
+    // 2. Dynamic labels from ChromeOS device dimensions
+    const supersededLabelKeys = new Set(
+      Object.values(HEALTH_FILTER_CONFIGS).flatMap((c) =>
+        c.supersededLabelKeys.map((k) => k.toLowerCase()),
+      ),
+    );
+
+    availableFields.forEach((def) => {
+      // Exclude base and special fields (e.g. type, id, state, realm, current_task)
+      if (def.type !== 'label') {
+        return;
+      }
+      if (
+        builders[def.filterKey] ||
+        supersededLabelKeys.has(def.id.toLowerCase())
+      ) {
+        return;
+      }
+
+      const values = getValues(def.id);
+      if (values.length === 0) {
+        return;
+      }
+
+      builders[def.filterKey] = new StringListFilterCategoryBuilder()
+        .setLabel(def.header)
+        .setOptions(values.map((v) => ({ label: v, value: v })));
+    });
+
     return builders;
-  }, [dimensionsQuery.data, dimensionsQuery.isPending]);
+  }, [availableFields, getValues, isLoading]);
 
   return useMemo(
     () => ({
       filterBuilders,
-      isLoading: dimensionsQuery.isPending,
+      isLoading,
     }),
-    [filterBuilders, dimensionsQuery.isPending],
+    [filterBuilders, isLoading],
   );
 };
 

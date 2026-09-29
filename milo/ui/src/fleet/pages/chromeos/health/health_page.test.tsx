@@ -37,10 +37,11 @@ describe('HealthPage', () => {
       .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
       .mockReturnValue({
         data: {
-          baseDimensions: {
-            model: { values: ['volteer', 'brya'] },
+          baseDimensions: {},
+          labels: {
+            'label-model': { values: ['volteer', 'brya'] },
+            'label-pool': { values: ['DUT_POOL_QUOTA'] },
           },
-          labels: {},
         } as unknown as GetDeviceDimensionsResponse,
         isPending: false,
         isLoading: false,

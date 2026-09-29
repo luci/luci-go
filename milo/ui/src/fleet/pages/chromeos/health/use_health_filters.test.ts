@@ -27,15 +27,15 @@ describe('useHealthFilters', () => {
     jest.restoreAllMocks();
   });
 
-  it('provides model filter options from baseDimensions', () => {
+  it('provides model filter options from dimensionSource ("label-model")', () => {
     jest
       .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
       .mockReturnValue({
         data: {
-          baseDimensions: {
-            [HEALTH_FILTER_CONFIGS.MODEL.key]: { values: ['volteer', 'brya'] },
+          baseDimensions: {},
+          labels: {
+            'label-model': { values: ['volteer', 'brya'] },
           },
-          labels: {},
         } as unknown as GetDeviceDimensionsResponse,
         isPending: false,
         isLoading: false,
@@ -60,14 +60,14 @@ describe('useHealthFilters', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it('falls back to labels["label-model"] when baseDimensions has no model', () => {
+  it('provides pool filter options from dimensionSource ("label-pool")', () => {
     jest
       .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
       .mockReturnValue({
         data: {
           baseDimensions: {},
           labels: {
-            'label-model': { values: ['dedede', 'corsola'] },
+            'label-pool': { values: ['DUT_POOL_QUOTA', 'DUT_POOL_CQ'] },
           },
         } as unknown as GetDeviceDimensionsResponse,
         isPending: false,
@@ -82,8 +82,62 @@ describe('useHealthFilters', () => {
 
     expect(result.current.filterValues).toBeDefined();
     expect(
+      result.current.filterValues?.[HEALTH_FILTER_CONFIGS.POOL.key],
+    ).toBeDefined();
+    expect(
+      result.current.filterValues?.[HEALTH_FILTER_CONFIGS.POOL.key].label,
+    ).toBe(HEALTH_FILTER_CONFIGS.POOL.label);
+    expect(
+      result.current.filterValues?.[HEALTH_FILTER_CONFIGS.POOL.key].key,
+    ).toBe(HEALTH_FILTER_CONFIGS.POOL.key);
+  });
+
+  it('provides dynamic label filter options and supersedes core dimension sources', () => {
+    jest
+      .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
+      .mockReturnValue({
+        data: {
+          baseDimensions: {},
+          labels: {
+            'label-model': { values: ['volteer'] },
+            'label-pool': { values: ['DUT_POOL_QUOTA'] },
+            'label-board': { values: ['brya', 'volteer'] },
+            dut_state: { values: ['ready', 'needs_repair'] },
+          },
+        } as unknown as GetDeviceDimensionsResponse,
+        isPending: false,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<GetDeviceDimensionsResponse, Error>);
+
+    const { result } = renderHook(() => useHealthFilters(), {
+      wrapper: FakeContextProvider,
+    });
+
+    expect(result.current.filterValues).toBeDefined();
+    // Core filters present
+    expect(
       result.current.filterValues?.[HEALTH_FILTER_CONFIGS.MODEL.key],
     ).toBeDefined();
+    expect(
+      result.current.filterValues?.[HEALTH_FILTER_CONFIGS.POOL.key],
+    ).toBeDefined();
+
+    // Dynamic labels present with label key format
+    expect(result.current.filterValues?.['labels."label-board"']).toBeDefined();
+    expect(result.current.filterValues?.['labels."label-board"'].label).toBe(
+      'Board',
+    );
+    expect(result.current.filterValues?.['labels."dut_state"']).toBeDefined();
+
+    // Superseded labels should not appear as duplicated dynamic label filters
+    expect(
+      result.current.filterValues?.['labels."label-model"'],
+    ).toBeUndefined();
+    expect(
+      result.current.filterValues?.['labels."label-pool"'],
+    ).toBeUndefined();
   });
 
   it('indicates loading when dimensions are pending', () => {
