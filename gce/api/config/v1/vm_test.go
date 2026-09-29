@@ -93,6 +93,39 @@ func TestVM(t *testing.T) {
 					assert.Loosely(t, vm.MachineType, should.Equal("zone/type"))
 					assert.Loosely(t, vm.Zone, should.Equal("zone"))
 				})
+
+				t.Run("zone rotation", func(t *ftt.Test) {
+					vm := &VM{
+						Disk: []*Disk{
+							{
+								Type: "zones/{{.Zone}}/diskTypes/pd-ssd",
+							},
+						},
+						MachineType: "zones/{{.Zone}}/machineTypes/n2-standard-8",
+					}
+					vm.SetZone("us-central1-c")
+					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/us-central1-c/diskTypes/pd-ssd"))
+					assert.Loosely(t, vm.MachineType, should.Equal("zones/us-central1-c/machineTypes/n2-standard-8"))
+					assert.Loosely(t, vm.Zone, should.Equal("us-central1-c"))
+
+					vm.SetZone("us-central1-a")
+					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/us-central1-a/diskTypes/pd-ssd"))
+					assert.Loosely(t, vm.MachineType, should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
+					assert.Loosely(t, vm.Zone, should.Equal("us-central1-a"))
+
+					vm.SetZone("us-central1-b")
+					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/us-central1-b/diskTypes/pd-ssd"))
+					assert.Loosely(t, vm.MachineType, should.Equal("zones/us-central1-b/machineTypes/n2-standard-8"))
+					assert.Loosely(t, vm.Zone, should.Equal("us-central1-b"))
+
+					vmPrefix := &VM{
+						MachineType: "{{.Zone}}/type",
+					}
+					vmPrefix.SetZone("us-central1-c")
+					assert.Loosely(t, vmPrefix.MachineType, should.Equal("us-central1-c/type"))
+					vmPrefix.SetZone("us-central1-a")
+					assert.Loosely(t, vmPrefix.MachineType, should.Equal("us-central1-a/type"))
+				})
 			})
 		})
 
@@ -138,6 +171,96 @@ func TestVM(t *testing.T) {
 						assert.Loosely(t, err, should.UnwrapToErrStringLike("metadata from text must be in key:value form"))
 					})
 				})
+
+				t.Run("fallback zones", func(t *ftt.Test) {
+					baseVM := func() *VM {
+						return &VM{
+							Disk: []*Disk{
+								{
+									Image: "global/images/image",
+									Type:  "zones/{{.Zone}}/diskTypes/type",
+								},
+							},
+							MachineType: "type",
+							NetworkInterface: []*NetworkInterface{
+								{},
+							},
+							Project: "project",
+							Zone:    "us-central1-c",
+						}
+					}
+
+					t.Run("too many", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.FallbackZones = []string{
+							"us-central1-a",
+							"us-central1-b",
+							"us-central1-f",
+							"us-central1-d",
+						}
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike("at most 3 fallback zones are allowed, got 4"))
+					})
+
+					t.Run("empty entry", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.FallbackZones = []string{""}
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike("fallback zone 0 cannot be empty"))
+					})
+
+					t.Run("same as primary", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.FallbackZones = []string{"us-central1-c"}
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`fallback zone "us-central1-c" cannot be the same as primary zone "us-central1-c"`))
+					})
+
+					t.Run("duplicate", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.FallbackZones = []string{"us-central1-a", "us-central1-a"}
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`duplicate fallback zone "us-central1-a"`))
+					})
+
+					t.Run("different region", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.FallbackZones = []string{"us-east1-b"}
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`fallback zone "us-east1-b" must be in the same region as primary zone "us-central1-c"`))
+					})
+
+					t.Run("subnetwork region mismatch", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.FallbackZones = []string{"us-central1-a"}
+						vm.NetworkInterface = []*NetworkInterface{
+							{
+								Subnetwork: "regions/us-west2/subnetworks/cloudbots-network-us-west2",
+							},
+						}
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`zone "us-central1-c" does not match subnetwork region "us-west2"`))
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`fallback zone "us-central1-a" does not match subnetwork region "us-west2"`))
+					})
+
+					t.Run("subnetwork region mismatch without fallback zones", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.NetworkInterface = []*NetworkInterface{
+							{
+								Subnetwork: "regions/us-west2/subnetworks/cloudbots-network-us-west2",
+							},
+						}
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`zone "us-central1-c" does not match subnetwork region "us-west2"`))
+					})
+				})
 			})
 
 			t.Run("valid", func(t *ftt.Test) {
@@ -164,6 +287,18 @@ func TestVM(t *testing.T) {
 				}
 				vm.Validate(c, true)
 				assert.Loosely(t, c.Finalize(), should.BeNil)
+
+				t.Run("with fallback zones and regional subnetwork", func(t *ftt.Test) {
+					vm.Zone = "us-central1-c"
+					vm.FallbackZones = []string{"us-central1-a", "us-central1-b", "us-central1-f"}
+					vm.NetworkInterface = []*NetworkInterface{
+						{
+							Subnetwork: "regions/us-central1/subnetworks/cloudbots-network-us-central1",
+						},
+					}
+					vm.Validate(c, true)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
+				})
 			})
 		})
 	})

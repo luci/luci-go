@@ -47,14 +47,36 @@ func (v *VM) ToProperty() (datastore.Property, error) {
 	return p, p.SetValue(bytes, datastore.NoIndex)
 }
 
-// SetZone sets the given zone throughout this VM.
+// SetZone sets the given zone throughout this VM, substituting both "{{.Zone}}"
+// templates and any previously bound zone path segments ("zones/<oldZone>/" or
+// leading "<oldZone>/") in disk and machine types.
 func (v *VM) SetZone(zone string) {
+	oldZone := v.GetZone()
 	for _, disk := range v.GetDisk() {
-		disk.Type = strings.Replace(disk.Type, "{{.Zone}}", zone, -1)
+		if disk != nil {
+			disk.Type = replaceZone(disk.Type, oldZone, zone)
+		}
 	}
-	v.MachineType = strings.Replace(v.GetMachineType(), "{{.Zone}}", zone, -1)
+	v.MachineType = replaceZone(v.GetMachineType(), oldZone, zone)
 	v.Zone = zone
 }
+
+// replaceZone substitutes "{{.Zone}}" and any previously bound zone segment
+// ("zones/<oldZone>/" or leading "<oldZone>/") in val with newZone.
+func replaceZone(val, oldZone, newZone string) string {
+	val = strings.ReplaceAll(val, "{{.Zone}}", newZone)
+	if oldZone != "" && oldZone != newZone {
+		val = strings.ReplaceAll(val, "zones/"+oldZone+"/", "zones/"+newZone+"/")
+		if strings.HasPrefix(val, oldZone+"/") {
+			val = newZone + strings.TrimPrefix(val, oldZone)
+		}
+	}
+	return val
+}
+
+// maxFallbackZones is the maximum number of fallback zones allowed per VM
+// configuration to bound per-task latency within Cloud Tasks execution limits.
+const maxFallbackZones = 3
 
 // Validate validates this VM description.
 func (v *VM) Validate(c *validation.Context, metadataFromFileResolved bool) {
@@ -91,4 +113,76 @@ func (v *VM) Validate(c *validation.Context, metadataFromFileResolved bool) {
 	if v.GetZone() == "" {
 		c.Errorf("zone is required")
 	}
+	v.validateFallbackZones(c)
+}
+
+// validateFallbackZones validates fallback_zones constraints and regional
+// subnetwork compatibility for this VM description.
+func (v *VM) validateFallbackZones(c *validation.Context) {
+	primaryZone := v.GetZone()
+	primaryRegion := extractZoneRegion(primaryZone)
+	fbs := v.GetFallbackZones()
+	if len(fbs) > maxFallbackZones {
+		c.Errorf("at most %d fallback zones are allowed, got %d", maxFallbackZones, len(fbs))
+	}
+	seen := make(map[string]bool, len(fbs))
+	for i, fb := range fbs {
+		if fb == "" {
+			c.Errorf("fallback zone %d cannot be empty", i)
+			continue
+		}
+		if fb == primaryZone {
+			c.Errorf("fallback zone %q cannot be the same as primary zone %q", fb, primaryZone)
+		}
+		if seen[fb] {
+			c.Errorf("duplicate fallback zone %q", fb)
+		}
+		seen[fb] = true
+		fbRegion := extractZoneRegion(fb)
+		if primaryRegion == "" || fbRegion == "" || fbRegion != primaryRegion {
+			c.Errorf("fallback zone %q must be in the same region as primary zone %q", fb, primaryZone)
+		}
+	}
+	for _, nic := range v.GetNetworkInterface() {
+		subRegion := extractSubnetworkRegion(nic.GetSubnetwork())
+		if subRegion == "" {
+			continue
+		}
+		if primaryZone != "" && (primaryRegion == "" || primaryRegion != subRegion) {
+			c.Errorf("zone %q does not match subnetwork region %q", primaryZone, subRegion)
+		}
+		for _, fb := range fbs {
+			if fb == "" {
+				continue
+			}
+			if fbRegion := extractZoneRegion(fb); fbRegion == "" || fbRegion != subRegion {
+				c.Errorf("fallback zone %q does not match subnetwork region %q", fb, subRegion)
+			}
+		}
+	}
+}
+
+// extractZoneRegion returns the GCP region prefix from a zone name (for
+// example, "us-central1" from "us-central1-c"), or an empty string if the zone
+// does not follow the "<region>-<zone>" format.
+func extractZoneRegion(zone string) string {
+	idx := strings.LastIndex(zone, "-")
+	if idx <= 0 || idx == len(zone)-1 {
+		return ""
+	}
+	return zone[:idx]
+}
+
+// extractSubnetworkRegion returns the GCP region segment from a subnetwork path
+// of the form "...regions/<region>/subnetworks/<name>" (for example, "us-west2"
+// from "regions/us-west2/subnetworks/cloudbots-network-us-west2"), or an empty
+// string if no regional segment is present.
+func extractSubnetworkRegion(subnetwork string) string {
+	parts := strings.Split(subnetwork, "/")
+	for i := 0; i+2 < len(parts); i++ {
+		if parts[i] == "regions" && parts[i+2] == "subnetworks" && parts[i+1] != "" {
+			return parts[i+1]
+		}
+	}
+	return ""
 }
