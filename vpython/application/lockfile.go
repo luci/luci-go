@@ -22,12 +22,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
 
 	"go.chromium.org/luci/vpython/common"
+	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/standard"
 )
 
@@ -113,9 +116,70 @@ func SyncLockfile(ctx context.Context, specPath, uvBin, pythonBin string, isBot 
 	return nil
 }
 
-func updateLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin string, spec *standard.ProjectSpec, reason string) ([]byte, error) {
-	// Developer mode: synchronize the attached lockfile locally via stdin.
-	logging.Infof(ctx, "%s is missing or out-of-sync (%s). Synchronizing via uv pip compile...", filepath.Base(lockPath), reason)
+// DefaultSupportedPythonVersions lists the CPython major.minor versions bundled with vpython3.
+var DefaultSupportedPythonVersions = []string{"3.8", "3.11"}
+
+// resolveTargetPythonVersion resolves a PEP 440 requires-python constraint
+// against vpython's bundled Python versions, defaulting to the highest
+// bundled version ("3.11") when requiresPython is empty.
+func resolveTargetPythonVersion(requiresPython string) (string, error) {
+	ver, err := standard.MatchInterpreter(requiresPython, DefaultSupportedPythonVersions)
+	if err != nil {
+		return "", errors.Fmt("failed to resolve compatible Python interpreter for constraint %q: %w", requiresPython, err)
+	}
+	return ver, nil
+}
+
+// resolveBundledPythonBin probes for the bundled CPython interpreter matching
+// targetVer relative to the running vpython3 executable.
+func resolveBundledPythonBin(targetVer string) string {
+	execDir, err := python.FindExecutableDir()
+	if err != nil {
+		return ""
+	}
+	pythonBundle := filepath.Join(execDir, common.DefaultBundleDir(targetVer))
+	candidates := []string{filepath.Join(pythonBundle, "bin", "python3")}
+	if runtime.GOOS == "windows" {
+		candidates = []string{
+			filepath.Join(pythonBundle, "bin", "python.exe"),
+			filepath.Join(pythonBundle, "python.exe"),
+		}
+	}
+	for _, cand := range candidates {
+		if st, err := os.Stat(cand); err == nil && !st.IsDir() {
+			return cand
+		}
+	}
+	return ""
+}
+
+// compileLockfile invokes `uv pip compile` to resolve universal dependencies
+// bounded to the target Python version from spec.RequiresPython, and writes
+// the resulting lockfile to lockPath.
+func compileLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin string, spec *standard.ProjectSpec) ([]byte, error) {
+	targetVer, err := resolveTargetPythonVersion(spec.RequiresPython)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create an isolated temporary project with [tool.uv] environments bounded to
+	// targetVer. Without this, `uv pip compile --universal --python-version X.Y`
+	// treats X.Y only as a lower bound (>=X.Y) with no upper bound, attempting to
+	// resolve wheels for future Python versions (e.g., cp313, >=3.14) that may not
+	// exist in the wheelhouse mirror.
+	tmpProjDir, err := os.MkdirTemp("", "vpython-uv-proj-*")
+	if err != nil {
+		return nil, errors.Fmt("failed to create temporary uv project directory: %w", err)
+	}
+	defer os.RemoveAll(tmpProjDir)
+
+	pyprojectContent := fmt.Sprintf(
+		"[project]\nname = \"vpython-env\"\nversion = \"0.0.0\"\nrequires-python = \"==%s.*\"\n\n[tool.uv]\nenvironments = [\"python_version == '%s'\"]\n",
+		targetVer, targetVer,
+	)
+	if err := os.WriteFile(filepath.Join(tmpProjDir, "pyproject.toml"), []byte(pyprojectContent), 0644); err != nil {
+		return nil, errors.Fmt("failed to write temporary pyproject.toml: %w", err)
+	}
 
 	var reqs bytes.Buffer
 	for _, dep := range spec.Dependencies {
@@ -127,23 +191,32 @@ func updateLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin st
 		"--universal",
 		"--generate-hashes",
 		"--no-header",
+		"--python-version", targetVer,
+		"--project", tmpProjDir,
 	)
 	cmdLock.Dir = filepath.Dir(specPath)
 	cmdLock.Stdin = &reqs
+
+	if pythonBin == "" {
+		pythonBin = resolveBundledPythonBin(targetVer)
+	}
 
 	arURL := os.Getenv(common.EnvVpythonArUrl)
 	if arURL == "" {
 		arURL = common.DefaultARURL
 	}
-	env := append(os.Environ(),
-		"UV_PYTHON_DOWNLOADS=never",
-		"UV_NO_WORKSPACE=1",
-		"UV_PYTHON="+pythonBin,
-	)
-	if arURL != "" {
-		env = append(env, "UV_DEFAULT_INDEX="+arURL)
+	env := environ.System()
+	env.Set("UV_PYTHON_DOWNLOADS", "never")
+	env.Set("UV_NO_WORKSPACE", "1")
+	if pythonBin != "" {
+		env.Set("UV_PYTHON", pythonBin)
+	} else {
+		env.Remove("UV_PYTHON")
 	}
-	cmdLock.Env = env
+	if arURL != "" {
+		env.Set("UV_DEFAULT_INDEX", arURL)
+	}
+	cmdLock.Env = env.Sorted()
 
 	var stdout, stderr bytes.Buffer
 	cmdLock.Stdout = &stdout
@@ -157,9 +230,21 @@ func updateLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin st
 		return nil, errors.Fmt("failed to write lockfile %s: %w", filepath.Base(lockPath), err)
 	}
 
+	return stdout.Bytes(), nil
+}
+
+func updateLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin string, spec *standard.ProjectSpec, reason string) ([]byte, error) {
+	// Developer mode: synchronize the attached lockfile locally via stdin.
+	logging.Infof(ctx, "%s is missing or out-of-sync (%s). Synchronizing via uv pip compile...", filepath.Base(lockPath), reason)
+
+	lockData, err := compileLockfile(ctx, specPath, lockPath, uvBin, pythonBin, spec)
+	if err != nil {
+		return nil, err
+	}
+
 	logging.Infof(ctx, "Successfully synchronized lockfile %s!", filepath.Base(lockPath))
 
-	return stdout.Bytes(), nil
+	return lockData, nil
 }
 
 // extractBaseName extracts the base package name from a PEP 508 dependency string.

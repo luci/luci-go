@@ -24,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
@@ -34,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/common"
+	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/spec"
 	"go.chromium.org/luci/vpython/standard"
 	"go.chromium.org/luci/vpython/standard/legacy"
@@ -283,7 +285,7 @@ func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool)
 	}
 
 	// Best-effort proactive lockfile generation.
-	generateProactiveLockfile(ctx, destPath, projectSpec.Dependencies)
+	generateProactiveLockfile(ctx, destPath, projectSpec)
 	if !keepLegacy {
 		if err := os.Remove(srcPath); err != nil {
 			return errors.Fmt("failed to delete legacy spec file %q after migration: %w", srcPath, err)
@@ -404,7 +406,7 @@ func mergeSpecIntoScript(ctx context.Context, scriptPath, specPath string, keepL
 		logging.Infof(ctx, "Successfully merged companion spec: %s -> injected inline inside script %s (kept original spec file)", specPath, scriptPath)
 	}
 	// Best-effort proactive lockfile generation.
-	generateProactiveLockfile(ctx, scriptPath, projectSpec.Dependencies)
+	generateProactiveLockfile(ctx, scriptPath, projectSpec)
 	return nil
 }
 
@@ -561,7 +563,7 @@ func convertInlineSpec(ctx context.Context, scriptPath string) error {
 	fmt.Printf("Successfully migrated inline legacy spec -> PEP 723 shebang in script %q\n", scriptPath)
 	logging.Infof(ctx, "Successfully migrated inline legacy spec -> PEP 723 shebang in script %q", scriptPath)
 	// Best-effort proactive lockfile generation.
-	generateProactiveLockfile(ctx, scriptPath, projectSpec.Dependencies)
+	generateProactiveLockfile(ctx, scriptPath, projectSpec)
 	return nil
 }
 
@@ -637,22 +639,39 @@ func hasCompanionSpecFile(scriptPath string) bool {
 	return false
 }
 
-func generateProactiveLockfile(ctx context.Context, specPath string, dependencies []string) {
-	if len(dependencies) == 0 {
-		return
+func isStandardSpecTOML(base string) bool {
+	return base == "vpython.toml" || strings.HasSuffix(base, ".vpython.toml")
+}
+
+func resolveUpgradeUVBin() (string, error) {
+	if uvBin := os.Getenv("VPYTHON_UV_BIN"); uvBin != "" {
+		return uvBin, nil
 	}
-	uvBin := os.Getenv("VPYTHON_UV_BIN")
-	if uvBin == "" {
-		var err error
-		uvBin, err = exec.LookPath("uv")
-		if err != nil {
-			logging.Infof(ctx, "Proactive lockfile skipped: 'uv' not found on PATH and VPYTHON_UV_BIN not set")
-			return
+	if execDir, err := python.FindExecutableDir(); err == nil {
+		uvBundle := filepath.Join(execDir, common.DefaultBundleDir("uv"))
+		candidate := filepath.Join(uvBundle, "uv")
+		if runtime.GOOS == "windows" {
+			candidate += ".exe"
+		}
+		if st, err := os.Stat(candidate); err == nil && !st.IsDir() {
+			return candidate, nil
 		}
 	}
-	arURL := os.Getenv(common.EnvVpythonArUrl)
-	if arURL == "" {
-		arURL = common.DefaultARURL
+	uvBin, err := exec.LookPath("uv")
+	if err != nil {
+		return "", errors.New("failed to resolve bundled 'uv', 'uv' on PATH, or VPYTHON_UV_BIN")
+	}
+	return uvBin, nil
+}
+
+func generateProactiveLockfile(ctx context.Context, specPath string, projectSpec *standard.ProjectSpec) {
+	if projectSpec == nil || len(projectSpec.Dependencies) == 0 {
+		return
+	}
+	uvBin, err := resolveUpgradeUVBin()
+	if err != nil {
+		logging.Infof(ctx, "Proactive lockfile skipped: %v", err)
+		return
 	}
 
 	lockPath := specPath + ".uv.lock"
@@ -660,47 +679,16 @@ func generateProactiveLockfile(ctx context.Context, specPath string, dependencie
 	fmt.Println(msg)
 	logging.Infof(ctx, "%s", msg)
 
-	var reqs bytes.Buffer
-	for _, dep := range dependencies {
-		reqs.WriteString(dep)
-		reqs.WriteByte('\n')
-	}
-
-	cmdLock := exec.CommandContext(ctx, uvBin, "pip", "compile", "-",
-		"--universal",
-		"--generate-hashes",
-		"--no-header",
-	)
-	cmdLock.Dir = filepath.Dir(specPath)
-	cmdLock.Stdin = &reqs
-	env := append(os.Environ(),
-		"UV_PYTHON_DOWNLOADS=never",
-		"UV_NO_WORKSPACE=1",
-	)
-	if arURL != "" {
-		env = append(env, "UV_DEFAULT_INDEX="+arURL)
-	}
-	cmdLock.Env = env
-
-	var stdout, stderr bytes.Buffer
-	cmdLock.Stdout = &stdout
-	cmdLock.Stderr = &stderr
-
-	if errCmd := cmdLock.Run(); errCmd != nil {
-		errMsg := fmt.Sprintf("Warning: failed to automatically generate lockfile %s: %v\nOutput:\n%s", filepath.Base(lockPath), errCmd, stderr.String())
+	if _, err := compileLockfile(ctx, specPath, lockPath, uvBin, "", projectSpec); err != nil {
+		errMsg := fmt.Sprintf("Warning: %v", err)
 		fmt.Fprintln(os.Stderr, errMsg)
 		logging.Warningf(ctx, "%s", errMsg)
-	} else {
-		if err := os.WriteFile(lockPath, stdout.Bytes(), 0644); err != nil {
-			errMsg := fmt.Sprintf("Warning: failed to write lockfile %s: %v", filepath.Base(lockPath), err)
-			fmt.Fprintln(os.Stderr, errMsg)
-			logging.Warningf(ctx, "%s", errMsg)
-		} else {
-			successMsg := fmt.Sprintf("Successfully generated lockfile %s!", filepath.Base(lockPath))
-			fmt.Println(successMsg)
-			logging.Infof(ctx, "%s", successMsg)
-		}
+		return
 	}
+
+	successMsg := fmt.Sprintf("Successfully generated lockfile %s!", filepath.Base(lockPath))
+	fmt.Println(successMsg)
+	logging.Infof(ctx, "%s", successMsg)
 }
 
 func detectGitModifiedFiles(ctx context.Context, targetDir string) ([]string, error) {
@@ -781,7 +769,7 @@ func detectGitModifiedFiles(ctx context.Context, targetDir string) ([]string, er
 		// Only process supported files
 		ext := strings.ToLower(filepath.Ext(absPath))
 		base := filepath.Base(absPath)
-		if ext == ".py" || ext == ".vpython" || ext == ".vpython3" || base == "vpython.toml" {
+		if ext == ".py" || ext == ".vpython" || ext == ".vpython3" || isStandardSpecTOML(base) {
 			modifiedFiles = append(modifiedFiles, absPath)
 		}
 	}
@@ -790,17 +778,17 @@ func detectGitModifiedFiles(ctx context.Context, targetDir string) ([]string, er
 }
 
 func forceRegenerateLockfile(ctx context.Context, specPath string) error {
-	var dependencies []string
+	var spec *standard.ProjectSpec
+	var err error
 	base := filepath.Base(specPath)
 
-	if base == "vpython.toml" {
-		spec, err := standard.ParseVpythonTOML(specPath)
+	if isStandardSpecTOML(base) {
+		spec, err = standard.ParseVpythonTOML(specPath)
 		if err != nil {
 			return errors.Fmt("failed to parse standard spec TOML: %w", err)
 		}
-		dependencies = spec.Dependencies
 	} else {
-		spec, err := standard.ParseScriptMetadata(specPath)
+		spec, err = standard.ParseScriptMetadata(specPath)
 		if err != nil {
 			return errors.Fmt("failed to parse PEP 723 script shebang: %w", err)
 		}
@@ -808,11 +796,10 @@ func forceRegenerateLockfile(ctx context.Context, specPath string) error {
 			// Skip python scripts without shebangs when force-locking!
 			return nil
 		}
-		dependencies = spec.Dependencies
 	}
 
 	lockPath := specPath + ".uv.lock"
-	if len(dependencies) == 0 {
+	if len(spec.Dependencies) == 0 {
 		if err := os.Remove(lockPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return errors.Fmt("failed to delete obsolete lockfile %s: %w", filepath.Base(lockPath), err)
 		}
@@ -823,48 +810,13 @@ func forceRegenerateLockfile(ctx context.Context, specPath string) error {
 	fmt.Println(msg)
 	logging.Infof(ctx, "%s", msg)
 
-	uvBin := os.Getenv("VPYTHON_UV_BIN")
-	if uvBin == "" {
-		var err error
-		uvBin, err = exec.LookPath("uv")
-		if err != nil {
-			return errors.New("failed to resolve 'uv' on PATH and VPYTHON_UV_BIN is not set")
-		}
-	}
-	arURL := os.Getenv("VPYTHON_AR_URL")
-
-	var reqs bytes.Buffer
-	for _, dep := range dependencies {
-		reqs.WriteString(dep)
-		reqs.WriteByte('\n')
+	uvBin, err := resolveUpgradeUVBin()
+	if err != nil {
+		return err
 	}
 
-	cmdLock := exec.CommandContext(ctx, uvBin, "pip", "compile", "-",
-		"--universal",
-		"--generate-hashes",
-		"--no-header",
-	)
-	cmdLock.Dir = filepath.Dir(specPath)
-	cmdLock.Stdin = &reqs
-	env := append(os.Environ(),
-		"UV_PYTHON_DOWNLOADS=never",
-		"UV_NO_WORKSPACE=1",
-	)
-	if arURL != "" {
-		env = append(env, "UV_DEFAULT_INDEX="+arURL)
-	}
-	cmdLock.Env = env
-
-	var stdout, stderr bytes.Buffer
-	cmdLock.Stdout = &stdout
-	cmdLock.Stderr = &stderr
-
-	if errCmd := cmdLock.Run(); errCmd != nil {
-		return errors.Fmt("failed to compile lockfile %s: %s\nOutput:\n%s", filepath.Base(lockPath), errCmd, stderr.String())
-	}
-
-	if err := os.WriteFile(lockPath, stdout.Bytes(), 0644); err != nil {
-		return errors.Fmt("failed to write lockfile %s: %w", filepath.Base(lockPath), err)
+	if _, err := compileLockfile(ctx, specPath, lockPath, uvBin, "", spec); err != nil {
+		return err
 	}
 
 	fmt.Printf("Successfully force-regenerated lockfile %s!\n", filepath.Base(lockPath))
@@ -875,7 +827,7 @@ func forceRegenerateLockfile(ctx context.Context, specPath string) error {
 func forceRegenerateFile(ctx context.Context, filePath string, isDirectTarget bool) error {
 	base := filepath.Base(filePath)
 
-	if base == "vpython.toml" {
+	if isStandardSpecTOML(base) {
 		return forceRegenerateLockfile(ctx, filePath)
 	}
 
