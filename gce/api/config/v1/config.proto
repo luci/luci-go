@@ -228,6 +228,12 @@ message VM {
 
   // Ensure VMs are terminated if under maintenance.
   bool terminate_on_maintenance = 20;
+
+  // Ordered fallback zones in the same region to try sequentially when the
+  // primary zone experiences a hard GCP capacity stockout. At most 3 unique
+  // fallback zones distinct from the primary zone may be specified, and all
+  // zones must match any regional subnetwork configured on the VM.
+  repeated string fallback_zones = 21;
 }
 
 // A length of time.
