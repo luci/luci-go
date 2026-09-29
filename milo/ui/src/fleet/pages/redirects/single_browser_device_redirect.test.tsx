@@ -43,14 +43,19 @@ describe('<SingleBrowserDeviceRedirect />', () => {
   });
 
   it('redirects to first device in search', async () => {
-    mockListBrowserDevices([MOCK_BROWSER_DEVICE_1, MOCK_BROWSER_DEVICE_2], '');
+    mockListBrowserDevices(
+      [MOCK_BROWSER_DEVICE_1, MOCK_BROWSER_DEVICE_2],
+      'id = "test-device-1"',
+    );
 
     // Create a fake device detail page to test route navigation.
     render(
       <FakeContextProvider
         mountedPath="/ui/fleet/redirects/singlebrowserdevice"
         routerOptions={{
-          initialEntries: ['/ui/fleet/redirects/singlebrowserdevice'],
+          initialEntries: [
+            '/ui/fleet/redirects/singlebrowserdevice?filter=id%20%3D%20%22test-device-1%22',
+          ],
         }}
         siblingRoutes={[
           {
@@ -70,11 +75,40 @@ describe('<SingleBrowserDeviceRedirect />', () => {
     ).toBeVisible();
   });
 
+  it('warns when filter query is missing or empty', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/fleet/redirects/singlebrowserdevice"
+        routerOptions={{
+          initialEntries: ['/ui/fleet/redirects/singlebrowserdevice'],
+        }}
+      >
+        <SingleBrowserDeviceRedirect />
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('single-browser-device-redirect');
+
+    expect(screen.getByText(/Missing filter query/)).toBeVisible();
+    expect(
+      screen.getByText(
+        /A filter parameter is required to redirect to a device/,
+      ),
+    ).toBeVisible();
+  });
+
   it('warns when no devices match', async () => {
-    mockListBrowserDevices([], '');
+    mockListBrowserDevices([], 'id = "nonexistent"');
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/ui/fleet/redirects/singlebrowserdevice"
+        routerOptions={{
+          initialEntries: [
+            '/ui/fleet/redirects/singlebrowserdevice?filter=id%20%3D%20%22nonexistent%22',
+          ],
+        }}
+      >
         <SingleBrowserDeviceRedirect />
       </FakeContextProvider>,
     );
@@ -88,7 +122,14 @@ describe('<SingleBrowserDeviceRedirect />', () => {
     mockErrorListingBrowserDevices();
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/ui/fleet/redirects/singlebrowserdevice"
+        routerOptions={{
+          initialEntries: [
+            '/ui/fleet/redirects/singlebrowserdevice?filter=id%20%3D%20%22test-device-1%22',
+          ],
+        }}
+      >
         <SingleBrowserDeviceRedirect />
       </FakeContextProvider>,
     );

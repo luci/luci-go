@@ -32,7 +32,9 @@ export function SingleDeviceRedirect() {
     filter,
   });
 
-  const devicesQuery = useDevices(request);
+  const devicesQuery = useDevices(request, {
+    enabled: Boolean(filter?.trim()),
+  });
 
   return (
     <BaseDeviceRedirect

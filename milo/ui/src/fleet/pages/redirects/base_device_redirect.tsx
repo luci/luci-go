@@ -37,6 +37,22 @@ export function BaseDeviceRedirect({
   // more jarring because the load time is quick for one device.
   if (isLoading) return <></>;
 
+  if (!filter?.trim()) {
+    return (
+      <AlertWithFeedback
+        testId={testId}
+        severity="error"
+        title="Missing filter query"
+        bugErrorMessage="Filter query parameter is missing or empty"
+      >
+        <p>
+          A filter parameter is required to redirect to a device. Please provide
+          a valid search filter in the URL query parameters.
+        </p>
+      </AlertWithFeedback>
+    );
+  }
+
   if (error) {
     return (
       <AlertWithFeedback
@@ -45,7 +61,7 @@ export function BaseDeviceRedirect({
         title="Redirection failed"
         bugErrorMessage={`Device not found for query: ${filter}`}
       >
-        <p>An error occured.</p>
+        <p>An error occurred.</p>
       </AlertWithFeedback>
     );
   }

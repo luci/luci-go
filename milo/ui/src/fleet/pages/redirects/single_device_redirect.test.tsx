@@ -43,14 +43,16 @@ describe('<SingleDeviceRedirect />', () => {
   });
 
   it('redirects to first device in search', async () => {
-    mockListDevices([MOCK_DEVICE_1, MOCK_DEVICE_2], '');
+    mockListDevices([MOCK_DEVICE_1, MOCK_DEVICE_2], 'id = "test-device-1"');
 
     // Create a fake device detail page to test route navigation.
     render(
       <FakeContextProvider
         mountedPath="/ui/fleet/redirects/singledevice"
         routerOptions={{
-          initialEntries: ['/ui/fleet/redirects/singledevice'],
+          initialEntries: [
+            '/ui/fleet/redirects/singledevice?filter=id%20%3D%20%22test-device-1%22',
+          ],
         }}
         siblingRoutes={[
           {
@@ -70,11 +72,40 @@ describe('<SingleDeviceRedirect />', () => {
     ).toBeVisible();
   });
 
+  it('warns when filter query is missing or empty', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/fleet/redirects/singledevice"
+        routerOptions={{
+          initialEntries: ['/ui/fleet/redirects/singledevice'],
+        }}
+      >
+        <SingleDeviceRedirect />
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('single-device-redirect');
+
+    expect(screen.getByText(/Missing filter query/)).toBeVisible();
+    expect(
+      screen.getByText(
+        /A filter parameter is required to redirect to a device/,
+      ),
+    ).toBeVisible();
+  });
+
   it('warns when no devices match', async () => {
-    mockListDevices([], '');
+    mockListDevices([], 'id = "nonexistent"');
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/ui/fleet/redirects/singledevice"
+        routerOptions={{
+          initialEntries: [
+            '/ui/fleet/redirects/singledevice?filter=id%20%3D%20%22nonexistent%22',
+          ],
+        }}
+      >
         <SingleDeviceRedirect />
       </FakeContextProvider>,
     );
@@ -88,7 +119,14 @@ describe('<SingleDeviceRedirect />', () => {
     mockErrorListingDevices();
 
     render(
-      <FakeContextProvider>
+      <FakeContextProvider
+        mountedPath="/ui/fleet/redirects/singledevice"
+        routerOptions={{
+          initialEntries: [
+            '/ui/fleet/redirects/singledevice?filter=id%20%3D%20%22test-device-1%22',
+          ],
+        }}
+      >
         <SingleDeviceRedirect />
       </FakeContextProvider>,
     );

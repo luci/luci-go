@@ -12,11 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryKey, useQuery, keepPreviousData } from '@tanstack/react-query';
+import {
+  QueryKey,
+  useQuery,
+  keepPreviousData,
+  UndefinedInitialDataOptions,
+} from '@tanstack/react-query';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { ListBrowserDevicesRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  ListBrowserDevicesRequest,
+  ListBrowserDevicesResponse,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const useListBrowserDevicesQueryKey = (
   request?: ListBrowserDevicesRequest,
@@ -30,7 +38,17 @@ export const useListBrowserDevicesQueryKey = (
   return queryKey;
 };
 
-export const useBrowserDevices = (request: ListBrowserDevicesRequest) => {
+export const useBrowserDevices = (
+  request: ListBrowserDevicesRequest,
+  options?: Partial<
+    UndefinedInitialDataOptions<
+      ListBrowserDevicesResponse,
+      Error,
+      ListBrowserDevicesResponse,
+      readonly unknown[]
+    >
+  >,
+) => {
   const client = useFleetConsoleClient();
   const queryKey = useListBrowserDevicesQueryKey(request);
 
@@ -38,6 +56,7 @@ export const useBrowserDevices = (request: ListBrowserDevicesRequest) => {
     queryKey: queryKey,
     queryFn: client.ListBrowserDevices.query(request).queryFn,
     placeholderData: keepPreviousData, // avoid loading while switching page
+    ...options,
   });
 
   return devicesQuery;
