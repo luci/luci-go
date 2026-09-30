@@ -15,6 +15,7 @@
 import { UseQueryResult } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import {
@@ -49,6 +50,14 @@ describe('HealthPage', () => {
         error: null,
       } as unknown as UseQueryResult<GetDeviceDimensionsResponse, Error>);
 
+    jest
+      .spyOn(UseAdminTaskPermissionModule, 'useModelQuotaPermission')
+      .mockReturnValue({
+        hasPermission: true,
+        fetchPermissions: jest.fn(),
+        isError: false,
+        error: null,
+      });
     jest
       .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
       .mockReturnValue({
@@ -207,6 +216,60 @@ describe('HealthPage', () => {
     ).toBeInTheDocument();
     expect(
       screen.queryByText('Global Default Expected Quota'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('hides Configuration button when user lacks permission', () => {
+    jest
+      .spyOn(UseAdminTaskPermissionModule, 'useModelQuotaPermission')
+      .mockReturnValue({
+        hasPermission: false,
+        fetchPermissions: jest.fn(),
+        isError: false,
+        error: null,
+      });
+
+    render(
+      <FakeContextProvider>
+        <ShortcutProvider>
+          <HealthPage />
+        </ShortcutProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(
+      screen.getByText('ChromeOS Fleet Health Metrics'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /^configuration$/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not display configuration view when tab=configuration is accessed without permission', () => {
+    jest
+      .spyOn(UseAdminTaskPermissionModule, 'useModelQuotaPermission')
+      .mockReturnValue({
+        hasPermission: false,
+        fetchPermissions: jest.fn(),
+        isError: false,
+        error: null,
+      });
+
+    render(
+      <FakeContextProvider
+        routerOptions={{ initialEntries: ['/?tab=configuration'] }}
+      >
+        <ShortcutProvider>
+          <HealthPage />
+        </ShortcutProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(
+      screen.getByText('ChromeOS Fleet Health Metrics'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Fleet Health Configuration'),
     ).not.toBeInTheDocument();
   });
 });

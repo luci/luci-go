@@ -67,3 +67,9 @@ export const PRIORITY_RULES_ADMINS_GROUP =
 export function usePriorityRulesPermission() {
   return usePermission(`mdb/${PRIORITY_RULES_ADMINS_GROUP}`);
 }
+
+export const MODEL_QUOTA_ADMINS_GROUP = 'fleet-console-model-quota-admins';
+
+export function useModelQuotaPermission() {
+  return usePermission(`mdb/${MODEL_QUOTA_ADMINS_GROUP}`);
+}

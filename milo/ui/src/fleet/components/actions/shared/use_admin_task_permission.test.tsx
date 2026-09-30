@@ -18,8 +18,10 @@ import { render, renderHook, screen, waitFor } from '@testing-library/react';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
 import {
+  MODEL_QUOTA_ADMINS_GROUP,
   PRIORITY_RULES_ADMINS_GROUP,
   useAdminTaskPermission,
+  useModelQuotaPermission,
   usePermission,
   usePriorityRulesPermission,
 } from './use_admin_task_permission';
@@ -277,6 +279,62 @@ describe('usePermission', () => {
       mockCheckPermission.mockResolvedValue({ hasPermission: false });
 
       const { result } = renderHook(() => usePriorityRulesPermission(), {
+        wrapper: createWrapper(),
+      });
+
+      const res = await result.current.fetchPermissions();
+      expect(res).toEqual({ hasPermission: false });
+    });
+  });
+
+  describe('useModelQuotaPermission', () => {
+    it('queries mdb/fleet-console-model-quota-admins and returns true when caller is member', async () => {
+      mockCheckPermission.mockImplementation((req: { group: string }) => {
+        if (req.group === `mdb/${MODEL_QUOTA_ADMINS_GROUP}`) {
+          return Promise.resolve({ hasPermission: true });
+        }
+        return Promise.resolve({ hasPermission: false });
+      });
+
+      const { result } = renderHook(() => useModelQuotaPermission(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(mockCheckPermission).toHaveBeenCalledWith({
+          group: 'mdb/fleet-console-model-quota-admins',
+        });
+        expect(result.current.hasPermission).toBe(true);
+      });
+    });
+
+    it('returns false if caller is not member', async () => {
+      mockCheckPermission.mockResolvedValue({ hasPermission: false });
+
+      const { result } = renderHook(() => useModelQuotaPermission(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.hasPermission).toBe(false);
+      });
+    });
+
+    it('fetchPermissions returns true when member', async () => {
+      mockCheckPermission.mockResolvedValue({ hasPermission: true });
+
+      const { result } = renderHook(() => useModelQuotaPermission(), {
+        wrapper: createWrapper(),
+      });
+
+      const res = await result.current.fetchPermissions();
+      expect(res).toEqual({ hasPermission: true });
+    });
+
+    it('fetchPermissions returns false when not member', async () => {
+      mockCheckPermission.mockResolvedValue({ hasPermission: false });
+
+      const { result } = renderHook(() => useModelQuotaPermission(), {
         wrapper: createWrapper(),
       });
 

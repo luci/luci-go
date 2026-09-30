@@ -14,7 +14,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
+import { useModelQuotaPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
 export const MODEL_QUOTA_OVERRIDES_QUERY_KEY = ['ListModelQuotaOverrides'];
@@ -22,7 +22,7 @@ export const MODEL_QUOTA_OVERRIDES_QUERY_KEY = ['ListModelQuotaOverrides'];
 export const useModelQuotaOverrides = () => {
   const client = useFleetConsoleClient();
   const queryClient = useQueryClient();
-  const { hasPermission } = useAdminTaskPermission();
+  const { hasPermission } = useModelQuotaPermission();
 
   const overridesQuery = useQuery({
     ...client.ListModelQuotaOverrides.query({}),

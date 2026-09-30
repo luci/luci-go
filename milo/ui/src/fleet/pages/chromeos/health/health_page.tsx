@@ -16,6 +16,7 @@ import { ArrowBack, Settings } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
 
+import { useModelQuotaPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
@@ -30,8 +31,12 @@ import { useHealthFilters } from './use_health_filters';
 
 export const HealthPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const { hasPermission: hasQuotaPermission } = useModelQuotaPermission();
+  const canEditQuota = hasQuotaPermission === true;
+
+  const rawTab = searchParams.get('tab');
   const pageTab: 'overview' | 'configuration' =
-    searchParams.get('tab') === 'configuration' ? 'configuration' : 'overview';
+    rawTab === 'configuration' && canEditQuota ? 'configuration' : 'overview';
 
   const { filterValues, aip160, isLoading, warnings, setFiltersBatch } =
     useHealthFilters();
@@ -97,30 +102,32 @@ export const HealthPage = () => {
                   identify pool degradations.
                 </Typography>
               </Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 1.5,
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<Settings />}
-                  onClick={() => setPageTab('configuration')}
+              {canEditQuota && (
+                <Box
                   sx={{
-                    textTransform: 'none',
-                    fontWeight: 'bold',
-                    px: 2,
-                    py: 0.8,
-                    borderRadius: 1.5,
+                    display: 'flex',
+                    gap: 1.5,
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
                   }}
                 >
-                  Configuration
-                </Button>
-              </Box>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<Settings />}
+                    onClick={() => setPageTab('configuration')}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 'bold',
+                      px: 2,
+                      py: 0.8,
+                      borderRadius: 1.5,
+                    }}
+                  >
+                    Configuration
+                  </Button>
+                </Box>
+              )}
             </Box>
 
             {/* Global Filter Bar */}

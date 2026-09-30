@@ -14,7 +14,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
+import { useModelQuotaPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
 export const DEFAULT_QUOTA_QUERY_KEY = ['GetDefaultQuota'];
@@ -22,7 +22,7 @@ export const DEFAULT_QUOTA_QUERY_KEY = ['GetDefaultQuota'];
 export const useDefaultQuota = () => {
   const client = useFleetConsoleClient();
   const queryClient = useQueryClient();
-  const { hasPermission } = useAdminTaskPermission();
+  const { hasPermission } = useModelQuotaPermission();
 
   const quotaQuery = useQuery({
     ...client.GetDefaultQuota.query({}),
