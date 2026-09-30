@@ -300,7 +300,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     );
     expect(screen.getAllByText('volteer').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('82% / 95%')).toBeInTheDocument();
-    expect(screen.getAllByText('NEEDS_REPAIR').length).toBeGreaterThanOrEqual(
+    expect(screen.getAllByText('Needs repair').length).toBeGreaterThanOrEqual(
       1,
     );
 
@@ -313,7 +313,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     expect(screen.getAllByText('faft-cr50').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('brya').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('45% / 70%')).toBeInTheDocument();
-    expect(screen.getAllByText('REPAIR_FAILED').length).toBeGreaterThanOrEqual(
+    expect(screen.getAllByText('Repair failed').length).toBeGreaterThanOrEqual(
       1,
     );
 

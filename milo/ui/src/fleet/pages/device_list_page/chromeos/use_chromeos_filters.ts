@@ -17,13 +17,14 @@ import { useCallback, useMemo } from 'react';
 
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
-  useFilters,
   FilterCategory,
+  useFilters,
 } from '@/fleet/components/filters/use_filters';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 import { ChromeOSFilterKey } from './chromeos_fields';
+import { formatDeviceStateLabel } from './dut_state';
 import { useChromeOSFields } from './use_chromeos_available_columns';
 
 export const useChromeOSFilterBuilders = (): {
@@ -42,11 +43,14 @@ export const useChromeOSFilterBuilders = (): {
       const values = getValues(def.id);
       if (values.length === 0) return;
 
+      const formatLabel =
+        def.id === 'dut_state' ? formatDeviceStateLabel : (v: string) => v;
+
       filters[def.filterKey] = new StringListFilterCategoryBuilder()
         .setLabel(def.header)
         .setOptions([
           { label: BLANK_VALUE, value: BLANK_VALUE },
-          ...values.map((v) => ({ label: v, value: v })),
+          ...values.map((v) => ({ label: formatLabel(v), value: v })),
         ]);
     });
 

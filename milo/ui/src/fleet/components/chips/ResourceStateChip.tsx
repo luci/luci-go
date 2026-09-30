@@ -16,6 +16,7 @@ import { Chip } from '@mui/material';
 
 import { formatEnum } from '@/fleet/pages/device_details_page/chromeos/utils/formatters';
 import { getStatusColor } from '@/fleet/pages/device_details_page/chromeos/utils/status_helpers';
+import { formatDeviceStateLabel } from '@/fleet/pages/device_list_page/chromeos/dut_state';
 import { colors } from '@/fleet/theme/colors';
 import { stateToJSON } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/state.pb';
 
@@ -25,7 +26,7 @@ export interface ResourceStateChipProps {
 
 export const ResourceStateChip = ({ state }: ResourceStateChipProps) => {
   const formatted = formatEnum(state, stateToJSON, 'STATE_');
-  const label = formatted.replace(/_/g, ' ');
+  const label = formatDeviceStateLabel(formatted);
 
   const chipColor = getStatusColor(state);
   const variant = chipColor === colors.transparent ? 'outlined' : 'filled';
@@ -40,7 +41,7 @@ export const ResourceStateChip = ({ state }: ResourceStateChipProps) => {
           chipColor !== colors.transparent ? chipColor : undefined,
         fontWeight: 500,
         color:
-          chipColor !== colors.transparent ? 'rgba(0, 0, 0, 0.87)' : undefined, // Light backgrounds expect dark text
+          chipColor !== colors.transparent ? 'rgba(0, 0, 0, 0.87)' : undefined,
       }}
     />
   );

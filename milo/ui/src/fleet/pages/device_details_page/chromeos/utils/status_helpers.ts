@@ -24,14 +24,17 @@ export const getStatusColor = (
     case State.STATE_SERVING:
     case 'STATE_DEPLOYED_TESTING':
     case State.STATE_DEPLOYED_TESTING:
-      return colors.transparent;
+      return colors.green[100];
+    case 'STATE_NEEDS_MANUAL_REPAIR':
+    case State.STATE_NEEDS_MANUAL_REPAIR:
+      return colors.red[100];
     case 'STATE_NEEDS_REPAIR':
     case State.STATE_NEEDS_REPAIR:
     case 'STATE_NEEDS_RESET':
     case State.STATE_NEEDS_RESET:
     case 'STATE_REPAIR_FAILED':
     case State.STATE_REPAIR_FAILED:
-      return colors.red[100];
+      return colors.orange[100];
     case 'STATE_REGISTERED':
     case State.STATE_REGISTERED:
     case 'STATE_DEPLOYING':

@@ -145,7 +145,7 @@ describe('Pixel Devices Page', () => {
     cy.get('.MuiChip-root').contains('run_target').should('be.visible');
     cy.get('.MuiChip-root').contains('coral').should('be.visible');
     cy.get('.MuiChip-root').contains('State').should('be.visible');
-    cy.get('.MuiChip-root').contains('LAMEDUCK').should('be.visible');
+    cy.get('.MuiChip-root').contains('Lameduck').should('be.visible');
 
     // Verify table is rendered with device data
     cy.get('table').should('be.visible');

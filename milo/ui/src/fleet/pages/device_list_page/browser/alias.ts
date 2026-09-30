@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { formatDeviceStateLabel } from '../chromeos/dut_state';
+
 // Note: The alias maps and logic in this file are copied from the Swarming UI
 // (swarming/server/cmd/default/ui2/modules/alias.js) to maintain consistent
 // labels that users are used to seeing and usually try to filter by.
@@ -221,6 +223,9 @@ export function getDisplayName(
 ): string {
   if (!value || value === 'none') {
     return value ?? '';
+  }
+  if (key === 'dut_state' || key === 'state' || key === 'resource_state') {
+    return formatDeviceStateLabel(value);
   }
   if (!aliasMap[key]) {
     return value;

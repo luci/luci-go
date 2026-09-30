@@ -45,4 +45,10 @@ describe('getDisplayName', () => {
     expect(getDisplayName('Android', 'os')).toBe('Android');
     expect(getDisplayName('Mac-10.9.5', 'os')).toBe('Mac-10.9.5');
   });
+
+  it('formats state and dut_state values in sentence case', () => {
+    expect(getDisplayName('NEEDS_REPAIR', 'dut_state')).toBe('Needs repair');
+    expect(getDisplayName('ALIVE', 'state')).toBe('Alive');
+    expect(getDisplayName('QUARANTINED', 'state')).toBe('Quarantined');
+  });
 });

@@ -56,7 +56,7 @@ describe('renderChipCell', () => {
       </FakeContextProvider>,
     );
 
-    const chip = screen.getByText('repair_failed');
+    const chip = screen.getByText('Repair failed');
     expect(chip.closest('a')).toHaveAttribute('href', '/test/repair_failed');
     expect(mockGetColor).toHaveBeenCalledWith('repair_failed');
   });
@@ -87,7 +87,7 @@ describe('renderChipCell', () => {
       </FakeContextProvider>,
     );
 
-    const chip = screen.getByText('needs_repair');
+    const chip = screen.getByText('Needs repair');
     // Use the overrideValue instead of the cell value
     expect(chip.closest('a')).toHaveAttribute('href', '/test/needs_repair');
     expect(mockGetColor).toHaveBeenCalledWith('needs_repair');

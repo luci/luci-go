@@ -10,9 +10,12 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
+// limitations under the License.
 
 import { DateFilterCategoryDataBuilder } from '@/fleet/components/filters/date_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
+
+import { formatDeviceStateLabel } from '../chromeos/dut_state';
 
 import { androidState } from './android_state';
 
@@ -25,7 +28,7 @@ export const ANDROID_EXTRA_FILTERS = {
     .setOptions([
       { label: '(Blank)', value: '(Blank)' },
       ...Object.values(androidState).map((val) => ({
-        label: val,
+        label: formatDeviceStateLabel(val),
         value: val,
       })),
     ]),

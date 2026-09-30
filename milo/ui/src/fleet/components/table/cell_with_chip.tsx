@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,14 @@ import React from 'react';
 
 import { androidState } from '@/fleet/pages/device_list_page/android/android_state';
 import { swarmingState } from '@/fleet/pages/device_list_page/browser/swarming_state';
-import { dutState } from '@/fleet/pages/device_list_page/chromeos/dut_state';
+import {
+  dutState,
+  formatDeviceStateLabel,
+} from '@/fleet/pages/device_list_page/chromeos/dut_state';
 import { FC_CellProps } from '@/fleet/types/table';
 import {
-  useGoogleAnalytics,
   EventPayload,
+  useGoogleAnalytics,
 } from '@/generic_libs/components/google_analytics';
 
 import { ChipComponent } from './chip_component';
@@ -66,7 +69,7 @@ const ChipCell = <R extends MRT_RowData>(props: ChipCellProps<R>) => {
 
   return (
     <ChipComponent
-      label={label ?? valueStr}
+      label={label ?? formatDeviceStateLabel(valueStr)}
       url={url}
       color={color}
       openInNewTab={openInNewTab}

@@ -19,14 +19,14 @@ import { State } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/
 import { ResourceStateChip } from './ResourceStateChip';
 
 describe('<ResourceStateChip />', () => {
-  it('renders numeric state correctly with formatting and correct text', () => {
+  it('renders numeric state correctly in sentence case', () => {
     render(<ResourceStateChip state={State.STATE_SERVING} />);
-    expect(screen.getByText('SERVING')).toBeInTheDocument();
+    expect(screen.getByText('Serving')).toBeInTheDocument();
   });
 
-  it('renders string state correctly with formatting and replacing underscores', () => {
+  it('renders string state correctly in sentence case', () => {
     render(<ResourceStateChip state="STATE_NEEDS_REPAIR" />);
-    expect(screen.getByText('NEEDS REPAIR')).toBeInTheDocument();
+    expect(screen.getByText('Needs repair')).toBeInTheDocument();
   });
 
   it('renders N/A for null or undefined state', () => {

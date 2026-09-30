@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,23 @@ export enum dutState {
   REGISTERED = 'REGISTERED',
 }
 
+/**
+ * Formats a raw snake_case or SCREAMING_SNAKE_CASE device state string into a
+ * human-readable sentence-case label (e.g., "NEEDS_REPAIR" -> "Needs repair",
+ * "READY" -> "Ready", "N/A" -> "N/A").
+ */
+export const formatDeviceStateLabel = (rawState: string): string => {
+  const trimmed = rawState.trim();
+  if (!trimmed) return '';
+  if (trimmed.toUpperCase() === 'N/A') return 'N/A';
+  const words = trimmed.toLowerCase().split('_').filter(Boolean);
+  if (words.length === 0) return trimmed;
+  words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
+  return words.join(' ');
+};
+
+export const formatDutStateLabel = formatDeviceStateLabel;
+
 export const getStatusColor = (status: StateUnion) => {
   switch (status.toUpperCase()) {
     case dutState.NEEDS_MANUAL_REPAIR:
@@ -38,9 +55,14 @@ export const getStatusColor = (status: StateUnion) => {
     case dutState.RESERVED:
       return colors.purple[100];
     case dutState.READY:
-    case dutState.UNKNOWN:
+      return colors.green[100];
+    // Both NEEDS_REPAIR and REPAIR_FAILED are automated recovery states that
+    // automation typically recovers from without human intervention; reserve
+    // red[100] for NEEDS_MANUAL_REPAIR where physical technician action is required.
     case dutState.NEEDS_REPAIR:
     case dutState.REPAIR_FAILED:
+      return colors.orange[100];
+    case dutState.UNKNOWN:
       return colors.transparent;
     default:
       return unknownStateColor;

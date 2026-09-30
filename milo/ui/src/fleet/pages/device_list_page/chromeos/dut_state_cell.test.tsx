@@ -15,8 +15,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import { SettingsProvider } from '@/fleet/context/providers';
+import { colors } from '@/fleet/theme/colors';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import { dutState, getStatusColor } from './dut_state';
 import { DutStateCell } from './dut_state_cell';
 
 const mockTrackEvent = jest.fn();
@@ -52,7 +54,7 @@ describe('DutStateCell', () => {
     );
 
     // Should render the chip
-    expect(screen.getByText('READY')).toBeInTheDocument();
+    expect(screen.getByText('Ready')).toBeInTheDocument();
 
     // Should NOT render the info tooltip trigger
     expect(
@@ -70,7 +72,7 @@ describe('DutStateCell', () => {
     );
 
     // Should render the chip
-    expect(screen.getByText('RESERVED')).toBeInTheDocument();
+    expect(screen.getByText('Reserved')).toBeInTheDocument();
 
     // Should render the info tooltip trigger
     expect(
@@ -170,5 +172,23 @@ describe('DutStateCell', () => {
       screen.getByText('DUT is currently reserved for:'),
     ).toBeInTheDocument();
     expect(screen.getByText('No comment provided')).toBeInTheDocument();
+  });
+
+  test('should format multi-word states into sentence case', () => {
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <DutStateCell state="NEEDS_MANUAL_REPAIR" />
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getByText('Needs manual repair')).toBeInTheDocument();
+  });
+
+  test('should use orange for automated REPAIR_FAILED and red for NEEDS_MANUAL_REPAIR', () => {
+    expect(getStatusColor(dutState.REPAIR_FAILED)).toBe(colors.orange[100]);
+    expect(getStatusColor(dutState.NEEDS_REPAIR)).toBe(colors.orange[100]);
+    expect(getStatusColor(dutState.NEEDS_MANUAL_REPAIR)).toBe(colors.red[100]);
   });
 });

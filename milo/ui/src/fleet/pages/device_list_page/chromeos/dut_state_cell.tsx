@@ -21,7 +21,7 @@ import { ChipComponent } from '@/fleet/components/table/chip_component';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
-import { getStatusColor } from './dut_state';
+import { formatDutStateLabel, getStatusColor } from './dut_state';
 
 export interface DutStateCellProps {
   state?: string;
@@ -43,7 +43,7 @@ export const DutStateCell = ({
 
   const chip = (
     <ChipComponent
-      label={upperState}
+      label={formatDutStateLabel(upperState)}
       url={getSwarmingStateDocLinkForLabel(upperState)}
       color={getStatusColor(upperState)}
       onClick={() => {

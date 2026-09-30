@@ -70,7 +70,7 @@ describe('<DeviceDetailsCard />', () => {
       </FakeContextProvider>,
     );
 
-    expect(screen.getByText('SERVING')).toBeVisible();
+    expect(screen.getByText('Serving')).toBeVisible();
     expect(screen.getByText('Primary testbed labstation')).toBeVisible();
     expect(screen.getByText('b/1234567')).toBeVisible();
     expect(screen.getByText('machineLSEPrototypes/labstation')).toBeVisible();

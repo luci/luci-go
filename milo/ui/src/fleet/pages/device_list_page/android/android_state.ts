@@ -41,10 +41,11 @@ export const getAndroidStatusColor = (status: StateUnion) => {
     case androidState.DIRTY:
       return colors.yellow[100];
     case androidState.IDLE:
+    case androidState.LAB_RUNNING:
+      return colors.green[100];
     case androidState.BUSY:
     case androidState.LAMEDUCK:
-    case androidState.LAB_RUNNING:
-      return colors.transparent;
+      return colors.blue[100];
     default:
       return unknownStateColor;
   }

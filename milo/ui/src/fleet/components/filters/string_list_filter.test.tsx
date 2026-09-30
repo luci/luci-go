@@ -415,4 +415,34 @@ describe('StringListFilterCategory', () => {
 
     expect(screen.getByText('Select matches (1)')).toBeInTheDocument();
   });
+
+  it('matches raw and sentence-case labels in search and selection', () => {
+    const result = StringListFilterCategory.create(
+      'Dut State',
+      'labels."dut_state"',
+      [
+        { value: 'READY', label: 'Ready' },
+        { value: 'NEEDS_REPAIR', label: 'Needs repair' },
+        { value: 'NEEDS_MANUAL_REPAIR', label: 'Needs manual repair' },
+      ],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    // Searching by raw enum name with underscore matches the sentence-case option
+    expect(category.getChildrenSearchScore('NEEDS_REPAIR')).toBeGreaterThan(0);
+    expect(category.getChildrenSearchScore('needs_repair')).toBeGreaterThan(0);
+    expect(category.getChildrenSearchScore('Needs repair')).toBeGreaterThan(0);
+
+    // Selecting by either pretty display label or raw enum value emits raw AIP-160 value
+    expect(category.setSelectedOptions(['Needs repair'])).toBeUndefined();
+    expect(category.getSelectedOptions()).toEqual(['NEEDS_REPAIR']);
+    expect(category.toAIP160()).toEqual(
+      '(labels."dut_state" = "NEEDS_REPAIR")',
+    );
+  });
 });

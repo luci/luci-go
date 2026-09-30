@@ -45,6 +45,7 @@ export const ChipComponent = ({
       size={density === 'compact' ? 'small' : 'medium'}
       sx={{
         backgroundColor: color,
+        color: color !== colors.transparent ? colors.grey[900] : undefined,
         width: 'fit-content',
         fontWeight: 500,
       }}

@@ -78,7 +78,7 @@ describe('Android Devices Page', () => {
     cy.get('.MuiChip-root').contains('run_target').should('be.visible');
     cy.get('.MuiChip-root').contains('a04e').should('be.visible');
     cy.get('.MuiChip-root').contains('State').should('be.visible');
-    cy.get('.MuiChip-root').contains('LAMEDUCK').should('be.visible');
+    cy.get('.MuiChip-root').contains('Lameduck').should('be.visible');
 
     cy.get('table').should('be.visible');
     cy.get('table').find('td').contains('1').should('be.visible');

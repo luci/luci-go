@@ -222,6 +222,26 @@ export const getAndroidColumnOverrides: (
       } as FC_CellProps<AndroidDevice>);
     },
   },
+  dut_state: {
+    renderCell: ({ value, device }) => {
+      const stateValue = (value as string) ?? '';
+
+      if (stateValue === '') return <></>;
+
+      return renderChipCell<AndroidDevice>({
+        getValueOrUrl: (_1, _2) => workspaces[workspace].docsUrl,
+        getColor: getAndroidStatusColor,
+        overrideValue: stateValue.toUpperCase() as StateUnion,
+        getTrackingEvent: (value) => ({
+          eventName: 'state_doc_link_clicked',
+          payload: { componentName: 'android_dut_state', activeTab: value },
+        }),
+      })({
+        cell: { getValue: () => value },
+        row: { original: device },
+      } as FC_CellProps<AndroidDevice>);
+    },
+  },
   run_target: {
     accessorFn: (device) => device.runTarget,
     orderByField: 'run_target',

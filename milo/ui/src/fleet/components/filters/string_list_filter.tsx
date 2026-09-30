@@ -27,7 +27,7 @@ import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { colors } from '@/fleet/theme/colors';
 import { OptionValue } from '@/fleet/types/option';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
-import { fuzzySort, fuzzyMaxScore } from '@/fleet/utils/fuzzy_sort';
+import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 import { escapeAipValue } from '@/fleet/utils/search_param';
 
 import {
@@ -47,6 +47,36 @@ import {
 } from './use_filters';
 
 const ANY_VALUE = '*';
+
+const scoreOptionAgainstQuery = (
+  query: string,
+  option: OptionValue,
+): [number, number[]] => {
+  const [labelScore, labelMatches] = fuzzySubstring(query, option.label);
+  let bestScore = labelScore;
+  let bestMatches = labelMatches;
+
+  if (query.includes('_')) {
+    const normalizedQuery = query.replace(/_/g, ' ');
+    const [normScore, normMatches] = fuzzySubstring(
+      normalizedQuery,
+      option.label,
+    );
+    if (normScore > bestScore) {
+      bestScore = normScore;
+      bestMatches = normMatches;
+    }
+  }
+
+  const rawVal = unquote(option.value);
+  const [rawScore, rawMatches] = fuzzySubstring(query, rawVal);
+  if (rawScore > bestScore) {
+    bestScore = rawScore;
+    bestMatches = rawVal.length === option.label.length ? rawMatches : [];
+  }
+
+  return [bestScore, bestMatches];
+};
 
 interface OptionWithSelection {
   optionValue: OptionValue;
@@ -362,12 +392,19 @@ export class StringListFilterCategory implements FilterCategory {
     const foundKeys = new Set<string>();
 
     for (const opt of Object.values(this.options)) {
-      const lowerUnquotedOptKey = unquote(opt.optionValue.value).toLowerCase();
-      const isSelected = lowerUnquotedSelectedKeysSet.has(lowerUnquotedOptKey);
+      const lowerVal = unquote(opt.optionValue.value).toLowerCase();
+      const lowerLabel = unquote(opt.optionValue.label).toLowerCase();
+      const lowerSnakeLabel = lowerLabel.replace(/ /g, '_');
+
+      const matchedVal = lowerUnquotedSelectedKeysSet.has(lowerVal);
+      const matchedLabel = lowerUnquotedSelectedKeysSet.has(lowerLabel);
+      const matchedSnake = lowerUnquotedSelectedKeysSet.has(lowerSnakeLabel);
+
+      const isSelected = matchedVal || matchedLabel || matchedSnake;
       map[opt.optionValue.value] = isSelected;
-      if (isSelected) {
-        foundKeys.add(lowerUnquotedOptKey);
-      }
+      if (matchedVal) foundKeys.add(lowerVal);
+      if (matchedLabel) foundKeys.add(lowerLabel);
+      if (matchedSnake) foundKeys.add(lowerSnakeLabel);
     }
 
     this.setOptions(map, silent);
@@ -383,10 +420,15 @@ export class StringListFilterCategory implements FilterCategory {
   }
 
   public getChildrenSearchScore(searchQuery: string) {
-    return fuzzyMaxScore(
-      searchQuery,
-      (o: OptionWithSelection) => o.optionValue.label,
-    )(Object.values(this.options));
+    if (searchQuery.trim() === '') return 0;
+    let max = -1.0;
+    for (const opt of Object.values(this.options)) {
+      const [score] = scoreOptionAgainstQuery(searchQuery, opt.optionValue);
+      if (score > max) {
+        max = score;
+      }
+    }
+    return max;
   }
 }
 
@@ -448,10 +490,15 @@ const OptionComponent = function OptionComponent({
   const deferredSearchQuery = useDeferredValue(childrenSearchQuery);
 
   const fuzzySorted = useMemo(() => {
-    const scored = fuzzySort(deferredSearchQuery)(
-      Object.values(options),
-      (o) => o.optionValue.label,
-    );
+    const scored = Object.values(options)
+      .map((o) => {
+        const [score, matches] = scoreOptionAgainstQuery(
+          deferredSearchQuery,
+          o.optionValue,
+        );
+        return { el: o, score, matches };
+      })
+      .sort((a, b) => b.score - a.score);
 
     const scores = scored.map((s) => s.score).filter((s) => s >= 0);
     const maxScore = Math.max(...scores);

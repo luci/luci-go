@@ -16,6 +16,7 @@ import { useMemo } from 'react';
 
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
+import { formatDeviceStateLabel } from '@/fleet/pages/device_list_page/chromeos/dut_state';
 import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
 
 export type RepairQueueFilterKey = string;
@@ -125,12 +126,16 @@ export const useRepairQueueFilterBuilders = (): {
   const filterBuilders = useMemo(() => {
     const filters: Record<string, StringListFilterCategoryBuilder> = {};
 
-    const build = (label: string, values: readonly string[]) =>
+    const build = (
+      label: string,
+      values: readonly string[],
+      formatLabel: (v: string) => string = (v) => v,
+    ) =>
       new StringListFilterCategoryBuilder()
         .setLabel(label)
         .setOptions([
           { label: BLANK_VALUE, value: BLANK_VALUE },
-          ...values.map((v) => ({ label: v, value: v })),
+          ...values.map((v) => ({ label: formatLabel(v), value: v })),
         ]);
 
     // 1. Core repair columns available on the repair_tasks table
@@ -139,7 +144,12 @@ export const useRepairQueueFilterBuilders = (): {
         ? getValues(config.dimensionSourceKey)
         : (config.staticOptions ?? []);
 
-      filters[config.filterKey] = build(config.header, values);
+      const formatLabel =
+        config.filterKey === 'dut_state'
+          ? formatDeviceStateLabel
+          : (v: string) => v;
+
+      filters[config.filterKey] = build(config.header, values, formatLabel);
     }
 
     const supersededLabelKeys = new Set(

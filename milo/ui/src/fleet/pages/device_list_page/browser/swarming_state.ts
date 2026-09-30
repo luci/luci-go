@@ -31,7 +31,7 @@ export const getBrowserSwarmingStateColor = (status: StateUnion) => {
     case swarmingState.MAINTENANCE:
       return colors.cyan[100];
     case swarmingState.ALIVE:
-      return colors.transparent;
+      return colors.green[100];
     default:
       return unknownStateColor;
   }
