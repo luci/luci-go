@@ -15,6 +15,7 @@
 package actions
 
 import (
+	"cmp"
 	"context"
 	"crypto"
 	"errors"
@@ -54,11 +55,7 @@ func ActionURLFetchExecutor(ctx context.Context, a *core.ActionURLFetch, out str
 	}
 	defer joinErr(resp.Body.Close)
 
-	name := a.Name
-	if name == "" {
-		name = "file"
-	}
-	dst := filepath.Join(out, name)
+	dst := filepath.Join(out, cmp.Or(a.Name, "file"))
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return err
 	}
@@ -68,11 +65,7 @@ func ActionURLFetchExecutor(ctx context.Context, a *core.ActionURLFetch, out str
 	}
 	defer joinErr(f.Close)
 
-	mode := a.Mode
-	if mode == 0 {
-		mode = 0o666
-	}
-	if err := f.Chmod(fs.FileMode(mode)); err != nil {
+	if err := f.Chmod(fs.FileMode(cmp.Or(a.Mode, 0o666))); err != nil {
 		return err
 	}
 

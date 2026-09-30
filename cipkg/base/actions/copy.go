@@ -16,6 +16,7 @@ package actions
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"embed"
 	"errors"
@@ -44,7 +45,7 @@ func ActionFilesCopyTransformer(a *core.ActionFilesCopy, deps []Package) (*core.
 	// Clone the action so we can remove path/ref when regenerating the hash.
 	// If version is set, we don't need path/ref to determine whether content
 	// changed. Recalculate the hash based on the assumption.
-	m := proto.Clone(a).(*core.ActionFilesCopy)
+	m := proto.CloneOf(a)
 	for _, f := range m.Files {
 		if f.GetVersion() == "" {
 			continue
@@ -223,11 +224,7 @@ func (f *filesCopyExecutor) copyEmbed(s *core.ActionFilesCopy_Source_Embed, dst 
 	case fs.ModeSymlink:
 		return fmt.Errorf("symlink not supported for the source type")
 	case fs.ModeDir:
-		path := s.Path
-		if path == "" {
-			path = "."
-		}
-		src, err := fs.Sub(e, path)
+		src, err := fs.Sub(e, cmp.Or(s.Path, "."))
 		if err != nil {
 			return fmt.Errorf("failed to load subdir fs for %s: %s: %w", dst, s, err)
 		}

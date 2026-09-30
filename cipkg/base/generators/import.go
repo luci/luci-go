@@ -102,9 +102,9 @@ func (i *ImportTargets) Generate(ctx context.Context, plats Platforms) (*core.Ac
 		case v.GenerateBatShim:
 			batDst := strings.TrimSuffix(dst, ".exe") + ".bat"
 			files[batDst] = &core.ActionFilesCopy_Source{
-				Content: &core.ActionFilesCopy_Source_Raw{Raw: []byte(
-					fmt.Sprintf("@%s %%*", src),
-				)},
+				Content: &core.ActionFilesCopy_Source_Raw{
+					Raw: fmt.Appendf(nil, "@%s %%*", src),
+				},
 				Mode: 0o666,
 			}
 		case v.MinGWSymlink:

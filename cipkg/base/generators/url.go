@@ -15,6 +15,7 @@
 package generators
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"encoding/base32"
@@ -82,7 +83,7 @@ func FetchURLs(prefix string, urls []*FetchURL) ([]Generator, error) {
 
 	// Make sure urls is sorted so dependencies can be stable.
 	slices.SortFunc(urls, func(a *FetchURL, b *FetchURL) int {
-		return strings.Compare(a.Name, b.Name)
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	gs := make([]Generator, 0, len(urls))

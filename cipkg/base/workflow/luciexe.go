@@ -14,6 +14,7 @@
 package workflow
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -195,11 +196,7 @@ func (rs RootSteps) update(ctx context.Context, pkg actions.Package, root *RootS
 	}
 
 	if root == nil || isRootStep(pkg) {
-		name := pkg.Action.Metadata.GetLuciexe().GetStepName()
-		if name == "" {
-			name = pkg.ActionID
-		}
-
+		name := cmp.Or(pkg.Action.Metadata.GetLuciexe().GetStepName(), pkg.ActionID)
 		root = NewRootStep(ctx, name, pkg.ActionID)
 	}
 	rs[pkg.ActionID] = root

@@ -57,7 +57,7 @@ type Generator struct {
 func (g *Generator) Generate(ctx context.Context, plats generators.Platforms) (*core.Action, error) {
 	metadata := &core.Action_Metadata{}
 	if g.Metadata != nil {
-		metadata = proto.Clone(g.Metadata).(*core.Action_Metadata)
+		metadata = proto.CloneOf(g.Metadata)
 	}
 
 	env := g.Env.Clone()

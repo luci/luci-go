@@ -94,15 +94,7 @@ func TestBinLookup(t *testing.T) {
 		err = f.Close()
 		assert.Loosely(t, err, should.BeNil)
 
-		olddir, err := os.Getwd()
-		assert.Loosely(t, err, should.BeNil)
-		err = os.Chdir(bin)
-		assert.Loosely(t, err, should.BeNil)
-		t.Cleanup(func() {
-			if err := os.Chdir(olddir); err != nil {
-				t.Fatal(err)
-			}
-		})
+		t.Chdir(bin)
 
 		fname := filepath.Base(f.Name())
 
@@ -112,8 +104,7 @@ func TestBinLookup(t *testing.T) {
 		_, err = exec.LookPath(fname)
 		assert.Loosely(t, errors.Is(err, exec.ErrDot), should.BeTrue)
 
-		err = os.Setenv("NoDefaultCurrentDirectoryInExePath", "1")
-		assert.Loosely(t, err, should.BeNil)
+		t.Setenv("NoDefaultCurrentDirectoryInExePath", "1")
 
 		_, err = exec.LookPath(fname)
 		assert.Loosely(t, errors.Is(err, exec.ErrNotFound), should.BeTrue)

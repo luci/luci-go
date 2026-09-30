@@ -84,11 +84,10 @@ func TestLocalPackageManager(t *testing.T) {
 
 		t.Run("lock", func(c *ftt.Test) {
 			var wg sync.WaitGroup
-			wg.Add(2)
 
 			signal := make(chan struct{})
 
-			go func() {
+			wg.Go(func() {
 				h := pm.Get("something")
 				err := h.Build(func() error {
 					signal <- struct{}{} // holding exclusive lock
@@ -96,12 +95,11 @@ func TestLocalPackageManager(t *testing.T) {
 					return nil
 				})
 				assert.Loosely(c, err, should.BeNil)
-				wg.Done()
-			}()
+			})
 
 			<-signal
 			var built atomic.Bool
-			go func() {
+			wg.Go(func() {
 				h := pm.Get("something")
 				err := h.IncRef() // blocked by build
 				// exclusive lock released
@@ -109,8 +107,7 @@ func TestLocalPackageManager(t *testing.T) {
 				assert.Loosely(c, built.Load(), should.BeTrue)
 				err = h.DecRef()
 				assert.Loosely(c, err, should.BeNil)
-				wg.Done()
-			}()
+			})
 
 			// We can't ensure `close` happened after IncRef. So this will be flaky
 			// if something wrong here.

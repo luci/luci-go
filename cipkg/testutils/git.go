@@ -17,10 +17,11 @@
 package testutils
 
 import (
+	"cmp"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -106,7 +107,7 @@ func InitGitRepoWithSubmodule(t testing.TB) (string, string) {
 
 	// Add .gitmodules
 	subUrl := "file://" + filepath.ToSlash(subDir)
-	if err := os.WriteFile(filepath.Join(mainDir, ".gitmodules"), []byte(fmt.Sprintf("[submodule \"sub\"]\n\tpath = sub\n\turl = %s\n", subUrl)), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(mainDir, ".gitmodules"), fmt.Appendf(nil, "[submodule \"sub\"]\n\tpath = sub\n\turl = %s\n", subUrl), 0644); err != nil {
 		t.Fatalf("failed to create .gitmodules: %s", err)
 	}
 	if _, err := wt.Add(".gitmodules"); err != nil {
@@ -123,8 +124,8 @@ func InitGitRepoWithSubmodule(t testing.TB) (string, string) {
 		Hash: subCommit,
 		Mode: filemode.Submodule,
 	})
-	sort.Slice(idx.Entries, func(i, j int) bool {
-		return idx.Entries[i].Name < idx.Entries[j].Name
+	slices.SortFunc(idx.Entries, func(a, b *index.Entry) int {
+		return cmp.Compare(a.Name, b.Name)
 	})
 	if err := repo.Storer.SetIndex(idx); err != nil {
 		t.Fatalf("failed to set index: %s", err)
