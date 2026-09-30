@@ -368,6 +368,77 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     expect(isPlotted('pool-3')).toBe(false);
   });
 
+  it('moves DUT_POOL_QUOTA and faft_test to the top and selects them by default in By Pool tab', () => {
+    const multiPoolData: GetFleetAvailabilityTrendsResponse = {
+      series: [
+        { name: 'zebra_pool', points: [{ timestamp: t0, value: 0.8 }] },
+        { name: 'faft_test', points: [{ timestamp: t0, value: 0.92 }] },
+        { name: 'alpha_pool', points: [{ timestamp: t0, value: 0.85 }] },
+        { name: 'DUT_POOL_QUOTA', points: [{ timestamp: t0, value: 0.96 }] },
+        { name: 'beta_pool', points: [{ timestamp: t0, value: 0.88 }] },
+      ],
+      metricType: TrendlineMetricType.HEALTH,
+    };
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockImplementation((req) => {
+        if (req.grouping === TrendlineGrouping.GROUP_BY_POOL) {
+          return {
+            data: multiPoolData,
+            isLoading: false,
+            isError: false,
+            error: null,
+          } as unknown as UseQueryResult<
+            GetFleetAvailabilityTrendsResponse,
+            Error
+          >;
+        }
+        return {
+          data: mockOverallData,
+          isLoading: false,
+          isError: false,
+          error: null,
+        } as unknown as UseQueryResult<
+          GetFleetAvailabilityTrendsResponse,
+          Error
+        >;
+      });
+
+    render(
+      <FakeContextProvider>
+        <HistoricalAvailabilityTrendsChart />
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'By Pool' }));
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    const labels = checkboxes
+      .map((cb) => cb.closest('label')?.textContent)
+      .filter((text) => text !== 'Select all');
+    expect(labels).toEqual([
+      'DUT_POOL_QUOTA',
+      'faft_test',
+      'zebra_pool',
+      'alpha_pool',
+      'beta_pool',
+    ]);
+
+    expect(screen.getByLabelText('DUT_POOL_QUOTA')).toBeChecked();
+    expect(screen.getByLabelText('faft_test')).toBeChecked();
+    expect(screen.getByLabelText('zebra_pool')).not.toBeChecked();
+    expect(isPlotted('DUT_POOL_QUOTA')).toBe(true);
+    expect(isPlotted('faft_test')).toBe(true);
+    expect(isPlotted('zebra_pool')).toBe(false);
+
+    const labelText = screen.getByText('DUT_POOL_QUOTA');
+    expect(labelText).toHaveStyle({
+      textOverflow: 'ellipsis',
+      overflow: 'hidden',
+      whiteSpace: 'nowrap',
+    });
+  });
+
   it('shows tooltip on mouse hover over the chart', () => {
     giveChartASize();
     jest

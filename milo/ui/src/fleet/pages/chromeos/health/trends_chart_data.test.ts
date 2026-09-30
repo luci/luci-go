@@ -22,6 +22,7 @@ import {
   findFreeColorSlot,
   getSeriesColor,
   PALETTE,
+  sortPoolSeries,
 } from './trends_chart_data';
 
 const at = (hour: number, minute = 0) =>
@@ -228,5 +229,80 @@ describe('axis helpers', () => {
   it('spreads six value ticks across the axis', () => {
     expect(buildValueAxisTicks(1)).toEqual([0, 0.2, 0.4, 0.6, 0.8, 1]);
     expect(buildValueAxisTicks(1.2)).toEqual([0, 0.24, 0.48, 0.72, 0.96, 1.2]);
+  });
+});
+
+describe('sortPoolSeries', () => {
+  it('places DUT_POOL_QUOTA and faft_test first, preserving default order for the rest', () => {
+    const input = [
+      { name: 'zebra_pool' },
+      { name: 'faft_test' },
+      { name: 'alpha_pool' },
+      { name: 'DUT_POOL_QUOTA' },
+      { name: 'beta_pool' },
+    ];
+
+    const sorted = sortPoolSeries(input);
+
+    expect(sorted.map((s) => s.name)).toEqual([
+      'DUT_POOL_QUOTA',
+      'faft_test',
+      'zebra_pool',
+      'alpha_pool',
+      'beta_pool',
+    ]);
+  });
+
+  it('handles case when only DUT_POOL_QUOTA is present', () => {
+    const input = [
+      { name: 'bvt' },
+      { name: 'DUT_POOL_QUOTA' },
+      { name: 'arc_test' },
+    ];
+
+    const sorted = sortPoolSeries(input);
+
+    expect(sorted.map((s) => s.name)).toEqual([
+      'DUT_POOL_QUOTA',
+      'bvt',
+      'arc_test',
+    ]);
+  });
+
+  it('handles case when only faft_test is present', () => {
+    const input = [
+      { name: 'bvt' },
+      { name: 'faft_test' },
+      { name: 'arc_test' },
+    ];
+
+    const sorted = sortPoolSeries(input);
+
+    expect(sorted.map((s) => s.name)).toEqual(['faft_test', 'bvt', 'arc_test']);
+  });
+
+  it('preserves order when neither default pool is present', () => {
+    const input = [
+      { name: 'chameleon' },
+      { name: 'audio_box' },
+      { name: 'bvt' },
+    ];
+
+    const sorted = sortPoolSeries(input);
+
+    expect(sorted.map((s) => s.name)).toEqual([
+      'chameleon',
+      'audio_box',
+      'bvt',
+    ]);
+  });
+
+  it('does not mutate the original array', () => {
+    const input = [{ name: 'b' }, { name: 'a' }];
+    const copy = [...input];
+
+    sortPoolSeries(input);
+
+    expect(input).toEqual(copy);
   });
 });

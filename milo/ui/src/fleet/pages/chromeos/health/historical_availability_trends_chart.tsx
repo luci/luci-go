@@ -59,6 +59,7 @@ import {
   formatTooltipDate,
   getSeriesColor,
   SeriesColorSlots,
+  sortPoolSeries,
   TrendsChartRow,
 } from './trends_chart_data';
 import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
@@ -204,7 +205,15 @@ export const HistoricalAvailabilityTrendsChart = ({
   const { data, isLoading, isError, error } =
     useFleetAvailabilityTrends(queryRequest);
 
-  const seriesList = useMemo(() => data?.series ?? [], [data?.series]);
+  // NOTE: This is a temporary solution until sorting by fleet size is available.
+  // TODO(b/567504412): For pool grouping, prioritize "DUT_POOL_QUOTA" and "faft_test", with remaining pools in default order.
+  const seriesList = useMemo(() => {
+    const series = data?.series ?? [];
+    if (viewBy === TrendlineGrouping.GROUP_BY_POOL) {
+      return sortPoolSeries(series);
+    }
+    return series;
+  }, [data?.series, viewBy]);
 
   // The default selection is seeded once per query key (grouping + filter), as soon as that
   // query's first response arrives. It deliberately does not re-run on background refetches
@@ -486,6 +495,7 @@ export const HistoricalAvailabilityTrendsChart = ({
                   display: 'flex',
                   flexDirection: 'column',
                   height: CHART_HEIGHT,
+                  minWidth: 0,
                 }}
               >
                 {/* Fixed Header with Tristate Checkbox (never scrolls away) */}
@@ -542,7 +552,9 @@ export const HistoricalAvailabilityTrendsChart = ({
                   sx={{
                     flexGrow: 1,
                     overflowY: 'auto',
+                    overflowX: 'hidden',
                     pr: 1,
+                    minWidth: 0,
                     '&::-webkit-scrollbar': { width: '4px' },
                     '&::-webkit-scrollbar-thumb': {
                       backgroundColor: 'divider',
@@ -550,7 +562,7 @@ export const HistoricalAvailabilityTrendsChart = ({
                     },
                   }}
                 >
-                  <FormGroup>
+                  <FormGroup sx={{ width: '100%', minWidth: 0 }}>
                     {seriesList.map((series) => {
                       const slot = colorSlots[series.name];
                       const isChecked = slot !== undefined;
@@ -560,6 +572,16 @@ export const HistoricalAvailabilityTrendsChart = ({
                       return (
                         <FormControlLabel
                           key={series.name}
+                          sx={{
+                            width: '100%',
+                            minWidth: 0,
+                            mr: 0,
+                            '& .MuiFormControlLabel-label': {
+                              minWidth: 0,
+                              width: '100%',
+                              overflow: 'hidden',
+                            },
+                          }}
                           control={
                             <Checkbox
                               size="small"
@@ -578,7 +600,16 @@ export const HistoricalAvailabilityTrendsChart = ({
                             />
                           }
                           label={
-                            <Typography variant="body2">
+                            <Typography
+                              variant="body2"
+                              title={series.name}
+                              sx={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                display: 'block',
+                              }}
+                            >
                               {series.name}
                             </Typography>
                           }

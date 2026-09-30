@@ -86,6 +86,24 @@ export const DEFAULT_VISIBLE_SERIES_MODEL = 5;
 export const DEFAULT_VISIBLE_SERIES_POOL = 2;
 
 /**
+ * Prioritizes "DUT_POOL_QUOTA" and "faft_test" by moving them to the top of
+ * the pool series list, preserving the default sort order for all other pools.
+ *
+ * NOTE: This is a temporary solution until sorting by fleet size is available.
+ * TODO(b/567504412): Update to sort by fleet size once supported by backend.
+ */
+export const sortPoolSeries = <T extends { readonly name: string }>(
+  series: readonly T[],
+): readonly T[] => {
+  const quota = series.find((s) => s.name === 'DUT_POOL_QUOTA');
+  const faft = series.find((s) => s.name === 'faft_test');
+  const rest = series.filter(
+    (s) => s.name !== 'DUT_POOL_QUOTA' && s.name !== 'faft_test',
+  );
+  return [quota, faft, ...rest].filter((s): s is T => s !== undefined);
+};
+
+/**
  * Maps a series name to the palette slot it owns. A name is present if and
  * only if that series is plotted, and the value is an index into `PALETTE`
  * or procedural color slot.
