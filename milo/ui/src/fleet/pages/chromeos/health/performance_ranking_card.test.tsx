@@ -88,10 +88,15 @@ describe('PerformanceRankingCard', () => {
     expect(modelElements).toHaveLength(3);
     expect(modelElements[0]).toHaveTextContent('volteer');
     expect(modelElements[0]).toHaveTextContent('62% Available');
+    expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent('-3%');
+
     expect(modelElements[1]).toHaveTextContent('dedede');
     expect(modelElements[1]).toHaveTextContent('74% Available');
+    expect(screen.getByTestId('drop-badge-dedede')).toHaveTextContent('-1%');
+
     expect(modelElements[2]).toHaveTextContent('brya');
     expect(modelElements[2]).toHaveTextContent('88% Available');
+    expect(screen.queryByTestId('drop-badge-brya')).not.toBeInTheDocument();
   });
 
   it('renders loading state skeletons while fetching data', () => {
@@ -176,5 +181,45 @@ describe('PerformanceRankingCard', () => {
     expect(getHealthColor(70)).toBe('warning');
     expect(getHealthColor(69)).toBe('error');
     expect(getHealthColor(0)).toBe('error');
+  });
+
+  it('calculates 24h delta by comparing against point 24 hours prior rather than previous hourly bucket', () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [
+            // 24h ago: value 0.80
+            { timestamp: '2026-09-29T12:00:00Z', value: 0.8 },
+            // 1h ago: value 0.55 (short-term dip)
+            { timestamp: '2026-09-30T11:00:00Z', value: 0.55 },
+            // Current reading: value 0.60 (up from 1h ago, but down 20% compared to 24h ago)
+            { timestamp: '2026-09-30T12:00:00Z', value: 0.6 },
+          ],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard />
+      </FakeContextProvider>,
+    );
+
+    // Compared to 24h ago (80%), current (60%) is a 20% drop, despite being up from 1h ago (55%)
+    expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent('-20%');
   });
 });

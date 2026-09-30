@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { TrendingDown, TrendingFlat, TrendingUp } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -29,7 +30,7 @@ import { useMemo } from 'react';
 
 import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getHealthColor } from './ranking_utils';
+import { calculate24hDelta, getHealthColor } from './ranking_utils';
 import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
 
 export interface PerformanceRankingCardProps {
@@ -39,6 +40,9 @@ export interface PerformanceRankingCardProps {
 export interface RankedModelItem {
   readonly name: string;
   readonly availabilityPct: number;
+  readonly prevAvailabilityPct: number;
+  readonly healthDrop: number;
+  readonly trend: 'up' | 'down' | 'flat';
 }
 
 export const PerformanceRankingCard = ({
@@ -66,16 +70,10 @@ export const PerformanceRankingCard = ({
     const list: RankedModelItem[] = [];
     for (const s of data.series) {
       if (!s.name || s.name === 'Overall') continue;
-      const points = s.points ?? [];
-      const latestPoint = points[points.length - 1];
-      const availabilityPct =
-        latestPoint !== undefined
-          ? Math.min(100, Math.max(0, Math.round(latestPoint.value * 100)))
-          : 0;
-
+      const delta = calculate24hDelta(s.points ?? []);
       list.push({
         name: s.name,
-        availabilityPct,
+        ...delta,
       });
     }
 
@@ -223,6 +221,34 @@ export const PerformanceRankingCard = ({
                     >
                       {model.availabilityPct}% Available
                     </Typography>
+                    {model.trend === 'down' && (
+                      <Box
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 0.25,
+                        }}
+                      >
+                        <TrendingDown color="error" sx={{ fontSize: 16 }} />
+                        <Typography
+                          variant="caption"
+                          data-testid={`drop-badge-${model.name}`}
+                          sx={{
+                            color: 'error.main',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          -{model.healthDrop}%
+                        </Typography>
+                      </Box>
+                    )}
+                    {model.trend === 'up' && (
+                      <TrendingUp color="success" sx={{ fontSize: 16 }} />
+                    )}
+                    {model.trend === 'flat' && (
+                      <TrendingFlat color="action" sx={{ fontSize: 16 }} />
+                    )}
                   </Box>
                   <LinearProgress
                     variant="determinate"
