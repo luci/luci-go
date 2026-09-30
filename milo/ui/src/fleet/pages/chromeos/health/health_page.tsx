@@ -24,6 +24,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 
 import { ExpectedQuotaCard } from './expected_quota_card';
 import { HEALTH_FILTER_CONFIGS } from './filter_constants';
+import { HeroAvailabilityCard } from './hero_availability_card';
 import { HistoricalAvailabilityTrendsChart } from './historical_availability_trends_chart';
 import { ManualQuotaOverridesCard } from './manual_quota_overrides_card';
 import { SupportRiskIncidentsPanel } from './support_risk_incidents_panel';
@@ -138,6 +139,9 @@ export const HealthPage = () => {
                 searchPlaceholder="Add a filter (e.g. model:volteer)"
               />
             </Box>
+
+            {/* Hero Availability Card */}
+            <HeroAvailabilityCard filter={activeFilter} />
 
             {/* Dashboard Layout */}
             <Box

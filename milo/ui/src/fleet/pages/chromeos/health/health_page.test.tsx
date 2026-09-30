@@ -16,6 +16,7 @@ import { UseQueryResult } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
+import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import {
@@ -23,12 +24,14 @@ import {
   GetFleetAvailabilityTrendsResponse,
   GetDeviceDimensionsResponse,
   ListSupportRiskIncidentsResponse,
+  TrendlineMetricType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { HealthPage } from './health_page';
 import * as UseDefaultQuotaModule from './use_default_quota';
 import * as UseFleetAvailabilityTrendsModule from './use_fleet_availability_trends';
+import * as UseHealthFiltersModule from './use_health_filters';
 import * as UseModelQuotaOverridesModule from './use_model_quota_overrides';
 import * as UseSupportRiskIncidentsModule from './use_support_risk_incidents';
 
@@ -60,15 +63,24 @@ describe('HealthPage', () => {
       });
     jest
       .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
-      .mockReturnValue({
-        data: { series: [], metricType: 'health' },
-        isLoading: false,
-        isError: false,
-        error: null,
-      } as unknown as UseQueryResult<
-        GetFleetAvailabilityTrendsResponse,
-        Error
-      >);
+      .mockImplementation((req) => {
+        const isAvailability =
+          !req.filter || !req.filter.includes('DUT_POOL_QUOTA');
+        return {
+          data: {
+            series: [],
+            metricType: isAvailability
+              ? TrendlineMetricType.AVAILABILITY
+              : TrendlineMetricType.HEALTH,
+          },
+          isLoading: false,
+          isError: false,
+          error: null,
+        } as unknown as UseQueryResult<
+          GetFleetAvailabilityTrendsResponse,
+          Error
+        >;
+      });
 
     jest
       .spyOn(UseModelQuotaOverridesModule, 'useModelQuotaOverrides')
@@ -165,9 +177,43 @@ describe('HealthPage', () => {
     expect(
       screen.getByText('Active Support Risk Incidents'),
     ).toBeInTheDocument();
+    expect(screen.getByTestId('hero-availability-card')).toBeInTheDocument();
     expect(
       screen.queryByText('Global Default Expected Quota'),
     ).not.toBeInTheDocument();
+  });
+
+  it('switches Hero card to Enrolled Baseline when non-model filter is applied', () => {
+    const builder = new StringListFilterCategoryBuilder()
+      .setLabel('Pool')
+      .setOptions([{ label: 'DUT_POOL_QUOTA', value: 'DUT_POOL_QUOTA' }]);
+    const buildResult = builder.build('pool', jest.fn(), null);
+    if (buildResult.isError) throw new Error(buildResult.error);
+    buildResult.value.setSelectedOptions(['DUT_POOL_QUOTA'], true);
+
+    jest.spyOn(UseHealthFiltersModule, 'useHealthFilters').mockReturnValue({
+      filterValues: {
+        pool: buildResult.value,
+      } as unknown as ReturnType<
+        typeof UseHealthFiltersModule.useHealthFilters
+      >['filterValues'],
+      aip160: () => 'pool = "DUT_POOL_QUOTA"',
+      isLoading: false,
+      warnings: [],
+      setFiltersBatch: jest.fn(),
+    });
+
+    render(
+      <FakeContextProvider>
+        <ShortcutProvider>
+          <HealthPage />
+        </ShortcutProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getByTestId('hero-baseline-chip')).toHaveTextContent(
+      'Enrolled Baseline',
+    );
   });
 
   it('applies model filter when Show button on Support Risk incident is clicked', () => {

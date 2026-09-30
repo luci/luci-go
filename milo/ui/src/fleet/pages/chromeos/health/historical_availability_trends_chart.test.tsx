@@ -229,7 +229,7 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     });
   });
 
-  it('renders overall view by default with header, chip, and chart', () => {
+  it('renders overall view by default with header, chip, and chart', async () => {
     jest
       .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
       .mockImplementation((req) => {
@@ -257,6 +257,14 @@ describe('HistoricalAvailabilityTrendsChart', () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByText('Last 72h')).toBeInTheDocument();
+    const baselineChip = screen.getByTestId('trends-baseline-chip');
+    expect(baselineChip).toHaveTextContent('Enrolled Baseline');
+    fireEvent.mouseOver(baselineChip);
+    expect(
+      await screen.findByText(
+        /Health is calculated as the percentage of READY devices/i,
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         'Overall fleet health percentage trendline over the last 72 hours.',
@@ -301,6 +309,9 @@ describe('HistoricalAvailabilityTrendsChart', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'By Model' }));
 
+    expect(screen.getByTestId('trends-baseline-chip')).toHaveTextContent(
+      'Quota Baseline',
+    );
     expect(screen.getByLabelText('Select all series')).toBeInTheDocument();
     expect(screen.getByText('Select all')).toBeInTheDocument();
     expect(screen.getByLabelText('brya')).toBeChecked();

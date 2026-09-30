@@ -13,3 +13,8 @@
 // limitations under the License.
 
 export { HealthPage, Component, default } from './health_page';
+export { BaselineChip, type BaselineChipProps } from './baseline_chip';
+export {
+  HeroAvailabilityCard,
+  type HeroAvailabilityCardProps,
+} from './hero_availability_card';

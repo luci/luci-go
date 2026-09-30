@@ -43,8 +43,12 @@ import {
 } from 'recharts';
 
 import { colors } from '@/fleet/theme/colors';
-import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  TrendlineGrouping,
+  TrendlineMetricType,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { BaselineChip } from './baseline_chip';
 import {
   buildTimeAxisTicks,
   buildTrendsChartRows,
@@ -340,8 +344,9 @@ export const HistoricalAvailabilityTrendsChart = ({
     [theme],
   );
 
-  const metricLabel =
-    viewBy === TrendlineGrouping.GROUP_BY_MODEL ? 'Availability' : 'Health';
+  const isAvailability = data?.metricType === TrendlineMetricType.AVAILABILITY;
+
+  const metricLabel = isAvailability ? 'Availability' : 'Health';
 
   const subtitle = useMemo(() => {
     switch (viewBy) {
@@ -402,6 +407,10 @@ export const HistoricalAvailabilityTrendsChart = ({
                     color: 'text.secondary',
                     borderColor: 'divider',
                   }}
+                />
+                <BaselineChip
+                  isAvailability={isAvailability}
+                  testId="trends-baseline-chip"
                 />
               </Box>
               <Typography variant="caption" color="text.secondary">
