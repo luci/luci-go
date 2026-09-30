@@ -233,10 +233,10 @@ describe('axis helpers', () => {
 });
 
 describe('sortPoolSeries', () => {
-  it('places DUT_POOL_QUOTA and faft_test first, preserving default order for the rest', () => {
+  it('places DUT_POOL_QUOTA and faft-test first, then remaining pools alphabetically', () => {
     const input = [
       { name: 'zebra_pool' },
-      { name: 'faft_test' },
+      { name: 'faft-test' },
       { name: 'alpha_pool' },
       { name: 'DUT_POOL_QUOTA' },
       { name: 'beta_pool' },
@@ -246,10 +246,10 @@ describe('sortPoolSeries', () => {
 
     expect(sorted.map((s) => s.name)).toEqual([
       'DUT_POOL_QUOTA',
-      'faft_test',
-      'zebra_pool',
+      'faft-test',
       'alpha_pool',
       'beta_pool',
+      'zebra_pool',
     ]);
   });
 
@@ -264,24 +264,24 @@ describe('sortPoolSeries', () => {
 
     expect(sorted.map((s) => s.name)).toEqual([
       'DUT_POOL_QUOTA',
-      'bvt',
       'arc_test',
+      'bvt',
     ]);
   });
 
-  it('handles case when only faft_test is present', () => {
+  it('handles case when only faft-test is present', () => {
     const input = [
       { name: 'bvt' },
-      { name: 'faft_test' },
+      { name: 'faft-test' },
       { name: 'arc_test' },
     ];
 
     const sorted = sortPoolSeries(input);
 
-    expect(sorted.map((s) => s.name)).toEqual(['faft_test', 'bvt', 'arc_test']);
+    expect(sorted.map((s) => s.name)).toEqual(['faft-test', 'arc_test', 'bvt']);
   });
 
-  it('preserves order when neither default pool is present', () => {
+  it('sorts all pools alphabetically when neither default pool is present', () => {
     const input = [
       { name: 'chameleon' },
       { name: 'audio_box' },
@@ -291,9 +291,9 @@ describe('sortPoolSeries', () => {
     const sorted = sortPoolSeries(input);
 
     expect(sorted.map((s) => s.name)).toEqual([
-      'chameleon',
       'audio_box',
       'bvt',
+      'chameleon',
     ]);
   });
 

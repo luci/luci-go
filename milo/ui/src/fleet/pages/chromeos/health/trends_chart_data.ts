@@ -86,8 +86,8 @@ export const DEFAULT_VISIBLE_SERIES_MODEL = 5;
 export const DEFAULT_VISIBLE_SERIES_POOL = 2;
 
 /**
- * Prioritizes "DUT_POOL_QUOTA" and "faft_test" by moving them to the top of
- * the pool series list, preserving the default sort order for all other pools.
+ * Prioritizes "DUT_POOL_QUOTA" and "faft-test" by moving them to the top of
+ * the pool series list, and sorts all remaining pools alphabetically.
  *
  * NOTE: This is a temporary solution until sorting by fleet size is available.
  * TODO(b/567504412): Update to sort by fleet size once supported by backend.
@@ -96,10 +96,10 @@ export const sortPoolSeries = <T extends { readonly name: string }>(
   series: readonly T[],
 ): readonly T[] => {
   const quota = series.find((s) => s.name === 'DUT_POOL_QUOTA');
-  const faft = series.find((s) => s.name === 'faft_test');
-  const rest = series.filter(
-    (s) => s.name !== 'DUT_POOL_QUOTA' && s.name !== 'faft_test',
-  );
+  const faft = series.find((s) => s.name === 'faft-test');
+  const rest = series
+    .filter((s) => s.name !== 'DUT_POOL_QUOTA' && s.name !== 'faft-test')
+    .sort((a, b) => a.name.localeCompare(b.name));
   return [quota, faft, ...rest].filter((s): s is T => s !== undefined);
 };
 

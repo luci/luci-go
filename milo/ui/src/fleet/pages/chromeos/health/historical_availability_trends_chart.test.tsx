@@ -368,11 +368,11 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     expect(isPlotted('pool-3')).toBe(false);
   });
 
-  it('moves DUT_POOL_QUOTA and faft_test to the top and selects them by default in By Pool tab', () => {
+  it('moves DUT_POOL_QUOTA and faft-test to the top and sorts remaining pools alphabetically in By Pool tab', () => {
     const multiPoolData: GetFleetAvailabilityTrendsResponse = {
       series: [
         { name: 'zebra_pool', points: [{ timestamp: t0, value: 0.8 }] },
-        { name: 'faft_test', points: [{ timestamp: t0, value: 0.92 }] },
+        { name: 'faft-test', points: [{ timestamp: t0, value: 0.92 }] },
         { name: 'alpha_pool', points: [{ timestamp: t0, value: 0.85 }] },
         { name: 'DUT_POOL_QUOTA', points: [{ timestamp: t0, value: 0.96 }] },
         { name: 'beta_pool', points: [{ timestamp: t0, value: 0.88 }] },
@@ -418,17 +418,17 @@ describe('HistoricalAvailabilityTrendsChart', () => {
       .filter((text) => text !== 'Select all');
     expect(labels).toEqual([
       'DUT_POOL_QUOTA',
-      'faft_test',
-      'zebra_pool',
+      'faft-test',
       'alpha_pool',
       'beta_pool',
+      'zebra_pool',
     ]);
 
     expect(screen.getByLabelText('DUT_POOL_QUOTA')).toBeChecked();
-    expect(screen.getByLabelText('faft_test')).toBeChecked();
+    expect(screen.getByLabelText('faft-test')).toBeChecked();
     expect(screen.getByLabelText('zebra_pool')).not.toBeChecked();
     expect(isPlotted('DUT_POOL_QUOTA')).toBe(true);
-    expect(isPlotted('faft_test')).toBe(true);
+    expect(isPlotted('faft-test')).toBe(true);
     expect(isPlotted('zebra_pool')).toBe(false);
 
     const labelText = screen.getByText('DUT_POOL_QUOTA');
