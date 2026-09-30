@@ -56,15 +56,10 @@ export interface SidebarSection {
 export function generateSidebarSections(
   platform?: Platform,
   pendingAdminTasksCount?: number,
-  isHealthDashboardEnabled?: boolean,
 ): SidebarSection[] {
   return [
     generateHomeSection(),
-    generateLabHealthSection(
-      platform,
-      pendingAdminTasksCount,
-      isHealthDashboardEnabled,
-    ),
+    generateLabHealthSection(platform, pendingAdminTasksCount),
     generateResourceRequestsSection(),
     generateOtherToolsSection(),
   ];
@@ -86,7 +81,6 @@ function generateHomeSection(): SidebarSection {
 function generateLabHealthSection(
   platform?: Platform,
   pendingAdminTasksCount?: number,
-  isHealthDashboardEnabled?: boolean,
 ): SidebarSection {
   const showChromeOsRepairs = getFeatureFlagValue(
     enableChromeOsRepairsDashboard,
@@ -97,8 +91,7 @@ function generateLabHealthSection(
     platform === Platform.PIXEL ||
     (platform === Platform.CHROMEOS && showChromeOsRepairs);
   const isAdminTasksEnabled = !platform || platform === Platform.CHROMEOS;
-  const isHealthEnabled =
-    isHealthDashboardEnabled && (!platform || platform === Platform.CHROMEOS);
+  const isHealthEnabled = !platform || platform === Platform.CHROMEOS;
   return {
     title: 'Lab Health',
     pages: [

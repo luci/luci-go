@@ -138,45 +138,7 @@ describe('platformRoutes', () => {
   });
 
   describe('health route', () => {
-    beforeEach(() => {
-      localStorage.clear();
-      sessionStorage.clear();
-    });
-
-    it('renders 404 PageNotFoundPage when health dashboard flag is disabled', async () => {
-      localStorage.setItem(
-        'featureFlag:fleet-console:chromeos-health-dashboard',
-        'off',
-      );
-
-      render(
-        <FakeContextProvider
-          siblingRoutes={[
-            {
-              path: 'p/:platform',
-              children: platformRoutes,
-            },
-          ]}
-          routerOptions={{
-            initialEntries: ['/p/chromeos/health'],
-          }}
-        >
-          <></>
-        </FakeContextProvider>,
-      );
-
-      expect(await screen.findByText('Page not found')).toBeInTheDocument();
-      expect(
-        screen.queryByTestId('chromeos-health-page'),
-      ).not.toBeInTheDocument();
-    });
-
-    it('renders ChromeOS health page when health dashboard flag is enabled', async () => {
-      localStorage.setItem(
-        'featureFlag:fleet-console:chromeos-health-dashboard',
-        'on',
-      );
-
+    it('renders ChromeOS health page for ChromeOS platform', async () => {
       render(
         <FakeContextProvider
           siblingRoutes={[
@@ -199,12 +161,7 @@ describe('platformRoutes', () => {
       expect(screen.queryByText('Page not found')).not.toBeInTheDocument();
     });
 
-    it('renders PlatformNotAvailable on unsupported platforms even when flag is enabled', async () => {
-      localStorage.setItem(
-        'featureFlag:fleet-console:chromeos-health-dashboard',
-        'on',
-      );
-
+    it('renders PlatformNotAvailable on unsupported platforms', async () => {
       render(
         <FakeContextProvider
           siblingRoutes={[

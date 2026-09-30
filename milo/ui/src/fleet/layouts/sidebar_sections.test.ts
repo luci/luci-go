@@ -185,12 +185,8 @@ describe('generateSidebarSections', () => {
   });
 
   describe('Health dashboard page', () => {
-    it('is shown for ChromeOS when isHealthDashboardEnabled is true', () => {
-      const sections = generateSidebarSections(
-        Platform.CHROMEOS,
-        undefined,
-        true,
-      );
+    it('is shown for ChromeOS platform', () => {
+      const sections = generateSidebarSections(Platform.CHROMEOS);
       const labHealth = sections.find((s) => s.title === 'Lab Health');
       const healthPage = labHealth?.pages.find(
         (p) => p.label === 'Health dashboard',
@@ -199,12 +195,8 @@ describe('generateSidebarSections', () => {
       expect(healthPage?.url).toBe('/ui/fleet/p/chromeos/health');
     });
 
-    it('is hidden when isHealthDashboardEnabled is false or undefined', () => {
-      const sections = generateSidebarSections(
-        Platform.CHROMEOS,
-        undefined,
-        false,
-      );
+    it('is hidden for non-ChromeOS platforms', () => {
+      const sections = generateSidebarSections(Platform.ANDROID);
       const labHealth = sections.find((s) => s.title === 'Lab Health');
       const healthPage = labHealth?.pages.find(
         (p) => p.label === 'Health dashboard',

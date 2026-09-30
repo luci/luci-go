@@ -18,7 +18,6 @@ import { Navigate, RouteObject } from 'react-router';
 
 import { useFeatureFlag } from '@/common/feature_flags';
 import {
-  enableChromeOsHealthDashboard,
   enableChromeOsRepairsDashboard,
   enableChromeOsWorkforceActivity,
 } from '@/fleet/features';
@@ -81,21 +80,6 @@ const WorkforceRouteElement = () => {
         ...(showChromeOsRepairs && showWorkforce
           ? {
               [Platform.CHROMEOS]: WorkforceActivityPage,
-            }
-          : {}),
-      }}
-    />
-  );
-};
-
-const HealthRouteElement = () => {
-  const showHealthDashboard = useFeatureFlag(enableChromeOsHealthDashboard);
-  return (
-    <PlatformDependentPage
-      pageComponentMap={{
-        ...(showHealthDashboard
-          ? {
-              [Platform.CHROMEOS]: ChromeOsHealthPage,
             }
           : {}),
       }}
@@ -199,6 +183,12 @@ export const platformRoutes: RouteObject[] = [
 
   {
     path: 'health',
-    element: <HealthRouteElement />,
+    element: (
+      <PlatformDependentPage
+        pageComponentMap={{
+          [Platform.CHROMEOS]: ChromeOsHealthPage,
+        }}
+      />
+    ),
   },
 ];
