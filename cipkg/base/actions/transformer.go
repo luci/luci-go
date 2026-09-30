@@ -17,6 +17,7 @@ package actions
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"sync"
 
@@ -56,9 +57,13 @@ var (
 // derivation.
 type Transformer[M proto.Message] func(M, []Package) (*core.Derivation, error)
 
+// PostProcessFunc is the function executed after an action is processed.
+type PostProcessFunc func(a *core.Action) error
+
 // ActionProcessor processes and transforms actions into packages.
 type ActionProcessor struct {
 	transformers map[protoreflect.FullName]Transformer[proto.Message]
+	postProc     PostProcessFunc
 
 	mu     sync.Mutex
 	sealed bool
@@ -74,6 +79,16 @@ func NewActionProcessor() *ActionProcessor {
 	MustSetTransformer(ap, ActionFilesCopyTransformer)
 	MustSetTransformer(ap, ActionCIPDExportTransformer)
 	return ap
+}
+
+// Clone returns an unsealed copy of the ActionProcessor.
+func (ap *ActionProcessor) Clone() *ActionProcessor {
+	ap.mu.Lock()
+	defer ap.mu.Unlock()
+	return &ActionProcessor{
+		transformers: maps.Clone(ap.transformers),
+		postProc:     ap.postProc,
+	}
 }
 
 var (
@@ -110,6 +125,25 @@ func MustSetTransformer[M proto.Message](ap *ActionProcessor, tf Transformer[M])
 	}
 }
 
+// SetPostProcessor sets the post processor for the ActionProcessor.
+func (ap *ActionProcessor) SetPostProcessor(fn PostProcessFunc) error {
+	ap.mu.Lock()
+	defer ap.mu.Unlock()
+	if ap.sealed {
+		return ErrActionProcessorSealed
+	}
+	ap.postProc = fn
+	return nil
+}
+
+// MustSetPostProcessor sets the post processor for the ActionProcessor and
+// panics if any error happened.
+func (ap *ActionProcessor) MustSetPostProcessor(fn PostProcessFunc) {
+	if err := ap.SetPostProcessor(fn); err != nil {
+		panic(err)
+	}
+}
+
 // Process transforms a given *core.Action into a self-contained Package, which
 // includes all its dependencies also converted from *core.Action into Package.
 func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *core.Action) (Package, error) {
@@ -123,13 +157,8 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 		return Package{}, fmt.Errorf("action name must conform %s: %s", packageNameRe, a)
 	}
 
-	aid, err := core.GetActionID(a)
-	if err != nil {
-		return Package{}, err
-	}
 	pkg := Package{
-		ActionID: aid,
-		Action:   a,
+		Action: a,
 	}
 
 	// Recursivedly process all dependencies
@@ -155,7 +184,10 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 	}
 
 	// Parse spec message
-	var spec proto.Message
+	var (
+		spec proto.Message
+		err  error
+	)
 
 	if s, ok := a.Spec.(*core.Action_Extension); ok {
 		if spec, err = s.Extension.UnmarshalNew(); err != nil {
@@ -196,6 +228,18 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 	}
 	pkg.DerivationID = drvID
 	pkg.Handler = pm.Get(drvID)
+
+	if ap.postProc != nil {
+		if err := ap.postProc(a); err != nil {
+			return Package{}, err
+		}
+	}
+
+	aid, err := core.GetActionID(a)
+	if err != nil {
+		return Package{}, err
+	}
+	pkg.ActionID = aid
 
 	return pkg, nil
 }

@@ -29,6 +29,14 @@ import (
 func TestRelocatableID(t *testing.T) {
 	ftt.Run("Test RelocatableID", t, func(t *ftt.Test) {
 		ap := actions.NewActionProcessor()
+		ap.MustSetPostProcessor(func(a *core.Action) error {
+			id, err := RelocatableCacheID("", ap, a)
+			if err != nil {
+				return err
+			}
+			a.Metadata = &core.Action_Metadata{CacheId: id}
+			return nil
+		})
 		pm1 := testutils.NewMockPackageManage("/storage/one")
 		pm2 := testutils.NewMockPackageManage("/storage/two")
 
@@ -56,13 +64,17 @@ func TestRelocatableID(t *testing.T) {
 		assert.Loosely(t, pkg1.ActionID, should.Equal(pkg2.ActionID))
 
 		// RelocatableID is reproducible across different storage paths.
-		id1, err := RelocatableCacheID("", ap, pkg1.Action)
-		assert.Loosely(t, err, should.BeNil)
-		id2, err := RelocatableCacheID("", ap, pkg2.Action)
-		assert.Loosely(t, err, should.BeNil)
+		id1 := pkg1.Action.GetMetadata().GetCacheId()
+		id2 := pkg2.Action.GetMetadata().GetCacheId()
 		assert.Loosely(t, id1, should.NotBeEmpty)
 		assert.Loosely(t, id1, should.Equal(id2))
 		assert.Loosely(t, id1, should.NotEqual(pkg1.DerivationID))
 		assert.Loosely(t, id2, should.NotEqual(pkg2.DerivationID))
+
+		// Dependencies also have their CacheId populated.
+		depID1 := pkg1.BuildDependencies[0].Action.GetMetadata().GetCacheId()
+		depID2 := pkg2.BuildDependencies[0].Action.GetMetadata().GetCacheId()
+		assert.Loosely(t, depID1, should.NotBeEmpty)
+		assert.Loosely(t, depID1, should.Equal(depID2))
 	})
 }

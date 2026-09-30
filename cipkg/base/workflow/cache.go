@@ -25,6 +25,8 @@ import (
 // RelocatableCacheID generates a derivation id with a stable storage path,
 // which can be used as the cache id for a relocatable package.
 func RelocatableCacheID(buildPlat string, ap *actions.ActionProcessor, a *core.Action) (string, error) {
+	ap = ap.Clone()
+	ap.MustSetPostProcessor(nil)
 	pkg, err := ap.Process(buildPlat, relocatableStubPM, a)
 	if err != nil {
 		return "", err
