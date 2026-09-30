@@ -174,6 +174,7 @@ describe('HealthPage', () => {
     expect(
       screen.getByPlaceholderText('Add a filter (e.g. model:volteer)'),
     ).toBeInTheDocument();
+    expect(screen.getByText('Hardware Performance')).toBeInTheDocument();
     expect(
       screen.getByText('Active Support Risk Incidents'),
     ).toBeInTheDocument();

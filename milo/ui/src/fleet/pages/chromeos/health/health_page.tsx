@@ -27,6 +27,7 @@ import { HEALTH_FILTER_CONFIGS } from './filter_constants';
 import { HeroAvailabilityCard } from './hero_availability_card';
 import { HistoricalAvailabilityTrendsChart } from './historical_availability_trends_chart';
 import { ManualQuotaOverridesCard } from './manual_quota_overrides_card';
+import { PerformanceRankingCard } from './performance_ranking_card';
 import { SupportRiskIncidentsPanel } from './support_risk_incidents_panel';
 import { useHealthFilters } from './use_health_filters';
 
@@ -146,17 +147,49 @@ export const HealthPage = () => {
             {/* Dashboard Layout */}
             <Box
               sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', lg: 'row' },
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', lg: '8fr 4fr' },
+                gridTemplateRows: { xs: 'auto', lg: 'minmax(0, 1fr)' },
+                height: { lg: 770 },
                 gap: 4,
-                alignItems: 'flex-start',
+                mb: 4,
               }}
             >
-              <Box sx={{ flex: 1, width: '100%', minWidth: 0 }}>
+              {/* Left Column: Interactive Trend Chart & Support Risk Incidents */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  height: '100%',
+                  minHeight: 0,
+                }}
+              >
                 <HistoricalAvailabilityTrendsChart filter={activeFilter} />
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gap: 3,
+                    flexGrow: 1,
+                    minHeight: { xs: 260, lg: 0 },
+                  }}
+                >
+                  <SupportRiskIncidentsPanel onShowModel={handleShowModel} />
+                </Box>
               </Box>
-              <Box sx={{ width: { xs: '100%', lg: 440 }, flexShrink: 0 }}>
-                <SupportRiskIncidentsPanel onShowModel={handleShowModel} />
+
+              {/* Right Column: Performance Ranking Card */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  height: '100%',
+                  minHeight: 0,
+                }}
+              >
+                <PerformanceRankingCard filter={activeFilter} />
               </Box>
             </Box>
           </>

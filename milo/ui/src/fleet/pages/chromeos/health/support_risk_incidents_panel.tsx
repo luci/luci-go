@@ -44,10 +44,11 @@ export const SupportRiskIncidentsPanel = ({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        width: '100%',
-        maxHeight: { xs: 400, md: 520 },
-        bgcolor: 'background.paper',
-        borderRadius: 2,
+        flexGrow: 1,
+        height: '100%',
+        minHeight: 0,
+        bgcolor: '#ffffff',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
       }}
     >
       <CardHeader
@@ -64,8 +65,14 @@ export const SupportRiskIncidentsPanel = ({
           flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
-          minHeight: 120,
+          minHeight: 0,
           overflowY: 'auto',
+          scrollbarWidth: 'thin',
+          '&::-webkit-scrollbar': { width: '6px' },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'divider',
+            borderRadius: '4px',
+          },
           '&:last-child': { pb: 0 },
         }}
       >
