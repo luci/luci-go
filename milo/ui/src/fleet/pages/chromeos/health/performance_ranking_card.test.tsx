@@ -17,6 +17,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import {
   GetFleetAvailabilityTrendsResponse,
+  TrendlineGrouping,
   TrendlineMetricType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -80,8 +81,8 @@ describe('PerformanceRankingCard', () => {
       </FakeContextProvider>,
     );
 
-    expect(screen.getByText('Hardware Performance')).toBeInTheDocument();
-    expect(screen.getByText('Models')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /^models$/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /^pools$/i })).toBeInTheDocument();
 
     // Verify ordering: volteer (62%) -> dedede (74%) -> brya (88%)
     const modelElements = screen.getAllByRole('listitem');
@@ -230,8 +231,8 @@ describe('PerformanceRankingCard', () => {
         {
           name: 'volteer',
           points: [
-            { timestamp: '2026-09-29T00:00:00Z', value: 65 },
-            { timestamp: '2026-09-30T00:00:00Z', value: 62 },
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.65 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.62 },
           ],
         },
       ],
@@ -260,5 +261,75 @@ describe('PerformanceRankingCard', () => {
     fireEvent.click(screen.getByTestId('ranking-row-volteer'));
     expect(onSelectModel).toHaveBeenCalledTimes(1);
     expect(onSelectModel).toHaveBeenCalledWith('volteer');
+  });
+  it('switches to Pools tab, fetches pool groupings, and renders sorted pools', () => {
+    const mockPoolTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'DUT_POOL_QUOTA',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.92 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.85 },
+          ],
+        },
+        {
+          name: 'DUT_POOL_CQ',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.6 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.55 },
+          ],
+        },
+      ],
+    };
+
+    const useTrendsSpy = jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockPoolTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    const onSelectPool = jest.fn();
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard onSelectPool={onSelectPool} />
+      </FakeContextProvider>,
+    );
+
+    const poolsTab = screen.getByRole('tab', { name: /^pools$/i });
+    fireEvent.click(poolsTab);
+
+    // Verify spy was called with TrendlineGrouping.GROUP_BY_POOL
+    expect(useTrendsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        grouping: TrendlineGrouping.GROUP_BY_POOL,
+      }),
+    );
+
+    // Verify pool list ordering: DUT_POOL_CQ (55%) -> DUT_POOL_QUOTA (85%)
+    const poolElements = screen.getAllByRole('listitem');
+    expect(poolElements).toHaveLength(2);
+    expect(poolElements[0]).toHaveTextContent('DUT_POOL_CQ');
+    expect(poolElements[0]).toHaveTextContent('55% Healthy');
+    expect(screen.getByTestId('drop-badge-DUT_POOL_CQ')).toHaveTextContent(
+      '-5%',
+    );
+
+    expect(poolElements[1]).toHaveTextContent('DUT_POOL_QUOTA');
+    expect(poolElements[1]).toHaveTextContent('85% Healthy');
+    expect(screen.getByTestId('drop-badge-DUT_POOL_QUOTA')).toHaveTextContent(
+      '-7%',
+    );
+
+    // Test clicking a pool row
+    fireEvent.click(screen.getByTestId('ranking-row-DUT_POOL_CQ'));
+    expect(onSelectPool).toHaveBeenCalledWith('DUT_POOL_CQ');
   });
 });

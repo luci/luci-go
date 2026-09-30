@@ -24,21 +24,26 @@ import {
   List,
   ListItem,
   Skeleton,
+  Tab,
+  Tabs,
   Typography,
 } from '@mui/material';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { calculate24hDelta, getHealthColor } from './ranking_utils';
 import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
 
+export type RankingEntityTab = 'models' | 'pools';
+
 export interface PerformanceRankingCardProps {
   filter?: string;
   onSelectModel?: (model: string) => void;
+  onSelectPool?: (pool: string) => void;
 }
 
-export interface RankedModelItem {
+export interface RankedCohortItem {
   readonly name: string;
   readonly availabilityPct: number;
   readonly prevAvailabilityPct: number;
@@ -49,15 +54,21 @@ export interface RankedModelItem {
 export const PerformanceRankingCard = ({
   filter = '',
   onSelectModel,
+  onSelectPool,
 }: PerformanceRankingCardProps) => {
+  const [entityTab, setEntityTab] = useState<RankingEntityTab>('models');
+
   const queryRequest = useMemo(
     () => ({
-      grouping: TrendlineGrouping.GROUP_BY_MODEL,
+      grouping:
+        entityTab === 'models'
+          ? TrendlineGrouping.GROUP_BY_MODEL
+          : TrendlineGrouping.GROUP_BY_POOL,
       startTime: undefined,
       endTime: undefined,
       filter,
     }),
-    [filter],
+    [entityTab, filter],
   );
 
   // TODO: Transitional data source using GetFleetAvailabilityTrends;
@@ -66,10 +77,10 @@ export const PerformanceRankingCard = ({
 
   // TODO: Transitional data source using GetFleetAvailabilityTrends;
   // switch to QueryPerformanceRankings RPC once implemented (Phase 2 / Story 8).
-  const rankedModels = useMemo<readonly RankedModelItem[]>(() => {
+  const rankedItems = useMemo<readonly RankedCohortItem[]>(() => {
     if (!data?.series) return [];
 
-    const list: RankedModelItem[] = [];
+    const list: RankedCohortItem[] = [];
     for (const s of data.series) {
       if (!s.name || s.name === 'Overall') continue;
       const delta = calculate24hDelta(s.points ?? []);
@@ -81,6 +92,8 @@ export const PerformanceRankingCard = ({
 
     return list.sort((a, b) => a.availabilityPct - b.availabilityPct);
   }, [data?.series]);
+
+  const onSelectItem = entityTab === 'models' ? onSelectModel : onSelectPool;
 
   return (
     <Card
@@ -105,22 +118,27 @@ export const PerformanceRankingCard = ({
               width: '100%',
             }}
           >
-            <Typography
-              component="h2"
-              sx={{ fontWeight: 'bold', fontSize: 15 }}
+            <Tabs
+              value={entityTab}
+              onChange={(_, val: RankingEntityTab | null) => {
+                if (val !== null) setEntityTab(val);
+              }}
+              aria-label="Performance ranking tabs"
             >
-              Hardware Performance
-            </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontWeight: 600, fontSize: '0.8125rem' }}
-            >
-              Models
-            </Typography>
+              <Tab
+                value="models"
+                label="Models"
+                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 80 }}
+              />
+              <Tab
+                value="pools"
+                label="Pools"
+                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 80 }}
+              />
+            </Tabs>
           </Box>
         }
-        sx={{ py: 1.5, px: 2 }}
+        sx={{ py: 1, px: 2 }}
       />
       <Divider />
       <CardContent
@@ -167,21 +185,23 @@ export const PerformanceRankingCard = ({
           </Alert>
         )}
 
-        {!isLoading && !isError && rankedModels.length === 0 && (
+        {!isLoading && !isError && rankedItems.length === 0 && (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              No models found matching current filters.
+              {entityTab === 'models'
+                ? 'No models found matching current filters.'
+                : 'No pools found matching current filters.'}
             </Typography>
           </Box>
         )}
 
-        {!isLoading && !isError && rankedModels.length > 0 && (
+        {!isLoading && !isError && rankedItems.length > 0 && (
           <List dense disablePadding>
-            {rankedModels.map((model) => (
+            {rankedItems.map((item) => (
               <ListItem
-                key={model.name}
-                data-testid={`ranking-row-${model.name}`}
-                onClick={() => onSelectModel?.(model.name)}
+                key={item.name}
+                data-testid={`ranking-row-${item.name}`}
+                onClick={() => onSelectItem?.(item.name)}
                 sx={{
                   py: 1.5,
                   px: 2.5,
@@ -192,8 +212,8 @@ export const PerformanceRankingCard = ({
                   flexDirection: 'column',
                   alignItems: 'stretch',
                   gap: 1,
-                  cursor: onSelectModel ? 'pointer' : 'default',
-                  '&:hover': onSelectModel
+                  cursor: onSelectItem ? 'pointer' : 'default',
+                  '&:hover': onSelectItem
                     ? { bgcolor: 'action.hover' }
                     : undefined,
                 }}
@@ -206,7 +226,7 @@ export const PerformanceRankingCard = ({
                   }}
                 >
                   <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    {model.name}
+                    {item.name}
                   </Typography>
                 </Box>
                 <Box sx={{ width: '100%', mt: 0.25 }}>
@@ -226,9 +246,10 @@ export const PerformanceRankingCard = ({
                         fontSize: '0.72rem',
                       }}
                     >
-                      {model.availabilityPct}% Available
+                      {item.availabilityPct}%{' '}
+                      {entityTab === 'models' ? 'Available' : 'Healthy'}
                     </Typography>
-                    {model.trend === 'down' && (
+                    {item.trend === 'down' && (
                       <Box
                         sx={{
                           display: 'inline-flex',
@@ -239,30 +260,30 @@ export const PerformanceRankingCard = ({
                         <TrendingDown color="error" sx={{ fontSize: 16 }} />
                         <Typography
                           variant="caption"
-                          data-testid={`drop-badge-${model.name}`}
+                          data-testid={`drop-badge-${item.name}`}
                           sx={{
                             color: 'error.main',
                             fontWeight: 'bold',
                             fontSize: '0.75rem',
                           }}
                         >
-                          -{model.healthDrop}%
+                          -{item.healthDrop}%
                         </Typography>
                       </Box>
                     )}
-                    {model.trend === 'up' && (
+                    {item.trend === 'up' && (
                       <TrendingUp color="success" sx={{ fontSize: 16 }} />
                     )}
-                    {model.trend === 'flat' && (
+                    {item.trend === 'flat' && (
                       <TrendingFlat color="action" sx={{ fontSize: 16 }} />
                     )}
                   </Box>
                   <LinearProgress
                     variant="determinate"
-                    value={model.availabilityPct}
-                    color={getHealthColor(model.availabilityPct)}
+                    value={item.availabilityPct}
+                    color={getHealthColor(item.availabilityPct)}
                     sx={{ height: 6, borderRadius: 3 }}
-                    aria-label={`${model.name} availability`}
+                    aria-label={`${item.name} availability`}
                   />
                 </Box>
               </ListItem>

@@ -56,6 +56,13 @@ export const HealthPage = () => {
     [setFiltersBatch],
   );
 
+  const handleShowPool = useCallback(
+    (pool: string) => {
+      setFiltersBatch({ [HEALTH_FILTER_CONFIGS.POOL.key]: [pool] });
+    },
+    [setFiltersBatch],
+  );
+
   const setPageTab = (newTab: 'overview' | 'configuration') => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -192,6 +199,7 @@ export const HealthPage = () => {
                 <PerformanceRankingCard
                   filter={activeFilter}
                   onSelectModel={handleShowModel}
+                  onSelectPool={handleShowPool}
                 />
               </Box>
             </Box>
