@@ -250,9 +250,6 @@ describe('<WorkforceActivityView />', () => {
     expect(
       screen.getByText('Workforce & Technician Monitoring'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Workforce roster is dynamically derived/i),
-    ).toBeInTheDocument();
     expect(screen.getByText('Active Repairers')).toBeInTheDocument();
     expect(screen.getByText('4')).toBeInTheDocument();
     expect(

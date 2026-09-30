@@ -17,7 +17,6 @@ import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import GroupIcon from '@mui/icons-material/Group';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import TimerIcon from '@mui/icons-material/Timer';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -466,29 +465,6 @@ export const WorkforceActivityView = ({
           {getErrorMessage(error, 'loading workforce activity data')}
         </Alert>
       )}
-
-      {/* Info Banner */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          px: 2,
-          py: 1.5,
-          mb: 3,
-          borderRadius: '8px',
-          bgcolor: colors.blue[50],
-          border: `1px solid ${colors.blue[200]}`,
-          color: colors.blue[900],
-        }}
-      >
-        <InfoOutlinedIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          Workforce roster is dynamically derived from repair activity in the
-          past 30 days. Technicians automatically appear once they claim or
-          resolve a repair in the queue.
-        </Typography>
-      </Box>
 
       {/* KPI Summary Cards */}
       <Box
