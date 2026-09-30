@@ -11,6 +11,7 @@ This directory contains skills (instructions and guidelines) for AI agents worki
 - [high-density-ui](./skills/high-density-ui/SKILL.md): Guidelines for building high-density enterprise UIs in Fleet Console. Use when designing or modifying complex dashboards and tables in Fleet Console that require high data density.
 - [project-verification](./skills/project-verification/SKILL.md): Runs project checks including linter, tests, and type-checks to ensure no regressions. Use before committing changes, before uploading a CL, or when validating code correctness.
 - [ux-prototyping](./skills/ux-prototyping/SKILL.md): Guidelines for rapid prototyping and adhering to UX principles in Fleet Console. Use when you need to create new UI views, modify existing layouts, or perform rapid prototyping for UX changes.
+- [fcon-easy-mock](./skills/fcon-easy-mock/SKILL.md): Instructions for building and packaging standalone static Fleet Console UI prototype bundles (`dist_proto/`) for local preview or static hosting.
 - [continuous-improvement](./skills/continuous-improvement/SKILL.md): Analyzes session friction, reviews logs, and drafts process/documentation improvements. Use at the end of a task, after completing a CL, or when encountering significant workflow friction.
 
 ## Usage

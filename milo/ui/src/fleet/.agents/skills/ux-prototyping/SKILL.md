@@ -69,3 +69,4 @@ Progress:
 - [ux-pm-review](../ux-pm-review/SKILL.md)
 - [high-density-ui](../high-density-ui/SKILL.md)
 - [project-verification](../project-verification/SKILL.md)
+- [fcon-easy-mock](../fcon-easy-mock/SKILL.md)
