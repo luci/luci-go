@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-refresh/only-export-components */
 import { lazy, ReactElement } from 'react';
 import { Navigate, RouteObject } from 'react-router';
 
-import { getFeatureFlagValue } from '@/common/feature_flags';
+import { useFeatureFlag } from '@/common/feature_flags';
 import {
   enableChromeOsHealthDashboard,
   enableChromeOsRepairsDashboard,
@@ -36,6 +37,16 @@ const AndroidDevicesPage = lazy(
 
 const AndroidRepairsPage = lazy(() => import('@/fleet/pages/android/repairs'));
 
+const ChromeOsRepairsPage = lazy(
+  () => import('@/fleet/pages/chromeos/repairs'),
+);
+
+const WorkforceActivityPage = lazy(
+  () => import('@/fleet/pages/chromeos/repairs/workforce_activity_view'),
+);
+
+const ChromeOsHealthPage = lazy(() => import('@/fleet/pages/chromeos/health'));
+
 const AndroidDeviceDetailsPage = lazy(() =>
   import(
     '@/fleet/pages/device_details_page/android/android_device_details_page'
@@ -43,6 +54,54 @@ const AndroidDeviceDetailsPage = lazy(() =>
     default: module.Component,
   })),
 );
+
+const RepairsRouteElement = () => {
+  const showChromeOsRepairs = useFeatureFlag(enableChromeOsRepairsDashboard);
+  return (
+    <PlatformDependentPage
+      pageComponentMap={{
+        [Platform.ANDROID]: <AndroidRepairsPage workspace="Android" />,
+        [Platform.PIXEL]: <AndroidRepairsPage workspace="Pixel" />,
+        ...(showChromeOsRepairs
+          ? {
+              [Platform.CHROMEOS]: ChromeOsRepairsPage,
+            }
+          : {}),
+      }}
+    />
+  );
+};
+
+const WorkforceRouteElement = () => {
+  const showChromeOsRepairs = useFeatureFlag(enableChromeOsRepairsDashboard);
+  const showWorkforce = useFeatureFlag(enableChromeOsWorkforceActivity);
+  return (
+    <PlatformDependentPage
+      pageComponentMap={{
+        ...(showChromeOsRepairs && showWorkforce
+          ? {
+              [Platform.CHROMEOS]: WorkforceActivityPage,
+            }
+          : {}),
+      }}
+    />
+  );
+};
+
+const HealthRouteElement = () => {
+  const showHealthDashboard = useFeatureFlag(enableChromeOsHealthDashboard);
+  return (
+    <PlatformDependentPage
+      pageComponentMap={{
+        ...(showHealthDashboard
+          ? {
+              [Platform.CHROMEOS]: ChromeOsHealthPage,
+            }
+          : {}),
+      }}
+    />
+  );
+};
 
 export const platformRoutes: RouteObject[] = [
   {
@@ -64,41 +123,11 @@ export const platformRoutes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: (
-          <PlatformDependentPage
-            pageComponentMap={{
-              [Platform.ANDROID]: <AndroidRepairsPage workspace="Android" />,
-              [Platform.PIXEL]: <AndroidRepairsPage workspace="Pixel" />,
-              ...(getFeatureFlagValue(enableChromeOsRepairsDashboard)
-                ? {
-                    [Platform.CHROMEOS]: lazy(
-                      () => import('@/fleet/pages/chromeos/repairs'),
-                    ),
-                  }
-                : {}),
-            }}
-          />
-        ),
+        element: <RepairsRouteElement />,
       },
       {
         path: 'workforce',
-        element: (
-          <PlatformDependentPage
-            pageComponentMap={{
-              ...(getFeatureFlagValue(enableChromeOsRepairsDashboard) &&
-              getFeatureFlagValue(enableChromeOsWorkforceActivity)
-                ? {
-                    [Platform.CHROMEOS]: lazy(
-                      () =>
-                        import(
-                          '@/fleet/pages/chromeos/repairs/workforce_activity_view'
-                        ),
-                    ),
-                  }
-                : {}),
-            }}
-          />
-        ),
+        element: <WorkforceRouteElement />,
       },
     ],
   },
@@ -170,18 +199,6 @@ export const platformRoutes: RouteObject[] = [
 
   {
     path: 'health',
-    element: (
-      <PlatformDependentPage
-        pageComponentMap={{
-          ...(getFeatureFlagValue(enableChromeOsHealthDashboard)
-            ? {
-                [Platform.CHROMEOS]: lazy(
-                  () => import('@/fleet/pages/chromeos/health'),
-                ),
-              }
-            : {}),
-        }}
-      />
-    ),
+    element: <HealthRouteElement />,
   },
 ];

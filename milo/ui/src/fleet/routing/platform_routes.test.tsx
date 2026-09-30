@@ -15,7 +15,30 @@
 import { render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
 import { platformRoutes } from './platform_routes';
+
+jest.mock('@/fleet/pages/chromeos/health', () => ({
+  __esModule: true,
+  default: () => (
+    <div data-testid="chromeos-health-page">ChromeOS Health Page</div>
+  ),
+}));
+
+jest.mock('@/fleet/pages/chromeos/repairs', () => ({
+  __esModule: true,
+  default: () => (
+    <div data-testid="chromeos-repairs-page">ChromeOS Repairs Page</div>
+  ),
+}));
+
+jest.mock('@/fleet/pages/chromeos/repairs/workforce_activity_view', () => ({
+  __esModule: true,
+  default: () => (
+    <div data-testid="chromeos-workforce-page">ChromeOS Workforce Page</div>
+  ),
+}));
 
 describe('platformRoutes', () => {
   it('redirects /p/chromium to /devices', async () => {
@@ -112,5 +135,163 @@ describe('platformRoutes', () => {
     render(<RouterProvider router={router} />);
 
     expect(await screen.findByTestId('repairs-page')).toBeInTheDocument();
+  });
+
+  describe('health route', () => {
+    beforeEach(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+
+    it('renders 404 PageNotFoundPage when health dashboard flag is disabled', async () => {
+      localStorage.setItem(
+        'featureFlag:fleet-console:chromeos-health-dashboard',
+        'off',
+      );
+
+      render(
+        <FakeContextProvider
+          siblingRoutes={[
+            {
+              path: 'p/:platform',
+              children: platformRoutes,
+            },
+          ]}
+          routerOptions={{
+            initialEntries: ['/p/chromeos/health'],
+          }}
+        >
+          <></>
+        </FakeContextProvider>,
+      );
+
+      expect(await screen.findByText('Page not found')).toBeInTheDocument();
+      expect(
+        screen.queryByTestId('chromeos-health-page'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('renders ChromeOS health page when health dashboard flag is enabled', async () => {
+      localStorage.setItem(
+        'featureFlag:fleet-console:chromeos-health-dashboard',
+        'on',
+      );
+
+      render(
+        <FakeContextProvider
+          siblingRoutes={[
+            {
+              path: 'p/:platform',
+              children: platformRoutes,
+            },
+          ]}
+          routerOptions={{
+            initialEntries: ['/p/chromeos/health'],
+          }}
+        >
+          <></>
+        </FakeContextProvider>,
+      );
+
+      expect(
+        await screen.findByTestId('chromeos-health-page'),
+      ).toBeInTheDocument();
+      expect(screen.queryByText('Page not found')).not.toBeInTheDocument();
+    });
+
+    it('renders PlatformNotAvailable on unsupported platforms even when flag is enabled', async () => {
+      localStorage.setItem(
+        'featureFlag:fleet-console:chromeos-health-dashboard',
+        'on',
+      );
+
+      render(
+        <FakeContextProvider
+          siblingRoutes={[
+            {
+              path: 'p/:platform',
+              children: platformRoutes,
+            },
+          ]}
+          routerOptions={{
+            initialEntries: ['/p/android/health'],
+          }}
+        >
+          <></>
+        </FakeContextProvider>,
+      );
+
+      expect(
+        await screen.findByText('Platform not available'),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId('chromeos-health-page'),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('repairs and workforce routes', () => {
+    beforeEach(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+
+    it('renders ChromeOS repairs page when repairs flag is enabled', async () => {
+      localStorage.setItem(
+        'featureFlag:fleet-console:chromeos-repairs-dashboard',
+        'on',
+      );
+
+      render(
+        <FakeContextProvider
+          siblingRoutes={[
+            {
+              path: 'p/:platform',
+              children: platformRoutes,
+            },
+          ]}
+          routerOptions={{
+            initialEntries: ['/p/chromeos/repairs'],
+          }}
+        >
+          <></>
+        </FakeContextProvider>,
+      );
+
+      expect(
+        await screen.findByTestId('chromeos-repairs-page'),
+      ).toBeInTheDocument();
+    });
+
+    it('renders ChromeOS workforce page when both repairs and workforce flags are enabled', async () => {
+      localStorage.setItem(
+        'featureFlag:fleet-console:chromeos-repairs-dashboard',
+        'on',
+      );
+      localStorage.setItem(
+        'featureFlag:fleet-console:chromeos-workforce-activity',
+        'on',
+      );
+
+      render(
+        <FakeContextProvider
+          siblingRoutes={[
+            {
+              path: 'p/:platform',
+              children: platformRoutes,
+            },
+          ]}
+          routerOptions={{
+            initialEntries: ['/p/chromeos/repairs/workforce'],
+          }}
+        >
+          <></>
+        </FakeContextProvider>,
+      );
+
+      expect(
+        await screen.findByTestId('chromeos-workforce-page'),
+      ).toBeInTheDocument();
+    });
   });
 });

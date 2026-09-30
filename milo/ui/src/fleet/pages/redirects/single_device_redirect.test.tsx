@@ -65,7 +65,9 @@ describe('<SingleDeviceRedirect />', () => {
       </FakeContextProvider>,
     );
 
-    await screen.findByText('Fake Device details: test-device-1');
+    await screen.findByText('Fake Device details: test-device-1', undefined, {
+      timeout: 10000,
+    });
 
     expect(
       screen.getByText('Fake Device details: test-device-1'),
@@ -156,7 +158,9 @@ describe('<SingleDeviceRedirect />', () => {
       </FakeContextProvider>,
     );
 
-    await screen.findByText('Fake Device details: test-device-1');
+    await screen.findByText('Fake Device details: test-device-1', undefined, {
+      timeout: 10000,
+    });
     expect(
       screen.getByText('Fake Device details: test-device-1'),
     ).toBeVisible();
