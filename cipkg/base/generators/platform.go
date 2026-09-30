@@ -15,6 +15,7 @@
 package generators
 
 import (
+	"fmt"
 	"runtime"
 	"strings"
 
@@ -101,4 +102,21 @@ func PlatformFromCIPD(cipdPlat string) Platform {
 		arch = "arm"
 	}
 	return NewPlatform(os, arch)
+}
+
+// ParsePlatform parse platform from string.
+func ParsePlatform(plat string) (Platform, error) {
+	p := UniversalPlatform()
+	if plat == "" {
+		return p, nil
+	}
+
+	for attr := range strings.SplitSeq(plat, ",") {
+		k, v, ok := strings.Cut(attr, "=")
+		if !ok || k == "" || v == "" {
+			return Platform{}, fmt.Errorf("invalid platform attribute: %q in %q", attr, plat)
+		}
+		p.Set(k, v)
+	}
+	return p, nil
 }
