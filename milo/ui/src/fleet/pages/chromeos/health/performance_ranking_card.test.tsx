@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { UseQueryResult } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import {
   GetFleetAvailabilityTrendsResponse,
@@ -221,5 +221,44 @@ describe('PerformanceRankingCard', () => {
 
     // Compared to 24h ago (80%), current (60%) is a 20% drop, despite being up from 1h ago (55%)
     expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent('-20%');
+  });
+
+  it('calls onSelectModel when a model row is clicked', () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 65 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 62 },
+          ],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    const onSelectModel = jest.fn();
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard onSelectModel={onSelectModel} />
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId('ranking-row-volteer'));
+    expect(onSelectModel).toHaveBeenCalledTimes(1);
+    expect(onSelectModel).toHaveBeenCalledWith('volteer');
   });
 });

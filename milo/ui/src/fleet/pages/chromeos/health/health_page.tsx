@@ -189,7 +189,10 @@ export const HealthPage = () => {
                   minHeight: 0,
                 }}
               >
-                <PerformanceRankingCard filter={activeFilter} />
+                <PerformanceRankingCard
+                  filter={activeFilter}
+                  onSelectModel={handleShowModel}
+                />
               </Box>
             </Box>
           </>

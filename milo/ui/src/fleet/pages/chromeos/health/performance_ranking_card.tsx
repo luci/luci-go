@@ -35,6 +35,7 @@ import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
 
 export interface PerformanceRankingCardProps {
   filter?: string;
+  onSelectModel?: (model: string) => void;
 }
 
 export interface RankedModelItem {
@@ -47,6 +48,7 @@ export interface RankedModelItem {
 
 export const PerformanceRankingCard = ({
   filter = '',
+  onSelectModel,
 }: PerformanceRankingCardProps) => {
   const queryRequest = useMemo(
     () => ({
@@ -179,6 +181,7 @@ export const PerformanceRankingCard = ({
               <ListItem
                 key={model.name}
                 data-testid={`ranking-row-${model.name}`}
+                onClick={() => onSelectModel?.(model.name)}
                 sx={{
                   py: 1.5,
                   px: 2.5,
@@ -189,6 +192,10 @@ export const PerformanceRankingCard = ({
                   flexDirection: 'column',
                   alignItems: 'stretch',
                   gap: 1,
+                  cursor: onSelectModel ? 'pointer' : 'default',
+                  '&:hover': onSelectModel
+                    ? { bgcolor: 'action.hover' }
+                    : undefined,
                 }}
               >
                 <Box
