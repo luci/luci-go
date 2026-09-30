@@ -332,4 +332,130 @@ describe('PerformanceRankingCard', () => {
     fireEvent.click(screen.getByTestId('ranking-row-DUT_POOL_CQ'));
     expect(onSelectPool).toHaveBeenCalledWith('DUT_POOL_CQ');
   });
+
+  it('sorts cohorts by Health Drop descending when selected in Sort by dropdown', () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.65 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.62 }, // drop: 3%
+          ],
+        },
+        {
+          name: 'dedede',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.85 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.75 }, // drop: 10%
+          ],
+        },
+        {
+          name: 'brya',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.8 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.8 }, // drop: 0%
+          ],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard />
+      </FakeContextProvider>,
+    );
+
+    // Initial default sorting by Availability ascending: volteer (62%) -> dedede (75%) -> brya (80%)
+    let rows = screen.getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('volteer');
+    expect(rows[1]).toHaveTextContent('dedede');
+    expect(rows[2]).toHaveTextContent('brya');
+
+    // Switch sort to Health Drop
+    const sortSelect = screen.getByRole('combobox', { name: /sort by/i });
+    fireEvent.mouseDown(sortSelect);
+    const dropOption = screen.getByRole('option', { name: /^health drop$/i });
+    fireEvent.click(dropOption);
+
+    // Sorted descending by health drop: dedede (-10%) -> volteer (-3%) -> brya (0%)
+    rows = screen.getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('dedede');
+    expect(rows[1]).toHaveTextContent('volteer');
+    expect(rows[2]).toHaveTextContent('brya');
+  });
+
+  it('filters cohorts to only show degrading hardware when Drops Only is toggled', () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.65 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.62 }, // drop: 3%
+          ],
+        },
+        {
+          name: 'brya',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.8 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.85 }, // no drop (improved)
+          ],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard />
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+
+    const toggleButton = screen.getByRole('button', {
+      name: /filter degraded models \(drops only\)/i,
+    });
+    fireEvent.click(toggleButton);
+
+    // Only volteer should remain
+    const filteredRows = screen.getAllByRole('listitem');
+    expect(filteredRows).toHaveLength(1);
+    expect(filteredRows[0]).toHaveTextContent('volteer');
+    expect(screen.queryByText('brya')).not.toBeInTheDocument();
+
+    // Toggle back
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /showing degraded models — click to show all/i,
+      }),
+    );
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+  });
 });

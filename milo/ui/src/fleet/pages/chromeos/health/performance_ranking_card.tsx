@@ -16,13 +16,17 @@ import { TrendingDown, TrendingFlat, TrendingUp } from '@mui/icons-material';
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   CardHeader,
   Divider,
+  FormControl,
   LinearProgress,
   List,
   ListItem,
+  MenuItem,
+  Select,
   Skeleton,
   Tab,
   Tabs,
@@ -36,6 +40,7 @@ import { calculate24hDelta, getHealthColor } from './ranking_utils';
 import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
 
 export type RankingEntityTab = 'models' | 'pools';
+export type RankingSortOption = 'availability' | 'drop';
 
 export interface PerformanceRankingCardProps {
   filter?: string;
@@ -57,6 +62,8 @@ export const PerformanceRankingCard = ({
   onSelectPool,
 }: PerformanceRankingCardProps) => {
   const [entityTab, setEntityTab] = useState<RankingEntityTab>('models');
+  const [sortBy, setSortBy] = useState<RankingSortOption>('availability');
+  const [dropsOnly, setDropsOnly] = useState<boolean>(false);
 
   const queryRequest = useMemo(
     () => ({
@@ -80,7 +87,7 @@ export const PerformanceRankingCard = ({
   const rankedItems = useMemo<readonly RankedCohortItem[]>(() => {
     if (!data?.series) return [];
 
-    const list: RankedCohortItem[] = [];
+    let list: RankedCohortItem[] = [];
     for (const s of data.series) {
       if (!s.name || s.name === 'Overall') continue;
       const delta = calculate24hDelta(s.points ?? []);
@@ -90,8 +97,16 @@ export const PerformanceRankingCard = ({
       });
     }
 
+    if (dropsOnly) {
+      list = list.filter((item) => item.healthDrop > 0);
+    }
+
+    if (sortBy === 'drop') {
+      return list.sort((a, b) => b.healthDrop - a.healthDrop);
+    }
+
     return list.sort((a, b) => a.availabilityPct - b.availabilityPct);
-  }, [data?.series]);
+  }, [data?.series, dropsOnly, sortBy]);
 
   const onSelectItem = entityTab === 'models' ? onSelectModel : onSelectPool;
 
@@ -116,6 +131,8 @@ export const PerformanceRankingCard = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
+              gap: 1.5,
+              flexWrap: 'wrap',
             }}
           >
             <Tabs
@@ -128,14 +145,70 @@ export const PerformanceRankingCard = ({
               <Tab
                 value="models"
                 label="Models"
-                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 80 }}
+                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 70 }}
               />
               <Tab
                 value="pools"
                 label="Pools"
-                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 80 }}
+                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 70 }}
               />
             </Tabs>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.8125rem',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Sort by:
+              </Typography>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <Select
+                  inputProps={{ 'aria-label': 'Sort by' }}
+                  size="small"
+                  value={sortBy}
+                  onChange={(e) =>
+                    setSortBy(e.target.value as RankingSortOption)
+                  }
+                  sx={{
+                    height: 28,
+                    fontSize: '0.8125rem',
+                    bgcolor: '#ffffff',
+                    '& .MuiSelect-select': {
+                      py: '2px !important',
+                      pl: 1.25,
+                      pr: '28px !important',
+                      fontSize: '0.8125rem',
+                      lineHeight: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'divider',
+                    },
+                    '& .MuiSvgIcon-root': {
+                      fontSize: '1.1rem',
+                    },
+                  }}
+                >
+                  <MenuItem
+                    value="availability"
+                    sx={{ fontSize: '0.8125rem', py: 0.5, minHeight: 30 }}
+                  >
+                    Availability
+                  </MenuItem>
+                  <MenuItem
+                    value="drop"
+                    sx={{ fontSize: '0.8125rem', py: 0.5, minHeight: 30 }}
+                  >
+                    Health Drop
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
           </Box>
         }
         sx={{ py: 1, px: 2 }}
@@ -188,9 +261,9 @@ export const PerformanceRankingCard = ({
         {!isLoading && !isError && rankedItems.length === 0 && (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              {entityTab === 'models'
-                ? 'No models found matching current filters.'
-                : 'No pools found matching current filters.'}
+              {dropsOnly
+                ? `No ${entityTab === 'models' ? 'models' : 'pools'} experienced a health drop in the last 24 hours.`
+                : `No ${entityTab === 'models' ? 'models' : 'pools'} found matching current filters.`}
             </Typography>
           </Box>
         )}
@@ -291,6 +364,36 @@ export const PerformanceRankingCard = ({
           </List>
         )}
       </CardContent>
+      <Divider />
+      <Box
+        sx={{
+          p: 1.5,
+          bgcolor: '#ffffff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Button
+          fullWidth
+          variant={dropsOnly ? 'contained' : 'outlined'}
+          color="primary"
+          size="small"
+          startIcon={<TrendingDown sx={{ fontSize: 16 }} />}
+          onClick={() => setDropsOnly((prev) => !prev)}
+          sx={{
+            py: 0.6,
+            textTransform: 'none',
+            fontSize: 12,
+            fontWeight: 'bold',
+            borderRadius: 1.5,
+          }}
+        >
+          {dropsOnly
+            ? `Showing Degraded ${entityTab === 'models' ? 'Models' : 'Pools'} — Click to Show All`
+            : `Filter Degraded ${entityTab === 'models' ? 'Models' : 'Pools'} (Drops Only)`}
+        </Button>
+      </Box>
     </Card>
   );
 };
