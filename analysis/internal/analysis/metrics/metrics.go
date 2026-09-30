@@ -110,8 +110,10 @@ var (
 			SortPriority:          220,
 			ShowInMetricsSelector: false,
 		},
-		FilterSQL: `f.is_test_run_blocked AND (f.sources.changelists IS NULL OR (ARRAY_LENGTH(f.sources.changelists) = 0 AND NOT f.sources.is_dirty))`,
-		CountSQL:  `f.test_run_id`,
+		FilterSQL: `f.is_test_run_blocked AND f.presubmit_run_id.id IS NULL ` +
+			`AND COALESCE(ARRAY_LENGTH(f.sources.changelists), 0) = 0 ` +
+			`AND NOT COALESCE(f.sources.is_dirty, FALSE)`,
+		CountSQL: `f.test_run_id`,
 	}.Build()
 
 	// The total number of test results in this cluster. LUCI Analysis only
