@@ -16,7 +16,6 @@ import { TrendingDown, TrendingFlat, TrendingUp } from '@mui/icons-material';
 import {
   Alert,
   Box,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -64,7 +63,6 @@ export const PerformanceRankingCard = ({
 }: PerformanceRankingCardProps) => {
   const [entityTab, setEntityTab] = useState<RankingEntityTab>('models');
   const [sortBy, setSortBy] = useState<RankingSortOption>('availability');
-  const [dropsOnly, setDropsOnly] = useState<boolean>(false);
 
   const queryRequest = useMemo(
     () => ({
@@ -88,7 +86,7 @@ export const PerformanceRankingCard = ({
   const rankedItems = useMemo<readonly RankedCohortItem[]>(() => {
     if (!data?.series) return [];
 
-    let list: RankedCohortItem[] = [];
+    const list: RankedCohortItem[] = [];
     for (const s of data.series) {
       if (!s.name || s.name === 'Overall') continue;
       const delta = calculate24hDelta(s.points ?? []);
@@ -98,16 +96,12 @@ export const PerformanceRankingCard = ({
       });
     }
 
-    if (dropsOnly) {
-      list = list.filter((item) => item.healthDrop > 0);
-    }
-
     if (sortBy === 'drop') {
       return list.sort((a, b) => b.healthDrop - a.healthDrop);
     }
 
     return list.sort((a, b) => a.availabilityPct - b.availabilityPct);
-  }, [data?.series, dropsOnly, sortBy]);
+  }, [data?.series, sortBy]);
 
   const onSelectItem = entityTab === 'models' ? onSelectModel : onSelectPool;
 
@@ -262,9 +256,9 @@ export const PerformanceRankingCard = ({
         {!isLoading && !isError && rankedItems.length === 0 && (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              {dropsOnly
-                ? `No ${entityTab === 'models' ? 'models' : 'pools'} experienced a health drop in the last 24 hours.`
-                : `No ${entityTab === 'models' ? 'models' : 'pools'} found matching current filters.`}
+              {entityTab === 'models'
+                ? 'No models found matching current filters.'
+                : 'No pools found matching current filters.'}
             </Typography>
           </Box>
         )}
@@ -365,36 +359,6 @@ export const PerformanceRankingCard = ({
           </List>
         )}
       </CardContent>
-      <Divider />
-      <Box
-        sx={{
-          p: 1.5,
-          bgcolor: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Button
-          fullWidth
-          variant={dropsOnly ? 'contained' : 'outlined'}
-          color="primary"
-          size="small"
-          startIcon={<TrendingDown sx={{ fontSize: 16 }} />}
-          onClick={() => setDropsOnly((prev) => !prev)}
-          sx={{
-            py: 0.6,
-            textTransform: 'none',
-            fontSize: 12,
-            fontWeight: 'bold',
-            borderRadius: 1.5,
-          }}
-        >
-          {dropsOnly
-            ? `Showing Degraded ${entityTab === 'models' ? 'Models' : 'Pools'} — Click to Show All`
-            : `Filter Degraded ${entityTab === 'models' ? 'Models' : 'Pools'} (Drops Only)`}
-        </Button>
-      </Box>
     </Card>
   );
 };
