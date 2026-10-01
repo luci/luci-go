@@ -402,7 +402,7 @@ func (opts ReadTestHistoryOptions) statement(tmpl string, paginationParams []str
 
 // ReadTestHistory reads verdicts from the spanner database.
 // Must be called in a spanner transactional context.
-func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts []*pb.TestVerdict, nextPageToken string, err error) {
+func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions, now time.Time) (verdicts []*pb.TestVerdict, nextPageToken string, err error) {
 	attrs := []attribute.KeyValue{
 		attribute.String("project", opts.Project),
 		attribute.String("test_id", opts.TestID),
@@ -430,96 +430,164 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/testresults.ReadTestHistory", attrs...)
 	defer func() { tracing.End(s, err) }()
 
-	stmt, err := opts.statement("testHistoryQuery", []string{"paginationTime", "paginationVariantHash", "paginationInvId"}, TimeRangeFromProto(opts.TimeRange))
+	// Find the partition time range to query.
+	totalQueryInterval, err := findQueryInterval(opts, now, false)
 	if err != nil {
 		return nil, "", err
 	}
 
-	var b spanutil.Buffer
+	// For efficiency, do not query all results for a test at once as the
+	// query design is hard for Spanner to do a LIMIT-clause push down on.
+	// (It will tend to read all rows for the test each time). Instead,
+	// read a chunk of results, and only continue if we do not have enough
+	// for a page.
+	partitioner := totalQueryInterval.Partition()
+
+	// Start querying at most 2 UTC days (typically today's fractional data plus yesterday).
+	// After the first run, we will update our estimate of days to query.
+	partitionDays := 2
+
 	verdicts = make([]*pb.TestVerdict, 0, opts.PageSize)
-	err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
-		tv := &pb.TestVerdict{}
-		var isPreviousTestID bool
-		var status int64
-		var statusV2 int64
-		var passedAvgDurationUsec spanner.NullInt64
-		var isExonerated bool
-		var changelistHosts []string
-		var changelistChanges []int64
-		var changelistPatchsets []int64
-		var changelistOwnerKinds []string
-		err := b.FromSpanner(
-			row,
-			&isPreviousTestID,
-			&tv.PartitionTime,
-			&tv.VariantHash,
-			&tv.InvocationId,
-			&status,
-			&statusV2,
-			&isExonerated,
-			&passedAvgDurationUsec,
-			&changelistHosts,
-			&changelistChanges,
-			&changelistPatchsets,
-			&changelistOwnerKinds,
-		)
+
+	// Keep reading until one of two conditions:
+	// - We have finished reading all date partitions for this test.
+	// - We have filled up a page of results.
+	for {
+		queryRange, ok := partitioner.Next(partitionDays)
+		if !ok {
+			// We have finished querying all partitions.
+			break
+		}
+		logging.Debugf(ctx, "History: querying interval from %v to %v (%v days).", queryRange.Earliest, queryRange.Latest, queryRange.Days())
+
+		stmt, err := opts.statement("testHistoryQuery", []string{"paginationTime", "paginationVariantHash", "paginationInvId"}, queryRange)
 		if err != nil {
-			return err
-		}
-		if isPreviousTestID {
-			tv.TestId = opts.PreviousTestID
-		} else {
-			tv.TestId = opts.TestID
-		}
-		tv.Status = pb.TestVerdictStatus(status)
-		tv.StatusV2 = pb.TestVerdict_Status(statusV2)
-
-		if isExonerated && (tv.StatusV2 == pb.TestVerdict_FAILED || tv.StatusV2 == pb.TestVerdict_EXECUTION_ERRORED || tv.StatusV2 == pb.TestVerdict_PRECLUDED) {
-			// Exonerated override only ever applies to failed, execution errored
-			// and precluded verdicts. While exonerations can be uploaded for any
-			// verdict, they have no effect for the other verdict statuses.
-			tv.StatusOverride = pb.TestVerdict_EXONERATED
-		} else {
-			tv.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
+			return nil, "", err
 		}
 
-		if passedAvgDurationUsec.Valid {
-			tv.PassedAvgDuration = durationpb.New(time.Microsecond * time.Duration(passedAvgDurationUsec.Int64))
-		}
-
-		// Data in spanner should be consistent, so
-		// len(changelistHosts) == len(changelistChanges)
-		//    == len(changelistPatchsets).
-		//
-		// ChangeListOwnerKinds was retrofitted after the table
-		// was first created, so it should be of equal length
-		// only if present. It was introduced in November 2022,
-		// so this special-case can be deleted in March 2023+.
-		if len(changelistHosts) != len(changelistChanges) ||
-			len(changelistChanges) != len(changelistPatchsets) ||
-			(changelistOwnerKinds != nil && len(changelistOwnerKinds) != len(changelistPatchsets)) {
-			panic("Changelist arrays have mismatched length in Spanner")
-		}
-		changelists := make([]*pb.Changelist, 0, len(changelistHosts))
-		for i := range changelistHosts {
-			var ownerKind pb.ChangelistOwnerKind
-			if changelistOwnerKinds != nil {
-				ownerKind = OwnerKindFromDB(changelistOwnerKinds[i])
+		var b spanutil.Buffer
+		var itemsInThisLastQuery int
+		err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
+			tv := &pb.TestVerdict{}
+			var isPreviousTestID bool
+			var status int64
+			var statusV2 int64
+			var passedAvgDurationUsec spanner.NullInt64
+			var isExonerated bool
+			var changelistHosts []string
+			var changelistChanges []int64
+			var changelistPatchsets []int64
+			var changelistOwnerKinds []string
+			err := b.FromSpanner(
+				row,
+				&isPreviousTestID,
+				&tv.PartitionTime,
+				&tv.VariantHash,
+				&tv.InvocationId,
+				&status,
+				&statusV2,
+				&isExonerated,
+				&passedAvgDurationUsec,
+				&changelistHosts,
+				&changelistChanges,
+				&changelistPatchsets,
+				&changelistOwnerKinds,
+			)
+			if err != nil {
+				return err
 			}
-			changelists = append(changelists, &pb.Changelist{
-				Host:      DecompressHost(changelistHosts[i]),
-				Change:    changelistChanges[i],
-				Patchset:  int32(changelistPatchsets[i]),
-				OwnerKind: ownerKind,
-			})
-		}
-		tv.Changelists = changelists
+			if isPreviousTestID {
+				tv.TestId = opts.PreviousTestID
+			} else {
+				tv.TestId = opts.TestID
+			}
+			tv.Status = pb.TestVerdictStatus(status)
+			tv.StatusV2 = pb.TestVerdict_Status(statusV2)
 
-		verdicts = append(verdicts, tv)
-		return nil
-	})
-	if err != nil {
-		return nil, "", errors.Fmt("query test history for %q in %q: %w", opts.TestID, opts.Project, err)
+			if isExonerated && (tv.StatusV2 == pb.TestVerdict_FAILED || tv.StatusV2 == pb.TestVerdict_EXECUTION_ERRORED || tv.StatusV2 == pb.TestVerdict_PRECLUDED) {
+				// Exonerated override only ever applies to failed, execution errored
+				// and precluded verdicts. While exonerations can be uploaded for any
+				// verdict, they have no effect for the other verdict statuses.
+				tv.StatusOverride = pb.TestVerdict_EXONERATED
+			} else {
+				tv.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
+			}
+
+			if passedAvgDurationUsec.Valid {
+				tv.PassedAvgDuration = durationpb.New(time.Microsecond * time.Duration(passedAvgDurationUsec.Int64))
+			}
+
+			// Data in spanner should be consistent, so
+			// len(changelistHosts) == len(changelistChanges)
+			//    == len(changelistPatchsets).
+			//
+			// ChangeListOwnerKinds was retrofitted after the table
+			// was first created, so it should be of equal length
+			// only if present. It was introduced in November 2022,
+			// so this special-case can be deleted in March 2023+.
+			if len(changelistHosts) != len(changelistChanges) ||
+				len(changelistChanges) != len(changelistPatchsets) ||
+				(changelistOwnerKinds != nil && len(changelistOwnerKinds) != len(changelistPatchsets)) {
+				panic("Changelist arrays have mismatched length in Spanner")
+			}
+			changelists := make([]*pb.Changelist, 0, len(changelistHosts))
+			for i := range changelistHosts {
+				var ownerKind pb.ChangelistOwnerKind
+				if changelistOwnerKinds != nil {
+					ownerKind = OwnerKindFromDB(changelistOwnerKinds[i])
+				}
+				changelists = append(changelists, &pb.Changelist{
+					Host:      DecompressHost(changelistHosts[i]),
+					Change:    changelistChanges[i],
+					Patchset:  int32(changelistPatchsets[i]),
+					OwnerKind: ownerKind,
+				})
+			}
+			tv.Changelists = changelists
+
+			// Do not read more than the requested page size.
+			if opts.PageSize != 0 && len(verdicts) >= opts.PageSize {
+				// Signal we want to stop reading early.
+				return complete
+			}
+			verdicts = append(verdicts, tv)
+			itemsInThisLastQuery++
+			return nil
+		})
+		if err != nil && err != complete {
+			return nil, "", errors.Fmt("query test history for %q in %q: %w", opts.TestID, opts.Project, err)
+		}
+
+		var remainingItems int
+		if opts.PageSize != 0 {
+			remainingItems = opts.PageSize - len(verdicts)
+		} else {
+			// When page size = 0, we should retrieve all items. Assume there are
+			// a lot of items in the table.
+			remainingItems = 1_000_000
+		}
+		if remainingItems <= 0 {
+			// We have a full page. No need to read further.
+			break
+		}
+
+		// Estimate the average number of items we have read per day.
+		// Even if we read nothing, estimate there were ~0.5 items in the query interval
+		// to avoid divide by zero errors later.
+		itemsPerDay := (math.Max(float64(itemsInThisLastQuery), 0.5)) / queryRange.Days()
+
+		// Read about 10% more than we think we need, and at least one day.
+		// The 10% is to reduce the likelihood of missing with the next query.
+		// The 1 day floor (via math.Ceil) is to make sure we make progress.
+		daysRequired := math.Ceil((float64(remainingItems) / itemsPerDay) * 1.1)
+		if daysRequired > 31 {
+			// Cap the number of days read at a time to 31 to avoid
+			// overly expensive queries (e.g. due to early understimates of
+			// the number of results per day).
+			daysRequired = 31
+		}
+
+		partitionDays = int(daysRequired)
 	}
 
 	if opts.PageSize != 0 && len(verdicts) == opts.PageSize {
@@ -554,7 +622,7 @@ type verdictCountsV1 struct {
 // - The data retention period of the table
 // - The pagination position
 // - The query options
-func findQueryInterval(opts ReadTestHistoryOptions, now time.Time) (TimeRange, error) {
+func findQueryInterval(opts ReadTestHistoryOptions, now time.Time, isDayGrouped bool) (TimeRange, error) {
 	// Start with all times.
 	result := TimeRange{
 		Latest:   MaxSpannerTimestamp,
@@ -562,8 +630,8 @@ func findQueryInterval(opts ReadTestHistoryOptions, now time.Time) (TimeRange, e
 	}
 	if opts.PageToken != "" {
 		// If we have paginated, start reading from the pagination point.
-		// The pagination token contains the (PartitionTime, VariantHash) of the
-		// last group returned.
+		// The pagination token contains the PartitionTime (or PartitionDate) as
+		// the first component.
 		tokens, err := pagination.ParseToken(opts.PageToken)
 		if err != nil {
 			return TimeRange{}, err
@@ -572,9 +640,18 @@ func findQueryInterval(opts ReadTestHistoryOptions, now time.Time) (TimeRange, e
 		if err != nil {
 			return TimeRange{}, err
 		}
-		// Latest is an exclusive time, but we want to treat lastGroupTime as an inclusive date,
-		// so add 24 hours.
-		result.Latest = lastGroupTime.UTC().Add(24 * time.Hour)
+		if isDayGrouped {
+			// For ReadTestHistoryStats, results are grouped by UTC day (PartitionDate).
+			// Latest is an exclusive bound, and we need to scan the entire UTC day of
+			// lastGroupTime to aggregate stats for the remaining variants on that day,
+			// so truncate to the UTC day and add 24 hours.
+			result.Latest = lastGroupTime.UTC().Add(24 * time.Hour)
+		} else {
+			// For ReadTestHistory, verdicts are ordered by exact PartitionTime DESC,
+			// so no verdict on subsequent pages can have PartitionTime > lastGroupTime.
+			// Since Latest is an exclusive bound, add 1 microsecond to treat lastGroupTime as inclusive.
+			result.Latest = lastGroupTime.UTC().Add(time.Microsecond)
+		}
 	}
 	// Intersect with the retention period of the table.
 	result = result.Intersect(TimeRange{
@@ -594,7 +671,7 @@ var complete = errors.New("callback does not want any more test verdicts")
 // Must be called in a spanner transactional context.
 func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions, now time.Time) (groups []*pb.QueryTestHistoryStatsResponse_Group, nextPageToken string, err error) {
 	// Find the partition time range to query.
-	totalQueryInterval, err := findQueryInterval(opts, now)
+	totalQueryInterval, err := findQueryInterval(opts, now, true)
 	if err != nil {
 		return nil, "", err
 	}
@@ -976,7 +1053,7 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 						OR (PartitionTime = TIMESTAMP(@paginationTime) AND VariantHash = @paginationVariantHash AND IngestedInvocationId > @paginationInvId)
 				)
 			{{end}}
-		GROUP BY PartitionTime, TestId, VariantHash, IngestedInvocationId
+		GROUP BY Project, TestId, PartitionTime, VariantHash, IngestedInvocationId
 		ORDER BY
 			PartitionTime DESC,
 			TestId ASC,

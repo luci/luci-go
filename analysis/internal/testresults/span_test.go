@@ -150,8 +150,16 @@ func TestReadTestHistory(t *testing.T) {
 			},
 		}
 
+		now := referenceTime.Add(20 * time.Minute)
+
+		readHistory := func(ctx context.Context, opts ReadTestHistoryOptions) ([]*pb.TestVerdict, string, error) {
+			readTxn, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			return ReadTestHistory(readTxn, opts, now)
+		}
+
 		t.Run("baseline", func(t *ftt.Test) {
-			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts))
@@ -170,20 +178,20 @@ func TestReadTestHistory(t *testing.T) {
 			// The unexpected skips get mapped back to execution errors instead.
 			expectedTestVerdicts[7].StatusV2 = pb.TestVerdict_EXECUTION_ERRORED
 
-			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts))
 		})
 		t.Run("pagination works", func(t *ftt.Test) {
 			opts.PageSize = 5
-			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts[:5]))
 
 			opts.PageToken = nextPageToken
-			verdicts, nextPageToken, err = ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err = readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts[5:]))
@@ -196,7 +204,7 @@ func TestReadTestHistory(t *testing.T) {
 				// Exclusive.
 				Latest: timestamppb.New(referenceTime.Add(-24 * time.Hour)),
 			}
-			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
@@ -213,7 +221,7 @@ func TestReadTestHistory(t *testing.T) {
 						Contains: pbutil.Variant("key1", "val2"),
 					},
 				}
-				verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+				verdicts, nextPageToken, err := readHistory(ctx, opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
@@ -229,7 +237,7 @@ func TestReadTestHistory(t *testing.T) {
 						Contains: pbutil.Variant("key1", "val2", "key2", "val2"),
 					},
 				}
-				verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+				verdicts, nextPageToken, err := readHistory(ctx, opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
@@ -244,7 +252,7 @@ func TestReadTestHistory(t *testing.T) {
 					Equals: testVariant2,
 				},
 			}
-			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
@@ -259,7 +267,7 @@ func TestReadTestHistory(t *testing.T) {
 					HashEquals: pbutil.VariantHash(testVariant2),
 				},
 			}
-			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
@@ -270,7 +278,7 @@ func TestReadTestHistory(t *testing.T) {
 
 		t.Run("with submitted_filter", func(t *ftt.Test) {
 			opts.SubmittedFilter = pb.SubmittedFilter_ONLY_UNSUBMITTED
-			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
@@ -281,7 +289,7 @@ func TestReadTestHistory(t *testing.T) {
 			}))
 
 			opts.SubmittedFilter = pb.SubmittedFilter_ONLY_SUBMITTED
-			verdicts, nextPageToken, err = ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err = readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
@@ -294,7 +302,7 @@ func TestReadTestHistory(t *testing.T) {
 
 		t.Run("with bisection filter", func(t *ftt.Test) {
 			opts.ExcludeBisectionResults = true
-			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
@@ -309,7 +317,7 @@ func TestReadTestHistory(t *testing.T) {
 		})
 		t.Run("with previous_test_id", func(t *ftt.Test) {
 			opts.PreviousTestID = "previous_test_id"
-			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readHistory(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 

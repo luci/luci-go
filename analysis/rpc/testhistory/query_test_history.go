@@ -17,6 +17,7 @@ package testhistory
 import (
 	"context"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/server/span"
@@ -62,7 +63,11 @@ func (s *testHistoryServer) Query(ctx context.Context, req *pb.QueryTestHistoryR
 		PageToken:               req.PageToken,
 	}
 
-	verdicts, nextPageToken, err := testresults.ReadTestHistory(span.Single(ctx), opts)
+	now := clock.Now(ctx)
+	readTxn, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	verdicts, nextPageToken, err := testresults.ReadTestHistory(readTxn, opts, now)
 	if err != nil {
 		return nil, err
 	}
