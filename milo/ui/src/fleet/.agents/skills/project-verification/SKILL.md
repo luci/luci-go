@@ -17,8 +17,10 @@ Use this skill before declaring a task complete to ensure no regressions.
 Progress:
 - [ ] Step 1: Audit changes to ensure no references to deprecated symbols or *_OLD files were introduced
 - [ ] Step 2: Run linting (`npm run lint-inc` or `npm run lint`)
-- [ ] Step 3: Run tests (`npm test -- ./src/fleet/` or specific spec files)
+- [ ] Step 3: Run transitive unit/integration tests (`npx jest --bail --findRelatedTests <changed_files>` and `npm test -- ./src/fleet/`)
 - [ ] Step 4: Run type checking (`npm run type-check`)
+- [ ] Step 5: Run Feature-Flag & pRPC Blast-Radius E2E Check (`npm run e2e` whenever `src/fleet/features.ts`, `src/fleet/routing/**`, or pRPC query hooks change)
+- [ ] Step 6: Re-verify after rebase (`git rebase origin/main` requires re-running Steps 3-5 before pushing to Gerrit CQ)
 
 ## Commands
 
@@ -51,6 +53,14 @@ Persistent client-side state (like IndexedDB, LocalStorage, or Cookies) can leak
       # Run the stress test
       STRESS_COUNT=5 STRESS_SPEC="cypress/e2e/fleet/android_devices_page.cy.ts" PREVIEW_PORT=8765 ./scripts/stress_e2e.sh
       ```
+
+## Feature-Flag, pRPC & Post-Rebase Blast-Radius Gate
+
+Because Cypress specs (`cypress/e2e/fleet/*.cy.ts`) load routes by URL rather than TypeScript `import` statements, `jest --findRelatedTests` will not traverse into `cypress/e2e/fleet/`.
+- **When flipping a feature flag (`src/fleet/features.ts`), modifying routes (`src/fleet/routing/**`), or changing a component pRPC query (`client.<Method>.query`)**:
+  1. Audit `cypress/e2e/fleet/*.cy.ts` for `mockPrpc` / `mockPrpcEndpoint` calls targeting replaced or gated pRPC methods (e.g., `CountDevices` vs. `CountAndroidDevices`).
+  2. Run `npm run e2e` locally even if no `.cy.ts` file was initially modified.
+- **No Blind Rebase-Push**: Whenever rebasing onto `origin/main` (`git fetch origin main && git rebase origin/main`), re-run `npx jest --findRelatedTests` and `npm run e2e` before pushing to `refs/for/main`, as new unit or Cypress specs may have landed on `origin/main` while the CL was in flight.
 
 ## Local Debugging and Temp Files
 
