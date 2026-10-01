@@ -15,7 +15,6 @@
 package app
 
 import (
-	"context"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -23,16 +22,19 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/common/tsmon"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/pubsub"
+	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/analysis/internal/checkpoints"
+	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/internal/workunits/exporter"
+	bqpb "go.chromium.org/luci/analysis/proto/bq"
 )
 
 func TestWorkUnitsPubSubHandler(t *testing.T) {
 	ftt.Run("WorkUnitsPubSubHandler", t, func(t *ftt.Test) {
-		ctx, _ := tsmon.WithDummyInMemory(context.Background())
+		ctx := testutil.IntegrationTestContext(t)
 
 		fakeClient := exporter.NewFakeClient()
 		wuExporter := exporter.NewExporter(fakeClient)
@@ -73,6 +75,7 @@ func TestWorkUnitsPubSubHandler(t *testing.T) {
 					Realm:            "test-project:try",
 					RootInvocationId: "u-root-inv",
 				},
+				DeduplicationKey: "dedup-key-123",
 			}
 			message := pubsub.Message{
 				Attributes: map[string]string{
@@ -104,6 +107,27 @@ func TestWorkUnitsPubSubHandler(t *testing.T) {
 			assert.Loosely(t, row2.ParentWorkUnit, should.BeEmpty) // Should be empty because parent was Root Invocation
 			assert.Loosely(t, row2.Kind, should.Equal("TF_MODULE"))
 			assert.Loosely(t, row2.State, should.Equal(rdbpb.WorkUnit_SUCCEEDED))
+
+			// Verify checkpoint was recorded in Spanner.
+			cps, err := checkpoints.ReadAllForTesting(span.Single(ctx))
+			assert.NoErr(t, err)
+			assert.Loosely(t, cps, should.HaveLength(1))
+			assert.Loosely(t, cps[0].Key, should.Match(checkpoints.Key{
+				Project:    "test-project",
+				ResourceID: "results.api.cr.dev/u-root-inv",
+				ProcessID:  "work-unit-ingestion/export-work-units/work-units",
+				Uniquifier: "dedup-key-123",
+			}))
+
+			t.Run("Work units are not exported again if duplicate message is received", func(t *ftt.Test) {
+				fakeClient.InsertionsByDestinationKey = map[string][]*bqpb.WorkUnitRow{}
+
+				err := h.Handle(ctx, message, notification)
+				assert.NoErr(t, err)
+
+				// Nothing should be exported because the checkpoint already exists.
+				assert.Loosely(t, fakeClient.InsertionsByDestinationKey, should.BeEmpty)
+			})
 		})
 
 		t.Run("Missing project", func(t *ftt.Test) {

@@ -16,18 +16,28 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"time"
+
+	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/pubsub"
+	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/workunits/exporter"
 )
+
+// Keep checkpoints for 90 days, so that task/message retries within 90 days are safe.
+const workUnitsCheckpointTTL = 90 * 24 * time.Hour
 
 var (
 	workUnitsNotificationCounter = metric.NewCounter(
@@ -69,20 +79,54 @@ func (h *WorkUnitsPubSubHandler) Handle(ctx context.Context, message pubsub.Mess
 	project, _ := realms.Split(realm)
 
 	fields := logging.Fields{
-		"Project":        project,
-		"RootInvocation": notification.RootInvocationMetadata.RootInvocationId,
+		"Project":          project,
+		"RootInvocation":   notification.RootInvocationMetadata.RootInvocationId,
+		"DeduplicationKey": notification.DeduplicationKey,
 	}
 	ctx = logging.SetFields(ctx, fields)
 
-	exportOpts := exporter.Options{
-		Project: project,
-	}
-
-	if err := h.exporter.Export(ctx, notification, exporter.WorkUnitTable, exportOpts); err != nil {
+	if err := h.exportTo(ctx, project, notification, exporter.WorkUnitTable); err != nil {
 		status = errStatus(err)
 		return err
 	}
 
 	status = "success"
+	return nil
+}
+
+func (h *WorkUnitsPubSubHandler) exportTo(ctx context.Context, project string, notification *rdbpb.WorkUnitsNotification, dest exporter.ExportDestination) error {
+	var key checkpoints.Key
+	if notification.DeduplicationKey != "" {
+		key = checkpoints.Key{
+			Project:    project,
+			ResourceID: fmt.Sprintf("%s/%s", notification.ResultdbHost, notification.RootInvocationMetadata.RootInvocationId),
+			ProcessID:  fmt.Sprintf("work-unit-ingestion/export-work-units/%s", dest.Key),
+			Uniquifier: notification.DeduplicationKey,
+		}
+		exists, err := checkpoints.Exists(span.Single(ctx), key)
+		if err != nil {
+			return transient.Tag.Apply(errors.Fmt("test existence of checkpoint: %w", err))
+		}
+		if exists {
+			// We already performed this export previously. Do not perform it
+			// again to avoid duplicate rows in the destination table.
+			return nil
+		}
+	}
+
+	exportOpts := exporter.Options{
+		Project: project,
+	}
+	if err := h.exporter.Export(ctx, notification, dest, exportOpts); err != nil {
+		return transient.Tag.Apply(errors.Fmt("export: %w", err))
+	}
+
+	if notification.DeduplicationKey != "" {
+		ms := []*spanner.Mutation{checkpoints.Insert(ctx, key, workUnitsCheckpointTTL)}
+		if _, err := span.Apply(ctx, ms); err != nil {
+			return transient.Tag.Apply(errors.Fmt("create checkpoint: %w", err))
+		}
+	}
+
 	return nil
 }
