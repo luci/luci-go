@@ -36,7 +36,8 @@ import { useMemo, useState } from 'react';
 
 import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { calculate24hDelta, getHealthColor } from './ranking_utils';
+import { getHealthStatus } from './health_status_utils';
+import { calculate24hDelta } from './ranking_utils';
 import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
 
 export type RankingEntityTab = 'models' | 'pools';
@@ -354,7 +355,7 @@ export const PerformanceRankingCard = ({
                   <LinearProgress
                     variant="determinate"
                     value={item.availabilityPct}
-                    color={getHealthColor(item.availabilityPct)}
+                    color={getHealthStatus(item.availabilityPct).color}
                     sx={{ height: 6, borderRadius: 3 }}
                     aria-label={`${item.name} availability`}
                   />

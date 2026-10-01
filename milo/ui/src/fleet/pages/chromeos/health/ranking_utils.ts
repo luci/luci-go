@@ -89,14 +89,3 @@ export const calculate24hDelta = (
     trend,
   };
 };
-
-/**
- * Returns the MUI color key corresponding to a cohort's availability percentage.
- */
-export const getHealthColor = (
-  availabilityPct: number,
-): 'success' | 'warning' | 'error' => {
-  if (availabilityPct >= 85) return 'success';
-  if (availabilityPct >= 70) return 'warning';
-  return 'error';
-};

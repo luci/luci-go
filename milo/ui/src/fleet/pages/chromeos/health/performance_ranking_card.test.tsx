@@ -23,7 +23,6 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { PerformanceRankingCard } from './performance_ranking_card';
-import { getHealthColor } from './ranking_utils';
 import * as UseFleetAvailabilityTrendsModule from './use_fleet_availability_trends';
 
 describe('PerformanceRankingCard', () => {
@@ -173,15 +172,6 @@ describe('PerformanceRankingCard', () => {
     expect(
       screen.getByText('No models found matching current filters.'),
     ).toBeInTheDocument();
-  });
-
-  it('correctly maps SLA colors based on availability thresholds', () => {
-    expect(getHealthColor(95)).toBe('success');
-    expect(getHealthColor(85)).toBe('success');
-    expect(getHealthColor(84)).toBe('warning');
-    expect(getHealthColor(70)).toBe('warning');
-    expect(getHealthColor(69)).toBe('error');
-    expect(getHealthColor(0)).toBe('error');
   });
 
   it('calculates 24h delta by comparing against point 24 hours prior rather than previous hourly bucket', () => {
