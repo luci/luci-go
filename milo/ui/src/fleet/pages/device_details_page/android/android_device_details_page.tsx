@@ -45,6 +45,7 @@ import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { isTyping } from '@/fleet/utils/field_typing';
+import { getMobileHarnessLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -250,16 +251,7 @@ export const AndroidDeviceDetailsPage = ({
     );
   }
 
-  const hostname = device?.omnilabSpec?.labels['hostname']?.values?.[0];
-  const hostIp = device?.omnilabSpec?.labels['host_ip']?.values?.[0];
-  let mhUrl = '';
-  if (hostname && hostIp) {
-    mhUrl = `https://mobileharness-fe.corp.google.com/devicedetailview/${hostname}/${hostIp}/${device.id}`;
-  } else {
-    const params = new URLSearchParams();
-    params.append('filter', `"id":("${device?.id}")`);
-    mhUrl = `https://mobileharness-fe.corp.google.com/devicelistview?${params.toString()}`;
-  }
+  const mhUrl = getMobileHarnessLink(device);
 
   const headerSection = (
     <div

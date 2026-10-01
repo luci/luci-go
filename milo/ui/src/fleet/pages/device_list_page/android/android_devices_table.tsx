@@ -24,6 +24,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { useFeatureFlag } from '@/common/feature_flags';
+import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import {
   getColumnId,
   MrtColumnManager,
@@ -39,7 +40,10 @@ import {
   ANDROID_DEVICES_LOCAL_STORAGE_KEY,
   PIXEL_DEVICES_LOCAL_STORAGE_KEY,
 } from '@/fleet/constants/local_storage_keys';
-import { enableAndroidUtilizationMetrics } from '@/fleet/features';
+import {
+  enableAndroidUtilizationMetrics,
+  enablePixelDeviceRestoration,
+} from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
@@ -56,6 +60,7 @@ import {
   AndroidDevice,
   ListAndroidDevicesRequest,
   ExportAndroidDevicesToCSVRequest,
+  Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AndroidPageWorkspace, workspaces } from '../../../workspaces';
@@ -75,6 +80,9 @@ export const AndroidDevicesTable = ({
   workspace,
 }: AndroidTableProps) => {
   const showAvgUtilization = useFeatureFlag(enableAndroidUtilizationMetrics);
+  const isPixelRestorationEnabled = useFeatureFlag(
+    enablePixelDeviceRestoration,
+  );
   const client = useFleetConsoleClient();
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100, 500, 1000],
@@ -159,38 +167,50 @@ export const AndroidDevicesTable = ({
         },
       }),
       positionToolbarAlertBanner: 'none',
-      renderTopToolbarCustomActions: ({ table }) => (
-        <FleetTopToolbar
-          table={table}
-          availableColumns={availableColumns}
-          visibleColumnIds={mrtColumnManager.columns
-            .filter((col) => {
-              const id = getColumnId(col);
-              return id && mrtColumnManager.columnVisibility[id];
-            })
-            .map((col) => getColumnId(col))}
-          onToggleColumn={mrtColumnManager.onToggleColumn}
-          selectOnlyColumn={mrtColumnManager.selectOnlyColumn}
-          resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
-          resetColumnWidths={resetColumnWidths}
-        >
-          <FleetCSVExportButton
+      renderTopToolbarCustomActions: ({ table }) => {
+        const selectedDevices = table
+          .getSelectedRowModel()
+          .rows.map((row) => row.original);
+
+        return (
+          <FleetTopToolbar
             table={table}
-            filter={combinedAip160}
-            fileName={`fleet_console_${workspace.toLowerCase()}_devices`}
-            onExport={(cols, filterStr, ids) =>
-              client.ExportAndroidDevicesToCSV(
-                ExportAndroidDevicesToCSVRequest.fromPartial({
-                  columns: cols,
-                  orderBy: orderByParam,
-                  filter: filterStr,
-                  ids,
-                }),
-              )
-            }
-          />
-        </FleetTopToolbar>
-      ),
+            availableColumns={availableColumns}
+            visibleColumnIds={mrtColumnManager.columns
+              .filter((col) => {
+                const id = getColumnId(col);
+                return id && mrtColumnManager.columnVisibility[id];
+              })
+              .map((col) => getColumnId(col))}
+            onToggleColumn={mrtColumnManager.onToggleColumn}
+            selectOnlyColumn={mrtColumnManager.selectOnlyColumn}
+            resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
+            resetColumnWidths={resetColumnWidths}
+          >
+            {workspace === 'Pixel' && isPixelRestorationEnabled && (
+              <RequestRepair
+                selectedItems={selectedDevices}
+                platform={Platform.PIXEL}
+              />
+            )}
+            <FleetCSVExportButton
+              table={table}
+              filter={combinedAip160}
+              fileName={`fleet_console_${workspace.toLowerCase()}_devices`}
+              onExport={(cols, filterStr, ids) =>
+                client.ExportAndroidDevicesToCSV(
+                  ExportAndroidDevicesToCSVRequest.fromPartial({
+                    columns: cols,
+                    orderBy: orderByParam,
+                    filter: filterStr,
+                    ids,
+                  }),
+                )
+              }
+            />
+          </FleetTopToolbar>
+        );
+      },
       renderBottomToolbarCustomActions: ({ table }) => (
         <FleetBottomToolbar
           table={table}
@@ -248,6 +268,8 @@ export const AndroidDevicesTable = ({
       combinedAip160,
       client,
       orderByParam,
+      workspace,
+      isPixelRestorationEnabled,
     ],
   );
 

@@ -33,6 +33,7 @@ import { renderTimestampCell } from '@/fleet/components/table/cell_with_timestam
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { generateDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FC_CellProps } from '@/fleet/types/table';
+import { getMobileHarnessLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -138,28 +139,7 @@ export const getAndroidColumnOverrides: (
         d.id,
       );
 
-      const type = d.omnilabSpec?.labels['fc_machine_type']?.values?.[0];
-      const hostname = d.omnilabSpec?.labels['hostname']?.values?.[0];
-      const hostIp = d.omnilabSpec?.labels['host_ip']?.values?.[0];
-
-      let mhLink = '';
-      if (type === 'host') {
-        if (hostname && hostIp) {
-          mhLink = `https://mobileharness-fe.corp.google.com/labdetailview/${hostname}/${hostIp}`;
-        } else {
-          const urlParams = new URLSearchParams();
-          urlParams.append('filter', `"host_name":("${d.id}")`);
-          mhLink = `https://mobileharness-fe.corp.google.com/lablistview?${urlParams.toString()}`;
-        }
-      } else {
-        if (hostname && hostIp) {
-          mhLink = `https://mobileharness-fe.corp.google.com/devicedetailview/${hostname}/${hostIp}/${d.id}`;
-        } else {
-          const urlParams = new URLSearchParams();
-          urlParams.append('filter', `"id":("${d.id}")`);
-          mhLink = `https://mobileharness-fe.corp.google.com/devicelistview?${urlParams.toString()}`;
-        }
-      }
+      const mhLink = getMobileHarnessLink(d);
 
       return (
         <div

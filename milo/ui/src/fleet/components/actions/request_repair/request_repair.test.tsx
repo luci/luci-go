@@ -14,7 +14,11 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  AndroidDevice,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { HealthCategory } from '@/proto/go.chromium.org/infra/fleetconsole/internal/infra/ext/omnilab/omnilab-device.pb';
 import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
 import { DutToRepair } from '../shared/types';
@@ -218,5 +222,179 @@ describe('<RequestRepair />', () => {
     expect(decodeURIComponent(openedUrl.searchParams.get('description')!)).toBe(
       decodeURIComponent(expectedDescription),
     );
+  });
+
+  describe('Pixel restoration', () => {
+    const createPixelDevice = (
+      id: string,
+      labName?: string,
+    ): AndroidDevice => ({
+      id,
+      runTarget: 'oriole',
+      realm: 'pixel-realm',
+      healthCategory: HealthCategory.HEALTH_CATEGORY_IN_SERVICE,
+      fcOfflineSince: undefined,
+      omnilabSpec:
+        labName !== undefined
+          ? {
+              labels: {
+                lab_name: { values: [labName] },
+                hostname: { values: [`${id}.mock.host`] },
+                dut_state: { values: ['ready'] },
+              },
+            }
+          : { labels: {} },
+    });
+
+    it('should not render the button if no Pixel devices are selected', () => {
+      render(
+        <FakeAuthStateProvider>
+          <RequestRepair selectedItems={[]} platform={Platform.PIXEL} />
+        </FakeAuthStateProvider>,
+      );
+      expect(
+        screen.queryByTestId('file-restoration-bug-button'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('should render a button that opens a new tab with the prepopulated template for single device', () => {
+      const dev = createPixelDevice('pixel-dev-1', 'pixel-lab-mtv');
+
+      render(
+        <FakeAuthStateProvider>
+          <RequestRepair selectedItems={[dev]} platform={Platform.PIXEL} />
+        </FakeAuthStateProvider>,
+      );
+
+      const button = screen.getByTestId('file-restoration-bug-button');
+      expect(button).toBeInTheDocument();
+      expect(button).toBeEnabled();
+      expect(button).toHaveTextContent('Request Restoration');
+
+      fireEvent.click(button);
+
+      expect(windowOpenSpy).toHaveBeenCalledTimes(1);
+      const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
+      expect(openedUrl.origin).toBe('https://b.corp.google.com');
+      expect(openedUrl.pathname).toBe('/issues/new');
+      expect(openedUrl.searchParams.get('component')).toBe('2174751');
+      expect(openedUrl.searchParams.get('template')).toBe('2403455');
+      expect(openedUrl.searchParams.get('format')).toBe('MARKDOWN');
+      expect(openedUrl.searchParams.get('title')).toBe(
+        '[pixel-lab-mtv][Restoration][pixel-dev-1]',
+      );
+
+      const desc = decodeURIComponent(
+        openedUrl.searchParams.get('description')!,
+      );
+      expect(desc.startsWith('Lab: pixel\\-lab\\-mtv')).toBe(true);
+      expect(desc).toContain('pixel-dev-1');
+    });
+
+    it('should render an enabled button for multiple devices from the same lab', () => {
+      const dev1 = createPixelDevice('pixel-dev-1', 'pixel-lab-mtv');
+      const dev2 = createPixelDevice('pixel-dev-2', 'pixel-lab-mtv');
+
+      render(
+        <FakeAuthStateProvider>
+          <RequestRepair
+            selectedItems={[dev1, dev2]}
+            platform={Platform.PIXEL}
+          />
+        </FakeAuthStateProvider>,
+      );
+
+      const button = screen.getByTestId('file-restoration-bug-button');
+      expect(button).toBeInTheDocument();
+      expect(button).toBeEnabled();
+
+      fireEvent.click(button);
+
+      expect(windowOpenSpy).toHaveBeenCalledTimes(1);
+      const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
+      expect(openedUrl.origin).toBe('https://b.corp.google.com');
+      expect(openedUrl.searchParams.get('component')).toBe('2174751');
+      expect(openedUrl.searchParams.get('template')).toBe('2403455');
+      expect(openedUrl.searchParams.get('title')).toBe(
+        '[pixel-lab-mtv][Restoration][pixel-dev-1, pixel-dev-2]',
+      );
+
+      const desc = decodeURIComponent(
+        openedUrl.searchParams.get('description')!,
+      );
+      expect(desc.startsWith('Lab: pixel\\-lab\\-mtv')).toBe(true);
+      expect(desc).toContain(
+        '| Device ID | Hostname | Run Target | State | Mobile Harness |',
+      );
+      expect(desc).toContain('pixel-dev-1');
+      expect(desc).toContain('pixel-dev-2');
+      expect(desc).toContain('[View in MH](');
+
+      const fconLinkPos = desc.indexOf(
+        '[View selected devices in Fleet Console]',
+      );
+      const tablePos = desc.indexOf('| Device ID | Hostname |');
+      expect(fconLinkPos).toBeGreaterThan(-1);
+      expect(fconLinkPos).toBeLessThan(tablePos);
+    });
+
+    it('should disable the button when selected devices are from different labs', () => {
+      const dev1 = createPixelDevice('pixel-dev-1', 'lab-alpha');
+      const dev2 = createPixelDevice('pixel-dev-2', 'lab-beta');
+
+      render(
+        <FakeAuthStateProvider>
+          <RequestRepair
+            selectedItems={[dev1, dev2]}
+            platform={Platform.PIXEL}
+          />
+        </FakeAuthStateProvider>,
+      );
+
+      const button = screen.getByTestId('file-restoration-bug-button');
+      expect(button).toBeInTheDocument();
+      expect(button).toBeDisabled();
+
+      fireEvent.click(button);
+      expect(windowOpenSpy).not.toHaveBeenCalled();
+    });
+
+    it('should disable the button when a selected device is missing lab information', () => {
+      const dev = createPixelDevice('pixel-dev-no-lab');
+
+      render(
+        <FakeAuthStateProvider>
+          <RequestRepair selectedItems={[dev]} platform={Platform.PIXEL} />
+        </FakeAuthStateProvider>,
+      );
+
+      const button = screen.getByTestId('file-restoration-bug-button');
+      expect(button).toBeInTheDocument();
+      expect(button).toBeDisabled();
+
+      fireEvent.click(button);
+      expect(windowOpenSpy).not.toHaveBeenCalled();
+    });
+
+    it('should disable the button when multiple selected devices all have missing lab information', () => {
+      const dev1 = createPixelDevice('pixel-dev-1');
+      const dev2 = createPixelDevice('pixel-dev-2');
+
+      render(
+        <FakeAuthStateProvider>
+          <RequestRepair
+            selectedItems={[dev1, dev2]}
+            platform={Platform.PIXEL}
+          />
+        </FakeAuthStateProvider>,
+      );
+
+      const button = screen.getByTestId('file-restoration-bug-button');
+      expect(button).toBeInTheDocument();
+      expect(button).toBeDisabled();
+
+      fireEvent.click(button);
+      expect(windowOpenSpy).not.toHaveBeenCalled();
+    });
   });
 });

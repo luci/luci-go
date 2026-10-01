@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { FeedbackOutlined } from '@mui/icons-material';
-import { Button } from '@mui/material';
+import { Button, Tooltip } from '@mui/material';
 import type { ReactElement } from 'react';
 
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import {
+  AndroidDevice,
   Platform,
   platformToJSON,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -29,6 +30,11 @@ import {
   BrowserReinstallConfig,
 } from './request_repair_browser_config';
 import { ChromeOSRepairConfig } from './request_repair_os_config';
+import {
+  areDevicesFromSingleLab,
+  extractPixelLabName,
+  PixelRestorationConfig,
+} from './request_repair_pixel_config';
 
 /**
  * Configuration interface for repair/reinstall actions.
@@ -40,6 +46,7 @@ export interface RepairConfig<T> {
   generateTitle: (items: T[]) => string;
   generateDescription: (items: T[]) => string;
   hotlistIds?: string | ((items: T[]) => string);
+  baseUrl?: string;
 }
 
 // Function overloads to provide type safety for callers based on the platform.
@@ -51,17 +58,22 @@ export function RequestRepair(props: {
   selectedItems: BrowserDeviceToRepair[];
   platform: Platform.CHROMIUM;
 }): ReactElement;
+export function RequestRepair(props: {
+  selectedItems: AndroidDevice[];
+  platform: Platform.PIXEL;
+}): ReactElement;
 /**
- * Component to render repair and reinstall action buttons.
+ * Component to render repair, reinstall, and restoration action buttons.
  * For Browser devices, it renders both "Request Repair" and "Request Reinstall".
  * For ChromeOS, it renders a single "Request Repair" button.
+ * For Pixel, it renders a "Request Restoration" button restricted to a single lab.
  */
 export function RequestRepair({
   selectedItems,
   platform,
 }: {
-  selectedItems: DutToRepair[] | BrowserDeviceToRepair[];
-  platform: Platform.CHROMEOS | Platform.CHROMIUM;
+  selectedItems: DutToRepair[] | BrowserDeviceToRepair[] | AndroidDevice[];
+  platform: Platform.CHROMEOS | Platform.CHROMIUM | Platform.PIXEL;
 }) {
   const { trackEvent } = useGoogleAnalytics();
   const showButton = selectedItems?.length > 0;
@@ -96,7 +108,10 @@ export function RequestRepair({
     }
 
     trackEvent('request_repair', {
-      componentName: 'request_repair_button',
+      componentName:
+        platform === Platform.PIXEL
+          ? 'request_restoration_button'
+          : 'request_repair_button',
       dutCount: items.length,
       platform: platformToJSON(platform).toLowerCase(),
     });
@@ -111,7 +126,8 @@ export function RequestRepair({
     if (hotlistIds) {
       params.set('hotlistIds', hotlistIds);
     }
-    const url = `http://b/issues/new?${params.toString()}`;
+    const baseUrl = config.baseUrl || 'http://b';
+    const url = `${baseUrl}/issues/new?${params.toString()}`;
     window.open(url, '_blank');
   };
 
@@ -131,6 +147,43 @@ export function RequestRepair({
       >
         Request Repair
       </Button>
+    );
+  }
+
+  if (platform === Platform.PIXEL) {
+    const devices = selectedItems as AndroidDevice[];
+    const isSingleLab = areDevicesFromSingleLab(devices);
+    const hasMissingLab = devices.some((d) => !extractPixelLabName(d));
+    const labName =
+      isSingleLab && devices.length > 0 ? extractPixelLabName(devices[0]) : '';
+
+    let tooltipTitle: string;
+    if (hasMissingLab) {
+      tooltipTitle = 'All selected devices must belong to a known lab';
+    } else if (!isSingleLab) {
+      tooltipTitle = 'Selected devices must belong to the same lab';
+    } else {
+      tooltipTitle = `Create restoration bug for ${devices.length} ${devices.length === 1 ? 'device' : 'devices'} in ${labName}`;
+    }
+
+    return (
+      <Tooltip title={tooltipTitle}>
+        <span data-testid="request-restoration-button">
+          <Button
+            data-testid="file-restoration-bug-button"
+            disabled={!isSingleLab}
+            onClick={() => {
+              if (!isSingleLab) return;
+              fileRepairRequest(PixelRestorationConfig, devices);
+            }}
+            color="primary"
+            size="small"
+            startIcon={<FeedbackOutlined />}
+          >
+            Request Restoration
+          </Button>
+        </span>
+      </Tooltip>
     );
   }
 

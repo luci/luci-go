@@ -142,3 +142,15 @@ export const enableUnifiedTaskHistory = createFeatureFlag({
   trackingBug: '542600108',
   allowedEnvironments: ['dev', 'prod'],
 });
+
+export const enablePixelDeviceRestoration = createFeatureFlag({
+  description: 'Enables creating restoration bugs for Pixel devices.',
+  namespace: 'fleet-console',
+  name: 'pixel-device-restoration',
+  percentage: {
+    dev: 100,
+    prod: 100,
+  },
+  trackingBug: '564815043',
+  allowedEnvironments: ['dev', 'prod'],
+});
