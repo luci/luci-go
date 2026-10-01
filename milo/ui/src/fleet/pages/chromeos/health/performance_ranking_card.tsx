@@ -16,6 +16,7 @@ import { TrendingDown, TrendingFlat, TrendingUp } from '@mui/icons-material';
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -33,8 +34,16 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 
+import {
+  CHROMEOS_PLATFORM,
+  generateDeviceListURL,
+} from '@/fleet/constants/paths';
+import { getFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
+import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
+import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { HEALTH_FILTER_CONFIGS } from './filter_constants';
 import { getHealthStatus } from './health_status_utils';
 import { calculate24hDelta } from './ranking_utils';
 import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
@@ -104,6 +113,31 @@ export const PerformanceRankingCard = ({
   }, [data?.series, sortBy]);
 
   const onSelectItem = entityTab === 'models' ? onSelectModel : onSelectPool;
+
+  // Trend series names are lowercased by the backend (e.g. "anahera"), while
+  // device dimension values keep their original casing (e.g. "Anahera").
+  // Filters match option values exactly, so map to the canonical value.
+  //
+  // Known limitation: device labels are not consistently cased in production
+  // (e.g. both "VOLET" and "volet" exist). Health aggregates them into one
+  // lowercase series, but this maps it to only one of the casings, so the
+  // device list shows a subset of the devices counted here. There is
+  // intentionally no fallback for multiple casings until a fleet-wide strategy
+  // is decided.
+  //
+  // TODO(b/568309497): Revisit once model label casing is handled
+  // consistently across fleetconsole.
+  const { getValues } = useChromeOSFields();
+  const dimensionKey =
+    entityTab === 'models'
+      ? HEALTH_FILTER_CONFIGS.MODEL.dimensionSource
+      : HEALTH_FILTER_CONFIGS.POOL.dimensionSource;
+  const canonicalNames = useMemo(
+    () => new Map(getValues(dimensionKey).map((v) => [v.toLowerCase(), v])),
+    [getValues, dimensionKey],
+  );
+  const toCanonical = (name: string) =>
+    canonicalNames.get(name.toLowerCase()) ?? name;
 
   return (
     <Card
@@ -269,7 +303,7 @@ export const PerformanceRankingCard = ({
               <ListItem
                 key={item.name}
                 data-testid={`ranking-row-${item.name}`}
-                onClick={() => onSelectItem?.(item.name)}
+                onClick={() => onSelectItem?.(toCanonical(item.name))}
                 sx={{
                   py: 1.5,
                   px: 2.5,
@@ -296,6 +330,38 @@ export const PerformanceRankingCard = ({
                   <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                     {item.name}
                   </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    component="a"
+                    href={
+                      generateDeviceListURL(CHROMEOS_PLATFORM) +
+                      getFilterQueryString(
+                        {
+                          [getFilterKey(
+                            entityTab === 'models'
+                              ? 'label-model'
+                              : 'label-pool',
+                          )]: [toCanonical(item.name)],
+                        },
+                        undefined,
+                      )
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{
+                      textTransform: 'none',
+                      fontSize: 10,
+                      py: 0.1,
+                      px: 0.8,
+                      height: 20,
+                      borderRadius: 1,
+                    }}
+                  >
+                    View devices
+                  </Button>
                 </Box>
                 <Box sx={{ width: '100%', mt: 0.25 }}>
                   <Box

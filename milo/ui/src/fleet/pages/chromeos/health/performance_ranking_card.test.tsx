@@ -15,7 +15,9 @@
 import { UseQueryResult } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import {
+  GetDeviceDimensionsResponse,
   GetFleetAvailabilityTrendsResponse,
   TrendlineGrouping,
   TrendlineMetricType,
@@ -386,5 +388,106 @@ describe('PerformanceRankingCard', () => {
     expect(rows[0]).toHaveTextContent('dedede');
     expect(rows[1]).toHaveTextContent('volteer');
     expect(rows[2]).toHaveTextContent('brya');
+  });
+
+  it('renders View devices button linking to filtered devices page and prevents row click', () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [{ timestamp: '2026-09-30T00:00:00Z', value: 0.62 }],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    const onSelectModel = jest.fn();
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard onSelectModel={onSelectModel} />
+      </FakeContextProvider>,
+    );
+
+    const devicesLink = screen.getByRole('link', { name: /^view devices$/i });
+    const href = devicesLink.getAttribute('href') ?? '';
+    const url = new URL(href, 'http://localhost');
+    expect(url.pathname).toBe('/ui/fleet/p/chromeos/devices');
+    expect(url.searchParams.get('filters')).toBe(
+      '(labels."label-model" = "volteer")',
+    );
+
+    // Clicking the link should NOT fire row click onSelectModel
+    fireEvent.click(devicesLink);
+    expect(onSelectModel).not.toHaveBeenCalled();
+  });
+
+  it('uses device dimension casing for model names in link and row click', () => {
+    jest
+      .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
+      .mockReturnValue({
+        data: {
+          baseDimensions: {},
+          labels: {
+            'label-model': { values: ['Anahera', 'Brya'] },
+          },
+        } as unknown as GetDeviceDimensionsResponse,
+        isPending: false,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<GetDeviceDimensionsResponse, Error>);
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: {
+          metricType: TrendlineMetricType.AVAILABILITY,
+          series: [
+            {
+              name: 'anahera',
+              points: [{ timestamp: '2026-09-30T00:00:00Z', value: 0.62 }],
+            },
+          ],
+        },
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    const onSelectModel = jest.fn();
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard onSelectModel={onSelectModel} />
+      </FakeContextProvider>,
+    );
+
+    const devicesLink = screen.getByRole('link', { name: /^view devices$/i });
+    const url = new URL(
+      devicesLink.getAttribute('href') ?? '',
+      'http://localhost',
+    );
+    expect(url.searchParams.get('filters')).toBe(
+      '(labels."label-model" = "Anahera")',
+    );
+
+    fireEvent.click(screen.getByTestId('ranking-row-anahera'));
+    expect(onSelectModel).toHaveBeenCalledWith('Anahera');
   });
 });
