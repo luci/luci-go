@@ -22,6 +22,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -251,7 +252,9 @@ func console(c context.Context, project, id string, limit int, con *projectconfi
 		builds := make([]*model.BuildSummary, len(commits))
 		for row := range commits {
 			if summaries := rows[row].Builds[columnIdx]; len(summaries) > 0 {
-				builds[row] = summaries[0]
+				builds[row] = slices.MaxFunc(summaries, func(a, b *model.BuildSummary) int {
+					return a.Created.Compare(b.Created)
+				})
 			}
 		}
 		return builderSummaries[consoleID].Builders[columnIdx], builds
