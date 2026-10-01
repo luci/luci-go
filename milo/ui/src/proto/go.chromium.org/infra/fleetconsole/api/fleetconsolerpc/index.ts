@@ -19,4 +19,5 @@ export * from "./chromeos.pb";
 export * from "./common_types.pb";
 export * from "./resourcedelivery.pb";
 export * from "./service.pb";
+export * from "./taskhistory.pb";
 export * from "./util.pb";

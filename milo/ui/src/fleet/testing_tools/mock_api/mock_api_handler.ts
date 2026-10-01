@@ -97,6 +97,7 @@ export interface FleetConsoleMockFixtures {
   DeleteModelQuotaOverride: unknown;
   GetWorkforceActivity: unknown;
   GetFleetAvailabilityTrends: unknown;
+  ListTaskHistory: unknown;
   [method: string]: unknown;
 }
 
@@ -630,6 +631,34 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   GetFleetAvailabilityTrends: {
     series: [],
     metricType: 0,
+  },
+  ListTaskHistory: {
+    tasks: [
+      {
+        taskId: 'task-1',
+        name: 'cros_test_platform',
+        state: 'COMPLETED',
+        startTime: '2026-09-17T12:00:00Z',
+        duration: { seconds: '120', nanos: 0 },
+        buildVersion: 'R120-15662.0.0',
+        taskUrl: 'https://chromeos-swarming.appspot.com/task?id=task-1',
+        source: 1,
+        endTime: '2026-09-17T12:02:00Z',
+      },
+      {
+        taskId: 'task-2',
+        name: 'MobileHarness_Test',
+        state: 'RUNNING',
+        startTime: '2026-09-17T12:05:00Z',
+        duration: { seconds: '60', nanos: 0 },
+        buildVersion: 'R120-15662.0.0',
+        taskUrl:
+          'https://mobileharness-fe.corp.google.com/testdetailview/job-1/task-2',
+        source: 2,
+        endTime: undefined,
+      },
+    ],
+    nextPageToken: '',
   },
 };
 

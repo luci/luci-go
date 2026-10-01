@@ -13,6 +13,10 @@
 // limitations under the License.
 
 import {
+  ListTaskHistoryResponse,
+  TaskHistoryItem,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
   TaskListResponse,
   TaskResultResponse,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
@@ -49,6 +53,42 @@ export function mockListBotTasks(
 export function mockErrorListingBotTasks(errorMsg: string) {
   mockFetchRaw(
     (url) => url.includes('swarming.v2.Bots/ListBotTasks'),
+    errorMsg,
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '2',
+      },
+    },
+  );
+}
+
+export function mockListTaskHistory(
+  tasks: TaskHistoryItem[],
+  nextPageToken?: string,
+) {
+  mockFetchRaw(
+    (url) => url.includes('fleetconsole.FleetConsole/ListTaskHistory'),
+    ")]}'\n" +
+      JSON.stringify(
+        ListTaskHistoryResponse.toJSON(
+          ListTaskHistoryResponse.fromPartial({
+            tasks,
+            nextPageToken,
+          }),
+        ),
+      ),
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
+      },
+    },
+  );
+}
+
+export function mockErrorListingTaskHistory(errorMsg: string) {
+  mockFetchRaw(
+    (url) => url.includes('fleetconsole.FleetConsole/ListTaskHistory'),
     errorMsg,
     {
       headers: {

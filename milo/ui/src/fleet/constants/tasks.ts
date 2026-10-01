@@ -21,3 +21,12 @@ export const TASK_EXCEPTIONAL_STATES = new Set([
   'CANCELED',
   'KILLED',
 ]);
+
+export const PILOT_BOARDS = new Set(['brya', 'rauru', 'fatcat']);
+
+export const isPilotBoard = (board?: string | null): boolean => {
+  if (!board) {
+    return false;
+  }
+  return PILOT_BOARDS.has(board.toLowerCase().trim());
+};

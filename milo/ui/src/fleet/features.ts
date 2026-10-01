@@ -129,3 +129,16 @@ export const enableWorkforceTimeframeFilter = createFeatureFlag({
   },
   allowedEnvironments: ['dev'],
 });
+
+export const enableUnifiedTaskHistory = createFeatureFlag({
+  description:
+    'Enables unified task history (Swarming + Mobile Harness) via the Fleet Console backend RPC for supported pilot devices.',
+  namespace: 'fleet-console',
+  name: 'unified-task-history',
+  percentage: {
+    dev: 100,
+    prod: 0,
+  },
+  trackingBug: '542600108',
+  allowedEnvironments: ['dev', 'prod'],
+});

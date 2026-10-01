@@ -119,6 +119,7 @@ import {
   ListResourceRequestsRequest,
   ListResourceRequestsResponse,
 } from "./resourcedelivery.pb";
+import { ListTaskHistoryRequest, ListTaskHistoryResponse } from "./taskhistory.pb";
 import {
   CleanExitRequest,
   CleanExitResponse,
@@ -403,6 +404,7 @@ export interface FleetConsole {
   DeleteModelQuotaOverride(request: DeleteModelQuotaOverrideRequest): Promise<DeleteModelQuotaOverrideResponse>;
   ListModelQuotaOverrides(request: ListModelQuotaOverridesRequest): Promise<ListModelQuotaOverridesResponse>;
   GetFleetAvailabilityTrends(request: GetFleetAvailabilityTrendsRequest): Promise<GetFleetAvailabilityTrendsResponse>;
+  ListTaskHistory(request: ListTaskHistoryRequest): Promise<ListTaskHistoryResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -473,6 +475,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.DeleteModelQuotaOverride = this.DeleteModelQuotaOverride.bind(this);
     this.ListModelQuotaOverrides = this.ListModelQuotaOverrides.bind(this);
     this.GetFleetAvailabilityTrends = this.GetFleetAvailabilityTrends.bind(this);
+    this.ListTaskHistory = this.ListTaskHistory.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -842,6 +845,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = GetFleetAvailabilityTrendsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetFleetAvailabilityTrends", data);
     return promise.then((data) => GetFleetAvailabilityTrendsResponse.fromJSON(data));
+  }
+
+  ListTaskHistory(request: ListTaskHistoryRequest): Promise<ListTaskHistoryResponse> {
+    const data = ListTaskHistoryRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListTaskHistory", data);
+    return promise.then((data) => ListTaskHistoryResponse.fromJSON(data));
   }
 }
 
