@@ -188,9 +188,7 @@ describe('generateSidebarSections', () => {
     it('is shown for ChromeOS platform', () => {
       const sections = generateSidebarSections(Platform.CHROMEOS);
       const labHealth = sections.find((s) => s.title === 'Lab Health');
-      const healthPage = labHealth?.pages.find(
-        (p) => p.label === 'Health dashboard',
-      );
+      const healthPage = labHealth?.pages.find((p) => p.label === 'Health');
       expect(healthPage).toBeDefined();
       expect(healthPage?.url).toBe('/ui/fleet/p/chromeos/health');
     });
@@ -198,9 +196,7 @@ describe('generateSidebarSections', () => {
     it('is hidden for non-ChromeOS platforms', () => {
       const sections = generateSidebarSections(Platform.ANDROID);
       const labHealth = sections.find((s) => s.title === 'Lab Health');
-      const healthPage = labHealth?.pages.find(
-        (p) => p.label === 'Health dashboard',
-      );
+      const healthPage = labHealth?.pages.find((p) => p.label === 'Health');
       expect(healthPage).toBeUndefined();
     });
   });

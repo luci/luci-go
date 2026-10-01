@@ -132,7 +132,7 @@ function generateLabHealthSection(
       ...(isHealthEnabled
         ? [
             {
-              label: 'Health dashboard',
+              label: 'Health',
               url: generateHealthURL(
                 platformToURL(platform || Platform.CHROMEOS),
               ),
