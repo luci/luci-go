@@ -20,8 +20,14 @@ import {
 } from '@/fleet/testing_tools/mocks/bots_mock';
 import {
   mockErrorListingBotTasks,
+  mockErrorListingTaskHistory,
   mockListBotTasks,
+  mockListTaskHistory,
 } from '@/fleet/testing_tools/mocks/tasks_mock';
+import {
+  TaskHistoryItem,
+  TaskSource,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import {
   BotInfo,
   TaskResultResponse,
@@ -154,6 +160,107 @@ describe('<Tasks />', () => {
 
     await waitFor(() => {
       expect(screen.getByText('direct-task')).toBeVisible();
+    });
+  });
+
+  describe('Unified Task History for pilot devices', () => {
+    it('renders unified task history for pilot device (brya)', async () => {
+      mockListTaskHistory([
+        TaskHistoryItem.fromPartial({
+          taskId: 'sw-1',
+          name: 'cros_test_platform',
+          state: 'COMPLETED',
+          source: TaskSource.TASK_SOURCE_SWARMING,
+          taskUrl: 'https://chromeos-swarming.appspot.com/task?id=sw-1',
+        }),
+        TaskHistoryItem.fromPartial({
+          taskId: 'mh-1',
+          name: 'MobileHarness_Test',
+          state: 'RUNNING',
+          source: TaskSource.TASK_SOURCE_MOBILE_HARNESS,
+          taskUrl:
+            'https://mobileharness-fe.corp.google.com/testdetailview/job-1/mh-1',
+        }),
+      ]);
+
+      render(
+        <FakeContextProvider>
+          <SettingsProvider>
+            <Tasks dutId="chromeos8-row6-rack10-host33" board="brya" />
+          </SettingsProvider>
+        </FakeContextProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('cros_test_platform')).toBeVisible();
+        expect(screen.getByText('MobileHarness_Test')).toBeVisible();
+        expect(screen.getByText('Swarming')).toBeVisible();
+        expect(screen.getByText('Mobile Harness')).toBeVisible();
+      });
+    });
+
+    it('warns when unified task history request errors', async () => {
+      const errorMsg = 'Test ListTaskHistory GRPC error';
+      mockErrorListingTaskHistory(errorMsg);
+
+      render(
+        <FakeContextProvider>
+          <SettingsProvider>
+            <Tasks dutId="chromeos8-row6-rack10-host33" board="rauru" />
+          </SettingsProvider>
+        </FakeContextProvider>,
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            `An unexpected error occurred during list task history. ${errorMsg}.`,
+          ),
+        ).toBeVisible();
+      });
+    });
+
+    it('informs when no unified tasks found', async () => {
+      const dutId = 'chromeos8-row6-rack10-host33';
+      mockListTaskHistory([], '');
+
+      render(
+        <FakeContextProvider>
+          <SettingsProvider>
+            <Tasks dutId={dutId} board="fatcat" />
+          </SettingsProvider>
+        </FakeContextProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('No tasks found')).toBeVisible();
+        expect(screen.getByText(dutId)).toBeVisible();
+      });
+    });
+
+    it('falls back to legacy Swarming for non-pilot board', async () => {
+      mockListBots([BotInfo.fromPartial({ botId: 'bot-non-al' })]);
+      mockListBotTasks(
+        [
+          TaskResultResponse.fromPartial({
+            taskId: 'legacy-1',
+            name: 'legacy-swarming-task',
+          }),
+        ],
+        '',
+      );
+
+      render(
+        <FakeContextProvider>
+          <SettingsProvider>
+            <Tasks dutId="A1234" board="volteer" />
+          </SettingsProvider>
+        </FakeContextProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('legacy-swarming-task')).toBeVisible();
+      });
     });
   });
 });

@@ -20,12 +20,17 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { useFeatureFlag } from '@/common/feature_flags';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import {
   TasksGrid,
   TaskGridColumnKey,
 } from '@/fleet/components/tasks_grid/tasks_grid';
+import { UnifiedTasksGrid } from '@/fleet/components/tasks_grid/unified_tasks_grid';
+import { isPilotBoard } from '@/fleet/constants/tasks';
+import { enableUnifiedTaskHistory } from '@/fleet/features';
 import { useBot, useBotTasks } from '@/fleet/hooks/swarming_hooks';
+import { useTaskHistory } from '@/fleet/hooks/use_task_history';
 import {
   DEVICE_TASKS_MILO_HOST,
   DEVICE_TASKS_SWARMING_HOST,
@@ -48,10 +53,12 @@ const COLUMNS: readonly TaskGridColumnKey[] = [
 export const Tasks = ({
   dutId,
   botId,
+  board,
   swarmingHost = DEVICE_TASKS_SWARMING_HOST,
 }: {
   dutId?: string;
   botId?: string;
+  board?: string | null;
   swarmingHost?: string;
 }) => {
   const [searchParams] = useSyncedSearchParams();
@@ -60,20 +67,78 @@ export const Tasks = ({
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
+  const isUnifiedEnabled = useFeatureFlag(enableUnifiedTaskHistory);
+  const isPilot = isPilotBoard(board);
+  const shouldUseUnifiedHistory = isUnifiedEnabled && isPilot && !!dutId;
+
+  // Unified Task History query (for supported pilot devices when feature flag is on).
+  const unifiedTasksData = useTaskHistory({
+    dutId: dutId || '',
+    pageSize: getPageSize(pagerCtx, searchParams),
+    pageToken: getPageToken(pagerCtx, searchParams),
+    enabled: shouldUseUnifiedHistory,
+  });
+
+  // Legacy Swarming queries (for standard devices or when flag is off).
   const client = useBotsClient(swarmingHost);
   const botData = useBot(client, dutId || '', {
-    enabled: !!dutId && !botId,
+    enabled: !shouldUseUnifiedHistory && !!dutId && !botId,
   });
   const resolvedBotId = botId || botData.data?.botId;
 
   const tasksData = useBotTasks({
     client,
-    botId: resolvedBotId ?? '',
+    botId: shouldUseUnifiedHistory ? '' : (resolvedBotId ?? ''),
     limit: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
   });
 
-  // First, ensure we have a valid botId to work with.
+  // Handle Unified Task History rendering
+  if (shouldUseUnifiedHistory) {
+    if (unifiedTasksData.isError) {
+      return (
+        <Alert severity="error">
+          {getErrorMessage(unifiedTasksData.error, 'list task history')}{' '}
+        </Alert>
+      );
+    }
+    if (unifiedTasksData.isLoading) {
+      return (
+        <div
+          css={{
+            width: '100%',
+            margin: '24px 0px',
+          }}
+        >
+          <CentralizedProgress />
+        </div>
+      );
+    }
+    if (!unifiedTasksData.tasks?.length) {
+      return (
+        <Alert severity="info">
+          <AlertTitle>No tasks found</AlertTitle>
+          <dl>
+            {dutId && (
+              <>
+                <dt>DUT ID</dt>
+                <dd>{dutId}</dd>
+              </>
+            )}
+          </dl>
+        </Alert>
+      );
+    }
+    return (
+      <UnifiedTasksGrid
+        tasks={unifiedTasksData.tasks}
+        pagerCtx={pagerCtx}
+        nextPageToken={unifiedTasksData.nextPageToken}
+      />
+    );
+  }
+
+  // Legacy Swarming branch: First, ensure we have a valid botId to work with.
   if (!botId && dutId) {
     if (botData.isError) {
       return (
@@ -111,7 +176,7 @@ export const Tasks = ({
     }
   }
 
-  // Now, check the tasks request.
+  // Check the legacy tasks request.
   if (tasksData.isError) {
     return (
       <Alert severity="error">

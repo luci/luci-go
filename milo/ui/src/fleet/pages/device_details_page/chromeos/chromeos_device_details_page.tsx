@@ -315,7 +315,7 @@ export const ChromeOSDeviceDetailsPage = () => {
                   No <code>dutID</code> set on this device
                 </Alert>
               ) : (
-                <Tasks dutId={dutId} />
+                <Tasks dutId={dutId} board={selectedDuts[0]?.board} />
               )}
             </TabPanel>
             <TabPanel value={TabValue.INVENTORY_DATA}>
