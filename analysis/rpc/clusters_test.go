@@ -1737,6 +1737,116 @@ func TestClusters(t *testing.T) {
 				})
 			})
 		})
+
+		t.Run("QueryHistory", func(t *ftt.Test) {
+			authState.IdentityPermissions = listTestResultsPermissions(
+				"testproject:realm1",
+				"testproject:realm2",
+				"otherproject:realm3",
+			)
+			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+				Realm:      "testproject:@project",
+				Permission: perms.PermGetConfig,
+			})
+
+			analysisClient.expectedRealmsQueried = []string{"testproject:realm1", "testproject:realm2"}
+			analysisClient.clusterHistoryDaysByProject["testproject"] = []*analysis.ReadClusterHistoryDay{
+				{
+					Date: time.Date(2026, time.September, 30, 0, 0, 0, 0, time.UTC),
+					MetricValues: map[metrics.ID]int32{
+						metrics.HumanClsFailedPresubmit.ID:    1,
+						metrics.CriticalFailuresExonerated.ID: 2,
+						metrics.Failures.ID:                   3,
+					},
+				},
+			}
+
+			request := &pb.QueryClusterHistoryRequest{
+				Project:       "testproject",
+				FailureFilter: `test_id:"pita.Boot" failure_reason:"failed to boot"`,
+				Days:          7,
+				Metrics: []string{
+					"projects/testproject/metrics/human-cls-failed-presubmit",
+					"projects/testproject/metrics/critical-failures-exonerated",
+					"projects/testproject/metrics/failures",
+				},
+			}
+
+			t.Run("Not authorised to get config", func(t *ftt.Test) {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
+
+				response, err := server.QueryHistory(ctx, request)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.config.get"))
+				assert.Loosely(t, response, should.BeNil)
+			})
+			t.Run("Not authorised to list test results in any realm", func(t *ftt.Test) {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
+
+				response, err := server.QueryHistory(ctx, request)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, response, should.BeNil)
+			})
+			t.Run("Valid request", func(t *ftt.Test) {
+				response, err := server.QueryHistory(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Match(&pb.QueryClusterHistoryResponse{
+					Days: []*pb.ClusterHistoryDay{
+						{
+							Date: "2026-09-30",
+							Metrics: map[string]int32{
+								metrics.HumanClsFailedPresubmit.ID.String():    1,
+								metrics.CriticalFailuresExonerated.ID.String(): 2,
+								metrics.Failures.ID.String():                   3,
+							},
+						},
+					},
+				}))
+			})
+			t.Run("Invalid request", func(t *ftt.Test) {
+				t.Run("Invalid project", func(t *ftt.Test) {
+					request.Project = ""
+
+					response, err := server.QueryHistory(ctx, request)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("project: unspecified"))
+				})
+				t.Run("Failure filter syntax is invalid", func(t *ftt.Test) {
+					request.FailureFilter = "test_id::"
+
+					response, err := server.QueryHistory(ctx, request)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("failure_filter: expected arg after :"))
+				})
+				t.Run("Failure filter references non-existent column", func(t *ftt.Test) {
+					request.FailureFilter = `test:"pita.Boot"`
+
+					response, err := server.QueryHistory(ctx, request)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`failure_filter: no filterable field "test"`))
+				})
+				t.Run("Failure filter has unquoted field reference value", func(t *ftt.Test) {
+					request.FailureFilter = "realm:devtools-frontend/try"
+
+					response, err := server.QueryHistory(ctx, request)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`failure_filter: argument for field "realm": expected a quoted ("") string literal but got possible field reference "devtools-frontend/try"`))
+				})
+				t.Run("Metrics references non-existent metric", func(t *ftt.Test) {
+					request.Metrics = []string{"projects/testproject/metrics/not-exists"}
+
+					response, err := server.QueryHistory(ctx, request)
+					assert.Loosely(t, response, should.BeNil)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`no metric with ID "not-exists"`))
+				})
+			})
+		})
 	})
 }
 
@@ -1825,6 +1935,7 @@ type fakeAnalysisClient struct {
 	exoneratedTVBsByProjectAndCluster map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariantBranch
 	clusterMetricsByProject           map[string][]*analysis.ClusterSummary
 	clusterMetricBreakdownsByProject  map[string][]*analysis.ClusterMetricBreakdown
+	clusterHistoryDaysByProject       map[string][]*analysis.ReadClusterHistoryDay
 	expectedRealmsQueried             []string
 	expectedMetricFilter              *metrics.Definition
 }
@@ -1837,6 +1948,7 @@ func newFakeAnalysisClient() *fakeAnalysisClient {
 		exoneratedTVBsByProjectAndCluster: make(map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariantBranch),
 		clusterMetricsByProject:           make(map[string][]*analysis.ClusterSummary),
 		clusterMetricBreakdownsByProject:  make(map[string][]*analysis.ClusterMetricBreakdown),
+		clusterHistoryDaysByProject:       make(map[string][]*analysis.ReadClusterHistoryDay),
 	}
 }
 
@@ -1953,5 +2065,15 @@ func (f *fakeAnalysisClient) ReadClusterExoneratedTestVariantBranches(ctx contex
 }
 
 func (f *fakeAnalysisClient) ReadClusterHistory(ctx context.Context, options analysis.ReadClusterHistoryOptions) (ret []*analysis.ReadClusterHistoryDay, err error) {
-	return nil, nil
+	set := stringset.NewFromSlice(options.Realms...)
+	if set.Len() != len(f.expectedRealmsQueried) || !set.HasAll(f.expectedRealmsQueried...) {
+		panic("realms passed to ReadClusterHistory do not match expected")
+	}
+
+	_, _, err = analysis.ClusteredFailuresTable.WhereClause(options.FailureFilter, "", "w_")
+	if err != nil {
+		return nil, analysis.InvalidArgumentTag.Apply(errors.Fmt("failure_filter: %w", err))
+	}
+
+	return f.clusterHistoryDaysByProject[options.Project], nil
 }

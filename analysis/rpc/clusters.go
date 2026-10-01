@@ -838,6 +838,9 @@ func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterH
 
 	days, err := c.analysisClient.ReadClusterHistory(ctx, opts)
 	if err != nil {
+		if analysis.InvalidArgumentTag.In(err) {
+			return nil, InvalidArgumentError(err)
+		}
 		return nil, errors.Fmt("cluster history: %w", err)
 	}
 
