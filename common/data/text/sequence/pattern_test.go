@@ -211,3 +211,82 @@ func TestPatternIn(t *testing.T) {
 		})
 	})
 }
+
+func TestPatternIn_EllipsisTableDriven(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		pattern []string
+		seq     []string
+		want    bool
+	}{
+		{
+			name:    "zero_width_ellipsis_docstring_example",
+			pattern: []string{"foo", "...", "bar"},
+			seq:     []string{"foo", "bar"},
+			want:    true,
+		},
+		{
+			name:    "zero_width_ellipsis_with_unanchored_prefix",
+			pattern: []string{"foo", "...", "bar"},
+			seq:     []string{"prefix", "foo", "bar"},
+			want:    true,
+		},
+		{
+			name:    "zero_width_ellipsis_multi_token_prefix_and_suffix",
+			pattern: []string{"a", "b", "...", "c", "d"},
+			seq:     []string{"a", "b", "c", "d"},
+			want:    true,
+		},
+		{
+			name:    "ellipsis_multi_token_suffix_too_short",
+			pattern: []string{"a", "...", "b", "c", "d"},
+			seq:     []string{"a", "b", "c"},
+			want:    false,
+		},
+		{
+			name:    "unanchored_prefix_does_not_match_token_before_prefix",
+			pattern: []string{"foo", "...", "bar"},
+			seq:     []string{"x", "bar", "foo", "y", "z"},
+			want:    false,
+		},
+		{
+			name:    "unanchored_prefix_matches_later_token_after_earlier_false_token",
+			pattern: []string{"foo", "...", "bar"},
+			seq:     []string{"x", "bar", "foo", "y", "bar"},
+			want:    true,
+		},
+		{
+			name:    "multiple_ellipses_zero_width",
+			pattern: []string{"a", "...", "b", "...", "c"},
+			seq:     []string{"a", "b", "c"},
+			want:    true,
+		},
+		{
+			name:    "multiple_ellipses_reversed_sequence",
+			pattern: []string{"a", "...", "b", "...", "c"},
+			seq:     []string{"x", "c", "b", "a", "y", "z"},
+			want:    false,
+		},
+		{
+			name:    "trailing_edge_after_zero_width_ellipsis",
+			pattern: []string{"foo", "...", "bar", "$"},
+			seq:     []string{"prefix", "foo", "bar"},
+			want:    true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			pat, err := sequence.NewPattern(tc.pattern...)
+			if err != nil {
+				t.Fatalf("NewPattern(%q) failed: %v", tc.pattern, err)
+			}
+			if got := pat.In(tc.seq...); got != tc.want {
+				t.Errorf("NewPattern(%q).In(%q) = %v, want %v", tc.pattern, tc.seq, got, tc.want)
+			}
+		})
+	}
+}

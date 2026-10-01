@@ -48,7 +48,6 @@ func (p Pattern) In(seq ...string) bool {
 	// Ellipsis and Edge have a minimum width of 0, everything else has a match
 	// size of 1 slot. Do a pass over matchers to calculate the number of slots
 	// required to match `p[i:]`.
-	minSlotsCount := 0
 	minSlots := make([]int, len(p))
 	prevEllipsis := false
 	for i, matcher := range p {
@@ -65,10 +64,13 @@ func (p Pattern) In(seq ...string) bool {
 		} else {
 			prevEllipsis = false
 		}
-		if !isEllipsis && !isEdge {
+	}
+	minSlotsCount := 0
+	for i := len(p) - 1; i >= 0; i-- {
+		if p[i] != Ellipsis && p[i] != Edge {
 			minSlotsCount++
 		}
-		minSlots[len(minSlots)-1-i] = minSlotsCount
+		minSlots[i] = minSlotsCount
 	}
 	// If p looked like ['a', 'b', ..., 'c'], minSlots now looks like:
 	// [3, 2, 1, 1]
@@ -114,7 +116,7 @@ func (p Pattern) In(seq ...string) bool {
 
 					// otherwise and try matching the rest of the pattern against the rest
 					// of the sequence at every offset.
-					for startIdx := seqOffset + numMatched; startIdx < len(seq)-minSlots[matcherIdx]; startIdx++ {
+					for startIdx := seqIdx + numMatched; startIdx <= len(seq)-minSlots[matcherIdx]; startIdx++ {
 						if cachedMatchesSeq(matcherIdx, startIdx) {
 							return true
 						}
