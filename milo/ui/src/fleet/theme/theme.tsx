@@ -20,6 +20,10 @@ import { DeepPartial } from '@/proto/google/protobuf/empty.pb';
 
 import { colors } from './colors';
 
+const GOOGLE_SANS_FONT_FAMILY = "'Google Sans', 'Roboto', sans-serif";
+const GOOGLE_SANS_TEXT_FONT_FAMILY =
+  "'Google Sans Text', 'Google Sans', 'Roboto', sans-serif";
+
 export const theme = createTheme(baseTheme, {
   palette: {
     text: {
@@ -53,23 +57,60 @@ export const theme = createTheme(baseTheme, {
   },
   typography: {
     fontFamily: 'Roboto',
-    h1: { fontFamily: 'Roboto', fontSize: 36, lineHeight: '44px' },
-    h2: { fontFamily: 'Roboto', fontSize: 32, lineHeight: '40px' },
+    h1: {
+      fontFamily: GOOGLE_SANS_FONT_FAMILY,
+      fontSize: 36,
+      lineHeight: '44px',
+      fontWeight: 400,
+    },
+    h2: {
+      fontFamily: GOOGLE_SANS_FONT_FAMILY,
+      fontSize: 32,
+      lineHeight: '40px',
+      fontWeight: 400,
+    },
     h3: { fontFamily: 'Roboto', fontSize: 28, lineHeight: '36px' },
-    h4: { fontFamily: 'Roboto', fontSize: 24, lineHeight: '32px' },
-    h5: { fontFamily: 'Roboto', fontSize: 22, lineHeight: '28px' },
-    h6: { fontFamily: 'Roboto', fontSize: 18, lineHeight: '24px' },
-    subhead1: { fontFamily: 'Roboto', fontSize: 16, lineHeight: '24px' },
-    subhead2: { fontFamily: 'Roboto', fontSize: 14, lineHeight: '24px' },
-    subtitle1: {
-      fontFamily: 'Roboto Medium',
+    h4: {
+      fontFamily: GOOGLE_SANS_FONT_FAMILY,
+      fontSize: 24,
+      lineHeight: '32px',
+      fontWeight: 400,
+    },
+    h5: {
+      fontFamily: GOOGLE_SANS_FONT_FAMILY,
+      fontSize: 22,
+      lineHeight: '28px',
+      fontWeight: 400,
+    },
+    h6: {
+      fontFamily: GOOGLE_SANS_FONT_FAMILY,
+      fontSize: 18,
+      lineHeight: '24px',
+      fontWeight: 500,
+    },
+    subhead1: {
+      fontFamily: GOOGLE_SANS_TEXT_FONT_FAMILY,
       fontSize: 16,
       lineHeight: '24px',
+      fontWeight: 400,
+    },
+    subhead2: {
+      fontFamily: 'Roboto',
+      fontSize: 14,
+      lineHeight: '24px',
+      fontWeight: 400,
+    },
+    subtitle1: {
+      fontFamily: GOOGLE_SANS_TEXT_FONT_FAMILY,
+      fontSize: 16,
+      lineHeight: '24px',
+      fontWeight: 500,
     },
     subtitle2: {
-      fontFamily: 'Roboto Medium',
+      fontFamily: GOOGLE_SANS_TEXT_FONT_FAMILY,
       fontSize: 14,
       lineHeight: '20px',
+      fontWeight: 500,
     },
     body1: { fontFamily: 'Roboto', fontSize: 16, lineHeight: '24px' },
     body2: { fontFamily: 'Roboto', fontSize: 14, lineHeight: '20px' },

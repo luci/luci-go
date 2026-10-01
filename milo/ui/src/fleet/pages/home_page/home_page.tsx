@@ -203,7 +203,12 @@ export const HomePage = () => {
         <Box sx={{ maxWidth: 1300, mx: 'auto', width: '100%', mt: 8 }}>
           {/* Hero Section */}
           <Box sx={{ mb: 8, textAlign: 'center' }}>
-            <Typography variant="h3" component="h1" gutterBottom>
+            <Typography
+              variant="h3"
+              component="h1"
+              gutterBottom
+              sx={{ fontFamily: (t) => t.typography.h1.fontFamily }}
+            >
               Welcome to Fleet Console (FCon)
               {displayFirstName ? `, ${displayFirstName}` : ''}!
             </Typography>

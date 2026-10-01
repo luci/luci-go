@@ -28,6 +28,10 @@ export function FleetHelmet({ pageTitle }: FleetHelmetProps) {
         {pageTitle ? `${pageTitle} | Fleet Console` : 'Fleet Console'}
       </title>
       <link rel="icon" href={bassFavicon} />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Text:wght@400;500;700&display=swap"
+      />
     </>
   );
 }
