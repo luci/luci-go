@@ -15,7 +15,7 @@
 import _ from 'lodash';
 import { useMemo, useCallback } from 'react';
 
-import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
+import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/chromeos_device_config';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
 import { useDeviceDimensions } from '../common/use_device_dimensions';

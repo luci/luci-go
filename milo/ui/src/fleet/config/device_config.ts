@@ -12,25 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
-import { escapeAipValue } from '@/fleet/utils/search_param';
-
-export const CHROMEOS_DEFAULT_COLUMNS = [
-  'id',
-  'dut_id',
-  'state',
-  'dut_state',
-  'current_task',
-  'label-board',
-  'label-model',
-  'label-phase',
-  'label-pool',
-  'label-servo_component',
-  'label-servo_state',
-  'label-servo_usb_state',
-  'realm',
-];
-
 export const ANDROID_DEFAULT_COLUMNS = [
   'id',
   'state',
@@ -63,25 +44,3 @@ export const BROWSER_DEFAULT_COLUMNS = [
   'sw.state',
   'realm',
 ];
-
-// Define a list of device filters commonly used by FLOPS to show in the
-// filter options for the device.
-// TODO: Hotfix for b/449956551, needs further investigation on quote handling
-export const COMMON_DEVICE_FILTERS: string[] = [
-  'labels."dut_state"',
-  'labels."label-board"',
-  'labels."label-model"',
-  'labels."label-pool"',
-  'labels."label-phase"',
-];
-
-/**
- * Generate a link to find a particular device by its dut_name Swarming label.
- * Technically, ID is the same as dut_name for ChromeOS - but we might not
- * always be able to assume this in the future.
- */
-// TODO: b/402410880 - Consider making it possible to directly use the id of a
-// device for a URL in the future.
-export const generateDutNameRedirectURL = (dutName: string): string => {
-  return `/ui/fleet/redirects/singledevice?${FILTERS_PARAM_KEY}=${encodeURIComponent(`labels."dut_name" = "${escapeAipValue(dutName)}"`)}`;
-};

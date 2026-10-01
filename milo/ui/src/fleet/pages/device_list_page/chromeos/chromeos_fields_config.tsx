@@ -19,7 +19,7 @@ import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
 import { CellWithTooltip, renderTimestampCell } from '@/fleet/components/table';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
-import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
+import { generateDutNameRedirectURL } from '@/fleet/config/chromeos_device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FC_CellProps } from '@/fleet/types/table';

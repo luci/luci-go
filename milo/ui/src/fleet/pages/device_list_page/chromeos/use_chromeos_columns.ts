@@ -16,7 +16,7 @@ import { useMemo } from 'react';
 
 import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
-import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
+import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/chromeos_device_config';
 import { CHROMEOS_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';

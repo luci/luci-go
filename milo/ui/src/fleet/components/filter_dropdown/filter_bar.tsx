@@ -15,7 +15,7 @@
 import { useRef, useState } from 'react';
 
 import { useShortcut } from '@/fleet/components/shortcut_provider';
-import { COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
+import { CHROMEOS_COMMON_DEVICE_FILTERS } from '@/fleet/config/chromeos_device_config';
 import { isTyping } from '@/fleet/utils/field_typing';
 
 import { FilterCategory } from '../filters/use_filters';
@@ -101,7 +101,7 @@ export function FilterBar({
         onClose={() => {
           setIsDropdownOpen(false);
         }}
-        commonOptions={COMMON_DEVICE_FILTERS}
+        commonOptions={CHROMEOS_COMMON_DEVICE_FILTERS}
         isLoading={isLoading}
       />
     </div>
