@@ -113,9 +113,9 @@ describe('RepairListPage', () => {
       const links = screen.getAllByRole('link');
       const hrefs = links.map((link) => link.getAttribute('href'));
 
-      // Check link for lab1 (uses lab_location)
+      // Check link for lab1 (uses lab)
       expect(hrefs).toContain(
-        'https://omnilab.corp.google.com/recovery?host=lab_location%3Ainclude%3Alab1&host=host_group%3Ainclude%3Agroup1',
+        'https://omnilab.corp.google.com/recovery?host=lab%3Ainclude%3Alab1&host=host_group%3Ainclude%3Agroup1',
       );
 
       // Check link for sjc-mdpt9-wear (uses lab)

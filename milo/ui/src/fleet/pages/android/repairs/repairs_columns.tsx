@@ -330,17 +330,11 @@ export const getRepairsColumns = (workspace: AndroidPageWorkspace) =>
       Cell: (x) => {
         // Double encodeURIComponent because omnilab is weird i guess
         const params = new URLSearchParams();
-        if (x.row.original.lab_name) {
-          const filterKey =
-            x.row.original.lab_name === 'sjc-mdpt9-wear'
-              ? 'lab'
-              : 'lab_location';
+        if (x.row.original.lab_name)
           params.append(
             'host',
-            `${filterKey}:include:` +
-              encodeURIComponent(x.row.original.lab_name),
+            'lab:include:' + encodeURIComponent(x.row.original.lab_name),
           );
-        }
         if (x.row.original.host_group)
           params.append(
             'host',
