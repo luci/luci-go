@@ -31,6 +31,24 @@ import {
 
 import { getPriorityIcon, type Row } from './repairs_columns.utils';
 
+// Labs where lab_name is populated from the MobileHarness "lab" host property
+// rather than the DNS-derived "lab_location" property (see b/540374614, b/567925704).
+// Arsenal's /recovery page requires matching the exact HostProperty key.
+// NOTE: Keep this set in sync with MobileHarness host configs ingested by
+// AllDevicesFilter (filters.go) when new logical "lab" host properties are added.
+const LAB_PROPERTY_LAB_NAMES = new Set([
+  'acs-1265',
+  'bcpc-perf-lab',
+  'gtw-phone-cuj',
+  'ntc-tpke',
+  'pte-us-mtv',
+  'sjc-mdpt9-adapt',
+  'sjc-mdpt9-wear',
+  'slaas-aep',
+  'slaas-wasabi-ate',
+  'us-mtv-tv-1667',
+]);
+
 interface ExploreInArsenalLinkProps {
   to: string;
   totalDevices: number;
@@ -330,11 +348,16 @@ export const getRepairsColumns = (workspace: AndroidPageWorkspace) =>
       Cell: (x) => {
         // Double encodeURIComponent because omnilab is weird i guess
         const params = new URLSearchParams();
-        if (x.row.original.lab_name)
+        if (x.row.original.lab_name) {
+          const filterKey = LAB_PROPERTY_LAB_NAMES.has(x.row.original.lab_name)
+            ? 'lab'
+            : 'lab_location';
           params.append(
             'host',
-            'lab:include:' + encodeURIComponent(x.row.original.lab_name),
+            `${filterKey}:include:` +
+              encodeURIComponent(x.row.original.lab_name),
           );
+        }
         if (x.row.original.host_group)
           params.append(
             'host',

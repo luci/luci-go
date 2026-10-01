@@ -113,15 +113,90 @@ describe('RepairListPage', () => {
       const links = screen.getAllByRole('link');
       const hrefs = links.map((link) => link.getAttribute('href'));
 
-      // Check link for lab1 (uses lab)
+      // Check link for lab1 (uses lab_location)
       expect(hrefs).toContain(
-        'https://omnilab.corp.google.com/recovery?host=lab%3Ainclude%3Alab1&host=host_group%3Ainclude%3Agroup1',
+        'https://omnilab.corp.google.com/recovery?host=lab_location%3Ainclude%3Alab1&host=host_group%3Ainclude%3Agroup1',
       );
 
       // Check link for sjc-mdpt9-wear (uses lab)
       expect(hrefs).toContain(
         'https://omnilab.corp.google.com/recovery?host=lab%3Ainclude%3Asjc-mdpt9-wear&host=host_group%3Ainclude%3Agroup3',
       );
+    });
+
+    it('uses lab filter key in Arsenal link for logical lab host properties', async () => {
+      const logicalLabs = [
+        'acs-1265',
+        'bcpc-perf-lab',
+        'gtw-phone-cuj',
+        'ntc-tpke',
+        'pte-us-mtv',
+        'sjc-mdpt9-adapt',
+        'sjc-mdpt9-wear',
+        'slaas-aep',
+        'slaas-wasabi-ate',
+        'us-mtv-tv-1667',
+      ];
+      const locationLabs = [
+        'atc',
+        'acs',
+        'em53-acs',
+        'em53-atc',
+        'mtv',
+        'ntc-tpkd',
+        'sjc',
+        'sjc-mdpt9',
+      ];
+
+      renderComponent(
+        'Android',
+        createMockClientWithMetrics([
+          ...logicalLabs.map((labName, i) => ({
+            priority: RepairMetric_Priority.BREACHED,
+            labName,
+            hostGroup: `group-${i}`,
+            runTarget: `target-${i}`,
+            minimumRepairs: 2,
+            devicesOffline: 3,
+            totalDevices: 10,
+            peakUsage: 8,
+          })),
+          ...locationLabs.map((labName, i) => ({
+            priority: RepairMetric_Priority.NICE,
+            labName,
+            hostGroup: `loc-group-${i}`,
+            runTarget: `loc-target-${i}`,
+            minimumRepairs: 0,
+            devicesOffline: 0,
+            totalDevices: 4,
+            peakUsage: 3,
+          })),
+        ]),
+      );
+
+      for (const [i, labName] of logicalLabs.entries()) {
+        const row = (await screen.findByText(`group-${i}`)).closest('tr')!;
+        const arsenalLink = within(row).getByRole('link', {
+          name: /explore in arsenal/i,
+        });
+        const url = new URL(arsenalLink.getAttribute('href')!);
+        expect(url.searchParams.getAll('host')).toEqual([
+          `lab:include:${labName}`,
+          `host_group:include:group-${i}`,
+        ]);
+      }
+
+      for (const [i, labName] of locationLabs.entries()) {
+        const row = (await screen.findByText(labName)).closest('tr')!;
+        const arsenalLink = within(row).getByRole('link', {
+          name: /explore in arsenal/i,
+        });
+        const url = new URL(arsenalLink.getAttribute('href')!);
+        expect(url.searchParams.getAll('host')).toEqual([
+          `lab_location:include:${labName}`,
+          `host_group:include:loc-group-${i}`,
+        ]);
+      }
     });
 
     it('allows opening filter menu for Lab Name', async () => {
