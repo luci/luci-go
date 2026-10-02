@@ -105,7 +105,7 @@ func Schedule(ctx context.Context, task *taskspb.IngestArtifacts) {
 	})
 }
 
-var artifactFields = []string{"name", "result_id", "artifact_id", "content_type", "size_bytes"}
+var artifactFields = []string{"name", "result_id", "artifact_id", "content_type", "size_bytes", "artifact_type"}
 
 type artifactIngester struct {
 	antsExporter *antsexporter.Exporter

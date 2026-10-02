@@ -96,13 +96,16 @@ func prepareExportRow(artifacts []*rdbpb.Artifact, opts ExportOptions) ([]*bqpb.
 			CompletionTime: completionTime,
 		}
 
-		// Populate work unit id.
+		// Populate work unit id and test result id.
 		if opts.RootInvocation != nil {
 			parts, err := rdbpbutil.ParseArtifactName(artifact.Name)
 			if err != nil {
 				return nil, err
 			}
 			artifactRow.WorkUnitId = parts.WorkUnitID
+			if parts.ResultID != "" {
+				artifactRow.TestResultId = parts.ResultID
+			}
 		}
 
 		// Populate root invocation info.

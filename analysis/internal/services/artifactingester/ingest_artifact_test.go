@@ -141,12 +141,13 @@ func TestArtifactIngesterRun(t *testing.T) {
 					SizeBytes:   102400,
 				},
 				{
-					Name:        fmt.Sprintf("rootInvocations/%s/workUnits/wu-2/tests/my_test_case/results/result789/artifacts/log.txt", testRootInvocationID),
-					TestId:      "my_test_case",
-					ResultId:    "result789",
-					ArtifactId:  "log.txt",
-					ContentType: "text/plain",
-					SizeBytes:   5120,
+					Name:         fmt.Sprintf("rootInvocations/%s/workUnits/wu-2/tests/my_test_case/results/result789/artifacts/log.txt", testRootInvocationID),
+					TestId:       "my_test_case",
+					ResultId:     "result789",
+					ArtifactId:   "log.txt",
+					ContentType:  "text/plain",
+					ArtifactType: "LOGCAT",
+					SizeBytes:    5120,
 				},
 			}
 			expectedAntsArtifactRows := []*bqpb.AntsArtifactRow{
@@ -167,7 +168,7 @@ func TestArtifactIngesterRun(t *testing.T) {
 					Name:           "log.txt",
 					Size:           5120,
 					ContentType:    "text/plain",
-					ArtifactType:   "",
+					ArtifactType:   "LOGCAT",
 					CompletionTime: invocationFinalizedTime,
 				},
 			}
