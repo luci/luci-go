@@ -78,10 +78,12 @@ func TestProcessPoll(t *testing.T) {
 	var testTime = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
 
 	goodSession := &internalspb.Session{
-		BotId:          testBotID,
-		SessionId:      testSessionID,
-		Expiry:         timestamppb.New(testTime.Add(time.Minute)),
-		BotConfig:      &internalspb.BotConfig{},
+		BotId:     testBotID,
+		SessionId: testSessionID,
+		Expiry:    timestamppb.New(testTime.Add(time.Minute)),
+		BotConfig: &internalspb.BotConfig{
+			Expiry: timestamppb.New(testTime.Add(10 * time.Minute)),
+		},
 		LastSeenConfig: timestamppb.New(testTime),
 	}
 
@@ -662,17 +664,17 @@ func TestPoll(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			pb := botsession.Create(botsession.SessionParameters{
-				SessionID:    testSessionID,
-				BotID:        testBotID,
-				BotGroup:     cfg.BotGroup(testBotID),
-				RBEConfig:    rbeConf,
-				ServerConfig: cfg,
-				DebugInfo:    botsession.DebugInfo(ctx, srv.version),
-				Now:          clock.Now(ctx),
+			pb := botsession.Create(ctx, &botsession.SessionParameters{
+				SessionID:     testSessionID,
+				BotID:         testBotID,
+				BotGroup:      cfg.BotGroup(testBotID),
+				RBEConfig:     rbeConf,
+				ServerConfig:  cfg,
+				ServerVersion: srv.version,
 			})
 			pb.RbeBotSessionId = rbeBotSessionId
 			pb.LastSeenConfig = timestamppb.New(clock.Now(ctx).Add(-10 * time.Minute))
+			pb.LastSyncTime = timestamppb.New(clock.Now(ctx).Add(-15 * time.Minute))
 			return pb
 		}
 
@@ -742,6 +744,7 @@ func TestPoll(t *testing.T) {
 				HandshakeConfigHash: session.HandshakeConfigHash, // unchanged
 				RbeBotSessionId:     "some-rbe-session-id",       // preserved
 				LastSeenConfig:      timestamppb.New(testTime),   // updated
+				LastSyncTime:        timestamppb.New(testTime),   // updated
 			}))
 
 			assert.That(t, lastUpdate, should.Match(&botinfo.Update{
@@ -810,6 +813,7 @@ func TestPoll(t *testing.T) {
 				HandshakeConfigHash: session.HandshakeConfigHash, // unchanged
 				RbeBotSessionId:     "some-rbe-session-id",       // preserved
 				LastSeenConfig:      timestamppb.New(now),        // updated
+				LastSyncTime:        timestamppb.New(now),        // updated
 			}))
 		})
 
@@ -857,6 +861,7 @@ func TestPoll(t *testing.T) {
 				HandshakeConfigHash: session.HandshakeConfigHash, // unchanged
 				RbeBotSessionId:     "some-rbe-session-id",       // preserved
 				LastSeenConfig:      timestamppb.New(now),        // updated
+				LastSyncTime:        timestamppb.New(now),        // updated
 			}))
 		})
 

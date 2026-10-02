@@ -28,9 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
@@ -512,9 +510,7 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 // updateSessionToken generates a new session token with bumped expiry.
 func (srv *SessionServer) updateSessionToken(ctx context.Context, s *internalspb.Session, rbeSessionID string) ([]byte, error) {
 	s.RbeBotSessionId = rbeSessionID
-	s.DebugInfo = botsession.DebugInfo(ctx, srv.backendVer)
-	s.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
-	return botsession.Marshal(s, srv.hmacSecret)
+	return botsession.Marshal(botsession.BumpExpiry(ctx, s, srv.backendVer), srv.hmacSecret)
 }
 
 // rbeBotSession constructs remoteworkers.BotSession based on validated bot

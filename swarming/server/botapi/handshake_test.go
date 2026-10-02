@@ -170,6 +170,7 @@ func TestHandshake(t *testing.T) {
 				BotConfig:           session.BotConfig,
 				HandshakeConfigHash: session.HandshakeConfigHash,
 				LastSeenConfig:      timestamppb.New(testTime),
+				LastSyncTime:        timestamppb.New(testTime),
 			}))
 
 			assert.That(t, latestUpdate, should.Match(&botinfo.Update{

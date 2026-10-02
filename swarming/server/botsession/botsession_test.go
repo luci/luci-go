@@ -20,8 +20,11 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/secrets"
@@ -67,12 +70,16 @@ func TestMarshaling(t *testing.T) {
 	})
 }
 
-func TestCreateUpdate(t *testing.T) {
+func TestCreateSyncBump(t *testing.T) {
 	t.Parallel()
 
 	testTime := time.Date(2100, time.December, 1, 2, 3, 4, 0, time.UTC)
+	ctx, tc := testclock.UseTime(t.Context(), testTime)
+	ctx = trace.ContextWithSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: trace.TraceID{1, 2, 3, 4, 5},
+	}))
 
-	pb := Create(SessionParameters{
+	pb := Create(ctx, &SessionParameters{
 		SessionID: "session-id",
 		BotID:     "bot-id",
 		BotGroup: &cfg.BotGroup{
@@ -95,11 +102,7 @@ func TestCreateUpdate(t *testing.T) {
 				Fetched: testTime.Add(-time.Hour),
 			},
 		},
-		DebugInfo: &internalspb.DebugInfo{
-			SwarmingVersion: "server-ver",
-			RequestId:       "request-id",
-		},
-		Now: testTime,
+		ServerVersion: "server-ver",
 	})
 
 	expectedHandshakeConfigHash := digest([]string{
@@ -115,14 +118,16 @@ func TestCreateUpdate(t *testing.T) {
 		BotId:     "bot-id",
 		Expiry:    timestamppb.New(testTime.Add(Expiry)),
 		DebugInfo: &internalspb.DebugInfo{
+			Created:         timestamppb.New(testTime),
 			SwarmingVersion: "server-ver",
-			RequestId:       "request-id",
+			RequestId:       "01020304050000000000000000000000",
 		},
 		BotConfig: &internalspb.BotConfig{
 			Expiry: timestamppb.New(testTime.Add(Expiry)),
 			DebugInfo: &internalspb.DebugInfo{
+				Created:         timestamppb.New(testTime),
 				SwarmingVersion: "server-ver",
-				RequestId:       "request-id",
+				RequestId:       "01020304050000000000000000000000",
 			},
 			BotAuth:              []*configpb.BotAuth{{RequireLuciMachineToken: new(configpb.BotAuth_LuciMachineToken)}},
 			SystemServiceAccount: "system-service-account",
@@ -131,11 +136,17 @@ func TestCreateUpdate(t *testing.T) {
 		},
 		HandshakeConfigHash: expectedHandshakeConfigHash,
 		LastSeenConfig:      timestamppb.New(testTime.Add(-time.Hour)),
+		LastSyncTime:        timestamppb.New(testTime),
 	}))
 
-	testTime = testTime.Add(10 * time.Minute)
+	tc.Add(10 * time.Minute)
+	testTime = clock.Now(ctx)
 
-	pb = Update(pb, SessionParameters{
+	ctx = trace.ContextWithSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: trace.TraceID{6, 7, 8},
+	}))
+
+	pb = Sync(ctx, pb, &SessionParameters{
 		BotGroup: &cfg.BotGroup{
 			Dimensions: map[string][]string{
 				"pool": {"another-pool"},
@@ -152,11 +163,7 @@ func TestCreateUpdate(t *testing.T) {
 				Fetched: testTime.Add(-time.Hour),
 			},
 		},
-		DebugInfo: &internalspb.DebugInfo{
-			SwarmingVersion: "server-ver",
-			RequestId:       "another-request-id",
-		},
-		Now: testTime,
+		ServerVersion: "server-ver",
 	})
 
 	assert.That(t, pb, should.Match(&internalspb.Session{
@@ -164,14 +171,16 @@ func TestCreateUpdate(t *testing.T) {
 		BotId:     "bot-id",     // unchanged
 		Expiry:    timestamppb.New(testTime.Add(Expiry)),
 		DebugInfo: &internalspb.DebugInfo{
+			Created:         timestamppb.New(testTime),
 			SwarmingVersion: "server-ver",
-			RequestId:       "another-request-id",
+			RequestId:       "06070800000000000000000000000000",
 		},
 		BotConfig: &internalspb.BotConfig{
 			Expiry: timestamppb.New(testTime.Add(Expiry)),
 			DebugInfo: &internalspb.DebugInfo{
+				Created:         timestamppb.New(testTime),
 				SwarmingVersion: "server-ver",
-				RequestId:       "another-request-id",
+				RequestId:       "06070800000000000000000000000000",
 			},
 			SystemServiceAccount:       "another-system-service-account",
 			RbeInstance:                "rbe-instance",
@@ -180,6 +189,39 @@ func TestCreateUpdate(t *testing.T) {
 		},
 		HandshakeConfigHash: expectedHandshakeConfigHash, // unchanged
 		LastSeenConfig:      timestamppb.New(testTime.Add(-time.Hour)),
+		LastSyncTime:        timestamppb.New(testTime), // bumped
+	}))
+
+	prevTime := testTime
+	tc.Add(10 * time.Minute)
+	testTime = clock.Now(ctx)
+
+	pb = BumpConfigExpiry(ctx, pb, testTime.Add(5*time.Hour), "server-ver")
+
+	assert.That(t, pb, should.Match(&internalspb.Session{
+		SessionId: "session-id",                          // unchanged
+		BotId:     "bot-id",                              // unchanged
+		Expiry:    timestamppb.New(testTime.Add(Expiry)), // bumped
+		DebugInfo: &internalspb.DebugInfo{
+			Created:         timestamppb.New(testTime), // bumped
+			SwarmingVersion: "server-ver",
+			RequestId:       "06070800000000000000000000000000",
+		},
+		BotConfig: &internalspb.BotConfig{
+			Expiry: timestamppb.New(testTime.Add(5 * time.Hour)), // bumped
+			DebugInfo: &internalspb.DebugInfo{
+				Created:         timestamppb.New(prevTime), // unchanged
+				SwarmingVersion: "server-ver",
+				RequestId:       "06070800000000000000000000000000",
+			},
+			SystemServiceAccount:       "another-system-service-account",
+			RbeInstance:                "rbe-instance",
+			RbeEffectiveBotIdDimension: "effective-bot-id-dim",
+			RbeEffectiveBotId:          "effective-bot-id-val",
+		},
+		HandshakeConfigHash: expectedHandshakeConfigHash,               // unchanged
+		LastSeenConfig:      timestamppb.New(prevTime.Add(-time.Hour)), // unchanged
+		LastSyncTime:        timestamppb.New(prevTime),                 // unchanged
 	}))
 }
 
@@ -187,6 +229,7 @@ func TestIsHandshakeConfigStale(t *testing.T) {
 	t.Parallel()
 
 	testTime := time.Date(2100, time.December, 1, 2, 3, 4, 0, time.UTC)
+	ctx, _ := testclock.UseTime(t.Context(), testTime)
 
 	botGroup := func() *cfg.BotGroup {
 		return &cfg.BotGroup{
@@ -200,7 +243,7 @@ func TestIsHandshakeConfigStale(t *testing.T) {
 		}
 	}
 
-	pb := Create(SessionParameters{
+	pb := Create(ctx, &SessionParameters{
 		SessionID: "session-id",
 		BotID:     "bot-id",
 		BotGroup:  botGroup(),
@@ -209,7 +252,6 @@ func TestIsHandshakeConfigStale(t *testing.T) {
 				Fetched: testTime.Add(-time.Hour),
 			},
 		},
-		Now: testTime,
 	})
 
 	// Changing non-essential parameter doesn't invalidate the session.

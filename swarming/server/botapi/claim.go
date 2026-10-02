@@ -22,7 +22,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -534,15 +533,11 @@ func (srv *BotAPIServer) claimTask(ctx context.Context, d *claimDetails, r *bots
 		logging.Warningf(ctx, "CLAIMED_AT_FALLBACK: %s", taskID)
 		claimedAt = clock.Now(ctx)
 	}
-	completionDeadline := claimedAt.Add(maxPossibleTaskRuntime(props))
-
-	// TODO: Add a mechanism that ensures this expiry extension can't be abused
-	// by a malicious bot that was removed from config. Otherwise it can keep
-	// running tasks back-to-back forever, continuously bumping config expiry.
-	r.Session.BotConfig.Expiry = timestamppb.New(completionDeadline)
-	r.Session.DebugInfo = botsession.DebugInfo(ctx, srv.version)
-	r.Session.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
-	session, err := botsession.Marshal(r.Session, srv.hmacSecret)
+	session, err := botsession.Marshal(botsession.BumpConfigExpiry(ctx,
+		r.Session,
+		claimedAt.Add(maxPossibleTaskRuntime(props)),
+		srv.version,
+	), srv.hmacSecret)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "fail to marshal session proto: %s", err)
 	}

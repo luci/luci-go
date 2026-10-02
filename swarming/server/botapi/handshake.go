@@ -237,14 +237,13 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	// here since at this point we don't know it yet (the bot hasn't sent
 	// all dimensions yet). We'll populate it in the very first /bot/poll that
 	// happens soon after the handshake (after the bot collects all dimensions).
-	session, err := botsession.Marshal(botsession.Create(botsession.SessionParameters{
-		SessionID:    sessionID,
-		BotID:        botID,
-		BotGroup:     botGroup,
-		RBEConfig:    rbeConfig,
-		ServerConfig: conf,
-		DebugInfo:    botsession.DebugInfo(ctx, srv.version),
-		Now:          clock.Now(ctx),
+	session, err := botsession.Marshal(botsession.Create(ctx, &botsession.SessionParameters{
+		SessionID:     sessionID,
+		BotID:         botID,
+		BotGroup:      botGroup,
+		RBEConfig:     rbeConfig,
+		ServerConfig:  conf,
+		ServerVersion: srv.version,
 	}), srv.hmacSecret)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "fail to marshal session proto: %s", err)

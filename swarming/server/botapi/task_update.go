@@ -20,7 +20,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -312,15 +311,13 @@ func (srv *BotAPIServer) processTaskCompletion(ctx context.Context, body *TaskUp
 	}, nil
 }
 
-// Bump the session expiry.
+// updateBotSession returns a new session token with expiration bumped.
 func (srv *BotAPIServer) updateBotSession(ctx context.Context, session *internalspb.Session) ([]byte, error) {
-	session.DebugInfo = botsession.DebugInfo(ctx, srv.version)
-	session.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
-	newSession, err := botsession.Marshal(session, srv.hmacSecret)
+	token, err := botsession.Marshal(botsession.BumpExpiry(ctx, session, srv.version), srv.hmacSecret)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "fail to marshal session proto: %s", err)
 	}
-	return newSession, nil
+	return token, nil
 }
 
 func isTaskCompletion(body *TaskUpdateRequest) bool {

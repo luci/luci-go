@@ -90,7 +90,7 @@ func Unmarshal(tok []byte, secret *hmactoken.Secret) (*internalspb.Session, erro
 	return s, nil
 }
 
-// SessionParameters encapsulates arguments of Create function.
+// SessionParameters encapsulates arguments of Create and Sync functions.
 type SessionParameters struct {
 	// SessionID is the new session's ID as reported by the bot.
 	SessionID string
@@ -104,38 +104,66 @@ type SessionParameters struct {
 	RBEEffectiveBotID string
 	// ServerConfig is the config instance used to look up BotGroup and RBEConfig.
 	ServerConfig *cfg.Config
-	// DebugInfo to put into the session proto.
-	DebugInfo *internalspb.DebugInfo
-	// Now is the current time to use to calculate the expiration timestamp.
-	Now time.Time
+	// ServerVersion is the version of the server updating the session.
+	ServerVersion string
 }
 
 // Create initializes a new Session proto for an authorized connecting bot.
 //
 // Assumes all parameters have been validated already.
-func Create(params SessionParameters) *internalspb.Session {
+func Create(ctx context.Context, params *SessionParameters) *internalspb.Session {
+	now := clock.Now(ctx)
+	debugInfo := debugInfo(ctx, now, params.ServerVersion)
 	return &internalspb.Session{
 		BotId:               params.BotID,
 		SessionId:           params.SessionID,
-		Expiry:              timestamppb.New(params.Now.Add(Expiry)),
-		DebugInfo:           params.DebugInfo,
-		BotConfig:           botConfigPb(&params),
+		Expiry:              timestamppb.New(now.Add(Expiry)),
+		DebugInfo:           debugInfo,
+		BotConfig:           botConfigPb(params, now, debugInfo),
 		HandshakeConfigHash: handshakeConfigHash(params.BotGroup),
 		RbeBotSessionId:     "", // will be populate later when the bot opens RBE session
 		LastSeenConfig:      timestamppb.New(params.ServerConfig.VersionInfo.Fetched),
+		LastSyncTime:        timestamppb.New(now),
 	}
 }
 
-// Update updates the session by refreshing the config stored inside of it.
+// Sync updates the session by refreshing the config stored inside of it.
+//
+// Configs in `params` are the current fresh server-side configs. They will be
+// placed into the session.
 //
 // This doesn't touch set-once fields of the session (like SessionId and
 // HandshakeConfigHash and few others).
-func Update(s *internalspb.Session, params SessionParameters) *internalspb.Session {
-	s.Expiry = timestamppb.New(params.Now.Add(Expiry))
-	s.DebugInfo = params.DebugInfo
-	s.BotConfig = botConfigPb(&params)
+func Sync(ctx context.Context, s *internalspb.Session, params *SessionParameters) *internalspb.Session {
+	now := clock.Now(ctx)
+	debugInfo := debugInfo(ctx, now, params.ServerVersion)
+	s.Expiry = timestamppb.New(now.Add(Expiry))
+	s.DebugInfo = debugInfo
+	s.BotConfig = botConfigPb(params, now, debugInfo)
 	s.LastSeenConfig = timestamppb.New(params.ServerConfig.VersionInfo.Fetched)
+	s.LastSyncTime = timestamppb.New(now)
 	return s
+}
+
+// BumpExpiry updates the session expiry without touching anything else.
+//
+// This is used by various high-frequency RPCs (like "/task_update") to maintain
+// liveness of the bot session without messing with any of its other payload.
+func BumpExpiry(ctx context.Context, s *internalspb.Session, serverVersion string) *internalspb.Session {
+	now := clock.Now(ctx)
+	s.Expiry = timestamppb.New(now.Add(Expiry))
+	s.DebugInfo = debugInfo(ctx, now, serverVersion)
+	return s
+}
+
+// BumpConfigExpiry bumps the expiry of the stored config without changing it.
+//
+// This is used before starting executing a task to make sure the bot will be
+// able to finish it (relying on the config stored in the token in case it is
+// removed from the server configs).
+func BumpConfigExpiry(ctx context.Context, s *internalspb.Session, configExpiry time.Time, serverVersion string) *internalspb.Session {
+	s.BotConfig.Expiry = timestamppb.New(configExpiry)
+	return BumpExpiry(ctx, s, serverVersion)
 }
 
 // IsHandshakeConfigStale returns true if the bot needs to restart to pick up
@@ -148,17 +176,17 @@ func IsHandshakeConfigStale(s *internalspb.Session, group *cfg.BotGroup) bool {
 	return !bytes.Equal(s.HandshakeConfigHash, handshakeConfigHash(group))
 }
 
-// botConfigPb prepares *internalspb.BotConfig when creating or updating the
+// botConfigPb prepares *internalspb.BotConfig when creating or syncing the
 // session.
-func botConfigPb(params *SessionParameters) *internalspb.BotConfig {
+func botConfigPb(params *SessionParameters, now time.Time, debugInfo *internalspb.DebugInfo) *internalspb.BotConfig {
 	return &internalspb.BotConfig{
 		// Use default expiry when refreshing the bot config. It will be updated
 		// to a larger value before we launch a task to make sure the captured
 		// config can survive as long as the task (but not much longer). This will
 		// be needed to allow the task to complete even if the bot is removed from
 		// the config.
-		Expiry:                     timestamppb.New(params.Now.Add(Expiry)),
-		DebugInfo:                  params.DebugInfo,
+		Expiry:                     timestamppb.New(now.Add(Expiry)),
+		DebugInfo:                  debugInfo,
 		BotAuth:                    params.BotGroup.Auth,
 		SystemServiceAccount:       params.BotGroup.SystemServiceAccount,
 		LogsCloudProject:           params.BotGroup.LogsCloudProject,
@@ -226,10 +254,10 @@ func FormatForDebug(s *internalspb.Session) string {
 	return string(blob)
 }
 
-// DebugInfo generates new DebugInfo proto identifying the current request.
-func DebugInfo(ctx context.Context, backendVer string) *internalspb.DebugInfo {
+// debugInfo generates new debugInfo proto identifying the current request.
+func debugInfo(ctx context.Context, now time.Time, backendVer string) *internalspb.DebugInfo {
 	return &internalspb.DebugInfo{
-		Created:         timestamppb.New(clock.Now(ctx)),
+		Created:         timestamppb.New(now),
 		SwarmingVersion: backendVer,
 		RequestId:       trace.SpanContextFromContext(ctx).TraceID().String(),
 	}
@@ -259,6 +287,8 @@ func CheckSessionToken(tok []byte, secret *hmactoken.Secret, now time.Time) (*in
 		brokenErr = "no expiry"
 	case session.BotConfig == nil:
 		brokenErr = "no bot_config"
+	case session.BotConfig.Expiry == nil:
+		brokenErr = "no bot_config.expiry"
 	case session.LastSeenConfig == nil:
 		brokenErr = "no last_seen_config"
 	}
@@ -266,8 +296,10 @@ func CheckSessionToken(tok []byte, secret *hmactoken.Secret, now time.Time) (*in
 		return session, status.Errorf(codes.Internal, "session proto is broken: %s", brokenErr)
 	}
 
-	// Check expiration time. It is occasionally bumped by various backend
-	// handlers.
+	// Check the session token expiration time. It is occasionally bumped by
+	// various backend handlers. It just signals the bot had recently successfully
+	// contacted the server, not much else. This will fail for zombie bots woken
+	// up from slumber.
 	if dt := now.Sub(session.Expiry.AsTime()); dt > 0 {
 		return session, status.Errorf(codes.Unauthenticated, "session token has expired %s ago", dt)
 	}
@@ -277,15 +309,26 @@ func CheckSessionToken(tok []byte, secret *hmactoken.Secret, now time.Time) (*in
 
 // LogSession logs some session fields (usually on errors).
 func LogSession(ctx context.Context, session *internalspb.Session) {
+	now := clock.Now(ctx)
 	logging.Infof(ctx, "Bot ID: %s", session.BotId)
 	logging.Infof(ctx, "Session ID: %s", session.SessionId)
 	logging.Infof(ctx, "RBE session: %s", session.RbeBotSessionId)
 	if session.DebugInfo != nil {
-		logging.Infof(ctx, "Session age: %s", clock.Now(ctx).Sub(session.DebugInfo.Created.AsTime()))
+		logging.Infof(ctx, "Session age: %s", now.Sub(session.DebugInfo.Created.AsTime()))
 		logging.Infof(ctx, "Session by: %s, %s", session.DebugInfo.SwarmingVersion, session.DebugInfo.RequestId)
 	}
 	if cfgDbg := session.BotConfig.GetDebugInfo(); cfgDbg != nil {
-		logging.Infof(ctx, "Config snapshot age: %s", clock.Now(ctx).Sub(cfgDbg.Created.AsTime()))
+		logging.Infof(ctx, "Config snapshot age: %s", now.Sub(cfgDbg.Created.AsTime()))
 		logging.Infof(ctx, "Config snapshot by: %s, %s", cfgDbg.SwarmingVersion, cfgDbg.RequestId)
+	}
+	if exp := session.BotConfig.GetExpiry(); exp != nil {
+		logging.Infof(ctx, "Config expiry in: %s", exp.AsTime().Sub(now))
+	} else {
+		logging.Infof(ctx, "Config expiry in: ???")
+	}
+	if session.LastSyncTime != nil {
+		logging.Infof(ctx, "Config last sync age: %s", now.Sub(session.LastSyncTime.AsTime()))
+	} else {
+		logging.Infof(ctx, "Config last sync age: ???")
 	}
 }

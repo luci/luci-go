@@ -172,13 +172,12 @@ func (srv *BotAPIServer) Poll(ctx context.Context, body *PollRequest, _ *botsrv.
 	}
 
 	// Update the session, in particular BotConfig embedded there.
-	sessionToken, err := botsession.Marshal(botsession.Update(pr.session, botsession.SessionParameters{
+	sessionToken, err := botsession.Marshal(botsession.Sync(ctx, pr.session, &botsession.SessionParameters{
 		BotGroup:          pr.group,
 		RBEConfig:         pr.rbeConf,
 		RBEEffectiveBotID: pr.rbeEffectiveBotID(),
 		ServerConfig:      pr.conf,
-		DebugInfo:         botsession.DebugInfo(ctx, srv.version),
-		Now:               clock.Now(ctx),
+		ServerVersion:     srv.version,
 	}), srv.hmacSecret)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "fail to marshal session proto: %s", err)
