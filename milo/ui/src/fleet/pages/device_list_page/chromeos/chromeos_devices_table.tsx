@@ -18,7 +18,7 @@ import {
   MRT_RowSelectionState,
   MRT_TableInstance,
 } from 'material-react-table';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   emptyPageTokenUpdater,
@@ -28,7 +28,10 @@ import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorep
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import { RunReserve } from '@/fleet/components/actions/reserve/run_reserve';
-import { MrtColumnManager } from '@/fleet/components/columns/use_mrt_column_management';
+import {
+  getColumnId,
+  MrtColumnManager,
+} from '@/fleet/components/columns/use_mrt_column_management';
 import { FleetCSVExportButton } from '@/fleet/components/export/fleet_csv_export_button';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
@@ -135,9 +138,12 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
   );
 
   const [_, setSearchParams] = useSyncedSearchParams();
-  const filterCategoryDatas = useChromeOSFilters((searchParams) =>
-    emptyPageTokenUpdater(pagerCtx)(searchParams),
+  const onApplyFilters = useCallback(
+    (searchParams: URLSearchParams) =>
+      emptyPageTokenUpdater(pagerCtx)(searchParams),
+    [pagerCtx],
   );
+  const filterCategoryDatas = useChromeOSFilters(onApplyFilters);
 
   const aip160Filter = filterCategoryDatas.aip160();
 
@@ -164,11 +170,11 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
   const { columnSizing, onColumnSizingChange, resetColumnWidths } =
     useMrtColumnSizing(CHROMEOS_DEVICES_LOCAL_STORAGE_KEY);
 
-  // Clear row selection when filters change to prevent performing bulk actions
-  // on hidden/invisible rows.
+  // Clear row selection when the active filter query changes to prevent
+  // performing bulk actions on hidden/invisible rows.
   useEffect(() => {
     setRowSelection({});
-  }, [filterCategoryDatas.filterValues]);
+  }, [aip160Filter]);
 
   const rows = useMemo(() => {
     const baseRows = currentTasks.isPending
@@ -184,9 +190,18 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
     return baseRows;
   }, [devices, currentTasks.tasks, currentTasks.isPending]);
 
+  const visibleColumns = useMemo(
+    () =>
+      mrtColumnManager.columns.filter((col) => {
+        const id = getColumnId(col);
+        return Boolean(id && mrtColumnManager.columnVisibility[id]);
+      }),
+    [mrtColumnManager.columns, mrtColumnManager.columnVisibility],
+  );
+
   const tableOptions: FC_TableOptions<ChromeOSDevice> = useMemo(
     () => ({
-      columns: mrtColumnManager.columns,
+      columns: visibleColumns,
       data: rows,
       displayColumnDefOptions: {
         'mrt-row-select': {
@@ -206,9 +221,7 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
         <FleetTopToolbar
           table={table}
           availableColumns={mrtColumnManager.allColumns}
-          visibleColumnIds={mrtColumnManager.columns
-            .filter((col) => mrtColumnManager.columnVisibility[col.id])
-            .map((col) => col.id)}
+          visibleColumnIds={mrtColumnManager.visibleColumnIds}
           onToggleColumn={mrtColumnManager.onToggleColumn}
           selectOnlyColumn={mrtColumnManager.selectOnlyColumn}
           resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
@@ -244,7 +257,7 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
         showProgressBars: devicesQuery.isFetching,
         columnOrder: [
           'mrt-row-select',
-          ...mrtColumnManager.columns.map((col) => col.id),
+          ...visibleColumns.map((col) => getColumnId(col)),
         ],
       },
       manualFiltering: true,
@@ -254,6 +267,7 @@ export const ChromeOSTable = ({ mrtColumnManager }: ChromeOSTableProps) => {
     }),
     [
       mrtColumnManager,
+      visibleColumns,
       resetColumnWidths,
       rows,
       onSortingChange,

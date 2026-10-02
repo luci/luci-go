@@ -12,34 +12,71 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MRT_SortingState, MRT_Updater } from 'material-react-table';
-import { useCallback } from 'react';
+import {
+  MRT_ColumnDef,
+  MRT_RowData,
+  MRT_SortingState,
+  MRT_Updater,
+} from 'material-react-table';
+import { useCallback, useMemo } from 'react';
 
 import {
   emptyPageTokenUpdater,
   PagerContext,
 } from '@/common/components/params_pager';
+import { getColumnId } from '@/fleet/components/columns/use_mrt_column_management';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ORDER_BY_PARAM_KEY } from './order_by';
-import { useMrtSorting } from './use_mrt_sorting';
 
 /**
  * Hook for managing the Material React Table (MRT) sorting state.
  * Syncs the sorting state with the `order_by` search parameter. If a `pagerCtx` is provided,
  * changing the sorting direction or sorted column will atomically reset the pagination token.
  */
-export function useMrtSortingState(
-  columns?: Array<{ id?: string; orderByField?: string }>,
+export function useMrtSortingState<TData extends MRT_RowData = MRT_RowData>(
+  columns?:
+    | MRT_ColumnDef<TData>[]
+    | Array<{ id?: string; orderByField?: string }>,
   pagerCtx?: PagerContext,
 ): [
   MRT_SortingState,
   (updater: MRT_Updater<MRT_SortingState>) => void,
   string,
 ] {
-  const sorting = useMrtSorting(columns);
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const orderByParam = searchParams.get(ORDER_BY_PARAM_KEY) ?? '';
+
+  const sorting = useMemo<MRT_SortingState>(() => {
+    if (!orderByParam) return [];
+    const rawItems = orderByParam
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return rawItems
+      .map((item) => {
+        const parts = item.split(/\s+/);
+        const id = parts[0];
+        const desc = parts[1]?.toLowerCase() === 'desc';
+
+        if (!id) return null;
+
+        if (!columns || columns.length === 0) {
+          return { id, desc };
+        }
+
+        const col = columns.find(
+          (c) =>
+            getColumnId(c as MRT_ColumnDef<TData>) === id ||
+            (c as { orderByField?: string }).orderByField === id,
+        );
+
+        const sortId = (col && getColumnId(col as MRT_ColumnDef<TData>)) || id;
+
+        return { id: sortId, desc };
+      })
+      .filter((s): s is { id: string; desc: boolean } => Boolean(s && s.id));
+  }, [orderByParam, columns]);
 
   const onSortingChange = useCallback(
     (updater: MRT_Updater<MRT_SortingState>) => {
@@ -48,8 +85,11 @@ export function useMrtSortingState(
 
       const nextOrderBy = newSorting
         .map((s) => {
-          const col = columns?.find((c) => c.id === s.id);
-          const field = col?.orderByField ?? s.id;
+          const col = columns?.find(
+            (c) => getColumnId(c as MRT_ColumnDef<TData>) === s.id,
+          );
+          const field =
+            (col as { orderByField?: string })?.orderByField ?? s.id;
           return s.desc ? `${field} desc` : field;
         })
         .join(', ');

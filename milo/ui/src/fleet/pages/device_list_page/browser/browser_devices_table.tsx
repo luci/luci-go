@@ -18,7 +18,7 @@ import {
   MRT_RowSelectionState,
   MRT_TableInstance,
 } from 'material-react-table';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   emptyPageTokenUpdater,
@@ -30,7 +30,10 @@ import {
   extractHostname,
   extractPool,
 } from '@/fleet/components/actions/request_repair/request_repair_utils';
-import { MrtColumnManager } from '@/fleet/components/columns/use_mrt_column_management';
+import {
+  getColumnId,
+  MrtColumnManager,
+} from '@/fleet/components/columns/use_mrt_column_management';
 import { FleetCSVExportButton } from '@/fleet/components/export/fleet_csv_export_button';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
@@ -107,22 +110,23 @@ export const BrowserDevicesTable = ({
   const { pageSize, pageToken } = usePager(pagerCtx);
 
   const [sorting, onSortingChange, orderByParam] = useMrtSortingState(
-    mrtColumnManager.columns.map((c) => ({
-      id: c.id || (c.accessorKey as string) || '',
-      orderByField: c.orderByField,
-    })),
+    mrtColumnManager.columns,
     pagerCtx,
   );
 
   const [_, setSearchParams] = useSyncedSearchParams();
 
+  const onApplyFilters = useCallback(
+    (searchParams: URLSearchParams) =>
+      emptyPageTokenUpdater(pagerCtx)(searchParams),
+    [pagerCtx],
+  );
+
   const {
     filterValues,
     aip160,
     warnings: filterWarnings,
-  } = useBrowserFilters((searchParams) =>
-    emptyPageTokenUpdater(pagerCtx)(searchParams),
-  );
+  } = useBrowserFilters(onApplyFilters);
 
   const aip160Filter = filterWarnings.length > 0 ? '' : aip160();
 
@@ -150,15 +154,24 @@ export const BrowserDevicesTable = ({
   const { columnSizing, onColumnSizingChange, resetColumnWidths } =
     useMrtColumnSizing(BROWSER_DEVICES_LOCAL_STORAGE_KEY);
 
-  // Clear row selection when filters change to prevent performing bulk actions
-  // on hidden/invisible rows.
+  // Clear row selection when the active filter query changes to prevent
+  // performing bulk actions on hidden/invisible rows.
   useEffect(() => {
     setRowSelection({});
-  }, [filterValues]);
+  }, [aip160Filter]);
+
+  const visibleColumns = useMemo(
+    () =>
+      mrtColumnManager.columns.filter((col) => {
+        const id = getColumnId(col);
+        return Boolean(id && mrtColumnManager.columnVisibility[id]);
+      }),
+    [mrtColumnManager.columns, mrtColumnManager.columnVisibility],
+  );
 
   const tableOptions: FC_TableOptions<BrowserDevice> = useMemo(
     () => ({
-      columns: mrtColumnManager.columns,
+      columns: visibleColumns,
       data: devices,
       displayColumnDefOptions: {
         'mrt-row-select': {
@@ -229,7 +242,7 @@ export const BrowserDevicesTable = ({
         showProgressBars: devicesQuery.isFetching,
         columnOrder: [
           'mrt-row-select',
-          ...mrtColumnManager.columns.map((col) => col.id as string),
+          ...visibleColumns.map((col) => getColumnId(col)),
         ],
       },
       manualFiltering: true,
@@ -239,6 +252,7 @@ export const BrowserDevicesTable = ({
     }),
     [
       mrtColumnManager,
+      visibleColumns,
       resetColumnWidths,
       devices,
       totalSize,

@@ -41,6 +41,7 @@ export const getAndroidColumns = (
     const { renderCell, ...restOverride } = override;
 
     return {
+      id,
       accessorKey: id,
       header: id,
       orderByField: 'labels.' + id,

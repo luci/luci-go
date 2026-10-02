@@ -17,7 +17,7 @@ import {
   MaterialReactTable,
   MRT_RowSelectionState,
 } from 'material-react-table';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   emptyPageTokenUpdater,
@@ -92,10 +92,7 @@ export const AndroidDevicesTable = ({
   const { pageSize, pageToken } = usePager(pagerCtx);
 
   const [sorting, onSortingChange, orderByParam] = useMrtSortingState(
-    mrtColumnManager.columns.map((c) => ({
-      id: c.id || (c.accessorKey as string) || '',
-      orderByField: c.orderByField,
-    })),
+    mrtColumnManager.columns,
     pagerCtx,
   );
 
@@ -103,9 +100,15 @@ export const AndroidDevicesTable = ({
 
   const [_, setSearchParams] = useSyncedSearchParams();
 
+  const onApplyFilters = useCallback(
+    (searchParams: URLSearchParams) =>
+      emptyPageTokenUpdater(pagerCtx)(searchParams),
+    [pagerCtx],
+  );
+
   const { filterValues, aip160 } = useAndroidFilters(
     workspace,
-    (searchParams) => emptyPageTokenUpdater(pagerCtx)(searchParams),
+    onApplyFilters,
     showAvgUtilization,
   );
 
@@ -114,11 +117,11 @@ export const AndroidDevicesTable = ({
     [aip160, workspace],
   );
 
-  // Clear row selection when filters change to prevent performing bulk actions
-  // on hidden/invisible rows.
+  // Clear row selection when the active filter query changes to prevent
+  // performing bulk actions on hidden/invisible rows.
   useEffect(() => {
     setRowSelection({});
-  }, [filterValues, workspace]);
+  }, [combinedAip160, workspace]);
 
   const request = useMemo(
     () =>
@@ -176,12 +179,7 @@ export const AndroidDevicesTable = ({
           <FleetTopToolbar
             table={table}
             availableColumns={availableColumns}
-            visibleColumnIds={mrtColumnManager.columns
-              .filter((col) => {
-                const id = getColumnId(col);
-                return id && mrtColumnManager.columnVisibility[id];
-              })
-              .map((col) => getColumnId(col))}
+            visibleColumnIds={mrtColumnManager.visibleColumnIds}
             onToggleColumn={mrtColumnManager.onToggleColumn}
             selectOnlyColumn={mrtColumnManager.selectOnlyColumn}
             resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
@@ -234,12 +232,7 @@ export const AndroidDevicesTable = ({
         showProgressBars: devicesQuery.isFetching,
         columnOrder: [
           'mrt-row-select',
-          ...mrtColumnManager.columns
-            .filter((col) => {
-              const id = getColumnId(col);
-              return id && mrtColumnManager.columnVisibility[id];
-            })
-            .map((col) => getColumnId(col)),
+          ...visibleColumns.map((col) => getColumnId(col)),
         ],
       },
       manualFiltering: true,

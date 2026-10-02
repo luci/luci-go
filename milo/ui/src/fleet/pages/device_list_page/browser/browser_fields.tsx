@@ -55,6 +55,7 @@ export type BrowserColumnDef = MRT_ColumnDef<BrowserDevice> & {
 
 export const CUSTOM_COLUMNS: Record<string, BrowserColumnDef> = {
   unhealthy_devices_ratio: {
+    id: 'unhealthy_devices_ratio',
     accessorKey: 'unhealthy_devices_ratio',
     header: 'unhealthy/total devices',
     enableSorting: false,

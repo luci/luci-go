@@ -12,43 +12,78 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MRT_SortingState } from 'material-react-table';
+import { MRT_ColumnDef, MRT_RowData } from 'material-react-table';
 import { useMemo } from 'react';
 
-import { parseOrderByParam } from '@/fleet/utils/search_param';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { getColumnId } from '@/fleet/components/columns/use_mrt_column_management';
 
-import { OrderByDirection, ORDER_BY_PARAM_KEY } from './order_by';
+import { useMrtSortingState } from './use_mrt_sorting_state';
 
-export function useMrtSorting(
-  columns?: Array<{ id?: string; orderByField?: string }>,
-): MRT_SortingState {
-  const [searchParams] = useSyncedSearchParams();
-  const orderByParam = searchParams.get(ORDER_BY_PARAM_KEY);
+/**
+ * Custom hook that combines URL-based sorting state management with client-side
+ * data sorting for Material React Table.
+ *
+ * This hook resolves sort columns using either `id` or `accessorKey` and supports
+ * custom `sortingFn` when provided on the column definition.
+ */
+export function useMrtSorting<TData extends MRT_RowData>(
+  rows: TData[],
+  columns: MRT_ColumnDef<TData>[],
+) {
+  const [sorting, onSortingChange] = useMrtSortingState(columns);
 
-  return useMemo<MRT_SortingState>(() => {
-    if (!orderByParam) return [];
-    return orderByParam
-      .split(', ')
-      .map((sort: string) => {
-        const parsed = parseOrderByParam(sort);
-        if (!parsed) return null;
+  const sortedRows = useMemo(() => {
+    if (!sorting || sorting.length === 0) return rows;
 
-        const match = columns?.find(
-          (c) =>
-            parsed.field === (c.orderByField ?? c.id) || parsed.field === c.id,
-        );
-        if (match && match.id) {
-          return {
-            id: match.id,
-            desc: parsed.direction === OrderByDirection.DESC,
+    return [...rows].sort((a, b) => {
+      for (const sort of sorting) {
+        const col = columns.find((c) => getColumnId(c) === sort.id);
+        if (!col) continue;
+
+        let cmp = 0;
+        if (typeof col.sortingFn === 'function') {
+          const resolveCellValue = (row: TData, id: string) => {
+            const targetCol =
+              id === sort.id
+                ? col
+                : (columns.find((c) => getColumnId(c) === id) ?? col);
+            return targetCol.accessorFn
+              ? targetCol.accessorFn(row)
+              : row[(targetCol.accessorKey as string) ?? id];
           };
+          const mockRowA = {
+            original: a,
+            getValue: (id: string) => resolveCellValue(a, id),
+          } as Parameters<typeof col.sortingFn>[0];
+          const mockRowB = {
+            original: b,
+            getValue: (id: string) => resolveCellValue(b, id),
+          } as Parameters<typeof col.sortingFn>[1];
+          cmp = col.sortingFn(mockRowA, mockRowB, sort.id);
+        } else {
+          const valA = col.accessorFn
+            ? col.accessorFn(a)
+            : a[(col.accessorKey as string) ?? sort.id];
+          const valB = col.accessorFn
+            ? col.accessorFn(b)
+            : b[(col.accessorKey as string) ?? sort.id];
+
+          const strA = String(valA ?? '');
+          const strB = String(valB ?? '');
+          cmp = strA.localeCompare(strB, undefined, { numeric: true });
         }
-        return {
-          id: parsed.field,
-          desc: parsed.direction === OrderByDirection.DESC,
-        };
-      })
-      .filter((x): x is NonNullable<typeof x> => !!x);
-  }, [orderByParam, columns]);
+
+        if (cmp !== 0) {
+          return sort.desc ? -cmp : cmp;
+        }
+      }
+      return 0;
+    });
+  }, [rows, sorting, columns]);
+
+  return {
+    sorting,
+    onSortingChange,
+    sortedRows,
+  };
 }

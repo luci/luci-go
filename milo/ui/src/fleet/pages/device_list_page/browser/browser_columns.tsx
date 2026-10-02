@@ -92,6 +92,7 @@ export const getBrowserColumn = (id: string): BrowserColumnDef => {
   const { labelKey, source } = destructureColumnId(id);
 
   return {
+    id,
     accessorKey: id,
     header: getColumnHeader(labelKey, source),
     orderByField: id,
