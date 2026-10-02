@@ -109,6 +109,62 @@ func candidateZones(vm *model.VM) []string {
 	return candidates
 }
 
+// recordZoneFallback logs and records metrics for a zone fallback transition.
+func recordZoneFallback(ctx context.Context, vm *model.VM, fromZone, toZone, reason string) {
+	logging.Warningf(ctx, "Create instance %q: stockout in zone %q (%s), falling back to zone %q", vm.Hostname, fromZone, reason, toZone)
+	metrics.UpdateZoneFallback(ctx, vm, fromZone, toZone, reason)
+}
+
+// handleInsertError processes an error returned by InsertInstance, recording
+// failure and fallback metrics and returning whether the caller should retry on
+// nextZone or abort with an error.
+func handleInsertError(ctx context.Context, vm *model.VM, err error, targetZone, nextZone string, hasFallbacks bool) (bool, error) {
+	logging.Debugf(ctx, "Create instance %q: got error from attempt to create instance %s", vm.Hostname, err)
+	gerr, ok := err.(*googleapi.Error)
+	if !ok {
+		return false, errors.Fmt("failed to create instance %s: %w", vm.Hostname, err)
+	}
+	logErrors(ctx, "Create instance", vm.Hostname, gerr)
+	stockout, reason := isStockoutGoogleAPIError(gerr)
+	metrics.UpdateFailures(ctx, gerr.Code, reason, vm)
+	// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
+	if rateLimitExceeded(gerr) {
+		return false, errors.Fmt("rate limit exceeded creating instance %s: %w", vm.Hostname, err)
+	}
+	if stockout && nextZone != "" {
+		recordZoneFallback(ctx, vm, targetZone, nextZone, reason)
+		return true, nil
+	}
+	if (gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500) && !(stockout && hasFallbacks) {
+		return false, errors.Fmt("transiently failed to create instance %s: %w", vm.Hostname, err)
+	}
+	logging.Debugf(ctx, "Create instance %q: try to delete instance as got error during creation.", vm.Hostname)
+	if delErr := deleteVM(ctx, vm.ID, vm.Hostname); delErr != nil {
+		logging.Errorf(ctx, "Create instance %q: failed to delete instance %s", vm.Hostname, delErr)
+	}
+	return false, errors.Fmt("failed to create instance %s: %w", vm.Hostname, err)
+}
+
+// handleOperationErrors processes errors inside a GCP Operation returned by
+// InsertInstance, recording failure and fallback metrics and returning whether
+// the caller should retry on nextZone or abort with an error.
+func handleOperationErrors(ctx context.Context, vm *model.VM, opErrors []CommonOpError, targetZone, nextZone string) (bool, error) {
+	logging.Debugf(ctx, "Create instance %q: failed to create instance total %d error received", vm.Hostname, len(opErrors))
+	for _, err := range opErrors {
+		logging.Errorf(ctx, "create instance %q: failed with code %s: Message %s", vm.Hostname, err.Code, err.Message)
+	}
+	stockout, reason := isStockoutOperationErrors(opErrors)
+	metrics.UpdateFailures(ctx, 200, reason, vm)
+	if stockout && nextZone != "" {
+		recordZoneFallback(ctx, vm, targetZone, nextZone, reason)
+		return true, nil
+	}
+	if err := deleteVM(ctx, vm.ID, vm.Hostname); err != nil {
+		return false, errors.Fmt("failed to create instance %s: %w", vm.Hostname, err)
+	}
+	return false, errors.Fmt("failed to create instance %s", vm.Hostname)
+}
+
 // cloneVMForZone returns a shallow copy of vm with a deep-copied Attributes
 // proto bound to the given target zone via SetZone.
 func cloneVMForZone(vm *model.VM, zone string) *model.VM {
@@ -168,7 +224,8 @@ func checkInstance(c context.Context, vm *model.VM) error {
 // createInstanceQueue is the name of the create instance task handler queue.
 const createInstanceQueue = "create-instance"
 
-// createInstance creates a GCE instance.
+// createInstance creates a GCE instance, sequentially attempting configured
+// fallback zones within the same task when a hard GCP capacity stockout occurs.
 func createInstance(ctx context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.CreateInstance)
 	switch {
@@ -188,63 +245,51 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 		return nil
 	}
 	logging.Debugf(ctx, "Create instance %q: with ID %q", vm.Hostname, vm.ID)
-	hasFallbacks := len(vm.Attributes.GetFallbackZones()) > 0
-	attemptVM := vm
-	if hasFallbacks {
-		attemptVM = cloneVMForZone(vm, vm.Attributes.GetZone())
-	}
-	instance := attemptVM.GetInstance()
-
-	// Generate a request ID based on the hostname.
-	// Ensures duplicate operations aren't created in GCE.
-	// Request IDs are valid for 24 hours.
-	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("create-%s", vm.Hostname)))
+	initialZone := vm.Attributes.GetZone()
+	candidates := candidateZones(vm)
+	hasFallbacks := len(candidates) > 1
 	srv := getCompute(ctx)
-	op, err := srv.InsertInstance(ctx, attemptVM.Attributes.GetProject(), attemptVM.Attributes.GetZone(), instance, rID.String())
-	if err != nil {
-		logging.Debugf(ctx, "Create instance %q: got error from attempt to create instance %s", vm.Hostname, err)
-		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(ctx, "Create instance", vm.Hostname, gerr)
-			reason := errReasonHTTPError
-			if len(gerr.Errors) > 0 && gerr.Errors[0].Reason != "" {
-				reason = gerr.Errors[0].Reason
-			}
-			metrics.UpdateFailures(ctx, gerr.Code, reason, attemptVM)
-			// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
-			if rateLimitExceeded(gerr) {
-				return errors.Fmt("rate limit exceeded creating instance %s: %w", vm.Hostname, err)
-			}
-			if gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500 {
-				return errors.Fmt("transiently failed to create instance %s: %w", vm.Hostname, err)
-			}
-			logging.Debugf(ctx, "Create instance %q: try to delete instance as got error during creation.", vm.Hostname)
-			if err := deleteVM(ctx, task.Id, vm.Hostname); err != nil {
-				logging.Errorf(ctx, "Create instance %q: failed to delete instance %s", vm.Hostname, err)
-			}
+
+	var op Operation
+	var targetZone string
+	for i, zone := range candidates {
+		targetZone = zone
+		var nextZone string
+		if i+1 < len(candidates) {
+			nextZone = candidates[i+1]
 		}
-		return errors.Fmt("failed to create instance %s: %w", vm.Hostname, err)
+		attemptVM := cloneVMForZone(vm, targetZone)
+		instance := attemptVM.GetInstance()
+
+		// Generate a request ID based on the hostname and target zone.
+		// Ensures duplicate operations aren't created in GCE while allowing
+		// zone fallback attempts within the same task.
+		// Request IDs are valid for 24 hours.
+		rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("create-%s-%s", vm.Hostname, targetZone)))
+		var err error
+		op, err = srv.InsertInstance(ctx, attemptVM.Attributes.GetProject(), targetZone, instance, rID.String())
+		if err != nil {
+			fallback, retErr := handleInsertError(ctx, attemptVM, err, targetZone, nextZone, hasFallbacks)
+			if fallback {
+				continue
+			}
+			return retErr
+		}
+		logging.Debugf(ctx, "Create instance %q: received response from GCP, waiting execution", vm.Hostname)
+		if operationsErrors := op.GetErrors(); len(operationsErrors) > 0 {
+			fallback, retErr := handleOperationErrors(ctx, attemptVM, operationsErrors, targetZone, nextZone)
+			if fallback {
+				continue
+			}
+			return retErr
+		}
+		break
 	}
-	logging.Debugf(ctx, "Create instance %q: received response from GCP, waiting execution", vm.Hostname)
-	if operationsErrors := op.GetErrors(); len(operationsErrors) > 0 {
-		logging.Debugf(ctx, "Create instance %q: failed to create instance total %d error received", vm.Hostname, len(operationsErrors))
-		reason := errReasonOperationError
-		for _, err := range operationsErrors {
-			logging.Errorf(ctx, "create instance %q: failed with code %s: Message %s", vm.Hostname, err.Code, err.Message)
-			if err.Code != "" && reason == errReasonOperationError {
-				reason = err.Code
-			}
-		}
-		metrics.UpdateFailures(ctx, 200, reason, attemptVM)
-		if err := deleteVM(ctx, task.Id, vm.Hostname); err != nil {
-			return errors.Fmt("failed to create instance %s: %w", vm.Hostname, err)
-		}
-		return errors.Fmt("failed to create instance %s", vm.Hostname)
-	}
-	if hasFallbacks {
-		if err := updateVMZone(ctx, vm.ID, vm.Attributes.GetZone()); err != nil {
+	if targetZone != initialZone || hasFallbacks {
+		if err := updateVMZone(ctx, vm.ID, targetZone); err != nil {
 			return errors.Fmt("failed to update zone for instance %s: %w", vm.Hostname, err)
 		}
-		vm.Attributes.SetZone(vm.Attributes.GetZone())
+		vm.Attributes.SetZone(targetZone)
 	}
 	if op.GetStatus() == "DONE" {
 		logging.Debugf(ctx, "Create instance %q: reported as created, next step is to check it.", vm.Hostname)

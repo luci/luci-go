@@ -276,6 +276,131 @@ func TestCreate(t *testing.T) {
 					assert.Loosely(t, v.URL, should.Equal("url"))
 					assert.Loosely(t, s.Get(c, metrics.CreatedInstanceChecked, confFields), should.Equal(1))
 				})
+
+				t.Run("fallback zones", func(t *ftt.Test) {
+					makeVM := func() *model.VM {
+						return &model.VM{
+							ID:       "id",
+							Hostname: "name",
+							Prefix:   "prefix",
+							Attributes: config.VM{
+								Project:       "project",
+								Zone:          "us-central1-c",
+								FallbackZones: []string{"us-central1-a", "us-central1-b"},
+								Disk:          []*config.Disk{{Type: "zones/{{.Zone}}/diskTypes/pd-ssd"}},
+								MachineType:   "zones/{{.Zone}}/machineTypes/n2-standard-8",
+							},
+						}
+					}
+					opErr := func(code, msg string) *compute.Operation {
+						return &compute.Operation{
+							Error: &compute.OperationError{
+								Errors: []*compute.OperationErrorErrors{{Code: code, Message: msg}},
+							},
+						}
+					}
+					opDone := func(link string) *compute.Operation {
+						return &compute.Operation{
+							EndTime:    "2018-12-14T15:07:48.200-08:00",
+							Status:     "DONE",
+							TargetLink: link,
+						}
+					}
+
+					t.Run("http 503 stockout falls back and succeeds", func(t *ftt.Test) {
+						attempts := 0
+						rt.Handler = func(req any) (int, any) {
+							attempts++
+							switch attempts {
+							case 1:
+								inst := req.(*compute.Instance)
+								assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-c/machineTypes/n2-standard-8"))
+								assert.Loosely(t, inst.Disks[0].InitializeParams.DiskType, should.Equal("zones/us-central1-c/diskTypes/pd-ssd"))
+								return http.StatusServiceUnavailable, nil
+							case 2:
+								inst := req.(*compute.Instance)
+								assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
+								assert.Loosely(t, inst.Disks[0].InitializeParams.DiskType, should.Equal("zones/us-central1-a/diskTypes/pd-ssd"))
+								rt.Type = reflect.TypeOf(map[string]string{})
+								return http.StatusOK, opDone("url-fallback-a")
+							default:
+								return http.StatusOK, &compute.Instance{
+									CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
+									SelfLink:          "url-fallback-a",
+								}
+							}
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						assert.Loosely(t, datastore.Put(c, makeVM()), should.BeNil)
+						assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+						assert.Loosely(t, attempts, should.Equal(3))
+
+						v := &model.VM{ID: "id"}
+						assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+						assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-a"))
+						assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
+						assert.Loosely(t, v.Attributes.GetDisk()[0].GetType(), should.Equal("zones/us-central1-a/diskTypes/pd-ssd"))
+						assert.Loosely(t, v.URL, should.Equal("url-fallback-a"))
+					})
+
+					t.Run("operation stockout falls back across multiple zones", func(t *ftt.Test) {
+						attempts := 0
+						rt.Handler = func(req any) (int, any) {
+							attempts++
+							switch attempts {
+							case 1:
+								return http.StatusOK, opErr(errCodeZoneResourcePoolExhausted, "The zone "+errMsgZoneResourcePoolExhausted+".")
+							case 2:
+								return http.StatusOK, opErr(errCodeZoneResourcePoolExhaustedWithDetails, "The zone "+errMsgZoneResourcePoolExhausted+".")
+							case 3:
+								inst := req.(*compute.Instance)
+								assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-b/machineTypes/n2-standard-8"))
+								rt.Type = reflect.TypeOf(map[string]string{})
+								return http.StatusOK, opDone("url-fallback-b")
+							default:
+								return http.StatusOK, &compute.Instance{
+									CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
+									SelfLink:          "url-fallback-b",
+								}
+							}
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						assert.Loosely(t, datastore.Put(c, makeVM()), should.BeNil)
+						assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+						assert.Loosely(t, attempts, should.Equal(4))
+
+						v := &model.VM{ID: "id"}
+						assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+						assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-b"))
+						assert.Loosely(t, v.URL, should.Equal("url-fallback-b"))
+					})
+
+					t.Run("all candidate zones exhausted deletes VM", func(t *ftt.Test) {
+						attempts := 0
+						rt.Handler = func(req any) (int, any) {
+							attempts++
+							return http.StatusServiceUnavailable, nil
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						assert.Loosely(t, datastore.Put(c, makeVM()), should.BeNil)
+						assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.ErrLike("failed to create instance"))
+						assert.Loosely(t, attempts, should.Equal(3))
+						assert.Loosely(t, datastore.Get(c, &model.VM{ID: "id"}), should.Equal(datastore.ErrNoSuchEntity))
+					})
+
+					t.Run("non-stockout operation error does not fallback", func(t *ftt.Test) {
+						attempts := 0
+						rt.Handler = func(req any) (int, any) {
+							attempts++
+							return http.StatusOK, opErr(errCodeQuotaExceeded, "Quota 'CPUS' exceeded.")
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						assert.Loosely(t, datastore.Put(c, makeVM()), should.BeNil)
+						assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.ErrLike("failed to create instance"))
+						assert.Loosely(t, attempts, should.Equal(1))
+						assert.Loosely(t, datastore.Get(c, &model.VM{ID: "id"}), should.Equal(datastore.ErrNoSuchEntity))
+					})
+				})
 			})
 		})
 	})
