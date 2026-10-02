@@ -95,24 +95,6 @@ func logErrors(c context.Context, actionSource, hostname string, err *googleapi.
 	logging.Errorf(c, "%s %q: failed with HTTP: %d, errors: %s", actionSource, hostname, err.Code, strings.Join(errMsgs, ","))
 }
 
-// rateLimitExceeded returns whether the given *googleapi.Error contains a rate
-// limit error.
-func rateLimitExceeded(err *googleapi.Error) bool {
-	for _, err := range err.Errors {
-		switch {
-		case strings.Contains(err.Message, "Queries per user per 100 seconds"):
-			return true
-		case strings.Contains(err.Message, "Rate Limit Exceeded"):
-			return true
-		case strings.Contains(err.Message, "rateLimitExceeded"):
-			return true
-		case strings.Contains(err.Reason, "rateLimitExceeded"):
-			return true
-		}
-	}
-	return false
-}
-
 // checkInstance fetches the GCE instance and either sets its creation details
 // or deletes the VM if the instance doesn't exist.
 func checkInstance(c context.Context, vm *model.VM) error {
@@ -124,7 +106,7 @@ func checkInstance(c context.Context, vm *model.VM) error {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
 				logging.Debugf(c, "Check created instance %q: instance not found in %q project", vm.Hostname, vm.Attributes.GetProject())
-				metrics.UpdateFailures(c, gerr.Code, "NOT_FOUND", vm)
+				metrics.UpdateFailures(c, gerr.Code, errReasonNotFound, vm)
 				if err := deleteVM(c, vm.ID, vm.Hostname); err != nil {
 					return errors.Fmt("check created instance %q: not found: %w", vm.Hostname, err)
 				}
@@ -175,7 +157,7 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 		logging.Debugf(ctx, "Create instance %q: got error from attempt to create instance %s", vm.Hostname, err)
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(ctx, "Create instance", vm.Hostname, gerr)
-			reason := "HTTP_ERROR"
+			reason := errReasonHTTPError
 			if len(gerr.Errors) > 0 && gerr.Errors[0].Reason != "" {
 				reason = gerr.Errors[0].Reason
 			}
@@ -197,10 +179,10 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 	logging.Debugf(ctx, "Create instance %q: received response from GCP, waiting execution", vm.Hostname)
 	if operationsErrors := op.GetErrors(); len(operationsErrors) > 0 {
 		logging.Debugf(ctx, "Create instance %q: failed to create instance total %d error received", vm.Hostname, len(operationsErrors))
-		reason := "OPERATION_ERROR"
+		reason := errReasonOperationError
 		for _, err := range operationsErrors {
 			logging.Errorf(ctx, "create instance %q: failed with code %s: Message %s", vm.Hostname, err.Code, err.Message)
-			if err.Code != "" && reason == "OPERATION_ERROR" {
+			if err.Code != "" && reason == errReasonOperationError {
 				reason = err.Code
 			}
 		}
