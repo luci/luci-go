@@ -68,9 +68,10 @@ export const useAndroidColumns = (
       Object.keys(dimensionsQuery.data.baseDimensions).forEach((id) =>
         list.push({ id, label: id }),
       );
-      Object.keys(dimensionsQuery.data.labels).forEach((id) =>
-        list.push({ id, label: id }),
-      );
+      Object.keys(dimensionsQuery.data.labels).forEach((id) => {
+        const normId = id === 'Hardware' ? 'hardware' : id;
+        list.push({ id: normId, label: normId });
+      });
     }
 
     return _.uniqBy(list, 'id');

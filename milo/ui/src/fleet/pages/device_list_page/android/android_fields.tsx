@@ -395,6 +395,52 @@ export const getAndroidColumnOverrides: (
       return <>{val.toFixed(2)}%</>;
     },
   },
+  hardware: {
+    header: 'hardware',
+    orderByField: 'labels.hardware',
+    filterKey: 'labels."hardware"',
+    accessorFn: (device) => {
+      const vals =
+        device.omnilabSpec?.labels?.['hardware']?.values ??
+        device.omnilabSpec?.labels?.['Hardware']?.values;
+      return vals ? labelValuesToString(vals) : undefined;
+    },
+  },
+  host_version: {
+    header: 'Host Version',
+    orderByField: 'labels.host_version',
+    filterKey: 'labels."host_version"',
+    accessorFn: (device) => {
+      const vals =
+        device.omnilabSpec?.labels?.['host_version']?.values ??
+        device.omnilabSpec?.labels?.['lab_server_version']?.values ??
+        device.omnilabSpec?.labels?.['build_label']?.values;
+      return vals ? labelValuesToString(vals) : undefined;
+    },
+  },
+  lab_server_version: {
+    header: 'Lab Server Version',
+    orderByField: 'labels.lab_server_version',
+    filterKey: 'labels."lab_server_version"',
+    accessorFn: (device) => {
+      const vals =
+        device.omnilabSpec?.labels?.['lab_server_version']?.values ??
+        device.omnilabSpec?.labels?.['host_version']?.values ??
+        device.omnilabSpec?.labels?.['build_label']?.values;
+      return vals ? labelValuesToString(vals) : undefined;
+    },
+  },
+  test_harness: {
+    header: 'Test Harness',
+    orderByField: 'labels.test_harness',
+    filterKey: 'labels."test_harness"',
+    accessorFn: (device) => {
+      const vals =
+        device.omnilabSpec?.labels?.['test_harness']?.values ??
+        device.omnilabSpec?.labels?.['dm_type']?.values;
+      return vals ? labelValuesToString(vals) : undefined;
+    },
+  },
   battery_temperature: {
     header: 'Battery Temperature',
     orderByField: 'labels.battery_temperature',

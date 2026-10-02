@@ -75,9 +75,18 @@ export const useAndroidFilters = (
     const data = dimensionsQuery.data;
     const baseKeys = Object.keys(data.baseDimensions);
 
+    const mergedLabels: Record<string, { values: string[] }> = {};
+    for (const [rawKey, val] of Object.entries(data.labels)) {
+      const canonicalKey = rawKey === 'Hardware' ? 'hardware' : rawKey;
+      const prev = mergedLabels[canonicalKey]?.values ?? [];
+      mergedLabels[canonicalKey] = {
+        values: Array.from(new Set([...prev, ...val.values])),
+      };
+    }
+
     for (const [key, value] of [
       ...Object.entries(data.baseDimensions),
-      ...Object.entries(data.labels),
+      ...Object.entries(mergedLabels),
     ]) {
       let values = value.values;
       if (key === 'host_group' && isPTEEnabled) {
