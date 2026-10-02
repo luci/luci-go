@@ -115,8 +115,7 @@ func TestCancel(t *testing.T) {
 			assert.NoErr(t, err)
 			ttr := &model.TaskToRun{
 				Key:            toRunKey,
-				QueueNumber:    datastore.NewIndexedOptional(int64(2)),
-				Expiration:     datastore.NewIndexedOptional(now.Add(time.Hour)),
+				Expiration:     datastore.NewUnindexedOptional(now.Add(time.Hour)),
 				RBEReservation: "reservation",
 			}
 			assert.NoErr(t, datastore.Put(ctx, trs, ttr))
@@ -340,8 +339,7 @@ func TestBatchCancellation(t *testing.T) {
 		assert.NoErr(t, err)
 		ttr := &model.TaskToRun{
 			Key:            toRunKey,
-			QueueNumber:    datastore.NewIndexedOptional(int64(2)),
-			Expiration:     datastore.NewIndexedOptional(now.Add(time.Hour)),
+			Expiration:     datastore.NewUnindexedOptional(now.Add(time.Hour)),
 			RBEReservation: "reservation",
 		}
 		trr := &model.TaskRunResult{

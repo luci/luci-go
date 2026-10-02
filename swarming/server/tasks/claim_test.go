@@ -106,7 +106,7 @@ func TestClaimOp(t *testing.T) {
 		assert.NoErr(t, datastore.Put(ctx, req, trs))
 
 		createTTR := func(claimID *string) *datastore.Key {
-			var exp datastore.Optional[time.Time, datastore.Indexed]
+			var exp datastore.Optional[time.Time, datastore.Unindexed]
 			var clID datastore.Optional[string, datastore.Unindexed]
 			if claimID == nil {
 				exp.Set(testTime.Add(time.Hour))

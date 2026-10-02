@@ -111,7 +111,7 @@ func TestReservationServer(t *testing.T) {
 				enqueueTask.Payload.TaskToRunShard,
 				enqueueTask.Payload.TaskToRunId,
 			),
-			Expiration: datastore.NewIndexedOptional(expiry),
+			Expiration: datastore.NewUnindexedOptional(expiry),
 		}
 		assert.NoErr(t, datastore.Put(ctx, taskToRun))
 
@@ -289,7 +289,7 @@ func TestReservationServer(t *testing.T) {
 			}
 
 			prepTaskToRun := func(reapable bool, retryCount int) {
-				var exp datastore.Optional[time.Time, datastore.Indexed]
+				var exp datastore.Optional[time.Time, datastore.Unindexed]
 				if reapable {
 					exp.Set(testclock.TestRecentTimeUTC.Add(time.Hour))
 				}

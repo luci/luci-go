@@ -283,7 +283,7 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 			toRunKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
 			ttr := &model.TaskToRun{
 				Key:            toRunKey,
-				Expiration:     datastore.NewIndexedOptional(TestTime.Add(time.Hour)),
+				Expiration:     datastore.NewUnindexedOptional(TestTime.Add(time.Hour)),
 				RBEReservation: "reservation",
 			}
 			toPut = append(toPut, ttr)

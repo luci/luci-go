@@ -230,14 +230,12 @@ func TestTaskResultSummary(t *testing.T) {
 		assert.NoErr(t, err)
 
 		ttr0 := &TaskToRun{
-			Key:         TaskToRunKey(ctx, reqKey, 0, TaskToRunID(0)),
-			Expiration:  datastore.NewIndexedOptional(testTime),
-			QueueNumber: datastore.NewIndexedOptional(int64(123)),
+			Key:        TaskToRunKey(ctx, reqKey, 0, TaskToRunID(0)),
+			Expiration: datastore.NewUnindexedOptional(testTime),
 		}
 		ttr1 := &TaskToRun{
-			Key:         TaskToRunKey(ctx, reqKey, 0, TaskToRunID(1)),
-			Expiration:  datastore.NewIndexedOptional(testTime.Add(time.Hour)),
-			QueueNumber: datastore.NewIndexedOptional(int64(456)),
+			Key:        TaskToRunKey(ctx, reqKey, 0, TaskToRunID(1)),
+			Expiration: datastore.NewUnindexedOptional(testTime.Add(time.Hour)),
 		}
 
 		trs := &TaskResultSummary{Key: TaskResultSummaryKey(ctx, reqKey)}
@@ -251,7 +249,6 @@ func TestTaskResultSummary(t *testing.T) {
 		assert.That(t, trs.SliceExpiration.IsSet(), should.BeFalse)
 		assert.That(t, ttr0.ClaimID.Get(), should.Equal("claim-id"))
 		assert.That(t, ttr0.Expiration.IsSet(), should.BeFalse)
-		assert.That(t, ttr0.QueueNumber.IsSet(), should.BeFalse)
 
 		trs.ActivateTaskToRun(ttr1)
 		assert.That(t, trs.CurrentTaskSlice, should.Equal(int64(1)))

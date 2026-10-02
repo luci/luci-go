@@ -403,7 +403,8 @@ func NewTaskResultSummary(ctx context.Context, req *TaskRequest, serverVersion s
 	}
 }
 
-// ConsumeTaskToRun moves `ttr` into non-reapable state (e.g. when canceling).
+// ConsumeTaskToRun moves `ttr` into non-reapable state (e.g. when picking it up
+// for execution by a bot, canceling or expiring).
 //
 // This mutates both `trs` and `ttr`.
 func (trs *TaskResultSummary) ConsumeTaskToRun(ttr *TaskToRun, claimID string) {
@@ -412,7 +413,6 @@ func (trs *TaskResultSummary) ConsumeTaskToRun(ttr *TaskToRun, claimID string) {
 	// The actual change.
 	ttr.ClaimID = datastore.NewUnindexedOptional(claimID)
 	ttr.Expiration.Unset()
-	ttr.QueueNumber.Unset()
 
 	trs.syncToTaskToRun(ttr)
 }
@@ -433,7 +433,7 @@ func (trs *TaskResultSummary) assertCanTouchTaskToRun(ttr *TaskToRun) {
 // syncToTaskToRun populates `trs` fields based on `ttr`.
 func (trs *TaskResultSummary) syncToTaskToRun(ttr *TaskToRun) {
 	trs.CurrentTaskSlice = int64(ttr.TaskSliceIndex())
-	trs.SliceExpiration = ttr.Expiration.AsUnindexed()
+	trs.SliceExpiration = ttr.Expiration
 }
 
 // ToProto converts the TaskResultSummary struct to an apipb.TaskResultResponse.

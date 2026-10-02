@@ -38,20 +38,10 @@ const (
 // or expires. Each TaskToRun picked up for execution has an TaskRunResult
 // entity (expired ones don't).
 //
-// A TaskToRun can either be in "native mode" (dispatched via the native
-// Swarming scheduler implemented in Python code base) or in "RBE mode"
-// (dispatched via the remote RBE scheduler service). This is controlled by
-// RBEReservation field.
+// A TaskToRun can be in two states:
 //
-// A TaskToRun (regardless of mode) can be in two states:
-//
-// 1. "reapable"
-//   - Native mode: QueueNumber and Expiration are both set.
-//   - RBE mode: ClaimID is unset and Expiration is set.
-//
-// 2. "consumed":
-//   - Native mode: QueueNumber and Expiration are both unset.
-//   - RBE mode: ClaimID is set and Expiration is unset.
+// 1. "reapable": ClaimID is unset and Expiration is set.
+// 2. "consumed": ClaimID is set and Expiration is unset.
 //
 // The entity starts its life in reapable state and then transitions to consumed
 // state either by being picked up by a bot for execution or when it expires.
@@ -83,8 +73,6 @@ type TaskToRun struct {
 	// The very first TaskToRun has the same value as TaskRequest.Created, but the
 	// following ones (when using multiple task slices) have Created set at the
 	// time they are created.
-	//
-	// Used in both native and RBE mode.
 	Created time.Time `gae:"created_ts,noindex"`
 
 	// Dimensions is a copy of dimensions from the corresponding task slice of
@@ -92,51 +80,25 @@ type TaskToRun struct {
 	//
 	// It is used to quickly check if a bot can reap this TaskToRun right after
 	// fetching it from a datastore query.
-	//
-	// Used in both native and RBE mode.
 	Dimensions TaskDimensions `gae:"dimensions"`
 
 	// RBEReservation is the RBE reservation name that is (or will be) handling
 	// this TaskToRun.
 	//
-	// If set, then TaskToRunShard is in RBE mode. If not, then in native
-	// mode. TaskToRunShard in RBE mode are always (transactionally) created with
-	// a Task Queue task to actually dispatch them to the RBE scheduler.
+	// TaskToRunShard are always (transactionally) created with a Task Queue task
+	// to actually dispatch them to the RBE scheduler.
 	RBEReservation string `gae:"rbe_reservation,noindex"`
 
 	// Expiration is the scheduling deadline for this TaskToRun.
 	//
-	// It is based on TaskSlice.Expiration. It is used to figure out when to
-	// fallback on the next task slice. It is scanned by a cron job and thus needs
-	// to be indexed.
-	//
 	// It is unset when the TaskToRun is claimed, canceled or expires.
-	//
-	// Used in both native and RBE mode.
-	//
-	// TODO: Remove the index once Python code is not running anymore. Go code
-	// periodically scans all pending jobs (to collect statistics) and it does
-	// late slice expiration that way, it doesn't need an index.
-	Expiration datastore.Optional[time.Time, datastore.Indexed] `gae:"expiration_ts"`
-
-	// QueueNumber is a magical number by which bots and tasks find one another.
-	//
-	// Used only in native mode. Always unset and unused in RBE mode.
-	//
-	// Priority and request creation timestamp are mixed together to allow queries
-	// to order the results by this field to allow sorting by priority first, and
-	// then timestamp.
-	//
-	// Gets unset when the TaskToRun is consumed.
-	//
-	// TODO: Remove once Python code is gone. Go code is not using this.
-	QueueNumber datastore.Optional[int64, datastore.Indexed] `gae:"queue_number"`
+	Expiration datastore.Optional[time.Time, datastore.Unindexed] `gae:"expiration_ts"`
 
 	// ClaimID is set if some bot claimed this TaskToRun and will execute it.
 	//
-	// Used only in RBE mode. Always unset in native mode.
+	// Additionally it is set to "" if the TaskToRun is canceled or has expired.
 	//
-	// It is an opaque ID supplied by the bot when it attempts to claim this
+	// Claim ID is an opaque ID supplied by the bot when it attempts to claim this
 	// entity. If TaskToRun is already claimed and ClaimID matches the one
 	// supplied by the bot, then it means this bot has actually claimed the entity
 	// already and now just retries the call.
@@ -146,8 +108,6 @@ type TaskToRun struct {
 
 	// RetryCount is increased when resubmitting an RBE reservation if the
 	// previous one failed before the TaskToRun was claimed.
-	//
-	// Used only in RBE mode.
 	RetryCount int64 `gae:"retry_count,noindex"`
 
 	// ExpirationDelay is a delay from Expiration to the actual expiry time.
@@ -250,7 +210,7 @@ func NewTaskToRun(ctx context.Context, swarmingProject string, tr *TaskRequest, 
 	for i := 0; i <= sliceIndex; i++ {
 		offset += int(tr.TaskSlices[i].ExpirationSecs)
 	}
-	exp := datastore.NewIndexedOptional(tr.Created.Add(time.Duration(offset) * time.Second))
+	exp := datastore.NewUnindexedOptional(tr.Created.Add(time.Duration(offset) * time.Second))
 
 	ttr := &TaskToRun{
 		Key:            ttrKey,

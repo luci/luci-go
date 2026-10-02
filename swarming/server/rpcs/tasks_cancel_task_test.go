@@ -130,8 +130,7 @@ func TestCancelTask(t *testing.T) {
 				toRunKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
 				ttr := &model.TaskToRun{
 					Key:            toRunKey,
-					QueueNumber:    datastore.NewIndexedOptional(int64(2)),
-					Expiration:     datastore.NewIndexedOptional(now.Add(time.Hour)),
+					Expiration:     datastore.NewUnindexedOptional(now.Add(time.Hour)),
 					RBEReservation: "reservation",
 				}
 				_ = datastore.Put(ctx, trs, ttr)

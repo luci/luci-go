@@ -83,7 +83,7 @@ func TestClaim(t *testing.T) {
 
 		prepTask := func(dims model.TaskDimensions, claimID *string) (*model.TaskRequest, *model.TaskToRun) {
 			var claim datastore.Optional[string, datastore.Unindexed]
-			var exp datastore.Optional[time.Time, datastore.Indexed]
+			var exp datastore.Optional[time.Time, datastore.Unindexed]
 			if claimID != nil {
 				claim.Set(*claimID)
 			} else {
