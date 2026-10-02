@@ -32,6 +32,63 @@ type Failure struct {
 	Reason *pb.FailureReason
 	// Key-value pairs describing how the test was run.
 	Variant *pb.Variant
+
+	// Cached fields for rule matching, populated lazily.
+	errorsPopulated bool
+	errorMessages   []string
+	errorTraces     []string
+}
+
+// Kind returns the failure reason kind as a string ("ORDINARY", "CRASH", "TIMEOUT", or "").
+func (f *Failure) Kind() string {
+	if f == nil || f.Reason == nil {
+		return ""
+	}
+	switch f.Reason.Kind {
+	case pb.FailureReason_ORDINARY:
+		return "ORDINARY"
+	case pb.FailureReason_CRASH:
+		return "CRASH"
+	case pb.FailureReason_TIMEOUT:
+		return "TIMEOUT"
+	default:
+		return ""
+	}
+}
+
+func (f *Failure) populateErrors() {
+	if f == nil || f.errorsPopulated {
+		return
+	}
+	if f.Reason != nil && len(f.Reason.Errors) > 0 {
+		f.errorMessages = make([]string, len(f.Reason.Errors))
+		f.errorTraces = make([]string, len(f.Reason.Errors))
+		for i, err := range f.Reason.Errors {
+			f.errorMessages[i] = err.Message
+			f.errorTraces[i] = err.Trace
+		}
+	}
+	f.errorsPopulated = true
+}
+
+// GetErrorMessages returns the error messages from the failure reason,
+// populated lazily and cached on the Failure.
+func (f *Failure) GetErrorMessages() []string {
+	if f == nil {
+		return nil
+	}
+	f.populateErrors()
+	return f.errorMessages
+}
+
+// GetErrorTraces returns the error traces from the failure reason,
+// populated lazily and cached on the Failure.
+func (f *Failure) GetErrorTraces() []string {
+	if f == nil {
+		return nil
+	}
+	f.populateErrors()
+	return f.errorTraces
 }
 
 // FailureFromProto extracts failure information relevant for clustering from

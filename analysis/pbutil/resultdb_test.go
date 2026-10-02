@@ -79,6 +79,55 @@ func TestResultDB(t *testing.T) {
 			assert.Loosely(t, kind, should.NotEqual(pb.FailureReason_KIND_UNSPECIFIED))
 		}
 	})
+	ftt.Run("FailureReasonToResultDB", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
+			assert.Loosely(t, FailureReasonToResultDB(nil), should.BeNil)
+		})
+		t.Run("populated", func(t *ftt.Test) {
+			fr := &pb.FailureReason{
+				Kind:                pb.FailureReason_CRASH,
+				PrimaryErrorMessage: "Some error message.",
+				Errors: []*pb.FailureReason_Error{
+					{
+						Message: "Error 1 message",
+						Trace:   "Error 1 trace",
+					},
+					{
+						Message: "Error 2 message",
+						Trace:   "Error 2 trace",
+					},
+				},
+				TruncatedErrorsCount: 5,
+			}
+			rdbfr := FailureReasonToResultDB(fr)
+			assert.Loosely(t, rdbfr, should.Match(&rdbpb.FailureReason{
+				Kind:                rdbpb.FailureReason_CRASH,
+				PrimaryErrorMessage: "Some error message.",
+				Errors: []*rdbpb.FailureReason_Error{
+					{
+						Message: "Error 1 message",
+						Trace:   "Error 1 trace",
+					},
+					{
+						Message: "Error 2 message",
+						Trace:   "Error 2 trace",
+					},
+				},
+				TruncatedErrorsCount: 5,
+			}))
+		})
+	})
+	ftt.Run("FailureReasonKindToResultDB", t, func(t *ftt.Test) {
+		for _, v := range pb.FailureReason_Kind_value {
+			kind := pb.FailureReason_Kind(v)
+			if kind == pb.FailureReason_KIND_UNSPECIFIED {
+				continue
+			}
+
+			rdbKind := FailureReasonKindToResultDB(kind)
+			assert.Loosely(t, rdbKind, should.NotEqual(rdbpb.FailureReason_KIND_UNSPECIFIED))
+		}
+	})
 	ftt.Run("LegacyTestStatusFromResultDB", t, func(t *ftt.Test) {
 		// Confirm LUCI Analysis handles every test status defined by ResultDB.
 		// This test is designed to break if ResultDB extends the set of

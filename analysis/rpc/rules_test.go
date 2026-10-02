@@ -427,6 +427,20 @@ func TestRules(t *testing.T) {
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
 				})
+				t.Run("Invalid rule definition with repeated field in scalar context", func(t *ftt.Test) {
+					request.Rule.RuleDefinition = `failure_reason.errors.message = "something"`
+
+					_, err := srv.Update(ctx, request)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: parse: cannot use repeated field "failure_reason.errors.message" in scalar context`))
+				})
+				t.Run("Invalid rule definition with scalar field in repeated context", func(t *ftt.Test) {
+					request.Rule.RuleDefinition = `ANY_LIKE(test, "%something%")`
+
+					_, err := srv.Update(ctx, request)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: parse: expected repeated field, got scalar field "test"`))
+				})
 			})
 			t.Run("Success", func(t *ftt.Test) {
 				t.Run("Predicate updated", func(t *ftt.Test) {
@@ -468,6 +482,13 @@ func TestRules(t *testing.T) {
 						// Verify the returned rule matches what was expected.
 						mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
 						assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
+					})
+					t.Run("With new syntax", func(t *ftt.Test) {
+						request.Rule.RuleDefinition = `failure_reason.kind = "CRASH" AND ANY_LIKE(failure_reason.errors.message, "%something%")`
+
+						rule, err := srv.Update(ctx, request)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rule.RuleDefinition, should.Equal(`failure_reason.kind = "CRASH" AND ANY_LIKE(failure_reason.errors.message, "%something%")`))
 					})
 					t.Run("No audit users permission", func(t *ftt.Test) {
 						authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
@@ -743,6 +764,20 @@ func TestRules(t *testing.T) {
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
 				})
+				t.Run("Invalid rule definition with repeated field in scalar context", func(t *ftt.Test) {
+					request.Rule.RuleDefinition = `failure_reason.errors.message = "something"`
+
+					_, err := srv.Create(ctx, request)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: parse: cannot use repeated field "failure_reason.errors.message" in scalar context`))
+				})
+				t.Run("Invalid rule definition with scalar field in repeated context", func(t *ftt.Test) {
+					request.Rule.RuleDefinition = `ANY_LIKE(test, "%something%")`
+
+					_, err := srv.Create(ctx, request)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: parse: expected repeated field, got scalar field "test"`))
+				})
 			})
 			t.Run("Success", func(t *ftt.Test) {
 				expectedRuleBuilder := rules.NewRule(0).
@@ -799,6 +834,17 @@ func TestRules(t *testing.T) {
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
 					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
+				})
+				t.Run("With new syntax", func(t *ftt.Test) {
+					request.Rule.RuleDefinition = `failure_reason.kind = "CRASH" AND ANY_LIKE(failure_reason.errors.message, "%something%")`
+					request.Rule.Bug = &pb.AssociatedBug{
+						System: "buganizer",
+						Id:     "12345678",
+					}
+
+					rule, err := srv.Create(ctx, request)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rule.RuleDefinition, should.Equal(`failure_reason.kind = "CRASH" AND ANY_LIKE(failure_reason.errors.message, "%something%")`))
 				})
 				t.Run("Bug managed by another rule", func(t *ftt.Test) {
 					// Re-use the same bug as a rule in another project,

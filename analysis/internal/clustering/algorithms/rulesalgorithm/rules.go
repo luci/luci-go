@@ -67,24 +67,13 @@ func (a *Algorithm) Cluster(ruleset *cache.Ruleset, existingRulesVersion time.Ti
 	// For efficiency, only match new/modified rules since the
 	// last call to Cluster(...).
 	newRules := ruleset.ActiveRulesWithPredicateUpdatedSince(existingRulesVersion)
+
 	for _, r := range newRules {
-		var variant map[string]string
-		if failure.Variant != nil {
-			variant = failure.Variant.Def
-		}
-		f := lang.Failure{
-			Test:    failure.TestID,
-			Reason:  failure.Reason.GetPrimaryErrorMessage(),
-			Variant: variant,
-		}
+		f := clusteringToLangFailure(failure)
 		matches := r.Expr.Evaluate(f)
 		if failure.PreviousTestID != "" {
 			// Also try matching against the old test ID.
-			f = lang.Failure{
-				Test:    failure.PreviousTestID,
-				Reason:  failure.Reason.GetPrimaryErrorMessage(),
-				Variant: variant,
-			}
+			f.Test = failure.PreviousTestID
 			matches = matches || r.Expr.Evaluate(f)
 		}
 		if matches {
@@ -95,5 +84,21 @@ func (a *Algorithm) Cluster(ruleset *cache.Ruleset, existingRulesVersion time.Ti
 			// match.
 			delete(ruleIDs, r.Rule.RuleID)
 		}
+	}
+}
+
+func clusteringToLangFailure(failure *clustering.Failure) lang.Failure {
+	var variant map[string]string
+	if failure.Variant != nil {
+		variant = failure.Variant.Def
+	}
+
+	return lang.Failure{
+		Test:          failure.TestID,
+		Reason:        failure.Reason.GetPrimaryErrorMessage(),
+		Variant:       variant,
+		Kind:          failure.Kind(),
+		ErrorMessages: failure.GetErrorMessages(),
+		ErrorTraces:   failure.GetErrorTraces(),
 	}
 }

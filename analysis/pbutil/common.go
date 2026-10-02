@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/resultdb/pbutil"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -308,10 +307,7 @@ func ValidateFailureReason(fr *pb.FailureReason) error {
 	if fr == nil {
 		return errors.New("unspecified")
 	}
-	rdbfr := &rdbpb.FailureReason{
-		PrimaryErrorMessage: fr.PrimaryErrorMessage,
-	}
-	return pbutil.ValidateFailureReason(rdbfr, false)
+	return pbutil.ValidateFailureReason(FailureReasonToResultDB(fr), false)
 }
 
 func ValidateSourceRef(ref *pb.SourceRef) error {

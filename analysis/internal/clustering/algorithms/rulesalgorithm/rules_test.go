@@ -56,12 +56,45 @@ func TestAlgorithm(t *testing.T) {
 					WithRuleDefinition(`reason LIKE "failed to connect to %.%.%.%"`).
 					Build())
 			assert.Loosely(t, err, should.BeNil)
+			ruleOnKind, err := cache.NewCachedRule(
+				rules.NewRule(102).
+					WithRuleDefinition(`failure_reason.kind = "CRASH"`).
+					Build())
+			assert.Loosely(t, err, should.BeNil)
+			ruleOnTimeout, err := cache.NewCachedRule(
+				rules.NewRule(103).
+					WithRuleDefinition(`failure_reason.kind = "TIMEOUT"`).
+					Build())
+			assert.Loosely(t, err, should.BeNil)
+			ruleOnSecondaryError, err := cache.NewCachedRule(
+				rules.NewRule(104).
+					WithRuleDefinition(`ANY_LIKE(failure_reason.errors.message, "%kernel panic%")`).
+					Build())
+			assert.Loosely(t, err, should.BeNil)
+			ruleOnTrace, err := cache.NewCachedRule(
+				rules.NewRule(105).
+					WithRuleDefinition(`ANY_LIKE(failure_reason.errors.trace, "%panic.c:%")`).
+					Build())
+			assert.Loosely(t, err, should.BeNil)
+			ruleOnAnyEquals, err := cache.NewCachedRule(
+				rules.NewRule(106).
+					WithRuleDefinition(`ANY_EQUALS(failure_reason.errors.message, "out of memory")`).
+					Build())
+			assert.Loosely(t, err, should.BeNil)
+			ruleOnAnyRegexp, err := cache.NewCachedRule(
+				rules.NewRule(107).
+					WithRuleDefinition(`ANY_REGEXP_CONTAINS(failure_reason.errors.message, "fatal (signal|exception)")`).
+					Build())
+			assert.Loosely(t, err, should.BeNil)
 
 			rulesVersion := rules.Version{
 				Predicates: time.Now(),
 			}
 			lastUpdated := time.Now()
-			rules := []*cache.CachedRule{ruleOnTest, ruleOnReason}
+			rules := []*cache.CachedRule{
+				ruleOnTest, ruleOnReason, ruleOnKind, ruleOnTimeout,
+				ruleOnSecondaryError, ruleOnTrace, ruleOnAnyEquals, ruleOnAnyRegexp,
+			}
 			ruleset := cache.NewRuleset("myproject", rules, rulesVersion, lastUpdated)
 
 			t.Run(`Without failure reason`, func(t *ftt.Test) {
@@ -114,6 +147,57 @@ func TestAlgorithm(t *testing.T) {
 				sort.Strings(expectedIDs)
 				assert.Loosely(t, ids, should.Match(map[string]struct{}{
 					ruleOnTest.Rule.RuleID: {},
+				}))
+			})
+			t.Run(`Multi-error failure reason`, func(t *ftt.Test) {
+				failure := &clustering.Failure{
+					TestID: "://module!junit:package:class#other_method",
+					Reason: &pb.FailureReason{
+						Kind:                pb.FailureReason_CRASH,
+						PrimaryErrorMessage: "process crashed",
+						Errors: []*pb.FailureReason_Error{
+							{
+								Message: "process crashed",
+								Trace:   "main.go:10",
+							},
+							{
+								Message: "kernel panic: fatal exception",
+								Trace:   "kernel/panic.c:123",
+							},
+							{
+								Message: "out of memory",
+								Trace:   "alloc.go:45",
+							},
+						},
+					},
+				}
+				a.Cluster(ruleset, existingRulesVersion, ids, failure)
+				assert.Loosely(t, ids, should.Match(map[string]struct{}{
+					ruleOnKind.Rule.RuleID:           {},
+					ruleOnSecondaryError.Rule.RuleID: {},
+					ruleOnTrace.Rule.RuleID:          {},
+					ruleOnAnyEquals.Rule.RuleID:      {},
+					ruleOnAnyRegexp.Rule.RuleID:      {},
+				}))
+			})
+			t.Run(`Multi-error failure reason with PreviousTestID`, func(t *ftt.Test) {
+				failure := &clustering.Failure{
+					TestID:         "://module!junit:package:class#new_method",
+					PreviousTestID: "://module!junit:package:class#method_one",
+					Reason: &pb.FailureReason{
+						Kind: pb.FailureReason_CRASH,
+						Errors: []*pb.FailureReason_Error{
+							{
+								Message: "out of memory",
+							},
+						},
+					},
+				}
+				a.Cluster(ruleset, existingRulesVersion, ids, failure)
+				assert.Loosely(t, ids, should.Match(map[string]struct{}{
+					ruleOnTest.Rule.RuleID:      {},
+					ruleOnKind.Rule.RuleID:      {},
+					ruleOnAnyEquals.Rule.RuleID: {},
 				}))
 			})
 		})

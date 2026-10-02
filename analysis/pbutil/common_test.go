@@ -128,3 +128,20 @@ func TestVariantToJSON(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateFailureReason(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`ValidateFailureReason`, t, func(t *ftt.Test) {
+		t.Run(`nil`, func(t *ftt.Test) {
+			err := ValidateFailureReason(nil)
+			assert.Loosely(t, err, should.ErrLike(`unspecified`))
+		})
+		t.Run(`invalid kind`, func(t *ftt.Test) {
+			err := ValidateFailureReason(&pb.FailureReason{
+				Kind: pb.FailureReason_Kind(999),
+			})
+			// Invalid kinds are tolerated but set to UNSPECIFIED.
+			assert.Loosely(t, err, should.BeNil)
+		})
+	})
+}

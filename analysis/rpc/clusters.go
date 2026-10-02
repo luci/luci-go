@@ -175,6 +175,11 @@ func validateTestResult(i int, tr *pb.ClusterRequest_TestResult) error {
 	if tr.TestId == "" {
 		return InvalidArgumentError(fmt.Errorf("test result %v: test ID must not be empty", i))
 	}
+	if tr.FailureReason != nil {
+		if err := pbutil.ValidateFailureReason(tr.FailureReason); err != nil {
+			return InvalidArgumentError(fmt.Errorf("test result %v: failure_reason: %w", i, err))
+		}
+	}
 	return nil
 }
 

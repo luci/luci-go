@@ -100,6 +100,44 @@ func FailureReasonFromResultDB(fr *rdbpb.FailureReason) *pb.FailureReason {
 	}
 }
 
+// FailureReasonKindToResultDB returns the ResultDB failure reason kind
+// corresponding to the LUCI Analysis failure reason kind.
+func FailureReasonKindToResultDB(k pb.FailureReason_Kind) rdbpb.FailureReason_Kind {
+	switch k {
+	case pb.FailureReason_ORDINARY:
+		return rdbpb.FailureReason_ORDINARY
+	case pb.FailureReason_CRASH:
+		return rdbpb.FailureReason_CRASH
+	case pb.FailureReason_TIMEOUT:
+		return rdbpb.FailureReason_TIMEOUT
+	case pb.FailureReason_KIND_UNSPECIFIED:
+		return rdbpb.FailureReason_KIND_UNSPECIFIED
+	default:
+		return rdbpb.FailureReason_KIND_UNSPECIFIED
+	}
+}
+
+// FailureReasonToResultDB returns a ResultDB FailureReason
+// corresponding to the supplied LUCI Analysis FailureReason.
+func FailureReasonToResultDB(fr *pb.FailureReason) *rdbpb.FailureReason {
+	if fr == nil {
+		return nil
+	}
+	var errors []*rdbpb.FailureReason_Error
+	for _, err := range fr.Errors {
+		errors = append(errors, &rdbpb.FailureReason_Error{
+			Message: err.Message,
+			Trace:   err.Trace,
+		})
+	}
+	return &rdbpb.FailureReason{
+		Kind:                 FailureReasonKindToResultDB(fr.Kind),
+		PrimaryErrorMessage:  fr.PrimaryErrorMessage,
+		Errors:               errors,
+		TruncatedErrorsCount: fr.TruncatedErrorsCount,
+	}
+}
+
 // LegacyTestStatusFromResultDB returns the LUCI Analysis test result status
 // corresponding to the given ResultDB test result status.
 func LegacyTestStatusFromResultDB(s rdbpb.TestStatus) pb.TestResultStatus {

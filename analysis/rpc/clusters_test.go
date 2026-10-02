@@ -128,6 +128,14 @@ func TestClusters(t *testing.T) {
 					System: "monorail",
 					ID:     "chromium/123456",
 				}).Build(),
+			rules.NewRule(4).
+				WithProject("testproject").
+				WithRuleDefinition(`failure_reason.kind = "CRASH" AND ANY_LIKE(failure_reason.errors.message, "%Kernel panic%")`).
+				WithPredicateLastUpdateTime(rulesVersion.Add(-4 * time.Hour)).
+				WithBug(bugs.BugID{
+					System: "buganizer",
+					ID:     "12345678",
+				}).Build(),
 		}
 		err = rules.SetForTesting(ctx, t, rs)
 		assert.Loosely(t, err, should.BeNil)
@@ -192,6 +200,23 @@ func TestClusters(t *testing.T) {
 						Variant: &pb.Variant{
 							Def: map[string]string{
 								"os": "windows",
+							},
+						},
+					},
+					{
+						RequestTag: "my tag 5",
+						TestId:     "CrashTest",
+						FailureReason: &pb.FailureReason{
+							Kind:                pb.FailureReason_CRASH,
+							PrimaryErrorMessage: "Fatal error occurred.",
+							Errors: []*pb.FailureReason_Error{
+								{
+									Message: "Fatal error occurred.",
+								},
+								{
+									Message: "Kernel panic: Fatal exception in interrupt",
+									Trace:   "kernel/panic.c:123",
+								},
 							},
 						},
 					},
@@ -294,6 +319,25 @@ func TestClusters(t *testing.T) {
 								testNameClusterEntry(compiledTestProjectCfg, "VariantTest"),
 							}),
 						},
+						{
+							RequestTag: "my tag 5",
+							Clusters: sortClusterEntries([]*pb.ClusterResponse_ClusteredTestResult_ClusterEntry{
+								{
+									ClusterId: &pb.ClusterId{
+										Algorithm: "rules",
+										Id:        rs[4].RuleID,
+									},
+									Bug: &pb.AssociatedBug{
+										System:   "buganizer",
+										Id:       "12345678",
+										LinkText: "b/12345678",
+										Url:      "https://issuetracker.google.com/issues/12345678",
+									},
+								},
+								failureReasonClusterEntry(compiledTestProjectCfg, "Fatal error occurred."),
+								testNameClusterEntry(compiledTestProjectCfg, "CrashTest"),
+							}),
+						},
 					},
 					ClusteringVersion: &pb.ClusteringVersion{
 						AlgorithmsVersion: algorithms.AlgorithmsVersion,
@@ -301,6 +345,22 @@ func TestClusters(t *testing.T) {
 						ConfigVersion:     timestamppb.New(configVersion),
 					},
 				}))
+			})
+			t.Run("With invalid failure reason", func(t *ftt.Test) {
+				request.TestResults[1].FailureReason = &pb.FailureReason{
+					TruncatedErrorsCount: -1,
+				}
+				defer func() {
+					request.TestResults[1].FailureReason = nil
+				}()
+
+				// Run
+				response, err := server.Cluster(ctx, request)
+
+				// Verify
+				assert.Loosely(t, response, should.BeNil)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("test result 1: failure_reason: truncated_errors_count: must be non-negative"))
 			})
 			t.Run("With no monorail configuration", func(t *ftt.Test) {
 				// Setup
