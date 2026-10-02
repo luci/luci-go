@@ -834,8 +834,15 @@ type VM struct {
 	TerminateOnMaintenance bool `protobuf:"varint,20,opt,name=terminate_on_maintenance,json=terminateOnMaintenance,proto3" json:"terminate_on_maintenance,omitempty"`
 	// Ordered fallback zones in the same region to try sequentially when the
 	// primary zone experiences a hard GCP capacity stockout. At most 3 unique
-	// fallback zones distinct from the primary zone may be specified, and all
-	// zones must match any regional subnetwork configured on the VM.
+	// fallback zones distinct from the primary zone may be specified.
+	//
+	// Note: Fallback zones cannot use different regions because regional
+	// configurations such as network_interface.subnetwork
+	// (e.g., "regions/us-west2/subnetworks/cloudbots-network-us-west2") are
+	// defined per region and dynamic selection of regional networks is not
+	// supported yet. When fallback_zones is set, zone-scoped fields such as
+	// machine_type and disk.type must use the "{{.Zone}}" template placeholder
+	// (e.g., "zones/{{.Zone}}/machineTypes/n2-standard-8").
 	FallbackZones []string `protobuf:"bytes,21,rep,name=fallback_zones,json=fallbackZones,proto3" json:"fallback_zones,omitempty"`
 }
 

@@ -85,46 +85,15 @@ func TestVM(t *testing.T) {
 								Type: "zones/{{.Zone}}/diskTypes/type-2",
 							},
 						},
-						MachineType: "{{.Zone}}/type",
+						FallbackZones: []string{"us-central1-a"},
+						MachineType:   "{{.Zone}}/type",
 					}
 					vm.SetZone("zone")
 					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/zone/diskTypes/type-1"))
 					assert.Loosely(t, vm.Disk[1].Type, should.Equal("zones/zone/diskTypes/type-2"))
+					assert.Loosely(t, vm.FallbackZones, should.BeNil)
 					assert.Loosely(t, vm.MachineType, should.Equal("zone/type"))
 					assert.Loosely(t, vm.Zone, should.Equal("zone"))
-				})
-
-				t.Run("zone rotation", func(t *ftt.Test) {
-					vm := &VM{
-						Disk: []*Disk{
-							{
-								Type: "zones/{{.Zone}}/diskTypes/pd-ssd",
-							},
-						},
-						MachineType: "zones/{{.Zone}}/machineTypes/n2-standard-8",
-					}
-					vm.SetZone("us-central1-c")
-					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/us-central1-c/diskTypes/pd-ssd"))
-					assert.Loosely(t, vm.MachineType, should.Equal("zones/us-central1-c/machineTypes/n2-standard-8"))
-					assert.Loosely(t, vm.Zone, should.Equal("us-central1-c"))
-
-					vm.SetZone("us-central1-a")
-					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/us-central1-a/diskTypes/pd-ssd"))
-					assert.Loosely(t, vm.MachineType, should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
-					assert.Loosely(t, vm.Zone, should.Equal("us-central1-a"))
-
-					vm.SetZone("us-central1-b")
-					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/us-central1-b/diskTypes/pd-ssd"))
-					assert.Loosely(t, vm.MachineType, should.Equal("zones/us-central1-b/machineTypes/n2-standard-8"))
-					assert.Loosely(t, vm.Zone, should.Equal("us-central1-b"))
-
-					vmPrefix := &VM{
-						MachineType: "{{.Zone}}/type",
-					}
-					vmPrefix.SetZone("us-central1-c")
-					assert.Loosely(t, vmPrefix.MachineType, should.Equal("us-central1-c/type"))
-					vmPrefix.SetZone("us-central1-a")
-					assert.Loosely(t, vmPrefix.MachineType, should.Equal("us-central1-a/type"))
 				})
 			})
 		})
@@ -181,7 +150,7 @@ func TestVM(t *testing.T) {
 									Type:  "zones/{{.Zone}}/diskTypes/type",
 								},
 							},
-							MachineType: "type",
+							MachineType: "zones/{{.Zone}}/machineTypes/type",
 							NetworkInterface: []*NetworkInterface{
 								{},
 							},
@@ -227,38 +196,22 @@ func TestVM(t *testing.T) {
 						assert.Loosely(t, err, should.UnwrapToErrStringLike(`duplicate fallback zone "us-central1-a"`))
 					})
 
-					t.Run("different region", func(t *ftt.Test) {
-						vm := baseVM()
-						vm.FallbackZones = []string{"us-east1-b"}
-						vm.Validate(c, true)
-						err := c.Finalize().(*validation.Error).Errors
-						assert.Loosely(t, err, should.UnwrapToErrStringLike(`fallback zone "us-east1-b" must be in the same region as primary zone "us-central1-c"`))
-					})
-
-					t.Run("subnetwork region mismatch", func(t *ftt.Test) {
+					t.Run("machine type missing template", func(t *ftt.Test) {
 						vm := baseVM()
 						vm.FallbackZones = []string{"us-central1-a"}
-						vm.NetworkInterface = []*NetworkInterface{
-							{
-								Subnetwork: "regions/us-west2/subnetworks/cloudbots-network-us-west2",
-							},
-						}
+						vm.MachineType = "zones/us-central1-c/machineTypes/type"
 						vm.Validate(c, true)
 						err := c.Finalize().(*validation.Error).Errors
-						assert.Loosely(t, err, should.UnwrapToErrStringLike(`zone "us-central1-c" does not match subnetwork region "us-west2"`))
-						assert.Loosely(t, err, should.UnwrapToErrStringLike(`fallback zone "us-central1-a" does not match subnetwork region "us-west2"`))
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`machine type "zones/us-central1-c/machineTypes/type" must contain {{.Zone}} template when fallback_zones is set`))
 					})
 
-					t.Run("subnetwork region mismatch without fallback zones", func(t *ftt.Test) {
+					t.Run("disk type missing template", func(t *ftt.Test) {
 						vm := baseVM()
-						vm.NetworkInterface = []*NetworkInterface{
-							{
-								Subnetwork: "regions/us-west2/subnetworks/cloudbots-network-us-west2",
-							},
-						}
+						vm.FallbackZones = []string{"us-central1-a"}
+						vm.Disk[0].Type = "zones/us-central1-c/diskTypes/type"
 						vm.Validate(c, true)
 						err := c.Finalize().(*validation.Error).Errors
-						assert.Loosely(t, err, should.UnwrapToErrStringLike(`zone "us-central1-c" does not match subnetwork region "us-west2"`))
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`disk 0 type "zones/us-central1-c/diskTypes/type" must contain {{.Zone}} template when fallback_zones is set`))
 					})
 				})
 			})
@@ -271,7 +224,7 @@ func TestVM(t *testing.T) {
 							Type:  "zones/{{.Zone}}/diskTypes/type",
 						},
 					},
-					MachineType: "type",
+					MachineType: "zones/{{.Zone}}/machineTypes/type",
 					Metadata: []*Metadata{
 						{
 							Metadata: &Metadata_FromText{
@@ -288,14 +241,13 @@ func TestVM(t *testing.T) {
 				vm.Validate(c, true)
 				assert.Loosely(t, c.Finalize(), should.BeNil)
 
-				t.Run("with fallback zones and regional subnetwork", func(t *ftt.Test) {
+				t.Run("with fallback zones", func(t *ftt.Test) {
 					vm.Zone = "us-central1-c"
 					vm.FallbackZones = []string{"us-central1-a", "us-central1-b", "us-central1-f"}
-					vm.NetworkInterface = []*NetworkInterface{
-						{
-							Subnetwork: "regions/us-central1/subnetworks/cloudbots-network-us-central1",
-						},
-					}
+					vm.Validate(c, true)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
+
+					vm.SetZone("us-central1-a")
 					vm.Validate(c, true)
 					assert.Loosely(t, c.Finalize(), should.BeNil)
 				})

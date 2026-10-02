@@ -47,31 +47,22 @@ func (v *VM) ToProperty() (datastore.Property, error) {
 	return p, p.SetValue(bytes, datastore.NoIndex)
 }
 
-// SetZone sets the given zone throughout this VM, substituting both "{{.Zone}}"
-// templates and any previously bound zone path segments ("zones/<oldZone>/" or
-// leading "<oldZone>/") in disk and machine types.
+// zoneTemplate is the placeholder token substituted by SetZone in zone-scoped
+// VM resource fields such as machine_type and disk.type.
+const zoneTemplate = "{{.Zone}}"
+
+// SetZone sets the given zone throughout this VM, substituting "{{.Zone}}"
+// templates in disk and machine types and clearing fallback_zones since the
+// zone templates have been resolved.
 func (v *VM) SetZone(zone string) {
-	oldZone := v.GetZone()
 	for _, disk := range v.GetDisk() {
 		if disk != nil {
-			disk.Type = replaceZone(disk.Type, oldZone, zone)
+			disk.Type = strings.ReplaceAll(disk.Type, zoneTemplate, zone)
 		}
 	}
-	v.MachineType = replaceZone(v.GetMachineType(), oldZone, zone)
+	v.MachineType = strings.ReplaceAll(v.GetMachineType(), zoneTemplate, zone)
 	v.Zone = zone
-}
-
-// replaceZone substitutes "{{.Zone}}" and any previously bound zone segment
-// ("zones/<oldZone>/" or leading "<oldZone>/") in val with newZone.
-func replaceZone(val, oldZone, newZone string) string {
-	val = strings.ReplaceAll(val, "{{.Zone}}", newZone)
-	if oldZone != "" && oldZone != newZone {
-		val = strings.ReplaceAll(val, "zones/"+oldZone+"/", "zones/"+newZone+"/")
-		if strings.HasPrefix(val, oldZone+"/") {
-			val = newZone + strings.TrimPrefix(val, oldZone)
-		}
-	}
-	return val
+	v.FallbackZones = nil
 }
 
 // maxFallbackZones is the maximum number of fallback zones allowed per VM
@@ -116,15 +107,21 @@ func (v *VM) Validate(c *validation.Context, metadataFromFileResolved bool) {
 	v.validateFallbackZones(c)
 }
 
-// validateFallbackZones validates fallback_zones constraints and regional
-// subnetwork compatibility for this VM description.
+// validateFallbackZones validates fallback_zones constraints and "{{.Zone}}"
+// template requirements for this VM description.
+//
+// Note: Fallback zones cannot use different regions because regional
+// configurations such as network_interface.subnetwork are defined per region
+// and dynamic selection of regional networks is not supported yet.
 func (v *VM) validateFallbackZones(c *validation.Context) {
-	primaryZone := v.GetZone()
-	primaryRegion := extractZoneRegion(primaryZone)
 	fbs := v.GetFallbackZones()
+	if len(fbs) == 0 {
+		return
+	}
 	if len(fbs) > maxFallbackZones {
 		c.Errorf("at most %d fallback zones are allowed, got %d", maxFallbackZones, len(fbs))
 	}
+	primaryZone := v.GetZone()
 	seen := make(map[string]bool, len(fbs))
 	for i, fb := range fbs {
 		if fb == "" {
@@ -138,51 +135,13 @@ func (v *VM) validateFallbackZones(c *validation.Context) {
 			c.Errorf("duplicate fallback zone %q", fb)
 		}
 		seen[fb] = true
-		fbRegion := extractZoneRegion(fb)
-		if primaryRegion == "" || fbRegion == "" || fbRegion != primaryRegion {
-			c.Errorf("fallback zone %q must be in the same region as primary zone %q", fb, primaryZone)
+	}
+	if mt := v.GetMachineType(); mt != "" && !strings.Contains(mt, zoneTemplate) {
+		c.Errorf("machine type %q must contain %s template when fallback_zones is set", mt, zoneTemplate)
+	}
+	for i, d := range v.GetDisk() {
+		if dt := d.GetType(); dt != "" && !strings.Contains(dt, zoneTemplate) {
+			c.Errorf("disk %d type %q must contain %s template when fallback_zones is set", i, dt, zoneTemplate)
 		}
 	}
-	for _, nic := range v.GetNetworkInterface() {
-		subRegion := extractSubnetworkRegion(nic.GetSubnetwork())
-		if subRegion == "" {
-			continue
-		}
-		if primaryZone != "" && (primaryRegion == "" || primaryRegion != subRegion) {
-			c.Errorf("zone %q does not match subnetwork region %q", primaryZone, subRegion)
-		}
-		for _, fb := range fbs {
-			if fb == "" {
-				continue
-			}
-			if fbRegion := extractZoneRegion(fb); fbRegion == "" || fbRegion != subRegion {
-				c.Errorf("fallback zone %q does not match subnetwork region %q", fb, subRegion)
-			}
-		}
-	}
-}
-
-// extractZoneRegion returns the GCP region prefix from a zone name (for
-// example, "us-central1" from "us-central1-c"), or an empty string if the zone
-// does not follow the "<region>-<zone>" format.
-func extractZoneRegion(zone string) string {
-	idx := strings.LastIndex(zone, "-")
-	if idx <= 0 || idx == len(zone)-1 {
-		return ""
-	}
-	return zone[:idx]
-}
-
-// extractSubnetworkRegion returns the GCP region segment from a subnetwork path
-// of the form "...regions/<region>/subnetworks/<name>" (for example, "us-west2"
-// from "regions/us-west2/subnetworks/cloudbots-network-us-west2"), or an empty
-// string if no regional segment is present.
-func extractSubnetworkRegion(subnetwork string) string {
-	parts := strings.Split(subnetwork, "/")
-	for i := 0; i+2 < len(parts); i++ {
-		if parts[i] == "regions" && parts[i+2] == "subnetworks" && parts[i+1] != "" {
-			return parts[i+1]
-		}
-	}
-	return ""
 }
