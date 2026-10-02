@@ -306,7 +306,7 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 	var sessionBroken bool
 	if len(body.Session) != 0 {
 		var err error
-		session, err = botsession.CheckSessionToken(body.Session, srv.hmacSecret, clock.Now(ctx))
+		session, err = botsession.CheckSessionToken(ctx, body.Session, srv.hmacSecret, clock.Now(ctx))
 		if err != nil {
 			logging.Warningf(ctx, "Bad session token: %s", status.Convert(err).Message())
 			if session != nil {

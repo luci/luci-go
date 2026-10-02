@@ -248,6 +248,22 @@ func TestBotHandler(t *testing.T) {
 			assert.Loosely(t, resp, should.ContainSubstring("session token has expired 5m0s ago"))
 		})
 
+		/*
+			t.Run("Expired session config", func(t *ftt.Test) {
+				session := makeSession("good-bot", "sid", goodBotAuth)
+				session.BotConfig.Expiry = timestamppb.New(now.Add(-5 * time.Minute))
+
+				req := testRequest{
+					Session: genSessionToken(session),
+				}
+
+				_, seenReq, status, resp := call("/with-session", req, "some-response", nil)
+				assert.Loosely(t, seenReq, should.BeNil)
+				assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
+				assert.Loosely(t, resp, should.ContainSubstring("session config has expired 5m0s ago"))
+			})
+		*/
+
 		t.Run("Unauthorized bot", func(t *ftt.Test) {
 			session := makeSession("good-bot", "sid", &configpb.BotAuth{
 				RequireServiceAccount: []string{"something-else@example.com"},

@@ -202,20 +202,17 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			writeErr(status.Errorf(codes.Unauthenticated, "no session token"), req, wrt, RB(body), nil)
 			return
 		}
-		session, err := botsession.CheckSessionToken(sessionTok, s.hmacSecret, clock.Now(ctx))
+		session, err := botsession.CheckSessionToken(ctx, sessionTok, s.hmacSecret, clock.Now(ctx))
 		if err != nil {
 			writeErr(err, req, wrt, RB(body), session)
 			return
 		}
 
 		// Verify the bot credentials match what's recorded in the session token.
-		// Since the session token is initially created by the server after it
-		// authorizes the bot, this check verifies the bot is known per the config
-		// when the token was initially created.
-		//
-		// TODO: Add a check for session.bot_config.expiry to limit how long a bot
-		// can reuse the "captured" config. This depends on actually populating this
-		// expiry correctly before launching long-running tasks.
+		// Since the config in the session token is updated by the server after
+		// it authorizes the bot, this check verifies the bot was known per the
+		// config when the token was initially created in /handshake or last synced
+		// in /bot/poll.
 		if err := AuthorizeBot(ctx, session.BotId, session.BotConfig.BotAuth); err != nil {
 			if transient.Tag.In(err) {
 				writeErr(status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err), req, wrt, RB(body), session)
