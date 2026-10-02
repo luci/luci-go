@@ -14,6 +14,8 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
 import { ColumnsManageDropDown } from './column_manage_dropdown';
 
 jest.mock('../filter_dropdown/options_menu', () => ({
@@ -47,13 +49,15 @@ describe('<ColumnsManageDropDown />', () => {
     const anchorEl = document.createElement('div');
 
     render(
-      <ColumnsManageDropDown
-        anchorEl={anchorEl}
-        setAnchorEl={setAnchorEl}
-        allColumns={allColumns}
-        visibleColumns={visibleColumns}
-        onToggleColumn={onToggleColumn}
-      />,
+      <FakeContextProvider>
+        <ColumnsManageDropDown
+          anchorEl={anchorEl}
+          setAnchorEl={setAnchorEl}
+          allColumns={allColumns}
+          visibleColumns={visibleColumns}
+          onToggleColumn={onToggleColumn}
+        />
+      </FakeContextProvider>,
     );
 
     // Look for checkboxes by labels to verify they render without crashing

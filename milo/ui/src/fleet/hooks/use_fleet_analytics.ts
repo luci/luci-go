@@ -21,6 +21,13 @@ import {
   useGoogleAnalytics,
 } from '@/generic_libs/components/google_analytics';
 
+export interface FleetEventPayload extends EventPayload {
+  /** The ID of the table column acted upon. */
+  columnId?: string;
+  /** Whether the column is visible after the action. */
+  visible?: boolean;
+}
+
 /**
  * Custom hook for Fleet Console tracking that automatically injects the current platform attribute into GA events.
  */
@@ -29,7 +36,7 @@ export function useFleetAnalytics() {
   const currentPlatform = useCurrentPlatform();
 
   const trackEvent = useCallback(
-    (eventName: string, payload?: EventPayload) => {
+    (eventName: string, payload?: FleetEventPayload) => {
       const platformStr =
         currentPlatform !== undefined
           ? platformToURL(currentPlatform)

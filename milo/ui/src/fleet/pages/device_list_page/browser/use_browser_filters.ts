@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
   useFilters,
+  useTrackedFilterChange,
   FilterCategory,
 } from '@/fleet/components/filters/use_filters';
 import { BROWSER_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
@@ -26,7 +27,6 @@ import {
 } from '@/fleet/constants/browser';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { getDisplayName } from './alias';
@@ -41,19 +41,9 @@ export const useBrowserFilters = (
   isLoading: boolean;
   warnings: string[];
 } => {
-  const { trackEvent } = useGoogleAnalytics();
   const [searchParams] = useSyncedSearchParams();
   const dimensionsQuery = useBrowserDeviceDimensions();
-
-  const onApplyFilter = useCallback(
-    (searchParams: URLSearchParams) => {
-      trackEvent('filter_changed', {
-        componentName: 'device_list_filter',
-      });
-      return onApply?.(searchParams) ?? searchParams;
-    },
-    [onApply, trackEvent],
-  );
+  const onApplyFilter = useTrackedFilterChange(onApply);
 
   const isDimensionsQueryProperlyLoaded =
     dimensionsQuery.data &&

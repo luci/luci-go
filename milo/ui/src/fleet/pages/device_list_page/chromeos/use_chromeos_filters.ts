@@ -13,15 +13,15 @@
 // limitations under the License.
 
 import _ from 'lodash';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
   FilterCategory,
   useFilters,
+  useTrackedFilterChange,
 } from '@/fleet/components/filters/use_filters';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 import { ChromeOSFilterKey } from './chromeos_fields';
 import { formatDeviceStateLabel } from './dut_state';
@@ -73,17 +73,7 @@ export const useChromeOSFilters = (
   setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
   const { filterBuilders, isLoading } = useChromeOSFilterBuilders();
-  const { trackEvent } = useGoogleAnalytics();
-
-  const onApplyFilter = useCallback(
-    (searchParams: URLSearchParams) => {
-      trackEvent('filter_changed', {
-        componentName: 'device_list_filter',
-      });
-      return onApply?.(searchParams) ?? searchParams;
-    },
-    [onApply, trackEvent],
-  );
+  const onApplyFilter = useTrackedFilterChange(onApply);
 
   const { filterValues, aip160, warnings, setFiltersBatch } = useFilters(
     filterBuilders,

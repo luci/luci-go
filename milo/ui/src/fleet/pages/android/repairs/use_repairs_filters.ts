@@ -14,19 +14,20 @@
 
 import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
-import { useFilters } from '@/fleet/components/filters/use_filters';
+import {
+  useFilters,
+  useTrackedFilterChange,
+} from '@/fleet/components/filters/use_filters';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const useRepairsFilters = (
   onFilterChange?: (searchParams: URLSearchParams) => URLSearchParams | void,
 ) => {
-  const { trackEvent } = useGoogleAnalytics();
   const client = useFleetConsoleClient();
 
   const repairMetricsFilterValues = useQuery({
@@ -60,15 +61,7 @@ export const useRepairsFilters = (
     return filters;
   }, [repairMetricsFilterValues.data]);
 
-  const onApplyFilter = useCallback(
-    (searchParams: URLSearchParams) => {
-      trackEvent('filter_changed', {
-        componentName: 'device_list_filter',
-      });
-      return onFilterChange?.(searchParams) ?? searchParams;
-    },
-    [onFilterChange, trackEvent],
-  );
+  const onApplyFilter = useTrackedFilterChange(onFilterChange);
 
   const filterCategoryDatas = useFilters(loadedFilterOptions, {
     areFilterValuesLoading: !repairMetricsFilterValues.data,

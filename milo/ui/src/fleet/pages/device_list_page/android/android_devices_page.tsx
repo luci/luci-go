@@ -126,6 +126,8 @@ export const AndroidDevicesPage = ({
           mrtColumnManager={mrtColumnManager}
           availableColumns={availableColumns}
           workspace={workspace}
+          filterValues={filterValues}
+          combinedAip160={combinedAip160}
         />
       </div>
     </div>

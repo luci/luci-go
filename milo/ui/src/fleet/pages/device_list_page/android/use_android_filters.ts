@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { useFeatureFlag } from '@/common/feature_flags';
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
   useFilters,
+  useTrackedFilterChange,
   FilterCategory,
   FilterCategoryBuilder,
 } from '@/fleet/components/filters/use_filters';
@@ -26,7 +27,6 @@ import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { enablePTE } from '@/fleet/features';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getAndroidColumnOverrides } from './android_fields';
@@ -37,7 +37,6 @@ export const useAndroidFilters = (
   onFilterChange?: (searchParams: URLSearchParams) => URLSearchParams | void,
   showAvgUtilization = false,
 ) => {
-  const { trackEvent } = useGoogleAnalytics();
   const dimensionsQuery = useDeviceDimensions({ platform: Platform.ANDROID });
 
   const isDimensionsQueryProperlyLoaded =
@@ -45,15 +44,7 @@ export const useAndroidFilters = (
     dimensionsQuery.data.baseDimensions &&
     dimensionsQuery.data.labels;
 
-  const onFilterChangeCallback = useCallback(
-    (searchParams: URLSearchParams) => {
-      trackEvent('filter_changed', {
-        componentName: 'device_list_filter',
-      });
-      return onFilterChange?.(searchParams) ?? searchParams;
-    },
-    [onFilterChange, trackEvent],
-  );
+  const onFilterChangeCallback = useTrackedFilterChange(onFilterChange);
   const ANDROID_COLUMN_OVERRIDES = useMemo(() => {
     return getAndroidColumnOverrides(workspace);
   }, [workspace]);

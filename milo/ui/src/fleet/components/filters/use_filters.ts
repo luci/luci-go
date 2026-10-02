@@ -15,6 +15,7 @@
 import { useCallback, useMemo, useEffect, useRef } from 'react';
 
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { parseFilter } from '@/fleet/utils/aip160/parser/parser';
 import { useWarnings } from '@/fleet/utils/use_warnings';
@@ -45,6 +46,91 @@ export const serializeFilters = (
     .map((f) => f.toAIP160())
     .filter((f) => f !== '')
     .join(' AND ');
+};
+
+export const MAX_GA4_PARAM_LENGTH = 100;
+
+const extractFilterFieldSignatureMap = (
+  filtersAIP160: string | null | undefined,
+): Map<string, string> => {
+  const map = new Map<string, string>();
+  if (!filtersAIP160 || !filtersAIP160.trim()) {
+    return map;
+  }
+  const parsed = constructFiltersFromAIP160(filtersAIP160);
+  if (parsed.isError) {
+    return map;
+  }
+  for (const [rawKey, terms] of Object.entries(parsed.terms)) {
+    const key = normalizeFilterKey(rawKey);
+    const sig = JSON.stringify(terms);
+    const prev = map.get(key);
+    map.set(key, prev ? `${prev}|${sig}` : sig);
+  }
+  return map;
+};
+
+export const extractActiveFilterFields = (
+  filtersAIP160: string | null | undefined,
+): string[] => {
+  return [...extractFilterFieldSignatureMap(filtersAIP160).keys()].sort();
+};
+
+export const extractChangedFilterFields = (
+  prevAIP160: string | null | undefined,
+  nextAIP160: string | null | undefined,
+): string[] => {
+  const prevMap = extractFilterFieldSignatureMap(prevAIP160);
+  const nextMap = extractFilterFieldSignatureMap(nextAIP160);
+  const allKeys = new Set<string>([...prevMap.keys(), ...nextMap.keys()]);
+  const changed: string[] = [];
+  for (const key of allKeys) {
+    if (prevMap.get(key) !== nextMap.get(key)) {
+      changed.push(key);
+    }
+  }
+  return changed.sort();
+};
+
+export const formatTrackedFilterFields = (
+  fields: readonly string[],
+  maxLength = MAX_GA4_PARAM_LENGTH,
+): string => {
+  const joined = fields.join(',');
+  if (joined.length <= maxLength) {
+    return joined;
+  }
+  return joined.slice(0, maxLength);
+};
+
+export const useTrackedFilterChange = (
+  onFilterChange?: (searchParams: URLSearchParams) => URLSearchParams | void,
+) => {
+  const { trackEvent } = useFleetAnalytics();
+  const [searchParams] = useSyncedSearchParams();
+  const prevFilterRef = useRef(searchParams.get(FILTERS_PARAM_KEY));
+  prevFilterRef.current = searchParams.get(FILTERS_PARAM_KEY);
+
+  return useCallback(
+    (nextSearchParams: URLSearchParams) => {
+      const nextFilter = nextSearchParams.get(FILTERS_PARAM_KEY);
+      const changedFields = extractChangedFilterFields(
+        prevFilterRef.current,
+        nextFilter,
+      );
+      const fieldsToReport =
+        changedFields.length > 0
+          ? changedFields
+          : extractActiveFilterFields(nextFilter);
+      trackEvent('filter_changed', {
+        componentName: 'device_list_filter',
+        editedFields: formatTrackedFilterFields(fieldsToReport),
+        fieldCount: fieldsToReport.length,
+      });
+      return onFilterChange?.(nextSearchParams) ?? nextSearchParams;
+    },
+    [onFilterChange, trackEvent],
+  );
 };
 
 export const useFilterState = <

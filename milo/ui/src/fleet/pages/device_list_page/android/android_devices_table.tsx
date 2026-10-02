@@ -17,12 +17,9 @@ import {
   MaterialReactTable,
   MRT_RowSelectionState,
 } from 'material-react-table';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import {
-  emptyPageTokenUpdater,
-  usePagerContext,
-} from '@/common/components/params_pager';
+import { usePagerContext } from '@/common/components/params_pager';
 import { useFeatureFlag } from '@/common/feature_flags';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import {
@@ -36,14 +33,12 @@ import {
   FC_TableOptions,
   useFCDataTable,
 } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import {
   ANDROID_DEVICES_LOCAL_STORAGE_KEY,
   PIXEL_DEVICES_LOCAL_STORAGE_KEY,
 } from '@/fleet/constants/local_storage_keys';
-import {
-  enableAndroidUtilizationMetrics,
-  enablePixelDeviceRestoration,
-} from '@/fleet/features';
+import { enablePixelDeviceRestoration } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
@@ -54,7 +49,6 @@ import {
   InvalidPageTokenAlert,
   isInvalidPageTokenError,
 } from '@/fleet/utils/invalid-page-token-alert';
-import { combineAipFilters } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   AndroidDevice,
@@ -63,23 +57,25 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { AndroidPageWorkspace, workspaces } from '../../../workspaces';
+import { AndroidPageWorkspace } from '../../../workspaces';
 
 import { AndroidColumnDef } from './android_fields';
-import { useAndroidFilters } from './use_android_filters';
 
 interface AndroidTableProps {
   mrtColumnManager: MrtColumnManager<AndroidColumnDef>;
   availableColumns: { id: string; label: string }[];
   workspace: AndroidPageWorkspace;
+  filterValues: Record<string, FilterCategory> | undefined;
+  combinedAip160: string;
 }
 
 export const AndroidDevicesTable = ({
   mrtColumnManager,
   availableColumns,
   workspace,
+  filterValues,
+  combinedAip160,
 }: AndroidTableProps) => {
-  const showAvgUtilization = useFeatureFlag(enableAndroidUtilizationMetrics);
   const isPixelRestorationEnabled = useFeatureFlag(
     enablePixelDeviceRestoration,
   );
@@ -99,23 +95,6 @@ export const AndroidDevicesTable = ({
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
   const [_, setSearchParams] = useSyncedSearchParams();
-
-  const onApplyFilters = useCallback(
-    (searchParams: URLSearchParams) =>
-      emptyPageTokenUpdater(pagerCtx)(searchParams),
-    [pagerCtx],
-  );
-
-  const { filterValues, aip160 } = useAndroidFilters(
-    workspace,
-    onApplyFilters,
-    showAvgUtilization,
-  );
-
-  const combinedAip160 = useMemo(
-    () => combineAipFilters(workspaces[workspace].baseFilter, aip160()),
-    [aip160, workspace],
-  );
 
   // Clear row selection when the active filter query changes to prevent
   // performing bulk actions on hidden/invisible rows.

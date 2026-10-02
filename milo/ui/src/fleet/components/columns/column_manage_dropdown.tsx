@@ -14,6 +14,7 @@
 
 import { useMemo } from 'react';
 
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { OptionValue } from '@/fleet/types/option';
 import { partition } from '@/fleet/utils/array';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
@@ -52,7 +53,16 @@ export function ColumnsManageDropDown({
   onToggleColumn,
   selectOnlyColumn,
 }: ColumnsManageDropDownProps) {
+  const { trackEvent } = useFleetAnalytics();
+
   const toggleColumn = (field: string) => {
+    const isCurrentlyPermanentVisible =
+      visibleColumns.includes(field) && !temporaryColumns?.includes(field);
+    trackEvent('column_toggled', {
+      componentName: 'column_manage_dropdown',
+      columnId: field,
+      visible: !isCurrentlyPermanentVisible,
+    });
     if (temporaryColumns?.includes(field)) {
       // Toggling a temporary column makes it permanent.
       addUserVisibleColumn?.(field);
@@ -60,6 +70,17 @@ export function ColumnsManageDropDown({
     }
     onToggleColumn(field);
   };
+
+  const handleSelectOnlyColumn = selectOnlyColumn
+    ? (field: string) => {
+        trackEvent('column_select_only', {
+          componentName: 'column_manage_dropdown',
+          columnId: field,
+          visible: true,
+        });
+        selectOnlyColumn(field);
+      }
+    : undefined;
 
   const columns = useMemo(
     () =>
@@ -121,7 +142,7 @@ export function ColumnsManageDropDown({
             elements={finalSortedColumns}
             selectedElements={new Set(selectedColumns)}
             flipOption={toggleColumn}
-            selectOnly={selectOnlyColumn}
+            selectOnly={handleSelectOnlyColumn}
           />
         );
       }}
