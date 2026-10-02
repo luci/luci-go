@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -778,5 +779,36 @@ func TestIsLeakHuerestic(t *testing.T) {
 				assert.Loosely(t, leak, should.BeFalse)
 			})
 		})
+	})
+
+	ftt.Run("zone fallback helpers", t, func(t *ftt.Test) {
+		c := memory.Use(context.Background())
+		vm := &model.VM{
+			ID:       "id",
+			Hostname: "name",
+			Attributes: config.VM{
+				Zone:          "us-central1-c",
+				FallbackZones: []string{"us-central1-a", "us-central1-c", "us-central1-b"},
+				MachineType:   "zones/{{.Zone}}/machineTypes/n2-standard-8",
+				Disk: []*config.Disk{{
+					Image: "global/images/image",
+					Type:  "zones/{{.Zone}}/diskTypes/pd-ssd",
+				}},
+			},
+		}
+		assert.Loosely(t, candidateZones(vm), should.Match([]string{"us-central1-c", "us-central1-a", "us-central1-b"}))
+
+		cloned := cloneVMForZone(vm, "us-central1-a")
+		assert.Loosely(t, cloned.Attributes.GetZone(), should.Equal("us-central1-a"))
+		assert.Loosely(t, cloned.Attributes.GetMachineType(), should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
+		assert.Loosely(t, vm.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
+
+		assert.Loosely(t, datastore.Put(c, vm), should.BeNil)
+		assert.Loosely(t, updateVMZone(c, "id", "us-central1-b"), should.BeNil)
+		stored := &model.VM{ID: "id"}
+		assert.Loosely(t, datastore.Get(c, stored), should.BeNil)
+		assert.Loosely(t, stored.Attributes.GetZone(), should.Equal("us-central1-b"))
+		assert.Loosely(t, stored.Attributes.GetMachineType(), should.Equal("zones/us-central1-b/machineTypes/n2-standard-8"))
+		assert.Loosely(t, stored.AttributesIndexed, should.Match([]string{"disk.image:image"}))
 	})
 }

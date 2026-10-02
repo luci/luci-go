@@ -239,6 +239,39 @@ func TestQueues(t *testing.T) {
 						Zone:        "zone",
 					}))
 				})
+
+				t.Run("preserves zone template with fallback zones", func(t *ftt.Test) {
+					err := createVM(c, &tasks.CreateVM{
+						Id: "id-fb",
+						Attributes: &config.VM{
+							Disk: []*config.Disk{
+								{
+									Type: "{{.Zone}}/type",
+								},
+							},
+							MachineType:   "{{.Zone}}/type",
+							Zone:          "us-central1-c",
+							FallbackZones: []string{"us-central1-a"},
+						},
+						Config: "config",
+						Index:  2,
+					})
+					assert.Loosely(t, err, should.BeNil)
+					v := &model.VM{
+						ID: "id-fb",
+					}
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+					assert.Loosely(t, &v.Attributes, should.Match(&config.VM{
+						Disk: []*config.Disk{
+							{
+								Type: "{{.Zone}}/type",
+							},
+						},
+						MachineType:   "{{.Zone}}/type",
+						Zone:          "us-central1-c",
+						FallbackZones: []string{"us-central1-a"},
+					}))
+				})
 			})
 		})
 

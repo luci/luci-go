@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -95,6 +97,47 @@ func logErrors(c context.Context, actionSource, hostname string, err *googleapi.
 	logging.Errorf(c, "%s %q: failed with HTTP: %d, errors: %s", actionSource, hostname, err.Code, strings.Join(errMsgs, ","))
 }
 
+// candidateZones returns the ordered, deduplicated list of zones to try for
+// creating the given VM, starting with its primary zone.
+func candidateZones(vm *model.VM) []string {
+	candidates := []string{vm.Attributes.GetZone()}
+	for _, fb := range vm.Attributes.GetFallbackZones() {
+		if fb != "" && !slices.Contains(candidates, fb) {
+			candidates = append(candidates, fb)
+		}
+	}
+	return candidates
+}
+
+// cloneVMForZone returns a shallow copy of vm with a deep-copied Attributes
+// proto bound to the given target zone via SetZone.
+func cloneVMForZone(vm *model.VM, zone string) *model.VM {
+	cloned := *vm
+	if attrs, ok := proto.Clone(&vm.Attributes).(*config.VM); ok && attrs != nil {
+		attrs.SetZone(zone)
+		cloned.Attributes = *attrs
+	}
+	return &cloned
+}
+
+// updateVMZone persists the selected zone and expanded "{{.Zone}}" templates
+// to the VM entity in datastore so subsequent check, audit, and destroy tasks
+// target the zone where the instance was created.
+func updateVMZone(ctx context.Context, id, zone string) error {
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		cur := &model.VM{ID: id}
+		if err := datastore.Get(ctx, cur); err != nil {
+			return errors.Fmt("failed to fetch VM with id %q: %w", id, err)
+		}
+		cur.Attributes.SetZone(zone)
+		cur.IndexAttributes()
+		if err := datastore.Put(ctx, cur); err != nil {
+			return errors.Fmt("failed to store VM %q: %w", id, err)
+		}
+		return nil
+	}, nil)
+}
+
 // checkInstance fetches the GCE instance and either sets its creation details
 // or deletes the VM if the instance doesn't exist.
 func checkInstance(c context.Context, vm *model.VM) error {
@@ -145,14 +188,19 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 		return nil
 	}
 	logging.Debugf(ctx, "Create instance %q: with ID %q", vm.Hostname, vm.ID)
-	instance := vm.GetInstance()
+	hasFallbacks := len(vm.Attributes.GetFallbackZones()) > 0
+	attemptVM := vm
+	if hasFallbacks {
+		attemptVM = cloneVMForZone(vm, vm.Attributes.GetZone())
+	}
+	instance := attemptVM.GetInstance()
 
 	// Generate a request ID based on the hostname.
 	// Ensures duplicate operations aren't created in GCE.
 	// Request IDs are valid for 24 hours.
 	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("create-%s", vm.Hostname)))
 	srv := getCompute(ctx)
-	op, err := srv.InsertInstance(ctx, vm.Attributes.GetProject(), vm.Attributes.GetZone(), instance, rID.String())
+	op, err := srv.InsertInstance(ctx, attemptVM.Attributes.GetProject(), attemptVM.Attributes.GetZone(), instance, rID.String())
 	if err != nil {
 		logging.Debugf(ctx, "Create instance %q: got error from attempt to create instance %s", vm.Hostname, err)
 		if gerr, ok := err.(*googleapi.Error); ok {
@@ -161,7 +209,7 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 			if len(gerr.Errors) > 0 && gerr.Errors[0].Reason != "" {
 				reason = gerr.Errors[0].Reason
 			}
-			metrics.UpdateFailures(ctx, gerr.Code, reason, vm)
+			metrics.UpdateFailures(ctx, gerr.Code, reason, attemptVM)
 			// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
 			if rateLimitExceeded(gerr) {
 				return errors.Fmt("rate limit exceeded creating instance %s: %w", vm.Hostname, err)
@@ -186,11 +234,17 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 				reason = err.Code
 			}
 		}
-		metrics.UpdateFailures(ctx, 200, reason, vm)
+		metrics.UpdateFailures(ctx, 200, reason, attemptVM)
 		if err := deleteVM(ctx, task.Id, vm.Hostname); err != nil {
 			return errors.Fmt("failed to create instance %s: %w", vm.Hostname, err)
 		}
 		return errors.Fmt("failed to create instance %s", vm.Hostname)
+	}
+	if hasFallbacks {
+		if err := updateVMZone(ctx, vm.ID, vm.Attributes.GetZone()); err != nil {
+			return errors.Fmt("failed to update zone for instance %s: %w", vm.Hostname, err)
+		}
+		vm.Attributes.SetZone(vm.Attributes.GetZone())
 	}
 	if op.GetStatus() == "DONE" {
 		logging.Debugf(ctx, "Create instance %q: reported as created, next step is to check it.", vm.Hostname)
