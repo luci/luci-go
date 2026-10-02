@@ -86,11 +86,8 @@ export const DEFAULT_VISIBLE_SERIES_MODEL = 5;
 export const DEFAULT_VISIBLE_SERIES_POOL = 2;
 
 /**
- * Prioritizes "DUT_POOL_QUOTA" and "faft-test" by moving them to the top of
- * the pool series list, and sorts all remaining pools alphabetically.
- *
- * NOTE: This is a temporary solution until sorting by fleet size is available.
- * TODO(b/567504412): Update to sort by fleet size once supported by backend.
+ * Prioritizes primary quota ("DUT_POOL_QUOTA") and FAFT ("faft-test") pools
+ * before sorting remaining pools alphabetically.
  */
 export const sortPoolSeries = <T extends { readonly name: string }>(
   series: readonly T[],

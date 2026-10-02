@@ -209,8 +209,6 @@ export const HistoricalAvailabilityTrendsChart = ({
   const { data, isLoading, isError, error } =
     useFleetAvailabilityTrends(queryRequest);
 
-  // NOTE: This is a temporary solution until sorting by fleet size is available.
-  // TODO(b/567504412): For pool grouping, prioritize "DUT_POOL_QUOTA" and "faft-test", with remaining pools sorted alphabetically.
   const seriesList = useMemo(() => {
     const series = data?.series ?? [];
     if (viewBy === TrendlineGrouping.GROUP_BY_POOL) {

@@ -337,7 +337,6 @@ export const getAndroidColumnOverrides: (
     renderCell: renderTimestampCell,
   },
   fc_offline_since: {
-    //TODO (b/502485099): this will be filterable after is resolved
     header: 'Offline since',
     meta: {
       infoTooltip: 'Last seen online (±10 min), per the fc_is_offline',
@@ -347,7 +346,6 @@ export const getAndroidColumnOverrides: (
     renderCell: renderTimestampCell,
   },
   average_7d: {
-    //TODO (b/502485099): this will be filterable after is resolved
     header: '7 Day Average Utilization',
     meta: {
       infoTooltip: <UtilizationTooltipContent />,
@@ -373,7 +371,6 @@ export const getAndroidColumnOverrides: (
     },
   },
   average_30d: {
-    //TODO (b/502485099): this will be filterable after is resolved
     header: '30 Day Average Utilization',
     meta: {
       infoTooltip: <UtilizationTooltipContent />,

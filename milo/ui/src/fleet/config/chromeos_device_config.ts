@@ -33,7 +33,7 @@ export const CHROMEOS_DEFAULT_COLUMNS = [
 
 // Define a list of device filters commonly used by FLOPS to show in the
 // filter options for the ChromeOS device list.
-// TODO: Hotfix for b/449956551, needs further investigation on quote handling
+// Uses quoted label keys (labels."...") for AIP-160 filter parser compatibility.
 export const CHROMEOS_COMMON_DEVICE_FILTERS: string[] = [
   'labels."dut_state"',
   'labels."label-board"',

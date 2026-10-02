@@ -30,7 +30,6 @@ const MOCK_FILTER_VALUES =
     gceVm: ['Yes', 'No'],
   });
 
-// TODO: b/435182355 - Look into patterns for improving network request mocking.
 jest.mock('@/fleet/hooks/prpc_clients', () => ({
   useFleetConsoleClient: jest.fn(() => ({
     GetResourceRequestsMultiselectFilterValues: {

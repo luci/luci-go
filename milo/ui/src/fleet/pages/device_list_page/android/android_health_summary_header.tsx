@@ -304,7 +304,6 @@ export function AndroidHealthSummaryHeader({
       alwaysShowBreakdown: true,
       tooltipText: (
         <Typography variant="body2">
-          {/* TODO: Update description with final definition. */}
           Healthy devices actively serving test capacity. These devices are
           either running a test or immediately available to accept one.
         </Typography>
@@ -317,7 +316,6 @@ export function AndroidHealthSummaryHeader({
       icon: <ErrorIcon sx={{ color: colors.rose }} />,
       tooltipText: (
         <Typography variant="body2">
-          {/* TODO: Update description with final definition. */}
           Devices requiring physical human intervention from Lab Ops. These
           devices cannot recover automatically.
         </Typography>
@@ -334,7 +332,6 @@ export function AndroidHealthSummaryHeader({
       icon: <WarningIcon sx={{ color: colors.amber }} />,
       tooltipText: (
         <Typography variant="body2">
-          {/* TODO: Update description with final definition. */}
           Temporarily unavailable devices undergoing automatic software
           remediation, provisioning, or state transitions. They do not require
           human intervention and are expected to self-recover to In Service.

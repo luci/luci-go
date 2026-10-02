@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Constant for the the separator we use across the UI for displaying
-// multiple values as a string string (ie: in one chip or one table cell)
-// TODO: b/378634266 should be discussed how to show multiple values
+// Constant for the separator we use across the UI for displaying
+// multiple values as a single string (ie: in one chip or one table cell)
 export const DIMENSION_SEPARATOR = ', ';

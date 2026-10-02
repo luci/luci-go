@@ -158,7 +158,7 @@ const generateBrowserIssueDescription = (
 
   let requestText = '';
   if (actionType === 'reinstall') {
-    // TODO(b/477806570): Add dynamic OS selection or detection.
+    // Uses <TARGET_OS> placeholder when the target OS is not detected automatically.
     requestText =
       'Please upgrade the following device to OS <TARGET_OS> (Fill in target OS):';
   } else {
@@ -241,7 +241,7 @@ const generateBrowserBulkIssueDescription = (
 
     let requestText = '';
     if (actionType === 'reinstall') {
-      // TODO(b/477806570): Add dynamic OS selection or detection.
+      // Uses <TARGET_OS> placeholder when the target OS is not detected automatically.
       requestText =
         'Please upgrade the following devices to OS <TARGET_OS> (Fill in target OS):';
     } else {

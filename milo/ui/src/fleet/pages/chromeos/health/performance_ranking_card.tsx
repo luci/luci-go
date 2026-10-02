@@ -86,12 +86,9 @@ export const PerformanceRankingCard = ({
     [entityTab, filter],
   );
 
-  // TODO: Transitional data source using GetFleetAvailabilityTrends;
-  // switch to QueryPerformanceRankings RPC once implemented (Phase 2 / Story 8).
+  // Uses GetFleetAvailabilityTrends until the dedicated QueryPerformanceRankings RPC lands.
   const { data, isLoading, isError } = useFleetAvailabilityTrends(queryRequest);
 
-  // TODO: Transitional data source using GetFleetAvailabilityTrends;
-  // switch to QueryPerformanceRankings RPC once implemented (Phase 2 / Story 8).
   const rankedItems = useMemo<readonly RankedCohortItem[]>(() => {
     if (!data?.series) return [];
 

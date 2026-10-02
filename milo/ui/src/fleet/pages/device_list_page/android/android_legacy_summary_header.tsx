@@ -76,7 +76,7 @@ export function AndroidLegacySummaryHeader({
   const onlineFilter = combineAipFilters(aip160, 'fc_is_offline = "false"');
   const offlineFilter = combineAipFilters(aip160, 'fc_is_offline = "true"');
 
-  // TODO(b/512174685): Optimize backend CountDevices to return online/offline breakdown in a single payload to reduce traffic.
+  // Legacy CountDevices requires a separate unfiltered call for the total count.
   const onlineCountQuery = useQuery(
     client.CountDevices.query({
       filter: onlineFilter,
@@ -128,7 +128,7 @@ export function AndroidLegacySummaryHeader({
       (offlineData?.dirtyDevices || 0) +
       (offlineData?.preppingDevices || 0);
 
-  // TODO(b/503171080): CountDevices API returns 0 for (Blank) state searches.
+  // Legacy CountDevices returns 0 for (Blank) state searches.
   const blankStatesCount =
     isLoading || !onlineData
       ? undefined

@@ -303,7 +303,6 @@ export const HomePage = () => {
                     <PlatformSummaryCard
                       title="Pixel"
                       logoSrc={pixelLogo}
-                      // TODO(bartekdeska@) Change the way the elements display the count of elements
                       total={pixelTotal}
                       healthyPercentage={pixelHealthy}
                       healthChipSuffix={
