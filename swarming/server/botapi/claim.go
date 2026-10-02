@@ -260,6 +260,12 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 		return nil, status.Errorf(codes.InvalidArgument, "missing task to run ID")
 	}
 
+	// Refuse to give tasks to a bot that haven't called "/poll" in a while. Its
+	// cached config might be too stale.
+	if err := botsession.CheckLastSyncTime(ctx, r.Session); err != nil {
+		return nil, err
+	}
+
 	// Ignore invalid state. This broken state will be noticed in the next Poll
 	// call and move the bot into quarantined state. Here we already have a
 	// pending task which the bot must execute. Better to try to execute the task

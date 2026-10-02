@@ -324,6 +324,20 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		}
 	}
 
+	// If this is an attempt to pick up new work (perhaps in combination with
+	// finishing the previous lease), verify the config snapshot in the token was
+	// synced recently enough. Healthy bots call "/poll" regularly between tasks
+	// to pick up commands from Swarming and to update the config snapshot. They
+	// don't do it when running the task. Note we do this check in "/claim" as
+	// well, but ideally we want to reject non-compliant bots earlier, before
+	// they popped the lease from RBE (which is why we do it here as well).
+	pullingNewLease := botStatus == remoteworkers.BotStatus_OK && (leaseIn == nil || leaseIn.State == remoteworkers.LeaseState_COMPLETED)
+	if pullingNewLease {
+		if err := botsession.CheckLastSyncTime(ctx, r.Session); err != nil {
+			return nil, err
+		}
+	}
+
 	// If there are no pending leases, RBE seems to block for `<rpc deadline>-10s`
 	// (not doing anything at all if the RPC deadline is less than 10s).
 	var timeout time.Duration

@@ -326,6 +326,31 @@ func CheckSessionToken(ctx context.Context, tok []byte, secret *hmactoken.Secret
 	return session, nil
 }
 
+// CheckLastSyncTime returns an error if the config in the session is too old.
+func CheckLastSyncTime(ctx context.Context, session *internalspb.Session) error {
+	synced := session.LastSyncTime
+	if synced == nil {
+		logging.Warningf(ctx, "CHECK_LAST_SYNC_TIME: %s: fallback on debug info", session.BotId)
+		synced = session.BotConfig.GetDebugInfo().GetCreated()
+	}
+	if synced == nil {
+		logging.Warningf(ctx, "CHECK_LAST_SYNC_TIME: %s: no last sync time at all", session.BotId)
+		// TODO: Start returning an error.
+		return nil
+	}
+
+	age := clock.Now(ctx).Sub(synced.AsTime())
+	logging.Infof(ctx, "%s: Last config sync was %s ago", session.BotId, age)
+	if age > 30*time.Minute {
+		logging.Warningf(ctx, "CHECK_LAST_SYNC_TIME: %s: last sync time was too long ago: %s ago", session.BotId, age)
+		LogSession(ctx, session)
+		// TODO: Start returning an error.
+		return nil
+	}
+
+	return nil
+}
+
 // LogSession logs some session fields (usually on errors).
 func LogSession(ctx context.Context, session *internalspb.Session) {
 	now := clock.Now(ctx)
