@@ -19,7 +19,10 @@ import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
 import { CellWithTooltip, renderTimestampCell } from '@/fleet/components/table';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
-import { generateDutNameRedirectURL } from '@/fleet/config/chromeos_device_config';
+import {
+  generateDutNameRedirectURL,
+  generateServoHostnameFilterURL,
+} from '@/fleet/config/chromeos_device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FC_CellProps } from '@/fleet/types/table';
@@ -294,6 +297,24 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
     type: 'label',
     renderCell: renderCellWithLink<ChromeOSDevice>({
       linkGenerator: generateDutNameRedirectURL,
+    }),
+  },
+  servo_hostname: {
+    type: 'label',
+    header: 'Servo Hostname',
+    renderCell: renderCellWithLink<ChromeOSDevice>({
+      linkGenerator: (value) =>
+        generateServoHostnameFilterURL(value, 'servo_hostname'),
+      newTab: false,
+    }),
+  },
+  'label-servo_hostname': {
+    type: 'label',
+    header: 'Servo Hostname',
+    renderCell: renderCellWithLink<ChromeOSDevice>({
+      linkGenerator: (value) =>
+        generateServoHostnameFilterURL(value, 'label-servo_hostname'),
+      newTab: false,
     }),
   },
   'label-servo_usb_state': {

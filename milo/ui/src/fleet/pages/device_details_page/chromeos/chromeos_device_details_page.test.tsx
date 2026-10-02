@@ -15,7 +15,13 @@
 import { render, screen } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
+import { generateServoHostnameFilterURL } from '@/fleet/config/chromeos_device_config';
 import { SettingsProvider } from '@/fleet/context/providers';
+import {
+  ChromeOSDevice,
+  getFieldDefinition,
+} from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
+import { FC_CellProps } from '@/fleet/types/table';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSDeviceDetailsPage } from './chromeos_device_details_page';
@@ -43,5 +49,19 @@ describe('<ChromeOSDeviceDetailsPage />', () => {
     );
 
     expect(screen.getByTestId('loading-spinner')).toBeVisible();
+  });
+
+  it('renders servo_hostname as a 1-click filter link', () => {
+    const def = getFieldDefinition('servo_hostname');
+    const cell = def.renderCell!({
+      cell: { getValue: () => ['host-1'] },
+      row: { original: { id: 'chromeos6-row1-rack2-host3' } as ChromeOSDevice },
+      column: { id: 'servo_hostname' },
+    } as unknown as FC_CellProps<ChromeOSDevice>);
+    render(<FakeContextProvider>{cell}</FakeContextProvider>);
+    expect(screen.getByRole('link', { name: 'host-1' })).toHaveAttribute(
+      'href',
+      generateServoHostnameFilterURL('host-1', 'servo_hostname'),
+    );
   });
 });

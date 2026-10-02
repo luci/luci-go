@@ -13,6 +13,10 @@
 // limitations under the License.
 
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
+import {
+  CHROMEOS_PLATFORM,
+  generateDeviceListURL,
+} from '@/fleet/constants/paths';
 import { escapeAipValue } from '@/fleet/utils/search_param';
 
 export const CHROMEOS_DEFAULT_COLUMNS = [
@@ -51,4 +55,12 @@ export const CHROMEOS_COMMON_DEVICE_FILTERS: string[] = [
 // device for a URL in the future.
 export const generateDutNameRedirectURL = (dutName: string): string => {
   return `/ui/fleet/redirects/singledevice?${FILTERS_PARAM_KEY}=${encodeURIComponent(`labels."dut_name" = "${escapeAipValue(dutName)}"`)}`;
+};
+
+export const generateServoHostnameFilterURL = (
+  servoHostname: string,
+  labelKey = 'servo_hostname',
+): string => {
+  const filter = `labels."${escapeAipValue(labelKey)}" = "${escapeAipValue(servoHostname)}"`;
+  return `${generateDeviceListURL(CHROMEOS_PLATFORM)}?${FILTERS_PARAM_KEY}=${encodeURIComponent(filter)}`;
 };

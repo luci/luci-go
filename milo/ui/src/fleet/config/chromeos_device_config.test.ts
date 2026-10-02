@@ -16,6 +16,7 @@ import {
   CHROMEOS_COMMON_DEVICE_FILTERS,
   CHROMEOS_DEFAULT_COLUMNS,
   generateDutNameRedirectURL,
+  generateServoHostnameFilterURL,
 } from './chromeos_device_config';
 
 describe('chromeos_device_config', () => {
@@ -47,6 +48,23 @@ describe('chromeos_device_config', () => {
     const url = generateDutNameRedirectURL('host\\"name');
     expect(url).toBe(
       '/ui/fleet/redirects/singledevice?filters=labels.%22dut_name%22%20%3D%20%22host%5C%5C%5C%22name%22',
+    );
+  });
+
+  it('should format generateServoHostnameFilterURL with quoted AIP-160 syntax', () => {
+    const url = generateServoHostnameFilterURL(
+      'chromeos6-row1-rack2-labstation1',
+    );
+    expect(url).toBe(
+      '/ui/fleet/p/chromeos/devices?filters=labels.%22servo_hostname%22%20%3D%20%22chromeos6-row1-rack2-labstation1%22',
+    );
+
+    const prefixedUrl = generateServoHostnameFilterURL(
+      'chromeos6-row1-rack2-labstation1',
+      'label-servo_hostname',
+    );
+    expect(prefixedUrl).toBe(
+      '/ui/fleet/p/chromeos/devices?filters=labels.%22label-servo_hostname%22%20%3D%20%22chromeos6-row1-rack2-labstation1%22',
     );
   });
 });
