@@ -53,8 +53,9 @@ type ClaimOp struct {
 
 // ClaimOpOutcome is returned by ClaimTxn.
 type ClaimOpOutcome struct {
-	Unavailable string // a reason if the task to run can't be claimed
-	Claimed     bool   // true if claimed, false if was already claimed with the same ID
+	Unavailable string    // a reason if the task to run can't be claimed
+	Claimed     bool      // true if just claimed, false if was claimed before with the same ID
+	ClaimedAt   time.Time // when the task was claimed (just now or previously)
 }
 
 // ClaimTxn is called inside a transaction to mark the task slice as claimed.
@@ -78,12 +79,15 @@ func (m *managerImpl) ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcom
 	if !ttr.IsReapable() {
 		switch existing := ttr.ClaimID.Get(); {
 		case existing == "":
-			return &ClaimOpOutcome{Unavailable: "The task slice has expired"}, nil
+			return &ClaimOpOutcome{Unavailable: "The task slice has expired or was cancelled"}, nil
 		case existing != op.ClaimID:
 			return &ClaimOpOutcome{Unavailable: fmt.Sprintf("Already claimed by %q", existing)}, nil
 		default:
-			// This task is already claimed by us.
-			return &ClaimOpOutcome{Claimed: false}, nil
+			// This task was already claimed by us before.
+			return &ClaimOpOutcome{
+				Claimed:   false,
+				ClaimedAt: ttr.ClaimedAt.Get(),
+			}, nil
 		}
 	}
 
@@ -132,7 +136,7 @@ func (m *managerImpl) ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcom
 	trs.TryNumber.Set(1)
 
 	// Mark TaskToRun as claimed (this updates `trs` as well).
-	trs.ConsumeTaskToRun(ttr, op.ClaimID)
+	trs.ConsumeTaskToRun(ttr, op.ClaimID, now)
 
 	// Repopulate ServerVersions which was clobbered in TaskResultCommon
 	// assignment above. Note that TaskRunResult was touched only by one server
@@ -154,6 +158,8 @@ func (m *managerImpl) ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcom
 		onTaskToRunConsumed(ctx, ttr, trs, now)
 	})
 
-	// Store some state for reporting metrics in Finished.
-	return &ClaimOpOutcome{Claimed: true}, nil
+	return &ClaimOpOutcome{
+		Claimed:   true,
+		ClaimedAt: now,
+	}, nil
 }

@@ -244,7 +244,7 @@ func TestTaskResultSummary(t *testing.T) {
 		assert.That(t, trs.CurrentTaskSlice, should.Equal(int64(0)))
 		assert.That(t, trs.SliceExpiration.Get(), should.Match(testTime))
 
-		trs.ConsumeTaskToRun(ttr0, "claim-id")
+		trs.ConsumeTaskToRun(ttr0, "claim-id", testTime)
 		assert.That(t, trs.CurrentTaskSlice, should.Equal(int64(0)))
 		assert.That(t, trs.SliceExpiration.IsSet(), should.BeFalse)
 		assert.That(t, ttr0.ClaimID.Get(), should.Equal("claim-id"))

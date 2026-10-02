@@ -54,6 +54,7 @@ func TestClaimOp(t *testing.T) {
 
 	var (
 		testTime   = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+		beforeTime = testTime.Add(-time.Hour)
 		createTime = testTime.Add(-20 * time.Minute)
 	)
 
@@ -105,13 +106,15 @@ func TestClaimOp(t *testing.T) {
 		}
 		assert.NoErr(t, datastore.Put(ctx, req, trs))
 
-		createTTR := func(claimID *string) *datastore.Key {
+		createTTR := func(claimID *string, claimedAt time.Time) *datastore.Key {
 			var exp datastore.Optional[time.Time, datastore.Unindexed]
 			var clID datastore.Optional[string, datastore.Unindexed]
+			var clAt datastore.Optional[time.Time, datastore.Unindexed]
 			if claimID == nil {
 				exp.Set(testTime.Add(time.Hour))
 			} else {
 				clID.Set(*claimID)
+				clAt.Set(claimedAt)
 			}
 			ttr := &model.TaskToRun{
 				Key:        model.TaskToRunKey(ctx, reqKey, 1, model.TaskToRunID(1)),
@@ -119,6 +122,7 @@ func TestClaimOp(t *testing.T) {
 				Dimensions: dims,
 				Expiration: exp,
 				ClaimID:    clID,
+				ClaimedAt:  clAt,
 			}
 			assert.NoErr(t, datastore.Put(ctx, ttr))
 			return ttr.Key
@@ -152,9 +156,10 @@ func TestClaimOp(t *testing.T) {
 		}
 
 		t.Run("Success", func(t *ftt.Test) {
-			ttrKey := createTTR(nil)
+			ttrKey := createTTR(nil, time.Time{})
 			outcome := run(ttrKey)
 			assert.That(t, outcome.Claimed, should.BeTrue)
+			assert.That(t, outcome.ClaimedAt, should.Match(testTime))
 			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
 			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string{taskID}))
 
@@ -219,6 +224,7 @@ func TestClaimOp(t *testing.T) {
 				Created:    createTime,
 				Dimensions: dims,
 				ClaimID:    datastore.NewUnindexedOptional("bot:claim-id"),
+				ClaimedAt:  datastore.NewUnindexedOptional(testTime),
 			}))
 		})
 
@@ -226,6 +232,7 @@ func TestClaimOp(t *testing.T) {
 			// Note: skip calling createTTR, we want it missing.
 			outcome := run(model.TaskToRunKey(ctx, reqKey, 1, model.TaskToRunID(1)))
 			assert.That(t, outcome.Claimed, should.BeFalse)
+			assert.That(t, outcome.ClaimedAt, should.Match(time.Time{}))
 			assert.That(t, outcome.Unavailable, should.Equal("No such task"))
 			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string(nil)))
 			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string(nil)))
@@ -233,17 +240,19 @@ func TestClaimOp(t *testing.T) {
 
 		t.Run("Expired TTR", func(t *ftt.Test) {
 			emptyClaimID := ""
-			outcome := run(createTTR(&emptyClaimID))
+			outcome := run(createTTR(&emptyClaimID, beforeTime))
 			assert.That(t, outcome.Claimed, should.BeFalse)
-			assert.That(t, outcome.Unavailable, should.Equal("The task slice has expired"))
+			assert.That(t, outcome.ClaimedAt, should.Match(time.Time{}))
+			assert.That(t, outcome.Unavailable, should.Equal("The task slice has expired or was cancelled"))
 			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string(nil)))
 			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string(nil)))
 		})
 
 		t.Run("Already claimed by us", func(t *ftt.Test) {
 			existingClaimID := "bot:claim-id"
-			outcome := run(createTTR(&existingClaimID))
+			outcome := run(createTTR(&existingClaimID, beforeTime))
 			assert.That(t, outcome.Claimed, should.BeFalse)
+			assert.That(t, outcome.ClaimedAt, should.Match(beforeTime))
 			assert.That(t, outcome.Unavailable, should.Equal(""))
 			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string(nil)))
 			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string(nil)))
@@ -251,8 +260,9 @@ func TestClaimOp(t *testing.T) {
 
 		t.Run("Already claimed by someone else", func(t *ftt.Test) {
 			existingClaimID := "bot:another-claim-id"
-			outcome := run(createTTR(&existingClaimID))
+			outcome := run(createTTR(&existingClaimID, beforeTime))
 			assert.That(t, outcome.Claimed, should.BeFalse)
+			assert.That(t, outcome.ClaimedAt, should.Match(time.Time{}))
 			assert.That(t, outcome.Unavailable, should.Equal(`Already claimed by "bot:another-claim-id"`))
 			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string(nil)))
 			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string(nil)))

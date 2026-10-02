@@ -56,8 +56,11 @@ func init() {
 func TestClaim(t *testing.T) {
 	t.Parallel()
 
-	var testTime = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
-	var idleSince = testTime.Add(-time.Hour)
+	var (
+		testTime   = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+		beforeTime = testTime.Add(-5 * time.Hour)
+		idleSince  = testTime.Add(-time.Hour)
+	)
 
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
@@ -75,28 +78,35 @@ func TestClaim(t *testing.T) {
 			Active: []byte("secret"),
 		})
 
+		taskProps := model.TaskProperties{
+			ExecutionTimeoutSecs: 3600,
+			GracePeriodSecs:      300,
+		}
+
 		srv := BotAPIServer{
 			cfg:        cfgtest.MockConfigs(ctx, cfgtest.NewMockedConfigs()),
 			hmacSecret: secret,
 			version:    "server-ver",
 		}
 
-		prepTask := func(dims model.TaskDimensions, claimID *string) (*model.TaskRequest, *model.TaskToRun) {
+		prepTask := func(dims model.TaskDimensions, claimID *string, claimedAt time.Time) (*model.TaskRequest, *model.TaskToRun) {
 			var claim datastore.Optional[string, datastore.Unindexed]
+			var cldAt datastore.Optional[time.Time, datastore.Unindexed]
 			var exp datastore.Optional[time.Time, datastore.Unindexed]
 			if claimID != nil {
 				claim.Set(*claimID)
+				cldAt.Set(claimedAt)
 			} else {
 				exp.Set(testTime.Add(time.Hour))
 			}
+			props := taskProps
+			props.Dimensions = dims
 			req := &model.TaskRequest{
 				Key:  reqKey,
 				Name: "task-name",
 				TaskSlices: []model.TaskSlice{
 					{
-						Properties: model.TaskProperties{
-							Dimensions: dims,
-						},
+						Properties: props,
 					},
 				},
 			}
@@ -105,6 +115,7 @@ func TestClaim(t *testing.T) {
 				Dimensions: dims,
 				Expiration: exp,
 				ClaimID:    claim,
+				ClaimedAt:  cldAt,
 			}
 			assert.NoErr(t, datastore.Put(ctx, req, ttr))
 			return req, ttr
@@ -131,6 +142,18 @@ func TestClaim(t *testing.T) {
 				return nil, err
 			}
 			return resp.(*ClaimResponse), nil
+		}
+
+		sessionCfgExp := func(session []byte) time.Time {
+			pb, err := botsession.Unmarshal(session, secret)
+			if err != nil {
+				panic(err)
+			}
+			return pb.BotConfig.Expiry.AsTime()
+		}
+
+		expectedCfgExp := func(claimedAt time.Time) time.Time {
+			return claimedAt.Add(maxPossibleTaskRuntime(&taskProps))
 		}
 
 		t.Run("Bad request", func(t *ftt.Test) {
@@ -170,7 +193,7 @@ func TestClaim(t *testing.T) {
 		})
 
 		t.Run("Dimensions mismatch", func(t *ftt.Test) {
-			prepTask(model.TaskDimensions{"pool": {"another-pool"}}, nil)
+			prepTask(model.TaskDimensions{"pool": {"another-pool"}}, nil, time.Time{})
 			resp, err := call(&ClaimRequest{
 				ClaimID:        "new-claim-id",
 				TaskID:         taskID,
@@ -186,7 +209,7 @@ func TestClaim(t *testing.T) {
 
 		t.Run("Expired", func(t *ftt.Test) {
 			existingClaimID := "" // means the slice expired
-			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, &existingClaimID)
+			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, &existingClaimID, beforeTime)
 			resp, err := call(&ClaimRequest{
 				ClaimID:        "new-claim-id",
 				TaskID:         taskID,
@@ -196,13 +219,13 @@ func TestClaim(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.That(t, resp, should.Match(&ClaimResponse{
 				Cmd:    ClaimSkip,
-				Reason: "The task slice has expired",
+				Reason: "The task slice has expired or was cancelled",
 			}))
 		})
 
 		t.Run("Claimed by someone else", func(t *ftt.Test) {
 			existingClaimID := "another-bot:new-claim-id"
-			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, &existingClaimID)
+			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, &existingClaimID, beforeTime)
 			resp, err := call(&ClaimRequest{
 				ClaimID:        "new-claim-id",
 				TaskID:         taskID,
@@ -218,7 +241,7 @@ func TestClaim(t *testing.T) {
 
 		t.Run("Claimed by us already", func(t *ftt.Test) {
 			existingClaimID := "bot-id:new-claim-id"
-			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, &existingClaimID)
+			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, &existingClaimID, beforeTime)
 			resp, err := call(&ClaimRequest{
 				ClaimID:        "new-claim-id",
 				TaskID:         taskID,
@@ -232,8 +255,10 @@ func TestClaim(t *testing.T) {
 				TaskID:  runID,
 				Session: resp.Session,
 				Manifest: &TaskManifest{
-					TaskID:     runID,
-					Dimensions: model.TaskDimensions{"pool": {"bot-pool"}},
+					TaskID:          runID,
+					Dimensions:      model.TaskDimensions{"pool": {"bot-pool"}},
+					GracePeriodSecs: taskProps.GracePeriodSecs,
+					HardTimeoutSecs: taskProps.ExecutionTimeoutSecs,
 					ServiceAccounts: TaskServiceAccounts{
 						System: TaskServiceAccount{ServiceAccount: "none"},
 						Task:   TaskServiceAccount{ServiceAccount: "none"},
@@ -243,6 +268,7 @@ func TestClaim(t *testing.T) {
 					BotAuthenticatedAs: "bot:bot-id",
 				},
 			}))
+			assert.That(t, sessionCfgExp(resp.Session), should.Match(expectedCfgExp(beforeTime)))
 		})
 
 		t.Run("Claim txn OK", func(t *ftt.Test) {
@@ -272,7 +298,7 @@ func TestClaim(t *testing.T) {
 				},
 			}
 
-			req, ttr := prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil)
+			req, ttr := prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil, time.Time{})
 			resp, err := call(&ClaimRequest{
 				ClaimID:        "new-claim-id",
 				TaskID:         taskID,
@@ -287,6 +313,7 @@ func TestClaim(t *testing.T) {
 				Session:  resp.Session,
 				Manifest: resp.Manifest,
 			}))
+			assert.That(t, sessionCfgExp(resp.Session), should.Match(expectedCfgExp(testTime)))
 
 			botInfoUpdate.TasksManager = nil // non-comparable
 			assert.That(t, botInfoUpdate, should.Match(&botinfo.Update{
@@ -341,7 +368,7 @@ func TestClaim(t *testing.T) {
 				},
 			}
 
-			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil)
+			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil, time.Time{})
 			resp, err := call(&ClaimRequest{
 				ClaimID:        "new-claim-id",
 				TaskID:         taskID,
@@ -374,11 +401,14 @@ func TestClaim(t *testing.T) {
 
 			srv.tasksManager = &tasks.MockedManager{
 				ClaimTxnMock: func(ctx context.Context, op *tasks.ClaimOp) (*tasks.ClaimOpOutcome, error) {
-					return &tasks.ClaimOpOutcome{}, nil
+					return &tasks.ClaimOpOutcome{
+						Claimed:   false,      // was already claimed by us
+						ClaimedAt: beforeTime, // at this time
+					}, nil
 				},
 			}
 
-			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil)
+			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil, time.Time{})
 			resp, err := call(&ClaimRequest{
 				ClaimID:        "new-claim-id",
 				TaskID:         taskID,
@@ -392,6 +422,7 @@ func TestClaim(t *testing.T) {
 				Session:  resp.Session,
 				Manifest: resp.Manifest,
 			}))
+			assert.That(t, sessionCfgExp(resp.Session), should.Match(expectedCfgExp(beforeTime)))
 		})
 	})
 }
@@ -635,6 +666,14 @@ func TestClaimTaskResponse(t *testing.T) {
 	})
 
 	t.Run("Minimal", func(t *testing.T) {
+		claimedAt := testTime.Add(-2 * time.Hour)
+
+		taskProps := model.TaskProperties{
+			Dimensions:           model.TaskDimensions{"pool": {"some-pool"}},
+			ExecutionTimeoutSecs: 120,
+			GracePeriodSecs:      15,
+		}
+
 		resp := call(&claimDetails{
 			req: &model.TaskRequest{
 				Key: reqKey,
@@ -642,14 +681,11 @@ func TestClaimTaskResponse(t *testing.T) {
 					{Properties: model.TaskProperties{
 						Dimensions: model.TaskDimensions{"skip": {"this"}},
 					}},
-					{Properties: model.TaskProperties{
-						Dimensions:           model.TaskDimensions{"pool": {"some-pool"}},
-						ExecutionTimeoutSecs: 120,
-						GracePeriodSecs:      15,
-					}},
+					{Properties: taskProps},
 				},
 			},
-			slice: 1,
+			claimedAt: claimedAt,
+			slice:     1,
 		})
 		assert.That(t, resp, should.Match(&ClaimResponse{
 			Cmd:     ClaimRun,
@@ -657,9 +693,9 @@ func TestClaimTaskResponse(t *testing.T) {
 			Session: resp.Session,
 			Manifest: &TaskManifest{
 				TaskID:          runID,
-				Dimensions:      model.TaskDimensions{"pool": {"some-pool"}},
-				GracePeriodSecs: 15,
-				HardTimeoutSecs: 120,
+				Dimensions:      taskProps.Dimensions,
+				GracePeriodSecs: taskProps.GracePeriodSecs,
+				HardTimeoutSecs: taskProps.ExecutionTimeoutSecs,
 				ServiceAccounts: TaskServiceAccounts{
 					System: TaskServiceAccount{ServiceAccount: "system@example.com"},
 					Task:   TaskServiceAccount{ServiceAccount: "none"},
@@ -682,7 +718,7 @@ func TestClaimTaskResponse(t *testing.T) {
 			BotConfig: &internalspb.BotConfig{
 				SystemServiceAccount: "system@example.com",
 				LogsCloudProject:     "logs-project",
-				Expiry:               timestamppb.New(testTime.Add(120*time.Second + 15*time.Second + 300*time.Second)),
+				Expiry:               timestamppb.New(claimedAt.Add(maxPossibleTaskRuntime(&taskProps))),
 			},
 			DebugInfo: &internalspb.DebugInfo{
 				Created:         timestamppb.New(testTime),

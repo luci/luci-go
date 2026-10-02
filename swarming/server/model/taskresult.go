@@ -407,11 +407,12 @@ func NewTaskResultSummary(ctx context.Context, req *TaskRequest, serverVersion s
 // for execution by a bot, canceling or expiring).
 //
 // This mutates both `trs` and `ttr`.
-func (trs *TaskResultSummary) ConsumeTaskToRun(ttr *TaskToRun, claimID string) {
+func (trs *TaskResultSummary) ConsumeTaskToRun(ttr *TaskToRun, claimID string, now time.Time) {
 	trs.assertCanTouchTaskToRun(ttr)
 
 	// The actual change.
 	ttr.ClaimID = datastore.NewUnindexedOptional(claimID)
+	ttr.ClaimedAt = datastore.NewUnindexedOptional(now)
 	ttr.Expiration.Unset()
 
 	trs.syncToTaskToRun(ttr)

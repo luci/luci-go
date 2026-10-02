@@ -106,6 +106,9 @@ type TaskToRun struct {
 	// Never gets unset once set.
 	ClaimID datastore.Optional[string, datastore.Unindexed] `gae:"claim_id"`
 
+	// ClaimedAt is when ClaimID was set.
+	ClaimedAt datastore.Optional[time.Time, datastore.Unindexed] `gae:"claimed_at"`
+
 	// RetryCount is increased when resubmitting an RBE reservation if the
 	// previous one failed before the TaskToRun was claimed.
 	RetryCount int64 `gae:"retry_count,noindex"`

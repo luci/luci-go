@@ -311,7 +311,7 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 	if !ttr.IsReapable() {
 		switch existing := ttr.ClaimID.Get(); {
 		case existing == "":
-			return srv.claimSkipped(ctx, ttr, "The task slice has expired")
+			return srv.claimSkipped(ctx, ttr, "The task slice has expired or was cancelled")
 		case existing != claimID:
 			return srv.claimSkipped(ctx, ttr, "Already claimed by %q", existing)
 		}
@@ -393,16 +393,18 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 	if outcome.Unavailable != "" {
 		return srv.claimSkipped(ctx, ttr, outcome.Unavailable)
 	}
+	details.claimedAt = outcome.ClaimedAt
 	return srv.claimTask(ctx, details, r)
 }
 
 // claimDetails are fetched before hitting heavy transactions.
 type claimDetails struct {
-	req      *model.TaskRequest
-	slice    int
-	secret   []byte
-	caches   []TaskCache
-	settings *configpb.SettingsCfg
+	req       *model.TaskRequest
+	claimedAt time.Time
+	slice     int
+	secret    []byte
+	caches    []TaskCache
+	settings  *configpb.SettingsCfg
 }
 
 // fetchClaimDetails fetches information about the task slice and named caches.
@@ -417,7 +419,10 @@ func (srv *BotAPIServer) fetchClaimDetails(ctx context.Context, ttr *model.TaskT
 		return nil, errors.Fmt("fetching TaskRequest: %w", err)
 	}
 	if req.IsTerminate() {
-		return &claimDetails{req: req}, nil
+		return &claimDetails{
+			req:       req,
+			claimedAt: ttr.ClaimedAt.Get(),
+		}, nil
 	}
 
 	if ttr.TaskSliceIndex() >= len(req.TaskSlices) {
@@ -476,11 +481,12 @@ func (srv *BotAPIServer) fetchClaimDetails(ctx context.Context, ttr *model.TaskT
 	}
 
 	return &claimDetails{
-		req:      req,
-		slice:    ttr.TaskSliceIndex(),
-		secret:   secret,
-		caches:   caches,
-		settings: cfg.Settings(),
+		req:       req,
+		claimedAt: ttr.ClaimedAt.Get(),
+		slice:     ttr.TaskSliceIndex(),
+		secret:    secret,
+		caches:    caches,
+		settings:  cfg.Settings(),
 	}, nil
 }
 
@@ -517,13 +523,23 @@ func (srv *BotAPIServer) claimTask(ctx context.Context, d *claimDetails, r *bots
 
 	// Bump the config expiration in the session to be long enough to outlive the
 	// task (with some fudge factor). This would allow the bot to finish the task
-	// even if it is removed from the configs midway through the execution.
+	// even if it is removed from the configs midway through the execution. Use
+	// ClaimedAt to make sure indefinitely retrying idempotent "/claim" calls
+	// doesn't bump the config expiry time.
 	//
+	// TODO: Remove fallback to `now` once TaskToRun.ClaimedAt is populated
+	// everywhere.
+	claimedAt := d.claimedAt
+	if claimedAt.IsZero() {
+		logging.Warningf(ctx, "CLAIMED_AT_FALLBACK: %s", taskID)
+		claimedAt = clock.Now(ctx)
+	}
+	completionDeadline := claimedAt.Add(maxPossibleTaskRuntime(props))
+
 	// TODO: Add a mechanism that ensures this expiry extension can't be abused
 	// by a malicious bot that was removed from config. Otherwise it can keep
 	// running tasks back-to-back forever, continuously bumping config expiry.
-	maxRuntimeSec := props.ExecutionTimeoutSecs + props.GracePeriodSecs + 300
-	r.Session.BotConfig.Expiry = timestamppb.New(clock.Now(ctx).Add(time.Second * time.Duration(maxRuntimeSec)))
+	r.Session.BotConfig.Expiry = timestamppb.New(completionDeadline)
 	r.Session.DebugInfo = botsession.DebugInfo(ctx, srv.version)
 	r.Session.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
 	session, err := botsession.Marshal(r.Session, srv.hmacSecret)
@@ -591,6 +607,13 @@ func (srv *BotAPIServer) claimTask(ctx context.Context, d *claimDetails, r *bots
 			BotAuthenticatedAs: auth.CurrentIdentity(ctx),
 		},
 	}, nil
+}
+
+// maxPossibleTaskRuntime is how long a task can theoretically run.
+//
+// Has some fudge factor added. It is an upper bound.
+func maxPossibleTaskRuntime(props *model.TaskProperties) time.Duration {
+	return time.Second * time.Duration(props.ExecutionTimeoutSecs+props.GracePeriodSecs+300)
 }
 
 // pick returns `t` if yes is true or nil otherwise.

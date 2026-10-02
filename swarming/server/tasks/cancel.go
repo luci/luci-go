@@ -162,7 +162,7 @@ func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model
 			return errors.Fmt("datastore error fetching TaskToRun for task %s: %w", op.taskID(), err)
 		}
 
-		trs.ConsumeTaskToRun(toRun, "")
+		trs.ConsumeTaskToRun(toRun, "", now)
 		toPut = append(toPut, toRun)
 
 		// Finalize ResultDB invocation

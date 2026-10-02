@@ -114,7 +114,7 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) (*E
 		delay := now.Sub(ttr.Expiration.Get()).Seconds()
 		ttr.ExpirationDelay.Set(max(0.0, delay))
 	}
-	trs.ConsumeTaskToRun(ttr, "")
+	trs.ConsumeTaskToRun(ttr, "", now)
 
 	// Create the next TaskToRun if there are more slices to run.
 	var newTTR *model.TaskToRun
