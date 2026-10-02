@@ -40,6 +40,7 @@ import {
   Node,
   FitViewOptions,
   Edge,
+  CoordinateExtent,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
@@ -473,6 +474,40 @@ function Graph() {
     return n;
   }, [nodes, selectedNodeId]);
 
+  // Constrain the panning viewport to the bounding box of the graph nodes (with padding).
+  // This prevents users from panning out into empty canvas space, automatically centers
+  // the graph when zoomed out, and prevents the MiniMap from inflating its bounding box
+  // to include empty void.
+  const translateExtent = useMemo<CoordinateExtent | undefined>(() => {
+    if (nodes.length === 0) return undefined;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const node of nodes) {
+      const x = node.position.x;
+      const y = node.position.y;
+      const w = node.measured?.width ?? node.initialWidth ?? 240;
+      const h = node.measured?.height ?? node.initialHeight ?? 32;
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + w);
+      maxY = Math.max(maxY, y + h);
+    }
+
+    // Comfortable margin so nodes aren't pressed directly against the screen edges
+    const PADDING_X = 300;
+    const PADDING_Y = 150;
+
+    return [
+      [minX - PADDING_X, minY - PADDING_Y],
+      [maxX + PADDING_X, maxY + PADDING_Y],
+    ];
+  }, [nodes]);
+
   return (
     <PanelGroup
       direction="horizontal"
@@ -509,11 +544,19 @@ function Graph() {
             fitView
             panOnScroll
             minZoom={0.1}
+            translateExtent={translateExtent}
             onlyRenderVisibleElements={true}
           >
             <Background />
             <Controls />
-            <MiniMap pannable zoomable />
+            <MiniMap
+              pannable
+              zoomable
+              nodeStrokeColor="var(--greyed-out-text-color)"
+              nodeStrokeWidth={50}
+              maskStrokeColor="var(--active-text-color)"
+              maskStrokeWidth={1}
+            />
             <ReactFlowPanel position="top-left">
               <Paper
                 elevation={2}
