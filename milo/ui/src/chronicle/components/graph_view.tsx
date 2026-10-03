@@ -60,6 +60,7 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { WorkflowType } from '../fake_turboci_graph';
 import { getNodeSearchIndex } from '../utils/check_utils';
+import { computeCriticalPath } from '../utils/critical_path';
 import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 // ?worker&url is special vite syntax to import a web worker script
 // and retrieve the URL to the script.
@@ -145,6 +146,7 @@ function Graph() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [showAssignmentEdges, setShowAssignmentEdges] = useState(false);
+  const [showCriticalPath, setShowCriticalPath] = useState(false);
   const [autoFitSelection, setAutoFitSelection] = useState(true);
   const [contextMenuState, setContextMenuState] = useState<
     ContextMenuState | undefined
@@ -157,6 +159,20 @@ function Graph() {
     nodes: ChronicleNode[];
     edges: Edge[];
   }>({ nodes: [], edges: [] });
+
+  const filteredGraph = useMemo(() => {
+    if (!graph || !showCriticalPath) {
+      return graph;
+    }
+
+    const criticalPathStageIds = computeCriticalPath(graph.stages);
+    return {
+      ...graph,
+      stages: graph.stages.filter(
+        (s) => s.identifier?.id && criticalPathStageIds.has(s.identifier.id),
+      ),
+    };
+  }, [graph, showCriticalPath]);
 
   // Track if we have applied the defaults for the current workflow.
   // Used to prevent overriding the graph (eg. collapsed/expanded nodes) after
@@ -175,7 +191,7 @@ function Graph() {
     groupModes,
     groupData,
     actions: groupActions,
-  } = useCollapsibleGroups(graph);
+  } = useCollapsibleGroups(filteredGraph);
 
   // While we're still using canned fake data, we need to re-initialize defaults
   // when changing workflow type.
@@ -185,12 +201,12 @@ function Graph() {
       hasInitializedDefaults.current = false;
       setSelectedNodeId(undefined);
     }
-  }, [workflowType, setSelectedNodeId]);
+  }, [workflowType, showCriticalPath, setSelectedNodeId]);
 
   // The graph layout algorithm is a performance bottleneck so use the Web Worker API
   // to perform this work in a background thread to prevent freezing the UI.
   useEffect(() => {
-    if (!graph) {
+    if (!filteredGraph) {
       return;
     }
 
@@ -200,7 +216,7 @@ function Graph() {
     });
 
     worker.postMessage({
-      graph,
+      graph: filteredGraph,
       valueDataMap,
       options: {
         showAssignmentEdges,
@@ -223,7 +239,7 @@ function Graph() {
     return () => {
       worker.terminate();
     };
-  }, [graph, valueDataMap, showAssignmentEdges, groupModes]);
+  }, [filteredGraph, valueDataMap, showAssignmentEdges, groupModes]);
 
   useDebounce(
     () => {
@@ -678,6 +694,17 @@ function Graph() {
                     <Typography variant="body2">
                       Fit View on Selection
                     </Typography>
+                  }
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={showCriticalPath}
+                      onChange={(e) => setShowCriticalPath(e.target.checked)}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2">Show Critical Path</Typography>
                   }
                 />
                 <Button

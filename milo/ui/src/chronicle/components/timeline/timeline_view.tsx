@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
+import { Box, FormControlLabel, Switch } from '@mui/material';
 import { DateTime } from 'luxon';
 import {
   useMemo,
@@ -28,6 +28,7 @@ import {
   getStageLabel,
   getStageResultStatus,
 } from '@/chronicle/utils/check_utils';
+import { computeCriticalPath } from '@/chronicle/utils/critical_path';
 import { getBaseNodeId } from '@/chronicle/utils/id/get_base_node_id';
 import { parseTimestamp } from '@/chronicle/utils/time_utils';
 import {
@@ -74,6 +75,8 @@ function TimelineView() {
     useContext(ChronicleContext);
 
   const [containerRef, containerWidth] = useContainerWidth();
+
+  const [showCriticalPath, setShowCriticalPath] = useState(false);
 
   const bodyWidth = useMemo(
     () =>
@@ -142,6 +145,15 @@ function TimelineView() {
     };
   }, [graph, valueDataMap]);
 
+  // Filters the displayed stage rows when the critical path toggle is active.
+  const visibleItems = useMemo(() => {
+    if (!showCriticalPath) return items;
+    const criticalPathIds = computeCriticalPath(
+      items.map((item) => item.stage),
+    );
+    return items.filter((item) => criticalPathIds.has(item.id));
+  }, [items, showCriticalPath]);
+
   const baseSelectedNodeId = useMemo(
     () => getBaseNodeId(selectedNodeId, { includePrefix: false }),
     [selectedNodeId],
@@ -170,10 +182,20 @@ function TimelineView() {
     >
       <Panel minSize={30} style={{ overflowY: 'visible', overflowX: 'clip' }}>
         <Box ref={containerRef} sx={{ p: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={showCriticalPath}
+                onChange={(e) => setShowCriticalPath(e.target.checked)}
+              />
+            }
+            label="Show Critical Path"
+          />
           <Timeline
             startTime={timelineStart}
             endTime={timelineEnd}
-            itemCount={items.length}
+            itemCount={visibleItems.length}
             itemHeight={ROW_HEIGHT}
             sidePanelWidth={STAGE_COLUMN_WIDTH}
             bodyWidth={bodyWidth}
@@ -182,7 +204,7 @@ function TimelineView() {
             <TopAxis />
             <SidePanel
               content={(index) => {
-                const item = items[index];
+                const item = visibleItems[index];
                 const isSelected = item.id === baseSelectedNodeId;
                 return (
                   <StageRow
@@ -197,7 +219,7 @@ function TimelineView() {
             />
             <Body
               content={(index, xScale) => {
-                const item = items[index];
+                const item = visibleItems[index];
                 const isSelected = item.id === baseSelectedNodeId;
                 return (
                   <StageTimelineBar
