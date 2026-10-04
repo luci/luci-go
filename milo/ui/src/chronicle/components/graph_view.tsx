@@ -12,21 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Box,
-  Button,
-  Checkbox,
-  FormControl,
-  FormControlLabel,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Typography,
-  Snackbar,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
+import { Alert, Box, CircularProgress, Snackbar } from '@mui/material';
 import {
   ReactFlow,
   Background,
@@ -36,7 +22,6 @@ import {
   useEdgesState,
   ReactFlowProvider,
   useReactFlow,
-  Panel as ReactFlowPanel,
   Node,
   FitViewOptions,
   Edge,
@@ -52,13 +37,10 @@ import {
   useState,
 } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useNavigate, useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
-import { TURBO_CI_ENVIRONMENTS } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
-import { WorkflowType } from '../fake_turboci_graph';
 import { getNodeSearchIndex } from '../utils/check_utils';
 import { computeCriticalPath } from '../utils/critical_path';
 import { ChronicleNode, GroupMode } from '../utils/graph_builder';
@@ -68,12 +50,9 @@ import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 import graphWorkerUrl from '../utils/graph_worker?worker&url';
 import { getBaseNodeId } from '../utils/id';
 
-import {
-  ChronicleContext,
-  DEMO_ENVIRONMENT_NAME,
-  DEMO_WORKPLAN_ID,
-} from './context';
+import { ChronicleContext } from './context';
 import { ContextMenu, ContextMenuState } from './context_menu';
+import { GraphControlPanel } from './graph_control_panel';
 import { useCollapsibleGroups } from './hooks/use_collapsible_groups';
 import { InspectorPanel } from './inspector_panel/inspector_panel';
 
@@ -126,19 +105,12 @@ function getTrustedWorkerURL(url: string): TrustedScriptURL | URL | string {
 }
 
 function Graph() {
-  const navigate = useNavigate();
-  const { workplanId: urlWorkplanId } = useParams<{ workplanId: string }>();
   const {
-    workplanId,
     graph,
     valueDataMap,
     workflowType,
-    setWorkflowType,
     selectedNodeId,
     setSelectedNodeId,
-    activeEnvironment,
-    setActiveEnvironment,
-    foundEnvironments,
   } = useContext(ChronicleContext);
   const [nodes, setNodes, onNodesChange] = useNodesState<ChronicleNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -573,155 +545,19 @@ function Graph() {
               maskStrokeColor="var(--active-text-color)"
               maskStrokeWidth={1}
             />
-            <ReactFlowPanel position="top-left">
-              <Paper
-                elevation={2}
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 0,
-                  p: 1,
-                  borderRadius: 1,
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="Search nodes..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    // Clear selected node when searching
-                    if (e.target.value) {
-                      setSelectedNodeId(undefined);
-                    }
-                  }}
-                  style={{
-                    padding: '8px',
-                    width: '200px',
-                    marginBottom: '8px',
-                  }}
-                />
-                <FormControl fullWidth size="small" sx={{ mt: 2 }}>
-                  <InputLabel id="environment-select-label">
-                    Environment
-                  </InputLabel>
-                  <Select
-                    labelId="environment-select-label"
-                    id="environment-select"
-                    value={activeEnvironment || ''}
-                    label="Environment"
-                    onChange={(e) => {
-                      const environment = e.target.value;
-                      if (environment === DEMO_ENVIRONMENT_NAME) {
-                        const currentPath = window.location.pathname;
-                        const idToReplace = urlWorkplanId || workplanId;
-                        const newPath = currentPath.replace(
-                          new RegExp(`/chronicle/${idToReplace}(?=/|$)`),
-                          '/chronicle/' + DEMO_WORKPLAN_ID,
-                        );
-                        navigate(newPath);
-                      } else {
-                        setActiveEnvironment(environment);
-                      }
-                    }}
-                  >
-                    {[
-                      ...foundEnvironments.filter(
-                        (env) => env.environment !== DEMO_ENVIRONMENT_NAME,
-                      ),
-                      TURBO_CI_ENVIRONMENTS.find(
-                        (env) => env.environment === DEMO_ENVIRONMENT_NAME,
-                      ),
-                    ]
-                      .filter((env): env is NonNullable<typeof env> =>
-                        Boolean(env),
-                      )
-                      .map((env) => (
-                        <MenuItem key={env.host} value={env.environment}>
-                          {env.environment}
-                        </MenuItem>
-                      ))}
-                  </Select>
-                </FormControl>
-                {workplanId === DEMO_WORKPLAN_ID && (
-                  <FormControl fullWidth size="small" sx={{ mt: 2 }}>
-                    <InputLabel id="workflow-type-select-label">
-                      Workflow Type
-                    </InputLabel>
-                    <Select
-                      labelId="workflow-type-select-label"
-                      id="workflow-type-select"
-                      value={workflowType}
-                      label="Workflow Type"
-                      onChange={(e) =>
-                        setWorkflowType(e.target.value as WorkflowType)
-                      }
-                    >
-                      <MenuItem value={WorkflowType.ANDROID}>Android</MenuItem>
-                      <MenuItem value={WorkflowType.BROWSER}>Browser</MenuItem>
-                      <MenuItem value={WorkflowType.BROWSER_FUTURE}>
-                        Browser Future
-                      </MenuItem>
-                      <MenuItem
-                        value={WorkflowType.ANDROID_GIGANTIC_POSTSUBMIT}
-                      >
-                        Android Gigantic Postsubmit
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                )}
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={showAssignmentEdges}
-                      onChange={(e) => setShowAssignmentEdges(e.target.checked)}
-                    />
-                  }
-                  label={
-                    <Typography variant="body2">
-                      Show Assignment Edges
-                    </Typography>
-                  }
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={autoFitSelection}
-                      onChange={(e) => setAutoFitSelection(e.target.checked)}
-                    />
-                  }
-                  label={
-                    <Typography variant="body2">
-                      Fit View on Selection
-                    </Typography>
-                  }
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={showCriticalPath}
-                      onChange={(e) => setShowCriticalPath(e.target.checked)}
-                    />
-                  }
-                  label={
-                    <Typography variant="body2">Show Critical Path</Typography>
-                  }
-                />
-                <Button
-                  onClick={groupActions.collapseAllSuccessful}
-                  sx={{ mt: 1 }}
-                  size="small"
-                >
-                  Collapse Successful
-                </Button>
-                <Button onClick={groupActions.collapseAll} size="small">
-                  Collapse All
-                </Button>
-                <Button onClick={groupActions.expandAll} size="small">
-                  Expand All
-                </Button>
-              </Paper>
-            </ReactFlowPanel>
+            <GraphControlPanel
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              showAssignmentEdges={showAssignmentEdges}
+              onShowAssignmentEdgesChange={setShowAssignmentEdges}
+              autoFitSelection={autoFitSelection}
+              onAutoFitSelectionChange={setAutoFitSelection}
+              showCriticalPath={showCriticalPath}
+              onShowCriticalPathChange={setShowCriticalPath}
+              onCollapseAllSuccessful={groupActions.collapseAllSuccessful}
+              onCollapseAll={groupActions.collapseAll}
+              onExpandAll={groupActions.expandAll}
+            />
           </ReactFlow>
         </div>
         <ContextMenu
