@@ -112,6 +112,57 @@ func TestAbsoluteSchedule(t *testing.T) {
 	})
 }
 
+func TestExhaustedCronSchedule(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		expr string
+		now  time.Time
+		want time.Time
+	}{
+		{
+			name: "year-bounded schedule before final tick",
+			expr: "0 0 1 1 * 2020",
+			now:  time.Date(2019, time.December, 31, 0, 0, 0, 0, time.UTC),
+			want: time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "year-bounded schedule at final tick returns DistantFuture",
+			expr: "0 0 1 1 * 2020",
+			now:  time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC),
+			want: DistantFuture,
+		},
+		{
+			name: "year-bounded schedule after final year returns DistantFuture",
+			expr: "0 0 1 1 * 2020",
+			now:  time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC),
+			want: DistantFuture,
+		},
+		{
+			name: "7-field year-bounded schedule after final year returns DistantFuture",
+			expr: "0 0 0 15 6 * 2018",
+			now:  time.Date(2018, time.June, 15, 0, 0, 1, 0, time.UTC),
+			want: DistantFuture,
+		},
+		{
+			name: "unbounded cron schedule past 2099 horizon returns DistantFuture",
+			expr: "0 0 * * *",
+			now:  time.Date(2100, time.January, 1, 0, 0, 0, 0, time.UTC),
+			want: DistantFuture,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			sched, err := Parse(tc.expr, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sched.Next(tc.now, time.Time{}), should.Match(tc.want))
+		})
+	}
+}
+
 func TestRelativeSchedule(t *testing.T) {
 	t.Parallel()
 

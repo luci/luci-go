@@ -69,7 +69,10 @@ func (s *Schedule) Next(now, prev time.Time) time.Time {
 
 	// For an absolute schedule just look at the time table.
 	if s.cronExpr != nil {
-		return s.cronExpr.Next(now)
+		if next := s.cronExpr.Next(now); !next.IsZero() {
+			return next
+		}
+		return DistantFuture
 	}
 
 	// Using relative schedule and this is a first invocation ever? Randomize
