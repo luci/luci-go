@@ -49,6 +49,7 @@ import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 // eslint-disable-next-line import/default
 import graphWorkerUrl from '../utils/graph_worker?worker&url';
 import { getBaseNodeId } from '../utils/id';
+import { getTrustedWorkerURL } from '../utils/worker_utils';
 
 import { ChronicleContext } from './context';
 import { ContextMenu, ContextMenuState } from './context_menu';
@@ -58,35 +59,6 @@ import { useGraphHighlighting } from './hooks/use_graph_highlighting';
 import { InspectorPanel } from './inspector_panel/inspector_panel';
 
 const SELECTION_FIT_MAX_ZOOM = 0.7;
-
-let graphWorkerPolicy: TrustedTypePolicy;
-
-/**
- * Web Workers require a sanitized script URL via the Trusted Types API
- * in order to protect against things like XSS.
- */
-function getTrustedWorkerURL(url: string): TrustedScriptURL | URL | string {
-  if (typeof window === 'undefined') return url;
-
-  const tt = window.trustedTypes;
-  if (!tt) return url;
-
-  if (!graphWorkerPolicy) {
-    try {
-      graphWorkerPolicy = tt.createPolicy('chronicle-graph-worker', {
-        createScriptURL: (u: string) => u,
-      }) as TrustedTypePolicy;
-    } catch {
-      return url;
-    }
-  }
-
-  if (graphWorkerPolicy) {
-    return graphWorkerPolicy.createScriptURL(url.toString());
-  }
-
-  return url;
-}
 
 function Graph() {
   const {
