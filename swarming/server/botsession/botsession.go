@@ -317,37 +317,27 @@ func CheckSessionToken(ctx context.Context, tok []byte, secret *hmactoken.Secret
 	// inability to do so (if the bot was unregistered between the last "/poll"
 	// and "/claim" calls).
 	if dt := now.Sub(session.BotConfig.Expiry.AsTime()); dt > 0 {
-		logging.Warningf(ctx, "EXPIRED_BOT_CONFIG: %s ago", dt)
-		LogSession(ctx, session)
-		// TODO: Start returning this error.
-		// return session, status.Errorf(codes.Unauthenticated, "session config has expired %s ago", dt)
+		return session, status.Errorf(codes.Unauthenticated, "session config has expired %s ago", dt)
 	}
 
 	return session, nil
 }
 
 // CheckLastSyncTime returns an error if the config in the session is too old.
+//
+// This is called right before giving bot a task to execute. Healthy bots always
+// call "/bot/poll" between tasks to synchronize with the server config (among
+// other things) and they never have a stale config when picking up a new task.
 func CheckLastSyncTime(ctx context.Context, session *internalspb.Session) error {
 	synced := session.LastSyncTime
 	if synced == nil {
-		logging.Warningf(ctx, "CHECK_LAST_SYNC_TIME: %s: fallback on debug info", session.BotId)
-		synced = session.BotConfig.GetDebugInfo().GetCreated()
+		return status.Errorf(codes.FailedPrecondition, "no last_sync_time in the session")
 	}
-	if synced == nil {
-		logging.Warningf(ctx, "CHECK_LAST_SYNC_TIME: %s: no last sync time at all", session.BotId)
-		// TODO: Start returning an error.
-		return nil
-	}
-
 	age := clock.Now(ctx).Sub(synced.AsTime())
 	logging.Infof(ctx, "%s: Last config sync was %s ago", session.BotId, age)
 	if age > 30*time.Minute {
-		logging.Warningf(ctx, "CHECK_LAST_SYNC_TIME: %s: last sync time was too long ago: %s ago", session.BotId, age)
-		LogSession(ctx, session)
-		// TODO: Start returning an error.
-		return nil
+		return status.Errorf(codes.FailedPrecondition, "the config in the session is stale: last sync time was %s ago", age)
 	}
-
 	return nil
 }
 
