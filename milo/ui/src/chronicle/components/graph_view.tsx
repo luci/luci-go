@@ -54,24 +54,8 @@ import { ChronicleContext } from './context';
 import { ContextMenu, ContextMenuState } from './context_menu';
 import { GraphControlPanel } from './graph_control_panel';
 import { useCollapsibleGroups } from './hooks/use_collapsible_groups';
+import { useGraphHighlighting } from './hooks/use_graph_highlighting';
 import { InspectorPanel } from './inspector_panel/inspector_panel';
-
-// We must explicit set all top/right/bottom/left border properties here instead
-// of just setting "border" because React does not work well when mixing shorthand
-// and non-shorthand CSS properties.
-const HIGHLIGHTED_NODE_STYLE = {
-  borderTop: '2px solid #007bff',
-  borderRight: '2px solid #007bff',
-  borderBottom: '2px solid #007bff',
-  borderLeft: '2px solid #007bff',
-  boxShadow: '0 0 10px #007bff',
-};
-
-const HIGHLIGHTED_EDGE_STYLE = {
-  stroke: '#007bff',
-  strokeWidth: 3,
-  pointerEvents: 'none' as const,
-};
 
 const SELECTION_FIT_MAX_ZOOM = 0.7;
 
@@ -221,17 +205,40 @@ function Graph() {
     [searchQuery],
   );
 
-  // Unified effect for handling graph highlighting (both search and selection).
-  // Selection takes precedence over search.
+  const matchedNodeIds = useMemo(() => {
+    const query = debouncedSearchQuery.trim().toLocaleLowerCase();
+    if (!query) return [];
+    const matched: string[] = [];
+    for (const node of baseLayout.nodes) {
+      const indexText = getNodeSearchIndex(
+        node.id,
+        node.data.fullLabel,
+        node.data.view,
+        valueDataMap,
+      );
+      if (indexText.includes(query)) {
+        matched.push(node.id);
+      }
+    }
+    return matched;
+  }, [baseLayout.nodes, debouncedSearchQuery, valueDataMap]);
+
+  const { baseNodesMap } = useGraphHighlighting({
+    baseLayout,
+    effectiveSettledNodeId: selectedNodeId,
+    matchedNodeIds,
+    setNodes,
+    setEdges,
+  });
+
+  // Queue a fitView request when layout initializes, groups expand, or selection/search changes.
   useEffect(() => {
-    let nextNodes = baseLayout.nodes;
-    let nextEdges = baseLayout.edges;
     let nodesToFit: string[] = [];
 
     // Check if there is a pending focus request from an expand/collapse action.
     if (pendingFocusNodes.current && !selectedNodeId) {
       const targetsExist = pendingFocusNodes.current.every((id) =>
-        baseLayout.nodes.some((n) => n.id === id),
+        baseNodesMap.has(id),
       );
       if (targetsExist) {
         nodesToFit = pendingFocusNodes.current;
@@ -243,75 +250,16 @@ function Graph() {
       const baseNodeId = getBaseNodeId(selectedNodeId, {
         includePrefix: false,
       })!;
-      const relatedNodeIds = new Set<string>([baseNodeId]);
-      const relatedEdgeIds = new Set<string>();
-
-      // Find immediate neighbors and connecting edges
-      baseLayout.edges.forEach((edge) => {
-        if (edge.source === baseNodeId) {
-          relatedNodeIds.add(edge.target);
-          relatedEdgeIds.add(edge.id);
-        } else if (edge.target === baseNodeId) {
-          relatedNodeIds.add(edge.source);
-          relatedEdgeIds.add(edge.id);
-        }
-      });
-
-      // Highlight nodes
-      nextNodes = nextNodes.map((node) => {
-        if (relatedNodeIds.has(node.id)) {
-          return {
-            ...node,
-            style: { ...node.style, ...HIGHLIGHTED_NODE_STYLE },
-          };
-        }
-        return node;
-      });
-
-      // Highlight edges
-      nextEdges = nextEdges.map((edge) => {
-        if (relatedEdgeIds.has(edge.id)) {
-          return {
-            ...edge,
-            style: { ...edge.style, ...HIGHLIGHTED_EDGE_STYLE },
-            zIndex: 10, // Bring highlighted edges to front
-          };
-        }
-        return edge;
-      });
-
       // Only autofit on selection if the option is enabled.
       // Focus/center directly on the selected node to avoid positioning the viewport
       // in the empty space between nodes when neighbors are spaced far apart.
       if (autoFitSelection) {
         nodesToFit = [baseNodeId];
       }
-    } else if (debouncedSearchQuery) {
-      const query = debouncedSearchQuery.toLocaleLowerCase();
-      nextNodes = nextNodes.map((node) => {
-        const indexText = getNodeSearchIndex(
-          node.id,
-          node.data.fullLabel,
-          node.data.view,
-          valueDataMap,
-        );
-        const nodeMatch = indexText.includes(query);
-
-        if (nodeMatch) {
-          nodesToFit.push(node.id);
-          return {
-            ...node,
-            style: { ...node.style, ...HIGHLIGHTED_NODE_STYLE },
-          };
-        }
-        return node;
-      });
+    } else if (matchedNodeIds.length > 0) {
+      nodesToFit = matchedNodeIds;
     }
 
-    setNodes(nextNodes);
-    setEdges(nextEdges);
-
-    // Queue a fitView request.
     if (nodesToFit.length > 0) {
       pendingFitViewOptions.current = {
         nodes: nodesToFit.map((id) => ({ id })),
@@ -329,11 +277,9 @@ function Graph() {
     }
   }, [
     baseLayout,
+    baseNodesMap,
     selectedNodeId,
-    debouncedSearchQuery,
-    valueDataMap,
-    setNodes,
-    setEdges,
+    matchedNodeIds,
     autoFitSelection,
   ]);
 
@@ -355,9 +301,9 @@ function Graph() {
         }
       };
 
-      window.requestAnimationFrame(tryFitView);
+      void tryFitView();
     }
-  }, [nodes, fitView]);
+  }, [nodes, fitView, autoFitSelection, selectedNodeId]);
 
   // Use useCallback even with no dependencies to prevent React creating a new
   // function reference on every render.
@@ -453,14 +399,79 @@ function Graph() {
   );
 
   const selectedNode = useMemo(() => {
-    if (!nodes || nodes.length === 0) return;
-    const baseNodeId = getBaseNodeId(selectedNodeId, { includePrefix: false });
-    const n = nodes.find((n) => n.id === baseNodeId);
-    if (!n && !!selectedNodeId) {
+    if (!selectedNodeId || baseNodesMap.size === 0) return undefined;
+    const baseNodeId = getBaseNodeId(selectedNodeId, {
+      includePrefix: false,
+    });
+    return baseNodeId ? baseNodesMap.get(baseNodeId) : undefined;
+  }, [baseNodesMap, selectedNodeId]);
+
+  useEffect(() => {
+    if (
+      baseNodesMap.size > 0 &&
+      selectedNodeId &&
+      !selectedNodeId.startsWith('collapsed-group') &&
+      !selectedNode
+    ) {
       setErrorMessage(`Node "${selectedNodeId}" not found.`);
     }
-    return n;
-  }, [nodes, selectedNodeId]);
+  }, [baseNodesMap, selectedNodeId, selectedNode]);
+
+  const inspectorPanelElement = useMemo(() => {
+    if (
+      !selectedNodeId ||
+      selectedNodeId.startsWith('collapsed-group') ||
+      !selectedNode
+    ) {
+      return null;
+    }
+    return (
+      <>
+        <PanelResizeHandle>
+          <Box
+            sx={{
+              width: '8px',
+              height: '100%',
+              cursor: 'col-resize',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: 'action.hover',
+              '&:hover': { bgcolor: 'action.selected' },
+            }}
+          >
+            <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
+          </Box>
+        </PanelResizeHandle>
+        <Panel defaultSize={30} minSize={20}>
+          <InspectorPanel
+            nodeId={selectedNodeId}
+            viewData={selectedNode?.data?.view}
+            valueDataMap={valueDataMap}
+            onClose={onInspectorClose}
+          />
+        </Panel>
+      </>
+    );
+  }, [selectedNodeId, selectedNode, valueDataMap, onInspectorClose]);
+
+  const reactFlowStaticChildren = useMemo(
+    () => (
+      <>
+        <Background />
+        <Controls />
+        <MiniMap
+          pannable
+          zoomable
+          nodeStrokeColor="var(--greyed-out-text-color)"
+          nodeStrokeWidth={50}
+          maskStrokeColor="var(--active-text-color)"
+          maskStrokeWidth={1}
+        />
+      </>
+    ),
+    [],
+  );
 
   // Constrain the panning viewport to the bounding box of the graph nodes (with padding).
   // This prevents users from panning out into empty canvas space, automatically centers
@@ -535,16 +546,7 @@ function Graph() {
             translateExtent={translateExtent}
             onlyRenderVisibleElements={true}
           >
-            <Background />
-            <Controls />
-            <MiniMap
-              pannable
-              zoomable
-              nodeStrokeColor="var(--greyed-out-text-color)"
-              nodeStrokeWidth={50}
-              maskStrokeColor="var(--active-text-color)"
-              maskStrokeWidth={1}
-            />
+            {reactFlowStaticChildren}
             <GraphControlPanel
               searchQuery={searchQuery}
               onSearchQueryChange={setSearchQuery}
@@ -566,38 +568,7 @@ function Graph() {
           onSetGroupMode={handleGroupModeChange}
         />
       </Panel>
-      {selectedNodeId &&
-        !selectedNodeId.startsWith('collapsed-group') &&
-        selectedNode && (
-          <>
-            <PanelResizeHandle>
-              <Box
-                sx={{
-                  width: '8px',
-                  height: '100%',
-                  cursor: 'col-resize',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: 'action.hover',
-                  '&:hover': { bgcolor: 'action.selected' },
-                }}
-              >
-                <Box
-                  sx={{ width: '2px', height: '24px', bgcolor: 'divider' }}
-                />
-              </Box>
-            </PanelResizeHandle>
-            <Panel defaultSize={30} minSize={20}>
-              <InspectorPanel
-                nodeId={selectedNodeId}
-                viewData={selectedNode?.data?.view}
-                valueDataMap={valueDataMap}
-                onClose={onInspectorClose}
-              />
-            </Panel>
-          </>
-        )}
+      {inspectorPanelElement}
       <Snackbar
         open={!!errorMessage}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
