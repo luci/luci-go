@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	grpcStatus "google.golang.org/grpc/status"
@@ -5293,6 +5294,99 @@ func TestScheduleBuild(t *testing.T) {
 					})
 					_, merr := scheduleBuilds(ctx, reqs, nil)
 					assert.Loosely(t, merr.First(), should.BeNil)
+				})
+				t.Run("resultdb is_export_root", func(t *ftt.Test) {
+					bqExports := []*rdbPb.BigQueryExport{}
+					assert.Loosely(t, datastore.Put(ctx, &model.Builder{
+						Parent: model.BucketKey(ctx, "project", "bucket1"),
+						ID:     "builder_with_rdb",
+						Config: &pb.BuilderConfig{
+							Name:         "builder_with_rdb",
+							SwarmingHost: "host",
+							Resultdb: &pb.BuilderConfig_ResultDB{
+								Enable:    true,
+								BqExports: bqExports,
+							},
+						},
+					}), should.BeNil)
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAddAsChild),
+							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
+						),
+					})
+					ctl := gomock.NewController(t)
+					defer ctl.Finish()
+					mockRdbClient := rdbPb.NewMockRecorderClient(ctl)
+					ctx = resultdb.SetMockRecorder(ctx, mockRdbClient)
+					deadline := testclock.TestRecentTimeUTC.Add(time.Second * 10800).Add(time.Second * 21600)
+					ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+					mockRdbClient.EXPECT().CreateInvocation(gomock.Any(), luciCmProto.MatcherEqual(
+						&rdbPb.CreateInvocationRequest{
+							InvocationId: "build-9021868963222163313",
+							Invocation: &rdbPb.Invocation{
+								BigqueryExports:  bqExports,
+								ProducerResource: "//app.appspot.com/builds/9021868963222163313",
+								Realm:            "project:bucket1",
+								Deadline:         timestamppb.New(deadline),
+								IsExportRoot:     false,
+							},
+							RequestId: "build-9021868963222163313",
+						}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
+						h, _ := opt.(grpc.HeaderCallOption)
+						h.HeaderAddr.Set("update-token", "token-1")
+						return &rdbPb.Invocation{}, nil
+					})
+					mockRdbClient.EXPECT().CreateInvocation(gomock.Any(), luciCmProto.MatcherEqual(
+						&rdbPb.CreateInvocationRequest{
+							InvocationId: "build-9021868963222163297",
+							Invocation: &rdbPb.Invocation{
+								BigqueryExports:  bqExports,
+								ProducerResource: "//app.appspot.com/builds/9021868963222163297",
+								Realm:            "project:bucket1",
+								Deadline:         timestamppb.New(deadline),
+								IsExportRoot:     true,
+							},
+							RequestId: "build-9021868963222163297",
+						}), gomock.Any()).DoAndReturn(func(ctx context.Context, in *rdbPb.CreateInvocationRequest, opt grpc.CallOption) (*rdbPb.Invocation, error) {
+						h, _ := opt.(grpc.HeaderCallOption)
+						h.HeaderAddr.Set("update-token", "token-2")
+						return &rdbPb.Invocation{}, nil
+					})
+
+					rdbReqs := []*pb.ScheduleBuildRequest{
+						{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket1",
+								Builder: "builder_with_rdb",
+							},
+							ParentBuildId: 1,
+						},
+						{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket1",
+								Builder: "builder_with_rdb",
+							},
+							ParentBuildId: 2,
+							Resultdb: &pb.ScheduleBuildRequest_ResultDB{
+								IsExportRootOverride: true,
+							},
+						},
+					}
+					rsp, merr := scheduleBuilds(ctx, rdbReqs, nil)
+					assert.Loosely(t, merr.First(), should.BeNil)
+					assert.Loosely(t, rsp, should.HaveLength(2))
+					b0 := &model.Build{ID: rsp[0].Id}
+					b1 := &model.Build{ID: rsp[1].Id}
+					assert.Loosely(t, datastore.Get(ctx, b0, b1), should.BeNil)
+					assert.Loosely(t, b0.AncestorIds, should.Resemble([]int64{1}))
+					assert.Loosely(t, b0.ParentID, should.Equal(int64(1)))
+					assert.Loosely(t, b1.AncestorIds, should.Resemble([]int64{2}))
+					assert.Loosely(t, b1.ParentID, should.Equal(int64(2)))
 				})
 			})
 

@@ -183,7 +183,7 @@ func launchNative(ctx context.Context, reqs []*pb.ScheduleBuildRequest, builds [
 			resultDB: resultdb.CreateOptions{
 				// Build is an export root in ResultDB if it has no parent, or if
 				// explicitly requested.
-				IsExportRoot: len(builds[idx].AncestorIds) == 0 || req.GetResultdb().GetIsExportRootOverride(),
+				IsExportRoot: len(builds[idx].Proto.GetAncestorIds()) == 0 || req.GetResultdb().GetIsExportRootOverride(),
 			},
 		})
 	}
