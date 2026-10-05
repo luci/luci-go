@@ -1615,9 +1615,6 @@ func (a *Authenticator) authTokenInjector(req *http.Request) error {
 		}
 
 	case req.Response == nil || req.Response.Request.URL.Hostname() == req.URL.Hostname():
-		logging.Debugf(a.ctx, "luci/auth: authenticating request for %q",
-			req.URL.Hostname())
-
 		tok.SetAuthHeader(req)
 	}
 	return nil

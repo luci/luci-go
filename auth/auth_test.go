@@ -1250,7 +1250,7 @@ func TestRedirectStickyHosts(t *testing.T) {
 		},
 	}
 
-	t.Run("Redirect to same host preserves auth header and logs debug", func(t *testing.T) {
+	t.Run("Redirect to same host preserves auth header", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
 			case "/initial":
@@ -1265,9 +1265,6 @@ func TestRedirectStickyHosts(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		u, err := url.Parse(ts.URL)
-		assert.NoErr(t, err)
-
 		ctx := memlogger.Use(context.Background())
 		auth := NewAuthenticator(ctx, SilentLogin, Options{
 			testingCache:             &internal.MemoryTokenCache{},
@@ -1280,15 +1277,6 @@ func TestRedirectStickyHosts(t *testing.T) {
 		resp, err := client.Get(ts.URL + "/initial")
 		assert.NoErr(t, err)
 		defer resp.Body.Close()
-
-		ml := logging.Get(ctx).(*memlogger.MemLogger)
-		debugLogs := 0
-		for _, entry := range ml.Messages() {
-			if entry.Level == logging.Debug && entry.Msg == fmt.Sprintf("luci/auth: authenticating request for %q", u.Hostname()) {
-				debugLogs++
-			}
-		}
-		assert.That(t, debugLogs, should.Equal(2))
 	})
 
 	t.Run("Redirect to different host strips auth header", func(t *testing.T) {
