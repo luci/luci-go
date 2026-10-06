@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import LaunchIcon from '@mui/icons-material/Launch';
-import MenuIcon from '@mui/icons-material/Menu';
-import { Chip, styled, Tooltip, Typography } from '@mui/material';
+import { Chip, styled, Tooltip } from '@mui/material';
 import MuiDrawer from '@mui/material/Drawer';
 import MaterialLink from '@mui/material/Link';
 import List from '@mui/material/List';
@@ -80,7 +79,10 @@ export const Sidebar = ({ open }: { open: boolean }) => {
       open={open}
       role="complementary"
     >
-      <Toolbar variant="dense" sx={{ height: 64 }} />
+      <Toolbar
+        variant="dense"
+        sx={{ minHeight: 64, height: 64, flexShrink: 0 }}
+      />
       <List sx={{ mb: '40px', pt: 0 }}>
         {sidebarSections.map((sidebarSection) => (
           <Fragment key={sidebarSection.title}>
@@ -90,7 +92,24 @@ export const Sidebar = ({ open }: { open: boolean }) => {
             {sidebarSection.pages.map((sidebarPage) => {
               const button = (
                 <ListItemButton
-                  sx={{ px: 2.5 }}
+                  sx={{
+                    mx: 1,
+                    px: 1.5,
+                    borderRadius: '20px',
+                    '&.Mui-selected': {
+                      backgroundColor: colors.blue[50],
+                      color: colors.blue[800],
+                      '& .MuiListItemIcon-root': {
+                        color: colors.blue[800],
+                      },
+                      '& .MuiListItemText-primary': {
+                        fontWeight: 500,
+                      },
+                      '&:hover': {
+                        backgroundColor: colors.blue[100],
+                      },
+                    },
+                  }}
                   selected={sidebarPage.url === location.pathname}
                   component={sidebarPage.external ? MaterialLink : Link}
                   to={sidebarPage.url}
@@ -157,17 +176,6 @@ export const Sidebar = ({ open }: { open: boolean }) => {
             })}
           </Fragment>
         ))}
-
-        <div style={{ margin: '40px 20px', color: colors.grey[600] }}>
-          <Typography variant="caption">
-            Click{' '}
-            <MenuIcon
-              fontSize="small"
-              style={{ position: 'relative', top: '5px' }}
-            />{' '}
-            above to hide this menu.
-          </Typography>
-        </div>
       </List>
     </Drawer>
   );
