@@ -612,9 +612,11 @@ func (srv *BotAPIServer) claimTask(ctx context.Context, d *claimDetails, r *bots
 
 // maxPossibleTaskRuntime is how long a task can theoretically run.
 //
-// Has some fudge factor added. It is an upper bound.
+// Has some huge fudge factor added. It is an upper bound. Apparently Swarming
+// bot doesn't respect the deadline or grace periods when "uninstalling named
+// caches" (which can take O(hour) for some reason).
 func maxPossibleTaskRuntime(props *model.TaskProperties) time.Duration {
-	return time.Second * time.Duration(props.ExecutionTimeoutSecs+props.GracePeriodSecs+300)
+	return time.Second*time.Duration(props.ExecutionTimeoutSecs+props.GracePeriodSecs) + 5*time.Hour
 }
 
 // pick returns `t` if yes is true or nil otherwise.
