@@ -12,11 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ExtensionOutlined, FeedbackOutlined } from '@mui/icons-material';
+import {
+  AutoAwesome,
+  ExtensionOutlined,
+  FeedbackOutlined,
+} from '@mui/icons-material';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Avatar, Button, IconButton, Tooltip, Typography } from '@mui/material';
+import {
+  Avatar,
+  Button,
+  Divider,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { Link } from 'react-router';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
@@ -64,16 +75,19 @@ export const Header = ({
         css={{
           display: 'flex',
           alignItems: 'center',
-          gap: 13,
+          gap: 12,
         }}
       >
         <IconButton
-          size="large"
+          size="medium"
           aria-label="menu"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           sx={{
             color: colors.grey[700],
-            padding: 0,
+            width: 40,
+            height: 40,
+            padding: '8px',
+            marginLeft: '-8px',
           }}
         >
           <MenuIcon />
@@ -104,43 +118,76 @@ export const Header = ({
         css={{
           display: 'flex',
           alignItems: 'center',
-          gap: 13,
+          gap: 4,
+          color: colors.grey[700],
+          '& .MuiIconButton-root': {
+            color: colors.grey[700],
+            width: 40,
+            height: 40,
+            padding: 8,
+          },
         }}
       >
-        <IconButton
-          onClick={() => window.open('http://go/fleet-console')}
-          aria-label="Fleet Console Documentation"
-        >
-          <Tooltip title="Fleet Console documentation">
-            <HelpOutlineOutlinedIcon sx={{ color: colors.grey[700] }} />
-          </Tooltip>
-        </IconButton>
-        <IconButton
-          onClick={() =>
-            window.open(
-              genFeedbackUrl({ bugComponent: FEEDBACK_BUGANIZER_BUG_ID }),
-            )
-          }
-          aria-label="Report a bug"
-        >
-          <Tooltip title="Report a bug">
-            <FeedbackOutlined sx={{ color: colors.grey[700] }} />
-          </Tooltip>
-        </IconButton>
-        <IconButton
-          onClick={() => window.open('http://go/fcon-feature')}
-          aria-label="Request a feature"
-        >
-          <Tooltip title="Request a feature">
-            <ExtensionOutlined sx={{ color: colors.grey[700] }} />
-          </Tooltip>
-        </IconButton>
+        <Tooltip title="Ask Captain Fin (AI assistant)">
+          <IconButton
+            onClick={() => window.open('http://go/captain-fin')}
+            aria-label="Ask Captain Fin (AI assistant)"
+          >
+            <AutoAwesome />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Fleet Console documentation">
+          <IconButton
+            onClick={() => window.open('http://go/fleet-console')}
+            aria-label="Fleet Console documentation"
+          >
+            <HelpOutlineOutlinedIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Report a bug">
+          <IconButton
+            onClick={() =>
+              window.open(
+                genFeedbackUrl({ bugComponent: FEEDBACK_BUGANIZER_BUG_ID }),
+              )
+            }
+            aria-label="Report a bug"
+          >
+            <FeedbackOutlined />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Request a feature">
+          <IconButton
+            onClick={() => window.open('http://go/fcon-feature')}
+            aria-label="Request a feature"
+          >
+            <ExtensionOutlined />
+          </IconButton>
+        </Tooltip>
         <AvailableFlags />
         <SettingsMenu />
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
+            height: 24,
+            alignSelf: 'center',
+            mx: '8px',
+            borderColor: colors.grey[300],
+          }}
+        />
         {!authState.identity || authState.identity === ANONYMOUS_IDENTITY ? (
           <Button
             variant="text"
-            sx={{ color: colors.grey[700], padding: 0, marign: 0 }}
+            sx={{
+              color: colors.grey[700],
+              px: 1.5,
+              py: 0.75,
+              margin: 0,
+              borderRadius: '9999px',
+              textTransform: 'none',
+              fontWeight: 500,
+            }}
             href={getLoginUrl(
               location.pathname + location.search + location.hash,
             )}
@@ -169,6 +216,7 @@ function LoggedInAvatar({
         sx={{
           width: 32,
           height: 32,
+          mx: '4px',
         }}
         alt={email}
         src={picture}
@@ -183,7 +231,6 @@ function LoggedInAvatar({
             location.pathname + location.search + location.hash,
           )}
           sx={{
-            color: colors.grey[700],
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',

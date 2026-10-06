@@ -82,4 +82,39 @@ describe('Header', () => {
     const logoLink = screen.getByRole('link', { name: /logo/i });
     expect(logoLink).toHaveAttribute('href', '/ui/fleet/');
   });
+
+  it('renders Ask Captain Fin button and opens Captain Fin link when clicked', () => {
+    const windowOpenSpy = jest
+      .spyOn(window, 'open')
+      .mockImplementation(() => null);
+    (useAuthState as jest.Mock).mockReturnValue({
+      identity: ANONYMOUS_IDENTITY,
+    });
+    render(
+      <ShortcutProvider>
+        <FakeContextProvider>
+          <Header sidebarOpen={false} setSidebarOpen={() => {}} />
+        </FakeContextProvider>
+      </ShortcutProvider>,
+    );
+
+    const captainFinBtn = screen.getByRole('button', {
+      name: 'Ask Captain Fin (AI assistant)',
+    });
+    expect(captainFinBtn).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Fleet Console documentation' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Report a bug' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Request a feature' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('separator')).toBeInTheDocument();
+
+    captainFinBtn.click();
+    expect(windowOpenSpy).toHaveBeenCalledWith('http://go/captain-fin');
+    windowOpenSpy.mockRestore();
+  });
 });
