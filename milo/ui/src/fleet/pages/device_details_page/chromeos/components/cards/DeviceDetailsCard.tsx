@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Grid, Link, Typography } from '@mui/material';
+import { Grid, Typography } from '@mui/material';
 
 import { ResourceStateChip } from '@/fleet/components/chips/ResourceStateChip';
+import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 
 import { safeFormatDate } from '../../utils/formatters';
 import { CodeChip } from '../common/CodeChip';
@@ -78,7 +79,10 @@ export const DeviceDetailsCard = ({
       <Grid container spacing={2}>
         <PropertyField label="Hostname" value={hostname}>
           {hostname ? (
-            <CodeChip value={hostname} />
+            <CodeChip
+              value={hostname}
+              href={`https://${DEVICE_TASKS_SWARMING_HOST}/bot?id=cros-${hostname}`}
+            />
           ) : (
             <Typography variant="body2">N/A</Typography>
           )}
@@ -86,14 +90,10 @@ export const DeviceDetailsCard = ({
 
         <PropertyField label="Board" value={board}>
           {board ? (
-            <Link
+            <CodeChip
+              value={board}
               href={`http://go/dlm-board/${encodeURIComponent(board)}`}
-              target="_blank"
-              rel="noreferrer"
-              sx={{ textDecoration: 'none' }}
-            >
-              <CodeChip value={board} />
-            </Link>
+            />
           ) : (
             <Typography variant="body2">N/A</Typography>
           )}
@@ -105,14 +105,10 @@ export const DeviceDetailsCard = ({
 
         <PropertyField label="Model" value={model}>
           {model ? (
-            <Link
+            <CodeChip
+              value={model}
               href={`http://go/dlm-model/${encodeURIComponent(model)}`}
-              target="_blank"
-              rel="noreferrer"
-              sx={{ textDecoration: 'none' }}
-            >
-              <CodeChip value={model} />
-            </Link>
+            />
           ) : (
             <Typography variant="body2">N/A</Typography>
           )}

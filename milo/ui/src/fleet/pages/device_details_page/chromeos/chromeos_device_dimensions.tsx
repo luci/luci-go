@@ -10,29 +10,74 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
+// limitations under the License.
 
-import { Typography } from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
+import SearchIcon from '@mui/icons-material/Search';
+import {
+  Box,
+  IconButton,
+  InputAdornment,
+  TextField,
+  Typography,
+} from '@mui/material';
 import {
   MaterialReactTable,
   MRT_ColumnDef,
   MRT_Column,
   MRT_Cell,
 } from 'material-react-table';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { CellWithTooltip } from '@/fleet/components/table/cell_with_tooltip';
 import { BotInformation } from '@/fleet/pages/device_details_page/common/bot_information';
 import { BotState } from '@/fleet/pages/device_details_page/common/bot_state';
+import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
+import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
 import {
   getFieldDefinition,
   ChromeOSDevice,
   KnownChromeOSColumnId,
 } from '../../device_list_page/chromeos/chromeos_fields';
+
+const PRIORITY_TRIAGE_LABEL_KEYS = [
+  'servo_hostname',
+  'label-servo_hostname',
+  'servo_port',
+  'label-servo_port',
+  'servo_serial',
+  'label-servo_serial',
+  'servo_type',
+  'label-servo_type',
+  'label-servo_state',
+  'label-servo_usb_state',
+  'label-pool',
+  'label-board',
+  'label-model',
+  'label-phase',
+  'label-rpm_state',
+  'ufs_zone',
+  'label-zone',
+  'location_tag',
+  'dut_name',
+  'label-associated_hostname',
+];
+
+const PRIORITY_INDEX = new Map(
+  PRIORITY_TRIAGE_LABEL_KEYS.map((key, idx) => [key, idx]),
+);
+
+const CUSTOM_DIMENSION_IDS: KnownChromeOSColumnId[] = [
+  'dut_id',
+  'realm',
+  'state',
+  'dut_state',
+];
 
 interface ChromeOSDeviceDimensionsProps {
   device?: ChromeOSDevice;
@@ -41,16 +86,12 @@ interface ChromeOSDeviceDimensionsProps {
 export const ChromeOSDeviceDimensions = ({
   device,
 }: ChromeOSDeviceDimensionsProps) => {
-  const dimensionRows = useMemo(() => {
+  const [filterText, setFilterText] = useState('');
+
+  const allRows = useMemo(() => {
     if (!device) return [];
 
-    const customIds: KnownChromeOSColumnId[] = [
-      'dut_id',
-      'realm',
-      'state',
-      'dut_state',
-    ];
-    const custom = customIds.map((id) => ({
+    const custom = CUSTOM_DIMENSION_IDS.map((id) => ({
       id,
       value: String(getFieldDefinition(id).accessorFn(device) ?? ''),
     }));
@@ -58,7 +99,15 @@ export const ChromeOSDeviceDimensions = ({
     if (!device.deviceSpec) return custom;
 
     const labelRows = Object.keys(device.deviceSpec.labels)
-      .filter((key) => !(customIds as string[]).includes(key))
+      .filter((key) => !(CUSTOM_DIMENSION_IDS as string[]).includes(key))
+      .sort((a, b) => {
+        const pa = PRIORITY_INDEX.get(a);
+        const pb = PRIORITY_INDEX.get(b);
+        if (pa !== undefined && pb !== undefined) return pa - pb;
+        if (pa !== undefined) return -1;
+        if (pb !== undefined) return 1;
+        return a.localeCompare(b);
+      })
       .map((label) => ({
         id: label,
         value: device.deviceSpec!.labels[label].values,
@@ -66,6 +115,19 @@ export const ChromeOSDeviceDimensions = ({
 
     return [...custom, ...labelRows];
   }, [device]);
+
+  const dimensionRows = useMemo(() => {
+    const query = filterText.trim();
+    if (!query) return allRows;
+    return fuzzySort(query)(allRows, (row) => {
+      const valStr = Array.isArray(row.value)
+        ? labelValuesToString(row.value)
+        : String(row.value ?? '');
+      return `${row.id} ${valStr}`;
+    })
+      .filter((res) => res.score >= 0)
+      .map((res) => res.el);
+  }, [allRows, filterText]);
 
   const columns = useMemo<
     MRT_ColumnDef<{ id: string; value: string | readonly string[] }>[]
@@ -100,8 +162,6 @@ export const ChromeOSDeviceDimensions = ({
 
           const def = getFieldDefinition(fieldKey);
           if (def.renderCell && device) {
-            // Mock MRT objects for the dimensions view since we are rendering
-            // Device properties as rows in a key-value table.
             return def.renderCell({
               cell: {
                 getValue: () => value,
@@ -126,10 +186,10 @@ export const ChromeOSDeviceDimensions = ({
     [device],
   );
 
-  // TODO: Refactor these device dimensions tables to use shared styles.
   const table = useFCDataTable({
     columns,
     data: dimensionRows,
+    getRowId: (r) => r.id,
     enablePagination: false,
     enableColumnActions: false,
     enableSorting: false,
@@ -175,9 +235,63 @@ export const ChromeOSDeviceDimensions = ({
           dutId={device?.dutId || ''}
         />
 
-        <Typography variant="h5" sx={{ mt: 4 }}>
-          Device Dimensions
-        </Typography>
+        <Box
+          sx={{
+            mt: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Typography variant="h5">Device Dimensions</Typography>
+          <TextField
+            size="small"
+            placeholder="Filter dimensions by key or value..."
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            sx={{
+              minWidth: 300,
+              '& .MuiOutlinedInput-root': {
+                fontSize: 14,
+                minHeight: 36,
+                '& fieldset': {
+                  borderColor: colors.grey[300],
+                },
+                '&:hover fieldset': {
+                  borderColor: colors.grey[500],
+                },
+                '&:focus-within fieldset': {
+                  borderWidth: '1px !important',
+                },
+              },
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon
+                      sx={{ fontSize: 18, color: 'text.secondary' }}
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: filterText ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      aria-label="Clear filter"
+                      onClick={() => setFilterText('')}
+                      edge="end"
+                    >
+                      <ClearIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              },
+            }}
+          />
+        </Box>
         <div css={{ marginTop: 16 }}>
           <MaterialReactTable table={table} />
         </div>

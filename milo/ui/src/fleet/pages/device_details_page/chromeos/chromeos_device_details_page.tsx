@@ -13,10 +13,19 @@
 // limitations under the License.
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckIcon from '@mui/icons-material/Check';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { Alert, Box, IconButton, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  IconButton,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import Tab from '@mui/material/Tab';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
@@ -127,6 +136,7 @@ const useNavigatedFromLink = () => {
 export const ChromeOSDeviceDetailsPage = () => {
   const { id = '' } = useParams();
   const [deviceIdInputValue, setDeviceIdInputValue] = useState(id);
+  const [copiedHostname, setCopiedHostname] = useState(false);
   const navigatedFromLink = useNavigatedFromLink();
   const [selectedTab, setSelectedTab] = useTabs();
 
@@ -169,7 +179,6 @@ export const ChromeOSDeviceDetailsPage = () => {
           value={deviceIdInputValue}
           onChange={(event) => setDeviceIdInputValue(event.target.value)}
           slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
-          fullWidth
           onBlur={(e) => {
             navigateToDeviceIfChanged(e.target.value);
           }}
@@ -251,7 +260,6 @@ export const ChromeOSDeviceDetailsPage = () => {
           value={deviceIdInputValue}
           onChange={(event) => setDeviceIdInputValue(event.target.value)}
           slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
-          fullWidth
           onBlur={(e) => {
             navigateToDeviceIfChanged(e.target.value);
           }}
@@ -262,6 +270,26 @@ export const ChromeOSDeviceDetailsPage = () => {
             }
           }}
         />
+        <Tooltip title={copiedHostname ? 'Copied!' : 'Copy device hostname'}>
+          <IconButton
+            aria-label="Copy device hostname"
+            size="small"
+            onClick={() => {
+              navigator.clipboard?.writeText(id || '');
+              setCopiedHostname(true);
+              setTimeout(() => setCopiedHostname(false), 1500);
+            }}
+            sx={{
+              color: copiedHostname ? 'success.main' : 'text.secondary',
+            }}
+          >
+            {copiedHostname ? (
+              <CheckIcon fontSize="small" />
+            ) : (
+              <ContentCopyIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Tooltip>
       </div>
       <>
         {device === undefined && (
