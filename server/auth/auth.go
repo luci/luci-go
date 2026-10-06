@@ -609,7 +609,7 @@ func checkClientID(ctx context.Context, cfg *Config, db authdb.DB, email, client
 		}
 	}
 
-	logging.Errorf(ctx, "auth: %q is using client_id %q not in the allowlist", email, clientID)
+	logging.Infof(ctx, "auth: %q is using client_id %q not in the allowlist", email, clientID)
 	return ErrBadClientID
 }
 
