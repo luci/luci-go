@@ -17,6 +17,7 @@ package commitingester
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
@@ -103,6 +104,12 @@ const (
 	//   by the sync-commits cron job.
 	firstTaskPageSize   = 100
 	regularTaskPageSize = 1000
+
+	// gitilesRPCTimeout is the timeout for a single Gitiles Log RPC call.
+	// A shorter timeout than the 10-minute AppEngine task request deadline
+	// prevents stalled Gitiles requests from occupying limited task queue
+	// concurrency slots for the full 10 minutes.
+	gitilesRPCTimeout = time.Minute
 )
 
 func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits) error {
@@ -128,7 +135,9 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 		PageToken:  task.PageToken,
 		PageSize:   pageSize,
 	}
-	res, err := client.Log(ctx, req)
+	logCtx, cancel := context.WithTimeout(ctx, gitilesRPCTimeout)
+	defer cancel()
+	res, err := client.Log(logCtx, req)
 	if err != nil {
 		return errors.Fmt("query Gitiles logs: %w", grpcutil.WrapIfTransient(err))
 	}
