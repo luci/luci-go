@@ -304,6 +304,286 @@ func TestFailureDetection(t *testing.T) {
 			assert.Loosely(t, firstFailedBuild, should.BeNil)
 			assert.Loosely(t, err, should.NotBeNil)
 		})
+
+		t.Run("Versioned tag builds out-of-order resolution", func(t *ftt.Test) {
+			// Builds in chronological order (newest to oldest):
+			// #102: 150.0.7000.1 (SUCCESS)
+			// #101: 151.0.7001.0 (SUCCESS)
+			// #100: 150.0.7000.0 (SUCCESS)
+			res := &buildbucketpb.SearchBuildsResponse{
+				Builds: []*buildbucketpb.Build{
+					{
+						Id:     102,
+						Status: buildbucketpb.Status_SUCCESS,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/150.0.7000.1",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+					{
+						Id:     101,
+						Status: buildbucketpb.Status_SUCCESS,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/151.0.7001.0",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+					{
+						Id:     100,
+						Status: buildbucketpb.Status_SUCCESS,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/150.0.7000.0",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+				},
+			}
+			mc.Client.EXPECT().SearchBuilds(
+				gomock.Any(), gomock.Any(), gomock.Any(),
+			).Return(res, nil).Times(1)
+
+			refBuild := &buildbucketpb.Build{
+				Id:     103,
+				Status: buildbucketpb.Status_FAILURE,
+				Input: &buildbucketpb.Build_Input{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Ref: "refs/tags/151.0.7002.0",
+					},
+				},
+			}
+			lastPassed, firstFailed, err := getLastPassedFirstFailedBuilds(
+				c, refBuild,
+			)
+			assert.Loosely(t, err, should.BeNil)
+			// Should pick #101 (151.0.7001.0) instead of #102 (150.0.7000.1)
+			assert.Loosely(t, lastPassed.Id, should.Equal(101))
+			assert.Loosely(t, firstFailed.Id, should.Equal(103))
+		})
+
+		t.Run("Versioned tag failure on older branch", func(t *ftt.Test) {
+			res := &buildbucketpb.SearchBuildsResponse{
+				Builds: []*buildbucketpb.Build{
+					{
+						Id:     101,
+						Status: buildbucketpb.Status_SUCCESS,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/151.0.7001.0",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+					{
+						Id:     100,
+						Status: buildbucketpb.Status_SUCCESS,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/150.0.7000.0",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+				},
+			}
+			mc.Client.EXPECT().SearchBuilds(
+				gomock.Any(), gomock.Any(), gomock.Any(),
+			).Return(res, nil).Times(1)
+
+			refBuild := &buildbucketpb.Build{
+				Id:     102,
+				Status: buildbucketpb.Status_FAILURE,
+				Input: &buildbucketpb.Build_Input{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Ref: "refs/tags/150.0.7000.1",
+					},
+				},
+			}
+			lastPassed, firstFailed, err := getLastPassedFirstFailedBuilds(
+				c, refBuild,
+			)
+			assert.Loosely(t, err, should.BeNil)
+			// Nearest smaller for 150.0.7000.1 is 150.0.7000.0 (#100)
+			assert.Loosely(t, lastPassed.Id, should.Equal(100))
+			assert.Loosely(t, firstFailed.Id, should.Equal(102))
+		})
+
+		t.Run("Versioned tag retry on same version", func(t *ftt.Test) {
+			res := &buildbucketpb.SearchBuildsResponse{
+				Builds: []*buildbucketpb.Build{
+					{
+						Id:     103,
+						Status: buildbucketpb.Status_FAILURE,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/151.0.7002.0",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_FAILURE,
+							},
+						},
+					},
+					{
+						Id:     101,
+						Status: buildbucketpb.Status_SUCCESS,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/151.0.7001.0",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+				},
+			}
+			mc.Client.EXPECT().SearchBuilds(
+				gomock.Any(), gomock.Any(), gomock.Any(),
+			).Return(res, nil).Times(1)
+
+			refBuild := &buildbucketpb.Build{
+				Id:     104,
+				Status: buildbucketpb.Status_FAILURE,
+				Input: &buildbucketpb.Build_Input{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Ref: "refs/tags/151.0.7002.0",
+					},
+				},
+			}
+			lastPassed, firstFailed, err := getLastPassedFirstFailedBuilds(
+				c, refBuild,
+			)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lastPassed.Id, should.Equal(101))
+			// #103 was an earlier failed attempt on the same version
+			assert.Loosely(t, firstFailed.Id, should.Equal(103))
+		})
+
+		t.Run("Versioned tag no smaller version found", func(t *ftt.Test) {
+			res := &buildbucketpb.SearchBuildsResponse{
+				Builds: []*buildbucketpb.Build{
+					{
+						Id:     99,
+						Status: buildbucketpb.Status_SUCCESS,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/151.0.7001.0",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+				},
+			}
+			mc.Client.EXPECT().SearchBuilds(
+				gomock.Any(), gomock.Any(), gomock.Any(),
+			).Return(res, nil).Times(1)
+
+			refBuild := &buildbucketpb.Build{
+				Id:     100,
+				Status: buildbucketpb.Status_FAILURE,
+				Input: &buildbucketpb.Build_Input{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Ref: "refs/tags/150.0.7000.0",
+					},
+				},
+			}
+			_, _, err := getLastPassedFirstFailedBuilds(c, refBuild)
+			assert.Loosely(t, err, should.NotBeNil)
+		})
+
+		t.Run("Versioned tag ignores build without successful compile step", func(t *ftt.Test) {
+			res := &buildbucketpb.SearchBuildsResponse{
+				Builds: []*buildbucketpb.Build{
+					{
+						Id:     103,
+						Status: buildbucketpb.Status_SUCCESS,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/151.0.7001.0",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "test",
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+					{
+						Id:     102,
+						Status: buildbucketpb.Status_SUCCESS,
+						Input: &buildbucketpb.Build_Input{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/150.0.7000.0",
+							},
+						},
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_SUCCESS,
+							},
+						},
+					},
+				},
+			}
+			mc.Client.EXPECT().SearchBuilds(
+				gomock.Any(), gomock.Any(), gomock.Any(),
+			).Return(res, nil).Times(1)
+
+			refBuild := &buildbucketpb.Build{
+				Id:     104,
+				Status: buildbucketpb.Status_FAILURE,
+				Input: &buildbucketpb.Build_Input{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Ref: "refs/tags/151.0.7002.0",
+					},
+				},
+			}
+			lastPassed, _, err := getLastPassedFirstFailedBuilds(c, refBuild)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lastPassed.Id, should.Equal(102))
+		})
 	})
 
 	ftt.Run("analysisExists", t, func(t *ftt.Test) {
@@ -599,6 +879,64 @@ func TestShouldCancelAnalysis(t *testing.T) {
 			Number: 101,
 		}
 		shouldCancel, err = shouldCancelAnalysis(c, cfa, build)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shouldCancel, should.BeFalse)
+
+		// Versioned tag build cancellation tests
+		releaseFb := &model.LuciFailedBuild{
+			Id: 888,
+			LuciBuild: model.LuciBuild{
+				BuildId:     888,
+				Project:     "chromium",
+				Bucket:      "ci",
+				Builder:     "linux64",
+				BuildNumber: 103,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Ref: "refs/tags/151.0.7002.0",
+				},
+			},
+		}
+		assert.Loosely(t, datastore.Put(c, releaseFb), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		releaseCf := testutil.CreateCompileFailure(c, t, releaseFb)
+		releaseCfa := testutil.CreateCompileFailureAnalysis(
+			c, t, 8888, releaseCf, "chromium",
+		)
+
+		// Versioned tag build should NOT be cancelled by any build
+		olderVerBuild := &buildbucketpb.Build{
+			Number: 104,
+			Input: &buildbucketpb.Build_Input{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Ref: "refs/tags/150.0.7000.2",
+				},
+			},
+		}
+		shouldCancel, err = shouldCancelAnalysis(c, releaseCfa, olderVerBuild)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shouldCancel, should.BeFalse)
+
+		sameVerBuild := &buildbucketpb.Build{
+			Number: 105,
+			Input: &buildbucketpb.Build_Input{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Ref: "refs/tags/151.0.7002.0",
+				},
+			},
+		}
+		shouldCancel, err = shouldCancelAnalysis(c, releaseCfa, sameVerBuild)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shouldCancel, should.BeFalse)
+
+		newerVerBuild := &buildbucketpb.Build{
+			Number: 106,
+			Input: &buildbucketpb.Build_Input{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Ref: "refs/tags/151.0.7003.0",
+				},
+			},
+		}
+		shouldCancel, err = shouldCancelAnalysis(c, releaseCfa, newerVerBuild)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, shouldCancel, should.BeFalse)
 	})

@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	blamelist "go.chromium.org/luci/common/blamelist/chromium"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -201,6 +202,15 @@ func shouldCancelAnalysis(c context.Context, cfa *model.CompileFailureAnalysis, 
 	if err != nil {
 		return false, errors.Fmt("getFailedBuildForAnalysis %d: %w", cfa.Id, err)
 	}
+
+	// Do not cancel analyses for versioned tag builds (e.g. Chrome official
+	// builds). Release tags come from multiple concurrent branches (trunk,
+	// beta, stable), so a succeeded build on one version does not mean a
+	// failure on another version is fixed.
+	if _, ok := blamelist.ParseVersionedTag(build.Ref); ok {
+		return false, nil
+	}
+
 	if succededBuild.GetOutput() != nil && succededBuild.GetOutput().GetGitilesCommit() != nil && succededBuild.GetOutput().GetGitilesCommit().Position > 0 && build.Position > 0 {
 		return succededBuild.GetOutput().GetGitilesCommit().Position > build.Position, nil
 	}
@@ -228,6 +238,7 @@ func shouldAnalyzeBuild(c context.Context, build *buildbucketpb.Build) bool {
 
 // Search builds older than refBuild to find the last passed and first failed builds
 func getLastPassedFirstFailedBuilds(c context.Context, refBuild *buildbucketpb.Build) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
+	targetVersion, isVersioned := blamelist.GetBuildVersion(refBuild)
 	firstFailedBuild := refBuild
 
 	// Query buildbucket for the first build with compile failure or generate_build_files failure
@@ -240,10 +251,11 @@ func getLastPassedFirstFailedBuilds(c context.Context, refBuild *buildbucketpb.B
 
 	buildMask := &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"id", "builder", "input", "status", "steps"},
+			Paths: []string{"id", "builder", "input", "output.gitiles_commit", "status", "steps"},
 		},
 	}
 
+	var allOlderBuilds []*buildbucketpb.Build
 	for buildsToSearch > 0 {
 		// Tweak the batch size if necessary to respect the search limit
 		if buildsToSearch < batchSize {
@@ -257,14 +269,18 @@ func getLastPassedFirstFailedBuilds(c context.Context, refBuild *buildbucketpb.B
 			return nil, nil, err
 		}
 
-		// Search this batch of older builds for the last passed and first failed build
-		for _, oldBuild := range olderBuilds {
-			// We found the last passed build
-			if oldBuild.Status == buildbucketpb.Status_SUCCESS && hasBuildStepStatus(c, oldBuild, buildbucketpb.Status_SUCCESS) {
-				return oldBuild, firstFailedBuild, nil
-			}
-			if oldBuild.Status == buildbucketpb.Status_FAILURE && hasBuildStepStatus(c, oldBuild, buildbucketpb.Status_FAILURE) {
-				firstFailedBuild = oldBuild
+		if isVersioned {
+			allOlderBuilds = append(allOlderBuilds, olderBuilds...)
+		} else {
+			// Search this batch of older builds for the last passed and first failed build
+			for _, oldBuild := range olderBuilds {
+				// We found the last passed build
+				if isSuccessfulCompile(c, oldBuild) {
+					return oldBuild, firstFailedBuild, nil
+				}
+				if isFailedCompile(c, oldBuild) {
+					firstFailedBuild = oldBuild
+				}
 			}
 		}
 
@@ -276,6 +292,31 @@ func getLastPassedFirstFailedBuilds(c context.Context, refBuild *buildbucketpb.B
 		// Update the remaining number of builds to search and the page token
 		buildsToSearch -= int32(len(olderBuilds))
 		pageToken = nextPageToken
+	}
+
+	if isVersioned {
+		var passedCompileBuilds []*buildbucketpb.Build
+		for _, b := range allOlderBuilds {
+			if isFailedCompile(c, b) {
+				if ver, ok := blamelist.GetBuildVersion(b); ok && ver == targetVersion {
+					firstFailedBuild = b
+				}
+			}
+			if isSuccessfulCompile(c, b) {
+				passedCompileBuilds = append(passedCompileBuilds, b)
+			}
+		}
+		lastPassedBuild, ok := blamelist.FindBaselineBuild(
+			targetVersion, passedCompileBuilds,
+		)
+		if !ok {
+			return nil, nil, fmt.Errorf(
+				"could not find baseline passed build for "+
+					"versioned tag build %d",
+				refBuild.Id,
+			)
+		}
+		return lastPassedBuild, firstFailedBuild, nil
 	}
 
 	// If we have reached here, the last passed build could not be found within the search limit
@@ -401,6 +442,16 @@ func searchAnalysis(c context.Context, firstFailedBuildId int64) (*model.Compile
 		logging.Warningf(c, "Found more than one analysis for first_failed_build_id %d", firstFailedBuildId)
 	}
 	return analyses[0], nil
+}
+
+func isSuccessfulCompile(c context.Context, build *buildbucketpb.Build) bool {
+	return build.Status == buildbucketpb.Status_SUCCESS &&
+		hasBuildStepStatus(c, build, buildbucketpb.Status_SUCCESS)
+}
+
+func isFailedCompile(c context.Context, build *buildbucketpb.Build) bool {
+	return build.Status == buildbucketpb.Status_FAILURE &&
+		hasBuildStepStatus(c, build, buildbucketpb.Status_FAILURE)
 }
 
 // hasBuildStepStatus checks if a build step for a build has the specified status.
