@@ -21,6 +21,8 @@ import (
 	"regexp"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/caching"
@@ -113,7 +115,7 @@ func Project(ctx context.Context, project string, minimumVersion time.Time) (*Pr
 
 			if it != nil {
 				cfg := it.Value
-				if cfg.LastUpdated.Equal(projectCfg.LastUpdated.AsTime()) {
+				if cfg.LastUpdated.Equal(projectCfg.LastUpdated.AsTime()) && proto.Equal(cfg.Config, projectCfg) {
 					// Cached value is already up to date.
 					return it
 				}

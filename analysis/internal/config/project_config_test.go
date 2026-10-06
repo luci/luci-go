@@ -121,7 +121,7 @@ func TestProjectConfig(t *testing.T) {
 				projects, err = fetchProjects(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(projects.Keys()), should.Equal(3))
-				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime))) // Retained.
+				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, creationTime))) // Retained.
 				assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
 				assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
 
@@ -141,7 +141,7 @@ func TestProjectConfig(t *testing.T) {
 				projects, err = fetchProjects(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(projects.Keys()), should.Equal(3))
-				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime))) // Retained.
+				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, creationTime))) // Retained.
 				assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
 				assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
 
@@ -158,7 +158,7 @@ func TestProjectConfig(t *testing.T) {
 					projects, err = Projects(ctx)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(projects.Keys()), should.Equal(3))
-					assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime))) // Retained.
+					assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, creationTime))) // Retained.
 					assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
 					assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
 
@@ -169,7 +169,7 @@ func TestProjectConfig(t *testing.T) {
 					projects, err = Projects(ctx)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(projects.Keys()), should.Equal(3))
-					assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime)))
+					assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, creationTime)))
 					assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
 					assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
 				})

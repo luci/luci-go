@@ -152,6 +152,25 @@ func TestCompiledConfig(t *testing.T) {
 
 				verifyNotExists(config.StartingEpoch)
 			})
+			t.Run(`Then delete preserving LastUpdated`, func(t *ftt.Test) {
+				deletedCfg := &configpb.ProjectConfig{
+					LastUpdated: timestamppb.New(configVersion(1)),
+				}
+				err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
+					"myproject": deletedCfg,
+				})
+				assert.Loosely(t, err, should.BeNil)
+
+				// Let the cache expire (note this expires the cache
+				// in the config package, not this package).
+				tc.Add(2 * config.ProjectCacheExpiry)
+
+				cfg, err := Project(ctx, "myproject", config.StartingEpoch)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg.Config, should.Match(deletedCfg))
+				assert.Loosely(t, len(cfg.TestNameRules), should.BeZero)
+				assert.Loosely(t, len(cfg.ReasonMaskPatterns), should.BeZero)
+			})
 		})
 	})
 }

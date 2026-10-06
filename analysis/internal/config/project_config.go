@@ -234,9 +234,24 @@ func updateStoredConfig(ctx context.Context, fetchedConfigs map[string]*fetchedP
 			continue
 		}
 		// For config that is deleted from LUCI config, we keep an entry in datastore with
-		// an empty config except having lastUpdatedTime as the time of deletion.
-		// This is to avoid a timestamp rollback situation.
-		configToSave := &configpb.ProjectConfig{LastUpdated: timestamppb.New(clock.Now(ctx))}
+		// an empty config while preserving the previous lastUpdatedTime.
+		// This avoids both a timestamp rollback situation and an unnecessary full
+		// re-clustering of historical chunks when a project is removed.
+		var lastUpdated *timestamppb.Timestamp
+		if cur.Config != nil {
+			cfg := &configpb.ProjectConfig{}
+			if err := proto.Unmarshal(cur.Config, cfg); err != nil {
+				// Continue through errors to ensure bad config for one project
+				// does not affect others.
+				errs = append(errs, errors.Fmt("unmarshal current config: %w", err))
+				continue
+			}
+			lastUpdated = cfg.LastUpdated
+		}
+		if lastUpdated == nil {
+			lastUpdated = timestamppb.New(StartingEpoch)
+		}
+		configToSave := &configpb.ProjectConfig{LastUpdated: lastUpdated}
 		blob, err := proto.Marshal(configToSave)
 		if err != nil {
 			// Continue through errors to ensure bad config for one project
