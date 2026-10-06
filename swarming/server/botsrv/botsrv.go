@@ -29,7 +29,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/scopes"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -202,8 +201,14 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			writeErr(status.Errorf(codes.Unauthenticated, "no session token"), req, wrt, RB(body), nil)
 			return
 		}
-		session, err := botsession.CheckSessionToken(ctx, sessionTok, s.hmacSecret, clock.Now(ctx))
+		session, err := botsession.CheckSessionToken(ctx, sessionTok, s.hmacSecret)
 		if err != nil {
+			writeErr(err, req, wrt, RB(body), session)
+			return
+		}
+
+		// Verify the config recorded in the session token is relatively fresh.
+		if err := botsession.CheckConfigExpiry(ctx, session); err != nil {
 			writeErr(err, req, wrt, RB(body), session)
 			return
 		}

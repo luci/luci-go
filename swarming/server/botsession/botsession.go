@@ -269,7 +269,7 @@ func debugInfo(ctx context.Context, now time.Time, backendVer string) *internals
 // Returns gRPC errors. All errors indicate there's something wrong with the
 // token (i.e. transient errors are impossible). May return both a session and
 // an error (in case it managed to deserialize the session, but it is broken).
-func CheckSessionToken(ctx context.Context, tok []byte, secret *hmactoken.Secret, now time.Time) (*internalspb.Session, error) {
+func CheckSessionToken(ctx context.Context, tok []byte, secret *hmactoken.Secret) (*internalspb.Session, error) {
 	session, err := Unmarshal(tok, secret)
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "failed to verify or deserialize session token: %s", err)
@@ -300,33 +300,40 @@ func CheckSessionToken(ctx context.Context, tok []byte, secret *hmactoken.Secret
 	// various backend handlers. It just signals the bot had recently successfully
 	// contacted the server, not much else. This will fail for zombie bots woken
 	// up from slumber.
-	if dt := now.Sub(session.Expiry.AsTime()); dt > 0 {
+	if dt := clock.Now(ctx).Sub(session.Expiry.AsTime()); dt > 0 {
 		return session, status.Errorf(codes.Unauthenticated, "session token has expired %s ago", dt)
-	}
-
-	// Stop trusting the token if it carries stale bot config (i.e. the bot
-	// unexpectedly neglected to call "/poll" or "/claim" when it should have).
-	// Note that we specifically use BotConfig.Expiry for this (not LastSyncTime).
-	// This matters for session tokens used during the task execution: when
-	// "/claim" is called, we verify that the last full config sync happened
-	// relatively recently, and then bump the expiry of this working config
-	// snapshot (which we just used to authorize "/claim" call) to be sufficient
-	// to finish executing the task. We can't do the full sync in the "/claim"
-	// handler itself, because at this point the bot is already responsible for
-	// finishing the task (RBE told it so), and the full config sync can result in
-	// inability to do so (if the bot was unregistered between the last "/poll"
-	// and "/claim" calls).
-	if dt := now.Sub(session.BotConfig.Expiry.AsTime()); dt > 0 {
-		logging.Warningf(ctx, "EXPIRED_BOT_CONFIG: %s ago", dt)
-		LogSession(ctx, session)
-		// TODO: Start returning this error.
-		// return session, status.Errorf(codes.Unauthenticated, "session config has expired %s ago", dt)
 	}
 
 	return session, nil
 }
 
-// CheckLastSyncTime returns an error if the config in the session is too old.
+// CheckConfigExpiry returns an error if the config in the session should not
+// be trusted anymore.
+//
+// This is used instead of CheckLastSyncTime while running a task. When "/claim"
+// is called, we verify that the last full config sync happened relatively
+// recently, and then bump the expiry of this working config snapshot (which we
+// just used to authorize "/claim" call) to be sufficient to finish executing
+// the task. We can't do the full sync in the "/claim" handler itself, because
+// at this point the bot is already responsible for finishing the task (RBE told
+// it so), and the full config sync can result in inability to do so (if the bot
+// was unregistered between the last "/poll" and "/claim" calls).
+func CheckConfigExpiry(ctx context.Context, session *internalspb.Session) error {
+	if dt := clock.Now(ctx).Sub(session.BotConfig.Expiry.AsTime()); dt > 0 {
+		logging.Warningf(ctx, "EXPIRED_BOT_CONFIG: %s ago", dt)
+		LogSession(ctx, session)
+		// TODO: Start returning this error.
+		// return session, status.Errorf(codes.Unauthenticated, "session config has expired %s ago", dt)
+	}
+	return nil
+}
+
+// CheckLastSyncTime returns an error if the last time config in the session
+// was sync with the server exceeds some threshold.
+//
+// This is more "severe" analogue of CheckConfigExpiry used before issues new
+// tasks to a bot. Healthy bots periodically call "/poll" between tasks to
+// synchronize the session with the server configs.
 func CheckLastSyncTime(ctx context.Context, session *internalspb.Session) error {
 	synced := session.LastSyncTime
 	if synced == nil {
