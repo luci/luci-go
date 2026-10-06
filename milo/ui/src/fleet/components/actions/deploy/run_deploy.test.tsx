@@ -133,4 +133,55 @@ describe('<RunDeploy />', () => {
       expect(screen.getByText(/Failed to schedule deploy/i)).toBeVisible();
     });
   });
+
+  it('sends LATEST flag when "Use latest deploy version" is checked', async () => {
+    render(
+      <FakeContextProvider>
+        <RunDeploy selectedDuts={selectedDuts} />
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deploy' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
+    });
+
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Use latest deploy version' }),
+    );
+    expect(
+      screen.getByText('shivas update dut -force-deploy -latest device-1'),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+
+    await waitFor(() => {
+      expect(FleetConsoleMockAPI.getCalls('ScheduleDeploy')).toHaveLength(1);
+    });
+    const payload = FleetConsoleMockAPI.getCalls('ScheduleDeploy')[0]
+      .payload as { unitNames?: string[]; flags?: string[] };
+    expect(payload.unitNames).toEqual(['device-1']);
+    expect(payload.flags).toEqual(['LATEST']);
+  });
+
+  it('sends no flags by default', async () => {
+    render(
+      <FakeContextProvider>
+        <RunDeploy selectedDuts={selectedDuts} />
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deploy' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+
+    await waitFor(() => {
+      expect(FleetConsoleMockAPI.getCalls('ScheduleDeploy')).toHaveLength(1);
+    });
+    const payload = FleetConsoleMockAPI.getCalls('ScheduleDeploy')[0]
+      .payload as { flags?: string[] };
+    expect(payload.flags ?? []).toEqual([]);
+  });
 });

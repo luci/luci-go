@@ -16,11 +16,13 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import {
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   Stack,
   Tooltip,
@@ -46,6 +48,9 @@ export interface DeployDialogProps {
   handleClose: () => void;
   handleOk: () => void;
   loading: boolean;
+  /** Whether to schedule the latest (non-prod) deploy task version. */
+  latest: boolean;
+  handleLatestChange: (latest: boolean) => void;
 }
 
 const plurifyDevices = (count: number) => {
@@ -72,9 +77,13 @@ export default function DeployDialog({
   handleClose,
   handleOk,
   loading,
+  latest,
+  handleLatestChange,
 }: DeployDialogProps) {
   const isPartner = namespaces.some(isPartnerNamespace);
-  const shivasCommand = `shivas update dut -force-deploy ${dutNames.join(' ')}`;
+  const shivasCommand = `shivas update dut -force-deploy${
+    latest ? ' -latest' : ''
+  } ${dutNames.join(' ')}`;
 
   const loadingScreen = (
     <>
@@ -142,6 +151,19 @@ export default function DeployDialog({
             <ul>
               {dutNames?.map((dutName) => getDeviceDetailListItem(dutName))}
             </ul>
+            <Box sx={{ mb: 2 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={latest}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      handleLatestChange(e.target.checked)
+                    }
+                  />
+                }
+                label="Use latest deploy version"
+              />
+            </Box>
             <p>Equivalent shivas command:</p>
             <CodeSnippet
               displayText={shivasCommand}

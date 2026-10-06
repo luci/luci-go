@@ -425,7 +425,44 @@ export interface ScheduleReserveResponse {
 
 export interface ScheduleDeployRequest {
   readonly unitNames: readonly string[];
-  readonly deployOptions: DeployOptions | undefined;
+  readonly deployOptions:
+    | DeployOptions
+    | undefined;
+  /** Optional flags that tune how the deploy task is scheduled. */
+  readonly flags: readonly ScheduleDeployRequest_DeployFlag[];
+}
+
+export enum ScheduleDeployRequest_DeployFlag {
+  FLAG_UNSPECIFIED = 0,
+  /**
+   * LATEST - Schedule the latest (non-prod) CIPD version of the deploy task.
+   * Equivalent to `shivas update dut -force-deploy -latest`.
+   */
+  LATEST = 1,
+}
+
+export function scheduleDeployRequest_DeployFlagFromJSON(object: any): ScheduleDeployRequest_DeployFlag {
+  switch (object) {
+    case 0:
+    case "FLAG_UNSPECIFIED":
+      return ScheduleDeployRequest_DeployFlag.FLAG_UNSPECIFIED;
+    case 1:
+    case "LATEST":
+      return ScheduleDeployRequest_DeployFlag.LATEST;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ScheduleDeployRequest_DeployFlag");
+  }
+}
+
+export function scheduleDeployRequest_DeployFlagToJSON(object: ScheduleDeployRequest_DeployFlag): string {
+  switch (object) {
+    case ScheduleDeployRequest_DeployFlag.FLAG_UNSPECIFIED:
+      return "FLAG_UNSPECIFIED";
+    case ScheduleDeployRequest_DeployFlag.LATEST:
+      return "LATEST";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ScheduleDeployRequest_DeployFlag");
+  }
 }
 
 export interface DeployOptions {
@@ -3046,7 +3083,7 @@ export const ScheduleReserveResponse: MessageFns<ScheduleReserveResponse> = {
 };
 
 function createBaseScheduleDeployRequest(): ScheduleDeployRequest {
-  return { unitNames: [], deployOptions: undefined };
+  return { unitNames: [], deployOptions: undefined, flags: [] };
 }
 
 export const ScheduleDeployRequest: MessageFns<ScheduleDeployRequest> = {
@@ -3057,6 +3094,11 @@ export const ScheduleDeployRequest: MessageFns<ScheduleDeployRequest> = {
     if (message.deployOptions !== undefined) {
       DeployOptions.encode(message.deployOptions, writer.uint32(18).fork()).join();
     }
+    writer.uint32(26).fork();
+    for (const v of message.flags) {
+      writer.int32(v);
+    }
+    writer.join();
     return writer;
   },
 
@@ -3083,6 +3125,24 @@ export const ScheduleDeployRequest: MessageFns<ScheduleDeployRequest> = {
           message.deployOptions = DeployOptions.decode(reader, reader.uint32());
           continue;
         }
+        case 3: {
+          if (tag === 24) {
+            message.flags.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 26) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.flags.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3098,6 +3158,9 @@ export const ScheduleDeployRequest: MessageFns<ScheduleDeployRequest> = {
         ? object.unitNames.map((e: any) => globalThis.String(e))
         : [],
       deployOptions: isSet(object.deployOptions) ? DeployOptions.fromJSON(object.deployOptions) : undefined,
+      flags: globalThis.Array.isArray(object?.flags)
+        ? object.flags.map((e: any) => scheduleDeployRequest_DeployFlagFromJSON(e))
+        : [],
     };
   },
 
@@ -3108,6 +3171,9 @@ export const ScheduleDeployRequest: MessageFns<ScheduleDeployRequest> = {
     }
     if (message.deployOptions !== undefined) {
       obj.deployOptions = DeployOptions.toJSON(message.deployOptions);
+    }
+    if (message.flags?.length) {
+      obj.flags = message.flags.map((e) => scheduleDeployRequest_DeployFlagToJSON(e));
     }
     return obj;
   },
@@ -3121,6 +3187,7 @@ export const ScheduleDeployRequest: MessageFns<ScheduleDeployRequest> = {
     message.deployOptions = (object.deployOptions !== undefined && object.deployOptions !== null)
       ? DeployOptions.fromPartial(object.deployOptions)
       : undefined;
+    message.flags = object.flags?.map((e) => e) || [];
     return message;
   },
 };

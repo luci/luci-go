@@ -19,7 +19,10 @@ import { useState } from 'react';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
-import { ScheduleDeployRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  ScheduleDeployRequest,
+  ScheduleDeployRequest_DeployFlag,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminAccessRequiredDialog } from '../shared/admin_access_required_dialog';
 import { DutToRepair } from '../shared/types';
@@ -38,6 +41,7 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
   const [open, setOpen] = useState<boolean>(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const [latest, setLatest] = useState<boolean>(false);
   const [adminAccessRequiredDialogOpen, setAdminAccessRequiredDialogOpen] =
     useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -57,6 +61,7 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
           dutNames: dutNames,
           namespaces: namespaces,
         });
+        setLatest(false);
         setOpen(true);
       } else {
         setAdminAccessRequiredDialogOpen(true);
@@ -77,10 +82,12 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
     });
     setLoading(true);
 
+    const flags = latest ? [ScheduleDeployRequest_DeployFlag.LATEST] : [];
     try {
       const resp = await fleetConsoleClient.ScheduleDeploy(
         ScheduleDeployRequest.fromPartial({
           unitNames: dutNames,
+          flags: flags,
         }),
       );
 
@@ -115,6 +122,7 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
       });
     }
     setSessionInfo({});
+    setLatest(false);
   };
 
   return (
@@ -136,6 +144,8 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
         handleClose={handleClose}
         handleOk={runDeploy}
         loading={loading}
+        latest={latest}
+        handleLatestChange={setLatest}
       />
       <AdminAccessRequiredDialog
         open={adminAccessRequiredDialogOpen}

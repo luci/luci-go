@@ -21,11 +21,13 @@ import DeployDialog, { DeployDialogProps } from './deploy_dialog';
 describe('<DeployDialog />', () => {
   let handleCloseMock: jest.Mock;
   let handleOkMock: jest.Mock;
+  let handleLatestChangeMock: jest.Mock;
   let sharedTestProps: DeployDialogProps;
 
   beforeEach(() => {
     handleCloseMock = jest.fn();
     handleOkMock = jest.fn();
+    handleLatestChangeMock = jest.fn();
 
     sharedTestProps = {
       open: true,
@@ -33,6 +35,8 @@ describe('<DeployDialog />', () => {
       handleOk: handleOkMock,
       sessionInfo: {},
       loading: false,
+      latest: false,
+      handleLatestChange: handleLatestChangeMock,
     };
   });
 
@@ -73,6 +77,42 @@ describe('<DeployDialog />', () => {
       'shivas update dut -force-deploy test-dut dut1 dut2 dut3',
     );
     expect(shivas).toBeVisible();
+  });
+
+  it('adds -latest to shivas command when latest is selected', async () => {
+    render(
+      <FakeAuthStateProvider>
+        <DeployDialog
+          {...sharedTestProps}
+          latest={true}
+          sessionInfo={{ dutNames: ['test-dut'] }}
+        />
+      </FakeAuthStateProvider>,
+    );
+
+    const shivas = screen.getByText(
+      'shivas update dut -force-deploy -latest test-dut',
+    );
+    expect(shivas).toBeVisible();
+  });
+
+  it('toggles latest version checkbox', async () => {
+    render(
+      <FakeAuthStateProvider>
+        <DeployDialog
+          {...sharedTestProps}
+          sessionInfo={{ dutNames: ['test-dut'] }}
+        />
+      </FakeAuthStateProvider>,
+    );
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'Use latest deploy version',
+    });
+    expect(checkbox).not.toBeChecked();
+    checkbox.click();
+
+    expect(handleLatestChangeMock).toHaveBeenCalledWith(true);
   });
 
   it('renders loading spinner', async () => {
