@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -528,11 +529,19 @@ func (srv *BotAPIServer) claimTask(ctx context.Context, d *claimDetails, r *bots
 	// Bump the config expiration in the session to be long enough to outlive the
 	// task (with some fudge factor). This would allow the bot to finish the task
 	// even if it is removed from the configs midway through the execution. Use
-	// ClaimedAt (instead of time.Now) to make sure indefinitely retrying
-	// idempotent "/claim" calls doesn't bump the config expiry time.
+	// ClaimedAt to make sure indefinitely retrying idempotent "/claim" calls
+	// doesn't bump the config expiry time.
+	//
+	// TODO: Remove fallback to `now` once TaskToRun.ClaimedAt is populated
+	// everywhere.
+	claimedAt := d.claimedAt
+	if claimedAt.IsZero() {
+		logging.Warningf(ctx, "CLAIMED_AT_FALLBACK: %s", taskID)
+		claimedAt = clock.Now(ctx)
+	}
 	session, err := botsession.Marshal(botsession.BumpConfigExpiry(ctx,
 		r.Session,
-		d.claimedAt.Add(maxPossibleTaskRuntime(props)),
+		claimedAt.Add(maxPossibleTaskRuntime(props)),
 		srv.version,
 	), srv.hmacSecret)
 	if err != nil {

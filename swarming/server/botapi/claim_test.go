@@ -121,28 +121,23 @@ func TestClaim(t *testing.T) {
 			return req, ttr
 		}
 
-		prepBotSrvReq := func() *botsrv.Request {
-			return &botsrv.Request{
+		call := func(req *ClaimRequest) (*ClaimResponse, error) {
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity: "bot:bot-id",
+			})
+			resp, err := srv.Claim(ctx, req, &botsrv.Request{
 				Session: &internalspb.Session{
 					BotId: "bot-id",
 					BotConfig: &internalspb.BotConfig{
 						LogsCloudProject: "logs-cloud-project",
 					},
-					SessionId:    "session-id",
-					LastSyncTime: timestamppb.New(testTime),
+					SessionId: "session-id",
 				},
 				Dimensions: []string{
 					"id:bot-id",
 					"pool:bot-pool",
 				},
-			}
-		}
-
-		call := func(req *ClaimRequest) (*ClaimResponse, error) {
-			ctx := auth.WithState(ctx, &authtest.FakeState{
-				Identity: "bot:bot-id",
 			})
-			resp, err := srv.Claim(ctx, req, prepBotSrvReq())
 			if err != nil {
 				return nil, err
 			}
@@ -185,17 +180,6 @@ func TestClaim(t *testing.T) {
 				Cmd:    ClaimSkip,
 				Reason: "No such task",
 			}))
-		})
-
-		t.Run("Stale session config", func(t *ftt.Test) {
-			botSrvReq := prepBotSrvReq()
-			botSrvReq.Session.LastSyncTime = timestamppb.New(testTime.Add(-time.Hour))
-			_, err := srv.Claim(ctx, &ClaimRequest{
-				ClaimID:     "claim-id",
-				TaskID:      taskID,
-				TaskToRunID: ttrID,
-			}, botSrvReq)
-			assert.That(t, status.Code(err), should.Equal(codes.FailedPrecondition))
 		})
 
 		t.Run("Ignores broken state", func(t *ftt.Test) {
@@ -310,10 +294,7 @@ func TestClaim(t *testing.T) {
 			srv.tasksManager = &tasks.MockedManager{
 				ClaimTxnMock: func(ctx context.Context, op *tasks.ClaimOp) (*tasks.ClaimOpOutcome, error) {
 					claimOp = op
-					return &tasks.ClaimOpOutcome{
-						Claimed:   true,
-						ClaimedAt: testTime,
-					}, nil
+					return &tasks.ClaimOpOutcome{Claimed: true}, nil
 				},
 			}
 
