@@ -37,11 +37,9 @@ import {
   useState,
 } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useDebounce } from 'react-use';
 
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
-import { getNodeSearchIndex } from '../utils/check_utils';
 import { computeCriticalPath } from '../utils/critical_path';
 import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 // ?worker&url is special vite syntax to import a web worker script
@@ -56,9 +54,12 @@ import { ContextMenu, ContextMenuState } from './context_menu';
 import { GraphControlPanel } from './graph_control_panel';
 import { useCollapsibleGroups } from './hooks/use_collapsible_groups';
 import { useGraphHighlighting } from './hooks/use_graph_highlighting';
+import { useNodeSearch } from './hooks/use_node_search';
 import { InspectorPanel } from './inspector_panel/inspector_panel';
 
 const SELECTION_FIT_MAX_ZOOM = 0.7;
+// Chosen to feel snappy when iterating through search results.
+const SELECTION_FIT_DURATION = 200;
 
 function Graph() {
   const {
@@ -71,8 +72,6 @@ function Graph() {
   const [nodes, setNodes, onNodesChange] = useNodesState<ChronicleNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { fitView } = useReactFlow();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [showAssignmentEdges, setShowAssignmentEdges] = useState(false);
   const [showCriticalPath, setShowCriticalPath] = useState(false);
   const [autoFitSelection, setAutoFitSelection] = useState(true);
@@ -114,6 +113,7 @@ function Graph() {
 
   // Ref to store a pending fitView request
   const pendingFitViewOptions = useRef<FitViewOptions | undefined>(undefined);
+  const lastFittedNodeIdRef = useRef<string | undefined>(undefined);
 
   const {
     groupModes,
@@ -121,15 +121,60 @@ function Graph() {
     actions: groupActions,
   } = useCollapsibleGroups(filteredGraph);
 
+  // Nodes sorted in left-to-right, top-to-bottom layout order for search match iteration.
+  const searchableNodes = useMemo(
+    () =>
+      [...baseLayout.nodes]
+        .sort(
+          (a, b) => a.position.x - b.position.x || a.position.y - b.position.y,
+        )
+        .map((node) => ({
+          id: node.id,
+          label: node.data.fullLabel,
+          view: node.data.view,
+        })),
+    [baseLayout.nodes],
+  );
+
+  const handleSettledMatch = useCallback(
+    (targetId: string) => {
+      if (autoFitSelection) {
+        lastFittedNodeIdRef.current = targetId;
+        fitView({
+          nodes: [{ id: targetId }],
+          duration: SELECTION_FIT_DURATION,
+          maxZoom: SELECTION_FIT_MAX_ZOOM,
+        });
+      }
+    },
+    [autoFitSelection, fitView],
+  );
+
+  const nodeSearch = useNodeSearch({
+    nodes: searchableNodes,
+    valueDataMap,
+    isLoading,
+    selectedNodeId,
+    setSelectedNodeId,
+    onSettledMatch: handleSettledMatch,
+  });
+  const {
+    matchedNodeIds,
+    effectiveSettledNodeId,
+    cancelPendingMatchNav,
+    resetSearchTracking,
+  } = nodeSearch;
+
   // While we're still using canned fake data, we need to re-initialize defaults
   // when changing workflow type.
   useEffect(() => {
     // Only reset if we have already initialized once to avoid reset on initial page load.
     if (hasInitializedDefaults.current) {
       hasInitializedDefaults.current = false;
+      resetSearchTracking();
       setSelectedNodeId(undefined);
     }
-  }, [workflowType, showCriticalPath, setSelectedNodeId]);
+  }, [workflowType, showCriticalPath, resetSearchTracking, setSelectedNodeId]);
 
   // The graph layout algorithm is a performance bottleneck so use the Web Worker API
   // to perform this work in a background thread to prevent freezing the UI.
@@ -169,46 +214,26 @@ function Graph() {
     };
   }, [filteredGraph, valueDataMap, showAssignmentEdges, groupModes]);
 
-  useDebounce(
-    () => {
-      setDebouncedSearchQuery(searchQuery);
-    },
-    300,
-    [searchQuery],
-  );
-
-  const matchedNodeIds = useMemo(() => {
-    const query = debouncedSearchQuery.trim().toLocaleLowerCase();
-    if (!query) return [];
-    const matched: string[] = [];
-    for (const node of baseLayout.nodes) {
-      const indexText = getNodeSearchIndex(
-        node.id,
-        node.data.fullLabel,
-        node.data.view,
-        valueDataMap,
-      );
-      if (indexText.includes(query)) {
-        matched.push(node.id);
-      }
-    }
-    return matched;
-  }, [baseLayout.nodes, debouncedSearchQuery, valueDataMap]);
-
   const { baseNodesMap } = useGraphHighlighting({
     baseLayout,
-    effectiveSettledNodeId: selectedNodeId,
+    effectiveSettledNodeId,
     matchedNodeIds,
     setNodes,
     setEdges,
   });
 
-  // Queue a fitView request when layout initializes, groups expand, or selection/search changes.
+  // Queue a fitView request when layout initializes, groups expand, or selection changes.
   useEffect(() => {
+    // While the layout worker is computing, do not run fitView or consume
+    // hasInitializedDefaults against stale nodes.
+    if (isLoading) {
+      return;
+    }
+
     let nodesToFit: string[] = [];
 
     // Check if there is a pending focus request from an expand/collapse action.
-    if (pendingFocusNodes.current && !selectedNodeId) {
+    if (pendingFocusNodes.current && !effectiveSettledNodeId) {
       const targetsExist = pendingFocusNodes.current.every((id) =>
         baseNodesMap.has(id),
       );
@@ -218,24 +243,32 @@ function Graph() {
       }
     }
 
-    if (selectedNodeId) {
-      const baseNodeId = getBaseNodeId(selectedNodeId, {
+    if (!autoFitSelection) {
+      lastFittedNodeIdRef.current = undefined;
+    }
+
+    if (effectiveSettledNodeId) {
+      const baseNodeId = getBaseNodeId(effectiveSettledNodeId, {
         includePrefix: false,
       })!;
-      // Only autofit on selection if the option is enabled.
-      // Focus/center directly on the selected node to avoid positioning the viewport
-      // in the empty space between nodes when neighbors are spaced far apart.
-      if (autoFitSelection) {
+      // Only autofit on selection if the option is enabled, the node exists in the current layout,
+      // and not already fitted immediately.
+      if (
+        autoFitSelection &&
+        baseNodesMap.has(baseNodeId) &&
+        lastFittedNodeIdRef.current !== baseNodeId
+      ) {
+        lastFittedNodeIdRef.current = baseNodeId;
         nodesToFit = [baseNodeId];
       }
-    } else if (matchedNodeIds.length > 0) {
-      nodesToFit = matchedNodeIds;
+    } else {
+      lastFittedNodeIdRef.current = undefined;
     }
 
     if (nodesToFit.length > 0) {
       pendingFitViewOptions.current = {
         nodes: nodesToFit.map((id) => ({ id })),
-        duration: 500,
+        duration: SELECTION_FIT_DURATION,
         maxZoom: SELECTION_FIT_MAX_ZOOM,
       };
       if (baseLayout.nodes.length > 0) {
@@ -244,15 +277,15 @@ function Graph() {
     } else if (!hasInitializedDefaults.current && baseLayout.nodes.length > 0) {
       hasInitializedDefaults.current = true;
       pendingFitViewOptions.current = {
-        duration: 500,
+        duration: SELECTION_FIT_DURATION,
       };
     }
   }, [
     baseLayout,
     baseNodesMap,
-    selectedNodeId,
-    matchedNodeIds,
+    effectiveSettledNodeId,
     autoFitSelection,
+    isLoading,
   ]);
 
   // Effect to process pending fitView requests.
@@ -275,17 +308,23 @@ function Graph() {
 
       void tryFitView();
     }
-  }, [nodes, fitView, autoFitSelection, selectedNodeId]);
+  }, [nodes, fitView, autoFitSelection, effectiveSettledNodeId]);
 
   // Use useCallback even with no dependencies to prevent React creating a new
   // function reference on every render.
   // https://reactflow.dev/learn/advanced-use/performance#memoize-functions
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      setSelectedNodeId(node.id);
+      cancelPendingMatchNav();
+      const baseSelectedId = selectedNodeId
+        ? getBaseNodeId(selectedNodeId, { includePrefix: false })
+        : undefined;
+      const isAlreadySelected =
+        selectedNodeId === node.id || baseSelectedId === node.id;
+      setSelectedNodeId(isAlreadySelected ? undefined : node.id);
       setContextMenuState(undefined);
     },
-    [setSelectedNodeId],
+    [cancelPendingMatchNav, selectedNodeId, setSelectedNodeId],
   );
 
   const onNodeContextMenu = useCallback(
@@ -328,13 +367,15 @@ function Graph() {
   );
 
   const onPaneClick = useCallback(() => {
+    cancelPendingMatchNav();
     setSelectedNodeId(undefined);
     setContextMenuState(undefined);
-  }, [setSelectedNodeId]);
+  }, [cancelPendingMatchNav, setSelectedNodeId]);
 
   const onInspectorClose = useCallback(() => {
+    cancelPendingMatchNav();
     setSelectedNodeId(undefined);
-  }, [setSelectedNodeId]);
+  }, [cancelPendingMatchNav, setSelectedNodeId]);
 
   const handleContextMenuClose = useCallback(() => {
     setContextMenuState(undefined);
@@ -371,28 +412,28 @@ function Graph() {
   );
 
   const selectedNode = useMemo(() => {
-    if (!selectedNodeId || baseNodesMap.size === 0) return undefined;
-    const baseNodeId = getBaseNodeId(selectedNodeId, {
+    if (!effectiveSettledNodeId || baseNodesMap.size === 0) return undefined;
+    const baseNodeId = getBaseNodeId(effectiveSettledNodeId, {
       includePrefix: false,
     });
     return baseNodeId ? baseNodesMap.get(baseNodeId) : undefined;
-  }, [baseNodesMap, selectedNodeId]);
+  }, [baseNodesMap, effectiveSettledNodeId]);
 
   useEffect(() => {
     if (
       baseNodesMap.size > 0 &&
-      selectedNodeId &&
-      !selectedNodeId.startsWith('collapsed-group') &&
+      effectiveSettledNodeId &&
+      !effectiveSettledNodeId.startsWith('collapsed-group') &&
       !selectedNode
     ) {
-      setErrorMessage(`Node "${selectedNodeId}" not found.`);
+      setErrorMessage(`Node "${effectiveSettledNodeId}" not found.`);
     }
-  }, [baseNodesMap, selectedNodeId, selectedNode]);
+  }, [baseNodesMap, effectiveSettledNodeId, selectedNode]);
 
   const inspectorPanelElement = useMemo(() => {
     if (
-      !selectedNodeId ||
-      selectedNodeId.startsWith('collapsed-group') ||
+      !effectiveSettledNodeId ||
+      effectiveSettledNodeId.startsWith('collapsed-group') ||
       !selectedNode
     ) {
       return null;
@@ -417,7 +458,7 @@ function Graph() {
         </PanelResizeHandle>
         <Panel defaultSize={30} minSize={20}>
           <InspectorPanel
-            nodeId={selectedNodeId}
+            nodeId={effectiveSettledNodeId}
             viewData={selectedNode?.data?.view}
             valueDataMap={valueDataMap}
             onClose={onInspectorClose}
@@ -425,7 +466,7 @@ function Graph() {
         </Panel>
       </>
     );
-  }, [selectedNodeId, selectedNode, valueDataMap, onInspectorClose]);
+  }, [effectiveSettledNodeId, selectedNode, valueDataMap, onInspectorClose]);
 
   const reactFlowStaticChildren = useMemo(
     () => (
@@ -520,8 +561,7 @@ function Graph() {
           >
             {reactFlowStaticChildren}
             <GraphControlPanel
-              searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
+              search={nodeSearch}
               showAssignmentEdges={showAssignmentEdges}
               onShowAssignmentEdgesChange={setShowAssignmentEdges}
               autoFitSelection={autoFitSelection}

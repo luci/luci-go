@@ -36,10 +36,11 @@ import {
   DEMO_ENVIRONMENT_NAME,
   DEMO_WORKPLAN_ID,
 } from './context';
+import { UseNodeSearchResult } from './hooks/use_node_search';
+import { NodeSearchBox } from './node_search_box';
 
 export interface GraphControlPanelProps {
-  searchQuery: string;
-  onSearchQueryChange: (query: string) => void;
+  search: UseNodeSearchResult;
   showAssignmentEdges: boolean;
   onShowAssignmentEdgesChange: (checked: boolean) => void;
   autoFitSelection: boolean;
@@ -56,8 +57,7 @@ export interface GraphControlPanelProps {
  * selectors, display toggles, and collapsible group actions.
  */
 export function GraphControlPanel({
-  searchQuery,
-  onSearchQueryChange,
+  search,
   showAssignmentEdges,
   onShowAssignmentEdgesChange,
   autoFitSelection,
@@ -74,11 +74,25 @@ export function GraphControlPanel({
     workplanId,
     workflowType,
     setWorkflowType,
+    selectedNodeId,
     setSelectedNodeId,
     activeEnvironment,
     setActiveEnvironment,
     foundEnvironments,
   } = useContext(ChronicleContext);
+
+  const {
+    searchQuery,
+    matchedNodeIds,
+    safeMatchIndex,
+    isCurrentMatchSelected,
+    handleSearchChange,
+    handleClearSearch,
+    handleNextMatch,
+    handlePrevMatch,
+    stepToMatch,
+    cancelPendingMatchNav,
+  } = search;
 
   return (
     <ReactFlowPanel position="top-left">
@@ -92,22 +106,17 @@ export function GraphControlPanel({
           borderRadius: 1,
         }}
       >
-        <input
-          type="text"
-          placeholder="Search nodes..."
-          value={searchQuery}
-          onChange={(e) => {
-            onSearchQueryChange(e.target.value);
-            // Clear selected node when searching
-            if (e.target.value) {
-              setSelectedNodeId(undefined);
-            }
-          }}
-          style={{
-            padding: '8px',
-            width: '200px',
-            marginBottom: '8px',
-          }}
+        <NodeSearchBox
+          searchQuery={searchQuery}
+          matchedNodeIds={matchedNodeIds}
+          safeMatchIndex={safeMatchIndex}
+          isCurrentMatchSelected={isCurrentMatchSelected}
+          selectedNodeId={selectedNodeId}
+          onSearchChange={handleSearchChange}
+          onClearSearch={handleClearSearch}
+          onNextMatch={handleNextMatch}
+          onPrevMatch={handlePrevMatch}
+          onStepToMatch={stepToMatch}
         />
         <FormControl fullWidth size="small" sx={{ mt: 2 }}>
           <InputLabel id="environment-select-label">Environment</InputLabel>
@@ -183,7 +192,19 @@ export function GraphControlPanel({
           control={
             <Checkbox
               checked={autoFitSelection}
-              onChange={(e) => onAutoFitSelectionChange(e.target.checked)}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                cancelPendingMatchNav();
+                onAutoFitSelectionChange(checked);
+                if (
+                  checked &&
+                  !selectedNodeId &&
+                  isCurrentMatchSelected &&
+                  matchedNodeIds.length > 0
+                ) {
+                  setSelectedNodeId(matchedNodeIds[safeMatchIndex]);
+                }
+              }}
             />
           }
           label={<Typography variant="body2">Fit View on Selection</Typography>}
