@@ -26,6 +26,7 @@ import {
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { enablePTE } from '@/fleet/features';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
+import { humanizeColumnLabel } from '@/fleet/utils/humanize_column';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -100,7 +101,7 @@ export const useAndroidFilters = (
       if (filters[filterKey]) continue;
 
       const override = ANDROID_COLUMN_OVERRIDES[key];
-      const label = override?.header || key;
+      const label = humanizeColumnLabel(override?.header || key);
 
       filters[filterKey] = new StringListFilterCategoryBuilder()
         .setLabel(label)
@@ -116,6 +117,7 @@ export const useAndroidFilters = (
     isDimensionsQueryProperlyLoaded,
     dimensionsQuery.data,
     isPTEEnabled,
+    ANDROID_COLUMN_OVERRIDES,
   ]);
 
   const filterCategoryDatas = useFilters(filterOptions, {

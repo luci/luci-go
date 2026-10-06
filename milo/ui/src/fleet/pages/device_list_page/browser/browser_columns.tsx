@@ -20,6 +20,7 @@ import {
   BROWSER_SWARMING_SOURCE,
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
+import { humanizeColumnLabel } from '@/fleet/utils/humanize_column';
 import { GetBrowserDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
@@ -51,7 +52,7 @@ const getColumnHeader = (labelKey: string, source?: string) => {
   } else if (source === BROWSER_UFS_SOURCE) {
     return `ufs.${labelKey}`;
   } else {
-    return labelKey;
+    return humanizeColumnLabel(labelKey);
   }
 };
 

@@ -36,6 +36,7 @@ import {
   useState,
 } from 'react';
 
+import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 import { colors } from '@/fleet/theme/colors';
 import {
   hasAnyModifier,
@@ -43,7 +44,8 @@ import {
   keyboardFilterDropdownNavigationHandler,
 } from '@/fleet/utils';
 import { shouldIgnoreClickAway } from '@/fleet/utils/click_away';
-import { fuzzySubstring, SortedElement } from '@/fleet/utils/fuzzy_sort';
+import { SortedElement } from '@/fleet/utils/fuzzy_sort';
+import { resolveColumnSearchMatch } from '@/fleet/utils/humanize_column';
 
 import { EllipsisTooltip } from '../ellipsis_tooltip';
 import { StringListFilterCategory } from '../filters/string_list_filter';
@@ -213,20 +215,28 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
             childrenSearchQuery.trim(),
           );
 
-          const parentScore = fuzzySubstring(parentSearchQuery, option.label);
+          const parentMatch = resolveColumnSearchMatch(
+            parentSearchQuery,
+            normalizeFilterKey(option.key),
+            option.label,
+          );
+          const bestParentScore =
+            parentSearchQuery.trim() === '' ? 0 : parentMatch.score;
 
           return {
             el: option,
             score:
-              isCategoryScoped && parentScore[0] === -1
+              isCategoryScoped && bestParentScore === -1
                 ? -1
                 : Math.max(
                     // will prioritize parent matches when children have similar scores
                     // (e.g. "id" search will prioritize "dut id" category over "label-xyz" category with value "someid")
-                    parentScore[0] * PARENT_SEARCH_SCORE_MULTIPLIER,
+                    bestParentScore * PARENT_SEARCH_SCORE_MULTIPLIER,
                     childrenScore,
                   ),
-            matches: parentScore[1],
+            matches: parentMatch.matches,
+            matchedKey: parentMatch.matchedKey,
+            keyMatches: parentMatch.keyMatches,
           };
         })
         .filter((a) => deferredSearchQuery.trim() === '' || a.score > 0)
@@ -447,18 +457,40 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
           minHeight: 'auto',
         }}
       >
-        <EllipsisTooltip tooltip={parent.el.label}>
-          <HighlightCharacter
-            variant="body2"
-            highlightIndexes={parentMatches}
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {parent.el.label}
-          </HighlightCharacter>
-        </EllipsisTooltip>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: '6px',
+            minWidth: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <EllipsisTooltip tooltip={parent.el.label}>
+            <HighlightCharacter
+              variant="body2"
+              highlightIndexes={parentMatches}
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {parent.el.label}
+            </HighlightCharacter>
+          </EllipsisTooltip>
+          {parent.matchedKey && (
+            <HighlightCharacter
+              variant="body2"
+              highlightIndexes={parent.keyMatches?.map((i) => i + 1)}
+              sx={{
+                color: colors.grey[600],
+                flexShrink: 0,
+              }}
+            >
+              {`(${parent.matchedKey})`}
+            </HighlightCharacter>
+          )}
+        </Box>
         <ArrowRightIcon />
       </MenuItem>
     );

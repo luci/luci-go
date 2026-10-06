@@ -43,6 +43,8 @@ export type SortedElement<ElementType> = {
   el: ElementType;
   score: number;
   matches: number[];
+  matchedKey?: string;
+  keyMatches?: number[];
 };
 
 /** The number of characters from the start of the string to apply a bonus for. */

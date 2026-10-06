@@ -158,15 +158,15 @@ describe('Pixel Devices Page', () => {
     cy.visit(targetUrl);
     cy.wait(['@getDimensions', '@listDevices', '@countDevices']);
 
-    // Open filter dropdown and select run_target -> coral
+    // Open filter dropdown and select Run Target -> coral
     cy.get('input[placeholder*="Add a filter"]').click();
     cy.get('[role="menuitem"]').should('have.length.gt', 0);
-    cy.get('[role="menuitem"]').contains('run_target').click();
+    cy.get('[role="menuitem"]').contains('Run Target').click();
     cy.get('[role="menuitem"]').contains('coral').click();
     cy.contains('button', 'Apply').click();
 
     // Verify chip rendered
-    cy.contains('[role="button"]', 'run_target').should('be.visible');
+    cy.contains('[role="button"]', 'Run Target').should('be.visible');
     cy.contains('[role="button"]', 'coral').should('be.visible');
   });
 

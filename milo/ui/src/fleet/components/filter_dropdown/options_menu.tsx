@@ -244,7 +244,16 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
                     }}
                     checkedIcon={checkedIcon}
                   />
-                  <Box sx={{ minWidth: 0, flexGrow: 1, overflow: 'hidden' }}>
+                  <Box
+                    sx={{
+                      minWidth: 0,
+                      flexGrow: 1,
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: '6px',
+                    }}
+                  >
                     <EllipsisTooltip tooltip={item.el.label}>
                       <HighlightCharacter
                         variant="body2"
@@ -252,13 +261,22 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
                         highlightIndexes={
                           item.el.isSignificant === false ? [] : item.matches
                         }
-                        sx={{
-                          flexGrow: 1,
-                        }}
                       >
                         {item.el.label}
                       </HighlightCharacter>
                     </EllipsisTooltip>
+                    {item.matchedKey && item.el.isSignificant !== false && (
+                      <HighlightCharacter
+                        variant="body2"
+                        highlightIndexes={item.keyMatches?.map((i) => i + 1)}
+                        sx={{
+                          color: colors.grey[600],
+                          flexShrink: 0,
+                        }}
+                      >
+                        {`(${item.matchedKey})`}
+                      </HighlightCharacter>
+                    )}
                   </Box>
                   {selectOnly && (
                     <Button

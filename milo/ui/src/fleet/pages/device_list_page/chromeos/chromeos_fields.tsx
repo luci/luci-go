@@ -15,6 +15,7 @@
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { FC_CellProps } from '@/fleet/types/table';
+import { humanizeColumnLabel } from '@/fleet/utils/humanize_column';
 
 import {
   CHROMEOS_FIELD_DEFINITIONS,
@@ -57,8 +58,6 @@ const createColumnDef = (
   filterKey: ChromeOSFilterKey,
 ): ChromeOSColumnDef => {
   return {
-    id: id,
-    header: header,
     orderByField:
       def === undefined || def.type === 'label' ? `labels.${id}` : id,
     filterKey: filterKey,
@@ -81,6 +80,8 @@ const createColumnDef = (
           },
         }),
     ...def,
+    id: id,
+    header: header,
   };
 };
 
@@ -96,7 +97,9 @@ export const getFieldDefinition = (
     id as keyof typeof CHROMEOS_FIELD_DEFINITIONS
   ] as FieldDefinition | undefined;
 
-  const header = def?.header || id;
+  const header = def?.header
+    ? humanizeColumnLabel(def.header)
+    : humanizeColumnLabel(id);
   const accessorFn =
     def?.accessorFn || ((device: ChromeOSDevice) => getLabelValues(device, id));
   const filterKey = (def?.filterKey || getFilterKey(id)) as ChromeOSFilterKey;

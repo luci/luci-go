@@ -18,6 +18,7 @@ import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { OptionValue } from '@/fleet/types/option';
 import { partition } from '@/fleet/utils/array';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
+import { resolveColumnSearchMatch } from '@/fleet/utils/humanize_column';
 
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
 import { OptionsMenu } from '../filter_dropdown/options_menu';
@@ -124,11 +125,31 @@ export function ColumnsManageDropDown({
           return <MenuSkeleton itemCount={columns.length} maxHeight={200} />;
         }
 
-        const sortedColumns = searchQuery
-          ? fuzzySort(searchQuery)(columns, (x: OptionValue) => x.label)
+        const hasSearchQuery = searchQuery.trim().length > 0;
+
+        const sortedColumns = hasSearchQuery
+          ? columns
+              .map((col) => {
+                const match = resolveColumnSearchMatch(
+                  searchQuery.trim(),
+                  col.value,
+                  col.label,
+                );
+                return {
+                  el: {
+                    ...col,
+                    isSignificant: match.score > 0,
+                  },
+                  score: match.score,
+                  matches: match.matches,
+                  matchedKey: match.matchedKey,
+                  keyMatches: match.keyMatches,
+                };
+              })
+              .sort((a, b) => b.score - a.score)
           : defaultSortedColumns;
 
-        const finalSortedColumns = searchQuery
+        const finalSortedColumns = hasSearchQuery
           ? sortedColumns
           : (() => {
               const [pass, fail] = partition(sortedColumns, (x) =>
