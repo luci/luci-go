@@ -23,13 +23,20 @@ import {
 import { DateTime } from 'luxon';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { OrderForm } from './order_form';
+import { UnifiedProductCatalogEntry } from './types';
+
+const mockTrackEvent = jest.fn();
 
 jest.mock('@/fleet/hooks/prpc_clients');
+jest.mock('@/generic_libs/components/google_analytics', () => ({
+  useGoogleAnalytics: () => ({
+    trackEvent: mockTrackEvent,
+  }),
+}));
 
-const mockEntry: ProductCatalogEntry = {
+const mockEntry: UnifiedProductCatalogEntry = {
   productCatalogId: 'prod-12345',
   productName: 'Google Pixel 9 Pro',
   gpn: '123-4567-890',
@@ -43,7 +50,7 @@ const mockEntry: ProductCatalogEntry = {
 };
 
 const renderOrderForm = (
-  entry: ProductCatalogEntry = mockEntry,
+  entry: UnifiedProductCatalogEntry = mockEntry,
   resourceGroups: string[] = ['CrOS TryJob', 'Group A', 'Group B'],
 ) => {
   const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
@@ -306,6 +313,14 @@ describe('<OrderForm />', () => {
     }
 
     expect(openSpy).toHaveBeenCalledTimes(1);
+    expect(mockTrackEvent).toHaveBeenCalledWith(
+      'product_catalogue_request_resource',
+      {
+        componentName: 'product_catalogue_order_form',
+        platform: 'os',
+        dutCount: 1,
+      },
+    );
     const openedUrlStr = openSpy.mock.calls[0][0] as string;
     const url = new URL(openedUrlStr);
     const customFields = url.searchParams.getAll('customFields');
