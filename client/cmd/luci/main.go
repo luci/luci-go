@@ -47,8 +47,9 @@ func getApplication() *cli.Application {
 			"  1. Extract IDs from a Milo or ATI test URL:\n" +
 			"     $ luci ids https://ci.chromium.org/ui/test-investigate/invocations/build-123/...\n" +
 			"     $ luci ids https://android-build.corp.google.com/test_investigate/invocation/I.../test/TR...\n\n" +
-			"  2. Inspect a Buildbucket build, its status, summary, and failed steps:\n" +
-			"     $ luci build get -buildid 8738491827364512345\n\n" +
+			"  2. Inspect a Buildbucket build, its status, summary, failed steps, and step logs:\n" +
+			"     $ luci build get -buildid 8738491827364512345\n" +
+			"     $ luci build log tail -buildid 8738491827364512345 -step compile -n 50\n\n" +
 			"  3. List test verdicts in an invocation:\n" +
 			"     $ luci verdict list -invocationid build-123\n\n" +
 			"  4. Inspect a module and its shards/errors:\n" +

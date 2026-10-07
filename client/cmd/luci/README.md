@@ -32,12 +32,13 @@ INTEGRATION_TESTS=1 go test ./...
 *   `base/`: Shared CLI utilities and authentication flags.
 *   `format/`: Common formatting and HTML summary processing helpers.
 *   `ids/`: Subcommand `luci ids <target>` to parse URLs / resource names and extract component IDs.
+*   `build/`: Subpackage for `build` resource management (`luci build get`, `luci build log`).
 *   `testresult/`: Subpackage for `test-result` resource management (`luci test-result get`, `luci test-result artifact ...`).
 *   `workunit/`: Subpackage for `work-unit` resource management (`luci work-unit get`, `luci work-unit artifact ...`).
-*   `verdict/`: Subpackage for `verdict` resource management (`luci verdict get`).
+*   `verdict/`: Subpackage for `verdict` resource management (`luci verdict get`, `luci verdict list`).
 *   `artifact/`: Core package for artifact queries and streaming (`list`, `get`, `head`, `tail`).
 
-Commands are completely stateless and require explicit flags (`-invocationid`, `-testid`, `-resultid`, `-workunitid`, `-artifactid`). Use `luci ids <url>` to extract IDs from URLs or canonical resource names.
+Commands are completely stateless and require explicit flags (`-buildid`, `-invocationid`, `-testid`, `-resultid`, `-workunitid`, `-artifactid`). Use `luci ids <url>` to extract IDs from URLs or canonical resource names.
 
 ## Manual Testing & Authentication
 
@@ -50,6 +51,10 @@ The tool automatically integrates with your local credentials. If running on cor
 # Extract IDs from a URL or resource name
 ./luci ids "https://ci.chromium.org/ui/test-investigate/invocations/build-.../modules/.../schemes/.../variants/.../cases/..."
 ./luci ids "https://android-build.corp.google.com/test_investigate/invocation/I.../test/TR..."
+
+# Inspect a Buildbucket build and fetch step logs
+./luci build get -buildid 8738491827364512345
+./luci build log tail -buildid 8738491827364512345 -step compile -n 50
 
 # Get a test verdict
 ./luci verdict get -invocationid build-8676... -testid "ninja://..." [-varianthash ...]

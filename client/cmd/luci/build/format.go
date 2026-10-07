@@ -163,6 +163,21 @@ func FormatBuild(w io.Writer, b *pb.Build, opts FormatOptions) error {
 		cleanInv = strings.TrimPrefix(cleanInv, "invocations/")
 		fmt.Fprintf(w, "\n(Tip: To list failed test verdicts, run: luci verdict list -invocationid %s)\n", cleanInv)
 	}
+	if b.Id != 0 && hasFailures {
+		for _, s := range b.Steps {
+			if (s.Status == pb.Status_FAILURE || s.Status == pb.Status_INFRA_FAILURE) && len(s.Logs) > 0 {
+				logName := s.Logs[0].Name
+				for _, l := range s.Logs {
+					if l.Name == "stdout" || l.Name == "failure_summary" {
+						logName = l.Name
+						break
+					}
+				}
+				fmt.Fprintf(w, "(Tip: To view step logs, run: luci build log tail -buildid %d -step %q -log %s -n 50)\n", b.Id, s.Name, logName)
+				break
+			}
+		}
+	}
 	if !opts.AllSteps && len(b.Steps) > 0 && hasFailures {
 		if b.Id != 0 {
 			fmt.Fprintf(w, "(Tip: To view all steps, run: luci build get -buildid %d -steps)\n", b.Id)

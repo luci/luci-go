@@ -44,6 +44,8 @@ import (
 type ExtractedIDs struct {
 	BuildID      string `json:"build_id,omitempty"`
 	InvocationID string `json:"invocation_id,omitempty"`
+	StepName     string `json:"step_name,omitempty"`
+	LogName      string `json:"log_name,omitempty"`
 	ModuleName   string `json:"module_name,omitempty"`
 	WorkUnitID   string `json:"work_unit_id,omitempty"`
 	TestID       string `json:"test_id,omitempty"`
@@ -52,17 +54,20 @@ type ExtractedIDs struct {
 	VariantHash  string `json:"variant_hash,omitempty"`
 	Legacy       bool   `json:"legacy,omitempty"`
 
-	// builder and buildNumber are unexported internal fields used during ID extraction
-	// to query Buildbucket for the build ID. They are not output.
-	builder        string
-	buildNumber    int
-	legacyResolved bool
+	// builder, buildNumber, and logdogStreamPath are unexported internal fields used during ID extraction
+	// to query Buildbucket for the build ID or canonical step/log names. They are not output.
+	builder          string
+	buildNumber      int
+	logdogStreamPath string
+	legacyResolved   bool
 }
 
 // IsEmpty returns true if no identifiers were extracted.
 func (e *ExtractedIDs) IsEmpty() bool {
 	return e.BuildID == "" &&
 		e.InvocationID == "" &&
+		e.StepName == "" &&
+		e.LogName == "" &&
 		e.ModuleName == "" &&
 		e.WorkUnitID == "" &&
 		e.TestID == "" &&
@@ -76,8 +81,8 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "ids [-json] <target>",
 		ShortDesc: "Extract resource IDs from a URL or resource name",
-		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket URLs, ResultDB resource names, and AnTS / ATI URLs)\n" +
-			"and extract the canonical IDs (-buildid, -invocationid, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
+		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog URLs, ResultDB resource names, and AnTS / ATI URLs)\n" +
+			"and extract the canonical IDs (-buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
 			"for use with other commands.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &idsRun{af: af}
@@ -169,6 +174,12 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 	if extracted.InvocationID != "" {
 		fmt.Fprintf(out, "Invocation ID: %s\n", extracted.InvocationID)
 	}
+	if extracted.StepName != "" {
+		fmt.Fprintf(out, "Step Name:     %s\n", extracted.StepName)
+	}
+	if extracted.LogName != "" {
+		fmt.Fprintf(out, "Log Name:      %s\n", extracted.LogName)
+	}
 	if extracted.ModuleName != "" {
 		fmt.Fprintf(out, "Module Name:   %s\n", extracted.ModuleName)
 	}
@@ -209,7 +220,7 @@ func ExtractIDs(ctx context.Context, rdbClient pb.ResultDBClient, bbClient grpcp
 	// 1. Android Test Investigate (ATI) URL or AnTS target
 	if ok, err := extractFromAntsTarget(ctx, rdbClient, raw, extracted); err != nil {
 		return nil, err
-	} else if !ok {
+	} else if !ok && !extractFromLogDogBuildURL(raw, extracted) {
 		clean := base.TrimResourceURL(raw)
 
 		// 2. Milo module URL without test cases: .../modules/<module>
@@ -241,6 +252,10 @@ func ExtractIDs(ctx context.Context, rdbClient pb.ResultDBClient, bbClient grpcp
 		if err := resolveBuildID(ctx, bbClient, extracted); err != nil {
 			return nil, err
 		}
+	}
+
+	if extracted.logdogStreamPath != "" && extracted.BuildID != "" {
+		resolveLogDogStepAndLog(ctx, bbClient, extracted)
 	}
 
 	populateBuildIDFromInvocation(extracted)
@@ -438,7 +453,102 @@ func extractFromMiloStructuredURL(ctx context.Context, client pb.ResultDBClient,
 	return true
 }
 
-// extractFromMiloBuildURL handles Milo UI and Buildbucket invocation and build URLs
+// extractFromLogDogBuildURL handles LogDog buildbucket URLs
+// (e.g. https://logs.chromium.org/logs/<project>/buildbucket/<host>/<build_id>/+/u/<step>/<log>
+// or logdog://logs.chromium.org/<project>/buildbucket/<host>/<build_id>/+/u/<step>/<log>).
+func extractFromLogDogBuildURL(raw string, extracted *ExtractedIDs) bool {
+	clean := strings.TrimSpace(raw)
+	if idx := strings.IndexAny(clean, "?#"); idx != -1 {
+		clean = clean[:idx]
+	}
+	idx := strings.Index(clean, "/buildbucket/")
+	if idx == -1 {
+		return false
+	}
+	after := clean[idx+len("/buildbucket/"):]
+	parts := strings.SplitN(after, "/", 3)
+	if len(parts) < 2 {
+		return false
+	}
+	candidate := strings.TrimPrefix(parts[1], "b")
+	if !isAllDigits(candidate) || len(candidate) <= 10 {
+		return false
+	}
+	extracted.BuildID = candidate
+	extracted.InvocationID = "build-" + candidate
+
+	if len(parts) == 3 {
+		rest := parts[2]
+		if plusIdx := strings.Index(rest, "+/"); plusIdx != -1 {
+			streamPath := strings.Trim(rest[plusIdx+2:], "/")
+			if streamPath != "" {
+				extracted.logdogStreamPath = streamPath
+				if strings.HasPrefix(streamPath, "u/") {
+					uRest := strings.TrimPrefix(streamPath, "u/")
+					segs := strings.Split(uRest, "/")
+					if len(segs) >= 2 {
+						extracted.StepName = strings.Join(segs[:len(segs)-1], "|")
+						extracted.LogName = segs[len(segs)-1]
+					} else if len(segs) == 1 && segs[0] != "" {
+						extracted.LogName = segs[0]
+					}
+				} else {
+					segs := strings.Split(streamPath, "/")
+					if len(segs) > 0 && segs[len(segs)-1] != "" {
+						extracted.LogName = segs[len(segs)-1]
+					}
+				}
+			}
+		}
+	}
+	return true
+}
+
+func resolveLogDogStepAndLog(ctx context.Context, bbClient grpcpb.BuildsClient, extracted *ExtractedIDs) {
+	if bbClient == nil || extracted.BuildID == "" || extracted.logdogStreamPath == "" {
+		return
+	}
+	buildID, err := strconv.ParseInt(extracted.BuildID, 10, 64)
+	if err != nil || buildID <= 0 {
+		return
+	}
+	req := &bbpb.GetBuildRequest{
+		Id: buildID,
+		Mask: &bbpb.BuildMask{
+			Fields: &field_mask.FieldMask{
+				Paths: []string{"id", "steps", "output.logs"},
+			},
+		},
+	}
+	b, err := bbClient.GetBuild(ctx, req)
+	if err != nil || b == nil {
+		return
+	}
+	targetSuffix := "/+/" + extracted.logdogStreamPath
+	for _, s := range b.Steps {
+		for _, l := range s.Logs {
+			if matchesLogDogStreamSuffix(l, targetSuffix) {
+				extracted.StepName = s.Name
+				extracted.LogName = l.Name
+				return
+			}
+		}
+	}
+	for _, l := range b.GetOutput().GetLogs() {
+		if matchesLogDogStreamSuffix(l, targetSuffix) {
+			extracted.StepName = ""
+			extracted.LogName = l.Name
+			return
+		}
+	}
+}
+
+func matchesLogDogStreamSuffix(l *bbpb.Log, targetSuffix string) bool {
+	return strings.HasSuffix(strings.TrimRight(l.Url, "/"), targetSuffix) ||
+		strings.HasSuffix(strings.TrimRight(l.ViewUrl, "/"), targetSuffix)
+}
+
+// extractFromMiloBuildURL handles Milo UI and Buildbucket build URLs
 // (e.g. /ui/inv/<inv>, /ui/b/<build_id>, /b/<build_id>, /build/<build_id>, /builders/.../<build_id>).
 func extractFromMiloBuildURL(clean string, extracted *ExtractedIDs) bool {
 	if idx := strings.Index(clean, "/inv/"); idx != -1 {

@@ -146,6 +146,7 @@ func TestFormatBuild(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Summary: ninja returned exit code 1"))
 			assert.Loosely(t, out, should.ContainSubstring("Logs: stdout (https://logs.chromium.org/logs/1), ninja_log (https://logs.chromium.org/logs/2)"))
 			assert.Loosely(t, out, should.ContainSubstring("luci verdict list -invocationid build-8738491827364512346"))
+			assert.Loosely(t, out, should.ContainSubstring(`luci build log tail -buildid 8738491827364512346 -step "compile" -log stdout -n 50`))
 			assert.Loosely(t, out, should.ContainSubstring("luci build get -buildid 8738491827364512346 -steps"))
 		})
 
@@ -251,6 +252,12 @@ func TestBuildGetRun(t *testing.T) {
 			assert.Loosely(t, run.Run(nil, []string{}, nil), should.Equal(0))
 			assert.Loosely(t, run.Run(nil, []string{"--help"}, nil), should.Equal(0))
 			assert.Loosely(t, run.Run(nil, []string{"get", "--help"}, nil), should.Equal(0))
+			assert.Loosely(t, run.Run(nil, []string{"log", "--help"}, nil), should.Equal(0))
+			assert.Loosely(t, run.Run(nil, []string{"log", "list", "--help"}, nil), should.Equal(0))
+			assert.Loosely(t, run.Run(nil, []string{"log", "get", "--help"}, nil), should.Equal(0))
+			assert.Loosely(t, run.Run(nil, []string{"log", "head", "--help"}, nil), should.Equal(0))
+			assert.Loosely(t, run.Run(nil, []string{"log", "tail", "--help"}, nil), should.Equal(0))
+			assert.Loosely(t, run.Run(nil, []string{"logs", "--help"}, nil), should.Equal(0))
 		})
 
 		t.Run(`Execution with mock client - buildid flag`, func(t *ftt.Test) {

@@ -775,5 +775,56 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, ids2.InvocationID, should.Equal("build-8674628400464446193"))
 			assert.Loosely(t, ids2.ArtifactID, should.Equal("tradefed/pkg.Class#Method-screenshot.png"))
 		})
+
+		t.Run(`ExtractIDs extracts BuildID, InvocationID, StepName, and LogName from LogDog buildbucket URLs`, func(t *ftt.Test) {
+			ctx := context.Background()
+			viewURL := "https://logs.chromium.org/logs/chrome/buildbucket/cr-buildbucket/8669362094518613393/+/u/generate_build_files/stdout"
+			ids, err := ExtractIDs(ctx, nil, nil, viewURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids.BuildID, should.Equal("8669362094518613393"))
+			assert.Loosely(t, ids.InvocationID, should.Equal("build-8669362094518613393"))
+			assert.Loosely(t, ids.StepName, should.Equal("generate_build_files"))
+			assert.Loosely(t, ids.LogName, should.Equal("stdout"))
+
+			logdogURL := "logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket/8738491827364512345/+/u/compile/stdout"
+			ids2, err := ExtractIDs(ctx, nil, nil, logdogURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids2.BuildID, should.Equal("8738491827364512345"))
+			assert.Loosely(t, ids2.InvocationID, should.Equal("build-8738491827364512345"))
+			assert.Loosely(t, ids2.StepName, should.Equal("compile"))
+			assert.Loosely(t, ids2.LogName, should.Equal("stdout"))
+
+			// Resolves canonical Buildbucket step and log names when sanitized in LogDog URL
+			sanitizedURL := "https://logs.chromium.org/logs/chrome/buildbucket/cr-buildbucket/8669362094518613393/+/u/builder_cache/check_if_empty/l_execution_details"
+			bbMock := &mockBuildsClient{
+				getBuild: func(ctx context.Context, in *bbpb.GetBuildRequest) (*bbpb.Build, error) {
+					return &bbpb.Build{
+						Id: 8669362094518613393,
+						Steps: []*bbpb.Step{
+							{
+								Name: "builder cache|check if empty",
+								Logs: []*bbpb.Log{
+									{
+										Name:    "$execution details",
+										ViewUrl: sanitizedURL,
+										Url:     "logdog://logs.chromium.org/chrome/buildbucket/cr-buildbucket/8669362094518613393/+/u/builder_cache/check_if_empty/l_execution_details",
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			ids3, err := ExtractIDs(ctx, nil, bbMock, sanitizedURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids3.BuildID, should.Equal("8669362094518613393"))
+			assert.Loosely(t, ids3.StepName, should.Equal("builder cache|check if empty"))
+			assert.Loosely(t, ids3.LogName, should.Equal("$execution details"))
+
+			var buf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&buf, ids3, false), should.BeNil)
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Step Name:     builder cache|check if empty\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Log Name:      $execution details\n"))
+		})
 	})
 }

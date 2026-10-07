@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -51,4 +52,18 @@ func (af *AuthFlags) NewBuildsClient(ctx context.Context, host string) (grpcpb.B
 		Options: prpc.DefaultOptions(),
 	}
 	return grpcpb.NewBuildsClient(prpcClient), httpClient, nil
+}
+
+// NewLogDogClient creates an authenticated LogDog Logs pRPC client.
+func (af *AuthFlags) NewLogDogClient(ctx context.Context, host string) (logdog.LogsClient, error) {
+	httpClient, err := af.NewHTTPClient(ctx)
+	if err != nil {
+		return nil, errors.Fmt("failed to create http client: %w", err)
+	}
+	prpcClient := &prpc.Client{
+		C:       httpClient,
+		Host:    host,
+		Options: prpc.DefaultOptions(),
+	}
+	return logdog.NewLogsPRPCClient(prpcClient), nil
 }
