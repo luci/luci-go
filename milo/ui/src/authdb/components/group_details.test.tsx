@@ -55,7 +55,7 @@ describe('<GroupDetails />', () => {
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute(
       'href',
-      'http://cs/f:groups_push_cron/config.yaml%20foo',
+      'http://cs/f:groups_push_cron/project_configs%20foo',
     );
   });
 
@@ -76,7 +76,7 @@ describe('<GroupDetails />', () => {
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute(
       'href',
-      'http://cs/f:groups_push_cron/config.yaml%20bar',
+      'http://cs/f:groups_push_cron/project_configs%20bar',
     );
   });
 

@@ -64,7 +64,7 @@ const getExternalConfigUrl = (name: string): string | null => {
   const match = name.match(/^(mdb|google)\/(.+)$/);
   if (match) {
     const groupName = match[2];
-    return `http://cs/f:groups_push_cron/config.yaml%20${encodeURIComponent(groupName)}`;
+    return `http://cs/f:groups_push_cron/project_configs%20${encodeURIComponent(groupName)}`;
   }
   return null;
 };
