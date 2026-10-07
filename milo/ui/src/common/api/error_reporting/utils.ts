@@ -183,18 +183,14 @@ export class ASTCache {
   }
 }
 
-export function getFleetConsoleProject() {
+export function getFleetConsoleProject(hostname = window.location.hostname) {
   let fleetConsoleProjectApiKey = '';
   let fleetConsoleProjectId = '';
 
-  if (
-    ['luci-milo.appspot.com', 'ci.chromium.org'].includes(
-      window.location.hostname,
-    )
-  ) {
+  if (['luci-milo.appspot.com', 'ci.chromium.org'].includes(hostname)) {
     fleetConsoleProjectApiKey = 'AIzaSyD8sLpokusZlnCyEDZ_b3dZmcSueo5g_-M';
     fleetConsoleProjectId = 'fleet-console-prod';
-  } else if (window.location.hostname.endsWith('luci-milo-dev.appspot.com')) {
+  } else if (hostname === 'luci-milo-dev.appspot.com') {
     fleetConsoleProjectApiKey = 'AIzaSyDxnTm4WP4mpJ5t1_S-q68vbGc8YEDPVrA';
     fleetConsoleProjectId = 'fleet-console-dev';
   }

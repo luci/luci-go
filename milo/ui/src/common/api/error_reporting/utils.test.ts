@@ -21,6 +21,7 @@ import {
   trimLeadingParents,
   formatFrame,
   findEnclosingFunctionName,
+  getFleetConsoleProject,
 } from './utils';
 
 describe('Error Reporting Utils', () => {
@@ -290,6 +291,41 @@ describe('Error Reporting Utils', () => {
       `;
       const ast = parse(code);
       expect(findEnclosingFunctionName(ast, 2, 8)).toBe(null);
+    });
+  });
+
+  describe('getFleetConsoleProject', () => {
+    it('returns empty config by default in local test environment', () => {
+      expect(getFleetConsoleProject()).toEqual({
+        fleetConsoleProjectApiKey: '',
+        fleetConsoleProjectId: '',
+      });
+    });
+
+    it('returns prod config on canonical prod hostnames', () => {
+      expect(
+        getFleetConsoleProject('ci.chromium.org').fleetConsoleProjectId,
+      ).toBe('fleet-console-prod');
+
+      expect(
+        getFleetConsoleProject('luci-milo.appspot.com').fleetConsoleProjectId,
+      ).toBe('fleet-console-prod');
+    });
+
+    it('returns dev config only on canonical luci-milo-dev.appspot.com', () => {
+      expect(
+        getFleetConsoleProject('luci-milo-dev.appspot.com')
+          .fleetConsoleProjectId,
+      ).toBe('fleet-console-dev');
+    });
+
+    it('disables error reporting on per-CL App Engine demo subdomains', () => {
+      expect(
+        getFleetConsoleProject('c8497591-dot-luci-milo-dev.appspot.com'),
+      ).toEqual({
+        fleetConsoleProjectApiKey: '',
+        fleetConsoleProjectId: '',
+      });
     });
   });
 });
