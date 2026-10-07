@@ -14,28 +14,32 @@
 
 package aip160
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
+
+var tokenKindsTests = []struct {
+	input string
+	kind  string
+	value string
+}{
+	{input: "<= 10", kind: kindComparator, value: "<="},
+	{input: "-file", kind: kindNegate, value: "-"},
+	{input: "NOT file", kind: kindNegate, value: "NOT"},
+	{input: "AND b", kind: kindAnd, value: "AND"},
+	{input: "OR a", kind: kindOr, value: "OR"},
+	{input: ".field", kind: kindDot, value: "."},
+	{input: ".\"field\"", kind: kindDot, value: "."},
+	{input: "(arg)", kind: kindLParen, value: "("},
+	{input: ")", kind: kindRParen, value: ")"},
+	{input: ", arg2)", kind: kindComma, value: ","},
+	{input: "text", kind: kindText, value: "text"},
+	{input: "\"string\"", kind: kindString, value: "\"string\""},
+}
 
 func TestTokenKinds(t *testing.T) {
-	tests := []struct {
-		input string
-		kind  string
-		value string
-	}{
-		{input: "<= 10", kind: kindComparator, value: "<="},
-		{input: "-file", kind: kindNegate, value: "-"},
-		{input: "NOT file", kind: kindNegate, value: "NOT"},
-		{input: "AND b", kind: kindAnd, value: "AND"},
-		{input: "OR a", kind: kindOr, value: "OR"},
-		{input: ".field", kind: kindDot, value: "."},
-		{input: ".\"field\"", kind: kindDot, value: "."},
-		{input: "(arg)", kind: kindLParen, value: "("},
-		{input: ")", kind: kindRParen, value: ")"},
-		{input: ", arg2)", kind: kindComma, value: ","},
-		{input: "text", kind: kindText, value: "text"},
-		{input: "\"string\"", kind: kindString, value: "\"string\""},
-	}
-	for _, test := range tests {
+	for _, test := range tokenKindsTests {
 		t.Run(test.value, func(t *testing.T) {
 			token, err := NewLexer(test.input).Next()
 			if err != nil {
@@ -99,67 +103,71 @@ func TestWhitespaceLexing(t *testing.T) {
 	}
 }
 
+var fullParseTests = []struct {
+	input     string
+	ast       string
+	expectErr bool
+}{
+	{input: "", ast: "filter{}"},
+	{input: " ", ast: "filter{}"},
+	{input: "simple", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"simple\"}}}}}}}}}}"},
+	{input: " wsBefore", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"wsBefore\"}}}}}}}}}}"},
+	{input: "wsAfter ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"wsAfter\"}}}}}}}}}}"},
+	{input: " wsAround ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"wsAround\"}}}}}}}}}}"},
+	{input: "\"string\"", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{quoted,\"string\"}}}}}}}}}}"},
+	{input: " \"string\" ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{quoted,\"string\"}}}}}}}}}}"},
+	{input: "\"ws string\"", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{quoted,\"ws string\"}}}}}}}}}}"},
+	{input: "-negated", ast: "filter{expression{sequence{factor{term{-simple{restriction{comparable{member{value{\"negated\"}}}}}}}}}}"},
+	{input: " - negated ", ast: "filter{expression{sequence{factor{term{-simple{restriction{comparable{member{value{\"negated\"}}}}}}}}}}"},
+	// This is a common case (lots of test names are separated by -).
+	{input: "dash-separated-name", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"dash-separated-name\"}}}}}}}}}}"},
+	{input: "term -negated-term", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"term\"}}}}}}},factor{term{-simple{restriction{comparable{member{value{\"negated-term\"}}}}}}}}}}"},
+	{input: "NOT negated", ast: "filter{expression{sequence{factor{term{-simple{restriction{comparable{member{value{\"negated\"}}}}}}}}}}"},
+	{input: " NOT negated ", ast: "filter{expression{sequence{factor{term{-simple{restriction{comparable{member{value{\"negated\"}}}}}}}}}}"},
+	{input: " NOTnegated ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"NOTnegated\"}}}}}}}}}}"},
+	{input: "implicit and", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"implicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
+	{input: " implicit and ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"implicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
+	{input: "explicit AND and", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
+	{input: "explicit AND ", expectErr: true},
+	{input: "explicit AND and", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
+	{input: " explicit AND and ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
+	{input: " explicit ANDnotand ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"ANDnotand\"}}}}}}}}}}"},
+	{input: "test OR or", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"test\"}}}}}},term{simple{restriction{comparable{member{value{\"or\"}}}}}}}}}}"},
+	{input: "test OR ", expectErr: true},
+	{input: "test ORnotor", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"test\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"ORnotor\"}}}}}}}}}}"},
+	{input: " test OR or ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"test\"}}}}}},term{simple{restriction{comparable{member{value{\"or\"}}}}}}}}}}"},
+	{input: " testORor ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"testORor\"}}}}}}}}}}"},
+	{input: "implicit and AND explicit", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"implicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}}}}}"},
+	{input: "implicit with OR term AND explicit OR term", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"implicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"with\"}}}}}},term{simple{restriction{comparable{member{value{\"term\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}},term{simple{restriction{comparable{member{value{\"term\"}}}}}}}}}}"},
+	{input: "(composite)", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}"},
+	{input: " (composite) ", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}"},
+	{input: "( composite )", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}"},
+	{input: " ( composite ) ", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}"},
+	{input: " ( composite multi) ", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"multi\"}}}}}}}}}}}}}}}"},
+	{input: "value<21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"<\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
+	{input: "value < 21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"<\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
+	{input: " value < 21 ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"<\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
+	{input: "value<=21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"<=\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
+	{input: "value>21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\">\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
+	{input: "value>=21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\">=\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
+	{input: "value=21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"=\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
+	{input: "value!=21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"!=\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
+	// "!" is only valid as part of "!=". Negation is written "-" or "NOT".
+	{input: "!negated", expectErr: true},
+	{input: "value!21", expectErr: true},
+	{input: "value:21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\":\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
+	{input: "value=(composite)", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"=\",arg{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}}}"},
+	// Note: although this parses correctly as a "global" restriction, the implementation doesn't handle this type of restriction, so an error will be returned higher in the stack.
+	{input: "member.field", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"member\"}, {value{\"field\"}}}}}}}}}}}"},
+	{input: " member.field > 4 ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"member\"}, {value{\"field\"}}}},\">\",arg{comparable{member{value{\"4\"}}}}}}}}}}}"},
+	{input: " member.\"field\" > 4 ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"member\"}, {value{quoted,\"field\"}}}},\">\",arg{comparable{member{value{\"4\"}}}}}}}}}}}"},
+	{input: "composite (expression)", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}},factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"expression\"}}}}}}}}}}}}}}}"},
+	// This should parse as a function, but function parsing is not implemented.
+	// {input: "function(expression)", ast: ""},
+}
+
 func TestFullParse(t *testing.T) {
-	tests := []struct {
-		input     string
-		ast       string
-		expectErr bool
-	}{
-		{input: "", ast: "filter{}"},
-		{input: " ", ast: "filter{}"},
-		{input: "simple", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"simple\"}}}}}}}}}}"},
-		{input: " wsBefore", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"wsBefore\"}}}}}}}}}}"},
-		{input: "wsAfter ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"wsAfter\"}}}}}}}}}}"},
-		{input: " wsAround ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"wsAround\"}}}}}}}}}}"},
-		{input: "\"string\"", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{quoted,\"string\"}}}}}}}}}}"},
-		{input: " \"string\" ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{quoted,\"string\"}}}}}}}}}}"},
-		{input: "\"ws string\"", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{quoted,\"ws string\"}}}}}}}}}}"},
-		{input: "-negated", ast: "filter{expression{sequence{factor{term{-simple{restriction{comparable{member{value{\"negated\"}}}}}}}}}}"},
-		{input: " - negated ", ast: "filter{expression{sequence{factor{term{-simple{restriction{comparable{member{value{\"negated\"}}}}}}}}}}"},
-		// This is a common case (lots of test names are separated by -).
-		{input: "dash-separated-name", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"dash-separated-name\"}}}}}}}}}}"},
-		{input: "term -negated-term", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"term\"}}}}}}},factor{term{-simple{restriction{comparable{member{value{\"negated-term\"}}}}}}}}}}"},
-		{input: "NOT negated", ast: "filter{expression{sequence{factor{term{-simple{restriction{comparable{member{value{\"negated\"}}}}}}}}}}"},
-		{input: " NOT negated ", ast: "filter{expression{sequence{factor{term{-simple{restriction{comparable{member{value{\"negated\"}}}}}}}}}}"},
-		{input: " NOTnegated ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"NOTnegated\"}}}}}}}}}}"},
-		{input: "implicit and", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"implicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
-		{input: " implicit and ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"implicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
-		{input: "explicit AND and", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
-		{input: "explicit AND ", expectErr: true},
-		{input: "explicit AND and", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
-		{input: " explicit AND and ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}}}}"},
-		{input: " explicit ANDnotand ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"ANDnotand\"}}}}}}}}}}"},
-		{input: "test OR or", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"test\"}}}}}},term{simple{restriction{comparable{member{value{\"or\"}}}}}}}}}}"},
-		{input: "test OR ", expectErr: true},
-		{input: "test ORnotor", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"test\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"ORnotor\"}}}}}}}}}}"},
-		{input: " test OR or ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"test\"}}}}}},term{simple{restriction{comparable{member{value{\"or\"}}}}}}}}}}"},
-		{input: " testORor ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"testORor\"}}}}}}}}}}"},
-		{input: "implicit and AND explicit", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"implicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"and\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}}}}}}"},
-		{input: "implicit with OR term AND explicit OR term", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"implicit\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"with\"}}}}}},term{simple{restriction{comparable{member{value{\"term\"}}}}}}}},sequence{factor{term{simple{restriction{comparable{member{value{\"explicit\"}}}}}},term{simple{restriction{comparable{member{value{\"term\"}}}}}}}}}}"},
-		{input: "(composite)", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}"},
-		{input: " (composite) ", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}"},
-		{input: "( composite )", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}"},
-		{input: " ( composite ) ", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}"},
-		{input: " ( composite multi) ", ast: "filter{expression{sequence{factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}},factor{term{simple{restriction{comparable{member{value{\"multi\"}}}}}}}}}}}}}}}"},
-		{input: "value<21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"<\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
-		{input: "value < 21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"<\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
-		{input: " value < 21 ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"<\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
-		{input: "value<=21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"<=\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
-		{input: "value>21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\">\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
-		{input: "value>=21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\">=\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
-		{input: "value=21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"=\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
-		{input: "value!=21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"!=\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
-		{input: "value:21", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\":\",arg{comparable{member{value{\"21\"}}}}}}}}}}}"},
-		{input: "value=(composite)", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"value\"}}},\"=\",arg{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}}}}}}}}}}}}"},
-		// Note: although this parses correctly as a "global" restriction, the implementation doesn't handle this type of restriction, so an error will be returned higher in the stack.
-		{input: "member.field", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"member\"}, {value{\"field\"}}}}}}}}}}}"},
-		{input: " member.field > 4 ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"member\"}, {value{\"field\"}}}},\">\",arg{comparable{member{value{\"4\"}}}}}}}}}}}"},
-		{input: " member.\"field\" > 4 ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"member\"}, {value{quoted,\"field\"}}}},\">\",arg{comparable{member{value{\"4\"}}}}}}}}}}}"},
-		{input: "composite (expression)", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"composite\"}}}}}}},factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{value{\"expression\"}}}}}}}}}}}}}}}"},
-		// This should parse as a function, but function parsing is not implemented.
-		// {input: "function(expression)", ast: ""},
-	}
-	for _, test := range tests {
+	for _, test := range fullParseTests {
 		t.Run(test.input, func(t *testing.T) {
 			filter, err := ParseFilter(test.input)
 			if test.expectErr {
@@ -177,4 +185,50 @@ func TestFullParse(t *testing.T) {
 			}
 		})
 	}
+}
+
+// FuzzLexer checks that the lexer consumes its input exactly: the token
+// values, concatenated, must equal the input minus whitespace. No input may be
+// skipped or lexed twice.
+func FuzzLexer(f *testing.F) {
+	for _, test := range tokenKindsTests {
+		f.Add(test.input)
+	}
+	for _, test := range fullParseTests {
+		f.Add(test.input)
+	}
+	f.Fuzz(func(t *testing.T, input string) {
+		var tokens strings.Builder
+		l := NewLexer(input)
+		for {
+			token, err := l.Next()
+			if err != nil {
+				// Invalid input.
+				return
+			}
+			if token.kind == kindEnd {
+				break
+			}
+			tokens.WriteString(token.value)
+		}
+		got := removeWhitespace(tokens.String())
+		want := removeWhitespace(input)
+		if got != want {
+			t.Errorf("tokens of %q concatenate to %q, want %q", input, got, want)
+		}
+	})
+}
+
+// removeWhitespace removes the characters matched by \s in lexerRegexp. It
+// works byte by byte so that invalid UTF-8 is compared verbatim.
+func removeWhitespace(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case ' ', '\t', '\n', '\f', '\r':
+		default:
+			b.WriteByte(s[i])
+		}
+	}
+	return b.String()
 }

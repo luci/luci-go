@@ -55,7 +55,8 @@ const (
 )
 
 // lexerRegexp has one group for each kind of token that can be lexed, in the order of the kind consts above. There are two cases for kindNegate to handle whitespace correctly.
-var lexerRegexp = regexp.MustCompile(`^(<=|>=|!=|<|>|=|\:)|(NOT\s)|(-)|(AND\s)|(OR\s)|(\.)|(\()|(\))|(,)|("(?:[^"\\]|\\.)*")|([^\s\.,<>=!:\(\)]+)`)
+// The alternation is wrapped in (?:...) so that ^ anchors every alternative and a token can only match at the start of the remaining input.
+var lexerRegexp = regexp.MustCompile(`^(?:(<=|>=|!=|<|>|=|\:)|(NOT\s)|(-)|(AND\s)|(OR\s)|(\.)|(\()|(\))|(,)|("(?:[^"\\]|\\.)*")|([^\s\.,<>=!:\(\)]+))`)
 
 type token struct {
 	kind  string
