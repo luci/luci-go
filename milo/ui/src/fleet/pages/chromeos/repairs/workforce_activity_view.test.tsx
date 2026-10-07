@@ -22,7 +22,6 @@ import {
   enableWorkforceInProgressRepairs,
   enableWorkforceMttr,
   enableWorkforcePickupRank,
-  enableWorkforcePriorityScoreCleared,
   enableWorkforceTimeframeFilter,
 } from '@/fleet/features';
 import * as UseWorkforceActivityModule from '@/fleet/pages/chromeos/repairs/use_workforce_activity';
@@ -110,10 +109,6 @@ const MOCK_WORKFORCE_DATA = {
 
 const enableAllMetricFlags = () => {
   localStorage.setItem(
-    getFeatureFlagLocalStorageKey(enableWorkforcePriorityScoreCleared),
-    'on',
-  );
-  localStorage.setItem(
     getFeatureFlagLocalStorageKey(enableWorkforcePickupRank),
     'on',
   );
@@ -194,11 +189,17 @@ describe('<WorkforceActivityView />', () => {
     expect(screen.getByText('Andrew Miller')).toBeInTheDocument();
     expect(screen.getByText('8 devices')).toBeInTheDocument();
 
-    // Unimplemented KPI cards are hidden by default
     expect(
-      screen.queryByText('Total Priority Points Cleared'),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText('2,850 pts')).not.toBeInTheDocument();
+      screen.getByText('Total Priority Points Cleared'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('2,850 pts')).toBeInTheDocument();
+    expect(
+      screen.getByText('High-impact score restored (1D)'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Priority Score Cleared (1D)')).toBeInTheDocument();
+    expect(screen.getByText('680 pts')).toBeInTheDocument();
+
+    // Unimplemented KPI cards are hidden by default
     expect(screen.queryByText('Avg Queue Pickup Rank')).not.toBeInTheDocument();
     expect(screen.queryByText('#4.7')).not.toBeInTheDocument();
     expect(screen.queryByText('In-Progress Repairs')).not.toBeInTheDocument();
@@ -213,10 +214,6 @@ describe('<WorkforceActivityView />', () => {
     expect(
       screen.queryByText(/chromeos1-row2-rack3-host1/i),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('Priority Score Cleared (1D)'),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText('680 pts')).not.toBeInTheDocument();
     expect(
       screen.queryByText('Avg Queue Pickup Rank (1D)'),
     ).not.toBeInTheDocument();
@@ -424,7 +421,7 @@ describe('<WorkforceActivityView />', () => {
     renderWorkforceView();
 
     const skeletons = screen.getAllByTestId('kpi-skeleton');
-    expect(skeletons).toHaveLength(1);
+    expect(skeletons).toHaveLength(2);
     expect(screen.getByTestId('workforce-loading-spinner')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     expect(screen.queryByText('Andrew Miller')).not.toBeInTheDocument();

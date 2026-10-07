@@ -70,18 +70,6 @@ export const enableChromeOsWorkforceActivity = createFeatureFlag({
   allowedEnvironments: ['dev'],
 });
 
-export const enableWorkforcePriorityScoreCleared = createFeatureFlag({
-  description:
-    'Displays the Priority Score Cleared metric and table column in ChromeOS Workforce Activity.',
-  namespace: 'fleet-console',
-  name: 'workforce-priority-score-cleared',
-  percentage: {
-    dev: 0,
-    prod: 0,
-  },
-  allowedEnvironments: ['dev'],
-});
-
 export const enableWorkforcePickupRank = createFeatureFlag({
   description:
     'Displays the Avg Queue Pickup Rank metric and table column in ChromeOS Workforce Activity.',

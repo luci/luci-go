@@ -60,7 +60,6 @@ import {
   enableWorkforceInProgressRepairs,
   enableWorkforceMttr,
   enableWorkforcePickupRank,
-  enableWorkforcePriorityScoreCleared,
   enableWorkforceTimeframeFilter,
 } from '@/fleet/features';
 import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
@@ -117,9 +116,6 @@ export const WorkforceActivityView = ({
   const [timeframe, setTimeframe] = useState<TimeframeOption>('1D');
   const [unclaimedDuts, setUnclaimedDuts] = useState<Set<string>>(new Set());
 
-  const showPriorityScoreCleared = useFeatureFlag(
-    enableWorkforcePriorityScoreCleared,
-  );
   const showPickupRank = useFeatureFlag(enableWorkforcePickupRank);
   const showMttr = useFeatureFlag(enableWorkforceMttr);
   const showInProgressRepairs = useFeatureFlag(
@@ -231,7 +227,7 @@ export const WorkforceActivityView = ({
             </Typography>
           ),
       },
-      showPriorityScoreCleared && {
+      {
         id: 'priorityScoreCleared',
         align: 'center',
         header: `Priority Score Cleared (${timeframe})`,
@@ -520,53 +516,51 @@ export const WorkforceActivityView = ({
         </Paper>
 
         {/* Total Priority Points Cleared */}
-        {showPriorityScoreCleared && (
-          <Paper
-            elevation={0}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: '8px',
+            border: `1px solid ${colors.grey[300]}`,
+          }}
+        >
+          <Box
             sx={{
-              p: 2,
-              borderRadius: '8px',
-              border: `1px solid ${colors.grey[300]}`,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 1,
             }}
           >
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 1,
-              }}
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontWeight: 600 }}
             >
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ fontWeight: 600 }}
-              >
-                Total Priority Points Cleared
-              </Typography>
-              <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-            </Box>
-            {loading ? (
-              <Skeleton
-                variant="text"
-                width={100}
-                height={42}
-                sx={{ mb: 0.5 }}
-                data-testid="kpi-skeleton"
-              />
-            ) : (
-              <Typography
-                variant="h4"
-                sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
-              >
-                {(data?.totalPriorityPointsCleared ?? 0).toLocaleString()} pts
-              </Typography>
-            )}
-            <Typography variant="caption" color="text.secondary">
-              High-impact score restored (today)
+              Total Priority Points Cleared
             </Typography>
-          </Paper>
-        )}
+            <TrendingUpIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+          </Box>
+          {loading ? (
+            <Skeleton
+              variant="text"
+              width={100}
+              height={42}
+              sx={{ mb: 0.5 }}
+              data-testid="kpi-skeleton"
+            />
+          ) : (
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
+            >
+              {(data?.totalPriorityPointsCleared ?? 0).toLocaleString()} pts
+            </Typography>
+          )}
+          <Typography variant="caption" color="text.secondary">
+            High-impact score restored ({timeframe})
+          </Typography>
+        </Paper>
 
         {/* Avg Queue Pickup Rank */}
         {showPickupRank && (
