@@ -155,12 +155,12 @@ func FuzzSanitize(f *testing.F) {
 			t.Fatalf("Sanitize(%q) = %q, which does not parse: %s", in, out, err)
 		}
 		for _, n := range nodes {
-			checkNode(t, in, out, n)
+			assertAllowedNode(t, in, out, n)
 		}
 	})
 }
 
-func checkNode(t *testing.T, in, out string, n *html.Node) {
+func assertAllowedNode(t *testing.T, in, out string, n *html.Node) {
 	t.Helper()
 	switch {
 	case n.Type == html.TextNode:
@@ -175,7 +175,7 @@ func checkNode(t *testing.T, in, out string, n *html.Node) {
 		}
 	}
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		checkNode(t, in, out, c)
+		assertAllowedNode(t, in, out, c)
 	}
 }
 
