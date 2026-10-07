@@ -509,7 +509,7 @@ func shallowCopyEvents(events []eventbox.Event, indexesToCopy []int) []eventbox.
 	if len(events) == len(indexesToCopy) {
 		return events
 	}
-	ret := make([]eventbox.Event, len(events))
+	ret := make([]eventbox.Event, len(indexesToCopy))
 	for i, index := range indexesToCopy {
 		ret[i] = events[index]
 	}

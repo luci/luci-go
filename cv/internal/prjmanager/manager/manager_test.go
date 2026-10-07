@@ -482,3 +482,58 @@ type tjMock struct{}
 func (t *tjMock) ScheduleCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32, eta time.Time) error {
 	return nil
 }
+
+func TestShallowCopyEvents(t *testing.T) {
+	t.Parallel()
+
+	events := []eventbox.Event{
+		{ID: "e0", Value: []byte("v0")},
+		{ID: "e1", Value: []byte("v1")},
+		{ID: "e2", Value: []byte("v2")},
+	}
+
+	cases := []struct {
+		name          string
+		events        []eventbox.Event
+		indexesToCopy []int
+		want          []eventbox.Event
+	}{
+		{
+			name:          "empty selection",
+			events:        events,
+			indexesToCopy: nil,
+			want:          []eventbox.Event{},
+		},
+		{
+			name:          "single element subset",
+			events:        events,
+			indexesToCopy: []int{1},
+			want: []eventbox.Event{
+				{ID: "e1", Value: []byte("v1")},
+			},
+		},
+		{
+			name:          "two element subset",
+			events:        events,
+			indexesToCopy: []int{0, 2},
+			want: []eventbox.Event{
+				{ID: "e0", Value: []byte("v0")},
+				{ID: "e2", Value: []byte("v2")},
+			},
+		},
+		{
+			name:          "all elements",
+			events:        events,
+			indexesToCopy: []int{0, 1, 2},
+			want:          events,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := shallowCopyEvents(tc.events, tc.indexesToCopy)
+			assert.That(t, got, should.Match(tc.want))
+		})
+	}
+}
