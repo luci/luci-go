@@ -210,9 +210,10 @@ func (cl *CommandLine) RemoveAllFlag(flag string) (found bool) {
 // Clone returns an independent deep copy of cl.
 func (cl *CommandLine) Clone() *CommandLine {
 	return &CommandLine{
-		Target: cl.Target,
-		Flags:  append([]CommandLineFlag(nil), cl.Flags...),
-		Args:   append([]string(nil), cl.Args...),
+		Target:        cl.Target,
+		Flags:         append([]CommandLineFlag(nil), cl.Flags...),
+		FlagSeparator: cl.FlagSeparator,
+		Args:          append([]string(nil), cl.Args...),
 	}
 }
 
@@ -269,6 +270,9 @@ func (cl *CommandLine) parseSingleFlag(fs *parsedFlagState) error {
 		if err != nil {
 			return err
 		}
+		if val == "" {
+			return errors.New("two-value flag has empty second value")
+		}
 		cl.Flags = append(cl.Flags, CommandLineFlag{string(r), val})
 
 	case 'O':
@@ -290,8 +294,7 @@ func (cl *CommandLine) parseSingleFlag(fs *parsedFlagState) error {
 			break
 		}
 
-		// Not sure what this could be, but fall through none the less.
-		isSingleCharFlag = true
+		return errors.New("invalid '-' in flag")
 
 	default:
 		isSingleCharFlag = true
@@ -330,7 +333,8 @@ func ParseCommandLine(args []string) (*CommandLine, error) {
 		if arg == "-" {
 			// "-" instructs Python to load the script from STDIN.
 			cl.Target = ScriptTarget{
-				Path: "-",
+				Path:             "-",
+				FollowsSeparator: cl.FlagSeparator,
 			}
 			continue
 		}

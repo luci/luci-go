@@ -16,6 +16,8 @@ package python
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -110,6 +112,15 @@ func TestParseCommandLine(t *testing.T) {
 				Args:   []string{"-foo", "-bar"},
 			},
 			[]string{"-Wbar", "-", "-foo", "-bar"},
+		},
+
+		{[]string{"--", "-", "-foo"},
+			CommandLine{
+				Target:        ScriptTarget{"-", true},
+				FlagSeparator: true,
+				Args:          []string{"-foo"},
+			},
+			[]string{"--", "-", "-foo"},
 		},
 
 		// NOTE: This will parse the first positional argument, "-c", as the path
@@ -210,9 +221,12 @@ func TestParseCommandLine(t *testing.T) {
 		err  string
 	}{
 		{[]string{"-a", "-b", "-Q"}, "two-value flag missing second value"},
+		{[]string{"-X", ""}, "two-value flag has empty second value"},
 		{[]string{"-c"}, "missing second value"},
 		{[]string{"-vvm"}, "missing second value"},
 		{[]string{"-\x80"}, "invalid rune in flag"},
+		{[]string{"-0-0"}, "invalid '-' in flag"},
+		{[]string{"--help"}, "invalid '-' in flag"},
 	}
 
 	ftt.Run(`Testing Python command-line parsing`, t, func(t *ftt.Test) {
@@ -305,9 +319,10 @@ func TestCommandLine(t *testing.T) {
 		t.Run(`Testing Clone`, func(t *ftt.Test) {
 			// Create a command-line with all fields populated.
 			cmd := CommandLine{
-				Target: ScriptTarget{"script", false},
-				Flags:  []CommandLineFlag{f("OO"), f("v"), f("Q", "warnall")},
-				Args:   []string{"foo"},
+				Target:        ScriptTarget{"script", true},
+				Flags:         []CommandLineFlag{f("OO"), f("v"), f("Q", "warnall")},
+				FlagSeparator: true,
+				Args:          []string{"foo"},
 			}
 
 			clone := cmd.Clone()
@@ -342,5 +357,67 @@ func TestCommandLine(t *testing.T) {
 			}
 			assert.Loosely(t, cl.BuildArgs(), should.Match([]string{"-m", "<module>", "--", "foo", "bar"}))
 		})
+	})
+}
+
+func FuzzParseCommandLine(f *testing.F) {
+	seeds := [][]string{
+		{},
+		{"-a", "-b", "-Q'foo.bar.baz'", "-X", "'foo.bar.baz'", "-Wbar"},
+		{"path.py", "--", "foo", "bar"},
+		{"-v", "-c", "<script>", "--", "-foo", "-bar"},
+		{"-v", "<script>", "--", "-foo", "-bar"},
+		{"-v", "--", "<script>", "-foo", "-bar"},
+		{"-v", "-cprint", "foo", "bar"},
+		{"-Wbar", "-", "-foo", "-bar"},
+		{"--", "-", "-foo"},
+		{"--", "-c", "-foo", "-bar"},
+		{"-a", "-Wfoo", "-", "--", "foo"},
+		{"-a", "-b", "-tt", "-W", "foo", "-Wbar", "-c", "<script>", "--", "arg"},
+		{"-tt", "-W", "foo", "-Wbar", "-c", "<script>", "-Wbaz", "-v", "--", "arg"},
+		{"-vWfoo", "-vvvW", "-c", "script", "-arg"},
+		{"-vOOWfoo", "-Ovv", "-OOvv", "-c", "script", "-arg"},
+		{"-a", "-b", "-m'foo.bar.baz'", "arg"},
+		{"--", "--", "--", "--"},
+		{"--version"},
+		{"-a", "-b", "-Q"},
+		{"-X", ""},
+		{"-c"},
+		{"-vvm"},
+		{"-\x80"},
+		{"-0-0"},
+		{"--help"},
+	}
+	for _, s := range seeds {
+		f.Add(strings.Join(s, "\x00"))
+	}
+
+	f.Fuzz(func(t *testing.T, joined string) {
+		var args []string
+		if joined != "" {
+			args = strings.Split(joined, "\x00")
+		}
+		cmd, err := ParseCommandLine(args)
+		if err != nil {
+			return
+		}
+
+		clone := cmd.Clone()
+		if !reflect.DeepEqual(clone, cmd) {
+			t.Fatalf("Clone() mismatch for args %q:\ngot:  %#v\nwant: %#v", args, clone, cmd)
+		}
+
+		builtArgs := cmd.BuildArgs()
+		cmd2, err := ParseCommandLine(builtArgs)
+		if err != nil {
+			t.Fatalf("ParseCommandLine(BuildArgs()) failed for args %q (builtArgs=%q): %v", args, builtArgs, err)
+		}
+		if !reflect.DeepEqual(cmd2, cmd) {
+			t.Fatalf("Round-trip CommandLine mismatch for args %q (builtArgs=%q):\ngot:  %#v\nwant: %#v", args, builtArgs, cmd2, cmd)
+		}
+		roundTripBuiltArgs := cmd2.BuildArgs()
+		if !reflect.DeepEqual(roundTripBuiltArgs, builtArgs) {
+			t.Fatalf("Round-trip BuildArgs mismatch for args %q:\ngot:  %q\nwant: %q", args, roundTripBuiltArgs, builtArgs)
+		}
 	})
 }
