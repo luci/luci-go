@@ -911,6 +911,58 @@ export interface ListModelQuotaOverridesResponse {
   readonly overrides: readonly ModelQuotaOverride[];
 }
 
+/**
+ * HealthSlice is a named, saved AIP-160 filter shown on the ChromeOS Health
+ * dashboard. Its metrics are computed by GetFleetAvailabilityTrends.
+ */
+export interface HealthSlice {
+  /** Server-assigned identifier. Output only on create. */
+  readonly id: string;
+  /**
+   * Human-readable name. Required, unique (case-insensitive), at most 100
+   * characters.
+   */
+  readonly name: string;
+  /**
+   * AIP-160 filter, using the same fields as GetFleetAvailabilityTrends.
+   * At most 2000 characters. May be empty to match the whole fleet.
+   */
+  readonly filter: string;
+}
+
+export interface ListHealthSlicesRequest {
+}
+
+export interface ListHealthSlicesResponse {
+  /** Slices ordered by creation time. */
+  readonly healthSlices: readonly HealthSlice[];
+}
+
+export interface CreateHealthSliceRequest {
+  /** The slice to create. The id field is ignored. */
+  readonly healthSlice: HealthSlice | undefined;
+}
+
+export interface CreateHealthSliceResponse {
+  readonly healthSlice: HealthSlice | undefined;
+}
+
+export interface UpdateHealthSliceRequest {
+  /** The slice to update, identified by id. Name and filter are replaced. */
+  readonly healthSlice: HealthSlice | undefined;
+}
+
+export interface UpdateHealthSliceResponse {
+  readonly healthSlice: HealthSlice | undefined;
+}
+
+export interface DeleteHealthSliceRequest {
+  readonly id: string;
+}
+
+export interface DeleteHealthSliceResponse {
+}
+
 /** Request message for GetFleetAvailabilityTrends. */
 export interface GetFleetAvailabilityTrendsRequest {
   /** How trendline data should be grouped. */
@@ -8565,6 +8617,544 @@ export const ListModelQuotaOverridesResponse: MessageFns<ListModelQuotaOverrides
   fromPartial(object: DeepPartial<ListModelQuotaOverridesResponse>): ListModelQuotaOverridesResponse {
     const message = createBaseListModelQuotaOverridesResponse() as any;
     message.overrides = object.overrides?.map((e) => ModelQuotaOverride.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseHealthSlice(): HealthSlice {
+  return { id: "0", name: "", filter: "" };
+}
+
+export const HealthSlice: MessageFns<HealthSlice> = {
+  encode(message: HealthSlice, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.name !== "") {
+      writer.uint32(18).string(message.name);
+    }
+    if (message.filter !== "") {
+      writer.uint32(26).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): HealthSlice {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseHealthSlice() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): HealthSlice {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: HealthSlice): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<HealthSlice>): HealthSlice {
+    return HealthSlice.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<HealthSlice>): HealthSlice {
+    const message = createBaseHealthSlice() as any;
+    message.id = object.id ?? "0";
+    message.name = object.name ?? "";
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseListHealthSlicesRequest(): ListHealthSlicesRequest {
+  return {};
+}
+
+export const ListHealthSlicesRequest: MessageFns<ListHealthSlicesRequest> = {
+  encode(_: ListHealthSlicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListHealthSlicesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListHealthSlicesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ListHealthSlicesRequest {
+    return {};
+  },
+
+  toJSON(_: ListHealthSlicesRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListHealthSlicesRequest>): ListHealthSlicesRequest {
+    return ListHealthSlicesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<ListHealthSlicesRequest>): ListHealthSlicesRequest {
+    const message = createBaseListHealthSlicesRequest() as any;
+    return message;
+  },
+};
+
+function createBaseListHealthSlicesResponse(): ListHealthSlicesResponse {
+  return { healthSlices: [] };
+}
+
+export const ListHealthSlicesResponse: MessageFns<ListHealthSlicesResponse> = {
+  encode(message: ListHealthSlicesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.healthSlices) {
+      HealthSlice.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListHealthSlicesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListHealthSlicesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.healthSlices.push(HealthSlice.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListHealthSlicesResponse {
+    return {
+      healthSlices: globalThis.Array.isArray(object?.healthSlices)
+        ? object.healthSlices.map((e: any) => HealthSlice.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ListHealthSlicesResponse): unknown {
+    const obj: any = {};
+    if (message.healthSlices?.length) {
+      obj.healthSlices = message.healthSlices.map((e) => HealthSlice.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListHealthSlicesResponse>): ListHealthSlicesResponse {
+    return ListHealthSlicesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListHealthSlicesResponse>): ListHealthSlicesResponse {
+    const message = createBaseListHealthSlicesResponse() as any;
+    message.healthSlices = object.healthSlices?.map((e) => HealthSlice.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseCreateHealthSliceRequest(): CreateHealthSliceRequest {
+  return { healthSlice: undefined };
+}
+
+export const CreateHealthSliceRequest: MessageFns<CreateHealthSliceRequest> = {
+  encode(message: CreateHealthSliceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.healthSlice !== undefined) {
+      HealthSlice.encode(message.healthSlice, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateHealthSliceRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateHealthSliceRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.healthSlice = HealthSlice.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateHealthSliceRequest {
+    return { healthSlice: isSet(object.healthSlice) ? HealthSlice.fromJSON(object.healthSlice) : undefined };
+  },
+
+  toJSON(message: CreateHealthSliceRequest): unknown {
+    const obj: any = {};
+    if (message.healthSlice !== undefined) {
+      obj.healthSlice = HealthSlice.toJSON(message.healthSlice);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CreateHealthSliceRequest>): CreateHealthSliceRequest {
+    return CreateHealthSliceRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CreateHealthSliceRequest>): CreateHealthSliceRequest {
+    const message = createBaseCreateHealthSliceRequest() as any;
+    message.healthSlice = (object.healthSlice !== undefined && object.healthSlice !== null)
+      ? HealthSlice.fromPartial(object.healthSlice)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseCreateHealthSliceResponse(): CreateHealthSliceResponse {
+  return { healthSlice: undefined };
+}
+
+export const CreateHealthSliceResponse: MessageFns<CreateHealthSliceResponse> = {
+  encode(message: CreateHealthSliceResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.healthSlice !== undefined) {
+      HealthSlice.encode(message.healthSlice, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateHealthSliceResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateHealthSliceResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.healthSlice = HealthSlice.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateHealthSliceResponse {
+    return { healthSlice: isSet(object.healthSlice) ? HealthSlice.fromJSON(object.healthSlice) : undefined };
+  },
+
+  toJSON(message: CreateHealthSliceResponse): unknown {
+    const obj: any = {};
+    if (message.healthSlice !== undefined) {
+      obj.healthSlice = HealthSlice.toJSON(message.healthSlice);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CreateHealthSliceResponse>): CreateHealthSliceResponse {
+    return CreateHealthSliceResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CreateHealthSliceResponse>): CreateHealthSliceResponse {
+    const message = createBaseCreateHealthSliceResponse() as any;
+    message.healthSlice = (object.healthSlice !== undefined && object.healthSlice !== null)
+      ? HealthSlice.fromPartial(object.healthSlice)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseUpdateHealthSliceRequest(): UpdateHealthSliceRequest {
+  return { healthSlice: undefined };
+}
+
+export const UpdateHealthSliceRequest: MessageFns<UpdateHealthSliceRequest> = {
+  encode(message: UpdateHealthSliceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.healthSlice !== undefined) {
+      HealthSlice.encode(message.healthSlice, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateHealthSliceRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateHealthSliceRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.healthSlice = HealthSlice.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateHealthSliceRequest {
+    return { healthSlice: isSet(object.healthSlice) ? HealthSlice.fromJSON(object.healthSlice) : undefined };
+  },
+
+  toJSON(message: UpdateHealthSliceRequest): unknown {
+    const obj: any = {};
+    if (message.healthSlice !== undefined) {
+      obj.healthSlice = HealthSlice.toJSON(message.healthSlice);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateHealthSliceRequest>): UpdateHealthSliceRequest {
+    return UpdateHealthSliceRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateHealthSliceRequest>): UpdateHealthSliceRequest {
+    const message = createBaseUpdateHealthSliceRequest() as any;
+    message.healthSlice = (object.healthSlice !== undefined && object.healthSlice !== null)
+      ? HealthSlice.fromPartial(object.healthSlice)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseUpdateHealthSliceResponse(): UpdateHealthSliceResponse {
+  return { healthSlice: undefined };
+}
+
+export const UpdateHealthSliceResponse: MessageFns<UpdateHealthSliceResponse> = {
+  encode(message: UpdateHealthSliceResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.healthSlice !== undefined) {
+      HealthSlice.encode(message.healthSlice, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateHealthSliceResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateHealthSliceResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.healthSlice = HealthSlice.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateHealthSliceResponse {
+    return { healthSlice: isSet(object.healthSlice) ? HealthSlice.fromJSON(object.healthSlice) : undefined };
+  },
+
+  toJSON(message: UpdateHealthSliceResponse): unknown {
+    const obj: any = {};
+    if (message.healthSlice !== undefined) {
+      obj.healthSlice = HealthSlice.toJSON(message.healthSlice);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateHealthSliceResponse>): UpdateHealthSliceResponse {
+    return UpdateHealthSliceResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateHealthSliceResponse>): UpdateHealthSliceResponse {
+    const message = createBaseUpdateHealthSliceResponse() as any;
+    message.healthSlice = (object.healthSlice !== undefined && object.healthSlice !== null)
+      ? HealthSlice.fromPartial(object.healthSlice)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseDeleteHealthSliceRequest(): DeleteHealthSliceRequest {
+  return { id: "0" };
+}
+
+export const DeleteHealthSliceRequest: MessageFns<DeleteHealthSliceRequest> = {
+  encode(message: DeleteHealthSliceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteHealthSliceRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteHealthSliceRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteHealthSliceRequest {
+    return { id: isSet(object.id) ? globalThis.String(object.id) : "0" };
+  },
+
+  toJSON(message: DeleteHealthSliceRequest): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeleteHealthSliceRequest>): DeleteHealthSliceRequest {
+    return DeleteHealthSliceRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeleteHealthSliceRequest>): DeleteHealthSliceRequest {
+    const message = createBaseDeleteHealthSliceRequest() as any;
+    message.id = object.id ?? "0";
+    return message;
+  },
+};
+
+function createBaseDeleteHealthSliceResponse(): DeleteHealthSliceResponse {
+  return {};
+}
+
+export const DeleteHealthSliceResponse: MessageFns<DeleteHealthSliceResponse> = {
+  encode(_: DeleteHealthSliceResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteHealthSliceResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteHealthSliceResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): DeleteHealthSliceResponse {
+    return {};
+  },
+
+  toJSON(_: DeleteHealthSliceResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeleteHealthSliceResponse>): DeleteHealthSliceResponse {
+    return DeleteHealthSliceResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<DeleteHealthSliceResponse>): DeleteHealthSliceResponse {
+    const message = createBaseDeleteHealthSliceResponse() as any;
     return message;
   },
 };

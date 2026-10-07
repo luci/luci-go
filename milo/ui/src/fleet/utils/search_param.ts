@@ -113,6 +113,31 @@ export function combineAipFilters(base: string, clause: string): string {
 }
 
 /**
+ * Safely combines two AIP-160 filter expressions using AND, wrapping non-empty
+ * expressions in parentheses to preserve boolean operator precedence (e.g. when
+ * either side contains OR disjunctions).
+ *
+ * TODO(b/569891683): Audit existing callers of combineAipFilters across other
+ * pages to see if they can be safely migrated or unified with this function.
+ */
+export function combineAipFiltersWithParentheses(
+  base?: string,
+  clause?: string,
+): string {
+  const b = base?.trim();
+  const c = clause?.trim();
+  if (b && c) {
+    // Note: We intentionally perform a simple string identity check here rather than
+    // attempting full boolean AST resolution or clause simplification, primarily to avoid
+    // visual duplicates like `(A) AND (A)` in URLs and queries when a slice filter matches
+    // the active global filter.
+    if (b === c) return b;
+    return `(${b}) AND (${c})`;
+  }
+  return b || c || '';
+}
+
+/**
  * Returns a filter query string, falling back to legacy URL parameters (`filter`, `q`, `f`, `search`)
  * when `filters` is not present, and auto-wrapping bare query tokens into `id = "raw"`.
  *

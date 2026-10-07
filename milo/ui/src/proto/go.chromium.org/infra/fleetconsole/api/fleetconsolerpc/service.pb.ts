@@ -49,8 +49,12 @@ import {
   CountDevicesResponse,
   CountRepairMetricsRequest,
   CountRepairMetricsResponse,
+  CreateHealthSliceRequest,
+  CreateHealthSliceResponse,
   CreatePriorityRuleRequest,
   CreatePriorityRuleResponse,
+  DeleteHealthSliceRequest,
+  DeleteHealthSliceResponse,
   DeleteModelQuotaOverrideRequest,
   DeleteModelQuotaOverrideResponse,
   DeletePriorityRuleRequest,
@@ -71,6 +75,8 @@ import {
   GetWorkforceActivityResponse,
   ListDevicesRequest,
   ListDevicesResponse,
+  ListHealthSlicesRequest,
+  ListHealthSlicesResponse,
   ListIrmIncidentsRequest,
   ListIrmIncidentsResponse,
   ListModelQuotaOverridesRequest,
@@ -99,6 +105,8 @@ import {
   UnclaimRepairTaskResponse,
   UpdateChromeOSDeviceRequest,
   UpdateChromeOSDeviceResponse,
+  UpdateHealthSliceRequest,
+  UpdateHealthSliceResponse,
   UpdatePriorityRuleRequest,
   UpdatePriorityRuleResponse,
 } from "./chromeos.pb";
@@ -405,6 +413,10 @@ export interface FleetConsole {
   ListModelQuotaOverrides(request: ListModelQuotaOverridesRequest): Promise<ListModelQuotaOverridesResponse>;
   GetFleetAvailabilityTrends(request: GetFleetAvailabilityTrendsRequest): Promise<GetFleetAvailabilityTrendsResponse>;
   ListTaskHistory(request: ListTaskHistoryRequest): Promise<ListTaskHistoryResponse>;
+  ListHealthSlices(request: ListHealthSlicesRequest): Promise<ListHealthSlicesResponse>;
+  CreateHealthSlice(request: CreateHealthSliceRequest): Promise<CreateHealthSliceResponse>;
+  UpdateHealthSlice(request: UpdateHealthSliceRequest): Promise<UpdateHealthSliceResponse>;
+  DeleteHealthSlice(request: DeleteHealthSliceRequest): Promise<DeleteHealthSliceResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -476,6 +488,10 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ListModelQuotaOverrides = this.ListModelQuotaOverrides.bind(this);
     this.GetFleetAvailabilityTrends = this.GetFleetAvailabilityTrends.bind(this);
     this.ListTaskHistory = this.ListTaskHistory.bind(this);
+    this.ListHealthSlices = this.ListHealthSlices.bind(this);
+    this.CreateHealthSlice = this.CreateHealthSlice.bind(this);
+    this.UpdateHealthSlice = this.UpdateHealthSlice.bind(this);
+    this.DeleteHealthSlice = this.DeleteHealthSlice.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -851,6 +867,30 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ListTaskHistoryRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListTaskHistory", data);
     return promise.then((data) => ListTaskHistoryResponse.fromJSON(data));
+  }
+
+  ListHealthSlices(request: ListHealthSlicesRequest): Promise<ListHealthSlicesResponse> {
+    const data = ListHealthSlicesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListHealthSlices", data);
+    return promise.then((data) => ListHealthSlicesResponse.fromJSON(data));
+  }
+
+  CreateHealthSlice(request: CreateHealthSliceRequest): Promise<CreateHealthSliceResponse> {
+    const data = CreateHealthSliceRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CreateHealthSlice", data);
+    return promise.then((data) => CreateHealthSliceResponse.fromJSON(data));
+  }
+
+  UpdateHealthSlice(request: UpdateHealthSliceRequest): Promise<UpdateHealthSliceResponse> {
+    const data = UpdateHealthSliceRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdateHealthSlice", data);
+    return promise.then((data) => UpdateHealthSliceResponse.fromJSON(data));
+  }
+
+  DeleteHealthSlice(request: DeleteHealthSliceRequest): Promise<DeleteHealthSliceResponse> {
+    const data = DeleteHealthSliceRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "DeleteHealthSlice", data);
+    return promise.then((data) => DeleteHealthSliceResponse.fromJSON(data));
   }
 }
 

@@ -98,6 +98,10 @@ export interface FleetConsoleMockFixtures {
   GetWorkforceActivity: unknown;
   GetFleetAvailabilityTrends: unknown;
   ListTaskHistory: unknown;
+  ListHealthSlices: unknown;
+  CreateHealthSlice: unknown;
+  UpdateHealthSlice: unknown;
+  DeleteHealthSlice: unknown;
   [method: string]: unknown;
 }
 
@@ -689,6 +693,35 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     series: [],
     metricType: 0,
   },
+  ListHealthSlices: {
+    healthSlices: [
+      {
+        id: '1',
+        name: 'Labstations',
+        filter: 'labels.board = "zgb"',
+      },
+      {
+        id: '2',
+        name: 'DUTs in Dev',
+        filter: 'labels.pool = "faft-cr50"',
+      },
+    ],
+  },
+  CreateHealthSlice: {
+    healthSlice: {
+      id: '1',
+      name: 'New Slice',
+      filter: '',
+    },
+  },
+  UpdateHealthSlice: {
+    healthSlice: {
+      id: '1',
+      name: 'Updated Slice',
+      filter: '',
+    },
+  },
+  DeleteHealthSlice: {},
   ListTaskHistory: {
     tasks: [
       {

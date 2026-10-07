@@ -14,6 +14,7 @@
 
 import {
   combineAipFilters,
+  combineAipFiltersWithParentheses,
   escapeAipValue,
   formatAipClause,
   getFilterQueryString,
@@ -61,6 +62,41 @@ describe('data_table_search_param_utils', () => {
         'a = "1" AND b = "2"',
       );
       expect(combineAipFilters('', 'b = "2"')).toEqual('b = "2"');
+    });
+  });
+
+  describe('combineAipFiltersWithParentheses', () => {
+    it('combines clauses with parentheses to protect boolean precedence', () => {
+      expect(combineAipFiltersWithParentheses('a = "1"', 'b = "2"')).toEqual(
+        '(a = "1") AND (b = "2")',
+      );
+      expect(
+        combineAipFiltersWithParentheses(
+          'model = "volteer" OR model = "brya"',
+          'pool = "faft-cr50"',
+        ),
+      ).toEqual(
+        '(model = "volteer" OR model = "brya") AND (pool = "faft-cr50")',
+      );
+      expect(combineAipFiltersWithParentheses('', 'b = "2"')).toEqual(
+        'b = "2"',
+      );
+      expect(combineAipFiltersWithParentheses('a = "1"', '')).toEqual(
+        'a = "1"',
+      );
+      expect(combineAipFiltersWithParentheses('   ', '   ')).toEqual('');
+    });
+
+    it('returns single expression when both clauses are identical', () => {
+      expect(
+        combineAipFiltersWithParentheses(
+          'labels.board = "zgb"',
+          'labels.board = "zgb"',
+        ),
+      ).toEqual('labels.board = "zgb"');
+      expect(
+        combineAipFiltersWithParentheses('  pool = "faft"  ', 'pool = "faft"'),
+      ).toEqual('pool = "faft"');
     });
   });
 

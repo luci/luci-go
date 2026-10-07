@@ -32,6 +32,7 @@ import { HealthPage } from './health_page';
 import * as UseDefaultQuotaModule from './use_default_quota';
 import * as UseFleetAvailabilityTrendsModule from './use_fleet_availability_trends';
 import * as UseHealthFiltersModule from './use_health_filters';
+import * as UseHealthSlicesModule from './use_health_slices';
 import * as UseModelQuotaOverridesModule from './use_model_quota_overrides';
 import * as UseSupportRiskIncidentsModule from './use_support_risk_incidents';
 
@@ -109,6 +110,24 @@ describe('HealthPage', () => {
         isPermissionLoading: false,
       });
 
+    const idleMutation = {
+      mutate: jest.fn(),
+      reset: jest.fn(),
+      isPending: false,
+      error: null,
+    };
+    jest.spyOn(UseHealthSlicesModule, 'useHealthSlices').mockReturnValue({
+      slicesQuery: {
+        data: { healthSlices: [] },
+        isPending: false,
+        isError: false,
+        error: null,
+      },
+      createSliceMutation: idleMutation,
+      updateSliceMutation: idleMutation,
+      deleteSliceMutation: idleMutation,
+    } as unknown as ReturnType<typeof UseHealthSlicesModule.useHealthSlices>);
+
     jest.spyOn(UseDefaultQuotaModule, 'useDefaultQuota').mockReturnValue({
       quotaQuery: {
         data: {
@@ -177,6 +196,10 @@ describe('HealthPage', () => {
     expect(screen.getByRole('tab', { name: /^models$/i })).toBeInTheDocument();
     expect(
       screen.getByText('Active Support Risk Incidents'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Health Slices')).toBeInTheDocument();
+    expect(
+      screen.getByText('No health slices configured.'),
     ).toBeInTheDocument();
     expect(screen.getByTestId('hero-availability-card')).toBeInTheDocument();
     expect(

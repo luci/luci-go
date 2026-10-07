@@ -18,6 +18,7 @@ import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/stri
 import {
   FilterCategory,
   useFilters,
+  useFilterState,
 } from '@/fleet/components/filters/use_filters';
 import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
@@ -132,5 +133,47 @@ export const useHealthFilters = (
       setFiltersBatch,
     }),
     [filterValues, aip160, isLoading, warnings, setFiltersBatch],
+  );
+};
+
+export const useHealthFilterState = (
+  initialAip160?: string | null,
+  onFilterChange?: (nextAip160: string) => void,
+): {
+  filterValues: Record<string, FilterCategory> | undefined;
+  filterCategoryDatas: FilterCategory[];
+  aip160: () => string;
+  isLoading: boolean;
+  warnings: string[];
+  setFiltersBatch: (updates: Record<string, string[]>) => void;
+} => {
+  const { filterBuilders, isLoading } = useHealthFilterBuilders();
+  const filterState = useFilterState(
+    filterBuilders,
+    initialAip160 ?? null,
+    onFilterChange,
+    {
+      areFilterValuesLoading: isLoading,
+    },
+  );
+
+  const filterCategoryDatas = useMemo(
+    () =>
+      filterState.filterValues ? Object.values(filterState.filterValues) : [],
+    [filterState.filterValues],
+  );
+
+  return useMemo(
+    () => ({
+      filterValues: filterState.filterValues as
+        | Record<string, FilterCategory>
+        | undefined,
+      filterCategoryDatas,
+      aip160: filterState.aip160,
+      isLoading,
+      warnings: filterState.warnings,
+      setFiltersBatch: filterState.setFiltersBatch,
+    }),
+    [filterState, filterCategoryDatas, isLoading],
   );
 };

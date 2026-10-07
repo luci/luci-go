@@ -17,13 +17,16 @@ import { Box, Button, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
 
 import { useModelQuotaPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
-import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
+import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { HealthSlice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { ExpectedQuotaCard } from './expected_quota_card';
 import { HEALTH_FILTER_CONFIGS } from './filter_constants';
+import { HealthFilterBar } from './health_filter_bar';
+import { HealthSlicesCard } from './health_slices_card';
 import { HeroAvailabilityCard } from './hero_availability_card';
 import { HistoricalAvailabilityTrendsChart } from './historical_availability_trends_chart';
 import { ManualQuotaOverridesCard } from './manual_quota_overrides_card';
@@ -61,6 +64,25 @@ export const HealthPage = () => {
       setFiltersBatch({ [HEALTH_FILTER_CONFIGS.POOL.key]: [pool] });
     },
     [setFiltersBatch],
+  );
+
+  const handleSelectSlice = useCallback(
+    (slice: HealthSlice) => {
+      const sliceFilter = slice.filter.trim();
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        const currentFilter = next.get(FILTERS_PARAM_KEY) ?? '';
+        if (sliceFilter && currentFilter === sliceFilter) {
+          next.delete(FILTERS_PARAM_KEY);
+        } else if (sliceFilter) {
+          next.set(FILTERS_PARAM_KEY, sliceFilter);
+        } else {
+          next.delete(FILTERS_PARAM_KEY);
+        }
+        return next;
+      });
+    },
+    [setSearchParams],
   );
 
   const setPageTab = (newTab: 'overview' | 'configuration') => {
@@ -141,7 +163,7 @@ export const HealthPage = () => {
 
             {/* Global Filter Bar */}
             <Box sx={{ mb: 4 }}>
-              <FilterBar
+              <HealthFilterBar
                 filterCategoryDatas={filterCategoryDatas}
                 isLoading={isLoading || filterValues === undefined}
                 searchPlaceholder="Add a filter (e.g. model:volteer)"
@@ -183,6 +205,11 @@ export const HealthPage = () => {
                   }}
                 >
                   <SupportRiskIncidentsPanel onShowModel={handleShowModel} />
+                  <HealthSlicesCard
+                    globalFilter={activeFilter}
+                    globalFilterValues={filterValues}
+                    onSelectSlice={handleSelectSlice}
+                  />
                 </Box>
               </Box>
 

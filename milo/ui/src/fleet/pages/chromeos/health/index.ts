@@ -18,3 +18,13 @@ export {
   HeroAvailabilityCard,
   type HeroAvailabilityCardProps,
 } from './hero_availability_card';
+export {
+  HealthSlicesCard,
+  type HealthSlicesCardProps,
+} from './health_slices_card';
+export { useHealthFilters, useHealthFilterState } from './use_health_filters';
+export { useHealthSlices } from './use_health_slices';
+export {
+  HealthFilterBar,
+  type HealthFilterBarProps,
+} from './health_filter_bar';
