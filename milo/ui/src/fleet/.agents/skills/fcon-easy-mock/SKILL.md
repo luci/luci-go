@@ -18,76 +18,54 @@ Use this skill when building, packaging, or sharing a **standalone static Fleet 
 
 ## Architecture Boundary
 
-Fleet Console static prototyping separates **open-source bundle generation** from **static asset hosting**:
+Fleet Console static prototyping separates **open-source bundle generation** from **static asset hosting** (see [`easy-mock-architecture.md`](../../docs/easy-mock-architecture.md)):
 
 1. **Open-Source Fleet Console (`milo/ui/src/fleet/`)**:
-   - Owns the UI components, routes, and `FleetConsoleMockAPI` (`src/fleet/testing_tools/mock_api/mock_api_handler.ts`), which intercepts `/prpc/fleetconsole.FleetConsole/*` and `/auth/openid/state` requests in the browser.
-   - Produces a self-contained directory (`dist_proto/`) containing the compiled static assets, a reproducible source diff (`changes.patch`), and a metadata manifest (`.prototype-meta.json`).
-2. **Static Hosting (Bring Your Own Host or [go/fcon-labs](http://go/fcon-labs))**:
-   - The generated `dist_proto/` directory is host-agnostic and can be served from any local or remote static HTTP server.
-   - **External / Open-Source Developers**: Serve locally with `npx serve dist_proto` or upload `dist_proto/` to any static host (GitHub Pages, Firebase Hosting, Netlify, S3, or GCS).
-   - **Googlers**: Upload `dist_proto/` to the internal FCon Labs prototype directory at [`http://go/fcon-labs`](http://go/fcon-labs) ([`http://go/fcon-prototypes`](http://go/fcon-prototypes)) using the internal Google3 publishing skill.
+   - Owns the UI components, routes, and [`FleetConsoleMockAPI`](../../testing_tools/mock_api/mock_api_handler.ts), which intercepts `/prpc/fleetconsole.FleetConsole/*` and `/auth/openid/state` requests in the browser.
+   - Compiles a self-contained static directory (`dist_proto/`) via [`scripts/build_prototype.ts`](../../scripts/build_prototype.ts).
+2. **Static Hosting (Bring Your Own Host)**:
+   - The generated `dist_proto/` directory is host-agnostic and can be served from any local or remote static HTTP server (`npx serve dist_proto`, GitHub Pages, Firebase Hosting, Netlify, S3, or GCS).
 
 ---
 
-## Step-by-Step Instructions: What to Build and Package
+## Step-by-Step Instructions: Building and Previewing a Prototype
 
-### Step 1: Enable Client-Side Mock API Interception
-Ensure your prototype views or entry point initialize [`FleetConsoleMockAPI`](../../testing_tools/mock_api/mock_api_handler.ts) (see [`mock-api-architecture.md`](../../docs/decisions/mock-api-architecture.md)):
-
-```ts
-import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
-
-FleetConsoleMockAPI.initPrototypeMode({
-  persistToLocalStorage: true,
-});
-```
-
-### Step 2: Compile the Static UI Bundle (`dist_proto/`)
-From `milo/ui/`, run a Vite production build with relative asset paths (`--base=./`):
+### Step 1: Compile the Static UI Bundle (`dist_proto/`)
+From `milo/ui/src/fleet/`, run the static prototype builder target:
 
 ```bash
-npx vite build --base=./ --outDir=dist_proto
+make fcon-easy-mock
 ```
 
-Ensure `dist_proto/settings.js` and `dist_proto/ui_version.js` exist and are referenced via relative paths (`./settings.js` and `./ui_version.js`) in `dist_proto/index.html`, with `crossorigin` attributes removed so static file hosts do not block script loads.
+Or run the script directly from `milo/ui/`:
 
-### Step 3: Export the Reproducible Source Patch (`changes.patch`)
-Include a complete git diff against `origin/main` inside `dist_proto/changes.patch` so any developer or agent can reconstruct and iterate on your prototype source code even after upstream changes:
+```bash
+npx tsx src/fleet/scripts/build_prototype.ts
+```
+
+This script automatically:
+- Bootstraps [`FleetConsoleMockAPI.initPrototypeMode()`](../../testing_tools/mock_api/mock_api_handler.ts) before mounting `<App />`.
+- Stubs `src/App.tsx` with a minimal router that mounts `fleetRoutes` under `/ui/fleet` inside `FakeAuthStateProvider`.
+- Enables feature flags in `src/fleet/config/features.ts` so prototype UI is visible by default.
+- Emits relative asset paths (`./assets/*`) and `dist_proto/404.html` for single-page application (SPA) fallback routing.
+
+### Step 2: Export the Reproducible Source Patch (`changes.patch`)
+When sharing a prototype bundle, include a git diff against `origin/main` inside `dist_proto/changes.patch` so any developer or agent can reconstruct and iterate on your prototype source code:
 
 ```bash
 git add -N -- src/fleet
 git diff "$(git merge-base origin/main HEAD)" -- src/fleet > dist_proto/changes.patch
 ```
 
-### Step 4: Write the Prototype Manifest (`.prototype-meta.json`)
-Write `dist_proto/.prototype-meta.json` with metadata and the base commit SHA:
-
-```json
-{
-  "name": "<slug>",
-  "title": "<Human-Readable Title>",
-  "description": "<Short summary of the UX exploration>",
-  "entryPoint": "/ui/fleet/p/chromeos/devices",
-  "vcs": {
-    "patchFile": "changes.patch",
-    "baseCommitSha": "<git merge-base origin/main HEAD>"
-  }
-}
-```
-
-### Step 5: Preview Locally or Upload to a Static Host
-Verify that `dist_proto/` contains all required files before hosting:
-- `dist_proto/index.html` and `dist_proto/assets/*`
-- `dist_proto/settings.js` and `dist_proto/ui_version.js`
-- `dist_proto/changes.patch`
-- `dist_proto/.prototype-meta.json`
+### Step 3: Preview Locally or Upload to a Static Host
+Verify that `dist_proto/` contains the compiled bundle:
+- `dist_proto/index.html`, `dist_proto/404.html`, and `dist_proto/assets/*`
 
 Preview locally:
 ```bash
 npx serve dist_proto
 ```
-Then upload the `dist_proto/` directory to your static host (or, for Googlers, publish via [`http://go/fcon-labs`](http://go/fcon-labs)).
+Then upload the `dist_proto/` directory to your static host.
 
 ---
 
