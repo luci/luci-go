@@ -638,6 +638,9 @@ export interface CountRepairMetricsResponse {
   readonly breachedRepairGroup: number;
   readonly watchRepairGroup: number;
   readonly niceRepairGroup: number;
+  readonly inServiceDevices: number;
+  readonly needManualRepairDevices: number;
+  readonly inAutomatedMaintenanceDevices: number;
 }
 
 export interface GetRepairMetricsDimensionsRequest {
@@ -4697,6 +4700,9 @@ function createBaseCountRepairMetricsResponse(): CountRepairMetricsResponse {
     breachedRepairGroup: 0,
     watchRepairGroup: 0,
     niceRepairGroup: 0,
+    inServiceDevices: 0,
+    needManualRepairDevices: 0,
+    inAutomatedMaintenanceDevices: 0,
   };
 }
 
@@ -4725,6 +4731,15 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
     }
     if (message.niceRepairGroup !== 0) {
       writer.uint32(64).int32(message.niceRepairGroup);
+    }
+    if (message.inServiceDevices !== 0) {
+      writer.uint32(72).int32(message.inServiceDevices);
+    }
+    if (message.needManualRepairDevices !== 0) {
+      writer.uint32(80).int32(message.needManualRepairDevices);
+    }
+    if (message.inAutomatedMaintenanceDevices !== 0) {
+      writer.uint32(88).int32(message.inAutomatedMaintenanceDevices);
     }
     return writer;
   },
@@ -4800,6 +4815,30 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
           message.niceRepairGroup = reader.int32();
           continue;
         }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.inServiceDevices = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.needManualRepairDevices = reader.int32();
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.inAutomatedMaintenanceDevices = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4819,6 +4858,13 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
       breachedRepairGroup: isSet(object.breachedRepairGroup) ? globalThis.Number(object.breachedRepairGroup) : 0,
       watchRepairGroup: isSet(object.watchRepairGroup) ? globalThis.Number(object.watchRepairGroup) : 0,
       niceRepairGroup: isSet(object.niceRepairGroup) ? globalThis.Number(object.niceRepairGroup) : 0,
+      inServiceDevices: isSet(object.inServiceDevices) ? globalThis.Number(object.inServiceDevices) : 0,
+      needManualRepairDevices: isSet(object.needManualRepairDevices)
+        ? globalThis.Number(object.needManualRepairDevices)
+        : 0,
+      inAutomatedMaintenanceDevices: isSet(object.inAutomatedMaintenanceDevices)
+        ? globalThis.Number(object.inAutomatedMaintenanceDevices)
+        : 0,
     };
   },
 
@@ -4848,6 +4894,15 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
     if (message.niceRepairGroup !== 0) {
       obj.niceRepairGroup = Math.round(message.niceRepairGroup);
     }
+    if (message.inServiceDevices !== 0) {
+      obj.inServiceDevices = Math.round(message.inServiceDevices);
+    }
+    if (message.needManualRepairDevices !== 0) {
+      obj.needManualRepairDevices = Math.round(message.needManualRepairDevices);
+    }
+    if (message.inAutomatedMaintenanceDevices !== 0) {
+      obj.inAutomatedMaintenanceDevices = Math.round(message.inAutomatedMaintenanceDevices);
+    }
     return obj;
   },
 
@@ -4864,6 +4919,9 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
     message.breachedRepairGroup = object.breachedRepairGroup ?? 0;
     message.watchRepairGroup = object.watchRepairGroup ?? 0;
     message.niceRepairGroup = object.niceRepairGroup ?? 0;
+    message.inServiceDevices = object.inServiceDevices ?? 0;
+    message.needManualRepairDevices = object.needManualRepairDevices ?? 0;
+    message.inAutomatedMaintenanceDevices = object.inAutomatedMaintenanceDevices ?? 0;
     return message;
   },
 };

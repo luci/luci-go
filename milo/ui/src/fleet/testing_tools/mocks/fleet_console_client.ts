@@ -65,6 +65,9 @@ const MOCK_COUNT_REPAIR_METRICS: CountRepairMetricsResponse = {
   breachedRepairGroup: 1,
   watchRepairGroup: 2,
   niceRepairGroup: 2,
+  inServiceDevices: 15,
+  needManualRepairDevices: 3,
+  inAutomatedMaintenanceDevices: 2,
 };
 
 export function createMockUseFleetConsoleClient(

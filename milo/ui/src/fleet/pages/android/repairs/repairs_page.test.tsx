@@ -19,6 +19,7 @@ import {
 } from '@tanstack/react-query';
 import { act, render, screen, fireEvent, within } from '@testing-library/react';
 
+import * as FeatureFlags from '@/common/feature_flags';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { SettingsProvider } from '@/fleet/context/providers';
@@ -90,15 +91,43 @@ describe('RepairListPage', () => {
       .mockImplementation(createMockUseFleetConsoleClient());
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   describe('with default android page', () => {
     beforeEach(() => {
       renderComponent('Android');
     });
 
-    it('renders the component and calls the mock', () => {
+    it('renders the component and unified health summary metrics', () => {
       expect(screen.getByText('Repair metrics')).toBeInTheDocument();
       expect(screen.getByText('Offline / Total Devices')).toBeInTheDocument();
+      expect(screen.getByText('In Service')).toBeInTheDocument();
+      expect(screen.getByText('Need Manual Repair')).toBeInTheDocument();
+      expect(screen.getByText('In Automated Maintenance')).toBeInTheDocument();
       expect(mockUseFleetConsoleClient).toHaveBeenCalled();
+
+      const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+      fireEvent(
+        screen.getByText('In Automated Maintenance'),
+        new MouseEvent('auxclick', { bubbles: true }),
+      );
+      expect(openSpy).toHaveBeenCalledTimes(1);
+      const autoMaintUrl = new URL(
+        openSpy.mock.calls[0][0] as string,
+        'http://localhost',
+      );
+      expect(autoMaintUrl.searchParams.get(FILTERS_PARAM_KEY)).toContain(
+        'NOT health_category:*',
+      );
+    });
+
+    it('tracks Need Manual Repair metric clicks in google analytics', () => {
+      fireEvent.click(screen.getByText('Need Manual Repair'));
+      expect(mockTrackEvent).toHaveBeenCalledWith('main_metric_clicked', {
+        componentName: 'Need Manual Repair',
+      });
     });
 
     it('renders table data', async () => {
@@ -439,6 +468,17 @@ describe('RepairListPage', () => {
       expect(allEmptyFilters).toContain('NOT "lab_name":*');
       expect(allEmptyFilters).toContain('NOT "host_group":*');
       expect(allEmptyFilters).toContain('NOT "run_target":*');
+    });
+  });
+
+  describe('when enableAndroidHealthMetrics is disabled', () => {
+    it('renders legacy Distinct Devices Online and Offline when feature flag is off', () => {
+      jest.spyOn(FeatureFlags, 'useFeatureFlag').mockReturnValue(false);
+      renderComponent('Android');
+
+      expect(screen.getByText('Distinct Devices Online')).toBeInTheDocument();
+      expect(screen.getByText('Distinct Devices Offline')).toBeInTheDocument();
+      expect(screen.queryByText('Need Manual Repair')).not.toBeInTheDocument();
     });
   });
 });

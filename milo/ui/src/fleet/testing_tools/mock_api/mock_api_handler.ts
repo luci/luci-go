@@ -321,6 +321,11 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   },
   CountRepairMetrics: {
     total: sampleRepairMetrics.length,
+    totalDevices: sampleAndroidDevices.length,
+    inServiceDevices: androidReadyCount + androidBusyCount,
+    needManualRepairDevices: androidNeedManualRepairCount,
+    inAutomatedMaintenanceDevices:
+      androidInTransitionCount + androidInAutoRecoveryCount,
   },
   ListRepairMetrics: {
     repairMetrics: sampleRepairMetrics,
