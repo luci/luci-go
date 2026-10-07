@@ -78,6 +78,7 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/foobar",
 						Path:        "something/file.cfg",
+						ContentSize: 34,
 						ContentHash: "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8",
 						Revision:    expectedRev,
 						ViewURL:     "file://./something/file.cfg",
@@ -98,6 +99,7 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "services/foosrv",
 							Path:        "something.cfg",
+							ContentSize: 29,
 							ContentHash: "v1:536a41710e0cb4f21950d5e0e32642bda58fce9a",
 							Revision:    expectedRev,
 							ViewURL:     "file://./something.cfg",
@@ -110,6 +112,7 @@ func TestFSImpl(t *testing.T) {
 					cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", true)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, cfg.ContentHash, should.Equal("v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8"))
+					assert.Loosely(t, cfg.ContentSize, should.Equal(34))
 					assert.Loosely(t, cfg.Content, should.BeEmpty)
 
 					t.Run("make sure it doesn't poison the cache", func(t *ftt.Test) {
@@ -128,6 +131,7 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/foobar",
 							Path:        "another/file.cfg",
+							ContentSize: 32,
 							ContentHash: "v1:1b136cf89ccbd1d5f42cecae874367b0258d810d",
 							Revision:    expectedRev,
 							ViewURL:     "file://./another/file.cfg",
@@ -138,6 +142,7 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/foobar",
 							Path:        "something/file.cfg",
+							ContentSize: 34,
 							ContentHash: "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8",
 							Revision:    expectedRev,
 							ViewURL:     "file://./something/file.cfg",
@@ -164,6 +169,7 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/doodly",
 							Path:        "something/file.cfg",
+							ContentSize: 34,
 							ContentHash: "v1:5a2f9983dbb615a58e1d267633396e72f6710ef2",
 							Revision:    expectedRev,
 							ViewURL:     "file://./something/file.cfg",
@@ -174,6 +180,7 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/foobar",
 							Path:        "something/file.cfg",
+							ContentSize: 34,
 							ContentHash: "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8",
 							Revision:    expectedRev,
 							ViewURL:     "file://./something/file.cfg",
@@ -218,6 +225,7 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly",
 						Path:        "file.cfg",
+						ContentSize: 24,
 						ContentHash: "v1:a4f9e9ab503a00964c88e696067feed0702a81b3",
 						Revision:    "42a1ca1c43387844fafbb1c958a0d12f3ea61347",
 						ViewURL:     "file://./file.cfg",
@@ -227,6 +235,7 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/woodly",
 						Path:        "file.cfg",
+						ContentSize: 24,
 						ContentHash: "v1:722c6274d1e657691764199fa1095114a3569dee",
 						Revision:    "42a1ca1c43387844fafbb1c958a0d12f3ea61347",
 						ViewURL:     "file://./file.cfg",
@@ -248,6 +257,7 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly",
 						Path:        "file.cfg",
+						ContentSize: 5,
 						ContentHash: "v1:a593942cb7ea9ffcd8ccf2f0fa23c338e23bfecd",
 						Revision:    "e841b8e92756491dae3302e1e31f673e0613ad0c",
 						ViewURL:     "file://./file.cfg",
@@ -257,6 +267,7 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/woodly",
 						Path:        "file.cfg",
+						ContentSize: 24,
 						ContentHash: "v1:722c6274d1e657691764199fa1095114a3569dee",
 						Revision:    "e841b8e92756491dae3302e1e31f673e0613ad0c",
 						ViewURL:     "file://./file.cfg",

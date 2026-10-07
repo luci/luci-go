@@ -67,6 +67,7 @@ func TestRemoteCalls(t *testing.T) {
 					},
 					Revision:      "revision",
 					ContentSha256: "sha256",
+					Size:          7,
 					Url:           "url",
 				}, nil)
 
@@ -77,6 +78,7 @@ func TestRemoteCalls(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/project1",
 						Path:        "config.cfg",
+						ContentSize: 7,
 						ContentHash: "sha256",
 						Revision:    "revision",
 						ViewURL:     "url",
@@ -100,6 +102,7 @@ func TestRemoteCalls(t *testing.T) {
 					},
 					Revision:      "revision",
 					ContentSha256: "sha256",
+					Size:          7,
 					Url:           "url",
 				}, nil)
 
@@ -110,6 +113,7 @@ func TestRemoteCalls(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/project1",
 						Path:        "config.cfg",
+						ContentSize: 7,
 						ContentHash: "sha256",
 						Revision:    "revision",
 						ViewURL:     "url",
@@ -123,13 +127,14 @@ func TestRemoteCalls(t *testing.T) {
 					ConfigSet: "projects/project1",
 					Path:      "config.cfg",
 					Fields: &fieldmaskpb.FieldMask{
-						Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
+						Paths: []string{"config_set", "path", "content_sha256", "revision", "url", "size"},
 					},
 				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.Config{
 					ConfigSet:     "projects/project1",
 					Path:          "config.cfg",
 					Revision:      "revision",
 					ContentSha256: "sha256",
+					Size:          7,
 					Url:           "url",
 				}, nil)
 
@@ -140,6 +145,7 @@ func TestRemoteCalls(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/project1",
 						Path:        "config.cfg",
+						ContentSize: 7,
 						ContentHash: "sha256",
 						Revision:    "revision",
 						ViewURL:     "url",
@@ -173,7 +179,7 @@ func TestRemoteCalls(t *testing.T) {
 				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
 					Path: "config.cfg",
 					Fields: &fieldmaskpb.FieldMask{
-						Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
+						Paths: []string{"config_set", "path", "content_sha256", "revision", "url", "size"},
 					},
 				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.GetProjectConfigsResponse{
 					Configs: []*pb.Config{
@@ -182,6 +188,7 @@ func TestRemoteCalls(t *testing.T) {
 							Path:          "config.cfg",
 							Revision:      "revision",
 							ContentSha256: "sha256",
+							Size:          7,
 							Url:           "url",
 						},
 					},
@@ -194,6 +201,7 @@ func TestRemoteCalls(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/project1",
 							Path:        "config.cfg",
+							ContentSize: 7,
 							ContentHash: "sha256",
 							Revision:    "revision",
 							ViewURL:     "url",
@@ -215,6 +223,7 @@ func TestRemoteCalls(t *testing.T) {
 							Path:          "config.cfg",
 							Revision:      "revision",
 							ContentSha256: "sha256",
+							Size:          13,
 							Url:           "url",
 							Content: &pb.Config_RawContent{
 								RawContent: []byte("small content"),
@@ -225,6 +234,7 @@ func TestRemoteCalls(t *testing.T) {
 							Path:          "config.cfg",
 							Revision:      "revision",
 							ContentSha256: "sha256",
+							Size:          13,
 							Url:           "url",
 							Content: &pb.Config_SignedUrl{
 								SignedUrl: signedURLServer.URL,
@@ -240,6 +250,7 @@ func TestRemoteCalls(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/project1",
 							Path:        "config.cfg",
+							ContentSize: 13,
 							ContentHash: "sha256",
 							Revision:    "revision",
 							ViewURL:     "url",
@@ -250,6 +261,7 @@ func TestRemoteCalls(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/project2",
 							Path:        "config.cfg",
+							ContentSize: 13,
 							ContentHash: "sha256",
 							Revision:    "revision",
 							ViewURL:     "url",
@@ -475,6 +487,7 @@ func TestRemoteCalls(t *testing.T) {
 							Meta: config.Meta{
 								ConfigSet:   "projects/project",
 								Path:        "file1",
+								ContentSize: 123,
 								ContentHash: "file1-hash",
 								Revision:    "rev",
 								ViewURL:     "file1-url",
@@ -485,6 +498,7 @@ func TestRemoteCalls(t *testing.T) {
 							Meta: config.Meta{
 								ConfigSet:   "projects/project",
 								Path:        "file2",
+								ContentSize: 456,
 								ContentHash: "file2-hash",
 								Revision:    "rev",
 								ViewURL:     "file2-url",
@@ -500,6 +514,7 @@ func TestRemoteCalls(t *testing.T) {
 						cfg.Path = "ignore-me"
 						cfg.Revision = "ignore-me"
 						cfg.ContentSha256 = "ignore-me"
+						cfg.Size = 999999
 						cfg.Url = "ignore-me"
 					}
 					mockClient.EXPECT().GetConfig(gomock.Any(), proto.MatcherEqual(&pb.GetConfigRequest{

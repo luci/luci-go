@@ -33,6 +33,9 @@ type Meta struct {
 	// without leading slash, e.g. "luci-scheduler.cfg".
 	Path string `json:"path,omitempty"`
 
+	// ContentSize is the size of the content in bytes.
+	ContentSize int64 `json:"contentSize,omitempty"`
+
 	// ContentHash can be used to quickly check that content didn't change.
 	ContentHash string `json:"contentHash,omitempty"`
 

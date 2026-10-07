@@ -49,6 +49,7 @@ func TestMemoryImpl(t *testing.T) {
 				Meta: config.Meta{
 					ConfigSet:   "services/abc",
 					Path:        "file",
+					ContentSize: 4,
 					ContentHash: "v2:ace00670121e87a8e442ea9c1b74c16e95564f9d9ffcdb503a0b44db763c220a",
 					Revision:    "4435ce6f8ad97b8b3df8bddf1c9cbe88feed13fb",
 					ViewURL:     "https://example.com/view/here/file",
@@ -64,6 +65,7 @@ func TestMemoryImpl(t *testing.T) {
 				Meta: config.Meta{
 					ConfigSet:   "services/abc",
 					Path:        "file",
+					ContentSize: 4,
 					ContentHash: "v2:ace00670121e87a8e442ea9c1b74c16e95564f9d9ffcdb503a0b44db763c220a",
 					Revision:    "4435ce6f8ad97b8b3df8bddf1c9cbe88feed13fb",
 					ViewURL:     "https://example.com/view/here/file",
@@ -79,6 +81,7 @@ func TestMemoryImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj2",
 						Path:        "another/file",
+						ContentSize: 21,
 						ContentHash: "v2:d63f27b6c9bec5886662ba0378c6b49c08fc68c4b9f0cddf5d558bbe4c82592a",
 						Revision:    "d8d48bd9c29f7a3cb1a88fe69028b74f71f22fb4",
 						ViewURL:     "https://example.com/view/here/another/file",
@@ -89,6 +92,7 @@ func TestMemoryImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj2",
 						Path:        "file",
+						ContentSize: 13,
 						ContentHash: "v2:0098b08f0108cd69b0cc27d152c319dd47e1cfb184f8ee335efa9148fdc204e3",
 						Revision:    "d8d48bd9c29f7a3cb1a88fe69028b74f71f22fb4",
 						ViewURL:     "https://example.com/view/here/file",
@@ -140,6 +144,7 @@ func TestMemoryImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj1",
 						Path:        "file",
+						ContentSize: 13,
 						ContentHash: "v2:844b762dbd1107bf48cd0f13092f1aa310465f058044fb7a4b10eac1217c5622",
 						Revision:    "d7d38dcf39d73e6a323ca3326d82b4d6d2a3cf94",
 						ViewURL:     "https://example.com/view/here/file",
@@ -150,6 +155,7 @@ func TestMemoryImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj2",
 						Path:        "file",
+						ContentSize: 13,
 						ContentHash: "v2:0098b08f0108cd69b0cc27d152c319dd47e1cfb184f8ee335efa9148fdc204e3",
 						Revision:    "d8d48bd9c29f7a3cb1a88fe69028b74f71f22fb4",
 						ViewURL:     "https://example.com/view/here/file",
@@ -167,6 +173,7 @@ func TestMemoryImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj1",
 						Path:        "file",
+						ContentSize: 13,
 						ContentHash: "v2:844b762dbd1107bf48cd0f13092f1aa310465f058044fb7a4b10eac1217c5622",
 						Revision:    "d7d38dcf39d73e6a323ca3326d82b4d6d2a3cf94",
 						ViewURL:     "https://example.com/view/here/file",
@@ -176,6 +183,7 @@ func TestMemoryImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj2",
 						Path:        "file",
+						ContentSize: 13,
 						ContentHash: "v2:0098b08f0108cd69b0cc27d152c319dd47e1cfb184f8ee335efa9148fdc204e3",
 						Revision:    "d8d48bd9c29f7a3cb1a88fe69028b74f71f22fb4",
 						ViewURL:     "https://example.com/view/here/file",

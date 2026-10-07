@@ -161,6 +161,7 @@ func (b Files) configMaybe(configSet config.Set, path string, metaOnly bool) *co
 			Meta: config.Meta{
 				ConfigSet:   configSet,
 				Path:        path,
+				ContentSize: int64(len(body)),
 				ContentHash: hash(body),
 				Revision:    b.rev(),
 				ViewURL:     fmt.Sprintf("https://example.com/view/here/%s", path),

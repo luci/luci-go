@@ -294,6 +294,7 @@ func scanDirectory(realPath nativePath) (*scannedConfigs, error) {
 				Meta: config.Meta{
 					ConfigSet:   config.Set(cs.s()),
 					Path:        cfgPath.s(),
+					ContentSize: int64(len(content)),
 					ContentHash: hexHsh,
 					ViewURL:     "file://./" + filepath.ToSlash(cfgPath.s()),
 				},

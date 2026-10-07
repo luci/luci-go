@@ -155,7 +155,7 @@ func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path s
 	}
 	if metaOnly {
 		req.Fields = &fieldmaskpb.FieldMask{
-			Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
+			Paths: []string{"config_set", "path", "content_sha256", "revision", "url", "size"},
 		}
 	}
 
@@ -286,7 +286,7 @@ func (r *remoteImpl) GetProjectConfigs(ctx context.Context, path string, metaOnl
 	req := &pb.GetProjectConfigsRequest{Path: path}
 	if metaOnly {
 		req.Fields = &fieldmaskpb.FieldMask{
-			Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
+			Paths: []string{"config_set", "path", "content_sha256", "revision", "url", "size"},
 		}
 	}
 
@@ -403,6 +403,7 @@ func toConfig(configPb *pb.Config) *config.Config {
 		Meta: config.Meta{
 			ConfigSet:   config.Set(configPb.ConfigSet),
 			Path:        configPb.Path,
+			ContentSize: configPb.Size,
 			ContentHash: configPb.ContentSha256,
 			Revision:    configPb.Revision,
 			ViewURL:     configPb.Url,
