@@ -48,6 +48,46 @@ func mockCheckAccessAnalyses(ctx context.Context, methodName string, req proto.M
 	return ctx, nil // Allow all requests in tests
 }
 
+func TestGetAnalysis(t *testing.T) {
+	t.Parallel()
+	server := &AnalysesServer{ACL: mockCheckAccessAnalyses}
+	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
+	datastore.GetTestable(c).AutoIndex(true)
+
+	ftt.Run("Invalid analysis_id", t, func(t *ftt.Test) {
+		req := &pb.GetAnalysisRequest{AnalysisId: 0}
+		_, err := server.GetAnalysis(c, req)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+
+		req = &pb.GetAnalysisRequest{AnalysisId: -5}
+		_, err = server.GetAnalysis(c, req)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+	})
+
+	ftt.Run("Not found", t, func(t *ftt.Test) {
+		req := &pb.GetAnalysisRequest{AnalysisId: 123}
+		_, err := server.GetAnalysis(c, req)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.NotFound))
+	})
+
+	ftt.Run("Found", t, func(t *ftt.Test) {
+		cfa := &model.CompileFailureAnalysis{
+			Id: 100,
+		}
+		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		req := &pb.GetAnalysisRequest{AnalysisId: 100}
+		res, err := server.GetAnalysis(c, req)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.AnalysisId, should.Equal(int64(100)))
+	})
+}
+
 func TestQueryAnalysis(t *testing.T) {
 	t.Parallel()
 	server := &AnalysesServer{ACL: mockCheckAccessAnalyses}
@@ -856,6 +896,22 @@ func TestGetTestAnalyses(t *testing.T) {
 			IsPrimary: true,
 			TestID:    "testID",
 			StartHour: time.Unix(int64(100), 0).UTC(),
+		})
+
+		t.Run("Invalid analysis_id", func(t *ftt.Test) {
+			req := &pb.GetTestAnalysisRequest{
+				AnalysisId: 0,
+			}
+			_, err := server.GetTestAnalysis(ctx, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+
+			req = &pb.GetTestAnalysisRequest{
+				AnalysisId: -5,
+			}
+			_, err = server.GetTestAnalysis(ctx, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 		})
 
 		t.Run("Not found", func(t *ftt.Test) {

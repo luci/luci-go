@@ -87,6 +87,9 @@ func (server *AnalysesServer) GetAnalysis(c context.Context, req *pb.GetAnalysis
 	if err != nil {
 		return nil, err
 	}
+	if req.AnalysisId <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "analysis_id must be positive")
+	}
 	c = loggingutil.SetAnalysisID(c, req.AnalysisId)
 	analysis := &model.CompileFailureAnalysis{
 		Id: req.AnalysisId,
@@ -249,7 +252,7 @@ func (server *AnalysesServer) ListTestAnalyses(c context.Context, req *pb.ListTe
 	}
 	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 	if err != nil {
-		return nil, errors.Fmt("from field mask: %w", err)
+		return nil, status.Errorf(codes.InvalidArgument, "from field mask: %s", err)
 	}
 
 	// Decode cursor from page token.
@@ -328,6 +331,9 @@ func (server *AnalysesServer) GetTestAnalysis(c context.Context, req *pb.GetTest
 	if err != nil {
 		return nil, err
 	}
+	if req.AnalysisId <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "analysis_id must be positive")
+	}
 	c = loggingutil.SetAnalysisID(c, req.AnalysisId)
 
 	// By default, returning all fields.
@@ -337,7 +343,7 @@ func (server *AnalysesServer) GetTestAnalysis(c context.Context, req *pb.GetTest
 	}
 	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 	if err != nil {
-		return nil, errors.Fmt("from field mask: %w", err)
+		return nil, status.Errorf(codes.InvalidArgument, "from field mask: %s", err)
 	}
 
 	tfa, err := datastoreutil.GetTestFailureAnalysis(c, req.AnalysisId)
@@ -385,7 +391,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(c context.Context, req *pb.Ba
 	}
 	tfamask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 	if err != nil {
-		return nil, errors.Fmt("from field mask: %w", err)
+		return nil, status.Errorf(codes.InvalidArgument, "from field mask: %s", err)
 	}
 
 	// For test failures that have source position specified, we do not need to query LUCI Analysis.
