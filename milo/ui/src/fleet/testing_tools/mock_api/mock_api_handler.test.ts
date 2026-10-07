@@ -210,4 +210,69 @@ describe('FleetConsoleMockAPI', () => {
 
     FleetConsoleMockAPI.disableBrowserInterceptor();
   });
+
+  it('evaluates AIP-160 AST filters (including nested parentheses and quoted AND/OR) on ListDevices and CountDevices', async () => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+
+    const listRes = await fetch('/prpc/fleetconsole.FleetConsole/ListDevices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filter:
+          '(labels."dut_state" = "needs_repair") OR (labels."dut_state" = "repair_failed")',
+      }),
+    });
+    const listJson = JSON.parse((await listRes.text()).replace(")]}'\n", ''));
+    expect(listJson.devices.length).toBe(3);
+
+    const countRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/CountDevices',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filter: [
+            'labels."label-pool" = "labstation_tryjob"',
+            'labels."label-pool" = "labstation_main"',
+            'labels."label-pool" = "labstation_canary"',
+          ].join(' OR '),
+        }),
+      },
+    );
+    const countJson = JSON.parse((await countRes.text()).replace(")]}'\n", ''));
+    expect(countJson.total).toBe(3);
+    expect(countJson.deviceState.repairFailed).toBe(1);
+
+    expect(
+      FleetConsoleMockAPI.matchesAip160Filter(
+        {
+          state: 'DEVICE_STATE_AVAILABLE',
+          deviceSpec: {
+            labels: {
+              notes: { values: ['fish AND chips'] },
+              dut_state: { values: ['ready'] },
+            },
+          },
+        },
+        '(labels."notes" = "fish AND chips") AND (labels."dut_state" = "ready" OR labels."dut_state" = "needs_repair")',
+      ),
+    ).toBe(true);
+
+    expect(
+      FleetConsoleMockAPI.matchesAip160Filter(
+        {
+          state: 'DEVICE_STATE_AVAILABLE',
+          deviceSpec: {
+            labels: {
+              notes: { values: ['other'] },
+              dut_state: { values: ['needs_repair'] },
+            },
+          },
+        },
+        '(labels."notes" = "fish AND chips" AND labels."dut_state" = "ready") OR labels."dut_state" = "needs_repair"',
+      ),
+    ).toBe(true);
+
+    FleetConsoleMockAPI.disableBrowserInterceptor();
+  });
 });

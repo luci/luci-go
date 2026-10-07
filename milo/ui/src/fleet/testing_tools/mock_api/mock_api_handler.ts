@@ -111,6 +111,9 @@ const DEFAULT_AUTH_STATE = {
   idTokenExpiry: 9999999999,
 };
 
+import * as aip160Ast from '../../utils/aip160/ast/ast';
+import { parseFilter } from '../../utils/aip160/parser/parser';
+
 import sampleAndroidDevices from './data/android_devices.json';
 import sampleBrowserDevices from './data/browser_devices.json';
 import sampleChromeosDevices from './data/chromeos_devices.json';
@@ -180,12 +183,60 @@ const sampleChromeosBoards = Array.from(
   ),
 );
 
+const sampleChromeosLabels: Record<string, { values: string[] }> = {};
+for (const d of sampleChromeosDevices) {
+  const labels = (
+    d as unknown as {
+      deviceSpec?: {
+        labels?: Record<string, { values?: readonly string[] } | undefined>;
+      };
+    }
+  ).deviceSpec?.labels;
+  if (!labels) continue;
+  for (const [k, v] of Object.entries(labels)) {
+    sampleChromeosLabels[k] ??= { values: [] };
+    for (const val of v?.values || []) {
+      if (val && !sampleChromeosLabels[k].values.includes(val)) {
+        sampleChromeosLabels[k].values.push(val);
+      }
+    }
+  }
+}
+
+function computeChromeosCounts(devices: Array<Record<string, unknown>>) {
+  const byDutState = (st: string) =>
+    devices.filter(
+      (d) =>
+        (
+          d.deviceSpec as {
+            labels?: Record<string, { values?: readonly string[] }>;
+          }
+        )?.labels?.dut_state?.values?.[0] === st,
+    ).length;
+  return {
+    total: devices.length,
+    deviceState: {
+      ready: byDutState('ready'),
+      needRepair: byDutState('needs_repair'),
+      needManualRepair: byDutState('needs_manual_repair'),
+      repairFailed: byDutState('repair_failed'),
+    },
+    taskState: {
+      busy: devices.filter((d) => d.state === 'DEVICE_STATE_LEASED').length,
+      idle: devices.filter((d) => d.state === 'DEVICE_STATE_AVAILABLE').length,
+    },
+  };
+}
+
+const defaultCrosCounts = computeChromeosCounts(
+  sampleChromeosDevices as Array<Record<string, unknown>>,
+);
+
 const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   CountDevices: {
+    ...defaultCrosCounts,
     total: sampleChromeosDevices.length + sampleAndroidDevices.length,
-    chromeosCount: {
-      total: sampleChromeosDevices.length,
-    },
+    chromeosCount: defaultCrosCounts,
     androidCount: {
       totalDevices: sampleAndroidDevices.length,
     },
@@ -370,11 +421,17 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   PingSwarming: {},
   GetDeviceDimensions: {
     baseDimensions: {
+      id: { values: sampleChromeosDevices.map((d) => String(d.id)) },
+      dut_id: { values: sampleChromeosDevices.map((d) => String(d.dutId)) },
+      state: { values: ['DEVICE_STATE_AVAILABLE', 'DEVICE_STATE_LEASED'] },
+      type: { values: ['DEVICE_TYPE_PHYSICAL'] },
       model: { values: sampleChromeosModels },
       board: { values: sampleChromeosBoards },
     },
-    swarmingLabels: {},
+    labels: sampleChromeosLabels,
+    swarmingLabels: sampleChromeosLabels,
     ufsLabels: {
+      ...sampleChromeosLabels,
       location_tag: { values: ['atl_rack_42', 'chromeos6_rack_10'] },
       'ufs.location_tag': { values: ['atl_rack_42', 'lab_rack_1'] },
     },
@@ -865,6 +922,94 @@ export class FleetConsoleMockAPI {
   }
 
   /**
+   * Evaluates an AIP-160 filter expression against a mock item using the
+   * canonical Fleet Console AIP-160 lexer and AST parser.
+   */
+  static matchesAip160Filter(
+    item: Record<string, unknown>,
+    filterStr: string,
+  ): boolean {
+    const trimmed = filterStr.trim();
+    if (!trimmed) return true;
+    const parsed = parseFilter(trimmed);
+    if (parsed.isError || !parsed.ast.expression) {
+      const fallback = trimmed.replace(/^"|"$/g, '').toLowerCase();
+      return JSON.stringify(item).toLowerCase().includes(fallback);
+    }
+
+    const evalRestriction = (r: aip160Ast.Restriction): boolean => {
+      const root = r.comparable.member.value.value;
+      const fields = r.comparable.member.fields.map((f) => f.value);
+      if (!r.comparator || !r.arg) {
+        const needle = [root, ...fields].join('.').toLowerCase();
+        return JSON.stringify(item).toLowerCase().includes(needle);
+      }
+      if (r.arg.kind === 'Expression') {
+        return evalExpr(r.arg);
+      }
+      const op = r.comparator;
+      const targetVal = [
+        r.arg.member.value.value,
+        ...r.arg.member.fields.map((f) => f.value),
+      ]
+        .join('.')
+        .toLowerCase();
+      const labelMap =
+        (
+          item.deviceSpec as {
+            labels?: Record<string, { values?: readonly string[] }>;
+          }
+        )?.labels ||
+        (item.swarmingLabels as
+          | Record<string, { values?: readonly string[] }>
+          | undefined) ||
+        (
+          item.omnilabSpec as {
+            labels?: Record<string, { values?: readonly string[] }>;
+          }
+        )?.labels;
+
+      let matched = false;
+      if (root === 'labels' && fields.length > 0) {
+        const vals = labelMap?.[fields.join('.')]?.values ?? [];
+        matched =
+          targetVal === '*'
+            ? vals.length > 0
+            : vals.some((v) => {
+                const lv = String(v).toLowerCase();
+                return op === ':' ? lv.includes(targetVal) : lv === targetVal;
+              });
+      } else if (root in item) {
+        const fv = String(item[root] ?? '').toLowerCase();
+        matched =
+          targetVal === '*'
+            ? Boolean(item[root])
+            : op === ':'
+              ? fv.includes(targetVal)
+              : fv === targetVal || fv.endsWith(`_${targetVal}`);
+      } else {
+        matched = JSON.stringify(item).toLowerCase().includes(targetVal);
+      }
+      return op === '!=' ? !matched : matched;
+    };
+
+    const evalExpr = (expr: aip160Ast.Expression): boolean =>
+      expr.sequences.every((seq) =>
+        seq.factors.every((factor) =>
+          factor.terms.some((term) => {
+            const res =
+              term.simple.kind === 'Expression'
+                ? evalExpr(term.simple)
+                : evalRestriction(term.simple);
+            return term.negated ? !res : res;
+          }),
+        ),
+      );
+
+    return evalExpr(parsed.ast.expression);
+  }
+
+  /**
    * Gets the currently configured fixture for a method.
    */
   static getFixture(method: string): unknown {
@@ -1046,15 +1191,9 @@ export class FleetConsoleMockAPI {
             >;
 
             if (filterStr) {
-              // Simple AIP-160 substring match: matches any exact string literal in filter
-              const stringMatches =
-                filterStr.match(/"([^"]+)"/) || filterStr.match(/=\s*([^\s]+)/);
-              if (stringMatches && stringMatches[1]) {
-                const targetVal = stringMatches[1].toLowerCase();
-                items = items.filter((item) =>
-                  JSON.stringify(item).toLowerCase().includes(targetVal),
-                );
-              }
+              items = items.filter((item) =>
+                FleetConsoleMockAPI.matchesAip160Filter(item, filterStr),
+              );
             }
 
             const pageSize =
@@ -1077,6 +1216,21 @@ export class FleetConsoleMockAPI {
               [listArrayKey]: pagedItems,
               nextPageToken,
               totalSize: items.length,
+            };
+          } else if (method === 'CountDevices' && filterStr) {
+            const allCros = sampleChromeosDevices as Array<
+              Record<string, unknown>
+            >;
+            const filteredCounts = computeChromeosCounts(
+              allCros.filter((d) =>
+                FleetConsoleMockAPI.matchesAip160Filter(d, filterStr),
+              ),
+            );
+            responseData = {
+              ...responseData,
+              ...filteredCounts,
+              chromeosCount: filteredCounts,
+              chromeosTotal: filteredCounts.total,
             };
           }
         }
