@@ -541,7 +541,7 @@ export function ChromeOSSummaryHeader({
                         </Typography>
                         <Typography variant="body2" sx={{ mt: 2 }}>
                           <Link
-                            href="http://go/flops-swarming#dut-states"
+                            href="http://goto.google.com/flops-swarming#dut-states"
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="documentation (opens in a new tab)"

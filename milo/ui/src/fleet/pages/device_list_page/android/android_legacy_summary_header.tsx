@@ -573,7 +573,7 @@ export function AndroidLegacySummaryHeader({
                           These devices are in transitory states and are
                           expected to be recovered by automated jobs. See{' '}
                           <Link
-                            href="http://go/android-labtechs#device-terminology"
+                            href="http://goto.google.com/android-labtechs#device-terminology"
                             target="_blank"
                             rel="noopener noreferrer"
                           >

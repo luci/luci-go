@@ -259,7 +259,11 @@ export const ChromeOSInventoryData = ({
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Typography variant="body2" color="text.secondary">
           Equivalent{' '}
-          <Link href="http://go/shivas" target="_blank" rel="noreferrer">
+          <Link
+            href="http://goto.google.com/shivas"
+            target="_blank"
+            rel="noreferrer"
+          >
             shivas
           </Link>{' '}
           command:{' '}

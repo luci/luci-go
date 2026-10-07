@@ -49,7 +49,7 @@ describe('ChromeOSRepairConfig', () => {
       const desc = ChromeOSRepairConfig.generateDescription(duts);
       expect(desc).toContain('**DUT Link(s) / Locations:**:');
       expect(desc).toContain(
-        '* [http://go/fcdut/dut1](http://go/fcdut/dut1) (Location: \\<Please add if known\\>, Board: board1, Model: model1, Pool: pool1)',
+        '* [http://goto.google.com/fcdut/dut1](http://goto.google.com/fcdut/dut1) (Location: \\<Please add if known\\>, Board: board1, Model: model1, Pool: pool1)',
       );
     });
 
@@ -65,7 +65,7 @@ describe('ChromeOSRepairConfig', () => {
       ];
       const desc = ChromeOSRepairConfig.generateDescription(duts);
       expect(desc).toContain(
-        '* [http://go/fcdut/dut\\_1](http://go/fcdut/dut_1) (Location: \\<Please add if known\\>, Board: board\\*bold\\*, Model: model \\[link\\]\\(http://evil\\.com\\), Pool: pool \\| col)',
+        '* [http://goto.google.com/fcdut/dut\\_1](http://goto.google.com/fcdut/dut_1) (Location: \\<Please add if known\\>, Board: board\\*bold\\*, Model: model \\[link\\]\\(http://evil\\.com\\), Pool: pool \\| col)',
       );
     });
   });

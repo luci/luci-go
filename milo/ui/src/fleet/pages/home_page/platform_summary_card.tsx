@@ -49,7 +49,7 @@ const PermissionWarningTooltip = () => (
       <br />
       Go to{' '}
       <Link
-        href="http://go/fcon-user-guide#getting-access"
+        href="http://goto.google.com/fcon-user-guide#getting-access"
         target="_blank"
         rel="noreferrer"
         sx={{ textDecoration: 'underline' }}

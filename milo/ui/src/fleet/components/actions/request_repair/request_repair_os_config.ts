@@ -58,8 +58,10 @@ const generateDutInfo = (selectedDuts: DutToRepair[]): string =>
         model && `Model: ${model}`,
         pool && `Pool: ${pool}`,
       ];
-      const dutUrl = rawMd(`http://go/fcdut/${encodeURIComponent(name)}`);
-      return md` * [http://go/fcdut/${name}](${dutUrl}) (${extraInfo.filter(Boolean).join(', ')})`;
+      const dutUrl = rawMd(
+        `http://goto.google.com/fcdut/${encodeURIComponent(name)}`,
+      );
+      return md` * [http://goto.google.com/fcdut/${name}](${dutUrl}) (${extraInfo.filter(Boolean).join(', ')})`;
     })
     .join('\n');
 

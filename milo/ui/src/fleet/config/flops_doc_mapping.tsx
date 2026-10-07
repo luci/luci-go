@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const swarmingStateBaseUrl = 'http://go/flops-swarming';
+const swarmingStateBaseUrl = 'http://goto.google.com/flops-swarming';
 
 export const getSwarmingStateDocLinkForLabel = (
   value: string | undefined,
@@ -23,7 +23,7 @@ export const getSwarmingStateDocLinkForLabel = (
   return `${swarmingStateBaseUrl}#${value.replace(/_/g, '-').toLowerCase()}`;
 };
 
-const browserSwarmingStateBaseUrl = 'http://go/flops-browser';
+const browserSwarmingStateBaseUrl = 'http://goto.google.com/flops-browser';
 
 export const getBrowserSwarmingStateDocLinkForLabel = (
   value: string | undefined,

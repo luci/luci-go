@@ -111,7 +111,7 @@ export default function DeployDialog({
           <Tooltip title="View External Device Manual">
             <IconButton
               size="small"
-              href="http://go/satlab-manual"
+              href="http://goto.google.com/satlab-manual"
               target="_blank"
             >
               <HelpOutlineIcon fontSize="small" />

@@ -8,7 +8,7 @@ A static Fleet Console prototype ("Easy Mock") runs entirely in the browser with
 
 The workflow is split into two parts:
 1. **Build & Package (`milo/ui/src/fleet/`)**: Compile the Fleet Console UI with client-side mock pRPC fixtures (`FleetConsoleMockAPI`) and export a self-contained static directory (`dist_proto/`).
-2. **Host Anywhere**: Serve `dist_proto/` locally (`npx serve dist_proto`), upload it to any static web host, or (for Googlers) publish it to the FCon Labs gallery at [go/fcon-labs](http://go/fcon-labs).
+2. **Host Anywhere**: Serve `dist_proto/` locally (`npx serve dist_proto`), upload it to any static web host, or (for Googlers) publish it to the FCon Labs gallery at [go/fcon-labs](http://goto.google.com/fcon-labs).
 
 ## Required Bundle Contents (`dist_proto/`)
 
@@ -37,7 +37,7 @@ To ensure every prototype can be viewed in a browser and reconstructed in source
 4. **Preview or Upload**:
    - **Local preview**: `npx serve dist_proto`
    - **External static hosting**: Upload `dist_proto/` to GitHub Pages, Firebase Hosting, Netlify, S3, or GCS.
-   - **Internal gallery (Googlers)**: See [go/fcon-labs](http://go/fcon-labs) for publishing `dist_proto/` to the shared FCon Labs directory.
+   - **Internal gallery (Googlers)**: See [go/fcon-labs](http://goto.google.com/fcon-labs) for publishing `dist_proto/` to the shared FCon Labs directory.
 
 ## Related Documentation
 - [`mock-api-architecture.md`](../decisions/mock-api-architecture.md)

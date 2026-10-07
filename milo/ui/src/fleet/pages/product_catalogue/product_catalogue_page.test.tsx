@@ -136,12 +136,18 @@ describe('ProductCataloguePage', () => {
     const link1 = await findByText('r11n-val');
     expect(link1).toBeInTheDocument();
     expect(link1.tagName).toBe('A');
-    expect(link1).toHaveAttribute('href', 'http://go/ngp-npi/r11n/r11n-val');
+    expect(link1).toHaveAttribute(
+      'href',
+      'http://goto.google.com/ngp-npi/r11n/r11n-val',
+    );
 
     const link2 = await findByText('TBD');
     expect(link2).toBeInTheDocument();
     expect(link2.tagName).toBe('A');
-    expect(link2).toHaveAttribute('href', 'http://go/ngp-npi/r11n/tbd');
+    expect(link2).toHaveAttribute(
+      'href',
+      'http://goto.google.com/ngp-npi/r11n/tbd',
+    );
   });
 
   it('should sort client-side by R11N correctly', async () => {

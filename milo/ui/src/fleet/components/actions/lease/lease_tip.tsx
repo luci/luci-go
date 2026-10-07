@@ -63,7 +63,7 @@ export function LeaseTip({ hostname }: LeaseTipProps) {
           <Alert severity="info" sx={{ mb: 2 }}>
             When you first lease a ChromeOS device, you will need to follow{' '}
             <a
-              href="http://go/crosfleet-cli#installation-and-updates"
+              href="http://goto.google.com/crosfleet-cli#installation-and-updates"
               target="_blank"
               rel="noreferrer"
             >
@@ -73,7 +73,11 @@ export function LeaseTip({ hostname }: LeaseTipProps) {
           </Alert>
           <p>
             To learn how to lease a ChromeOS device, see:{' '}
-            <a href="http://go/crosfleet-cli" target="_blank" rel="noreferrer">
+            <a
+              href="http://goto.google.com/crosfleet-cli"
+              target="_blank"
+              rel="noreferrer"
+            >
               crosfleet CLI Documentation
             </a>
           </p>

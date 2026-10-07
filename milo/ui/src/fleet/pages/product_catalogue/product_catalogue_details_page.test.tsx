@@ -109,12 +109,12 @@ describe('<ProductCatalogDetailsPage />', () => {
     const link1 = screen.getByText('r11n-us-central');
     expect(link1).toHaveAttribute(
       'href',
-      'http://go/ngp-npi/r11n/r11n-us-central',
+      'http://goto.google.com/ngp-npi/r11n/r11n-us-central',
     );
     const link2 = screen.getByText('r11n-us-east');
     expect(link2).toHaveAttribute(
       'href',
-      'http://go/ngp-npi/r11n/r11n-us-east',
+      'http://goto.google.com/ngp-npi/r11n/r11n-us-east',
     );
     // Verify Order Resources form is visible by default
     expect(screen.getByText('Order Resources')).toBeVisible();

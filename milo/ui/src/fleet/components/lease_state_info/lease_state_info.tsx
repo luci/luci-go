@@ -33,7 +33,7 @@ export function LeaseStateInfo() {
         <Typography variant="caption" component="div" sx={{ mt: 2 }}>
           [1] Traditionally humans would lease ChromeOS devices through the{' '}
           <Link
-            href="http://go/crosfleet-cli#dut-lease"
+            href="http://goto.google.com/crosfleet-cli#dut-lease"
             target="_blank"
             rel="noreferrer"
           >

@@ -349,7 +349,7 @@ export const HomePage = () => {
                 variant="outlined"
                 color="inherit"
                 component="a"
-                href="http://go/fleet-console"
+                href="http://goto.google.com/fleet-console"
                 target="_blank"
                 rel="noreferrer"
                 startIcon={<ArticleOutlinedIcon />}

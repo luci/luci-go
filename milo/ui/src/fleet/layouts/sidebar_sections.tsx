@@ -188,13 +188,13 @@ function generateOtherToolsSection(): SidebarSection {
     pages: [
       {
         label: 'Incidents (IRM)',
-        url: 'http://go/fleetops-irm',
+        url: 'http://goto.google.com/fleetops-irm',
         icon: <WarningIcon />,
         external: true,
       },
       {
         label: 'Fleet Team',
-        url: 'http://go/fleet',
+        url: 'http://goto.google.com/fleet',
         icon: <TopicIcon />,
         external: true,
       },

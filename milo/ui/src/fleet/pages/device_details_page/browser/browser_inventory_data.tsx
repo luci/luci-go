@@ -257,7 +257,11 @@ const InventoryDataCodeSnippet = ({
       >
         <span>
           Equivalent{' '}
-          <a href="http://go/shivas" target="_blank" rel="noreferrer">
+          <a
+            href="http://goto.google.com/shivas"
+            target="_blank"
+            rel="noreferrer"
+          >
             shivas
           </a>{' '}
           command:{' '}

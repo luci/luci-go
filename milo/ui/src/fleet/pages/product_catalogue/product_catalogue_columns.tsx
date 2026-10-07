@@ -60,7 +60,7 @@ export const COLUMNS: MRT_ColumnDef<UnifiedProductCatalogEntry>[] &
         if (!trimmed) {
           return '';
         }
-        return `http://go/ngp-npi/r11n/${trimmed.toLowerCase()}`;
+        return `http://goto.google.com/ngp-npi/r11n/${trimmed.toLowerCase()}`;
       },
     }),
     sortingFn: (rowA, rowB) => {

@@ -2,7 +2,7 @@
 
 This directory contains the source code for the LUCI Fleet Console UI subproject.
 
-For overall docs on the Fleet Console, see: [go/fleet-console](http://go/fleet-console)
+For overall docs on the Fleet Console, see: [go/fleet-console](http://goto.google.com/fleet-console)
 
 For architectural decisions regarding Material-React-Table usage, see: [mrt-table-architecture.md](./docs/decisions/mrt-table-architecture.md)
 

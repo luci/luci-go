@@ -93,7 +93,7 @@ const ProductCatalogueHeader = () => {
 
       <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
         <Link
-          href="http://go/ineedhw"
+          href="http://goto.google.com/ineedhw"
           target="_blank"
           rel="noopener noreferrer"
           sx={{
@@ -110,7 +110,7 @@ const ProductCatalogueHeader = () => {
           <OpenInNewIcon sx={{ fontSize: 16 }} />
         </Link>
         <Link
-          href="http://go/fcon-user-guide#product-catalog"
+          href="http://goto.google.com/fcon-user-guide#product-catalog"
           target="_blank"
           rel="noopener noreferrer"
           sx={{

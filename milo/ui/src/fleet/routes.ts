@@ -31,7 +31,7 @@ import { platformRoutes } from './routing/platform_routes';
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.
 // If you need PII in the path param, document it and scrub the URL param from
-// GA4 tracking. See http://go/ooga-config#scrub-urls.
+// GA4 tracking. See http://goto.google.com/ooga-config#scrub-urls.
 // The return type of a dynamic import.
 type LazyModule = Promise<{ readonly [s: string]: unknown }>;
 

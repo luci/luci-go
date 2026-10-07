@@ -114,13 +114,13 @@ describe('generateSidebarSections', () => {
     expect(otherTools?.pages).toEqual([
       {
         label: 'Incidents (IRM)',
-        url: 'http://go/fleetops-irm',
+        url: 'http://goto.google.com/fleetops-irm',
         icon: expect.anything(),
         external: true,
       },
       {
         label: 'Fleet Team',
-        url: 'http://go/fleet',
+        url: 'http://goto.google.com/fleet',
         icon: expect.anything(),
         external: true,
       },

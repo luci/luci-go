@@ -138,7 +138,7 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
   },
   dut_id: {
     type: 'base',
-    header: 'Dut ID',
+    header: 'DUT ID',
     accessorFn: (device) => device.dutId,
     orderByField: 'dut_id',
     filterKey: 'dut_id',
@@ -152,7 +152,7 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
   },
   state: {
     type: 'base',
-    header: 'Lease state',
+    header: 'Lease State',
     accessorFn: (device) => getDeviceStateString(device),
     orderByField: 'state',
     filterKey: 'state',
@@ -222,7 +222,7 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
   },
   dut_state: {
     type: 'label',
-    header: 'dut_state',
+    header: 'DUT State',
     accessorFn: (device) =>
       getLabelValueInternal(device, 'dut_state').toUpperCase(),
     renderCell: ({ row }: FC_CellProps<ChromeOSDevice>) => {
@@ -263,19 +263,19 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
     type: 'label',
     header: 'Model',
     renderCell: renderCellWithLink<ChromeOSDevice>({
-      linkGenerator: (value) => `http://go/dlm-model/${value}`,
+      linkGenerator: (value) => `http://goto.google.com/dlm-model/${value}`,
     }),
   },
   'label-board': {
     type: 'label',
     header: 'Board',
     renderCell: renderCellWithLink<ChromeOSDevice>({
-      linkGenerator: (value) => `http://go/dlm-board/${value}`,
+      linkGenerator: (value) => `http://goto.google.com/dlm-board/${value}`,
     }),
   },
   dut_name: {
     type: 'label',
-    header: 'Dut Name',
+    header: 'DUT Name',
     renderCell: renderCellWithLink<ChromeOSDevice>({
       linkGenerator: generateDutNameRedirectURL,
     }),

@@ -130,7 +130,7 @@ export const Header = ({
       >
         <Tooltip title="Ask Captain Fin (AI assistant)">
           <IconButton
-            onClick={() => window.open('http://go/captain-fin')}
+            onClick={() => window.open('http://goto.google.com/captain-fin')}
             aria-label="Ask Captain Fin (AI assistant)"
           >
             <AutoAwesome />
@@ -138,7 +138,7 @@ export const Header = ({
         </Tooltip>
         <Tooltip title="Fleet Console documentation">
           <IconButton
-            onClick={() => window.open('http://go/fleet-console')}
+            onClick={() => window.open('http://goto.google.com/fleet-console')}
             aria-label="Fleet Console documentation"
           >
             <HelpOutlineOutlinedIcon />
@@ -158,7 +158,7 @@ export const Header = ({
         </Tooltip>
         <Tooltip title="Request a feature">
           <IconButton
-            onClick={() => window.open('http://go/fcon-feature')}
+            onClick={() => window.open('http://goto.google.com/fcon-feature')}
             aria-label="Request a feature"
           >
             <ExtensionOutlined />

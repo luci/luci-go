@@ -9,7 +9,7 @@ Previously, offline prototypes (`go/fcon-prototypes`), Jest unit tests, and E2E 
 
 ## Twofold Goals of Mock Infrastructure
 This architecture serves two explicit goals:
-1. **Unblock Frontend Prototyping Pipeline (`http://go/fcon-prototypes`)**:
+1. **Unblock Frontend Prototyping Pipeline (`http://goto.google.com/fcon-prototypes`)**:
    Provide a production-like synthetic mock data generator and network interceptor layer between Fleet Console frontend code and backend APIs. This allows hosting static-only frontend prototypes using real Fleet Console UI components with full visual and functional fidelity without needing live backend server connections.
 2. **Front Door Integration Testing**:
    Utilize the synthetic mock datasets to drive automated integration tests that interact with Fleet Console from the "front door" (testing real React components, pages, and hooks as a real user would experience them).

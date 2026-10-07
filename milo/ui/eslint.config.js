@@ -71,6 +71,88 @@ const localPlugin = {
         };
       },
     },
+    'canonical-go-links': {
+      meta: { type: 'problem', fixable: 'code' },
+      /** @param {any} context */
+      create(context) {
+        const nonCanonicalGoLinkRe =
+          /\bhttps?:\/\/(?:go|goto2\.corp\.google\.com|go\.corp\.google\.com|goto\.corp\.google\.com)\/([a-zA-Z0-9_/-]*)/g;
+        /**
+         * @param {any} node
+         * @param {string} rawText
+         * @param {number} rangeStart
+         */
+        function checkText(node, rawText, rangeStart) {
+          for (const match of rawText.matchAll(nonCanonicalGoLinkRe)) {
+            if (match.index === undefined) {
+              continue;
+            }
+            const fullMatch = match[0];
+            const slug = match[1];
+            const replacement = `http://goto.google.com/${slug}`;
+            const start = rangeStart + match.index;
+            const end = start + fullMatch.length;
+            context.report({
+              node,
+              message:
+                `Use canonical '${replacement}' instead of '${fullMatch}' ` +
+                'so Go links resolve without shortlink DNS aliasing.',
+              /** @param {any} fixer */
+              fix(fixer) {
+                return fixer.replaceTextRange([start, end], replacement);
+              },
+            });
+          }
+        }
+        return {
+          Program() {
+            const sourceCode = context.sourceCode || context.getSourceCode();
+            for (const comment of sourceCode.getAllComments()) {
+              if (comment.range) {
+                checkText(
+                  comment,
+                  sourceCode.text.slice(comment.range[0], comment.range[1]),
+                  comment.range[0],
+                );
+              }
+            }
+          },
+          /** @param {any} node */
+          Literal(node) {
+            if (typeof node.value === 'string' && node.range) {
+              const sourceCode = context.sourceCode || context.getSourceCode();
+              checkText(
+                node,
+                sourceCode.text.slice(node.range[0], node.range[1]),
+                node.range[0],
+              );
+            }
+          },
+          /** @param {any} node */
+          TemplateElement(node) {
+            if (node.range) {
+              const sourceCode = context.sourceCode || context.getSourceCode();
+              checkText(
+                node,
+                sourceCode.text.slice(node.range[0], node.range[1]),
+                node.range[0],
+              );
+            }
+          },
+          /** @param {any} node */
+          JSXText(node) {
+            if (node.range) {
+              const sourceCode = context.sourceCode || context.getSourceCode();
+              checkText(
+                node,
+                sourceCode.text.slice(node.range[0], node.range[1]),
+                node.range[0],
+              );
+            }
+          },
+        };
+      },
+    },
   },
 };
 
@@ -271,6 +353,14 @@ export default [
     files: ['cypress/**/*.ts', 'cypress/**/*.tsx'],
     rules: {
       'spaced-comment': ['error', 'always', { markers: ['/'] }],
+    },
+  },
+
+  // 6. Override for Fleet Console Files
+  {
+    files: ['src/fleet/**/*.{js,mjs,cjs,ts,jsx,tsx}'],
+    rules: {
+      'local-rules/canonical-go-links': 'error',
     },
   },
 ];

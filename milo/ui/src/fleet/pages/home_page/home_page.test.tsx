@@ -164,7 +164,7 @@ describe('<HomePage />', () => {
     // Check external links
     expect(screen.getByText('Learn more').closest('a')).toHaveAttribute(
       'href',
-      'http://go/fleet-console',
+      'http://goto.google.com/fleet-console',
     );
     expect(screen.getByText('File feedback').closest('a')).toHaveAttribute(
       'href',

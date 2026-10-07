@@ -168,7 +168,7 @@ export default function ReserveDialog({
               <Tooltip title="View documentation">
                 <IconButton
                   size="small"
-                  href="http://go/shivas-manual-os"
+                  href="http://goto.google.com/shivas-manual-os"
                   target="_blank"
                 >
                   <HelpOutlineIcon fontSize="small" />

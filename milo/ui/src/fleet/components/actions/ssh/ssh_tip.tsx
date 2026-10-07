@@ -106,7 +106,7 @@ export function SshTip({ hostname, dutId }: SshTipProps) {
             <Alert severity="info">
               When you first SSH into a ChromeOS device, you will need to follow{' '}
               <a
-                href="http://go/chromeos-lab-duts-ssh#setup-private-key-and-ssh-config"
+                href="http://goto.google.com/chromeos-lab-duts-ssh#setup-private-key-and-ssh-config"
                 target="_blank"
                 rel="noreferrer"
               >
@@ -118,7 +118,7 @@ export function SshTip({ hostname, dutId }: SshTipProps) {
           <p>
             To learn how to SSH into a ChromeOS device, see:{' '}
             <a
-              href="http://go/chromeos-lab-duts-ssh"
+              href="http://goto.google.com/chromeos-lab-duts-ssh"
               target="_blank"
               rel="noreferrer"
             >

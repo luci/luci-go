@@ -78,10 +78,12 @@ describe('<ChromeOSDeviceDetailsPage />', () => {
   });
 
   it('renders CodeChip with 1-click copy button and optional link', () => {
-    render(<CodeChip value="brya" href="http://go/dlm-board/brya" />);
+    render(
+      <CodeChip value="brya" href="http://goto.google.com/dlm-board/brya" />,
+    );
     expect(screen.getByRole('link', { name: 'brya' })).toHaveAttribute(
       'href',
-      'http://go/dlm-board/brya',
+      'http://goto.google.com/dlm-board/brya',
     );
     expect(screen.getByRole('button', { name: 'Copy brya' })).toBeVisible();
   });

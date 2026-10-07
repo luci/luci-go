@@ -2,7 +2,7 @@
 
 * **Status**: Approved
 * **Date**: 2026-08-11
-* **Related Documents**: [`mock-api-architecture.md`](mock-api-architecture.md), [`prototypes/README.md`](../prototypes/README.md), [`http://go/fcon-labs`](http://go/fcon-labs)
+* **Related Documents**: [`mock-api-architecture.md`](mock-api-architecture.md), [`prototypes/README.md`](../prototypes/README.md), [`http://goto.google.com/fcon-labs`](http://goto.google.com/fcon-labs)
 
 ## Context
 
@@ -22,10 +22,10 @@ We establish a two-layer boundary between **static prototype bundle generation**
    A prototype bundle consists of the compiled static assets (`index.html`, `assets/*`, `settings.js`, `ui_version.js`), a reproducible git patch against `origin/main` (`changes.patch`), and a metadata manifest (`.prototype-meta.json` recording `vcs.baseCommitSha`).
 
 3. **Decoupled Hosting**:
-   The open-source repository documents how to build and package `dist_proto/` (`src/fleet/.agents/skills/fcon-easy-mock/SKILL.md` and `src/fleet/docs/prototypes/README.md`) without bundling provider-specific uploaders. Developers can serve `dist_proto/` on any static host, and Googlers can publish `dist_proto/` to the internal FCon Labs directory ([`http://go/fcon-labs`](http://go/fcon-labs)).
+   The open-source repository documents how to build and package `dist_proto/` (`src/fleet/.agents/skills/fcon-easy-mock/SKILL.md` and `src/fleet/docs/prototypes/README.md`) without bundling provider-specific uploaders. Developers can serve `dist_proto/` on any static host, and Googlers can publish `dist_proto/` to the internal FCon Labs directory ([`http://goto.google.com/fcon-labs`](http://goto.google.com/fcon-labs)).
 
 ## Consequences
 
 * **Minimal Open-Source Footprint**: `luci-go` contains zero internal hosting scripts, credentials, or deployment endpoints.
 * **Lossless Code Recovery**: Every static prototype carries `changes.patch` and `vcs.baseCommitSha`, allowing any engineer or agent to apply (`git apply --3way`) and reconcile the prototype against future `main` commits.
-* **Host Portability**: The same `dist_proto/` bundle runs on `npx serve`, public static hosts, or internal gallery hosting ([go/fcon-labs](http://go/fcon-labs)).
+* **Host Portability**: The same `dist_proto/` bundle runs on `npx serve`, public static hosts, or internal gallery hosting ([go/fcon-labs](http://goto.google.com/fcon-labs)).

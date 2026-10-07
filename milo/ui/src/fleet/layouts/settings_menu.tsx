@@ -77,7 +77,7 @@ export function SettingsMenu() {
       >
         <MenuItem
           component={Link}
-          to="http://go/fleet-console-newsletter"
+          to="http://goto.google.com/fleet-console-newsletter"
           title="View Fleet Console newsletter"
           onClick={handleCloseMenu}
           target="_blank"

@@ -48,7 +48,11 @@ export function AdminAccessRequiredDialog({
         </p>
         <p>
           Report issues to the{' '}
-          <a href="http://go/fcon-bug" target="_blank" rel="noreferrer">
+          <a
+            href="http://goto.google.com/fcon-bug"
+            target="_blank"
+            rel="noreferrer"
+          >
             Fleet Console team
           </a>
           .

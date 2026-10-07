@@ -114,7 +114,9 @@ describe('Header', () => {
     expect(screen.getByRole('separator')).toBeInTheDocument();
 
     captainFinBtn.click();
-    expect(windowOpenSpy).toHaveBeenCalledWith('http://go/captain-fin');
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      'http://goto.google.com/captain-fin',
+    );
     windowOpenSpy.mockRestore();
   });
 });
