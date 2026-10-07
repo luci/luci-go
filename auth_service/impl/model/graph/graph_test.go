@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 )
 
@@ -629,6 +630,70 @@ func TestGetRelevantSubgraph(t *testing.T) {
 			}
 
 			assert.Loosely(t, subgraph, should.Match(expectedSubgraph, subgraphComp))
+		})
+	})
+}
+
+func TestConvertPrincipal(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("Testing ConvertPrincipal", t, func(t *ftt.Test) {
+		t.Run("nil principal returns error", func(t *ftt.Test) {
+			_, err := ConvertPrincipal(nil)
+			assert.Loosely(t, errors.Is(err, ErrInvalidPrincipalValue), should.BeTrue)
+		})
+
+		t.Run("empty principal name returns error", func(t *ftt.Test) {
+			_, err := ConvertPrincipal(&rpcpb.Principal{
+				Kind: rpcpb.PrincipalKind_IDENTITY,
+				Name: "",
+			})
+			assert.Loosely(t, errors.Is(err, ErrInvalidPrincipalValue), should.BeTrue)
+		})
+
+		t.Run("unspecified principal kind returns error", func(t *ftt.Test) {
+			_, err := ConvertPrincipal(&rpcpb.Principal{
+				Kind: rpcpb.PrincipalKind_PRINCIPAL_KIND_UNSPECIFIED,
+				Name: "test",
+			})
+			assert.Loosely(t, errors.Is(err, ErrInvalidPrincipalKind), should.BeTrue)
+			assert.Loosely(t, err, should.ErrLike(`invalid principal kind "PRINCIPAL_KIND_UNSPECIFIED"`))
+		})
+
+		t.Run("glob principal", func(t *ftt.Test) {
+			nodeKey, err := ConvertPrincipal(&rpcpb.Principal{
+				Kind: rpcpb.PrincipalKind_GLOB,
+				Name: "user:*@example.com",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nodeKey, should.Match(NodeKey{
+				Kind:  Glob,
+				Value: "user:*@example.com",
+			}))
+		})
+
+		t.Run("identity principal", func(t *ftt.Test) {
+			nodeKey, err := ConvertPrincipal(&rpcpb.Principal{
+				Kind: rpcpb.PrincipalKind_IDENTITY,
+				Name: "user:someone@example.com",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nodeKey, should.Match(NodeKey{
+				Kind:  Identity,
+				Value: "user:someone@example.com",
+			}))
+		})
+
+		t.Run("group principal", func(t *ftt.Test) {
+			nodeKey, err := ConvertPrincipal(&rpcpb.Principal{
+				Kind: rpcpb.PrincipalKind_GROUP,
+				Name: "test-group",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nodeKey, should.Match(NodeKey{
+				Kind:  Group,
+				Value: "test-group",
+			}))
 		})
 	})
 }

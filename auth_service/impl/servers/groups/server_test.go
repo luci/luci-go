@@ -1325,7 +1325,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.GetSubgraph(ctx, &request)
-			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid principal kind"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring(`invalid principal kind "PRINCIPAL_KIND_UNSPECIFIED`))
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
@@ -1362,6 +1362,7 @@ func TestGroupsServer(t *testing.T) {
 
 			_, err := srv.GetSubgraph(ctx, &request)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("not found"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 	})
 }

@@ -18,6 +18,7 @@ package graph
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"sort"
 
@@ -391,6 +392,6 @@ func ConvertPrincipal(p *rpcpb.Principal) (NodeKey, error) {
 	case rpcpb.PrincipalKind_GROUP:
 		return NodeKey{Kind: Group, Value: p.Name}, nil
 	default:
-		return NodeKey{}, ErrInvalidPrincipalKind
+		return NodeKey{}, fmt.Errorf("%w %q", ErrInvalidPrincipalKind, p.Kind)
 	}
 }

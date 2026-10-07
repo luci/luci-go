@@ -151,18 +151,16 @@ func (srv *Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRe
 	case err == nil:
 		newGroup, err := createdGroup.ToProto(ctx, true)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to lookup caller: %s", err)
+			return nil, status.Errorf(codes.Internal, "failed converting group to proto: %s", err)
 		}
 		return newGroup, nil
 	case errors.Is(err, customerrors.ErrAlreadyExists):
 		return nil, status.Errorf(codes.AlreadyExists, "group already exists: %s", group.ID)
 	case errors.Is(err, customerrors.ErrInvalidName):
 		return nil, status.Errorf(codes.InvalidArgument, "invalid group name: %s", group.ID)
-	case errors.Is(err, customerrors.ErrInvalidReference):
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, customerrors.ErrInvalidIdentity):
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, customerrors.ErrInvalidArgument):
+	case errors.Is(err, customerrors.ErrInvalidReference),
+		errors.Is(err, customerrors.ErrInvalidIdentity),
+		errors.Is(err, customerrors.ErrInvalidArgument):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to create group %q: %s", request.GetGroup().GetName(), err)
@@ -176,7 +174,7 @@ func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRe
 	case err == nil:
 		updatedGroupProto, err := updatedGroup.ToProto(ctx, true)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to lookup caller: %s", err)
+			return nil, status.Errorf(codes.Internal, "failed converting group to proto: %s", err)
 		}
 		return updatedGroupProto, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
@@ -185,11 +183,9 @@ func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRe
 		return nil, status.Errorf(codes.PermissionDenied, "%s does not have permission to update group %q: %s", auth.CurrentIdentity(ctx), groupUpdate.ID, err)
 	case errors.Is(err, customerrors.ErrConcurrentModification):
 		return nil, status.Error(codes.Aborted, err.Error())
-	case errors.Is(err, customerrors.ErrInvalidReference):
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, customerrors.ErrInvalidArgument):
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, customerrors.ErrInvalidIdentity):
+	case errors.Is(err, customerrors.ErrInvalidReference),
+		errors.Is(err, customerrors.ErrInvalidArgument),
+		errors.Is(err, customerrors.ErrInvalidIdentity):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, customerrors.ErrCyclicDependency):
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -259,17 +255,17 @@ func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroup
 //	InvalidArgument error if the PrincipalKind is unspecified.
 //	Annotated error if the subgraph building fails, this may be an InvalidArgument or NotFound error.
 func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRequest) (*rpcpb.Subgraph, error) {
+	principal, err := graph.ConvertPrincipal(request.Principal)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"issue parsing the principal from the request: %s", err)
+	}
+
 	// Get the latest graph of all groups.
 	groupsGraph, err := srv.authGroupsProvider.GetGroupsGraph(ctx, false)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
 			"failed to fetch groups graph: %s", err)
-	}
-
-	principal, err := graph.ConvertPrincipal(request.Principal)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument,
-			"issue parsing the principal from the request: %s", err)
 	}
 
 	subgraph, err := groupsGraph.GetRelevantSubgraph(principal)
