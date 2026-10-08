@@ -23,14 +23,13 @@ import userEvent from '@testing-library/user-event';
 
 import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
+import { PriorityRulesPanel } from '@/fleet/components/repair_queue/priority_rules_panel';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import * as UsePriorityRulesModule from '@/fleet/pages/chromeos/repairs/use_priority_rules';
 import { ChromeOSFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
 import * as UseChromeOSFiltersModule from '@/fleet/pages/device_list_page/chromeos/use_chromeos_filters';
 import { PriorityRule } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { PriorityRulesPanel } from './priority_rules_panel';
 
 const MOCK_RULES: readonly PriorityRule[] = [
   {

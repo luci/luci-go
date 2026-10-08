@@ -29,9 +29,8 @@ import {
 } from '@mui/material';
 
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { useIrmIncidents } from '@/fleet/pages/chromeos/repairs/use_irm_incidents';
 import { getErrorMessage } from '@/fleet/utils/errors';
-
-import { useIrmIncidents } from './use_irm_incidents';
 
 export const ActiveIrmTable = () => {
   const { data, isLoading, isError, error } = useIrmIncidents();

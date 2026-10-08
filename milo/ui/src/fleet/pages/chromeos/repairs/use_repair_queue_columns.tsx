@@ -25,6 +25,7 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
+import { UserAvatar } from '@/fleet/components/repair_queue/user_avatar';
 import { DutStateCell } from '@/fleet/pages/device_list_page/chromeos/dut_state_cell';
 import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
@@ -39,7 +40,6 @@ import {
   useUnclaimRepairTask,
 } from './use_claim_repair_task';
 import { usePriorityRules } from './use_priority_rules';
-import { UserAvatar } from './user_avatar';
 
 export const formatPriorityScore = (score?: string | number): string => {
   const scoreStr = typeof score === 'number' ? String(score) : score || '0';

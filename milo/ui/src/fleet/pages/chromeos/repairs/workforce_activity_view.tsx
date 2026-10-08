@@ -50,6 +50,7 @@ import {
   parseProtoDurationStr,
 } from '@/common/tools/time_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { UserAvatar } from '@/fleet/components/repair_queue/user_avatar';
 import {
   CHROMEOS_PLATFORM,
   generateRepairsURL,
@@ -75,7 +76,6 @@ import {
 import { Duration as ProtoDuration } from '@/proto/google/protobuf/duration.pb';
 
 import { useWorkforceActivity } from './use_workforce_activity';
-import { UserAvatar } from './user_avatar';
 
 const formatDuration = (d?: ProtoDuration | string | null): string => {
   if (!d) return '-';

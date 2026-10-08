@@ -20,6 +20,8 @@ import { useNavigate } from 'react-router';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFeatureFlag } from '@/common/feature_flags';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { ActiveIrmTable } from '@/fleet/components/repair_queue/active_irm_table';
+import { PriorityRulesPanel } from '@/fleet/components/repair_queue/priority_rules_panel';
 import {
   CHROMEOS_PLATFORM,
   generateRepairsWorkforceURL,
@@ -31,9 +33,7 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ListRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { ActiveIrmTable } from './active_irm_table';
 import { ChromeOSRepairTable } from './chromeos_repair_table';
-import { PriorityRulesPanel } from './priority_rules_panel';
 import { useRepairQueue } from './use_repair_queue';
 
 export const ChromeOSRepairDashboard = () => {

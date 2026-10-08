@@ -35,11 +35,10 @@ import {
   FilterCategoryBuilder,
   useFilterState,
 } from '@/fleet/components/filters/use_filters';
+import { usePriorityRules } from '@/fleet/pages/chromeos/repairs/use_priority_rules';
 import { useChromeOSFilterBuilders } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_filters';
 import { colors } from '@/fleet/theme/colors';
 import { PriorityRule } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
-
-import { usePriorityRules } from './use_priority_rules';
 
 const MAX_PRIORITY_RULES = 5;
 const DEFAULT_VISIBLE_RULES = 3;

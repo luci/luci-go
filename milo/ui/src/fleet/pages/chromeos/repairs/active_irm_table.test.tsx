@@ -14,10 +14,10 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { ActiveIrmTable } from '@/fleet/components/repair_queue/active_irm_table';
 import { IrmIncident } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ActiveIrmTable } from './active_irm_table';
 import * as UseIrmIncidentsModule from './use_irm_incidents';
 
 const MOCK_INCIDENTS: readonly IrmIncident[] = [
