@@ -34,6 +34,7 @@ import {
 } from '@/fleet/constants/paths';
 import { enableChromeOsRepairsDashboard } from '@/fleet/features';
 import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import {
   QueuedStickyScrollingBase,
   Sticky,
@@ -65,6 +66,7 @@ const FleetLayoutContent = () => {
   );
   const navigate = useNavigate();
   const currentPlatform = useCurrentPlatform();
+  const { trackExternalLinkClick } = useFleetAnalytics();
   const chromeOsRepairsEnabled = useFeatureFlag(enableChromeOsRepairsDashboard);
 
   Settings.defaultLocale = 'en';
@@ -124,7 +126,7 @@ const FleetLayoutContent = () => {
   });
 
   return (
-    <ScrollingBase>
+    <ScrollingBase onClickCapture={trackExternalLinkClick}>
       <link rel="icon" href={bassFavicon} />
       <Box
         sx={{

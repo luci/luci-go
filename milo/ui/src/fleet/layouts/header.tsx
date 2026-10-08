@@ -28,6 +28,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { MouseEvent } from 'react';
 import { Link } from 'react-router';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
@@ -37,6 +38,7 @@ import { getLoginUrl, getLogoutUrl } from '@/common/tools/url_utils';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import fleetConsoleMascot from '@/fleet/assets/pngs/fleet-console-mascot.png';
 import { PlatformSelector } from '@/fleet/components/platform_selector';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { colors } from '@/fleet/theme/colors';
 
 import { FEEDBACK_BUGANIZER_BUG_ID } from '../constants/feedback';
@@ -53,9 +55,37 @@ export const Header = ({
 }) => {
   const authState = useAuthState();
   const isInPlatformScope = useIsInPlatformScope();
+  const { trackEvent } = useFleetAnalytics();
+
+  const handleHeaderClickCapture = (event: MouseEvent<HTMLElement>) => {
+    if (!(event.target instanceof Element)) {
+      return;
+    }
+    const control = event.target.closest('button, a');
+    if (!control) {
+      return;
+    }
+    const label =
+      control.getAttribute('aria-label') ||
+      control.textContent?.trim() ||
+      control.getAttribute('href');
+    if (label) {
+      trackEvent('header_button_clicked', {
+        componentName: label,
+      });
+    }
+  };
+
+  const openExternalLink = (url: string) => {
+    trackEvent('external_link_clicked', {
+      componentName: url,
+    });
+    window.open(url);
+  };
 
   return (
     <header
+      onClickCapture={handleHeaderClickCapture}
       css={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -130,7 +160,9 @@ export const Header = ({
       >
         <Tooltip title="Ask Captain Fin (AI assistant)">
           <IconButton
-            onClick={() => window.open('http://goto.google.com/captain-fin')}
+            onClick={() =>
+              openExternalLink('http://goto.google.com/captain-fin')
+            }
             aria-label="Ask Captain Fin (AI assistant)"
           >
             <AutoAwesome />
@@ -138,7 +170,9 @@ export const Header = ({
         </Tooltip>
         <Tooltip title="Fleet Console documentation">
           <IconButton
-            onClick={() => window.open('http://goto.google.com/fleet-console')}
+            onClick={() =>
+              openExternalLink('http://goto.google.com/fleet-console')
+            }
             aria-label="Fleet Console documentation"
           >
             <HelpOutlineOutlinedIcon />
@@ -147,7 +181,7 @@ export const Header = ({
         <Tooltip title="Report a bug">
           <IconButton
             onClick={() =>
-              window.open(
+              openExternalLink(
                 genFeedbackUrl({ bugComponent: FEEDBACK_BUGANIZER_BUG_ID }),
               )
             }
@@ -158,7 +192,9 @@ export const Header = ({
         </Tooltip>
         <Tooltip title="Request a feature">
           <IconButton
-            onClick={() => window.open('http://goto.google.com/fcon-feature')}
+            onClick={() =>
+              openExternalLink('http://goto.google.com/fcon-feature')
+            }
             aria-label="Request a feature"
           >
             <ExtensionOutlined />

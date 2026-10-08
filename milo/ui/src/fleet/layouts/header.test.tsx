@@ -21,9 +21,20 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { Header } from './header';
 
+const mockTrackEvent = jest.fn();
+
 jest.mock('@/common/components/auth_state_provider');
+jest.mock('@/fleet/hooks/use_fleet_analytics', () => ({
+  useFleetAnalytics: () => ({
+    trackEvent: mockTrackEvent,
+  }),
+}));
 
 describe('Header', () => {
+  beforeEach(() => {
+    mockTrackEvent.mockClear();
+  });
+
   it('When not logged in should display login button', async () => {
     (useAuthState as jest.Mock).mockReturnValue({
       identity: '',
@@ -83,7 +94,7 @@ describe('Header', () => {
     expect(logoLink).toHaveAttribute('href', '/ui/fleet/');
   });
 
-  it('renders Ask Captain Fin button and opens Captain Fin link when clicked', () => {
+  it('tracks header button clicks and external link opens', () => {
     const windowOpenSpy = jest
       .spyOn(window, 'open')
       .mockImplementation(() => null);
@@ -101,22 +112,48 @@ describe('Header', () => {
     const captainFinBtn = screen.getByRole('button', {
       name: 'Ask Captain Fin (AI assistant)',
     });
+    const docsBtn = screen.getByRole('button', {
+      name: 'Fleet Console documentation',
+    });
+    const bugBtn = screen.getByRole('button', { name: 'Report a bug' });
+    const featureBtn = screen.getByRole('button', {
+      name: 'Request a feature',
+    });
+    const menuBtn = screen.getByRole('button', { name: 'menu' });
+
     expect(captainFinBtn).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Fleet Console documentation' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Report a bug' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Request a feature' }),
-    ).toBeInTheDocument();
+    expect(docsBtn).toBeInTheDocument();
+    expect(bugBtn).toBeInTheDocument();
+    expect(featureBtn).toBeInTheDocument();
     expect(screen.getByRole('separator')).toBeInTheDocument();
 
     captainFinBtn.click();
     expect(windowOpenSpy).toHaveBeenCalledWith(
       'http://goto.google.com/captain-fin',
     );
+    expect(mockTrackEvent).toHaveBeenCalledWith('header_button_clicked', {
+      componentName: 'Ask Captain Fin (AI assistant)',
+    });
+    expect(mockTrackEvent).toHaveBeenCalledWith('external_link_clicked', {
+      componentName: 'http://goto.google.com/captain-fin',
+    });
+
+    docsBtn.click();
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      'http://goto.google.com/fleet-console',
+    );
+    expect(mockTrackEvent).toHaveBeenCalledWith('header_button_clicked', {
+      componentName: 'Fleet Console documentation',
+    });
+    expect(mockTrackEvent).toHaveBeenCalledWith('external_link_clicked', {
+      componentName: 'http://goto.google.com/fleet-console',
+    });
+
+    menuBtn.click();
+    expect(mockTrackEvent).toHaveBeenCalledWith('header_button_clicked', {
+      componentName: 'menu',
+    });
+
     windowOpenSpy.mockRestore();
   });
 });

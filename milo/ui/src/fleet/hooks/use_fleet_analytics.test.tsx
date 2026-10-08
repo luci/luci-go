@@ -125,5 +125,41 @@ describe('useFleetAnalytics', () => {
 
     expect(result.current).toBe(firstResult);
     expect(result.current.trackEvent).toBe(firstResult.trackEvent);
+    expect(result.current.trackExternalLinkClick).toBe(
+      firstResult.trackExternalLinkClick,
+    );
+  });
+
+  it('tracks clicks on external anchor links and ignores internal links', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/p/chromeos/devices']}>
+        <Routes>
+          <Route path="/p/:platform/*" element={<>{children}</>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFleetAnalytics(), { wrapper });
+
+    const externalLink = document.createElement('a');
+    externalLink.setAttribute(
+      'href',
+      'https://issuetracker.google.com/issues/123',
+    );
+    const nestedSpan = document.createElement('span');
+    externalLink.appendChild(nestedSpan);
+
+    result.current.trackExternalLinkClick({ target: nestedSpan });
+    expect(mockTrackEvent).toHaveBeenCalledWith('external_link_clicked', {
+      platform: 'chromeos',
+      componentName: 'https://issuetracker.google.com/issues/123',
+    });
+
+    mockTrackEvent.mockClear();
+
+    const internalLink = document.createElement('a');
+    internalLink.setAttribute('href', '/ui/fleet/labs/devices');
+    result.current.trackExternalLinkClick({ target: internalLink });
+    expect(mockTrackEvent).not.toHaveBeenCalled();
   });
 });

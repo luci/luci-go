@@ -50,5 +50,36 @@ export function useFleetAnalytics() {
     [baseTrackEvent, currentPlatform],
   );
 
-  return useMemo(() => ({ trackEvent }), [trackEvent]);
+  const trackExternalLinkClick = useCallback(
+    (event: { target: EventTarget | null }) => {
+      if (!(event.target instanceof Element)) {
+        return;
+      }
+      const anchor = event.target.closest('a');
+      if (!anchor) {
+        return;
+      }
+      const rawUrl = anchor.getAttribute('href') || anchor.getAttribute('to');
+      if (!rawUrl || !/^https?:\/\//i.test(rawUrl)) {
+        return;
+      }
+      try {
+        const parsed = new URL(rawUrl, window.location.origin);
+        if (parsed.origin === window.location.origin) {
+          return;
+        }
+      } catch {
+        // Keep tracking even if a shorthand URL fails standard URL parsing.
+      }
+      trackEvent('external_link_clicked', {
+        componentName: rawUrl,
+      });
+    },
+    [trackEvent],
+  );
+
+  return useMemo(
+    () => ({ trackEvent, trackExternalLinkClick }),
+    [trackEvent, trackExternalLinkClick],
+  );
 }
