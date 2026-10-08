@@ -131,4 +131,5 @@ enum HashAlgorithm {
   HASH_UNSPECIFIED = 0;
   HASH_MD5 = 1;
   HASH_SHA256 = 2;
+  HASH_SHA1 = 3;
 }

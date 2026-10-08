@@ -92,6 +92,8 @@ func hashFromEnum(h core.HashAlgorithm) (hash.Hash, error) {
 	switch h {
 	case core.HashAlgorithm_HASH_MD5:
 		return crypto.MD5.New(), nil
+	case core.HashAlgorithm_HASH_SHA1:
+		return crypto.SHA1.New(), nil
 	case core.HashAlgorithm_HASH_SHA256:
 		return crypto.SHA256.New(), nil
 	}
