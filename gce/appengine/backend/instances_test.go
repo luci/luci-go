@@ -400,6 +400,92 @@ func TestCreate(t *testing.T) {
 						assert.Loosely(t, attempts, should.Equal(1))
 						assert.Loosely(t, datastore.Get(c, &model.VM{ID: "id"}), should.Equal(datastore.ErrNoSuchEntity))
 					})
+
+					t.Run("multi-tick async operation stockout falls back and preserves templates", func(t *ftt.Test) {
+						attempts := 0
+						rt.Handler = func(req any) (int, any) {
+							attempts++
+							switch attempts {
+							case 1:
+								// Tick 1: primary zone us-central1-c starts async operation (RUNNING).
+								inst := req.(*compute.Instance)
+								assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-c/machineTypes/n2-standard-8"))
+								assert.Loosely(t, inst.Disks[0].InitializeParams.DiskType, should.Equal("zones/us-central1-c/diskTypes/pd-ssd"))
+								return http.StatusOK, &compute.Operation{Status: "RUNNING"}
+							case 2:
+								// Tick 2: polling us-central1-c returns async stockout error.
+								inst := req.(*compute.Instance)
+								assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-c/machineTypes/n2-standard-8"))
+								return http.StatusOK, opErr(errCodeZoneResourcePoolExhausted, "The zone "+errMsgZoneResourcePoolExhausted+".")
+							case 3:
+								// Tick 2 (continued): rotates to fallback 1 (us-central1-a), starts async operation (RUNNING).
+								inst := req.(*compute.Instance)
+								assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
+								assert.Loosely(t, inst.Disks[0].InitializeParams.DiskType, should.Equal("zones/us-central1-a/diskTypes/pd-ssd"))
+								return http.StatusOK, &compute.Operation{Status: "RUNNING"}
+							case 4:
+								// Tick 3: resumes directly at us-central1-a (does not retry us-central1-c), returns async stockout.
+								inst := req.(*compute.Instance)
+								assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
+								return http.StatusOK, opErr(errCodeZoneResourcePoolExhaustedWithDetails, "The zone "+errMsgZoneResourcePoolExhausted+".")
+							case 5:
+								// Tick 3 (continued): rotates to fallback 2 (us-central1-b), starts async operation (RUNNING).
+								inst := req.(*compute.Instance)
+								assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-b/machineTypes/n2-standard-8"))
+								assert.Loosely(t, inst.Disks[0].InitializeParams.DiskType, should.Equal("zones/us-central1-b/diskTypes/pd-ssd"))
+								return http.StatusOK, &compute.Operation{Status: "RUNNING"}
+							case 6:
+								// Tick 4: resumes directly at us-central1-b, operation completes (DONE).
+								inst := req.(*compute.Instance)
+								assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-b/machineTypes/n2-standard-8"))
+								rt.Type = reflect.TypeOf(map[string]string{})
+								return http.StatusOK, opDone("url-fallback-b")
+							default:
+								return http.StatusOK, &compute.Instance{
+									CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
+									SelfLink:          "url-fallback-b",
+								}
+							}
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						assert.Loosely(t, datastore.Put(c, makeVM()), should.BeNil)
+
+						// Tick 1: primary zone RUNNING.
+						assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+						assert.Loosely(t, attempts, should.Equal(1))
+						v := &model.VM{ID: "id"}
+						assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+						assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-c"))
+						assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
+
+						// Tick 2: primary zone fails with stockout -> fallback 1 (us-central1-a) RUNNING.
+						// Active zone cursor advances, while {{.Zone}} templates remain unexpanded in Datastore.
+						assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+						assert.Loosely(t, attempts, should.Equal(3))
+						v = &model.VM{ID: "id"}
+						assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+						assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-a"))
+						assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
+						assert.Loosely(t, v.Attributes.GetDisk()[0].GetType(), should.Equal("zones/{{.Zone}}/diskTypes/pd-ssd"))
+
+						// Tick 3: fallback 1 fails with stockout -> fallback 2 (us-central1-b) RUNNING.
+						assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+						assert.Loosely(t, attempts, should.Equal(5))
+						v = &model.VM{ID: "id"}
+						assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+						assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-b"))
+						assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
+
+						// Tick 4: fallback 2 completes (DONE) -> templates are finalized via SetZone.
+						assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+						assert.Loosely(t, attempts, should.Equal(7))
+						v = &model.VM{ID: "id"}
+						assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+						assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-b"))
+						assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/us-central1-b/machineTypes/n2-standard-8"))
+						assert.Loosely(t, v.Attributes.GetDisk()[0].GetType(), should.Equal("zones/us-central1-b/diskTypes/pd-ssd"))
+						assert.Loosely(t, v.URL, should.Equal("url-fallback-b"))
+					})
 				})
 			})
 		})
@@ -913,7 +999,7 @@ func TestIsLeakHuerestic(t *testing.T) {
 			Hostname: "name",
 			Attributes: config.VM{
 				Zone:          "us-central1-c",
-				FallbackZones: []string{"us-central1-a", "us-central1-c", "us-central1-b"},
+				FallbackZones: []string{"us-central1-a", "us-central1-b", "us-central1-f"},
 				MachineType:   "zones/{{.Zone}}/machineTypes/n2-standard-8",
 				Disk: []*config.Disk{{
 					Image: "global/images/image",
@@ -921,7 +1007,17 @@ func TestIsLeakHuerestic(t *testing.T) {
 				}},
 			},
 		}
-		assert.Loosely(t, candidateZones(vm), should.Match([]string{"us-central1-c", "us-central1-a", "us-central1-b"}))
+		assert.Loosely(t, candidateZones(vm), should.Match([]string{"us-central1-c", "us-central1-a", "us-central1-b", "us-central1-f"}))
+
+		// When the active zone cursor advances into FallbackZones, only subsequent
+		// fallback zones are returned (previously exhausted zones are skipped).
+		vm.Attributes.Zone = "us-central1-a"
+		assert.Loosely(t, candidateZones(vm), should.Match([]string{"us-central1-a", "us-central1-b", "us-central1-f"}))
+		vm.Attributes.Zone = "us-central1-b"
+		assert.Loosely(t, candidateZones(vm), should.Match([]string{"us-central1-b", "us-central1-f"}))
+		vm.Attributes.Zone = "us-central1-f"
+		assert.Loosely(t, candidateZones(vm), should.Match([]string{"us-central1-f"}))
+		vm.Attributes.Zone = "us-central1-c"
 
 		cloned := cloneVMForZone(vm, "us-central1-a")
 		assert.Loosely(t, cloned.Attributes.GetZone(), should.Equal("us-central1-a"))
@@ -929,8 +1025,14 @@ func TestIsLeakHuerestic(t *testing.T) {
 		assert.Loosely(t, vm.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
 
 		assert.Loosely(t, datastore.Put(c, vm), should.BeNil)
-		assert.Loosely(t, updateVMZone(c, "id", "us-central1-b"), should.BeNil)
+		assert.Loosely(t, setActiveVMZone(c, "id", "us-central1-a"), should.BeNil)
 		stored := &model.VM{ID: "id"}
+		assert.Loosely(t, datastore.Get(c, stored), should.BeNil)
+		assert.Loosely(t, stored.Attributes.GetZone(), should.Equal("us-central1-a"))
+		assert.Loosely(t, stored.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
+
+		assert.Loosely(t, updateVMZone(c, "id", "us-central1-b"), should.BeNil)
+		stored = &model.VM{ID: "id"}
 		assert.Loosely(t, datastore.Get(c, stored), should.BeNil)
 		assert.Loosely(t, stored.Attributes.GetZone(), should.Equal("us-central1-b"))
 		assert.Loosely(t, stored.Attributes.GetMachineType(), should.Equal("zones/us-central1-b/machineTypes/n2-standard-8"))
