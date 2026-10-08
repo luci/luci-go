@@ -61,5 +61,11 @@ func TestFailures(t *testing.T) {
 		fallbackFields := []any{"prefix", "project", "us-central1-b", "us-central1-f", "ZONE_RESOURCE_POOL_EXHAUSTED"}
 		UpdateZoneFallback(c, vm, "us-central1-b", "us-central1-f", "ZONE_RESOURCE_POOL_EXHAUSTED")
 		assert.Loosely(t, s.Get(c, zoneFallbacks, fallbackFields).(int64), should.Equal(1))
+
+		vm.FallbackOriginalZone = "us-central1-c"
+		vm.FallbackZoneRotations = 2
+		rotationFields := []any{"prefix", "project", "us-central1-c", "us-central1-b", 2}
+		UpdateZoneRotations(c, vm)
+		assert.Loosely(t, s.Get(c, zoneRotations, rotationFields).(int64), should.Equal(1))
 	})
 }

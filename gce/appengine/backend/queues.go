@@ -239,6 +239,9 @@ func createVM(c context.Context, payload proto.Message) error {
 
 		if task.Attributes != nil {
 			vm.Attributes = *task.Attributes
+			vm.FallbackOriginalZone = vm.Attributes.GetZone()
+			vm.FallbackFailedZones = nil
+			vm.FallbackZoneRotations = 0
 			// TODO(crbug/942301): Auto-select zone if zone is unspecified.
 			if len(vm.Attributes.GetFallbackZones()) == 0 {
 				vm.Attributes.SetZone(vm.Attributes.GetZone())

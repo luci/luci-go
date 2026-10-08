@@ -261,6 +261,9 @@ func TestQueues(t *testing.T) {
 						ID: "id-fb",
 					}
 					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+					assert.Loosely(t, v.FallbackOriginalZone, should.Equal("us-central1-c"))
+					assert.Loosely(t, v.FallbackFailedZones, should.BeEmpty)
+					assert.Loosely(t, v.FallbackZoneRotations, should.Equal(int64(0)))
 					assert.Loosely(t, &v.Attributes, should.Match(&config.VM{
 						Disk: []*config.Disk{
 							{

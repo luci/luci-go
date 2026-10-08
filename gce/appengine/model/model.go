@@ -138,6 +138,35 @@ type VM struct {
 	Timeout int64 `gae:"timeout"`
 	// URL is the URL of the created GCE instance.
 	URL string `gae:"url"`
+	// FallbackOriginalZone is the initially configured primary zone
+	// (Attributes.Zone at createVM expansion time) for the GCE instance.
+	// Associated with Attributes.Zone, Attributes.FallbackZones,
+	// FallbackFailedZones, and FallbackZoneRotations: while Attributes.Zone
+	// advances through candidate zones
+	// ([FallbackOriginalZone, Attributes.FallbackZones...]) on stockout,
+	// FallbackOriginalZone remains immutable so the VM can wrap back around to
+	// FallbackOriginalZone when all fallback zones in FallbackFailedZones are
+	// exhausted and report the starting zone in the
+	// gce/instances/zone_rotations metric.
+	FallbackOriginalZone string `gae:"fallback_original_zone,noindex"`
+	// FallbackFailedZones is the ordered per-VM trace of candidate zones (from
+	// [FallbackOriginalZone, Attributes.FallbackZones...]) that failed with a
+	// stockout during the current creation pass.
+	// Associated with FallbackOriginalZone, Attributes.Zone, and
+	// FallbackZoneRotations: initialized to nil in createVM, appended to on each
+	// stockout as Attributes.Zone advances to the next candidate zone, and reset
+	// to nil when all candidate zones fail and Attributes.Zone wraps back around
+	// to FallbackOriginalZone for a fresh pass.
+	FallbackFailedZones []string `gae:"fallback_failed_zones,noindex"`
+	// FallbackZoneRotations is the cumulative count of times this VM rotated to
+	// a new zone attempt due to stockouts across all creation passes.
+	// Associated with FallbackOriginalZone, FallbackFailedZones, and
+	// Attributes.Zone: initialized to 0 in createVM and incremented every time a
+	// zone is added to FallbackFailedZones (including when FallbackFailedZones
+	// wraps around to FallbackOriginalZone). Used to disambiguate GCE requestIds
+	// across wrap-around passes and emitted via the
+	// gce/instances/zone_rotations metric when the instance is created.
+	FallbackZoneRotations int64 `gae:"fallback_zone_rotations,noindex"`
 }
 
 // IndexAttributes sets indexable fields of vm.Attributes in AttributesIndexed.

@@ -45,6 +45,17 @@ var (
 		field.String("to_zone"),
 		field.String("reason"),
 	)
+
+	zoneRotations = metric.NewCounter(
+		"gce/instances/zone_rotations",
+		"Cumulative number of GCE instances created by winning zone, original zone, and number of zone rotations.",
+		nil,
+		field.String("prefix"),
+		field.String("project"),
+		field.String("original_zone"),
+		field.String("zone"),
+		field.Int("rotations"),
+	)
 )
 
 // DefaultFailureReason is the fallback failure reason recorded when a specific
@@ -67,4 +78,15 @@ func UpdateZoneFallback(c context.Context, vm *model.VM, fromZone, toZone, reaso
 		reason = DefaultFailureReason
 	}
 	zoneFallbacks.Add(c, int64(1), vm.Prefix, vm.Attributes.GetProject(), fromZone, toZone, reason)
+}
+
+// UpdateZoneRotations records the winning zone, original configured zone, and
+// total number of zone rotations for a created GCE instance so users can see
+// how many times VMs rotated and which zone was most successful.
+func UpdateZoneRotations(c context.Context, vm *model.VM) {
+	origZone := vm.FallbackOriginalZone
+	if origZone == "" {
+		origZone = vm.Attributes.GetZone()
+	}
+	zoneRotations.Add(c, int64(1), vm.Prefix, vm.Attributes.GetProject(), origZone, vm.Attributes.GetZone(), vm.FallbackZoneRotations)
 }
