@@ -81,9 +81,9 @@ export const BrowserDevicesPage = () => {
           marginTop: '24px',
         }}
       >
-        Currently, this page only displays physical devices. virtualized
-        hardware (VMs and GCE instances) will be onboarded by the end of Q2 or
-        early Q3 (tracking bug:{' '}
+        Currently, this page only displays physical devices. Virtualized
+        hardware (VMs and GCE instances) will be onboarded in the future
+        (tracking bug:{' '}
         <Link href="http://b/503171517" target="_blank" rel="noreferrer">
           b/503171517
         </Link>
