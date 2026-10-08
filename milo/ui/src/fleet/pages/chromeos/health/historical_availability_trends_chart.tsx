@@ -30,7 +30,15 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  memo,
+  SVGProps,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   CartesianGrid,
   Line,
@@ -58,17 +66,43 @@ import {
   DEFAULT_VISIBLE_SERIES_MODEL,
   DEFAULT_VISIBLE_SERIES_POOL,
   findFreeColorSlot,
+  findNearestReading,
   formatPercentTick,
   formatTickLabel,
   formatTooltipDate,
   getSeriesColor,
+  MAX_TOOLTIP_ROWS,
+  selectTooltipRows,
   SeriesColorSlots,
   sortPoolSeries,
   TrendsChartRow,
+  valueAtCursor,
 } from './trends_chart_data';
 import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
 
 const CHART_HEIGHT = 300;
+
+/** Opacity of the lines that are not hovered while another one is. */
+const FADED_OPACITY = 0.2;
+
+/**
+ * Layout shared by the main chart and the highlight layer drawn over it. Both
+ * must place the plot area at exactly the same pixels, so neither may size
+ * its axes from content.
+ */
+const CHART_MARGIN = { top: 16, right: 24, bottom: 0, left: 0 } as const;
+const TIME_AXIS_HEIGHT = 30;
+const VALUE_AXIS_WIDTH = 48;
+
+const LINE_WIDTH = 2.2;
+const HIGHLIGHTED_LINE_WIDTH = 3.2;
+
+/**
+ * Lifts the tooltip above the highlight layer. The layer is positioned and
+ * comes later in the DOM, so without this the hovered line paints over the
+ * tooltip while the faded lines, which live in the main chart, sit under it.
+ */
+const TOOLTIP_WRAPPER_STYLE = { zIndex: 1 } as const;
 
 /** A series that is currently plotted, and the color it owns. */
 interface PlottedSeries {
@@ -78,32 +112,150 @@ interface PlottedSeries {
 
 interface TrendsTooltipProps extends TooltipProps<number, string> {
   readonly metricLabel: string;
+  /** The top of the value axis, needed to turn the cursor height into a value. */
+  readonly maxYScale: number;
+  /**
+   * Called with the series under the cursor, or null when there is none, so
+   * the chart can emphasize that line. Must be referentially stable.
+   */
+  readonly onHoveredSeriesChange?: (name: string | null) => void;
 }
 
 type TooltipEntry = NonNullable<
   TooltipProps<number, string>['payload']
 >[number];
 
+/** A payload entry that carries a reading in the hovered bucket. */
+interface TooltipRow {
+  readonly name: string;
+  readonly value: number;
+  readonly color: string | undefined;
+}
+
 /**
- * Whether a payload entry carries a reading. Series with no data in the
- * hovered bucket are still present in the payload, with no value.
+ * Keeps only the payload entries that carry a reading. Series with no data in
+ * the hovered bucket are still present in the payload, with no value; they are
+ * left out rather than shown as zero, because having no data is not the same
+ * as having measured zero.
  */
-const hasReading = (
-  entry: TooltipEntry,
-): entry is TooltipEntry & { value: number } => typeof entry.value === 'number';
+const toTooltipRows = (payload: readonly TooltipEntry[]): TooltipRow[] =>
+  payload.flatMap((entry) =>
+    typeof entry.value === 'number' && entry.name !== undefined
+      ? [{ name: String(entry.name), value: entry.value, color: entry.color }]
+      : [],
+  );
+
+interface TooltipRowViewProps {
+  readonly row: TooltipRow;
+  readonly metricLabel: string;
+  readonly isHovered?: boolean;
+}
+
+const TooltipRowView = ({
+  row,
+  metricLabel,
+  isHovered = false,
+}: TooltipRowViewProps) => {
+  const textSx = {
+    fontWeight: isHovered ? 'bold' : 400,
+    color: isHovered ? 'text.primary' : 'text.secondary',
+  };
+  return (
+    <Box
+      data-testid={
+        isHovered ? 'trends-tooltip-hovered-row' : 'trends-tooltip-row'
+      }
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1.25,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.75,
+          minWidth: 0,
+        }}
+      >
+        <Box
+          sx={{
+            width: isHovered ? 9 : 7,
+            height: isHovered ? 9 : 7,
+            borderRadius: '50%',
+            bgcolor: row.color,
+            flexShrink: 0,
+          }}
+        />
+        <Typography variant="caption" noWrap title={row.name} sx={textSx}>
+          {row.name}
+        </Typography>
+      </Box>
+      <Typography variant="caption" sx={{ ...textSx, flexShrink: 0 }}>
+        {(row.value * 100).toFixed(1)}% {metricLabel}
+      </Typography>
+    </Box>
+  );
+};
+
+interface MoreSeriesProps {
+  readonly count: number;
+  readonly testId: string;
+}
+
+/** The "+N more series" line for rows cut off above or below the window. */
+const MoreSeries = ({ count, testId }: MoreSeriesProps) =>
+  count > 0 ? (
+    <Typography
+      variant="caption"
+      data-testid={testId}
+      sx={{ color: 'text.secondary', fontStyle: 'italic' }}
+    >
+      +{count} more series
+    </Typography>
+  ) : null;
 
 const TrendsTooltip = ({
   active,
   payload,
   label,
+  coordinate,
+  viewBox,
   metricLabel,
+  maxYScale,
+  onHoveredSeriesChange,
 }: TrendsTooltipProps) => {
-  if (!active || !payload?.length || typeof label !== 'number') return null;
+  const date = active && typeof label === 'number' ? label : undefined;
+  const rows = date !== undefined && payload ? toTooltipRows(payload) : [];
 
-  // A series with no reading in this bucket is left out rather than shown as
-  // zero: it had no data then, which is not the same as having measured zero.
-  const entries = payload.filter(hasReading);
-  if (entries.length === 0) return null;
+  // Recharts' shared tooltip reports every series in the hovered bucket, not
+  // the line under the cursor, so the hovered line is taken to be the one
+  // drawn closest to the cursor's height.
+  const plotTop = viewBox?.y ?? 0;
+  const plotHeight = viewBox?.height ?? 0;
+  const cursorValue =
+    coordinate?.y === undefined
+      ? undefined
+      : valueAtCursor(coordinate.y, plotTop, plotHeight, maxYScale);
+  const hovered =
+    cursorValue === undefined
+      ? undefined
+      : findNearestReading(rows, cursorValue);
+  const hoveredName = hovered?.name ?? null;
+
+  useEffect(() => {
+    onHoveredSeriesChange?.(hoveredName);
+  }, [hoveredName, onHoveredSeriesChange]);
+
+  if (date === undefined || rows.length === 0) return null;
+
+  const { shown, hiddenAbove, hiddenBelow } = selectTooltipRows(
+    rows,
+    hoveredName,
+    MAX_TOOLTIP_ROWS,
+  );
 
   return (
     <Paper
@@ -111,8 +263,7 @@ const TrendsTooltip = ({
       data-testid="trends-chart-tooltip"
       sx={{
         p: 1,
-        minWidth: 170,
-        maxWidth: 230,
+        width: 260,
         border: '1px solid',
         borderColor: 'divider',
         borderRadius: 1.5,
@@ -127,61 +278,233 @@ const TrendsTooltip = ({
           mb: 0.5,
         }}
       >
-        {formatTooltipDate(label)}
+        {formatTooltipDate(date)}
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-        {entries.map((entry) => (
-          <Box
-            key={entry.name}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 1.25,
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.75,
-                minWidth: 0,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  bgcolor: entry.color,
-                  flexShrink: 0,
-                }}
-              />
-              <Typography
-                variant="caption"
-                noWrap
-                sx={{ fontWeight: 600, color: 'text.primary' }}
-              >
-                {entry.name}
-              </Typography>
-            </Box>
-            <Typography
-              variant="caption"
-              sx={{
-                fontWeight: 'bold',
-                color: 'text.primary',
-                flexShrink: 0,
-              }}
-            >
-              {(entry.value * 100).toFixed(1)}% {metricLabel}
-            </Typography>
-          </Box>
+        <MoreSeries count={hiddenAbove} testId="trends-tooltip-more-above" />
+        {shown.map((row) => (
+          <TooltipRowView
+            key={row.name}
+            row={row}
+            metricLabel={metricLabel}
+            isHovered={row.name === hoveredName}
+          />
         ))}
+        <MoreSeries count={hiddenBelow} testId="trends-tooltip-more-below" />
       </Box>
     </Paper>
   );
 };
+
+/**
+ * Reads a series' value from a row. A function rather than a string path,
+ * because a series name containing a dot would otherwise be read as a nested
+ * lookup.
+ */
+const valueOf = (name: string) => (row: TrendsChartRow) =>
+  row.values[name] ?? null;
+
+/** The dot drawn on every reading of a line. */
+const readingDot = (color: string) => ({
+  r: 2.5,
+  fill: color,
+  stroke: colors.white,
+  strokeWidth: 1.5,
+});
+
+interface TrendLinesProps {
+  readonly rows: readonly TrendsChartRow[];
+  readonly plotted: readonly PlottedSeries[];
+  readonly xDomain: [number, number] | undefined;
+  readonly xTicks: number[];
+  readonly yTicks: number[];
+  readonly maxYScale: number;
+  readonly axisTickStyle: SVGProps<SVGTextElement>;
+  readonly metricLabel: string;
+  readonly syncId: string;
+  readonly onHoveredSeriesChange: (name: string | null) => void;
+}
+
+/**
+ * Every plotted line, with axes and tooltip. Memoized and independent of the
+ * hovered series, so moving between lines does not redraw it.
+ */
+const TrendLines = memo(function TrendLines({
+  rows,
+  plotted,
+  xDomain,
+  xTicks,
+  yTicks,
+  maxYScale,
+  axisTickStyle,
+  metricLabel,
+  syncId,
+  onHoveredSeriesChange,
+}: TrendLinesProps) {
+  return (
+    <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+      <LineChart
+        // Trust that the chart will not modify readonly data.
+        data={rows as TrendsChartRow[]}
+        margin={CHART_MARGIN}
+        syncId={syncId}
+        onMouseLeave={() => onHoveredSeriesChange(null)}
+      >
+        <CartesianGrid
+          vertical={false}
+          stroke={colors.grey[300]}
+          strokeDasharray="2 2"
+        />
+        <XAxis
+          type="number"
+          scale="time"
+          dataKey="timestampMs"
+          domain={xDomain}
+          ticks={xTicks}
+          height={TIME_AXIS_HEIGHT}
+          // The labels are wide, so recharts is allowed to drop
+          // any that would collide, but never the two that
+          // anchor the range.
+          interval="preserveStartEnd"
+          minTickGap={24}
+          tickFormatter={formatTickLabel}
+          tick={axisTickStyle}
+          tickLine={false}
+          stroke={colors.grey[300]}
+        />
+        <YAxis
+          domain={[0, maxYScale]}
+          ticks={yTicks}
+          tickFormatter={formatPercentTick}
+          tick={axisTickStyle}
+          tickLine={false}
+          axisLine={false}
+          width={VALUE_AXIS_WIDTH}
+        />
+        <Tooltip
+          isAnimationActive={false}
+          wrapperStyle={TOOLTIP_WRAPPER_STYLE}
+          cursor={{
+            stroke: colors.grey[500],
+            strokeWidth: 1,
+            strokeDasharray: '3 3',
+          }}
+          content={
+            <TrendsTooltip
+              metricLabel={metricLabel}
+              maxYScale={maxYScale}
+              onHoveredSeriesChange={onHoveredSeriesChange}
+            />
+          }
+        />
+        {plotted.map(({ name, color }) => (
+          // Keyed by name, never by index: an index key lets
+          // React reuse the node, so deselecting a series makes
+          // its neighbour inherit the wrong data.
+          <Line
+            key={name}
+            name={name}
+            data-testid={`series-line-${name}`}
+            dataKey={valueOf(name)}
+            type="linear"
+            stroke={color}
+            strokeWidth={LINE_WIDTH}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            // A bucket with no reading is a break in the line,
+            // not a point to interpolate through.
+            connectNulls={false}
+            // Every reading is marked, because a reading whose
+            // neighbouring buckets are empty has no segment to
+            // draw and would otherwise not appear at all. Dots
+            // with no coordinate, i.e. the empty buckets, are
+            // skipped by recharts rather than drawn at zero.
+            dot={readingDot(color)}
+            activeDot={{ r: 4, strokeWidth: 1.5, stroke: colors.white }}
+            // Background refetches would otherwise make the
+            // chart redraw itself for no visible reason.
+            isAnimationActive={false}
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
+  );
+});
+
+/** Renders nothing; lets the highlight layer track the hovered bucket. */
+const NoTooltip = () => null;
+
+interface HighlightLayerProps {
+  readonly rows: readonly TrendsChartRow[];
+  readonly series: PlottedSeries;
+  readonly xDomain: [number, number] | undefined;
+  readonly maxYScale: number;
+  readonly syncId: string;
+}
+
+/**
+ * The hovered line, drawn again in a transparent chart laid over the main
+ * one. SVG has no z-index, so this is how the hovered line ends up on top
+ * without reordering, and so re-rendering, the main chart's lines. It only
+ * ever holds one line, so re-rendering it on hover is cheap.
+ *
+ * The axes are kept, invisible, so the plot area lines up with the main
+ * chart's; a hidden axis would give its space back to the plot.
+ */
+const HighlightLayer = ({
+  rows,
+  series,
+  xDomain,
+  maxYScale,
+  syncId,
+}: HighlightLayerProps) => (
+  <Box
+    data-testid="trends-highlight-layer"
+    sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+      <LineChart
+        data={rows as TrendsChartRow[]}
+        margin={CHART_MARGIN}
+        syncId={syncId}
+      >
+        <XAxis
+          type="number"
+          scale="time"
+          dataKey="timestampMs"
+          domain={xDomain}
+          height={TIME_AXIS_HEIGHT}
+          tick={false}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          domain={[0, maxYScale]}
+          width={VALUE_AXIS_WIDTH}
+          tick={false}
+          tickLine={false}
+          axisLine={false}
+        />
+        <Tooltip content={NoTooltip} cursor={false} isAnimationActive={false} />
+        <Line
+          name={series.name}
+          data-testid={`series-highlight-${series.name}`}
+          dataKey={valueOf(series.name)}
+          type="linear"
+          stroke={series.color}
+          strokeWidth={HIGHLIGHTED_LINE_WIDTH}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          connectNulls={false}
+          dot={readingDot(series.color)}
+          activeDot={{ r: 5, strokeWidth: 1.5, stroke: colors.white }}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  </Box>
+);
 
 export interface HistoricalAvailabilityTrendsChartProps {
   filter?: string;
@@ -195,6 +518,8 @@ export const HistoricalAvailabilityTrendsChart = ({
     TrendlineGrouping.GROUP_BY_OVERALL,
   );
   const [colorSlots, setColorSlots] = useState<SeriesColorSlots>({});
+  // The series whose line is under the cursor, as resolved by the tooltip.
+  const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
 
   const queryRequest = useMemo(
     () => ({
@@ -314,6 +639,25 @@ export const HistoricalAvailabilityTrendsChart = ({
       })),
     [activeSeries, colorSlots],
   );
+
+  // Only emphasize a line when there are others to tell it apart from, and
+  // only while it is still plotted: deselecting the hovered series, or
+  // switching grouping, must not leave every remaining line faded.
+  const emphasizedSeries =
+    plotted.length > 1 &&
+    hoveredSeries !== null &&
+    plotted.some((series) => series.name === hoveredSeries)
+      ? hoveredSeries
+      : null;
+
+  const highlighted = useMemo(
+    () => plotted.find((series) => series.name === emphasizedSeries),
+    [plotted, emphasizedSeries],
+  );
+
+  // Links the main chart to the highlight layer, so the layer's active dot
+  // follows the hovered bucket. Unique per chart instance.
+  const syncId = useId();
 
   const maxYScale = useMemo(
     () => computeMaxYScale(activeSeries),
@@ -664,100 +1008,49 @@ export const HistoricalAvailabilityTrendsChart = ({
               ) : (
                 <Box
                   data-testid="trends-svg-chart"
+                  data-highlighted-series={highlighted?.name}
                   role="img"
                   aria-label="Fleet historical availability and health trendlines chart"
-                  sx={{ width: '100%' }}
+                  sx={{
+                    width: '100%',
+                    position: 'relative',
+                    // Fading is done in CSS rather than through line props, so
+                    // hovering never re-renders the main chart: with ~100
+                    // series that costs a full recharts layout per change.
+                    ...(highlighted && {
+                      '& .trends-main-chart .recharts-line': {
+                        opacity: FADED_OPACITY,
+                      },
+                      // The highlight layer draws the only active dot.
+                      '& .trends-main-chart .recharts-active-dot': {
+                        display: 'none',
+                      },
+                    }),
+                  }}
                 >
-                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-                    <LineChart
-                      // Trust that the chart will not modify readonly data.
-                      data={rows as TrendsChartRow[]}
-                      margin={{ top: 16, right: 24, bottom: 0, left: 0 }}
-                    >
-                      <CartesianGrid
-                        vertical={false}
-                        stroke={colors.grey[300]}
-                        strokeDasharray="2 2"
-                      />
-                      <XAxis
-                        type="number"
-                        scale="time"
-                        dataKey="timestampMs"
-                        domain={xDomain}
-                        ticks={xTicks}
-                        // The labels are wide, so recharts is allowed to drop
-                        // any that would collide, but never the two that
-                        // anchor the range.
-                        interval="preserveStartEnd"
-                        minTickGap={24}
-                        tickFormatter={formatTickLabel}
-                        tick={axisTickStyle}
-                        tickLine={false}
-                        stroke={colors.grey[300]}
-                      />
-                      <YAxis
-                        domain={[0, maxYScale]}
-                        ticks={yTicks}
-                        tickFormatter={formatPercentTick}
-                        tick={axisTickStyle}
-                        tickLine={false}
-                        axisLine={false}
-                        width={48}
-                      />
-                      <Tooltip
-                        isAnimationActive={false}
-                        cursor={{
-                          stroke: colors.grey[500],
-                          strokeWidth: 1,
-                          strokeDasharray: '3 3',
-                        }}
-                        content={<TrendsTooltip metricLabel={metricLabel} />}
-                      />
-                      {plotted.map(({ name, color }) => (
-                        // Keyed by name, never by index: an index key lets
-                        // React reuse the node, so deselecting a series makes
-                        // its neighbour inherit the wrong data.
-                        <Line
-                          key={name}
-                          name={name}
-                          data-testid={`series-line-${name}`}
-                          // A function reads the value rather than a string
-                          // path, because a series name containing a dot would
-                          // otherwise be read as a nested lookup.
-                          dataKey={(row: TrendsChartRow) =>
-                            row.values[name] ?? null
-                          }
-                          type="linear"
-                          stroke={color}
-                          strokeWidth={2.2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          // A bucket with no reading is a break in the line,
-                          // not a point to interpolate through.
-                          connectNulls={false}
-                          // Every reading is marked, because a reading whose
-                          // neighbouring buckets are empty has no segment to
-                          // draw and would otherwise not appear at all. Dots
-                          // with no coordinate, i.e. the empty buckets, are
-                          // skipped by recharts rather than drawn at zero.
-                          dot={{
-                            r: 2.5,
-                            fill: color,
-                            stroke: colors.white,
-                            strokeWidth: 1.5,
-                          }}
-                          activeDot={{
-                            r: 4,
-                            strokeWidth: 1.5,
-                            stroke: colors.white,
-                          }}
-                          // Background refetches would otherwise make the
-                          // chart redraw itself for no visible reason.
-                          isAnimationActive={false}
-                        />
-                      ))}
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <Box className="trends-main-chart">
+                    <TrendLines
+                      rows={rows}
+                      plotted={plotted}
+                      xDomain={xDomain}
+                      xTicks={xTicks}
+                      yTicks={yTicks}
+                      maxYScale={maxYScale}
+                      axisTickStyle={axisTickStyle}
+                      metricLabel={metricLabel}
+                      syncId={syncId}
+                      onHoveredSeriesChange={setHoveredSeries}
+                    />
+                  </Box>
+                  {highlighted && (
+                    <HighlightLayer
+                      rows={rows}
+                      series={highlighted}
+                      xDomain={xDomain}
+                      maxYScale={maxYScale}
+                      syncId={syncId}
+                    />
+                  )}
                 </Box>
               )}
             </Box>

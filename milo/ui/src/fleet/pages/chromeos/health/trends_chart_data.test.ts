@@ -20,9 +20,12 @@ import {
   buildValueAxisTicks,
   computeMaxYScale,
   findFreeColorSlot,
+  findNearestReading,
   getSeriesColor,
   PALETTE,
+  selectTooltipRows,
   sortPoolSeries,
+  valueAtCursor,
 } from './trends_chart_data';
 
 const at = (hour: number, minute = 0) =>
@@ -304,5 +307,103 @@ describe('sortPoolSeries', () => {
     sortPoolSeries(input);
 
     expect(input).toEqual(copy);
+  });
+});
+
+describe('valueAtCursor', () => {
+  // A plot area 200px tall whose top edge is 10px below the chart's top.
+  const top = 10;
+  const height = 200;
+
+  it('maps the cursor height onto the value axis, clamped to its range', () => {
+    expect(valueAtCursor(top, top, height, 1.2)).toBeCloseTo(1.2);
+    expect(valueAtCursor(top + height / 4, top, height, 1)).toBeCloseTo(0.75);
+    expect(valueAtCursor(top + height, top, height, 1)).toBeCloseTo(0);
+    expect(valueAtCursor(0, top, height, 1)).toBe(1);
+    expect(valueAtCursor(500, top, height, 1)).toBe(0);
+  });
+
+  it('returns undefined before the chart has been laid out', () => {
+    expect(valueAtCursor(50, 0, 0, 1)).toBeUndefined();
+    expect(valueAtCursor(Number.NaN, top, height, 1)).toBeUndefined();
+  });
+});
+
+describe('findNearestReading', () => {
+  it('returns the closest reading, breaking ties by name', () => {
+    const readings = [
+      { name: 'brya', value: 0.95 },
+      { name: 'volteer', value: 0.6 },
+      { name: 'beta', value: 0.3 },
+      { name: 'alpha', value: 0.3 },
+    ];
+
+    expect(findNearestReading(readings, 0.65)?.name).toBe('volteer');
+    expect(findNearestReading(readings, 1)?.name).toBe('brya');
+    expect(findNearestReading(readings, 0)?.name).toBe('alpha');
+    expect(findNearestReading([], 0.5)).toBeUndefined();
+  });
+});
+
+describe('selectTooltipRows', () => {
+  const readings = [
+    { name: 'a', value: 0.1 },
+    { name: 'c', value: 0.5 },
+    { name: 'b', value: 0.5 },
+    { name: 'd', value: 0.9 },
+  ];
+  const names = (rows: readonly { name: string }[]) => rows.map((r) => r.name);
+
+  it('sorts by value then name, keeping the hovered reading in place', () => {
+    const { shown, hiddenAbove, hiddenBelow } = selectTooltipRows(
+      readings,
+      'c',
+      9,
+    );
+
+    expect(names(shown)).toEqual(['d', 'b', 'c', 'a']);
+    expect([hiddenAbove, hiddenBelow]).toEqual([0, 0]);
+    // The input is left as it was.
+    expect(names(readings)).toEqual(['a', 'c', 'b', 'd']);
+  });
+
+  it('slides the window down just far enough to keep the hovered row last', () => {
+    // r00 has the highest value, r19 the lowest.
+    const many = Array.from({ length: 20 }, (_, i) => ({
+      name: `r${String(i).padStart(2, '0')}`,
+      value: 1 - i / 100,
+    }));
+    const window = (hovered: string | null) => {
+      const { shown, hiddenAbove, hiddenBelow } = selectTooltipRows(
+        many,
+        hovered,
+        9,
+      );
+      return [hiddenAbove, names(shown).join(' '), hiddenBelow];
+    };
+
+    // Within the first nine, or nothing hovered: the window stays at the top.
+    expect(window(null)).toEqual([
+      0,
+      'r00 r01 r02 r03 r04 r05 r06 r07 r08',
+      11,
+    ]);
+    expect(window('r08')).toEqual([
+      0,
+      'r00 r01 r02 r03 r04 r05 r06 r07 r08',
+      11,
+    ]);
+    // The 13th row: four cut off above, it ends the window, seven below.
+    expect(window('r12')).toEqual([
+      4,
+      'r04 r05 r06 r07 r08 r09 r10 r11 r12',
+      7,
+    ]);
+    // The last row.
+    expect(window('r19')).toEqual([
+      11,
+      'r11 r12 r13 r14 r15 r16 r17 r18 r19',
+      0,
+    ]);
   });
 });

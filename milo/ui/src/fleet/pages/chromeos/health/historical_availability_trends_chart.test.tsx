@@ -693,6 +693,150 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     expect(screen.getByText(/9\/14 03:00 GMT-7/)).toBeInTheDocument();
   });
 
+  describe('hovered series', () => {
+    const asQueryResult = (data: GetFleetAvailabilityTrendsResponse) =>
+      ({
+        data,
+        isLoading: false,
+        isError: false,
+        error: null,
+      }) as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >;
+
+    /**
+     * Hovers the first bucket at the height where `value` is drawn. The plot
+     * area is read from the clip rect recharts draws for it, so the test does
+     * not depend on the chart's margins or axis sizes.
+     */
+    const hoverAt = (container: HTMLElement, value: number) => {
+      const surface = container.querySelector('.recharts-wrapper')!;
+      const plot = surface.querySelector('clipPath rect')!;
+      const top = Number(plot.getAttribute('y'));
+      const height = Number(plot.getAttribute('height'));
+      // x=60 is just inside the plot area, so this lands in the first bucket.
+      fireEvent.mouseMove(surface, {
+        clientX: 60,
+        clientY: top + height * (1 - value),
+      });
+      return surface;
+    };
+
+    /** The hovered line as redrawn on top, if any. */
+    const highlightOf = (container: HTMLElement, name: string) =>
+      container.querySelector(
+        `[data-testid="series-highlight-${name}"].recharts-curve`,
+      );
+
+    const renderModels = (
+      models: readonly { name: string; value: number }[],
+    ) => {
+      giveChartASize();
+      jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(
+          asQueryResult({
+            series: models.map(({ name, value }) => ({
+              name,
+              points: [
+                { timestamp: t0, value },
+                { timestamp: t1, value },
+              ],
+            })),
+            metricType: TrendlineMetricType.AVAILABILITY,
+          }),
+        );
+      const result = render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart />
+        </FakeContextProvider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'By Model' }));
+      return result;
+    };
+
+    it('marks the line under the cursor in the tooltip and on the chart', () => {
+      const { container } = renderModels([
+        { name: 'brya', value: 0.9 },
+        { name: 'volteer', value: 0.5 },
+        { name: 'octopus', value: 0.7 },
+      ]);
+      const chart = screen.getByTestId('trends-svg-chart');
+      const hoveredRow = () => screen.getByTestId('trends-tooltip-hovered-row');
+
+      // Near, not on, volteer's line: the nearest line wins.
+      const surface = hoverAt(container, 0.52);
+
+      // Tooltip: rows by value, the hovered one bold and left in place.
+      const tooltip = screen.getByTestId('trends-chart-tooltip');
+      expect(
+        within(tooltip)
+          .getAllByTestId(/^trends-tooltip-(hovered-)?row$/)
+          .map((row) => row.textContent),
+      ).toEqual([
+        expect.stringContaining('brya'),
+        expect.stringContaining('octopus'),
+        expect.stringContaining('volteer'),
+      ]);
+      expect(within(hoveredRow()).getByText('volteer')).toHaveStyle({
+        fontWeight: 700,
+      });
+      // It stays above the highlight layer, which comes later in the DOM.
+      expect(tooltip.closest('.recharts-tooltip-wrapper')).toHaveStyle({
+        zIndex: 1,
+      });
+
+      // Chart: the others fade and the hovered line is redrawn on top.
+      expect(chart).toHaveAttribute('data-highlighted-series', 'volteer');
+      expect(highlightOf(container, 'volteer')).toHaveAttribute(
+        'stroke-width',
+        '3.2',
+      );
+
+      // Moving to another line moves the mark with it.
+      hoverAt(container, 0.88);
+      expect(hoveredRow()).toHaveTextContent('brya');
+      expect(highlightOf(container, 'volteer')).toBeNull();
+      expect(highlightOf(container, 'brya')).not.toBeNull();
+      // The layer tracks the hovered bucket through the shared syncId, so it
+      // draws the active dot.
+      expect(
+        screen
+          .getByTestId('trends-highlight-layer')
+          .querySelector('.recharts-active-dot'),
+      ).not.toBeNull();
+
+      fireEvent.mouseLeave(surface);
+
+      expect(chart).not.toHaveAttribute('data-highlighted-series');
+      expect(
+        screen.queryByTestId('trends-highlight-layer'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('does not fade anything when only one line is plotted', () => {
+      giveChartASize();
+      jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(asQueryResult(mockOverallData));
+      const { container } = render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart />
+        </FakeContextProvider>,
+      );
+
+      hoverAt(container, 0.9);
+
+      expect(
+        screen.getByTestId('trends-tooltip-hovered-row'),
+      ).toHaveTextContent('Overall');
+      expect(
+        screen.queryByTestId('trends-highlight-layer'),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe('series colors', () => {
     const asQueryResult = (data: GetFleetAvailabilityTrendsResponse) =>
       ({

@@ -279,3 +279,103 @@ export const formatTooltipDate = (timestampMs: number) => {
 
 export const formatPercentTick = (value: number) =>
   `${Math.round(value * 100)}%`;
+
+/**
+ * How many series the tooltip lists at once; the rest are folded into "+N
+ * more" lines above and below. With a hundred series selected, listing every
+ * one of them makes the tooltip taller than the chart.
+ */
+export const MAX_TOOLTIP_ROWS = 9;
+
+/** A single series' reading in the hovered bucket. */
+export interface TooltipReading {
+  readonly name: string;
+  readonly value: number;
+}
+
+/**
+ * Converts the cursor's vertical position, in chart pixels, to a value on the
+ * value axis, which runs from zero at the bottom of the plot area to
+ * `maxYScale` at its top.
+ *
+ * Returns undefined when the plot area has no height, i.e. before recharts has
+ * laid the chart out.
+ */
+export const valueAtCursor = (
+  cursorY: number,
+  plotTop: number,
+  plotHeight: number,
+  maxYScale: number,
+): number | undefined => {
+  if (!(plotHeight > 0) || !Number.isFinite(cursorY)) return undefined;
+  const fraction = (plotTop + plotHeight - cursorY) / plotHeight;
+  return Math.min(maxYScale, Math.max(0, fraction * maxYScale));
+};
+
+/**
+ * Returns the reading drawn closest to the cursor, which is the line the user
+ * is pointing at. Recharts' shared tooltip only knows the hovered bucket, not
+ * the hovered line, so the line is recovered from the cursor's height.
+ *
+ * Ties go to the series whose name sorts first, so the result does not depend
+ * on the order the series happen to be drawn in.
+ *
+ * Known limit: the cursor's x snaps to the nearest bucket, and its height is
+ * compared with the readings in that bucket, not with the drawn segments.
+ * Between buckets, on steep or crossing lines, the pick can differ from the
+ * line visually under the cursor.
+ */
+export const findNearestReading = <T extends TooltipReading>(
+  readings: readonly T[],
+  cursorValue: number,
+): T | undefined => {
+  let nearest: T | undefined;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const reading of readings) {
+    const distance = Math.abs(reading.value - cursorValue);
+    if (
+      distance < nearestDistance ||
+      (distance === nearestDistance &&
+        nearest !== undefined &&
+        reading.name.localeCompare(nearest.name) < 0)
+    ) {
+      nearest = reading;
+      nearestDistance = distance;
+    }
+  }
+  return nearest;
+};
+
+/**
+ * Orders readings for display in the tooltip: highest value first, ties by
+ * name. Without this, rows appear in the order the lines were drawn, which
+ * follows the selection order and reads as random.
+ */
+const sortTooltipReadings = <T extends TooltipReading>(
+  readings: readonly T[],
+): T[] =>
+  [...readings].sort(
+    (a, b) => b.value - a.value || a.name.localeCompare(b.name),
+  );
+
+/**
+ * Picks the rows the tooltip shows: a window of at most `maxRows` over the
+ * readings sorted by value. The window starts at the top and slides down just
+ * far enough to keep the hovered reading in view, as its last row, so the rows
+ * next to it by value stay visible. Rows cut off on either side are counted.
+ */
+export const selectTooltipRows = <T extends TooltipReading>(
+  readings: readonly T[],
+  hoveredName: string | null,
+  maxRows: number,
+): { shown: T[]; hiddenAbove: number; hiddenBelow: number } => {
+  const sorted = sortTooltipReadings(readings);
+  const hoveredIndex = sorted.findIndex((r) => r.name === hoveredName);
+  const start = Math.max(0, hoveredIndex - maxRows + 1);
+  const shown = sorted.slice(start, start + maxRows);
+  return {
+    shown,
+    hiddenAbove: start,
+    hiddenBelow: sorted.length - start - shown.length,
+  };
+};
