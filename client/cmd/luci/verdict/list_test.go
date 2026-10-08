@@ -19,6 +19,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"sync"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -49,7 +50,11 @@ func (m *mockListResultDBClient) QueryTestVariants(ctx context.Context, in *pb.Q
 	return &pb.QueryTestVariantsResponse{}, nil
 }
 
+var stdoutMu sync.Mutex
+
 func captureStdout(fn func()) string {
+	stdoutMu.Lock()
+	defer stdoutMu.Unlock()
 	r, w, _ := os.Pipe()
 	old := os.Stdout
 	os.Stdout = w
@@ -142,12 +147,12 @@ func TestQueryRootInvocationListedVerdicts(t *testing.T) {
 	ftt.Run(`QueryRootInvocationListedVerdicts`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		t.Run(`default filter queries ui_priority and BASIC view`, func(t *ftt.Test) {
+		t.Run(`default filter queries ui_priority and FULL view with failure reason`, func(t *ftt.Test) {
 			client := &mockListResultDBClient{
 				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
 					assert.Loosely(t, in.Parent, should.Equal("rootInvocations/build-123"))
 					assert.Loosely(t, in.OrderBy, should.Equal("ui_priority, test_id_structured"))
-					assert.Loosely(t, in.View, should.Equal(pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC))
+					assert.Loosely(t, in.View, should.Equal(pb.TestVerdictView_TEST_VERDICT_VIEW_FULL))
 					assert.Loosely(t, in.PageSize, should.Equal(100))
 					assert.Loosely(t, in.Predicate, should.NotBeNil)
 					assert.Loosely(t, in.Predicate.EffectiveVerdictStatus, should.Match([]pb.VerdictEffectiveStatus{
@@ -168,6 +173,14 @@ func TestQueryRootInvocationListedVerdicts(t *testing.T) {
 									},
 								},
 								Status: pb.TestVerdict_FAILED,
+								Results: []*pb.TestResult{
+									{
+										StatusV2: pb.TestResult_FAILED,
+										FailureReason: &pb.FailureReason{
+											PrimaryErrorMessage: "Expected 0 to equal 5\nat Class.java:42",
+										},
+									},
+								},
 							},
 						},
 					}, nil
@@ -183,6 +196,25 @@ func TestQueryRootInvocationListedVerdicts(t *testing.T) {
 			assert.Loosely(t, verdicts[0].Status, should.Equal("FAILED"))
 			assert.Loosely(t, verdicts[0].VariantHash, should.Equal("vhash1"))
 			assert.Loosely(t, verdicts[0].Variant.Def["os"], should.Equal("Linux"))
+			assert.Loosely(t, verdicts[0].FailureReason, should.Equal("Expected 0 to equal 5"))
+			assert.Loosely(t, verdicts[0].FailureReasonTruncated, should.BeTrue)
+		})
+
+		t.Run(`moduleName and containsFilter populate ContainsTestResultFilter`, func(t *ftt.Test) {
+			client := &mockListResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					assert.Loosely(t, in.Predicate, should.NotBeNil)
+					assert.Loosely(t, in.Predicate.ContainsTestResultFilter, should.Equal(`test_id_structured.module_name = "VtsAidlKeyMintTargetTest" AND (NewKeyGenerationTest)`))
+					return &pb.QueryTestVerdictsResponse{}, nil
+				},
+			}
+
+			filter, _ := parseStatusFilter("", false, false, false, false, false, false)
+			filter.moduleName = "VtsAidlKeyMintTargetTest"
+			filter.containsFilter = "NewKeyGenerationTest"
+			assert.Loosely(t, filter.IsDefault(), should.BeFalse)
+			_, _, err := QueryRootInvocationListedVerdicts(ctx, client, "ants-i123", filter, 100)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run(`exoneration status override`, func(t *ftt.Test) {
@@ -342,12 +374,14 @@ func TestPrintListedVerdicts(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("-all-statuses"))
 		})
 
-		t.Run(`with results and variant`, func(t *ftt.Test) {
+		t.Run(`with results, failure reason, and variant`, func(t *ftt.Test) {
 			verdicts := []*ListedVerdict{
 				{
-					TestID:      ":no-module-name!junit:pkg.Class#testA",
-					Status:      "FAILED",
-					VariantHash: "e3b0c442",
+					TestID:                 ":no-module-name!junit:pkg.Class#testA",
+					Status:                 "FAILED",
+					VariantHash:            "e3b0c442",
+					FailureReason:          "keymint_test.cc:154: Expected ErrorCode::OK",
+					FailureReasonTruncated: true,
 				},
 				{
 					TestID: ":module!junit:pkg.Class#testB",
@@ -355,7 +389,8 @@ func TestPrintListedVerdicts(t *testing.T) {
 					Variant: &pb.Variant{
 						Def: map[string]string{"os": "Ubuntu-22.04", "builder": "linux-rel"},
 					},
-					VariantHash: "vhash1",
+					VariantHash:   "vhash1",
+					FailureReason: "Short single-line error",
 					Exonerations: []*pb.TestExoneration{
 						{
 							ExplanationHtml: "Failed on mainline",
@@ -370,8 +405,10 @@ func TestPrintListedVerdicts(t *testing.T) {
 			})
 			assert.Loosely(t, out, should.ContainSubstring("Verdicts (showing 2, use -max-verdicts or -all to see more):"))
 			assert.Loosely(t, out, should.ContainSubstring("- FAILED :no-module-name!junit:pkg.Class#testA"))
+			assert.Loosely(t, out, should.ContainSubstring("Error (truncated): keymint_test.cc:154: Expected ErrorCode::OK"))
 			assert.Loosely(t, out, should.ContainSubstring("- FAILED (EXONERATED) :module!junit:pkg.Class#testB"))
 			assert.Loosely(t, out, should.ContainSubstring("Variant: builder=linux-rel os=Ubuntu-22.04 (hash: vhash1)"))
+			assert.Loosely(t, out, should.ContainSubstring("Error: Short single-line error"))
 			assert.Loosely(t, out, should.ContainSubstring("Exoneration: Failed on mainline [OCCURS_ON_MAINLINE]"))
 		})
 	})

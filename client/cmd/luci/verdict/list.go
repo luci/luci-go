@@ -36,8 +36,8 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 		ShortDesc: "List test verdicts in an invocation",
 		LongDesc: "List test verdicts in an invocation in UI priority order.\n\n" +
 			"By default, only failed or execution errored verdicts are printed, up to 100.\n" +
-			"Flags can be used to include other verdict statuses (e.g. -flaky, -exonerated, -passed, -all-statuses)\n" +
-			"and to list more than 100 results (e.g. -max-verdicts 200, -all).\n\n" +
+			"Flags can be used to include other verdict statuses (e.g. -flaky, -exonerated, -passed, -all-statuses),\n" +
+			"filter by module or test substring (-modulename, -filter), and list more than 100 results (-max-verdicts 200, -all).\n\n" +
 			"Works with root invocations and legacy invocations (using -legacy).",
 		CommandRun: func() subcommands.CommandRun {
 			r := &verdictListRun{af: af, maxVerdicts: 100}
@@ -46,6 +46,9 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
+			r.Flags.StringVar(&r.moduleName, "modulename", "", "Filter verdicts to a specific module name")
+			r.Flags.StringVar(&r.moduleName, "module", "", "Alias for -modulename")
+			r.Flags.StringVar(&r.filter, "filter", "", "Filter verdicts by test result filter expression or substring (AIP-160)")
 			r.Flags.IntVar(&r.maxVerdicts, "max-verdicts", 100, "Maximum number of verdicts to display (default: 100, 0 for all)")
 			r.Flags.IntVar(&r.maxVerdicts, "limit", 100, "Alias for -max-verdicts")
 			r.Flags.BoolVar(&r.allVerdicts, "all", false, "Show all verdicts without truncation")
@@ -72,6 +75,8 @@ type verdictListRun struct {
 	af                *base.AuthFlags
 	host              string
 	invocationID      string
+	moduleName        string
+	filter            string
 	maxVerdicts       int
 	allVerdicts       bool
 	rawStatus         string
@@ -92,6 +97,8 @@ type statusFilter struct {
 	exonerated       bool
 	skipped          bool
 	passed           bool
+	moduleName       string
+	containsFilter   string
 }
 
 func (f *statusFilter) All() bool {
@@ -99,7 +106,22 @@ func (f *statusFilter) All() bool {
 }
 
 func (f *statusFilter) IsDefault() bool {
-	return f.failed && f.executionErrored && !f.precluded && !f.flaky && !f.exonerated && !f.skipped && !f.passed
+	return f.failed && f.executionErrored && !f.precluded && !f.flaky && !f.exonerated && !f.skipped && !f.passed && f.moduleName == "" && f.containsFilter == ""
+}
+
+func (f statusFilter) buildContainsTestResultFilter() string {
+	var parts []string
+	if f.moduleName != "" {
+		parts = append(parts, fmt.Sprintf("test_id_structured.module_name = %q", f.moduleName))
+	}
+	if f.containsFilter != "" {
+		if len(parts) > 0 {
+			parts = append(parts, fmt.Sprintf("(%s)", f.containsFilter))
+		} else {
+			parts = append(parts, f.containsFilter)
+		}
+	}
+	return strings.Join(parts, " AND ")
 }
 
 func (f statusFilter) toEffectiveStatuses() []pb.VerdictEffectiveStatus {
@@ -238,11 +260,13 @@ func parseStatusFilter(rawStatus string, exonerated, flaky, passed, skipped, pre
 
 // ListedVerdict represents a test verdict formatted for listing.
 type ListedVerdict struct {
-	TestID       string
-	Status       string
-	Variant      *pb.Variant
-	VariantHash  string
-	Exonerations []*pb.TestExoneration
+	TestID                 string
+	Status                 string
+	Variant                *pb.Variant
+	VariantHash            string
+	FailureReason          string
+	FailureReasonTruncated bool
+	Exonerations           []*pb.TestExoneration
 }
 
 func rootVerdictToListed(tv *pb.TestVerdict) *ListedVerdict {
@@ -260,12 +284,26 @@ func rootVerdictToListed(tv *pb.TestVerdict) *ListedVerdict {
 		variant = tv.TestIdStructured.ModuleVariant
 		varHash = tv.TestIdStructured.ModuleVariantHash
 	}
+	var failureReason string
+	var failureTruncated bool
+	for _, tr := range tv.Results {
+		if tr.FailureReason != nil {
+			firstLine, truncated := format.FormatFailureReasonFirstLine(tr.FailureReason, 120)
+			if firstLine != "" {
+				failureReason = firstLine
+				failureTruncated = truncated
+				break
+			}
+		}
+	}
 	return &ListedVerdict{
-		TestID:       tv.TestId,
-		Status:       statusStr,
-		Variant:      variant,
-		VariantHash:  varHash,
-		Exonerations: tv.Exonerations,
+		TestID:                 tv.TestId,
+		Status:                 statusStr,
+		Variant:                variant,
+		VariantHash:            varHash,
+		FailureReason:          failureReason,
+		FailureReasonTruncated: failureTruncated,
+		Exonerations:           tv.Exonerations,
 	}
 }
 
@@ -297,12 +335,26 @@ func legacyVariantToListed(tv *pb.TestVariant) *ListedVerdict {
 			statusStr = "EXONERATED"
 		}
 	}
+	var failureReason string
+	var failureTruncated bool
+	for _, rb := range tv.Results {
+		if tr := rb.GetResult(); tr != nil && tr.FailureReason != nil {
+			firstLine, truncated := format.FormatFailureReasonFirstLine(tr.FailureReason, 120)
+			if firstLine != "" {
+				failureReason = firstLine
+				failureTruncated = truncated
+				break
+			}
+		}
+	}
 	return &ListedVerdict{
-		TestID:       tv.TestId,
-		Status:       statusStr,
-		Variant:      tv.Variant,
-		VariantHash:  tv.VariantHash,
-		Exonerations: tv.Exonerations,
+		TestID:                 tv.TestId,
+		Status:                 statusStr,
+		Variant:                tv.Variant,
+		VariantHash:            tv.VariantHash,
+		FailureReason:          failureReason,
+		FailureReasonTruncated: failureTruncated,
+		Exonerations:           tv.Exonerations,
 	}
 }
 
@@ -310,6 +362,7 @@ func legacyVariantToListed(tv *pb.TestVariant) *ListedVerdict {
 func QueryRootInvocationListedVerdicts(ctx context.Context, client pb.ResultDBClient, invID string, filter statusFilter, maxVerdicts int) ([]*ListedVerdict, bool, error) {
 	rootInvName := "rootInvocations/" + base.NormalizeInvocation(invID)
 	effectiveStatuses := filter.toEffectiveStatuses()
+	containsFilter := filter.buildContainsTestResultFilter()
 
 	var listed []*ListedVerdict
 	pageToken := ""
@@ -329,13 +382,14 @@ func QueryRootInvocationListedVerdicts(ctx context.Context, client pb.ResultDBCl
 		req := &pb.QueryTestVerdictsRequest{
 			Parent:    rootInvName,
 			OrderBy:   "ui_priority, test_id_structured",
-			View:      pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC,
+			View:      pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
 			PageSize:  pageSize,
 			PageToken: pageToken,
 		}
-		if len(effectiveStatuses) > 0 {
+		if len(effectiveStatuses) > 0 || containsFilter != "" {
 			req.Predicate = &pb.TestVerdictPredicate{
-				EffectiveVerdictStatus: effectiveStatuses,
+				EffectiveVerdictStatus:   effectiveStatuses,
+				ContainsTestResultFilter: containsFilter,
 			}
 		}
 		res, err := client.QueryTestVerdicts(ctx, req)
@@ -413,6 +467,21 @@ func QueryLegacyInvocationListedVerdicts(ctx context.Context, client pb.ResultDB
 			if !filter.Matches(tv.StatusV2, tv.StatusOverride, hasEx) {
 				continue
 			}
+			if filter.moduleName != "" {
+				modMatch := (tv.TestIdStructured != nil && tv.TestIdStructured.ModuleName == filter.moduleName) ||
+					strings.Contains(tv.TestId, filter.moduleName)
+				if !modMatch {
+					continue
+				}
+			}
+			if filter.containsFilter != "" {
+				sub := strings.ToLower(filter.containsFilter)
+				textMatch := strings.Contains(strings.ToLower(tv.TestId), sub) ||
+					(tv.TestMetadata != nil && strings.Contains(strings.ToLower(tv.TestMetadata.Name), sub))
+				if !textMatch {
+					continue
+				}
+			}
 			listed = append(listed, legacyVariantToListed(tv))
 			if maxVerdicts > 0 && len(listed) >= maxVerdicts {
 				if i < len(res.TestVariants)-1 || res.NextPageToken != "" {
@@ -466,6 +535,13 @@ func printListedVerdicts(invID string, verdicts []*ListedVerdict, hasMore bool, 
 				fmt.Printf("    Variant: %s\n", varStr)
 			}
 		}
+		if v.FailureReason != "" {
+			label := "Error:"
+			if v.FailureReasonTruncated {
+				label = "Error (truncated):"
+			}
+			fmt.Printf("    %s %s\n", label, v.FailureReason)
+		}
 		if len(v.Exonerations) > 0 {
 			for _, ex := range v.Exonerations {
 				reasonStr := format.StripHTML(ex.ExplanationHtml)
@@ -505,6 +581,8 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
+	filter.moduleName = strings.TrimSpace(r.moduleName)
+	filter.containsFilter = strings.TrimSpace(r.filter)
 
 	if err := r.af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)

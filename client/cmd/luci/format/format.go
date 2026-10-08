@@ -33,6 +33,87 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// HierarchyAggregations holds test verdict counts at each level of the ResultDB
+// test hierarchy for inline display alongside Invocation and Test ID components.
+type HierarchyAggregations struct {
+	Invocation *pb.TestAggregation_VerdictCounts
+	Module     *pb.TestAggregation_VerdictCounts
+	Coarse     *pb.TestAggregation_VerdictCounts
+	Fine       *pb.TestAggregation_VerdictCounts
+}
+
+// GetInvocation returns the invocation-level verdict counts, or nil if receiver is nil.
+func (h *HierarchyAggregations) GetInvocation() *pb.TestAggregation_VerdictCounts {
+	if h == nil {
+		return nil
+	}
+	return h.Invocation
+}
+
+// GetModule returns the module-level verdict counts, or nil if receiver is nil.
+func (h *HierarchyAggregations) GetModule() *pb.TestAggregation_VerdictCounts {
+	if h == nil {
+		return nil
+	}
+	return h.Module
+}
+
+// GetCoarse returns the coarse-level verdict counts, or nil if receiver is nil.
+func (h *HierarchyAggregations) GetCoarse() *pb.TestAggregation_VerdictCounts {
+	if h == nil {
+		return nil
+	}
+	return h.Coarse
+}
+
+// GetFine returns the fine-level verdict counts, or nil if receiver is nil.
+func (h *HierarchyAggregations) GetFine() *pb.TestAggregation_VerdictCounts {
+	if h == nil {
+		return nil
+	}
+	return h.Fine
+}
+
+// FormatVerdictCountsInline formats verdict counts as a compact inline bracketed
+// summary, e.g. "[245 failed, 218 passed, 7 skipped]". Returns "" if vc is nil
+// or all counts are zero.
+func FormatVerdictCountsInline(vc *pb.TestAggregation_VerdictCounts) string {
+	if vc == nil {
+		return ""
+	}
+	hasFailures := vc.Failed > 0 || vc.ExecutionErrored > 0 || vc.Precluded > 0 || vc.Flaky > 0 || vc.Exonerated > 0
+	total := vc.Failed + vc.ExecutionErrored + vc.Precluded + vc.Flaky + vc.Exonerated + vc.Passed + vc.Skipped
+	if total == 0 {
+		return ""
+	}
+	var parts []string
+	if vc.Failed > 0 {
+		parts = append(parts, fmt.Sprintf("%d failed", vc.Failed))
+	}
+	if vc.ExecutionErrored > 0 {
+		parts = append(parts, fmt.Sprintf("%d execution_errored", vc.ExecutionErrored))
+	}
+	if vc.Precluded > 0 {
+		parts = append(parts, fmt.Sprintf("%d precluded", vc.Precluded))
+	}
+	if vc.Flaky > 0 {
+		parts = append(parts, fmt.Sprintf("%d flaky", vc.Flaky))
+	}
+	if vc.Exonerated > 0 {
+		parts = append(parts, fmt.Sprintf("%d exonerated", vc.Exonerated))
+	}
+	if vc.Passed > 0 || hasFailures {
+		parts = append(parts, fmt.Sprintf("%d passed", vc.Passed))
+	}
+	if vc.Skipped > 0 {
+		parts = append(parts, fmt.Sprintf("%d skipped", vc.Skipped))
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
+}
+
 // FetchArtifactContent downloads the artifact content from fetchURL using an HTTP request with context.
 func FetchArtifactContent(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", fetchURL, nil)
@@ -67,30 +148,49 @@ func FetchArtifact(ctx context.Context, rdbClient pb.ResultDBClient, httpClient 
 	return buf.Bytes(), nil
 }
 
+// PrintTestID prints the structured or flat test identifier of a test result.
 func PrintTestID(ctx context.Context, schemasClient pb.SchemasClient, res *pb.TestResult) {
+	PrintTestIDWithAggregations(ctx, schemasClient, res, nil)
+}
+
+// PrintTestIDWithAggregations prints the structured or flat test identifier of a
+// test result, optionally annotating the module, coarse, and fine hierarchy levels
+// with inline verdict counts from aggs.
+func PrintTestIDWithAggregations(ctx context.Context, schemasClient pb.SchemasClient, res *pb.TestResult, aggs *HierarchyAggregations) {
+	appendCounts := func(val string, vc *pb.TestAggregation_VerdictCounts) string {
+		if c := FormatVerdictCountsInline(vc); c != "" {
+			return val + " " + c
+		}
+		return val
+	}
+
 	st := res.TestIdStructured
 	if st != nil && st.ModuleScheme != "" && st.ModuleScheme != "legacy" {
 		fmt.Println("Test ID:")
-		scheme, err := schemasClient.GetScheme(ctx, &pb.GetSchemeRequest{Name: "schema/schemes/" + st.ModuleScheme})
+		var scheme *pb.Scheme
+		var err error
+		if schemasClient != nil {
+			scheme, err = schemasClient.GetScheme(ctx, &pb.GetSchemeRequest{Name: "schema/schemes/" + st.ModuleScheme})
+		}
 		if err == nil && scheme != nil {
 			modLabel := "Module"
 			if scheme.HumanReadableName != "" {
 				modLabel = fmt.Sprintf("Module (%s)", scheme.HumanReadableName)
 			}
-			fmt.Printf("  %s: %s\n", modLabel, st.ModuleName)
+			fmt.Printf("  %s: %s\n", modLabel, appendCounts(st.ModuleName, aggs.GetModule()))
 			if st.CoarseName != "" {
 				label := "Coarse"
 				if scheme.Coarse != nil && scheme.Coarse.HumanReadableName != "" {
 					label = scheme.Coarse.HumanReadableName
 				}
-				fmt.Printf("  %s: %s\n", label, st.CoarseName)
+				fmt.Printf("  %s: %s\n", label, appendCounts(st.CoarseName, aggs.GetCoarse()))
 			}
 			if st.FineName != "" {
 				label := "Fine"
 				if scheme.Fine != nil && scheme.Fine.HumanReadableName != "" {
 					label = scheme.Fine.HumanReadableName
 				}
-				fmt.Printf("  %s: %s\n", label, st.FineName)
+				fmt.Printf("  %s: %s\n", label, appendCounts(st.FineName, aggs.GetFine()))
 			}
 			if st.CaseName != "" {
 				label := "Case"
@@ -100,12 +200,13 @@ func PrintTestID(ctx context.Context, schemasClient pb.SchemasClient, res *pb.Te
 				fmt.Printf("  %s: %s\n", label, st.CaseName)
 			}
 		} else {
-			fmt.Printf("  Module:    %s (scheme: %s)\n", st.ModuleName, st.ModuleScheme)
+			modVal := fmt.Sprintf("%s (scheme: %s)", st.ModuleName, st.ModuleScheme)
+			fmt.Printf("  Module:    %s\n", appendCounts(modVal, aggs.GetModule()))
 			if st.CoarseName != "" {
-				fmt.Printf("  Coarse:    %s\n", st.CoarseName)
+				fmt.Printf("  Coarse:    %s\n", appendCounts(st.CoarseName, aggs.GetCoarse()))
 			}
 			if st.FineName != "" {
-				fmt.Printf("  Fine:      %s\n", st.FineName)
+				fmt.Printf("  Fine:      %s\n", appendCounts(st.FineName, aggs.GetFine()))
 			}
 			if st.CaseName != "" {
 				fmt.Printf("  Case:      %s\n", st.CaseName)

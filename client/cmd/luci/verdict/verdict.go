@@ -190,6 +190,12 @@ func queryRootInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, 
 		}
 		for _, tv := range res.TestVerdicts {
 			for _, tr := range tv.Results {
+				if tr.TestIdStructured == nil && tv.TestIdStructured != nil {
+					tr.TestIdStructured = tv.TestIdStructured
+				}
+				if tr.Variant == nil && tv.TestIdStructured != nil {
+					tr.Variant = tv.TestIdStructured.ModuleVariant
+				}
 				if tr.VariantHash == "" && tv.TestIdStructured != nil {
 					tr.VariantHash = tv.TestIdStructured.ModuleVariantHash
 				}
@@ -387,11 +393,20 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rdbClient pb.ResultDBClient, httpClient *http.Client, invID string, g *VerdictGroup, showArtifacts, showMetadata, legacy bool) {
 	status := g.DisplayStatus()
 
-	fmt.Printf("Invocation:   %s\n", invID)
+	var firstRes *pb.TestResult
 	if len(g.Results) > 0 {
-		format.PrintTestID(ctx, schemasClient, g.Results[0])
-		if g.Results[0].TestMetadata != nil && g.Results[0].TestMetadata.Name != "" {
-			fmt.Printf("Test Name:    %s\n", g.Results[0].TestMetadata.Name)
+		firstRes = g.Results[0]
+	}
+	aggs := FetchHierarchyAggregations(ctx, rdbClient, invID, firstRes, legacy)
+	invLine := invID
+	if c := format.FormatVerdictCountsInline(aggs.GetInvocation()); c != "" {
+		invLine += " " + c
+	}
+	fmt.Printf("Invocation:   %s\n", invLine)
+	if firstRes != nil {
+		format.PrintTestIDWithAggregations(ctx, schemasClient, firstRes, aggs)
+		if firstRes.TestMetadata != nil && firstRes.TestMetadata.Name != "" {
+			fmt.Printf("Test Name:    %s\n", firstRes.TestMetadata.Name)
 		}
 	}
 	fmt.Printf("Status:       %s\n", status)

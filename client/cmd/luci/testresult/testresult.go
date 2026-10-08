@@ -139,8 +139,12 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		return 1
 	}
 
+	aggs := verdict.FetchHierarchyAggregations(ctx, client, r.invocationID, res, r.legacy)
+	if c := format.FormatVerdictCountsInline(aggs.GetInvocation()); c != "" {
+		fmt.Printf("Invocation: %s %s\n", r.invocationID, c)
+	}
 	fmt.Printf("Result ID: %s\n", res.ResultId)
-	format.PrintTestID(ctx, schemasClient, res)
+	format.PrintTestIDWithAggregations(ctx, schemasClient, res, aggs)
 	if res.TestMetadata != nil && res.TestMetadata.Name != "" {
 		fmt.Printf("Test Name: %s\n", res.TestMetadata.Name)
 	}

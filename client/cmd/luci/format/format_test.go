@@ -161,6 +161,41 @@ func (f *fakeRDBClient) GetArtifact(ctx context.Context, in *pb.GetArtifactReque
 	return nil, nil
 }
 
+func TestFormatVerdictCountsInline(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`FormatVerdictCountsInline`, t, func(t *ftt.Test) {
+		t.Run(`nil or zero counts`, func(t *ftt.Test) {
+			assert.Loosely(t, FormatVerdictCountsInline(nil), should.Equal(""))
+			assert.Loosely(t, FormatVerdictCountsInline(&pb.TestAggregation_VerdictCounts{}), should.Equal(""))
+		})
+
+		t.Run(`failed with zero passed explicitly shows 0 passed`, func(t *ftt.Test) {
+			vc := &pb.TestAggregation_VerdictCounts{
+				Failed: 16,
+				Passed: 0,
+			}
+			assert.Loosely(t, FormatVerdictCountsInline(vc), should.Equal("[16 failed, 0 passed]"))
+		})
+
+		t.Run(`failed, passed, and skipped`, func(t *ftt.Test) {
+			vc := &pb.TestAggregation_VerdictCounts{
+				Failed:  245,
+				Passed:  218,
+				Skipped: 7,
+			}
+			assert.Loosely(t, FormatVerdictCountsInline(vc), should.Equal("[245 failed, 218 passed, 7 skipped]"))
+		})
+
+		t.Run(`only passed`, func(t *ftt.Test) {
+			vc := &pb.TestAggregation_VerdictCounts{
+				Passed: 50,
+			}
+			assert.Loosely(t, FormatVerdictCountsInline(vc), should.Equal("[50 passed]"))
+		})
+	})
+}
+
 func TestFormatSummaryHTML(t *testing.T) {
 	t.Parallel()
 
