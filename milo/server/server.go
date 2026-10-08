@@ -124,6 +124,22 @@ func CreateInternalService() *rpc.MiloInternalService {
 				Options: rpcOpts,
 			}), nil
 		},
+		GetBuildsClient: func(
+			c context.Context, host string, as auth.RPCAuthorityKind,
+		) (bbgrpcbb.BuildsClient, error) {
+			t, err := auth.GetRPCTransport(c, as)
+			if err != nil {
+				return nil, err
+			}
+
+			rpcOpts := prpc.DefaultOptions()
+			rpcOpts.PerRPCTimeout = time.Minute - time.Second
+			return bbgrpcbb.NewBuildsClient(&prpc.Client{
+				C:       &http.Client{Transport: t},
+				Host:    host,
+				Options: rpcOpts,
+			}), nil
+		},
 	}
 }
 

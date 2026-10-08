@@ -151,6 +151,10 @@ message QueryBlamelistResponse {
 message QueryBlamelistPageToken {
   // The first commit in the next page.
   string next_commit_id = 2;
+
+  // If set, only commits not reachable from this commit (inclusive) will be
+  // returned. Used for versioned tag blamelist pagination.
+  string exclude_ancestors_of = 3;
 }
 
 // A request message for `ListProjects` RPC.

@@ -39,6 +39,10 @@ type MiloInternalService struct {
 	// GetBuildersClient returns a buildbucket builders service for the given
 	// context.
 	GetBuildersClient func(c context.Context, host string, as auth.RPCAuthorityKind) (bbgrpcpb.BuildersClient, error)
+
+	// GetBuildsClient returns a buildbucket builds service for the given
+	// context.
+	GetBuildsClient func(c context.Context, host string, as auth.RPCAuthorityKind) (bbgrpcpb.BuildsClient, error)
 }
 
 // WithStatusDecorator returns a MiloInternal service wrapped with a postlude needed to

@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/gitiles"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
+	configpb "go.chromium.org/luci/milo/proto/config"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 )
 
@@ -49,7 +51,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 	ftt.Run(`TestPrepareQueryBlamelistRequest`, t, func(t *ftt.Test) {
 		t.Run(`extract commit ID correctly`, func(t *ftt.Test) {
 			t.Run(`when there's no page token`, func(t *ftt.Test) {
-				startRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+				startRev, token, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "chromium.googlesource.com",
 						Project: "project/src",
@@ -63,12 +65,13 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.BeNil)
 				// commit ID should take priority.
 				assert.Loosely(t, startRev, should.Equal("commit-id"))
 			})
 
 			t.Run(`when there's no page token or commit ID`, func(t *ftt.Test) {
-				startRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+				startRev, token, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "chromium.googlesource.com",
 						Project: "project/src",
@@ -81,11 +84,12 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.BeNil)
 				assert.Loosely(t, startRev, should.Equal("commit-ref"))
 			})
 
 			t.Run(`when there's a page token`, func(t *ftt.Test) {
-				startRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+				startRev, token, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "chromium.googlesource.com",
 						Project: "project/src",
@@ -98,14 +102,16 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.BeNil)
 				assert.Loosely(t, startRev, should.Equal("commit-id-1"))
 
 				pageToken, err := serializeQueryBlamelistPageToken(&milopb.QueryBlamelistPageToken{
-					NextCommitId: "commit-id-2",
+					NextCommitId:       "commit-id-2",
+					ExcludeAncestorsOf: "exclude-commit-id",
 				})
 				assert.Loosely(t, err, should.BeNil)
 
-				nextCommitRev, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+				nextCommitRev, parsedToken, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 					GitilesCommit: &buildbucketpb.GitilesCommit{
 						Host:    "chromium.googlesource.com",
 						Project: "project/src",
@@ -120,11 +126,12 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextCommitRev, should.Equal("commit-id-2"))
+				assert.Loosely(t, parsedToken.ExcludeAncestorsOf, should.Equal("exclude-commit-id"))
 			})
 		})
 
 		t.Run(`reject the page token when the page token is invalid`, func(t *ftt.Test) {
-			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+			_, _, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "chromium.googlesource.com",
 					Project: "project/src",
@@ -141,7 +148,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 		})
 
 		t.Run("no builder", func(t *ftt.Test) {
-			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+			_, _, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "chromium.googlesource.com",
 					Project: "project/src",
@@ -153,7 +160,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 		})
 
 		t.Run("invalid builder", func(t *ftt.Test) {
-			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+			_, _, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "chromium.googlesource.com",
 					Project: "project/src",
@@ -170,7 +177,7 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 		})
 
 		t.Run(`invalid gitiles host`, func(t *ftt.Test) {
-			_, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
+			_, _, err := prepareQueryBlamelistRequest(&milopb.QueryBlamelistRequest{
 				GitilesCommit: &buildbucketpb.GitilesCommit{
 					Host:    "invalid.host",
 					Project: "project/src",
@@ -595,6 +602,203 @@ func TestQueryBlamelist(t *testing.T) {
 			assert.Loosely(t, res.Commits[0].Id, should.Equal("commit3"))
 			assert.Loosely(t, res.Commits[1].Id, should.Equal("commit2"))
 			assert.Loosely(t, res.PrecedingCommit.Id, should.Equal("commit1"))
+		})
+
+		t.Run(`versioned tag blamelist`, func(t *ftt.Test) {
+			bbMock := bbgrpcpb.NewMockBuildsClient(ctrl)
+			srv.GetSettings = func(c context.Context) (*configpb.Settings, error) {
+				return &configpb.Settings{
+					Buildbucket: &configpb.Settings_Buildbucket{
+						Host: "cr-buildbucket.appspot.com",
+					},
+				}, nil
+			}
+			srv.GetBuildsClient = func(
+				c context.Context, host string, as auth.RPCAuthorityKind,
+			) (bbgrpcpb.BuildsClient, error) {
+				return bbMock, nil
+			}
+
+			t.Run(`first page and pagination`, func(t *ftt.Test) {
+				req := &milopb.QueryBlamelistRequest{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Host:    "fake_host.googlesource.com",
+						Project: "fake_gitiles_project",
+						Id:      "commit44",
+						Ref:     "refs/tags/130.0.6723.44",
+					},
+					Builder:  builder1,
+					PageSize: 2,
+				}
+
+				bbBuilds := []*buildbucketpb.Build{
+					// Larger version: skip.
+					{
+						Id:     200,
+						Status: buildbucketpb.Status_SUCCESS,
+						Output: &buildbucketpb.Build_Output{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/131.0.6750.0",
+								Id:  "commit200",
+							},
+						},
+					},
+					// Same version: skip.
+					{
+						Id:     199,
+						Status: buildbucketpb.Status_SUCCESS,
+						Output: &buildbucketpb.Build_Output{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/130.0.6723.44",
+								Id:  "commit44",
+							},
+						},
+					},
+					// Failed build: skip.
+					{
+						Id:     198,
+						Status: buildbucketpb.Status_FAILURE,
+						Output: &buildbucketpb.Build_Output{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/130.0.6723.40",
+								Id:  "commit40",
+							},
+						},
+					},
+					// Nearest smaller passed build!
+					{
+						Id:     195,
+						Status: buildbucketpb.Status_SUCCESS,
+						Output: &buildbucketpb.Build_Output{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/130.0.6723.30",
+								Id:  "commit30",
+							},
+						},
+					},
+					// Older build: smaller but not nearest.
+					{
+						Id:     190,
+						Status: buildbucketpb.Status_SUCCESS,
+						Output: &buildbucketpb.Build_Output{
+							GitilesCommit: &buildbucketpb.GitilesCommit{
+								Ref: "refs/tags/129.0.6600.1",
+								Id:  "commit1",
+							},
+						},
+					},
+				}
+
+				bbMock.
+					EXPECT().
+					SearchBuilds(gomock.Any(), gomock.Any()).
+					Return(&buildbucketpb.SearchBuildsResponse{
+						Builds: bbBuilds,
+					}, nil)
+
+				gitMock.
+					EXPECT().
+					Log(gomock.Any(), &gitiles.LogRequest{
+						Project:            req.GitilesCommit.Project,
+						Committish:         "commit44",
+						ExcludeAncestorsOf: "commit30",
+						PageSize:           3,
+						TreeDiff:           true,
+					}).
+					Return(&gitiles.LogResponse{
+						Log: []*gitpb.Commit{
+							{Id: "commit44"},
+							{Id: "commit43"},
+							{Id: "commit42"},
+						},
+					}, nil)
+
+				res, err := srv.QueryBlamelist(c, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Commits, should.HaveLength(2))
+				assert.Loosely(t, res.Commits[0].Id, should.Equal("commit44"))
+				assert.Loosely(t, res.Commits[1].Id, should.Equal("commit43"))
+				assert.Loosely(t, res.PrecedingCommit.Id, should.Equal("commit42"))
+				assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
+
+				// Page 2: uses page token, does not call Buildbucket again.
+				page2Req := &milopb.QueryBlamelistRequest{
+					GitilesCommit: req.GitilesCommit,
+					Builder:       req.Builder,
+					PageSize:      2,
+					PageToken:     res.NextPageToken,
+				}
+
+				gitMock.
+					EXPECT().
+					Log(gomock.Any(), &gitiles.LogRequest{
+						Project:            req.GitilesCommit.Project,
+						Committish:         "commit42",
+						ExcludeAncestorsOf: "commit30",
+						PageSize:           3,
+						TreeDiff:           true,
+					}).
+					Return(&gitiles.LogResponse{
+						Log: []*gitpb.Commit{
+							{Id: "commit42"},
+							{Id: "commit41"},
+						},
+					}, nil)
+
+				page2Res, err := srv.QueryBlamelist(c, page2Req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, page2Res.Commits, should.HaveLength(2))
+				assert.Loosely(t, page2Res.Commits[0].Id, should.Equal("commit42"))
+				assert.Loosely(t, page2Res.Commits[1].Id, should.Equal("commit41"))
+				assert.Loosely(t, page2Res.PrecedingCommit.Id, should.Equal("commit30"))
+				assert.Loosely(t, page2Res.NextPageToken, should.Equal(""))
+			})
+
+			t.Run(`no previous build found`, func(t *ftt.Test) {
+				req := &milopb.QueryBlamelistRequest{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Host:    "fake_host.googlesource.com",
+						Project: "fake_gitiles_project",
+						Id:      "commit100",
+						Ref:     "refs/tags/100.0.1000.0",
+					},
+					Builder: builder1,
+				}
+
+				bbMock.
+					EXPECT().
+					SearchBuilds(gomock.Any(), gomock.Any()).
+					Return(&buildbucketpb.SearchBuildsResponse{
+						Builds: []*buildbucketpb.Build{},
+					}, nil)
+
+				res, err := srv.QueryBlamelist(c, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Commits, should.BeEmpty)
+				assert.Loosely(t, res.NextPageToken, should.Equal(""))
+				assert.Loosely(t, res.PrecedingCommit, should.BeNil)
+			})
+
+			t.Run(`buildbucket search error`, func(t *ftt.Test) {
+				req := &milopb.QueryBlamelistRequest{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Host:    "fake_host.googlesource.com",
+						Project: "fake_gitiles_project",
+						Id:      "commit44",
+						Ref:     "refs/tags/130.0.6723.44",
+					},
+					Builder: builder1,
+				}
+
+				bbMock.
+					EXPECT().
+					SearchBuilds(gomock.Any(), gomock.Any()).
+					Return(nil, status.Errorf(codes.PermissionDenied, "access denied"))
+
+				_, err := srv.QueryBlamelist(c, req)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+			})
 		})
 	})
 }
