@@ -63,7 +63,6 @@ import { AndroidColumnDef } from './android_fields';
 
 interface AndroidTableProps {
   mrtColumnManager: MrtColumnManager<AndroidColumnDef>;
-  availableColumns: { id: string; label: string }[];
   workspace: AndroidPageWorkspace;
   filterValues: Record<string, FilterCategory> | undefined;
   combinedAip160: string;
@@ -71,7 +70,6 @@ interface AndroidTableProps {
 
 export const AndroidDevicesTable = ({
   mrtColumnManager,
-  availableColumns,
   workspace,
   filterValues,
   combinedAip160,
@@ -157,7 +155,7 @@ export const AndroidDevicesTable = ({
         return (
           <FleetTopToolbar
             table={table}
-            availableColumns={availableColumns}
+            availableColumns={mrtColumnManager.allColumns}
             visibleColumnIds={mrtColumnManager.visibleColumnIds}
             onToggleColumn={mrtColumnManager.onToggleColumn}
             selectOnlyColumn={mrtColumnManager.selectOnlyColumn}
@@ -222,7 +220,6 @@ export const AndroidDevicesTable = ({
     [
       visibleColumns,
       devices,
-      availableColumns,
       mrtColumnManager,
       resetColumnWidths,
       devicesQuery.data?.totalSize,

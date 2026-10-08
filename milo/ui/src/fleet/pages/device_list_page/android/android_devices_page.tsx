@@ -64,11 +64,7 @@ export const AndroidDevicesPage = ({
     aip160,
   } = useAndroidFilters(workspace, handleFilterChange, showAvgUtilization);
 
-  const {
-    mrtColumnManager,
-    warnings: columnWarnings,
-    availableColumns,
-  } = useAndroidColumns(
+  const { mrtColumnManager, warnings: columnWarnings } = useAndroidColumns(
     filterValues,
     isLoading || filterValues === undefined,
     false,
@@ -124,7 +120,6 @@ export const AndroidDevicesPage = ({
       >
         <AndroidDevicesTable
           mrtColumnManager={mrtColumnManager}
-          availableColumns={availableColumns}
           workspace={workspace}
           filterValues={filterValues}
           combinedAip160={combinedAip160}

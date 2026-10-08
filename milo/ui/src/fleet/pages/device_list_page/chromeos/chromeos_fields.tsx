@@ -93,13 +93,18 @@ const createColumnDef = (
 export const getFieldDefinition = (
   id: KnownChromeOSColumnId | (string & {}),
 ): CompleteFieldDefinition => {
-  const def = CHROMEOS_FIELD_DEFINITIONS[
+  const strippedId = id.replace(/^label-/, '');
+  const def = (CHROMEOS_FIELD_DEFINITIONS[
     id as keyof typeof CHROMEOS_FIELD_DEFINITIONS
-  ] as FieldDefinition | undefined;
+  ] ??
+    CHROMEOS_FIELD_DEFINITIONS[
+      strippedId as keyof typeof CHROMEOS_FIELD_DEFINITIONS
+    ] ??
+    CHROMEOS_FIELD_DEFINITIONS[
+      `label-${strippedId}` as keyof typeof CHROMEOS_FIELD_DEFINITIONS
+    ]) as FieldDefinition | undefined;
 
-  const header = def?.header
-    ? humanizeColumnLabel(def.header)
-    : humanizeColumnLabel(id);
+  const header = def?.header ?? humanizeColumnLabel(id);
   const accessorFn =
     def?.accessorFn || ((device: ChromeOSDevice) => getLabelValues(device, id));
   const filterKey = (def?.filterKey || getFilterKey(id)) as ChromeOSFilterKey;
@@ -126,6 +131,13 @@ export const getFieldDefinition = (
   };
 };
 
+/**
+ * Resolves the display header for a ChromeOS column or dimension key.
+ */
+export const getChromeOSFieldHeader = (
+  id: KnownChromeOSColumnId | (string & {}),
+): string => getFieldDefinition(id).header;
+
 type ExtractFilterKey<T> = T extends { filterKey: infer K } ? K : never;
 export type ConfigFilterKeys = ExtractFilterKey<
   (typeof CHROMEOS_FIELD_DEFINITIONS)[keyof typeof CHROMEOS_FIELD_DEFINITIONS]
@@ -139,9 +151,16 @@ export type ChromeOSFilterKey =
 export const getFilterKey = (
   id: KnownChromeOSColumnId | (string & {}),
 ): ChromeOSFilterKey => {
-  const def = CHROMEOS_FIELD_DEFINITIONS[
+  const strippedId = id.replace(/^label-/, '');
+  const def = (CHROMEOS_FIELD_DEFINITIONS[
     id as keyof typeof CHROMEOS_FIELD_DEFINITIONS
-  ] as FieldDefinition | undefined;
+  ] ??
+    CHROMEOS_FIELD_DEFINITIONS[
+      strippedId as keyof typeof CHROMEOS_FIELD_DEFINITIONS
+    ] ??
+    CHROMEOS_FIELD_DEFINITIONS[
+      `label-${strippedId}` as keyof typeof CHROMEOS_FIELD_DEFINITIONS
+    ]) as FieldDefinition | undefined;
   if (def?.filterKey) return def.filterKey;
   if (def?.type === 'base') return id as ChromeOSFilterKey;
   return `labels."${id}"` as ChromeOSFilterKey;

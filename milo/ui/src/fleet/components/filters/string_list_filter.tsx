@@ -27,7 +27,7 @@ import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { colors } from '@/fleet/theme/colors';
 import { OptionValue } from '@/fleet/types/option';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
-import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
+import { scoreTargetWithFallback } from '@/fleet/utils/fuzzy_sort';
 import { escapeAipValue } from '@/fleet/utils/search_param';
 
 import {
@@ -51,32 +51,8 @@ const ANY_VALUE = '*';
 const scoreOptionAgainstQuery = (
   query: string,
   option: OptionValue,
-): [number, number[]] => {
-  const [labelScore, labelMatches] = fuzzySubstring(query, option.label);
-  let bestScore = labelScore;
-  let bestMatches = labelMatches;
-
-  if (query.includes('_')) {
-    const normalizedQuery = query.replace(/_/g, ' ');
-    const [normScore, normMatches] = fuzzySubstring(
-      normalizedQuery,
-      option.label,
-    );
-    if (normScore > bestScore) {
-      bestScore = normScore;
-      bestMatches = normMatches;
-    }
-  }
-
-  const rawVal = unquote(option.value);
-  const [rawScore, rawMatches] = fuzzySubstring(query, rawVal);
-  if (rawScore > bestScore) {
-    bestScore = rawScore;
-    bestMatches = rawVal.length === option.label.length ? rawMatches : [];
-  }
-
-  return [bestScore, bestMatches];
-};
+): [number, number[]] =>
+  scoreTargetWithFallback(query, option.label, unquote(option.value));
 
 interface OptionWithSelection {
   optionValue: OptionValue;

@@ -24,6 +24,7 @@ import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { orderMRTColumns } from '@/fleet/utils/columns';
+import { humanizeColumnLabel } from '@/fleet/utils/humanize_column';
 import { useWarnings } from '@/fleet/utils/use_warnings';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -251,9 +252,13 @@ export function useMRTColumnManagement<
   const allColumns = useMemo(
     () =>
       rawColumns.map((c) => {
+        const id = getColumnId(c);
         return {
-          id: getColumnId(c),
-          label: typeof c.header === 'string' ? c.header : getColumnId(c),
+          id,
+          label:
+            typeof c.header === 'string' && c.header
+              ? c.header
+              : humanizeColumnLabel(id),
         };
       }),
     [rawColumns],

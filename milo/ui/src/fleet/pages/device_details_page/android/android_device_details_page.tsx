@@ -50,7 +50,10 @@ import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getAndroidColumnOverrides } from '../../device_list_page/android/android_fields';
+import {
+  getAndroidColumnHeader,
+  getAndroidColumnOverrides,
+} from '../../device_list_page/android/android_fields';
 
 import { useAndroidDeviceData } from './use_android_device_data';
 
@@ -106,15 +109,19 @@ export const AndroidDeviceDetailsPage = ({
     }
   });
 
-  const columns = useMemo<
-    MRT_ColumnDef<{ key: string; value: React.ReactNode }>[]
-  >(() => {
+  type AndroidDimensionRow = {
+    key: string;
+    label: string;
+    value: React.ReactNode;
+  };
+
+  const columns = useMemo<MRT_ColumnDef<AndroidDimensionRow>[]>(() => {
     // Omit the ID override for the details page so that it renders as plain text (no self-links)
     const { id: _, ...DETAILS_COLUMN_OVERRIDES } =
       getAndroidColumnOverrides(workspace);
     return [
       {
-        accessorKey: 'key',
+        accessorKey: 'label',
         header: 'Label',
         size: 300,
       },
@@ -142,11 +149,12 @@ export const AndroidDeviceDetailsPage = ({
     ];
   }, [device, workspace]);
 
-  const labels = useMemo<{ key: string; value: React.ReactNode }[]>(() => {
+  const labels = useMemo<AndroidDimensionRow[]>(() => {
     if (!device) return [];
     const l = Object.entries(device.omnilabSpec?.labels ?? {}).map(
       ([key, value]) => {
         const strVal = labelValuesToString(value.values);
+        const label = getAndroidColumnHeader(key, workspace);
         if (
           [
             'ufs.last_sync',
@@ -160,6 +168,7 @@ export const AndroidDeviceDetailsPage = ({
             if (dt.isValid) {
               return {
                 key,
+                label,
                 value: <SmartRelativeTimestamp date={dt} />,
               };
             }
@@ -169,6 +178,7 @@ export const AndroidDeviceDetailsPage = ({
         }
         return {
           key,
+          label,
           value: strVal,
         };
       },
@@ -176,13 +186,14 @@ export const AndroidDeviceDetailsPage = ({
     if (device.realm) {
       l.push({
         key: 'realm',
+        label: getAndroidColumnHeader('realm', workspace),
         value: device.realm,
       });
     }
 
-    l.sort((a, b) => a.key.localeCompare(b.key));
+    l.sort((a, b) => a.label.localeCompare(b.label));
     return l;
-  }, [device]);
+  }, [device, workspace]);
 
   // TODO: Refactor these device dimensions tables to use shared styles.
   const table = useFCDataTable({

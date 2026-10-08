@@ -83,22 +83,29 @@ interface ChromeOSDeviceDimensionsProps {
   device?: ChromeOSDevice;
 }
 
+interface DimensionRow {
+  id: string;
+  label: string;
+  value: string | readonly string[];
+}
+
 export const ChromeOSDeviceDimensions = ({
   device,
 }: ChromeOSDeviceDimensionsProps) => {
   const [filterText, setFilterText] = useState('');
 
-  const allRows = useMemo(() => {
+  const allRows = useMemo<DimensionRow[]>(() => {
     if (!device) return [];
 
-    const custom = CUSTOM_DIMENSION_IDS.map((id) => ({
+    const custom: DimensionRow[] = CUSTOM_DIMENSION_IDS.map((id) => ({
       id,
+      label: getFieldDefinition(id).header,
       value: String(getFieldDefinition(id).accessorFn(device) ?? ''),
     }));
 
     if (!device.deviceSpec) return custom;
 
-    const labelRows = Object.keys(device.deviceSpec.labels)
+    const labelRows: DimensionRow[] = Object.keys(device.deviceSpec.labels)
       .filter((key) => !(CUSTOM_DIMENSION_IDS as string[]).includes(key))
       .sort((a, b) => {
         const pa = PRIORITY_INDEX.get(a);
@@ -110,6 +117,7 @@ export const ChromeOSDeviceDimensions = ({
       })
       .map((label) => ({
         id: label,
+        label: getFieldDefinition(label).header,
         value: device.deviceSpec!.labels[label].values,
       }));
 
@@ -119,24 +127,35 @@ export const ChromeOSDeviceDimensions = ({
   const dimensionRows = useMemo(() => {
     const query = filterText.trim();
     if (!query) return allRows;
-    return fuzzySort(query)(allRows, (row) => {
-      const valStr = Array.isArray(row.value)
-        ? labelValuesToString(row.value)
-        : String(row.value ?? '');
-      return `${row.id} ${valStr}`;
-    })
+    return fuzzySort(query)(
+      allRows,
+      (row) => {
+        const valStr = Array.isArray(row.value)
+          ? labelValuesToString(row.value)
+          : String(row.value ?? '');
+        return `${row.label} ${valStr}`;
+      },
+      (row) => row.id,
+    )
       .filter((res) => res.score >= 0)
       .map((res) => res.el);
   }, [allRows, filterText]);
 
-  const columns = useMemo<
-    MRT_ColumnDef<{ id: string; value: string | readonly string[] }>[]
-  >(
+  const columns = useMemo<MRT_ColumnDef<DimensionRow>[]>(
     () => [
       {
-        accessorKey: 'id',
+        accessorKey: 'label',
         header: 'Key',
         size: 200,
+        Cell: ({
+          cell,
+          column,
+        }: {
+          cell: MRT_Cell<DimensionRow, unknown>;
+          column: MRT_Column<DimensionRow, unknown>;
+        }) => (
+          <CellWithTooltip column={column} value={cell.getValue() as string} />
+        ),
       },
       {
         accessorKey: 'value',
@@ -147,15 +166,9 @@ export const ChromeOSDeviceDimensions = ({
           row,
           column,
         }: {
-          cell: MRT_Cell<
-            { id: string; value: string | readonly string[] },
-            unknown
-          >;
-          row: { original: { id: string; value: string | readonly string[] } };
-          column: MRT_Column<
-            { id: string; value: string | readonly string[] },
-            unknown
-          >;
+          cell: MRT_Cell<DimensionRow, unknown>;
+          row: { original: DimensionRow };
+          column: MRT_Column<DimensionRow, unknown>;
         }): React.ReactNode => {
           const fieldKey = row.original.id;
           const value = cell.getValue();

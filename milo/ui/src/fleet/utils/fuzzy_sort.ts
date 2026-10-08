@@ -27,6 +27,7 @@ function isStringArray(x: unknown): x is string[] {
 export type SortingFunction = <ElementType>(
   list: ElementType[],
   getLabel?: (el: ElementType) => string,
+  getFallbackValue?: (el: ElementType) => string,
 ) => SortedElement<ElementType>[];
 
 export type FuzzySort = (
@@ -43,8 +44,6 @@ export type SortedElement<ElementType> = {
   el: ElementType;
   score: number;
   matches: number[];
-  matchedKey?: string;
-  keyMatches?: number[];
 };
 
 /** The number of characters from the start of the string to apply a bonus for. */
@@ -168,9 +167,9 @@ export const fuzzySubstring: ScoringFunction = (
   query: string,
   target: string,
 ) => {
-  // Convert strings to lowercase for case-insensitive matching
-  target = target.toLowerCase();
-  query = query.toLowerCase();
+  // Convert strings to lowercase and treat spaces, hyphens, and underscores as equivalent
+  target = target.toLowerCase().replace(/[\s_-]/g, '_');
+  query = query.toLowerCase().replace(/[\s_-]/g, '_');
 
   let targetIndex = 0;
   let queryIndex = 0;
@@ -214,6 +213,41 @@ export const fuzzySubstring: ScoringFunction = (
 };
 
 /**
+ * Scores a query against both a display label and an optional underlying
+ * fallback key/value (including stripping a leading `label-` prefix).
+ * Highlights character matches on `label` when `label` matches at least as well
+ * as the fallback key, and returns empty highlight indices when matched solely
+ * via a distinct fallback key.
+ */
+export const scoreTargetWithFallback = (
+  query: string,
+  label: string,
+  fallbackValue?: string,
+  scoringFunction: ScoringFunction = fuzzySubstring,
+): [number, number[]] => {
+  const trimmed = query.trim();
+  if (!trimmed) return [0, []];
+
+  const [labelScore, labelMatches] = scoringFunction(trimmed, label);
+  if (!fallbackValue) {
+    return [labelScore, labelMatches];
+  }
+
+  const [fallbackScore] = scoringFunction(trimmed, fallbackValue);
+  const strippedFallback = fallbackValue.replace(/^label-/, '');
+  const [strippedScore] =
+    strippedFallback !== fallbackValue
+      ? scoringFunction(trimmed, strippedFallback)
+      : [-1, []];
+
+  const bestScore = Math.max(labelScore, fallbackScore, strippedScore);
+  return [
+    bestScore,
+    labelScore > 0 && labelScore >= bestScore ? labelMatches : [],
+  ];
+};
+
+/**
  * Returns the maximum fuzzy match score for a list of items.
  * Optimized to avoid sorting and extra allocations.
  */
@@ -241,7 +275,7 @@ export const fuzzyMaxScore =
  */
 export const fuzzySort: FuzzySort =
   (searchString, scoringFunction = fuzzySubstring) =>
-  (list, getLabel) => {
+  (list, getLabel, getFallbackValue) => {
     if (!isStringArray(list) && getLabel === undefined) {
       throw Error(
         'If the list is not of type strings[] you need to provide a getter function',
@@ -251,7 +285,14 @@ export const fuzzySort: FuzzySort =
 
     return list
       .map((obj) => {
-        const [score, matches] = scoringFunction(searchString, getLabel(obj));
+        const [score, matches] = getFallbackValue
+          ? scoreTargetWithFallback(
+              searchString,
+              getLabel(obj),
+              getFallbackValue(obj),
+              scoringFunction,
+            )
+          : scoringFunction(searchString, getLabel(obj));
         return {
           el: obj,
           score,

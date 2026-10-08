@@ -194,7 +194,7 @@ describe('Pixel Devices Page', () => {
     // Verify Device details header and content
     cy.contains('Device details:').should('be.visible');
     cy.get('table').should('be.visible');
-    cy.contains('model').should('be.visible');
+    cy.contains(/model/i).should('be.visible');
     cy.contains('Pixel 8').should('be.visible');
   });
 

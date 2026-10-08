@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fuzzySort, fuzzySubstring } from './fuzzy_sort';
+import {
+  fuzzySort,
+  fuzzySubstring,
+  scoreTargetWithFallback,
+} from './fuzzy_sort';
 
 describe('fuzzy_sort', () => {
   describe('fuzzySort', () => {
@@ -132,6 +136,33 @@ describe('fuzzy_sort', () => {
       expect(significantLabels).toContain('Ubuntu');
       expect(significantLabels).toContain('Ubuntu-22.04');
     });
+
+    it('matches against fallback value when label does not match', () => {
+      const options = [
+        { label: 'Model', value: 'label-model' },
+        { label: 'Servo State', value: 'label-servo_state' },
+        { label: 'Address', value: 'host' },
+      ];
+
+      const byPrefix = fuzzySort('label-servo_state')(
+        options,
+        (x) => x.label,
+        (x) => x.value,
+      );
+      expect(byPrefix[0].el.value).toBe('label-servo_state');
+      expect(byPrefix[0].score).toBeGreaterThan(0);
+      expect(byPrefix[0].matches).toEqual([]);
+
+      const bySnakeCase = fuzzySort('servo_state')(
+        options,
+        (x) => x.label,
+        (x) => x.value,
+      );
+      expect(bySnakeCase[0].el.value).toBe('label-servo_state');
+      expect(bySnakeCase[0].matches).toEqual([
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      ]);
+    });
   });
 
   describe('fuzzySubstring', () => {
@@ -143,6 +174,27 @@ describe('fuzzy_sort', () => {
     it('matches the full word "bes" instead of "be" in "label"', () => {
       const [_, matches] = fuzzySubstring('bes', 'label-working_bes_boards');
       expect(matches).toEqual([14, 15, 16]);
+    });
+
+    it('treats spaces, hyphens, and underscores as equivalent while preserving highlight indices', () => {
+      const [score1, matches1] = fuzzySubstring('dut_state', 'DUT State');
+      expect(score1).toBeGreaterThan(0);
+      expect(matches1).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+
+      const [score2, matches2] = fuzzySubstring(
+        'needs-manual',
+        'needs_manual_repair',
+      );
+      expect(score2).toBeGreaterThan(0);
+      expect(matches2).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    });
+  });
+
+  describe('scoreTargetWithFallback', () => {
+    it('returns zero score and empty matches for whitespace query', () => {
+      expect(
+        scoreTargetWithFallback('   ', 'Servo State', 'label-servo_state'),
+      ).toEqual([0, []]);
     });
   });
 });

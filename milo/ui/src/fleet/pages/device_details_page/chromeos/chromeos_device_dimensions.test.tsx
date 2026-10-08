@@ -54,10 +54,10 @@ describe('ChromeOSDeviceDimensions', () => {
     const rows = screen.getAllByRole('row');
     const rowTexts = rows.map((r) => r.textContent);
 
-    const servoIndex = rowTexts.findIndex((t) => t?.includes('servo_hostname'));
-    const poolIndex = rowTexts.findIndex((t) => t?.includes('label-pool'));
+    const servoIndex = rowTexts.findIndex((t) => t?.includes('Servo Hostname'));
+    const poolIndex = rowTexts.findIndex((t) => t?.includes('Pool'));
     const otherIndex = rowTexts.findIndex((t) =>
-      t?.includes('some_other_label'),
+      t?.includes('Some Other Label'),
     );
 
     expect(servoIndex).toBeGreaterThan(0);
@@ -69,13 +69,17 @@ describe('ChromeOSDeviceDimensions', () => {
     );
     fireEvent.change(searchInput, { target: { value: 'servo_hostname' } });
 
-    expect(screen.queryByText('label-pool')).not.toBeInTheDocument();
-    expect(screen.getByText('servo_hostname')).toBeInTheDocument();
+    expect(screen.queryByText('Pool')).not.toBeInTheDocument();
+    expect(screen.getByText('Servo Hostname')).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: 'gimble' } });
 
-    expect(screen.queryByText('servo_hostname')).not.toBeInTheDocument();
-    expect(screen.getByText('label-model')).toBeInTheDocument();
+    expect(screen.queryByText('Servo Hostname')).not.toBeInTheDocument();
+    expect(screen.getByText('Model')).toBeInTheDocument();
     expect(screen.getByText('gimble')).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: 'Some Other' } });
+    expect(screen.getByText('Some Other Label')).toBeInTheDocument();
+    expect(screen.queryByText('Model')).not.toBeInTheDocument();
   });
 });

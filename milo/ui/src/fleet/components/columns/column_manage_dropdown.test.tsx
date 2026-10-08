@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -81,5 +81,38 @@ describe('<ColumnsManageDropDown />', () => {
     expect(items[0]).toHaveTextContent('Column 2');
     expect(items[1]).toHaveTextContent('Column 3');
     expect(items[2]).toHaveTextContent('Column 1');
+  });
+
+  it('searches columns by humanized label and by underlying column ID fallback', () => {
+    const allColumns = [
+      { id: 'label-servo_state', label: 'Servo State' },
+      { id: 'battery_level', label: 'Battery Level' },
+    ];
+
+    const setAnchorEl = jest.fn();
+    const onToggleColumn = jest.fn();
+    const anchorEl = document.createElement('div');
+
+    render(
+      <FakeContextProvider>
+        <ColumnsManageDropDown
+          anchorEl={anchorEl}
+          setAnchorEl={setAnchorEl}
+          allColumns={allColumns}
+          visibleColumns={[]}
+          onToggleColumn={onToggleColumn}
+        />
+      </FakeContextProvider>,
+    );
+
+    const searchInput = screen.getByPlaceholderText(/search/i);
+    fireEvent.change(searchInput, { target: { value: 'servo_state' } });
+
+    expect(screen.getByText('Servo State')).toBeInTheDocument();
+    expect(screen.queryByText('Battery Level')).not.toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: 'Battery' } });
+    expect(screen.getByText('Battery Level')).toBeInTheDocument();
+    expect(screen.queryByText('Servo State')).not.toBeInTheDocument();
   });
 });

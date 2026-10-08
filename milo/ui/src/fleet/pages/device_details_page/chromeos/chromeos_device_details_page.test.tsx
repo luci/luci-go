@@ -118,12 +118,10 @@ describe('<ChromeOSDeviceDetailsPage />', () => {
 
     const rows = screen.getAllByRole('row');
     const rowTexts = rows.map((r) => r.textContent ?? '');
-    const servoIdx = rowTexts.findIndex((t) =>
-      t.includes('label-servo_hostname'),
-    );
-    const boardIdx = rowTexts.findIndex((t) => t.includes('label-board'));
-    const alphaIdx = rowTexts.findIndex((t) => t.includes('alpha-label'));
-    const zebraIdx = rowTexts.findIndex((t) => t.includes('zebra-label'));
+    const servoIdx = rowTexts.findIndex((t) => t.includes('Servo Hostname'));
+    const boardIdx = rowTexts.findIndex((t) => t.includes('Board'));
+    const alphaIdx = rowTexts.findIndex((t) => t.includes('Alpha Label'));
+    const zebraIdx = rowTexts.findIndex((t) => t.includes('Zebra Label'));
 
     expect(servoIdx).toBeGreaterThan(0);
     expect(servoIdx).toBeLessThan(boardIdx);
@@ -135,7 +133,7 @@ describe('<ChromeOSDeviceDetailsPage />', () => {
     );
     fireEvent.change(filterInput, { target: { value: 'servohost' } });
 
-    expect(screen.getByText('label-servo_hostname')).toBeVisible();
-    expect(screen.queryByText('zebra-label')).not.toBeInTheDocument();
+    expect(screen.getByText('Servo Hostname')).toBeVisible();
+    expect(screen.queryByText('Zebra Label')).not.toBeInTheDocument();
   });
 });

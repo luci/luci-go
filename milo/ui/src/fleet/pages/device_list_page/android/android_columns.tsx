@@ -14,10 +14,13 @@
 
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-import { humanizeColumnLabel } from '@/fleet/utils/humanize_column';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 
-import { AndroidColumnDef, getAndroidColumnOverrides } from './android_fields';
+import {
+  AndroidColumnDef,
+  getAndroidColumnHeader,
+  getAndroidColumnOverrides,
+} from './android_fields';
 
 export const getAndroidColumns = (
   columnIds: string[],
@@ -60,9 +63,7 @@ export const getAndroidColumns = (
         <EllipsisTooltip>{param.renderedCellValue ?? ''}</EllipsisTooltip>
       ),
       ...restOverride,
-      header: restOverride.header
-        ? humanizeColumnLabel(String(restOverride.header))
-        : humanizeColumnLabel(id),
+      header: getAndroidColumnHeader(id, workspace),
       ...(renderCell
         ? {
             Cell: (params) =>

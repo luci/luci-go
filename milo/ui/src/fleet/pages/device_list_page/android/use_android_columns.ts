@@ -27,6 +27,7 @@ import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getAndroidColumns } from './android_columns';
+import { getAndroidColumnHeader } from './android_fields';
 
 const EXTRA_COLUMN_IDS = [
   'label-id',
@@ -56,26 +57,28 @@ export const useAndroidColumns = (
   const availableColumns = useMemo(() => {
     const list: { id: string; label: string }[] = [];
 
-    ANDROID_DEFAULT_COLUMNS.forEach((id) => list.push({ id, label: id }));
+    ANDROID_DEFAULT_COLUMNS.forEach((id) =>
+      list.push({ id, label: getAndroidColumnHeader(id, workspace) }),
+    );
     extraColumnIds.forEach((id) => {
-      let label = id;
-      if (id === 'average_7d') label = '7 Day Average Utilization';
-      if (id === 'average_30d') label = '30 Day Average Utilization';
-      list.push({ id, label });
+      list.push({ id, label: getAndroidColumnHeader(id, workspace) });
     });
 
     if (dimensionsQuery.data) {
       Object.keys(dimensionsQuery.data.baseDimensions).forEach((id) =>
-        list.push({ id, label: id }),
+        list.push({ id, label: getAndroidColumnHeader(id, workspace) }),
       );
       Object.keys(dimensionsQuery.data.labels).forEach((id) => {
         const normId = id === 'Hardware' ? 'hardware' : id;
-        list.push({ id: normId, label: normId });
+        list.push({
+          id: normId,
+          label: getAndroidColumnHeader(normId, workspace),
+        });
       });
     }
 
     return _.uniqBy(list, 'id');
-  }, [extraColumnIds, dimensionsQuery.data]);
+  }, [extraColumnIds, dimensionsQuery.data, workspace]);
 
   const allColumns = useMemo(() => {
     return getAndroidColumns(

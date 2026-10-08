@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  getColumnSearchAliases,
-  humanizeColumnLabel,
-  resolveColumnSearchMatch,
-} from './humanize_column';
+import { humanizeColumnLabel } from './humanize_column';
 
 describe('humanizeColumnLabel', () => {
   it('humanizes raw label-* and snake_case keys while preserving acronyms', () => {
@@ -27,68 +23,17 @@ describe('humanizeColumnLabel', () => {
     expect(humanizeColumnLabel('label-board')).toBe('Board');
     expect(humanizeColumnLabel('label-os_type')).toBe('OS Type');
     expect(humanizeColumnLabel('sw_version')).toBe('SW Version');
-  });
-
-  it('preserves already humanized labels', () => {
-    expect(humanizeColumnLabel(' Associated Hostname')).toBe(
-      ' Associated Hostname',
+    expect(humanizeColumnLabel('ufs_zone')).toBe('UFS Zone');
+    expect(humanizeColumnLabel('AssociatedHostname')).toBe(
+      'Associated Hostname',
     );
-  });
-});
-
-describe('getColumnSearchAliases', () => {
-  it('includes both historic raw keys and humanized names', () => {
-    const aliases = getColumnSearchAliases('label-servo_state', 'Servo State');
-    expect(aliases).toContain('Servo State');
-    expect(aliases).toContain('label-servo_state');
-    expect(aliases).toContain('servo_state');
-    expect(aliases).toContain('servo state');
-  });
-});
-
-describe('resolveColumnSearchMatch', () => {
-  it('hides backend key hint when query directly matches humanized label', () => {
-    const res = resolveColumnSearchMatch(
-      'servo',
-      'label-servo_state',
-      'Servo State',
-    );
-    expect(res.score).toBeGreaterThan(0);
-    expect(res.matches).toEqual([0, 1, 2, 3, 4]);
-    expect(res.matchedKey).toBeUndefined();
+    expect(humanizeColumnLabel('Servo State')).toBe('Servo State');
+    expect(humanizeColumnLabel('dms.pool')).toBe('DMS Pool');
+    expect(humanizeColumnLabel('ufs.last_sync')).toBe('UFS Last Sync');
+    expect(humanizeColumnLabel('mh.last_sync')).toBe('MH Last Sync');
   });
 
-  it('reveals highlighted backend key hint when query matches raw backend key', () => {
-    const res = resolveColumnSearchMatch(
-      'label-servo_state',
-      'label-servo_state',
-      'Servo State',
-    );
-    expect(res.score).toBeGreaterThan(0);
-    expect(res.matchedKey).toBe('label-servo_state');
-    expect(res.keyMatches).toHaveLength('label-servo_state'.length);
-  });
-
-  it('returns zero score on empty or whitespace-only search query', () => {
-    const res = resolveColumnSearchMatch(
-      '   ',
-      'label-servo_state',
-      'Servo State',
-    );
-    expect(res.score).toBe(0);
-    expect(res.matches).toEqual([]);
-    expect(res.matchedKey).toBeUndefined();
-  });
-
-  it('maps keyMatches accurately when query matches stripped alias without prefix', () => {
-    const res = resolveColumnSearchMatch(
-      'servo_state',
-      'label-servo_state',
-      'Servo State',
-    );
-    expect(res.score).toBeGreaterThan(0);
-    expect(res.matchedKey).toBe('label-servo_state');
-    // 'label-' is 6 chars, so 'servo_state' matches indices 6 through 16
-    expect(res.keyMatches).toEqual([6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+  it('handles empty strings gracefully', () => {
+    expect(humanizeColumnLabel('')).toBe('');
   });
 });

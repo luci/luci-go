@@ -14,7 +14,10 @@
 
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getAndroidColumnOverrides } from './android_fields';
+import {
+  getAndroidColumnHeader,
+  getAndroidColumnOverrides,
+} from './android_fields';
 
 describe('getAndroidColumnOverrides', () => {
   const overrides = getAndroidColumnOverrides('Android');
@@ -39,5 +42,27 @@ describe('getAndroidColumnOverrides', () => {
     });
     expect(overrides.host_version.accessorFn?.(dev)).toBe('4.310.0');
     expect(overrides.test_harness.accessorFn?.(dev)).toBe('MH');
+  });
+});
+
+describe('getAndroidColumnHeader', () => {
+  it('returns override headers when defined', () => {
+    expect(getAndroidColumnHeader('average_7d')).toBe(
+      '7 Day Average Utilization',
+    );
+    expect(getAndroidColumnHeader('average_30d')).toBe(
+      '30 Day Average Utilization',
+    );
+    expect(getAndroidColumnHeader('fc_offline_since')).toBe('Offline Since');
+    expect(getAndroidColumnHeader('id')).toBe('ID');
+    expect(getAndroidColumnHeader('location_tag')).toBe('location_tag');
+  });
+
+  it('falls back to humanizeColumnLabel for general labels and proto fields', () => {
+    expect(getAndroidColumnHeader('battery_level')).toBe('Battery Level');
+    expect(getAndroidColumnHeader('host_group')).toBe('Host Group');
+    expect(getAndroidColumnHeader('ufs.last_sync')).toBe('UFS Last Sync');
+    expect(getAndroidColumnHeader('label-servo_state')).toBe('Servo State');
+    expect(getAndroidColumnHeader('realm')).toBe('Realm');
   });
 });

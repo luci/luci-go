@@ -33,6 +33,7 @@ import { renderTimestampCell } from '@/fleet/components/table/cell_with_timestam
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { generateDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FC_CellProps } from '@/fleet/types/table';
+import { humanizeColumnLabel } from '@/fleet/utils/humanize_column';
 import { getMobileHarnessLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -337,7 +338,7 @@ export const getAndroidColumnOverrides: (
     renderCell: renderTimestampCell,
   },
   fc_offline_since: {
-    header: 'Offline since',
+    header: 'Offline Since',
     meta: {
       infoTooltip: 'Last seen online (±10 min), per the fc_is_offline',
     },
@@ -454,3 +455,15 @@ export const getAndroidColumnOverrides: (
     },
   },
 });
+
+/**
+ * Resolves the display header for an Android column, checking overrides first
+ * and falling back to humanizeColumnLabel.
+ */
+export const getAndroidColumnHeader = (
+  id: string,
+  workspace: AndroidPageWorkspace = 'Android',
+): string => {
+  const overrides = getAndroidColumnOverrides(workspace);
+  return overrides[id]?.header ?? humanizeColumnLabel(id);
+};

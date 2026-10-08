@@ -346,4 +346,31 @@ describe('useMRTColumnManagement', () => {
     const col2Meta = col2Def?.meta as { isHighlighted?: boolean } | undefined;
     expect(col2Meta?.isHighlighted).toBe(true);
   });
+
+  it('humanizes column label fallback in allColumns when header is missing or non-string', () => {
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1'],
+      jest.fn(),
+    ]);
+
+    const cols = [
+      { id: 'servo_state', header: 'Custom Header' },
+      { id: 'battery_level' },
+      { accessorKey: 'label-pool', header: 123 as unknown as string },
+    ] as unknown as MRT_ColumnDef<Record<string, unknown>>[];
+
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: cols,
+        defaultColumnIds: ['servo_state'],
+        localStorageKey: 'test-key',
+      }),
+    );
+
+    expect(result.current.allColumns).toEqual([
+      { id: 'servo_state', label: 'Custom Header' },
+      { id: 'battery_level', label: 'Battery Level' },
+      { id: 'label-pool', label: 'Pool' },
+    ]);
+  });
 });
