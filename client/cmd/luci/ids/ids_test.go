@@ -114,7 +114,17 @@ func testBuildsClient() *mockBuildsClient {
 					Id: 8712345678901234567,
 				}, nil
 			}
-			return &bbpb.Build{Id: 1111111111111111111}, nil
+			if in.Builder != nil && in.Builder.Project == "chromeos" && in.Builder.Bucket == "general" && in.Builder.Builder == "Full Builder" && in.BuildNumber == 12345 {
+				return &bbpb.Build{
+					Id: 8799999999999999999,
+				}, nil
+			}
+			if in.Builder != nil && in.Builder.Project == "chromium" && in.Builder.Bucket == "ci" && in.Builder.Builder == "Win10 Tests x64 (1)" && in.BuildNumber == 54321 {
+				return &bbpb.Build{
+					Id: 8788888888888888888,
+				}, nil
+			}
+			return nil, status.Errorf(codes.InvalidArgument, "unexpected builder %v", in.GetBuilder())
 		},
 	}
 }
@@ -241,6 +251,24 @@ func TestExtractIDs(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsWin.BuildID, should.Equal("8712345678901234567"))
 			assert.Loosely(t, idsWin.InvocationID, should.Equal("build-8712345678901234567"))
+
+			urlEscapedSpace := "https://ci.chromium.org/ui/p/chromeos/builders/general/Full%20Builder/12345"
+			idsEscapedSpace, err := ExtractIDs(ctx, legacyMockClient(), testBuildsClient(), urlEscapedSpace, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsEscapedSpace.BuildID, should.Equal("8799999999999999999"))
+			assert.Loosely(t, idsEscapedSpace.InvocationID, should.Equal("build-8799999999999999999"))
+
+			pathEscapedSpace := "chromeos/general/Full%20Builder/12345"
+			idsPathEscaped, err := ExtractIDs(ctx, legacyMockClient(), testBuildsClient(), pathEscapedSpace, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsPathEscaped.BuildID, should.Equal("8799999999999999999"))
+			assert.Loosely(t, idsPathEscaped.InvocationID, should.Equal("build-8799999999999999999"))
+
+			urlEscapedParens := "https://ci.chromium.org/ui/p/chromium/builders/ci/Win10%20Tests%20x64%20%281%29/54321/overview"
+			idsEscapedParens, err := ExtractIDs(ctx, legacyMockClient(), testBuildsClient(), urlEscapedParens, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsEscapedParens.BuildID, should.Equal("8788888888888888888"))
+			assert.Loosely(t, idsEscapedParens.InvocationID, should.Equal("build-8788888888888888888"))
 
 			_, errNoClient := ExtractIDs(ctx, nil, nil, urlWinCross, false)
 			assert.Loosely(t, errNoClient, should.NotBeNil)
@@ -647,6 +675,12 @@ EOF
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("build-8676886509240051393"))
 			assert.Loosely(t, ids.ModuleName, should.Equal("my_module"))
+
+			escapedURL := "https://ci.chromium.org/ui/test-investigate/invocations/build-8676886509240051393/modules/%2F%2Fchrome%3Achrome_private_code_test"
+			idsEscaped, err := ExtractIDs(ctx, nil, nil, escapedURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsEscaped.InvocationID, should.Equal("build-8676886509240051393"))
+			assert.Loosely(t, idsEscaped.ModuleName, should.Equal("//chrome:chrome_private_code_test"))
 		})
 	})
 }

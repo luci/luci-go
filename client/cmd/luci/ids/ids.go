@@ -271,15 +271,15 @@ func resolveBuildID(ctx context.Context, bbClient grpcpb.BuildsClient, extracted
 	if bbClient == nil {
 		return errors.Fmt("cannot resolve build ID for %s/%d: Buildbucket client not available", extracted.builder, extracted.buildNumber)
 	}
-	parts := strings.Split(extracted.builder, "/")
+	parts := strings.SplitN(extracted.builder, "/", 3)
 	if len(parts) != 3 {
 		return errors.Fmt("invalid builder format %q", extracted.builder)
 	}
 	req := &bbpb.GetBuildRequest{
 		Builder: &bbpb.BuilderID{
-			Project: parts[0],
-			Bucket:  parts[1],
-			Builder: parts[2],
+			Project: unescapePathSegment(parts[0]),
+			Bucket:  unescapePathSegment(parts[1]),
+			Builder: unescapePathSegment(parts[2]),
 		},
 		BuildNumber: int32(extracted.buildNumber),
 		Mask: &bbpb.BuildMask{
@@ -391,7 +391,7 @@ func extractFromMiloModuleURL(clean string, extracted *ExtractedIDs) bool {
 				modSuffix = modSuffix[:slashIdx]
 			}
 			extracted.InvocationID = base.NormalizeInvocation(invPrefix)
-			extracted.ModuleName = modSuffix
+			extracted.ModuleName = unescapePathSegment(modSuffix)
 			return true
 		}
 	}
@@ -617,7 +617,10 @@ func extractFromMiloBuildURL(clean string, extracted *ExtractedIDs) bool {
 				}
 			}
 			if num, err := strconv.Atoi(target); err == nil && project != "" {
-				extracted.builder = fmt.Sprintf("%s/%s/%s", project, parts[0], parts[1])
+				project = unescapePathSegment(project)
+				bucket := unescapePathSegment(parts[0])
+				builder := unescapePathSegment(parts[1])
+				extracted.builder = fmt.Sprintf("%s/%s/%s", project, bucket, builder)
 				extracted.buildNumber = num
 				return true
 			}
@@ -634,12 +637,22 @@ func extractFromBuilderPath(clean string, extracted *ExtractedIDs) bool {
 	parts := strings.Split(clean, "/")
 	if len(parts) == 4 && parts[0] != "" && parts[1] != "" && parts[2] != "" && parts[3] != "" {
 		if num, err := strconv.Atoi(parts[3]); err == nil {
-			extracted.builder = fmt.Sprintf("%s/%s/%s", parts[0], parts[1], parts[2])
+			project := unescapePathSegment(parts[0])
+			bucket := unescapePathSegment(parts[1])
+			builder := unescapePathSegment(parts[2])
+			extracted.builder = fmt.Sprintf("%s/%s/%s", project, bucket, builder)
 			extracted.buildNumber = num
 			return true
 		}
 	}
 	return false
+}
+
+func unescapePathSegment(s string) string {
+	if unescaped, err := url.PathUnescape(s); err == nil && unescaped != "" {
+		return unescaped
+	}
+	return s
 }
 
 func populateBuildIDFromInvocation(extracted *ExtractedIDs) {
