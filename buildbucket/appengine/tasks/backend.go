@@ -504,8 +504,8 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 		return errors.WrapIf(datastore.Put(ctx, bld, infra), "failed to save Build and BuildInfra")
 	}, nil)
 	if txErr != nil {
-		logging.Errorf(ctx, "Task failed to save: %s", taskResp.String())
-		return transient.Tag.Apply(err)
+		logging.Errorf(ctx, "Task failed to save %s: %s", taskResp.String(), txErr)
+		return transient.Tag.Apply(txErr)
 	}
 	return nil
 }

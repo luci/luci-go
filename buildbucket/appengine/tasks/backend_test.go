@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -631,6 +632,23 @@ func TestCreateBackendTask(t *testing.T) {
 				UpdateId: 1,
 			}))
 			assert.Loosely(c, sch.Tasks(), should.BeEmpty)
+		})
+
+		c.Run("save task failed", func(c *ftt.Test) {
+			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, _ *pb.RunTaskRequest, _ ...any) (*pb.RunTaskResponse, error) {
+				// Simulate BuildInfra becoming unavailable before the post-RunTask transaction commits.
+				_ = datastore.Delete(ctx, &model.BuildInfra{Build: key})
+				return &pb.RunTaskResponse{
+					Task: &pb.Task{
+						Id:       &pb.TaskID{Id: "abc123", Target: "swarming://chromium-swarm"},
+						Link:     "this_is_a_url_link",
+						UpdateId: 1,
+					},
+				}, nil
+			})
+			err = CreateBackendTask(ctx, 1, "request_id", timestamppb.New(now))
+			assert.Loosely(c, err, should.ErrLike("failed to get build 1"))
+			assert.Loosely(c, transient.Tag.In(err), should.BeTrue)
 		})
 
 		c.Run("fail", func(c *ftt.Test) {
