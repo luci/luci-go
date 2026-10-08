@@ -37,11 +37,7 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSRepairDashboard } from './chromeos_repair_dashboard';
-import {
-  formatPriorityScore,
-  formatRuleWeight,
-  useRepairQueueColumns,
-} from './use_repair_queue_columns';
+import { useRepairQueueColumns } from './use_repair_queue_columns';
 
 const mockNavigate = jest.fn();
 jest.mock('react-router', () => ({
@@ -1312,51 +1308,6 @@ describe('<ChromeOSRepairDashboard />', () => {
   });
 
   describe('Priority Score formatting and tooltip breakdown', () => {
-    describe('formatPriorityScore helper', () => {
-      it('formats positive scores with + and pts', () => {
-        expect(formatPriorityScore('350')).toBe('+350 pts');
-        expect(formatPriorityScore('+350')).toBe('+350 pts');
-        expect(formatPriorityScore('1')).toBe('+1 pts');
-      });
-
-      it('formats negative scores with - and pts', () => {
-        expect(formatPriorityScore('-50')).toBe('-50 pts');
-        expect(formatPriorityScore('-9223372036854775808')).toBe(
-          '-9223372036854775808 pts',
-        );
-      });
-
-      it('formats zero scores as "0 pts"', () => {
-        expect(formatPriorityScore('0')).toBe('0 pts');
-        expect(formatPriorityScore('-0')).toBe('0 pts');
-      });
-
-      it('handles empty or non-numeric strings safely', () => {
-        expect(formatPriorityScore('')).toBe('0 pts');
-        expect(formatPriorityScore(undefined)).toBe('0 pts');
-        expect(formatPriorityScore(350)).toBe('+350 pts');
-        expect(formatPriorityScore(-50)).toBe('-50 pts');
-      });
-    });
-
-    describe('formatRuleWeight helper', () => {
-      it('formats positive numeric and string weights with + and pts', () => {
-        expect(formatRuleWeight(300)).toBe('+300 pts');
-        expect(formatRuleWeight('300')).toBe('+300 pts');
-        expect(formatRuleWeight('+300')).toBe('+300 pts');
-      });
-
-      it('formats negative numeric and string weights with - and pts', () => {
-        expect(formatRuleWeight(-50)).toBe('-50 pts');
-        expect(formatRuleWeight('-50')).toBe('-50 pts');
-      });
-
-      it('formats zero weights as "0 pts"', () => {
-        expect(formatRuleWeight(0)).toBe('0 pts');
-        expect(formatRuleWeight('0')).toBe('0 pts');
-      });
-    });
-
     describe('PriorityScoreCell tooltip interaction in dashboard table', () => {
       const mockRules: readonly PriorityRule[] = [
         {

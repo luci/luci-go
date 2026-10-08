@@ -14,63 +14,53 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { IrmIncident } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ActiveIrmTable } from './active_irm_table';
-import * as UseIrmIncidentsModule from './use_irm_incidents';
+import {
+  ActiveIrmTable,
+  ActiveIrmTableProps,
+  RepairIrmIncident,
+} from './active_irm_table';
 
-const MOCK_INCIDENTS: readonly IrmIncident[] = [
+const MOCK_INCIDENTS: readonly RepairIrmIncident[] = [
   {
     id: '1',
     masterBugId: '  12345678  ',
-    title: 'ChromeOS fleet wide lab issue',
+    title: 'Fleet wide lab issue',
   },
   { id: '2', masterBugId: '', title: '' },
 ];
 
 describe('<ActiveIrmTable />', () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  const mockUseIrm = (
-    overrides: Partial<
-      ReturnType<typeof UseIrmIncidentsModule.useIrmIncidents>
-    >,
-  ) =>
-    jest.spyOn(UseIrmIncidentsModule, 'useIrmIncidents').mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-      ...overrides,
-    } as ReturnType<typeof UseIrmIncidentsModule.useIrmIncidents>);
-
-  const renderComponent = () =>
+  const renderComponent = (overrides: Partial<ActiveIrmTableProps> = {}) =>
     render(
       <FakeContextProvider>
-        <ActiveIrmTable />
+        <ActiveIrmTable
+          incidents={[]}
+          isLoading={false}
+          isError={false}
+          error={null}
+          {...overrides}
+        />
       </FakeContextProvider>,
     );
 
   it('renders loading state', () => {
-    mockUseIrm({ isLoading: true });
-    renderComponent();
+    renderComponent({ isLoading: true });
 
     expect(screen.getByText('Active IRM Bugs')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('active-irm-table-container'),
+    ).not.toBeInTheDocument();
   });
 
   it('renders error state', () => {
-    mockUseIrm({
+    renderComponent({
       isError: true,
       error: new Error('Failed to load IRM incidents'),
     });
-    renderComponent();
 
-    expect(screen.getByText('Active IRM Bugs')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(
       screen.getByText(/Failed to load IRM incidents/i),
@@ -78,20 +68,13 @@ describe('<ActiveIrmTable />', () => {
   });
 
   it('renders empty state', () => {
-    mockUseIrm({ data: { irmIncidents: [] } });
     renderComponent();
 
-    expect(screen.getByText('Active IRM Bugs')).toBeInTheDocument();
     expect(screen.getByText('No active IRM incidents')).toBeInTheDocument();
   });
 
-  it('renders data and handles edge cases with link and fallbacks', () => {
-    mockUseIrm({ data: { irmIncidents: MOCK_INCIDENTS } });
-    renderComponent();
-
-    expect(screen.getByText('Active IRM Bugs')).toBeInTheDocument();
-    expect(screen.getByText('Bug ID')).toBeInTheDocument();
-    expect(screen.getByText('Incident Name')).toBeInTheDocument();
+  it('renders incidents with bug links and fallbacks', () => {
+    renderComponent({ incidents: MOCK_INCIDENTS });
 
     const link = screen.getByRole('link', { name: /b\/12345678/i });
     expect(link).toHaveAttribute(
@@ -101,9 +84,7 @@ describe('<ActiveIrmTable />', () => {
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
 
-    expect(
-      screen.getByText('ChromeOS fleet wide lab issue'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Fleet wide lab issue')).toBeInTheDocument();
     expect(screen.getByText('N/A')).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
   });

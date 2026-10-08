@@ -16,16 +16,16 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import RemoveIcon from '@mui/icons-material/Remove';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Box, Button, Divider, Tooltip, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
-import { Fragment, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
-import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
-import { UserAvatar } from '@/fleet/components/repair_queue/user_avatar';
+import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
+import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
 import { DutStateCell } from '@/fleet/pages/device_list_page/chromeos/dut_state_cell';
 import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
@@ -40,32 +40,6 @@ import {
   useUnclaimRepairTask,
 } from './use_claim_repair_task';
 import { usePriorityRules } from './use_priority_rules';
-
-export const formatPriorityScore = (score?: string | number): string => {
-  const scoreStr = typeof score === 'number' ? String(score) : score || '0';
-  if (!scoreStr || scoreStr === '0' || scoreStr === '-0') {
-    return '0 pts';
-  }
-  if (scoreStr.startsWith('-')) {
-    const absVal = scoreStr.slice(1);
-    return `-${absVal} pts`;
-  }
-  const clean = scoreStr.startsWith('+') ? scoreStr.slice(1) : scoreStr;
-  return `+${clean} pts`;
-};
-
-export const formatRuleWeight = (weight?: string | number): string => {
-  const weightStr = typeof weight === 'number' ? String(weight) : weight || '0';
-  if (!weightStr || weightStr === '0' || weightStr === '-0') {
-    return '0 pts';
-  }
-  if (weightStr.startsWith('-')) {
-    const absVal = weightStr.slice(1);
-    return `-${absVal} pts`;
-  }
-  const clean = weightStr.startsWith('+') ? weightStr.slice(1) : weightStr;
-  return `+${clean} pts`;
-};
 
 export type RepairQueueRow = RepairQueueItem;
 export type RepairQueueColumnDef = MRT_ColumnDef<RepairQueueRow>;
@@ -86,115 +60,6 @@ export interface UseRepairQueueColumnsOptions {
   pageIndex?: number;
   pageSize?: number;
 }
-
-/**
- * Caps how wide a rule's AIP-160 expression may grow inside the breakdown
- * tooltip. Longer expressions are truncated with an ellipsis so that a single
- * verbose rule cannot stretch the tooltip across the viewport, and so the
- * points column stays anchored on the right.
- */
-const RULE_EXPRESSION_MAX_WIDTH = 300;
-
-const PriorityScoreCell = ({
-  item,
-  rulesById,
-}: {
-  item: RepairQueueRow;
-  rulesById: Map<string, PriorityRule>;
-}) => {
-  const scoreStr = item.priorityScore || '0';
-  const formattedScore = formatPriorityScore(scoreStr);
-  const matchedIds = item.matchedRuleIds || [];
-
-  let tooltipContent: React.ReactNode;
-  if (matchedIds.length === 0) {
-    tooltipContent = (
-      <Typography variant="body2">No matched priority rules (0 pts)</Typography>
-    );
-  } else {
-    const cleanScore = scoreStr.replace(/^\+/, '');
-    tooltipContent = (
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          columnGap: 3,
-          rowGap: 0.5,
-          alignItems: 'baseline',
-        }}
-      >
-        {matchedIds.map((id) => {
-          const rule = rulesById.get(id);
-          const expr = rule?.expressionAip160 ?? `Rule #${id}`;
-          const weightStr = rule ? formatRuleWeight(rule.weight) : '';
-          return (
-            <Fragment key={id}>
-              <Typography
-                variant="body2"
-                title={expr}
-                sx={{
-                  maxWidth: RULE_EXPRESSION_MAX_WIDTH,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {expr}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  textAlign: 'right',
-                  whiteSpace: 'nowrap',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {weightStr}
-              </Typography>
-            </Fragment>
-          );
-        })}
-        <Divider sx={{ gridColumn: '1 / -1', my: 0.5 }} />
-        <Typography
-          variant="body2"
-          sx={{
-            gridColumn: 2,
-            textAlign: 'right',
-            whiteSpace: 'nowrap',
-            fontWeight: 600,
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {`= ${cleanScore} pts`}
-        </Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <Tooltip
-      title={tooltipContent}
-      enterDelay={100}
-      placement="bottom-start"
-      slotProps={{ tooltip: { sx: INFO_TOOLTIP_PAPER_SX } }}
-    >
-      <Typography
-        component="span"
-        variant="body2"
-        sx={{
-          fontSize: '13px',
-          fontWeight: 600,
-          cursor: 'help',
-          display: 'inline-block',
-          textDecoration: 'underline dotted',
-          textUnderlineOffset: '3px',
-        }}
-      >
-        {formattedScore}
-      </Typography>
-    </Tooltip>
-  );
-};
 
 export const useRepairQueueColumns = ({
   pageIndex = 0,
@@ -292,86 +157,16 @@ export const useRepairQueueColumns = ({
           align: 'center',
         },
         accessorFn: (row) => row.claimedBy ?? '',
-        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
-          const claimedBy = row.original.claimedBy || '';
-          const taskId = row.original.taskId;
-
-          const trimmedClaimedBy = claimedBy.trim();
-
-          if (trimmedClaimedBy) {
-            const displayClaimedBy = trimmedClaimedBy.replace(/^user:/, '');
-            const isSelf = Boolean(
-              currentUser &&
-                (trimmedClaimedBy === currentUser ||
-                  (currentUser.startsWith('user:') &&
-                    trimmedClaimedBy === currentUser.replace(/^user:/, '')) ||
-                  (trimmedClaimedBy.startsWith('user:') &&
-                    trimmedClaimedBy.replace(/^user:/, '') === currentUser)),
-            );
-
-            const tooltipTitle = isSelf
-              ? 'Assigned to you (click to unclaim)'
-              : `Assigned to ${displayClaimedBy} (click to assign to yourself)`;
-
-            const handleClick = () => {
-              if (isPending) return;
-              if (isSelf) {
-                unclaimTask({ taskId });
-              } else {
-                claimTask({ taskId });
-              }
-            };
-
-            return (
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  width: '100%',
-                }}
-              >
-                <Tooltip title={tooltipTitle}>
-                  <UserAvatar
-                    email={displayClaimedBy}
-                    onClick={handleClick}
-                    sx={{
-                      width: 26,
-                      height: 26,
-                      fontSize: '0.85rem',
-                      cursor: isPending ? 'not-allowed' : 'pointer',
-                      opacity: isPending ? 0.6 : 1,
-                      pointerEvents: isPending ? 'none' : 'auto',
-                      '&:hover': {
-                        opacity: isPending ? 0.6 : 0.8,
-                      },
-                    }}
-                  />
-                </Tooltip>
-              </Box>
-            );
-          }
-
-          return (
-            <Box
-              sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}
-            >
-              <Button
-                variant="outlined"
-                size="small"
-                disabled={isPending}
-                sx={{
-                  borderRadius: '16px',
-                  textTransform: 'none',
-                  minWidth: '64px',
-                  height: '26px',
-                }}
-                onClick={() => claimTask({ taskId })}
-              >
-                Claim
-              </Button>
-            </Box>
-          );
-        },
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
+          <AssigneeCell
+            claimedBy={row.original.claimedBy}
+            taskId={row.original.taskId}
+            currentUser={currentUser}
+            isPending={isPending}
+            claimTask={claimTask}
+            unclaimTask={unclaimTask}
+          />
+        ),
       },
       {
         id: 'peripherals',

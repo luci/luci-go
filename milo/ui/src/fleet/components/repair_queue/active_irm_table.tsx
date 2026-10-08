@@ -29,14 +29,33 @@ import {
 } from '@mui/material';
 
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-import { useIrmIncidents } from '@/fleet/pages/chromeos/repairs/use_irm_incidents';
 import { getErrorMessage } from '@/fleet/utils/errors';
 
-export const ActiveIrmTable = () => {
-  const { data, isLoading, isError, error } = useIrmIncidents();
+import { getBugUrl } from './utils';
 
-  const incidents = data?.irmIncidents ?? [];
+/**
+ * The fields of an IRM incident rendered by the table. Structurally
+ * compatible with the per-platform IRM incident protos.
+ */
+export interface RepairIrmIncident {
+  readonly id?: string;
+  readonly masterBugId?: string;
+  readonly title?: string;
+}
 
+export interface ActiveIrmTableProps {
+  readonly incidents: readonly RepairIrmIncident[];
+  readonly isLoading: boolean;
+  readonly isError: boolean;
+  readonly error: unknown;
+}
+
+export const ActiveIrmTable = ({
+  incidents,
+  isLoading,
+  isError,
+  error,
+}: ActiveIrmTableProps) => {
   return (
     <Box sx={{ width: '100%' }}>
       <Typography
@@ -118,7 +137,7 @@ export const ActiveIrmTable = () => {
                         {bugId ? (
                           <Chip
                             component="a"
-                            href={`https://b.corp.google.com/issues/${encodeURIComponent(bugId)}`}
+                            href={getBugUrl(bugId)}
                             target="_blank"
                             rel="noopener noreferrer"
                             icon={<BugReportOutlinedIcon />}

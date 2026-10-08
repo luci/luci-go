@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
@@ -21,270 +20,78 @@ import {
   Box,
   Button,
   CircularProgress,
-  IconButton,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
-import { usePriorityRulesPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
-import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import {
   FilterCategory,
   FilterCategoryBuilder,
-  useFilterState,
 } from '@/fleet/components/filters/use_filters';
-import { usePriorityRules } from '@/fleet/pages/chromeos/repairs/use_priority_rules';
-import { useChromeOSFilterBuilders } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_filters';
 import { colors } from '@/fleet/theme/colors';
-import { PriorityRule } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import {
+  EditableRuleRow,
+  MAX_RULE_WEIGHT,
+  MIN_RULE_WEIGHT,
+  RepairPriorityRule,
+} from './editable_rule_row';
+import { PriorityRuleRow } from './priority_rule_row';
+import { useEditableRuleRows } from './use_editable_rule_rows';
 
 const MAX_PRIORITY_RULES = 5;
 const DEFAULT_VISIBLE_RULES = 3;
-const MIN_RULE_WEIGHT = -1000000;
-const MAX_RULE_WEIGHT = 1000000;
 
-interface EditableRuleRow {
-  readonly id: string;
-  readonly isDraft: boolean;
-  readonly expressionAip160: string;
-  readonly weight: string;
-  readonly backendExpressionAip160: string;
-  readonly backendWeight: string;
-}
-
-const ruleToEditableRow = (rule: PriorityRule): EditableRuleRow => ({
-  id: rule.id,
-  isDraft: false,
-  expressionAip160: rule.expressionAip160,
-  weight: rule.weight,
-  backendExpressionAip160: rule.expressionAip160,
-  backendWeight: rule.weight,
-});
-
-const isRowDirty = (row: EditableRuleRow): boolean => {
-  if (row.isDraft) return true;
-  return (
-    row.expressionAip160 !== row.backendExpressionAip160 ||
-    row.weight !== row.backendWeight
-  );
-};
-
-interface PriorityRuleRowProps {
-  readonly row: EditableRuleRow;
-  readonly index: number;
+export interface PriorityRulesPanelProps {
+  readonly rules: readonly RepairPriorityRule[];
+  readonly isLoading: boolean;
+  readonly isError: boolean;
+  readonly error: unknown;
+  readonly createRule: (req: {
+    readonly priorityRule: RepairPriorityRule;
+  }) => Promise<unknown>;
+  readonly isCreating: boolean;
+  readonly updateRule: (req: {
+    readonly id: string;
+    readonly expressionAip160: string;
+    readonly weight: string;
+  }) => Promise<unknown>;
+  readonly isUpdating: boolean;
+  readonly deleteRule: (req: { readonly id: string }) => Promise<unknown>;
+  readonly isDeleting: boolean;
   readonly filterBuilders: Record<
     string,
     FilterCategoryBuilder<FilterCategory>
   >;
   readonly isBuildersLoading: boolean;
-  readonly isBusy: boolean;
-  readonly isSubmitting: boolean;
   readonly canEdit: boolean;
-  readonly onFilterChange: (id: string, nextAip160: string) => void;
-  readonly onWeightChange: (id: string, weight: string) => void;
-  readonly onApply: (row: EditableRuleRow) => void;
-  readonly onDelete: (row: EditableRuleRow) => void;
+  /** Placeholder shown in the rule filter input while editing. */
+  readonly searchPlaceholder?: string;
 }
 
-const PriorityRuleRow = ({
-  row,
-  index,
+export const PriorityRulesPanel = ({
+  rules,
+  isLoading: isRulesLoading,
+  isError,
+  error,
+  createRule,
+  isCreating,
+  updateRule,
+  isUpdating,
+  deleteRule,
+  isDeleting,
   filterBuilders,
   isBuildersLoading,
-  isBusy,
-  isSubmitting,
   canEdit,
-  onFilterChange,
-  onWeightChange,
-  onApply,
-  onDelete,
-}: PriorityRuleRowProps) => {
-  const handleFilterChange = useCallback(
-    (nextAip160: string) => {
-      if (!canEdit) return;
-      onFilterChange(row.id, nextAip160);
-    },
-    [canEdit, onFilterChange, row.id],
-  );
-
-  const { filterValues } = useFilterState(
-    filterBuilders,
-    row.expressionAip160,
-    handleFilterChange,
-    {
-      areFilterValuesLoading: isBuildersLoading,
-    },
-  );
-
-  const filterCategoryDatas = useMemo(
-    () => (filterValues ? Object.values(filterValues) : []),
-    [filterValues],
-  );
-
-  const dirty = isRowDirty(row);
-
-  return (
-    <Box
-      data-testid={`priority-rule-row-${row.id}`}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        width: '100%',
-      }}
-    >
-      <Box
-        inert={!canEdit}
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          ...(!canEdit && {
-            pointerEvents: 'none',
-            '& .MuiChip-deleteIcon': {
-              display: 'none',
-            },
-            '& .MuiSvgIcon-root': {
-              display: 'none',
-            },
-            '& input': {
-              display: 'none',
-            },
-          }),
-        }}
-      >
-        <FilterBar
-          filterCategoryDatas={filterCategoryDatas}
-          isLoading={isBuildersLoading}
-          searchPlaceholder={
-            canEdit ? 'Add rule filter (e.g. pool, board, model)...' : ''
-          }
-          disableShortcut
-        />
-      </Box>
-
-      <TextField
-        label="Pts"
-        type="number"
-        value={row.weight}
-        onChange={(e) => onWeightChange(row.id, e.target.value)}
-        onKeyDown={(e) => {
-          if (canEdit && e.key === 'Enter' && !isSubmitting) {
-            e.preventDefault();
-            onApply(row);
-          }
-        }}
-        size="small"
-        disabled={!canEdit || isBusy}
-        sx={{
-          width: 100,
-          flexShrink: 0,
-          ...(!canEdit && {
-            '& .MuiInputBase-input.Mui-disabled': {
-              WebkitTextFillColor: (theme) => theme.palette.text.primary,
-              color: 'text.primary',
-            },
-            '& .MuiInputLabel-root.Mui-disabled': {
-              color: 'text.primary',
-            },
-            '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline':
-              {
-                borderColor: 'rgba(0, 0, 0, 0.23)',
-              },
-          }),
-        }}
-        inputProps={{
-          readOnly: !canEdit,
-          min: MIN_RULE_WEIGHT,
-          max: MAX_RULE_WEIGHT,
-          'data-testid': `rule-weight-input-${row.id}`,
-          'aria-label': `Rule ${index + 1} points weight`,
-        }}
-      />
-
-      {canEdit && dirty && (
-        <Button
-          variant="contained"
-          color="primary"
-          size="small"
-          onClick={() => onApply(row)}
-          disabled={isSubmitting}
-          data-testid={`rule-apply-button-${row.id}`}
-          sx={{ minWidth: 64, height: 40, flexShrink: 0 }}
-        >
-          {isBusy ? <CircularProgress size={20} color="inherit" /> : 'Apply'}
-        </Button>
-      )}
-
-      {canEdit && (
-        <IconButton
-          aria-label={`delete rule ${row.id}`}
-          size="small"
-          onClick={() => onDelete(row)}
-          disabled={isSubmitting}
-          data-testid={`rule-delete-button-${row.id}`}
-          sx={{ color: '#d32f2f', flexShrink: 0 }}
-        >
-          <DeleteOutlineIcon fontSize="small" />
-        </IconButton>
-      )}
-    </Box>
-  );
-};
-
-export const PriorityRulesPanel = () => {
-  const {
-    rules,
-    isLoading: isRulesLoading,
-    isError,
-    error,
-    createRule,
-    isCreating,
-    updateRule,
-    isUpdating,
-    deleteRule,
-    isDeleting,
-  } = usePriorityRules();
-
-  const { filterBuilders, isLoading: isBuildersLoading } =
-    useChromeOSFilterBuilders();
-  const { hasPermission } = usePriorityRulesPermission();
-  const canEdit = hasPermission === true;
-
-  const [rows, setRows] = useState<readonly EditableRuleRow[]>([]);
+  searchPlaceholder,
+}: PriorityRulesPanelProps) => {
+  const [rows, setRows] = useEditableRuleRows(rules);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(
     null,
   );
-
-  // Sync rows with remote rules
-  useEffect(() => {
-    setRows((prevRows) => {
-      if (prevRows.length === 0) {
-        return rules.map(ruleToEditableRow);
-      }
-
-      const updatedRemoteRows: EditableRuleRow[] = rules.map((rule) => {
-        const existing = prevRows.find((r) => r.id === rule.id);
-        if (!existing) {
-          return ruleToEditableRow(rule);
-        }
-        if (isRowDirty(existing)) {
-          return {
-            ...existing,
-            backendExpressionAip160: rule.expressionAip160,
-            backendWeight: rule.weight,
-          };
-        }
-        return ruleToEditableRow(rule);
-      });
-
-      const activeDraftRows = prevRows.filter((r) => r.isDraft);
-      return [...updatedRemoteRows, ...activeDraftRows];
-    });
-  }, [rules]);
 
   const handleFieldChange = useCallback(
     (id: string, field: 'expressionAip160' | 'weight', value: string) => {
@@ -294,7 +101,7 @@ export const PriorityRulesPanel = () => {
       );
       setErrorMessage(null);
     },
-    [canEdit],
+    [canEdit, setRows],
   );
 
   const handleAddRule = () => {
@@ -428,7 +235,8 @@ export const PriorityRulesPanel = () => {
 
       {isError && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error?.message || 'Failed to load priority scoring rules.'}
+          {(error instanceof Error && error.message) ||
+            'Failed to load priority scoring rules.'}
         </Alert>
       )}
 
@@ -480,6 +288,7 @@ export const PriorityRulesPanel = () => {
                   isBusy={isRowBusy}
                   isSubmitting={isSubmitting}
                   canEdit={canEdit}
+                  searchPlaceholder={searchPlaceholder}
                   onFilterChange={(id, nextAip160) =>
                     handleFieldChange(id, 'expressionAip160', nextAip160)
                   }

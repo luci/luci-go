@@ -12,96 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { useRepairQueueOptimisticMutation } from '@/fleet/components/repair_queue/use_repair_queue_optimistic_mutation';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
   ClaimRepairTaskRequest,
   ClaimRepairTaskResponse,
-  ListRepairQueueResponse,
   RepairQueueItem,
   UnclaimRepairTaskRequest,
   UnclaimRepairTaskResponse,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { REPAIR_QUEUE_QUERY_KEY } from './use_repair_queue';
-
-interface UseRepairQueueOptimisticMutationOptions<
-  TData,
-  TVariables extends { taskId: string },
-> {
-  mutationFn: (variables: TVariables) => Promise<TData>;
-  updateItem: (item: RepairQueueItem, variables: TVariables) => RepairQueueItem;
-}
-
-export const useRepairQueueOptimisticMutation = <
-  TData,
-  TVariables extends { taskId: string },
->({
-  mutationFn,
-  updateItem,
-}: UseRepairQueueOptimisticMutationOptions<TData, TVariables>) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn,
-    onMutate: async (variables: TVariables) => {
-      await queryClient.cancelQueries({ queryKey: REPAIR_QUEUE_QUERY_KEY });
-
-      const previousQueries =
-        queryClient.getQueriesData<ListRepairQueueResponse>({
-          queryKey: REPAIR_QUEUE_QUERY_KEY,
-        });
-
-      const targetTaskId = variables.taskId;
-
-      queryClient.setQueriesData<ListRepairQueueResponse>(
-        { queryKey: REPAIR_QUEUE_QUERY_KEY },
-        (oldData) => {
-          if (!oldData || !oldData.repairQueueItems) {
-            return oldData;
-          }
-          let inProgressDelta = 0;
-          const updatedItems = oldData.repairQueueItems.map((item) => {
-            if (item.taskId === targetTaskId) {
-              const wasClaimed = Boolean(item.claimedBy?.trim());
-              const updated = updateItem(item, variables);
-              const isClaimed = Boolean(updated.claimedBy?.trim());
-              if (!wasClaimed && isClaimed) {
-                inProgressDelta = 1;
-              } else if (wasClaimed && !isClaimed) {
-                inProgressDelta = -1;
-              }
-              return updated;
-            }
-            return item;
-          });
-          return {
-            ...oldData,
-            repairQueueItems: updatedItems,
-            inProgressCount: Math.max(
-              0,
-              (oldData.inProgressCount ?? 0) + inProgressDelta,
-            ),
-          };
-        },
-      );
-
-      return { previousQueries };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousQueries) {
-        for (const [queryKey, data] of context.previousQueries) {
-          queryClient.setQueryData(queryKey, data);
-        }
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: REPAIR_QUEUE_QUERY_KEY });
-    },
-  });
-};
 
 export const useClaimRepairTask = () => {
   const client = useFleetConsoleClient();
@@ -115,8 +37,10 @@ export const useClaimRepairTask = () => {
 
   return useRepairQueueOptimisticMutation<
     ClaimRepairTaskResponse,
-    ClaimRepairTaskRequest
+    ClaimRepairTaskRequest,
+    RepairQueueItem
   >({
+    queryKey: REPAIR_QUEUE_QUERY_KEY,
     mutationFn: (req: ClaimRepairTaskRequest) => client.ClaimRepairTask(req),
     updateItem: (item) => ({
       ...item,
@@ -131,8 +55,10 @@ export const useUnclaimRepairTask = () => {
 
   return useRepairQueueOptimisticMutation<
     UnclaimRepairTaskResponse,
-    UnclaimRepairTaskRequest
+    UnclaimRepairTaskRequest,
+    RepairQueueItem
   >({
+    queryKey: REPAIR_QUEUE_QUERY_KEY,
     mutationFn: (req: UnclaimRepairTaskRequest) =>
       client.UnclaimRepairTask(req),
     updateItem: (item) => ({
