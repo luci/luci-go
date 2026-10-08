@@ -67,17 +67,18 @@ type Artifact struct {
 // artifacts. See also ArtifactQuery.
 var tmplQueryArtifacts = template.Must(template.New("artifactQuery").Parse(`
 @{USE_ADDITIONAL_PARALLELISM=TRUE}
+{{ if .JoinWithTestResults }}
 WITH VariantsWithUnexpectedResults AS (
 	SELECT DISTINCT TestId, VariantHash
 	FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
-	WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+	WHERE IsUnexpected AND InvocationId IN UNNEST(@allInvIDs)
 ),
 VariantsWithUnexpectedResultsOnly AS (
 	SELECT TestId, VariantHash
 	FROM VariantsWithUnexpectedResults vur
 		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr
 			USING (TestId, VariantHash)
-	WHERE InvocationId IN UNNEST(@invIDs)
+	WHERE InvocationId IN UNNEST(@allInvIDs)
 	GROUP BY TestId, VariantHash
 	HAVING LOGICAL_AND(IFNULL(IsUnexpected, false))
 ),
@@ -103,6 +104,7 @@ FilteredTestResults AS (
 		AND (SELECT LOGICAL_AND(kv IN UNNEST(Variant)) FROM UNNEST(@variantContains) kv)
 {{ end }}
 )
+{{ end }}
 SELECT InvocationId, ParentId, ArtifactId, ContentType, ArtifactType, Size,
 {{ if .Q.WithRBECASHash }}
 	RBECASHash,
@@ -119,11 +121,15 @@ LEFT JOIN FilteredTestResults tr USING (InvocationId, ParentId)
 {{ end }}
 WHERE art.InvocationId IN UNNEST(@invIDs)
 {{ if .Params.afterInvocationId }}
-	# Skip artifacts after the one specified in the page token.
-	AND (
-		(art.InvocationId > @afterInvocationId) OR
-		(art.InvocationId = @afterInvocationId AND art.ParentId > @afterParentId) OR
-		(art.InvocationId = @afterInvocationId AND art.ParentId = @afterParentId AND art.ArtifactId > @afterArtifactId)
+	# Skip artifacts up to the one specified in the page token.
+	# @invIDs is already filtered in Go to only include invocations >= @afterInvocationId.
+	# Using IF(...) keeps the primary key seek on InvocationId IN UNNEST(@invIDs) (seekable_key_size: 1)
+	# instead of intersecting @invIDs with a 3-way OR across 3 key columns, which otherwise causes
+	# Spanner to fan out across all splits of the Artifacts table when @invIDs is large.
+	AND IF(art.InvocationId = @afterInvocationId,
+		(art.ParentId > @afterParentId) OR
+		(art.ParentId = @afterParentId AND art.ArtifactId > @afterArtifactId),
+		TRUE
 	)
 {{ end }}
 {{ if .Params.ParentIdRegexp }}
@@ -151,7 +157,6 @@ func (q *Query) genStmt(ctx context.Context) (spanner.Statement, error) {
 
 	// Prepare query params.
 	params := map[string]any{}
-	params["invIDs"] = q.InvocationIDs
 	params["limit"] = q.PageSize
 	addREParamMaybe(params, "contentTypeRegexp", q.ContentTypeRegexp)
 	addREParamMaybe(params, "artifactTypeRegexp", q.ArtifactTypeRegexp)
@@ -162,9 +167,21 @@ func (q *Query) genStmt(ctx context.Context) (spanner.Statement, error) {
 		return spanner.Statement{}, err
 	}
 
+	invIDs := q.InvocationIDs
+	if afterInvID := params["afterInvocationId"].(invocations.ID); afterInvID != "" {
+		afterRowID := afterInvID.RowID()
+		invIDs = make(invocations.IDSet, len(q.InvocationIDs))
+		for id := range q.InvocationIDs {
+			if id.RowID() >= afterRowID {
+				invIDs.Add(id)
+			}
+		}
+	}
+	params["invIDs"] = invIDs
+
 	testresults.PopulateVariantParams(params, q.TestResultPredicate.GetVariant())
 
-	// Prepeare statement generation input.
+	// Prepare statement generation input.
 	var input struct {
 		JoinWithTestResults       bool
 		InterestingTestResults    bool
@@ -186,6 +203,9 @@ func (q *Query) genStmt(ctx context.Context) (spanner.Statement, error) {
 			input.OnlyUnexpectedTestResults = true
 		}
 	}
+	if input.JoinWithTestResults {
+		params["allInvIDs"] = q.InvocationIDs
+	}
 	input.Q = q
 
 	st, err := spanutil.GenerateStatement(tmplQueryArtifacts, input)
@@ -197,6 +217,9 @@ func (q *Query) Run(ctx context.Context, f func(*Artifact) error) (err error) {
 	st, err := q.genStmt(ctx)
 	if err != nil {
 		return err
+	}
+	if len(st.Params["invIDs"].(invocations.IDSet)) == 0 {
+		return nil
 	}
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {

@@ -119,14 +119,27 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		return nil, appstatus.BadRequest(err)
 	}
 
+	includeFetchURL, err := readMask.Includes("fetch_url")
+	if err != nil {
+		return nil, err
+	}
+	includeGcsURI, err := readMask.Includes("gcs_uri")
+	if err != nil {
+		return nil, err
+	}
+	includeRbeURI, err := readMask.Includes("rbe_uri")
+	if err != nil {
+		return nil, err
+	}
+
 	// Prepare the query.
 	q := artifacts.Query{
 		PageSize:       pagination.AdjustPageSize(in.PageSize),
 		PageToken:      in.PageToken,
 		InvocationIDs:  invocations.NewIDSet(queryInvocationID),
 		ParentIDRegexp: parentIDRegexp,
-		WithGcsURI:     true,
-		WithRbeURI:     true,
+		WithGcsURI:     includeGcsURI != mask.Exclude || includeFetchURL != mask.Exclude,
+		WithRbeURI:     includeRbeURI != mask.Exclude || includeFetchURL != mask.Exclude,
 		Mask:           readMask,
 	}
 
@@ -136,10 +149,6 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		return nil, err
 	}
 
-	includeFetchURL, err := readMask.Includes("fetch_url")
-	if err != nil {
-		return nil, err
-	}
 	if includeFetchURL == mask.IncludeEntirely {
 		workUnitIDToProject := map[workunits.ID]string{}
 		invocationIDToProject := map[invocations.ID]string{}

@@ -126,6 +126,19 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 
+	includeFetchURL, err := readMask.Includes("fetch_url")
+	if err != nil {
+		return nil, err
+	}
+	includeGcsURI, err := readMask.Includes("gcs_uri")
+	if err != nil {
+		return nil, err
+	}
+	includeRbeURI, err := readMask.Includes("rbe_uri")
+	if err != nil {
+		return nil, err
+	}
+
 	// Query artifacts.
 	q := &artifacts.Query{
 		InvocationIDs:       reachableInvIDs,
@@ -136,8 +149,8 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		ContentTypeRegexp:   in.GetPredicate().GetContentTypeRegexp(),
 		ArtifactIDRegexp:    in.GetPredicate().GetArtifactIdRegexp(),
 		ArtifactTypeRegexp:  in.GetPredicate().GetArtifactTypeRegexp(),
-		WithGcsURI:          true,
-		WithRbeURI:          true,
+		WithGcsURI:          includeGcsURI != mask.Exclude || includeFetchURL != mask.Exclude,
+		WithRbeURI:          includeRbeURI != mask.Exclude || includeFetchURL != mask.Exclude,
 		Mask:                readMask,
 	}
 
@@ -155,22 +168,17 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 
-	workUnitIDToProject := make(map[workunits.ID]string, len(reachableInvs.Invocations))
-	invocationIDToProject := make(map[invocations.ID]string, len(reachableInvs.Invocations))
-	for invID, ri := range reachableInvs.Invocations {
-		p, _ := realms.Split(ri.Realm)
-		invocationIDToProject[invID] = p
-		if invID.IsWorkUnit() {
-			wuID := workunits.MustParseLegacyInvocationID(invID)
-			workUnitIDToProject[wuID] = p
-		}
-	}
-
-	includeFetchURL, err := readMask.Includes("fetch_url")
-	if err != nil {
-		return nil, err
-	}
 	if includeFetchURL == mask.IncludeEntirely {
+		workUnitIDToProject := make(map[workunits.ID]string, len(reachableInvs.Invocations))
+		invocationIDToProject := make(map[invocations.ID]string, len(reachableInvs.Invocations))
+		for invID, ri := range reachableInvs.Invocations {
+			p, _ := realms.Split(ri.Realm)
+			invocationIDToProject[invID] = p
+			if invID.IsWorkUnit() {
+				wuID := workunits.MustParseLegacyInvocationID(invID)
+				workUnitIDToProject[wuID] = p
+			}
+		}
 		if err := s.populateFetchURLs(ctx, workUnitIDToProject, invocationIDToProject, arts...); err != nil {
 			return nil, err
 		}

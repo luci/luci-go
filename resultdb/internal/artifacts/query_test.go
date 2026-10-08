@@ -363,6 +363,60 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, token, should.BeEmpty)
 			})
 
+			t.Run(`Across multiple invocations`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
+					insert.Invocation("inv0", pb.Invocation_ACTIVE, nil),
+					insert.Invocation("inv2", pb.Invocation_ACTIVE, nil),
+					insert.Artifact("inv0", "", "b0", nil),
+					insert.Artifact("inv0", "", "b1", nil),
+					insert.Artifact("inv2", "", "c0", nil),
+					insert.Artifact("inv2", "", "c1", nil),
+				)
+				q.InvocationIDs = invocations.NewIDSet("inv0", "inv1", "inv2")
+				sortedInvs := q.InvocationIDs.SortByRowID()
+
+				// Fetch all in one page first to get the expected order.
+				allArts, token := mustFetch(q)
+				assert.Loosely(t, token, should.BeEmpty)
+				assert.Loosely(t, allArts, should.HaveLength(9))
+
+				// Paginate 2 items at a time and verify @invIDs pruning.
+				var pagedNames []string
+				pageToken := ""
+				for {
+					qPage := *q
+					qPage.PageSize = 2
+					qPage.PageToken = pageToken
+					if pageToken != "" {
+						st, err := qPage.genStmt(ctx)
+						assert.Loosely(t, err, should.BeNil)
+						afterInvID := st.Params["afterInvocationId"].(invocations.ID)
+						prunedInvs := st.Params["invIDs"].(invocations.IDSet)
+						for _, id := range sortedInvs {
+							if id.RowID() < afterInvID.RowID() {
+								assert.Loosely(t, prunedInvs.Has(id), should.BeFalse)
+							} else {
+								assert.Loosely(t, prunedInvs.Has(id), should.BeTrue)
+							}
+						}
+					}
+					arts, nextTok := mustFetch(&qPage)
+					for _, a := range arts {
+						pagedNames = append(pagedNames, a.Name)
+					}
+					if nextTok == "" {
+						break
+					}
+					pageToken = nextTok
+				}
+
+				expectedNames := make([]string, len(allArts))
+				for i, a := range allArts {
+					expectedNames[i] = a.Name
+				}
+				assert.Loosely(t, pagedNames, should.Match(expectedNames))
+			})
+
 			t.Run(`Bad token`, func(t *ftt.Test) {
 				q.PageToken = "CgVoZWxsbw=="
 				_, _, err := q.FetchProtos(span.Single(ctx))
