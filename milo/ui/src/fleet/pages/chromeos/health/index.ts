@@ -28,3 +28,8 @@ export {
   HealthFilterBar,
   type HealthFilterBarProps,
 } from './health_filter_bar';
+export {
+  getHourAlignedTimeWindow,
+  RECENT_HOURS_WINDOW,
+  RANKING_HOURS_WINDOW,
+} from './time_window_utils';

@@ -298,10 +298,14 @@ describe('PerformanceRankingCard', () => {
     const poolsTab = screen.getByRole('tab', { name: /^pools$/i });
     fireEvent.click(poolsTab);
 
-    // Verify spy was called with TrendlineGrouping.GROUP_BY_POOL
+    // Verify spy was called with TrendlineGrouping.GROUP_BY_POOL and 26-hour aligned window
     expect(useTrendsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         grouping: TrendlineGrouping.GROUP_BY_POOL,
+        startTime: expect.stringMatching(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:00:00\.000Z$/,
+        ),
+        endTime: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:00:00\.000Z$/),
       }),
     );
 

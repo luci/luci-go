@@ -293,6 +293,10 @@ describe('HealthSlicesCard', () => {
     expect(trendsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         grouping: TrendlineGrouping.GROUP_BY_OVERALL,
+        startTime: expect.stringMatching(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:00:00\.000Z$/,
+        ),
+        endTime: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:00:00\.000Z$/),
         filter: expect.stringContaining('model = "volteer"'),
       }),
     );

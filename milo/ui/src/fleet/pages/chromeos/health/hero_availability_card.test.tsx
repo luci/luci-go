@@ -358,4 +358,34 @@ describe('HeroAvailabilityCard', () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it('requests a 2-hour hour-aligned time window for query deduplication', () => {
+    const trendsSpy = jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <HeroAvailabilityCard filter={'model = "volteer"'} />
+      </FakeContextProvider>,
+    );
+
+    expect(trendsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startTime: expect.stringMatching(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:00:00\.000Z$/,
+        ),
+        endTime: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:00:00\.000Z$/),
+        filter: 'model = "volteer"',
+      }),
+    );
+  });
 });

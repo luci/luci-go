@@ -33,6 +33,10 @@ import {
 
 import { BaselineChip } from './baseline_chip';
 import { getHealthStatus } from './health_status_utils';
+import {
+  getHourAlignedTimeWindow,
+  RECENT_HOURS_WINDOW,
+} from './time_window_utils';
 import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
 
 export interface HealthSliceItemProps {
@@ -59,15 +63,16 @@ export const HealthSliceItem = ({
     return globalFilter.trim() === sliceFilter.trim();
   }, [globalFilter, sliceFilter]);
 
-  const queryRequest = useMemo(
-    () => ({
+  const queryRequest = useMemo(() => {
+    const { startTime, endTime } =
+      getHourAlignedTimeWindow(RECENT_HOURS_WINDOW);
+    return {
       grouping: TrendlineGrouping.GROUP_BY_OVERALL,
-      startTime: undefined,
-      endTime: undefined,
+      startTime,
+      endTime,
       filter: effectiveFilter,
-    }),
-    [effectiveFilter],
-  );
+    };
+  }, [effectiveFilter]);
 
   const { data: trendsData, isLoading } =
     useFleetAvailabilityTrends(queryRequest);

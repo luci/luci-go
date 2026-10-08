@@ -46,6 +46,10 @@ import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/ap
 import { HEALTH_FILTER_CONFIGS } from './filter_constants';
 import { getHealthStatus } from './health_status_utils';
 import { calculate24hDelta } from './ranking_utils';
+import {
+  getHourAlignedTimeWindow,
+  RANKING_HOURS_WINDOW,
+} from './time_window_utils';
 import { useFleetAvailabilityTrends } from './use_fleet_availability_trends';
 
 export type RankingEntityTab = 'models' | 'pools';
@@ -73,18 +77,19 @@ export const PerformanceRankingCard = ({
   const [entityTab, setEntityTab] = useState<RankingEntityTab>('models');
   const [sortBy, setSortBy] = useState<RankingSortOption>('availability');
 
-  const queryRequest = useMemo(
-    () => ({
+  const queryRequest = useMemo(() => {
+    const { startTime, endTime } =
+      getHourAlignedTimeWindow(RANKING_HOURS_WINDOW);
+    return {
       grouping:
         entityTab === 'models'
           ? TrendlineGrouping.GROUP_BY_MODEL
           : TrendlineGrouping.GROUP_BY_POOL,
-      startTime: undefined,
-      endTime: undefined,
+      startTime,
+      endTime,
       filter,
-    }),
-    [entityTab, filter],
-  );
+    };
+  }, [entityTab, filter]);
 
   // Uses GetFleetAvailabilityTrends until the dedicated QueryPerformanceRankings RPC lands.
   const { data, isLoading, isError } = useFleetAvailabilityTrends(queryRequest);
