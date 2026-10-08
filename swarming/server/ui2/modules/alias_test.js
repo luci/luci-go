@@ -60,6 +60,9 @@ describe("alias", function () {
       expect(applyAlias("Windows-11-26200", "os")).toBe(
         "Windows 11 version 25H2 (Windows-11-26200)"
       );
+      expect(applyAlias("Windows-11-26300", "os")).toBe(
+        "Windows 11 version 26H2 (Windows-11-26300)"
+      );
       expect(applyAlias("Windows-Server-14393", "os")).toBe(
         "Windows Server 2016 (Windows-Server-14393)"
       );
