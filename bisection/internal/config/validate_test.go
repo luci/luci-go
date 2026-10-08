@@ -211,6 +211,7 @@ func TestValidateGerritConfig(t *testing.T) {
 			cfg.SubmitRevertSettings.Enabled = true
 			assert.Loosely(t, validate("chromium", cfg), should.BeNil)
 			assert.Loosely(t, validate("chrome", cfg), should.BeNil)
+			assert.Loosely(t, validate("dawn", cfg), should.BeNil)
 		})
 	})
 }

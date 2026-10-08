@@ -24,9 +24,9 @@ import (
 
 // IsProjectAuthorizedForGerritActions returns true if the project is authorized
 // to configure and perform Gerrit actions (e.g. creating/submitting reverts).
-// Currently only "chromium" and "chrome" are authorized.
+// Currently only "chromium", "chrome", and "dawn" are authorized.
 func IsProjectAuthorizedForGerritActions(project string) bool {
-	if project == "chromium" || project == "chrome" {
+	if project == "chromium" || project == "chrome" || project == "dawn" {
 		return true
 	}
 	return false
