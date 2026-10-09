@@ -17,6 +17,8 @@ package write_test
 import (
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
@@ -81,6 +83,51 @@ func TestAddStageCancellation(t *testing.T) {
 		StageCancellations: []*orchestratorpb.WriteNodesRequest_StageCancellation{
 			orchestratorpb.WriteNodesRequest_StageCancellation_builder{
 				Identifier: ids.Stage("stg"),
+			}.Build(),
+		},
+	}.Build()))
+}
+
+func makeStageAttr(name, expr string) *orchestratorpb.WriteNodesRequest_StageAttributeWrite {
+	return orchestratorpb.WriteNodesRequest_StageAttributeWrite_builder{
+		Name:       proto.String(name),
+		Expression: proto.String(expr),
+	}.Build()
+}
+
+func TestStageWrite_AddAttributes(t *testing.T) {
+	t.Parallel()
+
+	sw := write.StageWrite{Msg: &orchestratorpb.WriteNodesRequest_StageWrite{}}
+	attr1 := makeStageAttr("custom.attr1", "stage.concluded_reason == 'SUCCESS'")
+	attr2 := makeStageAttr("custom.attr2", "tags.stage.attempt.detail.hasKey('bar')")
+
+	sw.AddAttributes(attr1)
+	sw.AddAttributes(attr2)
+
+	assert.That(t, sw.Msg.GetAttributes(), should.Match([]*orchestratorpb.WriteNodesRequest_StageAttributeWrite{
+		attr1,
+		attr2,
+	}))
+}
+
+func TestAddNewStage_AddAttributes(t *testing.T) {
+	t.Parallel()
+
+	req := write.NewRequest()
+	stg := req.AddNewStage(ids.Stage("stage_id"), boolData)
+	attr := makeStageAttr("custom.attr", "stage.concluded_reason == 'SUCCESS'")
+
+	stg.AddAttributes(attr)
+
+	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
+		Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
+			orchestratorpb.WriteNodesRequest_StageWrite_builder{
+				Identifier: ids.Stage("stage_id"),
+				Args:       value.MustWrite(boolData, value.RealmFromContainer),
+				Attributes: []*orchestratorpb.WriteNodesRequest_StageAttributeWrite{
+					attr,
+				},
 			}.Build(),
 		},
 	}.Build()))

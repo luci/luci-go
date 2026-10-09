@@ -39,6 +39,11 @@ func (cw CheckWrite) AddResultData(rslt ...*orchestratorpb.ValueWrite) {
 	cw.Msg.SetResultData(append(cw.Msg.GetResultData(), rslt...))
 }
 
+// AddAttributes appends one or more check attribute writes.
+func (cw CheckWrite) AddAttributes(attrs ...*orchestratorpb.WriteNodesRequest_CheckAttributeWrite) {
+	cw.Msg.SetAttributes(append(cw.Msg.GetAttributes(), attrs...))
+}
+
 // AddNewCheck adds a new CheckWrite to the request for the creation of
 // a new Check (i.e. the writer believes the check does not already exist in the
 // graph).

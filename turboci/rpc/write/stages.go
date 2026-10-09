@@ -50,6 +50,11 @@ func (sw StageWrite) AddCheckAssignment(id *idspb.Check, goalState orchestratorp
 	return ret
 }
 
+// AddAttributes appends one or more stage attribute writes.
+func (sw StageWrite) AddAttributes(attrs ...*orchestratorpb.WriteNodesRequest_StageAttributeWrite) {
+	sw.Msg.SetAttributes(append(sw.Msg.GetAttributes(), attrs...))
+}
+
 // AddNewStage adds a new stage to the WriteNodesRequest.
 //
 // Assumes [value.RealmFromContainer] as the args realm (you can override this

@@ -103,3 +103,48 @@ func TestCheckAddNew(t *testing.T) {
 		},
 	}.Build()))
 }
+
+func makeCheckAttr(name, expr string) *orchestratorpb.WriteNodesRequest_CheckAttributeWrite {
+	return orchestratorpb.WriteNodesRequest_CheckAttributeWrite_builder{
+		Name:       proto.String(name),
+		Expression: proto.String(expr),
+	}.Build()
+}
+
+func TestCheckWrite_AddAttributes(t *testing.T) {
+	t.Parallel()
+
+	cw := write.CheckWrite{Msg: &orchestratorpb.WriteNodesRequest_CheckWrite{}}
+	attr1 := makeCheckAttr("custom.attr1", "tags.check.options.hasKey('foo')")
+	attr2 := makeCheckAttr("custom.attr2", "tags.check.result.data.getIntValues('count').first() > 0")
+
+	cw.AddAttributes(attr1)
+	cw.AddAttributes(attr2)
+
+	assert.That(t, cw.Msg.GetAttributes(), should.Match([]*orchestratorpb.WriteNodesRequest_CheckAttributeWrite{
+		attr1,
+		attr2,
+	}))
+}
+
+func TestAddNewCheck_AddAttributes(t *testing.T) {
+	t.Parallel()
+
+	req := write.NewRequest()
+	chk := req.AddNewCheck(ids.Check("check_id"), orchestratorpb.CheckKind_CHECK_KIND_BUILD)
+	attr := makeCheckAttr("custom.attr", "true")
+
+	chk.AddAttributes(attr)
+
+	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
+		Checks: []*orchestratorpb.WriteNodesRequest_CheckWrite{
+			orchestratorpb.WriteNodesRequest_CheckWrite_builder{
+				Identifier: ids.Check("check_id"),
+				Kind:       orchestratorpb.CheckKind_CHECK_KIND_BUILD.Enum(),
+				Attributes: []*orchestratorpb.WriteNodesRequest_CheckAttributeWrite{
+					attr,
+				},
+			}.Build(),
+		},
+	}.Build()))
+}
