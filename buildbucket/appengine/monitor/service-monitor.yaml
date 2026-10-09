@@ -27,6 +27,8 @@ inbound_services:
 
 instance_class: B4
 
+# Note -internal-request-timeout is effectively ignored. See main.go for where
+# the actual timeout is set.
 entrypoint: >
   main
   -auth-service-host ${AUTH_SERVICE_HOST}
@@ -37,7 +39,7 @@ entrypoint: >
   -ds-connection-pool-size 8
   -redis-addr ${REDIS_ADDR}
   -ds-cache ${DS_CACHE}
-  -internal-request-timeout 20m
+  -internal-request-timeout 60m
 
 handlers:
 - url: /.*

@@ -85,8 +85,15 @@ func main() {
 		}
 
 		cron.RegisterHandler("report_builder_metrics", func(_ context.Context) error {
-			// allow at most 10 mins to run.
-			ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+			// Note we specifically use `ctx` from the outer scope, not the one passed
+			// to the handler. That way we pick up custom tsmon state associated with
+			// it, while still allowing server.Server report its own built-in metrics
+			// normally (since we didn't touch tsmon state in srv.Context). As
+			// a downside, logs from this handler are attributed to the server as
+			// a whole, not individual cron request invocation. And we need to
+			// maintain the timeout manually as well, since the server sets it only in
+			// the context which we ignore.
+			ctx, cancel := context.WithTimeout(ctx, 20*time.Minute)
 			defer cancel()
 
 			start := clock.Now(ctx)
