@@ -103,7 +103,7 @@ func (r *RootStep) RunSubstep(ctx context.Context, sub SubstepFn) error {
 	}
 	r.initFn()
 
-	done := make(chan error)
+	done := make(chan error, 1)
 	r.substep <- substep{fn: sub, done: done}
 
 	// Either current context or RootStep is canceled/finished.
