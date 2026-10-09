@@ -37,6 +37,7 @@ entrypoint: >
   -ds-connection-pool-size 8
   -redis-addr ${REDIS_ADDR}
   -ds-cache ${DS_CACHE}
+  -internal-request-timeout 20m
 
 handlers:
 - url: /.*
