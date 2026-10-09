@@ -45,7 +45,7 @@ export const enableChromeOsRepairsDashboard = createFeatureFlag({
     prod: 0,
   },
   trackingBug: '542600108',
-  allowedEnvironments: ['dev'],
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const enableAndroidHealthMetrics = createFeatureFlag({
