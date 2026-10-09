@@ -100,6 +100,28 @@ func TestBuilder(t *testing.T) {
 			assert.Loosely(t, pkg.Action.Name, should.Equal("first"))
 		})
 
+		t.Run("runtime dependency on already referenced derivation", func(t *ftt.Test) {
+			dep, err := (&Generator{Name: "runtime_dep"}).Generate(ctx, generators.Platforms{})
+			assert.Loosely(t, err, should.BeNil)
+
+			pkgs, err := b.GeneratePackages(ctx, []generators.Generator{
+				&Generator{Name: "shared"},
+				&Generator{
+					Name: "shared",
+					Metadata: &core.Action_Metadata{
+						RuntimeDeps: []*core.Action{dep},
+					},
+				},
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pkgs[0].DerivationID, should.Equal(pkgs[1].DerivationID))
+
+			err = b.BuildPackages(ctx, pe, pkgs, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, func() { MustIncRefRecursiveRuntime(pkgs[1]) }, should.NotPanic)
+			assert.Loosely(t, func() { MustDecRefRecursiveRuntime(pkgs[1]) }, should.NotPanic)
+		})
+
 		t.Run("prePrepare", func(t *ftt.Test) {
 			var res string
 			pe = NewPackageExecutor("", PackageExecutorConfig{

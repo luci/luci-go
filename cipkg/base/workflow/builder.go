@@ -126,7 +126,15 @@ func NewPackageExecutor(tempDir string, cfg PackageExecutorConfig) *PackageExecu
 // preExpandFn will be invoked on the package before on it's dependencies.
 func (p *PackageExecutor) Expand(ctx context.Context, pkg actions.Package) ([]actions.Package, error) {
 	if _, ok := p.refs[pkg.DerivationID]; ok {
-		return []actions.Package{pkg}, nil
+		var newPkgs []actions.Package
+		for _, d := range pkg.RuntimeDependencies {
+			pkgs, err := p.Expand(ctx, d)
+			if err != nil {
+				return nil, err
+			}
+			newPkgs = append(newPkgs, pkgs...)
+		}
+		return append(newPkgs, pkg), nil
 	}
 
 	// PreExpandHook is promised to be executed on the package before all its
