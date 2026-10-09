@@ -210,3 +210,14 @@ func TestRead(t *testing.T) {
 		})
 	})
 }
+
+func TestLevenshteinDistance(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`LevenshteinDistance`, t, func(t *ftt.Test) {
+		assert.Loosely(t, LevenshteinDistance("cat", "cat"), should.Equal(0))
+		assert.Loosely(t, LevenshteinDistance("cat", "bat"), should.Equal(1))
+		assert.Loosely(t, LevenshteinDistance("kitten", "sitting"), should.Equal(3))
+		assert.Loosely(t, LevenshteinDistance("", "abc"), should.Equal(3))
+		assert.Loosely(t, LevenshteinDistance("abc", ""), should.Equal(3))
+	})
+}

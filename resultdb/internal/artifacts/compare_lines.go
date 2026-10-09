@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"io"
 	"regexp"
+	"strings"
 	"unicode/utf8"
 
 	farm "github.com/leemcloughlin/gofarmhash"
@@ -190,14 +191,16 @@ func ProcessFailingReader(ctx context.Context, r io.Reader, comparisonHashes map
 		_, present := comparisonHashes[h]
 
 		if !present { // This is a failure-only line.
+			if view == pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT {
+				if totalContentBytesInResponse+int64(len(line))+1 > maxContentBytes {
+					return iterator.Done
+				}
+			}
 			if rangeStartLine == -1 {
 				rangeStartLine = currentLine
 				rangeStartByte = currentByte
 			}
 			if view == pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT {
-				if totalContentBytesInResponse+int64(len(line))+1 > maxContentBytes {
-					return iterator.Done
-				}
 				if currentRangeContent.Len() > 0 {
 					currentRangeContent.WriteByte('\n')
 					totalContentBytesInResponse += 1
@@ -233,9 +236,13 @@ func ProcessFailingReader(ctx context.Context, r io.Reader, comparisonHashes map
 	pageFull := err == iterator.Done
 
 	// If a range was still open when we finished, close it.
-	if rangeStartLine != -1 && !pageFull {
+	if rangeStartLine != -1 {
+		endLine := lastProcessedLine + 1
+		if pageFull {
+			endLine = lastProcessedLine
+		}
 		r := &pb.CompareArtifactLinesResponse_FailureOnlyRange{
-			StartLine: rangeStartLine, EndLine: lastProcessedLine + 1,
+			StartLine: rangeStartLine, EndLine: endLine,
 			StartByte: rangeStartByte, EndByte: lastProcessedByte,
 		}
 		if view == pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT {
@@ -261,6 +268,7 @@ func hashLine(line []byte) (int64, error) {
 		return 0, errBinaryFileDetected
 	}
 	normalized := normalizeRegex.ReplaceAllString(string(line), "")
+	normalized = strings.Join(strings.Fields(normalized), " ")
 	return int64(farm.FingerPrint64([]byte(normalized))), nil
 }
 

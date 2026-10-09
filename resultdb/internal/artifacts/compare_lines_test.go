@@ -71,6 +71,16 @@ func TestProcessComparisonReader(t *testing.T) {
 			_, err := ProcessComparisonReader(context.Background(), reader)
 			assert.Loosely(t, err, should.Equal(errBinaryFileDetected))
 		})
+
+		t.Run("normalizes logcat lines across varying PID/TID widths and numeric UID columns", func(t *ftt.Test) {
+			// 3-digit PID/TID vs 4-digit PID/TID vs numeric UID column.
+			line3DigitPID := "10-04 21:26:23.472  1000   901   901 D SDM     : ScalarConfig::DumpPipeInputParams"
+			line4DigitPID := "10-04 21:26:23.589  1000  1234  5678 D SDM     : ScalarConfig::DumpPipeInputParams"
+			lineNoUID := "10-04 20:48:26.091  1234  5678 D SDM     : ScalarConfig::DumpPipeInputParams"
+
+			assert.Loosely(t, mustHash(line3DigitPID), should.Equal(mustHash(line4DigitPID)))
+			assert.Loosely(t, mustHash(line3DigitPID), should.Equal(mustHash(lineNoUID)))
+		})
 	})
 }
 
@@ -183,6 +193,30 @@ line f`
 			// Token should point to the start of the line that exceeded the content limit.
 			assert.Loosely(t, pt.NextLineNumber, should.Equal(int32(startOfNextPageLine)))
 			assert.Loosely(t, pt.NextByteOffset, should.Equal(int64(startOfNextPageByte)))
+		})
+		t.Run("paginates a single contiguous failure range exceeding maxContentBytes", func(t *ftt.Test) {
+			var content strings.Builder
+			failingLineChunk := strings.Repeat("x", 50*1024-1)
+			numChunksToFit := maxContentBytes / (len(failingLineChunk) + 1)
+
+			for i := 0; i < numChunksToFit+1; i++ {
+				content.WriteString(failingLineChunk)
+				content.WriteString("\n")
+			}
+
+			reader := strings.NewReader(content.String())
+			resp, err := ProcessFailingReader(context.Background(), reader, make(map[int64]struct{}), pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT, 1000, 0, 0)
+
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.NextPageToken, should.NotBeEmpty)
+			assert.Loosely(t, len(resp.FailureOnlyRanges), should.Equal(1))
+			assert.Loosely(t, resp.FailureOnlyRanges[0].StartLine, should.Equal(int32(0)))
+			assert.Loosely(t, resp.FailureOnlyRanges[0].EndLine, should.Equal(int32(numChunksToFit)))
+			assert.Loosely(t, len(resp.FailureOnlyRanges[0].Lines), should.Equal(numChunksToFit))
+
+			pt, _ := decodePageToken(resp.NextPageToken)
+			assert.Loosely(t, pt.NextLineNumber, should.Equal(int32(numChunksToFit)))
+			assert.Loosely(t, pt.NextByteOffset, should.Equal(int64(numChunksToFit*(len(failingLineChunk)+1))))
 		})
 		t.Run("File ends without a trailing newline", func(t *ftt.Test) {
 			// This tests that the final `remainder` buffer is processed correctly.

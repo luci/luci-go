@@ -16,6 +16,7 @@ package resultdb
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -378,6 +380,154 @@ func TestCompareArtifactLines(t *testing.T) {
 			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
 			assert.Loosely(t, res.Artifacts, should.HaveLength(1))
 			assert.Loosely(t, res.Artifacts[0], should.Equal("invocations/inv-pass-gcs/tests/t/results/r-pass/artifacts/a"))
+		})
+
+		t.Run("Fuzzy matching - fallback and prioritization", func(t *ftt.Test) {
+			// Setup:
+			// inv-fail: artifact "log-123.txt"
+			// inv-pass-1: artifact "log-123.txt" (exact match)
+			// inv-pass-2: artifact "log-456.txt" (fuzzy match)
+			// inv-pass-3: artifact "other.txt" (no match)
+			muts := []*spanner.Mutation{
+				insert.Invocation("inv-fail-fuzzy", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-fail-fuzzy", "tr/t/r", "log-123.txt", map[string]any{"RBECASHash": "rbscas-hash-fail"}),
+				insert.Invocation("inv-pass-exact", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-pass-exact", "tr/t/r", "log-123.txt", map[string]any{"RBECASHash": "rbscas-hash-pass"}),
+				insert.Invocation("inv-pass-fuzzy", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-pass-fuzzy", "tr/t/r", "log-456.txt", map[string]any{"RBECASHash": "rbscas-hash-pass"}),
+			}
+			muts = append(muts, insertTestResultLegacy(t, "inv-fail-fuzzy", "t", "r", pb.TestStatus_FAIL)...)
+			muts = append(muts, insertTestResultLegacy(t, "inv-pass-exact", "t", "r", pb.TestStatus_PASS)...)
+			muts = append(muts, insertTestResultLegacy(t, "inv-pass-fuzzy", "t", "r", pb.TestStatus_PASS)...)
+			testutil.MustApply(ctx, t, muts...)
+
+			// Scenario 1: Fallback to fuzzy match when exact is missing.
+			req := &pb.CompareArtifactLinesRequest{
+				Name:           "invocations/inv-fail-fuzzy/tests/t/results/r/artifacts/log-123.txt",
+				PassingResults: []string{"invocations/inv-pass-fuzzy/tests/t/results/r"},
+			}
+			res, err := srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Artifacts, should.Match([]string{
+				"invocations/inv-pass-fuzzy/tests/t/results/r/artifacts/log-456.txt",
+			}))
+
+			// Scenario 2: Prioritize exact match over fuzzy match.
+			req = &pb.CompareArtifactLinesRequest{
+				Name: "invocations/inv-fail-fuzzy/tests/t/results/r/artifacts/log-123.txt",
+				PassingResults: []string{
+					"invocations/inv-pass-fuzzy/tests/t/results/r",
+					"invocations/inv-pass-exact/tests/t/results/r",
+				},
+			}
+			res, err = srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			// Should have both, but exact should be first if we returned all.
+			assert.Loosely(t, res.Artifacts, should.Match([]string{
+				"invocations/inv-pass-exact/tests/t/results/r/artifacts/log-123.txt",
+				"invocations/inv-pass-fuzzy/tests/t/results/r/artifacts/log-456.txt",
+			}))
+
+			// Scenario 3: V2 passing result fuzzy match.
+			ri := &rootinvocations.RootInvocationRow{
+				RootInvocationID:  "inv-pass-v2-fuzzy",
+				Realm:             "testproject:testrealm",
+				FinalizationState: pb.RootInvocation_ACTIVE,
+				CreateTime:        time.Now(),
+			}
+			wuID := workunits.ID{RootInvocationID: "inv-pass-v2-fuzzy", WorkUnitID: "root"}
+			v2Muts := insert.RootInvocationWithRootWorkUnit(ri)
+			v2Muts = append(v2Muts, insert.Artifact(wuID.LegacyInvocationID(), "tr/t/r", "log-789.txt", map[string]any{"RBECASHash": "rbscas-hash-pass"}))
+			testutil.MustApply(ctx, t, v2Muts...)
+
+			req = &pb.CompareArtifactLinesRequest{
+				Name:           "invocations/inv-fail-fuzzy/tests/t/results/r/artifacts/log-123.txt",
+				PassingResults: []string{"rootInvocations/inv-pass-v2-fuzzy/workUnits/root/tests/t/results/r"},
+			}
+			res, err = srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Artifacts, should.Match([]string{
+				"rootInvocations/inv-pass-v2-fuzzy/workUnits/root/tests/t/results/r/artifacts/log-789.txt",
+			}))
+
+			// Scenario 4: V2 work-unit-level artifact fuzzy match and ancestor work-unit traversal.
+			riWu := &rootinvocations.RootInvocationRow{
+				RootInvocationID:  "inv-fail-wu",
+				Realm:             "testproject:testrealm",
+				FinalizationState: pb.RootInvocation_ACTIVE,
+				CreateTime:        time.Now(),
+			}
+			failWUID := workunits.ID{RootInvocationID: "inv-fail-wu", WorkUnitID: "root"}
+			riPassWu := &rootinvocations.RootInvocationRow{
+				RootInvocationID:  "inv-pass-wu",
+				Realm:             "testproject:testrealm",
+				FinalizationState: pb.RootInvocation_ACTIVE,
+				CreateTime:        time.Now(),
+			}
+			passParentWUID := workunits.ID{RootInvocationID: "inv-pass-wu", WorkUnitID: "root"}
+			passChildWUID := workunits.ID{RootInvocationID: "inv-pass-wu", WorkUnitID: "child"}
+			wuMuts := insert.RootInvocationWithRootWorkUnit(riWu)
+			wuMuts = append(wuMuts, insert.Artifact(failWUID.LegacyInvocationID(), "", "logcat_111.txt", map[string]any{"RBECASHash": "rbscas-hash-fail"}))
+			wuMuts = append(wuMuts, insert.RootInvocationWithRootWorkUnit(riPassWu)...)
+			wuMuts = append(wuMuts, insert.WorkUnit(&workunits.WorkUnitRow{
+				ID:                passChildWUID,
+				ParentWorkUnitID:  spanner.NullString{StringVal: "root", Valid: true},
+				Realm:             "secretproject:testrealm",
+				State:             pb.WorkUnit_SUCCEEDED,
+				FinalizationState: pb.WorkUnit_FINALIZED,
+			})...)
+			// Attach the passing work-unit artifact to the parent work unit ("root", where the caller has access),
+			// while the passing test result is on "child" (where the caller lacks access).
+			wuMuts = append(wuMuts, insert.Artifact(passParentWUID.LegacyInvocationID(), "", "logcat_222.txt", map[string]any{"RBECASHash": "rbscas-hash-pass"}))
+			testutil.MustApply(ctx, t, wuMuts...)
+
+			req = &pb.CompareArtifactLinesRequest{
+				Name:           "rootInvocations/inv-fail-wu/workUnits/root/artifacts/logcat_111.txt",
+				PassingResults: []string{"rootInvocations/inv-pass-wu/workUnits/child/tests/t/results/r"},
+			}
+			res, err = srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Artifacts, should.Match([]string{
+				"rootInvocations/inv-pass-wu/workUnits/root/artifacts/logcat_222.txt",
+			}))
+		})
+
+		t.Run("Parallel processing and failure handling", func(t *ftt.Test) {
+			// Setup 15 passing results.
+			// 1-5: Permission Denied
+			// 6-15: Success
+			muts := []*spanner.Mutation{
+				insert.Invocation("inv-fail-parallel", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-fail-parallel", "tr/t/r", "log.txt", map[string]any{"RBECASHash": "rbscas-hash-fail"}),
+			}
+			muts = append(muts, insertTestResultLegacy(t, "inv-fail-parallel", "t", "r", pb.TestStatus_FAIL)...)
+
+			var passingResults []string
+			for i := 1; i <= 15; i++ {
+				invID := fmt.Sprintf("inv-pass-%d", i)
+				realm := "testproject:testrealm"
+				if i <= 5 {
+					realm = "secretproject:testrealm"
+				}
+				muts = append(muts, insert.Invocation(invocations.ID(invID), pb.Invocation_FINALIZED, map[string]any{"Realm": realm}))
+				muts = append(muts, insert.Artifact(invocations.ID(invID), "tr/t/r", "log.txt", map[string]any{"RBECASHash": "rbscas-hash-pass"}))
+				muts = append(muts, insertTestResultLegacy(t, invID, "t", "r", pb.TestStatus_PASS)...)
+				passingResults = append(passingResults, fmt.Sprintf("invocations/%s/tests/t/results/r", invID))
+			}
+			testutil.MustApply(ctx, t, muts...)
+
+			req := &pb.CompareArtifactLinesRequest{
+				Name:           "invocations/inv-fail-parallel/tests/t/results/r/artifacts/log.txt",
+				PassingResults: passingResults,
+			}
+			res, err := srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			// Should have 10 artifacts (the ones from 6 to 15).
+			assert.Loosely(t, len(res.Artifacts), should.Equal(10))
+			for _, art := range res.Artifacts {
+				assert.Loosely(t, art, should.NotContainSubstring("inv-pass-1/"))
+				assert.Loosely(t, art, should.NotContainSubstring("inv-pass-5/"))
+			}
 		})
 	})
 }
