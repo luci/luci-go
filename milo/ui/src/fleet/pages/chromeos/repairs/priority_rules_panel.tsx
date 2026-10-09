@@ -14,9 +14,9 @@
 
 import { usePriorityRulesPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { PriorityRulesPanel as SharedPriorityRulesPanel } from '@/fleet/components/repair_queue/priority_rules_panel';
-import { useChromeOSFilterBuilders } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_filters';
 
 import { usePriorityRules } from './use_priority_rules';
+import { useRepairQueueFilterBuilders } from './use_repair_queue_filter_builders';
 
 export const PriorityRulesPanel = () => {
   const {
@@ -33,7 +33,7 @@ export const PriorityRulesPanel = () => {
   } = usePriorityRules();
 
   const { filterBuilders, isLoading: isBuildersLoading } =
-    useChromeOSFilterBuilders();
+    useRepairQueueFilterBuilders();
   const { hasPermission } = usePriorityRulesPermission();
   const canEdit = hasPermission === true;
 

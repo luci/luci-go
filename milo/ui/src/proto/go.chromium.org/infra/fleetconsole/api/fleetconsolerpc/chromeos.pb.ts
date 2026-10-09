@@ -741,6 +741,7 @@ export interface RepairQueueItem {
   readonly modelHealthPct?: number | undefined;
   readonly priorityScore: string;
   readonly matchedRuleIds: readonly string[];
+  readonly deviceId: string;
 }
 
 export interface ListRepairQueueResponse {
@@ -5873,6 +5874,7 @@ function createBaseRepairQueueItem(): RepairQueueItem {
     modelHealthPct: undefined,
     priorityScore: "0",
     matchedRuleIds: [],
+    deviceId: "",
   };
 }
 
@@ -5919,6 +5921,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     for (const v of message.matchedRuleIds) {
       writer.uint32(112).int64(v);
+    }
+    if (message.deviceId !== "") {
+      writer.uint32(122).string(message.deviceId);
     }
     return writer;
   },
@@ -6051,6 +6056,14 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
 
           break;
         }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.deviceId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6078,6 +6091,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
       matchedRuleIds: globalThis.Array.isArray(object?.matchedRuleIds)
         ? object.matchedRuleIds.map((e: unknown) => globalThis.String(e))
         : [],
+      deviceId: isSet(object.deviceId) ? globalThis.String(object.deviceId) : "",
     };
   },
 
@@ -6125,6 +6139,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.matchedRuleIds?.length) {
       obj.matchedRuleIds = message.matchedRuleIds;
     }
+    if (message.deviceId !== "") {
+      obj.deviceId = message.deviceId;
+    }
     return obj;
   },
 
@@ -6147,6 +6164,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.modelHealthPct = object.modelHealthPct ?? undefined;
     message.priorityScore = object.priorityScore ?? "0";
     message.matchedRuleIds = object.matchedRuleIds?.map((e) => e) || [];
+    message.deviceId = object.deviceId ?? "";
     return message;
   },
 };

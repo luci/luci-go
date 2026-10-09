@@ -26,6 +26,8 @@ import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
+import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
+import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { DutStateCell } from '@/fleet/pages/device_list_page/chromeos/dut_state_cell';
 import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
@@ -46,7 +48,7 @@ export type RepairQueueColumnDef = MRT_ColumnDef<RepairQueueRow>;
 
 export const REPAIR_QUEUE_COLUMN_IDS = [
   'rank',
-  'dut_id',
+  'id',
   'label-pool',
   'label-model',
   'dut_state',
@@ -61,6 +63,24 @@ export interface UseRepairQueueColumnsOptions {
   pageSize?: number;
 }
 
+const BaseDeviceIdCell = renderCellWithLink<RepairQueueRow>({
+  linkGenerator: (value) => {
+    const trimmed = (value ?? '').trim();
+    if (!trimmed) {
+      return '';
+    }
+    return generateChromeOsDeviceDetailsURL(trimmed);
+  },
+  newTab: true,
+});
+
+const DeviceIdCell = (props: FC_CellProps<RepairQueueRow>) => {
+  const value = String(props.cell.getValue() ?? '').trim();
+  if (!value) {
+    return <EllipsisTooltip>-</EllipsisTooltip>;
+  }
+  return <BaseDeviceIdCell {...props} />;
+};
 export const useRepairQueueColumns = ({
   pageIndex = 0,
   pageSize = 100,
@@ -96,16 +116,14 @@ export const useRepairQueueColumns = ({
         },
       },
       {
-        id: 'dut_id',
-        header: 'Dut ID',
-        accessorKey: 'dutId',
+        id: 'id',
+        header: 'ID',
+        accessorFn: (row) => row.deviceId || '',
         size: 100,
         minSize: 70,
         maxSize: 700,
         enableSorting: false,
-        Cell: ({ cell }: FC_CellProps<RepairQueueRow>) => (
-          <EllipsisTooltip>{cell.getValue<string>()}</EllipsisTooltip>
-        ),
+        Cell: DeviceIdCell,
       },
       {
         id: 'label-pool',

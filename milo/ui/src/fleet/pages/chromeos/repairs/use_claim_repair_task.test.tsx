@@ -44,6 +44,7 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
     priorityScore: '0',
     matchedRuleIds: [],
+    deviceId: 'chromeos-host-1',
   },
   {
     taskId: '102',
@@ -58,6 +59,7 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
     priorityScore: '0',
     matchedRuleIds: [],
+    deviceId: 'chromeos-host-2',
   },
 ];
 
@@ -285,6 +287,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
             bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
             priorityScore: '0',
             matchedRuleIds: [],
+            deviceId: 'chromeos-only-dut',
           },
         ],
         nextPageToken: '',

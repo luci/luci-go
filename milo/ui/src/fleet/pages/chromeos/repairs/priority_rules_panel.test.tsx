@@ -25,8 +25,8 @@ import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import * as UsePriorityRulesModule from '@/fleet/pages/chromeos/repairs/use_priority_rules';
+import * as UseRepairQueueFilterBuildersModule from '@/fleet/pages/chromeos/repairs/use_repair_queue_filter_builders';
 import { ChromeOSFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
-import * as UseChromeOSFiltersModule from '@/fleet/pages/device_list_page/chromeos/use_chromeos_filters';
 import { PriorityRule } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -109,7 +109,7 @@ describe('<PriorityRulesPanel />', () => {
     setupMockPermissions(true);
 
     jest
-      .spyOn(UseChromeOSFiltersModule, 'useChromeOSFilterBuilders')
+      .spyOn(UseRepairQueueFilterBuildersModule, 'useRepairQueueFilterBuilders')
       .mockReturnValue({
         filterBuilders: createMockFilterBuilders(),
         isLoading: false,

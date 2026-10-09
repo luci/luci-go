@@ -62,11 +62,11 @@ interface CoreRepairColumnConfig {
 
 const CORE_REPAIR_COLUMNS: readonly CoreRepairColumnConfig[] = [
   {
-    filterKey: 'dut_id',
-    header: 'Dut ID',
-    dimensionSourceKey: 'dut_id',
-    // `dut_name` holds the same hostname under a different key.
-    supersededLabelKeys: ['dut_id', 'dut_name'],
+    filterKey: 'device_id',
+    header: 'ID',
+    dimensionSourceKey: 'id',
+    // `id`, `device_id`, `dut_id`, and `dut_name` hold the same identifier under different keys.
+    supersededLabelKeys: ['id', 'device_id', 'dut_id', 'dut_name'],
   },
   {
     filterKey: 'pools',

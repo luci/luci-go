@@ -69,6 +69,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     modelHealthPct: 0.95,
     priorityScore: '650',
     matchedRuleIds: [],
+    deviceId: 'chromeos15-row2-rack3-host4',
   },
   {
     taskId: '102',
@@ -85,6 +86,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     modelHealthPct: 0.7,
     priorityScore: '500',
     matchedRuleIds: [],
+    deviceId: 'chromeos15-row2-rack3-host5',
   },
 ];
 
@@ -199,7 +201,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     const columnHeaders = screen.getAllByRole('columnheader');
     const expectedHeaders = [
       'Rank',
-      'Dut ID',
+      'ID',
       'Pool',
       'Model',
       'State',
@@ -232,6 +234,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         modelHealthPct: 0.95,
         priorityScore: '400',
         matchedRuleIds: [],
+        deviceId: 'chromeos15-row2-rack3-host6',
       },
       {
         taskId: '104',
@@ -245,6 +248,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         poolHealthPct: 0.85,
         priorityScore: '300',
         matchedRuleIds: [],
+        deviceId: 'chromeos15-row2-rack3-host7',
       },
       {
         taskId: '105',
@@ -257,6 +261,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: PeripheralState.PERIPHERAL_STATE_NOT_APPLICABLE,
         priorityScore: '200',
         matchedRuleIds: [],
+        deviceId: 'chromeos15-row2-rack3-host8',
       },
       {
         taskId: '106',
@@ -271,6 +276,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         modelHealthPct: 0.0,
         priorityScore: '100',
         matchedRuleIds: [],
+        deviceId: 'chromeos15-row2-rack3-host9',
       },
     ];
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -303,6 +309,15 @@ describe('<ChromeOSRepairDashboard />', () => {
     const row1 = screen.getByText('chromeos15-row2-rack3-host4').closest('tr');
     expect(row1).not.toBeNull();
     expect(within(row1!).getByText('1')).toBeInTheDocument();
+    const idLink = within(row1!).getByRole('link', {
+      name: 'chromeos15-row2-rack3-host4',
+    });
+    expect(idLink).toBeInTheDocument();
+    expect(idLink).toHaveAttribute(
+      'href',
+      '/ui/fleet/p/chromeos/devices/chromeos15-row2-rack3-host4',
+    );
+    expect(idLink).toHaveAttribute('target', '_blank');
     expect(within(row1!).getByText('+650 pts')).toBeInTheDocument();
 
     expect(screen.getByText('chromeos15-row2-rack3-host5')).toBeInTheDocument();
@@ -392,6 +407,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: 0,
         priorityScore: '0',
         matchedRuleIds: [],
+        deviceId: 'fallback-dut-1',
       },
       {
         dutId: 'fallback-dut-2',
@@ -404,6 +420,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: 0,
         priorityScore: '100',
         matchedRuleIds: [],
+        deviceId: 'fallback-dut-2',
       },
       {
         dutId: 'fallback-dut-3',
@@ -416,6 +433,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: 0,
         priorityScore: '',
         matchedRuleIds: [],
+        deviceId: 'fallback-dut-3',
       },
       {
         dutId: 'fallback-dut-4',
@@ -428,6 +446,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: 0,
         priorityScore: undefined,
         matchedRuleIds: [],
+        deviceId: 'fallback-dut-4',
       },
     ];
 
@@ -482,6 +501,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: 0,
         priorityScore: '',
         matchedRuleIds: [],
+        deviceId: 'score-empty-dut',
       },
       {
         dutId: 'score-undefined-dut',
@@ -494,6 +514,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         bluetoothState: 0,
         priorityScore: undefined,
         matchedRuleIds: [],
+        deviceId: 'score-undefined-dut',
       },
     ];
 
@@ -538,6 +559,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             claimedAt: undefined,
             priorityScore: '0',
             matchedRuleIds: [],
+            deviceId: 'chromeos15-row2-rack3-host6',
           },
         ],
         totalSize: 3,
@@ -624,6 +646,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
       priorityScore: '0',
       matchedRuleIds: [],
+      deviceId: 'chromeos15-row2-rack3-host7',
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -758,6 +781,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
       priorityScore: '0',
       matchedRuleIds: [],
+      deviceId: 'chromeos15-row2-rack3-host7',
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -914,6 +938,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           bluetoothState: 0,
           priorityScore: '120',
           matchedRuleIds: [],
+          deviceId: 'chromeos15-p2-item1',
         },
         {
           dutId: 'chromeos15-p2-item2',
@@ -926,6 +951,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           bluetoothState: 0,
           priorityScore: '90',
           matchedRuleIds: [],
+          deviceId: 'chromeos15-p2-item2',
         },
       ];
 
@@ -974,6 +1000,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           bluetoothState: 0,
           priorityScore: maxInt64,
           matchedRuleIds: [],
+          deviceId: 'dut-extreme-max',
         },
         {
           dutId: 'dut-extreme-min',
@@ -986,6 +1013,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           bluetoothState: 0,
           priorityScore: minInt64,
           matchedRuleIds: [],
+          deviceId: 'dut-extreme-min',
         },
         {
           dutId: 'dut-negative-score',
@@ -998,6 +1026,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           bluetoothState: 0,
           priorityScore: '-75',
           matchedRuleIds: [],
+          deviceId: 'dut-negative-score',
         },
         {
           dutId: 'dut-zero-score',
@@ -1010,6 +1039,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           bluetoothState: 0,
           priorityScore: '0',
           matchedRuleIds: [],
+          deviceId: 'dut-zero-score',
         },
       ];
 
@@ -1168,9 +1198,10 @@ describe('<ChromeOSRepairDashboard />', () => {
       ).toBeInTheDocument();
     });
 
-    it('does not render row selection checkboxes and starts rows with Rank and Dut ID', async () => {
+    it('does not render row selection checkboxes, starts rows with Rank and ID, and links ID to device details', async () => {
       const queueItems: readonly RepairQueueItem[] = [
         {
+          deviceId: 'device-select-1',
           dutId: 'dut-select-1',
           pools: ['quota'],
           model: 'volteer',
@@ -1199,22 +1230,69 @@ describe('<ChromeOSRepairDashboard />', () => {
 
       renderDashboard();
 
-      const row = (await screen.findByText('dut-select-1')).closest('tr');
+      const row = (await screen.findByText('device-select-1')).closest('tr');
       expect(row).not.toBeNull();
 
       // Row selection checkboxes should be disabled
       expect(within(row!).queryByRole('checkbox')).not.toBeInTheDocument();
 
-      // Verify cells in row: column 0 = Rank, column 1 = Dut ID
+      // Verify cells in row: column 0 = Rank, column 1 = ID
       const cells = within(row!).getAllByRole('cell');
       expect(cells).toHaveLength(9);
       // Cell 0 contains Rank '1'
       expect(within(cells[0]).getByText('1')).toBeInTheDocument();
-      // Cell 1 contains Dut ID 'dut-select-1'
-      expect(within(cells[1]).getByText('dut-select-1')).toBeInTheDocument();
+      // Cell 1 contains ID 'device-select-1' and links to device details
+      const idLink = within(cells[1]).getByRole('link', {
+        name: 'device-select-1',
+      });
+      expect(idLink).toBeInTheDocument();
+      expect(idLink).toHaveAttribute(
+        'href',
+        '/ui/fleet/p/chromeos/devices/device-select-1',
+      );
+      expect(idLink).toHaveAttribute('target', '_blank');
       // Cell 8 contains Priority Score '+100 pts' with 13px font size
       const scoreText = within(cells[8]).getByText('+100 pts');
       expect(scoreText).toHaveStyle({ fontSize: '13px' });
+    });
+
+    it('renders placeholder dash when deviceId is empty and does not fall back to dutId', async () => {
+      const queueItems: readonly RepairQueueItem[] = [
+        {
+          deviceId: '',
+          dutId: 'dut-no-fallback',
+          pools: ['quota'],
+          model: 'volteer',
+          state: 'needs_repair',
+          taskId: 'task-no-fb',
+          servoState: 0,
+          wifiState: 0,
+          bluetoothState: 0,
+          priorityScore: '100',
+          matchedRuleIds: [],
+        },
+      ];
+
+      jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+        data: {
+          repairQueueItems: queueItems,
+          totalSize: 1,
+          nextPageToken: '',
+        },
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+      renderDashboard();
+
+      const row = (await screen.findByText('quota')).closest('tr');
+      expect(row).not.toBeNull();
+      expect(screen.queryByText('dut-no-fallback')).not.toBeInTheDocument();
+      const cells = within(row!).getAllByRole('cell');
+      expect(within(cells[1]).getByText('-')).toBeInTheDocument();
     });
 
     it('configures columns in expected order with compact rank and priority score sizes and sorting disabled', () => {
@@ -1230,7 +1308,7 @@ describe('<ChromeOSRepairDashboard />', () => {
 
       expect(result.current.columns.map((col) => col.id)).toEqual([
         'rank',
-        'dut_id',
+        'id',
         'label-pool',
         'label-model',
         'dut_state',
@@ -1359,6 +1437,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             bluetoothState: 0,
             priorityScore: '650',
             matchedRuleIds: ['rule-1', 'rule-2'],
+            deviceId: 'dut-multi-match',
           },
         ];
 
@@ -1427,6 +1506,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             bluetoothState: 0,
             priorityScore: '-50',
             matchedRuleIds: ['rule-3'],
+            deviceId: 'dut-demoted',
           },
         ];
 
@@ -1472,6 +1552,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             bluetoothState: 0,
             priorityScore: '0',
             matchedRuleIds: [],
+            deviceId: 'dut-no-match',
           },
         ];
 
@@ -1532,6 +1613,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             bluetoothState: 0,
             priorityScore: '100',
             matchedRuleIds: ['rule-999'],
+            deviceId: 'dut-orphan-rule',
           },
         ];
 
@@ -1601,6 +1683,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             bluetoothState: 0,
             priorityScore: '25',
             matchedRuleIds: ['rule-long'],
+            deviceId: 'dut-long-rule',
           },
         ];
 

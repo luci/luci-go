@@ -58,7 +58,7 @@ describe('useRepairQueueFilterBuilders', () => {
     // dimensions, everything else arrives under labels.
     mockDimensions({
       baseDimensions: {
-        dut_id: { values: ['chromeos1-row2-rack3-host4'] },
+        id: { values: ['chromeos1-row2-rack3-host4'] },
         state: { values: ['ready'] },
       },
       labels: {
@@ -76,10 +76,10 @@ describe('useRepairQueueFilterBuilders', () => {
 
     const builders = result.current.filterBuilders;
 
-    // The base dimension `id` is not a repair_tasks column, so it is not offered.
+    // The base dimension `id` is not exposed directly; it is mapped to `device_id`.
     expect(builders.id).toBeUndefined();
 
-    expect(optionValues(builders.dut_id)).toEqual([
+    expect(optionValues(builders.device_id)).toEqual([
       BLANK_VALUE,
       'chromeos1-row2-rack3-host4',
     ]);
@@ -100,7 +100,7 @@ describe('useRepairQueueFilterBuilders', () => {
       'repair_failed',
     ]);
 
-    expect(builders.dut_id.label).toBe('Dut ID');
+    expect(builders.device_id.label).toBe('ID');
     expect(builders.board.label).toBe('Board');
     expect(builders.model.label).toBe('Model');
     expect(builders.pools.label).toBe('Pool');
@@ -131,7 +131,7 @@ describe('useRepairQueueFilterBuilders', () => {
     expect(result.current.isLoading).toBe(true);
 
     const builders = result.current.filterBuilders;
-    expect(builders.dut_id).toBeDefined();
+    expect(builders.device_id).toBeDefined();
     expect(builders.id).toBeUndefined();
     expect(builders.pools).toBeDefined();
     expect(builders.model).toBeDefined();
@@ -179,18 +179,22 @@ describe('useRepairQueueFilterBuilders', () => {
     expect(builders.claimed_by).toBeUndefined();
   });
 
-  it('drops dut_name, which duplicates the dut_id column', () => {
+  it('drops dut_name, dut_id, and id, which duplicate the ID column', () => {
     mockDimensions({
-      baseDimensions: { dut_id: { values: ['dut-1'] } },
+      baseDimensions: { id: { values: ['dut-1'] } },
       labels: {
+        id: { values: ['dut-1'] },
         dut_name: { values: ['dut-1'] },
+        dut_id: { values: ['dut-1'] },
         'label-phase': { values: ['MP'] },
       },
     });
 
     const builders = renderFilterBuilders().result.current.filterBuilders;
 
+    expect(builders['labels."id"']).toBeUndefined();
     expect(builders['labels."dut_name"']).toBeUndefined();
+    expect(builders['labels."dut_id"']).toBeUndefined();
     expect(builders['labels."label-phase"']).toBeDefined();
   });
 
