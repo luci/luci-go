@@ -42,17 +42,21 @@ import (
 
 // ExtractedIDs holds all extracted resource identifiers.
 type ExtractedIDs struct {
-	BuildID      string `json:"build_id,omitempty"`
-	InvocationID string `json:"invocation_id,omitempty"`
-	StepName     string `json:"step_name,omitempty"`
-	LogName      string `json:"log_name,omitempty"`
-	ModuleName   string `json:"module_name,omitempty"`
-	WorkUnitID   string `json:"work_unit_id,omitempty"`
-	TestID       string `json:"test_id,omitempty"`
-	ResultID     string `json:"result_id,omitempty"`
-	ArtifactID   string `json:"artifact_id,omitempty"`
-	VariantHash  string `json:"variant_hash,omitempty"`
-	Legacy       bool   `json:"legacy,omitempty"`
+	Project          string `json:"project,omitempty"`
+	RuleID           string `json:"rule_id,omitempty"`
+	ClusterAlgorithm string `json:"cluster_algorithm,omitempty"`
+	ClusterID        string `json:"cluster_id,omitempty"`
+	BuildID          string `json:"build_id,omitempty"`
+	InvocationID     string `json:"invocation_id,omitempty"`
+	StepName         string `json:"step_name,omitempty"`
+	LogName          string `json:"log_name,omitempty"`
+	ModuleName       string `json:"module_name,omitempty"`
+	WorkUnitID       string `json:"work_unit_id,omitempty"`
+	TestID           string `json:"test_id,omitempty"`
+	ResultID         string `json:"result_id,omitempty"`
+	ArtifactID       string `json:"artifact_id,omitempty"`
+	VariantHash      string `json:"variant_hash,omitempty"`
+	Legacy           bool   `json:"legacy,omitempty"`
 
 	// builder, buildNumber, and logdogStreamPath are unexported internal fields used during ID extraction
 	// to query Buildbucket for the build ID or canonical step/log names. They are not output.
@@ -64,7 +68,11 @@ type ExtractedIDs struct {
 
 // IsEmpty returns true if no identifiers were extracted.
 func (e *ExtractedIDs) IsEmpty() bool {
-	return e.BuildID == "" &&
+	return e.Project == "" &&
+		e.RuleID == "" &&
+		e.ClusterAlgorithm == "" &&
+		e.ClusterID == "" &&
+		e.BuildID == "" &&
 		e.InvocationID == "" &&
 		e.StepName == "" &&
 		e.LogName == "" &&
@@ -81,8 +89,8 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "ids [-json] <target>",
 		ShortDesc: "Extract resource IDs from a URL or resource name",
-		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog URLs, ResultDB resource names, and AnTS / ATI URLs)\n" +
-			"and extract the canonical IDs (-buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
+		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog / LUCI Analysis URLs, ResultDB / LUCI Analysis resource names, and AnTS / ATI URLs)\n" +
+			"and extract the canonical IDs (-project, -ruleid, -buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
 			"for use with other commands.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &idsRun{af: af}
@@ -168,38 +176,50 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 	}
 
 	// Aligned human-readable output
+	if extracted.Project != "" {
+		fmt.Fprintf(out, "Project:           %s\n", extracted.Project)
+	}
+	if extracted.RuleID != "" {
+		fmt.Fprintf(out, "Rule ID:           %s\n", extracted.RuleID)
+	}
+	if extracted.ClusterAlgorithm != "" {
+		fmt.Fprintf(out, "Cluster Algorithm: %s\n", extracted.ClusterAlgorithm)
+	}
+	if extracted.ClusterID != "" {
+		fmt.Fprintf(out, "Cluster ID:        %s\n", extracted.ClusterID)
+	}
 	if extracted.BuildID != "" {
-		fmt.Fprintf(out, "Build ID:      %s\n", extracted.BuildID)
+		fmt.Fprintf(out, "Build ID:          %s\n", extracted.BuildID)
 	}
 	if extracted.InvocationID != "" {
-		fmt.Fprintf(out, "Invocation ID: %s\n", extracted.InvocationID)
+		fmt.Fprintf(out, "Invocation ID:     %s\n", extracted.InvocationID)
 	}
 	if extracted.StepName != "" {
-		fmt.Fprintf(out, "Step Name:     %s\n", extracted.StepName)
+		fmt.Fprintf(out, "Step Name:         %s\n", extracted.StepName)
 	}
 	if extracted.LogName != "" {
-		fmt.Fprintf(out, "Log Name:      %s\n", extracted.LogName)
+		fmt.Fprintf(out, "Log Name:          %s\n", extracted.LogName)
 	}
 	if extracted.ModuleName != "" {
-		fmt.Fprintf(out, "Module Name:   %s\n", extracted.ModuleName)
+		fmt.Fprintf(out, "Module Name:       %s\n", extracted.ModuleName)
 	}
 	if extracted.WorkUnitID != "" {
-		fmt.Fprintf(out, "Work Unit ID:  %s\n", extracted.WorkUnitID)
+		fmt.Fprintf(out, "Work Unit ID:      %s\n", extracted.WorkUnitID)
 	}
 	if extracted.TestID != "" {
-		fmt.Fprintf(out, "Test ID:       %s\n", extracted.TestID)
+		fmt.Fprintf(out, "Test ID:           %s\n", extracted.TestID)
 	}
 	if extracted.ResultID != "" {
-		fmt.Fprintf(out, "Result ID:     %s\n", extracted.ResultID)
+		fmt.Fprintf(out, "Result ID:         %s\n", extracted.ResultID)
 	}
 	if extracted.ArtifactID != "" {
-		fmt.Fprintf(out, "Artifact ID:   %s\n", extracted.ArtifactID)
+		fmt.Fprintf(out, "Artifact ID:       %s\n", extracted.ArtifactID)
 	}
 	if extracted.VariantHash != "" {
-		fmt.Fprintf(out, "Variant Hash:  %s\n", extracted.VariantHash)
+		fmt.Fprintf(out, "Variant Hash:      %s\n", extracted.VariantHash)
 	}
 	if extracted.Legacy {
-		fmt.Fprintf(out, "Legacy:        true (subsequent commands require -legacy)\n")
+		fmt.Fprintf(out, "Legacy:            true (subsequent commands require -legacy)\n")
 		fmt.Fprintf(out, "\nNote: This is a legacy invocation. You will need to pass the -legacy flag to subsequent commands (e.g. 'luci verdict', 'luci test-result', 'luci test-result artifact').\n")
 	}
 
@@ -220,7 +240,7 @@ func ExtractIDs(ctx context.Context, rdbClient pb.ResultDBClient, bbClient grpcp
 	// 1. Android Test Investigate (ATI) URL or AnTS target
 	if ok, err := extractFromAntsTarget(ctx, rdbClient, raw, extracted); err != nil {
 		return nil, err
-	} else if !ok && !extractFromLogDogBuildURL(raw, extracted) {
+	} else if !ok && !extractFromLogDogBuildURL(raw, extracted) && !extractFromLUCIAnalysisTarget(raw, extracted) {
 		clean := base.TrimResourceURL(raw)
 
 		// 2. Milo module URL without test cases: .../modules/<module>
@@ -676,6 +696,71 @@ func isAllDigits(s string) bool {
 	return true
 }
 
+// extractFromLUCIAnalysisTarget handles LUCI Analysis rule and cluster URLs and resource names
+// without making any network calls:
+// - Web URLs:
+//   - https://luci-analysis.appspot.com/p/<project>/rules/<id>
+//   - https://luci-milo.appspot.com/ui/tests/p/<project>/rules/<id>
+//   - https://ci.chromium.org/ui/tests/p/<project>/rules/<id>
+//   - https://.../p/<project>/clusters/<alg>/<id>
+//
+// - Canonical resource names:
+//   - projects/<project>/rules/<id>
+//   - projects/<project>/clusters/<alg>/<id>[/failures]
+func extractFromLUCIAnalysisTarget(raw string, extracted *ExtractedIDs) bool {
+	clean := strings.TrimSpace(raw)
+	if idx := strings.IndexAny(clean, "?#"); idx != -1 {
+		clean = clean[:idx]
+	}
+	clean = strings.TrimRight(clean, "/")
+
+	// 1. Canonical LUCI Analysis resource names:
+	//    projects/<project>/rules/<id> or projects/<project>/clusters/<alg>/<id>[/failures]
+	res := clean
+	if idx := strings.Index(clean, "/projects/"); idx != -1 {
+		res = clean[idx+1:]
+	}
+	if strings.HasPrefix(res, "projects/") {
+		if applyAnalysisResourceSegments(strings.Split(strings.TrimPrefix(res, "projects/"), "/"), extracted) {
+			return true
+		}
+	}
+
+	// 2. LUCI Analysis / Milo / CI web URLs:
+	//    .../p/<project>/rules/<id> or .../p/<project>/clusters/<alg>/<id>
+	if idx := strings.Index(clean, "/p/"); idx != -1 {
+		if applyAnalysisResourceSegments(strings.Split(clean[idx+len("/p/"):], "/"), extracted) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// applyAnalysisResourceSegments extracts Project, RuleID, ClusterAlgorithm, and ClusterID
+// from path segments starting at <project>/(rules|clusters)/... .
+func applyAnalysisResourceSegments(parts []string, extracted *ExtractedIDs) bool {
+	if len(parts) >= 3 && parts[0] != "" && parts[1] == "rules" && parts[2] != "" {
+		extracted.Project = unescapePathSegment(parts[0])
+		extracted.RuleID = unescapePathSegment(parts[2])
+		// Every LUCI Analysis rule has a corresponding rule cluster at clusters/rules/<rule_id>.
+		extracted.ClusterAlgorithm = "rules"
+		extracted.ClusterID = extracted.RuleID
+		return true
+	}
+	if len(parts) >= 4 && parts[0] != "" && parts[1] == "clusters" && parts[2] != "" && parts[3] != "" {
+		extracted.Project = unescapePathSegment(parts[0])
+		extracted.ClusterAlgorithm = unescapePathSegment(parts[2])
+		extracted.ClusterID = unescapePathSegment(parts[3])
+		// Populate RuleID automatically when the cluster algorithm is "rules" (or versioned "rules-...").
+		if strings.HasPrefix(extracted.ClusterAlgorithm, "rules") {
+			extracted.RuleID = extracted.ClusterID
+		}
+		return true
+	}
+	return false
+}
+
 // extractFromMiloTestHistoryURL handles Milo test history URLs:
 // /ui/test/:projectOrRealm/:testId
 func extractFromMiloTestHistoryURL(raw string, extracted *ExtractedIDs) bool {
@@ -700,14 +785,21 @@ func extractFromMiloTestHistoryURL(raw string, extracted *ExtractedIDs) bool {
 	if qIdx := strings.IndexAny(testIDPart, "?#"); qIdx != -1 {
 		testIDPart = testIDPart[:qIdx]
 	}
+	resolvedTestID := ""
 	if unescaped, err := url.PathUnescape(testIDPart); err == nil && unescaped != "" {
-		extracted.TestID = unescaped
-		return true
+		resolvedTestID = unescaped
 	} else if testIDPart != "" {
-		extracted.TestID = testIDPart
-		return true
+		resolvedTestID = testIDPart
 	}
-	return false
+	if resolvedTestID == "" {
+		return false
+	}
+	// Strip optional ":<subrealm>" suffix when the first segment is a full realm (e.g. "chromium:ci").
+	if projectOrRealm := unescapePathSegment(parts[0]); projectOrRealm != "" {
+		extracted.Project = strings.SplitN(projectOrRealm, ":", 2)[0]
+	}
+	extracted.TestID = resolvedTestID
+	return true
 }
 
 // extractArtifactSuffix strips /artifacts/<art_id> from a ResultDB resource name if present and sets extracted.ArtifactID.

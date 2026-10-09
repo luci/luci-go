@@ -700,12 +700,12 @@ func TestPrintExtractedIDs(t *testing.T) {
 			err := printExtractedIDs(&buf, extracted, false)
 			assert.Loosely(t, err, should.BeNil)
 			out := buf.String()
-			assert.Loosely(t, out, should.ContainSubstring("Invocation ID: build-8671749950226328289\n"))
-			assert.Loosely(t, out, should.ContainSubstring("Test ID:       ninja://chromeos:chrome_all_tast_tests/tast.cryptohome.UssMigrationPasswordPin\n"))
-			assert.Loosely(t, out, should.ContainSubstring("Result ID:     ee50005a-00024\n"))
-			assert.Loosely(t, out, should.ContainSubstring("Artifact ID:   summary_node\n"))
-			assert.Loosely(t, out, should.ContainSubstring("Variant Hash:  a24ef92542e11200\n"))
-			assert.Loosely(t, out, should.ContainSubstring("Legacy:        true (subsequent commands require -legacy)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     build-8671749950226328289\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Test ID:           ninja://chromeos:chrome_all_tast_tests/tast.cryptohome.UssMigrationPasswordPin\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Result ID:         ee50005a-00024\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Artifact ID:       summary_node\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Variant Hash:      a24ef92542e11200\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Legacy:            true (subsequent commands require -legacy)\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Note: This is a legacy invocation. You will need to pass the -legacy flag to subsequent commands (e.g. 'luci verdict', 'luci test-result', 'luci test-result artifact').\n"))
 		})
 
@@ -722,8 +722,8 @@ func TestPrintExtractedIDs(t *testing.T) {
 			err := printExtractedIDs(&buf, extracted, false)
 			assert.Loosely(t, err, should.BeNil)
 			out := buf.String()
-			assert.Loosely(t, out, should.ContainSubstring("Invocation ID: ants-i77100010600769898\n"))
-			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:  ants-wu17100269020689387\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i77100010600769898\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      ants-wu17100269020689387\n"))
 			assert.Loosely(t, out, should.NotContainSubstring("Legacy:"))
 			assert.Loosely(t, out, should.NotContainSubstring("Note: This is a legacy invocation"))
 		})
@@ -737,8 +737,8 @@ func TestPrintExtractedIDs(t *testing.T) {
 			err := printExtractedIDs(&buf, extracted, false)
 			assert.Loosely(t, err, should.BeNil)
 			out := buf.String()
-			assert.Loosely(t, out, should.ContainSubstring("Invocation ID: build-8676886509240051393\n"))
-			assert.Loosely(t, out, should.ContainSubstring("Module Name:   my_module\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     build-8676886509240051393\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Name:       my_module\n"))
 		})
 
 		t.Run(`Human-readable output with build ID does not print builder or build number`, func(t *ftt.Test) {
@@ -750,10 +750,10 @@ func TestPrintExtractedIDs(t *testing.T) {
 			err := printExtractedIDs(&buf, extracted, false)
 			assert.Loosely(t, err, should.BeNil)
 			out := buf.String()
-			assert.Loosely(t, out, should.ContainSubstring("Build ID:      8738491827364512345\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Build ID:          8738491827364512345\n"))
 			assert.Loosely(t, out, should.NotContainSubstring("Builder:"))
 			assert.Loosely(t, out, should.NotContainSubstring("Build Number:"))
-			assert.Loosely(t, out, should.ContainSubstring("Invocation ID: build-8738491827364512345\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     build-8738491827364512345\n"))
 		})
 
 		t.Run(`JSON output with legacy`, func(t *ftt.Test) {
@@ -857,8 +857,98 @@ func TestPrintExtractedIDs(t *testing.T) {
 
 			var buf bytes.Buffer
 			assert.Loosely(t, printExtractedIDs(&buf, ids3, false), should.BeNil)
-			assert.Loosely(t, buf.String(), should.ContainSubstring("Step Name:     builder cache|check if empty\n"))
-			assert.Loosely(t, buf.String(), should.ContainSubstring("Log Name:      $execution details\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Step Name:         builder cache|check if empty\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Log Name:          $execution details\n"))
+		})
+
+		t.Run(`ExtractIDs extracts LUCI Analysis rule/cluster URLs and resource names`, func(t *ftt.Test) {
+			ctx := context.Background()
+
+			// Milo / LUCI Analysis rule URLs
+			miloRuleURL := "https://luci-milo.appspot.com/ui/tests/p/turquoise/rules/32ae75255a4aa807897d8fa20137e7d5"
+			idsMilo, err := ExtractIDs(ctx, nil, nil, miloRuleURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsMilo.Project, should.Equal("turquoise"))
+			assert.Loosely(t, idsMilo.RuleID, should.Equal("32ae75255a4aa807897d8fa20137e7d5"))
+			assert.Loosely(t, idsMilo.ClusterAlgorithm, should.Equal("rules"))
+			assert.Loosely(t, idsMilo.ClusterID, should.Equal("32ae75255a4aa807897d8fa20137e7d5"))
+
+			analysisRuleURL := "https://luci-analysis.appspot.com/p/chromium/rules/deadbeef0123456789abcdef01234567"
+			idsAnalysis, err := ExtractIDs(ctx, nil, nil, analysisRuleURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsAnalysis.Project, should.Equal("chromium"))
+			assert.Loosely(t, idsAnalysis.RuleID, should.Equal("deadbeef0123456789abcdef01234567"))
+			assert.Loosely(t, idsAnalysis.ClusterAlgorithm, should.Equal("rules"))
+			assert.Loosely(t, idsAnalysis.ClusterID, should.Equal("deadbeef0123456789abcdef01234567"))
+
+			ciRuleURL := "https://ci.chromium.org/ui/tests/p/chromium/rules/0123456789abcdef0123456789abcdef?selectedMetrics=human-cls-failed-presubmit,builds-failed-due-to-flaky-tests"
+			idsCI, err := ExtractIDs(ctx, nil, nil, ciRuleURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsCI.Project, should.Equal("chromium"))
+			assert.Loosely(t, idsCI.RuleID, should.Equal("0123456789abcdef0123456789abcdef"))
+			assert.Loosely(t, idsCI.ClusterAlgorithm, should.Equal("rules"))
+			assert.Loosely(t, idsCI.ClusterID, should.Equal("0123456789abcdef0123456789abcdef"))
+
+			// Suggested cluster URL (non-rule algorithm)
+			clusterURL := "https://luci-milo.appspot.com/ui/tests/p/chromium/clusters/reason-v6/fedcba9876543210fedcba9876543210"
+			idsCluster, err := ExtractIDs(ctx, nil, nil, clusterURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsCluster.Project, should.Equal("chromium"))
+			assert.Loosely(t, idsCluster.RuleID, should.Equal(""))
+			assert.Loosely(t, idsCluster.ClusterAlgorithm, should.Equal("reason-v6"))
+			assert.Loosely(t, idsCluster.ClusterID, should.Equal("fedcba9876543210fedcba9876543210"))
+			assert.Loosely(t, idsCluster.IsEmpty(), should.BeFalse)
+
+			// Rule cluster URL (/clusters/rules/<id>) also populates RuleID
+			ruleClusterURL := "https://luci-analysis.appspot.com/p/turquoise/clusters/rules/32ae75255a4aa807897d8fa20137e7d5/"
+			idsRuleCluster, err := ExtractIDs(ctx, nil, nil, ruleClusterURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsRuleCluster.Project, should.Equal("turquoise"))
+			assert.Loosely(t, idsRuleCluster.RuleID, should.Equal("32ae75255a4aa807897d8fa20137e7d5"))
+			assert.Loosely(t, idsRuleCluster.ClusterAlgorithm, should.Equal("rules"))
+			assert.Loosely(t, idsRuleCluster.ClusterID, should.Equal("32ae75255a4aa807897d8fa20137e7d5"))
+
+			// Canonical LUCI Analysis resource names (including embedded /projects/... path and suggested cluster)
+			ruleRes, err := ExtractIDs(ctx, nil, nil, "projects/turquoise/rules/32ae75255a4aa807897d8fa20137e7d5", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ruleRes.Project, should.Equal("turquoise"))
+			assert.Loosely(t, ruleRes.RuleID, should.Equal("32ae75255a4aa807897d8fa20137e7d5"))
+			assert.Loosely(t, ruleRes.ClusterAlgorithm, should.Equal("rules"))
+			assert.Loosely(t, ruleRes.ClusterID, should.Equal("32ae75255a4aa807897d8fa20137e7d5"))
+
+			urlEmbeddedRes, err := ExtractIDs(ctx, nil, nil, "https://analysis.api.luci.app/projects/chromium/clusters/testname-v4/abcdef0123456789abcdef0123456789", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, urlEmbeddedRes.Project, should.Equal("chromium"))
+			assert.Loosely(t, urlEmbeddedRes.RuleID, should.Equal(""))
+			assert.Loosely(t, urlEmbeddedRes.ClusterAlgorithm, should.Equal("testname-v4"))
+			assert.Loosely(t, urlEmbeddedRes.ClusterID, should.Equal("abcdef0123456789abcdef0123456789"))
+
+			clusterFailuresRes, err := ExtractIDs(ctx, nil, nil, "projects/turquoise/clusters/rules/32ae75255a4aa807897d8fa20137e7d5/failures", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, clusterFailuresRes.Project, should.Equal("turquoise"))
+			assert.Loosely(t, clusterFailuresRes.RuleID, should.Equal("32ae75255a4aa807897d8fa20137e7d5"))
+			assert.Loosely(t, clusterFailuresRes.ClusterAlgorithm, should.Equal("rules"))
+			assert.Loosely(t, clusterFailuresRes.ClusterID, should.Equal("32ae75255a4aa807897d8fa20137e7d5"))
+
+			// Test history URL also populates Project
+			testHistoryRealm := "https://ci.chromium.org/ui/test/chromium:ci/ninja%3A%2F%2Fchrome%2Ftest%3Abrowser_tests%2FMyTest.Case"
+			idsHistory, err := ExtractIDs(ctx, nil, nil, testHistoryRealm, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsHistory.Project, should.Equal("chromium"))
+			assert.Loosely(t, idsHistory.TestID, should.Equal("ninja://chrome/test:browser_tests/MyTest.Case"))
+
+			// Print output formatting (text & JSON)
+			var textBuf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&textBuf, idsMilo, false), should.BeNil)
+			assert.Loosely(t, textBuf.String(), should.ContainSubstring("Project:           turquoise\n"))
+			assert.Loosely(t, textBuf.String(), should.ContainSubstring("Rule ID:           32ae75255a4aa807897d8fa20137e7d5\n"))
+			assert.Loosely(t, textBuf.String(), should.ContainSubstring("Cluster Algorithm: rules\n"))
+			assert.Loosely(t, textBuf.String(), should.ContainSubstring("Cluster ID:        32ae75255a4aa807897d8fa20137e7d5\n"))
+
+			var jsonBuf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&jsonBuf, idsMilo, true), should.BeNil)
+			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"project": "turquoise"`))
+			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"rule_id": "32ae75255a4aa807897d8fa20137e7d5"`))
 		})
 	})
 }

@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 
+	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -66,4 +67,20 @@ func (af *AuthFlags) NewLogDogClient(ctx context.Context, host string) (logdog.L
 		Options: prpc.DefaultOptions(),
 	}
 	return logdog.NewLogsPRPCClient(prpcClient), nil
+}
+
+// NewAnalysisClients creates authenticated LUCI Analysis Rules, Clusters, and TestHistory
+// pRPC clients sharing a single underlying HTTP transport against host (typically
+// chromeinfra.AnalysisHost, i.e. "analysis.api.luci.app").
+func (af *AuthFlags) NewAnalysisClients(ctx context.Context, host string) (analysispb.RulesClient, analysispb.ClustersClient, analysispb.TestHistoryClient, error) {
+	httpClient, err := af.NewHTTPClient(ctx)
+	if err != nil {
+		return nil, nil, nil, errors.Fmt("failed to create http client: %w", err)
+	}
+	prpcClient := &prpc.Client{
+		C:       httpClient,
+		Host:    host,
+		Options: prpc.DefaultOptions(),
+	}
+	return analysispb.NewRulesClient(prpcClient), analysispb.NewClustersClient(prpcClient), analysispb.NewTestHistoryClient(prpcClient), nil
 }

@@ -73,6 +73,9 @@ const (
 	// UFSStagingHost is the URL of the staging ufs service.
 	UFSStagingHost = "staging.ufs.api.cr.dev"
 
+	// AnalysisHost is the hostname of the production LUCI Analysis service.
+	AnalysisHost = "analysis.api.luci.app"
+
 	// ResultDBHost is the hostname of the production ResultDB service.
 	ResultDBHost = "results.api.luci.app"
 
