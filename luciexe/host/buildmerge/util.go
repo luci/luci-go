@@ -70,9 +70,11 @@ func isAbs(url string) bool {
 		case 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z':
 		// always valid
 		case '0' <= c && c <= '9' || c == '+' || c == '-' || c == '.':
-			if i != 0 {
+			if i == 0 {
 				return false
 			}
+		default:
+			return false
 		}
 	}
 	return true

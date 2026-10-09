@@ -37,6 +37,11 @@ func TestAbsolutize(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, absLogURL, should.Equal("url://ns/log/foo"))
 			assert.Loosely(t, absViewURL, should.Equal("viewURL://ns/log/foo"))
+
+			absLogURL, absViewURL, err = absolutize("http+2.0-test://ns/log/foo", "v1://ns/log/foo")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, absLogURL, should.Equal("http+2.0-test://ns/log/foo"))
+			assert.Loosely(t, absViewURL, should.Equal("v1://ns/log/foo"))
 		})
 
 		t.Run(`calc urls if log url is relative`, func(t *ftt.Test) {
@@ -72,6 +77,12 @@ func TestAbsolutize(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("expected absolute view url, got"))
 					assert.Loosely(t, absLogURL, should.Equal("url://ns/log/foo"))
 					assert.Loosely(t, absViewURL, should.Equal("log/foo"))
+
+					_, _, err = absolutize("url://ns/log/foo", "1http://ns/log/foo")
+					assert.Loosely(t, err, should.ErrLike("expected absolute view url, got"))
+
+					_, _, err = absolutize("url://ns/log/foo", "ht_tp://ns/log/foo")
+					assert.Loosely(t, err, should.ErrLike("expected absolute view url, got"))
 				})
 			})
 
