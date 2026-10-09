@@ -443,6 +443,35 @@ func TestCreateDirectories(t *testing.T) {
 	})
 }
 
+func TestCreateDirectoriesSiblingPrefix(t *testing.T) {
+	t.Parallel()
+	ftt.Run("CreateDirectories creates sibling directories sharing a name prefix", t, func(t *ftt.Test) {
+		dir := t.TempDir()
+		assert.NoErr(t, CreateDirectories(dir, []string{
+			filepath.Join("a", "b", "file1"),
+			filepath.Join("a", "b2", "file2"),
+			filepath.Join("x", "file3"),
+			filepath.Join("x2", "file4"),
+		}))
+
+		var paths []string
+		collectPaths := func(path string, info os.FileInfo, err error) error {
+			paths = append(paths, path)
+			return nil
+		}
+
+		assert.NoErr(t, filepath.Walk(dir, collectPaths))
+		assert.That(t, paths, should.Match([]string{
+			dir,
+			filepath.Join(dir, "a"),
+			filepath.Join(dir, "a", "b"),
+			filepath.Join(dir, "a", "b2"),
+			filepath.Join(dir, "x"),
+			filepath.Join(dir, "x2"),
+		}))
+	})
+}
+
 func TestIsEmptyDir(t *testing.T) {
 	ftt.Run("IsEmptyDir", t, func(t *ftt.Test) {
 		dir := t.TempDir()

@@ -397,7 +397,7 @@ func CreateDirectories(baseDirectory string, files []string) error {
 		if dir == "" {
 			continue
 		}
-		if i+1 < len(dirs) && filepath.HasPrefix(dirs[i+1], dir) {
+		if i+1 < len(dirs) && (dirs[i+1] == dir || strings.HasPrefix(dirs[i+1], dir+string(filepath.Separator))) {
 			continue
 		}
 		dir = filepath.Join(baseDirectory, dir)
