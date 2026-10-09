@@ -13,17 +13,18 @@
 // limitations under the License.
 
 export { HealthPage, Component, default } from './health_page';
+export { HealthChip, type HealthChipProps } from './health_chip';
 export { BaselineChip, type BaselineChipProps } from './baseline_chip';
-export {
-  HeroAvailabilityCard,
-  type HeroAvailabilityCardProps,
-} from './hero_availability_card';
 export {
   HealthSlicesCard,
   type HealthSlicesCardProps,
 } from './health_slices_card';
 export { useHealthFilters, useHealthFilterState } from './use_health_filters';
-export { useHealthSlices } from './use_health_slices';
+export {
+  useHealthSlices,
+  useDefaultSlice,
+  useDefaultSliceSync,
+} from './use_health_slices';
 export {
   HealthFilterBar,
   type HealthFilterBarProps,

@@ -126,7 +126,7 @@ export const HealthSliceDialog = ({
 
         <Box>
           <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Slice Filters (Unified Filter Bar):
+            Slice Filters:
           </Typography>
           <HealthFilterBar
             filterCategoryDatas={filterCategoryDatas}

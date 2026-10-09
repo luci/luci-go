@@ -931,6 +931,11 @@ export interface HealthSlice {
    * At most 2000 characters. May be empty to match the whole fleet.
    */
   readonly filter: string;
+  /**
+   * Sort order in the UI. Output only on create/update; managed via
+   * ReorderHealthSlices.
+   */
+  readonly displayOrder: number;
 }
 
 export interface ListHealthSlicesRequest {
@@ -964,6 +969,16 @@ export interface DeleteHealthSliceRequest {
 }
 
 export interface DeleteHealthSliceResponse {
+}
+
+export interface ReorderHealthSlicesRequest {
+  /** The ordered list of slice IDs. Must contain all existing slice IDs. */
+  readonly sliceIds: readonly string[];
+}
+
+export interface ReorderHealthSlicesResponse {
+  /** Slices in their new order. */
+  readonly healthSlices: readonly HealthSlice[];
 }
 
 /** Request message for GetFleetAvailabilityTrends. */
@@ -8680,7 +8695,7 @@ export const ListModelQuotaOverridesResponse: MessageFns<ListModelQuotaOverrides
 };
 
 function createBaseHealthSlice(): HealthSlice {
-  return { id: "0", name: "", filter: "" };
+  return { id: "0", name: "", filter: "", displayOrder: 0 };
 }
 
 export const HealthSlice: MessageFns<HealthSlice> = {
@@ -8693,6 +8708,9 @@ export const HealthSlice: MessageFns<HealthSlice> = {
     }
     if (message.filter !== "") {
       writer.uint32(26).string(message.filter);
+    }
+    if (message.displayOrder !== 0) {
+      writer.uint32(32).int32(message.displayOrder);
     }
     return writer;
   },
@@ -8728,6 +8746,14 @@ export const HealthSlice: MessageFns<HealthSlice> = {
           message.filter = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.displayOrder = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -8742,6 +8768,7 @@ export const HealthSlice: MessageFns<HealthSlice> = {
       id: isSet(object.id) ? globalThis.String(object.id) : "0",
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      displayOrder: isSet(object.displayOrder) ? globalThis.Number(object.displayOrder) : 0,
     };
   },
 
@@ -8756,6 +8783,9 @@ export const HealthSlice: MessageFns<HealthSlice> = {
     if (message.filter !== "") {
       obj.filter = message.filter;
     }
+    if (message.displayOrder !== 0) {
+      obj.displayOrder = Math.round(message.displayOrder);
+    }
     return obj;
   },
 
@@ -8767,6 +8797,7 @@ export const HealthSlice: MessageFns<HealthSlice> = {
     message.id = object.id ?? "0";
     message.name = object.name ?? "";
     message.filter = object.filter ?? "";
+    message.displayOrder = object.displayOrder ?? 0;
     return message;
   },
 };
@@ -9213,6 +9244,136 @@ export const DeleteHealthSliceResponse: MessageFns<DeleteHealthSliceResponse> = 
   },
   fromPartial(_: DeepPartial<DeleteHealthSliceResponse>): DeleteHealthSliceResponse {
     const message = createBaseDeleteHealthSliceResponse() as any;
+    return message;
+  },
+};
+
+function createBaseReorderHealthSlicesRequest(): ReorderHealthSlicesRequest {
+  return { sliceIds: [] };
+}
+
+export const ReorderHealthSlicesRequest: MessageFns<ReorderHealthSlicesRequest> = {
+  encode(message: ReorderHealthSlicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.sliceIds) {
+      writer.uint32(8).int64(v);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ReorderHealthSlicesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReorderHealthSlicesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag === 8) {
+            message.sliceIds.push(reader.int64().toString());
+            continue;
+          }
+          if (tag === 10) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.sliceIds.push(reader.int64().toString());
+            }
+            continue;
+          }
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReorderHealthSlicesRequest {
+    return {
+      sliceIds: globalThis.Array.isArray(object?.sliceIds)
+        ? object.sliceIds.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ReorderHealthSlicesRequest): unknown {
+    const obj: any = {};
+    if (message.sliceIds?.length) {
+      obj.sliceIds = message.sliceIds;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ReorderHealthSlicesRequest>): ReorderHealthSlicesRequest {
+    return ReorderHealthSlicesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ReorderHealthSlicesRequest>): ReorderHealthSlicesRequest {
+    const message = createBaseReorderHealthSlicesRequest() as any;
+    message.sliceIds = object.sliceIds?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseReorderHealthSlicesResponse(): ReorderHealthSlicesResponse {
+  return { healthSlices: [] };
+}
+
+export const ReorderHealthSlicesResponse: MessageFns<ReorderHealthSlicesResponse> = {
+  encode(message: ReorderHealthSlicesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.healthSlices) {
+      HealthSlice.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ReorderHealthSlicesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReorderHealthSlicesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.healthSlices.push(HealthSlice.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReorderHealthSlicesResponse {
+    return {
+      healthSlices: globalThis.Array.isArray(object?.healthSlices)
+        ? object.healthSlices.map((e: any) => HealthSlice.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ReorderHealthSlicesResponse): unknown {
+    const obj: any = {};
+    if (message.healthSlices?.length) {
+      obj.healthSlices = message.healthSlices.map((e) => HealthSlice.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ReorderHealthSlicesResponse>): ReorderHealthSlicesResponse {
+    return ReorderHealthSlicesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ReorderHealthSlicesResponse>): ReorderHealthSlicesResponse {
+    const message = createBaseReorderHealthSlicesResponse() as any;
+    message.healthSlices = object.healthSlices?.map((e) => HealthSlice.fromPartial(e)) || [];
     return message;
   },
 };

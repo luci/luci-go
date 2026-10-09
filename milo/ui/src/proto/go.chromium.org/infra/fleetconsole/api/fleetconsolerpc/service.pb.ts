@@ -91,6 +91,8 @@ import {
   ListSupportRiskIncidentsResponse,
   RepopulateCacheRequest,
   RepopulateCacheResponse,
+  ReorderHealthSlicesRequest,
+  ReorderHealthSlicesResponse,
   ScheduleAutorepairRequest,
   ScheduleAutorepairResponse,
   ScheduleDeployRequest,
@@ -417,6 +419,7 @@ export interface FleetConsole {
   CreateHealthSlice(request: CreateHealthSliceRequest): Promise<CreateHealthSliceResponse>;
   UpdateHealthSlice(request: UpdateHealthSliceRequest): Promise<UpdateHealthSliceResponse>;
   DeleteHealthSlice(request: DeleteHealthSliceRequest): Promise<DeleteHealthSliceResponse>;
+  ReorderHealthSlices(request: ReorderHealthSlicesRequest): Promise<ReorderHealthSlicesResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -492,6 +495,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.CreateHealthSlice = this.CreateHealthSlice.bind(this);
     this.UpdateHealthSlice = this.UpdateHealthSlice.bind(this);
     this.DeleteHealthSlice = this.DeleteHealthSlice.bind(this);
+    this.ReorderHealthSlices = this.ReorderHealthSlices.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -891,6 +895,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = DeleteHealthSliceRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "DeleteHealthSlice", data);
     return promise.then((data) => DeleteHealthSliceResponse.fromJSON(data));
+  }
+
+  ReorderHealthSlices(request: ReorderHealthSlicesRequest): Promise<ReorderHealthSlicesResponse> {
+    const data = ReorderHealthSlicesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ReorderHealthSlices", data);
+    return promise.then((data) => ReorderHealthSlicesResponse.fromJSON(data));
   }
 }
 

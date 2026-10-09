@@ -163,12 +163,30 @@ export const theme = createTheme(baseTheme, {
         },
       ],
     },
+    MuiMenu: {
+      defaultProps: {
+        elevation: 2,
+      },
+      styleOverrides: {
+        list: {
+          padding: '4px 0',
+        },
+      },
+    },
     MuiMenuItem: {
       styleOverrides: {
         root: {
+          minHeight: 36,
           ':hover, :focus, :active': {
             backgroundColor: colors.blue[50],
           },
+        },
+      },
+    },
+    MuiListItemIcon: {
+      styleOverrides: {
+        root: {
+          minWidth: 32,
         },
       },
     },

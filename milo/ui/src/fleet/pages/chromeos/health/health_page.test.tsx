@@ -118,7 +118,9 @@ describe('HealthPage', () => {
     };
     jest.spyOn(UseHealthSlicesModule, 'useHealthSlices').mockReturnValue({
       slicesQuery: {
-        data: { healthSlices: [] },
+        data: {
+          healthSlices: [{ id: 'all-fleet', name: 'All Fleet', filter: '' }],
+        },
         isPending: false,
         isError: false,
         error: null,
@@ -126,6 +128,7 @@ describe('HealthPage', () => {
       createSliceMutation: idleMutation,
       updateSliceMutation: idleMutation,
       deleteSliceMutation: idleMutation,
+      reorderSlicesMutation: idleMutation,
     } as unknown as ReturnType<typeof UseHealthSlicesModule.useHealthSlices>);
 
     jest.spyOn(UseDefaultQuotaModule, 'useDefaultQuota').mockReturnValue({
@@ -183,10 +186,9 @@ describe('HealthPage', () => {
       screen.getByText('ChromeOS Fleet Health Metrics'),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        'Analyze hardware reliability trends, monitor model health, and identify pool degradations.',
-      ),
+      screen.getByText(/Analyze hardware reliability trends/i),
     ).toBeInTheDocument();
+    expect(screen.getByText('availability and health')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /^configuration$/i }),
     ).toBeInTheDocument();
@@ -197,17 +199,17 @@ describe('HealthPage', () => {
     expect(
       screen.getByText('Active Support Risk Incidents'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Health Slices')).toBeInTheDocument();
+    expect(screen.getByTestId('health-slices-card')).toBeInTheDocument();
     expect(
-      screen.getByText('No health slices configured.'),
+      screen.getByTestId('health-slice-item-all-fleet'),
     ).toBeInTheDocument();
-    expect(screen.getByTestId('hero-availability-card')).toBeInTheDocument();
+    expect(screen.getByTestId('health-page-help-icon')).toBeInTheDocument();
     expect(
       screen.queryByText('Global Default Expected Quota'),
     ).not.toBeInTheDocument();
   });
 
-  it('switches Hero card to Enrolled Baseline when non-model filter is applied', () => {
+  it('switches slice baseline chip to Enrolled Baseline when non-model filter is applied', () => {
     const builder = new StringListFilterCategoryBuilder()
       .setLabel('Pool')
       .setOptions([{ label: 'DUT_POOL_QUOTA', value: 'DUT_POOL_QUOTA' }]);
@@ -235,9 +237,9 @@ describe('HealthPage', () => {
       </FakeContextProvider>,
     );
 
-    expect(screen.getByTestId('hero-baseline-chip')).toHaveTextContent(
-      'Enrolled Baseline',
-    );
+    expect(
+      screen.getByTestId('slice-baseline-chip-all-fleet'),
+    ).toHaveTextContent('Enrolled Baseline');
   });
 
   it('applies model filter when Show button on Support Risk incident is clicked', () => {

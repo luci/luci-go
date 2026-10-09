@@ -13,11 +13,92 @@
 // limitations under the License.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { HealthSlice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const HEALTH_SLICES_QUERY_KEY = ['ListHealthSlices'];
+export const DEFAULT_SLICE_STORAGE_KEY =
+  'fleet.chromeos.health.default_slice_id';
+
+export const useDefaultSlice = () => {
+  const [defaultSliceId, setDefaultSliceIdState] = useState<string | null>(
+    () => {
+      try {
+        return localStorage.getItem(DEFAULT_SLICE_STORAGE_KEY);
+      } catch {
+        return null;
+      }
+    },
+  );
+
+  const setDefaultSliceId = useCallback((id: string | null) => {
+    setDefaultSliceIdState(id);
+    try {
+      if (id === null) {
+        localStorage.removeItem(DEFAULT_SLICE_STORAGE_KEY);
+      } else {
+        localStorage.setItem(DEFAULT_SLICE_STORAGE_KEY, id);
+      }
+    } catch {
+      // Ignore localStorage errors (e.g. private mode, sandbox restrictions).
+    }
+  }, []);
+
+  return { defaultSliceId, setDefaultSliceId };
+};
+
+/**
+ * Automatically applies the pinned default slice filter to the URL if the user
+ * lands on the page with no active ?filters= query param.
+ */
+export const useDefaultSliceSync = () => {
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const { defaultSliceId, setDefaultSliceId } = useDefaultSlice();
+  const { slicesQuery } = useHealthSlices();
+  const hasAppliedDefaultRef = useRef(false);
+
+  useEffect(() => {
+    if (hasAppliedDefaultRef.current) return;
+    if (!defaultSliceId) {
+      hasAppliedDefaultRef.current = true;
+      return;
+    }
+    if (!slicesQuery.data) return;
+
+    hasAppliedDefaultRef.current = true;
+    const defaultSlice = slicesQuery.data.healthSlices?.find(
+      (s) => s.id === defaultSliceId,
+    );
+    if (!defaultSlice) {
+      // Auto-purge stale defaultSliceId if the slice was deleted.
+      setDefaultSliceId(null);
+      return;
+    }
+
+    if (!searchParams.has(FILTERS_PARAM_KEY)) {
+      if (defaultSlice.filter.trim()) {
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.set(FILTERS_PARAM_KEY, defaultSlice.filter.trim());
+            return next;
+          },
+          { replace: true },
+        );
+      }
+    }
+  }, [
+    defaultSliceId,
+    setDefaultSliceId,
+    slicesQuery.data,
+    searchParams,
+    setSearchParams,
+  ]);
+};
 
 export const useHealthSlices = () => {
   const client = useFleetConsoleClient();
@@ -48,10 +129,20 @@ export const useHealthSlices = () => {
     onSettled: invalidate,
   });
 
+  const reorderSlicesMutation = useMutation({
+    mutationFn: (sliceIds: readonly string[]) =>
+      client.ReorderHealthSlices({ sliceIds }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(HEALTH_SLICES_QUERY_KEY, data);
+    },
+    onSettled: invalidate,
+  });
+
   return {
     slicesQuery,
     createSliceMutation,
     updateSliceMutation,
     deleteSliceMutation,
+    reorderSlicesMutation,
   };
 };

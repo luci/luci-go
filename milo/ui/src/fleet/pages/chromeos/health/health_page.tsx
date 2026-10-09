@@ -13,10 +13,11 @@
 // limitations under the License.
 
 import { ArrowBack, Settings } from '@mui/icons-material';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Tooltip, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
 
 import { useModelQuotaPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
+import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
@@ -27,17 +28,19 @@ import { ExpectedQuotaCard } from './expected_quota_card';
 import { HEALTH_FILTER_CONFIGS } from './filter_constants';
 import { HealthFilterBar } from './health_filter_bar';
 import { HealthSlicesCard } from './health_slices_card';
-import { HeroAvailabilityCard } from './hero_availability_card';
 import { HistoricalAvailabilityTrendsChart } from './historical_availability_trends_chart';
 import { ManualQuotaOverridesCard } from './manual_quota_overrides_card';
 import { PerformanceRankingCard } from './performance_ranking_card';
 import { SupportRiskIncidentsPanel } from './support_risk_incidents_panel';
 import { useHealthFilters } from './use_health_filters';
+import { useDefaultSliceSync } from './use_health_slices';
 
 export const HealthPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const { hasPermission: hasQuotaPermission } = useModelQuotaPermission();
   const canEditQuota = hasQuotaPermission === true;
+
+  useDefaultSliceSync();
 
   const rawTab = searchParams.get('tab');
   const pageTab: 'overview' | 'configuration' =
@@ -123,14 +126,76 @@ export const HealthPage = () => {
                 <Typography
                   variant="h4"
                   component="h1"
-                  gutterBottom
-                  sx={{ fontWeight: 'bold' }}
+                  sx={{ fontWeight: 'bold', mb: 0.5 }}
                 >
                   ChromeOS Fleet Health Metrics
                 </Typography>
                 <Typography variant="subtitle1" color="text.secondary">
-                  Analyze hardware reliability trends, monitor model health, and
-                  identify pool degradations.
+                  Analyze hardware reliability trends, monitor{' '}
+                  <Tooltip
+                    title={
+                      <Box sx={{ p: 0.5 }}>
+                        <Typography
+                          variant="caption"
+                          display="block"
+                          sx={{ fontWeight: 'bold', mb: 0.5 }}
+                        >
+                          Availability vs. Health:
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          display="block"
+                          sx={{ mb: 0.5 }}
+                        >
+                          • <b>Availability (Quota Baseline):</b> % of devices
+                          available out of expected quota target configured per
+                          model.
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          display="block"
+                          sx={{ mb: 0.5 }}
+                        >
+                          • <b>Health (Enrolled Baseline):</b> Expected quotas
+                          are configured per model overall. When filtered by
+                          pool, zone, or arbitrary labels, baseline falls back
+                          to actual enrolled physical DUTs.
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          display="block"
+                          color="text.secondary"
+                          sx={{ fontStyle: 'italic', mt: 0.5 }}
+                        >
+                          Note: Calculated based on devices in{' '}
+                          <b>dut_state = READY</b>, which may differ from other
+                          dashboards.
+                        </Typography>
+                      </Box>
+                    }
+                    arrow
+                    slotProps={{ tooltip: { sx: INFO_TOOLTIP_PAPER_SX } }}
+                  >
+                    <Box
+                      component="span"
+                      data-testid="health-page-help-icon"
+                      sx={{
+                        borderBottom: '1px dashed',
+                        borderColor: 'text.secondary',
+                        cursor: 'help',
+                        color: 'text.primary',
+                        fontWeight: 500,
+                        transition: 'all 0.15s ease-in-out',
+                        '&:hover': {
+                          color: 'primary.main',
+                          borderColor: 'primary.main',
+                        },
+                      }}
+                    >
+                      availability and health
+                    </Box>
+                  </Tooltip>
+                  , and identify pool degradations.
                 </Typography>
               </Box>
               {canEditQuota && (
@@ -162,7 +227,7 @@ export const HealthPage = () => {
             </Box>
 
             {/* Global Filter Bar */}
-            <Box sx={{ mb: 4 }}>
+            <Box sx={{ mb: 3 }}>
               <HealthFilterBar
                 filterCategoryDatas={filterCategoryDatas}
                 isLoading={isLoading || filterValues === undefined}
@@ -170,8 +235,11 @@ export const HealthPage = () => {
               />
             </Box>
 
-            {/* Hero Availability Card */}
-            <HeroAvailabilityCard filter={activeFilter} />
+            {/* Health Slices & Fleet Views Ribbon */}
+            <HealthSlicesCard
+              globalFilter={activeFilter}
+              onSelectSlice={handleSelectSlice}
+            />
 
             {/* Dashboard Layout */}
             <Box
@@ -197,19 +265,11 @@ export const HealthPage = () => {
                 <HistoricalAvailabilityTrendsChart filter={activeFilter} />
                 <Box
                   sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-                    gap: 3,
                     flexGrow: 1,
                     minHeight: { xs: 260, lg: 0 },
                   }}
                 >
                   <SupportRiskIncidentsPanel onShowModel={handleShowModel} />
-                  <HealthSlicesCard
-                    globalFilter={activeFilter}
-                    globalFilterValues={filterValues}
-                    onSelectSlice={handleSelectSlice}
-                  />
                 </Box>
               </Box>
 

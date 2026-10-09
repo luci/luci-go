@@ -102,6 +102,7 @@ export interface FleetConsoleMockFixtures {
   CreateHealthSlice: unknown;
   UpdateHealthSlice: unknown;
   DeleteHealthSlice: unknown;
+  ReorderHealthSlices: unknown;
   [method: string]: unknown;
 }
 
@@ -701,14 +702,22 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   ListHealthSlices: {
     healthSlices: [
       {
+        id: 'all-fleet',
+        name: 'All Fleet',
+        filter: '',
+        displayOrder: 0,
+      },
+      {
         id: '1',
         name: 'Labstations',
         filter: 'labels.board = "zgb"',
+        displayOrder: 1,
       },
       {
         id: '2',
         name: 'DUTs in Dev',
         filter: 'labels.pool = "faft-cr50"',
+        displayOrder: 2,
       },
     ],
   },
@@ -717,6 +726,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       id: '1',
       name: 'New Slice',
       filter: '',
+      displayOrder: 0,
     },
   },
   UpdateHealthSlice: {
@@ -724,9 +734,32 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       id: '1',
       name: 'Updated Slice',
       filter: '',
+      displayOrder: 0,
     },
   },
   DeleteHealthSlice: {},
+  ReorderHealthSlices: {
+    healthSlices: [
+      {
+        id: 'all-fleet',
+        name: 'All Fleet',
+        filter: '',
+        displayOrder: 0,
+      },
+      {
+        id: '1',
+        name: 'Labstations',
+        filter: 'labels.board = "zgb"',
+        displayOrder: 1,
+      },
+      {
+        id: '2',
+        name: 'DUTs in Dev',
+        filter: 'labels.pool = "faft-cr50"',
+        displayOrder: 2,
+      },
+    ],
+  },
   ListTaskHistory: {
     tasks: [
       {

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Chip, Tooltip, Typography } from '@mui/material';
+import { Box, Typography, type SxProps, type Theme } from '@mui/material';
 
-import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
+import { HealthChip } from './health_chip';
 
 export interface BaselineChipProps {
   /**
@@ -25,12 +25,15 @@ export interface BaselineChipProps {
   readonly baselineType?: 'expected' | 'enrolled';
   /** Optional custom testId for testing assertions. */
   readonly testId?: string;
+  /** Custom style overrides. */
+  readonly sx?: SxProps<Theme>;
 }
 
 export const BaselineChip = ({
   isAvailability: isAvailabilityProp,
   baselineType,
   testId = 'baseline-chip',
+  sx,
 }: BaselineChipProps) => {
   const isAvailability =
     isAvailabilityProp !== undefined
@@ -44,8 +47,12 @@ export const BaselineChip = ({
       ' (used when not tracking against model quota targets, such as filtering or grouping by pool, zone, or labels).';
 
   return (
-    <Tooltip
-      title={
+    <HealthChip
+      label={label}
+      color={isAvailability ? 'primary' : 'default'}
+      testId={testId}
+      sx={sx}
+      tooltip={
         <Box sx={{ p: 0.5 }}>
           <Typography
             variant="caption"
@@ -57,24 +64,16 @@ export const BaselineChip = ({
           <Typography variant="caption" display="block">
             {description}
           </Typography>
+          <Typography
+            variant="caption"
+            display="block"
+            color="text.secondary"
+            sx={{ fontStyle: 'italic', mt: 0.5 }}
+          >
+            Note: Calculated based on devices in <b>dut_state = READY</b>.
+          </Typography>
         </Box>
       }
-      arrow
-      slotProps={{ tooltip: { sx: INFO_TOOLTIP_PAPER_SX } }}
-    >
-      <Chip
-        data-testid={testId}
-        label={label}
-        size="small"
-        color={isAvailability ? 'primary' : 'default'}
-        variant="outlined"
-        sx={{
-          height: 20,
-          fontSize: 10,
-          fontWeight: 'bold',
-          cursor: 'help',
-        }}
-      />
-    </Tooltip>
+    />
   );
 };

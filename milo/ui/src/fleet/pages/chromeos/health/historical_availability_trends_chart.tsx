@@ -19,7 +19,6 @@ import {
   CardContent,
   CardHeader,
   Checkbox,
-  Chip,
   CircularProgress,
   Divider,
   FormControlLabel,
@@ -57,6 +56,7 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { BaselineChip } from './baseline_chip';
+import { HealthChip } from './health_chip';
 import {
   buildTimeAxisTicks,
   buildTrendsChartRows,
@@ -738,17 +738,10 @@ export const HistoricalAvailabilityTrendsChart = ({
                 >
                   Fleet Availability & Health Trends
                 </Typography>
-                <Chip
+                <HealthChip
                   label="Last 72h"
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: 12,
-                    height: 22,
-                    color: 'text.secondary',
-                    borderColor: 'divider',
-                  }}
+                  testId="trends-time-window-chip"
+                  tooltip="Historical data is aggregated hourly over a rolling 72-hour window."
                 />
                 <BaselineChip
                   isAvailability={isAvailability}
