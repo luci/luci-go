@@ -105,6 +105,17 @@ func clusterLike(config *compiledcfg.ProjectConfig, failure *clustering.Failure)
 	return likePattern
 }
 
+// splitsLikeEscape reports whether byte offset pos splits a two-byte LIKE
+// escape sequence (\\, \%, or \_) in s, which occurs iff s[:pos] ends with an
+// odd number of backslashes.
+func splitsLikeEscape(s string, pos int) bool {
+	backslashes := 0
+	for i := pos - 1; i >= 0 && s[i] == '\\'; i-- {
+		backslashes++
+	}
+	return backslashes%2 == 1
+}
+
 // applyMask applies the given masking regexp to an error message.
 //
 // The regular expression re must have exactly one
@@ -112,7 +123,11 @@ func clusterLike(config *compiledcfg.ProjectConfig, failure *clustering.Failure)
 // which matches the errorMessage is replaced with the LIKE
 // wildcard operator "%".
 //
-// Masking is applied to all non-overlapping matches.
+// Masking is applied to all non-overlapping matches. As errorMessage is
+// already LIKE-escaped, re matches the escaped text. A capture that starts or
+// ends inside an escape sequence (\\, \% or \_) is widened to cover all of it,
+// and matches in which the capturing sub-expression does not participate are
+// left unmasked.
 func applyMask(re *regexp.Regexp, errorMessage string) string {
 	matches := re.FindAllStringSubmatchIndex(errorMessage, -1)
 	if len(matches) == 0 {
@@ -126,6 +141,28 @@ func applyMask(re *regexp.Regexp, errorMessage string) string {
 	for _, match := range matches {
 		matchStart := match[2]
 		matchEnd := match[3]
+		if matchStart < 0 || matchEnd < 0 {
+			// The capturing subexpression did not participate in this match.
+			continue
+		}
+		// Avoid splitting a two-byte LIKE escape sequence (\\, \%, or \_).
+		if splitsLikeEscape(errorMessage, matchStart) {
+			matchStart--
+		}
+		if splitsLikeEscape(errorMessage, matchEnd) {
+			matchEnd++
+		}
+		// Widening can only make this capture overlap the previous masked one
+		// if it starts where that one ended, inside an escape sequence that
+		// both now cover. E.g. the mask `(.)` on `\%` captures `\`, then `%`.
+		if matchStart < startIndex {
+			if matchEnd <= startIndex {
+				// This capture is empty or just the escaped character (the
+				// `%` above), which the previous mask already covers.
+				continue
+			}
+			matchStart = startIndex
+		}
 		builder.WriteString(errorMessage[startIndex:matchStart])
 		builder.WriteString("%")
 		startIndex = matchEnd
