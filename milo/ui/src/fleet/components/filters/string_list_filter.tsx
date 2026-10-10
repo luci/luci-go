@@ -536,6 +536,7 @@ const OptionComponent = function OptionComponent({
       if (allSelectableAreSelected) {
         for (const option of fuzzySorted) {
           updatedOptions[option.el.value] = {
+            ...options[option.el.value],
             ...updatedOptions[option.el.value],
             isSelected: false,
           };
@@ -543,6 +544,7 @@ const OptionComponent = function OptionComponent({
       } else {
         for (const option of selectableOptions) {
           updatedOptions[option.el.value] = {
+            ...options[option.el.value],
             ...updatedOptions[option.el.value],
             isSelected: true,
           };
@@ -561,7 +563,16 @@ const OptionComponent = function OptionComponent({
     if (applyDisabled) {
       return;
     }
-    onApply(tempOptions, isExcluded);
+    const finalOptions = { ...options };
+    for (const key of Object.keys(finalOptions)) {
+      if (tempOptions[key]) {
+        finalOptions[key] = {
+          ...finalOptions[key],
+          isSelected: tempOptions[key].isSelected,
+        };
+      }
+    }
+    onApply(finalOptions, isExcluded);
   };
 
   const ExclusionBoxIcon = (
@@ -675,6 +686,7 @@ const OptionComponent = function OptionComponent({
             setTempOptions((old) => ({
               ...old,
               [key]: {
+                ...options[key],
                 ...old[key],
                 isSelected: !old[key]?.isSelected,
               },
@@ -685,6 +697,9 @@ const OptionComponent = function OptionComponent({
               const next = { ...old };
               for (const k of Object.keys(next)) {
                 next[k] = { ...next[k], isSelected: k === key };
+              }
+              if (!next[key]) {
+                next[key] = { ...options[key], isSelected: true };
               }
               return next;
             });

@@ -445,4 +445,65 @@ describe('StringListFilterCategory', () => {
       '(labels."dut_state" = "NEEDS_REPAIR")',
     );
   });
+
+  it('should not crash when OptionComponent receives new options', () => {
+    // 1. Create first category
+    const result1 = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [{ value: 'pixel', label: 'Pixel' }],
+      [],
+      () => {},
+      null,
+    );
+    expect(result1.isError).toBe(false);
+    if (result1.isError) return;
+    const cat1 = result1.value;
+
+    const { rerender } = render(
+      cat1.render(
+        '',
+        () => {},
+        () => {},
+        () => {},
+      ),
+    );
+
+    // 2. Create second category with same key but new options (simulating an async update)
+    const result2 = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [
+        { value: 'pixel', label: 'Pixel' },
+        { value: 'nexus', label: 'Nexus' },
+      ],
+      [],
+      () => {},
+      null,
+    );
+    expect(result2.isError).toBe(false);
+    if (result2.isError) return;
+    const cat2 = result2.value;
+
+    // 3. Rerender with new category (react reuses OptionComponent)
+    rerender(
+      cat2.render(
+        '',
+        () => {},
+        () => {},
+        () => {},
+      ),
+    );
+
+    // 4. Click Select All
+    const selectAllButton = screen.getByText('Select All');
+    selectAllButton.click();
+
+    // 5. Click apply
+    const applyButton = screen.getByText('Apply');
+    applyButton.click();
+
+    // 6. Access chip label (this should crash if bug is present)
+    expect(() => cat2.getChipLabel()).not.toThrow();
+  });
 });
