@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -508,6 +510,16 @@ func TestBugManager(t *testing.T) {
 					"This bug has been associated with failures in LUCI Analysis. "+
 						"To view failure examples or update the association, go to LUCI Analysis at: https://luci-analysis-test.appspot.com/p/chromeos/rules/rule-id"))
 			})
+			t.Run("Skips update without error if PermissionDenied when commenting on readable issue", func(t *ftt.Test) {
+				bugsToUpdate[0].BugManagementState.RuleAssociationNotified = false
+				bugsToUpdate[0].IsManagingBug = false
+				fakeClient.CreateCommentError = status.Error(codes.PermissionDenied, "caller does not have permission to add a comment")
+
+				response, err := bm.Update(ctx, bugsToUpdate)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Match(expectedResponse))
+				assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount))
+			})
 			t.Run("If active policies changed", func(t *ftt.Test) {
 				// De-activates policy-c (P1), leaving only policy-a (P4) active.
 				bugsToUpdate[0].BugManagementState.PolicyState["policy-c"].IsActive = false
@@ -972,6 +984,14 @@ func TestBugManager(t *testing.T) {
 
 				result, err := bm.GetMergedInto(ctx, bugID)
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, result, should.BeNil)
+			})
+			t.Run("Not merged into any bug, without append access to component", func(t *ftt.Test) {
+				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_NEW
+				fakeStore.Issues[1].Issue.IssueState.ComponentId = ComponentWithNoAccess
+
+				result, err := bm.GetMergedInto(ctx, bugID)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, result, should.BeNil)
 			})
 		})

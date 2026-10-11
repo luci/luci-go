@@ -22,11 +22,14 @@ import (
 	"time"
 
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -308,6 +311,16 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 			continue
 		}
 		updateResponse := bm.updateIssue(ctx, request, issue)
+		if grpcutil.Code(updateResponse.Error) == codes.PermissionDenied {
+			// We have read access to the issue (e.g. in a public tracker),
+			// but lack permission to comment on or modify it.
+			// Take no further action on the bug and do not fail the update run.
+			logging.Fields{
+				"Project":        bm.project,
+				"BuganizerBugID": request.Bug.ID,
+			}.Warningf(ctx, "No permission to update Buganizer issue %s (project: %s): %s, skipping.", request.Bug.ID, bm.project, updateResponse.Error)
+			updateResponse.Error = nil
+		}
 		responses = append(responses, updateResponse)
 
 		fields := logging.Fields{
@@ -371,6 +384,10 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 		return response
 	}
 
+	if issue.GetIssueState().GetStatus() == issuetracker.Issue_FIXED {
+		response.BugClosureValidationResult = evaluateBugClosureInvalidation(ctx, issue, request.InvalidationStatus)
+	}
+
 	// Add comment to bug notifying it of a new rule association.
 	if !request.BugManagementState.RuleAssociationNotified {
 		commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(request.RuleID, issue.IssueId)
@@ -392,10 +409,6 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 	if err != nil {
 		response.Error = errors.Fmt("notify policy activations: %w", err)
 		return response
-	}
-
-	if issue.GetIssueState().GetStatus() == issuetracker.Issue_FIXED {
-		response.BugClosureValidationResult = evaluateBugClosureInvalidation(ctx, issue, request.InvalidationStatus)
 	}
 	if request.IsManagingBug && bm.requestGenerator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority) {
 		var hasManuallySetPriority bool
@@ -637,6 +650,19 @@ func (bm *BugManager) GetMergedInto(ctx context.Context, bug bugs.BugID) (*bugs.
 	result, err := mergedIntoBug(issue)
 	if err != nil {
 		return nil, errors.Fmt("resolving canoncial merged into bug: %w", err)
+	}
+	if result == nil && issue.GetIssueState().GetComponentId() > 0 {
+		// This issue is the canonical bug at the end of the duplicate chain.
+		// Verify we have permission to append comments to issues in its component;
+		// for public trackers GetIssue may succeed even without append access.
+		componentChecker := NewComponentAccessChecker(bm.client, bm.selfEmail)
+		hasAppendAccess, err := componentChecker.CheckIssueAppendAccess(ctx, issue.IssueState.ComponentId)
+		if err != nil {
+			return nil, errors.Fmt("checking issue append access: %w", err)
+		}
+		if !hasAppendAccess {
+			return nil, status.Errorf(codes.PermissionDenied, "no permission to append comments to issues in component %d", issue.IssueState.ComponentId)
+		}
 	}
 	return result, nil
 }

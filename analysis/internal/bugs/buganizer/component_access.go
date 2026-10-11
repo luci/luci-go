@@ -77,6 +77,12 @@ func (c *ComponentAccessChecker) CheckAccess(ctx context.Context, componentID in
 	return result, nil
 }
 
+// CheckIssueAppendAccess checks whether the service has permission to append
+// comments to issues in the specified component.
+func (c *ComponentAccessChecker) CheckIssueAppendAccess(ctx context.Context, componentID int64) (bool, error) {
+	return c.checkSinglePermission(ctx, componentID, true, "appender")
+}
+
 // checkSinglePermission checks a single permission of a Buganizer component
 // ID.  You should typically use checkComponentPermission instead of this
 // method.

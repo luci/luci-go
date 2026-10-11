@@ -1410,6 +1410,18 @@ func TestUpdate(t *testing.T) {
 								assert.Loosely(t, issueOne.Comments, should.HaveLength(issueOneOriginalCommentCount+1))
 								assert.Loosely(t, issueOne.Comments[issueOneOriginalCommentCount].Comment, should.ContainSubstring("LUCI Analysis cannot merge the association rule for this bug into the rule"))
 							})
+							t.Run("bug marked as duplicate of readable bug in component without append permission", func(t *ftt.Test) {
+								issueTwo.Issue.IssueState.ComponentId = buganizer.ComponentWithNoAccess
+
+								// Act
+								err = UpdateBugsForProject(ctx, opts)
+
+								// Verify issue one kicked out of duplicate status.
+								assert.Loosely(t, err, should.BeNil)
+								assert.Loosely(t, issueOne.Issue.IssueState.Status, should.NotEqual(issuetracker.Issue_DUPLICATE))
+								assert.Loosely(t, issueOne.Comments, should.HaveLength(issueOneOriginalCommentCount+1))
+								assert.Loosely(t, issueOne.Comments[issueOneOriginalCommentCount].Comment, should.ContainSubstring("LUCI Analysis cannot merge the association rule for this bug into the rule"))
+							})
 							t.Run("failed to handle duplicate bug - bug has an assignee", func(t *ftt.Test) {
 								issueTwo.ShouldReturnAccessPermissionError = true
 

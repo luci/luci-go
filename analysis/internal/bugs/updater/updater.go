@@ -25,10 +25,10 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
@@ -973,8 +973,8 @@ func (b *BugUpdater) resolveMergedIntoBug(ctx context.Context, bug bugs.BugID) (
 			return bugs.BugID{}, fmt.Errorf("encountered unknown bug system: %q", system)
 		}
 		mergedInto, err := manager.GetMergedInto(ctx, mergedIntoBug)
-		if status.Code(err) == codes.PermissionDenied {
-			// We don't have permission to view the issue
+		if grpcutil.Code(err) == codes.PermissionDenied {
+			// We don't have permission to view or append to the issue.
 			return bugs.BugID{}, mergeIntoPermissionErr
 		} else if err != nil {
 			return bugs.BugID{}, err
