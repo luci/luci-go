@@ -136,4 +136,46 @@ describe('<ChromeOSDeviceDetailsPage />', () => {
     expect(screen.getByText('Servo Hostname')).toBeVisible();
     expect(screen.queryByText('Zebra Label')).not.toBeInTheDocument();
   });
+
+  it('renders device ID text field as full-width and renders copy button', () => {
+    const mockDevice: ChromeOSDevice = {
+      id: 'chromeos6-row1-rack2-host3',
+      dutId: 'C123456',
+      address: undefined,
+      type: DeviceType.DEVICE_TYPE_UNSPECIFIED,
+      state: DeviceState.DEVICE_STATE_AVAILABLE,
+      realm: 'chromeos:fleet',
+      deviceSpec: {
+        labels: {},
+      },
+    };
+    mockUseChromeOSDeviceData.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      device: mockDevice,
+    });
+
+    render(
+      <FakeContextProvider
+        mountedPath="/:id"
+        routerOptions={{
+          initialEntries: ['/chromeos6-row1-rack2-host3'],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <ChromeOSDeviceDetailsPage />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    const input = screen.getByDisplayValue('chromeos6-row1-rack2-host3');
+    expect(input.closest('.MuiFormControl-root')).toHaveClass(
+      'MuiFormControl-fullWidth',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Copy device hostname' }),
+    ).toBeVisible();
+  });
 });

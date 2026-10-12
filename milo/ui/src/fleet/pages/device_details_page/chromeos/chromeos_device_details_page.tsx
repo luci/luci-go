@@ -179,6 +179,7 @@ export const ChromeOSDeviceDetailsPage = () => {
           value={deviceIdInputValue}
           onChange={(event) => setDeviceIdInputValue(event.target.value)}
           slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
+          fullWidth
           onBlur={(e) => {
             navigateToDeviceIfChanged(e.target.value);
           }}
@@ -260,6 +261,7 @@ export const ChromeOSDeviceDetailsPage = () => {
           value={deviceIdInputValue}
           onChange={(event) => setDeviceIdInputValue(event.target.value)}
           slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
+          fullWidth
           onBlur={(e) => {
             navigateToDeviceIfChanged(e.target.value);
           }}
@@ -280,6 +282,7 @@ export const ChromeOSDeviceDetailsPage = () => {
               setTimeout(() => setCopiedHostname(false), 1500);
             }}
             sx={{
+              flexShrink: 0,
               color: copiedHostname ? 'success.main' : 'text.secondary',
             }}
           >
