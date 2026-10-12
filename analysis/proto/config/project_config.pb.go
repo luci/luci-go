@@ -1299,7 +1299,11 @@ type Clustering struct {
 	// For regular expression run against the failure reason,
 	// the part of the reason that matches the first (capturing)
 	// subexpression is masked out in the reason cluster.
-	// All non-overlapping matches are replaced.
+	// All non-overlapping matches are replaced. Matches in which the
+	// capturing subexpression does not participate (e.g. an unmatched
+	// optional group in an alternation) are left unmasked. If a capture
+	// starts or ends inside a two-byte LIKE escape sequence (`\\`, `\%`
+	// or `\_`), it is widened to cover the whole escape sequence.
 	//
 	// For example, given the masking expression:
 	// "^\\[Fixture failure\\] (\\w+):"
