@@ -107,12 +107,22 @@ func (v *VM) Validate(c *validation.Context, metadataFromFileResolved bool) {
 	v.validateFallbackZones(c)
 }
 
+// extractZoneRegion returns the GCP region prefix for a standard "<region>-<zone>"
+// identifier (for example, "us-central1" from "us-central1-b"), or an empty
+// string if the zone does not contain a non-empty region and zone suffix.
+func extractZoneRegion(zone string) string {
+	if idx := strings.LastIndex(zone, "-"); idx > 0 && idx < len(zone)-1 {
+		return zone[:idx]
+	}
+	return ""
+}
+
 // validateFallbackZones validates fallback_zones constraints and "{{.Zone}}"
 // template requirements for this VM description.
 //
-// Note: Fallback zones cannot use different regions because regional
-// configurations such as network_interface.subnetwork are defined per region
-// and dynamic selection of regional networks is not supported yet.
+// Fallback zones must belong to the same region as the primary zone because
+// regional configurations such as network_interface.subnetwork are defined per
+// region and dynamic selection of regional networks is not supported yet.
 func (v *VM) validateFallbackZones(c *validation.Context) {
 	fbs := v.GetFallbackZones()
 	if len(fbs) == 0 {
@@ -122,6 +132,7 @@ func (v *VM) validateFallbackZones(c *validation.Context) {
 		c.Errorf("at most %d fallback zones are allowed, got %d", maxFallbackZones, len(fbs))
 	}
 	primaryZone := v.GetZone()
+	primaryRegion := extractZoneRegion(primaryZone)
 	seen := make(map[string]bool, len(fbs))
 	for i, fb := range fbs {
 		if fb == "" {
@@ -130,6 +141,12 @@ func (v *VM) validateFallbackZones(c *validation.Context) {
 		}
 		if fb == primaryZone {
 			c.Errorf("fallback zone %q cannot be the same as primary zone %q", fb, primaryZone)
+		}
+		// Enforce that every fallback zone resides in the same region as the
+		// primary zone so regional resources (such as subnetworks) remain valid
+		// when rotating across zones on stockout.
+		if fbRegion := extractZoneRegion(fb); primaryRegion != "" && fbRegion != primaryRegion {
+			c.Errorf("fallback zone %q must be in the same region as primary zone %q (%q)", fb, primaryZone, primaryRegion)
 		}
 		if seen[fb] {
 			c.Errorf("duplicate fallback zone %q", fb)

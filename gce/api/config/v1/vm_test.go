@@ -188,6 +188,14 @@ func TestVM(t *testing.T) {
 						assert.Loosely(t, err, should.UnwrapToErrStringLike(`fallback zone "us-central1-c" cannot be the same as primary zone "us-central1-c"`))
 					})
 
+					t.Run("different region", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.FallbackZones = []string{"us-east1-b"}
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`fallback zone "us-east1-b" must be in the same region as primary zone "us-central1-c" ("us-central1")`))
+					})
+
 					t.Run("duplicate", func(t *ftt.Test) {
 						vm := baseVM()
 						vm.FallbackZones = []string{"us-central1-a", "us-central1-a"}
