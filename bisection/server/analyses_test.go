@@ -118,7 +118,7 @@ func TestQueryAnalysis(t *testing.T) {
 		}
 		_, err := server.QueryAnalysis(c, req)
 		assert.Loosely(t, err, should.NotBeNil)
-		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.Unimplemented))
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 	})
 
 	ftt.Run("No analysis found", t, func(t *ftt.Test) {

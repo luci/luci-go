@@ -120,7 +120,7 @@ func (server *AnalysesServer) QueryAnalysis(c context.Context, req *pb.QueryAnal
 	}
 	// Include "generate_build_files" failures as well.
 	if req.BuildFailure.FailedStepName != "compile" && req.BuildFailure.FailedStepName != "generate_build_files" {
-		return nil, status.Errorf(codes.Unimplemented, "compile and generate_build_files failures are supported")
+		return nil, status.Errorf(codes.InvalidArgument, "failed_step_name: only compile and generate_build_files are supported")
 	}
 	bbid := req.BuildFailure.GetBbid()
 	c = loggingutil.SetQueryBBID(c, bbid)
