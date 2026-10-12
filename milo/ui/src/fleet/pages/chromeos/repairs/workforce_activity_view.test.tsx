@@ -20,7 +20,6 @@ import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
 import {
   enableWorkforceInProgressRepairs,
-  enableWorkforceMttr,
   enableWorkforcePickupRank,
   enableWorkforceTimeframeFilter,
 } from '@/fleet/features';
@@ -78,7 +77,7 @@ const MOCK_WORKFORCE_DATA = {
         {
           dutId: 'chromeos2-row3-rack1-host2',
           score: 85,
-          duration: '1800s',
+          duration: { seconds: '1800', nanos: 0 },
         },
       ],
       priorityScoreCleared: 940,
@@ -110,10 +109,6 @@ const MOCK_WORKFORCE_DATA = {
 const enableAllMetricFlags = () => {
   localStorage.setItem(
     getFeatureFlagLocalStorageKey(enableWorkforcePickupRank),
-    'on',
-  );
-  localStorage.setItem(
-    getFeatureFlagLocalStorageKey(enableWorkforceMttr),
     'on',
   );
   localStorage.setItem(
@@ -184,10 +179,16 @@ describe('<WorkforceActivityView />', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Active Repairers')).toBeInTheDocument();
     expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('Avg Repair Time (MTTR)')).toBeInTheDocument();
+    expect(screen.getByText('28 min')).toBeInTheDocument();
     expect(screen.getByText('Technician')).toBeInTheDocument();
     expect(screen.getByText('Completed Repairs (1D)')).toBeInTheDocument();
+    expect(screen.getByText('Avg Duration (MTTR)')).toBeInTheDocument();
     expect(screen.getByText('Andrew Miller')).toBeInTheDocument();
     expect(screen.getByText('8 devices')).toBeInTheDocument();
+    expect(screen.getByText('32 min')).toBeInTheDocument();
+    expect(screen.getByText('24 min')).toBeInTheDocument();
+    expect(screen.getByText('-')).toBeInTheDocument();
 
     expect(
       screen.getByText('Total Priority Points Cleared'),
@@ -203,9 +204,6 @@ describe('<WorkforceActivityView />', () => {
     expect(screen.queryByText('Avg Queue Pickup Rank')).not.toBeInTheDocument();
     expect(screen.queryByText('#4.7')).not.toBeInTheDocument();
     expect(screen.queryByText('In-Progress Repairs')).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('Avg Repair Time (MTTR)'),
-    ).not.toBeInTheDocument();
 
     // Unimplemented table headers and cells are hidden by default
     expect(
@@ -218,7 +216,6 @@ describe('<WorkforceActivityView />', () => {
       screen.queryByText('Avg Queue Pickup Rank (1D)'),
     ).not.toBeInTheDocument();
     expect(screen.queryByText('#1.8')).not.toBeInTheDocument();
-    expect(screen.queryByText('Avg Duration (MTTR)')).not.toBeInTheDocument();
 
     // Timeframe picker is hidden by default
     expect(screen.queryByText('Timeframe:')).not.toBeInTheDocument();
@@ -421,7 +418,7 @@ describe('<WorkforceActivityView />', () => {
     renderWorkforceView();
 
     const skeletons = screen.getAllByTestId('kpi-skeleton');
-    expect(skeletons).toHaveLength(2);
+    expect(skeletons).toHaveLength(3);
     expect(screen.getByTestId('workforce-loading-spinner')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     expect(screen.queryByText('Andrew Miller')).not.toBeInTheDocument();

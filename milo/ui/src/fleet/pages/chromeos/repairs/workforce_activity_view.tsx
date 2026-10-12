@@ -44,11 +44,6 @@ import { useNavigate } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFeatureFlag } from '@/common/feature_flags';
-import {
-  displayCompactDuration,
-  parseProtoDuration,
-  parseProtoDurationStr,
-} from '@/common/tools/time_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { UserAvatar } from '@/fleet/components/repair_queue/user_avatar';
 import {
@@ -59,7 +54,6 @@ import {
 import {
   enableChromeOsWorkforceActivity,
   enableWorkforceInProgressRepairs,
-  enableWorkforceMttr,
   enableWorkforcePickupRank,
   enableWorkforceTimeframeFilter,
 } from '@/fleet/features';
@@ -67,6 +61,7 @@ import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { PageNotFoundPage } from '@/fleet/pages/not_found_page';
 import { colors } from '@/fleet/theme/colors';
+import { prettySeconds } from '@/fleet/utils/dates';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
@@ -77,21 +72,8 @@ import { Duration as ProtoDuration } from '@/proto/google/protobuf/duration.pb';
 
 import { useWorkforceActivity } from './use_workforce_activity';
 
-const formatDuration = (d?: ProtoDuration | string | null): string => {
-  if (!d) return '-';
-  if (typeof d === 'string') {
-    if (d.endsWith('s') && !isNaN(Number(d.slice(0, -1)))) {
-      const [str] = displayCompactDuration(parseProtoDurationStr(d));
-      return str;
-    }
-    return d;
-  }
-  if (d.seconds !== undefined && !isNaN(Number(d.seconds))) {
-    const [str] = displayCompactDuration(parseProtoDuration(d));
-    return str;
-  }
-  return '-';
-};
+const formatDuration = (d?: ProtoDuration): string =>
+  d ? prettySeconds(Number(d.seconds)) : '-';
 
 export type TimeframeOption = '1D' | '7D' | '30D' | 'YTD';
 
@@ -117,7 +99,6 @@ export const WorkforceActivityView = ({
   const [unclaimedDuts, setUnclaimedDuts] = useState<Set<string>>(new Set());
 
   const showPickupRank = useFeatureFlag(enableWorkforcePickupRank);
-  const showMttr = useFeatureFlag(enableWorkforceMttr);
   const showInProgressRepairs = useFeatureFlag(
     enableWorkforceInProgressRepairs,
   );
@@ -310,7 +291,7 @@ export const WorkforceActivityView = ({
           </Typography>
         ),
       },
-      showMttr && {
+      {
         id: 'mttr',
         align: 'center',
         header: 'Avg Duration (MTTR)',
@@ -663,53 +644,51 @@ export const WorkforceActivityView = ({
         )}
 
         {/* Avg Repair Time (MTTR) */}
-        {showMttr && (
-          <Paper
-            elevation={0}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: '8px',
+            border: `1px solid ${colors.grey[300]}`,
+          }}
+        >
+          <Box
             sx={{
-              p: 2,
-              borderRadius: '8px',
-              border: `1px solid ${colors.grey[300]}`,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 1,
             }}
           >
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 1,
-              }}
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontWeight: 600 }}
             >
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ fontWeight: 600 }}
-              >
-                Avg Repair Time (MTTR)
-              </Typography>
-              <TimerIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-            </Box>
-            {loading ? (
-              <Skeleton
-                variant="text"
-                width={90}
-                height={42}
-                sx={{ mb: 0.5 }}
-                data-testid="kpi-skeleton"
-              />
-            ) : (
-              <Typography
-                variant="h4"
-                sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
-              >
-                {formatDuration(data?.avgRepairTime)}
-              </Typography>
-            )}
-            <Typography variant="caption" color="text.secondary">
-              Mean elapsed time ({timeframe})
+              Avg Repair Time (MTTR)
             </Typography>
-          </Paper>
-        )}
+            <TimerIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+          </Box>
+          {loading ? (
+            <Skeleton
+              variant="text"
+              width={90}
+              height={42}
+              sx={{ mb: 0.5 }}
+              data-testid="kpi-skeleton"
+            />
+          ) : (
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 700, color: 'primary.main', mb: 0.5 }}
+            >
+              {formatDuration(data?.avgRepairTime)}
+            </Typography>
+          )}
+          <Typography variant="caption" color="text.secondary">
+            Mean elapsed time ({timeframe})
+          </Typography>
+        </Paper>
       </Box>
 
       {/* Technicians Table */}

@@ -82,18 +82,6 @@ export const enableWorkforcePickupRank = createFeatureFlag({
   allowedEnvironments: ['dev'],
 });
 
-export const enableWorkforceMttr = createFeatureFlag({
-  description:
-    'Displays the Avg Duration / MTTR metric and table column in ChromeOS Workforce Activity.',
-  namespace: 'fleet-console',
-  name: 'workforce-avg-duration-mttr',
-  percentage: {
-    dev: 0,
-    prod: 0,
-  },
-  allowedEnvironments: ['dev'],
-});
-
 export const enableWorkforceInProgressRepairs = createFeatureFlag({
   description:
     'Displays the Currently Claimed DUTs / In-Progress Repairs metric and table column in ChromeOS Workforce Activity.',
