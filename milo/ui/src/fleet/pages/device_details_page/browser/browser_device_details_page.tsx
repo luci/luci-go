@@ -46,7 +46,6 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { BotData } from '../common/bot_data';
 import { Tasks } from '../common/tasks_table';
 
 import { BrowserDeviceDimensions } from './browser_device_dimensions';
@@ -55,7 +54,6 @@ import { useBrowserDeviceData } from './use_browser_device_data';
 
 enum TabValue {
   TASKS = 'tasks',
-  BOT_INFO = 'bot-info',
   DIMENSIONS = 'dimensions',
   INVENTORY_DATA = 'inventory',
 }
@@ -63,6 +61,10 @@ enum TabValue {
 const parseTabValue = (tabString: string | null): TabValue | undefined => {
   if (!tabString) {
     return undefined;
+  }
+  // Map legacy 'bot-info' tab to Dimensions, where bot info now lives.
+  if (tabString === 'bot-info') {
+    return TabValue.DIMENSIONS;
   }
   const val = tabString as TabValue;
   if (Object.values(TabValue).includes(val)) {
@@ -279,7 +281,6 @@ export const BrowserDeviceDetailsPage = () => {
                 <Tab label="Tasks" value={TabValue.TASKS} />
                 <Tab label="Dimensions" value={TabValue.DIMENSIONS} />
                 <Tab label="Inventory data" value={TabValue.INVENTORY_DATA} />
-                <Tab label="Bot info" value={TabValue.BOT_INFO} />
               </TabList>
             </Box>
             <TabPanel value={TabValue.TASKS}>
@@ -298,13 +299,6 @@ export const BrowserDeviceDetailsPage = () => {
             </TabPanel>
             <TabPanel value={TabValue.INVENTORY_DATA}>
               <BrowserInventoryData device={device} />
-            </TabPanel>
-            <TabPanel value={TabValue.BOT_INFO}>
-              {swarmingInstance && botId ? (
-                <BotData />
-              ) : (
-                <UnavailableSwarmingInfo />
-              )}
             </TabPanel>
           </TabContext>
         </>

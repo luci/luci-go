@@ -178,4 +178,46 @@ describe('<ChromeOSDeviceDetailsPage />', () => {
       screen.getByRole('button', { name: 'Copy device hostname' }),
     ).toBeVisible();
   });
+
+  it('does not render Bot info tab and maps legacy ?tab=bot-info to Dimensions tab', () => {
+    const mockDevice: ChromeOSDevice = {
+      id: 'chromeos6-row1-rack2-host3',
+      dutId: 'C123456',
+      address: undefined,
+      type: DeviceType.DEVICE_TYPE_UNSPECIFIED,
+      state: DeviceState.DEVICE_STATE_AVAILABLE,
+      realm: 'chromeos:fleet',
+      deviceSpec: {
+        labels: {},
+      },
+    };
+    mockUseChromeOSDeviceData.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      device: mockDevice,
+    });
+
+    render(
+      <FakeContextProvider
+        mountedPath="/:id"
+        routerOptions={{
+          initialEntries: ['/chromeos6-row1-rack2-host3?tab=bot-info'],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <ChromeOSDeviceDetailsPage />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(
+      screen.queryByRole('tab', { name: 'Bot info' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Dimensions' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
 });
