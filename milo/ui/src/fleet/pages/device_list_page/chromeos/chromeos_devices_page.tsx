@@ -21,6 +21,7 @@ import {
 } from '@/common/components/params_pager';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { CHROMEOS_COMMON_DEVICE_FILTERS } from '@/fleet/config/chromeos_device_config';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -94,6 +95,7 @@ export const ChromeOSDevicesPage = () => {
           filterCategoryDatas={Object.values(filterValues || {})}
           isLoading={isLoading || filterValues === undefined}
           searchPlaceholder='Add a filter (e.g. "dut1" or "state:ready")'
+          commonOptions={CHROMEOS_COMMON_DEVICE_FILTERS}
         />
       </div>
       <div

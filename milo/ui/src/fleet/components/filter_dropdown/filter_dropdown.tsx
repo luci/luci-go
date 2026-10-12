@@ -242,13 +242,27 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
     [deferredSearchQuery, filterCategoryDatas, splitSearchQuery],
   );
 
-  const otherFilterResults = commonOptions
-    ? filterResults.filter((option) => !commonOptions.includes(option.el.key))
+  const normalizedCommonOptions = useMemo(
+    () =>
+      commonOptions
+        ? new Set(commonOptions.map(normalizeFilterKey))
+        : undefined,
+    [commonOptions],
+  );
+
+  const isCommonFilterOption = useCallback(
+    (key: string) =>
+      Boolean(normalizedCommonOptions?.has(normalizeFilterKey(key))),
+    [normalizedCommonOptions],
+  );
+
+  const otherFilterResults = normalizedCommonOptions
+    ? filterResults.filter((option) => !isCommonFilterOption(option.el.key))
     : filterResults;
 
   const commonFilterResults =
-    commonOptions &&
-    filterResults?.filter((option) => commonOptions.includes(option.el.key));
+    normalizedCommonOptions &&
+    filterResults?.filter((option) => isCommonFilterOption(option.el.key));
 
   const onSearchQueryChangeInternal = (newValue: string) => {
     const { isCategoryScoped } = splitSearchQuery(newValue);
@@ -588,7 +602,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
                     ),
 
                     otherFilterResults.length > 0 &&
-                      commonFilterResults.length > 0 && (
+                      (commonFilterResults?.length ?? 0) > 0 && (
                         <Divider
                           sx={{
                             backgroundColor: 'transparent',
@@ -597,7 +611,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
                         />
                       ),
 
-                    commonOptions.length > 0 &&
+                    (commonFilterResults?.length ?? 0) > 0 &&
                       otherFilterResults.length > 0 && (
                         <Typography
                           variant="caption"
@@ -615,7 +629,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
                   otherFilterResults.map((filterResult, index) =>
                     renderOption(
                       filterResult,
-                      index === 0 && commonFilterResults?.length === 0,
+                      index === 0 && (commonFilterResults?.length ?? 0) === 0,
                     ),
                   ),
                 ]

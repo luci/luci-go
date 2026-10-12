@@ -44,3 +44,24 @@ export const BROWSER_DEFAULT_COLUMNS = [
   'sw.state',
   'realm',
 ];
+
+export const ANDROID_COMMON_DEVICE_FILTERS: string[] = [
+  'state',
+  'device_type',
+  'build',
+  'host_group',
+  'model',
+  'pool',
+  'run_target',
+  'type',
+];
+
+export const BROWSER_COMMON_DEVICE_FILTERS: string[] = [
+  'ufs.resource_state',
+  'ufs.zone',
+  'ufs.chrome_platform',
+  'sw.device_state',
+  'sw.dut_state',
+  'sw.pool',
+  'realm',
+];

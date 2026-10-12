@@ -15,7 +15,6 @@
 import { useRef, useState } from 'react';
 
 import { useShortcut } from '@/fleet/components/shortcut_provider';
-import { CHROMEOS_COMMON_DEVICE_FILTERS } from '@/fleet/config/chromeos_device_config';
 import { isTyping } from '@/fleet/utils/field_typing';
 
 import { FilterCategory } from '../filters/use_filters';
@@ -29,6 +28,7 @@ interface FilterBarProps {
   isLoading?: boolean;
   searchPlaceholder?: string;
   disableShortcut?: boolean;
+  commonOptions?: string[];
 }
 
 export function FilterBar({
@@ -37,6 +37,7 @@ export function FilterBar({
   isLoading,
   searchPlaceholder,
   disableShortcut = false,
+  commonOptions,
 }: FilterBarProps) {
   const [value, setValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -101,7 +102,7 @@ export function FilterBar({
         onClose={() => {
           setIsDropdownOpen(false);
         }}
-        commonOptions={CHROMEOS_COMMON_DEVICE_FILTERS}
+        commonOptions={commonOptions}
         isLoading={isLoading}
       />
     </div>

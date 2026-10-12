@@ -22,6 +22,7 @@ import {
 import { useFeatureFlag } from '@/common/feature_flags';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { ANDROID_COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
 import { enableAndroidUtilizationMetrics } from '@/fleet/features';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { AndroidSummaryHeader } from '@/fleet/pages/device_list_page/android/android_summary_header';
@@ -111,6 +112,7 @@ export const AndroidDevicesPage = ({
           filterCategoryDatas={Object.values(filterValues || {})}
           isLoading={isLoading || filterValues === undefined}
           searchPlaceholder='Add a filter (e.g. "state:idle", "pool:default", or "device_id:123")'
+          commonOptions={ANDROID_COMMON_DEVICE_FILTERS}
         />
       </div>
       <div

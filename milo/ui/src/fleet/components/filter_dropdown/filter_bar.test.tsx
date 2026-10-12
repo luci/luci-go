@@ -63,6 +63,7 @@ jest.mock('@tanstack/react-virtual', () => ({
 const TestComponent = ({
   renderDuplicate = false,
   disableShortcut = false,
+  commonOptions,
   initialOptions = [
     { label: 'Option 1', key: 'option-1', options: ['Value 1'] },
     { label: 'Option 2', key: 'option-2', options: ['Value 1'] },
@@ -70,6 +71,7 @@ const TestComponent = ({
 }: {
   renderDuplicate?: boolean;
   disableShortcut?: boolean;
+  commonOptions?: string[];
   initialOptions?: { label: string; key: string; options: string[] }[];
 }) => {
   const [filterCategories, setFilterCategories] = useState<FilterCategory[]>(
@@ -105,6 +107,7 @@ const TestComponent = ({
         onApply={() => {}}
         data-testid="filter-bar"
         disableShortcut={disableShortcut}
+        commonOptions={commonOptions}
       />
       {renderDuplicate && (
         <FilterBar
@@ -161,8 +164,11 @@ const getDisabledInput = () => {
 // used on our fuzzy search matches, which break up the text into separate spans
 const queryByBrokenUpText = (text: string) => {
   return screen.queryAllByText((_, element) => {
-    // Use `element.textContent` to get the full, combined text
-    return element?.textContent === text;
+    const hasText = element?.textContent === text;
+    const childrenHaveText = Array.from(element?.children || []).some(
+      (child) => child.textContent === text,
+    );
+    return hasText && !childrenHaveText;
   })[0];
 };
 
@@ -1200,5 +1206,113 @@ describe('FilterBar', () => {
     await user.keyboard('/');
     expect(searchInputs[0]).not.toHaveFocus();
     expect(searchInputs[1]).not.toHaveFocus();
+  });
+
+  it('should render custom common filter options under Common filters header', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent commonOptions={['option-1']} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBarInput();
+    await user.click(searchInput);
+
+    expect(screen.getByText('Common filters')).toBeInTheDocument();
+    expect(screen.getByText('Other filters')).toBeInTheDocument();
+    expect(screen.getByText('Option 1')).toBeInTheDocument();
+    expect(screen.getByText('Option 2')).toBeInTheDocument();
+  });
+
+  it('should match quoted and prefixed filter keys against normalized commonOptions under Common filters', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent
+          commonOptions={['model', 'state', 'ufs.zone']}
+          initialOptions={[
+            { label: 'Model', key: 'labels."model"', options: ['Val 1'] },
+            { label: 'State', key: '"state"', options: ['Val 2'] },
+            { label: 'Zone', key: 'ufs."zone"', options: ['Val 3'] },
+            { label: 'Other', key: 'other', options: ['Val 4'] },
+          ]}
+        />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBarInput();
+    await user.click(searchInput);
+
+    expect(screen.getByText('Common filters')).toBeInTheDocument();
+    expect(screen.getByText('Other filters')).toBeInTheDocument();
+
+    const commonFiltersHeader = screen.getByText('Common filters');
+    const otherFiltersHeader = screen.getByText('Other filters');
+
+    const modelOption = screen.getByText('Model');
+    const stateOption = screen.getByText('State');
+    const zoneOption = screen.getByText('Zone');
+    const otherOption = screen.getByText('Other');
+
+    // Verify model, state, zone appear after 'Common filters' and before 'Other filters'
+    expect(
+      commonFiltersHeader.compareDocumentPosition(modelOption) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      modelOption.compareDocumentPosition(otherFiltersHeader) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    expect(
+      commonFiltersHeader.compareDocumentPosition(stateOption) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      stateOption.compareDocumentPosition(otherFiltersHeader) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    expect(
+      commonFiltersHeader.compareDocumentPosition(zoneOption) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      zoneOption.compareDocumentPosition(otherFiltersHeader) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    // Verify other option appears after 'Other filters'
+    expect(
+      otherFiltersHeader.compareDocumentPosition(otherOption) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('should not show Common filters header and should focus first option when commonOptions is undefined', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent
+          initialOptions={[
+            { label: 'Option 1', key: 'option-1', options: ['Val 1'] },
+            { label: 'Option 2', key: 'option-2', options: ['Val 2'] },
+          ]}
+        />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBarInput();
+    await user.click(searchInput);
+
+    expect(screen.queryByText('Common filters')).not.toBeInTheDocument();
+    expect(screen.queryByText('Other filters')).not.toBeInTheDocument();
+
+    const option1 = screen.getByText('Option 1');
+    expect(option1).toBeInTheDocument();
+
+    await user.keyboard('{ArrowDown}');
+    expect(document.activeElement).toContainElement(option1);
   });
 });

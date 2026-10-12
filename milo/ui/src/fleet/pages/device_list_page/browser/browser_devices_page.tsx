@@ -22,6 +22,7 @@ import {
 } from '@/common/components/params_pager';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { BROWSER_COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -104,6 +105,7 @@ export const BrowserDevicesPage = () => {
           filterCategoryDatas={Object.values(filterValues || {})}
           isLoading={isLoading || filterValues === undefined}
           searchPlaceholder='Add a filter (e.g. "os:Linux" or "sw.pool:default")'
+          commonOptions={BROWSER_COMMON_DEVICE_FILTERS}
         />
       </div>
       <div
