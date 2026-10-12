@@ -78,6 +78,10 @@ func (p Platform) IsZero() bool {
 	return p.attributes.Len() == 0
 }
 
+func (p Platform) Map() map[string]string {
+	return p.attributes.Map()
+}
+
 // UniversalPlatform returns an empty Platform.
 func UniversalPlatform() Platform {
 	return Platform{attributes: environ.New(nil)}
