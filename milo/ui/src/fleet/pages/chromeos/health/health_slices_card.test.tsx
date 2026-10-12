@@ -828,4 +828,26 @@ describe('HealthSlicesCard', () => {
       localStorage.getItem(UseHealthSlicesModule.DEFAULT_SLICE_STORAGE_KEY),
     ).toBeNull();
   });
+
+  it('displays healthy, warning, and critical thresholds tooltip when hovering over slice status label', async () => {
+    render(
+      <FakeContextProvider>
+        <ShortcutProvider>
+          <HealthSlicesCard />
+        </ShortcutProvider>
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /add slice/i }));
+    const titleInput = screen.getByLabelText('Slice Title');
+    fireEvent.change(titleInput, { target: { value: 'Brya Fleet' } });
+    fireEvent.click(screen.getByRole('button', { name: /save slice/i }));
+
+    const statusLabel = screen.getByTestId(/^slice-status-label-/);
+    expect(statusLabel).toHaveTextContent('Healthy');
+
+    fireEvent.mouseOver(statusLabel);
+    expect(await screen.findByText('Health Thresholds')).toBeInTheDocument();
+    expect(screen.getByText('Critical')).toBeInTheDocument();
+  });
 });

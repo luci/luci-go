@@ -14,6 +14,13 @@
 
 const MS_IN_24_HOURS = 24 * 60 * 60 * 1000;
 
+/**
+ * Explanatory tooltip for health change (drop/gain) indicators:
+ * explains that delta is compared to the average from the previous day.
+ */
+export const HEALTH_COMPARISON_TOOLTIP =
+  'Compared to average from the previous day';
+
 export interface TrendlinePointLike {
   readonly timestamp?: string | undefined;
   readonly value: number;

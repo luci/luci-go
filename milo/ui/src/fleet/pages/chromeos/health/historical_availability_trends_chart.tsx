@@ -49,6 +49,7 @@ import {
   YAxis,
 } from 'recharts';
 
+import { TRENDS_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
 import { colors } from '@/fleet/theme/colors';
 import {
   TrendlineGrouping,
@@ -262,11 +263,8 @@ const TrendsTooltip = ({
       elevation={3}
       data-testid="trends-chart-tooltip"
       sx={{
-        p: 1,
+        ...TRENDS_TOOLTIP_PAPER_SX,
         width: 260,
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 1.5,
       }}
     >
       <Typography

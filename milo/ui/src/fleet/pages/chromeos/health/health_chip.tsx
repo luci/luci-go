@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Chip, Tooltip, type SxProps, type Theme } from '@mui/material';
+import { Chip, type SxProps, type Theme } from '@mui/material';
 import React from 'react';
 
-import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
+import { HealthTooltip } from './health_tooltip';
 
 export interface HealthChipProps {
   /** The text label displayed inside the chip. */
@@ -50,13 +50,14 @@ export const HealthChip = ({
       label={label}
       size="small"
       variant="outlined"
+      tabIndex={tooltip ? 0 : undefined}
       sx={{
         height: 22,
         fontSize: 11,
         fontWeight: 600,
         color: isPrimary ? 'primary.main' : 'text.secondary',
         borderColor: isPrimary ? 'primary.main' : 'divider',
-        cursor: tooltip ? 'help' : 'default',
+        cursor: 'default',
         '& .MuiChip-label': {
           px: 1,
         },
@@ -70,12 +71,8 @@ export const HealthChip = ({
   }
 
   return (
-    <Tooltip
-      title={tooltip}
-      arrow
-      slotProps={{ tooltip: { sx: INFO_TOOLTIP_PAPER_SX } }}
-    >
+    <HealthTooltip variant="standard" title={tooltip}>
       {chip}
-    </Tooltip>
+    </HealthTooltip>
   );
 };

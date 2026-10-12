@@ -25,6 +25,7 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { PerformanceRankingCard } from './performance_ranking_card';
+import { HEALTH_COMPARISON_TOOLTIP } from './ranking_utils';
 import * as UseFleetAvailabilityTrendsModule from './use_fleet_availability_trends';
 
 describe('PerformanceRankingCard', () => {
@@ -493,5 +494,224 @@ describe('PerformanceRankingCard', () => {
 
     fireEvent.click(screen.getByTestId('ranking-row-anahera'));
     expect(onSelectModel).toHaveBeenCalledWith('Anahera');
+  });
+
+  it('displays comparison tooltip when hovering over health drop and gain badges', async () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.8 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.6 },
+          ],
+        },
+        {
+          name: 'brya',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.7 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.9 },
+          ],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard />
+      </FakeContextProvider>,
+    );
+
+    // Hover over drop badge
+    const dropBadge = screen.getByTestId('drop-badge-volteer');
+    fireEvent.mouseOver(dropBadge);
+    expect(
+      await screen.findByText(HEALTH_COMPARISON_TOOLTIP),
+    ).toBeInTheDocument();
+
+    // Hover over gain badge
+    const gainBadge = screen.getByTestId('gain-badge-brya');
+    fireEvent.mouseOver(gainBadge);
+    expect(
+      await screen.findByText(HEALTH_COMPARISON_TOOLTIP),
+    ).toBeInTheDocument();
+  });
+
+  it('displays healthy, warning, and critical thresholds tooltip when hovering over progress bar', async () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [{ timestamp: '2026-09-30T00:00:00Z', value: 0.7 }],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard />
+      </FakeContextProvider>,
+    );
+
+    const progressBar = screen.getByRole('progressbar', {
+      name: 'volteer availability',
+    });
+    fireEvent.mouseOver(progressBar);
+    expect(await screen.findByText('Health Thresholds')).toBeInTheDocument();
+    expect(screen.getByTestId('threshold-row-healthy')).toHaveTextContent(
+      'Healthy',
+    );
+    expect(screen.getByTestId('threshold-row-healthy')).toHaveTextContent(
+      '≥ 95%',
+    );
+    expect(screen.getByTestId('threshold-row-warning')).toHaveTextContent(
+      'Warning',
+    );
+    expect(screen.getByTestId('threshold-row-warning')).toHaveTextContent(
+      '80%–94%',
+    );
+    expect(screen.getByTestId('threshold-row-critical')).toHaveTextContent(
+      'Critical',
+    );
+    expect(screen.getByTestId('threshold-row-critical')).toHaveTextContent(
+      '< 80%',
+    );
+  });
+
+  it('displays healthy, warning, and critical thresholds tooltip when hovering over availability label', async () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [{ timestamp: '2026-09-30T00:00:00Z', value: 0.7 }],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard />
+      </FakeContextProvider>,
+    );
+
+    const availabilityLabel = screen.getByTestId('availability-label-volteer');
+    fireEvent.mouseOver(availabilityLabel);
+    expect(await screen.findByText('Health Thresholds')).toBeInTheDocument();
+  });
+
+  it('displays comparison tooltip when hovering over flat trend badge', async () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.8 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.8 },
+          ],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard />
+      </FakeContextProvider>,
+    );
+
+    const flatBadge = screen.getByTestId('flat-badge-volteer');
+    fireEvent.mouseOver(flatBadge);
+    expect(
+      await screen.findByText(HEALTH_COMPARISON_TOOLTIP),
+    ).toBeInTheDocument();
+  });
+
+  it('triggers onSelectModel when clicking on drop badge', () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [
+            { timestamp: '2026-09-29T00:00:00Z', value: 0.9 },
+            { timestamp: '2026-09-30T00:00:00Z', value: 0.75 },
+          ],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    const onSelectModel = jest.fn();
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard onSelectModel={onSelectModel} />
+      </FakeContextProvider>,
+    );
+
+    const dropBadge = screen.getByTestId('drop-badge-volteer');
+    fireEvent.click(dropBadge);
+    expect(onSelectModel).toHaveBeenCalledWith('volteer');
   });
 });

@@ -45,7 +45,8 @@ import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/ap
 
 import { HEALTH_FILTER_CONFIGS } from './filter_constants';
 import { getHealthStatus } from './health_status_utils';
-import { calculate24hDelta } from './ranking_utils';
+import { HealthThresholdsTooltip, HealthTooltip } from './health_tooltip';
+import { calculate24hDelta, HEALTH_COMPARISON_TOOLTIP } from './ranking_utils';
 import {
   getHourAlignedTimeWindow,
   RANKING_HOURS_WINDOW,
@@ -374,53 +375,158 @@ export const PerformanceRankingCard = ({
                       mb: 0.5,
                     }}
                   >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 'bold',
-                        color: 'text.primary',
-                        fontSize: '0.72rem',
-                      }}
+                    <HealthThresholdsTooltip
+                      pct={item.availabilityPct}
+                      metricLabel={
+                        entityTab === 'models' ? 'Availability' : 'Health'
+                      }
                     >
-                      {item.availabilityPct}%{' '}
-                      {entityTab === 'models' ? 'Available' : 'Healthy'}
-                    </Typography>
-                    {item.trend === 'down' && (
-                      <Box
+                      <Typography
+                        variant="caption"
+                        data-testid={`availability-label-${item.name}`}
+                        tabIndex={0}
                         sx={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 0.25,
+                          fontWeight: 'bold',
+                          color: 'text.primary',
+                          fontSize: '0.72rem',
+                          cursor: 'pointer',
+                          borderRadius: 0.5,
+                          px: 0.5,
+                          py: 0.25,
+                          transition: 'background-color 0.15s ease-in-out',
+                          '&:hover, &:focus-visible': {
+                            bgcolor: 'action.hover',
+                            outline: 'none',
+                          },
                         }}
                       >
-                        <TrendingDown color="error" sx={{ fontSize: 16 }} />
-                        <Typography
-                          variant="caption"
+                        {item.availabilityPct}%{' '}
+                        {entityTab === 'models' ? 'Available' : 'Healthy'}
+                      </Typography>
+                    </HealthThresholdsTooltip>
+                    {item.trend === 'down' && (
+                      <HealthTooltip title={HEALTH_COMPARISON_TOOLTIP}>
+                        <Box
+                          tabIndex={0}
                           data-testid={`drop-badge-${item.name}`}
                           sx={{
-                            color: 'error.main',
-                            fontWeight: 'bold',
-                            fontSize: '0.75rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.25,
+                            cursor: 'pointer',
+                            px: 0.5,
+                            py: 0.25,
+                            borderRadius: 1,
+                            transition: 'background-color 0.15s ease-in-out',
+                            '&:hover, &:focus-visible': {
+                              bgcolor: 'action.hover',
+                              outline: 'none',
+                            },
                           }}
                         >
-                          -{item.healthDrop}%
-                        </Typography>
-                      </Box>
+                          <TrendingDown color="error" sx={{ fontSize: 16 }} />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: 'error.main',
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                            }}
+                          >
+                            -{item.healthDrop}%
+                          </Typography>
+                        </Box>
+                      </HealthTooltip>
                     )}
                     {item.trend === 'up' && (
-                      <TrendingUp color="success" sx={{ fontSize: 16 }} />
+                      <HealthTooltip title={HEALTH_COMPARISON_TOOLTIP}>
+                        <Box
+                          component="span"
+                          tabIndex={0}
+                          data-testid={`gain-badge-${item.name}`}
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                            px: 0.5,
+                            py: 0.25,
+                            borderRadius: 1,
+                            transition: 'background-color 0.15s ease-in-out',
+                            '&:hover, &:focus-visible': {
+                              bgcolor: 'action.hover',
+                              outline: 'none',
+                            },
+                          }}
+                        >
+                          <TrendingUp color="success" sx={{ fontSize: 16 }} />
+                        </Box>
+                      </HealthTooltip>
                     )}
                     {item.trend === 'flat' && (
-                      <TrendingFlat color="action" sx={{ fontSize: 16 }} />
+                      <HealthTooltip title={HEALTH_COMPARISON_TOOLTIP}>
+                        <Box
+                          component="span"
+                          tabIndex={0}
+                          data-testid={`flat-badge-${item.name}`}
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                            px: 0.5,
+                            py: 0.25,
+                            borderRadius: 1,
+                            transition: 'background-color 0.15s ease-in-out',
+                            '&:hover, &:focus-visible': {
+                              bgcolor: 'action.hover',
+                              outline: 'none',
+                            },
+                          }}
+                        >
+                          <TrendingFlat color="action" sx={{ fontSize: 16 }} />
+                        </Box>
+                      </HealthTooltip>
                     )}
                   </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={item.availabilityPct}
-                    color={getHealthStatus(item.availabilityPct).color}
-                    sx={{ height: 6, borderRadius: 3 }}
-                    aria-label={`${item.name} availability`}
-                  />
+                  <HealthThresholdsTooltip
+                    pct={item.availabilityPct}
+                    metricLabel={
+                      entityTab === 'models' ? 'Availability' : 'Health'
+                    }
+                  >
+                    <Box
+                      tabIndex={0}
+                      sx={{
+                        cursor: 'pointer',
+                        py: 0.5,
+                        borderRadius: 1,
+                        transition: 'background-color 0.15s ease-in-out',
+                        '&:hover, &:focus-visible': {
+                          bgcolor: 'action.hover',
+                          outline: 'none',
+                        },
+                        '&:hover .MuiLinearProgress-root, &:focus-visible .MuiLinearProgress-root':
+                          {
+                            transform: 'scaleY(1.33)',
+                            filter: 'brightness(1.08)',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                          },
+                      }}
+                    >
+                      <LinearProgress
+                        variant="determinate"
+                        value={item.availabilityPct}
+                        color={getHealthStatus(item.availabilityPct).color}
+                        sx={{
+                          height: 6,
+                          borderRadius: 3,
+                          transition:
+                            'transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease, box-shadow 0.15s ease',
+                        }}
+                        aria-label={`${item.name} availability`}
+                        data-testid={`progress-bar-${item.name}`}
+                      />
+                    </Box>
+                  </HealthThresholdsTooltip>
                 </Box>
               </ListItem>
             ))}

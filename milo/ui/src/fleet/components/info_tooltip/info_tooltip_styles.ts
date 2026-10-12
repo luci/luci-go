@@ -15,20 +15,75 @@
 import { SxProps, Theme } from '@mui/material';
 
 /**
- * Styling for the light "info bauble" hovercard surface: a white paper
- * background with dark text, a hairline border and a drop shadow.
- *
- * Shared so that tooltips outside `InfoTooltip` itself — such as the repair
- * queue priority score breakdown — can adopt the same look without the two
- * treatments drifting apart.
+ * Styling for the arrow of light white hovercard surfaces.
+ * Matches the background.paper color and divider border of the tooltip box.
  */
-export const INFO_TOOLTIP_PAPER_SX = {
+export const WHITE_TOOLTIP_ARROW_SX = {
+  color: 'background.paper',
+  '&::before': {
+    border: (theme: Theme) => `1px solid ${theme.palette.divider}`,
+  },
+} as const satisfies SxProps<Theme>;
+
+/**
+ * Common base styling for the light "info bauble" / hovercard surface:
+ * a white paper background with dark text, hairline border, subtle drop shadow,
+ * rounded corners, and matching white arrow.
+ */
+export const BASE_WHITE_TOOLTIP_PAPER_SX = {
   bgcolor: 'background.paper',
   color: 'text.primary',
-  p: 2,
   border: (theme: Theme) => `1px solid ${theme.palette.divider}`,
+  borderRadius: 1.5,
   boxShadow: 3,
+  '& .MuiTooltip-arrow': WHITE_TOOLTIP_ARROW_SX,
+} as const satisfies SxProps<Theme>;
+
+/**
+ * Standard hovercard tooltip styling with comfortable padding (p: 2)
+ * for detailed explanatory popovers, such as InfoTooltip, repair queue priority
+ * score breakdowns, and Quota vs. Enrolled baseline descriptions.
+ */
+export const INFO_TOOLTIP_PAPER_SX = {
+  ...BASE_WHITE_TOOLTIP_PAPER_SX,
+  p: 2,
   maxWidth: 450,
   pointerEvents: 'auto',
   fontSize: '0.875rem',
+} as const satisfies SxProps<Theme>;
+
+export const INFO_TOOLTIP_SLOT_PROPS = {
+  tooltip: {
+    sx: INFO_TOOLTIP_PAPER_SX,
+  },
+} as const;
+
+/**
+ * Compact hovercard tooltip styling with tighter padding (p: 1)
+ * and smaller max-width (320px) for concise metrics, SLA thresholds,
+ * delta comparisons, and data points.
+ */
+export const COMPACT_TOOLTIP_PAPER_SX = {
+  ...BASE_WHITE_TOOLTIP_PAPER_SX,
+  p: 1,
+  maxWidth: 320,
+} as const satisfies SxProps<Theme>;
+
+export const COMPACT_TOOLTIP_SLOT_PROPS = {
+  tooltip: {
+    sx: COMPACT_TOOLTIP_PAPER_SX,
+  },
+} as const;
+
+/**
+ * Styling for custom MUI `<Paper>` elements used in Recharts chart tooltips
+ * (e.g. historical availability trends), matching the compact white hovercard
+ * treatment.
+ */
+export const TRENDS_TOOLTIP_PAPER_SX = {
+  bgcolor: 'background.paper',
+  color: 'text.primary',
+  p: 1,
+  border: (theme: Theme) => `1px solid ${theme.palette.divider}`,
+  borderRadius: 1.5,
 } as const satisfies SxProps<Theme>;

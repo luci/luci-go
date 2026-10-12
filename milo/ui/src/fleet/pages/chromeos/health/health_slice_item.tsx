@@ -33,6 +33,7 @@ import {
 import { BaselineChip } from './baseline_chip';
 import { HealthSliceMenu } from './health_slice_menu';
 import { getHealthStatus } from './health_status_utils';
+import { HealthThresholdsTooltip } from './health_tooltip';
 import {
   getHourAlignedTimeWindow,
   RECENT_HOURS_WINDOW,
@@ -431,31 +432,81 @@ export const HealthSliceItem = ({
             </Typography>
           </Box>
 
-          <Typography
-            variant="caption"
+          <HealthThresholdsTooltip
+            pct={pct}
+            metricLabel={isAvailability ? 'Availability' : 'Health'}
+          >
+            <Typography
+              variant="caption"
+              data-testid={`slice-status-label-${slice.id}`}
+              tabIndex={0}
+              sx={{
+                fontWeight: 700,
+                fontSize: 12,
+                color:
+                  healthMeta !== undefined
+                    ? `${healthMeta.color}.main`
+                    : 'text.secondary',
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                borderRadius: 0.5,
+                px: 0.5,
+                py: 0.25,
+                transition: 'background-color 0.15s ease-in-out',
+                '&:hover, &:focus-visible': {
+                  bgcolor: 'action.hover',
+                  outline: 'none',
+                },
+              }}
+            >
+              {pct === undefined
+                ? isLoading
+                  ? 'Loading...'
+                  : 'No data'
+                : (healthMeta?.status ?? 'No data')}
+            </Typography>
+          </HealthThresholdsTooltip>
+        </Box>
+
+        <HealthThresholdsTooltip
+          pct={pct}
+          metricLabel={isAvailability ? 'Availability' : 'Health'}
+        >
+          <Box
+            tabIndex={0}
+            data-testid={`slice-progress-bar-container-${slice.id}`}
             sx={{
-              fontWeight: 700,
-              fontSize: 12,
-              color:
-                healthMeta !== undefined
-                  ? `${healthMeta.color}.main`
-                  : 'text.secondary',
-              whiteSpace: 'nowrap',
+              cursor: 'pointer',
+              py: 0.5,
+              px: 0.5,
+              mx: -0.5,
+              borderRadius: 1,
+              transition: 'background-color 0.15s ease-in-out',
+              '&:hover, &:focus-visible': {
+                bgcolor: 'action.hover',
+                outline: 'none',
+              },
+              '&:hover .MuiLinearProgress-root, &:focus-visible .MuiLinearProgress-root':
+                {
+                  transform: 'scaleY(1.33)',
+                  filter: 'brightness(1.08)',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                },
             }}
           >
-            {pct === undefined
-              ? isLoading
-                ? 'Loading...'
-                : 'No data'
-              : (healthMeta?.status ?? 'No data')}
-          </Typography>
-        </Box>
-        <LinearProgress
-          variant={isLoading ? 'indeterminate' : 'determinate'}
-          value={Math.min(100, pct ?? 0)}
-          color={healthMeta?.color ?? 'primary'}
-          sx={{ height: 4, borderRadius: 2 }}
-        />
+            <LinearProgress
+              variant={isLoading ? 'indeterminate' : 'determinate'}
+              value={Math.min(100, pct ?? 0)}
+              color={healthMeta?.color ?? 'primary'}
+              sx={{
+                height: 4,
+                borderRadius: 2,
+                transition:
+                  'transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease, box-shadow 0.15s ease',
+              }}
+            />
+          </Box>
+        </HealthThresholdsTooltip>
       </Box>
     </Box>
   );
