@@ -17,6 +17,7 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -51,13 +52,19 @@ func ReportBuilderMetrics(ctx context.Context) error {
 		return err
 	}
 
-	return parallel.WorkPool(256, func(taskC chan<- func() error) {
-		q := datastore.NewQuery(model.BuilderStatKind)
-		for k, err := range datastore.RunBatchQuery[*datastore.Key](ctx, 64, q).Results {
-			if err != nil {
-				taskC <- func() error { return errors.Fmt("datastore.RunBatchQuery: %w", err) }
-				break
-			}
+	// Visit builders in randomized order to avoid giving preference to ones
+	// that come first in alphabetical order.
+	builders, err := datastore.RunQuery[*datastore.Key](ctx,
+		datastore.NewQuery(model.BuilderStatKind),
+	).AsSlice()
+	if err != nil {
+		return fmt.Errorf("fetching the list of builders: %w", err)
+	}
+	rand.Shuffle(len(builders), func(i, j int) { builders[i], builders[j] = builders[j], builders[i] })
+
+	logging.Infof(ctx, "About to visit %d builders", len(builders))
+	return parallel.WorkPool(4096, func(taskC chan<- func() error) {
+		for _, k := range builders {
 			project, bucket, builder := mustParseBuilderStatID(k.StringID())
 			tctx := WithBuilder(ctx, project, bucket, builder)
 			legacyBucket := bucket
@@ -241,7 +248,7 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 			ctx, 64, q.Eq("status_v2", pb.Status_SCHEDULED),
 		).Results {
 			if err != nil {
-				return fmt.Errorf("enumerating SCHEDULED builds: %w", err)
+				return fmt.Errorf("enumerating SCHEDULED builds (after visiting %d builds): %w", nScheduled, err)
 			}
 			// Process scheduled time of pending builds
 			// and add to V2.Age metric

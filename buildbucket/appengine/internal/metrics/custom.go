@@ -227,7 +227,7 @@ func (cms *CustomMetrics) Flush(ctx context.Context, globalCfg *pb.SettingsCfg, 
 	newCmsInCfg := convertCustomMetricConfig(globalCfg)
 	needUpdate := checkUpdates(newCmsInCfg)
 	if !needUpdate {
-		return state.ParallelFlush(ctx, mon, 4)
+		return state.ParallelFlush(ctx, mon, 64)
 	}
 
 	// Need to update cms.metrics and recreate cms.state.
@@ -270,7 +270,7 @@ func (cms *CustomMetrics) Flush(ctx context.Context, globalCfg *pb.SettingsCfg, 
 	}()
 
 	// Flush existing reports in state.
-	err := state.ParallelFlush(ctx, mon, 4)
+	err := state.ParallelFlush(ctx, mon, 64)
 	if err != nil {
 		return err
 	}

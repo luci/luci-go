@@ -36,7 +36,7 @@ entrypoint: >
   -cloud-error-reporting
   -root-secret sm://root-secret
   -primary-tink-aead-key sm://tink-aead-primary
-  -ds-connection-pool-size 8
+  -ds-connection-pool-size 256
   -redis-addr ${REDIS_ADDR}
   -ds-cache ${DS_CACHE}
   -internal-request-timeout 60m

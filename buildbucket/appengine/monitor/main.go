@@ -117,7 +117,7 @@ func main() {
 
 			// Have two separate timeouts for querying and flushing.
 			start = clock.Now(ctx)
-			flushCtx, flushCtxCancel := context.WithTimeout(ctx, 5*time.Minute)
+			flushCtx, flushCtxCancel := context.WithTimeout(ctx, 10*time.Minute)
 			defer flushCtxCancel()
 
 			var wg sync.WaitGroup
@@ -126,7 +126,7 @@ func main() {
 			// Flush built-in metrics.
 			go func() {
 				defer wg.Done()
-				merr[1] = state.ParallelFlush(flushCtx, mon, 8)
+				merr[1] = state.ParallelFlush(flushCtx, mon, 64)
 			}()
 
 			// Flush custom metrics
