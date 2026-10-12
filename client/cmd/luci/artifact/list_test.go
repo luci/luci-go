@@ -265,7 +265,7 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1/tests/test1/results/0", ParentTypeTestResult, &buf)
+			PrintAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1/tests/test1/results/0", ParentTypeTestResult, &buf)
 			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
@@ -297,7 +297,7 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit, &buf)
+			PrintAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit, &buf)
 			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root contains 1 artifact. Run 'luci work-unit artifact list -invocationid build-123 -workunitid build-root' to view."))
@@ -324,7 +324,7 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit, &buf)
+			PrintAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit, &buf)
 			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Root work unit contains 1 artifact. Run 'luci work-unit artifact list -invocationid build-123 -workunitid root' to view."))
@@ -345,7 +345,7 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			printAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step/tests/t/results/0", ParentTypeTestResult, &buf)
+			PrintAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step/tests/t/results/0", ParentTypeTestResult, &buf)
 			out := buf.String()
 
 			assert.Loosely(t, out, should.Equal(""))
@@ -375,7 +375,7 @@ func TestPrintImmediateParentInvocationNotice(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			printImmediateParentInvocationNotice(ctx, client, "invocations/u-root-123/tests/test1/results/0", &buf)
+			PrintImmediateParentInvocationNotice(ctx, client, "invocations/u-root-123/tests/test1/results/0", &buf)
 			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Invocation Artifacts:"))
@@ -405,11 +405,11 @@ func TestPrintImmediateParentInvocationNotice(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			printImmediateParentInvocationNotice(ctx, client, "invocations/u-root-1/tests/test1/results/0", &buf)
+			PrintImmediateParentInvocationNotice(ctx, client, "invocations/u-root-1/tests/test1/results/0", &buf)
 			assert.Loosely(t, buf.String(), should.ContainSubstring("Invocation u-root-1 contains 1 artifact."))
 
 			buf.Reset()
-			printImmediateParentInvocationNotice(ctx, client, "invocations/u-root-more/tests/test1/results/0", &buf)
+			PrintImmediateParentInvocationNotice(ctx, client, "invocations/u-root-more/tests/test1/results/0", &buf)
 			assert.Loosely(t, buf.String(), should.ContainSubstring("Invocation u-root-more contains 1+ artifacts."))
 		})
 
@@ -421,14 +421,14 @@ func TestPrintImmediateParentInvocationNotice(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			printImmediateParentInvocationNotice(ctx, client, "invocations/u-root-123/tests/test1/results/0", &buf)
+			PrintImmediateParentInvocationNotice(ctx, client, "invocations/u-root-123/tests/test1/results/0", &buf)
 			assert.Loosely(t, buf.String(), should.Equal(""))
 		})
 
 		t.Run(`invalid target format`, func(t *ftt.Test) {
 			client := &mockResultDBClient{}
 			var buf bytes.Buffer
-			printImmediateParentInvocationNotice(ctx, client, "invalid-target", &buf)
+			PrintImmediateParentInvocationNotice(ctx, client, "invalid-target", &buf)
 			assert.Loosely(t, buf.String(), should.Equal(""))
 		})
 	})

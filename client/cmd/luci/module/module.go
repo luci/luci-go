@@ -72,7 +72,6 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Root invocation ID (e.g. ants-i... or build-867...)")
 			r.Flags.StringVar(&r.moduleName, "modulename", "", "Module name (e.g. CellBroadcastReceiverMTS)")
 			r.Flags.StringVar(&r.moduleName, "module", "", "Alias for -modulename")
-			r.Flags.BoolVar(&r.showArtifacts, "show-artifacts", false, "Show work unit artifacts for failed shards")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Show additional module metadata")
 			r.Flags.BoolVar(&r.jsonOut, "json", false, "Output module details in JSON format")
 			return r
@@ -82,13 +81,12 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 
 type moduleGetRun struct {
 	subcommands.CommandRunBase
-	af            *base.AuthFlags
-	host          string
-	invocationID  string
-	moduleName    string
-	showArtifacts bool
-	showMetadata  bool
-	jsonOut       bool
+	af           *base.AuthFlags
+	host         string
+	invocationID string
+	moduleName   string
+	showMetadata bool
+	jsonOut      bool
 }
 
 func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -136,7 +134,7 @@ func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcomm
 		return 0
 	}
 
-	printModuleDetails(modDetails, r.showArtifacts, r.showMetadata)
+	printModuleDetails(modDetails, r.showMetadata)
 	return 0
 }
 
@@ -377,7 +375,7 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 	return results, nil
 }
 
-func printModuleDetails(details *ModuleDetails, showArtifacts, showMetadata bool) {
+func printModuleDetails(details *ModuleDetails, showMetadata bool) {
 	statusClean := strings.TrimPrefix(details.ModuleStatus, "MODULE_STATUS_")
 	fmt.Printf("Module:        %s\n", details.ModuleName)
 	fmt.Printf("Invocation:    rootInvocations/%s\n", details.InvocationID)

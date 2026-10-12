@@ -169,9 +169,9 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		format.PrintArtifactList(trArtifacts[:displayedCount])
 
 		if r.legacy {
-			printImmediateParentInvocationNotice(ctx, client, cleanTarget, os.Stdout)
+			PrintImmediateParentInvocationNotice(ctx, client, cleanTarget, os.Stdout)
 		} else {
-			printAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
+			PrintAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
 		}
 		return 0
 	}
@@ -198,7 +198,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	displayedCount := printArtifactHeader("Work Unit", format.FormatWorkUnitBreadcrumb(cleanTarget), len(wuArtifacts), maxArtifacts)
 	format.PrintArtifactList(wuArtifacts[:displayedCount])
 
-	printAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
+	PrintAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
 	return 0
 }
 
@@ -217,7 +217,7 @@ func printArtifactHeaderTo(out io.Writer, category, breadcrumb string, totalCoun
 	return displayedCount
 }
 
-func printImmediateParentInvocationNotice(ctx context.Context, client pb.ResultDBClient, target string, out io.Writer) {
+func PrintImmediateParentInvocationNotice(ctx context.Context, client pb.ResultDBClient, target string, out io.Writer) {
 	idx := strings.Index(target, "/tests/")
 	if idx == -1 {
 		return
@@ -243,7 +243,7 @@ func printImmediateParentInvocationNotice(ctx context.Context, client pb.ResultD
 	}
 }
 
-func printAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient, target string, parentType ParentType, out io.Writer) {
+func PrintAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient, target string, parentType ParentType, out io.Writer) {
 	var wuToCheck []string
 	visited := make(map[string]bool)
 

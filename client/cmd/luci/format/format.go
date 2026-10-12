@@ -217,7 +217,15 @@ func PrintTestIDWithAggregations(ctx context.Context, schemasClient pb.SchemasCl
 	}
 }
 
-func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, resName, htmlStr string, showArtifacts bool) string {
+// maxInlineArtifactBytes is the maximum size (64 KiB) of an embedded
+// <text-artifact> in summary_html that will be fetched and expanded inline
+// automatically.
+const maxInlineArtifactBytes = 64 * 1024
+
+// FormatSummaryHTML converts a test result's summary_html into plain text,
+// automatically expanding small embedded <text-artifact> tags inline when
+// rdbClient and httpClient are provided.
+func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, resName, htmlStr string) string {
 	re := regexp.MustCompile(`<text-artifact\s+([^>]+)>`)
 	htmlStr = re.ReplaceAllStringFunc(htmlStr, func(tag string) string {
 		match := re.FindStringSubmatch(tag)
@@ -231,8 +239,8 @@ func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpCli
 			return tag
 		}
 		artID := idMatch[1]
-		if !showArtifacts {
-			return fmt.Sprintf("[Embedded Artifact: %s (pass --show-artifacts to view)]", artID)
+		if rdbClient == nil || httpClient == nil {
+			return fmt.Sprintf("[Embedded Artifact: %s - use 'luci artifact get' to view]", artID)
 		}
 		isInvLevel := strings.Contains(attrs, "inv-level")
 		encodedArtID := url.PathEscape(artID)
@@ -247,11 +255,18 @@ func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpCli
 		} else {
 			artName = resName + "/artifacts/" + encodedArtID
 		}
-		body, err := FetchArtifact(ctx, rdbClient, httpClient, artName)
-		if err != nil {
+		art, err := rdbClient.GetArtifact(ctx, &pb.GetArtifactRequest{Name: artName})
+		if err != nil || art == nil || art.FetchUrl == "" {
 			return fmt.Sprintf("[Failed to fetch embedded artifact: %s]", artID)
 		}
-		return fmt.Sprintf("\n--- Embedded Artifact: %s ---\n%s\n--- End Artifact ---", artID, string(body))
+		if art.SizeBytes > maxInlineArtifactBytes {
+			return fmt.Sprintf("[Embedded Artifact: %s (%s) - use 'luci artifact get' to view]", artID, FormatSize(art.SizeBytes))
+		}
+		var buf bytes.Buffer
+		if err := FetchArtifactContent(ctx, httpClient, art.FetchUrl, &buf); err != nil {
+			return fmt.Sprintf("[Failed to fetch embedded artifact: %s]", artID)
+		}
+		return fmt.Sprintf("\n--- Embedded Artifact: %s ---\n%s\n--- End Artifact ---", artID, buf.String())
 	})
 	htmlStr = strings.ReplaceAll(htmlStr, "<br>", "\n")
 	htmlStr = strings.ReplaceAll(htmlStr, "<br/>", "\n")

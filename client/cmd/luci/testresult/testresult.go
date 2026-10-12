@@ -17,6 +17,7 @@ package testresult
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/maruel/subcommands"
@@ -70,7 +71,6 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
 			r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
 			r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
-			r.Flags.BoolVar(&r.showArtifacts, "show-artifacts", false, "Render HTML artifact links inline")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Show additional result metadata and tags")
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
@@ -80,14 +80,13 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 
 type testResultGetRun struct {
 	subcommands.CommandRunBase
-	af            *base.AuthFlags
-	host          string
-	invocationID  string
-	testID        string
-	resultID      string
-	showArtifacts bool
-	showMetadata  bool
-	legacy        bool
+	af           *base.AuthFlags
+	host         string
+	invocationID string
+	testID       string
+	resultID     string
+	showMetadata bool
+	legacy       bool
 }
 
 // FetchTestResult fetches a test result by its decomposed IDs.
@@ -139,6 +138,11 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		return 1
 	}
 
+	r.printTestResult(ctx, client, schemasClient, httpClient, res)
+	return 0
+}
+
+func (r *testResultGetRun) printTestResult(ctx context.Context, client pb.ResultDBClient, schemasClient pb.SchemasClient, httpClient *http.Client, res *pb.TestResult) {
 	aggs := verdict.FetchHierarchyAggregations(ctx, client, r.invocationID, res, r.legacy)
 	if c := format.FormatVerdictCountsInline(aggs.GetInvocation()); c != "" {
 		fmt.Printf("Invocation: %s %s\n", r.invocationID, c)
@@ -175,15 +179,25 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		format.PrintFailureReason(res.FailureReason, "")
 	}
 	if res.SummaryHtml != "" {
-		fmt.Printf("Summary:\n%s\n", format.FormatSummaryHTML(ctx, client, httpClient, res.Name, res.SummaryHtml, r.showArtifacts))
+		fmt.Printf("Summary:\n%s\n", format.FormatSummaryHTML(ctx, client, httpClient, res.Name, res.SummaryHtml))
 	}
 	if r.showMetadata {
 		fmt.Println()
 		fmt.Printf("Full Name: %s\n", res.Name)
 		format.PrintAdditionalMetadata(res)
 	}
-
-	return 0
+	if arts, err := artifact.QueryAllArtifacts(ctx, client, res.Name); err == nil {
+		if len(arts) > 0 {
+			fmt.Printf("Artifact Count: %d (run 'luci test-result artifact list -invocationid %s -testid %q -resultid %s' to view)\n", len(arts), r.invocationID, res.TestId, res.ResultId)
+		} else {
+			fmt.Printf("Artifact Count: 0\n")
+		}
+	}
+	if r.legacy {
+		artifact.PrintImmediateParentInvocationNotice(ctx, client, res.Name, os.Stdout)
+	} else {
+		artifact.PrintAncestorWorkUnitNotices(ctx, client, res.Name, artifact.ParentTypeTestResult, os.Stdout)
+	}
 }
 
 func printVerdictContext(ctx context.Context, rdbClient pb.ResultDBClient, invID string, res *pb.TestResult, legacy bool) {

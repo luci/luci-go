@@ -64,7 +64,7 @@ func TestNormalizeAppArgs(t *testing.T) {
 		t.Run(`leaf commands with trailing help flag or positional args`, func(t *ftt.Test) {
 			assert.Loosely(t, NormalizeAppArgs(cmds, []string{"get", "-h"}), should.Match([]string{"help", "get"}))
 			assert.Loosely(t, NormalizeAppArgs(cmds, []string{"get", "name", "-h"}), should.Match([]string{"help", "get"}))
-			assert.Loosely(t, NormalizeAppArgs(cmds, []string{"get", "-show-artifacts", "-h"}), should.Match([]string{"help", "get"}))
+			assert.Loosely(t, NormalizeAppArgs(cmds, []string{"get", "-show-metadata", "-h"}), should.Match([]string{"help", "get"}))
 			assert.Loosely(t, NormalizeAppArgs(cmds, []string{"get", "-h", "name"}), should.Match([]string{"help", "get"}))
 			assert.Loosely(t, NormalizeAppArgs(cmds, []string{"list", "name", "--help"}), should.Match([]string{"help", "list"}))
 		})

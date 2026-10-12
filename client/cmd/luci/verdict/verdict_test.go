@@ -137,7 +137,7 @@ func TestPrintVerdictSummaryWithAggregations(t *testing.T) {
 		}
 
 		out := captureStdout(func() {
-			printVerdictSummary(ctx, &mockSchemasClient{}, client, nil, "ants-i85300010634749400", vg, false, false, false)
+			printVerdictSummary(ctx, &mockSchemasClient{}, client, nil, "ants-i85300010634749400", vg, false, false)
 		})
 
 		assert.Loosely(t, out, should.ContainSubstring("Invocation:   ants-i85300010634749400 [312 failed, 4498 passed]"))

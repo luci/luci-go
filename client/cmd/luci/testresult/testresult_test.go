@@ -15,7 +15,11 @@
 package testresult
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"os"
+	"sync"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -33,6 +37,8 @@ type mockResultDBClient struct {
 	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
 	queryTestResults      func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error)
 	queryTestExonerations func(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error)
+	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
+	queryWorkUnits        func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
 }
 
 func (m *mockResultDBClient) GetTestResult(ctx context.Context, in *pb.GetTestResultRequest, opts ...grpc.CallOption) (*pb.TestResult, error) {
@@ -61,6 +67,56 @@ func (m *mockResultDBClient) QueryTestExonerations(ctx context.Context, in *pb.Q
 		return m.queryTestExonerations(ctx, in)
 	}
 	return &pb.QueryTestExonerationsResponse{}, nil
+}
+
+func (m *mockResultDBClient) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+	if m.listArtifacts != nil {
+		return m.listArtifacts(ctx, in)
+	}
+	return &pb.ListArtifactsResponse{}, nil
+}
+
+func (m *mockResultDBClient) QueryTestAggregations(ctx context.Context, in *pb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*pb.QueryTestAggregationsResponse, error) {
+	return &pb.QueryTestAggregationsResponse{}, nil
+}
+
+func (m *mockResultDBClient) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+	return &pb.WorkUnit{Name: in.Name}, nil
+}
+
+func (m *mockResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+	return &pb.RootInvocation{Name: in.Name}, nil
+}
+
+func (m *mockResultDBClient) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
+	if m.queryWorkUnits != nil {
+		return m.queryWorkUnits(ctx, in)
+	}
+	return &pb.QueryWorkUnitsResponse{}, nil
+}
+
+func (m *mockResultDBClient) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest, opts ...grpc.CallOption) (*pb.QueryArtifactsResponse, error) {
+	return &pb.QueryArtifactsResponse{}, nil
+}
+
+var stdoutMu sync.Mutex
+
+func captureStdout(fn func()) string {
+	stdoutMu.Lock()
+	defer stdoutMu.Unlock()
+	r, w, _ := os.Pipe()
+	old := os.Stdout
+	os.Stdout = w
+	outC := make(chan string)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		outC <- buf.String()
+	}()
+	fn()
+	w.Close()
+	os.Stdout = old
+	return <-outC
 }
 
 func TestCmdTestResult(t *testing.T) {
@@ -146,6 +202,103 @@ func TestFetchTestResult(t *testing.T) {
 			assert.Loosely(t, calledQuery, should.BeTrue)
 			assert.Loosely(t, tr.ResultId, should.Equal("res1"))
 			assert.Loosely(t, tr.Name, should.Equal("rootInvocations/ants-i123/workUnits/wu-1/tests/test1/results/res1"))
+		})
+	})
+}
+
+func TestPrintTestResult(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`printTestResult prints test result and parent work unit artifact counts`, t, func(t *ftt.Test) {
+		ctx := context.Background()
+		trName := "rootInvocations/ants-i123/workUnits/wu-1/tests/test1/results/res1"
+
+		t.Run(`with test result and work unit artifacts`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					switch in.Parent {
+					case trName:
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									ArtifactId:   "logcat-on-failure-123.txt",
+									SizeBytes:    194987,
+									ContentType:  "text/plain",
+									ArtifactType: "LOGCAT",
+								},
+							},
+						}, nil
+					case "rootInvocations/ants-i123/workUnits/wu-1":
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{ArtifactId: "host_log.txt"},
+								{ArtifactId: "tradefed-expanded.xml"},
+							},
+						}, nil
+					default:
+						return &pb.ListArtifactsResponse{}, nil
+					}
+				},
+			}
+
+			res := &pb.TestResult{
+				Name:     trName,
+				TestId:   "test1",
+				ResultId: "res1",
+				StatusV2: pb.TestResult_FAILED,
+			}
+
+			run := &testResultGetRun{invocationID: "ants-i123"}
+			out := captureStdout(func() {
+				run.printTestResult(ctx, client, nil, nil, res)
+			})
+
+			assert.Loosely(t, out, should.ContainSubstring(`Artifact Count: 1 (run 'luci test-result artifact list -invocationid ants-i123 -testid "test1" -resultid res1' to view)`))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
+			assert.Loosely(t, out, should.ContainSubstring("Work unit wu-1 contains 2 artifacts. Run 'luci work-unit artifact list -invocationid ants-i123 -workunitid wu-1' to view."))
+		})
+
+		t.Run(`with 0 test result artifacts and artifacts only on ancestor wu_1 (wu_1 -> wu_2 -> wu_3 -> tr_1)`, func(t *ftt.Test) {
+			nestedTRName := "rootInvocations/ants-i123/workUnits/wu_3/tests/test1/results/tr_1"
+			client := &mockResultDBClient{
+				queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+					assert.Loosely(t, in.Predicate.GetAncestorsOf(), should.Equal("rootInvocations/ants-i123/workUnits/wu_3"))
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{Name: "rootInvocations/ants-i123/workUnits/wu_2"},
+							{Name: "rootInvocations/ants-i123/workUnits/wu_1"},
+						},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == "rootInvocations/ants-i123/workUnits/wu_1" {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{ArtifactId: "host_log.txt"},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			res := &pb.TestResult{
+				Name:     nestedTRName,
+				TestId:   "test1",
+				ResultId: "tr_1",
+				StatusV2: pb.TestResult_FAILED,
+			}
+
+			run := &testResultGetRun{invocationID: "ants-i123"}
+			out := captureStdout(func() {
+				run.printTestResult(ctx, client, nil, nil, res)
+			})
+
+			assert.Loosely(t, out, should.ContainSubstring("Artifact Count: 0\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
+			assert.Loosely(t, out, should.ContainSubstring("Work unit wu_1 contains 1 artifact. Run 'luci work-unit artifact list -invocationid ants-i123 -workunitid wu_1' to view."))
+			assert.Loosely(t, out, should.NotContainSubstring("wu_2"))
+			assert.Loosely(t, out, should.NotContainSubstring("wu_3 contains"))
 		})
 	})
 }

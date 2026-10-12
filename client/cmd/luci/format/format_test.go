@@ -202,13 +202,13 @@ func TestFormatSummaryHTML(t *testing.T) {
 	ftt.Run(`FormatSummaryHTML`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		t.Run(`without showArtifacts`, func(t *ftt.Test) {
+		t.Run(`without client returns placeholder`, func(t *ftt.Test) {
 			html := `<p>Test failed</p><br><text-artifact artifact-id="log.txt">`
-			res := FormatSummaryHTML(ctx, nil, nil, "invocations/inv1/tests/t1/results/r1", html, false)
-			assert.Loosely(t, res, should.Equal("Test failed\n\n[Embedded Artifact: log.txt (pass --show-artifacts to view)]"))
+			res := FormatSummaryHTML(ctx, nil, nil, "invocations/inv1/tests/t1/results/r1", html)
+			assert.Loosely(t, res, should.Equal("Test failed\n\n[Embedded Artifact: log.txt - use 'luci artifact get' to view]"))
 		})
 
-		t.Run(`with showArtifacts`, func(t *ftt.Test) {
+		t.Run(`expands small text-artifact by default`, func(t *ftt.Test) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("Error log content from artifact"))
@@ -220,14 +220,32 @@ func TestFormatSummaryHTML(t *testing.T) {
 					return &pb.Artifact{
 						Name:       in.Name,
 						ArtifactId: "log.txt",
+						SizeBytes:  31,
 						FetchUrl:   server.URL,
 					}, nil
 				},
 			}
 
 			html := `<p>Test failed</p><text-artifact artifact-id="log.txt">`
-			res := FormatSummaryHTML(ctx, fakeClient, server.Client(), "invocations/inv1/tests/t1/results/r1", html, true)
+			res := FormatSummaryHTML(ctx, fakeClient, server.Client(), "invocations/inv1/tests/t1/results/r1", html)
 			assert.Loosely(t, res, should.Equal("Test failed\n\n--- Embedded Artifact: log.txt ---\nError log content from artifact\n--- End Artifact ---"))
+		})
+
+		t.Run(`skips large text-artifact exceeding inline threshold`, func(t *ftt.Test) {
+			fakeClient := &fakeRDBClient{
+				getArtifactFunc: func(ctx context.Context, in *pb.GetArtifactRequest, opts ...grpc.CallOption) (*pb.Artifact, error) {
+					return &pb.Artifact{
+						Name:       in.Name,
+						ArtifactId: "big.txt",
+						SizeBytes:  128 * 1024,
+						FetchUrl:   "https://example.com/big.txt",
+					}, nil
+				},
+			}
+
+			html := `<p>Test failed</p><text-artifact artifact-id="big.txt">`
+			res := FormatSummaryHTML(ctx, fakeClient, http.DefaultClient, "invocations/inv1/tests/t1/results/r1", html)
+			assert.Loosely(t, res, should.Equal("Test failed\n[Embedded Artifact: big.txt (128.0 KiB (131072 bytes)) - use 'luci artifact get' to view]"))
 		})
 	})
 }

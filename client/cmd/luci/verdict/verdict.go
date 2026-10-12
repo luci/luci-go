@@ -74,7 +74,6 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.variantHash, "varianthash", "", "Variant hash (optional, e.g. b7de9035241e76cc)")
 			r.Flags.IntVar(&r.maxResults, "max-results", 10, "Maximum number of results to display (default: 10, 0 for all)")
 			r.Flags.BoolVar(&r.allResults, "all", false, "Show all results without truncation")
-			r.Flags.BoolVar(&r.showArtifacts, "show-artifacts", false, "Print content of artifacts embedded in run summary_html")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Additionally print test metadata, tags, and properties")
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
@@ -84,16 +83,15 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 
 type verdictGetRun struct {
 	subcommands.CommandRunBase
-	af            *base.AuthFlags
-	host          string
-	invocationID  string
-	testID        string
-	variantHash   string
-	maxResults    int
-	allResults    bool
-	showArtifacts bool
-	showMetadata  bool
-	legacy        bool
+	af           *base.AuthFlags
+	host         string
+	invocationID string
+	testID       string
+	variantHash  string
+	maxResults   int
+	allResults   bool
+	showMetadata bool
+	legacy       bool
 }
 
 func ParseVerdictName(name string) (invName, variantHash, testIDRegexp string, matchFunc func(*pb.TestResult) bool, err error) {
@@ -386,11 +384,11 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		HasMore:      hasMore,
 	}
 
-	printVerdictSummary(ctx, schemasClient, client, httpClient, r.invocationID, vg, r.showArtifacts, r.showMetadata, r.legacy)
+	printVerdictSummary(ctx, schemasClient, client, httpClient, r.invocationID, vg, r.showMetadata, r.legacy)
 	return 0
 }
 
-func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rdbClient pb.ResultDBClient, httpClient *http.Client, invID string, g *VerdictGroup, showArtifacts, showMetadata, legacy bool) {
+func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rdbClient pb.ResultDBClient, httpClient *http.Client, invID string, g *VerdictGroup, showMetadata, legacy bool) {
 	status := g.DisplayStatus()
 
 	var firstRes *pb.TestResult
@@ -480,21 +478,13 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 				}
 			}
 			if tr.SummaryHtml != "" {
-				if showArtifacts {
-					summaryText := format.FormatSummaryHTML(ctx, rdbClient, httpClient, tr.Name, tr.SummaryHtml, showArtifacts)
-					fmt.Printf("    Summary:\n")
-					for _, l := range strings.Split(strings.TrimRight(summaryText, "\n"), "\n") {
-						fmt.Printf("      %s\n", l)
+				firstLine, truncated := format.TruncateFirstLine(format.StripHTML(tr.SummaryHtml), 120)
+				if firstLine != "" {
+					label := "Summary:"
+					if truncated {
+						label = "Summary (truncated):"
 					}
-				} else {
-					firstLine, truncated := format.TruncateFirstLine(format.StripHTML(tr.SummaryHtml), 120)
-					if firstLine != "" {
-						label := "Summary:"
-						if truncated {
-							label = "Summary (truncated):"
-						}
-						fmt.Printf("    %s %s\n", label, firstLine)
-					}
+					fmt.Printf("    %s %s\n", label, firstLine)
 				}
 			}
 		}
