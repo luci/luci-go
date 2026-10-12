@@ -26,8 +26,6 @@ import (
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/genproto/protobuf/field_mask"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
@@ -35,13 +33,13 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // ExtractedIDs holds all extracted resource identifiers.
 type ExtractedIDs struct {
+	BugID            string `json:"bug_id,omitempty"`
 	Project          string `json:"project,omitempty"`
 	RuleID           string `json:"rule_id,omitempty"`
 	ClusterAlgorithm string `json:"cluster_algorithm,omitempty"`
@@ -68,7 +66,8 @@ type ExtractedIDs struct {
 
 // IsEmpty returns true if no identifiers were extracted.
 func (e *ExtractedIDs) IsEmpty() bool {
-	return e.Project == "" &&
+	return e.BugID == "" &&
+		e.Project == "" &&
 		e.RuleID == "" &&
 		e.ClusterAlgorithm == "" &&
 		e.ClusterID == "" &&
@@ -89,8 +88,8 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "ids [-json] <target>",
 		ShortDesc: "Extract resource IDs from a URL or resource name",
-		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog / LUCI Analysis URLs, ResultDB / LUCI Analysis resource names, and AnTS / ATI URLs)\n" +
-			"and extract the canonical IDs (-project, -ruleid, -buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
+		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog / LUCI Analysis URLs, ResultDB / LUCI Analysis resource names, bug URLs / shorthands, and AnTS / ATI URLs)\n" +
+			"and extract the canonical IDs (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
 			"for use with other commands.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &idsRun{af: af}
@@ -176,6 +175,9 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 	}
 
 	// Aligned human-readable output
+	if extracted.BugID != "" {
+		fmt.Fprintf(out, "Bug ID:            %s\n", extracted.BugID)
+	}
 	if extracted.Project != "" {
 		fmt.Fprintf(out, "Project:           %s\n", extracted.Project)
 	}
@@ -236,6 +238,11 @@ func ExtractIDs(ctx context.Context, rdbClient pb.ResultDBClient, bbClient grpcp
 	extracted := &ExtractedIDs{}
 
 	extractQueryParams(raw, extracted)
+
+	// 0. Bug URL or shorthand (e.g. b/<digits>, http(s)://b/<digits>, issuetracker..., crbug.com/<digits>)
+	if extractFromBugTarget(raw, extracted) {
+		return extracted, nil
+	}
 
 	// 1. Android Test Investigate (ATI) URL or AnTS target
 	if ok, err := extractFromAntsTarget(ctx, rdbClient, raw, extracted); err != nil {
@@ -696,6 +703,46 @@ func isAllDigits(s string) bool {
 	return true
 }
 
+// extractFromBugTarget extracts numeric Buganizer IDs from bug URLs and shorthands:
+//   - b/<digits>
+//   - http(s)://b/<digits>
+//   - http(s)://b.corp.google.com/issues/<digits>
+//   - http(s)://issuetracker.google.com/issues/<digits>
+//   - http(s)://issues.chromium.org/issues/<digits>
+//   - http(s)://crbug.com/<digits>
+//   - crbug.com/<digits>
+//
+// Bare numbers are not matched so bare invocation and build IDs continue to work as before.
+func extractFromBugTarget(raw string, extracted *ExtractedIDs) bool {
+	clean := strings.Trim(strings.TrimSpace(raw), "/")
+	if clean == "" {
+		return false
+	}
+	if !strings.Contains(clean, "://") {
+		if !strings.HasPrefix(clean, "b/") && !strings.HasPrefix(clean, "crbug.com/") {
+			return false
+		}
+		clean = "https://" + clean
+	}
+
+	u, err := url.Parse(clean)
+	if err != nil {
+		return false
+	}
+	host := strings.ToLower(u.Host)
+	if host == "b" || strings.HasPrefix(host, "b.") ||
+		strings.Contains(host, "issuetracker.google.com") ||
+		strings.Contains(host, "issues.chromium.org") ||
+		strings.Contains(host, "crbug.com") {
+		parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+		if len(parts) > 0 && isAllDigits(parts[len(parts)-1]) {
+			extracted.BugID = parts[len(parts)-1]
+			return true
+		}
+	}
+	return false
+}
+
 // extractFromLUCIAnalysisTarget handles LUCI Analysis rule and cluster URLs and resource names
 // without making any network calls:
 // - Web URLs:
@@ -923,31 +970,6 @@ func extractFromInvocationResourceName(clean string, extracted *ExtractedIDs) bo
 	return false
 }
 
-// isLegacyInvocation queries ResultDB directly to determine if an invocation is a legacy invocation.
-// It queries for the root invocation, and if not found, queries for the legacy invocation.
-func isLegacyInvocation(ctx context.Context, client pb.ResultDBClient, invID string) bool {
-	normalized := base.NormalizeInvocation(invID)
-	_, err := client.GetRootInvocation(ctx, &pb.GetRootInvocationRequest{
-		Name: "rootInvocations/" + normalized,
-	})
-	if err == nil {
-		return false
-	}
-	code := status.Code(err)
-	if code == codes.Unknown {
-		code = appstatus.Code(err)
-	}
-	if code == codes.NotFound {
-		_, errLegacy := client.GetInvocation(ctx, &pb.GetInvocationRequest{
-			Name: "invocations/" + normalized,
-		})
-		if errLegacy == nil {
-			return true
-		}
-	}
-	return false
-}
-
 func resolveLegacy(ctx context.Context, client pb.ResultDBClient, extracted *ExtractedIDs, legacy bool) {
 	if extracted == nil || extracted.legacyResolved {
 		return
@@ -958,7 +980,7 @@ func resolveLegacy(ctx context.Context, client pb.ResultDBClient, extracted *Ext
 		return
 	}
 	if client != nil && extracted.InvocationID != "" {
-		extracted.Legacy = isLegacyInvocation(ctx, client, extracted.InvocationID)
+		extracted.Legacy = base.IsLegacyInvocation(ctx, client, extracted.InvocationID)
 		extracted.legacyResolved = true
 	}
 }

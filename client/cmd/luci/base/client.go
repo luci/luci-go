@@ -18,11 +18,15 @@ import (
 	"context"
 	"net/http"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/prpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/prpc"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -83,4 +87,35 @@ func (af *AuthFlags) NewAnalysisClients(ctx context.Context, host string) (analy
 		Options: prpc.DefaultOptions(),
 	}
 	return analysispb.NewRulesClient(prpcClient), analysispb.NewClustersClient(prpcClient), analysispb.NewTestHistoryClient(prpcClient), nil
+}
+
+// IsLegacyInvocation queries ResultDB directly to determine if an invocation is a legacy invocation
+// (e.g. Fuchsia/Turquoise builds not yet migrated to ResultDB Root Invocations).
+// It queries for the root invocation, and if not found, queries for the legacy invocation.
+// It suppresses pRPC's Warning log when GetRootInvocation returns an expected NotFound on legacy builds.
+func IsLegacyInvocation(ctx context.Context, client pb.ResultDBClient, invID string) bool {
+	normalized := NormalizeInvocation(invID)
+	if client == nil || normalized == "" {
+		return false
+	}
+	probeCtx := logging.SetLevel(ctx, logging.Error)
+	_, err := client.GetRootInvocation(probeCtx, &pb.GetRootInvocationRequest{
+		Name: "rootInvocations/" + normalized,
+	})
+	if err == nil {
+		return false
+	}
+	code := status.Code(err)
+	if code == codes.Unknown {
+		code = appstatus.Code(err)
+	}
+	if code == codes.NotFound {
+		_, errLegacy := client.GetInvocation(probeCtx, &pb.GetInvocationRequest{
+			Name: "invocations/" + normalized,
+		})
+		if errLegacy == nil {
+			return true
+		}
+	}
+	return false
 }

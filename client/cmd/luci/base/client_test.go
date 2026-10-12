@@ -18,11 +18,16 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestNewAnalysisClients(t *testing.T) {
@@ -41,5 +46,81 @@ func TestNewAnalysisClients(t *testing.T) {
 		assert.Loosely(t, rulesClient, should.NotBeNil)
 		assert.Loosely(t, clustersClient, should.NotBeNil)
 		assert.Loosely(t, testHistoryClient, should.NotBeNil)
+	})
+}
+
+type mockResultDBClient struct {
+	pb.ResultDBClient
+	getRootInvocation func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
+	getInvocation     func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
+}
+
+func (m *mockResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+	if m.getRootInvocation != nil {
+		return m.getRootInvocation(ctx, in)
+	}
+	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}
+
+func (m *mockResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+	if m.getInvocation != nil {
+		return m.getInvocation(ctx, in)
+	}
+	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}
+
+func TestIsLegacyInvocation(t *testing.T) {
+	ftt.Run(`IsLegacyInvocation`, t, func(t *ftt.Test) {
+		ctx := context.Background()
+
+		t.Run(`nil client or empty ID returns false`, func(t *ftt.Test) {
+			assert.Loosely(t, IsLegacyInvocation(ctx, nil, "build-123"), should.BeFalse)
+			mock := &mockResultDBClient{}
+			assert.Loosely(t, IsLegacyInvocation(ctx, mock, ""), should.BeFalse)
+		})
+
+		t.Run(`root invocation found -> false`, func(t *ftt.Test) {
+			mock := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					assert.Loosely(t, in.Name, should.Equal("rootInvocations/build-123"))
+					return &pb.RootInvocation{Name: in.Name}, nil
+				},
+			}
+			assert.Loosely(t, IsLegacyInvocation(ctx, mock, "build-123"), should.BeFalse)
+		})
+
+		t.Run(`root invocation NotFound + legacy GetInvocation OK -> true`, func(t *ftt.Test) {
+			mock := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					assert.Loosely(t, in.Name, should.Equal("invocations/build-123"))
+					return &pb.Invocation{Name: in.Name}, nil
+				},
+			}
+			assert.Loosely(t, IsLegacyInvocation(ctx, mock, "123"), should.BeTrue)
+		})
+
+		t.Run(`root invocation NotFound + legacy GetInvocation error -> false`, func(t *ftt.Test) {
+			mock := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+			}
+			assert.Loosely(t, IsLegacyInvocation(ctx, mock, "build-123"), should.BeFalse)
+		})
+
+		t.Run(`root invocation returns internal error -> false`, func(t *ftt.Test) {
+			mock := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.Internal, "internal error")
+				},
+			}
+			assert.Loosely(t, IsLegacyInvocation(ctx, mock, "build-123"), should.BeFalse)
+		})
 	})
 }

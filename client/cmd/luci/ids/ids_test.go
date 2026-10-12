@@ -950,5 +950,55 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"project": "turquoise"`))
 			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"rule_id": "32ae75255a4aa807897d8fa20137e7d5"`))
 		})
+
+		t.Run(`Bug URL and shorthand extraction`, func(t *ftt.Test) {
+			ctx := context.Background()
+			cases := []struct {
+				input  string
+				wantID string
+			}{
+				{"b/553974454", "553974454"},
+				{"http://b/553974454", "553974454"},
+				{"https://b/553974454", "553974454"},
+				{"http://b.corp.google.com/issues/553974454", "553974454"},
+				{"https://b.corp.google.com/issues/553974454", "553974454"},
+				{"http://issuetracker.google.com/issues/553974454", "553974454"},
+				{"https://issuetracker.google.com/issues/553974454", "553974454"},
+				{"http://issues.chromium.org/issues/553974454", "553974454"},
+				{"https://issues.chromium.org/issues/553974454", "553974454"},
+				{"http://crbug.com/553974454", "553974454"},
+				{"https://crbug.com/553974454", "553974454"},
+				{"crbug.com/553974454", "553974454"},
+				{"b/553974454#comment3", "553974454"},
+				{"https://issues.chromium.org/issues/553974454#comment2", "553974454"},
+			}
+			for _, tc := range cases {
+				extracted, err := ExtractIDs(ctx, nil, nil, tc.input, false)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, extracted.BugID, should.Equal(tc.wantID))
+				assert.Loosely(t, extracted.IsEmpty(), should.BeFalse)
+			}
+
+			// Bare numbers must NOT be matched as BugID (treated as build/inv ID)
+			bare, err := ExtractIDs(ctx, nil, nil, "8673802696052024673", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bare.BugID, should.Equal(""))
+			assert.Loosely(t, bare.InvocationID, should.Equal("build-8673802696052024673"))
+
+			// Invalid bug shorthand does not extract BugID
+			invalid, err := ExtractIDs(ctx, nil, nil, "b/not-a-number", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invalid.BugID, should.Equal(""))
+
+			// Output formatting for BugID
+			ids := &ExtractedIDs{BugID: "553974454"}
+			var textBuf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&textBuf, ids, false), should.BeNil)
+			assert.Loosely(t, textBuf.String(), should.ContainSubstring("Bug ID:            553974454\n"))
+
+			var jsonBuf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&jsonBuf, ids, true), should.BeNil)
+			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"bug_id": "553974454"`))
+		})
 	})
 }
