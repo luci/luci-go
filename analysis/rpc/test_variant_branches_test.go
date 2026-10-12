@@ -607,6 +607,19 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.Loosely(t, err, should.ErrLike("ref: gitiles: host: unspecified"))
 				})
+				t.Run("invalid android build ref", func(t *ftt.Test) {
+					req.Ref = &pb.SourceRef{
+						System: &pb.SourceRef_AndroidBuild{
+							AndroidBuild: &pb.AndroidBuildBranch{
+								DataRealm: "prod",
+							},
+						},
+					}
+
+					_, err := server.Query(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("ref: android_build: branch: unspecified"))
+				})
 			})
 			t.Run("e2e", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{

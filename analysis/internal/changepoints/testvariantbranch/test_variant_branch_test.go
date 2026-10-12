@@ -533,6 +533,96 @@ func TestInsertToInputBuffer(t *testing.T) {
 			},
 		}))
 	})
+
+	ftt.Run("Insert root invocation test variant with Android sources and StatusV2", t, func(t *ftt.Test) {
+		tvb := &Entry{
+			InputBuffer: &inputbuffer.Buffer{
+				HotBufferCapacity:  10,
+				ColdBufferCapacity: 100,
+			},
+		}
+
+		androidSources := &pb.Sources{
+			BaseSources: &pb.Sources_SubmittedAndroidBuild{
+				SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+					DataRealm: "prod",
+					Branch:    "git_main",
+					BuildId:   12345678,
+				},
+			},
+		}
+		tv := &rdbpb.TestVariant{
+			Status:    rdbpb.TestVariantStatus_FLAKY,
+			SourcesId: "android_sources",
+			Results: []*rdbpb.TestResultBundle{
+				{
+					Result: &rdbpb.TestResult{
+						Name:     "rootInvocations/ants-i100/workUnits/wu-1/tests/test_a/results/0",
+						StatusV2: rdbpb.TestResult_FAILED,
+						FailureReason: &rdbpb.FailureReason{
+							Kind: rdbpb.FailureReason_ORDINARY,
+						},
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:     "rootInvocations/ants-i100/workUnits/wu-1/tests/test_a/results/1",
+						StatusV2: rdbpb.TestResult_PASSED,
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:     "rootInvocations/ants-i100/workUnits/wu-2/tests/test_a/results/0",
+						StatusV2: rdbpb.TestResult_FAILED,
+						FailureReason: &rdbpb.FailureReason{
+							Kind: rdbpb.FailureReason_CRASH,
+						},
+					},
+				},
+				{
+					// Work unit with only skipped / execution_errored results should not produce a run.
+					Result: &rdbpb.TestResult{
+						Name:     "rootInvocations/ants-i100/workUnits/wu-3/tests/test_a/results/0",
+						StatusV2: rdbpb.TestResult_EXECUTION_ERRORED,
+					},
+				},
+			},
+		}
+		claimedInvs := map[string]bool{
+			"rootInvocations/ants-i100/workUnits/wu-1": true,
+			"rootInvocations/ants-i100/workUnits/wu-2": true,
+			"rootInvocations/ants-i100/workUnits/wu-3": true,
+		}
+		partitionTime := time.Date(2031, time.January, 1, 15, 4, 0, 12, time.UTC)
+
+		runs, err := ToRuns(tv, partitionTime, claimedInvs, androidSources)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, runs, should.HaveLength(2))
+		for _, run := range runs {
+			tvb.InsertToInputBuffer(run)
+		}
+		assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.Match([]inputbuffer.Run{
+			{
+				// wu-2
+				SourcePosition: 12345678,
+				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
+				Unexpected: inputbuffer.ResultCounts{
+					CrashCount: 1,
+				},
+			},
+			{
+				// wu-1
+				SourcePosition: 12345678,
+				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
+				Expected: inputbuffer.ResultCounts{
+					PassCount: 1,
+				},
+				Unexpected: inputbuffer.ResultCounts{
+					FailCount: 1,
+				},
+			},
+		}))
+	})
 }
 
 func TestUpdateOutputBuffer(t *testing.T) {

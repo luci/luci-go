@@ -145,3 +145,71 @@ func TestValidateFailureReason(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateSourceRef(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`ValidateSourceRef`, t, func(t *ftt.Test) {
+		t.Run(`nil`, func(t *ftt.Test) {
+			err := ValidateSourceRef(nil)
+			assert.Loosely(t, err, should.ErrLike(`unspecified`))
+		})
+		t.Run(`system unspecified`, func(t *ftt.Test) {
+			err := ValidateSourceRef(&pb.SourceRef{})
+			assert.Loosely(t, err, should.ErrLike(`system: unspecified`))
+		})
+		t.Run(`gitiles`, func(t *ftt.Test) {
+			ref := &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "refs/heads/main",
+					},
+				},
+			}
+			t.Run(`valid`, func(t *ftt.Test) {
+				err := ValidateSourceRef(ref)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`missing host`, func(t *ftt.Test) {
+				ref.GetGitiles().Host = ""
+				err := ValidateSourceRef(ref)
+				assert.Loosely(t, err, should.ErrLike(`gitiles: host: unspecified`))
+			})
+			t.Run(`missing project`, func(t *ftt.Test) {
+				ref.GetGitiles().Project = ""
+				err := ValidateSourceRef(ref)
+				assert.Loosely(t, err, should.ErrLike(`gitiles: project: unspecified`))
+			})
+			t.Run(`missing ref`, func(t *ftt.Test) {
+				ref.GetGitiles().Ref = ""
+				err := ValidateSourceRef(ref)
+				assert.Loosely(t, err, should.ErrLike(`gitiles: ref: unspecified`))
+			})
+		})
+		t.Run(`android build`, func(t *ftt.Test) {
+			ref := &pb.SourceRef{
+				System: &pb.SourceRef_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildBranch{
+						DataRealm: "prod",
+						Branch:    "git_main",
+					},
+				},
+			}
+			t.Run(`valid`, func(t *ftt.Test) {
+				err := ValidateSourceRef(ref)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`missing data realm`, func(t *ftt.Test) {
+				ref.GetAndroidBuild().DataRealm = ""
+				err := ValidateSourceRef(ref)
+				assert.Loosely(t, err, should.ErrLike(`android_build: data_realm: unspecified`))
+			})
+			t.Run(`missing branch`, func(t *ftt.Test) {
+				ref.GetAndroidBuild().Branch = ""
+				err := ValidateSourceRef(ref)
+				assert.Loosely(t, err, should.ErrLike(`android_build: branch: unspecified`))
+			})
+		})
+	})
+}

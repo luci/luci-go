@@ -934,6 +934,151 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		assert.Loosely(t, len(client.Insertions), should.Equal(1))
 		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "ingested"), should.Equal(1))
 	})
+
+	ftt.Run(`Analyze root invocation batch with Android sources`, t, func(t *ftt.Test) {
+		ctx := newContext(t)
+		exporter, client := fakeExporter()
+
+		sourcesMap := map[string]*pb.Sources{
+			"android_sources": {
+				BaseSources: &pb.Sources_SubmittedAndroidBuild{
+					SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+						DataRealm: "prod",
+						Branch:    "git_main",
+						BuildId:   10002000,
+					},
+				},
+			},
+		}
+		sourceRef := pbutil.SourceRefFromSources(sourcesMap["android_sources"])
+
+		// Pre-populate history with non-consecutive Android build IDs:
+		// 100 builds passing (build IDs 10000100, 10000200, ..., 10010000)
+		// followed by 1900 builds failing (build IDs 10010100, 10010200, ..., 10200000).
+		positions := make([]int, 2000)
+		total := make([]int, 2000)
+		hasUnexpected := make([]int, 2000)
+		for i := range 2000 {
+			positions[i] = 10000000 + (i+1)*100
+			total[i] = 1
+			if i >= 100 {
+				hasUnexpected[i] = 1
+			}
+		}
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		tvb := &testvariantbranch.Entry{
+			IsNew:       true,
+			Project:     "android",
+			TestID:      ":module!junit:com.android.foo:BarTest#testBaz",
+			VariantHash: "hash_android",
+			SourceRef:   sourceRef,
+			RefHash:     pbutil.SourceRefHash(sourceRef),
+			Variant: &pb.Variant{
+				Def: map[string]string{
+					"device": "panther",
+				},
+			},
+			InputBuffer: &inputbuffer.Buffer{
+				HotBuffer: inputbuffer.History{
+					Runs: []inputbuffer.Run{},
+				},
+				ColdBuffer: inputbuffer.History{
+					Runs: vs,
+				},
+				IsColdBufferDirty: true,
+			},
+		}
+		var hs inputbuffer.HistorySerializer
+		mutation, err := tvb.ToMutation(&hs)
+		assert.Loosely(t, err, should.BeNil)
+		testutil.MustApply(ctx, t, mutation)
+
+		const ingestedVerdictHour = 55
+		creationTime := time.Unix(ingestedVerdictHour*3600, 0)
+		payload := &taskspb.IngestTestVerdicts{
+			IngestionId: "ingestion-id",
+			Project:     "android",
+			RootInvocation: &controlpb.RootInvocationResult{
+				ResultdbHost:     "rdb-host",
+				RootInvocationId: "ants-i999",
+				CreationTime:     timestamppb.New(creationTime),
+			},
+			PartitionTime: timestamppb.New(creationTime.Add(time.Hour)),
+		}
+
+		tvs := []*rdbpb.TestVariant{
+			{
+				TestId:      ":module!junit:com.android.foo:BarTest#testBaz",
+				VariantHash: "hash_android",
+				Status:      rdbpb.TestVariantStatus_EXPECTED,
+				StatusV2:    rdbpb.TestVerdict_PASSED,
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Name:     "rootInvocations/ants-i999/workUnits/wu-1/tests/xyz/results/0",
+							StatusV2: rdbpb.TestResult_PASSED,
+						},
+					},
+					{
+						Result: &rdbpb.TestResult{
+							Name:     "rootInvocations/ants-i999/workUnits/wu-2/tests/xyz/results/0",
+							StatusV2: rdbpb.TestResult_PASSED,
+						},
+					},
+				},
+				SourcesId: "android_sources",
+			},
+		}
+
+		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, countCheckPoint(ctx, t), should.Equal(1))
+
+		// Check claimed work unit invocations.
+		invs := fetchInvocations(ctx, t)
+		assert.Loosely(t, invs, should.Match([]Invocation{
+			{
+				Project:              "android",
+				InvocationID:         "rootInvocations/ants-i999/workUnits/wu-1",
+				IngestedInvocationID: "ants-i999",
+			},
+			{
+				Project:              "android",
+				InvocationID:         "rootInvocations/ants-i999/workUnits/wu-2",
+				IngestedInvocationID: "ants-i999",
+			},
+		}))
+
+		// Check test variant branch.
+		tvbs, err := FetchTestVariantBranches(ctx)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(tvbs), should.Equal(1))
+		tvb = tvbs[0]
+
+		assert.Loosely(t, tvb.SourceRef, should.Match(&pb.SourceRef{
+			System: &pb.SourceRef_AndroidBuild{
+				AndroidBuild: &pb.AndroidBuildBranch{
+					DataRealm: "prod",
+					Branch:    "git_main",
+				},
+			},
+		}))
+		// Verify that for Android (non-consecutive build IDs), the changepoint
+		// start position is 10010100 and its 99th percentile lower bound is the
+		// previous observed build ID (10010000), not 10010100 - 1.
+		assert.Loosely(t, tvb.FinalizingSegment.HasStartChangepoint, should.BeTrue)
+		assert.Loosely(t, tvb.FinalizingSegment.StartPosition, should.Equal(int64(10010100)))
+		assert.Loosely(t, tvb.FinalizingSegment.StartPositionLowerBound_99Th, should.Equal(int64(10010000)))
+		assert.Loosely(t, tvb.FinalizingSegment.StartPositionUpperBound_99Th, should.Equal(int64(10010100)))
+		assert.Loosely(t, tvb.FinalizedSegments.Segments[0].EndPosition, should.Equal(int64(10010000)))
+		// Verify both work units were ingested as separate runs (100 initial + 2 new = 102 runs).
+		assert.Loosely(t, tvb.FinalizedSegments.Segments[0].FinalizedCounts.TotalRuns, should.Equal(int64(102)))
+		assert.Loosely(t, tvb.FinalizedSegments.Segments[0].FinalizedCounts.TotalSourceVerdicts, should.Equal(int64(100)))
+
+		assert.Loosely(t, len(client.Insertions), should.Equal(1))
+		assert.Loosely(t, client.Insertions[0].Ref, should.Match(tvb.SourceRef))
+		assert.Loosely(t, verdictCounter.Get(ctx, "android", "ingested"), should.Equal(1))
+	})
 }
 
 func countCheckPoint(ctx context.Context, t testing.TB) int {

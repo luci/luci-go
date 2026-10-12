@@ -313,20 +313,12 @@ func toPBChangepointLegacy(cp *changepoints.ChangepointDetailRow) (*pb.Changepoi
 		return nil, err
 	}
 	return &pb.Changepoint{
-		Project:     cp.Project,
-		TestId:      cp.TestID,
-		VariantHash: cp.VariantHash,
-		Variant:     variant,
-		RefHash:     cp.RefHash,
-		Ref: &pb.SourceRef{
-			System: &pb.SourceRef_Gitiles{
-				Gitiles: &pb.GitilesRef{
-					Host:    cp.Ref.Gitiles.Host.String(),
-					Project: cp.Ref.Gitiles.Project.String(),
-					Ref:     cp.Ref.Gitiles.Ref.String(),
-				},
-			},
-		},
+		Project:                           cp.Project,
+		TestId:                            cp.TestID,
+		VariantHash:                       cp.VariantHash,
+		Variant:                           variant,
+		RefHash:                           cp.RefHash,
+		Ref:                               cp.Ref.ToProto(),
 		StartHour:                         timestamppb.New(cp.StartHour),
 		StartPositionLowerBound_99Th:      cp.LowerBound99th,
 		StartPositionUpperBound_99Th:      cp.UpperBound99th,
@@ -341,20 +333,12 @@ func toPBChangepoint(cp *changepoints.ChangepointRow) (*pb.Changepoint, error) {
 		return nil, err
 	}
 	return &pb.Changepoint{
-		Project:     cp.Project,
-		TestId:      cp.TestID,
-		VariantHash: cp.VariantHash,
-		Variant:     variant,
-		RefHash:     cp.RefHash,
-		Ref: &pb.SourceRef{
-			System: &pb.SourceRef_Gitiles{
-				Gitiles: &pb.GitilesRef{
-					Host:    cp.Ref.Gitiles.Host.String(),
-					Project: cp.Ref.Gitiles.Project.String(),
-					Ref:     cp.Ref.Gitiles.Ref.String(),
-				},
-			},
-		},
+		Project:                           cp.Project,
+		TestId:                            cp.TestID,
+		VariantHash:                       cp.VariantHash,
+		Variant:                           variant,
+		RefHash:                           cp.RefHash,
+		Ref:                               cp.Ref.ToProto(),
 		StartHour:                         timestamppb.New(cp.StartHour),
 		StartPositionLowerBound_99Th:      cp.LowerBound99th,
 		StartPositionUpperBound_99Th:      cp.UpperBound99th,

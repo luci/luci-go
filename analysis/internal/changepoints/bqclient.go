@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/tracing"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // NewClient creates a new client for reading changepints.
@@ -93,12 +94,69 @@ type ChangepointRow struct {
 }
 
 type Ref struct {
-	Gitiles *Gitiles
+	Gitiles      *Gitiles      `bigquery:"gitiles"`
+	AndroidBuild *AndroidBuild `bigquery:"android_build"`
 }
+
 type Gitiles struct {
-	Host    bigquery.NullString
-	Project bigquery.NullString
-	Ref     bigquery.NullString
+	Host    bigquery.NullString `bigquery:"host"`
+	Project bigquery.NullString `bigquery:"project"`
+	Ref     bigquery.NullString `bigquery:"ref"`
+}
+
+type AndroidBuild struct {
+	DataRealm bigquery.NullString `bigquery:"data_realm"`
+	Branch    bigquery.NullString `bigquery:"branch"`
+}
+
+// ToProto converts a BigQuery Ref to a pb.SourceRef proto.
+func (r *Ref) ToProto() *pb.SourceRef {
+	if r == nil {
+		return nil
+	}
+	if r.Gitiles != nil && (r.Gitiles.Host.Valid || r.Gitiles.Project.Valid || r.Gitiles.Ref.Valid) {
+		return &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    r.Gitiles.Host.String(),
+					Project: r.Gitiles.Project.String(),
+					Ref:     r.Gitiles.Ref.String(),
+				},
+			},
+		}
+	}
+	if r.AndroidBuild != nil && (r.AndroidBuild.DataRealm.Valid || r.AndroidBuild.Branch.Valid) {
+		return &pb.SourceRef{
+			System: &pb.SourceRef_AndroidBuild{
+				AndroidBuild: &pb.AndroidBuildBranch{
+					DataRealm: r.AndroidBuild.DataRealm.String(),
+					Branch:    r.AndroidBuild.Branch.String(),
+				},
+			},
+		}
+	}
+	if r.Gitiles != nil {
+		return &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    r.Gitiles.Host.String(),
+					Project: r.Gitiles.Project.String(),
+					Ref:     r.Gitiles.Ref.String(),
+				},
+			},
+		}
+	}
+	if r.AndroidBuild != nil {
+		return &pb.SourceRef{
+			System: &pb.SourceRef_AndroidBuild{
+				AndroidBuild: &pb.AndroidBuildBranch{
+					DataRealm: r.AndroidBuild.DataRealm.String(),
+					Branch:    r.AndroidBuild.Branch.String(),
+				},
+			},
+		}
+	}
+	return &pb.SourceRef{}
 }
 
 // ReadChangepoints reads changepoints of a certain week from BigQuery.

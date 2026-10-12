@@ -130,6 +130,19 @@ func TestQuerySourceVerdicts(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("source_ref: gitiles: project: unspecified"))
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				})
+				t.Run("Invalid android build source ref", func(t *ftt.Test) {
+					req.SourceRef = &pb.SourceRef{
+						System: &pb.SourceRef_AndroidBuild{
+							AndroidBuild: &pb.AndroidBuildBranch{
+								Branch: "git_main",
+							},
+						},
+					}
+					req.SourceRefHash = ""
+					_, err := server.QuerySourceVerdicts(ctx, req)
+					assert.Loosely(t, err, should.ErrLike("source_ref: android_build: data_realm: unspecified"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				})
 				t.Run("Invalid source ref hash", func(t *ftt.Test) {
 					req.SourceRef = nil
 					req.SourceRefHash = "a"

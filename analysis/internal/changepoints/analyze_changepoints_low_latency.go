@@ -270,7 +270,7 @@ func filterRunTestVerdictsLowLatency(ctx context.Context, project string, tvs []
 	for _, tv := range tvs {
 		allSkipped := true
 		for _, r := range tv.Results {
-			if r.Result.Status != rdbpb.TestStatus_SKIP {
+			if !isResultSkipped(r.Result) {
 				results = append(results, tv)
 				allSkipped = false
 				break

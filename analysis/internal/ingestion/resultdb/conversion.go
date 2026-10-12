@@ -61,15 +61,18 @@ func GroupAndOrderTestResults(input []*rdbpb.TestResultBundle) [][]*rdbpb.TestRe
 	return result
 }
 
-// InvocationFromTestResultName extracts the invocation that the
+// InvocationFromTestResultName extracts the invocation or work unit that the
 // test result is immediately included inside.
+// For legacy invocations, it returns the invocation ID.
+// For root invocations, it returns the work unit resource name
+// ("rootInvocations/{root_invocation_id}/workUnits/{work_unit_id}").
 func InvocationFromTestResultName(name string) (string, error) {
 	if strings.HasPrefix(name, "rootInvocations/") {
 		parts, err := pbutil.ParseTestResultName(name)
 		if err != nil {
 			return "", err
 		}
-		return parts.RootInvocationID, nil
+		return pbutil.WorkUnitName(parts.RootInvocationID, parts.WorkUnitID), nil
 	}
 
 	// Using a regexp here was consuming 5% of all CPU cycles

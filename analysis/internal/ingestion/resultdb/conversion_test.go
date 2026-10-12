@@ -27,6 +27,10 @@ func TestInvocationFromTestResultName(t *testing.T) {
 		result, err := InvocationFromTestResultName("invocations/build-1234/tests/a/results/b")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, result, should.Equal("build-1234"))
+
+		result, err = InvocationFromTestResultName("rootInvocations/root-inv-1234/workUnits/wu-5678/tests/a/results/b")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, result, should.Equal("rootInvocations/root-inv-1234/workUnits/wu-5678"))
 	})
 	ftt.Run("Invalid input", t, func(t *ftt.Test) {
 		_, err := InvocationFromTestResultName("")

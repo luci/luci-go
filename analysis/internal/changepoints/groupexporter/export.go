@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
-	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // InsertClient defines an interface for inserting rows into BigQuery.
@@ -62,20 +61,12 @@ func prepareExportRows(groups [][]*changepoints.ChangepointDetailRow, version ti
 		groupKey := changepointGroupID(g)
 		for _, r := range g {
 			row := &bqpb.GroupedChangepointRow{
-				Project:     r.Project,
-				TestId:      r.TestID,
-				VariantHash: r.VariantHash,
-				RefHash:     r.RefHash,
-				Variant:     r.Variant.JSONVal,
-				Ref: &pb.SourceRef{
-					System: &pb.SourceRef_Gitiles{
-						Gitiles: &pb.GitilesRef{
-							Host:    r.Ref.Gitiles.Host.String(),
-							Project: r.Ref.Gitiles.Project.String(),
-							Ref:     r.Ref.Gitiles.Ref.String(),
-						},
-					},
-				},
+				Project:                             r.Project,
+				TestId:                              r.TestID,
+				VariantHash:                         r.VariantHash,
+				RefHash:                             r.RefHash,
+				Variant:                             r.Variant.JSONVal,
+				Ref:                                 r.Ref.ToProto(),
 				UnexpectedSourceVerdictRate:         r.UnexpectedSourceVerdictRateAfter,
 				PreviousUnexpectedSourceVerdictRate: r.UnexpectedSourceVerdictRateBefore,
 				PreviousNominalEndPosition:          r.PreviousNominalEndPosition,

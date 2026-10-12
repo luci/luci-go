@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
@@ -25,6 +26,15 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
+
+// resultStatusV1 returns the v1 TestStatus and Expected flag for a TestResult,
+// deriving them from StatusV2 if the legacy Status field is unspecified.
+func resultStatusV1(tr *rdbpb.TestResult) (rdbpb.TestStatus, bool) {
+	if tr.Status == rdbpb.TestStatus_STATUS_UNSPECIFIED && tr.StatusV2 != rdbpb.TestResult_STATUS_UNSPECIFIED {
+		return rdbpbutil.TestStatusV1FromV2(tr.StatusV2, tr.FailureReason.GetKind(), tr.FrameworkExtensions.GetWebTest())
+	}
+	return tr.Status, tr.Expected
+}
 
 // ToRuns converts a test verdict to a set of runs for the
 // input buffer.
@@ -51,6 +61,11 @@ func ToRuns(tv *rdbpb.TestVariant, partitionTime time.Time, claimedInvs map[stri
 			// as they distort counts of independent events in the segment statistics.
 			continue
 		}
+		status, expected := resultStatusV1(tr)
+		if status == rdbpb.TestStatus_SKIP {
+			// Do not ingest skipped (or execution errored / precluded) results.
+			continue
+		}
 
 		index, ok := runIndicies[invocationName]
 
@@ -67,30 +82,30 @@ func ToRuns(tv *rdbpb.TestVariant, partitionTime time.Time, claimedInvs map[stri
 			runIndicies[invocationName] = index
 		}
 
-		if tr.Expected {
-			if tr.Status == rdbpb.TestStatus_PASS {
+		if expected {
+			if status == rdbpb.TestStatus_PASS {
 				run.Expected.PassCount++
 			}
-			if tr.Status == rdbpb.TestStatus_FAIL {
+			if status == rdbpb.TestStatus_FAIL {
 				run.Expected.FailCount++
 			}
-			if tr.Status == rdbpb.TestStatus_CRASH {
+			if status == rdbpb.TestStatus_CRASH {
 				run.Expected.CrashCount++
 			}
-			if tr.Status == rdbpb.TestStatus_ABORT {
+			if status == rdbpb.TestStatus_ABORT {
 				run.Expected.AbortCount++
 			}
 		} else {
-			if tr.Status == rdbpb.TestStatus_PASS {
+			if status == rdbpb.TestStatus_PASS {
 				run.Unexpected.PassCount++
 			}
-			if tr.Status == rdbpb.TestStatus_FAIL {
+			if status == rdbpb.TestStatus_FAIL {
 				run.Unexpected.FailCount++
 			}
-			if tr.Status == rdbpb.TestStatus_CRASH {
+			if status == rdbpb.TestStatus_CRASH {
 				run.Unexpected.CrashCount++
 			}
-			if tr.Status == rdbpb.TestStatus_ABORT {
+			if status == rdbpb.TestStatus_ABORT {
 				run.Unexpected.AbortCount++
 			}
 		}
@@ -110,30 +125,31 @@ func ToRun(v *rdbpb.RunTestVerdict, partitionTime time.Time, src *pb.Sources) in
 	}
 	for _, r := range v.Results {
 		tr := r.GetResult()
-		if tr.Expected {
-			if tr.Status == rdbpb.TestStatus_PASS {
+		status, expected := resultStatusV1(tr)
+		if expected {
+			if status == rdbpb.TestStatus_PASS {
 				result.Expected.PassCount++
 			}
-			if tr.Status == rdbpb.TestStatus_FAIL {
+			if status == rdbpb.TestStatus_FAIL {
 				result.Expected.FailCount++
 			}
-			if tr.Status == rdbpb.TestStatus_CRASH {
+			if status == rdbpb.TestStatus_CRASH {
 				result.Expected.CrashCount++
 			}
-			if tr.Status == rdbpb.TestStatus_ABORT {
+			if status == rdbpb.TestStatus_ABORT {
 				result.Expected.AbortCount++
 			}
 		} else {
-			if tr.Status == rdbpb.TestStatus_PASS {
+			if status == rdbpb.TestStatus_PASS {
 				result.Unexpected.PassCount++
 			}
-			if tr.Status == rdbpb.TestStatus_FAIL {
+			if status == rdbpb.TestStatus_FAIL {
 				result.Unexpected.FailCount++
 			}
-			if tr.Status == rdbpb.TestStatus_CRASH {
+			if status == rdbpb.TestStatus_CRASH {
 				result.Unexpected.CrashCount++
 			}
-			if tr.Status == rdbpb.TestStatus_ABORT {
+			if status == rdbpb.TestStatus_ABORT {
 				result.Unexpected.AbortCount++
 			}
 		}

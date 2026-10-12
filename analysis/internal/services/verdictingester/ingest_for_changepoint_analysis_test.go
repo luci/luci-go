@@ -160,6 +160,122 @@ func TestExportChangepointAnalysis(t *testing.T) {
 			verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
 			verifyCheckpoints(ctx, t, expectedCheckpoints)
 		})
+
+		t.Run("root invocation with android sources", func(t *ftt.Test) {
+			rootPayload := &taskspb.IngestTestVerdicts{
+				IngestionId: "ingestion-id",
+				Project:     "android",
+				RootInvocation: &ctrlpb.RootInvocationResult{
+					ResultdbHost:     "rdb-host",
+					RootInvocationId: rootInvocationID,
+					CreationTime:     timestamppb.New(invocationCreationTime),
+				},
+				PartitionTime:        timestamppb.New(partitionTime),
+				PageToken:            "expected_token",
+				TaskIndex:            1,
+				UseNewIngestionOrder: true,
+			}
+			rootInput := Inputs{
+				RootInvocation: &rdbpb.RootInvocation{
+					Name:             fmt.Sprintf("rootInvocations/%s", rootInvocationID),
+					RootInvocationId: rootInvocationID,
+					Realm:            "android:postsubmit",
+					CreateTime:       timestamppb.New(invocationCreationTime),
+					FinalizeTime:     timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				},
+				Verdicts: []*rdbpb.TestVariant{
+					{
+						TestId:      ":module!junit:package:class#test_android_failure",
+						VariantHash: "hash",
+						Status:      rdbpb.TestVariantStatus_UNEXPECTED,
+						StatusV2:    rdbpb.TestVerdict_FAILED,
+						SourcesId:   "android_sources",
+						Results: []*rdbpb.TestResultBundle{
+							{
+								Result: &rdbpb.TestResult{
+									Name:     fmt.Sprintf("rootInvocations/%s/workUnits/wu-1/tests/:module%%21junit:package:class%%23test_android_failure/results/one", rootInvocationID),
+									ResultId: "one",
+									Status:   rdbpb.TestStatus_FAIL,
+									StatusV2: rdbpb.TestResult_FAILED,
+									Expected: false,
+									FailureReason: &rdbpb.FailureReason{
+										Kind: rdbpb.FailureReason_ORDINARY,
+									},
+								},
+							},
+						},
+					},
+				},
+				SourcesByID: map[string]*pb.Sources{
+					"android_sources": {
+						BaseSources: &pb.Sources_SubmittedAndroidBuild{
+							SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+								DataRealm: "prod",
+								Branch:    "git_main",
+								BuildId:   12345678,
+							},
+						},
+						IsDirty: false,
+					},
+				},
+				Payload: rootPayload,
+			}
+
+			err := ingester.Ingest(ctx, rootInput)
+			assert.NoErr(t, err)
+
+			tvbs, err := changepoints.FetchTestVariantBranches(ctx)
+			assert.Loosely(t, err, should.BeNil)
+			// 2 branches: 1 from setupTestVariantAnalysis ("project") and 1 newly created ("android").
+			assert.Loosely(t, len(tvbs), should.Equal(2))
+
+			androidSR := &pb.SourceRef{
+				System: &pb.SourceRef_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildBranch{
+						DataRealm: "prod",
+						Branch:    "git_main",
+					},
+				},
+			}
+			hour := time.Unix(invocationCreationTime.Unix()/3600*3600, 0)
+			assert.Loosely(t, tvbs[0], should.Match(&testvariantbranch.Entry{
+				Project:     "android",
+				TestID:      ":module!junit:package:class#test_android_failure",
+				VariantHash: "hash",
+				Variant:     &pb.Variant{},
+				SourceRef:   androidSR,
+				RefHash:     rdbpbutil.SourceRefHash(pbutil.SourceRefToResultDB(androidSR)),
+				InputBuffer: &inputbuffer.Buffer{
+					HotBufferCapacity:  100,
+					ColdBufferCapacity: 2000,
+					HotBuffer: inputbuffer.History{
+						Runs: []inputbuffer.Run{
+							{
+								SourcePosition: 12345678,
+								Hour:           hour,
+								Unexpected: inputbuffer.ResultCounts{
+									FailCount: 1,
+								},
+							},
+						},
+					},
+					ColdBuffer: inputbuffer.History{
+						Runs: []inputbuffer.Run{},
+					},
+				},
+			}))
+			assert.Loosely(t, len(tvBQExporterClient.Insertions), should.Equal(1))
+			verifyCheckpoints(ctx, t, []checkpoints.Checkpoint{
+				{
+					Key: checkpoints.Key{
+						Project:    "android",
+						ResourceID: fmt.Sprintf("rootInvocation/rdb-host/%v", rootInvocationID),
+						ProcessID:  "verdict-ingestion/analyze-changepoints",
+						Uniquifier: ":module!junit:package:class#test_android_failure/hash",
+					},
+				},
+			})
+		})
 	})
 }
 

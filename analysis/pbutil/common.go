@@ -310,18 +310,31 @@ func ValidateFailureReason(fr *pb.FailureReason) error {
 	return pbutil.ValidateFailureReason(FailureReasonToResultDB(fr), false)
 }
 
+// ValidateSourceRef validates a source ref.
 func ValidateSourceRef(ref *pb.SourceRef) error {
 	if ref == nil {
 		return errors.New("unspecified")
 	}
-	if ref.GetGitiles().GetHost() == "" {
-		return errors.New("gitiles: host: unspecified")
-	}
-	if ref.GetGitiles().GetProject() == "" {
-		return errors.New("gitiles: project: unspecified")
-	}
-	if ref.GetGitiles().GetRef() == "" {
-		return errors.New("gitiles: ref: unspecified")
+	switch sys := ref.System.(type) {
+	case *pb.SourceRef_Gitiles:
+		if sys.Gitiles.GetHost() == "" {
+			return errors.New("gitiles: host: unspecified")
+		}
+		if sys.Gitiles.GetProject() == "" {
+			return errors.New("gitiles: project: unspecified")
+		}
+		if sys.Gitiles.GetRef() == "" {
+			return errors.New("gitiles: ref: unspecified")
+		}
+	case *pb.SourceRef_AndroidBuild:
+		if sys.AndroidBuild.GetDataRealm() == "" {
+			return errors.New("android_build: data_realm: unspecified")
+		}
+		if sys.AndroidBuild.GetBranch() == "" {
+			return errors.New("android_build: branch: unspecified")
+		}
+	default:
+		return errors.New("system: unspecified")
 	}
 	return nil
 }

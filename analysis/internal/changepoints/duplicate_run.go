@@ -99,11 +99,16 @@ func shouldClaimInLowLatencyPipeline(sources *pb.Sources) bool {
 
 // shouldClaimInHighLatencyPipeline returns whether an invocation with given
 // sources should be claimed in the high-latency ingestion pipeline.
-func shouldClaimInHighLatencyPipeline(sources *pb.Sources) bool {
-	// Invocations without changelists are ingestible by low-latency
+func shouldClaimInHighLatencyPipeline(sources *pb.Sources, isRootInvocation bool) bool {
+	if isRootInvocation {
+		// Root invocations are not ingested by the low-latency pipeline, so all
+		// root invocations with sources are ingested in the high-latency pipeline.
+		return sources != nil
+	}
+	// Legacy invocations without changelists are ingestible by low-latency
 	// pipeline as we do not need to know the CV run result to determine
 	// if they can be ingested.
-	// Other invocations with sources should be ingested in the
+	// Other legacy invocations with sources should be ingested in the
 	// high-latency pipeline.
 	return sources != nil && len(sources.Changelists) > 0
 }
@@ -113,11 +118,11 @@ func shouldClaimInHighLatencyPipeline(sources *pb.Sources) bool {
 // ingestion pipeline.
 //
 // This is used for a batch query to spanner to check for duplicate runs.
-func invocationIDsToClaimHighLatency(tvs []*rdbpb.TestVariant, sourcesMap map[string]*pb.Sources) ([]string, error) {
+func invocationIDsToClaimHighLatency(tvs []*rdbpb.TestVariant, sourcesMap map[string]*pb.Sources, isRootInvocation bool) ([]string, error) {
 	m := map[string]bool{}
 	for _, tv := range tvs {
 		srcs := sourcesMap[tv.SourcesId]
-		if !shouldClaimInHighLatencyPipeline(srcs) {
+		if !shouldClaimInHighLatencyPipeline(srcs, isRootInvocation) {
 			// Do not try to claim here.
 			continue
 		}

@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
@@ -106,12 +107,24 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	s.SetAttributes(attribute.String("variant_hash", firstTV.VariantHash))
 	defer func() { tracing.End(s, err) }()
 
-	invIDs, err := invocationIDsToClaimHighLatency(tvs, sourcesMap)
+	isRootInvocation := payload.RootInvocation != nil
+	invIDs, err := invocationIDsToClaimHighLatency(tvs, sourcesMap, isRootInvocation)
 	if err != nil {
 		return errors.Fmt("identify invocation ids to claim: %w", err)
 	}
 
-	rootInvocationID := payload.Invocation.InvocationId
+	var rootInvocationID string
+	var resourceID string
+	if payload.Invocation != nil {
+		rootInvocationID = payload.Invocation.InvocationId
+		resourceID = fmt.Sprintf("%s/%s", payload.Invocation.ResultdbHost, payload.Invocation.InvocationId)
+	} else if payload.RootInvocation != nil {
+		rootInvocationID = payload.RootInvocation.RootInvocationId
+		resourceID = fmt.Sprintf("rootInvocation/%s/%s", payload.RootInvocation.ResultdbHost, payload.RootInvocation.RootInvocationId)
+	} else {
+		return errors.New("neither invocation nor root invocation is specified in payload")
+	}
+
 	claimedInvs, err := tryClaimInvocations(ctx, payload.Project, rootInvocationID, invIDs)
 	if err != nil {
 		return errors.Fmt("try to claim invocations: %w", err)
@@ -133,7 +146,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 	checkpointKey := checkpoints.Key{
 		Project:    payload.Project,
-		ResourceID: fmt.Sprintf("%s/%s", payload.Invocation.ResultdbHost, payload.Invocation.InvocationId),
+		ResourceID: resourceID,
 		ProcessID:  "verdict-ingestion/analyze-changepoints",
 		Uniquifier: fmt.Sprintf("%s/%s", firstTV.TestId, firstTV.VariantHash),
 	}
@@ -266,12 +279,10 @@ func insertVerdictIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVa
 	}
 
 	partitionTime := payload.PartitionTime.AsTime()
-	// TODO: remove if statement and always use Invocation.CreationTime
-	// once protos without this field set have been flushed out.
-	// If you are reading this in August 2024, this can be safely actioned
-	// now.
-	if payload.Invocation.CreationTime != nil {
+	if payload.Invocation != nil && payload.Invocation.CreationTime != nil {
 		partitionTime = payload.Invocation.CreationTime.AsTime()
+	} else if payload.RootInvocation != nil && payload.RootInvocation.CreationTime != nil {
+		partitionTime = payload.RootInvocation.CreationTime.AsTime()
 	}
 
 	runs, err := testvariantbranch.ToRuns(tv, partitionTime, claimedInvs, src)
@@ -288,13 +299,21 @@ func insertVerdictIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVa
 	return tvb, true, nil
 }
 
+func isResultSkipped(tr *rdbpb.TestResult) bool {
+	status := tr.Status
+	if status == rdbpb.TestStatus_STATUS_UNSPECIFIED && tr.StatusV2 != rdbpb.TestResult_STATUS_UNSPECIFIED {
+		status, _ = rdbpbutil.TestStatusV1FromV2(tr.StatusV2, tr.FailureReason.GetKind(), tr.FrameworkExtensions.GetWebTest())
+	}
+	return status == rdbpb.TestStatus_SKIP
+}
+
 // filterTestVariantsHighLatency only keeps test variants that satisfy all following
 // conditions:
 //   - Have commit position information.
 //   - Have at least 1 non-skipped test result from a claimed invocation.
 //   - Not from unsubmitted code (i.e. try run that did not result in submitted code)
 //   - Are not eligible for ingestion through the low-latency pipeline,
-//     i.e. test runs testing an applied changelist.
+//     i.e. test runs testing an applied changelist, or root invocations.
 func filterTestVariantsHighLatency(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestVerdicts, claimedInvs map[string]bool, sourcesMap map[string]*pb.Sources) ([]*rdbpb.TestVariant, error) {
 	results := []*rdbpb.TestVariant{}
 	presubmit := payload.PresubmitRun
@@ -326,7 +345,7 @@ func filterTestVariantsHighLatency(ctx context.Context, tvs []*rdbpb.TestVariant
 				return nil, errors.Fmt("invocation from test result name: %w", err)
 			}
 			_, isClaimed := claimedInvs[invID]
-			if r.Result.Status != rdbpb.TestStatus_SKIP && isClaimed {
+			if !isResultSkipped(r.Result) && isClaimed {
 				results = append(results, tv)
 				allSkippedOrUnclaimed = false
 				break

@@ -449,6 +449,47 @@ func TestChangepointsServer(t *testing.T) {
 					}))
 				})
 
+				t.Run("group found with android build ref", func(t *ftt.Test) {
+					row := makeChangepointRow("test1")
+					row.Ref = &changepoints.Ref{
+						AndroidBuild: &changepoints.AndroidBuild{
+							DataRealm: bigquery.NullString{Valid: true, StringVal: "prod"},
+							Branch:    bigquery.NullString{Valid: true, StringVal: "git_main"},
+						},
+					}
+					client.ReadChangepointsInGroupResult = []*changepoints.ChangepointRow{row}
+
+					res, err := server.QueryChangepointsInGroup(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Match(&pb.QueryChangepointsInGroupResponse{
+						Changepoints: []*pb.Changepoint{{
+							Project:     "chromium",
+							TestId:      "test1",
+							VariantHash: "5097aaaaaaaaaaaa",
+							Variant: &pb.Variant{
+								Def: map[string]string{
+									"var":  "abc",
+									"varr": "xyx",
+								},
+							},
+							RefHash: "b920ffffffffffff",
+							Ref: &pb.SourceRef{
+								System: &pb.SourceRef_AndroidBuild{
+									AndroidBuild: &pb.AndroidBuildBranch{
+										DataRealm: "prod",
+										Branch:    "git_main",
+									},
+								},
+							},
+							StartHour:                         timestamppb.New(time.Unix(1000, 0)),
+							StartPositionLowerBound_99Th:      2,
+							StartPositionUpperBound_99Th:      4,
+							NominalStartPosition:              3,
+							PreviousSegmentNominalEndPosition: 1,
+						}},
+					}))
+				})
+
 				t.Run("group not found", func(t *ftt.Test) {
 					client.ReadChangepointsInGroupResult = []*changepoints.ChangepointRow{}
 
