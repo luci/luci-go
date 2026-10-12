@@ -17,6 +17,7 @@ package main
 
 import (
 	"context"
+	"math/rand/v2"
 	"sync"
 	"time"
 
@@ -38,7 +39,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/internalcontext"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
-	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func main() {
@@ -90,51 +90,73 @@ func main() {
 			// it, while still allowing server.Server report its own built-in metrics
 			// normally (since we didn't touch tsmon state in srv.Context). As
 			// a downside, logs from this handler are attributed to the server as
-			// a whole, not individual cron request invocation. And we need to
-			// maintain the timeout manually as well, since the server sets it only in
-			// the context which we ignore.
-			ctx, cancel := context.WithTimeout(ctx, 20*time.Minute)
-			defer cancel()
+			// a whole, not individual cron request invocation. As a workaround, we
+			// attach a custom logging field that would allow to manually correlate
+			// logs belonging to the same cron invocation. Additionally we need to
+			// manually maintain the request timeout, since the server sets it only in
+			// the per-request context which we ignore.
+			ctx := logging.SetField(ctx, "rid", rand.Int32())
 
+			// An error from ReportBuilderMetrics + two tsmon flushes.
+			merr := make(errors.MultiError, 3)
+
+			// Have two separate timeouts for querying and flushing.
 			start := clock.Now(ctx)
-			if err := metrics.ReportBuilderMetrics(ctx); err != nil {
-				return errors.Fmt("computing builder metrics: %w", err)
+			queryCtx, queryCtxCancel := context.WithTimeout(ctx, 20*time.Minute)
+			defer queryCtxCancel()
+
+			// Collect all metrics. This involves a ton of datastore queries. Some of
+			// them can fail. We'll still report as many metrics as we could fetch.
+			logging.Infof(queryCtx, "Computing building metrics")
+			merr[0] = metrics.ReportBuilderMetrics(queryCtx)
+			if merr[0] == nil {
+				logging.Infof(queryCtx, "Builder metrics computed successfully in %s", clock.Since(queryCtx, start))
+			} else {
+				logging.Warningf(queryCtx, "Some builder metrics could not be computed, see logs, took %s", clock.Since(queryCtx, start))
 			}
-			logging.Infof(ctx, "computing builder metrics took %s", clock.Since(ctx, start))
+
+			// Have two separate timeouts for querying and flushing.
 			start = clock.Now(ctx)
+			flushCtx, flushCtxCancel := context.WithTimeout(ctx, 5*time.Minute)
+			defer flushCtxCancel()
 
 			var wg sync.WaitGroup
 			wg.Add(2)
 
-			var err1, err2 error
+			// Flush built-in metrics.
 			go func() {
 				defer wg.Done()
-				err1 = state.ParallelFlush(ctx, mon, 8)
+				merr[1] = state.ParallelFlush(flushCtx, mon, 8)
 			}()
 
 			// Flush custom metrics
 			go func() {
 				defer wg.Done()
-				var globalCfg *pb.SettingsCfg
-				globalCfg, err2 = config.GetSettingsCfg(ctx)
-				if err2 != nil {
+				globalCfg, err := config.GetSettingsCfg(flushCtx)
+				if err != nil {
+					merr[2] = err
 					return
 				}
-
-				cms := metrics.GetCustomMetrics(ctx)
-				err2 = cms.Flush(ctx, globalCfg, mon)
+				cms := metrics.GetCustomMetrics(flushCtx)
+				merr[2] = cms.Flush(flushCtx, globalCfg, mon)
 			}()
 
 			wg.Wait()
 
-			switch {
-			case err1 != nil:
-				return err1
-			case err2 != nil:
-				return err2
-			default:
-				logging.Infof(ctx, "flushing builder metrics took %s", clock.Since(ctx, start))
+			logging.Infof(flushCtx, "Flushing took %s", clock.Since(flushCtx, start))
+			if merr[1] != nil {
+				logging.Errorf(flushCtx, "Built-in metrics flush failed: %s", merr[1])
+			}
+			if merr[2] != nil {
+				logging.Errorf(flushCtx, "Custom metrics flush failed: %s", merr[2])
+			}
+			switch count, first := merr.Summary(); {
+			case count == 0:
 				return nil
+			case count == 1:
+				return first
+			default:
+				return merr
 			}
 		})
 

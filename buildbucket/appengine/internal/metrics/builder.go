@@ -70,23 +70,22 @@ func ReportBuilderMetrics(ctx context.Context) error {
 
 			bldrDefinedMetrics := bldrToMetrics[protoutil.ToBuilderIDString(project, bucket, builder)]
 
-			taskC <- func() error {
-				return errors.WrapIf(
-					reportMaxAge(tctx, project, bucket, legacyBucket, builder, bldrDefinedMetrics),
-					"reportMaxAge",
-				)
-			}
-			taskC <- func() error {
-				return errors.WrapIf(
-					reportBuildCount(tctx, project, bucket, legacyBucket, builder, bldrDefinedMetrics),
-					"reportBuildCount",
-				)
-			}
-			taskC <- func() error {
-				return errors.WrapIf(
-					reportConsecutiveFailures(tctx, project, bucket, builder, bldrDefinedMetrics),
-					"reportConsecutiveFailures",
-				)
+			for name, cb := range map[string]func(context.Context, string, string, string, string, []string) error{
+				"reportMaxAge":              reportMaxAge,
+				"reportBuildCount":          reportBuildCount,
+				"reportConsecutiveFailures": reportConsecutiveFailures,
+			} {
+				taskC <- func() error {
+					start := clock.Now(tctx)
+					err := cb(tctx, project, bucket, legacyBucket, builder, bldrDefinedMetrics)
+					dt := clock.Since(tctx, start)
+					if err != nil {
+						logging.Warningf(tctx, "%s(%q) failed in %s: %s", name, k.StringID(), dt, err)
+						return fmt.Errorf("%s(%q): %w", name, k.StringID(), err)
+					}
+					logging.Infof(tctx, "%s(%q) succeeded in %s", name, k.StringID(), dt)
+					return nil
+				}
 			}
 		}
 	})
@@ -120,7 +119,6 @@ func fetchLUCIBuckets(ctx context.Context) (stringset.Set, error) {
 
 // reportMaxAge computes and reports the age of the oldest builds with SCHEDULED.
 func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder string, bldrDefinedMetrics []string) error {
-	var leasedCT, neverLeasedCT time.Time
 	// TODO(b/357664566): Make builder a dedicated field in Build model and use
 	// it instead of tags in the query.
 	q := datastore.NewQuery(model.BuildKind).
@@ -130,25 +128,34 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 		Eq("experimental", false).
 		Order("create_time").
 		Limit(1)
-	eg, eCtx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		b, err := datastore.RunQuery[*model.Build](eCtx, q.Eq("never_leased", false)).AsSlice()
+
+	wg := newWorkGroup()
+
+	var leastCTOK bool
+	var leasedCT time.Time
+	wg.Go(func() error {
+		b, err := datastore.RunQuery[*model.Build](ctx, q.Eq("never_leased", false)).AsSlice()
 		if err != nil {
-			return err
+			return fmt.Errorf("query over never_leased==false: %w", err)
 		}
 		if len(b) > 0 {
 			leasedCT = b[0].CreateTime
 		}
+		leastCTOK = true
 		return nil
 	})
-	eg.Go(func() error {
-		b, err := datastore.RunQuery[*model.Build](eCtx, q.Eq("never_leased", true)).AsSlice()
+
+	var neverLeasedCTOK bool
+	var neverLeasedCT time.Time
+	wg.Go(func() error {
+		b, err := datastore.RunQuery[*model.Build](ctx, q.Eq("never_leased", true)).AsSlice()
 		if err != nil {
-			return err
+			return fmt.Errorf("query over never_leased==true: %w", err)
 		}
 		if len(b) > 0 {
 			neverLeasedCT = b[0].CreateTime
 		}
+		neverLeasedCTOK = true
 		return nil
 	})
 
@@ -157,8 +164,8 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 	cmRes := make(map[string]time.Time)
 	var mu sync.Mutex
 	for _, name := range cmNames {
-		eg.Go(func() (err error) {
-			b, err := datastore.RunQuery[*model.Build](eCtx, q.Eq("custom_builder_max_age_metrics", name)).AsSlice()
+		wg.Go(func() (err error) {
+			b, err := datastore.RunQuery[*model.Build](ctx, q.Eq("custom_builder_max_age_metrics", name)).AsSlice()
 			if err != nil {
 				return err
 			}
@@ -170,63 +177,71 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 			return nil
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
+	queryErr := wg.Wait()
 
-	var max, neverLeasedMax float64
 	now := clock.Now(ctx)
-	if !neverLeasedCT.IsZero() {
-		neverLeasedMax = now.Sub(neverLeasedCT).Seconds()
+
+	// Report MaxAgeScheduled only when successfully fetched necessary values.
+	if leastCTOK && neverLeasedCTOK {
+		var neverLeasedMax float64
+		if !neverLeasedCT.IsZero() {
+			neverLeasedMax = now.Sub(neverLeasedCT).Seconds()
+		}
+
+		// In V1, the metric value of a stream with "must_be_never_leased == false"
+		// is the age of the oldest build w/ "must_be_never_leased == true|false".
+		//
+		// That is, it's the age of the oldest build regardless of the value
+		// in must_be_never_leased.
+		var max float64
+		if !leasedCT.IsZero() {
+			max = now.Sub(leasedCT).Seconds()
+		}
+		if max < neverLeasedMax {
+			max = neverLeasedMax
+		}
+		V1.MaxAgeScheduled.Set(ctx, max, legacyBucket, builder, false /*must_be_never_leased*/)
+		V1.MaxAgeScheduled.Set(ctx, neverLeasedMax, legacyBucket, builder, true)
+		V2.MaxAgeScheduled.Set(ctx, max)
 	}
 
-	// In V1, the metric value of a stream with "must_be_never_leased == false"
-	// is the age of the oldest build w/ "must_be_never_leased == true|false".
-	//
-	// That is, it's the age of the oldest build regardless of the value
-	// in must_be_never_leased.
-	if !leasedCT.IsZero() {
-		max = now.Sub(leasedCT).Seconds()
-	}
-	if max < neverLeasedMax {
-		max = neverLeasedMax
-	}
-	V1.MaxAgeScheduled.Set(ctx, max, legacyBucket, builder, false /*must_be_never_leased*/)
-	V1.MaxAgeScheduled.Set(ctx, neverLeasedMax, legacyBucket, builder, true)
-	V2.MaxAgeScheduled.Set(ctx, max)
+	// Report all custom metrics that we managed to fetch successfully.
 	for _, name := range cmNames {
 		if cmRes[name].IsZero() {
 			continue
 		}
-		max = now.Sub(cmRes[name]).Seconds()
+		max := now.Sub(cmRes[name]).Seconds()
 		cms.Report(ctx, &Report{
 			Base:  base,
 			Name:  name,
 			Value: max,
 		})
 	}
-	return nil
+
+	return queryErr
 }
 
 // reportBuildCount computes and reports # and age of builds with SCHEDULED and STARTED.
 func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builder string, bldrDefinedMetrics []string) error {
-	var nScheduled, nStarted int64
-	agesScheduled := distribution.New(V2.Age.Bucketer())
 	// TODO(b/357664566): Make builder a dedicated field in Build model and use
 	// it instead of tags in the query.
 	q := datastore.NewQuery(model.BuildKind).
 		Eq("bucket_id", protoutil.FormatBucketID(project, bucket)).
 		Eq("experimental", false).
 		Eq("tags", "builder:"+builder)
-	eg, eCtx := errgroup.WithContext(ctx)
 
-	eg.Go(func() error {
+	wg := newWorkGroup()
+
+	var scheduledOK bool
+	var nScheduled int64
+	agesScheduled := distribution.New(V2.Age.Bucketer())
+	wg.Go(func() error {
 		now := clock.Now(ctx)
 		for build, err := range datastore.RunBatchQuery[*model.Build](
-			eCtx, 64, q.Eq("status_v2", pb.Status_SCHEDULED),
+			ctx, 64, q.Eq("status_v2", pb.Status_SCHEDULED),
 		).Results {
 			if err != nil {
-				return err
+				return fmt.Errorf("enumerating SCHEDULED builds: %w", err)
 			}
 			// Process scheduled time of pending builds
 			// and add to V2.Age metric
@@ -235,12 +250,20 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 
 			nScheduled++
 		}
+		scheduledOK = true
 		return nil
 	})
 
-	eg.Go(func() (err error) {
-		nStarted, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_STARTED))
-		return
+	var startedOK bool
+	var nStarted int64
+	wg.Go(func() error {
+		var err error
+		nStarted, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_STARTED))
+		if err != nil {
+			return fmt.Errorf("counting STARTED builds: %w", err)
+		}
+		startedOK = true
+		return nil
 	})
 
 	base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT
@@ -253,29 +276,41 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 	}
 	for _, name := range cmNames {
 		for _, status := range statuses {
-			eg.Go(func() (err error) {
+			wg.Go(func() error {
+				count, err := datastore.Count(ctx, q.Eq("status_v2", status).Eq("custom_builder_count_metrics", name))
+				if err != nil {
+					return fmt.Errorf("counting status==%s, metric==%q: %w", status, name, err)
+				}
 				mu.Lock()
-				defer mu.Unlock()
-				cmCounts[name][status], err = datastore.Count(eCtx, q.Eq("status_v2", status).Eq("custom_builder_count_metrics", name))
-				return
+				cmCounts[name][status] = count
+				mu.Unlock()
+				return nil
 			})
 		}
 	}
-	if err := eg.Wait(); err != nil {
-		return err
+	queryErr := wg.Wait()
+
+	// Report built-in metrics only when successfully fetched necessary values.
+	if scheduledOK && startedOK {
+		V1.BuildCount.Set(ctx, nScheduled, legacyBucket, builder, pb.Status_name[int32(pb.Status_SCHEDULED)])
+		V1.BuildCount.Set(ctx, nStarted, legacyBucket, builder, pb.Status_name[int32(pb.Status_STARTED)])
+		V2.BuildCount.Set(ctx, nScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
+		V2.BuildCount.Set(ctx, nStarted, pb.Status_name[int32(pb.Status_STARTED)])
+		V2.Age.Set(ctx, agesScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
 	}
 
-	V1.BuildCount.Set(ctx, nScheduled, legacyBucket, builder, pb.Status_name[int32(pb.Status_SCHEDULED)])
-	V1.BuildCount.Set(ctx, nStarted, legacyBucket, builder, pb.Status_name[int32(pb.Status_STARTED)])
-	V2.BuildCount.Set(ctx, nScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
-	V2.BuildCount.Set(ctx, nStarted, pb.Status_name[int32(pb.Status_STARTED)])
-	V2.Age.Set(ctx, agesScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
-
+	// Report all custom metrics that we managed to fetch successfully.
 	reportCustomBuilderCounts(ctx, cms, base, cmNames, statuses, cmCounts)
-	return nil
+	return queryErr
 }
 
-func reportConsecutiveFailures(ctx context.Context, project, bucket, builder string, bldrDefinedMetrics []string) error {
+func reportConsecutiveFailures(ctx context.Context, project, bucket, legacyBucket, builder string, bldrDefinedMetrics []string) error {
+	statuses := []pb.Status{
+		pb.Status_CANCELED,
+		pb.Status_FAILURE,
+		pb.Status_INFRA_FAILURE,
+	}
+
 	// TODO(b/357664566): Make builder a dedicated field in Build model and use
 	// it instead of tags in the query.
 	q := datastore.NewQuery(model.BuildKind).
@@ -284,7 +319,7 @@ func reportConsecutiveFailures(ctx context.Context, project, bucket, builder str
 		Order("-status_changed_time")
 	b, err := datastore.RunQuery[*model.Build](ctx, q.Eq("status_v2", pb.Status_SUCCESS).Limit(1)).AsSlice()
 	if err != nil {
-		return err
+		return fmt.Errorf("finding last successful build: %w", err)
 	}
 
 	// if there was at least one successful build, add Ge()
@@ -293,50 +328,54 @@ func reportConsecutiveFailures(ctx context.Context, project, bucket, builder str
 		q = q.Gt("status_changed_time", b[0].StatusChangedTime.UTC())
 	}
 
-	var nCancels, nFailures, nInfraFailures int64
-	eg, eCtx := errgroup.WithContext(ctx)
-	eg.Go(func() (err error) {
-		nCancels, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_CANCELED))
-		return
-	})
-	eg.Go(func() (err error) {
-		nFailures, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_FAILURE))
-		return
-	})
-	eg.Go(func() (err error) {
-		nInfraFailures, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_INFRA_FAILURE))
-		return
-	})
+	wg := newWorkGroup()
+
+	perStatus := map[pb.Status]int64{}
+	var perStatusM sync.Mutex
+	for _, status := range statuses {
+		wg.Go(func() error {
+			count, err := datastore.Count(ctx, q.Eq("status_v2", status))
+			if err != nil {
+				return fmt.Errorf("counting %s: %w", status, err)
+			}
+			perStatusM.Lock()
+			perStatus[status] = count
+			perStatusM.Unlock()
+			return nil
+		})
+	}
 
 	base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT
 	cms, cmNames := getBuilderDefinedMetricsPerBase(ctx, base, bldrDefinedMetrics)
 	cmCounts := make(map[string]map[pb.Status]int64)
-	var mu sync.Mutex
-	statuses := []pb.Status{pb.Status_CANCELED, pb.Status_FAILURE, pb.Status_INFRA_FAILURE}
+	var cmCountsM sync.Mutex
 	for _, name := range cmNames {
 		cmCounts[name] = make(map[pb.Status]int64)
 	}
 	for _, name := range cmNames {
 		for _, status := range statuses {
-			eg.Go(func() (err error) {
-				mu.Lock()
-				defer mu.Unlock()
-				cmCounts[name][status], err = datastore.Count(eCtx, q.Eq("status_v2", status).Eq("custom_builder_consecutive_failures_metrics", name))
-				return
+			wg.Go(func() error {
+				count, err := datastore.Count(ctx, q.Eq("status_v2", status).Eq("custom_builder_consecutive_failures_metrics", name))
+				if err != nil {
+					return fmt.Errorf("counting status==%s, metric=%q: %w", status, name, err)
+				}
+				cmCountsM.Lock()
+				cmCounts[name][status] = count
+				cmCountsM.Unlock()
+				return nil
 			})
 		}
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
+	queryErr := wg.Wait()
 
 	// These counts can be inaccurate a bit, but should be accurate enough.
-	V2.ConsecutiveFailureCount.Set(ctx, nCancels, pb.Status_name[int32(pb.Status_CANCELED)])
-	V2.ConsecutiveFailureCount.Set(ctx, nFailures, pb.Status_name[int32(pb.Status_FAILURE)])
-	V2.ConsecutiveFailureCount.Set(ctx, nInfraFailures, pb.Status_name[int32(pb.Status_INFRA_FAILURE)])
+	for status, count := range perStatus {
+		V2.ConsecutiveFailureCount.Set(ctx, count, pb.Status_name[int32(status)])
+	}
 
+	// Report all custom metrics that we managed to fetch successfully.
 	reportCustomBuilderCounts(ctx, cms, base, cmNames, statuses, cmCounts)
-	return nil
+	return queryErr
 }
 
 // getBldrDefinedMetrics returns a map BuilderID -> a list of metric names.
@@ -381,8 +420,6 @@ func getBuilderDefinedMetricsPerBase(ctx context.Context, base pb.CustomMetricBa
 func reportCustomBuilderCounts(ctx context.Context, cms *CustomMetrics, base pb.CustomMetricBase, cmNames []string, statuses []pb.Status, cmCounts map[string]map[pb.Status]int64) {
 	for _, name := range cmNames {
 		for _, status := range statuses {
-			// TODO(b/338071541): remove after confirming the feature works.
-			logging.Infof(ctx, "reporting to %s for status %s with count %d", name, status, cmCounts[name][status])
 			cms.Report(ctx, &Report{
 				Base:     base,
 				Name:     name,
@@ -391,4 +428,36 @@ func reportCustomBuilderCounts(ctx context.Context, cms *CustomMetrics, base pb.
 			})
 		}
 	}
+}
+
+// workGroup runs a bunch of goroutines in parallel, collecting all errors.
+type workGroup struct {
+	eg    errgroup.Group
+	errs  errors.MultiError
+	errsM sync.Mutex
+}
+
+func newWorkGroup() *workGroup {
+	wg := &workGroup{}
+	wg.eg.SetLimit(200)
+	return wg
+}
+
+func (wg *workGroup) Go(cb func() error) {
+	wg.eg.Go(func() error {
+		if err := cb(); err != nil {
+			wg.errsM.Lock()
+			wg.errs = append(wg.errs, err)
+			wg.errsM.Unlock()
+		}
+		return nil
+	})
+}
+
+func (wg *workGroup) Wait() error {
+	_ = wg.eg.Wait()
+	if len(wg.errs) == 0 {
+		return nil
+	}
+	return wg.errs
 }
