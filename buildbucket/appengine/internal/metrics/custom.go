@@ -62,12 +62,12 @@ func (cmi *customeMetricInfo) getFields() []string {
 	return cmi.fields
 }
 
-type counter struct {
+type counterMetric struct {
 	metric.Counter
 	*customeMetricInfo
 }
 
-func (c *counter) report(ctx context.Context, value any, fields []any) {
+func (c *counterMetric) report(ctx context.Context, value any, fields []any) {
 	v, ok := value.(int64)
 	if !ok {
 		panic(fmt.Sprintf("cannot convert %q to int64", value))
@@ -88,12 +88,12 @@ func (cd *cumulativeDistribution) report(ctx context.Context, value any, fields 
 	cd.Add(ctx, v, fields...)
 }
 
-type float struct {
+type floatMetric struct {
 	metric.Float
 	*customeMetricInfo
 }
 
-func (f *float) report(ctx context.Context, value any, fields []any) {
+func (f *floatMetric) report(ctx context.Context, value any, fields []any) {
 	v, ok := value.(float64)
 	if !ok {
 		panic(fmt.Sprintf("cannot convert %q to float64", value))
@@ -101,12 +101,12 @@ func (f *float) report(ctx context.Context, value any, fields []any) {
 	f.Set(ctx, v, fields...)
 }
 
-type int struct {
+type intMetric struct {
 	metric.Int
 	*customeMetricInfo
 }
 
-func (i *int) report(ctx context.Context, value any, fields []any) {
+func (i *intMetric) report(ctx context.Context, value any, fields []any) {
 	v, ok := value.(int64)
 	if !ok {
 		panic(fmt.Sprintf("cannot convert %q to int64", value))
@@ -387,7 +387,7 @@ func newMetric(cm *pb.CustomMetric, registry *registry.Registry) (CustomMetric, 
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED:
-		return &counter{
+		return &counterMetric{
 			metric.NewCounterWithOptions(cm.Name, opt, cm.Description, nil, fields...),
 			info,
 		}, nil
@@ -403,14 +403,14 @@ func newMetric(cm *pb.CustomMetric, registry *registry.Registry) (CustomMetric, 
 				fields...), info}, nil
 
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED:
-		return &float{
+		return &floatMetric{
 			metric.NewFloatWithOptions(
 				cm.Name, opt, cm.Description,
 				&types.MetricMetadata{Units: types.Seconds}, fields...), info}, nil
 
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT:
-		return &int{
+		return &intMetric{
 			metric.NewIntWithOptions(cm.Name, opt, cm.Description, nil, fields...), info}, nil
 
 	default:

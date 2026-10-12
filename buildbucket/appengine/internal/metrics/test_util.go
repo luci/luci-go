@@ -42,7 +42,7 @@ func GetCustomMetricsData(ctx context.Context, base pb.CustomMetricBase, name st
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED:
-		return store.Get(ctx, cm.(*counter), fvs), nil
+		return store.Get(ctx, cm.(*counterMetric), fvs), nil
 
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_CYCLE_DURATIONS,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_RUN_DURATIONS,
@@ -50,11 +50,11 @@ func GetCustomMetricsData(ctx context.Context, base pb.CustomMetricBase, name st
 		return store.Get(ctx, cm.(*cumulativeDistribution), fvs), nil
 
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED:
-		return store.Get(ctx, cm.(*float), fvs), nil
+		return store.Get(ctx, cm.(*floatMetric), fvs), nil
 
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT:
-		return store.Get(ctx, cm.(*int), fvs), nil
+		return store.Get(ctx, cm.(*intMetric), fvs), nil
 
 	default:
 		return nil, errors.Fmt("invalid metric base %s", base)

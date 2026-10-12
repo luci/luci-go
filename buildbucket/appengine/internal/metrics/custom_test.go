@@ -95,16 +95,16 @@ func TestWithCustomMetrics(t *testing.T) {
 		t.Run("check metrics from test context", func(t *ftt.Test) {
 			v2Custom, _ := getCurrentMetricsAndState(ctx)
 			startM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED]["/chrome/infra/custom/builds/started"]
-			_, ok := startM.(*counter)
+			_, ok := startM.(*counterMetric)
 			assert.Loosely(t, ok, should.BeTrue)
 			runDurationM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_RUN_DURATIONS]["/chrome/infra/custom/builds/run_duration"]
 			_, ok = runDurationM.(*cumulativeDistribution)
 			assert.Loosely(t, ok, should.BeTrue)
 			maxAgeM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED]["/chrome/infra/custom/builds/max_age"]
-			_, ok = maxAgeM.(*float)
+			_, ok = maxAgeM.(*floatMetric)
 			assert.Loosely(t, ok, should.BeTrue)
 			countM := v2Custom[pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT]["/chrome/infra/custom/builds/count"]
-			_, ok = countM.(*int)
+			_, ok = countM.(*intMetric)
 			assert.Loosely(t, ok, should.BeTrue)
 		})
 	})

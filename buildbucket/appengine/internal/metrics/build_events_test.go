@@ -158,7 +158,7 @@ func TestBuildEvents(t *testing.T) {
 					BuildCreated(ctx, b)
 					v2Custom, state := getCustomMetricsAndState(ctx)
 					customStore := state.Store()
-					cm := v2Custom[base][name].(*counter)
+					cm := v2Custom[base][name].(*counterMetric)
 					assert.Loosely(t, customStore.Get(ctx, cm, fv("linux")), should.Equal(1))
 					assert.Loosely(t, globalStore.Get(ctx, cm, fv("linux")), should.BeNil)
 				})
