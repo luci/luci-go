@@ -142,3 +142,12 @@ export const enablePixelDeviceRestoration = createFeatureFlag({
   trackingBug: '564815043',
   allowedEnvironments: ['dev', 'prod'],
 });
+
+export const enableAndroidRepairQueue = createFeatureFlag({
+  description: 'Enable the manual repair queue dashboard for Android and Pixel',
+  namespace: 'fleet-console',
+  name: 'android-repair-queue',
+  percentage: { dev: 100, prod: 0 },
+  trackingBug: '568290011',
+  allowedEnvironments: ['dev'],
+});

@@ -35,10 +35,14 @@ import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { generateDeviceListURL } from '@/fleet/constants/paths';
-import { enableAndroidHealthMetrics } from '@/fleet/features';
+import {
+  enableAndroidHealthMetrics,
+  enableAndroidRepairQueue,
+} from '@/fleet/features';
 import { ORDER_BY_PARAM_KEY } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { AndroidRepairDashboard } from '@/fleet/pages/android/repair_queue';
 import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import {
@@ -459,13 +463,25 @@ function Metrics({
   );
 }
 
+function AndroidRepairsPageContent({
+  workspace,
+}: {
+  workspace: AndroidPageWorkspace;
+}) {
+  const isRepairQueueEnabled = useFeatureFlag(enableAndroidRepairQueue);
+  if (isRepairQueueEnabled) {
+    return <AndroidRepairDashboard workspace={workspace} />;
+  }
+  return <RepairListPage workspace={workspace} />;
+}
+
 export function Component({ workspace }: { workspace: AndroidPageWorkspace }) {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-repairs">
       <FleetHelmet pageTitle="Repairs" />
       <RecoverableErrorBoundary key="fleet-repairs">
         <LoggedInBoundary>
-          <RepairListPage workspace={workspace} />
+          <AndroidRepairsPageContent workspace={workspace} />
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>

@@ -15,6 +15,24 @@
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 /**
+ * Returns the Mobile Harness lab list view filtered down to `hostName`.
+ */
+export const getMobileHarnessHostListLink = (hostName: string): string => {
+  const urlParams = new URLSearchParams();
+  urlParams.append('filter', `"host_name":("${hostName}")`);
+  return `https://mobileharness-fe.corp.google.com/lablistview?${urlParams.toString()}`;
+};
+
+/**
+ * Returns the Mobile Harness device list view filtered down to `deviceId`.
+ */
+export const getMobileHarnessDeviceListLink = (deviceId: string): string => {
+  const urlParams = new URLSearchParams();
+  urlParams.append('filter', `"id":("${deviceId}")`);
+  return `https://mobileharness-fe.corp.google.com/devicelistview?${urlParams.toString()}`;
+};
+
+/**
  * Returns the Mobile Harness URL for a given Android device or host.
  *
  * For host machines:
@@ -38,14 +56,10 @@ export const getMobileHarnessLink = (device?: AndroidDevice | null): string => {
     if (hostname && hostIp) {
       return `https://mobileharness-fe.corp.google.com/labdetailview/${hostname}/${hostIp}`;
     }
-    const urlParams = new URLSearchParams();
-    urlParams.append('filter', `"host_name":("${device.id}")`);
-    return `https://mobileharness-fe.corp.google.com/lablistview?${urlParams.toString()}`;
+    return getMobileHarnessHostListLink(device.id);
   }
   if (hostname && hostIp) {
     return `https://mobileharness-fe.corp.google.com/devicedetailview/${hostname}/${hostIp}/${device.id}`;
   }
-  const urlParams = new URLSearchParams();
-  urlParams.append('filter', `"id":("${device.id}")`);
-  return `https://mobileharness-fe.corp.google.com/devicelistview?${urlParams.toString()}`;
+  return getMobileHarnessDeviceListLink(device.id);
 };

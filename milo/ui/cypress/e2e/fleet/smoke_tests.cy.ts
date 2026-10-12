@@ -34,20 +34,14 @@ describe('Fleet Console Smoke Tests', () => {
 
   it('should load Android Repairs Page', () => {
     mockPrpcEndpoint(
-      'GetRepairMetricsDimensions',
-      { dimensions: {} },
-      'getRepairDimensions',
+      'ListAndroidRepairQueue',
+      undefined,
+      'listAndroidRepairQueue',
     );
-    mockPrpcEndpoint('ListRepairMetrics', undefined, 'listRepairMetrics');
-    mockPrpcEndpoint('CountRepairMetrics', undefined, 'countRepairMetrics');
 
     cy.visit('/ui/fleet/p/android/repairs');
-    cy.wait([
-      '@getRepairDimensions',
-      '@listRepairMetrics',
-      '@countRepairMetrics',
-    ]);
-    cy.contains('Repair metrics').should('be.visible');
+    cy.wait('@listAndroidRepairQueue');
+    cy.contains('Android Manual Repair Dashboard').should('be.visible');
     cy.get('table').should('be.visible');
   });
 

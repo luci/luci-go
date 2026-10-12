@@ -13,22 +13,36 @@ import {
   GetDeviceACLsResponse,
 } from "./admintask.pb";
 import {
+  ClaimAndroidRepairTaskRequest,
+  ClaimAndroidRepairTaskResponse,
   CleanupAndroidDevicesRequest,
   CleanupAndroidDevicesResponse,
   CountAndroidDevicesRequest,
   CountAndroidDevicesResponse,
+  CreateAndroidPriorityRuleRequest,
+  CreateAndroidPriorityRuleResponse,
+  DeleteAndroidPriorityRuleRequest,
+  DeleteAndroidPriorityRuleResponse,
   ExportAndroidDevicesToCSVRequest,
   ExportAndroidDevicesToCSVResponse,
   ListAndroidDevicesRequest,
   ListAndroidDevicesResponse,
+  ListAndroidPriorityRulesRequest,
+  ListAndroidPriorityRulesResponse,
+  ListAndroidRepairQueueRequest,
+  ListAndroidRepairQueueResponse,
   RepopulateAndroidCacheRequest,
   RepopulateAndroidCacheResponse,
   RepopulateAndroidDeviceUtilizationRequest,
   RepopulateAndroidDeviceUtilizationResponse,
+  UnclaimAndroidRepairTaskRequest,
+  UnclaimAndroidRepairTaskResponse,
   UpdateAndroidDevicesRequest,
   UpdateAndroidDevicesResponse,
   UpdateAndroidMetricsRequest,
   UpdateAndroidMetricsResponse,
+  UpdateAndroidPriorityRuleRequest,
+  UpdateAndroidPriorityRuleResponse,
 } from "./android.pb";
 import {
   CountBrowserDevicesRequest,
@@ -420,6 +434,13 @@ export interface FleetConsole {
   UpdateHealthSlice(request: UpdateHealthSliceRequest): Promise<UpdateHealthSliceResponse>;
   DeleteHealthSlice(request: DeleteHealthSliceRequest): Promise<DeleteHealthSliceResponse>;
   ReorderHealthSlices(request: ReorderHealthSlicesRequest): Promise<ReorderHealthSlicesResponse>;
+  ListAndroidRepairQueue(request: ListAndroidRepairQueueRequest): Promise<ListAndroidRepairQueueResponse>;
+  ClaimAndroidRepairTask(request: ClaimAndroidRepairTaskRequest): Promise<ClaimAndroidRepairTaskResponse>;
+  UnclaimAndroidRepairTask(request: UnclaimAndroidRepairTaskRequest): Promise<UnclaimAndroidRepairTaskResponse>;
+  ListAndroidPriorityRules(request: ListAndroidPriorityRulesRequest): Promise<ListAndroidPriorityRulesResponse>;
+  CreateAndroidPriorityRule(request: CreateAndroidPriorityRuleRequest): Promise<CreateAndroidPriorityRuleResponse>;
+  UpdateAndroidPriorityRule(request: UpdateAndroidPriorityRuleRequest): Promise<UpdateAndroidPriorityRuleResponse>;
+  DeleteAndroidPriorityRule(request: DeleteAndroidPriorityRuleRequest): Promise<DeleteAndroidPriorityRuleResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -496,6 +517,13 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.UpdateHealthSlice = this.UpdateHealthSlice.bind(this);
     this.DeleteHealthSlice = this.DeleteHealthSlice.bind(this);
     this.ReorderHealthSlices = this.ReorderHealthSlices.bind(this);
+    this.ListAndroidRepairQueue = this.ListAndroidRepairQueue.bind(this);
+    this.ClaimAndroidRepairTask = this.ClaimAndroidRepairTask.bind(this);
+    this.UnclaimAndroidRepairTask = this.UnclaimAndroidRepairTask.bind(this);
+    this.ListAndroidPriorityRules = this.ListAndroidPriorityRules.bind(this);
+    this.CreateAndroidPriorityRule = this.CreateAndroidPriorityRule.bind(this);
+    this.UpdateAndroidPriorityRule = this.UpdateAndroidPriorityRule.bind(this);
+    this.DeleteAndroidPriorityRule = this.DeleteAndroidPriorityRule.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -901,6 +929,48 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ReorderHealthSlicesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ReorderHealthSlices", data);
     return promise.then((data) => ReorderHealthSlicesResponse.fromJSON(data));
+  }
+
+  ListAndroidRepairQueue(request: ListAndroidRepairQueueRequest): Promise<ListAndroidRepairQueueResponse> {
+    const data = ListAndroidRepairQueueRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListAndroidRepairQueue", data);
+    return promise.then((data) => ListAndroidRepairQueueResponse.fromJSON(data));
+  }
+
+  ClaimAndroidRepairTask(request: ClaimAndroidRepairTaskRequest): Promise<ClaimAndroidRepairTaskResponse> {
+    const data = ClaimAndroidRepairTaskRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ClaimAndroidRepairTask", data);
+    return promise.then((data) => ClaimAndroidRepairTaskResponse.fromJSON(data));
+  }
+
+  UnclaimAndroidRepairTask(request: UnclaimAndroidRepairTaskRequest): Promise<UnclaimAndroidRepairTaskResponse> {
+    const data = UnclaimAndroidRepairTaskRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UnclaimAndroidRepairTask", data);
+    return promise.then((data) => UnclaimAndroidRepairTaskResponse.fromJSON(data));
+  }
+
+  ListAndroidPriorityRules(request: ListAndroidPriorityRulesRequest): Promise<ListAndroidPriorityRulesResponse> {
+    const data = ListAndroidPriorityRulesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListAndroidPriorityRules", data);
+    return promise.then((data) => ListAndroidPriorityRulesResponse.fromJSON(data));
+  }
+
+  CreateAndroidPriorityRule(request: CreateAndroidPriorityRuleRequest): Promise<CreateAndroidPriorityRuleResponse> {
+    const data = CreateAndroidPriorityRuleRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CreateAndroidPriorityRule", data);
+    return promise.then((data) => CreateAndroidPriorityRuleResponse.fromJSON(data));
+  }
+
+  UpdateAndroidPriorityRule(request: UpdateAndroidPriorityRuleRequest): Promise<UpdateAndroidPriorityRuleResponse> {
+    const data = UpdateAndroidPriorityRuleRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdateAndroidPriorityRule", data);
+    return promise.then((data) => UpdateAndroidPriorityRuleResponse.fromJSON(data));
+  }
+
+  DeleteAndroidPriorityRule(request: DeleteAndroidPriorityRuleRequest): Promise<DeleteAndroidPriorityRuleResponse> {
+    const data = DeleteAndroidPriorityRuleRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "DeleteAndroidPriorityRule", data);
+    return promise.then((data) => DeleteAndroidPriorityRuleResponse.fromJSON(data));
   }
 }
 

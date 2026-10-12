@@ -15,6 +15,86 @@ import {
 import { MonitoredRecord } from "../../internal/infra/ext/omnilab/omnilab-pubsub.pb";
 import { Column, DeviceSpec } from "./common_types.pb";
 
+/**
+ * Identifies which repair queue an Android task, rule or incident belongs to.
+ * Both workspaces are backed by the same `android_repair_tasks` table and are
+ * split by the device's `host_group`: tasks whose `host_group` contains
+ * `pte_labs` belong to PIXEL, every other task belongs to ANDROID.
+ */
+export enum AndroidWorkspace {
+  ANDROID_WORKSPACE_UNSPECIFIED = 0,
+  ANDROID_WORKSPACE_ANDROID = 1,
+  ANDROID_WORKSPACE_PIXEL = 2,
+}
+
+export function androidWorkspaceFromJSON(object: any): AndroidWorkspace {
+  switch (object) {
+    case 0:
+    case "ANDROID_WORKSPACE_UNSPECIFIED":
+      return AndroidWorkspace.ANDROID_WORKSPACE_UNSPECIFIED;
+    case 1:
+    case "ANDROID_WORKSPACE_ANDROID":
+      return AndroidWorkspace.ANDROID_WORKSPACE_ANDROID;
+    case 2:
+    case "ANDROID_WORKSPACE_PIXEL":
+      return AndroidWorkspace.ANDROID_WORKSPACE_PIXEL;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum AndroidWorkspace");
+  }
+}
+
+export function androidWorkspaceToJSON(object: AndroidWorkspace): string {
+  switch (object) {
+    case AndroidWorkspace.ANDROID_WORKSPACE_UNSPECIFIED:
+      return "ANDROID_WORKSPACE_UNSPECIFIED";
+    case AndroidWorkspace.ANDROID_WORKSPACE_ANDROID:
+      return "ANDROID_WORKSPACE_ANDROID";
+    case AndroidWorkspace.ANDROID_WORKSPACE_PIXEL:
+      return "ANDROID_WORKSPACE_PIXEL";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum AndroidWorkspace");
+  }
+}
+
+/**
+ * Kind of android_devices row a repair task refers to. Mirrors the string
+ * column android_devices.fc_machine_type ("device" / "host").
+ */
+export enum AndroidMachineType {
+  ANDROID_MACHINE_TYPE_UNSPECIFIED = 0,
+  ANDROID_MACHINE_TYPE_DEVICE = 1,
+  ANDROID_MACHINE_TYPE_HOST = 2,
+}
+
+export function androidMachineTypeFromJSON(object: any): AndroidMachineType {
+  switch (object) {
+    case 0:
+    case "ANDROID_MACHINE_TYPE_UNSPECIFIED":
+      return AndroidMachineType.ANDROID_MACHINE_TYPE_UNSPECIFIED;
+    case 1:
+    case "ANDROID_MACHINE_TYPE_DEVICE":
+      return AndroidMachineType.ANDROID_MACHINE_TYPE_DEVICE;
+    case 2:
+    case "ANDROID_MACHINE_TYPE_HOST":
+      return AndroidMachineType.ANDROID_MACHINE_TYPE_HOST;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum AndroidMachineType");
+  }
+}
+
+export function androidMachineTypeToJSON(object: AndroidMachineType): string {
+  switch (object) {
+    case AndroidMachineType.ANDROID_MACHINE_TYPE_UNSPECIFIED:
+      return "ANDROID_MACHINE_TYPE_UNSPECIFIED";
+    case AndroidMachineType.ANDROID_MACHINE_TYPE_DEVICE:
+      return "ANDROID_MACHINE_TYPE_DEVICE";
+    case AndroidMachineType.ANDROID_MACHINE_TYPE_HOST:
+      return "ANDROID_MACHINE_TYPE_HOST";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum AndroidMachineType");
+  }
+}
+
 export interface AndroidDevice {
   readonly id: string;
   readonly omnilabSpec: DeviceSpec | undefined;
@@ -127,6 +207,177 @@ export interface ExportAndroidDevicesToCSVRequest {
 
 export interface ExportAndroidDevicesToCSVResponse {
   readonly csvData: string;
+}
+
+/**
+ * A single entry in the Android/Pixel manual repair queue: an open repair
+ * task for a broken device, enriched with the data the queue sorts and
+ * filters on.
+ */
+export interface AndroidRepairQueueItem {
+  /**
+   * ID of the broken device or host (android_devices.id). Not the task ID.
+   * Only unique together with fc_machine_type.
+   */
+  readonly deviceId: string;
+  /** Host groups of the device at ingestion time. Never null, possibly empty. */
+  readonly hostGroups: readonly string[];
+  /** Device run target at ingestion time. */
+  readonly runTarget: string;
+  /** Device state at ingestion time (e.g. DYING, MISSING). */
+  readonly state: string;
+  /** ID of the repair task row. Use this for Claim/Unclaim. */
+  readonly taskId: string;
+  /** Email of the technician working on the task, unset if unclaimed. */
+  readonly claimedBy?: string | undefined;
+  readonly claimedAt?:
+    | string
+    | undefined;
+  /**
+   * Fraction (0-1) of healthy devices in the task's host group, computed at
+   * ingestion time. Unset when the device has no host group.
+   */
+  readonly hostGroupHealthPct?:
+    | number
+    | undefined;
+  /**
+   * Fraction (0-1) of healthy devices with the same run_target, computed at
+   * ingestion time. Unset when the device has no run_target.
+   */
+  readonly runTargetHealthPct?:
+    | number
+    | undefined;
+  /**
+   * Sum of the weights of the active priority rules this task matches.
+   * Computed at list time; the queue is ordered by this value, descending.
+   */
+  readonly priorityScore: string;
+  readonly labName: string;
+  /** IDs of active priority rules that matched this repair task and contributed to priority_score. */
+  readonly matchedRuleIds: readonly string[];
+  /**
+   * Machine type of the broken row in android_devices. Together with
+   * device_id it identifies the row: a host and a device may share the same
+   * id.
+   */
+  readonly fcMachineType: AndroidMachineType;
+}
+
+export interface ListAndroidRepairQueueRequest {
+  readonly pageSize: number;
+  readonly pageToken: string;
+  /**
+   * Not supported: the queue is always ordered by `priority_score desc,
+   * created_at asc, task_id asc`. A non-empty value is rejected with
+   * INVALID_ARGUMENT.
+   */
+  readonly orderBy: string;
+  /**
+   * AIP-160 filter over the queue columns (device_id, fc_machine_type,
+   * host_group, run_target, state, lab_name, claimed_by, ...). It is AND-ed with the workspace scope.
+   */
+  readonly filter: string;
+  /** Required. UNSPECIFIED is rejected with INVALID_ARGUMENT. */
+  readonly workspace: AndroidWorkspace;
+}
+
+export interface ListAndroidRepairQueueResponse {
+  readonly repairQueueItems: readonly AndroidRepairQueueItem[];
+  readonly nextPageToken: string;
+  /** Number of open tasks matching `filter` in the workspace. */
+  readonly totalSize: number;
+  /**
+   * Number of claimed open tasks in the whole workspace. Ignores `filter`
+   * and paging.
+   */
+  readonly inProgressCount: number;
+}
+
+export interface ClaimAndroidRepairTaskRequest {
+  readonly taskId: string;
+}
+
+export interface ClaimAndroidRepairTaskResponse {
+  readonly repairQueueItem: AndroidRepairQueueItem | undefined;
+}
+
+export interface UnclaimAndroidRepairTaskRequest {
+  readonly taskId: string;
+}
+
+export interface UnclaimAndroidRepairTaskResponse {
+  readonly repairQueueItem: AndroidRepairQueueItem | undefined;
+}
+
+/**
+ * A rule that adds `weight` to the priority score of every open task in
+ * `workspace` that matches `expression_aip160`. At most 5 rules per
+ * workspace.
+ */
+export interface AndroidPriorityRule {
+  readonly id: string;
+  /**
+   * AIP-160 expression over the queue columns (same fields as
+   * ListAndroidRepairQueueRequest.filter).
+   */
+  readonly expressionAip160: string;
+  readonly weight: string;
+  /**
+   * Workspace the rule applies to. Required on create; a rule cannot be
+   * moved to another workspace afterwards.
+   */
+  readonly workspace: AndroidWorkspace;
+}
+
+export interface ListAndroidPriorityRulesRequest {
+  /** Required. */
+  readonly workspace: AndroidWorkspace;
+}
+
+export interface ListAndroidPriorityRulesResponse {
+  readonly priorityRules: readonly AndroidPriorityRule[];
+}
+
+export interface CreateAndroidPriorityRuleRequest {
+  /**
+   * `priority_rule.workspace` is required and determines which queue the
+   * rule applies to. `priority_rule.id` is ignored.
+   */
+  readonly priorityRule: AndroidPriorityRule | undefined;
+}
+
+export interface CreateAndroidPriorityRuleResponse {
+  readonly priorityRule: AndroidPriorityRule | undefined;
+}
+
+export interface UpdateAndroidPriorityRuleRequest {
+  readonly id: string;
+  readonly expressionAip160?: string | undefined;
+  readonly weight?:
+    | string
+    | undefined;
+  /**
+   * Required. Scopes the lookup of `id`: a rule that exists in another
+   * workspace is reported as NOT_FOUND. The workspace of a rule cannot be
+   * changed.
+   */
+  readonly workspace: AndroidWorkspace;
+}
+
+export interface UpdateAndroidPriorityRuleResponse {
+  readonly priorityRule: AndroidPriorityRule | undefined;
+}
+
+export interface DeleteAndroidPriorityRuleRequest {
+  readonly id: string;
+  /**
+   * Required. Scopes the lookup of `id`: a rule that exists in another
+   * workspace is reported as NOT_FOUND.
+   */
+  readonly workspace: AndroidWorkspace;
+}
+
+export interface DeleteAndroidPriorityRuleResponse {
 }
 
 function createBaseAndroidDevice(): AndroidDevice {
@@ -1944,6 +2195,1401 @@ export const ExportAndroidDevicesToCSVResponse: MessageFns<ExportAndroidDevicesT
   fromPartial(object: DeepPartial<ExportAndroidDevicesToCSVResponse>): ExportAndroidDevicesToCSVResponse {
     const message = createBaseExportAndroidDevicesToCSVResponse() as any;
     message.csvData = object.csvData ?? "";
+    return message;
+  },
+};
+
+function createBaseAndroidRepairQueueItem(): AndroidRepairQueueItem {
+  return {
+    deviceId: "",
+    hostGroups: [],
+    runTarget: "",
+    state: "",
+    taskId: "0",
+    claimedBy: undefined,
+    claimedAt: undefined,
+    hostGroupHealthPct: undefined,
+    runTargetHealthPct: undefined,
+    priorityScore: "0",
+    labName: "",
+    matchedRuleIds: [],
+    fcMachineType: 0,
+  };
+}
+
+export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
+  encode(message: AndroidRepairQueueItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.deviceId !== "") {
+      writer.uint32(10).string(message.deviceId);
+    }
+    for (const v of message.hostGroups) {
+      writer.uint32(18).string(v!);
+    }
+    if (message.runTarget !== "") {
+      writer.uint32(26).string(message.runTarget);
+    }
+    if (message.state !== "") {
+      writer.uint32(34).string(message.state);
+    }
+    if (message.taskId !== "0") {
+      writer.uint32(40).int64(message.taskId);
+    }
+    if (message.claimedBy !== undefined) {
+      writer.uint32(50).string(message.claimedBy);
+    }
+    if (message.claimedAt !== undefined) {
+      Timestamp.encode(toTimestamp(message.claimedAt), writer.uint32(58).fork()).join();
+    }
+    if (message.hostGroupHealthPct !== undefined) {
+      writer.uint32(65).double(message.hostGroupHealthPct);
+    }
+    if (message.runTargetHealthPct !== undefined) {
+      writer.uint32(73).double(message.runTargetHealthPct);
+    }
+    if (message.priorityScore !== "0") {
+      writer.uint32(80).int64(message.priorityScore);
+    }
+    if (message.labName !== "") {
+      writer.uint32(90).string(message.labName);
+    }
+    writer.uint32(98).fork();
+    for (const v of message.matchedRuleIds) {
+      writer.int64(v);
+    }
+    writer.join();
+    if (message.fcMachineType !== 0) {
+      writer.uint32(104).int32(message.fcMachineType);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AndroidRepairQueueItem {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAndroidRepairQueueItem() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.deviceId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.hostGroups.push(reader.string());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.runTarget = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.state = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.taskId = reader.int64().toString();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.claimedBy = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.claimedAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 8: {
+          if (tag !== 65) {
+            break;
+          }
+
+          message.hostGroupHealthPct = reader.double();
+          continue;
+        }
+        case 9: {
+          if (tag !== 73) {
+            break;
+          }
+
+          message.runTargetHealthPct = reader.double();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.priorityScore = reader.int64().toString();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.labName = reader.string();
+          continue;
+        }
+        case 12: {
+          if (tag === 96) {
+            message.matchedRuleIds.push(reader.int64().toString());
+
+            continue;
+          }
+
+          if (tag === 98) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.matchedRuleIds.push(reader.int64().toString());
+            }
+
+            continue;
+          }
+
+          break;
+        }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.fcMachineType = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AndroidRepairQueueItem {
+    return {
+      deviceId: isSet(object.deviceId) ? globalThis.String(object.deviceId) : "",
+      hostGroups: globalThis.Array.isArray(object?.hostGroups)
+        ? object.hostGroups.map((e: any) => globalThis.String(e))
+        : [],
+      runTarget: isSet(object.runTarget) ? globalThis.String(object.runTarget) : "",
+      state: isSet(object.state) ? globalThis.String(object.state) : "",
+      taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "0",
+      claimedBy: isSet(object.claimedBy) ? globalThis.String(object.claimedBy) : undefined,
+      claimedAt: isSet(object.claimedAt) ? globalThis.String(object.claimedAt) : undefined,
+      hostGroupHealthPct: isSet(object.hostGroupHealthPct) ? globalThis.Number(object.hostGroupHealthPct) : undefined,
+      runTargetHealthPct: isSet(object.runTargetHealthPct) ? globalThis.Number(object.runTargetHealthPct) : undefined,
+      priorityScore: isSet(object.priorityScore) ? globalThis.String(object.priorityScore) : "0",
+      labName: isSet(object.labName) ? globalThis.String(object.labName) : "",
+      matchedRuleIds: globalThis.Array.isArray(object?.matchedRuleIds)
+        ? object.matchedRuleIds.map((e: any) => globalThis.String(e))
+        : [],
+      fcMachineType: isSet(object.fcMachineType) ? androidMachineTypeFromJSON(object.fcMachineType) : 0,
+    };
+  },
+
+  toJSON(message: AndroidRepairQueueItem): unknown {
+    const obj: any = {};
+    if (message.deviceId !== "") {
+      obj.deviceId = message.deviceId;
+    }
+    if (message.hostGroups?.length) {
+      obj.hostGroups = message.hostGroups;
+    }
+    if (message.runTarget !== "") {
+      obj.runTarget = message.runTarget;
+    }
+    if (message.state !== "") {
+      obj.state = message.state;
+    }
+    if (message.taskId !== "0") {
+      obj.taskId = message.taskId;
+    }
+    if (message.claimedBy !== undefined) {
+      obj.claimedBy = message.claimedBy;
+    }
+    if (message.claimedAt !== undefined) {
+      obj.claimedAt = message.claimedAt;
+    }
+    if (message.hostGroupHealthPct !== undefined) {
+      obj.hostGroupHealthPct = message.hostGroupHealthPct;
+    }
+    if (message.runTargetHealthPct !== undefined) {
+      obj.runTargetHealthPct = message.runTargetHealthPct;
+    }
+    if (message.priorityScore !== "0") {
+      obj.priorityScore = message.priorityScore;
+    }
+    if (message.labName !== "") {
+      obj.labName = message.labName;
+    }
+    if (message.matchedRuleIds?.length) {
+      obj.matchedRuleIds = message.matchedRuleIds;
+    }
+    if (message.fcMachineType !== 0) {
+      obj.fcMachineType = androidMachineTypeToJSON(message.fcMachineType);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<AndroidRepairQueueItem>): AndroidRepairQueueItem {
+    return AndroidRepairQueueItem.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<AndroidRepairQueueItem>): AndroidRepairQueueItem {
+    const message = createBaseAndroidRepairQueueItem() as any;
+    message.deviceId = object.deviceId ?? "";
+    message.hostGroups = object.hostGroups?.map((e) => e) || [];
+    message.runTarget = object.runTarget ?? "";
+    message.state = object.state ?? "";
+    message.taskId = object.taskId ?? "0";
+    message.claimedBy = object.claimedBy ?? undefined;
+    message.claimedAt = object.claimedAt ?? undefined;
+    message.hostGroupHealthPct = object.hostGroupHealthPct ?? undefined;
+    message.runTargetHealthPct = object.runTargetHealthPct ?? undefined;
+    message.priorityScore = object.priorityScore ?? "0";
+    message.labName = object.labName ?? "";
+    message.matchedRuleIds = object.matchedRuleIds?.map((e) => e) || [];
+    message.fcMachineType = object.fcMachineType ?? 0;
+    return message;
+  },
+};
+
+function createBaseListAndroidRepairQueueRequest(): ListAndroidRepairQueueRequest {
+  return { pageSize: 0, pageToken: "", orderBy: "", filter: "", workspace: 0 };
+}
+
+export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueRequest> = {
+  encode(message: ListAndroidRepairQueueRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.pageSize !== 0) {
+      writer.uint32(8).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(18).string(message.pageToken);
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(26).string(message.orderBy);
+    }
+    if (message.filter !== "") {
+      writer.uint32(34).string(message.filter);
+    }
+    if (message.workspace !== 0) {
+      writer.uint32(40).int32(message.workspace);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListAndroidRepairQueueRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListAndroidRepairQueueRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.workspace = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListAndroidRepairQueueRequest {
+    return {
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0,
+    };
+  },
+
+  toJSON(message: ListAndroidRepairQueueRequest): unknown {
+    const obj: any = {};
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    if (message.workspace !== 0) {
+      obj.workspace = androidWorkspaceToJSON(message.workspace);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListAndroidRepairQueueRequest>): ListAndroidRepairQueueRequest {
+    return ListAndroidRepairQueueRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListAndroidRepairQueueRequest>): ListAndroidRepairQueueRequest {
+    const message = createBaseListAndroidRepairQueueRequest() as any;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    message.orderBy = object.orderBy ?? "";
+    message.filter = object.filter ?? "";
+    message.workspace = object.workspace ?? 0;
+    return message;
+  },
+};
+
+function createBaseListAndroidRepairQueueResponse(): ListAndroidRepairQueueResponse {
+  return { repairQueueItems: [], nextPageToken: "", totalSize: 0, inProgressCount: 0 };
+}
+
+export const ListAndroidRepairQueueResponse: MessageFns<ListAndroidRepairQueueResponse> = {
+  encode(message: ListAndroidRepairQueueResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.repairQueueItems) {
+      AndroidRepairQueueItem.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    if (message.totalSize !== 0) {
+      writer.uint32(24).int32(message.totalSize);
+    }
+    if (message.inProgressCount !== 0) {
+      writer.uint32(32).int32(message.inProgressCount);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListAndroidRepairQueueResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListAndroidRepairQueueResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.repairQueueItems.push(AndroidRepairQueueItem.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.totalSize = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.inProgressCount = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListAndroidRepairQueueResponse {
+    return {
+      repairQueueItems: globalThis.Array.isArray(object?.repairQueueItems)
+        ? object.repairQueueItems.map((e: any) => AndroidRepairQueueItem.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+      totalSize: isSet(object.totalSize) ? globalThis.Number(object.totalSize) : 0,
+      inProgressCount: isSet(object.inProgressCount) ? globalThis.Number(object.inProgressCount) : 0,
+    };
+  },
+
+  toJSON(message: ListAndroidRepairQueueResponse): unknown {
+    const obj: any = {};
+    if (message.repairQueueItems?.length) {
+      obj.repairQueueItems = message.repairQueueItems.map((e) => AndroidRepairQueueItem.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    if (message.totalSize !== 0) {
+      obj.totalSize = Math.round(message.totalSize);
+    }
+    if (message.inProgressCount !== 0) {
+      obj.inProgressCount = Math.round(message.inProgressCount);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListAndroidRepairQueueResponse>): ListAndroidRepairQueueResponse {
+    return ListAndroidRepairQueueResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListAndroidRepairQueueResponse>): ListAndroidRepairQueueResponse {
+    const message = createBaseListAndroidRepairQueueResponse() as any;
+    message.repairQueueItems = object.repairQueueItems?.map((e) => AndroidRepairQueueItem.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    message.totalSize = object.totalSize ?? 0;
+    message.inProgressCount = object.inProgressCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseClaimAndroidRepairTaskRequest(): ClaimAndroidRepairTaskRequest {
+  return { taskId: "0" };
+}
+
+export const ClaimAndroidRepairTaskRequest: MessageFns<ClaimAndroidRepairTaskRequest> = {
+  encode(message: ClaimAndroidRepairTaskRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "0") {
+      writer.uint32(8).int64(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClaimAndroidRepairTaskRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClaimAndroidRepairTaskRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.taskId = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ClaimAndroidRepairTaskRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "0" };
+  },
+
+  toJSON(message: ClaimAndroidRepairTaskRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "0") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ClaimAndroidRepairTaskRequest>): ClaimAndroidRepairTaskRequest {
+    return ClaimAndroidRepairTaskRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ClaimAndroidRepairTaskRequest>): ClaimAndroidRepairTaskRequest {
+    const message = createBaseClaimAndroidRepairTaskRequest() as any;
+    message.taskId = object.taskId ?? "0";
+    return message;
+  },
+};
+
+function createBaseClaimAndroidRepairTaskResponse(): ClaimAndroidRepairTaskResponse {
+  return { repairQueueItem: undefined };
+}
+
+export const ClaimAndroidRepairTaskResponse: MessageFns<ClaimAndroidRepairTaskResponse> = {
+  encode(message: ClaimAndroidRepairTaskResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.repairQueueItem !== undefined) {
+      AndroidRepairQueueItem.encode(message.repairQueueItem, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClaimAndroidRepairTaskResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClaimAndroidRepairTaskResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.repairQueueItem = AndroidRepairQueueItem.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ClaimAndroidRepairTaskResponse {
+    return {
+      repairQueueItem: isSet(object.repairQueueItem)
+        ? AndroidRepairQueueItem.fromJSON(object.repairQueueItem)
+        : undefined,
+    };
+  },
+
+  toJSON(message: ClaimAndroidRepairTaskResponse): unknown {
+    const obj: any = {};
+    if (message.repairQueueItem !== undefined) {
+      obj.repairQueueItem = AndroidRepairQueueItem.toJSON(message.repairQueueItem);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ClaimAndroidRepairTaskResponse>): ClaimAndroidRepairTaskResponse {
+    return ClaimAndroidRepairTaskResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ClaimAndroidRepairTaskResponse>): ClaimAndroidRepairTaskResponse {
+    const message = createBaseClaimAndroidRepairTaskResponse() as any;
+    message.repairQueueItem = (object.repairQueueItem !== undefined && object.repairQueueItem !== null)
+      ? AndroidRepairQueueItem.fromPartial(object.repairQueueItem)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseUnclaimAndroidRepairTaskRequest(): UnclaimAndroidRepairTaskRequest {
+  return { taskId: "0" };
+}
+
+export const UnclaimAndroidRepairTaskRequest: MessageFns<UnclaimAndroidRepairTaskRequest> = {
+  encode(message: UnclaimAndroidRepairTaskRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskId !== "0") {
+      writer.uint32(8).int64(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UnclaimAndroidRepairTaskRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnclaimAndroidRepairTaskRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.taskId = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnclaimAndroidRepairTaskRequest {
+    return { taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "0" };
+  },
+
+  toJSON(message: UnclaimAndroidRepairTaskRequest): unknown {
+    const obj: any = {};
+    if (message.taskId !== "0") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UnclaimAndroidRepairTaskRequest>): UnclaimAndroidRepairTaskRequest {
+    return UnclaimAndroidRepairTaskRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UnclaimAndroidRepairTaskRequest>): UnclaimAndroidRepairTaskRequest {
+    const message = createBaseUnclaimAndroidRepairTaskRequest() as any;
+    message.taskId = object.taskId ?? "0";
+    return message;
+  },
+};
+
+function createBaseUnclaimAndroidRepairTaskResponse(): UnclaimAndroidRepairTaskResponse {
+  return { repairQueueItem: undefined };
+}
+
+export const UnclaimAndroidRepairTaskResponse: MessageFns<UnclaimAndroidRepairTaskResponse> = {
+  encode(message: UnclaimAndroidRepairTaskResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.repairQueueItem !== undefined) {
+      AndroidRepairQueueItem.encode(message.repairQueueItem, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UnclaimAndroidRepairTaskResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnclaimAndroidRepairTaskResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.repairQueueItem = AndroidRepairQueueItem.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnclaimAndroidRepairTaskResponse {
+    return {
+      repairQueueItem: isSet(object.repairQueueItem)
+        ? AndroidRepairQueueItem.fromJSON(object.repairQueueItem)
+        : undefined,
+    };
+  },
+
+  toJSON(message: UnclaimAndroidRepairTaskResponse): unknown {
+    const obj: any = {};
+    if (message.repairQueueItem !== undefined) {
+      obj.repairQueueItem = AndroidRepairQueueItem.toJSON(message.repairQueueItem);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UnclaimAndroidRepairTaskResponse>): UnclaimAndroidRepairTaskResponse {
+    return UnclaimAndroidRepairTaskResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UnclaimAndroidRepairTaskResponse>): UnclaimAndroidRepairTaskResponse {
+    const message = createBaseUnclaimAndroidRepairTaskResponse() as any;
+    message.repairQueueItem = (object.repairQueueItem !== undefined && object.repairQueueItem !== null)
+      ? AndroidRepairQueueItem.fromPartial(object.repairQueueItem)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseAndroidPriorityRule(): AndroidPriorityRule {
+  return { id: "0", expressionAip160: "", weight: "0", workspace: 0 };
+}
+
+export const AndroidPriorityRule: MessageFns<AndroidPriorityRule> = {
+  encode(message: AndroidPriorityRule, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.expressionAip160 !== "") {
+      writer.uint32(18).string(message.expressionAip160);
+    }
+    if (message.weight !== "0") {
+      writer.uint32(24).int64(message.weight);
+    }
+    if (message.workspace !== 0) {
+      writer.uint32(32).int32(message.workspace);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AndroidPriorityRule {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAndroidPriorityRule() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.expressionAip160 = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.weight = reader.int64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.workspace = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AndroidPriorityRule {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      expressionAip160: isSet(object.expressionAip160) ? globalThis.String(object.expressionAip160) : "",
+      weight: isSet(object.weight) ? globalThis.String(object.weight) : "0",
+      workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0,
+    };
+  },
+
+  toJSON(message: AndroidPriorityRule): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.expressionAip160 !== "") {
+      obj.expressionAip160 = message.expressionAip160;
+    }
+    if (message.weight !== "0") {
+      obj.weight = message.weight;
+    }
+    if (message.workspace !== 0) {
+      obj.workspace = androidWorkspaceToJSON(message.workspace);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<AndroidPriorityRule>): AndroidPriorityRule {
+    return AndroidPriorityRule.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<AndroidPriorityRule>): AndroidPriorityRule {
+    const message = createBaseAndroidPriorityRule() as any;
+    message.id = object.id ?? "0";
+    message.expressionAip160 = object.expressionAip160 ?? "";
+    message.weight = object.weight ?? "0";
+    message.workspace = object.workspace ?? 0;
+    return message;
+  },
+};
+
+function createBaseListAndroidPriorityRulesRequest(): ListAndroidPriorityRulesRequest {
+  return { workspace: 0 };
+}
+
+export const ListAndroidPriorityRulesRequest: MessageFns<ListAndroidPriorityRulesRequest> = {
+  encode(message: ListAndroidPriorityRulesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.workspace !== 0) {
+      writer.uint32(8).int32(message.workspace);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListAndroidPriorityRulesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListAndroidPriorityRulesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.workspace = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListAndroidPriorityRulesRequest {
+    return { workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0 };
+  },
+
+  toJSON(message: ListAndroidPriorityRulesRequest): unknown {
+    const obj: any = {};
+    if (message.workspace !== 0) {
+      obj.workspace = androidWorkspaceToJSON(message.workspace);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListAndroidPriorityRulesRequest>): ListAndroidPriorityRulesRequest {
+    return ListAndroidPriorityRulesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListAndroidPriorityRulesRequest>): ListAndroidPriorityRulesRequest {
+    const message = createBaseListAndroidPriorityRulesRequest() as any;
+    message.workspace = object.workspace ?? 0;
+    return message;
+  },
+};
+
+function createBaseListAndroidPriorityRulesResponse(): ListAndroidPriorityRulesResponse {
+  return { priorityRules: [] };
+}
+
+export const ListAndroidPriorityRulesResponse: MessageFns<ListAndroidPriorityRulesResponse> = {
+  encode(message: ListAndroidPriorityRulesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.priorityRules) {
+      AndroidPriorityRule.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListAndroidPriorityRulesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListAndroidPriorityRulesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.priorityRules.push(AndroidPriorityRule.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListAndroidPriorityRulesResponse {
+    return {
+      priorityRules: globalThis.Array.isArray(object?.priorityRules)
+        ? object.priorityRules.map((e: any) => AndroidPriorityRule.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ListAndroidPriorityRulesResponse): unknown {
+    const obj: any = {};
+    if (message.priorityRules?.length) {
+      obj.priorityRules = message.priorityRules.map((e) => AndroidPriorityRule.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListAndroidPriorityRulesResponse>): ListAndroidPriorityRulesResponse {
+    return ListAndroidPriorityRulesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListAndroidPriorityRulesResponse>): ListAndroidPriorityRulesResponse {
+    const message = createBaseListAndroidPriorityRulesResponse() as any;
+    message.priorityRules = object.priorityRules?.map((e) => AndroidPriorityRule.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseCreateAndroidPriorityRuleRequest(): CreateAndroidPriorityRuleRequest {
+  return { priorityRule: undefined };
+}
+
+export const CreateAndroidPriorityRuleRequest: MessageFns<CreateAndroidPriorityRuleRequest> = {
+  encode(message: CreateAndroidPriorityRuleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.priorityRule !== undefined) {
+      AndroidPriorityRule.encode(message.priorityRule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateAndroidPriorityRuleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateAndroidPriorityRuleRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.priorityRule = AndroidPriorityRule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateAndroidPriorityRuleRequest {
+    return { priorityRule: isSet(object.priorityRule) ? AndroidPriorityRule.fromJSON(object.priorityRule) : undefined };
+  },
+
+  toJSON(message: CreateAndroidPriorityRuleRequest): unknown {
+    const obj: any = {};
+    if (message.priorityRule !== undefined) {
+      obj.priorityRule = AndroidPriorityRule.toJSON(message.priorityRule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CreateAndroidPriorityRuleRequest>): CreateAndroidPriorityRuleRequest {
+    return CreateAndroidPriorityRuleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CreateAndroidPriorityRuleRequest>): CreateAndroidPriorityRuleRequest {
+    const message = createBaseCreateAndroidPriorityRuleRequest() as any;
+    message.priorityRule = (object.priorityRule !== undefined && object.priorityRule !== null)
+      ? AndroidPriorityRule.fromPartial(object.priorityRule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseCreateAndroidPriorityRuleResponse(): CreateAndroidPriorityRuleResponse {
+  return { priorityRule: undefined };
+}
+
+export const CreateAndroidPriorityRuleResponse: MessageFns<CreateAndroidPriorityRuleResponse> = {
+  encode(message: CreateAndroidPriorityRuleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.priorityRule !== undefined) {
+      AndroidPriorityRule.encode(message.priorityRule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateAndroidPriorityRuleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateAndroidPriorityRuleResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.priorityRule = AndroidPriorityRule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateAndroidPriorityRuleResponse {
+    return { priorityRule: isSet(object.priorityRule) ? AndroidPriorityRule.fromJSON(object.priorityRule) : undefined };
+  },
+
+  toJSON(message: CreateAndroidPriorityRuleResponse): unknown {
+    const obj: any = {};
+    if (message.priorityRule !== undefined) {
+      obj.priorityRule = AndroidPriorityRule.toJSON(message.priorityRule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CreateAndroidPriorityRuleResponse>): CreateAndroidPriorityRuleResponse {
+    return CreateAndroidPriorityRuleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CreateAndroidPriorityRuleResponse>): CreateAndroidPriorityRuleResponse {
+    const message = createBaseCreateAndroidPriorityRuleResponse() as any;
+    message.priorityRule = (object.priorityRule !== undefined && object.priorityRule !== null)
+      ? AndroidPriorityRule.fromPartial(object.priorityRule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseUpdateAndroidPriorityRuleRequest(): UpdateAndroidPriorityRuleRequest {
+  return { id: "0", expressionAip160: undefined, weight: undefined, workspace: 0 };
+}
+
+export const UpdateAndroidPriorityRuleRequest: MessageFns<UpdateAndroidPriorityRuleRequest> = {
+  encode(message: UpdateAndroidPriorityRuleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.expressionAip160 !== undefined) {
+      writer.uint32(18).string(message.expressionAip160);
+    }
+    if (message.weight !== undefined) {
+      writer.uint32(24).int64(message.weight);
+    }
+    if (message.workspace !== 0) {
+      writer.uint32(32).int32(message.workspace);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateAndroidPriorityRuleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateAndroidPriorityRuleRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.expressionAip160 = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.weight = reader.int64().toString();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.workspace = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateAndroidPriorityRuleRequest {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      expressionAip160: isSet(object.expressionAip160) ? globalThis.String(object.expressionAip160) : undefined,
+      weight: isSet(object.weight) ? globalThis.String(object.weight) : undefined,
+      workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0,
+    };
+  },
+
+  toJSON(message: UpdateAndroidPriorityRuleRequest): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.expressionAip160 !== undefined) {
+      obj.expressionAip160 = message.expressionAip160;
+    }
+    if (message.weight !== undefined) {
+      obj.weight = message.weight;
+    }
+    if (message.workspace !== 0) {
+      obj.workspace = androidWorkspaceToJSON(message.workspace);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateAndroidPriorityRuleRequest>): UpdateAndroidPriorityRuleRequest {
+    return UpdateAndroidPriorityRuleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateAndroidPriorityRuleRequest>): UpdateAndroidPriorityRuleRequest {
+    const message = createBaseUpdateAndroidPriorityRuleRequest() as any;
+    message.id = object.id ?? "0";
+    message.expressionAip160 = object.expressionAip160 ?? undefined;
+    message.weight = object.weight ?? undefined;
+    message.workspace = object.workspace ?? 0;
+    return message;
+  },
+};
+
+function createBaseUpdateAndroidPriorityRuleResponse(): UpdateAndroidPriorityRuleResponse {
+  return { priorityRule: undefined };
+}
+
+export const UpdateAndroidPriorityRuleResponse: MessageFns<UpdateAndroidPriorityRuleResponse> = {
+  encode(message: UpdateAndroidPriorityRuleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.priorityRule !== undefined) {
+      AndroidPriorityRule.encode(message.priorityRule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateAndroidPriorityRuleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateAndroidPriorityRuleResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.priorityRule = AndroidPriorityRule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateAndroidPriorityRuleResponse {
+    return { priorityRule: isSet(object.priorityRule) ? AndroidPriorityRule.fromJSON(object.priorityRule) : undefined };
+  },
+
+  toJSON(message: UpdateAndroidPriorityRuleResponse): unknown {
+    const obj: any = {};
+    if (message.priorityRule !== undefined) {
+      obj.priorityRule = AndroidPriorityRule.toJSON(message.priorityRule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateAndroidPriorityRuleResponse>): UpdateAndroidPriorityRuleResponse {
+    return UpdateAndroidPriorityRuleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateAndroidPriorityRuleResponse>): UpdateAndroidPriorityRuleResponse {
+    const message = createBaseUpdateAndroidPriorityRuleResponse() as any;
+    message.priorityRule = (object.priorityRule !== undefined && object.priorityRule !== null)
+      ? AndroidPriorityRule.fromPartial(object.priorityRule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseDeleteAndroidPriorityRuleRequest(): DeleteAndroidPriorityRuleRequest {
+  return { id: "0", workspace: 0 };
+}
+
+export const DeleteAndroidPriorityRuleRequest: MessageFns<DeleteAndroidPriorityRuleRequest> = {
+  encode(message: DeleteAndroidPriorityRuleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.workspace !== 0) {
+      writer.uint32(16).int32(message.workspace);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteAndroidPriorityRuleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteAndroidPriorityRuleRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.workspace = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteAndroidPriorityRuleRequest {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0,
+    };
+  },
+
+  toJSON(message: DeleteAndroidPriorityRuleRequest): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.workspace !== 0) {
+      obj.workspace = androidWorkspaceToJSON(message.workspace);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeleteAndroidPriorityRuleRequest>): DeleteAndroidPriorityRuleRequest {
+    return DeleteAndroidPriorityRuleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeleteAndroidPriorityRuleRequest>): DeleteAndroidPriorityRuleRequest {
+    const message = createBaseDeleteAndroidPriorityRuleRequest() as any;
+    message.id = object.id ?? "0";
+    message.workspace = object.workspace ?? 0;
+    return message;
+  },
+};
+
+function createBaseDeleteAndroidPriorityRuleResponse(): DeleteAndroidPriorityRuleResponse {
+  return {};
+}
+
+export const DeleteAndroidPriorityRuleResponse: MessageFns<DeleteAndroidPriorityRuleResponse> = {
+  encode(_: DeleteAndroidPriorityRuleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteAndroidPriorityRuleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteAndroidPriorityRuleResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): DeleteAndroidPriorityRuleResponse {
+    return {};
+  },
+
+  toJSON(_: DeleteAndroidPriorityRuleResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeleteAndroidPriorityRuleResponse>): DeleteAndroidPriorityRuleResponse {
+    return DeleteAndroidPriorityRuleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<DeleteAndroidPriorityRuleResponse>): DeleteAndroidPriorityRuleResponse {
+    const message = createBaseDeleteAndroidPriorityRuleResponse() as any;
     return message;
   },
 };

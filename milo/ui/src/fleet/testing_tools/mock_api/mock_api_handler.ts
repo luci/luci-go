@@ -88,6 +88,13 @@ export interface FleetConsoleMockFixtures {
   CreatePriorityRule: unknown;
   UpdatePriorityRule: unknown;
   DeletePriorityRule: unknown;
+  ListAndroidRepairQueue: unknown;
+  ClaimAndroidRepairTask: unknown;
+  UnclaimAndroidRepairTask: unknown;
+  ListAndroidPriorityRules: unknown;
+  CreateAndroidPriorityRule: unknown;
+  UpdateAndroidPriorityRule: unknown;
+  DeleteAndroidPriorityRule: unknown;
   GetDefaultQuota: unknown;
   SetDefaultQuota: unknown;
   ListIrmIncidents: unknown;
@@ -521,6 +528,56 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     },
   },
   DeletePriorityRule: {},
+  ListAndroidRepairQueue: {
+    repairQueueItems: [],
+    nextPageToken: '',
+    totalSize: 0,
+    inProgressCount: 0,
+  },
+  ClaimAndroidRepairTask: {
+    repairQueueItem: {
+      deviceId: 'android-device-001',
+      fcMachineType: 'ANDROID_MACHINE_TYPE_DEVICE',
+      hostGroups: ['group1'],
+      runTarget: 'seahawk',
+      state: 'MISSING',
+      taskId: '1001',
+      claimedBy: 'user@example.com',
+      priorityScore: '10',
+    },
+  },
+  UnclaimAndroidRepairTask: {
+    repairQueueItem: {
+      deviceId: 'android-device-001',
+      fcMachineType: 'ANDROID_MACHINE_TYPE_DEVICE',
+      hostGroups: ['group1'],
+      runTarget: 'seahawk',
+      state: 'MISSING',
+      taskId: '1001',
+      claimedBy: '',
+      priorityScore: '10',
+    },
+  },
+  ListAndroidPriorityRules: {
+    priorityRules: [],
+  },
+  CreateAndroidPriorityRule: {
+    priorityRule: {
+      id: '1',
+      expressionAip160: 'host_group = "group1"',
+      weight: '10',
+      workspace: 'ANDROID_WORKSPACE_ANDROID',
+    },
+  },
+  UpdateAndroidPriorityRule: {
+    priorityRule: {
+      id: '1',
+      expressionAip160: 'host_group = "group1"',
+      weight: '10',
+      workspace: 'ANDROID_WORKSPACE_ANDROID',
+    },
+  },
+  DeleteAndroidPriorityRule: {},
   GetDefaultQuota: {
     defaultQuota: 49,
   },

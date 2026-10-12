@@ -24,20 +24,19 @@ import { getEnabledFeatureFlags } from '@/common/feature_flags';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import {
   renderChipCell,
   StateUnion,
 } from '@/fleet/components/table/cell_with_chip';
 import { renderTimestampCell } from '@/fleet/components/table/cell_with_timestamp';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
-import { generateDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FC_CellProps } from '@/fleet/types/table';
 import { humanizeColumnLabel } from '@/fleet/utils/humanize_column';
 import { getMobileHarnessLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { AndroidDeviceIdCell } from './android_device_id_cell';
 import { getAndroidStatusColor } from './android_state';
 
 export type AndroidColumnDef = MRT_ColumnDef<AndroidDevice> & {
@@ -135,45 +134,15 @@ export const getAndroidColumnOverrides: (
     renderCell: ({ value, device, workspace }) => {
       const d = device;
       if (!d) return (value as React.ReactNode) ?? null;
-      const internalLink = generateDeviceDetailsURL(
-        workspaces[workspace].baseUrl,
-        d.id,
-      );
 
       const mhLink = getMobileHarnessLink(d);
 
       return (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            maxWidth: '100%',
-          }}
-        >
-          <BuganizerLink name={d.id} project="android" />
-          <Link
-            to={internalLink}
-            style={{
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              minWidth: 0,
-            }}
-          >
-            {d.id}
-          </Link>
-          <Tooltip title="Open in Mobile Harness">
-            <a
-              href={mhLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center' }}
-            >
-              <OpenInNewIcon fontSize="small" />
-            </a>
-          </Tooltip>
-        </div>
+        <AndroidDeviceIdCell
+          deviceId={d.id}
+          workspace={workspace}
+          mhLink={mhLink}
+        />
       );
     },
   },

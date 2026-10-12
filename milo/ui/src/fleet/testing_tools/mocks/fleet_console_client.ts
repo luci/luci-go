@@ -169,6 +169,24 @@ export function createMockUseFleetConsoleClient(
         },
       }),
       DeletePriorityRule: jest.fn().mockResolvedValue({}),
+      ListAndroidRepairQueue: {
+        query: jest.fn().mockReturnValue({
+          queryKey: ['androidRepairQueue'],
+          queryFn: jest.fn().mockResolvedValue({
+            repairQueueItems: [],
+            totalSize: 0,
+            nextPageToken: '',
+            inProgressCount: 0,
+          }),
+          data: {
+            repairQueueItems: [],
+            totalSize: 0,
+            nextPageToken: '',
+            inProgressCount: 0,
+          },
+          isPending: false,
+        }),
+      },
     } as unknown as ReturnType<typeof PrpcClients.useFleetConsoleClient>;
   };
 }

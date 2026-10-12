@@ -265,23 +265,14 @@ describe('Pixel Devices Page', () => {
 
   it('should navigate to repairs page using keyboard shortcut', () => {
     mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/GetRepairMetricsDimensions',
-      { dimensions: {} },
-      'getRepairDimensions',
-    );
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/ListRepairMetrics',
+      '**/prpc/fleetconsole.FleetConsole/ListAndroidRepairQueue',
       {
-        repairMetrics: [
-          { labName: 'lab1', totalDevices: 10, devicesOffline: 2 },
-        ],
+        repairQueueItems: [],
+        nextPageToken: '',
+        totalSize: 0,
+        inProgressCount: 0,
       },
-      'listRepairMetrics',
-    );
-    mockPrpc(
-      '**/prpc/fleetconsole.FleetConsole/CountRepairMetrics',
-      { total: 1 },
-      'countRepairMetrics',
+      'listAndroidRepairQueue',
     );
 
     const targetUrl = '/ui/fleet/p/pixel/devices';
@@ -292,7 +283,7 @@ describe('Pixel Devices Page', () => {
     // Press g then r to navigate to repairs page
     cy.get('body').type('gr');
     cy.url().should('include', '/ui/fleet/p/pixel/repairs');
-    cy.contains('Repair metrics').should('be.visible');
+    cy.contains('Pixel Manual Repair Dashboard').should('be.visible');
 
     // Press g then d to navigate back to devices page
     cy.get('body').type('gd');
