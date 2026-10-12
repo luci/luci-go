@@ -86,6 +86,11 @@ func allCandidateZones(vm *model.VM) []string {
 			all = append(all, fb)
 		}
 	}
+	// Include the active zone cursor in case FallbackZones was already cleared
+	// while the VM was rotated to a fallback zone.
+	if curZone := vm.Attributes.GetZone(); curZone != "" && !slices.Contains(all, curZone) {
+		all = append(all, curZone)
+	}
 	return all
 }
 
@@ -161,13 +166,28 @@ func rotateVMZone(ctx context.Context, vm, attemptVM *model.VM, targetZone, next
 	return false, errors.Fmt("failed to create instance %s: all candidate zones exhausted, rotating back to original zone %s", vm.Hostname, origZone)
 }
 
+// persistActiveZoneIfRotated saves the current zone cursor and rotation history
+// to Datastore if any zone rotation occurred earlier in the current attempt.
+// This prevents a transient HTTP/RPC error on a subsequent candidate zone from
+// discarding earlier in-memory rotations and causing the next Cloud Tasks retry
+// to re-poll already-exhausted zones and double-count failure/fallback metrics.
+func persistActiveZoneIfRotated(ctx context.Context, vm *model.VM, targetZone string, initialRotations int64) {
+	if vm.FallbackZoneRotations == initialRotations {
+		return
+	}
+	if err := setActiveVMZone(ctx, vm.ID, targetZone, originalVMZone(vm), vm.FallbackFailedZones, vm.FallbackZoneRotations); err != nil {
+		logging.Errorf(ctx, "Create instance %q: failed to persist active zone %s after rotation: %s", vm.Hostname, targetZone, err)
+	}
+}
+
 // handleInsertError processes an error returned by InsertInstance, recording
 // failure and fallback metrics and returning whether the caller should retry on
 // nextZone or abort with an error.
-func handleInsertError(ctx context.Context, vm, attemptVM *model.VM, err error, targetZone, nextZone string, hasFallbacks bool) (bool, error) {
+func handleInsertError(ctx context.Context, vm, attemptVM *model.VM, err error, targetZone, nextZone string, hasFallbacks bool, initialRotations int64) (bool, error) {
 	logging.Debugf(ctx, "Create instance %q: got error from attempt to create instance %s", vm.Hostname, err)
 	gerr, ok := err.(*googleapi.Error)
 	if !ok {
+		persistActiveZoneIfRotated(ctx, vm, targetZone, initialRotations)
 		return false, errors.Fmt("failed to create instance %s: %w", vm.Hostname, err)
 	}
 	logErrors(ctx, "Create instance", vm.Hostname, gerr)
@@ -175,12 +195,14 @@ func handleInsertError(ctx context.Context, vm, attemptVM *model.VM, err error, 
 	metrics.UpdateFailures(ctx, gerr.Code, reason, attemptVM)
 	// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
 	if rateLimitExceeded(gerr) {
+		persistActiveZoneIfRotated(ctx, vm, targetZone, initialRotations)
 		return false, errors.Fmt("rate limit exceeded creating instance %s: %w", vm.Hostname, err)
 	}
 	if stockout && hasFallbacks {
 		return rotateVMZone(ctx, vm, attemptVM, targetZone, nextZone, reason)
 	}
 	if gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500 {
+		persistActiveZoneIfRotated(ctx, vm, targetZone, initialRotations)
 		return false, errors.Fmt("transiently failed to create instance %s: %w", vm.Hostname, err)
 	}
 	logging.Debugf(ctx, "Create instance %q: try to delete instance as got error during creation.", vm.Hostname)
@@ -277,7 +299,7 @@ func insertInstanceWithFallback(ctx context.Context, vm *model.VM) (Operation, e
 	initialZone := vm.Attributes.GetZone()
 	initialRotations := vm.FallbackZoneRotations
 	candidates := candidateZones(vm)
-	hasFallbacks := len(vm.Attributes.GetFallbackZones()) > 0
+	hasFallbacks := len(vm.Attributes.GetFallbackZones()) > 0 || vm.Attributes.GetZone() != origZone
 	srv := getCompute(ctx)
 
 	var op Operation
@@ -295,7 +317,7 @@ func insertInstanceWithFallback(ctx context.Context, vm *model.VM) (Operation, e
 		var err error
 		op, err = srv.InsertInstance(ctx, attemptVM.Attributes.GetProject(), targetZone, instance, rID.String())
 		if err != nil {
-			fallback, retErr := handleInsertError(ctx, vm, attemptVM, err, targetZone, nextZone, hasFallbacks)
+			fallback, retErr := handleInsertError(ctx, vm, attemptVM, err, targetZone, nextZone, hasFallbacks, initialRotations)
 			if fallback {
 				continue
 			}

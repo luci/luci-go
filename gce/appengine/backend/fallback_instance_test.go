@@ -276,6 +276,52 @@ func TestFallbackInstance(t *testing.T) {
 				assert.Loosely(t, datastore.Get(c, &model.VM{ID: "id"}), should.Equal(datastore.ErrNoSuchEntity))
 			})
 
+			t.Run("transient HTTP 500 after stockout rotation persists active zone cursor", func(t *ftt.Test) {
+				attempts := 0
+				rt.Handler = func(req any) (int, any) {
+					attempts++
+					switch attempts {
+					case 1:
+						// Zone 1 (us-central1-c) fails with stockout -> rotates to us-central1-a.
+						return http.StatusServiceUnavailable, nil
+					case 2:
+						// Zone 2 (us-central1-a) fails with transient HTTP 500.
+						return http.StatusInternalServerError, nil
+					case 3:
+						// Next retry resumes directly at us-central1-a (does not re-poll us-central1-c).
+						inst := req.(*compute.Instance)
+						assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
+						rt.Type = reflect.TypeOf(map[string]string{})
+						return http.StatusOK, opDone("url-fallback-a")
+					default:
+						return http.StatusOK, &compute.Instance{
+							CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
+							SelfLink:          "url-fallback-a",
+						}
+					}
+				}
+				rt.Type = reflect.TypeOf(compute.Instance{})
+				assert.Loosely(t, datastore.Put(c, makeVM()), should.BeNil)
+
+				assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.ErrLike("transiently failed to create instance"))
+				assert.Loosely(t, attempts, should.Equal(2))
+
+				v := &model.VM{ID: "id"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.FallbackOriginalZone, should.Equal("us-central1-c"))
+				assert.Loosely(t, v.FallbackFailedZones, should.Match([]string{"us-central1-c"}))
+				assert.Loosely(t, v.FallbackZoneRotations, should.Equal(int64(1)))
+				assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-a"))
+				assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
+
+				assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+				assert.Loosely(t, attempts, should.Equal(4))
+				v = &model.VM{ID: "id"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-a"))
+				assert.Loosely(t, v.URL, should.Equal("url-fallback-a"))
+			})
+
 			t.Run("multi-tick async operation stockout falls back and preserves templates", func(t *ftt.Test) {
 				attempts := 0
 				rt.Handler = func(req any) (int, any) {
