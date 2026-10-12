@@ -351,6 +351,107 @@ func TestReportBuilderMetrics(t *testing.T) {
 				assert.Loosely(t, age.(*distribution.Distribution).Sum(), should.Equal(0.0))
 				assert.Loosely(t, age.(*distribution.Distribution).Count(), should.Equal(0))
 			})
+			t.Run("custom", func(t *ftt.Test) {
+				base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT
+				name1 := "chrome/infra/custom/builds/count1"
+				name2 := "chrome/infra/custom/builds/count2"
+
+				globalCfg := &pb.SettingsCfg{
+					CustomMetrics: []*pb.CustomMetric{
+						{
+							Name: name1,
+							Class: &pb.CustomMetric_MetricBase{
+								MetricBase: base,
+							},
+						},
+						{
+							Name: name2,
+							Class: &pb.CustomMetric_MetricBase{
+								MetricBase: base,
+							},
+						},
+					},
+				}
+
+				assert.Loosely(t, createBuilder("b1"), should.BeNil)
+				ctx = WithBuilder(ctx, prj, bkt, "b1")
+				ctx, _ = WithCustomMetrics(ctx, globalCfg)
+
+				bldrMetrics := &model.CustomBuilderMetrics{
+					Key:        model.CustomBuilderMetricsKey(ctx),
+					LastUpdate: testclock.TestRecentTimeUTC,
+					Metrics: &modeldefs.CustomBuilderMetrics{
+						Metrics: []*modeldefs.CustomBuilderMetric{
+							{
+								Name: name1,
+								Builders: []*pb.BuilderID{
+									{
+										Project: prj,
+										Bucket:  bkt,
+										Builder: "b1",
+									},
+								},
+							},
+							{
+								Name: name2,
+								Builders: []*pb.BuilderID{
+									{
+										Project: prj,
+										Bucket:  bkt,
+										Builder: "b1",
+									},
+								},
+							},
+						},
+					},
+				}
+				assert.Loosely(t, datastore.Put(ctx, bldrMetrics), should.BeNil)
+
+				var builds []*model.Build
+				for _, b := range []struct {
+					status       pb.Status
+					metrics      []string
+					experimental bool
+				}{
+					{pb.Status_SCHEDULED, []string{name1}, false},
+					{pb.Status_SCHEDULED, []string{name1, name2, "ignored"}, false},
+					{pb.Status_STARTED, []string{name1}, false},
+					{pb.Status_STARTED, []string{name1, name2, "ignored"}, false},
+					// Ignored, wrong status.
+					{pb.Status_FAILURE, []string{name1}, false},
+					// Ignored, experimental.
+					{pb.Status_SCHEDULED, []string{name1}, true},
+				} {
+					builds = append(builds, &model.Build{
+						Proto: &pb.Build{
+							Builder: &pb.BuilderID{
+								Project: prj,
+								Bucket:  bkt,
+								Builder: "b1",
+							},
+							Status: b.status,
+							Input:  &pb.Build_Input{Experimental: b.experimental},
+						},
+						CustomBuilderCountMetrics: b.metrics,
+					})
+				}
+				assert.Loosely(t, datastore.Put(ctx, builds), should.BeNil)
+
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
+
+				res, err := GetCustomMetricsData(ctx, base, name1, []any{"SCHEDULED"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Equal(2))
+				res, err = GetCustomMetricsData(ctx, base, name1, []any{"STARTED"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Equal(2))
+				res, err = GetCustomMetricsData(ctx, base, name2, []any{"SCHEDULED"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Equal(1))
+				res, err = GetCustomMetricsData(ctx, base, name2, []any{"STARTED"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Equal(1))
+			})
 		})
 
 		t.Run("report ConsecutiveFailures", func(t *ftt.Test) {

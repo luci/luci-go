@@ -8,7 +8,8 @@ indexes:
     - name: builder_id
     - name: status_v2
 
-# Milo builder page uses this index to load ended builds.
+# Milo builder page uses this index to load ended builds. This is also used
+# when reporting builder metrics.
 - kind: Build
   properties:
     - name: builder_id

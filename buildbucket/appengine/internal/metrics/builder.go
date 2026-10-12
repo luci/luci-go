@@ -125,6 +125,9 @@ func fetchLUCIBuckets(ctx context.Context) (stringset.Set, error) {
 }
 
 // reportMaxAge computes and reports the age of the oldest builds with SCHEDULED.
+//
+// TODO: This can be merged into reportBuildCount without any performance
+// degradation.
 func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder string, bldrDefinedMetrics []string) error {
 	// TODO(b/357664566): Make builder a dedicated field in Build model and use
 	// it instead of tags in the query.
@@ -230,85 +233,68 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 
 // reportBuildCount computes and reports # and age of builds with SCHEDULED and STARTED.
 func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builder string, bldrDefinedMetrics []string) error {
-	// TODO(b/357664566): Make builder a dedicated field in Build model and use
-	// it instead of tags in the query.
-	q := datastore.NewQuery(model.BuildKind).
-		Eq("bucket_id", protoutil.FormatBucketID(project, bucket)).
-		Eq("experimental", false).
-		Eq("tags", "builder:"+builder)
+	// Local query stats, not reported.
+	var visited int64
+	var skipped int64
 
-	wg := newWorkGroup()
-
-	var scheduledOK bool
-	var nScheduled int64
+	// Reported as built-in metrics.
+	var scheduled int64
+	var started int64
 	agesScheduled := distribution.New(V2.Age.Bucketer())
-	wg.Go(func() error {
-		now := clock.Now(ctx)
-		for build, err := range datastore.RunBatchQuery[*model.Build](
-			ctx, 64, q.Eq("status_v2", pb.Status_SCHEDULED),
-		).Results {
-			if err != nil {
-				return fmt.Errorf("enumerating SCHEDULED builds (after visiting %d builds): %w", nScheduled, err)
-			}
-			// Process scheduled time of pending builds
-			// and add to V2.Age metric
-			age := now.Sub(build.Proto.CreateTime.AsTime()).Seconds()
-			agesScheduled.Add(age)
 
-			nScheduled++
-		}
-		scheduledOK = true
-		return nil
-	})
-
-	var startedOK bool
-	var nStarted int64
-	wg.Go(func() error {
-		var err error
-		nStarted, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_STARTED))
-		if err != nil {
-			return fmt.Errorf("counting STARTED builds: %w", err)
-		}
-		startedOK = true
-		return nil
-	})
-
+	// Reported as custom metrics.
 	base := pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT
 	cms, cmNames := getBuilderDefinedMetricsPerBase(ctx, base, bldrDefinedMetrics)
 	cmCounts := make(map[string]map[pb.Status]int64)
-	var mu sync.Mutex
-	statuses := []pb.Status{pb.Status_SCHEDULED, pb.Status_STARTED}
 	for _, name := range cmNames {
 		cmCounts[name] = make(map[pb.Status]int64)
 	}
-	for _, name := range cmNames {
-		for _, status := range statuses {
-			wg.Go(func() error {
-				count, err := datastore.Count(ctx, q.Eq("status_v2", status).Eq("custom_builder_count_metrics", name))
-				if err != nil {
-					return fmt.Errorf("counting status==%s, metric==%q: %w", status, name, err)
-				}
-				mu.Lock()
-				cmCounts[name][status] = count
-				mu.Unlock()
-				return nil
-			})
+
+	// A query over all SCHEDULED and STARTED builds. This directly hits a
+	// composite index over these exact two fields. To avoid messing with it,
+	// we'll filter out experimental builds manually (there shouldn't be too many
+	// of them).
+	q := datastore.NewQuery(model.BuildKind).
+		Eq("builder_id", protoutil.ToBuilderIDString(project, bucket, builder)).
+		Eq("incomplete", true)
+	for build, err := range datastore.RunBatchQuery[*model.Build](ctx, 1024, q).Results {
+		if err != nil {
+			// Note we can't really report any of metrics if we failed to visit all
+			// active builds, because we will be undercounting them and reporting
+			// wrong results.
+			return fmt.Errorf("enumerating active builds (after visiting %d builds and skipping %d builds): %w", visited, skipped, err)
+		}
+		if build.Experimental {
+			skipped++
+			continue
+		}
+
+		switch build.Status {
+		case pb.Status_SCHEDULED:
+			scheduled++
+			agesScheduled.Add(clock.Since(ctx, build.Proto.CreateTime.AsTime()).Seconds())
+		case pb.Status_STARTED:
+			started++
+		default:
+			skipped++
+			continue
+		}
+
+		for _, cm := range build.CustomBuilderCountMetrics {
+			if known := cmCounts[cm]; known != nil {
+				known[build.Status]++
+			}
 		}
 	}
-	queryErr := wg.Wait()
 
-	// Report built-in metrics only when successfully fetched necessary values.
-	if scheduledOK && startedOK {
-		V1.BuildCount.Set(ctx, nScheduled, legacyBucket, builder, pb.Status_name[int32(pb.Status_SCHEDULED)])
-		V1.BuildCount.Set(ctx, nStarted, legacyBucket, builder, pb.Status_name[int32(pb.Status_STARTED)])
-		V2.BuildCount.Set(ctx, nScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
-		V2.BuildCount.Set(ctx, nStarted, pb.Status_name[int32(pb.Status_STARTED)])
-		V2.Age.Set(ctx, agesScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
-	}
+	V1.BuildCount.Set(ctx, scheduled, legacyBucket, builder, pb.Status_name[int32(pb.Status_SCHEDULED)])
+	V1.BuildCount.Set(ctx, started, legacyBucket, builder, pb.Status_name[int32(pb.Status_STARTED)])
+	V2.BuildCount.Set(ctx, scheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
+	V2.BuildCount.Set(ctx, started, pb.Status_name[int32(pb.Status_STARTED)])
+	V2.Age.Set(ctx, agesScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
 
-	// Report all custom metrics that we managed to fetch successfully.
-	reportCustomBuilderCounts(ctx, cms, base, cmNames, statuses, cmCounts)
-	return queryErr
+	reportCustomBuilderCounts(ctx, cms, base, cmNames, []pb.Status{pb.Status_SCHEDULED, pb.Status_STARTED}, cmCounts)
+	return nil
 }
 
 func reportConsecutiveFailures(ctx context.Context, project, bucket, legacyBucket, builder string, bldrDefinedMetrics []string) error {
