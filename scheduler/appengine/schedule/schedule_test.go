@@ -15,6 +15,7 @@
 package schedule
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -159,6 +160,98 @@ func TestExhaustedCronSchedule(t *testing.T) {
 			sched, err := Parse(tc.expr, 0)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, sched.Next(tc.now, time.Time{}), should.Match(tc.want))
+		})
+	}
+}
+
+func TestScheduleNextConcurrent(t *testing.T) {
+	t.Parallel()
+
+	// Each schedule is called concurrently across different months so that
+	// cronexpr.Expression.Next recalculates actualDaysOfMonthList on every call.
+	schedules := []struct {
+		name  string
+		expr  string
+		cases []struct {
+			now  time.Time
+			want time.Time
+		}
+	}{
+		{
+			name: "last day of month",
+			expr: "0 0 L * *",
+			cases: []struct {
+				now  time.Time
+				want time.Time
+			}{
+				{
+					now:  time.Date(2020, time.January, 15, 0, 0, 0, 0, time.UTC),
+					want: time.Date(2020, time.January, 31, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					now:  time.Date(2020, time.February, 15, 0, 0, 0, 0, time.UTC),
+					want: time.Date(2020, time.February, 29, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					now:  time.Date(2021, time.February, 15, 0, 0, 0, 0, time.UTC),
+					want: time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					now:  time.Date(2021, time.April, 15, 0, 0, 0, 0, time.UTC),
+					want: time.Date(2021, time.April, 30, 0, 0, 0, 0, time.UTC),
+				},
+			},
+		},
+		{
+			name: "daily at midnight",
+			expr: "0 0 * * *",
+			cases: []struct {
+				now  time.Time
+				want time.Time
+			}{
+				{
+					now:  time.Date(2020, time.January, 31, 12, 0, 0, 0, time.UTC),
+					want: time.Date(2020, time.February, 1, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					now:  time.Date(2020, time.February, 28, 12, 0, 0, 0, time.UTC),
+					want: time.Date(2020, time.February, 29, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					now:  time.Date(2021, time.February, 28, 12, 0, 0, 0, time.UTC),
+					want: time.Date(2021, time.March, 1, 0, 0, 0, 0, time.UTC),
+				},
+				{
+					now:  time.Date(2021, time.April, 30, 12, 0, 0, 0, time.UTC),
+					want: time.Date(2021, time.May, 1, 0, 0, 0, 0, time.UTC),
+				},
+			},
+		},
+	}
+
+	for _, sc := range schedules {
+		t.Run(sc.name, func(t *testing.T) {
+			t.Parallel()
+			sched, err := Parse(sc.expr, 0)
+			assert.Loosely(t, err, should.BeNil)
+
+			var wg sync.WaitGroup
+			for range 8 {
+				for _, tc := range sc.cases {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						for range 50 {
+							got := sched.Next(tc.now, time.Time{})
+							if !got.Equal(tc.want) {
+								t.Errorf("Next(%v) = %v, want %v", tc.now, got, tc.want)
+								return
+							}
+						}
+					}()
+				}
+			}
+			wg.Wait()
 		})
 	}
 }

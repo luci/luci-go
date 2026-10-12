@@ -29,7 +29,8 @@ import (
 // happen.
 var DistantFuture = time.Unix(4604952467, 0).UTC()
 
-// cronexpr library is using global variables without synchronizing the access.
+// cronexpr library is using global variables without synchronizing the access
+// and mutates Expression.actualDaysOfMonthList inside Next.
 var cronexprLock sync.Mutex
 
 // Schedule knows when to run a periodic job (given current time and possibly
@@ -69,7 +70,10 @@ func (s *Schedule) Next(now, prev time.Time) time.Time {
 
 	// For an absolute schedule just look at the time table.
 	if s.cronExpr != nil {
-		if next := s.cronExpr.Next(now); !next.IsZero() {
+		cronexprLock.Lock()
+		next := s.cronExpr.Next(now)
+		cronexprLock.Unlock()
+		if !next.IsZero() {
 			return next
 		}
 		return DistantFuture
