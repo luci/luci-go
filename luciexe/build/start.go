@@ -96,7 +96,7 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 			return errors.Fmt("build.Start: %w", err)
 		}
 		ret.propertyState = pstate
-		ret.ctx, err = pstate.SetInContext(ctx)
+		ret.ctx, err = pstate.SetInContext(ret.ctx)
 		return
 	}()
 	if err != nil {

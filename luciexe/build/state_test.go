@@ -78,6 +78,12 @@ func TestState(t *testing.T) {
 				assert.Loosely(t, func() { st.End(nil) }, should.PanicLike("cannot mutate ended build"))
 				st = nil
 			})
+
+			t.Run(`cancels context as well`, func(t *ftt.Test) {
+				st.End(nil)
+				st = nil
+				assert.Loosely(t, ctx.Err(), should.Resemble(context.Canceled))
+			})
 		})
 
 		t.Run(`Build.Infra()`, func(t *ftt.Test) {
