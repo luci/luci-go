@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"slices"
 	"time"
 
 	"google.golang.org/api/googleapi"
@@ -40,6 +41,24 @@ import (
 
 // countVMsQueue is the name of the count VMs task handler queue.
 const countVMsQueue = "count-vms"
+
+// configuredZones returns the ordered, deduplicated list of non-empty candidate
+// zones (primary zone followed by fallback_zones) configured in attrs.
+func configuredZones(attrs *config.VM) []string {
+	if attrs == nil {
+		return nil
+	}
+	var zones []string
+	if z := attrs.GetZone(); z != "" {
+		zones = append(zones, z)
+	}
+	for _, fb := range attrs.GetFallbackZones() {
+		if fb != "" && !slices.Contains(zones, fb) {
+			zones = append(zones, fb)
+		}
+	}
+	return zones
+}
 
 // countVMs counts the VMs for a given config.
 func countVMs(c context.Context, payload proto.Message) error {
@@ -64,7 +83,19 @@ func countVMs(c context.Context, payload proto.Message) error {
 	case err != nil:
 		return errors.Fmt("failed to fetch config: %w", err)
 	default:
-		vms.AddConfigured(int(cfg.Config.CurrentAmount), cfg.Config.Attributes.Project)
+		project := cfg.Config.GetAttributes().GetProject()
+		vms.AddConfigured(int(cfg.Config.CurrentAmount), project)
+		// Pre-initialize created and connected counts to 0 for the primary zone
+		// and all configured fallback_zones. Because gce/instances/created and
+		// gce/instances/connected are in-memory tsmon gauges keyed by zone,
+		// any candidate zone that previously hosted VMs but currently has 0 VMs
+		// after a zone rotation must be explicitly present with Count=0 in
+		// InstanceCount so updateInstances resets its gauge to 0 instead of
+		// leaving a stale non-zero value in Monarch.
+		for _, zone := range configuredZones(cfg.Config.GetAttributes()) {
+			vms.AddCreated(0, project, zone)
+			vms.AddConnected(0, project, cfg.Config.GetSwarming(), zone)
+		}
 	}
 
 	// Get the actual (connected, created) counts.

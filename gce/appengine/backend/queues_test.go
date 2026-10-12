@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
+	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 )
@@ -77,6 +78,47 @@ func TestQueues(t *testing.T) {
 					Id: "id",
 				})
 				assert.Loosely(t, err, should.BeNil)
+
+				t.Run("with fallback zones", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.Config{
+						ID: "cfg-fb",
+						Config: &config.Config{
+							CurrentAmount: 1,
+							Swarming:      "swarming-srv",
+							Attributes: &config.VM{
+								Project:       "project",
+								Zone:          "us-central1-b",
+								FallbackZones: []string{"us-central1-c", "us-central1-a"},
+							},
+						},
+					}), should.BeNil)
+					assert.Loosely(t, datastore.Put(c, &model.VM{
+						ID:        "cfg-fb-0",
+						Config:    "cfg-fb",
+						Created:   100,
+						Connected: 110,
+						Swarming:  "swarming-srv",
+						Attributes: config.VM{
+							Project: "project",
+							Zone:    "us-central1-a",
+						},
+					}), should.BeNil)
+
+					assert.Loosely(t, countVMs(c, &tasks.CountVMs{Id: "cfg-fb"}), should.BeNil)
+					ic := &metrics.InstanceCount{ID: "cfg-fb"}
+					assert.Loosely(t, datastore.Get(c, ic), should.BeNil)
+					assert.Loosely(t, len(ic.Created), should.Equal(3))
+					assert.Loosely(t, ic.Created[0].Zone, should.Equal("us-central1-b"))
+					assert.Loosely(t, ic.Created[0].Count, should.Equal(0))
+					assert.Loosely(t, ic.Created[1].Zone, should.Equal("us-central1-c"))
+					assert.Loosely(t, ic.Created[1].Count, should.Equal(0))
+					assert.Loosely(t, ic.Created[2].Zone, should.Equal("us-central1-a"))
+					assert.Loosely(t, ic.Created[2].Count, should.Equal(1))
+					assert.Loosely(t, len(ic.Connected), should.Equal(3))
+					assert.Loosely(t, ic.Connected[0].Count, should.Equal(0))
+					assert.Loosely(t, ic.Connected[1].Count, should.Equal(0))
+					assert.Loosely(t, ic.Connected[2].Count, should.Equal(1))
+				})
 			})
 		})
 
