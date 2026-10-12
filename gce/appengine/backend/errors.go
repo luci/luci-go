@@ -25,12 +25,19 @@ import (
 const (
 	errCodeZoneResourcePoolExhausted            = "ZONE_RESOURCE_POOL_EXHAUSTED"
 	errCodeZoneResourcePoolExhaustedWithDetails = "ZONE_RESOURCE_POOL_EXHAUSTED_WITH_DETAILS"
-	errCodeResourceExhausted                    = "RESOURCE_EXHAUSTED"
-	errCodeQuotaExceeded                        = "QUOTA_EXCEEDED"
-	errReasonRateLimitExceeded                  = "rateLimitExceeded"
-	errReasonHTTPError                          = "HTTP_ERROR"
-	errReasonOperationError                     = "OPERATION_ERROR"
-	errReasonNotFound                           = "NOT_FOUND"
+	// errCodeResourcePoolExhausted matches both generic pool exhaustion
+	// ("RESOURCE_POOL_EXHAUSTED") and zone-scoped pool exhaustion
+	// ("ZONE_RESOURCE_POOL_EXHAUSTED", "ZONE_RESOURCE_POOL_EXHAUSTED_WITH_DETAILS").
+	// Note that errCodeResourceExhausted ("RESOURCE_EXHAUSTED") alone does not
+	// match "RESOURCE_POOL_EXHAUSTED" because "_POOL_" separates "RESOURCE_" and
+	// "EXHAUSTED".
+	errCodeResourcePoolExhausted = "RESOURCE_POOL_EXHAUSTED"
+	errCodeResourceExhausted     = "RESOURCE_EXHAUSTED"
+	errCodeQuotaExceeded         = "QUOTA_EXCEEDED"
+	errReasonRateLimitExceeded   = "rateLimitExceeded"
+	errReasonHTTPError           = "HTTP_ERROR"
+	errReasonOperationError      = "OPERATION_ERROR"
+	errReasonNotFound            = "NOT_FOUND"
 )
 
 // Substrings matched against GCP Compute API error messages when classifying
@@ -62,7 +69,7 @@ func rateLimitExceeded(err *googleapi.Error) bool {
 // isStockoutCode returns whether the given error code or reason string
 // indicates a hard GCP capacity stockout.
 func isStockoutCode(s string) bool {
-	return strings.Contains(s, errCodeZoneResourcePoolExhausted) ||
+	return strings.Contains(s, errCodeResourcePoolExhausted) ||
 		strings.Contains(s, errCodeResourceExhausted)
 }
 
@@ -75,8 +82,8 @@ func isStockoutMessage(s string) bool {
 
 // isStockoutGoogleAPIError returns whether the given *googleapi.Error indicates
 // a hard GCP capacity stockout (HTTP 503 Service Unavailable or an explicit
-// ZONE_RESOURCE_POOL_EXHAUSTED / RESOURCE_EXHAUSTED error) along with the
-// normalized failure reason.
+// ZONE_RESOURCE_POOL_EXHAUSTED / RESOURCE_POOL_EXHAUSTED / RESOURCE_EXHAUSTED
+// error) along with the normalized failure reason.
 func isStockoutGoogleAPIError(gerr *googleapi.Error) (bool, string) {
 	if gerr == nil {
 		return false, errReasonHTTPError

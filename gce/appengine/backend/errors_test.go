@@ -54,6 +54,17 @@ func TestErrors(t *testing.T) {
 			assert.Loosely(t, reason, should.Equal(errCodeZoneResourcePoolExhausted))
 		})
 
+		t.Run("RESOURCE_POOL_EXHAUSTED reason without ZONE prefix", func(t *ftt.Test) {
+			stockout, reason := isStockoutGoogleAPIError(&googleapi.Error{
+				Code: http.StatusConflict,
+				Errors: []googleapi.ErrorItem{
+					{Reason: errCodeResourcePoolExhausted},
+				},
+			})
+			assert.Loosely(t, stockout, should.BeTrue)
+			assert.Loosely(t, reason, should.Equal(errCodeResourcePoolExhausted))
+		})
+
 		t.Run("stockout message without explicit reason", func(t *ftt.Test) {
 			stockout, reason := isStockoutGoogleAPIError(&googleapi.Error{
 				Code: http.StatusBadRequest,
@@ -103,6 +114,14 @@ func TestErrors(t *testing.T) {
 			})
 			assert.Loosely(t, stockout, should.BeTrue)
 			assert.Loosely(t, reason, should.Equal(errCodeZoneResourcePoolExhaustedWithDetails))
+		})
+
+		t.Run("RESOURCE_POOL_EXHAUSTED code without ZONE prefix", func(t *ftt.Test) {
+			stockout, reason := isStockoutOperationErrors([]CommonOpError{
+				{Code: errCodeResourcePoolExhausted, Message: "Resource pool exhausted."},
+			})
+			assert.Loosely(t, stockout, should.BeTrue)
+			assert.Loosely(t, reason, should.Equal(errCodeResourcePoolExhausted))
 		})
 
 		t.Run("stockout message only", func(t *ftt.Test) {
