@@ -50,10 +50,7 @@ export const calculate24hDelta = (
   }
 
   const latestPoint = points[points.length - 1];
-  const availabilityPct = Math.min(
-    100,
-    Math.max(0, Math.round(latestPoint.value * 100)),
-  );
+  const availabilityPct = Math.max(0, Math.round(latestPoint.value * 100));
 
   let prevPoint = latestPoint;
   if (latestPoint.timestamp) {
@@ -76,10 +73,7 @@ export const calculate24hDelta = (
     prevPoint = points[0];
   }
 
-  const prevAvailabilityPct = Math.min(
-    100,
-    Math.max(0, Math.round(prevPoint.value * 100)),
-  );
+  const prevAvailabilityPct = Math.max(0, Math.round(prevPoint.value * 100));
 
   const healthDrop = Math.max(0, prevAvailabilityPct - availabilityPct);
   const trend: 'up' | 'down' | 'flat' =

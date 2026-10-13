@@ -514,7 +514,7 @@ export const PerformanceRankingCard = ({
                     >
                       <LinearProgress
                         variant="determinate"
-                        value={item.availabilityPct}
+                        value={Math.min(100, item.availabilityPct)}
                         color={getHealthStatus(item.availabilityPct).color}
                         sx={{
                           height: 6,

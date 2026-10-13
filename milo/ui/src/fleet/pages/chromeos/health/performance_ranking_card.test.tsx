@@ -714,4 +714,46 @@ describe('PerformanceRankingCard', () => {
     fireEvent.click(dropBadge);
     expect(onSelectModel).toHaveBeenCalledWith('volteer');
   });
+
+  it('correctly handles surplus availability exceeding 100% without capping at 100%', () => {
+    const mockTrends: GetFleetAvailabilityTrendsResponse = {
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'volteer',
+          points: [
+            { timestamp: '2026-09-29T12:00:00Z', value: 1.25 },
+            { timestamp: '2026-09-30T12:00:00Z', value: 1.15 },
+          ],
+        },
+      ],
+    };
+
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: mockTrends,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <PerformanceRankingCard />
+      </FakeContextProvider>,
+    );
+
+    const modelElements = screen.getAllByRole('listitem');
+    expect(modelElements).toHaveLength(1);
+    expect(modelElements[0]).toHaveTextContent('volteer');
+    expect(modelElements[0]).toHaveTextContent('115% Available');
+    expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent('-10%');
+
+    const progressBar = screen.getByLabelText('volteer availability');
+    expect(progressBar).toHaveAttribute('aria-valuenow', '100');
+  });
 });
