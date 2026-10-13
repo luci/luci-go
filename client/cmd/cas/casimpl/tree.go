@@ -17,11 +17,14 @@ package casimpl
 import (
 	"context"
 	"crypto"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
@@ -32,12 +35,13 @@ import (
 	"go.chromium.org/luci/common/data/caching/cache"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
+	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/signals"
 )
 
 const (
-	defaultCacheMaxSize  = 50 * 1024 * 1024 // 50 MiB
+	defaultCacheMaxSize  = 500 * 1024 * 1024 // 500 MiB
 	defaultCacheMaxItems = 1000
 )
 
@@ -50,12 +54,49 @@ type TreeFileEntry struct {
 	IsEmptyDir    bool   `json:"is_empty_dir,omitempty"`
 }
 
+// compactTreeFileEntry is the compact JSON representation of TreeFileEntry used with -compact.
+// Size is omitted because it is already encoded in Digest ("<hash>/<size>").
+type compactTreeFileEntry struct {
+	Digest        string `json:"d,omitempty"`
+	IsExecutable  bool   `json:"x,omitempty"`
+	SymlinkTarget string `json:"l,omitempty"`
+	IsEmptyDir    bool   `json:"e,omitempty"`
+}
+
 // TreeResult represents the complete metadata tree of a CAS root directory.
 type TreeResult struct {
 	Digest     string                   `json:"digest"`
 	Files      map[string]TreeFileEntry `json:"files"`
 	TotalFiles int                      `json:"total_files"`
 	TotalBytes int64                    `json:"total_bytes"`
+}
+
+type compactTreeResult struct {
+	Digest     string                          `json:"digest"`
+	Files      map[string]compactTreeFileEntry `json:"files"`
+	TotalFiles int                             `json:"total_files"`
+	TotalBytes int64                           `json:"total_bytes"`
+}
+
+func (res *TreeResult) marshal(compact bool) ([]byte, error) {
+	if !compact {
+		return json.MarshalIndent(res, "", "  ")
+	}
+	files := make(map[string]compactTreeFileEntry, len(res.Files))
+	for k, v := range res.Files {
+		files[k] = compactTreeFileEntry{
+			Digest:        v.Digest,
+			IsExecutable:  v.IsExecutable,
+			SymlinkTarget: v.SymlinkTarget,
+			IsEmptyDir:    v.IsEmptyDir,
+		}
+	}
+	return json.Marshal(&compactTreeResult{
+		Digest:     res.Digest,
+		Files:      files,
+		TotalFiles: res.TotalFiles,
+		TotalBytes: res.TotalBytes,
+	})
 }
 
 // CmdTree returns an object for the `tree` subcommand.
@@ -74,6 +115,8 @@ Tree is referenced by its root directory digest "<digest hash>/<size bytes>".`,
 			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Cache directory to store retrieved tree metadata.")
 			c.Flags.StringVar(&c.destination, "destination", "", "Path to write tree metadata JSON (Defaults to stdout if unspecified).")
 			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto "<digest hash>/<size bytes>".`)
+			c.Flags.BoolVar(&c.compact, "compact", false, "Output compact JSON without indentation and with shortened entry keys.")
+			c.Flags.Var(luciflag.StringSlice(&c.exclude), "exclude", "Regular expression of paths to exclude from the tree (repeatable).")
 			return &c
 		},
 	}
@@ -81,10 +124,13 @@ Tree is referenced by its root directory digest "<digest hash>/<size bytes>".`,
 
 type treeRun struct {
 	commonFlags
-	destination   string
-	digest        string
-	cacheDir      string
-	cachePolicies cache.Policies
+	destination    string
+	digest         string
+	cacheDir       string
+	cachePolicies  cache.Policies
+	compact        bool
+	exclude        []string
+	excludeRegexps []*regexp.Regexp
 
 	diskcache *cache.Cache
 	stdout    io.Writer // for testing; defaults to os.Stdout if nil
@@ -108,6 +154,16 @@ func (r *treeRun) parse(a subcommands.Application, args []string) error {
 		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified")
 	}
 
+	// Compile each -exclude pattern individually rather than joining with "|",
+	// preserving Go regexp's LiteralPrefix() SIMD fast-path on each pattern.
+	r.excludeRegexps = make([]*regexp.Regexp, 0, len(r.exclude))
+	for _, pat := range r.exclude {
+		re, err := regexp.Compile(pat)
+		if err != nil {
+			return errors.Fmt("invalid -exclude regexp %q: %w", pat, err)
+		}
+		r.excludeRegexps = append(r.excludeRegexps, re)
+	}
 	return nil
 }
 
@@ -128,10 +184,10 @@ func (r *treeRun) doTree(ctx context.Context) error {
 		return errors.Fmt("parse digest %s: %w", r.digest, err)
 	}
 
-	if cachedTreeResult, ok := r.readTreeFromCache(d); ok {
+	if cachedJSON, ok := r.readTreeFromCache(d); ok {
 		defer r.diskcache.Close()
 		logging.Infof(ctx, "cache hit for tree digest: %s", d)
-		return r.outputResult(cachedTreeResult)
+		return r.outputResult(cachedJSON)
 	}
 	if r.cacheDir != "" && r.diskcache == nil {
 		return errors.New("initialize cache")
@@ -151,19 +207,41 @@ func (r *treeRun) doTree(ctx context.Context) error {
 		return err
 	}
 
-	treeResult := buildTreeResult(d, outputs)
-	r.writeTreeToCache(ctx, d, treeResult)
+	treeResult := buildTreeResult(d, outputs, r.excludeRegexps)
+	jsonBytes, err := treeResult.marshal(r.compact)
+	if err != nil {
+		return errors.Fmt("marshal json: %w", err)
+	}
 
-	return r.outputResult(treeResult)
+	r.writeTreeToCache(ctx, d, jsonBytes)
+
+	return r.outputResult(jsonBytes)
 }
 
-func buildTreeResult(d digest.Digest, outputs map[string]*client.TreeOutput) *TreeResult {
+func matchesExclude(relPath string, exclude []*regexp.Regexp) bool {
+	for _, re := range exclude {
+		if re.MatchString(relPath) {
+			return true
+		}
+	}
+	return false
+}
+
+func buildTreeResult(d digest.Digest, outputs map[string]*client.TreeOutput, exclude []*regexp.Regexp) *TreeResult {
+	initialCap := len(outputs)
+	if len(exclude) > 0 {
+		initialCap = 0
+	}
 	res := &TreeResult{
 		Digest: d.String(),
-		Files:  make(map[string]TreeFileEntry, len(outputs)),
+		Files:  make(map[string]TreeFileEntry, initialCap),
 	}
 
 	for path, out := range outputs {
+		relPath := filepath.ToSlash(path)
+		if matchesExclude(relPath, exclude) {
+			continue
+		}
 		entry := TreeFileEntry{}
 		switch {
 		case out.IsEmptyDirectory:
@@ -177,12 +255,22 @@ func buildTreeResult(d digest.Digest, outputs map[string]*client.TreeOutput) *Tr
 			res.TotalFiles++
 			res.TotalBytes += out.Digest.Size
 		}
-		res.Files[filepath.ToSlash(path)] = entry
+		res.Files[relPath] = entry
 	}
 	return res
 }
 
-func (r *treeRun) readTreeFromCache(d digest.Digest) (*TreeResult, bool) {
+// cacheKeyDigest hashes the root digest with -compact and -exclude options into a SHA-256 cache key.
+func (r *treeRun) cacheKeyDigest(d digest.Digest) cache.HexDigest {
+	if len(r.exclude) == 0 && !r.compact {
+		return cache.HexDigest(d.Hash)
+	}
+	h := sha256.New()
+	fmt.Fprintf(h, "%s\ncompact=%t\nexclude=%q", d.Hash, r.compact, r.exclude)
+	return cache.HexDigest(hex.EncodeToString(h.Sum(nil)))
+}
+
+func (r *treeRun) readTreeFromCache(d digest.Digest) ([]byte, bool) {
 	if r.cacheDir == "" {
 		return nil, false
 	}
@@ -199,7 +287,7 @@ func (r *treeRun) readTreeFromCache(d digest.Digest) (*TreeResult, bool) {
 	}
 	r.diskcache = c
 
-	hexDigest := cache.HexDigest(d.Hash)
+	hexDigest := r.cacheKeyDigest(d)
 	if !hexDigest.Validate(crypto.SHA256) {
 		return nil, false
 	}
@@ -213,24 +301,19 @@ func (r *treeRun) readTreeFromCache(d digest.Digest) (*TreeResult, bool) {
 	if err != nil {
 		return nil, false
 	}
-	var res TreeResult
-	if err := json.Unmarshal(data, &res); err != nil {
+	if !json.Valid(data) {
 		r.diskcache.Evict(hexDigest)
 		return nil, false
 	}
-	return &res, true
+	return data, true
 }
 
-func (r *treeRun) writeTreeToCache(ctx context.Context, d digest.Digest, res *TreeResult) {
+func (r *treeRun) writeTreeToCache(ctx context.Context, d digest.Digest, jsonBytes []byte) {
 	if r.diskcache == nil {
 		return
 	}
-	hexDigest := cache.HexDigest(d.Hash)
+	hexDigest := r.cacheKeyDigest(d)
 	if !hexDigest.Validate(crypto.SHA256) {
-		return
-	}
-	jsonBytes, err := json.Marshal(res)
-	if err != nil {
 		return
 	}
 	tmpFile, err := os.CreateTemp(r.cacheDir, "tree_*.tmp")
@@ -252,12 +335,7 @@ func (r *treeRun) writeTreeToCache(ctx context.Context, d digest.Digest, res *Tr
 	}
 }
 
-func (r *treeRun) outputResult(res *TreeResult) error {
-	jsonBytes, err := json.MarshalIndent(res, "", "  ")
-	if err != nil {
-		return errors.Fmt("marshal json: %w", err)
-	}
-
+func (r *treeRun) outputResult(jsonBytes []byte) error {
 	if r.destination != "" {
 		if err := os.WriteFile(r.destination, jsonBytes, 0600); err != nil {
 			return errors.Fmt("write -destination: %w", err)
