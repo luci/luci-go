@@ -79,7 +79,7 @@ func (x Action_Metadata_CIPD_InstallMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Action_Metadata_CIPD_InstallMode.Descriptor instead.
 func (Action_Metadata_CIPD_InstallMode) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_cipkg_core_action_proto_rawDescGZIP(), []int{0, 0, 0, 0}
+	return file_go_chromium_org_luci_cipkg_core_action_proto_rawDescGZIP(), []int{0, 0, 1, 0}
 }
 
 // Action is a high level description of one node in the build graph.
@@ -294,14 +294,15 @@ type Action_Metadata struct {
 	// Dependencies which PackageManager will ensure being available prior to
 	// the use of this Action's output.
 	RuntimeDeps []*Action                `protobuf:"bytes,1,rep,name=runtime_deps,json=runtimeDeps,proto3" json:"runtime_deps,omitempty"`
-	Cipd        *Action_Metadata_CIPD    `protobuf:"bytes,2,opt,name=cipd,proto3" json:"cipd,omitempty"`
-	Luciexe     *Action_Metadata_LUCIExe `protobuf:"bytes,3,opt,name=luciexe,proto3" json:"luciexe,omitempty"`
+	Luciexe     *Action_Metadata_LUCIExe `protobuf:"bytes,2,opt,name=luciexe,proto3" json:"luciexe,omitempty"`
+	Cipd        *Action_Metadata_CIPD    `protobuf:"bytes,3,opt,name=cipd,proto3" json:"cipd,omitempty"`
+	Oci         *Action_Metadata_OCI     `protobuf:"bytes,4,opt,name=oci,proto3" json:"oci,omitempty"`
 	// untrusted signals the package may contain files from external sources
 	// that haven't been verified yet. Generators may treat them with extra
 	// cautious.
-	Untrusted bool `protobuf:"varint,4,opt,name=untrusted,proto3" json:"untrusted,omitempty"`
+	Untrusted bool `protobuf:"varint,97,opt,name=untrusted,proto3" json:"untrusted,omitempty"`
 	// cache_id is the unique id for caching.
-	CacheId string `protobuf:"bytes,5,opt,name=cache_id,json=cacheId,proto3" json:"cache_id,omitempty"`
+	CacheId string `protobuf:"bytes,98,opt,name=cache_id,json=cacheId,proto3" json:"cache_id,omitempty"`
 	// context_info can be used to indicate what this action related to - this
 	// can help e.g. differentiate action with same content but comes from
 	// different generator.
@@ -347,6 +348,13 @@ func (x *Action_Metadata) GetRuntimeDeps() []*Action {
 	return nil
 }
 
+func (x *Action_Metadata) GetLuciexe() *Action_Metadata_LUCIExe {
+	if x != nil {
+		return x.Luciexe
+	}
+	return nil
+}
+
 func (x *Action_Metadata) GetCipd() *Action_Metadata_CIPD {
 	if x != nil {
 		return x.Cipd
@@ -354,9 +362,9 @@ func (x *Action_Metadata) GetCipd() *Action_Metadata_CIPD {
 	return nil
 }
 
-func (x *Action_Metadata) GetLuciexe() *Action_Metadata_LUCIExe {
+func (x *Action_Metadata) GetOci() *Action_Metadata_OCI {
 	if x != nil {
-		return x.Luciexe
+		return x.Oci
 	}
 	return nil
 }
@@ -378,6 +386,52 @@ func (x *Action_Metadata) GetCacheId() string {
 func (x *Action_Metadata) GetContextInfo() string {
 	if x != nil {
 		return x.ContextInfo
+	}
+	return ""
+}
+
+type Action_Metadata_LUCIExe struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// step_name is the name of this action when it's being executed under
+	// luciexe framework.
+	StepName      string `protobuf:"bytes,1,opt,name=step_name,json=stepName,proto3" json:"step_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Action_Metadata_LUCIExe) Reset() {
+	*x = Action_Metadata_LUCIExe{}
+	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Action_Metadata_LUCIExe) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Action_Metadata_LUCIExe) ProtoMessage() {}
+
+func (x *Action_Metadata_LUCIExe) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Action_Metadata_LUCIExe.ProtoReflect.Descriptor instead.
+func (*Action_Metadata_LUCIExe) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipkg_core_action_proto_rawDescGZIP(), []int{0, 0, 0}
+}
+
+func (x *Action_Metadata_LUCIExe) GetStepName() string {
+	if x != nil {
+		return x.StepName
 	}
 	return ""
 }
@@ -409,7 +463,7 @@ type Action_Metadata_CIPD struct {
 
 func (x *Action_Metadata_CIPD) Reset() {
 	*x = Action_Metadata_CIPD{}
-	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[2]
+	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -421,7 +475,7 @@ func (x *Action_Metadata_CIPD) String() string {
 func (*Action_Metadata_CIPD) ProtoMessage() {}
 
 func (x *Action_Metadata_CIPD) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[2]
+	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -434,7 +488,7 @@ func (x *Action_Metadata_CIPD) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Action_Metadata_CIPD.ProtoReflect.Descriptor instead.
 func (*Action_Metadata_CIPD) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_cipkg_core_action_proto_rawDescGZIP(), []int{0, 0, 0}
+	return file_go_chromium_org_luci_cipkg_core_action_proto_rawDescGZIP(), []int{0, 0, 1}
 }
 
 func (x *Action_Metadata_CIPD) GetName() string {
@@ -486,30 +540,32 @@ func (x *Action_Metadata_CIPD) GetVersionFile() string {
 	return ""
 }
 
-type Action_Metadata_LUCIExe struct {
+type Action_Metadata_OCI struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// step_name is the name of this action when it's being executed under
-	// luciexe framework.
-	StepName      string `protobuf:"bytes,1,opt,name=step_name,json=stepName,proto3" json:"step_name,omitempty"`
+	// registry is the OCI container registry and repository name for the
+	// Action's output.
+	Registry string `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty"`
+	// tags is the list of tags should be attached to the OCI image.
+	Tags          []string `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Action_Metadata_LUCIExe) Reset() {
-	*x = Action_Metadata_LUCIExe{}
-	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[3]
+func (x *Action_Metadata_OCI) Reset() {
+	*x = Action_Metadata_OCI{}
+	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Action_Metadata_LUCIExe) String() string {
+func (x *Action_Metadata_OCI) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Action_Metadata_LUCIExe) ProtoMessage() {}
+func (*Action_Metadata_OCI) ProtoMessage() {}
 
-func (x *Action_Metadata_LUCIExe) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[3]
+func (x *Action_Metadata_OCI) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -520,23 +576,30 @@ func (x *Action_Metadata_LUCIExe) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Action_Metadata_LUCIExe.ProtoReflect.Descriptor instead.
-func (*Action_Metadata_LUCIExe) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_cipkg_core_action_proto_rawDescGZIP(), []int{0, 0, 1}
+// Deprecated: Use Action_Metadata_OCI.ProtoReflect.Descriptor instead.
+func (*Action_Metadata_OCI) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipkg_core_action_proto_rawDescGZIP(), []int{0, 0, 2}
 }
 
-func (x *Action_Metadata_LUCIExe) GetStepName() string {
+func (x *Action_Metadata_OCI) GetRegistry() string {
 	if x != nil {
-		return x.StepName
+		return x.Registry
 	}
 	return ""
+}
+
+func (x *Action_Metadata_OCI) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
 }
 
 var File_go_chromium_org_luci_cipkg_core_action_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_cipkg_core_action_proto_rawDesc = "" +
 	"\n" +
-	",go.chromium.org/luci/cipkg/core/action.proto\x1a\x19google/protobuf/any.proto\x1a+go.chromium.org/luci/cipkg/core/specs.proto\"\x9d\a\n" +
+	",go.chromium.org/luci/cipkg/core/action.proto\x1a\x19google/protobuf/any.proto\x1a+go.chromium.org/luci/cipkg/core/specs.proto\"\xfc\a\n" +
 	"\x06Action\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12,\n" +
 	"\bmetadata\x18\x02 \x01(\v2\x10.Action.MetadataR\bmetadata\x12\x1b\n" +
@@ -546,14 +609,17 @@ const file_go_chromium_org_luci_cipkg_core_action_proto_rawDesc = "" +
 	"\x03git\x18\b \x01(\v2\x0f.ActionGitFetchH\x00R\x03git\x12&\n" +
 	"\x04copy\x18\x06 \x01(\v2\x10.ActionFilesCopyH\x00R\x04copy\x12'\n" +
 	"\x04cipd\x18\a \x01(\v2\x11.ActionCIPDExportH\x00R\x04cipd\x124\n" +
-	"\textension\x18c \x01(\v2\x14.google.protobuf.AnyH\x00R\textension\x1a\xae\x04\n" +
+	"\textension\x18c \x01(\v2\x14.google.protobuf.AnyH\x00R\textension\x1a\x8d\x05\n" +
 	"\bMetadata\x12*\n" +
-	"\fruntime_deps\x18\x01 \x03(\v2\a.ActionR\vruntimeDeps\x12)\n" +
-	"\x04cipd\x18\x02 \x01(\v2\x15.Action.Metadata.CIPDR\x04cipd\x122\n" +
-	"\aluciexe\x18\x03 \x01(\v2\x18.Action.Metadata.LUCIExeR\aluciexe\x12\x1c\n" +
-	"\tuntrusted\x18\x04 \x01(\bR\tuntrusted\x12\x19\n" +
-	"\bcache_id\x18\x05 \x01(\tR\acacheId\x12!\n" +
-	"\fcontext_info\x18c \x01(\tR\vcontextInfo\x1a\x92\x02\n" +
+	"\fruntime_deps\x18\x01 \x03(\v2\a.ActionR\vruntimeDeps\x122\n" +
+	"\aluciexe\x18\x02 \x01(\v2\x18.Action.Metadata.LUCIExeR\aluciexe\x12)\n" +
+	"\x04cipd\x18\x03 \x01(\v2\x15.Action.Metadata.CIPDR\x04cipd\x12&\n" +
+	"\x03oci\x18\x04 \x01(\v2\x14.Action.Metadata.OCIR\x03oci\x12\x1c\n" +
+	"\tuntrusted\x18a \x01(\bR\tuntrusted\x12\x19\n" +
+	"\bcache_id\x18b \x01(\tR\acacheId\x12!\n" +
+	"\fcontext_info\x18c \x01(\tR\vcontextInfo\x1a&\n" +
+	"\aLUCIExe\x12\x1b\n" +
+	"\tstep_name\x18\x01 \x01(\tR\bstepName\x1a\x92\x02\n" +
 	"\x04CIPD\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12%\n" +
@@ -564,9 +630,10 @@ const file_go_chromium_org_luci_cipkg_core_action_proto_rawDesc = "" +
 	"\fversion_file\x18\a \x01(\tR\vversionFile\"$\n" +
 	"\vInstallMode\x12\b\n" +
 	"\x04copy\x10\x00\x12\v\n" +
-	"\asymlink\x10\x01\x1a&\n" +
-	"\aLUCIExe\x12\x1b\n" +
-	"\tstep_name\x18\x01 \x01(\tR\bstepNameB\x06\n" +
+	"\asymlink\x10\x01\x1a5\n" +
+	"\x03OCI\x12\x1a\n" +
+	"\bregistry\x18\x01 \x01(\tR\bregistry\x12\x12\n" +
+	"\x04tags\x18\x02 \x03(\tR\x04tagsB\x06\n" +
 	"\x04specB!Z\x1fgo.chromium.org/luci/cipkg/coreb\x06proto3"
 
 var (
@@ -582,38 +649,40 @@ func file_go_chromium_org_luci_cipkg_core_action_proto_rawDescGZIP() []byte {
 }
 
 var file_go_chromium_org_luci_cipkg_core_action_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_go_chromium_org_luci_cipkg_core_action_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_go_chromium_org_luci_cipkg_core_action_proto_goTypes = []any{
 	(Action_Metadata_CIPD_InstallMode)(0), // 0: Action.Metadata.CIPD.InstallMode
 	(*Action)(nil),                        // 1: Action
 	(*Action_Metadata)(nil),               // 2: Action.Metadata
-	(*Action_Metadata_CIPD)(nil),          // 3: Action.Metadata.CIPD
-	(*Action_Metadata_LUCIExe)(nil),       // 4: Action.Metadata.LUCIExe
-	(*ActionCommand)(nil),                 // 5: ActionCommand
-	(*ActionURLFetch)(nil),                // 6: ActionURLFetch
-	(*ActionGitFetch)(nil),                // 7: ActionGitFetch
-	(*ActionFilesCopy)(nil),               // 8: ActionFilesCopy
-	(*ActionCIPDExport)(nil),              // 9: ActionCIPDExport
-	(*anypb.Any)(nil),                     // 10: google.protobuf.Any
+	(*Action_Metadata_LUCIExe)(nil),       // 3: Action.Metadata.LUCIExe
+	(*Action_Metadata_CIPD)(nil),          // 4: Action.Metadata.CIPD
+	(*Action_Metadata_OCI)(nil),           // 5: Action.Metadata.OCI
+	(*ActionCommand)(nil),                 // 6: ActionCommand
+	(*ActionURLFetch)(nil),                // 7: ActionURLFetch
+	(*ActionGitFetch)(nil),                // 8: ActionGitFetch
+	(*ActionFilesCopy)(nil),               // 9: ActionFilesCopy
+	(*ActionCIPDExport)(nil),              // 10: ActionCIPDExport
+	(*anypb.Any)(nil),                     // 11: google.protobuf.Any
 }
 var file_go_chromium_org_luci_cipkg_core_action_proto_depIdxs = []int32{
 	2,  // 0: Action.metadata:type_name -> Action.Metadata
 	1,  // 1: Action.deps:type_name -> Action
-	5,  // 2: Action.command:type_name -> ActionCommand
-	6,  // 3: Action.url:type_name -> ActionURLFetch
-	7,  // 4: Action.git:type_name -> ActionGitFetch
-	8,  // 5: Action.copy:type_name -> ActionFilesCopy
-	9,  // 6: Action.cipd:type_name -> ActionCIPDExport
-	10, // 7: Action.extension:type_name -> google.protobuf.Any
+	6,  // 2: Action.command:type_name -> ActionCommand
+	7,  // 3: Action.url:type_name -> ActionURLFetch
+	8,  // 4: Action.git:type_name -> ActionGitFetch
+	9,  // 5: Action.copy:type_name -> ActionFilesCopy
+	10, // 6: Action.cipd:type_name -> ActionCIPDExport
+	11, // 7: Action.extension:type_name -> google.protobuf.Any
 	1,  // 8: Action.Metadata.runtime_deps:type_name -> Action
-	3,  // 9: Action.Metadata.cipd:type_name -> Action.Metadata.CIPD
-	4,  // 10: Action.Metadata.luciexe:type_name -> Action.Metadata.LUCIExe
-	0,  // 11: Action.Metadata.CIPD.install_mode:type_name -> Action.Metadata.CIPD.InstallMode
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	3,  // 9: Action.Metadata.luciexe:type_name -> Action.Metadata.LUCIExe
+	4,  // 10: Action.Metadata.cipd:type_name -> Action.Metadata.CIPD
+	5,  // 11: Action.Metadata.oci:type_name -> Action.Metadata.OCI
+	0,  // 12: Action.Metadata.CIPD.install_mode:type_name -> Action.Metadata.CIPD.InstallMode
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cipkg_core_action_proto_init() }
@@ -636,7 +705,7 @@ func file_go_chromium_org_luci_cipkg_core_action_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_cipkg_core_action_proto_rawDesc), len(file_go_chromium_org_luci_cipkg_core_action_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

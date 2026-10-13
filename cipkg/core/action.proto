@@ -58,7 +58,14 @@ message Action {
     // the use of this Action's output.
     repeated Action runtime_deps = 1;
 
-    CIPD cipd = 2;
+    LUCIExe luciexe = 2;
+    message LUCIExe {
+      // step_name is the name of this action when it's being executed under
+      // luciexe framework.
+      string step_name = 1;
+    }
+
+    CIPD cipd = 3;
     message CIPD {
       // Name is the cipd package name for the Action's output.
       string name = 1;
@@ -87,20 +94,22 @@ message Action {
       string version_file = 7;
     }
 
-    LUCIExe luciexe = 3;
-    message LUCIExe {
-      // step_name is the name of this action when it's being executed under
-      // luciexe framework.
-      string step_name = 1;
+    OCI oci = 4;
+    message OCI {
+      // registry is the OCI container registry and repository name for the
+      // Action's output.
+      string registry = 1;
+      // tags is the list of tags should be attached to the OCI image.
+      repeated string tags = 2;
     }
 
     // untrusted signals the package may contain files from external sources
     // that haven't been verified yet. Generators may treat them with extra
     // cautious.
-    bool untrusted = 4;
+    bool untrusted = 97;
 
     // cache_id is the unique id for caching.
-    string cache_id = 5;
+    string cache_id = 98;
 
     // context_info can be used to indicate what this action related to - this
     // can help e.g. differentiate action with same content but comes from
