@@ -706,6 +706,9 @@ export const HistoricalAvailabilityTrendsChart = ({
       sx={{
         borderRadius: 2,
         width: '100%',
+        boxSizing: 'border-box',
+        flexShrink: 0,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
       }}
     >
       <CardHeader
@@ -716,7 +719,7 @@ export const HistoricalAvailabilityTrendsChart = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               flexWrap: 'wrap',
-              gap: 2,
+              gap: 1.5,
               width: '100%',
             }}
           >
@@ -725,14 +728,15 @@ export const HistoricalAvailabilityTrendsChart = ({
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 1.5,
+                  flexWrap: 'wrap',
+                  gap: 1,
                   mb: 0.5,
                 }}
               >
                 <Typography
                   variant="h6"
                   component="h2"
-                  sx={{ fontWeight: 'bold' }}
+                  sx={{ fontWeight: 'bold', fontSize: 16 }}
                 >
                   Fleet Availability & Health Trends
                 </Typography>

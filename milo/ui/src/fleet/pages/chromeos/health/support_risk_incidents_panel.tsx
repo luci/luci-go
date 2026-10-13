@@ -46,7 +46,10 @@ export const SupportRiskIncidentsPanel = ({
         flexDirection: 'column',
         flexGrow: 1,
         height: '100%',
-        minHeight: 0,
+        minHeight: { xs: 260, lg: 0 },
+        maxHeight: { xs: 420, lg: 'none' },
+        boxSizing: 'border-box',
+        borderRadius: 2,
         bgcolor: '#ffffff',
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
       }}

@@ -151,6 +151,9 @@ export const PerformanceRankingCard = ({
         flexGrow: 1,
         height: '100%',
         minHeight: { xs: 560, lg: 0 },
+        maxHeight: { xs: 560, lg: 'none' },
+        boxSizing: 'border-box',
+        borderRadius: 2,
         bgcolor: '#ffffff',
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
       }}
@@ -163,7 +166,7 @@ export const PerformanceRankingCard = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
-              gap: 1.5,
+              gap: 1,
               flexWrap: 'wrap',
             }}
           >
@@ -173,19 +176,34 @@ export const PerformanceRankingCard = ({
                 if (val !== null) setEntityTab(val);
               }}
               aria-label="Performance ranking tabs"
+              sx={{ minHeight: 36 }}
             >
               <Tab
                 value="models"
                 label="Models"
-                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 70 }}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  minWidth: 0,
+                  minHeight: 36,
+                  px: 1.25,
+                  py: 0.5,
+                }}
               />
               <Tab
                 value="pools"
                 label="Pools"
-                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 70 }}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  minWidth: 0,
+                  minHeight: 36,
+                  px: 1.25,
+                  py: 0.5,
+                }}
               />
             </Tabs>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
               <Typography
                 variant="caption"
                 color="text.secondary"
@@ -197,7 +215,7 @@ export const PerformanceRankingCard = ({
               >
                 Sort by:
               </Typography>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
+              <FormControl size="small" sx={{ minWidth: 110 }}>
                 <Select
                   inputProps={{ 'aria-label': 'Sort by' }}
                   size="small"

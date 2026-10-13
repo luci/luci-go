@@ -247,7 +247,7 @@ export const HealthPage = () => {
                 display: 'grid',
                 gridTemplateColumns: { xs: '1fr', lg: '8fr 4fr' },
                 gridTemplateRows: { xs: 'auto', lg: 'minmax(0, 1fr)' },
-                height: { lg: 770 },
+                height: { lg: 860 },
                 gap: 4,
                 mb: 4,
               }}
@@ -260,12 +260,15 @@ export const HealthPage = () => {
                   gap: 4,
                   height: '100%',
                   minHeight: 0,
+                  minWidth: 0,
                 }}
               >
                 <HistoricalAvailabilityTrendsChart filter={activeFilter} />
                 <Box
                   sx={{
-                    flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: { xs: '1 1 auto', lg: '1 1 0' },
                     minHeight: { xs: 260, lg: 0 },
                   }}
                 >
@@ -281,6 +284,7 @@ export const HealthPage = () => {
                   gap: 4,
                   height: '100%',
                   minHeight: 0,
+                  minWidth: 0,
                 }}
               >
                 <PerformanceRankingCard
