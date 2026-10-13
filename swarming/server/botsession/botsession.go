@@ -303,7 +303,6 @@ func CheckSessionToken(ctx context.Context, tok []byte, secret *hmactoken.Secret
 	if dt := clock.Now(ctx).Sub(session.Expiry.AsTime()); dt > 0 {
 		return session, status.Errorf(codes.Unauthenticated, "session token has expired %s ago", dt)
 	}
-
 	return session, nil
 }
 
@@ -320,10 +319,7 @@ func CheckSessionToken(ctx context.Context, tok []byte, secret *hmactoken.Secret
 // was unregistered between the last "/poll" and "/claim" calls).
 func CheckConfigExpiry(ctx context.Context, session *internalspb.Session) error {
 	if dt := clock.Now(ctx).Sub(session.BotConfig.Expiry.AsTime()); dt > 0 {
-		logging.Warningf(ctx, "EXPIRED_BOT_CONFIG: %s ago", dt)
-		LogSession(ctx, session)
-		// TODO: Start returning this error.
-		// return session, status.Errorf(codes.Unauthenticated, "session config has expired %s ago", dt)
+		return status.Errorf(codes.Unauthenticated, "session config has expired %s ago", dt)
 	}
 	return nil
 }
@@ -337,24 +333,13 @@ func CheckConfigExpiry(ctx context.Context, session *internalspb.Session) error 
 func CheckLastSyncTime(ctx context.Context, session *internalspb.Session) error {
 	synced := session.LastSyncTime
 	if synced == nil {
-		logging.Warningf(ctx, "CHECK_LAST_SYNC_TIME: %s: fallback on debug info", session.BotId)
-		synced = session.BotConfig.GetDebugInfo().GetCreated()
+		return status.Errorf(codes.FailedPrecondition, "no last_sync_time in the session")
 	}
-	if synced == nil {
-		logging.Warningf(ctx, "CHECK_LAST_SYNC_TIME: %s: no last sync time at all", session.BotId)
-		// TODO: Start returning an error.
-		return nil
-	}
-
 	age := clock.Now(ctx).Sub(synced.AsTime())
 	logging.Infof(ctx, "%s: Last config sync was %s ago", session.BotId, age)
 	if age > 30*time.Minute {
-		logging.Warningf(ctx, "CHECK_LAST_SYNC_TIME: %s: last sync time was too long ago: %s ago", session.BotId, age)
-		LogSession(ctx, session)
-		// TODO: Start returning an error.
-		return nil
+		return status.Errorf(codes.FailedPrecondition, "the config in the session is stale: last sync time was %s ago", age)
 	}
-
 	return nil
 }
 
