@@ -35,6 +35,7 @@ type mockResultDBClient struct {
 	batchGetWorkUnits     func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error)
 	queryWorkUnits        func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
 	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
+	getInvocation         func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
 }
 
 func (m *mockResultDBClient) QueryTestAggregations(ctx context.Context, in *pb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*pb.QueryTestAggregationsResponse, error) {
@@ -70,6 +71,13 @@ func (m *mockResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRo
 		return m.getRootInvocation(ctx, in)
 	}
 	return &pb.RootInvocation{}, nil
+}
+
+func (m *mockResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+	if m.getInvocation != nil {
+		return m.getInvocation(ctx, in)
+	}
+	return &pb.Invocation{}, nil
 }
 
 func TestModuleDetails(t *testing.T) {
@@ -423,6 +431,39 @@ func TestModuleDetails(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("failed to discover module work units"))
 			assert.Loosely(t, err, should.ErrLike("failed to batch get work units"))
 			assert.Loosely(t, err, should.ErrLike("quota exceeded or network failure"))
+		})
+	})
+
+	ftt.Run(`moduleGetRun`, t, func(t *ftt.Test) {
+		t.Run(`rejects legacy invocation`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					return &pb.Invocation{Name: in.Name}, nil
+				},
+			}
+			r := &moduleGetRun{
+				client:       client,
+				invocationID: "u-swarming-123",
+				moduleName:   "ModA",
+			}
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(1))
+		})
+
+		t.Run(`fails immediately on PermissionDenied`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.PermissionDenied, "caller does not have permission")
+				},
+			}
+			r := &moduleGetRun{
+				client:       client,
+				invocationID: "build-123",
+				moduleName:   "ModA",
+			}
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(1))
 		})
 	})
 }

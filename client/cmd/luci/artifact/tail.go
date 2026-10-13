@@ -67,6 +67,7 @@ func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
 				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
+				// -legacy is now unused and will be removed in the future.
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			} else if parentType == ParentTypeWorkUnit {
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
@@ -74,6 +75,7 @@ func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
 				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
 				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+				// -legacy is now unused and will be removed in the future.
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			}
 			r.Flags.StringVar(&r.artifactID, "artifactid", "", "Artifact ID (e.g. text_log or test.xml)")
@@ -99,7 +101,7 @@ type artifactTailRun struct {
 	lines        int
 	bytes        int64
 	outputFile   string
-	legacy       bool
+	legacy       bool // Unused; will be removed in the future.
 }
 
 func (r *artifactTailRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -134,7 +136,7 @@ func (r *artifactTailRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
-	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, r.legacy, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
+	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 		if r.bytes > 0 {
 			byteRange := &ByteRange{Start: -1, End: r.bytes}
 			_, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, byteRange, out)

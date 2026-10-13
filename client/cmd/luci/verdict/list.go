@@ -38,7 +38,7 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			"By default, only failed or execution errored verdicts are printed, up to 100.\n" +
 			"Flags can be used to include other verdict statuses (e.g. -flaky, -exonerated, -passed, -all-statuses),\n" +
 			"filter by module or test substring (-modulename, -filter), and list more than 100 results (-max-verdicts 200, -all).\n\n" +
-			"Works with root invocations and legacy invocations (using -legacy).",
+			"Works with both root invocations and legacy invocations.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &verdictListRun{af: af, maxVerdicts: 100}
 			if r.af != nil {
@@ -64,6 +64,7 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.BoolVar(&r.includePrecluded, "precluded", false, "Include precluded verdicts")
 			r.Flags.BoolVar(&r.includePrecluded, "include-precluded", false, "Include precluded verdicts (alias)")
 			r.Flags.BoolVar(&r.allStatuses, "all-statuses", false, "Include all verdict statuses")
+			// -legacy is now unused and will be removed in the future.
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
 		},
@@ -73,6 +74,7 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 type verdictListRun struct {
 	subcommands.CommandRunBase
 	af                *base.AuthFlags
+	client            pb.ResultDBClient
 	host              string
 	invocationID      string
 	moduleName        string
@@ -86,7 +88,7 @@ type verdictListRun struct {
 	includeSkipped    bool
 	includePrecluded  bool
 	allStatuses       bool
-	legacy            bool
+	legacy            bool // Unused; will be removed in the future.
 }
 
 type statusFilter struct {
@@ -394,7 +396,10 @@ func QueryRootInvocationListedVerdicts(ctx context.Context, client pb.ResultDBCl
 		}
 		res, err := client.QueryTestVerdicts(ctx, req)
 		if err != nil {
-			return nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s (if this is a legacy invocation, try with -legacy): %w", rootInvName, err)
+			if base.IsPermissionDenied(err) {
+				return nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s (missing ResultDB realm permission): %w", rootInvName, err)
+			}
+			return nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s: %w", rootInvName, err)
 		}
 		for i, tv := range res.TestVerdicts {
 			listed = append(listed, rootVerdictToListed(tv))
@@ -460,7 +465,10 @@ func QueryLegacyInvocationListedVerdicts(ctx context.Context, client pb.ResultDB
 		}
 		res, err := client.QueryTestVariants(ctx, req)
 		if err != nil {
-			return nil, false, errors.Fmt("QueryTestVariants RPC failed for %s (if this is a root invocation, omit -legacy): %w", legacyInvName, err)
+			if base.IsPermissionDenied(err) {
+				return nil, false, errors.Fmt("QueryTestVariants RPC failed for %s (missing ResultDB realm permission): %w", legacyInvName, err)
+			}
+			return nil, false, errors.Fmt("QueryTestVariants RPC failed for %s: %w", legacyInvName, err)
 		}
 		for i, tv := range res.TestVariants {
 			hasEx := tv.StatusOverride == pb.TestVerdict_EXONERATED || len(tv.Exonerations) > 0
@@ -584,27 +592,35 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 	filter.moduleName = strings.TrimSpace(r.moduleName)
 	filter.containsFilter = strings.TrimSpace(r.filter)
 
-	if err := r.af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-		return 1
-	}
-
 	ctx := cli.GetContext(a, r, env)
 	ctx = format.WithDiscoveryCache(ctx)
-	client, _, _, err := r.af.NewResultDBClient(ctx, r.host)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
-		return 1
+	client := r.client
+	if client == nil {
+		if err := r.af.Parse(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			return 1
+		}
+		client, _, _, err = r.af.NewResultDBClient(ctx, r.host)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+			return 1
+		}
 	}
 
-	invID := base.NormalizeInvocation(r.invocationID)
+	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to list verdicts: %s\n", err)
+		return 1
+	}
+	format.CacheResolvedInvocation(ctx, resolved)
+	invID, legacy := resolved.ID, resolved.Legacy
 
 	maxVerdicts := r.maxVerdicts
 	if r.allVerdicts {
 		maxVerdicts = 0
 	}
 
-	verdicts, hasMore, err := QueryVerdictList(ctx, client, invID, filter, r.legacy, maxVerdicts)
+	verdicts, hasMore, err := QueryVerdictList(ctx, client, invID, filter, legacy, maxVerdicts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to list verdicts: %s\n", err)
 		return 1

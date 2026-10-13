@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/errors"
@@ -31,12 +33,28 @@ import (
 
 type mockResultDBClient struct {
 	pb.ResultDBClient
+	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
+	getInvocation         func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
 	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
 	queryWorkUnits        func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
 	getWorkUnit           func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
 	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
 	queryTestResults      func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error)
 	queryTestExonerations func(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error)
+}
+
+func (m *mockResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+	if m.getRootInvocation != nil {
+		return m.getRootInvocation(ctx, in)
+	}
+	return &pb.RootInvocation{Name: in.Name}, nil
+}
+
+func (m *mockResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+	if m.getInvocation != nil {
+		return m.getInvocation(ctx, in)
+	}
+	return &pb.Invocation{Name: in.Name}, nil
 }
 
 func (m *mockResultDBClient) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
@@ -105,6 +123,20 @@ func TestListCmd(t *testing.T) {
 		assert.Loosely(t, unknownRun.Flags.Lookup("testid"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("resultid"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("legacy"), should.NotBeNil)
+
+		t.Run(`fails immediately on PermissionDenied`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.PermissionDenied, "caller does not have permission")
+				},
+			}
+			run := &artifactListRun{
+				client:       client,
+				parentType:   ParentTypeInvocation,
+				invocationID: "build-123",
+			}
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(1))
+		})
 	})
 }
 
@@ -379,7 +411,7 @@ func TestPrintImmediateParentInvocationNotice(t *testing.T) {
 			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Invocation Artifacts:"))
-			assert.Loosely(t, out, should.ContainSubstring("Invocation u-root-123 contains 2 artifacts. Run 'luci artifact list -invocationid u-root-123 -legacy' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation u-root-123 contains 2 artifacts. Run 'luci artifact list -invocationid u-root-123' to view."))
 		})
 
 		t.Run(`singular artifact count and paginated`, func(t *ftt.Test) {

@@ -165,6 +165,25 @@ func cacheFromContext(ctx context.Context) *DiscoveryCache {
 	return nil
 }
 
+// CacheResolvedInvocation stores the retrieved RootInvocation from resolved in the
+// context's DiscoveryCache, if present, avoiding duplicate GetRootInvocation RPCs.
+func CacheResolvedInvocation(ctx context.Context, resolved *base.ResolvedInvocation) {
+	if resolved == nil || resolved.RootInvocation == nil || resolved.ID == "" {
+		return
+	}
+	cache := cacheFromContext(ctx)
+	if cache == nil {
+		return
+	}
+	name := "rootInvocations/" + base.NormalizeInvocation(resolved.ID)
+	cache.mu.Lock()
+	cache.rootInvocations[name] = resolved.RootInvocation
+	if resolved.RootInvocation.Name != "" {
+		cache.rootInvocations[resolved.RootInvocation.Name] = resolved.RootInvocation
+	}
+	cache.mu.Unlock()
+}
+
 func getWorkUnitWithCache(ctx context.Context, client pb.ResultDBClient, name string, cache *DiscoveryCache) *pb.WorkUnit {
 	if cache != nil {
 		cache.mu.RLock()

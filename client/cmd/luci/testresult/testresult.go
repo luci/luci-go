@@ -72,6 +72,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
 			r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Show additional result metadata and tags")
+			// -legacy is now unused and will be removed in the future.
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
 		},
@@ -81,12 +82,13 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 type testResultGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
+	client       pb.ResultDBClient
 	host         string
 	invocationID string
 	testID       string
 	resultID     string
 	showMetadata bool
-	legacy       bool
+	legacy       bool // Unused; will be removed in the future.
 }
 
 // FetchTestResult fetches a test result by its decomposed IDs.
@@ -119,33 +121,45 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
-
-	if err := r.af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-		return 1
-	}
-
 	ctx = format.WithDiscoveryCache(ctx)
-	client, schemasClient, httpClient, err := r.af.NewResultDBClient(ctx, r.host)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
-		return 1
+	client := r.client
+	var schemasClient pb.SchemasClient
+	var httpClient *http.Client
+	if client == nil {
+		if err := r.af.Parse(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			return 1
+		}
+		var err error
+		client, schemasClient, httpClient, err = r.af.NewResultDBClient(ctx, r.host)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+			return 1
+		}
 	}
 
-	res, err := FetchTestResult(ctx, client, r.invocationID, r.testID, r.resultID, r.legacy)
+	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get test result: %s\n", err)
+		return 1
+	}
+	format.CacheResolvedInvocation(ctx, resolved)
+	invID, legacy := resolved.ID, resolved.Legacy
+
+	res, err := FetchTestResult(ctx, client, invID, r.testID, r.resultID, legacy)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get test result: %s\n", err)
 		return 1
 	}
 
-	r.printTestResult(ctx, client, schemasClient, httpClient, res)
+	r.printTestResult(ctx, client, schemasClient, httpClient, invID, res, legacy)
 	return 0
 }
 
-func (r *testResultGetRun) printTestResult(ctx context.Context, client pb.ResultDBClient, schemasClient pb.SchemasClient, httpClient *http.Client, res *pb.TestResult) {
-	aggs := verdict.FetchHierarchyAggregations(ctx, client, r.invocationID, res, r.legacy)
+func (r *testResultGetRun) printTestResult(ctx context.Context, client pb.ResultDBClient, schemasClient pb.SchemasClient, httpClient *http.Client, invID string, res *pb.TestResult, legacy bool) {
+	aggs := verdict.FetchHierarchyAggregations(ctx, client, invID, res, legacy)
 	if c := format.FormatVerdictCountsInline(aggs.GetInvocation()); c != "" {
-		fmt.Printf("Invocation: %s %s\n", r.invocationID, c)
+		fmt.Printf("Invocation: %s %s\n", invID, c)
 	}
 	fmt.Printf("Result ID: %s\n", res.ResultId)
 	format.PrintTestIDWithAggregations(ctx, schemasClient, res, aggs)
@@ -155,7 +169,7 @@ func (r *testResultGetRun) printTestResult(ctx context.Context, client pb.Result
 	pg := format.GetParentGroup(res.Name)
 	if pg.Label != "" {
 		fmt.Printf("Run in:    %s\n", pg.Label)
-		if !r.legacy && pg.ID != "" {
+		if !legacy && pg.ID != "" {
 			modErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, pg.ID)
 			if modErr != nil {
 				firstLine, truncated := format.FormatDiscoveredErrorFirstLine(modErr, 120)
@@ -169,7 +183,7 @@ func (r *testResultGetRun) printTestResult(ctx context.Context, client pb.Result
 			}
 		}
 	}
-	printVerdictContext(ctx, client, r.invocationID, res, r.legacy)
+	printVerdictContext(ctx, client, invID, res, legacy)
 	if res.Variant != nil && len(res.Variant.GetDef()) > 0 {
 		fmt.Printf("Variant:   %s\n", format.FormatVariant(res.Variant))
 	}
@@ -188,12 +202,12 @@ func (r *testResultGetRun) printTestResult(ctx context.Context, client pb.Result
 	}
 	if arts, err := artifact.QueryAllArtifacts(ctx, client, res.Name); err == nil {
 		if len(arts) > 0 {
-			fmt.Printf("Artifact Count: %d (run 'luci test-result artifact list -invocationid %s -testid %q -resultid %s' to view)\n", len(arts), r.invocationID, res.TestId, res.ResultId)
+			fmt.Printf("Artifact Count: %d (run 'luci test-result artifact list -invocationid %s -testid %q -resultid %s' to view)\n", len(arts), invID, res.TestId, res.ResultId)
 		} else {
 			fmt.Printf("Artifact Count: 0\n")
 		}
 	}
-	if r.legacy {
+	if legacy {
 		artifact.PrintImmediateParentInvocationNotice(ctx, client, res.Name, os.Stdout)
 	} else {
 		artifact.PrintAncestorWorkUnitNotices(ctx, client, res.Name, artifact.ParentTypeTestResult, os.Stdout)

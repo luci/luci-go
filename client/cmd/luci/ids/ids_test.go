@@ -705,8 +705,8 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Result ID:         ee50005a-00024\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Artifact ID:       summary_node\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Variant Hash:      a24ef92542e11200\n"))
-			assert.Loosely(t, out, should.ContainSubstring("Legacy:            true (subsequent commands require -legacy)\n"))
-			assert.Loosely(t, out, should.ContainSubstring("Note: This is a legacy invocation. You will need to pass the -legacy flag to subsequent commands (e.g. 'luci verdict', 'luci test-result', 'luci test-result artifact').\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Legacy:            true\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("subsequent commands require -legacy"))
 		})
 
 		t.Run(`Human-readable non-legacy output`, func(t *ftt.Test) {

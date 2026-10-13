@@ -137,7 +137,7 @@ func ResolveArtifactResourceName(ctx context.Context, client pb.ResultDBClient, 
 	return targetName + "/artifacts/" + url.PathEscape(artID), nil
 }
 
-func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile string, parentType ParentType, invID, wuID, testID, resultID, artID string, legacy bool, fetcher artifactFetcher) int {
+func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile string, parentType ParentType, invID, wuID, testID, resultID, artID string, fetcher artifactFetcher) int {
 	if err := af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 		return 1
@@ -149,7 +149,17 @@ func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputF
 		return 1
 	}
 
-	artName, err := ResolveArtifactResourceName(ctx, client, parentType, invID, wuID, testID, resultID, artID, legacy)
+	resolved, err := base.ResolveInvocation(ctx, client, invID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to fetch artifact: %s\n", err)
+		return 1
+	}
+	if resolved.Legacy && parentType == ParentTypeWorkUnit {
+		fmt.Fprintf(os.Stderr, "work unit artifacts are only supported for root invocations (invocation %q is a legacy invocation)\n", resolved.ID)
+		return 1
+	}
+
+	artName, err := ResolveArtifactResourceName(ctx, client, parentType, resolved.ID, wuID, testID, resultID, artID, resolved.Legacy)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
@@ -157,7 +167,11 @@ func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputF
 
 	art, err := client.GetArtifact(ctx, &pb.GetArtifactRequest{Name: artName})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "GetArtifact RPC failed: %s\n", err)
+		if base.IsPermissionDenied(err) {
+			fmt.Fprintf(os.Stderr, "GetArtifact RPC failed (missing ResultDB realm permission): %s\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "GetArtifact RPC failed: %s\n", err)
+		}
 		return 1
 	}
 	if art.FetchUrl == "" {

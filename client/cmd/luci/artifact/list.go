@@ -68,6 +68,7 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
 				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
+				// -legacy is now unused and will be removed in the future.
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			} else if parentType == ParentTypeWorkUnit {
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
@@ -75,6 +76,7 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
 				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
 				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+				// -legacy is now unused and will be removed in the future.
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			}
 			r.Flags.IntVar(&r.maxArtifacts, "max-artifacts", 100, "Maximum number of artifacts to display (default: 100, 0 for all)")
@@ -87,15 +89,16 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 type artifactListRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
+	client       pb.ResultDBClient
 	parentType   ParentType
 	host         string
 	invocationID string
 	testID       string
 	resultID     string
 	workUnitID   string
-	legacy       bool
 	maxArtifacts int
 	allArtifacts bool
+	legacy       bool // Unused; will be removed in the future.
 }
 
 func (r *artifactListRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -107,18 +110,6 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	}
 	if len(args) > 0 {
 		fmt.Fprintf(os.Stderr, "unexpected positional arguments (run 'luci ids <url>' to extract ids)\n")
-		return 1
-	}
-	ctx := cli.GetContext(a, r, env)
-	if err := r.af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-		return 1
-	}
-
-	ctx = format.WithDiscoveryCache(ctx)
-	client, _, _, err := r.af.NewResultDBClient(ctx, r.host)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
 		return 1
 	}
 
@@ -147,7 +138,34 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		}
 	}
 
-	cleanTarget, err := ResolveTargetResourceName(ctx, client, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.legacy)
+	ctx := cli.GetContext(a, r, env)
+	ctx = format.WithDiscoveryCache(ctx)
+	client := r.client
+	if client == nil {
+		if err := r.af.Parse(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			return 1
+		}
+		var err error
+		client, _, _, err = r.af.NewResultDBClient(ctx, r.host)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+			return 1
+		}
+	}
+
+	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to list artifacts: %s\n", err)
+		return 1
+	}
+	format.CacheResolvedInvocation(ctx, resolved)
+	if resolved.Legacy && effectiveParentType == ParentTypeWorkUnit {
+		fmt.Fprintf(os.Stderr, "work unit artifacts are only supported for root invocations (invocation %q is a legacy invocation)\n", resolved.ID)
+		return 1
+	}
+
+	cleanTarget, err := ResolveTargetResourceName(ctx, client, effectiveParentType, resolved.ID, r.workUnitID, r.testID, r.resultID, resolved.Legacy)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
@@ -168,7 +186,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		displayedCount := printArtifactHeader("Test Result", format.FormatTestResultBreadcrumb(cleanTarget), len(trArtifacts), maxArtifacts)
 		format.PrintArtifactList(trArtifacts[:displayedCount])
 
-		if r.legacy {
+		if resolved.Legacy {
 			PrintImmediateParentInvocationNotice(ctx, client, cleanTarget, os.Stdout)
 		} else {
 			PrintAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
@@ -238,7 +256,7 @@ func PrintImmediateParentInvocationNotice(ctx context.Context, client pb.ResultD
 			artLabel = "artifact"
 		}
 		fmt.Fprintln(out, "Invocation Artifacts:")
-		fmt.Fprintf(out, "  - Invocation %s contains %s %s. Run 'luci artifact list -invocationid %s -legacy' to view.\n", leafInvID, countStr, artLabel, leafInvID)
+		fmt.Fprintf(out, "  - Invocation %s contains %s %s. Run 'luci artifact list -invocationid %s' to view.\n", leafInvID, countStr, artLabel, leafInvID)
 		fmt.Fprintln(out)
 	}
 }

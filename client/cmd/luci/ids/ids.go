@@ -58,10 +58,11 @@ type ExtractedIDs struct {
 
 	// builder, buildNumber, and logdogStreamPath are unexported internal fields used during ID extraction
 	// to query Buildbucket for the build ID or canonical step/log names. They are not output.
-	builder          string
-	buildNumber      int
-	logdogStreamPath string
-	legacyResolved   bool
+	builder           string
+	buildNumber       int
+	logdogStreamPath  string
+	lookupMiloVerdict bool
+	miloMatchFunc     func(*pb.TestResult) bool
 }
 
 // IsEmpty returns true if no identifiers were extracted.
@@ -93,10 +94,13 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 			"for use with other commands.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &idsRun{af: af}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.bbHost, "bb-host", chromeinfra.BuildbucketHost, "Buildbucket host")
 			r.Flags.BoolVar(&r.jsonOut, "json", false, "Output extracted IDs in JSON format")
+			// -legacy is now unused and will be removed in the future.
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
 		},
@@ -111,7 +115,7 @@ type idsRun struct {
 	host      string
 	bbHost    string
 	jsonOut   bool
-	legacy    bool
+	legacy    bool // Unused; will be removed in the future.
 }
 
 func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -131,7 +135,7 @@ func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.E
 
 	rdbClient := r.rdbClient
 	bbClient := r.bbClient
-	if rdbClient == nil || bbClient == nil {
+	if r.af != nil && (rdbClient == nil || bbClient == nil) {
 		if err := r.af.Parse(); err == nil {
 			if rdbClient == nil {
 				if c, _, _, errClient := r.af.NewResultDBClient(ctx, r.host); errClient == nil {
@@ -146,7 +150,7 @@ func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.E
 		}
 	}
 
-	extracted, err := ExtractIDs(ctx, rdbClient, bbClient, target, r.legacy)
+	extracted, err := ExtractIDs(ctx, rdbClient, bbClient, target, false)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to extract IDs: %s\n", err)
 		return 1
@@ -221,8 +225,7 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 		fmt.Fprintf(out, "Variant Hash:      %s\n", extracted.VariantHash)
 	}
 	if extracted.Legacy {
-		fmt.Fprintf(out, "Legacy:            true (subsequent commands require -legacy)\n")
-		fmt.Fprintf(out, "\nNote: This is a legacy invocation. You will need to pass the -legacy flag to subsequent commands (e.g. 'luci verdict', 'luci test-result', 'luci test-result artifact').\n")
+		fmt.Fprintf(out, "Legacy:            true\n")
 	}
 
 	return nil
@@ -253,7 +256,7 @@ func ExtractIDs(ctx context.Context, rdbClient pb.ResultDBClient, bbClient grpcp
 		// 2. Milo module URL without test cases: .../modules/<module>
 		if !extractFromMiloModuleURL(clean, extracted) &&
 			// 3. Milo / Chromium structured URL (/modules/.../variants/.../cases/..., /tests/.../variants/...)
-			!extractFromMiloStructuredURL(ctx, rdbClient, clean, legacy, extracted) &&
+			!extractFromMiloStructuredURL(clean, extracted) &&
 			// 4. Milo Invocation and Build URLs (/ui/inv/..., /ui/b/..., /builders/...)
 			!extractFromMiloBuildURL(clean, extracted) &&
 			// 5. Milo Test History URL (/ui/test/:project/:testId)
@@ -286,7 +289,29 @@ func ExtractIDs(ctx context.Context, rdbClient pb.ResultDBClient, bbClient grpcp
 	}
 
 	populateBuildIDFromInvocation(extracted)
-	resolveLegacy(ctx, rdbClient, extracted, legacy)
+
+	if rdbClient != nil && extracted.InvocationID != "" {
+		if resolved, err := base.ResolveInvocation(ctx, rdbClient, extracted.InvocationID); err == nil && resolved != nil {
+			extracted.Legacy = resolved.Legacy
+		}
+	} else if legacy {
+		extracted.Legacy = true
+	}
+
+	if extracted.lookupMiloVerdict && rdbClient != nil && extracted.InvocationID != "" {
+		results, _, _, errQuery := verdict.QueryVerdictResultsAndExonerations(ctx, rdbClient, extracted.InvocationID, extracted.TestID, extracted.VariantHash, extracted.Legacy, 1000)
+		if errQuery == nil {
+			for _, tr := range results {
+				if extracted.miloMatchFunc == nil || extracted.miloMatchFunc(tr) {
+					extracted.TestID = tr.TestId
+					if extracted.ResultID == "" {
+						extracted.ResultID = tr.ResultId
+					}
+					break
+				}
+			}
+		}
+	}
 
 	return extracted, nil
 }
@@ -428,7 +453,7 @@ func extractFromMiloModuleURL(clean string, extracted *ExtractedIDs) bool {
 // extractFromMiloStructuredURL handles Milo test investigation URLs:
 // - Structured URLs: .../modules/.../schemes/.../variants/.../cases/...
 // - Old/legacy URLs: .../tests/.../variants/...
-func extractFromMiloStructuredURL(ctx context.Context, client pb.ResultDBClient, clean string, legacy bool, extracted *ExtractedIDs) bool {
+func extractFromMiloStructuredURL(clean string, extracted *ExtractedIDs) bool {
 	if !strings.Contains(clean, "/variants/") || (!strings.Contains(clean, "/modules/") && !strings.Contains(clean, "/cases/") && !strings.Contains(clean, "/tests/")) {
 		return false
 	}
@@ -459,23 +484,8 @@ func extractFromMiloStructuredURL(ctx context.Context, client pb.ResultDBClient,
 		}
 	}
 
-	resolveLegacy(ctx, client, extracted, legacy)
-
-	// If ResultDB client available, resolve canonical TestID and ResultID
-	if client != nil && extracted.InvocationID != "" {
-		results, _, _, errQuery := verdict.QueryVerdictResultsAndExonerations(ctx, client, extracted.InvocationID, extracted.TestID, variantHash, extracted.Legacy, 1000)
-		if errQuery == nil {
-			for _, tr := range results {
-				if matchFunc == nil || matchFunc(tr) {
-					extracted.TestID = tr.TestId
-					if extracted.ResultID == "" {
-						extracted.ResultID = tr.ResultId
-					}
-					break
-				}
-			}
-		}
-	}
+	extracted.lookupMiloVerdict = true
+	extracted.miloMatchFunc = matchFunc
 
 	return true
 }
@@ -968,21 +978,6 @@ func extractFromInvocationResourceName(clean string, extracted *ExtractedIDs) bo
 		return true
 	}
 	return false
-}
-
-func resolveLegacy(ctx context.Context, client pb.ResultDBClient, extracted *ExtractedIDs, legacy bool) {
-	if extracted == nil || extracted.legacyResolved {
-		return
-	}
-	if extracted.Legacy || legacy {
-		extracted.Legacy = true
-		extracted.legacyResolved = true
-		return
-	}
-	if client != nil && extracted.InvocationID != "" {
-		extracted.Legacy = base.IsLegacyInvocation(ctx, client, extracted.InvocationID)
-		extracted.legacyResolved = true
-	}
 }
 
 func queryAntsResultDBVerdict(ctx context.Context, client pb.ResultDBClient, rootInvID string, info *base.AntsTestResultInfo) ([]*pb.TestResult, []*pb.TestExoneration, error) {

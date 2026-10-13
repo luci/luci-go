@@ -23,6 +23,8 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -32,8 +34,24 @@ import (
 
 type mockListResultDBClient struct {
 	pb.ResultDBClient
+	getRootInvocation func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
+	getInvocation     func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
 	queryTestVerdicts func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
 	queryTestVariants func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error)
+}
+
+func (m *mockListResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+	if m.getRootInvocation != nil {
+		return m.getRootInvocation(ctx, in)
+	}
+	return &pb.RootInvocation{Name: in.Name}, nil
+}
+
+func (m *mockListResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+	if m.getInvocation != nil {
+		return m.getInvocation(ctx, in)
+	}
+	return &pb.Invocation{Name: in.Name}, nil
 }
 
 func (m *mockListResultDBClient) QueryTestVerdicts(ctx context.Context, in *pb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*pb.QueryTestVerdictsResponse, error) {
@@ -410,6 +428,59 @@ func TestPrintListedVerdicts(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Variant: builder=linux-rel os=Ubuntu-22.04 (hash: vhash1)"))
 			assert.Loosely(t, out, should.ContainSubstring("Error: Short single-line error"))
 			assert.Loosely(t, out, should.ContainSubstring("Exoneration: Failed on mainline [OCCURS_ON_MAINLINE]"))
+		})
+	})
+}
+
+func TestVerdictListRunAutoDetect(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`verdictListRun auto-detection`, t, func(t *ftt.Test) {
+		t.Run(`auto-detects legacy build when GetRootInvocation returns NotFound`, func(t *ftt.Test) {
+			legacyQueried := false
+			client := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					return &pb.Invocation{Name: in.Name}, nil
+				},
+				queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+					legacyQueried = true
+					return &pb.QueryTestVariantsResponse{}, nil
+				},
+			}
+			run := &verdictListRun{
+				client:       client,
+				invocationID: "8697111068122866129",
+				maxVerdicts:  10,
+			}
+			_ = captureStdout(func() {
+				rc := run.Run(nil, nil, nil)
+				assert.Loosely(t, rc, should.Equal(0))
+			})
+			assert.Loosely(t, legacyQueried, should.BeTrue)
+		})
+
+		t.Run(`fails immediately on PermissionDenied without falling back to legacy`, func(t *ftt.Test) {
+			legacyQueried := false
+			client := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.PermissionDenied, "caller does not have permission")
+				},
+				queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+					legacyQueried = true
+					return &pb.QueryTestVariantsResponse{}, nil
+				},
+			}
+			run := &verdictListRun{
+				client:       client,
+				invocationID: "build-123",
+				maxVerdicts:  10,
+			}
+			rc := run.Run(nil, nil, nil)
+			assert.Loosely(t, rc, should.Equal(1))
+			assert.Loosely(t, legacyQueried, should.BeFalse)
 		})
 	})
 }

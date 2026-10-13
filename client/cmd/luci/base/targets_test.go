@@ -15,12 +15,38 @@
 package base
 
 import (
+	"context"
 	"testing"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+type mockTargetsResultDBClient struct {
+	pb.ResultDBClient
+	getRootInvocation func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error)
+	getInvocation     func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error)
+}
+
+func (m *mockTargetsResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+	if m.getRootInvocation != nil {
+		return m.getRootInvocation(ctx, in, opts...)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
+}
+
+func (m *mockTargetsResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+	if m.getInvocation != nil {
+		return m.getInvocation(ctx, in, opts...)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
+}
 
 func TestTargets(t *testing.T) {
 	ftt.Run("Targets parsing and formatting", t, func(t *ftt.Test) {
@@ -55,6 +81,7 @@ func TestTargets(t *testing.T) {
 			assert.Loosely(t, NormalizeInvocation("b8676886509240051393"), should.Equal("build-8676886509240051393"))
 			assert.Loosely(t, NormalizeInvocation("8676886509240051393"), should.Equal("build-8676886509240051393"))
 			assert.Loosely(t, NormalizeInvocation("I77100010600769898"), should.Equal("ants-i77100010600769898"))
+			assert.Loosely(t, NormalizeInvocation("i77100010600769898"), should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, NormalizeInvocation("ants-I77100010600769898"), should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, NormalizeInvocation("invocations/build-123"), should.Equal("build-123"))
 			assert.Loosely(t, NormalizeInvocation("rootInvocations/build-123"), should.Equal("build-123"))
@@ -64,6 +91,70 @@ func TestTargets(t *testing.T) {
 			assert.Loosely(t, NormalizeWorkUnit("WU17100269020689387"), should.Equal("ants-wu17100269020689387"))
 			assert.Loosely(t, NormalizeWorkUnit("wu17100269020689387"), should.Equal("ants-wu17100269020689387"))
 			assert.Loosely(t, NormalizeWorkUnit("workUnits/wu-1"), should.Equal("wu-1"))
+		})
+
+		t.Run("ResolveInvocation", func(t *ftt.Test) {
+			ctx := context.Background()
+
+			t.Run("Queries both GetRootInvocation and GetInvocation in parallel and returns RootInvocation when found", func(t *ftt.Test) {
+				expectedRoot := &pb.RootInvocation{Name: "rootInvocations/ants-i77100010600769898", SummaryMarkdown: "root summary"}
+				client := &mockTargetsResultDBClient{
+					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+						return expectedRoot, nil
+					},
+					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+						return nil, status.Error(codes.NotFound, "not found")
+					},
+				}
+				resolved, err := ResolveInvocation(ctx, client, "I77100010600769898")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resolved.ID, should.Equal("ants-i77100010600769898"))
+				assert.Loosely(t, resolved.Legacy, should.BeFalse)
+				assert.Loosely(t, resolved.RootInvocation, should.Equal(expectedRoot))
+			})
+
+			t.Run("Resolves legacy Invocation when GetRootInvocation returns NotFound", func(t *ftt.Test) {
+				expectedLegacy := &pb.Invocation{Name: "invocations/build-8697111068122866129"}
+				client := &mockTargetsResultDBClient{
+					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+						return nil, status.Error(codes.NotFound, "root not found")
+					},
+					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+						return expectedLegacy, nil
+					},
+				}
+				resolved, err := ResolveInvocation(ctx, client, "8697111068122866129")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resolved.ID, should.Equal("build-8697111068122866129"))
+				assert.Loosely(t, resolved.Legacy, should.BeTrue)
+				assert.Loosely(t, resolved.Invocation, should.Equal(expectedLegacy))
+			})
+
+			t.Run("PermissionDenied on GetRootInvocation fails immediately", func(t *ftt.Test) {
+				client := &mockTargetsResultDBClient{
+					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+						return nil, status.Error(codes.PermissionDenied, "caller does not have permission resultdb.rootInvocations.get")
+					},
+					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+						return nil, status.Error(codes.NotFound, "not found")
+					},
+				}
+				_, err := ResolveInvocation(ctx, client, "build-123")
+				assert.Loosely(t, err, should.ErrLike("missing ResultDB realm permission"))
+			})
+
+			t.Run("PermissionDenied on GetInvocation fails immediately", func(t *ftt.Test) {
+				client := &mockTargetsResultDBClient{
+					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+						return nil, status.Error(codes.NotFound, "not found")
+					},
+					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+						return nil, status.Error(codes.PermissionDenied, "caller does not have permission resultdb.invocations.get")
+					},
+				}
+				_, err := ResolveInvocation(ctx, client, "build-123")
+				assert.Loosely(t, err, should.ErrLike("missing ResultDB realm permission"))
+			})
 		})
 	})
 }

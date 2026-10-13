@@ -75,6 +75,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.IntVar(&r.maxResults, "max-results", 10, "Maximum number of results to display (default: 10, 0 for all)")
 			r.Flags.BoolVar(&r.allResults, "all", false, "Show all results without truncation")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Additionally print test metadata, tags, and properties")
+			// -legacy is now unused and will be removed in the future.
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			return r
 		},
@@ -84,6 +85,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 type verdictGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
+	client       pb.ResultDBClient
 	host         string
 	invocationID string
 	testID       string
@@ -91,7 +93,7 @@ type verdictGetRun struct {
 	maxResults   int
 	allResults   bool
 	showMetadata bool
-	legacy       bool
+	legacy       bool // Unused; will be removed in the future.
 }
 
 func ParseVerdictName(name string) (invName, variantHash, testIDRegexp string, matchFunc func(*pb.TestResult) bool, err error) {
@@ -184,7 +186,10 @@ func queryRootInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, 
 		}
 		res, err := client.QueryTestVerdicts(ctx, req)
 		if err != nil {
-			return nil, nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s (if this is a legacy invocation, try with -legacy): %w", rootInvName, err)
+			if base.IsPermissionDenied(err) {
+				return nil, nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s (missing ResultDB realm permission): %w", rootInvName, err)
+			}
+			return nil, nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s: %w", rootInvName, err)
 		}
 		for _, tv := range res.TestVerdicts {
 			for _, tr := range tv.Results {
@@ -275,6 +280,9 @@ func queryLegacyInvocationVerdicts(ctx context.Context, client pb.ResultDBClient
 		}
 		res, err := client.QueryTestResults(ctx, req)
 		if err != nil {
+			if base.IsPermissionDenied(err) {
+				return nil, nil, false, errors.Fmt("QueryTestResults RPC failed for %s (missing ResultDB realm permission): %w", legacyInvName, err)
+			}
 			return nil, nil, false, errors.Fmt("QueryTestResults RPC failed for %s: %w", legacyInvName, err)
 		}
 		for _, tr := range res.TestResults {
@@ -341,25 +349,38 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		return 1
 	}
 
-	if err := r.af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-		return 1
-	}
-
 	ctx := cli.GetContext(a, r, env)
 	ctx = format.WithDiscoveryCache(ctx)
-	client, schemasClient, httpClient, err := r.af.NewResultDBClient(ctx, r.host)
+	client := r.client
+	var schemasClient pb.SchemasClient
+	var httpClient *http.Client
+	if client == nil {
+		if err := r.af.Parse(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			return 1
+		}
+		var err error
+		client, schemasClient, httpClient, err = r.af.NewResultDBClient(ctx, r.host)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+			return 1
+		}
+	}
+
+	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+		fmt.Fprintf(os.Stderr, "failed to query verdict: %s\n", err)
 		return 1
 	}
+	format.CacheResolvedInvocation(ctx, resolved)
+	invID, legacy := resolved.ID, resolved.Legacy
 
 	maxFetch := 0
 	if !r.allResults && r.maxResults > 0 {
 		maxFetch = r.maxResults
 	}
 
-	verdictResults, exList, hasMore, err := QueryVerdictResultsAndExonerations(ctx, client, r.invocationID, r.testID, r.variantHash, r.legacy, maxFetch)
+	verdictResults, exList, hasMore, err := QueryVerdictResultsAndExonerations(ctx, client, invID, r.testID, r.variantHash, legacy, maxFetch)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to query verdict: %s\n", err)
 		return 1
@@ -369,9 +390,9 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 			modName := strings.TrimSuffix(r.testID, "#.")
 			modName = strings.TrimSuffix(modName, ".#")
 			modName = strings.TrimPrefix(modName, ":")
-			fmt.Fprintf(os.Stderr, "no results found for test %q in invocation %q (if this was a module error, try: luci module get -invocationid %s -modulename %s)\n", r.testID, r.invocationID, r.invocationID, modName)
+			fmt.Fprintf(os.Stderr, "no results found for test %q in invocation %q (if this was a module error, try: luci module get -invocationid %s -modulename %s)\n", r.testID, invID, invID, modName)
 		} else {
-			fmt.Fprintf(os.Stderr, "no results found for test %q in invocation %q\n", r.testID, r.invocationID)
+			fmt.Fprintf(os.Stderr, "no results found for test %q in invocation %q\n", r.testID, invID)
 		}
 		return 1
 	}
@@ -384,7 +405,7 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		HasMore:      hasMore,
 	}
 
-	printVerdictSummary(ctx, schemasClient, client, httpClient, r.invocationID, vg, r.showMetadata, r.legacy)
+	printVerdictSummary(ctx, schemasClient, client, httpClient, invID, vg, r.showMetadata, legacy)
 	return 0
 }
 

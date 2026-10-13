@@ -16,6 +16,7 @@ package workunit
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/maruel/subcommands"
@@ -63,7 +64,9 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 		LongDesc:  "Get details of a work unit by its root invocation ID and work unit ID.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &workUnitGetRun{af: af}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Root invocation ID (e.g. build-867... or ants-i...)")
 			r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
@@ -76,6 +79,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 type workUnitGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
+	client       pb.ResultDBClient
 	host         string
 	invocationID string
 	workUnitID   string
@@ -97,24 +101,45 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		fmt.Fprintf(os.Stderr, "flags -invocationid and -workunitid are required (run 'luci ids <url>' to extract ids)\n")
 		return 1
 	}
+
 	ctx := cli.GetContext(a, r, env)
-	clean := base.FormatWorkUnitResourceName(r.invocationID, r.workUnitID)
-
-	if err := r.af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-		return 1
-	}
-
 	ctx = format.WithDiscoveryCache(ctx)
-	client, _, httpClient, err := r.af.NewResultDBClient(ctx, r.host)
+	client := r.client
+	var httpClient *http.Client
+	if client == nil {
+		if err := r.af.Parse(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			return 1
+		}
+		var err error
+		client, _, httpClient, err = r.af.NewResultDBClient(ctx, r.host)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+			return 1
+		}
+	}
+
+	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+		fmt.Fprintf(os.Stderr, "failed to get work unit: %s\n", err)
 		return 1
 	}
+	format.CacheResolvedInvocation(ctx, resolved)
+	invID, legacy := resolved.ID, resolved.Legacy
+	if legacy {
+		fmt.Fprintf(os.Stderr, "work units are only supported for root invocations (invocation %q is a legacy invocation)\n", invID)
+		return 1
+	}
+
+	clean := base.FormatWorkUnitResourceName(invID, r.workUnitID)
 
 	wu, err := client.GetWorkUnit(ctx, &pb.GetWorkUnitRequest{Name: clean})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "GetWorkUnit RPC failed: %s\n", err)
+		if base.IsPermissionDenied(err) {
+			fmt.Fprintf(os.Stderr, "GetWorkUnit RPC failed (missing ResultDB realm permission): %s\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "GetWorkUnit RPC failed: %s\n", err)
+		}
 		return 1
 	}
 

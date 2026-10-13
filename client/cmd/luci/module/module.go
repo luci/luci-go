@@ -67,7 +67,9 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			"  $ luci module get -invocationid ants-i14600010609614895 -modulename CellBroadcastReceiverMTS",
 		CommandRun: func() subcommands.CommandRun {
 			r := &moduleGetRun{af: af}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Root invocation ID (e.g. ants-i... or build-867...)")
 			r.Flags.StringVar(&r.moduleName, "modulename", "", "Module name (e.g. CellBroadcastReceiverMTS)")
@@ -82,6 +84,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 type moduleGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
+	client       pb.ResultDBClient
 	host         string
 	invocationID string
 	moduleName   string
@@ -106,19 +109,34 @@ func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcomm
 	}
 
 	ctx := cli.GetContext(a, r, env)
-	if err := r.af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-		return 1
-	}
-
 	ctx = format.WithDiscoveryCache(ctx)
-	client, _, httpClient, err := r.af.NewResultDBClient(ctx, r.host)
+	client := r.client
+	var httpClient *http.Client
+	if client == nil {
+		if err := r.af.Parse(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			return 1
+		}
+		var err error
+		client, _, httpClient, err = r.af.NewResultDBClient(ctx, r.host)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+			return 1
+		}
+	}
+
+	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+		fmt.Fprintf(os.Stderr, "failed to fetch module details: %s\n", err)
+		return 1
+	}
+	format.CacheResolvedInvocation(ctx, resolved)
+	if resolved.Legacy {
+		fmt.Fprintf(os.Stderr, "modules are only supported for root invocations (invocation %q is a legacy invocation)\n", resolved.ID)
 		return 1
 	}
 
-	modDetails, err := FetchModuleDetails(ctx, client, httpClient, r.invocationID, r.moduleName)
+	modDetails, err := FetchModuleDetails(ctx, client, httpClient, resolved.ID, r.moduleName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to fetch module details: %s\n", err)
 		return 1
@@ -193,6 +211,9 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 
 	resAgg, errAgg := client.QueryTestAggregations(ctx, reqAgg)
 	if errAgg != nil {
+		if base.IsPermissionDenied(errAgg) {
+			return nil, errors.Fmt("failed to query test aggregations for %s (missing ResultDB realm permission): %w", rootInvName, errAgg)
+		}
 		return nil, errors.Fmt("failed to query test aggregations for %s: %w", rootInvName, errAgg)
 	}
 	if resAgg != nil {

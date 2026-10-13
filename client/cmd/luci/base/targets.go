@@ -15,12 +15,107 @@
 package base
 
 import (
+	"context"
 	"net/url"
 	"strings"
+	"sync"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// IsPermissionDenied reports whether err has a PermissionDenied gRPC or appstatus code.
+func IsPermissionDenied(err error) bool {
+	if err == nil {
+		return false
+	}
+	code := status.Code(err)
+	if code == codes.Unknown {
+		code = appstatus.Code(err)
+	}
+	return code == codes.PermissionDenied
+}
+
+// ResolvedInvocation holds the normalized invocation ID, whether it is a legacy
+// invocation, and the retrieved RootInvocation or legacy Invocation proto.
+type ResolvedInvocation struct {
+	ID             string
+	Legacy         bool
+	RootInvocation *pb.RootInvocation
+	Invocation     *pb.Invocation
+}
+
+// ResolveInvocation normalizes rawInvID and queries ResultDB for both the
+// RootInvocation and legacy Invocation in parallel to determine whether the
+// target is a RootInvocation or a legacy Invocation, returning the retrieved
+// invocation proto along with the resolved legacy status.
+//
+// If either probe returns codes.PermissionDenied, the PermissionDenied error is
+// returned immediately.
+func ResolveInvocation(ctx context.Context, client pb.ResultDBClient, rawInvID string) (*ResolvedInvocation, error) {
+	normalized := NormalizeInvocation(rawInvID)
+	if client == nil || normalized == "" {
+		return &ResolvedInvocation{ID: normalized}, nil
+	}
+
+	probeCtx := logging.SetLevel(ctx, logging.Error)
+	var (
+		rootInv   *pb.RootInvocation
+		rootErr   error
+		legacyInv *pb.Invocation
+		legacyErr error
+		wg        sync.WaitGroup
+	)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		rootInv, rootErr = client.GetRootInvocation(probeCtx, &pb.GetRootInvocationRequest{
+			Name: "rootInvocations/" + normalized,
+		})
+	}()
+	go func() {
+		defer wg.Done()
+		legacyInv, legacyErr = client.GetInvocation(probeCtx, &pb.GetInvocationRequest{
+			Name: "invocations/" + normalized,
+		})
+	}()
+	wg.Wait()
+
+	if rootErr == nil {
+		return &ResolvedInvocation{
+			ID:             normalized,
+			Legacy:         false,
+			RootInvocation: rootInv,
+			Invocation:     legacyInv,
+		}, nil
+	}
+	if IsPermissionDenied(rootErr) {
+		return nil, errors.Fmt("permission denied for rootInvocations/%s (missing ResultDB realm permission): %w", normalized, rootErr)
+	}
+	if legacyErr == nil {
+		return &ResolvedInvocation{
+			ID:         normalized,
+			Legacy:     true,
+			Invocation: legacyInv,
+		}, nil
+	}
+	if IsPermissionDenied(legacyErr) {
+		return nil, errors.Fmt("permission denied for invocations/%s (missing ResultDB realm permission): %w", normalized, legacyErr)
+	}
+
+	return &ResolvedInvocation{
+		ID:     normalized,
+		Legacy: false,
+	}, nil
+}
+
 // NormalizeInvocation strips "rootInvocations/" or "invocations/" prefix from an invocation ID.
-// If the invocation ID is an AnTS invocation (I<digits>), it is normalized to ants-i<digits>.
+// If the invocation ID is an AnTS invocation (I<digits> or i<digits>), it is normalized to ants-i<digits>.
 // If the invocation ID starts with a digit, it is normalized to build-<id>.
 func NormalizeInvocation(inv string) string {
 	inv = strings.TrimSpace(inv)
@@ -32,7 +127,7 @@ func NormalizeInvocation(inv string) string {
 	if strings.HasPrefix(inv, "i") && len(inv) > 1 && isAllDigits(inv[1:]) {
 		return "ants-i" + inv[1:]
 	}
-	if strings.HasPrefix(inv, "ants-I") {
+	if strings.HasPrefix(strings.ToLower(inv), "ants-i") && len(inv) > 6 && isAllDigits(inv[6:]) {
 		return "ants-i" + inv[6:]
 	}
 	if strings.HasPrefix(inv, "b") && len(inv) > 1 && isAllDigits(inv[1:]) {

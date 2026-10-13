@@ -23,6 +23,8 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -33,12 +35,32 @@ import (
 
 type mockResultDBClient struct {
 	pb.ResultDBClient
+	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
+	getInvocation         func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
 	getTestResult         func(ctx context.Context, in *pb.GetTestResultRequest) (*pb.TestResult, error)
 	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
 	queryTestResults      func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error)
 	queryTestExonerations func(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error)
 	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
 	queryWorkUnits        func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
+}
+
+func (m *mockResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+	if m.getRootInvocation != nil {
+		return m.getRootInvocation(ctx, in)
+	}
+	return &pb.RootInvocation{Name: in.Name}, nil
+}
+
+func (m *mockResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+	if m.getInvocation != nil {
+		return m.getInvocation(ctx, in)
+	}
+	return &pb.Invocation{Name: in.Name}, nil
+}
+
+func (m *mockResultDBClient) QueryTestAggregations(ctx context.Context, in *pb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*pb.QueryTestAggregationsResponse, error) {
+	return &pb.QueryTestAggregationsResponse{}, nil
 }
 
 func (m *mockResultDBClient) GetTestResult(ctx context.Context, in *pb.GetTestResultRequest, opts ...grpc.CallOption) (*pb.TestResult, error) {
@@ -76,16 +98,8 @@ func (m *mockResultDBClient) ListArtifacts(ctx context.Context, in *pb.ListArtif
 	return &pb.ListArtifactsResponse{}, nil
 }
 
-func (m *mockResultDBClient) QueryTestAggregations(ctx context.Context, in *pb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*pb.QueryTestAggregationsResponse, error) {
-	return &pb.QueryTestAggregationsResponse{}, nil
-}
-
 func (m *mockResultDBClient) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
 	return &pb.WorkUnit{Name: in.Name}, nil
-}
-
-func (m *mockResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
-	return &pb.RootInvocation{Name: in.Name}, nil
 }
 
 func (m *mockResultDBClient) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
@@ -203,6 +217,28 @@ func TestFetchTestResult(t *testing.T) {
 			assert.Loosely(t, tr.ResultId, should.Equal("res1"))
 			assert.Loosely(t, tr.Name, should.Equal("rootInvocations/ants-i123/workUnits/wu-1/tests/test1/results/res1"))
 		})
+
+		t.Run(`testResultGetRun fails immediately on PermissionDenied`, func(t *ftt.Test) {
+			legacyQueried := false
+			client := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.PermissionDenied, "caller does not have permission")
+				},
+				queryTestResults: func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+					legacyQueried = true
+					return &pb.QueryTestResultsResponse{}, nil
+				},
+			}
+			run := &testResultGetRun{
+				client:       client,
+				invocationID: "build-123",
+				testID:       "test1",
+				resultID:     "res1",
+			}
+			rc := run.Run(nil, nil, nil)
+			assert.Loosely(t, rc, should.Equal(1))
+			assert.Loosely(t, legacyQueried, should.BeFalse)
+		})
 	})
 }
 
@@ -250,7 +286,7 @@ func TestPrintTestResult(t *testing.T) {
 
 			run := &testResultGetRun{invocationID: "ants-i123"}
 			out := captureStdout(func() {
-				run.printTestResult(ctx, client, nil, nil, res)
+				run.printTestResult(ctx, client, nil, nil, "ants-i123", res, false)
 			})
 
 			assert.Loosely(t, out, should.ContainSubstring(`Artifact Count: 1 (run 'luci test-result artifact list -invocationid ants-i123 -testid "test1" -resultid res1' to view)`))
@@ -291,7 +327,7 @@ func TestPrintTestResult(t *testing.T) {
 
 			run := &testResultGetRun{invocationID: "ants-i123"}
 			out := captureStdout(func() {
-				run.printTestResult(ctx, client, nil, nil, res)
+				run.printTestResult(ctx, client, nil, nil, "ants-i123", res, false)
 			})
 
 			assert.Loosely(t, out, should.ContainSubstring("Artifact Count: 0\n"))
