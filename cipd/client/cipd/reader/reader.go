@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -563,7 +564,7 @@ func (inst *packageInstance) open(ctx context.Context, opts OpenInstanceOpts) er
 		inst.files = append(inst.files, vf)
 	}
 
-	return nil
+	return validateFiles(inst.files)
 }
 
 func (inst *packageInstance) Pin() common.Pin {
@@ -594,6 +595,46 @@ func IsCorruptionError(err error) bool {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities.
+
+// validateFiles checks that all file names in the package are clean, unique,
+// and do not traverse through symlinks in the package.
+func validateFiles(files []fs.File) error {
+	seen := make(map[string]bool, len(files))
+	symlinks := make(map[string]string) // lowercase path -> original symlink path
+	lowerFiles := make([]string, len(files))
+
+	for i, f := range files {
+		name := f.Name()
+		if !fs.IsCleanSlashPath(name) {
+			return cipderr.BadArgument.Apply(errors.Fmt("invalid file name %q", name))
+		}
+		if seen[name] {
+			return cipderr.BadArgument.Apply(errors.Fmt("duplicate file %q", name))
+		}
+		seen[name] = true
+		lower := strings.ToLower(name)
+		lowerFiles[i] = lower
+		if f.Symlink() {
+			symlinks[lower] = name
+		}
+	}
+
+	if len(symlinks) == 0 {
+		return nil
+	}
+
+	slices.Sort(lowerFiles)
+	for sym, origName := range symlinks {
+		if i, _ := slices.BinarySearch(lowerFiles, sym); i+1 < len(lowerFiles) && lowerFiles[i+1] == sym {
+			return cipderr.BadArgument.Apply(errors.Fmt("file %q collides with symlink %q", sym, origName))
+		}
+		prefix := sym + "/"
+		if i, _ := slices.BinarySearch(lowerFiles, prefix); i < len(lowerFiles) && strings.HasPrefix(lowerFiles[i], prefix) {
+			return cipderr.BadArgument.Apply(errors.Fmt("file %q is inside a symlink %q", lowerFiles[i], origName))
+		}
+	}
+	return nil
+}
 
 // calculateHash reads the entire file, passing it through the digester.
 func calculateHash(ctx context.Context, src pkg.Source, h hash.Hash) error {
