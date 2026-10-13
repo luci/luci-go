@@ -32,6 +32,10 @@ import { useLocalStorage } from 'react-use';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
+import {
+  SubMetricList,
+  SummaryHeaderTitle,
+} from '@/fleet/components/summary_header/summary_header_layout';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { METRICS_COLUMN_STYLE } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
@@ -217,16 +221,7 @@ export function AndroidHealthSummaryHeader({
     avg7dVal?: number | null,
     avg30dVal?: number | null,
   ) => (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        mt: 0.5,
-        mb: 2,
-        px: 0.5,
-        gap: 0.5,
-      }}
-    >
+    <SubMetricList>
       <SmallMetricItem
         ariaLabel="7 days avg"
         label={
@@ -263,7 +258,7 @@ export function AndroidHealthSummaryHeader({
             : `${(val * 100).toFixed(2)}%`
         }
       />
-    </Box>
+    </SubMetricList>
   );
 
   const automatedMaintenanceBucket: HealthCategoryBucket = {
@@ -343,9 +338,7 @@ export function AndroidHealthSummaryHeader({
   if (healthQuery.isError) {
     return (
       <MetricsContainer>
-        <Typography variant="h6" sx={{ mb: 2, color: colors.dark }}>
-          Device Health Metrics
-        </Typography>
+        <SummaryHeaderTitle>Device Health Metrics</SummaryHeaderTitle>
         <Alert severity="error">
           {getErrorMessage(healthQuery.error, 'get the metrics')}
         </Alert>
@@ -360,12 +353,12 @@ export function AndroidHealthSummaryHeader({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          mb: 1.5,
+          mb: 1,
         }}
       >
-        <Typography variant="h6" sx={{ color: colors.dark }}>
+        <SummaryHeaderTitle sx={{ mb: 0 }}>
           Device Health Metrics
-        </Typography>
+        </SummaryHeaderTitle>
         <FormControlLabel
           className="health-metrics-toggle"
           control={
@@ -610,22 +603,13 @@ export function AndroidHealthSummaryHeader({
                     }
                   />
                   {(showAllStates || bucketConfig.alwaysShowBreakdown) && (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        mt: 0.5,
-                        mb: 2,
-                        px: 0.5,
-                        gap: 0.5,
-                      }}
-                    >
+                    <SubMetricList>
                       {renderStatusBreakdown(
                         bucketConfig.bucket,
                         bucketConfig.categoryKeys,
                         bucketConfig.alwaysShowBreakdown,
                       )}
-                    </Box>
+                    </SubMetricList>
                   )}
                 </Grid>
               ))}

@@ -22,6 +22,10 @@ import { useQuery } from '@tanstack/react-query';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
+import {
+  SubMetricList,
+  SummaryHeaderTitle,
+} from '@/fleet/components/summary_header/summary_header_layout';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { getMetricsGridStyles } from '@/fleet/constants/styles';
@@ -128,7 +132,6 @@ export function ChromeOSSummaryHeader({
     error: theme.palette.error.main,
     warning: theme.palette.warning.main,
     grey: theme.palette.grey[400],
-    dark: theme.palette.text.primary,
     reserved: fleetColors.purple[400],
   };
 
@@ -244,9 +247,7 @@ export function ChromeOSSummaryHeader({
                 })
               }
             />
-            <Box
-              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
-            >
+            <SubMetricList>
               <SmallMetricItem
                 label="Ready:"
                 value={labstationsReady}
@@ -301,7 +302,7 @@ export function ChromeOSSummaryHeader({
                   }
                 />
               </Box>
-            </Box>
+            </SubMetricList>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3} sx={gridStyles.col3}>
@@ -318,9 +319,7 @@ export function ChromeOSSummaryHeader({
                 })
               }
             />
-            <Box
-              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
-            >
+            <SubMetricList>
               <SmallMetricItem
                 label="Need manual repair:"
                 value={labstationsNeedManualRepair}
@@ -334,7 +333,7 @@ export function ChromeOSSummaryHeader({
                   })
                 }
               />
-            </Box>
+            </SubMetricList>
           </Grid>
           <Grid item xs={12} sm={6} md={3} sx={gridStyles.col4}>
             <SingleMetric
@@ -350,9 +349,7 @@ export function ChromeOSSummaryHeader({
                 })
               }
             />
-            <Box
-              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
-            >
+            <SubMetricList>
               <SmallMetricItem
                 label="Needs deploy:"
                 value={labstationsNeedsDeploy}
@@ -392,11 +389,11 @@ export function ChromeOSSummaryHeader({
                   })
                 }
               />
-            </Box>
+            </SubMetricList>
           </Grid>
         </Grid>
 
-        <Divider sx={{ my: 2, borderColor: 'rgba(0, 0, 0, 0.05)' }} />
+        <Divider sx={{ my: 1, borderColor: 'rgba(0, 0, 0, 0.05)' }} />
 
         {/* Devices Row */}
         <Grid
@@ -418,9 +415,7 @@ export function ChromeOSSummaryHeader({
                 })
               }
             />
-            <Box
-              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
-            >
+            <SubMetricList>
               <SmallMetricItem
                 label="Available:"
                 value={countQuery.data?.taskState?.idle || 0}
@@ -496,7 +491,7 @@ export function ChromeOSSummaryHeader({
                 loading={isLoading}
                 onClick={() => handleMetricClick(LEASED_FILTERS)}
               />
-            </Box>
+            </SubMetricList>
           </Grid>
           <Grid item xs={12} sm={6} md={3} sx={gridStyles.col2}>
             <SingleMetric
@@ -515,9 +510,7 @@ export function ChromeOSSummaryHeader({
                 })
               }
             />
-            <Box
-              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
-            >
+            <SubMetricList>
               <SmallMetricItem
                 label="Ready:"
                 value={devicesReady}
@@ -589,7 +582,7 @@ export function ChromeOSSummaryHeader({
                   }
                 />
               </Box>
-            </Box>
+            </SubMetricList>
           </Grid>
           <Grid item xs={12} sm={6} md={3} sx={gridStyles.col3}>
             <SingleMetric
@@ -604,9 +597,7 @@ export function ChromeOSSummaryHeader({
                 })
               }
             />
-            <Box
-              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
-            >
+            <SubMetricList>
               <SmallMetricItem
                 label="Need manual repair:"
                 value={devicesNeedManualRepair}
@@ -619,7 +610,7 @@ export function ChromeOSSummaryHeader({
                   })
                 }
               />
-            </Box>
+            </SubMetricList>
           </Grid>
           <Grid item xs={12} sm={6} md={3} sx={gridStyles.col4}>
             <SingleMetric
@@ -634,9 +625,7 @@ export function ChromeOSSummaryHeader({
                 })
               }
             />
-            <Box
-              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
-            >
+            <SubMetricList>
               <SmallMetricItem
                 label="Needs deploy:"
                 value={devicesNeedsDeploy}
@@ -683,7 +672,7 @@ export function ChromeOSSummaryHeader({
                   })
                 }
               />
-            </Box>
+            </SubMetricList>
           </Grid>
         </Grid>
       </Box>
@@ -692,9 +681,7 @@ export function ChromeOSSummaryHeader({
 
   return (
     <MetricsContainer>
-      <Typography variant="h6" sx={{ mb: 2, color: colors.dark }}>
-        Device Health Metrics
-      </Typography>
+      <SummaryHeaderTitle>Device Health Metrics</SummaryHeaderTitle>
       {getContent()}
     </MetricsContainer>
   );

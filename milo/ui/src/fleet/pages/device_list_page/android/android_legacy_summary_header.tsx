@@ -21,6 +21,10 @@ import { useQuery } from '@tanstack/react-query';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
+import {
+  SubMetricList,
+  SummaryHeaderTitle,
+} from '@/fleet/components/summary_header/summary_header_layout';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import {
   METRICS_COLUMN_STYLE,
@@ -144,16 +148,7 @@ export function AndroidLegacySummaryHeader({
     avg7dVal?: number | null,
     avg30dVal?: number | null,
   ) => (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        mt: 0.5,
-        mb: 2,
-        px: 1,
-        gap: 0.5,
-      }}
-    >
+    <SubMetricList>
       <SmallMetricItem
         ariaLabel="7 days avg"
         label={
@@ -190,15 +185,13 @@ export function AndroidLegacySummaryHeader({
             : `${(val * 100).toFixed(2)}%`
         }
       />
-    </Box>
+    </SubMetricList>
   );
 
   if (isError) {
     return (
       <MetricsContainer>
-        <Typography variant="h6" sx={{ mb: 2, color: colors.dark }}>
-          Device Health Metrics
-        </Typography>
+        <SummaryHeaderTitle>Device Health Metrics</SummaryHeaderTitle>
         <Alert severity="error">
           {getErrorMessage(error, 'get the metrics')}
         </Alert>
@@ -208,9 +201,7 @@ export function AndroidLegacySummaryHeader({
 
   return (
     <MetricsContainer>
-      <Typography variant="h6" sx={{ mb: 2, color: colors.dark }}>
-        Device Health Metrics
-      </Typography>
+      <SummaryHeaderTitle>Device Health Metrics</SummaryHeaderTitle>
       <Box sx={{ p: 1 }}>
         {/* Top Row: Hosts Health */}
         <Grid container spacing={0} alignItems="stretch">
@@ -361,66 +352,64 @@ export function AndroidLegacySummaryHeader({
                 </Typography>
               </InfoTooltip>
             </Box>
-            <Grid container spacing={1} sx={{ mt: 0.5, px: 1 }}>
-              <Grid item xs={12}>
-                <SmallMetricItem
-                  label="Idle:"
-                  value={onlineData?.idleDevices || 0}
-                  total={totalDevices}
-                  onClick={() =>
-                    setFiltersBatch({
-                      [FILTER_KEYS.STATE]: [androidState.IDLE],
-                      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
-                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                    })
-                  }
-                  dotColor={colors.emerald}
-                  loading={isLoading}
-                />
-                <SmallMetricItem
-                  label="Busy:"
-                  value={onlineData?.busyDevices || 0}
-                  total={totalDevices}
-                  onClick={() =>
-                    setFiltersBatch({
-                      [FILTER_KEYS.STATE]: [androidState.BUSY],
-                      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
-                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                    })
-                  }
-                  dotColor={colors.emerald}
-                  loading={isLoading}
-                />
-                <SmallMetricItem
-                  label="Lameduck:"
-                  value={onlineData?.lameduckDevices || 0}
-                  total={totalDevices}
-                  onClick={() =>
-                    setFiltersBatch({
-                      [FILTER_KEYS.STATE]: [androidState.LAMEDUCK],
-                      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
-                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                    })
-                  }
-                  dotColor={colors.grey}
-                  loading={isLoading}
-                />
-                <SmallMetricItem
-                  label="Blank states:"
-                  value={blankStatesCount}
-                  total={totalDevices}
-                  onClick={() =>
-                    setFiltersBatch({
-                      [FILTER_KEYS.STATE]: ['(Blank)'],
-                      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
-                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                    })
-                  }
-                  dotColor={colors.grey}
-                  loading={isLoading}
-                />
-              </Grid>
-            </Grid>
+            <SubMetricList>
+              <SmallMetricItem
+                label="Idle:"
+                value={onlineData?.idleDevices || 0}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: [androidState.IDLE],
+                    [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.emerald}
+                loading={isLoading}
+              />
+              <SmallMetricItem
+                label="Busy:"
+                value={onlineData?.busyDevices || 0}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: [androidState.BUSY],
+                    [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.emerald}
+                loading={isLoading}
+              />
+              <SmallMetricItem
+                label="Lameduck:"
+                value={onlineData?.lameduckDevices || 0}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: [androidState.LAMEDUCK],
+                    [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.grey}
+                loading={isLoading}
+              />
+              <SmallMetricItem
+                label="Blank states:"
+                value={blankStatesCount}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: ['(Blank)'],
+                    [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.grey}
+                loading={isLoading}
+              />
+            </SubMetricList>
           </Grid>
 
           {/* Offline Devices takes md={6} to accommodate two internal sub-columns (Needs Action and Recovering) */}

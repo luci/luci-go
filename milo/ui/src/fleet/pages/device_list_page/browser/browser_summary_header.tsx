@@ -24,6 +24,10 @@ import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
 import {
+  SubMetricList,
+  SummaryHeaderTitle,
+} from '@/fleet/components/summary_header/summary_header_layout';
+import {
   BROWSER_SWARMING_SOURCE,
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
@@ -31,7 +35,6 @@ import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { getMetricsGridStyles } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
 
 import { useBrowserFilters } from './use_browser_filters';
@@ -276,17 +279,15 @@ export function BrowserSummaryHeader() {
               />
             </Box>
 
-            <Grid container spacing={1} sx={{ mt: 1, px: 1 }}>
-              <Grid item xs={12}>
-                <SmallMetricItem
-                  label="With Bots:"
-                  value={swTotal}
-                  total={totalDevices}
-                  dotColor={theme.palette.success.main}
-                  loading={isLoading}
-                />
-              </Grid>
-            </Grid>
+            <SubMetricList>
+              <SmallMetricItem
+                label="With Bots:"
+                value={swTotal}
+                total={totalDevices}
+                dotColor={theme.palette.success.main}
+                loading={isLoading}
+              />
+            </SubMetricList>
           </Grid>
 
           {/* Column 2: Healthy Devices */}
@@ -308,18 +309,16 @@ export function BrowserSummaryHeader() {
               </InfoTooltip>
             </Box>
 
-            <Grid container spacing={1} sx={{ mt: 1, px: 1 }}>
-              <Grid item xs={12}>
-                <SmallMetricItem
-                  label="Alive & Serving:"
-                  value={healthyCount}
-                  total={totalDevices}
-                  onClick={handleHealthyClick}
-                  dotColor={theme.palette.success.main}
-                  loading={isLoading}
-                />
-              </Grid>
-            </Grid>
+            <SubMetricList>
+              <SmallMetricItem
+                label="Alive & Serving:"
+                value={healthyCount}
+                total={totalDevices}
+                onClick={handleHealthyClick}
+                dotColor={theme.palette.success.main}
+                loading={isLoading}
+              />
+            </SubMetricList>
           </Grid>
 
           {/* Column 3: Unhealthy Devices */}
@@ -342,89 +341,79 @@ export function BrowserSummaryHeader() {
               </InfoTooltip>
             </Box>
 
-            <Grid container spacing={1} sx={{ mt: 1, px: 1 }}>
-              <Grid item xs={12}>
+            <SubMetricList>
+              <SmallMetricItem
+                label="Swarming Bot Issues:"
+                value={sDead + sQuarantined + sMaintenance}
+                total={totalDevices}
+                onClick={handleSwarmingIssuesClick}
+                dotColor={theme.palette.error.main}
+                loading={isLoading}
+              />
+              <Box sx={{ ml: 2 }}>
                 <SmallMetricItem
-                  label="Swarming Bot Issues:"
-                  value={sDead + sQuarantined + sMaintenance}
+                  label="Offline / Dead:"
+                  value={sDead}
                   total={totalDevices}
-                  onClick={handleSwarmingIssuesClick}
+                  onClick={() => handleUnhealthyClick('dead')}
                   dotColor={theme.palette.error.main}
                   loading={isLoading}
                 />
-                <Box sx={{ ml: 2 }}>
-                  <SmallMetricItem
-                    label="Offline / Dead:"
-                    value={sDead}
-                    total={totalDevices}
-                    onClick={() => handleUnhealthyClick('dead')}
-                    dotColor={theme.palette.error.main}
-                    loading={isLoading}
-                  />
-                  <SmallMetricItem
-                    label="Quarantined:"
-                    value={sQuarantined}
-                    total={totalDevices}
-                    onClick={() => handleUnhealthyClick('quarantined')}
-                    dotColor={colors.yellow[900]}
-                    loading={isLoading}
-                  />
-                  <SmallMetricItem
-                    label="In Maintenance:"
-                    value={sMaintenance}
-                    total={totalDevices}
-                    onClick={() => handleUnhealthyClick('maintenance')}
-                    dotColor={colors.yellow[900]}
-                    loading={isLoading}
-                  />
-                </Box>
+                <SmallMetricItem
+                  label="Quarantined:"
+                  value={sQuarantined}
+                  total={totalDevices}
+                  onClick={() => handleUnhealthyClick('quarantined')}
+                  dotColor={theme.palette.warning.main}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  label="In Maintenance:"
+                  value={sMaintenance}
+                  total={totalDevices}
+                  onClick={() => handleUnhealthyClick('maintenance')}
+                  dotColor={theme.palette.warning.main}
+                  loading={isLoading}
+                />
+              </Box>
 
+              <SmallMetricItem
+                label="UFS Inventory Issues:"
+                value={ufsNeedsRepair + ufsMissing}
+                total={totalDevices}
+                onClick={handleUfsIssuesClick}
+                dotColor={theme.palette.error.main}
+                loading={isLoading}
+              />
+              <Box sx={{ ml: 2 }}>
                 <SmallMetricItem
-                  label="UFS Inventory Issues:"
-                  value={ufsNeedsRepair + ufsMissing}
+                  label="Needs Repair (UFS):"
+                  value={ufsNeedsRepair}
                   total={totalDevices}
-                  onClick={handleUfsIssuesClick}
+                  onClick={() => {
+                    setFilterOptions(`${BROWSER_SWARMING_SOURCE}."state"`, []);
+                    setFilterOptions(`${BROWSER_UFS_SOURCE}."resource_state"`, [
+                      'NEEDS_REPAIR',
+                    ]);
+                  }}
                   dotColor={theme.palette.error.main}
                   loading={isLoading}
                 />
-                <Box sx={{ ml: 2 }}>
-                  <SmallMetricItem
-                    label="Needs Repair (UFS):"
-                    value={ufsNeedsRepair}
-                    total={totalDevices}
-                    onClick={() => {
-                      setFilterOptions(
-                        `${BROWSER_SWARMING_SOURCE}."state"`,
-                        [],
-                      );
-                      setFilterOptions(
-                        `${BROWSER_UFS_SOURCE}."resource_state"`,
-                        ['NEEDS_REPAIR'],
-                      );
-                    }}
-                    dotColor={theme.palette.error.main}
-                    loading={isLoading}
-                  />
-                  <SmallMetricItem
-                    label="Missing (UFS):"
-                    value={ufsMissing}
-                    total={totalDevices}
-                    onClick={() => {
-                      setFilterOptions(
-                        `${BROWSER_SWARMING_SOURCE}."state"`,
-                        [],
-                      );
-                      setFilterOptions(
-                        `${BROWSER_UFS_SOURCE}."resource_state"`,
-                        ['MISSING'],
-                      );
-                    }}
-                    dotColor={theme.palette.error.main}
-                    loading={isLoading}
-                  />
-                </Box>
-              </Grid>
-            </Grid>
+                <SmallMetricItem
+                  label="Missing (UFS):"
+                  value={ufsMissing}
+                  total={totalDevices}
+                  onClick={() => {
+                    setFilterOptions(`${BROWSER_SWARMING_SOURCE}."state"`, []);
+                    setFilterOptions(`${BROWSER_UFS_SOURCE}."resource_state"`, [
+                      'MISSING',
+                    ]);
+                  }}
+                  dotColor={theme.palette.error.main}
+                  loading={isLoading}
+                />
+              </Box>
+            </SubMetricList>
           </Grid>
 
           {/* Column 4: Other */}
@@ -436,7 +425,9 @@ export function BrowserSummaryHeader() {
                 total={totalDevices}
                 loading={isLoading}
                 Icon={
-                  <WarningIcon sx={{ color: colors.yellow[900], mt: '-2px' }} />
+                  <WarningIcon
+                    sx={{ color: theme.palette.warning.main, mt: '-2px' }}
+                  />
                 }
               />
               <InfoTooltip>
@@ -448,52 +439,46 @@ export function BrowserSummaryHeader() {
               </InfoTooltip>
             </Box>
 
-            <Grid container spacing={1} sx={{ mt: 1, px: 1 }}>
-              <Grid item xs={12}>
-                <SmallMetricItem
-                  label={
-                    <Box
-                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                    >
-                      <span>Reserved / Excluded:</span>
-                      <InfoTooltip>
-                        <Typography variant="body2">
-                          Devices intentionally taken out of active test
-                          scheduling (UFS state is Reserved, Decommissioned,
-                          Deployed Testing, Deploying, or Registered).
-                        </Typography>
-                      </InfoTooltip>
-                    </Box>
-                  }
-                  ariaLabel="Reserved or Excluded"
-                  value={ufsExcluded + nonServingOthers}
-                  total={totalDevices}
-                  onClick={handleNonServingClick}
-                  dotColor={theme.palette.grey[400]}
-                  loading={isLoading}
-                />
-                <SmallMetricItem
-                  label={
-                    <Box
-                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                    >
-                      <span>Missing Bot:</span>
-                      <InfoTooltip>
-                        <Typography variant="body2">
-                          Serving devices that are registered in UFS but have no
-                          connected Swarming bot client checking in.
-                        </Typography>
-                      </InfoTooltip>
-                    </Box>
-                  }
-                  ariaLabel="Missing Swarming Bot"
-                  value={sMissingBots}
-                  total={totalDevices}
-                  dotColor={theme.palette.grey[400]}
-                  loading={isLoading}
-                />
-              </Grid>
-            </Grid>
+            <SubMetricList>
+              <SmallMetricItem
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <span>Reserved / Excluded:</span>
+                    <InfoTooltip>
+                      <Typography variant="body2">
+                        Devices intentionally taken out of active test
+                        scheduling (UFS state is Reserved, Decommissioned,
+                        Deployed Testing, Deploying, or Registered).
+                      </Typography>
+                    </InfoTooltip>
+                  </Box>
+                }
+                ariaLabel="Reserved or Excluded"
+                value={ufsExcluded + nonServingOthers}
+                total={totalDevices}
+                onClick={handleNonServingClick}
+                dotColor={theme.palette.grey[400]}
+                loading={isLoading}
+              />
+              <SmallMetricItem
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <span>Missing Bot:</span>
+                    <InfoTooltip>
+                      <Typography variant="body2">
+                        Serving devices that are registered in UFS but have no
+                        connected Swarming bot client checking in.
+                      </Typography>
+                    </InfoTooltip>
+                  </Box>
+                }
+                ariaLabel="Missing Swarming Bot"
+                value={sMissingBots}
+                total={totalDevices}
+                dotColor={theme.palette.grey[400]}
+                loading={isLoading}
+              />
+            </SubMetricList>
           </Grid>
         </Grid>
       </Box>
@@ -502,9 +487,7 @@ export function BrowserSummaryHeader() {
 
   return (
     <MetricsContainer>
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        Device Health Summary
-      </Typography>
+      <SummaryHeaderTitle>Device Health Summary</SummaryHeaderTitle>
       {getContent()}
     </MetricsContainer>
   );
