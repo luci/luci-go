@@ -164,17 +164,11 @@ func FetchHeadLinesWithInitialChunkSize(ctx context.Context, httpClient *http.Cl
 	for {
 		var chunkBuf bytes.Buffer
 		br := &ByteRange{Start: offset, End: offset + chunkSize - 1}
-		statusCode, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, br, &chunkBuf)
+		_, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, br, &chunkBuf)
 		if err != nil {
 			return err
 		}
 		chunk := chunkBuf.Bytes()
-
-		if statusCode == http.StatusOK {
-			res, _ := ExtractHeadLines(chunk, headLines)
-			_, err = out.Write(res)
-			return err
-		}
 
 		buf = append(buf, chunk...)
 		res, ok := ExtractHeadLines(buf, headLines)

@@ -132,6 +132,89 @@ func TestFetchHTTPByteRange(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, buf.String(), should.Equal(fullContent[len(fullContent)-10:]))
 		})
+
+		t.Run(`server ignores Range and returns 200 OK`, func(t *ftt.Test) {
+			okServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(fullContent))
+			}))
+			defer okServer.Close()
+
+			t.Run(`range start-end from 0`, func(t *ftt.Test) {
+				var buf bytes.Buffer
+				status, _, err := FetchHTTPByteRange(ctx, okServer.Client(), okServer.URL, &ByteRange{Start: 0, End: 14}, &buf)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Equal(http.StatusOK))
+				assert.Loosely(t, buf.String(), should.Equal(fullContent[:15]))
+			})
+
+			t.Run(`range start-end from middle`, func(t *ftt.Test) {
+				var buf bytes.Buffer
+				status, _, err := FetchHTTPByteRange(ctx, okServer.Client(), okServer.URL, &ByteRange{Start: 14, End: 27}, &buf)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, status, should.Equal(http.StatusOK))
+				assert.Loosely(t, buf.String(), should.Equal(fullContent[14:28]))
+			})
+
+			t.Run(`range start-end where end exceeds content length`, func(t *ftt.Test) {
+				var buf bytes.Buffer
+				_, _, err := FetchHTTPByteRange(ctx, okServer.Client(), okServer.URL, &ByteRange{Start: 40, End: 500}, &buf)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buf.String(), should.Equal(fullContent[40:]))
+			})
+
+			t.Run(`range start-end where start exceeds content length`, func(t *ftt.Test) {
+				var buf bytes.Buffer
+				_, _, err := FetchHTTPByteRange(ctx, okServer.Client(), okServer.URL, &ByteRange{Start: 500, End: 600}, &buf)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buf.Len(), should.Equal(0))
+			})
+
+			t.Run(`range start to EOF`, func(t *ftt.Test) {
+				var buf bytes.Buffer
+				_, _, err := FetchHTTPByteRange(ctx, okServer.Client(), okServer.URL, &ByteRange{Start: 15, End: -1}, &buf)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buf.String(), should.Equal(fullContent[15:]))
+			})
+
+			t.Run(`suffix range smaller than content`, func(t *ftt.Test) {
+				var buf bytes.Buffer
+				_, totalSize, err := FetchHTTPByteRange(ctx, okServer.Client(), okServer.URL, &ByteRange{Start: -1, End: 10}, &buf)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, totalSize, should.Equal(int64(len(fullContent))))
+				assert.Loosely(t, buf.String(), should.Equal(fullContent[len(fullContent)-10:]))
+			})
+
+			t.Run(`suffix range larger than content`, func(t *ftt.Test) {
+				var buf bytes.Buffer
+				_, totalSize, err := FetchHTTPByteRange(ctx, okServer.Client(), okServer.URL, &ByteRange{Start: -1, End: 1000}, &buf)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, totalSize, should.Equal(int64(len(fullContent))))
+				assert.Loosely(t, buf.String(), should.Equal(fullContent))
+			})
+
+			t.Run(`suffix range with multi-chunk ring buffer wrap`, func(t *ftt.Test) {
+				// 100 KiB payload (> 32 KiB readBuf) to exercise multiple reads and ring buffer wrap-around.
+				largePayload := make([]byte, 100*1024)
+				for i := range largePayload {
+					largePayload[i] = byte('a' + (i % 26))
+				}
+				largeServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write(largePayload)
+				}))
+				defer largeServer.Close()
+
+				// Test suffix smaller than readBuf (100 bytes) and larger than readBuf (50 KiB).
+				for _, suffixLen := range []int64{100, 50 * 1024} {
+					var buf bytes.Buffer
+					_, totalSize, err := FetchHTTPByteRange(ctx, largeServer.Client(), largeServer.URL, &ByteRange{Start: -1, End: suffixLen}, &buf)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, totalSize, should.Equal(int64(len(largePayload))))
+					assert.Loosely(t, buf.Bytes(), should.Resemble(largePayload[int64(len(largePayload))-suffixLen:]))
+				}
+			})
+		})
 	})
 
 	ftt.Run(`GetCmd flags`, t, func(t *ftt.Test) {

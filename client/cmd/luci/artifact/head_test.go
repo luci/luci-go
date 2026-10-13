@@ -72,6 +72,11 @@ func TestFetchHeadLines(t *testing.T) {
 			err := FetchHeadLines(ctx, server.Client(), server.URL, 2, &buf)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, buf.String(), should.Equal("line 1: hello\nline 2: world\n"))
+
+			buf.Reset()
+			err = FetchHeadLinesWithInitialChunkSize(ctx, server.Client(), server.URL, 3, 20, &buf)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal("line 1: hello\nline 2: world\nline 3: luci\n"))
 		})
 
 		t.Run(`multi-chunk where only one chunk is needed`, func(t *ftt.Test) {

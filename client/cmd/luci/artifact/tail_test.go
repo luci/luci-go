@@ -97,6 +97,11 @@ func TestFetchTailLines(t *testing.T) {
 			err := FetchTailLines(ctx, server.Client(), server.URL, 2, int64(len(fullContent)), &buf)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, buf.String(), should.Equal("line 3: luci\nline 4: resultdb\n"))
+
+			buf.Reset()
+			err = FetchTailLinesWithInitialChunkSize(ctx, server.Client(), server.URL, 3, 0, 20, &buf)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.Equal("line 2: world\nline 3: luci\nline 4: resultdb\n"))
 		})
 
 		t.Run(`suffix range with 206 Partial Content and totalSizeBytes == 0`, func(t *ftt.Test) {

@@ -175,7 +175,7 @@ func FetchTailLinesWithInitialChunkSize(ctx context.Context, httpClient *http.Cl
 		}
 
 		var chunkBuf bytes.Buffer
-		statusCode, totalSize, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, br, &chunkBuf)
+		_, totalSize, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, br, &chunkBuf)
 		if err != nil {
 			return err
 		}
@@ -185,7 +185,7 @@ func FetchTailLinesWithInitialChunkSize(ctx context.Context, httpClient *http.Cl
 			totalSizeBytes = totalSize
 		}
 
-		if statusCode == http.StatusOK || (br.Start < 0 && int64(len(chunk)) < chunkSize) || (br.Start == 0) || (totalSizeBytes > 0 && int64(len(chunk)) >= totalSizeBytes) {
+		if (br.Start < 0 && int64(len(chunk)) < chunkSize) || (br.Start == 0) || (totalSizeBytes > 0 && int64(len(chunk)) >= totalSizeBytes) {
 			isBeginning = true
 		}
 

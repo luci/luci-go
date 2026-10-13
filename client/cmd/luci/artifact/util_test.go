@@ -17,7 +17,9 @@ package artifact
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -308,6 +310,237 @@ func TestFetchHTTPByteRangeEmptyFile(t *testing.T) {
 		assert.Loosely(t, code, should.Equal(http.StatusRequestedRangeNotSatisfiable))
 		assert.Loosely(t, size, should.Equal(0))
 		assert.Loosely(t, buf.Len(), should.Equal(0))
+	})
+}
+
+// chunkedReader yields a predetermined sequence of byte chunks on successive Read calls
+// to deterministically test ring-buffer state transitions in copySuffix.
+type chunkedReader struct {
+	chunks [][]byte
+	idx    int
+	err    error
+}
+
+func (r *chunkedReader) Read(p []byte) (int, error) {
+	if r.idx >= len(r.chunks) {
+		if r.err != nil {
+			return 0, r.err
+		}
+		return 0, io.EOF
+	}
+	n := copy(p, r.chunks[r.idx])
+	r.idx++
+	return n, nil
+}
+
+// failAfterWriter succeeds for the first allowedCalls Write calls and returns writeErr thereafter.
+type failAfterWriter struct {
+	allowedCalls int
+	calls        int
+	writeErr     error
+}
+
+func (w *failAfterWriter) Write(p []byte) (int, error) {
+	if w.calls >= w.allowedCalls {
+		return 0, w.writeErr
+	}
+	w.calls++
+	return len(p), nil
+}
+
+func TestCopySuffix(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`copySuffix`, t, func(t *ftt.Test) {
+		t.Run(`suffixLen <= 0 discards stream`, func(t *ftt.Test) {
+			for _, suffixLen := range []int64{0, -5} {
+				var buf bytes.Buffer
+				nRead, err := copySuffix(&buf, strings.NewReader("abcdefghij"), suffixLen)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nRead, should.Equal(int64(10)))
+				assert.Loosely(t, buf.Len(), should.Equal(0))
+			}
+		})
+
+		t.Run(`empty stream`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			nRead, err := copySuffix(&buf, strings.NewReader(""), 10)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nRead, should.Equal(int64(0)))
+			assert.Loosely(t, buf.Len(), should.Equal(0))
+		})
+
+		t.Run(`single chunk >= suffixLen`, func(t *ftt.Test) {
+			// Exact match (len(chunk) == suffixLen)
+			var buf bytes.Buffer
+			nRead, err := copySuffix(&buf, &chunkedReader{chunks: [][]byte{[]byte("abcdef")}}, 6)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nRead, should.Equal(int64(6)))
+			assert.Loosely(t, buf.String(), should.Equal("abcdef"))
+
+			// Strictly larger (len(chunk) > suffixLen)
+			buf.Reset()
+			nRead, err = copySuffix(&buf, &chunkedReader{chunks: [][]byte{[]byte("abcdefghij")}}, 4)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nRead, should.Equal(int64(10)))
+			assert.Loosely(t, buf.String(), should.Equal("ghij"))
+		})
+
+		t.Run(`small chunks followed by large chunk >= suffixLen and trailing small chunk`, func(t *ftt.Test) {
+			// Exercises: !wrapped accumulation -> chunk >= suffixLen superseding ring -> wrapped overwrite.
+			r := &chunkedReader{
+				chunks: [][]byte{
+					[]byte("ab"),       // !wrapped: ring = "ab"
+					[]byte("01234567"), // >= suffixLen (5): ring = "34567", writePos = 0, wrapped = true
+					[]byte("XY"),       // wrapped overwrite at writePos 0: ring = "XY567", writePos = 2
+				},
+			}
+			var buf bytes.Buffer
+			nRead, err := copySuffix(&buf, r, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nRead, should.Equal(int64(12)))
+			assert.Loosely(t, buf.String(), should.Equal("567XY"))
+		})
+
+		t.Run(`multiple small chunks never reaching suffixLen (!wrapped at EOF)`, func(t *ftt.Test) {
+			r := &chunkedReader{
+				chunks: [][]byte{
+					[]byte("ab"),
+					[]byte("cd"),
+					[]byte("ef"),
+				},
+			}
+			var buf bytes.Buffer
+			nRead, err := copySuffix(&buf, r, 10)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nRead, should.Equal(int64(6)))
+			assert.Loosely(t, buf.String(), should.Equal("abcdef"))
+		})
+
+		t.Run(`multiple small chunks hitting suffixLen exactly`, func(t *ftt.Test) {
+			// Exercises int64(len(ring)) == suffixLen transition inside !wrapped.
+			r := &chunkedReader{
+				chunks: [][]byte{
+					[]byte("ab"),
+					[]byte("cde"), // len(ring) becomes 5 == suffixLen -> wrapped = true, writePos = 0
+				},
+			}
+			var buf bytes.Buffer
+			nRead, err := copySuffix(&buf, r, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nRead, should.Equal(int64(5)))
+			assert.Loosely(t, buf.String(), should.Equal("abcde"))
+
+			// Now with an additional chunk after hitting exact suffixLen.
+			r2 := &chunkedReader{
+				chunks: [][]byte{
+					[]byte("ab"),
+					[]byte("cde"), // wrapped = true, writePos = 0
+					[]byte("fg"),  // overwrites "ab" -> "fgcde", writePos = 2
+				},
+			}
+			buf.Reset()
+			nRead, err = copySuffix(&buf, r2, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nRead, should.Equal(int64(7)))
+			assert.Loosely(t, buf.String(), should.Equal("cdefg"))
+		})
+
+		t.Run(`small chunks crossing suffixLen threshold and wrapping around multiple times`, func(t *ftt.Test) {
+			// Exercises:
+			// 1. !wrapped growing slice ("abc", len 3 < 5)
+			// 2. !wrapped crossing suffixLen ("defg", 3+4 > 5) -> allocates fullRing "cdefg", writePos = 0, wrapped = true
+			// 3. wrapped where len(chunk) <= firstPart ("hi", len 2 <= 5) -> ring = "hidefg"[0:5]="hideg", writePos = 2
+			// 4. wrapped where len(chunk) > firstPart ("JKLM", len 4 > 5-2=3) -> splits across end ("JKL" at [2:5]) and start ("M" at [0:1]), writePos = 1
+			// 5. wrapped where writePos reaches end of ring exactly ("NO", len 2, writePos 1->3; then "PQ", len 2 == 5-3, writePos wraps to 0)
+			r := &chunkedReader{
+				chunks: [][]byte{
+					[]byte("abc"),
+					[]byte("defg"),
+					[]byte("hi"),
+					[]byte("JKLM"),
+				},
+			}
+			var buf bytes.Buffer
+			nRead, err := copySuffix(&buf, r, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nRead, should.Equal(int64(13)))
+			assert.Loosely(t, buf.String(), should.Equal("iJKLM"))
+
+			// Continue wrapping back to writePos == 0.
+			rExactWrap := &chunkedReader{
+				chunks: [][]byte{
+					[]byte("abc"),
+					[]byte("defg"),
+					[]byte("hi"),
+					[]byte("JKLM"), // writePos = 1
+					[]byte("NO"),   // writePos = 3
+					[]byte("PQ"),   // writePos = (3+2)%5 = 0
+				},
+			}
+			buf.Reset()
+			nRead, err = copySuffix(&buf, rExactWrap, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nRead, should.Equal(int64(17)))
+			assert.Loosely(t, buf.String(), should.Equal("MNOPQ"))
+		})
+
+		t.Run(`exhaustive sweep over chunk sizes and suffix lengths`, func(t *ftt.Test) {
+			payload := make([]byte, 120)
+			for i := range payload {
+				payload[i] = byte('!' + (i % 90))
+			}
+
+			for _, chunkSize := range []int{1, 2, 3, 7, 13, 32, 64, 150} {
+				var chunks [][]byte
+				for off := 0; off < len(payload); off += chunkSize {
+					end := off + chunkSize
+					if end > len(payload) {
+						end = len(payload)
+					}
+					chunks = append(chunks, payload[off:end])
+				}
+
+				for _, suffixLen := range []int64{1, 2, 5, 7, 13, 31, 32, 33, 64, 119, 120, 121, 200} {
+					var buf bytes.Buffer
+					r := &chunkedReader{chunks: chunks}
+					nRead, err := copySuffix(&buf, r, suffixLen)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, nRead, should.Equal(int64(len(payload))))
+
+					wantStart := int64(len(payload)) - suffixLen
+					if wantStart < 0 {
+						wantStart = 0
+					}
+					assert.Loosely(t, buf.Bytes(), should.Resemble(payload[wantStart:]))
+				}
+			}
+		})
+
+		t.Run(`error propagation from src and dst`, func(t *ftt.Test) {
+			readErr := errors.New("simulated read failure")
+			r := &chunkedReader{
+				chunks: [][]byte{[]byte("abc"), []byte("def")},
+				err:    readErr,
+			}
+			var buf bytes.Buffer
+			nRead, err := copySuffix(&buf, r, 4)
+			assert.Loosely(t, err, should.Equal(readErr))
+			assert.Loosely(t, nRead, should.Equal(int64(6)))
+
+			writeErr := errors.New("simulated write failure")
+			// Fail on first Write when !wrapped
+			_, err = copySuffix(&failAfterWriter{allowedCalls: 0, writeErr: writeErr}, &chunkedReader{chunks: [][]byte{[]byte("abc")}}, 10)
+			assert.Loosely(t, err, should.Equal(writeErr))
+
+			// Fail on first Write (ring[writePos:]) when wrapped
+			_, err = copySuffix(&failAfterWriter{allowedCalls: 0, writeErr: writeErr}, &chunkedReader{chunks: [][]byte{[]byte("abcde"), []byte("fg")}}, 5)
+			assert.Loosely(t, err, should.Equal(writeErr))
+
+			// Fail on second Write (ring[:writePos]) when wrapped with writePos > 0
+			_, err = copySuffix(&failAfterWriter{allowedCalls: 1, writeErr: writeErr}, &chunkedReader{chunks: [][]byte{[]byte("abcde"), []byte("fg")}}, 5)
+			assert.Loosely(t, err, should.Equal(writeErr))
+		})
 	})
 }
 

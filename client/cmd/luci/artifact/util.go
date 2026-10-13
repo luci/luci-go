@@ -268,10 +268,153 @@ func FetchHTTPByteRange(ctx context.Context, httpClient *http.Client, fetchURL s
 		totalSize = resp.ContentLength
 	}
 
+	// Some upstream servers (such as Google Cloud Storage when serving objects
+	// with Content-Encoding: gzip via decompressive transcoding) ignore the HTTP
+	// Range header and respond with 200 OK and the entire uncompressed payload.
+	// Enforce the requested byteRange on the client side when that happens.
+	if resp.StatusCode == http.StatusOK && byteRange != nil {
+		// Case 1: Suffix range (bytes=-N, represented as Start < 0, End >= 0).
+		// Read the stream to EOF using a bounded circular buffer so only the last
+		// byteRange.End bytes are kept in memory and written to out.
+		if byteRange.Start < 0 && byteRange.End >= 0 {
+			nRead, err := copySuffix(out, resp.Body, byteRange.End)
+			if totalSize <= 0 {
+				totalSize = nRead
+			}
+			if err != nil {
+				return resp.StatusCode, totalSize, errors.Fmt("failed to write response body: %w", err)
+			}
+			return resp.StatusCode, totalSize, nil
+		}
+		// For [Start, End] and [Start, -1] ranges, discard the first Start bytes.
+		if byteRange.Start > 0 {
+			if _, err := io.CopyN(io.Discard, resp.Body, byteRange.Start); err != nil {
+				if errors.Is(err, io.EOF) {
+					// Stream ended before reaching byteRange.Start; nothing to write.
+					return resp.StatusCode, totalSize, nil
+				}
+				return resp.StatusCode, totalSize, errors.Fmt("failed to discard leading bytes: %w", err)
+			}
+		}
+		// Case 2: Bounded range [Start, End] (Start >= 0, End >= 0).
+		// Copy at most (End - Start + 1) bytes and return immediately so
+		// defer resp.Body.Close() aborts downloading the remainder of the stream.
+		if byteRange.Start >= 0 && byteRange.End >= 0 {
+			length := byteRange.End - byteRange.Start + 1
+			if length > 0 {
+				if _, err := io.CopyN(out, resp.Body, length); err != nil && !errors.Is(err, io.EOF) {
+					return resp.StatusCode, totalSize, errors.Fmt("failed to write response body: %w", err)
+				}
+			}
+			return resp.StatusCode, totalSize, nil
+		}
+		// Case 3: Open-ended range [Start, -1] (bytes=Start-) falls through to
+		// io.Copy below after discarding the leading Start bytes above.
+	}
+
 	if _, err := io.Copy(out, resp.Body); err != nil {
 		return resp.StatusCode, totalSize, errors.Fmt("failed to write response body: %w", err)
 	}
 	return resp.StatusCode, totalSize, nil
+}
+
+// copySuffix reads src until EOF, retaining at most the last suffixLen bytes in
+// a ring buffer, and writes those trailing bytes to dst. It returns the total
+// number of bytes read from src.
+//
+// To avoid pre-allocating a large buffer when suffixLen is much larger than the
+// actual stream size, ring grows lazily until totalRead reaches suffixLen. Once
+// suffixLen bytes have been buffered (wrapped == true), ring has fixed length
+// suffixLen and acts as a circular buffer where writePos (0 <= writePos < suffixLen)
+// points to the oldest byte (the next slot to be overwritten).
+func copySuffix(dst io.Writer, src io.Reader, suffixLen int64) (int64, error) {
+	if suffixLen <= 0 {
+		return io.Copy(io.Discard, src)
+	}
+	var (
+		ring      []byte
+		writePos  int64
+		wrapped   bool
+		totalRead int64
+		readBuf   = make([]byte, 32*1024)
+	)
+	for {
+		n, err := src.Read(readBuf)
+		if n > 0 {
+			totalRead += int64(n)
+			chunk := readBuf[:n]
+			if int64(len(chunk)) >= suffixLen {
+				// Current read chunk alone is at least suffixLen bytes; it completely
+				// supersedes any previously buffered data. Keep only its last
+				// suffixLen bytes at the start of ring and reset writePos to 0.
+				chunk = chunk[int64(len(chunk))-suffixLen:]
+				if int64(len(ring)) < suffixLen {
+					ring = make([]byte, suffixLen)
+				}
+				copy(ring, chunk)
+				writePos = 0
+				wrapped = true
+			} else if !wrapped {
+				// Still accumulating the initial suffixLen bytes.
+				if int64(len(ring)+len(chunk)) <= suffixLen {
+					ring = append(ring, chunk...)
+					if int64(len(ring)) == suffixLen {
+						// Buffer just reached full capacity suffixLen.
+						writePos = 0
+						wrapped = true
+					}
+				} else {
+					// Appending chunk crosses suffixLen for the first time. Allocate
+					// the full suffixLen buffer, retain the newest (suffixLen - len(chunk))
+					// bytes from ring followed by chunk, and mark the ring as full.
+					fullRing := make([]byte, suffixLen)
+					keepFromOld := suffixLen - int64(len(chunk))
+					copy(fullRing, ring[int64(len(ring))-keepFromOld:])
+					copy(fullRing[keepFromOld:], chunk)
+					ring = fullRing
+					writePos = 0
+					wrapped = true
+				}
+			} else {
+				// Ring is already at full capacity (len(ring) == suffixLen) and
+				// len(chunk) < suffixLen. Overwrite starting at writePos, wrapping
+				// around to index 0 if the chunk crosses the end of the slice.
+				firstPart := suffixLen - writePos
+				if int64(len(chunk)) <= firstPart {
+					copy(ring[writePos:], chunk)
+					writePos = (writePos + int64(len(chunk))) % suffixLen
+				} else {
+					copy(ring[writePos:], chunk[:firstPart])
+					rem := int64(len(chunk)) - firstPart
+					copy(ring[:rem], chunk[firstPart:])
+					writePos = rem
+				}
+			}
+		}
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return totalRead, err
+		}
+	}
+
+	if !wrapped {
+		// Stream was shorter than suffixLen; ring holds all bytes in order.
+		_, err := dst.Write(ring)
+		return totalRead, err
+	}
+	// Stream was >= suffixLen bytes. In the circular buffer, ring[writePos:]
+	// holds the older bytes and ring[:writePos] holds the newer wrapped bytes.
+	if _, err := dst.Write(ring[writePos:]); err != nil {
+		return totalRead, err
+	}
+	if writePos > 0 {
+		if _, err := dst.Write(ring[:writePos]); err != nil {
+			return totalRead, err
+		}
+	}
+	return totalRead, nil
 }
 
 // FormatInvocationArtifactName formats canonical invocation artifact resource name.
