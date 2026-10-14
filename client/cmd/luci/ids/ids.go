@@ -39,22 +39,23 @@ import (
 
 // ExtractedIDs holds all extracted resource identifiers.
 type ExtractedIDs struct {
-	BugID            string `json:"bug_id,omitempty"`
-	Project          string `json:"project,omitempty"`
-	RuleID           string `json:"rule_id,omitempty"`
-	ClusterAlgorithm string `json:"cluster_algorithm,omitempty"`
-	ClusterID        string `json:"cluster_id,omitempty"`
-	BuildID          string `json:"build_id,omitempty"`
-	InvocationID     string `json:"invocation_id,omitempty"`
-	StepName         string `json:"step_name,omitempty"`
-	LogName          string `json:"log_name,omitempty"`
-	ModuleName       string `json:"module_name,omitempty"`
-	WorkUnitID       string `json:"work_unit_id,omitempty"`
-	TestID           string `json:"test_id,omitempty"`
-	ResultID         string `json:"result_id,omitempty"`
-	ArtifactID       string `json:"artifact_id,omitempty"`
-	VariantHash      string `json:"variant_hash,omitempty"`
-	Legacy           bool   `json:"legacy,omitempty"`
+	BugID              string `json:"bug_id,omitempty"`
+	Project            string `json:"project,omitempty"`
+	RuleID             string `json:"rule_id,omitempty"`
+	ClusterAlgorithm   string `json:"cluster_algorithm,omitempty"`
+	ClusterID          string `json:"cluster_id,omitempty"`
+	BuildID            string `json:"build_id,omitempty"`
+	InvocationID       string `json:"invocation_id,omitempty"`
+	StepName           string `json:"step_name,omitempty"`
+	LogName            string `json:"log_name,omitempty"`
+	ModuleName         string `json:"module_name,omitempty"`
+	WorkUnitID         string `json:"work_unit_id,omitempty"`
+	TestID             string `json:"test_id,omitempty"`
+	ResultID           string `json:"result_id,omitempty"`
+	ArtifactID         string `json:"artifact_id,omitempty"`
+	VariantHash        string `json:"variant_hash,omitempty"`
+	SummaryPlaceholder bool   `json:"summary_placeholder,omitempty"`
+	Legacy             bool   `json:"legacy,omitempty"`
 
 	// builder, buildNumber, and logdogStreamPath are unexported internal fields used during ID extraction
 	// to query Buildbucket for the build ID or canonical step/log names. They are not output.
@@ -232,6 +233,19 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 	if extracted.Legacy {
 		fmt.Fprintf(out, "Legacy:            true\n")
 	}
+	if extracted.SummaryPlaceholder {
+		invID := extracted.InvocationID
+		wuID := extracted.WorkUnitID
+		if wuID == "" {
+			wuID = "root"
+		}
+		fmt.Fprintf(out, "\nNote: The AnTS test result in this target is an invocation-level summary placeholder (Test Case: #.), so -testid and -resultid are not emitted.\n")
+		fmt.Fprintf(out, "  1. To list failing test cases in this invocation, run:\n")
+		fmt.Fprintf(out, "       luci verdict list -invocationid=%s\n", invID)
+		fmt.Fprintf(out, "  2. If no test verdicts failed (e.g. build, setup, or target_preparer error), inspect the work unit and host logs:\n")
+		fmt.Fprintf(out, "       luci work-unit get -invocationid=%s -workunitid=%s\n", invID, wuID)
+		fmt.Fprintf(out, "       luci artifact list -invocationid=%s\n", invID)
+	}
 
 	return nil
 }
@@ -405,18 +419,31 @@ func extractFromAntsTarget(ctx context.Context, client pb.ResultDBClient, raw st
 		return false, err
 	}
 
-	extracted.InvocationID = base.NormalizeInvocation(info.InvocationID)
+	if info.InvocationID != "" {
+		extracted.InvocationID = base.NormalizeInvocation(info.InvocationID)
+	} else if invID != "" {
+		extracted.InvocationID = base.NormalizeInvocation(invID)
+	}
+	if info.WorkUnitID != "" {
+		extracted.WorkUnitID = base.NormalizeWorkUnit(info.WorkUnitID)
+	}
 
-	// If this is a module error or has no method name, extract only InvocationID and ModuleName.
-	if info.IsModuleError || (info.ModuleName != "" && info.MethodName == "") {
-		extracted.ModuleName = info.ModuleName
+	// If this is a module error or has no method name, extract only InvocationID, WorkUnitID, and ModuleName (or mark as SummaryPlaceholder).
+	if info.IsModuleError || info.MethodName == "" {
+		if info.ModuleName == "" {
+			extracted.SummaryPlaceholder = true
+		} else {
+			extracted.ModuleName = info.ModuleName
+		}
 		return true, nil
 	}
 
 	// Query ResultDB to resolve canonical TestID, ResultID, VariantHash
 	if client != nil && extracted.InvocationID != "" {
 		results, _, errQuery := queryAntsResultDBVerdict(ctx, client, extracted.InvocationID, info)
-		if errQuery == nil && len(results) > 0 {
+		if errQuery != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to query ResultDB for canonical test ID: %s\n", errQuery)
+		} else if len(results) > 0 {
 			extracted.TestID = results[0].TestId
 			extracted.VariantHash = results[0].VariantHash
 			if extracted.ResultID == "" {
@@ -433,6 +460,9 @@ func extractFromAntsTarget(ctx context.Context, client pb.ResultDBClient, raw st
 		if !strings.HasPrefix(trimmed, ".") {
 			extracted.TestID = trimmed
 		}
+	}
+	if extracted.TestID == "" && info.ModuleName != "" {
+		extracted.ModuleName = info.ModuleName
 	}
 
 	return true, nil

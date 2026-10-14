@@ -155,6 +155,14 @@ func newMockAntsServer() *httptest.Server {
 				"invocationId": "I56900010616552061",
 				"testStatus": "TEST_ERROR"
 			}`))
+		case "/v4/tests/TR73630363201872508":
+			// Invocation-level placeholder test result with workUnitId populated
+			_, _ = w.Write([]byte(`{
+				"testResultId": "TR73630363201872508",
+				"invocationId": "I18000010612961162",
+				"workUnitId": "WU51300269529723640",
+				"testStatus": "TEST_ERROR"
+			}`))
 		case "/v4/tests/TR36130379899461232":
 			// Method test result without module name
 			_, _ = w.Write([]byte(`{
@@ -172,6 +180,7 @@ func newMockAntsServer() *httptest.Server {
 			_, _ = w.Write([]byte(`{
 				"testResultId": "TR08930357531778741",
 				"invocationId": "I14600010609614895",
+				"workUnitId": "WU98100269380597657",
 				"testStatus": "TEST_ERROR",
 				"testIdentifier": {
 					"module": "CellBroadcastReceiverMTS"
@@ -492,18 +501,45 @@ func TestExtractIDs(t *testing.T) {
 			assert.Loosely(t, idsParams.ResultID, should.Equal("custom-res"))
 			assert.Loosely(t, idsParams.ArtifactID, should.Equal("stdout"))
 
-			// 4. Without ResultDB resolution, AnTS WorkUnitID is not populated as it does not match ResultDB WU IDs
+			// 4. Without ResultDB resolution, AnTS WorkUnitID is preserved as fallback
 			idsNoRDB, err := ExtractIDs(ctx, nil, nil, "TR13830335277435395", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsNoRDB.InvocationID, should.Equal("ants-i77100010600769898"))
-			assert.Loosely(t, idsNoRDB.WorkUnitID, should.Equal(""))
+			assert.Loosely(t, idsNoRDB.WorkUnitID, should.Equal("ants-wu17100269020689387"))
 			assert.Loosely(t, idsNoRDB.TestID, should.Equal("CellBroadcastServiceTests#com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest.testResetAreaInfoWithDefaultSubChanged"))
 
-			// 5. From placeholder test case "#." (e.g. build failure in AnTS)
+			// 4b. When ResultDB query returns an error, AnTS WorkUnitID and fallback TestID are preserved
+			errClient := &mockResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return nil, status.Error(codes.Unavailable, "transient error")
+				},
+			}
+			idsErrRDB, err := ExtractIDs(ctx, errClient, nil, "TR13830335277435395", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsErrRDB.InvocationID, should.Equal("ants-i77100010600769898"))
+			assert.Loosely(t, idsErrRDB.WorkUnitID, should.Equal("ants-wu17100269020689387"))
+			assert.Loosely(t, idsErrRDB.TestID, should.Equal("CellBroadcastServiceTests#com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest.testResetAreaInfoWithDefaultSubChanged"))
+
+			// 5. From placeholder test case "#." (e.g. invocation-level summary node in AnTS)
 			idsPlaceholder, err := ExtractIDs(ctx, nil, nil, "TR98730375213734414", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsPlaceholder.InvocationID, should.Equal("ants-i56900010616552061"))
+			assert.Loosely(t, idsPlaceholder.WorkUnitID, should.Equal(""))
+			assert.Loosely(t, idsPlaceholder.ModuleName, should.Equal(""))
 			assert.Loosely(t, idsPlaceholder.TestID, should.Equal(""))
+			assert.Loosely(t, idsPlaceholder.ResultID, should.Equal(""))
+			assert.Loosely(t, idsPlaceholder.SummaryPlaceholder, should.BeTrue)
+
+			// 5b. From ATI URL with placeholder test case "#." and Work Unit ID populated
+			atiSummaryURL := "https://android-build.corp.google.com/test_investigate/invocation/I18000010612961162/test/TR73630363201872508/?status=none"
+			idsPlaceholderWU, err := ExtractIDs(ctx, client, nil, atiSummaryURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsPlaceholderWU.InvocationID, should.Equal("ants-i18000010612961162"))
+			assert.Loosely(t, idsPlaceholderWU.WorkUnitID, should.Equal("ants-wu51300269529723640"))
+			assert.Loosely(t, idsPlaceholderWU.ModuleName, should.Equal(""))
+			assert.Loosely(t, idsPlaceholderWU.TestID, should.Equal(""))
+			assert.Loosely(t, idsPlaceholderWU.ResultID, should.Equal(""))
+			assert.Loosely(t, idsPlaceholderWU.SummaryPlaceholder, should.BeTrue)
 
 			// 6. From AnTS test result without module name (matching ResultDB no-module-name)
 			clientNoModule := &mockResultDBClient{
@@ -669,10 +705,10 @@ func TestExtractIDs(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("ants-i14600010609614895"))
 			assert.Loosely(t, ids.ModuleName, should.Equal("CellBroadcastReceiverMTS"))
-			// WorkUnitID, TestID, ResultID should NOT be populated for module errors
-			assert.Loosely(t, ids.WorkUnitID, should.Equal(""))
+			assert.Loosely(t, ids.WorkUnitID, should.Equal("ants-wu98100269380597657"))
 			assert.Loosely(t, ids.TestID, should.Equal(""))
 			assert.Loosely(t, ids.ResultID, should.Equal(""))
+			assert.Loosely(t, ids.SummaryPlaceholder, should.BeFalse)
 		})
 
 		t.Run(`Milo module URL without test cases`, func(t *ftt.Test) {
@@ -745,6 +781,38 @@ func TestPrintExtractedIDs(t *testing.T) {
 			out := buf.String()
 			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     build-8676886509240051393\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Module Name:       my_module\n"))
+		})
+
+		t.Run(`Human-readable and JSON output for AnTS summary placeholder`, func(t *ftt.Test) {
+			extracted := &ExtractedIDs{
+				InvocationID:       "ants-i18000010612961162",
+				WorkUnitID:         "ants-wu51300269529723640",
+				SummaryPlaceholder: true,
+			}
+			var buf bytes.Buffer
+			err := printExtractedIDs(&buf, extracted, false)
+			assert.Loosely(t, err, should.BeNil)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i18000010612961162\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      ants-wu51300269529723640\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Note: The AnTS test result in this target is an invocation-level summary placeholder (Test Case: #.), so -testid and -resultid are not emitted."))
+			assert.Loosely(t, out, should.ContainSubstring("luci verdict list -invocationid=ants-i18000010612961162"))
+			assert.Loosely(t, out, should.ContainSubstring("luci work-unit get -invocationid=ants-i18000010612961162 -workunitid=ants-wu51300269529723640"))
+			assert.Loosely(t, out, should.ContainSubstring("luci artifact list -invocationid=ants-i18000010612961162"))
+
+			// Without WorkUnitID, defaults to -workunitid=root in guidance
+			extractedNoWU := &ExtractedIDs{
+				InvocationID:       "ants-i56900010616552061",
+				SummaryPlaceholder: true,
+			}
+			var bufNoWU bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&bufNoWU, extractedNoWU, false), should.BeNil)
+			assert.Loosely(t, bufNoWU.String(), should.ContainSubstring("luci work-unit get -invocationid=ants-i56900010616552061 -workunitid=root"))
+
+			// JSON output includes summary_placeholder: true
+			var jsonBuf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&jsonBuf, extracted, true), should.BeNil)
+			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"summary_placeholder": true`))
 		})
 
 		t.Run(`Human-readable output with build ID does not print builder or build number`, func(t *ftt.Test) {
