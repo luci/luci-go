@@ -150,15 +150,27 @@ func FetchArtifact(ctx context.Context, rdbClient rdbpb.ResultDBClient, httpClie
 	return buf.Bytes(), nil
 }
 
-// PrintTestID prints the structured or flat test identifier of a test result.
+// PrintTestID prints the structured or flat test identifier of a test result to stdout.
 func PrintTestID(ctx context.Context, schemasClient rdbpb.SchemasClient, res *rdbpb.TestResult) {
 	PrintTestIDWithAggregations(ctx, schemasClient, res, nil)
+}
+
+// FprintTestID prints the structured or flat test identifier of a test result to out.
+func FprintTestID(out io.Writer, ctx context.Context, schemasClient rdbpb.SchemasClient, res *rdbpb.TestResult) {
+	FprintTestIDWithAggregations(out, ctx, schemasClient, res, nil)
 }
 
 // PrintTestIDWithAggregations prints the structured or flat test identifier of a
 // test result, optionally annotating the module, coarse, and fine hierarchy levels
 // with inline verdict counts from aggs.
 func PrintTestIDWithAggregations(ctx context.Context, schemasClient rdbpb.SchemasClient, res *rdbpb.TestResult, aggs *HierarchyAggregations) {
+	FprintTestIDWithAggregations(os.Stdout, ctx, schemasClient, res, aggs)
+}
+
+// FprintTestIDWithAggregations prints the structured or flat test identifier of a
+// test result to out, optionally annotating the module, coarse, and fine hierarchy
+// levels with inline verdict counts from aggs.
+func FprintTestIDWithAggregations(out io.Writer, ctx context.Context, schemasClient rdbpb.SchemasClient, res *rdbpb.TestResult, aggs *HierarchyAggregations) {
 	appendCounts := func(val string, vc *rdbpb.TestAggregation_VerdictCounts) string {
 		if c := FormatVerdictCountsInline(vc); c != "" {
 			return val + " " + c
@@ -168,7 +180,7 @@ func PrintTestIDWithAggregations(ctx context.Context, schemasClient rdbpb.Schema
 
 	st := res.TestIdStructured
 	if st != nil && st.ModuleScheme != "" && st.ModuleScheme != "legacy" {
-		fmt.Println("Test ID:")
+		fmt.Fprintln(out, "Test ID:")
 		var scheme *rdbpb.Scheme
 		var err error
 		if schemasClient != nil {
@@ -179,43 +191,43 @@ func PrintTestIDWithAggregations(ctx context.Context, schemasClient rdbpb.Schema
 			if scheme.HumanReadableName != "" {
 				modLabel = fmt.Sprintf("Module (%s)", scheme.HumanReadableName)
 			}
-			fmt.Printf("  %s: %s\n", modLabel, appendCounts(st.ModuleName, aggs.GetModule()))
+			fmt.Fprintf(out, "  %s: %s\n", modLabel, appendCounts(st.ModuleName, aggs.GetModule()))
 			if st.CoarseName != "" {
 				label := "Coarse"
 				if scheme.Coarse != nil && scheme.Coarse.HumanReadableName != "" {
 					label = scheme.Coarse.HumanReadableName
 				}
-				fmt.Printf("  %s: %s\n", label, appendCounts(st.CoarseName, aggs.GetCoarse()))
+				fmt.Fprintf(out, "  %s: %s\n", label, appendCounts(st.CoarseName, aggs.GetCoarse()))
 			}
 			if st.FineName != "" {
 				label := "Fine"
 				if scheme.Fine != nil && scheme.Fine.HumanReadableName != "" {
 					label = scheme.Fine.HumanReadableName
 				}
-				fmt.Printf("  %s: %s\n", label, appendCounts(st.FineName, aggs.GetFine()))
+				fmt.Fprintf(out, "  %s: %s\n", label, appendCounts(st.FineName, aggs.GetFine()))
 			}
 			if st.CaseName != "" {
 				label := "Case"
 				if scheme.Case != nil && scheme.Case.HumanReadableName != "" {
 					label = scheme.Case.HumanReadableName
 				}
-				fmt.Printf("  %s: %s\n", label, st.CaseName)
+				fmt.Fprintf(out, "  %s: %s\n", label, st.CaseName)
 			}
 		} else {
 			modVal := fmt.Sprintf("%s (scheme: %s)", st.ModuleName, st.ModuleScheme)
-			fmt.Printf("  Module:    %s\n", appendCounts(modVal, aggs.GetModule()))
+			fmt.Fprintf(out, "  Module:    %s\n", appendCounts(modVal, aggs.GetModule()))
 			if st.CoarseName != "" {
-				fmt.Printf("  Coarse:    %s\n", appendCounts(st.CoarseName, aggs.GetCoarse()))
+				fmt.Fprintf(out, "  Coarse:    %s\n", appendCounts(st.CoarseName, aggs.GetCoarse()))
 			}
 			if st.FineName != "" {
-				fmt.Printf("  Fine:      %s\n", appendCounts(st.FineName, aggs.GetFine()))
+				fmt.Fprintf(out, "  Fine:      %s\n", appendCounts(st.FineName, aggs.GetFine()))
 			}
 			if st.CaseName != "" {
-				fmt.Printf("  Case:      %s\n", st.CaseName)
+				fmt.Fprintf(out, "  Case:      %s\n", st.CaseName)
 			}
 		}
 	} else {
-		fmt.Printf("Test ID:   %s\n", res.TestId)
+		fmt.Fprintf(out, "Test ID:   %s\n", res.TestId)
 	}
 }
 

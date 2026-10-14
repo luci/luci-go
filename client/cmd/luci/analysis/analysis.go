@@ -31,11 +31,12 @@ import (
 func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "analysis <subcommand>",
-		ShortDesc: "Query LUCI Analysis rules and cluster failures",
-		LongDesc: "Query LUCI Analysis (analysis.api.luci.app) rules and failure clusters.\n\n" +
+		ShortDesc: "Query LUCI Analysis rules, cluster failures, and test history",
+		LongDesc: "Query LUCI Analysis (analysis.api.luci.app) rules, failure clusters, and cross-build test history.\n\n" +
 			"Available subcommands:\n" +
-			"  rule       Inspect failure association rules (e.g. 'luci analysis rule get -bugid 553974454')\n" +
-			"  failures   Summarize variant distribution and recent failing invocations for a bug, rule, or cluster",
+			"  rule          Inspect failure association rules (e.g. 'luci analysis rule get -bugid 553974454')\n" +
+			"  failures      Summarize variant distribution and recent failing invocations for a bug, rule, or cluster\n" +
+			"  test-history  Query cross-build pass/flaky/failed stats and recent verdicts for a test ID",
 		CommandRun: func() subcommands.CommandRun {
 			return &analysisRun{af: af}
 		},
@@ -54,6 +55,7 @@ func (r *analysisRun) Run(a subcommands.Application, args []string, env subcomma
 	return base.RunSubcommandApp(a, "luci analysis", "LUCI Analysis inspection", []*subcommands.Command{
 		RuleCmd(r.af),
 		FailuresCmd(r.af),
+		TestHistoryCmd(r.af),
 		subcommands.CmdHelp,
 	}, args)
 }
