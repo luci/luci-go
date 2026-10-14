@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/vpython/python"
+	"go.chromium.org/luci/vpython/standard"
 	"go.chromium.org/luci/vpython/wheels"
 )
 
@@ -230,6 +231,40 @@ func TestPythonFromPath(t *testing.T) {
 		rc, has := exitcode.Get(err)
 		assert.Loosely(t, has, should.BeTrue)
 		assert.Loosely(t, rc, should.Equal(42))
+	})
+}
+
+func TestPythonUpgradeCompanionPrecedence(t *testing.T) {
+	citest.IntegrationTest(t, "VPYTHON_INTEGRATION_TESTS")
+	if runtime.GOOS == "windows" {
+		t.Skip("UpgradeSpecs is not supported on Windows")
+	}
+
+	ftt.Run("Test upgrade companion spec precedence and python execution", t, func(t *ftt.Test) {
+		ctx := context.Background()
+		dir := t.TempDir()
+
+		scriptPath := filepath.Join(dir, "main.py")
+		scriptContent := "import sys\nprint(f'{sys.version_info.major}.{sys.version_info.minor}')\n"
+		assert.Loosely(t, os.WriteFile(scriptPath, []byte(scriptContent), 0755), should.BeNil)
+		assert.Loosely(t, os.WriteFile(scriptPath+".vpython", []byte(`python_version: "2.7"`), 0644), should.BeNil)
+		assert.Loosely(t, os.WriteFile(scriptPath+".vpython3", []byte(`python_version: "3.11"`), 0644), should.BeNil)
+
+		assert.Loosely(t, UpgradeSpecs(ctx, dir, false, true, true), should.BeNil)
+
+		res, err := ResolveFlow(ctx, python.ScriptTarget{Path: scriptPath}, "", "", ".vpython3", dir)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.Flow, should.Equal(FlowUV))
+		assert.Loosely(t, res.StandardSpec, should.NotBeNil)
+
+		resolvedVer, err := standard.MatchInterpreter(res.StandardSpec.RequiresPython, []string{"3.8", "3.11"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resolvedVer, should.Equal("3.11"))
+
+		c := cmd(t, &Application{
+			Arguments: []string{scriptPath},
+		}, getPythonEnvironment(resolvedVer))
+		assert.Loosely(t, output(c), should.Equal("3.11"))
 	})
 }
 

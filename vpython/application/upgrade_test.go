@@ -699,3 +699,83 @@ python_version: "3.8"
 		})
 	})
 }
+
+func TestUpgradeSpecs_CompanionSpec_Vpython3Precedence(t *testing.T) {
+	ctx := context.Background()
+
+	ftt.Run("Test companion and named spec migration .vpython3 over .vpython precedence", t, func(t *ftt.Test) {
+		t.Run("Merges .vpython3 companion spec and cleans up obsolete .vpython companion spec by default", func(t *ftt.Test) {
+			tempDir := t.TempDir()
+
+			scriptPath := filepath.Join(tempDir, "my_tool.py")
+			assert.NoErr(t, os.WriteFile(scriptPath, []byte("#!/usr/bin/env vpython3\nprint(\"OK\")\n"), 0755))
+
+			py2SpecPath := scriptPath + ".vpython"
+			py3SpecPath := scriptPath + ".vpython3"
+			assert.NoErr(t, os.WriteFile(py2SpecPath, []byte(`python_version: "2.7"`), 0644))
+			assert.NoErr(t, os.WriteFile(py3SpecPath, []byte(`python_version: "3.11"`), 0644))
+
+			err := UpgradeSpecs(ctx, tempDir, false, true, true)
+			assert.NoErr(t, err)
+
+			// Both companion spec files should be removed after migration.
+			_, err = os.Stat(py2SpecPath)
+			assert.Loosely(t, errors.Is(err, os.ErrNotExist), should.BeTrue)
+			_, err = os.Stat(py3SpecPath)
+			assert.Loosely(t, errors.Is(err, os.ErrNotExist), should.BeTrue)
+
+			// The script must receive the .vpython3 metadata, not the obsolete .vpython metadata.
+			spec, err := standard.ParseScriptMetadata(scriptPath)
+			assert.NoErr(t, err)
+			assert.Loosely(t, spec, should.NotBeNil)
+			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11,<3.12"))
+		})
+
+		t.Run("Merges .vpython3 companion spec and preserves both companion files when keepLegacy is active", func(t *ftt.Test) {
+			tempDir := t.TempDir()
+
+			scriptPath := filepath.Join(tempDir, "my_tool.py")
+			assert.NoErr(t, os.WriteFile(scriptPath, []byte("#!/usr/bin/env vpython3\nprint(\"OK\")\n"), 0755))
+
+			py2SpecPath := filepath.Join(tempDir, "my_tool.vpython")
+			py3SpecPath := scriptPath + ".vpython3"
+			assert.NoErr(t, os.WriteFile(py2SpecPath, []byte(`python_version: "2.7"`), 0644))
+			assert.NoErr(t, os.WriteFile(py3SpecPath, []byte(`python_version: "3.11"`), 0644))
+
+			err := UpgradeSpecs(ctx, tempDir, true, true, true)
+			assert.NoErr(t, err)
+
+			_, err = os.Stat(py2SpecPath)
+			assert.NoErr(t, err)
+			_, err = os.Stat(py3SpecPath)
+			assert.NoErr(t, err)
+
+			spec, err := standard.ParseScriptMetadata(scriptPath)
+			assert.NoErr(t, err)
+			assert.Loosely(t, spec, should.NotBeNil)
+			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11,<3.12"))
+		})
+
+		t.Run("Migrates custom named .vpython3 spec and cleans up obsolete custom .vpython spec", func(t *ftt.Test) {
+			tempDir := t.TempDir()
+
+			py2SpecPath := filepath.Join(tempDir, "custom.vpython")
+			py3SpecPath := filepath.Join(tempDir, "custom.vpython3")
+			assert.NoErr(t, os.WriteFile(py2SpecPath, []byte(`python_version: "2.7"`), 0644))
+			assert.NoErr(t, os.WriteFile(py3SpecPath, []byte(`python_version: "3.11"`), 0644))
+
+			err := UpgradeSpecs(ctx, tempDir, false, true, true)
+			assert.NoErr(t, err)
+
+			_, err = os.Stat(py2SpecPath)
+			assert.Loosely(t, errors.Is(err, os.ErrNotExist), should.BeTrue)
+			_, err = os.Stat(py3SpecPath)
+			assert.Loosely(t, errors.Is(err, os.ErrNotExist), should.BeTrue)
+
+			tomlPath := filepath.Join(tempDir, "custom.vpython.toml")
+			spec, err := standard.ParseVpythonTOML(tomlPath)
+			assert.NoErr(t, err)
+			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11,<3.12"))
+		})
+	})
+}

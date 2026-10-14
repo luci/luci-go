@@ -227,6 +227,17 @@ func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool)
 		}
 	}
 
+	if strings.HasSuffix(base, ".vpython") && hasVpython3Precedence(srcPath, scriptPath) {
+		if !keepLegacy {
+			// Clean up obsolete legacy .vpython file to protect workspace cleanliness!
+			if err := os.Remove(srcPath); err != nil {
+				return errors.Fmt("failed to delete obsolete legacy .vpython file %q: %w", srcPath, err)
+			}
+			logging.Infof(ctx, "Cleaned up obsolete legacy .vpython file bypassed by .vpython3 precedence: %s", srcPath)
+		}
+		return nil
+	}
+
 	if scriptPath != "" {
 		// Merge companion spec inline.
 		return mergeSpecIntoScript(ctx, scriptPath, srcPath, keepLegacy)
@@ -239,21 +250,6 @@ func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool)
 		destPath = filepath.Join(dir, name+".vpython.toml")
 	} else {
 		destPath = filepath.Join(dir, "vpython.toml")
-	}
-
-	if base == ".vpython" {
-		// Bypassed legacy .vpython migration if .vpython3 exists due to precedence.
-		vpython3Path := filepath.Join(dir, ".vpython3")
-		if _, err := os.Stat(vpython3Path); err == nil {
-			if !keepLegacy {
-				// Clean up obsolete legacy .vpython file to protect workspace cleanliness!
-				if err := os.Remove(srcPath); err != nil {
-					return errors.Fmt("failed to delete obsolete legacy .vpython file %q: %w", srcPath, err)
-				}
-				logging.Infof(ctx, "Cleaned up obsolete legacy .vpython file bypassed by .vpython3 precedence: %s", srcPath)
-			}
-			return nil
-		}
 	}
 
 	var sp vpython.Spec
@@ -636,6 +632,21 @@ func hasCompanionSpecFile(scriptPath string) bool {
 		}
 	}
 
+	return false
+}
+
+func hasVpython3Precedence(srcPath, scriptPath string) bool {
+	if st, err := os.Stat(srcPath + "3"); err == nil && !st.IsDir() {
+		return true
+	}
+	if scriptPath == "" {
+		return false
+	}
+	for _, cand := range []string{scriptPath + ".vpython3", strings.TrimSuffix(scriptPath, ".py") + ".vpython3"} {
+		if st, err := os.Stat(cand); err == nil && !st.IsDir() {
+			return true
+		}
+	}
 	return false
 }
 
