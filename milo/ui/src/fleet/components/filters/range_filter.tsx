@@ -93,7 +93,8 @@ export class RangeFilterCategory implements FilterCategory {
           continue;
         }
 
-        const valStr = term.simple.arg.member.value.value;
+        const member = term.simple.arg.member;
+        const valStr = ast.memberToString(member);
         let num = parseFloat(valStr);
         if (isNaN(num)) {
           continue;

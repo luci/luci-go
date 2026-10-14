@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Filter, astToString } from './ast';
+import { Filter, astToString, memberToString } from './ast';
 
 describe('AST', () => {
   // The AST here represents: NOT a.b: "foo" AND (c < d OR NOT e)
@@ -153,5 +153,48 @@ describe('AST', () => {
       'restriction{comparable{member{value{"e"}}}}}}}}}}}}}';
 
     expect(astToString(filter)).toBe(expected);
+  });
+
+  describe('memberToString', () => {
+    it('returns simple scalar value when fields are empty', () => {
+      expect(
+        memberToString({
+          kind: 'Member',
+          value: { kind: 'Value', value: '42', quoted: false },
+          fields: [],
+        }),
+      ).toBe('42');
+    });
+
+    it('returns quoted value when value is quoted', () => {
+      expect(
+        memberToString({
+          kind: 'Member',
+          value: { kind: 'Value', value: 'foo', quoted: true },
+          fields: [],
+        }),
+      ).toBe('foo');
+    });
+
+    it('reconstructs float literals with fields separated by dot', () => {
+      expect(
+        memberToString({
+          kind: 'Member',
+          value: { kind: 'Value', value: '0', quoted: false },
+          fields: [{ kind: 'Value', value: '8', quoted: false }],
+        }),
+      ).toBe('0.8');
+
+      expect(
+        memberToString({
+          kind: 'Member',
+          value: { kind: 'Value', value: '1', quoted: false },
+          fields: [
+            { kind: 'Value', value: '2', quoted: false },
+            { kind: 'Value', value: '3', quoted: false },
+          ],
+        }),
+      ).toBe('1.2.3');
+    });
   });
 });

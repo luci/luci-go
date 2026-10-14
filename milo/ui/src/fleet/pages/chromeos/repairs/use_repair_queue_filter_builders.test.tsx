@@ -14,12 +14,19 @@
 
 import { renderHook } from '@testing-library/react';
 
+import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
+import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { useRepairQueueFilterBuilders } from './use_repair_queue_filter_builders';
+import {
+  MODEL_HEALTH_FILTER_KEY,
+  POOL_HEALTH_FILTER_KEY,
+  RepairQueueFilterBuilder,
+  useRepairQueueFilterBuilders,
+} from './use_repair_queue_filter_builders';
 
 const renderFilterBuilders = () =>
   renderHook(() => useRepairQueueFilterBuilders(), {
@@ -41,8 +48,11 @@ const mockDimensions = (data: GetDeviceDimensionsResponse) => {
 };
 
 const optionValues = (
-  builder: { options?: ReadonlyArray<{ value: string }> } | undefined,
-): string[] => (builder?.options ?? []).map((o) => o.value);
+  builder: RepairQueueFilterBuilder | undefined,
+): string[] =>
+  builder instanceof StringListFilterCategoryBuilder
+    ? (builder.options?.map((o) => o.value) ?? [])
+    : [];
 
 describe('useRepairQueueFilterBuilders', () => {
   beforeEach(() => {
@@ -211,5 +221,29 @@ describe('useRepairQueueFilterBuilders', () => {
 
     expect(builders['labels."label-empty"']).toBeUndefined();
     expect(builders['labels."label-phase"']).toBeDefined();
+  });
+
+  it('offers pool_health_pct and model_health_pct as range filter category builders', () => {
+    mockDimensions({ baseDimensions: {}, labels: {} });
+
+    const builders = renderFilterBuilders().result.current.filterBuilders;
+
+    const poolHealthBuilder = builders[
+      POOL_HEALTH_FILTER_KEY
+    ] as RangeFilterCategoryBuilder;
+    expect(poolHealthBuilder).toBeInstanceOf(RangeFilterCategoryBuilder);
+    expect(poolHealthBuilder.label).toBe('Pool Health');
+    expect(poolHealthBuilder.min).toBe(0);
+    expect(poolHealthBuilder.max).toBe(100);
+    expect(poolHealthBuilder.scaleFactor).toBe(0.01);
+
+    const modelHealthBuilder = builders[
+      MODEL_HEALTH_FILTER_KEY
+    ] as RangeFilterCategoryBuilder;
+    expect(modelHealthBuilder).toBeInstanceOf(RangeFilterCategoryBuilder);
+    expect(modelHealthBuilder.label).toBe('Model Health');
+    expect(modelHealthBuilder.min).toBe(0);
+    expect(modelHealthBuilder.max).toBe(100);
+    expect(modelHealthBuilder.scaleFactor).toBe(0.01);
   });
 });

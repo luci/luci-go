@@ -191,3 +191,19 @@ export function astToString(node: Node | null): string {
       return `value{${node.quoted ? 'quoted,' : ''}${JSON.stringify(node.value)}}`;
   }
 }
+
+/**
+ * Returns the reconstructed string literal of a Member node.
+ *
+ * The AIP-160 grammar treats '.' as a field separator, so an unquoted float like
+ * 0.8 or 10.5 is parsed as a Member with value "0" and fields ["8"].
+ * Joining them back keeps such literals intact instead of truncating them.
+ *
+ * Mirrors the Go backend's `argValue` in filter_generator_ent.go.
+ */
+export function memberToString(member: Member): string {
+  if (!member.fields || member.fields.length === 0) {
+    return member.value.value;
+  }
+  return [member.value.value, ...member.fields.map((f) => f.value)].join('.');
+}

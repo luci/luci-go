@@ -178,6 +178,51 @@ describe('RangeFilterCategory', () => {
     expect(category.toAIP160()).toBe('custom_field >= 0.5');
   });
 
+  it('should parse decimal values from dotted AST Member fields', () => {
+    const termWithDottedAst: ast.Term & { simple: ast.Restriction } = {
+      kind: 'Term',
+      negated: false,
+      simple: {
+        kind: 'Restriction',
+        comparable: {
+          kind: 'Comparable',
+          member: {
+            kind: 'Member',
+            value: { kind: 'Value', value: 'pool_health_pct', quoted: false },
+            fields: [],
+          },
+        },
+        comparator: '<=',
+        arg: {
+          kind: 'Comparable',
+          member: {
+            kind: 'Member',
+            value: { kind: 'Value', value: '0', quoted: false },
+            fields: [{ kind: 'Value', value: '8', quoted: false }],
+          },
+        },
+      },
+    };
+
+    const builder = new RangeFilterCategoryBuilder()
+      .setLabel('Pool Health')
+      .setMin(0)
+      .setMax(100)
+      .setScaleFactor(0.01);
+
+    const result = builder.build('pool_health_pct', () => {}, [
+      termWithDottedAst,
+    ]);
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    // 0.8 / 0.01 = 80
+    expect(category.value.max).toBe(80);
+    expect(category.toAIP160()).toBe('pool_health_pct <= 0.8');
+    expect(category.getChipLabel()).toBe('[ Pool Health ]: to 80');
+  });
+
   it('should expose utilization filter constants with expected values', () => {
     expect(UTILIZATION_FILTER_KEYS).toContain('average_7d');
     expect(UTILIZATION_FILTER_KEYS).toContain('average_30d');

@@ -52,7 +52,7 @@ export const PriorityRulesPanel = () => {
       filterBuilders={filterBuilders}
       isBuildersLoading={isBuildersLoading}
       canEdit={canEdit}
-      searchPlaceholder="Add rule filter (e.g. pool, board, model)..."
+      searchPlaceholder="Add rule filter (e.g. pool, model, pool health)..."
     />
   );
 };

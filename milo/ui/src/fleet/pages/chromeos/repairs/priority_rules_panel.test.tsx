@@ -22,11 +22,16 @@ import {
 import userEvent from '@testing-library/user-event';
 
 import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
+import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import * as UsePriorityRulesModule from '@/fleet/pages/chromeos/repairs/use_priority_rules';
+import {
+  MODEL_HEALTH_FILTER_KEY,
+  POOL_HEALTH_FILTER_KEY,
+  RepairQueueFilterBuilder,
+} from '@/fleet/pages/chromeos/repairs/use_repair_queue_filter_builders';
 import * as UseRepairQueueFilterBuildersModule from '@/fleet/pages/chromeos/repairs/use_repair_queue_filter_builders';
-import { ChromeOSFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
 import { PriorityRule } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -55,28 +60,40 @@ const MOCK_RULES: readonly PriorityRule[] = [
   },
 ];
 
-const createMockFilterBuilders = () =>
-  ({
-    board: new StringListFilterCategoryBuilder().setLabel('Board').setOptions([
-      { label: 'bria', value: 'bria' },
-      { label: 'brya', value: 'brya' },
-    ]),
-    pool: new StringListFilterCategoryBuilder().setLabel('Pool').setOptions([
-      { label: 'DUT_POOL_QUOTA', value: 'DUT_POOL_QUOTA' },
-      { label: 'faft-cr50', value: 'faft-cr50' },
-    ]),
-    model: new StringListFilterCategoryBuilder().setLabel('Model').setOptions([
-      { label: 'volteer', value: 'volteer' },
-      { label: 'corsola', value: 'corsola' },
-      { label: 'brya', value: 'brya' },
-    ]),
-    lab: new StringListFilterCategoryBuilder()
-      .setLabel('Lab')
-      .setOptions([{ label: 'MTV', value: 'MTV' }]),
-    state: new StringListFilterCategoryBuilder()
-      .setLabel('State')
-      .setOptions([{ label: 'READY', value: 'READY' }]),
-  }) as unknown as Record<ChromeOSFilterKey, StringListFilterCategoryBuilder>;
+const createMockFilterBuilders = (): Record<
+  string,
+  RepairQueueFilterBuilder
+> => ({
+  board: new StringListFilterCategoryBuilder().setLabel('Board').setOptions([
+    { label: 'bria', value: 'bria' },
+    { label: 'brya', value: 'brya' },
+  ]),
+  pool: new StringListFilterCategoryBuilder().setLabel('Pool').setOptions([
+    { label: 'DUT_POOL_QUOTA', value: 'DUT_POOL_QUOTA' },
+    { label: 'faft-cr50', value: 'faft-cr50' },
+  ]),
+  model: new StringListFilterCategoryBuilder().setLabel('Model').setOptions([
+    { label: 'volteer', value: 'volteer' },
+    { label: 'corsola', value: 'corsola' },
+    { label: 'brya', value: 'brya' },
+  ]),
+  lab: new StringListFilterCategoryBuilder()
+    .setLabel('Lab')
+    .setOptions([{ label: 'MTV', value: 'MTV' }]),
+  state: new StringListFilterCategoryBuilder()
+    .setLabel('State')
+    .setOptions([{ label: 'READY', value: 'READY' }]),
+  [POOL_HEALTH_FILTER_KEY]: new RangeFilterCategoryBuilder()
+    .setLabel('Pool Health')
+    .setMin(0)
+    .setMax(100)
+    .setScaleFactor(0.01),
+  [MODEL_HEALTH_FILTER_KEY]: new RangeFilterCategoryBuilder()
+    .setLabel('Model Health')
+    .setMin(0)
+    .setMax(100)
+    .setScaleFactor(0.01),
+});
 
 describe('<PriorityRulesPanel />', () => {
   const mockCreateRule = jest.fn();
@@ -248,6 +265,31 @@ describe('<PriorityRulesPanel />', () => {
     });
   });
 
+  it('renders and supports priority rules with pool_health_pct and model_health_pct range filters', async () => {
+    const healthRules: readonly PriorityRule[] = [
+      {
+        id: '10',
+        expressionAip160: `${POOL_HEALTH_FILTER_KEY} <= 0.8`,
+        weight: '500',
+      },
+      {
+        id: '11',
+        expressionAip160: `${MODEL_HEALTH_FILTER_KEY} >= 0.2 AND ${MODEL_HEALTH_FILTER_KEY} <= 0.6`,
+        weight: '300',
+      },
+    ];
+    setupMockHook(healthRules);
+    renderPanel();
+
+    const row10 = screen.getByTestId('priority-rule-row-10');
+    expect(within(row10).getByText(/Pool Health/i)).toBeInTheDocument();
+    expect(within(row10).getByText(/to 80/i)).toBeInTheDocument();
+
+    const row11 = screen.getByTestId('priority-rule-row-11');
+    expect(within(row11).getByText(/Model Health/i)).toBeInTheDocument();
+    expect(within(row11).getByText(/from 20 to 60/i)).toBeInTheDocument();
+  });
+
   it('allows adding a new rule draft and creates it on Apply', async () => {
     setupMockHook(MOCK_RULES.slice(0, 2)); // 2 existing rules
     renderPanel();
@@ -261,7 +303,7 @@ describe('<PriorityRulesPanel />', () => {
     expect(rowDraft).toBeInTheDocument();
 
     const searchInput = within(rowDraft).getByPlaceholderText(
-      'Add rule filter (e.g. pool, board, model)...',
+      'Add rule filter (e.g. pool, model, pool health)...',
     );
     expect(searchInput).toBeInTheDocument();
 
@@ -288,6 +330,65 @@ describe('<PriorityRulesPanel />', () => {
           id: '0',
           expressionAip160: '(model = "corsola")',
           weight: '750',
+        },
+      });
+    });
+  });
+
+  it('allows adding a new rule draft with pool health range filter and creates it on Apply', async () => {
+    setupMockHook(MOCK_RULES.slice(0, 2));
+    renderPanel();
+
+    const addRuleButton = screen.getByTestId('add-priority-rule-button');
+    fireEvent.click(addRuleButton);
+
+    const rowDraft = await screen.findByTestId(/^priority-rule-row-draft-/);
+    expect(rowDraft).toBeInTheDocument();
+
+    const searchInput = within(rowDraft).getByPlaceholderText(
+      'Add rule filter (e.g. pool, model, pool health)...',
+    );
+    fireEvent.focus(searchInput);
+
+    const poolHealthMenuItem = await screen.findByRole('menuitem', {
+      name: /Pool Health/i,
+    });
+    fireEvent.click(poolHealthMenuItem);
+
+    const maxInput = await screen.findByLabelText(/Max/i);
+    fireEvent.change(maxInput, { target: { value: '80' } });
+
+    // Click Apply inside RangeFilter popover footer (adjacent to Cancel button)
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    const applyFilterButton = within(cancelButton.parentElement!).getByRole(
+      'button',
+      { name: /apply/i },
+    );
+    fireEvent.click(applyFilterButton);
+
+    // Filter chip for Pool Health should appear in the draft row
+    await waitFor(() => {
+      expect(within(rowDraft).getByText(/Pool Health/i)).toBeInTheDocument();
+      expect(within(rowDraft).getByText(/to 80/i)).toBeInTheDocument();
+    });
+
+    // Set points weight
+    const weightInputs = screen.getAllByLabelText(/points weight/i);
+    const draftWeightInput = weightInputs[weightInputs.length - 1];
+    fireEvent.change(draftWeightInput, {
+      target: { value: '500' },
+    });
+
+    // Click Apply on draft rule row
+    const applyDraftButton = screen.getByTestId(/^rule-apply-button-draft-/);
+    fireEvent.click(applyDraftButton);
+
+    await waitFor(() => {
+      expect(mockCreateRule).toHaveBeenCalledWith({
+        priorityRule: {
+          id: '0',
+          expressionAip160: `${POOL_HEALTH_FILTER_KEY} <= 0.8`,
+          weight: '500',
         },
       });
     });
@@ -443,7 +544,7 @@ describe('<PriorityRulesPanel />', () => {
 
     const rowDraft = await screen.findByTestId(/^priority-rule-row-draft-/);
     const draftSearchInput = within(rowDraft).getByPlaceholderText(
-      'Add rule filter (e.g. pool, board, model)...',
+      'Add rule filter (e.g. pool, model, pool health)...',
     );
     await user.type(draftSearchInput, 'model:brya');
     await user.keyboard('{Enter}');

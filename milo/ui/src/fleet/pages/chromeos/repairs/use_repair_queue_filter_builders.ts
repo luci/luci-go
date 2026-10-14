@@ -14,12 +14,20 @@
 
 import { useMemo } from 'react';
 
+import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { formatDeviceStateLabel } from '@/fleet/pages/device_list_page/chromeos/dut_state';
 import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
 
 export type RepairQueueFilterKey = string;
+
+export const POOL_HEALTH_FILTER_KEY = 'pool_health_pct';
+export const MODEL_HEALTH_FILTER_KEY = 'model_health_pct';
+
+export type RepairQueueFilterBuilder =
+  | StringListFilterCategoryBuilder
+  | RangeFilterCategoryBuilder;
 
 /**
  * The values `types.PeripheralState` can hold. Hardcoded rather than read from
@@ -118,13 +126,13 @@ const CORE_REPAIR_COLUMNS: readonly CoreRepairColumnConfig[] = [
 ];
 
 export const useRepairQueueFilterBuilders = (): {
-  filterBuilders: Record<string, StringListFilterCategoryBuilder>;
+  filterBuilders: Record<string, RepairQueueFilterBuilder>;
   isLoading: boolean;
 } => {
   const { availableFields, getValues, isLoading } = useChromeOSFields();
 
   const filterBuilders = useMemo(() => {
-    const filters: Record<string, StringListFilterCategoryBuilder> = {};
+    const filters: Record<string, RepairQueueFilterBuilder> = {};
 
     const build = (
       label: string,
@@ -152,11 +160,26 @@ export const useRepairQueueFilterBuilders = (): {
       filters[config.filterKey] = build(config.header, values, formatLabel);
     }
 
-    const supersededLabelKeys = new Set(
-      CORE_REPAIR_COLUMNS.flatMap((c) =>
+    // Health metrics
+    filters[POOL_HEALTH_FILTER_KEY] = new RangeFilterCategoryBuilder()
+      .setLabel('Pool Health')
+      .setMin(0)
+      .setMax(100)
+      .setScaleFactor(0.01);
+
+    filters[MODEL_HEALTH_FILTER_KEY] = new RangeFilterCategoryBuilder()
+      .setLabel('Model Health')
+      .setMin(0)
+      .setMax(100)
+      .setScaleFactor(0.01);
+
+    const supersededLabelKeys = new Set([
+      ...CORE_REPAIR_COLUMNS.flatMap((c) =>
         c.supersededLabelKeys.map((k) => k.toLowerCase()),
       ),
-    );
+      POOL_HEALTH_FILTER_KEY,
+      MODEL_HEALTH_FILTER_KEY,
+    ]);
 
     // 2. Include dynamic device labels from labels.* JSONB column.
     // Exclude device inventory base fields (e.g. type, id, state, realm) not on repair_tasks.
