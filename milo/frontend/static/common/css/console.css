@@ -18,10 +18,10 @@
 .console-column {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
 }
 
 .console-commits-column {
-  justify-content: flex-end;
   flex: 0;
   position: sticky;
   left: 0;
@@ -211,6 +211,11 @@
   justify-content: flex-end;
 }
 
+.collapsed .console-commit-column,
+.collapsed .console-build-column {
+  padding-bottom: 2px;
+}
+
 .console-commit-column div.console-commit-item:nth-child(even),
 .console-commit-column div.console-commit-item:nth-child(even) p {
   background-color: #cccccc;
@@ -263,12 +268,29 @@
 }
 
 .collapsed .console-commit-item {
-  margin-bottom: 2px;
+  height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.collapsed .console-cell-container {
+  display: flex;
+  flex-direction: column;
+  height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .console-commit-item-overlay {
   position: absolute;
-  top: -1px;
+  top: 0;
   left: 0;
   z-index: 16;
   border-top: 1px solid black;
@@ -288,7 +310,7 @@
 }
 
 .expanded .console-commit-item  {
-  border-top: 1px solid black;
+  padding-top: 1px;
 }
 
 .console-commit-revision {
@@ -426,6 +448,7 @@
 .console-builder-column {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   flex: 1;
 }
 
@@ -485,6 +508,7 @@
   display: flex;
   flex-grow: 1;
   flex-direction: column;
+  justify-content: flex-end;
 }
 
 .expanded .console-cell-container-inner {
@@ -532,20 +556,17 @@
 .collapsed .console-cell, .collapsed .console-cell-top, .collapsed .console-cell-middle, .collapsed .console-cell-bottom {
   margin-right: 1px;
   margin-left: 1px;
-}
-
-.collapsed .console-cell-top, .collapsed .console-cell-middle {
-  padding-bottom: 3px;
-}
-
-.collapsed .console-cell-top {
-  margin-top: 1px;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .collapsed .console-cell-top {
   display: flex;
   min-width: 1em;
-  min-height: 2em;
+  height: 23px;
+  min-height: 23px;
+  margin-top: 1px;
+  margin-bottom: 0;
   border-bottom-left-radius: unset;
   border-bottom-right-radius: unset;
   border-top-left-radius: 0.5em;
@@ -558,29 +579,33 @@
 .collapsed .console-cell-middle {
   display: flex;
   min-width: 1em;
-  min-height: 2em;
+  height: 24px;
+  min-height: 24px;
+  margin-top: 0;
+  margin-bottom: 0;
   border-width: 1px;
   border-style: solid;
   border-top: none;
   border-bottom: none;
   border-radius: unset;
-  padding-top: 1px;
 }
 
 .collapsed .console-cell, .collapsed .console-empty-cell {
+  height: 22px;
+  min-height: 22px;
   margin-top: 1px;
   margin-bottom: 1px;
-}
-
-.collapsed .console-cell-bottom {
-  padding-top: 1px;
-  margin-bottom: 1px;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .collapsed .console-cell-bottom {
   display: flex;
   min-width: 1em;
-  min-height: 2em;
+  height: 23px;
+  min-height: 23px;
+  margin-top: 0;
+  margin-bottom: 1px;
   border-bottom-left-radius: 0.5em;
   border-bottom-right-radius: 0.5em;
   border-top-left-radius: unset;
@@ -588,7 +613,6 @@
   border-width: 1px;
   border-style: solid;
   border-top: none;
-  padding-top: 1px;
 }
 
 .expanded .console-cell,
