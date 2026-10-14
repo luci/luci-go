@@ -56,18 +56,20 @@ import (
 //     to a new zone attempt due to stockouts across all passes. Initialized to
 //     0 in `createVM`, incremented on every stockout rotation in
 //     `rotateVMZone`, persisted via `setActiveVMZone` (while async creation is
-//     pending or wrapping around) and `updateVMZone` (when creation succeeds),
-//     used to disambiguate GCE `requestId`s across wrap-around passes, and
-//     reported via `gce/instances/zone_rotations` in `checkInstance`.
+//     pending or wrapping around) and `finalizeVMZone` in `setCreated` (when
+//     creation succeeds), used to disambiguate GCE `requestId`s across
+//     wrap-around passes, and reported via `gce/instances/zone_rotations` in
+//     `checkInstance`.
 //
 // Template Preservation Across Asynchronous Ticks:
 //   - While `op.GetStatus() != "DONE"`, `{{.Zone}}` templates in `Disk.Type`
 //     and `MachineType` remain unexpanded in Datastore (`setActiveVMZone`), and
 //     each attempt uses an in-memory clone (`cloneVMForZone`) bound to
 //     `targetZone`.
-//   - Once `op.GetStatus() == "DONE"`, `updateVMZone` expands `{{.Zone}}`
-//     templates via `SetZone(targetZone)` and persists the winning zone and
-//     rotation history.
+//   - Once `op.GetStatus() == "DONE"` and `checkInstance` verifies the
+//     instance via `Instances.Get`, `finalizeVMZone` (inside `setCreated`)
+//     expands `{{.Zone}}` templates via `SetZone(targetZone)` and persists the
+//     winning zone and rotation history in a single Datastore transaction.
 
 // originalVMZone returns the initially configured primary zone for the VM.
 func originalVMZone(vm *model.VM) string {
@@ -266,33 +268,31 @@ func setActiveVMZone(ctx context.Context, id, zone, origZone string, failedZones
 	}, nil)
 }
 
-// updateVMZone persists the selected zone, expanded "{{.Zone}}" templates, and
-// zone rotation history to the VM entity in datastore so subsequent check,
-// audit, and destroy tasks target the zone where the instance was created.
-func updateVMZone(ctx context.Context, id, zone, origZone string, failedZones []string, rotations int64) error {
-	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		cur := &model.VM{ID: id}
-		if err := datastore.Get(ctx, cur); err != nil {
-			return errors.Fmt("failed to fetch VM with id %q: %w", id, err)
-		}
-		if origZone != "" {
-			cur.FallbackOriginalZone = origZone
-		}
-		cur.FallbackFailedZones = append([]string(nil), failedZones...)
-		cur.FallbackZoneRotations = rotations
-		cur.Attributes.SetZone(zone)
-		cur.IndexAttributes()
-		if err := datastore.Put(ctx, cur); err != nil {
-			return errors.Fmt("failed to store VM %q: %w", id, err)
-		}
-		return nil
-	}, nil)
+// finalizeVMZone copies fallback rotation history from src to dst and expands
+// any "{{.Zone}}" attribute templates to the finalized zone where the GCE
+// instance was created. Running this inside setCreated consolidates DONE
+// persistence into a single Datastore transaction and keeps "{{.Zone}}"
+// templates intact if Instances.Get fails transiently before setCreated.
+func finalizeVMZone(dst, src *model.VM) {
+	if src.FallbackOriginalZone != "" {
+		dst.FallbackOriginalZone = src.FallbackOriginalZone
+	}
+	if len(src.FallbackFailedZones) > 0 || src.FallbackZoneRotations > 0 {
+		dst.FallbackFailedZones = append([]string(nil), src.FallbackFailedZones...)
+		dst.FallbackZoneRotations = src.FallbackZoneRotations
+	}
+	zone := src.Attributes.GetZone()
+	if zone != "" && (zone != dst.Attributes.GetZone() || len(dst.Attributes.GetFallbackZones()) > 0 || dst.FallbackZoneRotations > 0) {
+		dst.Attributes.SetZone(zone)
+		dst.IndexAttributes()
+	}
 }
 
 // insertInstanceWithFallback attempts to insert the GCE instance across the
-// VM's candidate zones, rotating on stockout errors and persisting either the
-// finalized zone (when op is DONE) or the active zone cursor (when op is still
-// pending).
+// VM's candidate zones, rotating on stockout errors. When the operation is DONE,
+// it updates the in-memory zone on vm so checkInstance/setCreated can verify and
+// persist the finalized zone in a single transaction; when the operation is
+// still pending, it persists the active zone cursor via setActiveVMZone.
 func insertInstanceWithFallback(ctx context.Context, vm *model.VM) (Operation, error) {
 	origZone := originalVMZone(vm)
 	vm.FallbackOriginalZone = origZone
@@ -334,12 +334,7 @@ func insertInstanceWithFallback(ctx context.Context, vm *model.VM) (Operation, e
 		break
 	}
 	if op.GetStatus() == "DONE" {
-		if targetZone != initialZone || hasFallbacks || vm.FallbackZoneRotations > 0 {
-			if err := updateVMZone(ctx, vm.ID, targetZone, origZone, vm.FallbackFailedZones, vm.FallbackZoneRotations); err != nil {
-				return op, errors.Fmt("failed to update zone for instance %s: %w", vm.Hostname, err)
-			}
-			vm.Attributes.SetZone(targetZone)
-		}
+		vm.Attributes.Zone = targetZone
 		return op, nil
 	}
 	if targetZone != initialZone || vm.FallbackZoneRotations != initialRotations {

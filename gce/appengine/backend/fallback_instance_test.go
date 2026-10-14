@@ -99,9 +99,14 @@ func TestFallbackInstance(t *testing.T) {
 			assert.Loosely(t, stored.Attributes.GetZone(), should.Equal("us-central1-a"))
 			assert.Loosely(t, stored.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
 
-			assert.Loosely(t, updateVMZone(c, "id", "us-central1-b", "us-central1-c", []string{"us-central1-c", "us-central1-a"}, 2), should.BeNil)
-			stored = &model.VM{ID: "id"}
-			assert.Loosely(t, datastore.Get(c, stored), should.BeNil)
+			finalizeVMZone(stored, &model.VM{
+				FallbackOriginalZone:  "us-central1-c",
+				FallbackFailedZones:   []string{"us-central1-c", "us-central1-a"},
+				FallbackZoneRotations: 2,
+				Attributes: config.VM{
+					Zone: "us-central1-b",
+				},
+			})
 			assert.Loosely(t, stored.FallbackOriginalZone, should.Equal("us-central1-c"))
 			assert.Loosely(t, stored.FallbackFailedZones, should.Match([]string{"us-central1-c", "us-central1-a"}))
 			assert.Loosely(t, stored.FallbackZoneRotations, should.Equal(int64(2)))
@@ -415,6 +420,57 @@ func TestFallbackInstance(t *testing.T) {
 				assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/us-central1-b/machineTypes/n2-standard-8"))
 				assert.Loosely(t, v.Attributes.GetDisk()[0].GetType(), should.Equal("zones/us-central1-b/diskTypes/pd-ssd"))
 				assert.Loosely(t, v.URL, should.Equal("url-fallback-b"))
+			})
+
+			t.Run("transient checkInstance error after DONE rotation preserves templates", func(t *ftt.Test) {
+				attempts := 0
+				rt.Handler = func(req any) (int, any) {
+					attempts++
+					switch attempts {
+					case 1:
+						// Zone 1 (us-central1-c) fails with stockout -> rotates to us-central1-a.
+						return http.StatusServiceUnavailable, nil
+					case 2:
+						// Zone 2 (us-central1-a) InsertInstance returns DONE.
+						rt.Type = reflect.TypeOf(map[string]string{})
+						return http.StatusOK, opDone("url-fallback-a")
+					case 3:
+						// Instances.Get in checkInstance fails transiently with HTTP 500.
+						return http.StatusInternalServerError, nil
+					case 4:
+						// Retry resumes at us-central1-a with intact {{.Zone}} templates and returns DONE.
+						inst := req.(*compute.Instance)
+						assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
+						rt.Type = reflect.TypeOf(map[string]string{})
+						return http.StatusOK, opDone("url-fallback-a")
+					default:
+						return http.StatusOK, &compute.Instance{
+							CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
+							SelfLink:          "url-fallback-a",
+						}
+					}
+				}
+				rt.Type = reflect.TypeOf(compute.Instance{})
+				assert.Loosely(t, datastore.Put(c, makeVM()), should.BeNil)
+
+				assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.ErrLike("failed to fetch instance"))
+				assert.Loosely(t, attempts, should.Equal(3))
+
+				v := &model.VM{ID: "id"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-a"))
+				assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
+				assert.Loosely(t, v.Created, should.BeZero)
+
+				rt.Type = reflect.TypeOf(compute.Instance{})
+				assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+				assert.Loosely(t, attempts, should.Equal(5))
+
+				v = &model.VM{ID: "id"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-a"))
+				assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
+				assert.Loosely(t, v.URL, should.Equal("url-fallback-a"))
 			})
 		})
 	})

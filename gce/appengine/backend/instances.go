@@ -42,8 +42,10 @@ var (
 	hostnameSuffixMatch = regexp.MustCompile(`-[0-9]+-[a-z0-9]{4}$`)
 )
 
-// setCreated sets the GCE instance as created in the datastore if it isn't already.
-func setCreated(c context.Context, id string, inst *compute.Instance) error {
+// setCreated sets the GCE instance as created in the datastore if it isn't
+// already, atomically finalizing any zone fallback metadata and "{{.Zone}}"
+// attribute templates in the same transaction.
+func setCreated(c context.Context, vm *model.VM, inst *compute.Instance) error {
 	t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
 	if err != nil {
 		return errors.Fmt("failed to parse instance creation time: %w", err)
@@ -59,29 +61,30 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 		}
 		nics[i].InternalIP = n.NetworkIP
 	}
-	vm := &model.VM{
-		ID: id,
+	cur := &model.VM{
+		ID: vm.ID,
 	}
 	put := false
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		put = false
-		switch err := datastore.Get(c, vm); {
+		switch err := datastore.Get(c, cur); {
 		case err != nil:
-			return errors.Fmt("failed to fetch VM with id: %q: %w", id, err)
-		case vm.Created > 0:
+			return errors.Fmt("failed to fetch VM with id: %q: %w", vm.ID, err)
+		case cur.Created > 0:
 			return nil
 		}
-		vm.Created = t.Unix()
-		vm.NetworkInterfaces = nics
-		vm.URL = inst.SelfLink
-		if err := datastore.Put(c, vm); err != nil {
-			return errors.Fmt("failed to store VM %q: %w", id, err)
+		finalizeVMZone(cur, vm)
+		cur.Created = t.Unix()
+		cur.NetworkInterfaces = nics
+		cur.URL = inst.SelfLink
+		if err := datastore.Put(c, cur); err != nil {
+			return errors.Fmt("failed to store VM %q: %w", vm.ID, err)
 		}
 		put = true
 		return nil
 	}, nil)
 	if put && err == nil {
-		metrics.ReportCreationTime(c, float64(vm.Created-vm.ConfigExpanded), vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone())
+		metrics.ReportCreationTime(c, float64(cur.Created-cur.ConfigExpanded), cur.Prefix, cur.Attributes.GetProject(), cur.Attributes.GetZone())
 	}
 	return err
 }
@@ -114,13 +117,17 @@ func checkInstance(c context.Context, vm *model.VM) error {
 			}
 			logErrors(c, "Check created instance", vm.Hostname, gerr)
 		}
+		// If InsertInstance rotated to a fallback zone and reported DONE in the
+		// same attempt, persist the active zone cursor before returning so the
+		// next retry checks the winning zone while keeping "{{.Zone}}" intact.
+		persistActiveZoneIfRotated(c, vm, vm.Attributes.GetZone(), 0)
 		logging.Debugf(c, "Check created instance %q: fail to find in %q project", vm.Hostname, vm.Attributes.GetProject())
 		return errors.Fmt("failed to fetch instance: %w", err)
 	}
 	logging.Debugf(c, "Check created instance %q: successfully created %s", vm.Hostname, inst.SelfLink)
 	metrics.CreatedInstanceChecked.Add(c, 1, vm.Config, vm.Attributes.GetProject(), vm.ScalingType, vm.Attributes.GetZone(), vm.Hostname)
 	metrics.UpdateZoneRotations(c, vm)
-	return setCreated(c, vm.ID, inst)
+	return setCreated(c, vm, inst)
 }
 
 // createInstanceQueue is the name of the create instance task handler queue.
