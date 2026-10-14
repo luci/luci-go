@@ -206,7 +206,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       'Model',
       'State',
       'Assignee',
-      'Peripherals (W / B / S)',
+      'Peripherals',
       'Pool / Model Health',
       'Priority Score',
     ];
@@ -332,9 +332,9 @@ describe('<ChromeOSRepairDashboard />', () => {
     expect(screen.getByLabelText('Servo: OK')).toBeInTheDocument();
     expect(screen.getByLabelText('Wi-Fi: BROKEN')).toBeInTheDocument();
     expect(screen.getByLabelText('Bluetooth: MISSING')).toBeInTheDocument();
-    expect(screen.getAllByLabelText('Wi-Fi: N/A')).toHaveLength(5);
-    expect(screen.getAllByLabelText('Bluetooth: N/A')).toHaveLength(5);
-    expect(screen.getAllByLabelText('Servo: N/A')).toHaveLength(5);
+    expect(screen.queryByLabelText('Wi-Fi: N/A')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Bluetooth: N/A')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Servo: N/A')).not.toBeInTheDocument();
 
     const row2 = screen.getByText('chromeos15-row2-rack3-host5').closest('tr');
     expect(row2).not.toBeNull();

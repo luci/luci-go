@@ -742,6 +742,8 @@ export interface RepairQueueItem {
   readonly priorityScore: string;
   readonly matchedRuleIds: readonly string[];
   readonly deviceId: string;
+  readonly chameleonState?: PeripheralState | undefined;
+  readonly audioboxJackpluggerState?: PeripheralState | undefined;
 }
 
 export interface ListRepairQueueResponse {
@@ -5875,6 +5877,8 @@ function createBaseRepairQueueItem(): RepairQueueItem {
     priorityScore: "0",
     matchedRuleIds: [],
     deviceId: "",
+    chameleonState: 0,
+    audioboxJackpluggerState: 0,
   };
 }
 
@@ -5924,6 +5928,12 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     if (message.deviceId !== "") {
       writer.uint32(122).string(message.deviceId);
+    }
+    if (message.chameleonState !== undefined && message.chameleonState !== 0) {
+      writer.uint32(128).int32(message.chameleonState);
+    }
+    if (message.audioboxJackpluggerState !== undefined && message.audioboxJackpluggerState !== 0) {
+      writer.uint32(136).int32(message.audioboxJackpluggerState);
     }
     return writer;
   },
@@ -6064,6 +6074,22 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
           message.deviceId = reader.string();
           continue;
         }
+        case 16: {
+          if (tag !== 128) {
+            break;
+          }
+
+          message.chameleonState = reader.int32() as any;
+          continue;
+        }
+        case 17: {
+          if (tag !== 136) {
+            break;
+          }
+
+          message.audioboxJackpluggerState = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6092,6 +6118,10 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
         ? object.matchedRuleIds.map((e: unknown) => globalThis.String(e))
         : [],
       deviceId: isSet(object.deviceId) ? globalThis.String(object.deviceId) : "",
+      chameleonState: isSet(object.chameleonState) ? peripheralStateFromJSON(object.chameleonState) : 0,
+      audioboxJackpluggerState: isSet(object.audioboxJackpluggerState)
+        ? peripheralStateFromJSON(object.audioboxJackpluggerState)
+        : 0,
     };
   },
 
@@ -6142,6 +6172,12 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.deviceId !== "") {
       obj.deviceId = message.deviceId;
     }
+    if (message.chameleonState !== undefined && message.chameleonState !== 0) {
+      obj.chameleonState = peripheralStateToJSON(message.chameleonState);
+    }
+    if (message.audioboxJackpluggerState !== undefined && message.audioboxJackpluggerState !== 0) {
+      obj.audioboxJackpluggerState = peripheralStateToJSON(message.audioboxJackpluggerState);
+    }
     return obj;
   },
 
@@ -6165,6 +6201,8 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.priorityScore = object.priorityScore ?? "0";
     message.matchedRuleIds = object.matchedRuleIds?.map((e) => e) || [];
     message.deviceId = object.deviceId ?? "";
+    message.chameleonState = object.chameleonState ?? 0;
+    message.audioboxJackpluggerState = object.audioboxJackpluggerState ?? 0;
     return message;
   },
 };

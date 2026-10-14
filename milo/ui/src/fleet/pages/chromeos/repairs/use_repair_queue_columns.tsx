@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import RemoveIcon from '@mui/icons-material/Remove';
-import WarningIcon from '@mui/icons-material/Warning';
+import CircleIcon from '@mui/icons-material/Circle';
 import { Box, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
@@ -188,14 +185,14 @@ export const useRepairQueueColumns = ({
       },
       {
         id: 'peripherals',
-        header: 'Peripherals (W / B / S)',
-        size: 85,
+        header: 'Peripherals',
+        size: 110,
         minSize: 70,
         maxSize: 700,
         enableSorting: false,
         Header: () => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <span>Peripherals (W / B / S)</span>
+            <span>Peripherals</span>
             <InfoTooltip paperCss={{ maxWidth: 360, p: 2 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
                 Peripheral Health States
@@ -205,7 +202,8 @@ export const useRepairQueueColumns = ({
                 color="text.secondary"
                 sx={{ mb: 1.5 }}
               >
-                Tracks Wi-Fi (W), Bluetooth (B), and Servo (S) status:
+                Displays configured peripherals (Wi-Fi, Bluetooth, Servo,
+                Chameleon, Audiobox) for each DUT:
               </Typography>
               <Box
                 sx={{
@@ -215,40 +213,24 @@ export const useRepairQueueColumns = ({
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CheckCircleIcon
-                    sx={{ color: colors.green[500], fontSize: 18 }}
+                  <CircleIcon sx={{ color: colors.green[500], fontSize: 14 }} />
+                  <Typography variant="body2">
+                    <strong>Green</strong> &mdash; Healthy &amp; responsive (OK)
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircleIcon sx={{ color: colors.red[600], fontSize: 14 }} />
+                  <Typography variant="body2">
+                    <strong>Red</strong> &mdash; Hardware failure (BROKEN)
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircleIcon
+                    sx={{ color: colors.orange[600], fontSize: 14 }}
                   />
                   <Typography variant="body2">
-                    <strong>OK</strong> &mdash; Healthy &amp; responsive
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <WarningIcon sx={{ color: colors.red[600], fontSize: 18 }} />
-                  <Typography variant="body2">
-                    <strong>Broken</strong> &mdash; Hardware failure
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <WarningIcon
-                    sx={{ color: colors.orange[600], fontSize: 18 }}
-                  />
-                  <Typography variant="body2">
-                    <strong>Missing</strong> &mdash; Disconnected / unplugged
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <RemoveIcon sx={{ color: colors.grey[500], fontSize: 18 }} />
-                  <Typography variant="body2">
-                    <strong>N/A</strong> &mdash; Not applicable to this DUT
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HelpOutlineIcon
-                    sx={{ color: colors.grey[500], fontSize: 18 }}
-                  />
-                  <Typography variant="body2">
-                    <strong>Unknown</strong> &mdash; State indeterminate /
-                    unrecorded
+                    <strong>Orange</strong> &mdash; Disconnected / unplugged
+                    (MISSING)
                   </Typography>
                 </Box>
               </Box>
@@ -260,6 +242,8 @@ export const useRepairQueueColumns = ({
             wifiState={row.original.wifiState}
             bluetoothState={row.original.bluetoothState}
             servoState={row.original.servoState}
+            chameleonState={row.original.chameleonState}
+            audioboxJackpluggerState={row.original.audioboxJackpluggerState}
           />
         ),
       },
