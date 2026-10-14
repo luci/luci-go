@@ -23,6 +23,8 @@ import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
 import { OptionsMenu } from '../filter_dropdown/options_menu';
 import { OptionsDropdown } from '../options_dropdown';
 
+import { ColumnOption } from './use_mrt_column_management';
+
 interface ColumnsManageDropDownProps {
   isLoading?: boolean;
   anchorEl: HTMLElement | null;
@@ -31,7 +33,7 @@ interface ColumnsManageDropDownProps {
   onResetWidths?: () => void;
   temporaryColumns?: string[];
   addUserVisibleColumn?: (column: string) => void;
-  allColumns: { id: string; label: string }[];
+  allColumns: ColumnOption[];
   visibleColumns: string[];
   onToggleColumn: (id: string) => void;
   selectOnlyColumn?: (id: string) => void;
@@ -47,7 +49,6 @@ export function ColumnsManageDropDown({
   onReset,
   onResetWidths,
   temporaryColumns,
-  addUserVisibleColumn,
   allColumns,
   visibleColumns,
   onToggleColumn,
@@ -55,19 +56,33 @@ export function ColumnsManageDropDown({
 }: ColumnsManageDropDownProps) {
   const { trackEvent } = useFleetAnalytics();
 
+  const selectedColumns = useMemo(() => {
+    const selected = new Set(visibleColumns);
+    for (const col of allColumns) {
+      if (col.isTemporary) {
+        selected.add(col.id);
+      }
+    }
+    return selected;
+  }, [visibleColumns, allColumns]);
+
+  const effectiveTemporaryColumns = useMemo(() => {
+    const temp = new Set(temporaryColumns ?? []);
+    for (const col of allColumns) {
+      if (col.isTemporary || col.isHighlighted) {
+        temp.add(col.id);
+      }
+    }
+    return temp;
+  }, [temporaryColumns, allColumns]);
+
   const toggleColumn = (field: string) => {
-    const isCurrentlyPermanentVisible =
-      visibleColumns.includes(field) && !temporaryColumns?.includes(field);
+    const isCurrentlyVisible = selectedColumns.has(field);
     trackEvent('column_toggled', {
       componentName: 'column_manage_dropdown',
       columnId: field,
-      visible: !isCurrentlyPermanentVisible,
+      visible: !isCurrentlyVisible,
     });
-    if (temporaryColumns?.includes(field)) {
-      // Toggling a temporary column makes it permanent.
-      addUserVisibleColumn?.(field);
-      return;
-    }
     onToggleColumn(field);
   };
 
@@ -87,20 +102,18 @@ export function ColumnsManageDropDown({
       allColumns.map(
         (d) =>
           ({
-            label: temporaryColumns?.includes(d.id) ? `${d.label} *` : d.label,
+            label: effectiveTemporaryColumns.has(d.id)
+              ? `${d.label} *`
+              : d.label,
             value: d.id,
           }) as OptionValue,
       ),
-    [allColumns, temporaryColumns],
+    [allColumns, effectiveTemporaryColumns],
   );
 
   const defaultSortedColumns = useMemo(
     () => fuzzySort('')(columns, (x: OptionValue) => x.label),
     [columns],
-  );
-
-  const selectedColumns = visibleColumns.filter(
-    (key) => !temporaryColumns?.includes(key),
   );
 
   return (
@@ -145,8 +158,11 @@ export function ColumnsManageDropDown({
         const finalSortedColumns = hasSearchQuery
           ? sortedColumns
           : (() => {
-              const [pass, fail] = partition(sortedColumns, (x) =>
-                visibleColumns.includes(x.el.value),
+              const [pass, fail] = partition(
+                sortedColumns,
+                (x) =>
+                  selectedColumns.has(x.el.value) ||
+                  effectiveTemporaryColumns.has(x.el.value),
               );
               return [...pass, ...fail];
             })();
@@ -154,7 +170,7 @@ export function ColumnsManageDropDown({
         return (
           <OptionsMenu
             elements={finalSortedColumns}
-            selectedElements={new Set(selectedColumns)}
+            selectedElements={selectedColumns}
             flipOption={toggleColumn}
             selectOnly={handleSelectOnlyColumn}
           />

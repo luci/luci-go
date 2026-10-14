@@ -18,11 +18,12 @@ import { MRT_RowData, MRT_TableInstance } from 'material-react-table';
 import * as React from 'react';
 
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
+import { ColumnOption } from '@/fleet/components/columns/use_mrt_column_management';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 
 interface FleetTopToolbarProps<TData extends MRT_RowData> {
   table: MRT_TableInstance<TData>;
-  availableColumns?: { id: string; label: string }[];
+  availableColumns?: ColumnOption[];
   visibleColumnIds?: string[];
   onToggleColumn?: (id: string) => void;
   selectOnlyColumn?: (id: string) => void;
@@ -41,6 +42,30 @@ export function FleetTopToolbar<TData extends MRT_RowData>({
   resetColumnWidths,
   children,
 }: FleetTopToolbarProps<TData>) {
+  const columnVisibility = table.getState()?.columnVisibility;
+
+  const activeFilteredColumnIds = React.useMemo(
+    () =>
+      availableColumns
+        .filter((col) => col.isTemporary || col.isHighlighted)
+        .map((col) => col.id),
+    [availableColumns],
+  );
+
+  const activeVisibleColumns = React.useMemo(() => {
+    if (!columnVisibility || Object.keys(columnVisibility).length === 0) {
+      return visibleColumnIds;
+    }
+    const visibleSet = new Set(visibleColumnIds);
+    return availableColumns
+      .filter((c) =>
+        c.id in columnVisibility
+          ? Boolean(columnVisibility[c.id])
+          : visibleSet.has(c.id),
+      )
+      .map((c) => c.id);
+  }, [columnVisibility, visibleColumnIds, availableColumns]);
+
   return (
     <Stack
       direction="row"
@@ -58,7 +83,8 @@ export function FleetTopToolbar<TData extends MRT_RowData>({
       <Stack direction="row" spacing={1} alignItems="center">
         <ColumnsButton
           allColumns={availableColumns}
-          visibleColumns={visibleColumnIds}
+          visibleColumns={activeVisibleColumns}
+          temporaryColumns={activeFilteredColumnIds}
           onToggleColumn={onToggleColumn}
           selectOnlyColumn={selectOnlyColumn}
           resetDefaultColumns={resetDefaultColumns}

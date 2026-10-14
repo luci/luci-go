@@ -19,12 +19,26 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 import { ColumnsManageDropDown } from './column_manage_dropdown';
 
 jest.mock('../filter_dropdown/options_menu', () => ({
-  OptionsMenu: ({ elements }: { elements: { el: { label: string } }[] }) => (
+  OptionsMenu: ({
+    elements,
+    selectedElements,
+    flipOption,
+  }: {
+    elements: { el: { label: string; value: string } }[];
+    selectedElements: Set<string>;
+    flipOption: (value: string) => void;
+  }) => (
     <div data-testid="mock-options-menu">
       {elements.map((item) => (
-        <div key={item.el.label} data-testid="menu-item-mock">
+        <button
+          key={item.el.value}
+          type="button"
+          data-testid="menu-item-mock"
+          data-selected={selectedElements.has(item.el.value)}
+          onClick={() => flipOption(item.el.value)}
+        >
           {item.el.label}
-        </div>
+        </button>
       ))}
     </div>
   ),
@@ -114,5 +128,84 @@ describe('<ColumnsManageDropDown />', () => {
     fireEvent.change(searchInput, { target: { value: 'Battery' } });
     expect(screen.getByText('Battery Level')).toBeInTheDocument();
     expect(screen.queryByText('Servo State')).not.toBeInTheDocument();
+  });
+
+  it('marks temporary/filtered columns with an asterisk, keeps hidden filtered columns in top partition, and allows toggling them', () => {
+    const allColumns = [
+      { id: 'col1', label: 'Column 1' },
+      { id: 'col2', label: 'Column 2' },
+      { id: 'col3', label: 'Column 3' },
+    ];
+
+    // col2 is visible and filtered; col3 is hidden (dismissed) but still has an active filter
+    const visibleColumns = ['col2'];
+    const temporaryColumns = ['col2', 'col3'];
+    const onToggleColumn = jest.fn();
+    const anchorEl = document.createElement('div');
+
+    render(
+      <FakeContextProvider>
+        <ColumnsManageDropDown
+          anchorEl={anchorEl}
+          setAnchorEl={jest.fn()}
+          allColumns={allColumns}
+          visibleColumns={visibleColumns}
+          temporaryColumns={temporaryColumns}
+          onToggleColumn={onToggleColumn}
+        />
+      </FakeContextProvider>,
+    );
+
+    const items = screen.getAllByTestId('menu-item-mock');
+    expect(items).toHaveLength(3);
+    // Both col2 (visible) and col3 (hidden but filtered) stay in the top partition with ' *'
+    expect(items[0]).toHaveTextContent('Column 2 *');
+    expect(items[0]).toHaveAttribute('data-selected', 'true');
+    expect(items[1]).toHaveTextContent('Column 3 *');
+    expect(items[1]).toHaveAttribute('data-selected', 'false');
+    expect(items[2]).toHaveTextContent('Column 1');
+    expect(items[2]).toHaveAttribute('data-selected', 'false');
+
+    fireEvent.click(items[0]);
+    expect(onToggleColumn).toHaveBeenCalledWith('col2');
+
+    fireEvent.click(items[1]);
+    expect(onToggleColumn).toHaveBeenCalledWith('col3');
+  });
+
+  it('derives temporary selection and asterisk indicators from allColumns metadata when temporaryColumns prop is omitted', () => {
+    const allColumns = [
+      { id: 'col1', label: 'Column 1' },
+      {
+        id: 'col2',
+        label: 'Column 2',
+        isTemporary: true,
+        isHighlighted: true,
+      },
+      { id: 'col3', label: 'Column 3', isHighlighted: true },
+    ];
+
+    const anchorEl = document.createElement('div');
+
+    render(
+      <FakeContextProvider>
+        <ColumnsManageDropDown
+          anchorEl={anchorEl}
+          setAnchorEl={jest.fn()}
+          allColumns={allColumns}
+          visibleColumns={[]}
+          onToggleColumn={jest.fn()}
+        />
+      </FakeContextProvider>,
+    );
+
+    const items = screen.getAllByTestId('menu-item-mock');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent('Column 2 *');
+    expect(items[0]).toHaveAttribute('data-selected', 'true');
+    expect(items[1]).toHaveTextContent('Column 3 *');
+    expect(items[1]).toHaveAttribute('data-selected', 'false');
+    expect(items[2]).toHaveTextContent('Column 1');
+    expect(items[2]).toHaveAttribute('data-selected', 'false');
   });
 });

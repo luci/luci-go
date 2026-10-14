@@ -42,8 +42,12 @@ export const FleetColumnHeader = <TData extends MRT_RowData>({
   const { column } = header;
   const { columnDef } = column;
   const meta = columnDef.meta;
-
-  const resolvedText = headerText ?? (columnDef.header as string) ?? column.id;
+  const isTemporary = meta?.isTemporary;
+  const headerDefText =
+    typeof columnDef.header === 'string' ? columnDef.header : undefined;
+  const baseText = headerText ?? headerDefText ?? column.id;
+  const resolvedText =
+    isTemporary && typeof baseText === 'string' ? `${baseText} *` : baseText;
   const resolvedTooltip = infoTooltip ?? meta?.infoTooltip;
 
   const canSort = column.getCanSort();

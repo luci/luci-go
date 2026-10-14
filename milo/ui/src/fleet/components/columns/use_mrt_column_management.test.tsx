@@ -373,4 +373,313 @@ describe('useMRTColumnManagement', () => {
       { id: 'label-pool', label: 'Pool' },
     ]);
   });
+
+  it('allows hiding a highlighted temporary column via onToggleColumn', () => {
+    const setVisibleIds = jest.fn();
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1'],
+      setVisibleIds,
+    ]);
+
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: ['col2'],
+      }),
+    );
+
+    expect(result.current.columnVisibility.col2).toBe(true);
+
+    act(() => {
+      result.current.onToggleColumn('col2');
+    });
+
+    expect(result.current.columnVisibility.col2).toBe(false);
+  });
+
+  it('allows hiding and re-showing a permanent column with an active filter', () => {
+    let visible = ['col1', 'col2'];
+    const setVisibleIds = jest.fn((next) => {
+      visible = typeof next === 'function' ? next(visible) : next;
+    });
+    (useParamsAndLocalStorage as jest.Mock).mockImplementation(() => [
+      visible,
+      setVisibleIds,
+    ]);
+
+    const { result, rerender } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1', 'col2'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: ['col2'],
+      }),
+    );
+
+    expect(result.current.columnVisibility.col2).toBe(true);
+
+    act(() => {
+      result.current.setColumnVisibility((old) => ({ ...old, col2: false }));
+    });
+    rerender();
+
+    expect(result.current.columnVisibility.col2).toBe(false);
+    expect(result.current.visibleColumnIds).toEqual(['col1']);
+
+    act(() => {
+      result.current.onToggleColumn('col2');
+    });
+    rerender();
+
+    expect(result.current.columnVisibility.col2).toBe(true);
+    expect(result.current.visibleColumnIds).toEqual(['col1', 'col2']);
+  });
+
+  it('restores a user-added non-default permanent column to visibleColumnIds when hidden and re-shown while filtered', () => {
+    let visible = ['col1', 'col2'];
+    const setVisibleIds = jest.fn((next) => {
+      visible = typeof next === 'function' ? next(visible) : next;
+    });
+    (useParamsAndLocalStorage as jest.Mock).mockImplementation(() => [
+      visible,
+      setVisibleIds,
+    ]);
+
+    const { result, rerender } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: ['col2'],
+      }),
+    );
+
+    act(() => {
+      result.current.onToggleColumn('col2');
+    });
+    rerender();
+
+    expect(result.current.columnVisibility.col2).toBe(false);
+    expect(result.current.visibleColumnIds).toEqual(['col1']);
+
+    act(() => {
+      result.current.onToggleColumn('col2');
+    });
+    rerender();
+
+    expect(result.current.columnVisibility.col2).toBe(true);
+    expect(result.current.visibleColumnIds).toEqual(['col1', 'col2']);
+  });
+
+  it('re-showing a dismissed temporary column via onToggleColumn keeps it temporary instead of adding to visibleColumnIds', () => {
+    const setVisibleIds = jest.fn();
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1'],
+      setVisibleIds,
+    ]);
+
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1', 'col2'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: ['col2'],
+      }),
+    );
+
+    expect(result.current.columnVisibility.col2).toBe(true);
+    expect(result.current.allColumns).toContainEqual({
+      id: 'col2',
+      label: 'Column 2',
+      isTemporary: true,
+      isHighlighted: true,
+    });
+
+    act(() => {
+      result.current.onToggleColumn('col2');
+    });
+    expect(result.current.columnVisibility.col2).toBe(false);
+    expect(result.current.allColumns).toContainEqual({
+      id: 'col2',
+      label: 'Column 2',
+      isHighlighted: true,
+    });
+    expect(setVisibleIds).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.onToggleColumn('col2');
+    });
+    expect(result.current.columnVisibility.col2).toBe(true);
+    expect(result.current.allColumns).toContainEqual({
+      id: 'col2',
+      label: 'Column 2',
+      isTemporary: true,
+      isHighlighted: true,
+    });
+    expect(setVisibleIds).not.toHaveBeenCalled();
+  });
+
+  it('hiding one column via setColumnVisibility does not promote untouched temporary columns into visibleColumnIds', () => {
+    const setVisibleIds = jest.fn();
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1'],
+      setVisibleIds,
+    ]);
+
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: ['col2', 'col3'],
+      }),
+    );
+
+    expect(result.current.columnVisibility).toEqual({
+      col1: true,
+      col2: true,
+      col3: true,
+    });
+
+    act(() => {
+      result.current.setColumnVisibility((old) => ({
+        ...old,
+        col2: false,
+      }));
+    });
+
+    // col3 was only temporary and untouched, so it must NOT be promoted to visibleColumnIds
+    expect(setVisibleIds).toHaveBeenCalledWith(['col1']);
+    expect(result.current.columnVisibility.col2).toBe(false);
+    expect(result.current.columnVisibility.col3).toBe(true);
+  });
+
+  it('selectOnlyColumn hides other temporary columns', () => {
+    let visible = ['col1'];
+    const setVisibleIds = jest.fn((next) => {
+      visible = typeof next === 'function' ? next(visible) : next;
+    });
+    (useParamsAndLocalStorage as jest.Mock).mockImplementation(() => [
+      visible,
+      setVisibleIds,
+    ]);
+
+    const { result, rerender } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: ['col2', 'col3'],
+      }),
+    );
+
+    act(() => {
+      result.current.selectOnlyColumn('col2');
+    });
+    rerender();
+
+    expect(result.current.visibleColumnIds).toEqual(['col2']);
+    expect(result.current.columnVisibility).toEqual({
+      col1: false,
+      col2: true,
+      col3: false,
+    });
+  });
+
+  it('clears dismissed state when a filter is removed and re-applied', () => {
+    const setVisibleIds = jest.fn();
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1'],
+      setVisibleIds,
+    ]);
+
+    let highlighted = ['col2'];
+    const { result, rerender } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: highlighted,
+      }),
+    );
+
+    act(() => {
+      result.current.onToggleColumn('col2');
+    });
+    expect(result.current.columnVisibility.col2).toBe(false);
+
+    // Filter removed
+    highlighted = [];
+    rerender();
+    expect(result.current.columnVisibility.col2).toBe(false);
+
+    // Filter re-applied -> column auto-shows again
+    highlighted = ['col2'];
+    rerender();
+    expect(result.current.columnVisibility.col2).toBe(true);
+  });
+
+  it('clears dismissed state when resetDefaultColumns is called', () => {
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1'],
+      jest.fn(),
+    ]);
+
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: ['col2'],
+      }),
+    );
+
+    act(() => {
+      result.current.onToggleColumn('col2');
+    });
+    expect(result.current.columnVisibility.col2).toBe(false);
+
+    act(() => {
+      result.current.resetDefaultColumns();
+    });
+    expect(result.current.columnVisibility.col2).toBe(true);
+  });
+
+  it('restores a dismissed permanent filtered column to visibleColumnIds when re-enabled via setColumnVisibility', () => {
+    let visible = ['col1', 'col2'];
+    const setVisibleIds = jest.fn((next) => {
+      visible = typeof next === 'function' ? next(visible) : next;
+    });
+    (useParamsAndLocalStorage as jest.Mock).mockImplementation(() => [
+      visible,
+      setVisibleIds,
+    ]);
+
+    const { result, rerender } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1', 'col2'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: ['col2'],
+      }),
+    );
+
+    act(() => {
+      result.current.setColumnVisibility((old) => ({ ...old, col2: false }));
+    });
+    rerender();
+
+    expect(result.current.columnVisibility.col2).toBe(false);
+    expect(result.current.visibleColumnIds).toEqual(['col1']);
+
+    act(() => {
+      result.current.setColumnVisibility((old) => ({ ...old, col2: true }));
+    });
+    rerender();
+
+    expect(result.current.columnVisibility.col2).toBe(true);
+    expect(result.current.visibleColumnIds).toEqual(['col1', 'col2']);
+  });
 });

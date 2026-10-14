@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-refresh/only-export-components */
+
 import {
   MRT_ColumnDef,
   MRT_VisibilityState,
@@ -30,6 +32,13 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 
+export interface ColumnOption {
+  id: string;
+  label: string;
+  isTemporary?: boolean;
+  isHighlighted?: boolean;
+}
+
 export interface MrtColumnManager<TColumnDef> {
   columns: TColumnDef[];
   columnVisibility: MRT_VisibilityState;
@@ -44,7 +53,7 @@ export interface MrtColumnManager<TColumnDef> {
   ) => void;
   onToggleColumn: (id: string) => void;
   selectOnlyColumn: (id: string) => void;
-  allColumns: { id: string; label: string }[];
+  allColumns: ColumnOption[];
   resetDefaultColumns: () => void;
   warnings: string[];
 }
@@ -159,12 +168,40 @@ export function useMRTColumnManagement<
     return Array.from(new Set(mapped));
   }, [filterValues, filterByFieldToId, manualHighlightedColumnIds]);
 
+  // Maps actively filtered column IDs that the user explicitly hid during the
+  // current filter session to their pre-dismissal origin ('permanent' | 'temporary').
+  // Permanent columns must also be recorded here when hidden while filtered so
+  // `temporaryColumnIds` does not immediately re-enable them, while preserving
+  // whether re-enabling them should restore them to `visibleColumnIds`.
+  const [hiddenFilteredColumns, setHiddenFilteredColumns] = useState<
+    Record<string, 'permanent' | 'temporary'>
+  >({});
+
+  useEffect(() => {
+    if (isLoadingColumns || isLoadingFilters) return;
+    setHiddenFilteredColumns((prev) => {
+      const nextEntries = Object.entries(prev).filter(
+        ([id]) =>
+          highlightedColumnIds.includes(id) && !visibleColumnIds.includes(id),
+      );
+      return nextEntries.length === Object.keys(prev).length
+        ? prev
+        : Object.fromEntries(nextEntries);
+    });
+  }, [
+    highlightedColumnIds,
+    visibleColumnIds,
+    isLoadingColumns,
+    isLoadingFilters,
+  ]);
+
   const temporaryColumnIds = useMemo(() => {
     if (highlightedColumnIds.length === 0) return EMPTY_ARRAY;
     return highlightedColumnIds.filter(
-      (col) => !visibleColumnIds.includes(col),
+      (col) =>
+        !visibleColumnIds.includes(col) && !(col in hiddenFilteredColumns),
     );
-  }, [highlightedColumnIds, visibleColumnIds]);
+  }, [highlightedColumnIds, visibleColumnIds, hiddenFilteredColumns]);
 
   const [internalVisibility, setInternalVisibility] =
     useState<MRT_VisibilityState>({});
@@ -209,59 +246,117 @@ export function useMRTColumnManagement<
         }));
       }
 
+      if (highlightedColumnIds.length > 0) {
+        setHiddenFilteredColumns((prev) => {
+          const next = { ...prev };
+          highlightedColumnIds.forEach((id) => {
+            if (newVisibility[id] === true) {
+              delete next[id];
+            } else if (newVisibility[id] === false && !(id in next)) {
+              next[id] = visibleColumnIds.includes(id)
+                ? 'permanent'
+                : 'temporary';
+            }
+          });
+          return next;
+        });
+      }
+
       const newVisibleIds = sanitizeColumnIds(
         Object.keys(newVisibility),
-      ).filter((id) => newVisibility[id]);
+      ).filter(
+        (id) =>
+          Boolean(newVisibility[id]) &&
+          (visibleColumnIds.includes(id) ||
+            hiddenFilteredColumns[id] === 'permanent' ||
+            !highlightedColumnIds.includes(id)),
+      );
       setVisibleColumnIds(newVisibleIds);
     },
-    [columnVisibility, setVisibleColumnIds, internalVisibility],
+    [
+      columnVisibility,
+      setVisibleColumnIds,
+      internalVisibility,
+      highlightedColumnIds,
+      visibleColumnIds,
+      hiddenFilteredColumns,
+    ],
   );
 
   const onToggleColumn = useCallback(
     (columnId: string) => {
-      if (temporaryColumnIds.includes(columnId)) {
-        // Toggling a temporary column makes it permanent
-        setVisibleColumnIds([...visibleColumnIds, columnId]);
-        return;
-      }
-
-      const isVisible = visibleColumnIds.includes(columnId);
+      const isVisible =
+        visibleColumnIds.includes(columnId) ||
+        temporaryColumnIds.includes(columnId);
       if (isVisible) {
-        setVisibleColumnIds(visibleColumnIds.filter((id) => id !== columnId));
+        if (highlightedColumnIds.includes(columnId)) {
+          const origin = visibleColumnIds.includes(columnId)
+            ? 'permanent'
+            : 'temporary';
+          setHiddenFilteredColumns((prev) =>
+            prev[columnId] === origin ? prev : { ...prev, [columnId]: origin },
+          );
+        }
+        if (visibleColumnIds.includes(columnId)) {
+          setVisibleColumnIds(visibleColumnIds.filter((id) => id !== columnId));
+        }
       } else {
-        setVisibleColumnIds([...visibleColumnIds, columnId]);
+        const wasDismissedTemp =
+          highlightedColumnIds.includes(columnId) &&
+          hiddenFilteredColumns[columnId] === 'temporary';
+        setHiddenFilteredColumns((prev) => {
+          if (!(columnId in prev)) return prev;
+          const next = { ...prev };
+          delete next[columnId];
+          return next;
+        });
+        if (!wasDismissedTemp) {
+          setVisibleColumnIds([...visibleColumnIds, columnId]);
+        }
       }
     },
-    [visibleColumnIds, setVisibleColumnIds, temporaryColumnIds],
+    [
+      visibleColumnIds,
+      setVisibleColumnIds,
+      temporaryColumnIds,
+      highlightedColumnIds,
+      hiddenFilteredColumns,
+    ],
   );
 
   const selectOnlyColumn = useCallback(
     (columnId: string) => {
-      const newVisibility: MRT_VisibilityState = {};
-      MRT_INTERNAL_COLUMNS.forEach((id) => {
-        if (id in columnVisibility) {
-          newVisibility[id] = columnVisibility[id];
+      const nextHidden: Record<string, 'permanent' | 'temporary'> = {};
+      for (const id of highlightedColumnIds) {
+        if (id !== columnId) {
+          nextHidden[id] = visibleColumnIds.includes(id)
+            ? 'permanent'
+            : 'temporary';
         }
-      });
-      newVisibility[columnId] = true;
-      setColumnVisibility(newVisibility);
+      }
+      setHiddenFilteredColumns(nextHidden);
+      setVisibleColumnIds([columnId]);
     },
-    [columnVisibility, setColumnVisibility],
+    [highlightedColumnIds, visibleColumnIds, setVisibleColumnIds],
   );
 
   const allColumns = useMemo(
     () =>
       rawColumns.map((c) => {
         const id = getColumnId(c);
+        const isTemporary = temporaryColumnIds.includes(id);
+        const isHighlighted = highlightedColumnIds.includes(id);
         return {
           id,
           label:
             typeof c.header === 'string' && c.header
               ? c.header
               : humanizeColumnLabel(id),
+          ...(isTemporary ? { isTemporary: true } : {}),
+          ...(isHighlighted ? { isHighlighted: true } : {}),
         };
       }),
-    [rawColumns],
+    [rawColumns, temporaryColumnIds, highlightedColumnIds],
   );
 
   const columns = useMemo(() => {
@@ -275,7 +370,6 @@ export function useMRTColumnManagement<
       if (isTemp || isHighlighted) {
         return {
           ...colDef,
-          enableHiding: isTemp ? false : colDef.enableHiding,
           meta: {
             ...(colDef.meta as Record<string, unknown> | undefined),
             isTemporary: isTemp,
@@ -303,6 +397,7 @@ export function useMRTColumnManagement<
   ]) as TColumnDef[];
 
   const resetDefaultColumns = useCallback(() => {
+    setHiddenFilteredColumns({});
     setVisibleColumnIds([...defaultColumnIdsRef.current]);
   }, [setVisibleColumnIds]);
 

@@ -197,7 +197,7 @@ describe('FleetColumnHeader', () => {
     ).toHaveBeenCalledWith(true);
   });
 
-  it('renders aria-description for temporary columns', () => {
+  it('appends an asterisk to temporary column headers', () => {
     const column = createMockColumn({
       columnDef: {
         header: 'Temp Column',
@@ -210,7 +210,7 @@ describe('FleetColumnHeader', () => {
       <FleetColumnHeader column={column} header={header} table={mockTable} />,
     );
 
-    expect(screen.getByText('Temp Column')).toBeInTheDocument();
+    expect(screen.getByText('Temp Column *')).toBeInTheDocument();
   });
 });
 
