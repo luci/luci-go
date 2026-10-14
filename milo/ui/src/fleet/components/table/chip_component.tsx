@@ -16,6 +16,13 @@ import Chip from '@mui/material/Chip';
 
 import { useSettings } from '@/fleet/hooks/use_settings';
 import { colors } from '@/fleet/theme/colors';
+import {
+  borders,
+  controlHeights,
+  fleetColors,
+  fontSizes,
+  statusTones,
+} from '@/fleet/theme/tokens';
 
 export interface ChipComponentProps {
   label: string;
@@ -24,6 +31,32 @@ export interface ChipComponentProps {
   openInNewTab?: boolean;
   onClick?: () => void;
 }
+
+const getSemanticTextColor = (bgColor?: string): string => {
+  if (!bgColor || bgColor === colors.transparent)
+    return fleetColors.textSecondary;
+  if (bgColor === colors.green[100] || bgColor === colors.green[50]) {
+    return statusTones.success.fg;
+  }
+  if (
+    bgColor === colors.orange[100] ||
+    bgColor === colors.yellow[100] ||
+    bgColor === colors.orange[50] ||
+    bgColor === colors.yellow[50]
+  ) {
+    return statusTones.warning.fg;
+  }
+  if (bgColor === colors.red[100] || bgColor === colors.red[50]) {
+    return statusTones.error.fg;
+  }
+  if (bgColor === colors.purple[100] || bgColor === colors.purple[50]) {
+    return statusTones.special.fg;
+  }
+  if (bgColor === colors.blue[100] || bgColor === colors.blue[50]) {
+    return statusTones.info.fg;
+  }
+  return fleetColors.textPrimary;
+};
 
 export const ChipComponent = ({
   label,
@@ -45,9 +78,19 @@ export const ChipComponent = ({
       size={density === 'compact' ? 'small' : 'medium'}
       sx={{
         backgroundColor: color,
-        color: color !== colors.transparent ? colors.grey[900] : undefined,
+        color: getSemanticTextColor(color),
+        border:
+          variant === 'filled' ? '1px solid transparent' : borders.default,
+        height:
+          density === 'compact'
+            ? controlHeights.chipCompact
+            : controlHeights.chip,
         width: 'fit-content',
+        fontSize: fontSizes.caption,
         fontWeight: 500,
+        '& .MuiChip-label': {
+          px: 1.25,
+        },
       }}
       href={url}
       target={url ? (openInNewTab ? '_blank' : '_self') : undefined}

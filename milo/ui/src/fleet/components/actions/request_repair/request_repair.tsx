@@ -79,7 +79,7 @@ export function RequestRepair({
   const showButton = selectedItems?.length > 0;
 
   if (!showButton) {
-    return <></>;
+    return null;
   }
 
   const fileRepairRequest = <T,>(config: RepairConfig<T>, items: T[]) => {
@@ -135,6 +135,7 @@ export function RequestRepair({
     return (
       <Button
         data-testid="file-repair-bug-button"
+        variant="toolbar"
         onClick={() =>
           fileRepairRequest(
             ChromeOSRepairConfig,
@@ -145,7 +146,7 @@ export function RequestRepair({
         size="small"
         startIcon={<FeedbackOutlined />}
       >
-        Request Repair
+        Request repair
       </Button>
     );
   }
@@ -168,9 +169,13 @@ export function RequestRepair({
 
     return (
       <Tooltip title={tooltipTitle}>
-        <span data-testid="request-restoration-button">
+        <span
+          data-testid="request-restoration-button"
+          style={{ display: 'inline-flex', alignItems: 'center' }}
+        >
           <Button
             data-testid="file-restoration-bug-button"
+            variant="toolbar"
             disabled={!isSingleLab}
             onClick={() => {
               if (!isSingleLab) return;
@@ -180,7 +185,7 @@ export function RequestRepair({
             size="small"
             startIcon={<FeedbackOutlined />}
           >
-            Request Restoration
+            Request restoration
           </Button>
         </span>
       </Tooltip>
@@ -191,27 +196,27 @@ export function RequestRepair({
   const actions = [
     {
       config: BrowserRepairConfig,
-      label: 'Request Repair',
+      label: 'Request repair',
       testId: 'file-repair-bug-button',
     },
     {
       config: BrowserReinstallConfig,
-      label: 'Request Reinstall',
+      label: 'Request reinstall',
       testId: 'file-reinstall-bug-button',
     },
   ];
 
   return (
     <>
-      {actions.map((action, index) => (
+      {actions.map((action) => (
         <Button
-          key={action.label}
+          key={action.testId}
           data-testid={action.testId}
+          variant="toolbar"
           onClick={() => fileRepairRequest(action.config, items)}
           color="primary"
           size="small"
           startIcon={<FeedbackOutlined />}
-          sx={{ marginRight: index < actions.length - 1 ? 1 : 0 }}
         >
           {action.label}
         </Button>

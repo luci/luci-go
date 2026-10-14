@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { ViewColumnOutlined } from '@mui/icons-material';
-import { Button, colors, Stack } from '@mui/material';
+import { Button, Stack } from '@mui/material';
 import { MRT_RowData, MRT_TableInstance } from 'material-react-table';
 import * as React from 'react';
 
@@ -69,18 +69,24 @@ export function FleetTopToolbar<TData extends MRT_RowData>({
   return (
     <Stack
       direction="row"
-      spacing={1}
+      useFlexGap
       sx={{
         width: '100%',
+        gap: 1,
         justifyContent: 'space-between',
         alignItems: 'center',
       }}
     >
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack
+        direction="row"
+        useFlexGap
+        alignItems="center"
+        sx={{ gap: 1, flexWrap: 'wrap' }}
+      >
         <FCDataTableCopy table={table} />
         {children}
       </Stack>
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" useFlexGap alignItems="center" sx={{ gap: 1 }}>
         <ColumnsButton
           allColumns={availableColumns}
           visibleColumns={activeVisibleColumns}
@@ -92,16 +98,11 @@ export function FleetTopToolbar<TData extends MRT_RowData>({
           renderTrigger={({ onClick }, ref) => (
             <Button
               ref={ref}
-              startIcon={<ViewColumnOutlined sx={{ fontSize: '20px' }} />}
+              variant="toolbar"
+              size="small"
+              startIcon={<ViewColumnOutlined />}
               onClick={onClick}
               color="inherit"
-              sx={{
-                color: colors.grey[600],
-                height: '40px',
-                fontSize: '0.875rem',
-                textTransform: 'none',
-                fontWeight: 500,
-              }}
             >
               Columns
             </Button>

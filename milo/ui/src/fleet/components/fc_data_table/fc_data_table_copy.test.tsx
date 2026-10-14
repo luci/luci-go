@@ -55,9 +55,8 @@ describe('FCDataTableCopy', () => {
     const table = createMockTable([], []);
     const { container } = render(<FCDataTableCopy table={table} />);
 
-    // Returns <div /> if rows.length === 0
-    expect(container.firstChild).toBeInstanceOf(HTMLDivElement);
-    expect(container.firstChild).toBeEmptyDOMElement();
+    // Returns null so the toolbar's flex gap does not reserve a slot.
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('copies data to clipboard on button click', () => {

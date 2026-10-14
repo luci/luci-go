@@ -15,10 +15,19 @@
 import { SxProps, Theme } from '@mui/material';
 
 import { colors } from '@/fleet/theme/colors';
+import {
+  borders,
+  fleetColors,
+  fontFamilies,
+  fontSizes,
+  iconSizes,
+  radii,
+} from '@/fleet/theme/tokens';
 
 export type Density = 'spacious' | 'comfortable' | 'compact';
 
 export const TABLE_HEADER_MIN_HEIGHT = '48px';
+export const SELECT_COL_PADDING = '8px';
 
 export const getDensityPadding = (density: Density) => {
   const vertical = density === 'spacious' ? 16 : density === 'compact' ? 4 : 12;
@@ -28,20 +37,34 @@ export const getDensityPadding = (density: Density) => {
 };
 
 export const fleetTableHeaderSx: SxProps<Theme> = {
-  '--header-bg-color': colors.grey[100],
+  '--header-bg-color': fleetColors.surfaceTonal,
   // Use && to increase specificity and avoid !important where possible
   '&&': {
     backgroundColor: 'var(--header-bg-color)',
-    fontWeight: 500,
+    borderBottom: borders.emphasis,
+    fontFamily: fontFamilies.text,
+    fontWeight: 600,
+    fontSize: fontSizes.label,
+    color: fleetColors.textSecondary,
+    paddingTop: 'var(--cell-padding-vertical)',
+    paddingBottom: 'var(--cell-padding-vertical)',
+    paddingLeft: 'var(--cell-padding-horizontal)',
+    paddingRight: 'var(--cell-padding-horizontal)',
+    '&.select-col': {
+      paddingLeft: SELECT_COL_PADDING,
+      paddingRight: SELECT_COL_PADDING,
+    },
     '&.column-highlight': {
-      backgroundColor: `${colors.blue[50]} !important`,
+      backgroundColor: fleetColors.primaryContainer,
+      color: fleetColors.primary,
     },
   },
+  transition: 'padding 0.2s',
   position: 'relative',
   overflow: 'visible',
   verticalAlign: 'middle',
   '&&.column-highlight .fleet-column-actions': {
-    backgroundColor: `${colors.blue[50]}`,
+    backgroundColor: fleetColors.primaryContainer,
   },
   '& .Mui-TableHeadCell-Content': {
     width: '100%',
@@ -84,7 +107,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
   '&&:hover .fleet-column-actions .MuiTableSortLabel-root, ' +
   '&& .fleet-column-actions:focus-within .MuiTableSortLabel-root']: {
     display: 'flex',
-    borderRadius: '12px',
+    borderRadius: radii.pill,
     padding: '0 4px',
     minWidth: '24px',
     height: '24px',
@@ -97,7 +120,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
     },
     '& .MuiTableSortLabel-icon': {
       margin: 0,
-      fontSize: '18px',
+      fontSize: iconSizes.inline,
       opacity: '1 !important', // Ensure MUI always renders the icon when inside this container
     },
     // Give the hover effect a pill-like structure so the badge fits comfortably
@@ -137,7 +160,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
       backgroundColor: 'rgba(0, 0, 0, 0.05)',
     },
     '& .MuiSvgIcon-root': {
-      fontSize: '18px !important',
+      fontSize: `${iconSizes.inline}px !important`,
     },
   },
   '&&:hover .fleet-column-actions .ColumnActionsMenuButton, && .fleet-column-actions:focus-within .ColumnActionsMenuButton':
@@ -159,7 +182,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
       backgroundColor: 'rgba(0, 0, 0, 0.05)',
     },
     '& .MuiSvgIcon-root': {
-      fontSize: '16px', // Matches InfoTooltip fontSize override
+      fontSize: iconSizes.control, // Matches InfoTooltip fontSize override
     },
   },
   '&& .Mui-TableHeadCell-Content-Actions': {
@@ -190,21 +213,21 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
     justifyContent: 'center !important',
   },
   '&& .Mui-TableHeadCell-ResizeHandle-Divider': {
-    backgroundColor: `${colors.grey[400]} !important`,
+    backgroundColor: `${fleetColors.border} !important`,
     borderWidth: '0 !important',
     border: 'none !important',
     opacity: '1 !important',
     visibility: 'visible !important',
-    height: '24px !important',
+    height: '18px !important',
     position: 'static !important',
     alignSelf: 'center !important',
-    width: '2px !important',
-    borderRadius: '1px !important',
+    width: '1px !important',
+    borderRadius: `${radii.pill} !important`,
     transition: 'all 0.2s',
     '&:hover, &[data-isresizing="true"]': {
-      backgroundColor: `${colors.blue[500]} !important`,
-      width: '4px !important',
-      borderRadius: '2px !important',
+      backgroundColor: `${fleetColors.primary} !important`,
+      width: '3px !important',
+      borderRadius: `${radii.pill} !important`,
     },
   },
   // MRT shifts the divider `translateX(4px)` so that it straddles the column
@@ -214,5 +237,29 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
   // last divider inside its cell instead.
   '&&:last-of-type .Mui-TableHeadCell-ResizeHandle-Divider': {
     transform: 'none',
+  },
+};
+
+export const fleetTableBodyCellFlatSx: SxProps<Theme> = {
+  fontFamily: fontFamilies.text,
+  fontSize: fontSizes.label,
+  color: fleetColors.textPrimary,
+  fontVariantNumeric: 'tabular-nums',
+  paddingTop: 'var(--cell-padding-vertical)',
+  paddingBottom: 'var(--cell-padding-vertical)',
+  paddingLeft: 'var(--cell-padding-horizontal)',
+  paddingRight: 'var(--cell-padding-horizontal)',
+  transition: 'padding 0.2s',
+};
+
+export const fleetTableBodyCellSx: SxProps<Theme> = {
+  ...fleetTableBodyCellFlatSx,
+  '&.select-col': {
+    paddingLeft: SELECT_COL_PADDING,
+    paddingRight: SELECT_COL_PADDING,
+  },
+  '&&.column-highlight': {
+    backgroundColor: fleetColors.primaryContainer,
+    color: fleetColors.primary,
   },
 };

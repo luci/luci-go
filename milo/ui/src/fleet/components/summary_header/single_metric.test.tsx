@@ -50,6 +50,9 @@ describe('<SingleMetric />', () => {
     );
 
     const button = screen.getByRole('button');
+    expect(button).toHaveStyle({
+      borderRadius: '6px',
+    });
     fireEvent.click(button);
     expect(handleClick).toHaveBeenCalledTimes(1);
     expect(mockTrackEvent).toHaveBeenCalledWith('main_metric_clicked', {

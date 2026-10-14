@@ -18,7 +18,6 @@ import {
   Box,
   Chip,
   CircularProgress,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -29,6 +28,7 @@ import {
 } from '@mui/material';
 
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { borders } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 
 import { getBugUrl } from './utils';
@@ -58,10 +58,7 @@ export const ActiveIrmTable = ({
 }: ActiveIrmTableProps) => {
   return (
     <Box sx={{ width: '100%' }}>
-      <Typography
-        variant="h6"
-        sx={{ mt: 2, mb: 2, fontSize: '16px', fontWeight: 'bold' }}
-      >
+      <Typography variant="h6" sx={{ mb: 2 }}>
         Active IRM Bugs
       </Typography>
 
@@ -87,12 +84,10 @@ export const ActiveIrmTable = ({
 
       {!isLoading && !isError && (
         <TableContainer
-          component={Paper}
-          variant="outlined"
           sx={{
             maxHeight: 200,
             overflowY: 'auto',
-            borderRadius: 1,
+            borderTop: borders.divider,
           }}
           data-testid="active-irm-table-container"
         >

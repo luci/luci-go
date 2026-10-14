@@ -47,7 +47,6 @@ interface SshTipProps {
 export function SshTip({ hostname, dutId }: SshTipProps) {
   const [open, setOpen] = useState<boolean>(false);
   const { trackEvent } = useGoogleAnalytics();
-
   const handleClickOpen = () => {
     trackEvent('ssh_tip', {
       componentName: 'ssh_tip_button',
@@ -86,6 +85,7 @@ export function SshTip({ hostname, dutId }: SshTipProps) {
   return (
     <>
       <Button
+        variant="toolbar"
         color="primary"
         size="small"
         startIcon={<TerminalIcon />}

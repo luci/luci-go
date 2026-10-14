@@ -32,7 +32,10 @@ import {
 } from '@/common/components/params_pager';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import { TaskResultPill } from '@/fleet/components/status_pill/status_pill';
 import { colors } from '@/fleet/theme/colors';
+import { surfaceCardClippedSx } from '@/fleet/theme/recipes';
+import { fleetColors, fontSizes } from '@/fleet/theme/tokens';
 import { prettyDateTime, prettySeconds } from '@/fleet/utils/dates';
 import { getRowClassName } from '@/fleet/utils/task_utils';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
@@ -120,6 +123,10 @@ const getSourceColors = (source: TaskSource) => {
   }
 };
 
+const ResultCell = ({ cell }: { cell: MRT_Cell<UnifiedGridRow, unknown> }) => (
+  <TaskResultPill result={cell.getValue<string>()} />
+);
+
 const SourceCell = ({ cell }: { cell: MRT_Cell<UnifiedGridRow, unknown> }) => {
   const source = cell.getValue<TaskSource>();
 
@@ -131,7 +138,7 @@ const SourceCell = ({ cell }: { cell: MRT_Cell<UnifiedGridRow, unknown> }) => {
       sx={{
         ...getSourceColors(source),
         fontWeight: 600,
-        fontSize: '0.75rem',
+        fontSize: fontSizes.caption,
       }}
     />
   );
@@ -191,7 +198,7 @@ export const UnifiedTaskDetailPanel = ({
   const { trackEvent } = useGoogleAnalytics();
 
   return (
-    <Box sx={{ p: 2, backgroundColor: colors.white }}>
+    <Box sx={{ p: 2, backgroundColor: fleetColors.surface }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
         Task Details
       </Typography>
@@ -353,17 +360,18 @@ export const UnifiedTasksGrid = ({
       {
         accessorKey: 'result',
         header: 'Result',
-        size: 100,
+        size: 130,
+        Cell: ResultCell,
       },
       {
         accessorKey: 'started',
         header: 'Started',
-        size: 250,
+        size: 220,
       },
       {
         accessorKey: 'duration',
         header: 'Duration',
-        size: 150,
+        size: 130,
       },
     ],
     [],
@@ -380,10 +388,14 @@ export const UnifiedTasksGrid = ({
     enableBottomToolbar: false,
     enableStickyHeader: true,
     renderDetailPanel: renderUnifiedTaskDetailPanel,
+    // The outer Box is the card; flatten MRT's own card so we never nest one.
+    muiTablePaperProps: {
+      sx: { border: 'none', boxShadow: 'none', borderRadius: 0 },
+    },
     muiDetailPanelProps: {
       sx: {
         width: '100%',
-        backgroundColor: `${colors.white} !important`,
+        backgroundColor: fleetColors.surface,
       },
     },
     displayColumnDefOptions: {
@@ -396,7 +408,7 @@ export const UnifiedTasksGrid = ({
       sx: {
         minHeight: 'unset',
         '& .MuiTableCell-head:hover': {
-          backgroundColor: `${colors.grey[100]} !important`,
+          backgroundColor: fleetColors.surfaceTonal,
         },
       },
     },
@@ -414,23 +426,8 @@ export const UnifiedTasksGrid = ({
         overflowX: 'hidden',
         maxHeight: '80vh',
         '--cell-padding-horizontal': '16px',
-        '& .Mui-TableHeadCell-Content': {
-          minHeight: 'unset !important',
-        },
-        '& .row--failure, .row--failure:hover': {
-          backgroundColor: `${colors.red[100]} !important`,
-        },
-        '& .row--pending, .row--pending:hover': {
-          backgroundColor: `${colors.yellow[100]} !important`,
-        },
-        '& .row--bot_died, .row--bot_died:hover': {
-          backgroundColor: `${colors.grey[100]} !important`,
-        },
-        '& .row--client_error, .row--client_error:hover': {
-          backgroundColor: `${colors.orange[100]} !important`,
-        },
-        '& .row--exception, .row--exception:hover': {
-          backgroundColor: `${colors.purple[100]} !important`,
+        '&& .Mui-TableHeadCell-Content': {
+          minHeight: 'unset',
         },
       },
     },
@@ -440,7 +437,7 @@ export const UnifiedTasksGrid = ({
   const pageSize = getPageSize(pagerCtx, searchParams);
 
   return (
-    <>
+    <Box sx={surfaceCardClippedSx}>
       <MaterialReactTable table={table} />
       <TablePagination
         component="div"
@@ -473,6 +470,6 @@ export const UnifiedTasksGrid = ({
           return `${realFrom}-${realTo} of ${hasNextPage ? `more than ${realTo}` : realTo}`;
         }}
       />
-    </>
+    </Box>
   );
 };

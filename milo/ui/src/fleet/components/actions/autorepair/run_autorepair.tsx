@@ -141,6 +141,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   return (
     <>
       <Button
+        variant="toolbar"
         color="primary"
         size="small"
         startIcon={<BuildIcon />}

@@ -18,14 +18,7 @@ import {
   Clear,
   VisibilityOff,
 } from '@mui/icons-material';
-import {
-  Divider,
-  ListItemIcon,
-  ListItemText,
-  MenuItem,
-  SxProps,
-  Theme,
-} from '@mui/material';
+import { Divider, ListItemIcon, ListItemText, MenuItem } from '@mui/material';
 import _ from 'lodash';
 import {
   MRT_RowData,
@@ -41,8 +34,11 @@ import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { FCFilterMenuItem } from '@/fleet/components/fc_data_table/fc_filter_menu_item';
 import { FleetColumnHeader } from '@/fleet/components/fc_data_table/fleet_column_header';
 import {
+  fleetTableBodyCellFlatSx,
+  fleetTableBodyCellSx,
   fleetTableHeaderSx,
   getDensityPadding,
+  TABLE_HEADER_MIN_HEIGHT,
 } from '@/fleet/components/fc_data_table/fleet_column_header.styles';
 import { MRTFilterMenuItem_OLD } from '@/fleet/components/fc_data_table/mrt_filter_menu_item';
 import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
@@ -52,7 +48,8 @@ import {
   mapMUIToMRT,
   useSettings,
 } from '@/fleet/hooks/use_settings';
-import { colors } from '@/fleet/theme/colors';
+import { iconButtonSx, surfaceCardClippedSx } from '@/fleet/theme/recipes';
+import { borders, controlHeights, fleetColors } from '@/fleet/theme/tokens';
 
 import { MenuScrollCloser } from './menu_scroll_closer';
 
@@ -79,7 +76,146 @@ export type FC_TableOptions<TData extends MRT_RowData, TValue = unknown> = Omit<
   filterValues?: Record<string, FilterCategory>;
 };
 
-const SELECT_COL_PADDING = '8px !important';
+const DEFAULT_DISPLAY_COLUMN_DEF_OPTIONS = {
+  'mrt-row-select': {
+    size: 40,
+  },
+};
+
+const DEFAULT_LOCALIZATION = {
+  sortByColumnAsc: 'Sort by {column} ascending (Shift + Click to multi-sort)',
+  sortByColumnDesc: 'Sort by {column} descending (Shift + Click to multi-sort)',
+  sortedByColumnAsc:
+    'Sorted by {column} ascending (Shift + Click to multi-sort)',
+  sortedByColumnDesc:
+    'Sorted by {column} descending (Shift + Click to multi-sort)',
+};
+
+const DEFAULT_MUI_PAGINATION_PROPS = {
+  rowsPerPageOptions: [10, 25, 50, 100, 500, 1000],
+  showFirstButton: false,
+  showLastButton: false,
+  SelectProps: {
+    MenuProps: {
+      anchorOrigin: { vertical: 'top' as const, horizontal: 'left' as const },
+      transformOrigin: {
+        vertical: 'bottom' as const,
+        horizontal: 'left' as const,
+      },
+    },
+  },
+};
+
+const DEFAULT_MRT_THEME = {
+  baseBackgroundColor: fleetColors.surface,
+};
+
+const DEFAULT_MUI_TABLE_PAPER_PROPS = {
+  variant: 'surface' as const,
+  elevation: 0,
+  sx: surfaceCardClippedSx,
+};
+
+const DEFAULT_MUI_TABLE_HEAD_PROPS = {
+  sx: { boxShadow: 'none' },
+};
+
+const DEFAULT_MUI_TABLE_HEAD_ROW_PROPS = {
+  // Force 2-line header height to prevent flex overlap/expansion issues
+  sx: { boxShadow: 'none', minHeight: TABLE_HEADER_MIN_HEIGHT },
+};
+
+const DEFAULT_MUI_TOP_TOOLBAR_PROPS = {
+  sx: {
+    backgroundColor: fleetColors.surface,
+    borderBottom: borders.divider,
+    minHeight: TABLE_HEADER_MIN_HEIGHT,
+    py: 1,
+    px: 1.75,
+    display: 'flex',
+    alignItems: 'center',
+    '& > .MuiBox-root': {
+      alignItems: 'center',
+      minHeight: controlHeights.button,
+    },
+    '& .MuiIconButton-root': {
+      ...iconButtonSx,
+      p: 0.75,
+    },
+    '& [aria-label="Show/Hide columns"]': {
+      display: 'none',
+    },
+  },
+};
+
+const DEFAULT_MUI_COLUMN_ACTIONS_BUTTON_PROPS = {
+  className: 'ColumnActionsMenuButton',
+  'aria-label': 'Column Actions',
+};
+
+const DEFAULT_MUI_TABLE_BODY_ROW_PROPS = {
+  sx: {
+    '& > .MuiTableCell-root': {
+      borderBottom: borders.divider,
+    },
+    '&:not(.Mui-selected):hover > .MuiTableCell-root': {
+      backgroundColor: fleetColors.surfaceTonal,
+    },
+  },
+};
+
+const DEFAULT_MUI_TABLE_PROPS = {
+  sx: {
+    tableLayout: 'fixed',
+  },
+};
+
+const DEFAULT_MUI_BOTTOM_TOOLBAR_PROPS = {
+  sx: {
+    backgroundColor: fleetColors.canvas,
+    borderTop: borders.default,
+    boxShadow: 'none',
+  },
+};
+
+const DEFAULT_CONTAINER_SX_BY_DENSITY = (
+  ['spacious', 'comfortable', 'compact'] as const
+).reduce(
+  (acc, d) => {
+    const { vertical, horizontal } = getDensityPadding(d);
+    acc[d] = {
+      maxWidth: '100%',
+      overflowX: 'auto',
+      overflowY: 'auto',
+      maxHeight: 'calc(100vh - 200px)',
+      '--cell-padding-vertical': `${vertical}px`,
+      '--cell-padding-horizontal': `${horizontal}px`,
+    };
+    return acc;
+  },
+  {} as Record<string, Record<string, unknown>>,
+);
+
+function mergeDefaultProp<TDefault, TOverride>(
+  defaultVal: TDefault,
+  overrideVal: TOverride,
+): TDefault | NonNullable<TOverride> {
+  if (overrideVal === undefined) {
+    return defaultVal;
+  }
+  if (typeof overrideVal === 'function') {
+    if (defaultVal && typeof defaultVal === 'object') {
+      return ((...args: unknown[]) =>
+        _.merge(
+          {},
+          defaultVal,
+          (overrideVal as (...a: unknown[]) => unknown)(...args),
+        )) as unknown as NonNullable<TOverride>;
+    }
+    return overrideVal as NonNullable<TOverride>;
+  }
+  return _.merge({}, defaultVal, overrideVal);
+}
 
 export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
   tableOptions: FC_TableOptions<TData, TValue> & {
@@ -100,11 +236,7 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
     manualSorting: true,
     enableRowVirtualization: process.env.NODE_ENV !== 'test',
 
-    displayColumnDefOptions: {
-      'mrt-row-select': {
-        size: 40,
-      },
-    },
+    displayColumnDefOptions: DEFAULT_DISPLAY_COLUMN_DEF_OPTIONS,
     defaultColumn: {
       grow: 1,
       size: 40,
@@ -112,16 +244,7 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
       Header: FleetColumnHeader,
     },
     // Override MRT default sort tooltips to include info about multi-sort.
-    localization: {
-      sortByColumnAsc:
-        'Sort by {column} ascending (Shift + Click to multi-sort)',
-      sortByColumnDesc:
-        'Sort by {column} descending (Shift + Click to multi-sort)',
-      sortedByColumnAsc:
-        'Sorted by {column} ascending (Shift + Click to multi-sort)',
-      sortedByColumnDesc:
-        'Sorted by {column} descending (Shift + Click to multi-sort)',
-    },
+    localization: DEFAULT_LOCALIZATION,
     onDensityChange: (updater) => {
       const newDensity =
         typeof updater === 'function'
@@ -136,28 +259,11 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
       density: mapMUIToMRT(settings.table.density),
     },
 
-    muiPaginationProps: {
-      rowsPerPageOptions: [10, 25, 50, 100, 500, 1000],
-      showFirstButton: false,
-      showLastButton: false,
-      SelectProps: {
-        MenuProps: {
-          anchorOrigin: { vertical: 'top', horizontal: 'left' },
-          transformOrigin: { vertical: 'bottom', horizontal: 'left' },
-        },
-      },
-    },
-    muiTablePaperProps: {
-      elevation: 0,
-      sx: { border: 'none', boxShadow: 'none' },
-    },
-    muiTableHeadProps: {
-      sx: { boxShadow: 'none' },
-    },
-    muiTableHeadRowProps: {
-      // Force 2-line header height to prevent flex overlap/expansion issues
-      sx: { boxShadow: 'none', minHeight: '56px' },
-    },
+    muiPaginationProps: DEFAULT_MUI_PAGINATION_PROPS,
+    mrtTheme: DEFAULT_MRT_THEME,
+    muiTablePaperProps: DEFAULT_MUI_TABLE_PAPER_PROPS,
+    muiTableHeadProps: DEFAULT_MUI_TABLE_HEAD_PROPS,
+    muiTableHeadRowProps: DEFAULT_MUI_TABLE_HEAD_ROW_PROPS,
 
     renderColumnActionsMenuItems: ({ column, closeMenu }) => {
       const sortingState = column.getIsSorted();
@@ -289,13 +395,7 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
       return items;
     },
 
-    muiTopToolbarProps: {
-      sx: {
-        '& [aria-label="Show/Hide columns"]': {
-          display: 'none',
-        },
-      },
-    },
+    muiTopToolbarProps: DEFAULT_MUI_TOP_TOOLBAR_PROPS,
 
     muiTableHeadCellProps: ({ column }) => {
       const isSelectCol = column.id === 'mrt-row-select';
@@ -306,88 +406,43 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
       const title = isTemporary
         ? 'Column visible because of active filter'
         : undefined;
+      const classNames = [
+        isHighlighted ? 'column-highlight' : '',
+        isSelectCol ? 'select-col' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
 
       return {
-        className: isHighlighted ? 'column-highlight' : '',
-        sx: {
-          ...(fleetTableHeaderSx as Record<string, unknown>),
-          paddingTop: `var(--cell-padding-vertical) !important`,
-          paddingBottom: `var(--cell-padding-vertical) !important`,
-          paddingLeft: isSelectCol
-            ? SELECT_COL_PADDING
-            : `var(--cell-padding-horizontal) !important`,
-          paddingRight: isSelectCol
-            ? SELECT_COL_PADDING
-            : `var(--cell-padding-horizontal) !important`,
-          transition: 'padding 0.2s',
-        } as SxProps<Theme>,
+        className: classNames,
+        sx: fleetTableHeaderSx,
         'aria-description': title,
         title: title,
       };
     },
 
-    muiColumnActionsButtonProps: {
-      className: 'ColumnActionsMenuButton',
-      'aria-label': 'Column Actions',
-    },
+    muiColumnActionsButtonProps: DEFAULT_MUI_COLUMN_ACTIONS_BUTTON_PROPS,
 
     muiTableBodyCellProps: ({ column }) => {
       const meta = column.columnDef.meta;
       const isHighlighted = meta?.isHighlighted || column.getIsFiltered();
       const isSelectCol = column.id === 'mrt-row-select';
+      const classNames = [
+        isHighlighted ? 'column-highlight' : '',
+        isSelectCol ? 'select-col' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
 
       return {
-        className: isHighlighted ? 'column-highlight' : '',
-        sx: {
-          fontSize: '13px',
-          paddingTop: `var(--cell-padding-vertical)`,
-          paddingBottom: `var(--cell-padding-vertical)`,
-          paddingLeft: isSelectCol
-            ? SELECT_COL_PADDING
-            : `var(--cell-padding-horizontal)`,
-          paddingRight: isSelectCol
-            ? SELECT_COL_PADDING
-            : `var(--cell-padding-horizontal)`,
-          transition: 'padding 0.2s',
-          ...(isHighlighted && {
-            backgroundColor: `${colors.blue[50]} !important`,
-            color: `${colors.blue[600]} !important`,
-          }),
-        } as SxProps<Theme>,
+        className: classNames,
+        sx: classNames ? fleetTableBodyCellSx : fleetTableBodyCellFlatSx,
       };
     },
-    muiTableBodyRowProps: {
-      sx: {
-        '&.MuiTableRow-root.Mui-selected': {
-          backgroundColor: `${colors.blue[50]} !important`,
-        },
-        '&.MuiTableRow-root.Mui-selected:hover': {
-          backgroundColor: `${colors.blue[100]} !important`,
-        },
-        '&.MuiTableRow-root.Mui-selected > .MuiTableCell-root::after': {
-          display: 'none', // Hide standard MRT overlay to let our solid MUI color shine
-        },
-        '&.MuiTableRow-root.Mui-selected > .MuiTableCell-root.column-highlight':
-          {
-            backgroundColor: `${colors.blue[100]} !important`,
-            zIndex: 1,
-          },
-        '&.MuiTableRow-root.Mui-selected > .MuiTableCell-root': {
-          borderBottom: '1px solid divider !important',
-        },
-      },
-    },
+    muiTableBodyRowProps: DEFAULT_MUI_TABLE_BODY_ROW_PROPS,
 
-    muiTableProps: {
-      sx: {
-        tableLayout: 'fixed',
-      },
-    },
-    muiBottomToolbarProps: {
-      sx: {
-        boxShadow: 'none',
-      },
-    },
+    muiTableProps: DEFAULT_MUI_TABLE_PROPS,
+    muiBottomToolbarProps: DEFAULT_MUI_BOTTOM_TOOLBAR_PROPS,
   };
 
   const {
@@ -412,12 +467,71 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
       }
     : {};
 
-  const mergedTableOptions = _.merge(
-    {},
-    defaultOptions,
-    errorOptions,
-    restTableOptions,
-  ) as FC_TableOptions<TData, TValue>;
+  const mergedTableOptions = {
+    ...defaultOptions,
+    ...errorOptions,
+    ...restTableOptions,
+    state: {
+      ...defaultOptions.state,
+      ...errorOptions.state,
+      ...restTableOptions.state,
+    },
+    muiToolbarAlertBannerProps: restTableOptions.muiToolbarAlertBannerProps
+      ? mergeDefaultProp(
+          errorOptions.muiToolbarAlertBannerProps,
+          restTableOptions.muiToolbarAlertBannerProps,
+        )
+      : errorOptions.muiToolbarAlertBannerProps,
+    displayColumnDefOptions: mergeDefaultProp(
+      DEFAULT_DISPLAY_COLUMN_DEF_OPTIONS,
+      restTableOptions.displayColumnDefOptions,
+    ),
+    defaultColumn: mergeDefaultProp(
+      defaultOptions.defaultColumn,
+      restTableOptions.defaultColumn,
+    ),
+    localization: mergeDefaultProp(
+      DEFAULT_LOCALIZATION,
+      restTableOptions.localization,
+    ),
+    muiPaginationProps: mergeDefaultProp(
+      DEFAULT_MUI_PAGINATION_PROPS,
+      restTableOptions.muiPaginationProps,
+    ),
+    mrtTheme: mergeDefaultProp(DEFAULT_MRT_THEME, restTableOptions.mrtTheme),
+    muiTablePaperProps: mergeDefaultProp(
+      DEFAULT_MUI_TABLE_PAPER_PROPS,
+      restTableOptions.muiTablePaperProps,
+    ),
+    muiTableHeadProps: mergeDefaultProp(
+      DEFAULT_MUI_TABLE_HEAD_PROPS,
+      restTableOptions.muiTableHeadProps,
+    ),
+    muiTableHeadRowProps: mergeDefaultProp(
+      DEFAULT_MUI_TABLE_HEAD_ROW_PROPS,
+      restTableOptions.muiTableHeadRowProps,
+    ),
+    muiTopToolbarProps: mergeDefaultProp(
+      DEFAULT_MUI_TOP_TOOLBAR_PROPS,
+      restTableOptions.muiTopToolbarProps,
+    ),
+    muiColumnActionsButtonProps: mergeDefaultProp(
+      DEFAULT_MUI_COLUMN_ACTIONS_BUTTON_PROPS,
+      restTableOptions.muiColumnActionsButtonProps,
+    ),
+    muiTableBodyRowProps: mergeDefaultProp(
+      DEFAULT_MUI_TABLE_BODY_ROW_PROPS,
+      restTableOptions.muiTableBodyRowProps,
+    ),
+    muiTableProps: mergeDefaultProp(
+      DEFAULT_MUI_TABLE_PROPS,
+      restTableOptions.muiTableProps,
+    ),
+    muiBottomToolbarProps: mergeDefaultProp(
+      DEFAULT_MUI_BOTTOM_TOOLBAR_PROPS,
+      restTableOptions.muiBottomToolbarProps,
+    ),
+  } as FC_TableOptions<TData, TValue>;
 
   if (meta) {
     mergedTableOptions.meta = meta;
@@ -425,7 +539,6 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
 
   mergedTableOptions.muiTableContainerProps = (props) => {
     const density = props.table.getState().density;
-    const { vertical, horizontal } = getDensityPadding(density);
 
     let injectedProps: Record<string, unknown> = {};
     if (typeof muiTableContainerProps === 'function') {
@@ -435,14 +548,26 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
       injectedProps = muiTableContainerProps as Record<string, unknown>;
     }
 
-    const defaultSx = {
-      maxWidth: '100%',
-      overflowX: 'auto',
-      overflowY: 'auto',
-      maxHeight: 'calc(100vh - 200px)',
-      '--cell-padding-vertical': `${vertical}px`,
-      '--cell-padding-horizontal': `${horizontal}px`,
-    };
+    const defaultSx =
+      DEFAULT_CONTAINER_SX_BY_DENSITY[density] ??
+      (() => {
+        const { vertical, horizontal } = getDensityPadding(density);
+        return {
+          maxWidth: '100%',
+          overflowX: 'auto',
+          overflowY: 'auto',
+          maxHeight: 'calc(100vh - 200px)',
+          '--cell-padding-vertical': `${vertical}px`,
+          '--cell-padding-horizontal': `${horizontal}px`,
+        };
+      })();
+
+    if (!injectedProps.sx) {
+      return {
+        ...injectedProps,
+        sx: defaultSx,
+      };
+    }
 
     let userSxConfig = {};
     if (typeof injectedProps.sx === 'function') {

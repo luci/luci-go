@@ -133,6 +133,7 @@ export default function AutorepairDialog({
           <Tooltip title="View documentation">
             <IconButton
               size="small"
+              aria-label="View documentation"
               href="http://goto.google.com/satlab-manual"
               target="_blank"
             >
@@ -188,6 +189,7 @@ export default function AutorepairDialog({
                 <Tooltip title="View documentation">
                   <IconButton
                     size="small"
+                    aria-label="View documentation"
                     href="http://goto.google.com/shivas-manual-os"
                     target="_blank"
                   >

@@ -14,9 +14,12 @@
 
 import { Accordion, AccordionProps } from '@mui/material';
 
+import { surfaceCardClippedSx } from '@/fleet/theme/recipes';
+import { radii } from '@/fleet/theme/tokens';
+
 export const StandaloneAccordion = ({
   disableGutters = true,
-  elevation = 2,
+  elevation = 0,
   variant = 'outlined',
   sx,
   ...props
@@ -27,7 +30,12 @@ export const StandaloneAccordion = ({
     variant={variant}
     sx={{
       mb: 2,
-      borderRadius: '4px',
+      ...surfaceCardClippedSx,
+      // MUI Accordion squares off middle items and sets its own radius on
+      // :first-of-type / :last-of-type; out-specify both instead of !important.
+      '&&, &&:first-of-type, &&:last-of-type': {
+        borderRadius: radii.md,
+      },
       '&::before': {
         display: 'none',
       },

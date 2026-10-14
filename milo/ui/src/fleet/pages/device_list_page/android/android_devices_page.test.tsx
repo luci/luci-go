@@ -311,7 +311,7 @@ describe('<AndroidDevicesPage /> Integration', () => {
 
     const button = await screen.findByTestId('file-restoration-bug-button');
     expect(button).toBeInTheDocument();
-    expect(button).toHaveTextContent('Request Restoration');
+    expect(button).toHaveTextContent('Request restoration');
   });
 
   it('renders Request Restoration button when feature flag is explicitly enabled via localStorage', async () => {
@@ -342,7 +342,7 @@ describe('<AndroidDevicesPage /> Integration', () => {
 
     const button = await screen.findByTestId('file-restoration-bug-button');
     expect(button).toBeInTheDocument();
-    expect(button).toHaveTextContent('Request Restoration');
+    expect(button).toHaveTextContent('Request restoration');
   });
 
   it('does not render Request Restoration button when feature flag is disabled', async () => {

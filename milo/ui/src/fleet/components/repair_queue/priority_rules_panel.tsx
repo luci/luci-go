@@ -30,6 +30,7 @@ import {
   FilterCategoryBuilder,
 } from '@/fleet/components/filters/use_filters';
 import { colors } from '@/fleet/theme/colors';
+import { fleetColors, radii } from '@/fleet/theme/tokens';
 
 import {
   EditableRuleRow,
@@ -216,10 +217,7 @@ export const PriorityRulesPanel = ({
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Typography
-        variant="h6"
-        sx={{ mt: 2, mb: 2, fontSize: '16px', fontWeight: 'bold' }}
-      >
+      <Typography variant="h6" sx={{ mb: 2 }}>
         Priority Scoring Rules
       </Typography>
 
@@ -259,8 +257,8 @@ export const PriorityRulesPanel = ({
                 p: 2,
                 textAlign: 'center',
                 backgroundColor: colors.grey[50],
-                borderRadius: 1,
-                border: `1px dashed ${colors.grey[300]}`,
+                borderRadius: radii.sm,
+                border: `1px dashed ${fleetColors.border}`,
               }}
             >
               <Typography variant="body2" color="text.secondary">
@@ -313,16 +311,11 @@ export const PriorityRulesPanel = ({
           >
             {canEdit && (
               <Button
-                variant="outlined"
-                size="small"
+                variant="toolbar"
                 startIcon={<AddIcon />}
                 onClick={handleAddRule}
                 disabled={rows.length >= MAX_PRIORITY_RULES || isSubmitting}
                 data-testid="add-priority-rule-button"
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 500,
-                }}
               >
                 {rows.length >= MAX_PRIORITY_RULES
                   ? `Limit of ${MAX_PRIORITY_RULES} rules reached`

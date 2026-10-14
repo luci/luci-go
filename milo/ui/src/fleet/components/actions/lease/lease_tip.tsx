@@ -37,7 +37,6 @@ interface LeaseTipProps {
 export function LeaseTip({ hostname }: LeaseTipProps) {
   const [open, setOpen] = useState<boolean>(false);
   const { trackEvent } = useGoogleAnalytics();
-
   const command = `crosfleet dut lease -host ${hostname}`;
 
   const handleClickOpen = () => {
@@ -50,6 +49,7 @@ export function LeaseTip({ hostname }: LeaseTipProps) {
   return (
     <>
       <Button
+        variant="toolbar"
         color="primary"
         size="small"
         startIcon={<VpnKeyIcon />}

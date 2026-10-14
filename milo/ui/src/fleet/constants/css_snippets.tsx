@@ -13,15 +13,17 @@
 // limitations under the License.
 import styled from '@emotion/styled';
 
-import { colors } from '@/fleet/theme/colors';
+import { borders, elevations, fleetColors, radii } from '@/fleet/theme/tokens';
 
 /**
  * Shared CSS styled div for panels similar to the Main metrics view on the
  * device list page.
  */
 export const MetricsContainer = styled.div`
-  padding: 16px 21px;
+  padding: 18px 24px;
   gap: 28px;
-  border-radius: 4px;
-  border: 1px solid ${colors.grey[300]};
+  background-color: ${fleetColors.surface};
+  border-radius: ${radii.md};
+  border: ${borders.default};
+  box-shadow: ${elevations.card};
 `;

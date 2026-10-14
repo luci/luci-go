@@ -128,6 +128,7 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
   return (
     <>
       <Button
+        variant="toolbar"
         color="primary"
         size="small"
         startIcon={<SystemUpdateAltIcon />}

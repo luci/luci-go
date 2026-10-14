@@ -14,26 +14,65 @@
 // limitations under the License.
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CheckIcon from '@mui/icons-material/Check';
 import {
   Button,
   List,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   Popover,
   Tooltip,
-  Typography,
 } from '@mui/material';
 import _ from 'lodash';
 import { useState } from 'react';
 
 import { useFeatureFlag } from '@/common/feature_flags';
+import androidLogo from '@/fleet/assets/logos/android.png';
+import browserLogo from '@/fleet/assets/logos/browser.png';
+import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
+import pixelLogo from '@/fleet/assets/logos/pixel.png';
 import { usePlatform, platformRenderString } from '@/fleet/hooks/usePlatform';
-import { colors } from '@/fleet/theme/colors';
+import {
+  borders,
+  fleetColors,
+  fontFamilies,
+  fontSizes,
+  iconSizes,
+  radii,
+} from '@/fleet/theme/tokens';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { enablePTE } from '../features';
 
 import { useShortcut } from './shortcut_provider';
+
+const PLATFORM_LOGOS: Partial<Record<Platform, { src: string; alt: string }>> =
+  {
+    [Platform.CHROMEOS]: { src: chromeosLogo, alt: 'Chrome OS' },
+    [Platform.CHROMIUM]: { src: browserLogo, alt: 'Chrome Browser' },
+    [Platform.ANDROID]: { src: androidLogo, alt: 'Android' },
+    [Platform.PIXEL]: { src: pixelLogo, alt: 'Pixel' },
+  };
+
+function PlatformLogo({ platform }: { platform?: Platform }) {
+  const logo =
+    (platform !== undefined && PLATFORM_LOGOS[platform]) ||
+    PLATFORM_LOGOS[Platform.CHROMEOS]!;
+  return (
+    <img
+      src={logo.src}
+      alt={logo.alt}
+      style={{
+        width: iconSizes.logo,
+        height: iconSizes.logo,
+        objectFit: 'contain',
+        display: 'block',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
 
 export function PlatformSelector() {
   const platform = usePlatform();
@@ -88,24 +127,13 @@ export function PlatformSelector() {
     <>
       <Tooltip title="Switch platform">
         <Button
-          variant="contained"
+          variant="toolbar"
           onClick={handleClick}
-          disableElevation
+          startIcon={<PlatformLogo platform={platform.platform} />}
           endIcon={<ArrowDropDownIcon />}
-          sx={{
-            color: colors.grey[800],
-            backgroundColor: colors.white,
-            border: '1px solid',
-            borderColor: colors.grey[300],
-            paddingBottom: '5px',
-            '&:hover': {
-              backgroundColor: colors.grey[200],
-            },
-          }}
+          sx={{ ml: 0.5 }}
         >
-          <Typography variant="body1">
-            {platformRenderString(platform.platform) || 'Invalid platform'}
-          </Typography>
+          {platformRenderString(platform.platform) || 'Invalid platform'}
         </Button>
       </Tooltip>
       <Popover
@@ -116,13 +144,61 @@ export function PlatformSelector() {
           vertical: 'bottom',
           horizontal: 'left',
         }}
+        slotProps={{
+          paper: {
+            elevation: 2,
+            sx: { mt: 0.75, border: borders.default, minWidth: 196 },
+          },
+        }}
       >
-        <List>
-          {PLATFORMS.map((p) => (
-            <ListItemButton key={p} onClick={() => handlePlatformSelect(p)}>
-              <ListItemText primary={platformRenderString(p)} />
-            </ListItemButton>
-          ))}
+        <List sx={{ p: 0.75 }}>
+          {PLATFORMS.map((p) => {
+            const selected = p === platform.platform;
+            return (
+              <ListItemButton
+                key={p}
+                selected={selected}
+                onClick={() => handlePlatformSelect(p)}
+                sx={{
+                  borderRadius: radii.sm,
+                  py: 0.75,
+                  px: 1.25,
+                  mb: 0.25,
+                  '&.Mui-selected': {
+                    backgroundColor: fleetColors.primaryContainer,
+                    color: fleetColors.primary,
+                    '&:hover': {
+                      backgroundColor: fleetColors.primaryContainerHover,
+                    },
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 28 }}>
+                  <PlatformLogo platform={p} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={platformRenderString(p)}
+                  primaryTypographyProps={{
+                    fontFamily: fontFamilies.display,
+                    fontSize: fontSizes.body,
+                    fontWeight: selected ? 600 : 500,
+                    color: selected
+                      ? fleetColors.primary
+                      : fleetColors.textPrimary,
+                  }}
+                />
+                {selected && (
+                  <CheckIcon
+                    sx={{
+                      fontSize: iconSizes.control,
+                      color: fleetColors.primary,
+                      ml: 1,
+                    }}
+                  />
+                )}
+              </ListItemButton>
+            );
+          })}
         </List>
       </Popover>
     </>

@@ -43,9 +43,11 @@ import {
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import { TaskResultPill } from '@/fleet/components/status_pill/status_pill';
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
-import { colors } from '@/fleet/theme/colors';
+import { surfaceCardClippedSx } from '@/fleet/theme/recipes';
+import { fleetColors } from '@/fleet/theme/tokens';
 import {
   extractBuildUrlFromTagData,
   getBuildUrlFromName,
@@ -90,11 +92,17 @@ const COLUMN_CONFIG: Record<
 > = {
   task: { header: 'Task', size: 300, grow: 2 },
   buildVersion: { header: 'Build version', size: 150 },
-  result: { header: 'Result', size: 100 },
-  started: { header: 'Started', size: 250 },
-  duration: { header: 'Duration', size: 150 },
+  result: { header: 'Result', size: 130 },
+  started: { header: 'Started', size: 220 },
+  duration: { header: 'Duration', size: 130 },
   dut_name: { header: 'DUT Name', size: 200 },
 };
+
+const ResultCell = ({
+  cell,
+}: {
+  cell: MRT_Cell<Record<string, unknown>, unknown>;
+}) => <TaskResultPill result={cell.getValue<string>()} />;
 
 const TaskCell = ({
   cell,
@@ -258,7 +266,13 @@ export const TasksDetailPanel = ({
   }
 
   return (
-    <Box sx={{ display: 'grid', width: '100%', backgroundColor: colors.white }}>
+    <Box
+      sx={{
+        display: 'grid',
+        width: '100%',
+        backgroundColor: fleetColors.surface,
+      }}
+    >
       <Typography variant="h6" sx={{ mb: 1 }}>
         Task Output Properties
       </Typography>
@@ -320,6 +334,8 @@ export const TasksGrid = ({
           colDef.Cell = TaskCell;
         } else if (key === 'dut_name') {
           colDef.Cell = DutNameCell;
+        } else if (key === 'result') {
+          colDef.Cell = ResultCell;
         }
         return colDef;
       }),
@@ -344,10 +360,14 @@ export const TasksGrid = ({
     renderDetailPanel: ({ row, table }) => (
       <TasksDetailPanel row={row} table={table} />
     ),
+    // The outer Box is the card; flatten MRT's own card so we never nest one.
+    muiTablePaperProps: {
+      sx: { border: 'none', boxShadow: 'none', borderRadius: 0 },
+    },
     muiDetailPanelProps: {
       sx: {
         width: '100%',
-        backgroundColor: `${colors.white} !important`,
+        backgroundColor: fleetColors.surface,
       },
     },
     displayColumnDefOptions: {
@@ -360,7 +380,7 @@ export const TasksGrid = ({
       sx: {
         minHeight: 'unset',
         '& .MuiTableCell-head:hover': {
-          backgroundColor: `${colors.grey[100]} !important`,
+          backgroundColor: fleetColors.surfaceTonal,
         },
       },
     },
@@ -377,23 +397,8 @@ export const TasksGrid = ({
         overflowX: 'hidden',
         maxHeight: '80vh',
         '--cell-padding-horizontal': '16px',
-        '& .Mui-TableHeadCell-Content': {
-          minHeight: 'unset !important',
-        },
-        '& .row--failure, .row--failure:hover': {
-          backgroundColor: `${colors.red[100]} !important`,
-        },
-        '& .row--pending, .row--pending:hover': {
-          backgroundColor: `${colors.yellow[100]} !important`,
-        },
-        '& .row--bot_died, .row--bot_died:hover': {
-          backgroundColor: `${colors.grey[100]} !important`,
-        },
-        '& .row--client_error, .row--client_error:hover': {
-          backgroundColor: `${colors.orange[100]} !important`,
-        },
-        '& .row--exception, .row--exception:hover': {
-          backgroundColor: `${colors.purple[100]} !important`,
+        '&& .Mui-TableHeadCell-Content': {
+          minHeight: 'unset',
         },
       },
     },
@@ -403,7 +408,7 @@ export const TasksGrid = ({
   const pageSize = getPageSize(pagerCtx, searchParams);
 
   return (
-    <>
+    <Box sx={surfaceCardClippedSx}>
       <MaterialReactTable table={table} />
       <TablePagination
         component="div"
@@ -434,6 +439,6 @@ export const TasksGrid = ({
           return `${realFrom}-${realTo} of ${hasNextPage ? `more than ${realTo}` : realTo}`;
         }}
       />
-    </>
+    </Box>
   );
 };

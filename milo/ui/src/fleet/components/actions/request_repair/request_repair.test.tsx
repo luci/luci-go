@@ -269,7 +269,7 @@ describe('<RequestRepair />', () => {
       const button = screen.getByTestId('file-restoration-bug-button');
       expect(button).toBeInTheDocument();
       expect(button).toBeEnabled();
-      expect(button).toHaveTextContent('Request Restoration');
+      expect(button).toHaveTextContent('Request restoration');
 
       fireEvent.click(button);
 

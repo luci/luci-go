@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import { Box, ButtonBase, Skeleton, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import React from 'react';
+
+import { subMetricRowSx } from '@/fleet/theme/recipes';
+import { fleetColors, radii } from '@/fleet/theme/tokens';
 
 export type SmallMetricItemProps = {
   value?: number;
@@ -50,7 +52,6 @@ export function SmallMetricItem({
   formatValue,
   ariaLabel,
 }: SmallMetricItemProps) {
-  const theme = useTheme();
   const percentage =
     !loading && typeof value === 'number' && total !== undefined && total > 0
       ? ((value / total) * 100).toFixed(1)
@@ -74,14 +75,12 @@ export function SmallMetricItem({
         width: '100%',
         justifyContent: 'flex-start',
         textAlign: 'left',
+        borderRadius: radii.sm,
         ...(onClick && {
-          '&:hover, &:focus-visible': {
-            backgroundColor: theme.palette.action.hover,
-            borderRadius: '4px',
-            outline: 'none',
-          },
+          ...subMetricRowSx,
           '&:hover .small-metric-label, &:focus-visible .small-metric-label': {
             textDecoration: 'underline',
+            color: fleetColors.primary,
           },
         }),
         p: '1px 4px',
@@ -143,9 +142,7 @@ export function SmallMetricItem({
               variant="caption"
               sx={{
                 color: 'text.secondary',
-                fontWeight: 300,
-                fontSize: '0.75rem',
-                opacity: 0.7,
+                fontWeight: 400,
               }}
             >
               ({percentage}%)

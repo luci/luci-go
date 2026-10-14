@@ -25,7 +25,7 @@ import * as path from 'path';
  */
 const BASELINE = {
   rgba: 33,
-  radius: 88,
+  radius: 80,
   hex: 13,
   shadow: 7,
 };

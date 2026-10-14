@@ -133,6 +133,7 @@ export function RunReserve({ selectedDuts }: RunReserveProps) {
   return (
     <>
       <Button
+        variant="toolbar"
         color="primary"
         size="small"
         startIcon={<LockIcon />}

@@ -38,7 +38,6 @@ export function FCDataTableCopy<T extends MRT_RowData>({
   table: MRT_TableInstance<T>;
 }) {
   const [showCopySuccess, setShowCopySuccess] = useState(false);
-
   const rows = table.getSelectedRowModel().rows;
 
   const copy = () => {
@@ -78,11 +77,13 @@ export function FCDataTableCopy<T extends MRT_RowData>({
     enabled: rows.length > 0,
   });
 
-  if (rows.length === 0) return <div />;
+  if (rows.length === 0) return null;
   return (
     <>
       <Button
         onClick={copy}
+        variant="toolbar"
+        size="small"
         startIcon={<ContentCopyIcon />}
         aria-label="Copy selected rows"
       >

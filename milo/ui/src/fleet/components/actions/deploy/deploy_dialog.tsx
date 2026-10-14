@@ -111,6 +111,7 @@ export default function DeployDialog({
           <Tooltip title="View External Device Manual">
             <IconButton
               size="small"
+              aria-label="View External Device Manual"
               href="http://goto.google.com/satlab-manual"
               target="_blank"
             >

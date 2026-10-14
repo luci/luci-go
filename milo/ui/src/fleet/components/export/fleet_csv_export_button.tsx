@@ -136,6 +136,7 @@ export function FleetCSVExportButton<TData extends MRT_RowData>({
     <>
       <Button
         onClick={(event) => setAnchorEl(event.currentTarget)}
+        variant="toolbar"
         size="small"
         startIcon={<SaveAltIcon />}
       >

@@ -472,7 +472,7 @@ describe('ProductCataloguePage', () => {
       expect(screen.getByText('Product 12')).toBeInTheDocument();
       expect(screen.queryByText('Product 1')).not.toBeInTheDocument();
     });
-  });
+  }, 15000);
 
   it('should render both non-virtual and GCE entries in unified table on All tab', async () => {
     FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {

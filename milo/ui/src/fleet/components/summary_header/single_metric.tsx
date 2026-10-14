@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Button, Skeleton, Typography } from '@mui/material';
+import { Box, Button, Skeleton, Typography } from '@mui/material';
 import { ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
-import { theme } from '@/fleet/theme/theme';
+import { metricTileSx } from '@/fleet/theme/recipes';
+import { fontSizes } from '@/fleet/theme/tokens';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 type SingleMetricProps = {
@@ -49,7 +50,7 @@ export function SingleMetric({
     return loading ? (
       <Skeleton data-testid="metric-skeleton" width={16} height={18} />
     ) : (
-      <Typography variant="body2">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {percentage.toLocaleString(undefined, {
           style: 'percent',
           maximumFractionDigits: 1,
@@ -60,22 +61,22 @@ export function SingleMetric({
   };
 
   const content = (
-    <div
-      css={{
-        padding: 8,
+    <Box
+      sx={{
+        p: 1,
         display: 'flex',
         flexDirection: 'column',
         textAlign: 'left',
         justifyContent: 'flex-start',
         alignItems: 'flex-start',
-        minHeight: '90px', // Prevent layout shift when loading data.
-        color: theme.palette.text.primary,
+        minHeight: 90, // Prevent layout shift when loading data.
+        color: 'text.primary',
       }}
     >
-      <div css={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         <Typography variant="body2">{name}</Typography>
         {infoTooltip && (
-          <div
+          <Box
             role="presentation"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
@@ -85,13 +86,13 @@ export function SingleMetric({
                 e.stopPropagation();
               }
             }}
-            css={{ display: 'inline-flex', alignItems: 'center' }}
+            sx={{ display: 'inline-flex', alignItems: 'center' }}
           >
             {infoTooltip}
-          </div>
+          </Box>
         )}
-      </div>
-      <div css={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      </Box>
+      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
         {Icon && Icon}
         {loading ? (
           <Skeleton
@@ -106,9 +107,8 @@ export function SingleMetric({
               variant="h3"
               sx={{
                 fontSize: {
-                  xs: '1.25rem',
-                  sm: '1.5rem',
-                  md: '1.75rem',
+                  xs: fontSizes.headline,
+                  sm: fontSizes.display,
                 },
                 lineHeight: 1.2,
               }}
@@ -120,12 +120,7 @@ export function SingleMetric({
                 variant="caption"
                 sx={{
                   textWrap: 'nowrap',
-                  fontSize: {
-                    xs: '0.65rem',
-                    sm: '0.7rem',
-                    md: '0.75rem',
-                  },
-                  opacity: 0.8,
+                  color: 'text.secondary',
                 }}
               >{` / ${total.toLocaleString('en-US')}`}</Typography>
             ) : (
@@ -133,9 +128,9 @@ export function SingleMetric({
             )}
           </>
         )}
-      </div>
+      </Box>
       {renderPercent()}
-    </div>
+    </Box>
   );
 
   const isClickable = handleClick || filterUrl;
@@ -146,8 +141,9 @@ export function SingleMetric({
         <Button
           component="div"
           variant="text"
-          css={{
-            padding: 0,
+          sx={{
+            ...metricTileSx,
+            p: 0,
           }}
           onAuxClick={() => {
             trackEvent('main_metric_clicked', {

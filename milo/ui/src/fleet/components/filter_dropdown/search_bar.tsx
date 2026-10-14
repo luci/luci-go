@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import SearchIcon from '@mui/icons-material/Search';
 import { TextField } from '@mui/material';
 import { forwardRef, useCallback, useMemo, useRef } from 'react';
 
-import { colors } from '@/fleet/theme/colors';
+import { pillInputSx } from '@/fleet/theme/recipes';
+import { fleetColors, iconSizes } from '@/fleet/theme/tokens';
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 
 import { StringListFilterCategory } from '../filters/string_list_filter';
@@ -36,6 +38,26 @@ interface SearchBarProps {
   onChipEditApplied: () => void;
   placeholder?: string;
 }
+
+const SEARCH_BAR_SX = {
+  width: '100%',
+  zIndex: 3, // above the filter dropdown backdrop
+};
+
+const SEARCH_BAR_INPUT_SX = {
+  ...pillInputSx,
+  width: '100%',
+  display: 'inline-flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  padding: '3px 12px 3px 10px',
+  '& input': {
+    marginLeft: '6px',
+    minWidth: '100px',
+    flex: 1,
+    padding: '7px 4px',
+  },
+};
 
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
   function SearchBar(
@@ -125,10 +147,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     return (
       <TextField
         data-testid="search-bar"
-        sx={{
-          width: '100%',
-          zIndex: 3, // above the filter dropdown backdrop
-        }}
+        sx={SEARCH_BAR_SX}
         inputRef={(node) => {
           internalRef.current = node;
           if (ref) {
@@ -226,37 +245,22 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
         size="small"
         slotProps={{
           input: {
-            sx: {
-              width: '100%',
-              display: 'inline-flex',
-              flexWrap: 'wrap',
-              padding: '2px 4px',
-              fontSize: 14,
-
-              '& input': {
-                marginLeft: '10px',
-                minWidth: '100px',
-                flex: 1,
-                padding: '8px 4px',
-              },
-              '& fieldset': {
-                borderColor: colors.grey[300],
-              },
-
-              '&:hover fieldset': {
-                borderColor: colors.grey[500] + '!important',
-              },
-
-              '&:focus-within fieldset': {
-                borderWidth: '1px !important',
-              },
-            },
+            sx: SEARCH_BAR_INPUT_SX,
             startAdornment: (
               // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
               <div
                 onClick={(e) => e.stopPropagation()}
                 style={{ display: 'contents' }}
               >
+                <SearchIcon
+                  sx={{
+                    fontSize: iconSizes.inline,
+                    color: fleetColors.textTertiary,
+                    ml: 0.5,
+                    mr: 0.5,
+                    flexShrink: 0,
+                  }}
+                />
                 {renderedChips}
                 {/*
                      spacer, aligned to the input, allows for correct ref positioning in situations
