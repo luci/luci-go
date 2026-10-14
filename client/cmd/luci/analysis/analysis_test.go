@@ -309,12 +309,29 @@ func TestRuleGet(t *testing.T) {
 					},
 				}, nil
 			},
+			queryClusterFailures: func(ctx context.Context, in *analysispb.QueryClusterFailuresRequest) (*analysispb.QueryClusterFailuresResponse, error) {
+				assert.Loosely(t, in.Parent, should.Equal("projects/turquoise/clusters/rules/32ae75255a4aa807897d8fa20137e7d5/failures"))
+				return &analysispb.QueryClusterFailuresResponse{
+					Failures: []*analysispb.DistinctClusterFailure{
+						{
+							IngestedInvocationId: "build-8700000000000000009",
+							TestId:               "fuchsia-pkg://fuchsia.com/boot-test#meta/boot.cm",
+							PartitionTime:        timestamppb.New(time.Date(2026, 10, 6, 14, 0, 0, 0, time.UTC)),
+							Count:                3,
+							BuildStatus:          analysispb.BuildStatus_BUILD_STATUS_FAILURE,
+							Variant:              &analysispb.Variant{Def: map[string]string{"board": "vim3"}},
+							FailureReasonPrefix:  "serial socket timed out waiting for prompt",
+						},
+					},
+				}, nil
+			},
 		}
 
-		details, err := fetchRuleDetails(ctx, rulesMock, clustersMock, "553974454", "", "")
+		details, err := fetchRuleDetails(ctx, rulesMock, clustersMock, "553974454", "", "", 3)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, lookupCalled, should.Equal(1))
 		assert.Loosely(t, details, should.HaveLength(1))
+		assert.Loosely(t, details[0].Examples, should.HaveLength(1))
 
 		var textBuf bytes.Buffer
 		assert.Loosely(t, printRuleDetails(&textBuf, details), should.BeNil)
@@ -325,7 +342,15 @@ func TestRuleGet(t *testing.T) {
 		assert.Loosely(t, textOut, should.ContainSubstring("Active Policies: exoneration-v2\n"))
 		assert.Loosely(t, textOut, should.ContainSubstring("Source Cluster:  testname-v4/0011223344\n"))
 		assert.Loosely(t, textOut, should.ContainSubstring("20 / 65 / 140"))
+		assert.Loosely(t, textOut, should.ContainSubstring("Example Failures (showing 1 of 1 distinct groups):"))
+		assert.Loosely(t, textOut, should.ContainSubstring(`-invocationid build-8700000000000000009 -testid "fuchsia-pkg://fuchsia.com/boot-test#meta/boot.cm"`))
+		assert.Loosely(t, textOut, should.ContainSubstring("luci verdict get -invocationid build-8700000000000000009"))
 		assert.Loosely(t, textOut, should.ContainSubstring("luci analysis failures -project turquoise -ruleid 32ae75255a4aa807897d8fa20137e7d5"))
+
+		// Verify -limit 0 skips example failures lookup
+		noExDetails, err := fetchRuleDetails(ctx, rulesMock, clustersMock, "553974454", "", "", 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, noExDetails[0].Examples, should.BeEmpty)
 
 		// Test redacted rule definition and multiple rules output
 		multi := []ruleDetail{
@@ -418,7 +443,7 @@ func TestFailuresCommand(t *testing.T) {
 		}
 
 		// 1. Unfiltered -bugid query summarizes all 3 boards across 140 failures even with -limit 2
-		report, err := fetchClusterFailures(ctx, rulesMock, clustersMock, "553974454", "", "", "", "", "", nil, 2)
+		report, err := fetchClusterFailures(ctx, rulesMock, clustersMock, "553974454", "", "", "", "", "", nil, 2, true)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, report.TotalFailures, should.Equal(int64(140)))
 		assert.Loosely(t, report.DistinctGroupsMatched, should.Equal(3))
@@ -434,11 +459,64 @@ func TestFailuresCommand(t *testing.T) {
 		assert.Loosely(t, out, should.ContainSubstring("luci verdict get -invocationid build-8700000000000000003"))
 
 		// 2. Filtering with -variant board:vim3 narrows strictly to physical vim3 failures
-		filteredReport, err := fetchClusterFailures(ctx, rulesMock, clustersMock, "553974454", "", "", "", "", "", map[string]string{"board": "vim3"}, 20)
+		filteredReport, err := fetchClusterFailures(ctx, rulesMock, clustersMock, "553974454", "", "", "", "", "", map[string]string{"board": "vim3"}, 20, false)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, filteredReport.TotalFailures, should.Equal(int64(38)))
 		assert.Loosely(t, filteredReport.Examples, should.HaveLength(1))
 		assert.Loosely(t, filteredReport.Examples[0].InvocationID, should.Equal("build-8700000000000000002"))
+	})
+
+	ftt.Run(`Suggested cluster metadata (title & equivalent rule) and adaptive <100-line output cap`, t, func(t *ftt.Test) {
+		ctx := context.Background()
+		rulesMock := &mockRulesClient{}
+		clustersMock := &mockClustersClient{
+			get: func(ctx context.Context, in *analysispb.GetClusterRequest) (*analysispb.Cluster, error) {
+				assert.Loosely(t, in.Name, should.Equal("projects/turquoise/clusters/reason-v6/a383d24efaeb52bc2e136b21413961f5"))
+				return &analysispb.Cluster{
+					Name:                             in.Name,
+					Title:                            "Failed to pass run, expected status 0 got 1",
+					EquivalentFailureAssociationRule: `reason LIKE "Failed to pass run, expected status % got %"`,
+				}, nil
+			},
+			queryClusterFailures: func(ctx context.Context, in *analysispb.QueryClusterFailuresRequest) (*analysispb.QueryClusterFailuresResponse, error) {
+				return &analysispb.QueryClusterFailuresResponse{
+					Failures: []*analysispb.DistinctClusterFailure{
+						{
+							IngestedInvocationId: "build-8700000000000000010",
+							TestId:               "test_a",
+							Count:                2,
+							Variant:              &analysispb.Variant{Def: map[string]string{"d01": "v1", "d02": "v1", "d03": "v1", "d04": "v1", "d05": "v1", "d06": "v1", "d07": "v1", "d08": "v1", "d09": "v1", "d10": "v1", "d11": "v1", "d12": "v1", "d13": "v1", "d14": "v1"}},
+						},
+						{
+							IngestedInvocationId: "build-8700000000000000011",
+							TestId:               "test_b",
+							Count:                2,
+							Variant:              &analysispb.Variant{Def: map[string]string{"d01": "v2", "d02": "v2", "d03": "v2", "d04": "v2", "d05": "v2", "d06": "v2", "d07": "v2", "d08": "v2", "d09": "v2", "d10": "v2", "d11": "v2", "d12": "v2", "d13": "v2", "d14": "v2"}},
+						},
+						{
+							IngestedInvocationId: "build-8700000000000000012",
+							TestId:               "test_c",
+							Count:                2,
+							Variant:              &analysispb.Variant{Def: map[string]string{"d01": "v3", "d02": "v3", "d03": "v3", "d04": "v3", "d05": "v3", "d06": "v3", "d07": "v3", "d08": "v3", "d09": "v3", "d10": "v3", "d11": "v3", "d12": "v3", "d13": "v3", "d14": "v3"}},
+						},
+					},
+				}, nil
+			},
+		}
+
+		// With 14 discriminating variant dimensions and adaptive=true, default limit=3 automatically drops to 1 example
+		report, err := fetchClusterFailures(ctx, rulesMock, clustersMock, "", "turquoise", "", "reason-v6", "a383d24efaeb52bc2e136b21413961f5", "", nil, defaultFailuresLimit, true)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, report.Title, should.Equal("Failed to pass run, expected status 0 got 1"))
+		assert.Loosely(t, report.SuggestedRule, should.Equal(`reason LIKE "Failed to pass run, expected status % got %"`))
+		assert.Loosely(t, report.Examples, should.HaveLength(1))
+
+		var buf bytes.Buffer
+		assert.Loosely(t, printClusterFailuresReport(&buf, report), should.BeNil)
+		out := buf.String()
+		assert.Loosely(t, out, should.ContainSubstring("Title:   Failed to pass run, expected status 0 got 1\n"))
+		assert.Loosely(t, out, should.ContainSubstring(`Rule:    reason LIKE "Failed to pass run, expected status % got %"`))
+		assert.Loosely(t, out, should.ContainSubstring("... +2 more variant dimensions\n"))
 	})
 
 	ftt.Run(`Multi-rule cross-project disambiguation, empty failures, and fallback variant buckets`, t, func(t *ftt.Test) {
@@ -469,7 +547,7 @@ func TestFailuresCommand(t *testing.T) {
 			},
 		}
 
-		report, err := fetchClusterFailures(ctx, rulesMock, clustersMock, "999999", "", "", "", "", "human-cls-failed-presubmit", nil, 20)
+		report, err := fetchClusterFailures(ctx, rulesMock, clustersMock, "999999", "", "", "", "", "human-cls-failed-presubmit", nil, 20, false)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, report.Project, should.Equal("chromium"))
 		assert.Loosely(t, report.ClusterID, should.Equal("active-rule-222"))
@@ -534,23 +612,5 @@ func TestSubcommandRunners(t *testing.T) {
 		// Reject invalid variant filter
 		failRun.variants = []string{"badvariant"}
 		assert.Loosely(t, failRun.Run(app, nil, nil), should.Equal(1))
-	})
-
-	ftt.Run(`Next step -legacy flag formatting`, t, func(t *ftt.Test) {
-		var buf bytes.Buffer
-		rep := &clusterFailuresReport{
-			Project:               "turquoise",
-			ClusterAlgorithm:      "rules",
-			ClusterID:             "32ae75255a4aa807897d8fa20137e7d5",
-			Legacy:                true,
-			TotalFailures:         1,
-			DistinctGroupsMatched: 1,
-			Examples: []failureExampleOutput{
-				{InvocationID: "build-8668463328066490497", TestID: "boot_test"},
-			},
-		}
-		assert.Loosely(t, printClusterFailuresReport(&buf, rep), should.BeNil)
-		assert.Loosely(t, buf.String(), should.ContainSubstring("Legacy:  true"))
-		assert.Loosely(t, buf.String(), should.ContainSubstring(`luci verdict get -legacy -invocationid build-8668463328066490497 -testid "boot_test"`))
 	})
 }

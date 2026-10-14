@@ -16,6 +16,7 @@ package analysis
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -36,6 +37,8 @@ import (
 const (
 	defaultFailuresLimit  = 3
 	maxVariantValuesShown = 6
+	maxVariantDimsShown   = 12
+	maxDefaultOutputLines = 100
 )
 
 var priorityVariantKeys = []string{
@@ -116,8 +119,9 @@ type clusterFailuresReport struct {
 	Project               string
 	ClusterAlgorithm      string
 	ClusterID             string
+	Title                 string
+	SuggestedRule         string
 	AdditionalRules       []string
-	Legacy                bool
 	TotalFailures         int64
 	DistinctGroupsMatched int
 	VariantDistribution   []variantDimensionSummary
@@ -136,6 +140,13 @@ func (r *failuresRun) Run(a subcommands.Application, args []string, env subcomma
 		return 1
 	}
 
+	limitExplicit := false
+	for _, setFlag := range flagSetNames(&r.Flags) {
+		if setFlag == "limit" {
+			limitExplicit = true
+		}
+	}
+
 	ctx := cli.GetContext(a, r, env)
 	if err := r.af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
@@ -147,15 +158,10 @@ func (r *failuresRun) Run(a subcommands.Application, args []string, env subcomma
 		return 1
 	}
 
-	report, err := fetchClusterFailures(ctx, rulesClient, clustersClient, r.bugID, r.project, r.ruleID, r.clusterAlg, r.clusterID, r.metric, variantFilters, r.limit)
+	report, err := fetchClusterFailures(ctx, rulesClient, clustersClient, r.bugID, r.project, r.ruleID, r.clusterAlg, r.clusterID, r.metric, variantFilters, r.limit, !limitExplicit)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
-	}
-	if len(report.Examples) > 0 {
-		if rdbClient, _, _, rdbErr := r.af.NewResultDBClient(ctx, chromeinfra.ResultDBHost); rdbErr == nil {
-			report.Legacy = base.IsLegacyInvocation(ctx, rdbClient, report.Examples[0].InvocationID)
-		}
 	}
 
 	if err := printClusterFailuresReport(os.Stdout, report); err != nil {
@@ -262,7 +268,8 @@ func resolveClusterTarget(ctx context.Context, rulesClient analysispb.RulesClien
 // fetchClusterFailures queries Clusters.QueryClusterFailures (which returns up to 2,000 recent
 // distinct failure groups from BigQuery), aggregates variant counts across ALL matched groups so
 // low-volume physical hardware dimensions are never obscured by high-volume emulator flakes, and
-// returns the most recent distinct groups up to limit.
+// returns the most recent distinct groups up to limit. For suggested clusters (!strings.HasPrefix(alg, "rules")),
+// Clusters.Get is also queried to populate the human-readable cluster title and suggested SQL rule.
 func fetchClusterFailures(
 	ctx context.Context,
 	rulesClient analysispb.RulesClient,
@@ -270,10 +277,20 @@ func fetchClusterFailures(
 	bugIDFlag, projectFlag, ruleIDFlag, clusterAlgFlag, clusterIDFlag, metricFlag string,
 	variantFilters map[string]string,
 	limit int,
+	adaptive bool,
 ) (*clusterFailuresReport, error) {
 	project, alg, clusterID, extraRules, err := resolveClusterTarget(ctx, rulesClient, bugIDFlag, projectFlag, ruleIDFlag, clusterAlgFlag, clusterIDFlag)
 	if err != nil {
 		return nil, err
+	}
+
+	var clusterTitle, suggestedRule string
+	if !strings.HasPrefix(alg, "rules") {
+		clusterName := fmt.Sprintf("projects/%s/clusters/%s/%s", project, alg, clusterID)
+		if cluster, getErr := clustersClient.Get(ctx, &analysispb.GetClusterRequest{Name: clusterName}); getErr == nil && cluster != nil {
+			clusterTitle = collapseSingleLine(cluster.GetTitle())
+			suggestedRule = collapseSingleLine(cluster.GetEquivalentFailureAssociationRule())
+		}
 	}
 
 	req := &analysispb.QueryClusterFailuresRequest{
@@ -307,16 +324,44 @@ func fetchClusterFailures(
 		totalFailures += c
 	}
 
+	variantDist := buildVariantDistribution(matched, totalFailures)
+	effectiveLimit := limit
+	if adaptive && limit > 0 {
+		effectiveLimit = adaptiveExampleLimit(limit, len(variantDist))
+	}
+
 	return &clusterFailuresReport{
 		Project:               project,
 		ClusterAlgorithm:      alg,
 		ClusterID:             clusterID,
+		Title:                 clusterTitle,
+		SuggestedRule:         suggestedRule,
 		AdditionalRules:       extraRules,
 		TotalFailures:         totalFailures,
 		DistinctGroupsMatched: len(matched),
-		VariantDistribution:   buildVariantDistribution(matched, totalFailures),
-		Examples:              formatFailureExamples(matched, limit),
+		VariantDistribution:   variantDist,
+		Examples:              formatFailureExamples(matched, effectiveLimit),
 	}, nil
+}
+
+// adaptiveExampleLimit adjusts default example count when a cluster spans many discriminating
+// variant dimensions so total default text output stays comfortably below 100 lines.
+func adaptiveExampleLimit(limit, variantDimCount int) int {
+	if limit <= 1 {
+		return limit
+	}
+	if variantDimCount > maxVariantDimsShown {
+		return 1
+	}
+	headerAndFooterLines := 10 + variantDimCount
+	maxByBudget := (maxDefaultOutputLines - headerAndFooterLines) / 3
+	if maxByBudget < 1 {
+		maxByBudget = 1
+	}
+	if maxByBudget < limit {
+		return maxByBudget
+	}
+	return limit
 }
 
 // formatFailureExamples sorts distinct failure groups by partition_time DESC and formats up to
@@ -373,6 +418,18 @@ func formatFailureExamples(failures []*analysispb.DistinctClusterFailure, limit 
 		})
 	}
 	return examples
+}
+
+func flagSetNames(fs *flag.FlagSet) []string {
+	var names []string
+	fs.Visit(func(f *flag.Flag) {
+		names = append(names, f.Name)
+	})
+	return names
+}
+
+func collapseSingleLine(s string) string {
+	return strings.Join(strings.Fields(s), " ")
 }
 
 func matchesVariantFilters(def, filters map[string]string) bool {
@@ -472,8 +529,11 @@ func printClusterFailuresReport(out io.Writer, report *clusterFailuresReport) er
 	}
 
 	fmt.Fprintf(out, "Project: %s | Cluster: %s/%s\n", report.Project, report.ClusterAlgorithm, report.ClusterID)
-	if report.Legacy {
-		fmt.Fprintf(out, "Legacy:  true (downstream luci verdict / test-result / artifact commands require -legacy)\n")
+	if report.Title != "" {
+		fmt.Fprintf(out, "Title:   %s\n", report.Title)
+	}
+	if report.SuggestedRule != "" {
+		fmt.Fprintf(out, "Rule:    %s\n", report.SuggestedRule)
 	}
 	if len(report.AdditionalRules) > 0 {
 		fmt.Fprintf(out, "Note: Bug also matches additional rules (%s); pass -project <p> to inspect another project.\n",
@@ -488,7 +548,13 @@ func printClusterFailuresReport(out io.Writer, report *clusterFailuresReport) er
 	if len(report.VariantDistribution) > 0 {
 		fmt.Fprintf(out, "\nVariant Distribution (%d failures across %d distinct groups):\n",
 			report.TotalFailures, report.DistinctGroupsMatched)
-		for _, dim := range report.VariantDistribution {
+		dims := report.VariantDistribution
+		extraDims := 0
+		if len(dims) > maxVariantDimsShown {
+			extraDims = len(dims) - maxVariantDimsShown
+			dims = dims[:maxVariantDimsShown]
+		}
+		for _, dim := range dims {
 			var parts []string
 			shown := dim.Values
 			extra := 0
@@ -504,6 +570,9 @@ func printClusterFailuresReport(out io.Writer, report *clusterFailuresReport) er
 			}
 			fmt.Fprintf(out, "  %-18s %s\n", dim.Key+":", strings.Join(parts, ", "))
 		}
+		if extraDims > 0 {
+			fmt.Fprintf(out, "  ... +%d more variant dimensions\n", extraDims)
+		}
 	}
 
 	fmt.Fprintf(out, "\nRecent Failing Invocations (showing %d of %d distinct groups):\n",
@@ -512,16 +581,12 @@ func printClusterFailuresReport(out io.Writer, report *clusterFailuresReport) er
 
 	if len(report.Examples) > 0 {
 		ex := report.Examples[0]
-		legacyFlag := ""
-		if report.Legacy {
-			legacyFlag = "-legacy "
-		}
-		fmt.Fprintf(out, "\nNext step:\n  luci verdict get %s-invocationid %s -testid %q\n", legacyFlag, ex.InvocationID, ex.TestID)
+		fmt.Fprintf(out, "\nNext step:\n  luci verdict get -invocationid %s -testid %q\n", ex.InvocationID, ex.TestID)
 	}
 	return nil
 }
 
-// printFailureExamples writes formatted failure example entries.
+// printFailureExamples writes formatted failure example entries shared by 'rule get' and 'failures'.
 func printFailureExamples(out io.Writer, examples []failureExampleOutput) {
 	for i, ex := range examples {
 		var meta []string

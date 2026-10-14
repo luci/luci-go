@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
+const defaultRuleFailuresLimit = 3
+
 // RuleCmd returns the subcommand group for `luci analysis rule`.
 func RuleCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
@@ -38,7 +40,7 @@ func RuleCmd(af *base.AuthFlags) *subcommands.Command {
 		ShortDesc: "Inspect LUCI Analysis failure association rules",
 		LongDesc: "Inspect LUCI Analysis failure association rules and cluster impact metrics.\n\n" +
 			"Available subcommands:\n" +
-			"  get  Get rule definition, bug management state, and impact counts by -bugid or (-project and -ruleid)",
+			"  get  Get rule definition, bug management state, impact counts, and example failures by -bugid or (-project and -ruleid)",
 		CommandRun: func() subcommands.CommandRun {
 			return &ruleRun{af: af}
 		},
@@ -60,19 +62,21 @@ func (r *ruleRun) Run(a subcommands.Application, args []string, env subcommands.
 // RuleGetCmd returns the subcommand for `luci analysis rule get`.
 func RuleGetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get [-bugid <bug_id> | -project <project> -ruleid <rule_id>]",
-		ShortDesc: "Get a LUCI Analysis rule and its cluster impact",
-		LongDesc: "Retrieve a LUCI Analysis failure association rule and its cluster impact metrics.\n\n" +
+		UsageLine: "get [-bugid <bug_id> | -project <project> -ruleid <rule_id>] [-limit <n>]",
+		ShortDesc: "Get a LUCI Analysis rule, its cluster impact, and example failures",
+		LongDesc: "Retrieve a LUCI Analysis failure association rule, its cluster impact metrics,\n" +
+			"and recent example failures ready for 'luci verdict get'.\n\n" +
 			"Examples:\n" +
 			"  luci analysis rule get -bugid 553974454\n" +
 			"  luci analysis rule get -project turquoise -ruleid 32ae75255a4aa807897d8fa20137e7d5",
 		CommandRun: func() subcommands.CommandRun {
-			r := &ruleGetRun{af: af}
+			r := &ruleGetRun{af: af, limit: defaultRuleFailuresLimit}
 			r.af.Register(&r.Flags)
 			r.Flags.StringVar(&r.host, "host", chromeinfra.AnalysisHost, "LUCI Analysis host")
 			r.Flags.StringVar(&r.bugID, "bugid", "", "Buganizer bug ID (e.g. 553974454)")
 			r.Flags.StringVar(&r.project, "project", "", "LUCI project (e.g. chromium, turquoise)")
 			r.Flags.StringVar(&r.ruleID, "ruleid", "", "LUCI Analysis rule ID (e.g. 32ae75255a4aa807897d8fa20137e7d5)")
+			r.Flags.IntVar(&r.limit, "limit", defaultRuleFailuresLimit, "Maximum number of example failures to display per rule (0 to skip)")
 			return r
 		},
 	}
@@ -85,11 +89,14 @@ type ruleGetRun struct {
 	bugID   string
 	project string
 	ruleID  string
+	limit   int
 }
 
 type ruleDetail struct {
-	Rule    *analysispb.Rule
-	Cluster *analysispb.Cluster
+	Rule                  *analysispb.Rule
+	Cluster               *analysispb.Cluster
+	DistinctGroupsMatched int
+	Examples              []failureExampleOutput
 }
 
 func (r *ruleGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -109,7 +116,7 @@ func (r *ruleGetRun) Run(a subcommands.Application, args []string, env subcomman
 		return 1
 	}
 
-	details, err := fetchRuleDetails(ctx, rulesClient, clustersClient, r.bugID, r.project, r.ruleID)
+	details, err := fetchRuleDetails(ctx, rulesClient, clustersClient, r.bugID, r.project, r.ruleID, r.limit)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
@@ -123,9 +130,15 @@ func (r *ruleGetRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 // fetchRuleDetails resolves each target rule via Rules.Get (for SQL predicate, associated bug,
-// and bug management policies) paired with Clusters.Get on projects/<project>/clusters/rules/<rule_id>
-// (for 1d/3d/7d impact counts).
-func fetchRuleDetails(ctx context.Context, rulesClient analysispb.RulesClient, clustersClient analysispb.ClustersClient, bugIDFlag, projectFlag, ruleIDFlag string) ([]ruleDetail, error) {
+// and bug management policies), Clusters.Get on projects/<project>/clusters/rules/<rule_id>
+// (for 1d/3d/7d impact counts), and Clusters.QueryClusterFailures for up to limit example failures.
+func fetchRuleDetails(
+	ctx context.Context,
+	rulesClient analysispb.RulesClient,
+	clustersClient analysispb.ClustersClient,
+	bugIDFlag, projectFlag, ruleIDFlag string,
+	limit int,
+) ([]ruleDetail, error) {
 	targets, err := resolveRuleTargets(ctx, rulesClient, bugIDFlag, projectFlag, ruleIDFlag)
 	if err != nil {
 		return nil, err
@@ -146,10 +159,21 @@ func fetchRuleDetails(ctx context.Context, rulesClient analysispb.RulesClient, c
 		if err != nil {
 			return nil, errors.Fmt("GetCluster(%s) RPC failed: %w", clusterName, err)
 		}
-		details = append(details, ruleDetail{
+		detail := ruleDetail{
 			Rule:    rule,
 			Cluster: cluster,
-		})
+		}
+		if limit > 0 {
+			qResp, qErr := clustersClient.QueryClusterFailures(ctx, &analysispb.QueryClusterFailuresRequest{
+				Parent: clusterName + "/failures",
+			})
+			if qErr == nil && qResp != nil {
+				failures := qResp.GetFailures()
+				detail.DistinctGroupsMatched = len(failures)
+				detail.Examples = formatFailureExamples(failures, limit)
+			}
+		}
+		details = append(details, detail)
 	}
 	return details, nil
 }
@@ -218,7 +242,18 @@ func printRuleDetails(out io.Writer, details []ruleDetail) error {
 			}
 		}
 
-		fmt.Fprintf(out, "\nNext step:\n  luci analysis failures -project %s -ruleid %s\n", r.GetProject(), r.GetRuleId())
+		if len(d.Examples) > 0 {
+			fmt.Fprintf(out, "\nExample Failures (showing %d of %d distinct groups):\n",
+				len(d.Examples), d.DistinctGroupsMatched)
+			printFailureExamples(out, d.Examples)
+
+			ex := d.Examples[0]
+			fmt.Fprintf(out, "\nNext steps:\n")
+			fmt.Fprintf(out, "  luci verdict get -invocationid %s -testid %q\n", ex.InvocationID, ex.TestID)
+			fmt.Fprintf(out, "  luci analysis failures -project %s -ruleid %s\n", r.GetProject(), r.GetRuleId())
+		} else {
+			fmt.Fprintf(out, "\nNext step:\n  luci analysis failures -project %s -ruleid %s\n", r.GetProject(), r.GetRuleId())
+		}
 	}
 	return nil
 }
