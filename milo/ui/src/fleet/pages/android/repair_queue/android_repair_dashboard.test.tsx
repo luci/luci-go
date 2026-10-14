@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import * as FeatureFlagsModule from '@/common/feature_flags';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
@@ -21,6 +21,7 @@ import { SettingsProvider } from '@/fleet/context/providers';
 import * as PrpcClientsModule from '@/fleet/hooks/prpc_clients';
 import * as UseAndroidRepairQueueModule from '@/fleet/pages/android/repair_queue/use_android_repair_queue';
 import { getAndroidRepairQueueRowId } from '@/fleet/pages/android/repair_queue/use_android_repair_queue_columns';
+import * as UseClaimAndroidRepairTaskModule from '@/fleet/pages/android/repair_queue/use_claim_android_repair_task';
 import { Component as AndroidRepairsPageComponent } from '@/fleet/pages/android/repairs/repairs_page';
 import { createMockUseFleetConsoleClient } from '@/fleet/testing_tools/mocks/fleet_console_client';
 import {
@@ -171,6 +172,7 @@ describe('<AndroidRepairDashboard />', () => {
       screen.getByText('Host Group / Run Target Health'),
     ).toBeInTheDocument();
     expect(screen.getByText('State')).toBeInTheDocument();
+    expect(screen.getByText('Assignee')).toBeInTheDocument();
     expect(screen.getByText('MTV-1')).toBeInTheDocument();
     expect(screen.getByText('MTV-2')).toBeInTheDocument();
 
@@ -190,6 +192,58 @@ describe('<AndroidRepairDashboard />', () => {
       screen.getByText('Host Group / Run Target Health'),
     ).toBeInTheDocument();
     expect(screen.getByText('State')).toBeInTheDocument();
+    expect(screen.getByText('Assignee')).toBeInTheDocument();
+  });
+
+  it('triggers claim and unclaim mutations when clicking Assignee buttons/avatars', () => {
+    const mockClaim = jest.fn();
+    const mockUnclaim = jest.fn();
+
+    jest
+      .spyOn(UseClaimAndroidRepairTaskModule, 'useClaimAndroidRepairTask')
+      .mockReturnValue({
+        mutate: mockClaim,
+        isPending: false,
+      } as unknown as ReturnType<
+        typeof UseClaimAndroidRepairTaskModule.useClaimAndroidRepairTask
+      >);
+
+    jest
+      .spyOn(UseClaimAndroidRepairTaskModule, 'useUnclaimAndroidRepairTask')
+      .mockReturnValue({
+        mutate: mockUnclaim,
+        isPending: false,
+      } as unknown as ReturnType<
+        typeof UseClaimAndroidRepairTaskModule.useUnclaimAndroidRepairTask
+      >);
+
+    jest
+      .spyOn(UseAndroidRepairQueueModule, 'useAndroidRepairQueue')
+      .mockReturnValue({
+        data: {
+          repairQueueItems: MOCK_QUEUE_ITEMS,
+          totalSize: 2,
+          nextPageToken: '',
+        },
+        inProgressCount: 1,
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<
+        typeof UseAndroidRepairQueueModule.useAndroidRepairQueue
+      >);
+
+    renderDashboard('Android');
+
+    const claimButton = screen.getByRole('button', { name: 'Claim' });
+    fireEvent.click(claimButton);
+    expect(mockClaim).toHaveBeenCalledWith({ taskId: '101' });
+
+    const avatar = screen.getByText('U');
+    fireEvent.click(avatar);
+    expect(mockUnclaim).toHaveBeenCalledWith({ taskId: '102' });
   });
 
   it('keys device and host rows sharing a deviceId separately and links hosts to the MH lab list', () => {

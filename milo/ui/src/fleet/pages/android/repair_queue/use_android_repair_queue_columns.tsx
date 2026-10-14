@@ -19,6 +19,8 @@ import { useMemo } from 'react';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
+import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
+import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
 import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { AndroidDeviceIdCell } from '@/fleet/pages/device_list_page/android/android_device_id_cell';
 import { getAndroidStatusColor } from '@/fleet/pages/device_list_page/android/android_state';
@@ -28,6 +30,10 @@ import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import { AndroidRepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { androidMachineTypeLabel, isAndroidHost } from './android_machine_type';
+import {
+  useClaimAndroidRepairTask,
+  useUnclaimAndroidRepairTask,
+} from './use_claim_android_repair_task';
 
 export type AndroidRepairQueueRow = AndroidRepairQueueItem;
 export type AndroidRepairQueueColumnDef = MRT_ColumnDef<AndroidRepairQueueRow>;
@@ -46,6 +52,14 @@ export const getAndroidRepairQueueRowId = (row: AndroidRepairQueueRow) =>
 export const useAndroidRepairQueueColumns = (
   workspace: AndroidPageWorkspace,
 ) => {
+  const { mutate: claimTask, isPending: isClaimPending } =
+    useClaimAndroidRepairTask();
+  const { mutate: unclaimTask, isPending: isUnclaimPending } =
+    useUnclaimAndroidRepairTask();
+  const isPending = isClaimPending || isUnclaimPending;
+
+  const currentUser = useCurrentUserEmail();
+
   const columns: AndroidRepairQueueColumnDef[] = useMemo(() => {
     const allColumns: AndroidRepairQueueColumnDef[] = [
       {
@@ -136,6 +150,31 @@ export const useAndroidRepairQueueColumns = (
         }),
       },
       {
+        id: 'assignee',
+        header: 'Assignee',
+        size: 70,
+        minSize: 60,
+        maxSize: 700,
+        enableSorting: false,
+        muiTableHeadCellProps: {
+          align: 'center',
+        },
+        muiTableBodyCellProps: {
+          align: 'center',
+        },
+        accessorFn: (row) => row.claimedBy ?? '',
+        Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => (
+          <AssigneeCell
+            claimedBy={row.original.claimedBy}
+            taskId={row.original.taskId}
+            currentUser={currentUser}
+            isPending={isPending}
+            claimTask={claimTask}
+            unclaimTask={unclaimTask}
+          />
+        ),
+      },
+      {
         id: 'host_group_run_target_health',
         header: 'Host Group / Run Target Health',
         size: 85,
@@ -176,7 +215,7 @@ export const useAndroidRepairQueueColumns = (
       return allColumns.filter((col) => col.id !== 'host_group');
     }
     return allColumns;
-  }, [workspace]);
+  }, [claimTask, unclaimTask, currentUser, isPending, workspace]);
 
   return { columns };
 };

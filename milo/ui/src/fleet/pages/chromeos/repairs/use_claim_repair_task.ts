@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useAuthState } from '@/common/components/auth_state_provider';
+import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
 import { useRepairQueueOptimisticMutation } from '@/fleet/components/repair_queue/use_repair_queue_optimistic_mutation';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
@@ -27,13 +27,7 @@ import { REPAIR_QUEUE_QUERY_KEY } from './use_repair_queue';
 
 export const useClaimRepairTask = () => {
   const client = useFleetConsoleClient();
-  const authState = useAuthState();
-  const email = authState.email?.trim();
-  const rawIdentity = authState.identity?.trim();
-  const identity = rawIdentity?.startsWith('user:')
-    ? rawIdentity.replace(/^user:/, '')
-    : rawIdentity;
-  const currentUser = email || identity || 'current_user';
+  const currentUser = useCurrentUserEmail();
 
   return useRepairQueueOptimisticMutation<
     ClaimRepairTaskResponse,

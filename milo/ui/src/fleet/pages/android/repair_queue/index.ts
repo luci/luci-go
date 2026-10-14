@@ -14,6 +14,7 @@
 
 export * from './android_workspace';
 export * from './use_android_repair_queue';
+export * from './use_claim_android_repair_task';
 export * from './use_android_repair_queue_columns';
 export * from './android_repair_queue_table';
 export * from './android_repair_dashboard';

@@ -103,6 +103,7 @@ export const useRepairQueueOptimisticMutation = <
       return { previousQueries };
     },
     onError: (_err, _variables, context) => {
+      // TODO(b/402410880): surface claim/unclaim RPC errors to the user instead of only rolling back.
       if (context?.previousQueries) {
         for (const [key, data] of context.previousQueries) {
           queryClient.setQueryData(key, data);

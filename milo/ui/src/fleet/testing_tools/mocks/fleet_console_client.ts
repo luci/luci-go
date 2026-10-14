@@ -16,6 +16,7 @@ import { UseQueryResult } from '@tanstack/react-query';
 
 import * as PrpcClients from '@/fleet/hooks/prpc_clients';
 import {
+  AndroidMachineType,
   CountRepairMetricsResponse,
   ListRepairMetricsResponse,
   ListRepairQueueResponse,
@@ -187,6 +188,32 @@ export function createMockUseFleetConsoleClient(
           isPending: false,
         }),
       },
+      ClaimAndroidRepairTask: jest.fn().mockResolvedValue({
+        repairQueueItem: {
+          deviceId: 'android-device-001',
+          fcMachineType: AndroidMachineType.ANDROID_MACHINE_TYPE_DEVICE,
+          hostGroups: ['group1'],
+          runTarget: 'seahawk',
+          state: 'MISSING',
+          taskId: '1001',
+          claimedBy: 'user@example.com',
+          priorityScore: '10',
+          matchedRuleIds: [],
+        },
+      }),
+      UnclaimAndroidRepairTask: jest.fn().mockResolvedValue({
+        repairQueueItem: {
+          deviceId: 'android-device-001',
+          fcMachineType: AndroidMachineType.ANDROID_MACHINE_TYPE_DEVICE,
+          hostGroups: ['group1'],
+          runTarget: 'seahawk',
+          state: 'MISSING',
+          taskId: '1001',
+          claimedBy: '',
+          priorityScore: '10',
+          matchedRuleIds: [],
+        },
+      }),
     } as unknown as ReturnType<typeof PrpcClients.useFleetConsoleClient>;
   };
 }
