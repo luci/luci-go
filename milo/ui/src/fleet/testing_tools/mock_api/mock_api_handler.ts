@@ -16,7 +16,7 @@
  * Unified Fleet Console Mock API Layer (FleetConsoleMockAPI)
  *
  * Single source of truth for mocking Fleet Console pRPC endpoints across:
- * 1. Live C4A Starter static prototypes (go/fcon-prototypes)
+ * 1. Live C4A Starter static prototypes
  * 2. Jest & Vitest frontend unit tests
  * 3. Cypress end-to-end smoke tests
  *
@@ -132,6 +132,15 @@ import sampleChromeosDevices from './data/chromeos_devices.json';
 import sampleProductCatalog from './data/product_catalog.json';
 import sampleRepairMetrics from './data/repair_metrics.json';
 import sampleResourceRequests from './data/resource_requests.json';
+import {
+  applyHealthSliceMutation,
+  buildDynamicGetBuild,
+  buildDynamicListBots,
+  buildDynamicMachineLse,
+  buildMockAvailabilityTrends,
+  HEALTH_AND_TASK_DEFAULT_FIXTURES,
+  synthesizeChromeosDevice,
+} from './mock_health_and_tasks';
 
 const androidReadyCount = sampleAndroidDevices.filter(
   (d) => (d as { state?: string }).state === 'IDLE',
@@ -449,7 +458,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     swarmingLabels: sampleChromeosLabels,
     ufsLabels: {
       ...sampleChromeosLabels,
-      location_tag: { values: ['atl_rack_42', 'chromeos6_rack_10'] },
+      location_tag: { values: ['atl_rack_42', 'demo_rack_10'] },
       'ufs.location_tag': { values: ['atl_rack_42', 'lab_rack_1'] },
     },
   },
@@ -539,7 +548,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       deviceId: 'android-device-001',
       fcMachineType: 'ANDROID_MACHINE_TYPE_DEVICE',
       hostGroups: ['group1'],
-      runTarget: 'seahawk',
+      runTarget: 'demo-target-1',
       state: 'MISSING',
       taskId: '1001',
       claimedBy: 'user@example.com',
@@ -551,7 +560,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       deviceId: 'android-device-001',
       fcMachineType: 'ANDROID_MACHINE_TYPE_DEVICE',
       hostGroups: ['group1'],
-      runTarget: 'seahawk',
+      runTarget: 'demo-target-1',
       state: 'MISSING',
       taskId: '1001',
       claimedBy: '',
@@ -584,100 +593,97 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   SetDefaultQuota: {
     defaultQuota: 49,
   },
-  ListIrmIncidents: {
-    irmIncidents: [],
-  },
   ListSupportRiskIncidents: {
     incidents: [
       {
         id: '1',
-        model: 'brya',
+        model: 'sim-model-nine',
         buganizerId: '1001',
-        title: 'Brya trackpad failure batch',
+        title: 'Sim-model-nine trackpad failure batch',
       },
       {
         id: '2',
-        model: 'brask',
+        model: 'demo-model-one',
         buganizerId: '1002',
-        title: 'Brask USB controller glitch',
+        title: 'Demo-model-one USB controller glitch',
       },
       {
         id: '3',
-        model: 'asurada',
+        model: 'demo-model-seven',
         buganizerId: '1003',
-        title: 'Asurada battery swelling campaign',
+        title: 'Demo-model-seven battery swelling campaign',
       },
       {
         id: '4',
-        model: 'atlas',
+        model: 'demo-model-ten',
         buganizerId: '1004',
-        title: 'Atlas firmware crash loop',
+        title: 'Demo-model-ten firmware crash loop',
       },
       {
         id: '5',
-        model: 'volteer',
+        model: 'mock-model-two',
         buganizerId: '1005',
-        title: 'Volteer Type-C power delivery failure',
+        title: 'Mock-model-two Type-C power delivery failure',
       },
       {
         id: '6',
-        model: 'dedede',
+        model: 'sim-model-three',
         buganizerId: '1006',
-        title: 'Dedede eMMC storage read degradation',
+        title: 'Sim-model-three eMMC storage read degradation',
       },
       {
         id: '7',
-        model: 'zork',
+        model: 'sim-model-six',
         buganizerId: '1007',
-        title: 'Zork thermal throttle BIOS bug',
+        title: 'Sim-model-six thermal throttle BIOS bug',
       },
       {
         id: '8',
-        model: 'hatch',
+        model: 'mock-model-eight',
         buganizerId: '1008',
-        title: 'Hatch audio codec kernel panic',
+        title: 'Mock-model-eight audio codec kernel panic',
       },
       {
         id: '9',
-        model: 'puff',
+        model: 'sim-model-labstation',
         buganizerId: '1009',
-        title: 'Puff fan bearing degradation',
+        title: 'Sim-model-labstation fan bearing degradation',
       },
       {
         id: '10',
-        model: 'octopus',
+        model: 'sim-model-satlab',
         buganizerId: '1010',
-        title: 'Octopus display flicker on wake',
+        title: 'Sim-model-satlab display flicker on wake',
       },
       {
         id: '11',
-        model: 'nissa',
+        model: 'mock-board-epsilon',
         buganizerId: '1011',
-        title: 'Nissa Wi-Fi module disconnection',
+        title: 'Mock-board-epsilon Wi-Fi module disconnection',
       },
       {
         id: '12',
-        model: 'guybrush',
+        model: 'demo-board-alpha',
         buganizerId: '1012',
-        title: 'Guybrush sleep state power drain',
+        title: 'Demo-board-alpha sleep state power drain',
       },
       {
         id: '13',
-        model: 'skyrim',
+        model: 'demo-board-delta',
         buganizerId: '1013',
-        title: 'Skyrim camera sensor detection loss',
+        title: 'Demo-board-delta camera sensor detection loss',
       },
       {
         id: '14',
-        model: 'corsola',
+        model: 'sim-board-gamma',
         buganizerId: '1014',
-        title: 'Corsola keyboard matrix ghosting',
+        title: 'Sim-board-gamma keyboard matrix ghosting',
       },
       {
         id: '15',
-        model: 'geralt',
+        model: 'mock-board-theta',
         buganizerId: '1015',
-        title: 'Geralt touch digitizer deadzone',
+        title: 'Mock-board-theta touch digitizer deadzone',
       },
     ],
   },
@@ -685,12 +691,12 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     overrides: [
       {
         id: '1',
-        model: 'brya',
+        model: 'sim-model-nine',
         overriddenExpectedQuantity: 15,
       },
       {
         id: '2',
-        model: 'volteer',
+        model: 'demo-model-one',
         overriddenExpectedQuantity: 20,
       },
     ],
@@ -698,7 +704,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   SetModelQuotaOverride: {
     override: {
       id: '1',
-      model: 'brya',
+      model: 'sim-model-nine',
       overriddenExpectedQuantity: 15,
     },
   },
@@ -716,7 +722,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
         email: 'andrew@google.com',
         claimedDuts: [
           {
-            dutId: 'chromeos1-row2-rack3-host1',
+            dutId: 'demo-cros-r2-rk1-h2',
             score: 250,
             duration: { seconds: '2700', nanos: 0 },
           },
@@ -736,7 +742,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
         email: 'beatrice@google.com',
         claimedDuts: [
           {
-            dutId: 'chromeos2-row3-rack1-host2',
+            dutId: 'demo-cros-r3-rk1-h3',
             score: 85,
             duration: { seconds: '1800', nanos: 0 },
           },
@@ -752,99 +758,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       },
     ],
   },
-  GetFleetAvailabilityTrends: {
-    series: [],
-    metricType: 0,
-  },
-  ListHealthSlices: {
-    healthSlices: [
-      {
-        id: 'all-fleet',
-        name: 'All Fleet',
-        filter: '',
-        displayOrder: 0,
-      },
-      {
-        id: '1',
-        name: 'Labstations',
-        filter: 'labels.board = "zgb"',
-        displayOrder: 1,
-      },
-      {
-        id: '2',
-        name: 'DUTs in Dev',
-        filter: 'labels.pool = "faft-cr50"',
-        displayOrder: 2,
-      },
-    ],
-  },
-  CreateHealthSlice: {
-    healthSlice: {
-      id: '1',
-      name: 'New Slice',
-      filter: '',
-      displayOrder: 0,
-    },
-  },
-  UpdateHealthSlice: {
-    healthSlice: {
-      id: '1',
-      name: 'Updated Slice',
-      filter: '',
-      displayOrder: 0,
-    },
-  },
-  DeleteHealthSlice: {},
-  ReorderHealthSlices: {
-    healthSlices: [
-      {
-        id: 'all-fleet',
-        name: 'All Fleet',
-        filter: '',
-        displayOrder: 0,
-      },
-      {
-        id: '1',
-        name: 'Labstations',
-        filter: 'labels.board = "zgb"',
-        displayOrder: 1,
-      },
-      {
-        id: '2',
-        name: 'DUTs in Dev',
-        filter: 'labels.pool = "faft-cr50"',
-        displayOrder: 2,
-      },
-    ],
-  },
-  ListTaskHistory: {
-    tasks: [
-      {
-        taskId: 'task-1',
-        name: 'cros_test_platform',
-        state: 'COMPLETED',
-        startTime: '2026-09-17T12:00:00Z',
-        duration: { seconds: '120', nanos: 0 },
-        buildVersion: 'R120-15662.0.0',
-        taskUrl: 'https://chromeos-swarming.appspot.com/task?id=task-1',
-        source: 1,
-        endTime: '2026-09-17T12:02:00Z',
-      },
-      {
-        taskId: 'task-2',
-        name: 'MobileHarness_Test',
-        state: 'RUNNING',
-        startTime: '2026-09-17T12:05:00Z',
-        duration: { seconds: '60', nanos: 0 },
-        buildVersion: 'R120-15662.0.0',
-        taskUrl:
-          'https://mobileharness-fe.corp.google.com/testdetailview/job-1/task-2',
-        source: 2,
-        endTime: undefined,
-      },
-    ],
-    nextPageToken: '',
-  },
+  ...HEALTH_AND_TASK_DEFAULT_FIXTURES,
 };
 
 function deepClone<T>(obj: T): T {
@@ -876,6 +790,7 @@ export interface MockCallRecord {
 export class FleetConsoleMockAPI {
   private static fixtures: Record<string, unknown> =
     deepClone(DEFAULT_FIXTURES);
+  private static overriddenMethods: Set<string> = new Set();
   private static currentAuthState: Record<string, unknown> =
     deepClone(DEFAULT_AUTH_STATE);
   private static callHistory: Record<string, MockCallRecord[]> = {};
@@ -945,6 +860,7 @@ export class FleetConsoleMockAPI {
    */
   static resetFixtures(): void {
     this.fixtures = deepClone(DEFAULT_FIXTURES);
+    this.overriddenMethods.clear();
     this.currentAuthState = deepClone(DEFAULT_AUTH_STATE);
     this.callHistory = {};
     if (
@@ -1016,6 +932,7 @@ export class FleetConsoleMockAPI {
    */
   static setFixture(method: string, data: unknown): void {
     this.fixtures[method] = data;
+    this.overriddenMethods.add(method);
     if (
       this.persistStorage &&
       typeof window !== 'undefined' &&
@@ -1305,8 +1222,68 @@ export class FleetConsoleMockAPI {
             ? (deepClone(data) as Record<string, unknown>)
             : {};
 
+        // Dynamic request-aware responses when default fixture has not been overridden
+        if (
+          typeof fixture !== 'function' &&
+          !FleetConsoleMockAPI.overriddenMethods.has(method)
+        ) {
+          const sliceMutation = applyHealthSliceMutation(
+            method,
+            reqPayload,
+            FleetConsoleMockAPI.fixtures,
+          );
+          if (sliceMutation !== null) {
+            responseData = sliceMutation;
+            if (
+              FleetConsoleMockAPI.persistStorage &&
+              typeof window !== 'undefined' &&
+              window.localStorage
+            ) {
+              try {
+                window.localStorage.setItem(
+                  FleetConsoleMockAPI.storageKey,
+                  JSON.stringify(FleetConsoleMockAPI.fixtures),
+                );
+              } catch {
+                // Ignore localStorage quota / availability failures in test environments
+              }
+            }
+          } else if (method === 'GetFleetAvailabilityTrends') {
+            responseData = buildMockAvailabilityTrends(reqPayload);
+          } else if (method === 'GetDevice') {
+            const requestedId =
+              typeof reqPayload.id === 'string'
+                ? reqPayload.id
+                : (reqPayload.id as { id?: string } | undefined)?.id || '';
+            const allCros = sampleChromeosDevices as Array<
+              Record<string, unknown>
+            >;
+            const device = synthesizeChromeosDevice(
+              requestedId || 'demo-cros-r2-rk1-h2',
+              allCros,
+            );
+            responseData = { device };
+          } else if (method === 'GetMachineLSE') {
+            const allCros = sampleChromeosDevices as Array<
+              Record<string, unknown>
+            >;
+            responseData = buildDynamicMachineLse(
+              reqPayload,
+              responseData,
+              allCros,
+            );
+          } else if (method === 'ListBots') {
+            responseData = buildDynamicListBots(reqPayload);
+          } else if (method === 'GetBuild') {
+            responseData = buildDynamicGetBuild(reqPayload, responseData);
+          }
+        }
+
         // In-memory AIP-160 filter evaluation & pagination simulation (for static object fixtures)
-        if (typeof fixture !== 'function') {
+        if (
+          typeof fixture !== 'function' &&
+          method !== 'GetFleetAvailabilityTrends'
+        ) {
           const filterStr =
             typeof reqPayload.filter === 'string' ? reqPayload.filter : '';
           const listArrayKey = Object.keys(responseData).find((k) =>
@@ -1322,20 +1299,42 @@ export class FleetConsoleMockAPI {
               items = items.filter((item) =>
                 FleetConsoleMockAPI.matchesAip160Filter(item, filterStr),
               );
+              const singleIdMatch =
+                method === 'ListDevices' && items.length === 0
+                  ? /^id\s*=\s*"?([^"]+)"?$/i.exec(filterStr.trim())
+                  : null;
+              if (
+                singleIdMatch &&
+                Array.isArray(sampleChromeosDevices) &&
+                sampleChromeosDevices.length > 0
+              ) {
+                items = [
+                  synthesizeChromeosDevice(
+                    singleIdMatch[1],
+                    sampleChromeosDevices as Array<Record<string, unknown>>,
+                  ),
+                ];
+              }
             }
 
-            const pageSize =
+            const rawLimit =
               typeof reqPayload.pageSize === 'number' && reqPayload.pageSize > 0
                 ? reqPayload.pageSize
-                : items.length;
-            const startIndex =
-              typeof reqPayload.pageToken === 'string' &&
-              reqPayload.pageToken.startsWith('token-')
-                ? parseInt(reqPayload.pageToken.replace('token-', ''), 10) || 0
-                : 0;
+                : typeof reqPayload.limit === 'number' && reqPayload.limit > 0
+                  ? reqPayload.limit
+                  : items.length;
+            const rawToken =
+              typeof reqPayload.pageToken === 'string' && reqPayload.pageToken
+                ? reqPayload.pageToken
+                : typeof reqPayload.cursor === 'string' && reqPayload.cursor
+                  ? reqPayload.cursor
+                  : '';
+            const startIndex = rawToken.startsWith('token-')
+              ? parseInt(rawToken.replace('token-', ''), 10) || 0
+              : 0;
 
-            const pagedItems = items.slice(startIndex, startIndex + pageSize);
-            const nextIndex = startIndex + pageSize;
+            const pagedItems = items.slice(startIndex, startIndex + rawLimit);
+            const nextIndex = startIndex + rawLimit;
             const nextPageToken =
               nextIndex < items.length ? `token-${nextIndex}` : '';
 
@@ -1343,6 +1342,9 @@ export class FleetConsoleMockAPI {
               ...responseData,
               [listArrayKey]: pagedItems,
               nextPageToken,
+              ...(listArrayKey === 'items' && nextPageToken
+                ? { cursor: nextPageToken }
+                : {}),
               totalSize: items.length,
             };
           } else if (method === 'CountDevices' && filterStr) {

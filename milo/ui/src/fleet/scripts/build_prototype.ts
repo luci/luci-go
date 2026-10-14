@@ -284,7 +284,15 @@ window.gtag = window.gtag || function() { window.dataLayer.push(arguments); };
 window.SETTINGS = window.SETTINGS || {
   firebase: { projectId: 'luci-milo-dev', appId: '1:0000:web:0000', apiKey: 'mock' },
   buildbucket: { host: 'cr-buildbucket.appspot.com' },
-  swarming: { defaultHost: 'chromium-swarm.appspot.com', allowedHosts: ['chromium-swarm.appspot.com'] },
+  swarming: {
+    defaultHost: 'chromium-swarm.appspot.com',
+    allowedHosts: [
+      'chromium-swarm.appspot.com',
+      'chromeos-swarming.appspot.com',
+      'chrome-swarming.appspot.com',
+      'chromium-swarm-dev.appspot.com',
+    ],
+  },
   resultdb: { host: 'results.api.cr.dev' },
   luciAnalysis: { host: 'analysis.api.cr.dev', uiHost: 'analysis.cr.dev' },
   luciBisection: { host: 'bisection.api.cr.dev' },

@@ -106,6 +106,8 @@ describe('build_prototype utilities', () => {
     const settingsJs = generateOfflineSettingsJs('/ui/fleet/catalog');
     expect(settingsJs).toContain('window.__FCON_EASY_MOCK__ = true;');
     expect(settingsJs).toContain("cleanUrl.hash = '#' + normalized;");
+    expect(settingsJs).toContain('chromeos-swarming.appspot.com');
+    expect(settingsJs).toContain('chrome-swarming.appspot.com');
 
     expect(() => validateOutDir('/workspace/ui', '/workspace/ui')).toThrow(
       /Refusing to clean unsafe --out-dir/,

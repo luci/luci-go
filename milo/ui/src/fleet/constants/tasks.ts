@@ -24,9 +24,14 @@ export const TASK_EXCEPTIONAL_STATES = new Set([
 
 export const PILOT_BOARDS = new Set(['brya', 'rauru', 'fatcat']);
 
+const SYNTHETIC_PILOT_BOARD_RE = /^(?:demo|mock|sim)-board-/i;
+
 export const isPilotBoard = (board?: string | null): boolean => {
   if (!board) {
     return false;
   }
-  return PILOT_BOARDS.has(board.toLowerCase().trim());
+  const normalized = board.toLowerCase().trim();
+  return (
+    PILOT_BOARDS.has(normalized) || SYNTHETIC_PILOT_BOARD_RE.test(normalized)
+  );
 };

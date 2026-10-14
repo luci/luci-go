@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
+
 import sampleAndroidDevices from './data/android_devices.json';
 import sampleChromeosDevices from './data/chromeos_devices.json';
 import { FleetConsoleMockAPI } from './mock_api_handler';
@@ -272,6 +274,309 @@ describe('FleetConsoleMockAPI', () => {
         '(labels."notes" = "fish AND chips" AND labels."dut_state" = "ready") OR labels."dut_state" = "needs_repair"',
       ),
     ).toBe(true);
+
+    FleetConsoleMockAPI.disableBrowserInterceptor();
+  });
+
+  it('returns dynamic Fleet Health trends by grouping and Swarming/UFS fixtures for Device Details', async () => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+
+    const overallRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/GetFleetAvailabilityTrends',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grouping: 'GROUP_BY_OVERALL',
+          filter: 'labels."label-pool" = "mock-pool-dev"',
+        }),
+      },
+    );
+    const overallJson = JSON.parse(
+      (await overallRes.text()).replace(")]}'\n", ''),
+    );
+    expect(overallJson.series).toHaveLength(1);
+    expect(overallJson.series[0].name).toBe('Overall');
+    expect(overallJson.series[0].points.length).toBeGreaterThan(24);
+    expect(typeof overallJson.series[0].points[0].value).toBe('number');
+    expect(overallJson.series[0].points[0].value).toBeGreaterThan(0.5);
+
+    const modelRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/GetFleetAvailabilityTrends',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grouping: 'GROUP_BY_MODEL' }),
+      },
+    );
+    const modelJson = JSON.parse((await modelRes.text()).replace(")]}'\n", ''));
+    expect(modelJson.series.length).toBeGreaterThan(1);
+    expect(modelJson.series[0].name).toBe('sim-model-nine');
+    expect(modelJson.series[0].points[0].value).toBeGreaterThan(0.5);
+
+    const singleDeviceRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/ListDevices',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pageSize: 1,
+          filter: 'id = "demo-cros-r2-rk1-h2"',
+        }),
+      },
+    );
+    const singleDeviceJson = JSON.parse(
+      (await singleDeviceRes.text()).replace(")]}'\n", ''),
+    );
+    expect(singleDeviceJson.devices).toHaveLength(1);
+    expect(singleDeviceJson.devices[0].id).toBe('demo-cros-r2-rk1-h2');
+
+    const botTasksRes = await fetch('/prpc/swarming.v2.Bots/ListBotTasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ botId: 'crossk-demo-cros-r2-rk1-h2' }),
+    });
+    const botTasksJson = JSON.parse(
+      (await botTasksRes.text()).replace(")]}'\n", ''),
+    );
+    expect(botTasksJson.items.length).toBeGreaterThanOrEqual(5);
+
+    const ufsRes = await fetch(
+      '/prpc/unifiedfleet.api.v1.rpc.Fleet/GetMachineLSE',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'machineLSEs/chromeos-device-02' }),
+      },
+    );
+    const ufsJson = JSON.parse((await ufsRes.text()).replace(")]}'\n", ''));
+    const decodedLse = MachineLSE.fromJSON(ufsJson);
+    expect(decodedLse.hostname).toBe('chromeos-device-02');
+    expect(
+      decodedLse.chromeosMachineLse?.deviceLse?.dut?.peripherals?.servo
+        ?.servoHostname,
+    ).toBe('chromeos-device-02-labstation1');
+
+    FleetConsoleMockAPI.disableBrowserInterceptor();
+  });
+
+  it('supports cross-fixture drill-down, filtered trends, slice mutations, and Swarming pagination', async () => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+
+    // 1. Cross-fixture drill-down: ListDevices & GetDeviceDimensions include mock-board-epsilon / sim-model-nine / mock-pool-dev
+    const bryaDevicesRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/ListDevices',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filter: 'labels."label-board" = "mock-board-epsilon"',
+        }),
+      },
+    );
+    const bryaDevicesJson = JSON.parse(
+      (await bryaDevicesRes.text()).replace(")]}'\n", ''),
+    );
+    expect(bryaDevicesJson.devices.length).toBeGreaterThanOrEqual(2);
+
+    const quotaDevicesRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/ListDevices',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filter: 'labels."label-pool" = "mock-pool-dev"',
+        }),
+      },
+    );
+    const quotaDevicesJson = JSON.parse(
+      (await quotaDevicesRes.text()).replace(")]}'\n", ''),
+    );
+    expect(quotaDevicesJson.devices.length).toBeGreaterThanOrEqual(2);
+
+    const dimsRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/GetDeviceDimensions',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      },
+    );
+    const dimsJson = JSON.parse((await dimsRes.text()).replace(")]}'\n", ''));
+    expect(dimsJson.labels['label-board'].values).toContain(
+      'mock-board-epsilon',
+    );
+    expect(dimsJson.labels['label-model'].values).toContain('sim-model-nine');
+    expect(dimsJson.labels['label-pool'].values).toContain('mock-pool-dev');
+
+    // 2. GetFleetAvailabilityTrends honors filter in GROUP_BY_MODEL and GROUP_BY_POOL and emits numeric metricType
+    const filteredModelRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/GetFleetAvailabilityTrends',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grouping: 'GROUP_BY_MODEL',
+          filter: 'labels."label-model" = "sim-model-nine"',
+        }),
+      },
+    );
+    const filteredModelJson = JSON.parse(
+      (await filteredModelRes.text()).replace(")]}'\n", ''),
+    );
+    expect(filteredModelJson.metricType).toBe(1);
+    expect(filteredModelJson.series).toHaveLength(1);
+    expect(filteredModelJson.series[0].name).toBe('sim-model-nine');
+    expect(Object.keys(filteredModelJson.series[0].points[0]).sort()).toEqual([
+      'timestamp',
+      'value',
+    ]);
+
+    const filteredPoolRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/GetFleetAvailabilityTrends',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grouping: 'GROUP_BY_POOL',
+          filter: 'labels."label-pool" = "mock-pool-dev"',
+        }),
+      },
+    );
+    const filteredPoolJson = JSON.parse(
+      (await filteredPoolRes.text()).replace(")]}'\n", ''),
+    );
+    expect(filteredPoolJson.metricType).toBe(2);
+    expect(filteredPoolJson.series).toHaveLength(1);
+    expect(filteredPoolJson.series[0].name).toBe('mock-pool-dev');
+
+    // 3. Stateful Health Slice mutations persist into ListHealthSlices
+    const createSliceRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/CreateHealthSlice',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          healthSlice: {
+            name: 'Alpha Fleet',
+            filter: 'labels."label-board" = "demo-board-alpha"',
+          },
+        }),
+      },
+    );
+    const createdSlice = JSON.parse(
+      (await createSliceRes.text()).replace(")]}'\n", ''),
+    ).healthSlice;
+    expect(createdSlice.name).toBe('Alpha Fleet');
+
+    const updateSliceRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/UpdateHealthSlice',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          healthSlice: {
+            id: createdSlice.id,
+            name: 'Alpha Canary',
+            filter: 'labels."label-board" = "demo-board-alpha"',
+          },
+        }),
+      },
+    );
+    const updatedSlice = JSON.parse(
+      (await updateSliceRes.text()).replace(")]}'\n", ''),
+    ).healthSlice;
+    expect(updatedSlice.name).toBe('Alpha Canary');
+
+    const listAfterUpdateRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/ListHealthSlices',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      },
+    );
+    const listAfterUpdateJson = JSON.parse(
+      (await listAfterUpdateRes.text()).replace(")]}'\n", ''),
+    );
+    expect(
+      listAfterUpdateJson.healthSlices.some(
+        (s: { id: string; name: string }) =>
+          s.id === createdSlice.id && s.name === 'Alpha Canary',
+      ),
+    ).toBe(true);
+
+    await fetch('/prpc/fleetconsole.FleetConsole/DeleteHealthSlice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: createdSlice.id }),
+    });
+    const listAfterDeleteRes = await fetch(
+      '/prpc/fleetconsole.FleetConsole/ListHealthSlices',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      },
+    );
+    const listAfterDeleteJson = JSON.parse(
+      (await listAfterDeleteRes.text()).replace(")]}'\n", ''),
+    );
+    expect(
+      listAfterDeleteJson.healthSlices.some(
+        (s: { id: string }) => s.id === createdSlice.id,
+      ),
+    ).toBe(false);
+
+    // 4. Swarming ListBotTasks pagination with limit & cursor
+    const page1TasksRes = await fetch('/prpc/swarming.v2.Bots/ListBotTasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        botId: 'crossk-demo-cros-r2-rk1-h2',
+        limit: 3,
+      }),
+    });
+    const page1TasksJson = JSON.parse(
+      (await page1TasksRes.text()).replace(")]}'\n", ''),
+    );
+    expect(page1TasksJson.items).toHaveLength(3);
+    expect(page1TasksJson.cursor).toBe('token-3');
+
+    const page2TasksRes = await fetch('/prpc/swarming.v2.Bots/ListBotTasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        botId: 'crossk-demo-cros-r2-rk1-h2',
+        limit: 3,
+        cursor: page1TasksJson.cursor,
+      }),
+    });
+    const page2TasksJson = JSON.parse(
+      (await page2TasksRes.text()).replace(")]}'\n", ''),
+    );
+    expect(page2TasksJson.items).toHaveLength(3);
+    expect(page2TasksJson.items[0].taskId).not.toBe(
+      page1TasksJson.items[0].taskId,
+    );
+
+    // 5. Dynamic GetBuild output.properties & summaryMarkdown for passed vs failed builds
+    const failedBuildRes = await fetch('/prpc/buildbucket.v2.Builds/GetBuild', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: '8741928374918273603' }),
+    });
+    const failedBuildJson = JSON.parse(
+      (await failedBuildRes.text()).replace(")]}'\n", ''),
+    );
+    expect(failedBuildJson.status).toBe(20);
+    expect(
+      failedBuildJson.output.properties.CompressedResult.chromeos_version,
+    ).toBe('16180.0.0');
+    expect(failedBuildJson.summaryMarkdown).toContain(
+      'tast.video-decode-accel-h264',
+    );
 
     FleetConsoleMockAPI.disableBrowserInterceptor();
   });
