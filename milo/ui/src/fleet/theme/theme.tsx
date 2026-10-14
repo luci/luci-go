@@ -19,11 +19,24 @@ import { theme as baseTheme } from '@/common/themes/base';
 import { DeepPartial } from '@/proto/google/protobuf/empty.pb';
 
 import { colors } from './colors';
+import {
+  borders,
+  controlHeights,
+  elevations,
+  fleetColors,
+  fontSizes,
+  iconSizes,
+  radii,
+} from './tokens';
 
 const GOOGLE_SANS_FONT_FAMILY = "'Google Sans', 'Roboto', sans-serif";
 const GOOGLE_SANS_TEXT_FONT_FAMILY =
   "'Google Sans Text', 'Google Sans', 'Roboto', sans-serif";
 
+/**
+ * The Fleet Console MUI theme (Stage 1: opt-in GM3 variants registered ahead of
+ * the Stage 2 global typography and surface cutover).
+ */
 export const theme = createTheme(baseTheme, {
   palette: {
     text: {
@@ -122,6 +135,57 @@ export const theme = createTheme(baseTheme, {
     },
   },
   components: {
+    MuiButton: {
+      variants: [
+        {
+          // Compact pill for table toolbars and page-header actions.
+          // Usage: <Button variant="toolbar" startIcon={...}>Deploy</Button>
+          // Neutral (non-primary) action: add color="inherit".
+          props: { variant: 'toolbar' },
+          style: {
+            height: controlHeights.button,
+            minHeight: controlHeights.button,
+            padding: '0 12px',
+            borderRadius: radii.pill,
+            border: `1px solid ${fleetColors.borderPrimary}`,
+            backgroundColor: fleetColors.canvas,
+            color: fleetColors.primary,
+            fontSize: fontSizes.label,
+            fontWeight: 500,
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
+            '& .MuiButton-startIcon': { marginLeft: 0, marginRight: 6 },
+            '& .MuiButton-startIcon > svg, & .MuiButton-endIcon > svg': {
+              fontSize: iconSizes.control,
+            },
+            '&:hover': {
+              backgroundColor: fleetColors.primaryContainer,
+              borderColor: fleetColors.borderHover,
+            },
+            '&.Mui-focusVisible': {
+              outline: `2px solid ${fleetColors.primary}`,
+              outlineOffset: 2,
+            },
+            '&.Mui-disabled': {
+              borderColor: fleetColors.border,
+              backgroundColor: fleetColors.canvas,
+            },
+          },
+        },
+        {
+          props: { variant: 'toolbar', color: 'inherit' },
+          style: {
+            borderColor: fleetColors.border,
+            color: fleetColors.textPrimary,
+            '&:hover': {
+              backgroundColor: fleetColors.primaryContainer,
+              borderColor: fleetColors.borderPrimary,
+              color: fleetColors.primary,
+            },
+          },
+        },
+      ],
+    },
     MuiChip: {
       defaultProps: {
         deleteIcon: <ClearIcon />,
@@ -132,33 +196,69 @@ export const theme = createTheme(baseTheme, {
             variant: 'outlined',
           },
           style: {
+            borderColor: fleetColors.border,
             // needs the class selector to be specific enough to override the default
             '&.MuiChip-clickable:hover, :focus': {
-              backgroundColor: colors.grey[100],
+              backgroundColor: fleetColors.surfaceTonal,
             },
           },
         },
         {
+          // Borderless tonal chip for applied filters.
           props: {
             variant: 'filter',
           },
           style: {
-            backgroundColor: colors.blue[50],
-            color: colors.blue[600],
-            fontSize: 14,
+            borderRadius: radii.pill,
+            backgroundColor: fleetColors.primaryContainer,
+            color: fleetColors.primary,
+            border: 'none',
+            fontSize: fontSizes.label,
+            fontWeight: 500,
             ':hover, :focus': {
-              backgroundColor: colors.blue[100],
-              color: colors.blue[600],
+              backgroundColor: fleetColors.primaryContainerHover,
+              color: fleetColors.primary,
             },
             '.MuiChip-deleteIcon': {
-              color: colors.blue[600],
+              color: fleetColors.primary,
               borderRadius: '50%',
               ':hover, :focus': {
-                color: colors.blue[600],
-                backgroundColor: colors.blue[200],
-                transition: '0.3s',
+                color: fleetColors.primaryHover,
+                backgroundColor: fleetColors.borderPrimary,
+                transition: '0.2s',
               },
             },
+          },
+        },
+      ],
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: { borderRadius: radii.sm },
+      },
+    },
+    MuiPaper: {
+      variants: [
+        {
+          props: { variant: 'surface' },
+          style: {
+            backgroundColor: fleetColors.surface,
+            border: borders.default,
+            borderRadius: radii.md,
+            boxShadow: elevations.card,
+          },
+        },
+      ],
+    },
+    MuiCard: {
+      variants: [
+        {
+          props: { variant: 'surface' },
+          style: {
+            backgroundColor: fleetColors.surface,
+            border: borders.default,
+            borderRadius: radii.md,
+            boxShadow: elevations.card,
           },
         },
       ],
@@ -193,9 +293,21 @@ export const theme = createTheme(baseTheme, {
   },
 } satisfies DeepPartial<Theme>);
 
+declare module '@mui/material/Button' {
+  interface ButtonPropsVariantOverrides {
+    toolbar: true;
+  }
+}
+
 declare module '@mui/material/Chip' {
   interface ChipPropsVariantOverrides {
     filter: true;
+  }
+}
+
+declare module '@mui/material/Paper' {
+  interface PaperPropsVariantOverrides {
+    surface: true;
   }
 }
 

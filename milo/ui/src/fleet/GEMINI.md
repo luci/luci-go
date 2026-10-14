@@ -43,6 +43,15 @@ A task or frontend CL (including autonomous 1-CL fixes) is complete when:
 - **Legacy Naming Conventions (`_OLD`)**: Do not copy or extend files or exports with `_OLD` / `_deprecated` naming suffixes.
 - **Reuse Shared Components & Utilities**: Respect the domain folder organization in `src/fleet/components/` and `src/fleet/utils/`. Before creating new UI widgets, dialogs, or formatting helpers, scan `src/fleet/components/` and `src/fleet/utils/` for existing implementations to reuse or extend (see [components/README.md](./components/README.md)).
 
+### 4b. Styling Conventions (read before writing any `sx`, `css`, or `styled`)
+The canonical guide is [theme/README.md](./theme/README.md). In short:
+- **Never write raw style literals** (hex colors, `borderRadius`, `boxShadow`, `fontSize`) in a component. Use tokens from `@/fleet/theme/tokens`, recipes from `@/fleet/theme/recipes`, or theme variants.
+- **Use the shared pieces**: `<Button variant="toolbar">` for toolbar/header actions, `<Chip variant="filter">` for filters, `<StatusPill>` / `<TaskResultPill>` for any colored state, `surfaceCardSx` / `MetricsContainer` for cards, `metricTileSx` / `subMetricRowSx` for interactive KPI tiles and sub-metrics, `pageHeaderSx` + `dockedTabStripSx` for detail pages.
+- **Three radii only**: `radii.sm` (6px, including multi-line KPI tiles and text buttons), `radii.md` (12px for cards/tables), `radii.pill` (9999px for single-line pills/chips). **One surface level**: no bordered card inside a bordered card.
+- **Accessibility (a11y)**: Never set `outline: 'none'` on `:focus-visible` (use `focusRingSx` / `metricTileSx` / `subMetricRowSx`), always include `aria-label` on icon-only `<IconButton>`s, and preserve WCAG AA (`>= 4.5:1`) contrast without `opacity` dimming.
+- **Call-site `sx` is for layout only** (margin, padding, gap, flex). A missing look means a missing token or recipe: add it to `src/fleet/theme/`, then use it.
+- `src/fleet/theme/style_conventions.test.ts` fails if raw literals in `src/fleet` grow. Do not raise its baseline; lower it when you remove literals.
+
 ### 5. Temporary File Hygiene
 - Do not run `rm` commands to delete temporary files.
 - Store transient test outputs in the gitignored `.tmp/` directory.

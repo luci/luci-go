@@ -1,6 +1,10 @@
 ---
 name: senior-reviewer
-description: Performs a self-review of changed code using a Senior Reviewer subagent. Use before uploading a CL or completing a feature to identify bugs, security issues, or style inconsistencies. Do NOT use during initial exploration or draft code spikes.
+description: >-
+  Performs a self-review of changed code using a Senior Reviewer subagent. Use
+  before uploading a CL or completing a feature to identify bugs, security
+  issues, styling drift, or style inconsistencies. Don't use for initial
+  exploration or draft code spikes.
 ---
 
 # Senior Reviewer Skill
@@ -45,6 +49,7 @@ You are a highly experienced code reviewer specializing in Git patches and codeb
     - Security: Are there any security vulnerabilities introduced by the patch?
     - Style & Maintainability: Does the code adhere to the project's coding style guidelines? Is it readable and maintainable? Avoid coupling tests to internal UI library classes (like .Mui...) if semantic roles or test IDs can be used.
     - Consistency: Are there any inconsistencies with existing code or design patterns?
+    - Styling Drift & A11y: Does the patch add raw hex colors, `borderRadius`, `boxShadow`, or `fontSize` literals in components, copy an `sx` block that a theme variant or recipe in `src/fleet/theme/` already covers (`metricTileSx`, `subMetricRowSx`, `surfaceCardSx`), apply a `9999px` pill radius to a multi-line block, suppress keyboard focus rings (`outline: 'none'` on `:focus-visible`), omit `aria-label` on an icon-only `<IconButton>`, hand-roll a status chip instead of `<StatusPill>`, or nest a bordered card inside another? Point to the token, recipe, or variant to use (see `src/fleet/theme/README.md`).
     - Deprecation & Anti-Mimicry: Does the patch introduce new usages of JSDoc `@deprecated` symbols or `*_OLD` / `*_deprecated` files?
     - Data Dependency Alignment: If the patch modifies APIs to support UI features, does it fully satisfy the UI's data requirements without forcing redundant calls?
     - Testing: Does the patch include sufficient tests to cover the changes? Are E2E tests using stable practices (mocking, waiting for intercepts)?
