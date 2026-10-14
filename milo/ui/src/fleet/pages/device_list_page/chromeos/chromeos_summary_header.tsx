@@ -30,7 +30,8 @@ import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { getMetricsGridStyles } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { colors as fleetColors } from '@/fleet/theme/colors';
+import { colors as legacyColors } from '@/fleet/theme/colors';
+import { fleetColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
 import { combineAipFilters, formatAipClause } from '@/fleet/utils/search_param';
@@ -132,7 +133,7 @@ export function ChromeOSSummaryHeader({
     error: theme.palette.error.main,
     warning: theme.palette.warning.main,
     grey: theme.palette.grey[400],
-    reserved: fleetColors.purple[400],
+    reserved: legacyColors.purple[400],
   };
 
   const getContent = () => {
@@ -393,7 +394,7 @@ export function ChromeOSSummaryHeader({
           </Grid>
         </Grid>
 
-        <Divider sx={{ my: 1, borderColor: 'rgba(0, 0, 0, 0.05)' }} />
+        <Divider sx={{ my: 1, borderColor: fleetColors.divider }} />
 
         {/* Devices Row */}
         <Grid

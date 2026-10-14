@@ -46,6 +46,7 @@ export const AdminTasksPage = () => {
         }}
       >
         <IconButton
+          aria-label="Back"
           onClick={() => navigate(generateDeviceListURL(CHROMEOS_PLATFORM))}
         >
           <ArrowBackIcon />

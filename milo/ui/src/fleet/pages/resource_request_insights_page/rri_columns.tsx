@@ -29,7 +29,6 @@ const getOverdueColor = (overdueDays: number) => {
   return overdueDays < 30 ? 'warning.main' : 'error.main';
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const STATUS_FILTER_OPTIONS: FilterOption[] = Object.keys(
   fulfillmentStatusDisplayValueMap,
 ).map((k) => ({
@@ -97,6 +96,7 @@ export const COLUMNS = {
           {x.row.original.resource_request_bug_id && (
             <sup style={{ display: 'inline-flex', flexShrink: 0 }}>
               <IconButton
+                aria-label={`Open bug ${x.row.original.resource_request_bug_id}`}
                 href={formatBugUrl(x.row.original.resource_request_bug_id)}
                 target="_blank"
                 color="primary"
@@ -275,7 +275,6 @@ export type ResourceRequestColumnKey = keyof typeof COLUMNS;
 
 export const DEFAULT_SORT_COLUMN_ID = 'slippage';
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const DEFAULT_COLUMNS = [
   'resource_details',
   'rr_id',

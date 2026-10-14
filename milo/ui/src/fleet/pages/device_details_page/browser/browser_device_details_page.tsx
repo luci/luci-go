@@ -40,6 +40,14 @@ import {
 } from '@/fleet/constants/paths';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import {
+  actionRowSx,
+  dockedTabStripSx,
+  iconButtonSx,
+  pageHeaderSx,
+  tabPanelSx,
+} from '@/fleet/theme/recipes';
+import { fleetColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { isTyping } from '@/fleet/utils/field_typing';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -197,55 +205,65 @@ export const BrowserDeviceDetailsPage = () => {
     : [];
 
   return (
-    <div
-      css={{
-        width: '100%',
-        margin: '24px 0px',
-      }}
-    >
-      <div
-        css={{
-          margin: '0px 24px 8px 24px',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        <IconButton
-          onClick={() => {
-            if (navigatedFromLink) {
-              navigate(navigatedFromLink);
-            } else {
-              navigate(generateDeviceListURL(CHROMIUM_PLATFORM));
-            }
+    <Box sx={{ width: '100%' }}>
+      <Box sx={pageHeaderSx}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 1,
           }}
         >
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h4" sx={{ whiteSpace: 'nowrap' }}>
-          Device details:
-        </Typography>
-        <TextField
-          inputRef={deviceIdInputRef}
-          variant="standard"
-          value={deviceIdInputValue}
-          onChange={(event) => setDeviceIdInputValue(event.target.value)}
-          slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
-          fullWidth
-          onBlur={(e) => {
-            navigateToDeviceIfChanged(e.target.value);
-          }}
-          onKeyDown={(e) => {
-            const target = e.target as HTMLInputElement;
-            if (e.key === 'Enter') {
-              navigateToDeviceIfChanged(target.value);
-            }
-          }}
-        />
-      </div>
-      <>
-        {device === undefined && (
+          <IconButton
+            aria-label="Back"
+            sx={iconButtonSx}
+            onClick={() => {
+              if (navigatedFromLink) {
+                navigate(navigatedFromLink);
+              } else {
+                navigate(generateDeviceListURL(CHROMIUM_PLATFORM));
+              }
+            }}
+          >
+            <ArrowBackIcon fontSize="small" />
+          </IconButton>
+          <Typography variant="h5" sx={{ whiteSpace: 'nowrap' }}>
+            Device details:
+          </Typography>
+          <TextField
+            inputRef={deviceIdInputRef}
+            variant="standard"
+            value={deviceIdInputValue}
+            onChange={(event) => setDeviceIdInputValue(event.target.value)}
+            slotProps={{
+              htmlInput: {
+                sx: { typography: 'h5', color: fleetColors.primary },
+              },
+            }}
+            fullWidth
+            onBlur={(e) => {
+              navigateToDeviceIfChanged(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              const target = e.target as HTMLInputElement;
+              if (e.key === 'Enter') {
+                navigateToDeviceIfChanged(target.value);
+              }
+            }}
+          />
+        </Box>
+        {device && (
+          <Box sx={actionRowSx}>
+            <RequestRepair
+              selectedItems={toRepair}
+              platform={Platform.CHROMIUM}
+            />
+          </Box>
+        )}
+      </Box>
+      {device === undefined && (
+        <Box sx={tabPanelSx}>
           <AlertWithFeedback
             title="Device not found!"
             bugErrorMessage={`Device not found: ${id}`}
@@ -255,55 +273,37 @@ export const BrowserDeviceDetailsPage = () => {
               found.
             </p>
           </AlertWithFeedback>
-        )}
-      </>
-      {device && (
-        <>
-          <div
-            css={{
-              boxSizing: 'border-box',
-              width: '100%',
-              paddingLeft: '72px',
-              marginBottom: '32px',
-              display: 'flex',
-              flexDirection: 'row',
-              gap: '8px',
-            }}
-          >
-            <RequestRepair
-              selectedItems={toRepair}
-              platform={Platform.CHROMIUM}
-            />
-          </div>
-          <TabContext value={selectedTab || TabValue.TASKS}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
-                <Tab label="Tasks" value={TabValue.TASKS} />
-                <Tab label="Dimensions" value={TabValue.DIMENSIONS} />
-                <Tab label="Inventory data" value={TabValue.INVENTORY_DATA} />
-              </TabList>
-            </Box>
-            <TabPanel value={TabValue.TASKS}>
-              {swarmingInstance && botId ? (
-                <Tasks botId={botId} swarmingHost={swarmingHost} />
-              ) : (
-                <UnavailableSwarmingInfo />
-              )}
-            </TabPanel>
-            <TabPanel value={TabValue.DIMENSIONS}>
-              <BrowserDeviceDimensions
-                device={device}
-                botId={botId}
-                swarmingHost={swarmingHost}
-              />
-            </TabPanel>
-            <TabPanel value={TabValue.INVENTORY_DATA}>
-              <BrowserInventoryData device={device} />
-            </TabPanel>
-          </TabContext>
-        </>
+        </Box>
       )}
-    </div>
+      {device && (
+        <TabContext value={selectedTab || TabValue.TASKS}>
+          <Box sx={dockedTabStripSx}>
+            <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
+              <Tab label="Tasks" value={TabValue.TASKS} />
+              <Tab label="Dimensions" value={TabValue.DIMENSIONS} />
+              <Tab label="Inventory data" value={TabValue.INVENTORY_DATA} />
+            </TabList>
+          </Box>
+          <TabPanel value={TabValue.TASKS} sx={tabPanelSx}>
+            {swarmingInstance && botId ? (
+              <Tasks botId={botId} swarmingHost={swarmingHost} />
+            ) : (
+              <UnavailableSwarmingInfo />
+            )}
+          </TabPanel>
+          <TabPanel value={TabValue.DIMENSIONS} sx={tabPanelSx}>
+            <BrowserDeviceDimensions
+              device={device}
+              botId={botId}
+              swarmingHost={swarmingHost}
+            />
+          </TabPanel>
+          <TabPanel value={TabValue.INVENTORY_DATA} sx={tabPanelSx}>
+            <BrowserInventoryData device={device} />
+          </TabPanel>
+        </TabContext>
+      )}
+    </Box>
   );
 };
 

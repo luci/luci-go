@@ -40,6 +40,7 @@ import {
 } from '@/fleet/constants/paths';
 import { getFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
 import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
+import { subMetricRowSx } from '@/fleet/theme/recipes';
 import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -404,18 +405,13 @@ export const PerformanceRankingCard = ({
                         data-testid={`availability-label-${item.name}`}
                         tabIndex={0}
                         sx={{
+                          ...subMetricRowSx,
                           fontWeight: 'bold',
                           color: 'text.primary',
                           fontSize: '0.72rem',
                           cursor: 'pointer',
-                          borderRadius: 0.5,
                           px: 0.5,
                           py: 0.25,
-                          transition: 'background-color 0.15s ease-in-out',
-                          '&:hover, &:focus-visible': {
-                            bgcolor: 'action.hover',
-                            outline: 'none',
-                          },
                         }}
                       >
                         {item.availabilityPct}%{' '}
@@ -428,18 +424,13 @@ export const PerformanceRankingCard = ({
                           tabIndex={0}
                           data-testid={`drop-badge-${item.name}`}
                           sx={{
+                            ...subMetricRowSx,
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: 0.25,
                             cursor: 'pointer',
                             px: 0.5,
                             py: 0.25,
-                            borderRadius: 1,
-                            transition: 'background-color 0.15s ease-in-out',
-                            '&:hover, &:focus-visible': {
-                              bgcolor: 'action.hover',
-                              outline: 'none',
-                            },
                           }}
                         >
                           <TrendingDown color="error" sx={{ fontSize: 16 }} />
@@ -463,17 +454,12 @@ export const PerformanceRankingCard = ({
                           tabIndex={0}
                           data-testid={`gain-badge-${item.name}`}
                           sx={{
+                            ...subMetricRowSx,
                             display: 'inline-flex',
                             alignItems: 'center',
                             cursor: 'pointer',
                             px: 0.5,
                             py: 0.25,
-                            borderRadius: 1,
-                            transition: 'background-color 0.15s ease-in-out',
-                            '&:hover, &:focus-visible': {
-                              bgcolor: 'action.hover',
-                              outline: 'none',
-                            },
                           }}
                         >
                           <TrendingUp color="success" sx={{ fontSize: 16 }} />
@@ -487,17 +473,12 @@ export const PerformanceRankingCard = ({
                           tabIndex={0}
                           data-testid={`flat-badge-${item.name}`}
                           sx={{
+                            ...subMetricRowSx,
                             display: 'inline-flex',
                             alignItems: 'center',
                             cursor: 'pointer',
                             px: 0.5,
                             py: 0.25,
-                            borderRadius: 1,
-                            transition: 'background-color 0.15s ease-in-out',
-                            '&:hover, &:focus-visible': {
-                              bgcolor: 'action.hover',
-                              outline: 'none',
-                            },
                           }}
                         >
                           <TrendingFlat color="action" sx={{ fontSize: 16 }} />
@@ -514,14 +495,9 @@ export const PerformanceRankingCard = ({
                     <Box
                       tabIndex={0}
                       sx={{
+                        ...subMetricRowSx,
                         cursor: 'pointer',
                         py: 0.5,
-                        borderRadius: 1,
-                        transition: 'background-color 0.15s ease-in-out',
-                        '&:hover, &:focus-visible': {
-                          bgcolor: 'action.hover',
-                          outline: 'none',
-                        },
                         '&:hover .MuiLinearProgress-root, &:focus-visible .MuiLinearProgress-root':
                           {
                             transform: 'scaleY(1.33)',

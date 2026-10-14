@@ -27,6 +27,7 @@ import { NavLink } from 'react-router';
 
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { colors } from '@/fleet/theme/colors';
+import { metricTileSx } from '@/fleet/theme/recipes';
 
 // Health thresholds aligned with Fleet Console UX standards to indicate
 // platform health status (Healthy >= 90%, Warning >= 75%, Danger < 75%).
@@ -116,15 +117,13 @@ export function PlatformSummaryCard({
 
   return (
     <Card
-      variant="outlined"
+      variant="surface"
       sx={{
         containerType: 'inline-size',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
         minHeight: 200,
-        boxShadow: 'none',
-        borderColor: colors.grey[300],
       }}
     >
       <CardContent>
@@ -218,6 +217,7 @@ export function PlatformSummaryCard({
                 component={NavLink}
                 to={linkTo}
                 sx={{
+                  ...metricTileSx,
                   textTransform: 'none',
                   color: 'inherit',
                   display: 'flex',
@@ -225,7 +225,6 @@ export function PlatformSummaryCard({
                   alignItems: 'flex-start',
                   padding: 1,
                   minWidth: 0,
-                  borderRadius: 1,
                 }}
               >
                 <Typography
@@ -277,13 +276,11 @@ export function PlatformSummaryCard({
               <Button
                 component={NavLink}
                 to={linkTo}
-                variant="outlined"
+                variant="toolbar"
                 disableElevation
                 fullWidth
                 aria-label={`${linkText} in ${title} platform`}
-                sx={{
-                  whiteSpace: 'nowrap',
-                }}
+                sx={{ whiteSpace: 'nowrap' }}
               >
                 {linkText}
               </Button>
@@ -324,6 +321,7 @@ export function PlatformSummaryCard({
                     component={NavLink}
                     to={secondaryLinkTo}
                     sx={{
+                      ...metricTileSx,
                       textTransform: 'none',
                       color: 'inherit',
                       display: 'flex',
@@ -331,7 +329,6 @@ export function PlatformSummaryCard({
                       alignItems: 'flex-start',
                       padding: 1,
                       minWidth: 0,
-                      borderRadius: 1,
                     }}
                   >
                     <Typography
@@ -385,13 +382,11 @@ export function PlatformSummaryCard({
                   <Button
                     component={NavLink}
                     to={secondaryLinkTo}
-                    variant="outlined"
+                    variant="toolbar"
                     disableElevation
                     fullWidth
                     aria-label={`${secondaryLinkText} in ${title} platform`}
-                    sx={{
-                      whiteSpace: 'nowrap',
-                    }}
+                    sx={{ whiteSpace: 'nowrap' }}
                   >
                     {secondaryLinkText}
                   </Button>

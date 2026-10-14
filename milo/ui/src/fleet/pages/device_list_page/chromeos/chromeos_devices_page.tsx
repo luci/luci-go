@@ -23,6 +23,7 @@ import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { CHROMEOS_COMMON_DEVICE_FILTERS } from '@/fleet/config/chromeos_device_config';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { radii } from '@/fleet/theme/tokens';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -70,7 +71,7 @@ export const ChromeOSDevicesPage = () => {
   return (
     <div
       css={{
-        margin: '24px',
+        margin: '20px 24px',
         paddingBottom: '40px',
       }}
     >
@@ -82,13 +83,13 @@ export const ChromeOSDevicesPage = () => {
       <AdminTasksAlert />
       <div
         css={{
-          marginTop: 24,
+          marginTop: 16,
           width: '100%',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 28,
-          borderRadius: 4,
+          borderRadius: radii.md,
         }}
       >
         <FilterBar
@@ -100,7 +101,7 @@ export const ChromeOSDevicesPage = () => {
       </div>
       <div
         css={{
-          marginTop: 24,
+          marginTop: 14,
         }}
       >
         <ChromeOSTable mrtColumnManager={mrtColumnManager} />

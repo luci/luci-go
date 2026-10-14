@@ -16,6 +16,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Alert,
+  Box,
   IconButton,
   Typography,
   Button,
@@ -43,6 +44,8 @@ import {
 } from '@/fleet/constants/paths';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { iconButtonSx, pageHeaderSx, tabPanelSx } from '@/fleet/theme/recipes';
+import { borders, fleetColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { isTyping } from '@/fleet/utils/field_typing';
 import { getMobileHarnessLink } from '@/fleet/utils/mobile_harness';
@@ -265,90 +268,104 @@ export const AndroidDeviceDetailsPage = ({
   const mhUrl = getMobileHarnessLink(device);
 
   const headerSection = (
-    <div
-      css={{
-        margin: '24px 24px 8px 24px',
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
+    <Box
+      sx={{
+        ...pageHeaderSx,
+        borderBottom: borders.default,
+        pb: 2,
       }}
     >
-      <IconButton
-        onClick={() => {
-          if (navigatedFromLink) {
-            navigate(navigatedFromLink);
-          } else {
-            navigate(generateDeviceListURL(platformString));
-          }
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 1,
         }}
       >
-        <ArrowBackIcon />
-      </IconButton>
-      <Typography variant="h4" sx={{ whiteSpace: 'nowrap' }}>
-        Device details:
-      </Typography>
-      <TextField
-        inputRef={deviceIdInputRef}
-        variant="standard"
-        value={deviceIdInputValue}
-        onChange={(event) => setDeviceIdInputValue(event.target.value)}
-        slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
-        fullWidth
-        onBlur={(e) => {
-          navigateToDeviceIfChanged(e.target.value);
-        }}
-        onKeyDown={(e) => {
-          const target = e.target as HTMLInputElement;
-          if (e.key === 'Enter') {
-            navigateToDeviceIfChanged(target.value);
-          }
-        }}
-      />
-      {device && (
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<OpenInNewIcon />}
-          href={mhUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ marginLeft: 'auto' }}
+        <IconButton
+          aria-label="Back"
+          sx={iconButtonSx}
+          onClick={() => {
+            if (navigatedFromLink) {
+              navigate(navigatedFromLink);
+            } else {
+              navigate(generateDeviceListURL(platformString));
+            }
+          }}
         >
-          View in Mobile Harness
-        </Button>
-      )}
-    </div>
+          <ArrowBackIcon fontSize="small" />
+        </IconButton>
+        <Typography variant="h5" sx={{ whiteSpace: 'nowrap' }}>
+          Device details:
+        </Typography>
+        <TextField
+          inputRef={deviceIdInputRef}
+          variant="standard"
+          value={deviceIdInputValue}
+          onChange={(event) => setDeviceIdInputValue(event.target.value)}
+          slotProps={{
+            htmlInput: {
+              sx: { typography: 'h5', color: fleetColors.primary },
+            },
+          }}
+          fullWidth
+          onBlur={(e) => {
+            navigateToDeviceIfChanged(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            const target = e.target as HTMLInputElement;
+            if (e.key === 'Enter') {
+              navigateToDeviceIfChanged(target.value);
+            }
+          }}
+        />
+        {device && (
+          <Button
+            variant="toolbar"
+            startIcon={<OpenInNewIcon />}
+            href={mhUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ ml: 'auto', flexShrink: 0 }}
+          >
+            View in Mobile Harness
+          </Button>
+        )}
+      </Box>
+    </Box>
   );
 
   return (
-    <div css={{ width: '100%', margin: '24px 0px' }}>
+    <Box sx={{ width: '100%' }}>
       {headerSection}
 
       {isError && (
-        <Alert severity="error" sx={{ margin: '0 24px' }}>
+        <Alert severity="error" sx={{ margin: '16px 24px 0' }}>
           Something went wrong: {getErrorMessage(error, 'fetch device')}
         </Alert>
       )}
 
       {!isError && !device && (
-        <AlertWithFeedback
-          title="Device not found!"
-          bugErrorMessage={`Device not found: ${id}`}
-        >
-          <p>
-            Oh no! The device <code>{id}</code> you are looking for was not
-            found.
-          </p>
-        </AlertWithFeedback>
+        <Box sx={tabPanelSx}>
+          <AlertWithFeedback
+            title="Device not found!"
+            bugErrorMessage={`Device not found: ${id}`}
+          >
+            <p>
+              Oh no! The device <code>{id}</code> you are looking for was not
+              found.
+            </p>
+          </AlertWithFeedback>
+        </Box>
       )}
 
       {device && (
-        <div css={{ margin: '0 24px' }}>
-          {<MaterialReactTable table={table} />}
-        </div>
+        <Box sx={tabPanelSx}>
+          <MaterialReactTable table={table} />
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 

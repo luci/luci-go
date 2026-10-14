@@ -346,25 +346,18 @@ export const HomePage = () => {
               }}
             >
               <Button
-                variant="outlined"
+                variant="toolbar"
                 color="inherit"
                 component="a"
                 href="http://goto.google.com/fleet-console"
                 target="_blank"
                 rel="noreferrer"
                 startIcon={<ArticleOutlinedIcon />}
-                sx={{
-                  textTransform: 'none',
-                  color: 'text.secondary',
-                  borderColor: 'divider',
-                  py: 1,
-                  px: 2,
-                }}
               >
                 Learn more
               </Button>
               <Button
-                variant="outlined"
+                variant="toolbar"
                 color="inherit"
                 component="a"
                 href={genFeedbackUrl({
@@ -373,31 +366,17 @@ export const HomePage = () => {
                 target="_blank"
                 rel="noreferrer"
                 startIcon={<FeedbackIcon />}
-                sx={{
-                  textTransform: 'none',
-                  color: 'text.secondary',
-                  borderColor: 'divider',
-                  py: 1,
-                  px: 2,
-                }}
               >
                 File feedback
               </Button>
               <Button
-                variant="outlined"
+                variant="toolbar"
                 color="inherit"
                 component="a"
                 href="http://g/fleet-console-users"
                 target="_blank"
                 rel="noreferrer"
                 startIcon={<EmailOutlinedIcon />}
-                sx={{
-                  textTransform: 'none',
-                  color: 'text.secondary',
-                  borderColor: 'divider',
-                  py: 1,
-                  px: 2,
-                }}
               >
                 Subscribe to updates
               </Button>

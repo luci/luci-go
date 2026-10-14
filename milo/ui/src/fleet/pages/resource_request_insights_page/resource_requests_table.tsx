@@ -35,7 +35,6 @@ import { PAGE_TOKEN_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { usePager } from '@/fleet/hooks/use_pager';
-import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import {
   InvalidPageTokenAlert,
@@ -136,16 +135,10 @@ export const ResourceRequestTable = ({
           renderTrigger={({ onClick }, ref) => (
             <Button
               ref={ref}
-              startIcon={<ViewColumnOutlined sx={{ fontSize: '20px' }} />}
+              variant="toolbar"
+              startIcon={<ViewColumnOutlined />}
               onClick={onClick}
               color="inherit"
-              sx={{
-                color: colors.grey[600],
-                height: '40px',
-                fontSize: '0.875rem',
-                textTransform: 'none',
-                fontWeight: 500,
-              }}
             >
               Columns
             </Button>
@@ -239,8 +232,7 @@ export const ResourceRequestTable = ({
   return (
     <div
       css={{
-        borderRadius: 4,
-        marginTop: 24,
+        marginTop: 14,
       }}
     >
       <MaterialReactTable table={table} />

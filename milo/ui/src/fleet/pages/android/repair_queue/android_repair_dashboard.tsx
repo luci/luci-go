@@ -14,6 +14,7 @@
 
 import { Box, Divider, Typography } from '@mui/material';
 
+import { surfaceCardSx } from '@/fleet/theme/recipes';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 
 import { AndroidPriorityRulesPanel } from './android_priority_rules_panel';
@@ -66,6 +67,9 @@ export const AndroidRepairDashboard = ({
           sx={{
             flex: '1 1 540px',
             minWidth: 0,
+            ...surfaceCardSx,
+            px: 2.5,
+            py: 2,
           }}
         >
           <AndroidPriorityRulesPanel workspace={workspace} />
@@ -74,9 +78,7 @@ export const AndroidRepairDashboard = ({
 
       <Divider sx={{ mt: 4, mb: 4 }} />
 
-      <Typography variant="h6" sx={{ fontSize: '16px' }}>
-        Prioritized Manual Repair Queue
-      </Typography>
+      <Typography variant="h6">Prioritized Manual Repair Queue</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
         Devices ranked by total priority score. Hover over a score to view
         matching rules.

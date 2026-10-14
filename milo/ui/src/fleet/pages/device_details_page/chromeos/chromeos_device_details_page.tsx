@@ -50,6 +50,14 @@ import {
 import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import {
+  actionRowSx,
+  dockedTabStripSx,
+  iconButtonSx,
+  pageHeaderSx,
+  tabPanelSx,
+} from '@/fleet/theme/recipes';
+import { fleetColors, statusTones } from '@/fleet/theme/tokens';
+import {
   extractDutState,
   extractDutId,
   extractDutLabel,
@@ -172,7 +180,7 @@ export const ChromeOSDeviceDetailsPage = () => {
   if (isError) {
     return (
       <Alert severity="error">
-        <Typography variant="h4" sx={{ whiteSpace: 'nowrap' }}>
+        <Typography variant="h5" sx={{ whiteSpace: 'nowrap' }}>
           Device details:
         </Typography>
         <TextField
@@ -180,7 +188,7 @@ export const ChromeOSDeviceDetailsPage = () => {
           variant="standard"
           value={deviceIdInputValue}
           onChange={(event) => setDeviceIdInputValue(event.target.value)}
-          slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
+          slotProps={{ htmlInput: { sx: { typography: 'h5' } } }}
           fullWidth
           onBlur={(e) => {
             navigateToDeviceIfChanged(e.target.value);
@@ -228,100 +236,78 @@ export const ChromeOSDeviceDetailsPage = () => {
   ];
 
   return (
-    <div
-      css={{
-        width: '100%',
-        margin: '24px 0px',
-      }}
-    >
-      <div
-        css={{
-          margin: '0px 24px 8px 24px',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        <IconButton
-          onClick={() => {
-            if (navigatedFromLink) {
-              navigate(navigatedFromLink);
-            } else {
-              navigate(generateDeviceListURL(CHROMEOS_PLATFORM));
-            }
+    <Box sx={{ width: '100%' }}>
+      <Box sx={pageHeaderSx}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 1,
           }}
         >
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h4" sx={{ whiteSpace: 'nowrap' }}>
-          Device details:
-        </Typography>
-        <TextField
-          inputRef={deviceIdInputRef}
-          variant="standard"
-          value={deviceIdInputValue}
-          onChange={(event) => setDeviceIdInputValue(event.target.value)}
-          slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
-          fullWidth
-          onBlur={(e) => {
-            navigateToDeviceIfChanged(e.target.value);
-          }}
-          onKeyDown={(e) => {
-            const target = e.target as HTMLInputElement;
-            if (e.key === 'Enter') {
-              navigateToDeviceIfChanged(target.value);
-            }
-          }}
-        />
-        <Tooltip title={copiedHostname ? 'Copied!' : 'Copy device hostname'}>
           <IconButton
-            aria-label="Copy device hostname"
-            size="small"
+            aria-label="Back"
+            sx={iconButtonSx}
             onClick={() => {
-              navigator.clipboard?.writeText(id || '');
-              setCopiedHostname(true);
-              setTimeout(() => setCopiedHostname(false), 1500);
-            }}
-            sx={{
-              flexShrink: 0,
-              color: copiedHostname ? 'success.main' : 'text.secondary',
+              if (navigatedFromLink) {
+                navigate(navigatedFromLink);
+              } else {
+                navigate(generateDeviceListURL(CHROMEOS_PLATFORM));
+              }
             }}
           >
-            {copiedHostname ? (
-              <CheckIcon fontSize="small" />
-            ) : (
-              <ContentCopyIcon fontSize="small" />
-            )}
+            <ArrowBackIcon fontSize="small" />
           </IconButton>
-        </Tooltip>
-      </div>
-      <>
-        {device === undefined && (
-          <AlertWithFeedback
-            title="Device not found!"
-            bugErrorMessage={`Device not found: ${id}`}
-          >
-            <p>
-              Oh no! The device <code>{id}</code> you are looking for was not
-              found.
-            </p>
-          </AlertWithFeedback>
-        )}
-      </>
-      {device && (
-        <>
-          <div
-            css={{
-              boxSizing: 'border-box',
-              width: '100%',
-              paddingLeft: '72px',
-              marginBottom: '32px',
-              display: 'flex',
-              flexDirection: 'row',
-              gap: '8px',
+          <Typography variant="h5" sx={{ whiteSpace: 'nowrap' }}>
+            Device details:
+          </Typography>
+          <TextField
+            inputRef={deviceIdInputRef}
+            variant="standard"
+            value={deviceIdInputValue}
+            onChange={(event) => setDeviceIdInputValue(event.target.value)}
+            slotProps={{
+              htmlInput: {
+                sx: { typography: 'h5', color: fleetColors.primary },
+              },
             }}
-          >
+            fullWidth
+            onBlur={(e) => {
+              navigateToDeviceIfChanged(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              const target = e.target as HTMLInputElement;
+              if (e.key === 'Enter') {
+                navigateToDeviceIfChanged(target.value);
+              }
+            }}
+          />
+          <Tooltip title={copiedHostname ? 'Copied!' : 'Copy device hostname'}>
+            <IconButton
+              aria-label="Copy device hostname"
+              size="small"
+              onClick={() => {
+                navigator.clipboard?.writeText(id || '');
+                setCopiedHostname(true);
+                setTimeout(() => setCopiedHostname(false), 1500);
+              }}
+              sx={{
+                ...iconButtonSx,
+                flexShrink: 0,
+                ...(copiedHostname && { color: statusTones.success.fg }),
+              }}
+            >
+              {copiedHostname ? (
+                <CheckIcon fontSize="small" />
+              ) : (
+                <ContentCopyIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+        </Box>
+        {device && (
+          <Box sx={actionRowSx}>
             <RunAutorepair selectedDuts={selectedDuts} />
             <RunDeploy selectedDuts={selectedDuts} />
             <RequestRepair
@@ -331,38 +317,53 @@ export const ChromeOSDeviceDetailsPage = () => {
             <RunReserve selectedDuts={selectedDuts} />
             <SshTip hostname={id} dutId={dutId} />
             <LeaseTip hostname={id} />
-          </div>
-          <TabContext value={selectedTab || TabValue.TASKS}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
-                <Tab label="Tasks" value={TabValue.TASKS} />
-                <Tab label="Dimensions" value={TabValue.DIMENSIONS} />
-                <Tab label="Inventory data" value={TabValue.INVENTORY_DATA} />
-                <Tab label="Smart Repair" value={TabValue.SMART_REPAIR} />
-              </TabList>
-            </Box>
-            <TabPanel value={TabValue.TASKS}>
-              {dutId === '' ? (
-                <Alert severity="warning">
-                  No <code>dutID</code> set on this device
-                </Alert>
-              ) : (
-                <Tasks dutId={dutId} board={selectedDuts[0]?.board} />
-              )}
-            </TabPanel>
-            <TabPanel value={TabValue.INVENTORY_DATA}>
-              <ChromeOSInventoryData device={device} />
-            </TabPanel>
-            <TabPanel value={TabValue.DIMENSIONS}>
-              <ChromeOSDeviceDimensions device={device} />
-            </TabPanel>
-            <TabPanel value={TabValue.SMART_REPAIR}>
-              <ChromeOSSmartRepair />
-            </TabPanel>
-          </TabContext>
-        </>
+          </Box>
+        )}
+      </Box>
+      {device === undefined && (
+        <Box sx={tabPanelSx}>
+          <AlertWithFeedback
+            title="Device not found!"
+            bugErrorMessage={`Device not found: ${id}`}
+          >
+            <p>
+              Oh no! The device <code>{id}</code> you are looking for was not
+              found.
+            </p>
+          </AlertWithFeedback>
+        </Box>
       )}
-    </div>
+      {device && (
+        <TabContext value={selectedTab || TabValue.TASKS}>
+          <Box sx={dockedTabStripSx}>
+            <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
+              <Tab label="Tasks" value={TabValue.TASKS} />
+              <Tab label="Dimensions" value={TabValue.DIMENSIONS} />
+              <Tab label="Inventory data" value={TabValue.INVENTORY_DATA} />
+              <Tab label="Smart Repair" value={TabValue.SMART_REPAIR} />
+            </TabList>
+          </Box>
+          <TabPanel value={TabValue.TASKS} sx={tabPanelSx}>
+            {dutId === '' ? (
+              <Alert severity="warning">
+                No <code>dutID</code> set on this device
+              </Alert>
+            ) : (
+              <Tasks dutId={dutId} board={selectedDuts[0]?.board} />
+            )}
+          </TabPanel>
+          <TabPanel value={TabValue.INVENTORY_DATA} sx={tabPanelSx}>
+            <ChromeOSInventoryData device={device} />
+          </TabPanel>
+          <TabPanel value={TabValue.DIMENSIONS} sx={tabPanelSx}>
+            <ChromeOSDeviceDimensions device={device} />
+          </TabPanel>
+          <TabPanel value={TabValue.SMART_REPAIR} sx={tabPanelSx}>
+            <ChromeOSSmartRepair />
+          </TabPanel>
+        </TabContext>
+      )}
+    </Box>
   );
 };
 

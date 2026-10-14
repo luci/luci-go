@@ -34,6 +34,15 @@ describe('Fleet GM3 Theme Variants', () => {
     });
   });
 
+  it('renders Button variant="text" with 6px rounded rectangle radius instead of circular pill', () => {
+    renderWithFleetTheme(<Button variant="text">Total Devices</Button>);
+    const button = screen.getByRole('button', { name: 'Total Devices' });
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveStyle({
+      borderRadius: radii.sm,
+    });
+  });
+
   it('renders Chip variant="filter" with primary container background', () => {
     renderWithFleetTheme(
       <Chip variant="filter" label="Dut State: Available" />,

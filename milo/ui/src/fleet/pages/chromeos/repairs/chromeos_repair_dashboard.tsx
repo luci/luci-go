@@ -13,13 +13,14 @@
 // limitations under the License.
 
 import GroupIcon from '@mui/icons-material/Group';
-import { Box, Button, Chip, Divider, Typography } from '@mui/material';
+import { Box, Button, Divider, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFeatureFlag } from '@/common/feature_flags';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { StatusPill } from '@/fleet/components/status_pill/status_pill';
 import {
   CHROMEOS_PLATFORM,
   generateRepairsWorkforceURL,
@@ -28,6 +29,7 @@ import {
 import { enableChromeOsWorkforceActivity } from '@/fleet/features';
 import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { surfaceCardSx } from '@/fleet/theme/recipes';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ListRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -81,7 +83,7 @@ export const ChromeOSRepairDashboard = () => {
 
         {isWorkforceEnabled && (
           <Button
-            variant="outlined"
+            variant="toolbar"
             onClick={() =>
               navigate(
                 generateRepairsWorkforceURL(
@@ -91,31 +93,14 @@ export const ChromeOSRepairDashboard = () => {
                 ),
               )
             }
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              borderRadius: '8px',
-              px: 2,
-              py: 0.75,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-            }}
+            startIcon={<GroupIcon />}
           >
-            <GroupIcon sx={{ fontSize: 20 }} />
-            <span>Workforce Activity</span>
-            <Chip
-              label={`${inProgressCount} In-Progress`}
-              size="small"
-              sx={{
-                ml: 0.5,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                fontWeight: 600,
-                height: 22,
-                fontSize: '0.75rem',
-              }}
-            />
+            Workforce Activity
+            <Box component="span" sx={{ ml: 1 }}>
+              <StatusPill tone="info" dot={false} size="compact">
+                {`${inProgressCount} In-Progress`}
+              </StatusPill>
+            </Box>
           </Button>
         )}
       </Box>
@@ -132,6 +117,9 @@ export const ChromeOSRepairDashboard = () => {
           sx={{
             flex: '1 1 540px',
             minWidth: 0,
+            ...surfaceCardSx,
+            px: 2.5,
+            py: 2,
           }}
         >
           <PriorityRulesPanel />
@@ -140,6 +128,9 @@ export const ChromeOSRepairDashboard = () => {
           sx={{
             flex: '1 1 360px',
             minWidth: 0,
+            ...surfaceCardSx,
+            px: 2.5,
+            py: 2,
           }}
         >
           <ActiveIrmTable />
@@ -148,9 +139,7 @@ export const ChromeOSRepairDashboard = () => {
 
       <Divider sx={{ mt: 4, mb: 4 }} />
 
-      <Typography variant="h6" sx={{ fontSize: '16px' }}>
-        Prioritized Manual Repair Queue
-      </Typography>
+      <Typography variant="h6">Prioritized Manual Repair Queue</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
         Devices ranked by total priority score. Hover over a score to view
         matching rules.

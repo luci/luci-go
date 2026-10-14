@@ -24,8 +24,8 @@ import * as path from 'path';
  * raise it: use a token, recipe, or theme variant instead.
  */
 const BASELINE = {
-  rgba: 33,
-  radius: 80,
+  rgba: 31,
+  radius: 56,
   hex: 13,
   shadow: 7,
 };

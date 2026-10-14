@@ -23,6 +23,7 @@ import {
 import { useMemo, useRef, useState } from 'react';
 
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
+import { subMetricRowSx } from '@/fleet/theme/recipes';
 import { combineAipFiltersWithParentheses } from '@/fleet/utils/search_param';
 import {
   HealthSlice,
@@ -441,6 +442,7 @@ export const HealthSliceItem = ({
               data-testid={`slice-status-label-${slice.id}`}
               tabIndex={0}
               sx={{
+                ...subMetricRowSx,
                 fontWeight: 700,
                 fontSize: 12,
                 color:
@@ -449,14 +451,8 @@ export const HealthSliceItem = ({
                     : 'text.secondary',
                 whiteSpace: 'nowrap',
                 cursor: 'pointer',
-                borderRadius: 0.5,
                 px: 0.5,
                 py: 0.25,
-                transition: 'background-color 0.15s ease-in-out',
-                '&:hover, &:focus-visible': {
-                  bgcolor: 'action.hover',
-                  outline: 'none',
-                },
               }}
             >
               {pct === undefined
@@ -476,16 +472,11 @@ export const HealthSliceItem = ({
             tabIndex={0}
             data-testid={`slice-progress-bar-container-${slice.id}`}
             sx={{
+              ...subMetricRowSx,
               cursor: 'pointer',
               py: 0.5,
               px: 0.5,
               mx: -0.5,
-              borderRadius: 1,
-              transition: 'background-color 0.15s ease-in-out',
-              '&:hover, &:focus-visible': {
-                bgcolor: 'action.hover',
-                outline: 'none',
-              },
               '&:hover .MuiLinearProgress-root, &:focus-visible .MuiLinearProgress-root':
                 {
                   transform: 'scaleY(1.33)',

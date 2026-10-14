@@ -58,21 +58,26 @@ export function generateSidebarSections(
   pendingAdminTasksCount?: number,
 ): SidebarSection[] {
   return [
-    generateHomeSection(),
+    generateOverviewSection(),
     generateLabHealthSection(platform, pendingAdminTasksCount),
     generateResourceRequestsSection(),
     generateOtherToolsSection(),
   ];
 }
 
-function generateHomeSection(): SidebarSection {
+function generateOverviewSection(): SidebarSection {
   return {
-    title: '',
+    title: 'Overview',
     pages: [
       {
         label: 'Home',
         url: '/ui/fleet/',
         icon: <HomeIcon />,
+      },
+      {
+        label: 'Metrics',
+        url: '/ui/fleet/labs/metrics',
+        icon: <DashboardIcon />,
       },
     ],
   };
@@ -95,11 +100,6 @@ function generateLabHealthSection(
   return {
     title: 'Lab Health',
     pages: [
-      {
-        label: 'Metrics',
-        url: '/ui/fleet/labs/metrics',
-        icon: <DashboardIcon />,
-      },
       {
         label: 'Devices',
         url: generateDeviceListURL(

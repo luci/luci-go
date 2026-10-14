@@ -34,7 +34,8 @@ import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_tab
 import { CellWithTooltip } from '@/fleet/components/table/cell_with_tooltip';
 import { BotInformation } from '@/fleet/pages/device_details_page/common/bot_information';
 import { BotState } from '@/fleet/pages/device_details_page/common/bot_state';
-import { colors } from '@/fleet/theme/colors';
+import { pillInputSx } from '@/fleet/theme/recipes';
+import { iconSizes } from '@/fleet/theme/tokens';
 import { FC_CellProps } from '@/fleet/types/table';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
@@ -264,28 +265,17 @@ export const ChromeOSDeviceDimensions = ({
             placeholder="Filter dimensions by key or value..."
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
-            sx={{
-              minWidth: 300,
-              '& .MuiOutlinedInput-root': {
-                fontSize: 14,
-                minHeight: 36,
-                '& fieldset': {
-                  borderColor: colors.grey[300],
-                },
-                '&:hover fieldset': {
-                  borderColor: colors.grey[500],
-                },
-                '&:focus-within fieldset': {
-                  borderWidth: '1px !important',
-                },
-              },
-            }}
+            sx={{ minWidth: 320 }}
             slotProps={{
               input: {
+                sx: pillInputSx,
                 startAdornment: (
                   <InputAdornment position="start">
                     <SearchIcon
-                      sx={{ fontSize: 18, color: 'text.secondary' }}
+                      sx={{
+                        fontSize: iconSizes.inline,
+                        color: 'text.secondary',
+                      }}
                     />
                   </InputAdornment>
                 ),
@@ -297,7 +287,7 @@ export const ChromeOSDeviceDimensions = ({
                       onClick={() => setFilterText('')}
                       edge="end"
                     >
-                      <ClearIcon sx={{ fontSize: 16 }} />
+                      <ClearIcon sx={{ fontSize: iconSizes.control }} />
                     </IconButton>
                   </InputAdornment>
                 ) : undefined,

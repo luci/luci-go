@@ -34,6 +34,13 @@ describe('generateSidebarSections', () => {
     });
   });
 
+  it('groups Home and Metrics under the top-level Overview section', () => {
+    const sections = generateSidebarSections(Platform.CHROMEOS);
+    const overview = sections.find((s) => s.title === 'Overview');
+    expect(overview).toBeDefined();
+    expect(overview?.pages.map((p) => p.label)).toEqual(['Home', 'Metrics']);
+  });
+
   it('enables Admin tasks for ChromeOS platform', () => {
     const sections = generateSidebarSections(Platform.CHROMEOS);
     const labHealth = sections.find((s) => s.title === 'Lab Health');

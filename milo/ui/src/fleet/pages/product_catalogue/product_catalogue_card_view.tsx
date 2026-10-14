@@ -31,6 +31,14 @@ import { MRT_PaginationState, MRT_Updater } from 'material-react-table';
 import { Link } from 'react-router';
 
 import { colors } from '@/fleet/theme/colors';
+import {
+  borders,
+  elevations,
+  fleetColors,
+  fontFamilies,
+  fontSizes,
+  radii,
+} from '@/fleet/theme/tokens';
 
 import { UnifiedProductCatalogEntry } from './types';
 
@@ -101,21 +109,20 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [20, 50, 100];
 const CardWrapper = styled(Card)`
   display: flex;
   height: 100%;
-  border: 1px solid ${colors.grey[200]};
-  border-radius: 8px;
-  background-color: ${colors.white};
+  border: ${borders.default};
+  border-radius: ${radii.md};
+  background-color: ${fleetColors.surface};
+  box-shadow: ${elevations.card};
   transition:
     transform 0.2s ease-in-out,
-    box-shadow 0.2s ease-in-out,
     border-color 0.2s ease-in-out;
   cursor: pointer;
   text-decoration: none;
   color: inherit;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-    border-color: ${colors.blue[200]};
+    transform: translateY(-3px);
+    border-color: ${fleetColors.borderHover};
   }
 `;
 
@@ -127,12 +134,12 @@ const ImageSection = styled(Box)`
   justify-content: center;
   background: linear-gradient(
     135deg,
-    ${colors.blue[50]} 0%,
-    ${colors.blue[100]} 100%
+    ${fleetColors.surfaceTonal} 0%,
+    ${fleetColors.primaryContainer} 100%
   );
-  border-right: 1px solid ${colors.grey[200]};
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
+  border-right: ${borders.default};
+  border-top-left-radius: ${radii.md};
+  border-bottom-left-radius: ${radii.md};
 `;
 
 const ContentSection = styled(CardContent)`
@@ -171,7 +178,7 @@ export const ProductCatalogueCardView = ({
         <Grid container spacing={3}>
           {Array.from({ length: pagination.pageSize }).map((_, idx) => (
             <Grid item xs={12} md={6} key={idx}>
-              <Card sx={{ display: 'flex', height: 160, borderRadius: 2 }}>
+              <Card variant="surface" sx={{ display: 'flex', height: 160 }}>
                 <Skeleton variant="rectangular" width={140} height="100%" />
                 <Box
                   sx={{
@@ -211,7 +218,7 @@ export const ProductCatalogueCardView = ({
           py: 8,
           px: 2,
           border: `1px dashed ${colors.grey[300]}`,
-          borderRadius: 2,
+          borderRadius: radii.md,
           backgroundColor: colors.grey[50],
         }}
       >
@@ -260,7 +267,7 @@ export const ProductCatalogueCardView = ({
                       <Typography
                         variant="h6"
                         sx={{
-                          fontSize: '1rem',
+                          fontSize: fontSizes.title,
                           fontWeight: 600,
                           color: colors.grey[900],
                           lineHeight: 1.2,
@@ -280,7 +287,7 @@ export const ProductCatalogueCardView = ({
                           sx={{
                             ml: 1,
                             fontWeight: 600,
-                            fontSize: '0.75rem',
+                            fontSize: fontSizes.caption,
                             height: 20,
                             backgroundColor: getPlmStatusColor(
                               entry.fleetPlmStatus,
@@ -299,7 +306,7 @@ export const ProductCatalogueCardView = ({
                         color: colors.grey[600],
                         display: 'block',
                         mb: 1.5,
-                        fontFamily: 'monospace',
+                        fontFamily: fontFamilies.mono,
                       }}
                     >
                       ID: {entry.productCatalogId}
@@ -315,7 +322,7 @@ export const ProductCatalogueCardView = ({
                           display: '-webkit-box',
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: 'vertical',
-                          fontSize: '0.8125rem',
+                          fontSize: fontSizes.label,
                         }}
                       >
                         {entry.descriptiveName}
@@ -345,7 +352,7 @@ export const ProductCatalogueCardView = ({
                           sx={{
                             fontWeight: 500,
                             color: colors.grey[800],
-                            fontSize: '0.8125rem',
+                            fontSize: fontSizes.label,
                           }}
                         >
                           {entry.gpn}
@@ -365,7 +372,7 @@ export const ProductCatalogueCardView = ({
                           sx={{
                             fontWeight: 500,
                             color: colors.grey[800],
-                            fontSize: '0.8125rem',
+                            fontSize: fontSizes.label,
                           }}
                         >
                           {entry.resourceType}
@@ -385,7 +392,7 @@ export const ProductCatalogueCardView = ({
                           sx={{
                             fontWeight: 500,
                             color: colors.grey[800],
-                            fontSize: '0.8125rem',
+                            fontSize: fontSizes.label,
                           }}
                         >
                           {entry.r11n.join(', ')}
@@ -407,7 +414,7 @@ export const ProductCatalogueCardView = ({
                             sx={{
                               fontWeight: 500,
                               color: colors.grey[800],
-                              fontSize: '0.8125rem',
+                              fontSize: fontSizes.label,
                             }}
                           >
                             ${entry.unitCost}
@@ -428,7 +435,7 @@ export const ProductCatalogueCardView = ({
                             sx={{
                               fontWeight: 500,
                               color: colors.grey[800],
-                              fontSize: '0.8125rem',
+                              fontSize: fontSizes.label,
                             }}
                           >
                             {entry.numberOfDevicesPerRack}
@@ -448,7 +455,7 @@ export const ProductCatalogueCardView = ({
                           sx={{
                             fontWeight: 500,
                             color: colors.grey[800],
-                            fontSize: '0.8125rem',
+                            fontSize: fontSizes.label,
                           }}
                         >
                           {entry.cpuType}
@@ -469,7 +476,7 @@ export const ProductCatalogueCardView = ({
                             sx={{
                               fontWeight: 500,
                               color: colors.grey[800],
-                              fontSize: '0.8125rem',
+                              fontSize: fontSizes.label,
                             }}
                           >
                             {entry.cpuNumPerVm}
@@ -490,7 +497,7 @@ export const ProductCatalogueCardView = ({
                             sx={{
                               fontWeight: 500,
                               color: colors.grey[800],
-                              fontSize: '0.8125rem',
+                              fontSize: fontSizes.label,
                             }}
                           >
                             {entry.memoryGbPerVm} GB

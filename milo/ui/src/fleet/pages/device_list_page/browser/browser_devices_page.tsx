@@ -24,6 +24,7 @@ import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { BROWSER_COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { radii } from '@/fleet/theme/tokens';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -69,7 +70,7 @@ export const BrowserDevicesPage = () => {
   return (
     <div
       css={{
-        margin: '24px',
+        margin: '20px 24px',
         paddingBottom: '40px',
       }}
     >
@@ -79,7 +80,7 @@ export const BrowserDevicesPage = () => {
       <Alert
         severity="info"
         sx={{
-          marginTop: '24px',
+          marginTop: '16px',
         }}
       >
         Currently, this page only displays physical devices. Virtualized
@@ -92,13 +93,13 @@ export const BrowserDevicesPage = () => {
       </Alert>
       <div
         css={{
-          marginTop: 24,
+          marginTop: 16,
           width: '100%',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 28,
-          borderRadius: 4,
+          borderRadius: radii.md,
         }}
       >
         <FilterBar
@@ -110,7 +111,7 @@ export const BrowserDevicesPage = () => {
       </div>
       <div
         css={{
-          marginTop: 24,
+          marginTop: 14,
         }}
       >
         <BrowserDevicesTable mrtColumnManager={mrtColumnManager} />

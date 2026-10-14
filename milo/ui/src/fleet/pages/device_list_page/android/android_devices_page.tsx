@@ -27,6 +27,7 @@ import { enableAndroidUtilizationMetrics } from '@/fleet/features';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { AndroidSummaryHeader } from '@/fleet/pages/device_list_page/android/android_summary_header';
 import { AdminTasksAlert } from '@/fleet/pages/device_list_page/common/admin_tasks_alert';
+import { radii } from '@/fleet/theme/tokens';
 import { combineAipFilters } from '@/fleet/utils/search_param';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -86,7 +87,7 @@ export const AndroidDevicesPage = ({
   return (
     <div
       css={{
-        margin: '24px',
+        margin: '20px 24px',
         paddingBottom: '40px',
       }}
     >
@@ -99,13 +100,13 @@ export const AndroidDevicesPage = ({
       <AdminTasksAlert />
       <div
         css={{
-          marginTop: 24,
+          marginTop: 16,
           width: '100%',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 28,
-          borderRadius: 4,
+          borderRadius: radii.md,
         }}
       >
         <FilterBar
@@ -117,7 +118,7 @@ export const AndroidDevicesPage = ({
       </div>
       <div
         css={{
-          marginTop: 24,
+          marginTop: 14,
         }}
       >
         <AndroidDevicesTable

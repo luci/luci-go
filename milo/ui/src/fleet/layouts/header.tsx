@@ -22,6 +22,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import {
   Avatar,
+  Box,
   Button,
   Divider,
   IconButton,
@@ -39,7 +40,13 @@ import { genFeedbackUrl } from '@/common/tools/utils';
 import fleetConsoleMascot from '@/fleet/assets/pngs/fleet-console-mascot.png';
 import { PlatformSelector } from '@/fleet/components/platform_selector';
 import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
-import { colors } from '@/fleet/theme/colors';
+import { iconButtonSx } from '@/fleet/theme/recipes';
+import {
+  borders,
+  elevations,
+  fleetColors,
+  iconSizes,
+} from '@/fleet/theme/tokens';
 
 import { FEEDBACK_BUGANIZER_BUG_ID } from '../constants/feedback';
 import { useIsInPlatformScope } from '../hooks/usePlatform';
@@ -89,8 +96,9 @@ export const Header = ({
       css={{
         display: 'flex',
         justifyContent: 'space-between',
-        backgroundColor: colors.white,
-        borderBottom: `solid ${colors.grey[300]} 1px`,
+        backgroundColor: fleetColors.surface,
+        borderBottom: borders.default,
+        boxShadow: elevations.input,
         padding: '0 20px',
         zIndex: 1200,
         boxSizing: 'border-box',
@@ -101,24 +109,18 @@ export const Header = ({
         height: 64,
       }}
     >
-      <div
-        css={{
+      <Box
+        sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
+          gap: 1.5,
         }}
       >
         <IconButton
           size="medium"
           aria-label="menu"
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          sx={{
-            color: colors.grey[700],
-            width: 40,
-            height: 40,
-            padding: '8px',
-            marginLeft: '-8px',
-          }}
+          sx={{ ...iconButtonSx, marginLeft: -0.5 }}
         >
           <MenuIcon />
         </IconButton>
@@ -133,7 +135,7 @@ export const Header = ({
             }}
           />
         </Link>
-        <Typography variant="h5" sx={{ color: colors.grey[700] }}>
+        <Typography variant="h5" sx={{ color: 'text.primary' }}>
           <Link
             to="/ui/fleet/"
             css={{ color: 'inherit', textDecoration: 'none' }}
@@ -142,20 +144,15 @@ export const Header = ({
           </Link>
         </Typography>
         {isInPlatformScope && <PlatformSelector />}
-      </div>
+      </Box>
 
-      <div
-        css={{
+      <Box
+        sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 4,
-          color: colors.grey[700],
-          '& .MuiIconButton-root': {
-            color: colors.grey[700],
-            width: 40,
-            height: 40,
-            padding: 8,
-          },
+          gap: 0.5,
+          color: fleetColors.textSecondary,
+          '& .MuiIconButton-root': iconButtonSx,
         }}
       >
         <Tooltip title="Ask Captain Fin (AI assistant)">
@@ -209,21 +206,13 @@ export const Header = ({
             height: 24,
             alignSelf: 'center',
             mx: '8px',
-            borderColor: colors.grey[300],
+            borderColor: fleetColors.border,
           }}
         />
         {!authState.identity || authState.identity === ANONYMOUS_IDENTITY ? (
           <Button
-            variant="text"
-            sx={{
-              color: colors.grey[700],
-              px: 1.5,
-              py: 0.75,
-              margin: 0,
-              borderRadius: '9999px',
-              textTransform: 'none',
-              fontWeight: 500,
-            }}
+            variant="toolbar"
+            color="inherit"
             href={getLoginUrl(
               location.pathname + location.search + location.hash,
             )}
@@ -233,7 +222,7 @@ export const Header = ({
         ) : (
           <LoggedInAvatar email={authState.email} picture={authState.picture} />
         )}
-      </div>
+      </Box>
     </header>
   );
 };
@@ -272,12 +261,7 @@ function LoggedInAvatar({
             alignItems: 'center',
           }}
         >
-          <LogoutIcon
-            sx={{
-              width: 20,
-              height: 20,
-            }}
-          />
+          <LogoutIcon sx={{ fontSize: iconSizes.inline }} />
         </IconButton>
       </Tooltip>
     </>

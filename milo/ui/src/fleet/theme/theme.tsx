@@ -24,27 +24,34 @@ import {
   controlHeights,
   elevations,
   fleetColors,
+  fontFamilies,
   fontSizes,
   iconSizes,
   radii,
 } from './tokens';
 
-const GOOGLE_SANS_FONT_FAMILY = "'Google Sans', 'Roboto', sans-serif";
-const GOOGLE_SANS_TEXT_FONT_FAMILY =
-  "'Google Sans Text', 'Google Sans', 'Roboto', sans-serif";
-
 /**
- * The Fleet Console MUI theme (Stage 1: opt-in GM3 variants registered ahead of
- * the Stage 2 global typography and surface cutover).
+ * The Fleet Console MUI theme.
+ *
+ * Component-wide look and feel lives here, not in component `sx` props. If two
+ * components need the same style, add a variant or override below (or a recipe
+ * in `./recipes.ts`) instead of copying an `sx` block. See src/fleet/GEMINI.md.
  */
 export const theme = createTheme(baseTheme, {
   palette: {
     text: {
-      primary: colors.grey[900],
+      primary: fleetColors.textPrimary,
+      secondary: fleetColors.textSecondary,
     },
+    // background.default stays white: Material React Table uses it for every
+    // row. FleetLayout paints the page canvas (fleetColors.canvas) itself.
+    background: {
+      paper: fleetColors.surface,
+    },
+    divider: fleetColors.border,
     primary: {
-      main: colors.blue[600],
-      dark: colors.blue[800],
+      main: fleetColors.primary,
+      dark: fleetColors.primaryHover,
       light: colors.blue[400],
     },
     secondary: {
@@ -69,73 +76,117 @@ export const theme = createTheme(baseTheme, {
     },
   },
   typography: {
-    fontFamily: 'Roboto',
+    fontFamily: fontFamilies.text,
     h1: {
-      fontFamily: GOOGLE_SANS_FONT_FAMILY,
+      fontFamily: fontFamilies.display,
       fontSize: 36,
       lineHeight: '44px',
-      fontWeight: 400,
+      fontWeight: 500,
+      letterSpacing: '-0.5px',
     },
     h2: {
-      fontFamily: GOOGLE_SANS_FONT_FAMILY,
+      fontFamily: fontFamilies.display,
       fontSize: 32,
       lineHeight: '40px',
-      fontWeight: 400,
+      fontWeight: 500,
+      letterSpacing: '-0.4px',
     },
-    h3: { fontFamily: 'Roboto', fontSize: 28, lineHeight: '36px' },
+    h3: {
+      fontFamily: fontFamilies.display,
+      fontSize: fontSizes.display,
+      lineHeight: '36px',
+      fontWeight: 500,
+      letterSpacing: '-0.5px',
+      fontVariantNumeric: 'tabular-nums',
+    },
     h4: {
-      fontFamily: GOOGLE_SANS_FONT_FAMILY,
+      fontFamily: fontFamilies.display,
       fontSize: 24,
       lineHeight: '32px',
-      fontWeight: 400,
+      fontWeight: 500,
+      letterSpacing: '-0.3px',
     },
     h5: {
-      fontFamily: GOOGLE_SANS_FONT_FAMILY,
-      fontSize: 22,
+      fontFamily: fontFamilies.display,
+      fontSize: fontSizes.headline,
       lineHeight: '28px',
-      fontWeight: 400,
+      fontWeight: 500,
+      letterSpacing: '-0.2px',
     },
     h6: {
-      fontFamily: GOOGLE_SANS_FONT_FAMILY,
-      fontSize: 18,
+      fontFamily: fontFamilies.display,
+      fontSize: fontSizes.title,
+      lineHeight: '24px',
+      fontWeight: 500,
+      letterSpacing: '-0.1px',
+    },
+    subhead1: {
+      fontFamily: fontFamilies.text,
+      fontSize: fontSizes.title,
       lineHeight: '24px',
       fontWeight: 500,
     },
-    subhead1: {
-      fontFamily: GOOGLE_SANS_TEXT_FONT_FAMILY,
-      fontSize: 16,
-      lineHeight: '24px',
-      fontWeight: 400,
-    },
     subhead2: {
-      fontFamily: 'Roboto',
-      fontSize: 14,
-      lineHeight: '24px',
-      fontWeight: 400,
+      fontFamily: fontFamilies.text,
+      fontSize: fontSizes.body,
+      lineHeight: '20px',
+      fontWeight: 500,
     },
     subtitle1: {
-      fontFamily: GOOGLE_SANS_TEXT_FONT_FAMILY,
-      fontSize: 16,
+      fontFamily: fontFamilies.text,
+      fontSize: fontSizes.title,
       lineHeight: '24px',
       fontWeight: 500,
     },
     subtitle2: {
-      fontFamily: GOOGLE_SANS_TEXT_FONT_FAMILY,
-      fontSize: 14,
+      fontFamily: fontFamilies.text,
+      fontSize: fontSizes.body,
       lineHeight: '20px',
       fontWeight: 500,
     },
-    body1: { fontFamily: 'Roboto', fontSize: 16, lineHeight: '24px' },
-    body2: { fontFamily: 'Roboto', fontSize: 14, lineHeight: '20px' },
-    caption: { fontFamily: 'Roboto', fontSize: 12, lineHeight: '16px' },
+    body1: {
+      fontFamily: fontFamilies.text,
+      fontSize: fontSizes.body,
+      lineHeight: '22px',
+    },
+    body2: {
+      fontFamily: fontFamilies.text,
+      fontSize: fontSizes.label,
+      lineHeight: '20px',
+    },
+    caption: {
+      fontFamily: fontFamilies.text,
+      fontSize: fontSizes.caption,
+      lineHeight: '16px',
+    },
     button: {
-      fontFamily: 'Roboto',
-      fontSize: 14,
+      fontFamily: fontFamilies.display,
+      fontSize: fontSizes.label,
+      fontWeight: 500,
       textTransform: 'none',
     },
   },
   components: {
     MuiButton: {
+      styleOverrides: {
+        // Contained, outlined, and toolbar buttons are pill-shaped (GM3).
+        root: {
+          borderRadius: radii.pill,
+          '&.Mui-focusVisible': {
+            outline: `2px solid ${fleetColors.primary}`,
+            outlineOffset: 2,
+          },
+        },
+        // Text buttons (scorecard KPI tiles, inline links, dialog actions) use a
+        // 6px rounded rectangle and shared tonal hover fill instead of a 9999px
+        // pill that looks circular on tall or compact elements.
+        text: {
+          borderRadius: radii.sm,
+          '&:hover': {
+            backgroundColor: fleetColors.surfaceTonal,
+          },
+        },
+      },
       variants: [
         {
           // Compact pill for table toolbars and page-header actions.
@@ -190,6 +241,16 @@ export const theme = createTheme(baseTheme, {
       defaultProps: {
         deleteIcon: <ClearIcon />,
       },
+      styleOverrides: {
+        root: {
+          borderRadius: radii.pill,
+          fontFamily: fontFamilies.text,
+          '&.Mui-focusVisible': {
+            outline: `2px solid ${fleetColors.primary}`,
+            outlineOffset: 2,
+          },
+        },
+      },
       variants: [
         {
           props: {
@@ -209,7 +270,6 @@ export const theme = createTheme(baseTheme, {
             variant: 'filter',
           },
           style: {
-            borderRadius: radii.pill,
             backgroundColor: fleetColors.primaryContainer,
             color: fleetColors.primary,
             border: 'none',
@@ -238,6 +298,11 @@ export const theme = createTheme(baseTheme, {
       },
     },
     MuiPaper: {
+      styleOverrides: {
+        rounded: {
+          borderRadius: radii.md,
+        },
+      },
       variants: [
         {
           props: { variant: 'surface' },
@@ -251,6 +316,15 @@ export const theme = createTheme(baseTheme, {
       ],
     },
     MuiCard: {
+      defaultProps: {
+        elevation: 0,
+      },
+      styleOverrides: {
+        root: {
+          border: borders.default,
+          boxShadow: elevations.card,
+        },
+      },
       variants: [
         {
           props: { variant: 'surface' },
@@ -262,6 +336,51 @@ export const theme = createTheme(baseTheme, {
           },
         },
       ],
+    },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: {
+          borderRadius: radii.sm,
+          fontSize: fontSizes.caption,
+        },
+      },
+    },
+    MuiTabs: {
+      styleOverrides: {
+        root: {
+          minHeight: controlHeights.tab,
+        },
+        indicator: {
+          height: 3,
+          borderTopLeftRadius: 3,
+          borderTopRightRadius: 3,
+          backgroundColor: fleetColors.primary,
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          minHeight: controlHeights.tab,
+          padding: '8px 16px',
+          fontFamily: fontFamilies.display,
+          fontSize: fontSizes.body,
+          fontWeight: 500,
+          textTransform: 'none',
+          color: fleetColors.textSecondary,
+          '&:hover': {
+            backgroundColor: fleetColors.surfaceTonal,
+            color: fleetColors.textPrimary,
+          },
+          '&.Mui-focusVisible': {
+            outline: `2px solid ${fleetColors.primary}`,
+            outlineOffset: -2,
+          },
+          '&.Mui-selected': {
+            color: fleetColors.primary,
+          },
+        },
+      },
     },
     MuiMenu: {
       defaultProps: {
@@ -277,8 +396,9 @@ export const theme = createTheme(baseTheme, {
       styleOverrides: {
         root: {
           minHeight: 36,
+          fontSize: fontSizes.label,
           ':hover, :focus, :active': {
-            backgroundColor: colors.blue[50],
+            backgroundColor: fleetColors.primaryContainer,
           },
         },
       },

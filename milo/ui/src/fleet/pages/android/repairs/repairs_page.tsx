@@ -32,6 +32,7 @@ import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
+import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { generateDeviceListURL } from '@/fleet/constants/paths';
@@ -44,6 +45,7 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { AndroidRepairDashboard } from '@/fleet/pages/android/repair_queue';
 import { colors } from '@/fleet/theme/colors';
+import { radii } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import {
   combineAipFilters,
@@ -127,7 +129,7 @@ export const RepairListPage = ({
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 28,
-          borderRadius: 4,
+          borderRadius: radii.md,
         }}
       >
         <FilterBar
@@ -138,7 +140,7 @@ export const RepairListPage = ({
       </div>
       <div
         css={{
-          borderRadius: 4,
+          borderRadius: radii.md,
           marginTop: 24,
         }}
       >
@@ -449,17 +451,10 @@ function Metrics({
   };
 
   return (
-    <div
-      css={{
-        padding: '16px 21px',
-        gap: 28,
-        border: `1px solid ${colors.grey[300]}`,
-        borderRadius: 4,
-      }}
-    >
-      <Typography variant="h4">Repair metrics</Typography>
-      <div css={{ marginTop: 24 }}>{getContent()}</div>
-    </div>
+    <MetricsContainer>
+      <Typography variant="h6">Repair metrics</Typography>
+      <div css={{ marginTop: 16 }}>{getContent()}</div>
+    </MetricsContainer>
   );
 }
 

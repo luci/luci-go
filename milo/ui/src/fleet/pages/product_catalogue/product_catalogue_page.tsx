@@ -40,7 +40,8 @@ import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { colors } from '@/fleet/theme/colors';
+import { iconButtonSx, surfaceCardSx } from '@/fleet/theme/recipes';
+import { fontSizes, iconSizes } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics/track_leaf_route_page_view';
@@ -68,24 +69,29 @@ const Container = styled.div`
 
 const DEFAULT_PAGE_SIZE = 50;
 
+const HEADER_CARD_SX = {
+  ...surfaceCardSx,
+  p: 3,
+  mb: 3,
+};
+
+const HEADER_LINK_SX = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 0.5,
+  fontSize: fontSizes.body,
+  fontWeight: 500,
+  textDecoration: 'none',
+  '&:hover': { textDecoration: 'underline' },
+};
+
 const ProductCatalogueHeader = () => {
   return (
-    <Box
-      sx={{
-        p: 3,
-        mb: 3,
-        borderRadius: 1,
-        border: `1px solid ${colors.grey[300]}`,
-        background: `linear-gradient(135deg, ${colors.grey[50]} 0%, ${colors.white} 100%)`,
-      }}
-    >
-      <Typography
-        variant="h5"
-        sx={{ fontWeight: 600, mb: 1, color: colors.grey[900] }}
-      >
+    <Box sx={HEADER_CARD_SX}>
+      <Typography variant="h5" sx={{ mb: 1, color: 'text.primary' }}>
         Product Catalog
       </Typography>
-      <Typography variant="body2" sx={{ color: colors.grey[700], mb: 3 }}>
+      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
         The Product Catalog lists all hardware configurations and models
         available in the fleet. Use this catalog to browse specifications and
         verify existing capacity before requesting new hardware.
@@ -96,35 +102,19 @@ const ProductCatalogueHeader = () => {
           href="http://goto.google.com/ineedhw"
           target="_blank"
           rel="noopener noreferrer"
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.5,
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
-          }}
+          sx={HEADER_LINK_SX}
         >
           Resource Request Program (go/ineedhw)
-          <OpenInNewIcon sx={{ fontSize: 16 }} />
+          <OpenInNewIcon sx={{ fontSize: iconSizes.control }} />
         </Link>
         <Link
           href="http://goto.google.com/fcon-user-guide#product-catalog"
           target="_blank"
           rel="noopener noreferrer"
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.5,
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
-          }}
+          sx={HEADER_LINK_SX}
         >
           Product catalog documentation
-          <OpenInNewIcon sx={{ fontSize: 16 }} />
+          <OpenInNewIcon sx={{ fontSize: iconSizes.control }} />
         </Link>
       </Box>
     </Box>
@@ -314,7 +304,6 @@ const ProductCatalogueTabPageContent = ({
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 28,
-          borderRadius: 4,
         }}
       >
         <FilterBar
@@ -329,16 +318,11 @@ const ProductCatalogueTabPageContent = ({
           }
         >
           <IconButton
+            aria-label={
+              view === 'card' ? 'Switch to Table View' : 'Switch to Card View'
+            }
             onClick={() => handleViewChange(view === 'card' ? 'table' : 'card')}
-            sx={{
-              border: `1px solid ${colors.grey[300]}`,
-              borderRadius: '8px',
-              '&:hover': {
-                backgroundColor: colors.grey[50],
-                color: colors.blue[700],
-                borderColor: colors.blue[200],
-              },
-            }}
+            sx={iconButtonSx}
           >
             {view === 'card' ? <TableRowsIcon /> : <GridViewIcon />}
           </IconButton>

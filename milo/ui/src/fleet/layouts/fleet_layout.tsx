@@ -44,6 +44,7 @@ import {
 import { ShortcutProvider } from '../components/shortcut_provider';
 import { IndexedDBPersistClientProvider, SettingsProvider } from '../context';
 import { theme } from '../theme/theme';
+import { fleetColors } from '../theme/tokens';
 
 import { Header } from './header';
 import { Sidebar } from './sidebar';
@@ -126,7 +127,12 @@ const FleetLayoutContent = () => {
   });
 
   return (
-    <ScrollingBase onClickCapture={trackExternalLinkClick}>
+    <ScrollingBase
+      sx={{
+        backgroundColor: fleetColors.canvas,
+      }}
+      onClickCapture={trackExternalLinkClick}
+    >
       <link rel="icon" href={bassFavicon} />
       <Box
         sx={{
