@@ -40,7 +40,7 @@ import {
 import { PriorityRuleRow } from './priority_rule_row';
 import { useEditableRuleRows } from './use_editable_rule_rows';
 
-const MAX_PRIORITY_RULES = 5;
+const MAX_PRIORITY_RULES = 10;
 const DEFAULT_VISIBLE_RULES = 3;
 
 export interface PriorityRulesPanelProps {
