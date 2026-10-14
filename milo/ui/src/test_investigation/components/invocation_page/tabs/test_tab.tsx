@@ -29,6 +29,7 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Invocation_State } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { QueryTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import {
   InvocationCounts,
   TestVariantsTable,
@@ -79,6 +80,9 @@ export function TestTab() {
   const invocation = useInvocation();
   const invocationId = useRawInvocationId();
   const isLegacyInvocation = useIsLegacyInvocation();
+  const isTestAggregationEnabled = useFeatureFlag(
+    TEST_AGGREGATION_IN_INVOCATION_FLAG,
+  );
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const hasPerformedInitialRedirect = useRef(false);
@@ -188,6 +192,13 @@ export function TestTab() {
     const pageSize = 10000;
     const resultLimit = 10;
 
+    const predicate =
+      selectedStatuses.size > 0 &&
+      !selectedStatuses.has('passed') &&
+      !selectedStatuses.has('skipped')
+        ? { status: TestVariantStatus.UNEXPECTED_MASK }
+        : undefined;
+
     const parentOrInvocation = isLegacyInvocation
       ? `invocations/${invocationId}`
       : `rootInvocations/${invocationId}`;
@@ -199,6 +210,7 @@ export function TestTab() {
         resultLimit,
         readMask,
         filter,
+        predicate,
       });
     } else {
       return QueryTestVariantsRequest.fromPartial({
@@ -207,9 +219,16 @@ export function TestTab() {
         resultLimit,
         readMask,
         filter,
+        predicate,
       });
     }
-  }, [invocationId, parsedTestId, parsedVariantDef, isLegacyInvocation]);
+  }, [
+    invocationId,
+    parsedTestId,
+    parsedVariantDef,
+    isLegacyInvocation,
+    selectedStatuses,
+  ]);
 
   const {
     data: testVariantsResponse,
@@ -227,7 +246,7 @@ export function TestTab() {
       invocation?.state === Invocation_State.FINALIZED
         ? Infinity
         : 5 * 60 * 1000,
-    enabled: !!invocation,
+    enabled: !!invocation && (!isTestAggregationEnabled || isLegacyInvocation),
   });
 
   const isLoadingTestVariantsPage = isPending || isFetchingNextPage;
@@ -286,10 +305,6 @@ export function TestTab() {
   const showInitialLoader =
     isFetchingTestVariants && !hasPerformedInitialRedirect.current;
   const isRedirecting = isUniqueResult && !hasPerformedInitialRedirect.current;
-
-  const isTestAggregationEnabled = useFeatureFlag(
-    TEST_AGGREGATION_IN_INVOCATION_FLAG,
-  );
 
   if (isTestAggregationEnabled && !isLegacyInvocation) {
     if (!invocation) {
