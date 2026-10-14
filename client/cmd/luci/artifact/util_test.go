@@ -25,10 +25,13 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestFormatArtifactNames(t *testing.T) {
@@ -190,9 +193,9 @@ func TestResolveResourceAndArtifactNames(t *testing.T) {
 
 		t.Run(`legacy mode queries test result`, func(t *ftt.Test) {
 			client := &mockResultDBClient{
-				queryTestResults: func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
-					return &pb.QueryTestResultsResponse{
-						TestResults: []*pb.TestResult{
+				queryTestResults: func(ctx context.Context, in *rdbpb.QueryTestResultsRequest) (*rdbpb.QueryTestResultsResponse, error) {
+					return &rdbpb.QueryTestResultsResponse{
+						TestResults: []*rdbpb.TestResult{
 							{
 								Name:     "invocations/u-leaf/tests/test1/results/res1",
 								TestId:   "test1",
@@ -215,12 +218,12 @@ func TestResolveResourceAndArtifactNames(t *testing.T) {
 
 		t.Run(`query verdict fallback`, func(t *ftt.Test) {
 			client := &mockResultDBClient{
-				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
-					return &pb.QueryTestVerdictsResponse{
-						TestVerdicts: []*pb.TestVerdict{
+				queryTestVerdicts: func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest) (*rdbpb.QueryTestVerdictsResponse, error) {
+					return &rdbpb.QueryTestVerdictsResponse{
+						TestVerdicts: []*rdbpb.TestVerdict{
 							{
 								TestId: "test1",
-								Results: []*pb.TestResult{
+								Results: []*rdbpb.TestResult{
 									{
 										Name:     "rootInvocations/ants-i123/workUnits/discovered-wu/tests/test1/results/res1",
 										TestId:   "test1",
@@ -243,8 +246,8 @@ func TestResolveResourceAndArtifactNames(t *testing.T) {
 
 		t.Run(`not found`, func(t *ftt.Test) {
 			client := &mockResultDBClient{
-				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
-					return &pb.QueryTestVerdictsResponse{}, nil
+				queryTestVerdicts: func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest) (*rdbpb.QueryTestVerdictsResponse, error) {
+					return &rdbpb.QueryTestVerdictsResponse{}, nil
 				},
 			}
 			_, err := ResolveTestResultResourceName(ctx, client, "ants-i123", "", "test1", "nonexistent", false)
@@ -289,6 +292,221 @@ func TestResolveResourceAndArtifactNames(t *testing.T) {
 			res, err = ResolveTargetResourceName(ctx, nil, ParentTypeUnknown, "build-123", "wu-1", "test1", "res1", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.Equal("rootInvocations/build-123/workUnits/wu-1/tests/test1/results/res1"))
+		})
+
+		t.Run(`ResolveInvocationArtifact via QueryArtifacts`, func(t *ftt.Test) {
+			t.Run(`single exact match on root invocation`, func(t *ftt.Test) {
+				client := &mockResultDBClient{
+					queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+						assert.Loosely(t, in.Parent, should.Equal("rootInvocations/ants-i05300010637202289"))
+						assert.Loosely(t, in.Predicate.GetArtifactIdRegexp(), should.Equal(`host_log\.txt`))
+						return &rdbpb.QueryArtifactsResponse{
+							Artifacts: []*rdbpb.Artifact{
+								{
+									Name:       "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/host_log.txt",
+									ArtifactId: "host_log.txt",
+									FetchUrl:   "https://example.com/host_log.txt",
+								},
+							},
+						}, nil
+					},
+				}
+				var stderr bytes.Buffer
+				art, err := ResolveInvocationArtifact(ctx, client, "I05300010637202289", "host_log.txt", &stderr)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, art.Name, should.Equal("rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/host_log.txt"))
+				assert.Loosely(t, stderr.String(), should.Equal(""))
+
+				// Also via ResolveArtifactResourceName
+				artName, err := ResolveArtifactResourceName(ctx, client, ParentTypeInvocation, "I05300010637202289", "", "", "", "host_log.txt", false)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, artName, should.Equal("rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/host_log.txt"))
+			})
+
+			t.Run(`multiple matches returns disambiguation error with owning flags`, func(t *ftt.Test) {
+				client := &mockResultDBClient{
+					queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+						return &rdbpb.QueryArtifactsResponse{
+							Artifacts: []*rdbpb.Artifact{
+								{
+									Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/logcat.txt",
+									ArtifactId:   "logcat.txt",
+									SizeBytes:    4096,
+									ArtifactType: "HOST_LOG",
+								},
+								{
+									Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202290/tests/com.android.FooTest%23testBar/results/0/artifacts/logcat.txt",
+									ArtifactId:   "logcat.txt",
+									SizeBytes:    2048,
+									ArtifactType: "LOGCAT",
+								},
+							},
+						}, nil
+					},
+				}
+				_, err := ResolveInvocationArtifact(ctx, client, "ants-i05300010637202289", "logcat.txt", io.Discard)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring(`multiple artifacts (2) match "logcat.txt" in invocation "ants-i05300010637202289"; please re-run with one of the following flag sets to disambiguate:`))
+				assert.Loosely(t, err.Error(), should.ContainSubstring(`1. -workunitid=ants-wu56200010637202289 (4.0 KiB (4096 bytes), HOST_LOG)`))
+				assert.Loosely(t, err.Error(), should.ContainSubstring(`2. -workunitid=ants-wu56200010637202290 -testid="com.android.FooTest#testBar" -resultid=0 (2.0 KiB (2048 bytes), LOGCAT)`))
+			})
+
+			t.Run(`zero matches returns not found error`, func(t *ftt.Test) {
+				client := &mockResultDBClient{
+					queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+						return &rdbpb.QueryArtifactsResponse{}, nil
+					},
+				}
+				_, err := ResolveInvocationArtifact(ctx, client, "ants-i05300010637202289", "missing.txt", io.Discard)
+				assert.Loosely(t, err, should.ErrLike(`artifact "missing.txt" not found in invocation "ants-i05300010637202289"`))
+			})
+
+			t.Run(`fetch_artifact path-prefix fallback resolves basename and prints note`, func(t *ftt.Test) {
+				calls := 0
+				client := &mockResultDBClient{
+					queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+						calls++
+						if calls == 1 {
+							// Exact match query returns empty
+							return &rdbpb.QueryArtifactsResponse{}, nil
+						}
+						assert.Loosely(t, in.Predicate.GetArtifactIdRegexp(), should.Equal(`(?:.*/)?host_log_456\.txt`))
+						return &rdbpb.QueryArtifactsResponse{
+							Artifacts: []*rdbpb.Artifact{
+								{
+									Name:       "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/host_log_456.txt",
+									ArtifactId: "host_log_456.txt",
+									FetchUrl:   "https://example.com/host_log_456.txt",
+								},
+							},
+						}, nil
+					},
+				}
+				var stderr bytes.Buffer
+				art, err := ResolveInvocationArtifact(ctx, client, "ants-i05300010637202289", "/builds/I05300010637202289/12345/target/inv_1/host_log_456.txt", &stderr)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, art.ArtifactId, should.Equal("host_log_456.txt"))
+				assert.Loosely(t, stderr.String(), should.Equal("Note: resolved path \"/builds/I05300010637202289/12345/target/inv_1/host_log_456.txt\" to artifact \"host_log_456.txt\" (-workunitid=ants-wu56200010637202289)\n"))
+			})
+
+			t.Run(`bare filename fallback resolves directory-prefixed artifact`, func(t *ftt.Test) {
+				calls := 0
+				client := &mockResultDBClient{
+					queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+						calls++
+						if calls == 1 {
+							assert.Loosely(t, in.Predicate.GetArtifactIdRegexp(), should.Equal(`ants-publish\.json`))
+							return &rdbpb.QueryArtifactsResponse{}, nil
+						}
+						assert.Loosely(t, in.Predicate.GetArtifactIdRegexp(), should.Equal(`.+/ants-publish\.json`))
+						return &rdbpb.QueryArtifactsResponse{
+							Artifacts: []*rdbpb.Artifact{
+								{
+									Name:       "rootInvocations/ants-i05300010637202289/workUnits/ants-wu78200270526224282/artifacts/injectables-191970884%2Fants-publish.json",
+									ArtifactId: "injectables-191970884/ants-publish.json",
+									FetchUrl:   "https://example.com/ants-publish.json",
+								},
+							},
+						}, nil
+					},
+				}
+				var stderr bytes.Buffer
+				art, err := ResolveInvocationArtifact(ctx, client, "I05300010637202289", "ants-publish.json", &stderr)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, art.ArtifactId, should.Equal("injectables-191970884/ants-publish.json"))
+				assert.Loosely(t, stderr.String(), should.Equal("Note: resolved path \"ants-publish.json\" to artifact \"injectables-191970884/ants-publish.json\" (-workunitid=ants-wu78200270526224282)\n"))
+			})
+
+			t.Run(`fetch_artifact path-prefix fallback prefers multi-segment suffix match`, func(t *ftt.Test) {
+				calls := 0
+				client := &mockResultDBClient{
+					queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+						calls++
+						if calls == 1 {
+							return &rdbpb.QueryArtifactsResponse{}, nil
+						}
+						return &rdbpb.QueryArtifactsResponse{
+							Artifacts: []*rdbpb.Artifact{
+								{
+									Name:       "rootInvocations/ants-i05300010637202289/workUnits/ants-wu1/artifacts/inv_1%2Fhost_log.txt",
+									ArtifactId: "inv_1/host_log.txt",
+								},
+								{
+									Name:       "rootInvocations/ants-i05300010637202289/workUnits/ants-wu2/artifacts/inv_2%2Fhost_log.txt",
+									ArtifactId: "inv_2/host_log.txt",
+								},
+							},
+						}, nil
+					},
+				}
+				art, err := ResolveInvocationArtifact(ctx, client, "ants-i05300010637202289", "/builds/I05300010637202289/12345/target/inv_1/host_log.txt", io.Discard)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, art.ArtifactId, should.Equal("inv_1/host_log.txt"))
+			})
+
+			t.Run(`multi-page pagination, tailMatches fallback, and error propagation`, func(t *ftt.Test) {
+				client := &mockResultDBClient{
+					queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+						assert.Loosely(t, in.Parent, should.Equal("rootInvocations/ants-i123"))
+						if in.Predicate.GetArtifactIdRegexp() == `other_dir/sub/log\.txt` {
+							return &rdbpb.QueryArtifactsResponse{}, nil
+						}
+						if in.PageToken == "" {
+							return &rdbpb.QueryArtifactsResponse{
+								Artifacts: []*rdbpb.Artifact{
+									{
+										Name:        "rootInvocations/ants-i123/workUnits/wu-1/artifacts/dir_a%2Flog.txt",
+										ArtifactId:  "dir_a/log.txt",
+										ContentType: "text/plain",
+									},
+								},
+								NextPageToken: "page-2",
+							}, nil
+						}
+						return &rdbpb.QueryArtifactsResponse{
+							Artifacts: []*rdbpb.Artifact{
+								{
+									Name:       "rootInvocations/ants-i123/workUnits/wu-2/artifacts/dir_b%2Flog.txt",
+									ArtifactId: "dir_b/log.txt",
+								},
+							},
+						}, nil
+					},
+				}
+				_, err := ResolveInvocationArtifact(ctx, client, "ants-i123", "other_dir/sub/log.txt", io.Discard)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring(`1. -workunitid=wu-1 -artifactid=dir_a/log.txt (text/plain)`))
+				assert.Loosely(t, err.Error(), should.ContainSubstring(`2. -workunitid=wu-2 -artifactid=dir_b/log.txt`))
+
+				// PermissionDenied on initial QueryArtifacts
+				permClient := &mockResultDBClient{
+					queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+						return nil, status.Error(codes.PermissionDenied, "denied")
+					},
+				}
+				_, err = ResolveInvocationArtifact(ctx, permClient, "ants-i123", "log.txt", io.Discard)
+				assert.Loosely(t, err, should.ErrLike("missing ResultDB realm permission"))
+			})
+
+			t.Run(`more than DefaultMaxArtifacts matches indicates 100+ in disambiguation error`, func(t *ftt.Test) {
+				client := &mockResultDBClient{
+					queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+						arts := make([]*rdbpb.Artifact, DefaultMaxArtifacts)
+						for i := range arts {
+							arts[i] = &rdbpb.Artifact{
+								Name:       "rootInvocations/ants-i123/workUnits/wu-1/artifacts/logcat.txt",
+								ArtifactId: "logcat.txt",
+							}
+						}
+						return &rdbpb.QueryArtifactsResponse{
+							Artifacts:     arts,
+							NextPageToken: "more",
+						}, nil
+					},
+				}
+				_, err := ResolveInvocationArtifact(ctx, client, "ants-i123", "logcat.txt", io.Discard)
+				assert.Loosely(t, err, should.ErrLike(`multiple artifacts (100+) match "logcat.txt" in invocation "ants-i123" (showing first 100)`))
+			})
 		})
 	})
 }

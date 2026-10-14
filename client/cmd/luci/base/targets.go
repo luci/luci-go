@@ -17,6 +17,7 @@ package base
 import (
 	"context"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -26,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // IsPermissionDenied reports whether err has a PermissionDenied gRPC or appstatus code.
@@ -46,8 +47,8 @@ func IsPermissionDenied(err error) bool {
 type ResolvedInvocation struct {
 	ID             string
 	Legacy         bool
-	RootInvocation *pb.RootInvocation
-	Invocation     *pb.Invocation
+	RootInvocation *rdbpb.RootInvocation
+	Invocation     *rdbpb.Invocation
 }
 
 // ResolveInvocation normalizes rawInvID and queries ResultDB for both the
@@ -57,7 +58,7 @@ type ResolvedInvocation struct {
 //
 // If either probe returns codes.PermissionDenied, the PermissionDenied error is
 // returned immediately.
-func ResolveInvocation(ctx context.Context, client pb.ResultDBClient, rawInvID string) (*ResolvedInvocation, error) {
+func ResolveInvocation(ctx context.Context, client rdbpb.ResultDBClient, rawInvID string) (*ResolvedInvocation, error) {
 	normalized := NormalizeInvocation(rawInvID)
 	if client == nil || normalized == "" {
 		return &ResolvedInvocation{ID: normalized}, nil
@@ -65,22 +66,22 @@ func ResolveInvocation(ctx context.Context, client pb.ResultDBClient, rawInvID s
 
 	probeCtx := logging.SetLevel(ctx, logging.Error)
 	var (
-		rootInv   *pb.RootInvocation
+		rootInv   *rdbpb.RootInvocation
 		rootErr   error
-		legacyInv *pb.Invocation
+		legacyInv *rdbpb.Invocation
 		legacyErr error
 		wg        sync.WaitGroup
 	)
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		rootInv, rootErr = client.GetRootInvocation(probeCtx, &pb.GetRootInvocationRequest{
+		rootInv, rootErr = client.GetRootInvocation(probeCtx, &rdbpb.GetRootInvocationRequest{
 			Name: "rootInvocations/" + normalized,
 		})
 	}()
 	go func() {
 		defer wg.Done()
-		legacyInv, legacyErr = client.GetInvocation(probeCtx, &pb.GetInvocationRequest{
+		legacyInv, legacyErr = client.GetInvocation(probeCtx, &rdbpb.GetInvocationRequest{
 			Name: "invocations/" + normalized,
 		})
 	}()
@@ -203,53 +204,91 @@ func FormatWorkUnitResourceName(rootInv, wuID string) string {
 	return "rootInvocations/" + rootInv + "/workUnits/" + wuID
 }
 
+func unescapePathSegment(seg string) string {
+	if unescaped, err := url.PathUnescape(seg); err == nil {
+		return unescaped
+	}
+	return seg
+}
+
 // ExtractTestResultComponents parses an invocation, test ID, and result ID from a resource name.
 func ExtractTestResultComponents(name string) (inv, testID, resultID string) {
-	if idx := strings.Index(name, "rootInvocations/"); idx != -1 {
-		name = name[idx:]
-	} else if idx := strings.Index(name, "invocations/"); idx != -1 {
-		name = name[idx:]
-	}
-	if idx := strings.Index(name, "/artifacts/"); idx != -1 {
-		name = name[:idx]
-	}
-	parts := strings.Split(name, "/")
-	for i := 0; i < len(parts); i++ {
-		if (parts[i] == "invocations" || parts[i] == "rootInvocations") && i+1 < len(parts) {
-			inv = parts[i+1]
-		}
-		if parts[i] == "tests" && i+1 < len(parts) {
-			if unescaped, err := url.PathUnescape(parts[i+1]); err == nil {
-				testID = unescaped
-			} else {
-				testID = parts[i+1]
-			}
-		}
-		if parts[i] == "results" && i+1 < len(parts) {
-			resultID = parts[i+1]
-		}
-	}
-	return inv, testID, resultID
+	meta := ExtractArtifactMetadata(name)
+	return meta.InvocationID, meta.TestID, meta.ResultID
 }
 
 // ExtractWorkUnitComponents parses a root invocation and work unit ID from a resource name.
 func ExtractWorkUnitComponents(name string) (rootInv, wuID string) {
+	meta := ExtractArtifactMetadata(name)
+	return meta.InvocationID, meta.WorkUnitID
+}
+
+// ArtifactMetadata holds the resource metadata (invocation, work unit, test ID,
+// result ID, and artifact ID) parsed from an artifact or target resource name.
+type ArtifactMetadata struct {
+	InvocationID string
+	WorkUnitID   string
+	TestID       string
+	ResultID     string
+	ArtifactID   string
+}
+
+// ExtractArtifactMetadata parses the owning invocation, work unit, test ID,
+// result ID, and artifact ID from a resource name in a single pass.
+func ExtractArtifactMetadata(name string) ArtifactMetadata {
 	if idx := strings.Index(name, "rootInvocations/"); idx != -1 {
 		name = name[idx:]
 	} else if idx := strings.Index(name, "invocations/"); idx != -1 {
 		name = name[idx:]
 	}
-	if idx := strings.Index(name, "/artifacts/"); idx != -1 {
-		name = name[:idx]
-	}
+	var meta ArtifactMetadata
 	parts := strings.Split(name, "/")
-	for i := 0; i < len(parts); i++ {
-		if (parts[i] == "rootInvocations" || parts[i] == "invocations") && i+1 < len(parts) {
-			rootInv = parts[i+1]
-		}
-		if parts[i] == "workUnits" && i+1 < len(parts) {
-			wuID = parts[i+1]
+	for i := 0; i+1 < len(parts); i++ {
+		switch parts[i] {
+		case "rootInvocations", "invocations":
+			meta.InvocationID = parts[i+1]
+			i++
+		case "workUnits":
+			meta.WorkUnitID = unescapePathSegment(parts[i+1])
+			i++
+		case "tests":
+			meta.TestID = unescapePathSegment(parts[i+1])
+			i++
+		case "results":
+			meta.ResultID = parts[i+1]
+			i++
+		case "variants":
+			i++
+		case "artifacts":
+			meta.ArtifactID = unescapePathSegment(strings.Join(parts[i+1:], "/"))
+			return meta
 		}
 	}
-	return rootInv, wuID
+	return meta
+}
+
+// ShellQuoteIfNeeded returns s quoted with double quotes if it contains shell
+// special characters or whitespace (such as '#', '!', spaces, etc.), or s as-is
+// otherwise.
+func ShellQuoteIfNeeded(s string) string {
+	if s == "" || strings.ContainsAny(s, " \t\n\"'#$&;|*?<>()[]{}\\!`~") {
+		return strconv.Quote(s)
+	}
+	return s
+}
+
+// FormatFlags returns the copy-pasteable CLI flags (-workunitid, -testid,
+// and/or -resultid) needed to target this artifact's owning resource.
+func (m ArtifactMetadata) FormatFlags() string {
+	var parts []string
+	if m.WorkUnitID != "" {
+		parts = append(parts, "-workunitid="+ShellQuoteIfNeeded(m.WorkUnitID))
+	}
+	if m.TestID != "" && m.ResultID != "" {
+		parts = append(parts,
+			"-testid="+ShellQuoteIfNeeded(m.TestID),
+			"-resultid="+ShellQuoteIfNeeded(m.ResultID),
+		)
+	}
+	return strings.Join(parts, " ")
 }

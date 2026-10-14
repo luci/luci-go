@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func GetCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
@@ -95,6 +96,8 @@ func GetCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 type artifactGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
+	client       rdbpb.ResultDBClient
+	httpClient   *http.Client
 	parentType   ParentType
 	host         string
 	invocationID string
@@ -140,7 +143,7 @@ func (r *artifactGetRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
-	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
+	return executeArtifactFetchWithClients(ctx, r.af, r.client, r.httpClient, r.host, r.outputFile, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 		_, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, byteRange, out)
 		return err
 	})

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
@@ -91,6 +92,8 @@ func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 type artifactTailRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
+	client       rdbpb.ResultDBClient
+	httpClient   *http.Client
 	parentType   ParentType
 	host         string
 	invocationID string
@@ -136,7 +139,7 @@ func (r *artifactTailRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
-	return executeArtifactFetch(ctx, r.af, r.host, r.outputFile, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
+	return executeArtifactFetchWithClients(ctx, r.af, r.client, r.httpClient, r.host, r.outputFile, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 		if r.bytes > 0 {
 			byteRange := &ByteRange{Start: -1, End: r.bytes}
 			_, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, byteRange, out)

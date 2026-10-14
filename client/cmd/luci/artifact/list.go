@@ -22,12 +22,13 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
@@ -79,7 +80,7 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 				// -legacy is now unused and will be removed in the future.
 				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 			}
-			r.Flags.IntVar(&r.maxArtifacts, "max-artifacts", 100, "Maximum number of artifacts to display (default: 100, 0 for all)")
+			r.Flags.IntVar(&r.maxArtifacts, "max-artifacts", DefaultMaxArtifacts, "Maximum number of artifacts to display (default: 100, 0 for all)")
 			r.Flags.BoolVar(&r.allArtifacts, "all", false, "Show all artifacts without truncation")
 			return r
 		},
@@ -89,7 +90,7 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 type artifactListRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
-	client       pb.ResultDBClient
+	client       rdbpb.ResultDBClient
 	parentType   ParentType
 	host         string
 	invocationID string
@@ -110,6 +111,10 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	}
 	if len(args) > 0 {
 		fmt.Fprintf(os.Stderr, "unexpected positional arguments (run 'luci ids <url>' to extract ids)\n")
+		return 1
+	}
+	if r.maxArtifacts < 0 {
+		fmt.Fprintf(os.Stderr, "flag -max-artifacts must be non-negative\n")
 		return 1
 	}
 
@@ -195,14 +200,26 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	}
 
 	if effectiveParentType == ParentTypeInvocation {
-		invArtifacts, err := QueryAllArtifacts(ctx, client, cleanTarget)
+		if resolved.Legacy {
+			invArtifacts, err := QueryAllArtifacts(ctx, client, cleanTarget)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to list artifacts for invocation %q: %s\n", cleanTarget, err)
+				return 1
+			}
+
+			displayedCount := printArtifactHeader("Invocation", format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), maxArtifacts)
+			format.PrintArtifactList(invArtifacts[:displayedCount])
+			return 0
+		}
+
+		invArtifacts, hasMore, err := QueryInvocationArtifacts(ctx, client, cleanTarget, maxArtifacts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to list artifacts for invocation %q: %s\n", cleanTarget, err)
 			return 1
 		}
 
-		displayedCount := printArtifactHeader("Invocation", format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), maxArtifacts)
-		format.PrintArtifactList(invArtifacts[:displayedCount])
+		printInvocationArtifactHeader(os.Stdout, format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), hasMore)
+		format.PrintInvocationArtifactList(invArtifacts)
 		return 0
 	}
 
@@ -220,6 +237,14 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	return 0
 }
 
+func printInvocationArtifactHeader(out io.Writer, breadcrumb string, count int, hasMore bool) {
+	if hasMore {
+		fmt.Fprintf(out, "Invocation Artifacts (%s) (showing %d, use -max-artifacts or -all to see more):\n", breadcrumb, count)
+	} else {
+		fmt.Fprintf(out, "Invocation Artifacts (%s) (%d):\n", breadcrumb, count)
+	}
+}
+
 func printArtifactHeader(category, breadcrumb string, totalCount, maxArtifacts int) int {
 	return printArtifactHeaderTo(os.Stdout, category, breadcrumb, totalCount, maxArtifacts)
 }
@@ -235,7 +260,7 @@ func printArtifactHeaderTo(out io.Writer, category, breadcrumb string, totalCoun
 	return displayedCount
 }
 
-func PrintImmediateParentInvocationNotice(ctx context.Context, client pb.ResultDBClient, target string, out io.Writer) {
+func PrintImmediateParentInvocationNotice(ctx context.Context, client rdbpb.ResultDBClient, target string, out io.Writer) {
 	idx := strings.Index(target, "/tests/")
 	if idx == -1 {
 		return
@@ -243,7 +268,7 @@ func PrintImmediateParentInvocationNotice(ctx context.Context, client pb.ResultD
 	parentInv := target[:idx]
 	leafInvID := strings.TrimPrefix(parentInv, "invocations/")
 
-	res, err := client.ListArtifacts(ctx, &pb.ListArtifactsRequest{
+	res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
 		Parent:   parentInv,
 		PageSize: 1000,
 	})
@@ -261,7 +286,7 @@ func PrintImmediateParentInvocationNotice(ctx context.Context, client pb.ResultD
 	}
 }
 
-func PrintAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient, target string, parentType ParentType, out io.Writer) {
+func PrintAncestorWorkUnitNotices(ctx context.Context, client rdbpb.ResultDBClient, target string, parentType ParentType, out io.Writer) {
 	var wuToCheck []string
 	visited := make(map[string]bool)
 
@@ -302,7 +327,7 @@ func PrintAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient,
 	var withArtifacts []wuInfo
 
 	for _, wuName := range wuToCheck {
-		res, err := client.ListArtifacts(ctx, &pb.ListArtifactsRequest{
+		res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
 			Parent:   wuName,
 			PageSize: 1000,
 		})
@@ -336,11 +361,11 @@ func PrintAncestorWorkUnitNotices(ctx context.Context, client pb.ResultDBClient,
 	}
 }
 
-func QueryAllArtifacts(ctx context.Context, client pb.ResultDBClient, parent string) ([]*pb.Artifact, error) {
-	var all []*pb.Artifact
+func QueryAllArtifacts(ctx context.Context, client rdbpb.ResultDBClient, parent string) ([]*rdbpb.Artifact, error) {
+	var all []*rdbpb.Artifact
 	pageToken := ""
 	for {
-		res, err := client.ListArtifacts(ctx, &pb.ListArtifactsRequest{
+		res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
 			Parent:    parent,
 			PageSize:  1000,
 			PageToken: pageToken,
@@ -355,4 +380,14 @@ func QueryAllArtifacts(ctx context.Context, client pb.ResultDBClient, parent str
 		pageToken = res.NextPageToken
 	}
 	return all, nil
+}
+
+// QueryInvocationArtifacts queries work-unit-level and test-result-level
+// artifacts across a root invocation using ResultDB.QueryArtifacts, up to
+// maxArtifacts (or all artifacts if maxArtifacts <= 0).
+// It returns the artifacts and whether more artifacts exist beyond maxArtifacts.
+func QueryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, cleanTarget string, maxArtifacts int) ([]*rdbpb.Artifact, bool, error) {
+	return queryInvocationArtifacts(ctx, client, cleanTarget, nil, &fieldmaskpb.FieldMask{
+		Paths: []string{"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines"},
+	}, maxArtifacts)
 }

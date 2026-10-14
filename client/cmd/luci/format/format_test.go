@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestParseInvocationContext(t *testing.T) {
@@ -106,12 +106,12 @@ func TestFormatVariant(t *testing.T) {
 		})
 
 		t.Run(`empty variant`, func(t *ftt.Test) {
-			v := &pb.Variant{Def: map[string]string{}}
+			v := &rdbpb.Variant{Def: map[string]string{}}
 			assert.Loosely(t, FormatVariant(v), should.Equal(""))
 		})
 
 		t.Run(`populated variant`, func(t *ftt.Test) {
-			v := &pb.Variant{
+			v := &rdbpb.Variant{
 				Def: map[string]string{
 					"builder":    "win-rel",
 					"os":         "Windows-10",
@@ -150,11 +150,11 @@ func TestStripHTML(t *testing.T) {
 }
 
 type fakeRDBClient struct {
-	pb.ResultDBClient
-	getArtifactFunc func(ctx context.Context, in *pb.GetArtifactRequest, opts ...grpc.CallOption) (*pb.Artifact, error)
+	rdbpb.ResultDBClient
+	getArtifactFunc func(ctx context.Context, in *rdbpb.GetArtifactRequest, opts ...grpc.CallOption) (*rdbpb.Artifact, error)
 }
 
-func (f *fakeRDBClient) GetArtifact(ctx context.Context, in *pb.GetArtifactRequest, opts ...grpc.CallOption) (*pb.Artifact, error) {
+func (f *fakeRDBClient) GetArtifact(ctx context.Context, in *rdbpb.GetArtifactRequest, opts ...grpc.CallOption) (*rdbpb.Artifact, error) {
 	if f.getArtifactFunc != nil {
 		return f.getArtifactFunc(ctx, in, opts...)
 	}
@@ -167,11 +167,11 @@ func TestFormatVerdictCountsInline(t *testing.T) {
 	ftt.Run(`FormatVerdictCountsInline`, t, func(t *ftt.Test) {
 		t.Run(`nil or zero counts`, func(t *ftt.Test) {
 			assert.Loosely(t, FormatVerdictCountsInline(nil), should.Equal(""))
-			assert.Loosely(t, FormatVerdictCountsInline(&pb.TestAggregation_VerdictCounts{}), should.Equal(""))
+			assert.Loosely(t, FormatVerdictCountsInline(&rdbpb.TestAggregation_VerdictCounts{}), should.Equal(""))
 		})
 
 		t.Run(`failed with zero passed explicitly shows 0 passed`, func(t *ftt.Test) {
-			vc := &pb.TestAggregation_VerdictCounts{
+			vc := &rdbpb.TestAggregation_VerdictCounts{
 				Failed: 16,
 				Passed: 0,
 			}
@@ -179,7 +179,7 @@ func TestFormatVerdictCountsInline(t *testing.T) {
 		})
 
 		t.Run(`failed, passed, and skipped`, func(t *ftt.Test) {
-			vc := &pb.TestAggregation_VerdictCounts{
+			vc := &rdbpb.TestAggregation_VerdictCounts{
 				Failed:  245,
 				Passed:  218,
 				Skipped: 7,
@@ -188,7 +188,7 @@ func TestFormatVerdictCountsInline(t *testing.T) {
 		})
 
 		t.Run(`only passed`, func(t *ftt.Test) {
-			vc := &pb.TestAggregation_VerdictCounts{
+			vc := &rdbpb.TestAggregation_VerdictCounts{
 				Passed: 50,
 			}
 			assert.Loosely(t, FormatVerdictCountsInline(vc), should.Equal("[50 passed]"))
@@ -216,8 +216,8 @@ func TestFormatSummaryHTML(t *testing.T) {
 			defer server.Close()
 
 			fakeClient := &fakeRDBClient{
-				getArtifactFunc: func(ctx context.Context, in *pb.GetArtifactRequest, opts ...grpc.CallOption) (*pb.Artifact, error) {
-					return &pb.Artifact{
+				getArtifactFunc: func(ctx context.Context, in *rdbpb.GetArtifactRequest, opts ...grpc.CallOption) (*rdbpb.Artifact, error) {
+					return &rdbpb.Artifact{
 						Name:       in.Name,
 						ArtifactId: "log.txt",
 						SizeBytes:  31,
@@ -233,8 +233,8 @@ func TestFormatSummaryHTML(t *testing.T) {
 
 		t.Run(`skips large text-artifact exceeding inline threshold`, func(t *ftt.Test) {
 			fakeClient := &fakeRDBClient{
-				getArtifactFunc: func(ctx context.Context, in *pb.GetArtifactRequest, opts ...grpc.CallOption) (*pb.Artifact, error) {
-					return &pb.Artifact{
+				getArtifactFunc: func(ctx context.Context, in *rdbpb.GetArtifactRequest, opts ...grpc.CallOption) (*rdbpb.Artifact, error) {
+					return &rdbpb.Artifact{
 						Name:       in.Name,
 						ArtifactId: "big.txt",
 						SizeBytes:  128 * 1024,
@@ -296,13 +296,13 @@ func TestPrintFailureReason(t *testing.T) {
 		})
 
 		t.Run(`primary error message only`, func(t *ftt.Test) {
-			fr := &pb.FailureReason{PrimaryErrorMessage: "Something went wrong"}
+			fr := &rdbpb.FailureReason{PrimaryErrorMessage: "Something went wrong"}
 			PrintFailureReason(fr, "")
 		})
 
 		t.Run(`single error with message and trace`, func(t *ftt.Test) {
-			fr := &pb.FailureReason{
-				Errors: []*pb.FailureReason_Error{
+			fr := &rdbpb.FailureReason{
+				Errors: []*rdbpb.FailureReason_Error{
 					{
 						Message: "NullPointerException: object was null",
 						Trace:   "java.lang.NullPointerException\n\tat com.example.MyClass.run(MyClass.java:42)",
@@ -313,8 +313,8 @@ func TestPrintFailureReason(t *testing.T) {
 		})
 
 		t.Run(`multiple errors`, func(t *ftt.Test) {
-			fr := &pb.FailureReason{
-				Errors: []*pb.FailureReason_Error{
+			fr := &rdbpb.FailureReason{
+				Errors: []*rdbpb.FailureReason_Error{
 					{
 						Message: "Error 1",
 						Trace:   "trace 1",
@@ -328,9 +328,9 @@ func TestPrintFailureReason(t *testing.T) {
 		})
 
 		t.Run(`empty error message with PrimaryErrorMessage fallback`, func(t *ftt.Test) {
-			fr := &pb.FailureReason{
+			fr := &rdbpb.FailureReason{
 				PrimaryErrorMessage: "Primary error message here",
-				Errors: []*pb.FailureReason_Error{
+				Errors: []*rdbpb.FailureReason_Error{
 					{
 						Message: "",
 						Trace:   "trace 1",
@@ -369,8 +369,8 @@ func TestPrintFailureReason(t *testing.T) {
 			assert.Loosely(t, s0, should.Equal(""))
 			assert.Loosely(t, t0, should.BeFalse)
 
-			fr := &pb.FailureReason{
-				Errors: []*pb.FailureReason_Error{
+			fr := &rdbpb.FailureReason{
+				Errors: []*rdbpb.FailureReason_Error{
 					{
 						Message: "AssertionError: expected true but was false\nextra details here",
 					},
@@ -380,8 +380,8 @@ func TestPrintFailureReason(t *testing.T) {
 			assert.Loosely(t, s1, should.Equal("AssertionError: expected true but was false"))
 			assert.Loosely(t, t1, should.BeTrue)
 
-			frSingle := &pb.FailureReason{
-				Errors: []*pb.FailureReason_Error{
+			frSingle := &rdbpb.FailureReason{
+				Errors: []*rdbpb.FailureReason_Error{
 					{
 						Message: "Single line error",
 					},
@@ -391,9 +391,9 @@ func TestPrintFailureReason(t *testing.T) {
 			assert.Loosely(t, s2, should.Equal("Single line error"))
 			assert.Loosely(t, t2, should.BeFalse)
 
-			frFallback := &pb.FailureReason{
+			frFallback := &rdbpb.FailureReason{
 				PrimaryErrorMessage: "Fallback primary error",
-				Errors: []*pb.FailureReason_Error{
+				Errors: []*rdbpb.FailureReason_Error{
 					{
 						Message: "",
 					},
@@ -402,6 +402,38 @@ func TestPrintFailureReason(t *testing.T) {
 			s3, t3 := FormatFailureReasonFirstLine(frFallback, 100)
 			assert.Loosely(t, s3, should.Equal("Fallback primary error"))
 			assert.Loosely(t, t3, should.BeFalse)
+		})
+	})
+
+	ftt.Run(`PrintInvocationArtifactListTo`, t, func(t *ftt.Test) {
+		t.Run(`empty artifacts`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			PrintInvocationArtifactListTo(&buf, nil)
+			assert.Loosely(t, buf.String(), should.Equal("  (no artifacts)\n\n"))
+		})
+
+		t.Run(`root invocation work unit and test result artifacts`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			arts := []*rdbpb.Artifact{
+				{
+					Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/bugreport-oriole-123.zip",
+					ArtifactId:   "bugreport-oriole-123.zip",
+					SizeBytes:    19293798,
+					ContentType:  "application/zip",
+					ArtifactType: "BUGREPORTZ",
+				},
+				{
+					Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202290/tests/com.android.FooTest%23testBar/results/0/artifacts/logcat_test_foo_123.txt",
+					ArtifactId:   "logcat_test_foo_123.txt",
+					SizeBytes:    145715,
+					ContentType:  "text/plain",
+					ArtifactType: "LOGCAT",
+				},
+			}
+			PrintInvocationArtifactListTo(&buf, arts)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("  - artifact_id: bugreport-oriole-123.zip\n    work_unit:   ants-wu56200010637202289\n    size:        18.4 MiB (19293798 bytes)\n    type:        application/zip\n    category:    BUGREPORTZ\n    flags:       -workunitid=ants-wu56200010637202289\n"))
+			assert.Loosely(t, out, should.ContainSubstring("  - artifact_id: logcat_test_foo_123.txt\n    work_unit:   ants-wu56200010637202290\n    test_id:     com.android.FooTest#testBar\n    result_id:   0\n    size:        142.3 KiB (145715 bytes)\n    type:        text/plain\n    category:    LOGCAT\n    flags:       -workunitid=ants-wu56200010637202290 -testid=\"com.android.FooTest#testBar\" -resultid=0\n"))
 		})
 	})
 }

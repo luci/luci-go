@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 
@@ -27,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestExtractTailLines(t *testing.T) {
@@ -256,5 +259,42 @@ func TestFetchTailLines(t *testing.T) {
 		assert.Loosely(t, unknownRun.Flags.Lookup("c"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("o"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("output"), should.NotBeNil)
+	})
+
+	ftt.Run(`artifactTailRun invocation-wide without -workunitid`, t, func(t *ftt.Test) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serveHTTPRange(w, r, []byte("line 1\nline 2\nline 3\n"))
+		}))
+		defer server.Close()
+
+		for _, rawInv := range []string{"ants-i05300010637202289", "I05300010637202289", "i05300010637202289"} {
+			outFile := filepath.Join(t.TempDir(), "tail_out.txt")
+			client := &mockResultDBClient{
+				queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+					return &rdbpb.QueryArtifactsResponse{
+						Artifacts: []*rdbpb.Artifact{
+							{
+								Name:       "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/host_log.txt",
+								ArtifactId: "host_log.txt",
+								FetchUrl:   server.URL,
+							},
+						},
+					}, nil
+				},
+			}
+			run := &artifactTailRun{
+				client:       client,
+				httpClient:   server.Client(),
+				parentType:   ParentTypeUnknown,
+				invocationID: rawInv,
+				artifactID:   "/builds/I05300010637202289/12345/target/inv_1/host_log.txt",
+				lines:        2,
+				outputFile:   outFile,
+			}
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			got, err := os.ReadFile(outFile)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(got), should.Equal("line 2\nline 3\n"))
+		}
 	})
 }

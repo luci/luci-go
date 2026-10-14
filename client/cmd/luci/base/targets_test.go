@@ -25,23 +25,23 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 type mockTargetsResultDBClient struct {
-	pb.ResultDBClient
-	getRootInvocation func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error)
-	getInvocation     func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error)
+	rdbpb.ResultDBClient
+	getRootInvocation func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error)
+	getInvocation     func(ctx context.Context, in *rdbpb.GetInvocationRequest, opts ...grpc.CallOption) (*rdbpb.Invocation, error)
 }
 
-func (m *mockTargetsResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+func (m *mockTargetsResultDBClient) GetRootInvocation(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
 	if m.getRootInvocation != nil {
 		return m.getRootInvocation(ctx, in, opts...)
 	}
 	return nil, status.Error(codes.NotFound, "not found")
 }
 
-func (m *mockTargetsResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+func (m *mockTargetsResultDBClient) GetInvocation(ctx context.Context, in *rdbpb.GetInvocationRequest, opts ...grpc.CallOption) (*rdbpb.Invocation, error) {
 	if m.getInvocation != nil {
 		return m.getInvocation(ctx, in, opts...)
 	}
@@ -97,12 +97,12 @@ func TestTargets(t *testing.T) {
 			ctx := context.Background()
 
 			t.Run("Queries both GetRootInvocation and GetInvocation in parallel and returns RootInvocation when found", func(t *ftt.Test) {
-				expectedRoot := &pb.RootInvocation{Name: "rootInvocations/ants-i77100010600769898", SummaryMarkdown: "root summary"}
+				expectedRoot := &rdbpb.RootInvocation{Name: "rootInvocations/ants-i77100010600769898", SummaryMarkdown: "root summary"}
 				client := &mockTargetsResultDBClient{
-					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+					getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
 						return expectedRoot, nil
 					},
-					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+					getInvocation: func(ctx context.Context, in *rdbpb.GetInvocationRequest, opts ...grpc.CallOption) (*rdbpb.Invocation, error) {
 						return nil, status.Error(codes.NotFound, "not found")
 					},
 				}
@@ -114,12 +114,12 @@ func TestTargets(t *testing.T) {
 			})
 
 			t.Run("Resolves legacy Invocation when GetRootInvocation returns NotFound", func(t *ftt.Test) {
-				expectedLegacy := &pb.Invocation{Name: "invocations/build-8697111068122866129"}
+				expectedLegacy := &rdbpb.Invocation{Name: "invocations/build-8697111068122866129"}
 				client := &mockTargetsResultDBClient{
-					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+					getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
 						return nil, status.Error(codes.NotFound, "root not found")
 					},
-					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+					getInvocation: func(ctx context.Context, in *rdbpb.GetInvocationRequest, opts ...grpc.CallOption) (*rdbpb.Invocation, error) {
 						return expectedLegacy, nil
 					},
 				}
@@ -132,10 +132,10 @@ func TestTargets(t *testing.T) {
 
 			t.Run("PermissionDenied on GetRootInvocation fails immediately", func(t *ftt.Test) {
 				client := &mockTargetsResultDBClient{
-					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+					getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
 						return nil, status.Error(codes.PermissionDenied, "caller does not have permission resultdb.rootInvocations.get")
 					},
-					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+					getInvocation: func(ctx context.Context, in *rdbpb.GetInvocationRequest, opts ...grpc.CallOption) (*rdbpb.Invocation, error) {
 						return nil, status.Error(codes.NotFound, "not found")
 					},
 				}
@@ -145,15 +145,50 @@ func TestTargets(t *testing.T) {
 
 			t.Run("PermissionDenied on GetInvocation fails immediately", func(t *ftt.Test) {
 				client := &mockTargetsResultDBClient{
-					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+					getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
 						return nil, status.Error(codes.NotFound, "not found")
 					},
-					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+					getInvocation: func(ctx context.Context, in *rdbpb.GetInvocationRequest, opts ...grpc.CallOption) (*rdbpb.Invocation, error) {
 						return nil, status.Error(codes.PermissionDenied, "caller does not have permission resultdb.invocations.get")
 					},
 				}
 				_, err := ResolveInvocation(ctx, client, "build-123")
 				assert.Loosely(t, err, should.ErrLike("missing ResultDB realm permission"))
+			})
+		})
+
+		t.Run("ExtractArtifactMetadata and FormatFlags", func(t *ftt.Test) {
+			t.Run("root invocation work unit artifact", func(t *ftt.Test) {
+				meta := ExtractArtifactMetadata("rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/bugreport.zip")
+				assert.Loosely(t, meta, should.Equal(ArtifactMetadata{
+					InvocationID: "ants-i05300010637202289",
+					WorkUnitID:   "ants-wu56200010637202289",
+					ArtifactID:   "bugreport.zip",
+				}))
+				assert.Loosely(t, meta.FormatFlags(), should.Equal("-workunitid=ants-wu56200010637202289"))
+			})
+
+			t.Run("root invocation test result artifact with special chars in test ID", func(t *ftt.Test) {
+				meta := ExtractArtifactMetadata("rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202290/tests/com.android.FooTest%23testBar/results/0/artifacts/logcat.txt")
+				assert.Loosely(t, meta, should.Equal(ArtifactMetadata{
+					InvocationID: "ants-i05300010637202289",
+					WorkUnitID:   "ants-wu56200010637202290",
+					TestID:       "com.android.FooTest#testBar",
+					ResultID:     "0",
+					ArtifactID:   "logcat.txt",
+				}))
+				assert.Loosely(t, meta.FormatFlags(), should.Equal(`-workunitid=ants-wu56200010637202290 -testid="com.android.FooTest#testBar" -resultid=0`))
+			})
+
+			t.Run("resource IDs matching collection keywords are not confused with keys", func(t *ftt.Test) {
+				meta := ExtractArtifactMetadata("rootInvocations/ants-i123/workUnits/tests/tests/artifacts/results/workUnits/artifacts/dir%2Flog.txt")
+				assert.Loosely(t, meta, should.Equal(ArtifactMetadata{
+					InvocationID: "ants-i123",
+					WorkUnitID:   "tests",
+					TestID:       "artifacts",
+					ResultID:     "workUnits",
+					ArtifactID:   "dir/log.txt",
+				}))
 			})
 		})
 	})

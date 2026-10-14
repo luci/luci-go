@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -29,21 +30,22 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/errors"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // HierarchyAggregations holds test verdict counts at each level of the ResultDB
 // test hierarchy for inline display alongside Invocation and Test ID components.
 type HierarchyAggregations struct {
-	Invocation *pb.TestAggregation_VerdictCounts
-	Module     *pb.TestAggregation_VerdictCounts
-	Coarse     *pb.TestAggregation_VerdictCounts
-	Fine       *pb.TestAggregation_VerdictCounts
+	Invocation *rdbpb.TestAggregation_VerdictCounts
+	Module     *rdbpb.TestAggregation_VerdictCounts
+	Coarse     *rdbpb.TestAggregation_VerdictCounts
+	Fine       *rdbpb.TestAggregation_VerdictCounts
 }
 
 // GetInvocation returns the invocation-level verdict counts, or nil if receiver is nil.
-func (h *HierarchyAggregations) GetInvocation() *pb.TestAggregation_VerdictCounts {
+func (h *HierarchyAggregations) GetInvocation() *rdbpb.TestAggregation_VerdictCounts {
 	if h == nil {
 		return nil
 	}
@@ -51,7 +53,7 @@ func (h *HierarchyAggregations) GetInvocation() *pb.TestAggregation_VerdictCount
 }
 
 // GetModule returns the module-level verdict counts, or nil if receiver is nil.
-func (h *HierarchyAggregations) GetModule() *pb.TestAggregation_VerdictCounts {
+func (h *HierarchyAggregations) GetModule() *rdbpb.TestAggregation_VerdictCounts {
 	if h == nil {
 		return nil
 	}
@@ -59,7 +61,7 @@ func (h *HierarchyAggregations) GetModule() *pb.TestAggregation_VerdictCounts {
 }
 
 // GetCoarse returns the coarse-level verdict counts, or nil if receiver is nil.
-func (h *HierarchyAggregations) GetCoarse() *pb.TestAggregation_VerdictCounts {
+func (h *HierarchyAggregations) GetCoarse() *rdbpb.TestAggregation_VerdictCounts {
 	if h == nil {
 		return nil
 	}
@@ -67,7 +69,7 @@ func (h *HierarchyAggregations) GetCoarse() *pb.TestAggregation_VerdictCounts {
 }
 
 // GetFine returns the fine-level verdict counts, or nil if receiver is nil.
-func (h *HierarchyAggregations) GetFine() *pb.TestAggregation_VerdictCounts {
+func (h *HierarchyAggregations) GetFine() *rdbpb.TestAggregation_VerdictCounts {
 	if h == nil {
 		return nil
 	}
@@ -77,7 +79,7 @@ func (h *HierarchyAggregations) GetFine() *pb.TestAggregation_VerdictCounts {
 // FormatVerdictCountsInline formats verdict counts as a compact inline bracketed
 // summary, e.g. "[245 failed, 218 passed, 7 skipped]". Returns "" if vc is nil
 // or all counts are zero.
-func FormatVerdictCountsInline(vc *pb.TestAggregation_VerdictCounts) string {
+func FormatVerdictCountsInline(vc *rdbpb.TestAggregation_VerdictCounts) string {
 	if vc == nil {
 		return ""
 	}
@@ -133,8 +135,8 @@ func FetchArtifactContent(ctx context.Context, httpClient *http.Client, fetchURL
 }
 
 // FetchArtifact fetches the full content of an artifact by its ResultDB resource name.
-func FetchArtifact(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, artName string) ([]byte, error) {
-	art, err := rdbClient.GetArtifact(ctx, &pb.GetArtifactRequest{Name: artName})
+func FetchArtifact(ctx context.Context, rdbClient rdbpb.ResultDBClient, httpClient *http.Client, artName string) ([]byte, error) {
+	art, err := rdbClient.GetArtifact(ctx, &rdbpb.GetArtifactRequest{Name: artName})
 	if err != nil {
 		return nil, errors.Fmt("GetArtifact RPC failed: %w", err)
 	}
@@ -149,15 +151,15 @@ func FetchArtifact(ctx context.Context, rdbClient pb.ResultDBClient, httpClient 
 }
 
 // PrintTestID prints the structured or flat test identifier of a test result.
-func PrintTestID(ctx context.Context, schemasClient pb.SchemasClient, res *pb.TestResult) {
+func PrintTestID(ctx context.Context, schemasClient rdbpb.SchemasClient, res *rdbpb.TestResult) {
 	PrintTestIDWithAggregations(ctx, schemasClient, res, nil)
 }
 
 // PrintTestIDWithAggregations prints the structured or flat test identifier of a
 // test result, optionally annotating the module, coarse, and fine hierarchy levels
 // with inline verdict counts from aggs.
-func PrintTestIDWithAggregations(ctx context.Context, schemasClient pb.SchemasClient, res *pb.TestResult, aggs *HierarchyAggregations) {
-	appendCounts := func(val string, vc *pb.TestAggregation_VerdictCounts) string {
+func PrintTestIDWithAggregations(ctx context.Context, schemasClient rdbpb.SchemasClient, res *rdbpb.TestResult, aggs *HierarchyAggregations) {
+	appendCounts := func(val string, vc *rdbpb.TestAggregation_VerdictCounts) string {
 		if c := FormatVerdictCountsInline(vc); c != "" {
 			return val + " " + c
 		}
@@ -167,10 +169,10 @@ func PrintTestIDWithAggregations(ctx context.Context, schemasClient pb.SchemasCl
 	st := res.TestIdStructured
 	if st != nil && st.ModuleScheme != "" && st.ModuleScheme != "legacy" {
 		fmt.Println("Test ID:")
-		var scheme *pb.Scheme
+		var scheme *rdbpb.Scheme
 		var err error
 		if schemasClient != nil {
-			scheme, err = schemasClient.GetScheme(ctx, &pb.GetSchemeRequest{Name: "schema/schemes/" + st.ModuleScheme})
+			scheme, err = schemasClient.GetScheme(ctx, &rdbpb.GetSchemeRequest{Name: "schema/schemes/" + st.ModuleScheme})
 		}
 		if err == nil && scheme != nil {
 			modLabel := "Module"
@@ -225,7 +227,7 @@ const maxInlineArtifactBytes = 64 * 1024
 // FormatSummaryHTML converts a test result's summary_html into plain text,
 // automatically expanding small embedded <text-artifact> tags inline when
 // rdbClient and httpClient are provided.
-func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, resName, htmlStr string) string {
+func FormatSummaryHTML(ctx context.Context, rdbClient rdbpb.ResultDBClient, httpClient *http.Client, resName, htmlStr string) string {
 	re := regexp.MustCompile(`<text-artifact\s+([^>]+)>`)
 	htmlStr = re.ReplaceAllStringFunc(htmlStr, func(tag string) string {
 		match := re.FindStringSubmatch(tag)
@@ -255,7 +257,7 @@ func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpCli
 		} else {
 			artName = resName + "/artifacts/" + encodedArtID
 		}
-		art, err := rdbClient.GetArtifact(ctx, &pb.GetArtifactRequest{Name: artName})
+		art, err := rdbClient.GetArtifact(ctx, &rdbpb.GetArtifactRequest{Name: artName})
 		if err != nil || art == nil || art.FetchUrl == "" {
 			return fmt.Sprintf("[Failed to fetch embedded artifact: %s]", artID)
 		}
@@ -275,7 +277,7 @@ func FormatSummaryHTML(ctx context.Context, rdbClient pb.ResultDBClient, httpCli
 	return StripHTML(htmlStr)
 }
 
-func PrintAdditionalMetadata(res *pb.TestResult) {
+func PrintAdditionalMetadata(res *rdbpb.TestResult) {
 	if tm := res.TestMetadata; tm != nil {
 		if loc := tm.Location; loc != nil {
 			fmt.Printf("Location:  repo: %s, file: %s", loc.Repo, loc.FileName)
@@ -440,7 +442,7 @@ func GetParentGroup(name string) ParentGroup {
 	}
 }
 
-func FormatVariant(v *pb.Variant) string {
+func FormatVariant(v *rdbpb.Variant) string {
 	if v == nil {
 		return ""
 	}
@@ -499,7 +501,7 @@ func FormatSize(sizeBytes int64) string {
 }
 
 // PrintFailureReason prints the failure reason error message(s) and stack trace(s).
-func PrintFailureReason(fr *pb.FailureReason, indent string) {
+func PrintFailureReason(fr *rdbpb.FailureReason, indent string) {
 	if fr == nil {
 		return
 	}
@@ -569,7 +571,7 @@ func TruncateFirstLine(s string, maxLen int) (string, bool) {
 
 // FormatFailureReasonFirstLine extracts the first line of a failure reason for compact summary display,
 // and returns whether the failure reason contains more details (such as a stack trace or additional lines/errors).
-func FormatFailureReasonFirstLine(fr *pb.FailureReason, maxLen int) (string, bool) {
+func FormatFailureReasonFirstLine(fr *rdbpb.FailureReason, maxLen int) (string, bool) {
 	if fr == nil {
 		return "", false
 	}
@@ -590,23 +592,64 @@ func FormatFailureReasonFirstLine(fr *pb.FailureReason, maxLen int) (string, boo
 	return res, truncated || hasMore
 }
 
-// PrintArtifactList prints a formatted list of artifacts.
-func PrintArtifactList(artifacts []*pb.Artifact) {
+// PrintArtifactList prints a formatted list of artifacts to stdout.
+func PrintArtifactList(artifacts []*rdbpb.Artifact) {
+	PrintArtifactListTo(os.Stdout, artifacts)
+}
+
+// PrintArtifactListTo prints a formatted list of artifacts to out.
+func PrintArtifactListTo(out io.Writer, artifacts []*rdbpb.Artifact) {
+	printArtifactList(out, artifacts, false)
+}
+
+// PrintInvocationArtifactList prints an invocation-wide list of artifacts to
+// stdout, annotating each artifact with its owning work unit, test ID, result ID,
+// and copy-pasteable CLI flags.
+func PrintInvocationArtifactList(artifacts []*rdbpb.Artifact) {
+	PrintInvocationArtifactListTo(os.Stdout, artifacts)
+}
+
+// PrintInvocationArtifactListTo prints an invocation-wide list of artifacts to out,
+// annotating each artifact with its owning work unit, test ID, result ID, and
+// copy-pasteable CLI flags.
+func PrintInvocationArtifactListTo(out io.Writer, artifacts []*rdbpb.Artifact) {
+	printArtifactList(out, artifacts, true)
+}
+
+func printArtifactList(out io.Writer, artifacts []*rdbpb.Artifact, includeMetadata bool) {
 	if len(artifacts) == 0 {
-		fmt.Printf("  (no artifacts)\n\n")
+		fmt.Fprintf(out, "  (no artifacts)\n\n")
 		return
 	}
 	for _, art := range artifacts {
-		fmt.Printf("  - artifact_id: %s\n", art.ArtifactId)
+		fmt.Fprintf(out, "  - artifact_id: %s\n", art.ArtifactId)
+		var meta base.ArtifactMetadata
+		if includeMetadata {
+			meta = base.ExtractArtifactMetadata(art.Name)
+			if meta.WorkUnitID != "" {
+				fmt.Fprintf(out, "    work_unit:   %s\n", meta.WorkUnitID)
+			}
+			if meta.TestID != "" {
+				fmt.Fprintf(out, "    test_id:     %s\n", meta.TestID)
+			}
+			if meta.ResultID != "" {
+				fmt.Fprintf(out, "    result_id:   %s\n", meta.ResultID)
+			}
+		}
 		if art.SizeBytes > 0 {
-			fmt.Printf("    size:        %s\n", FormatSize(art.SizeBytes))
+			fmt.Fprintf(out, "    size:        %s\n", FormatSize(art.SizeBytes))
 		}
 		if art.ContentType != "" {
-			fmt.Printf("    type:        %s\n", art.ContentType)
+			fmt.Fprintf(out, "    type:        %s\n", art.ContentType)
 		}
 		if art.ArtifactType != "" {
-			fmt.Printf("    category:    %s\n", art.ArtifactType)
+			fmt.Fprintf(out, "    category:    %s\n", art.ArtifactType)
+		}
+		if includeMetadata {
+			if flags := meta.FormatFlags(); flags != "" {
+				fmt.Fprintf(out, "    flags:       %s\n", flags)
+			}
 		}
 	}
-	fmt.Println()
+	fmt.Fprintln(out)
 }

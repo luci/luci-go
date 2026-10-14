@@ -21,13 +21,20 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
+	"regexp"
 	"strconv"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/errors"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 type artifactFetcher func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error
@@ -91,7 +98,7 @@ func ValidateArtifactFlags(parentType ParentType, invID, wuID, testID, resultID,
 // ResolveTestResultResourceName resolves the canonical resource name for a test result.
 // - In non-legacy mode when workUnitID is provided: formats "rootInvocations/<invID>/workUnits/<wuID>/tests/<testID>/results/<resultID>".
 // - Otherwise: queries test results in the invocation to find the canonical result resource name.
-func ResolveTestResultResourceName(ctx context.Context, client pb.ResultDBClient, invID, wuID, testID, resultID string, legacy bool) (string, error) {
+func ResolveTestResultResourceName(ctx context.Context, client rdbpb.ResultDBClient, invID, wuID, testID, resultID string, legacy bool) (string, error) {
 	if !legacy && wuID != "" {
 		return base.FormatTestResultWorkUnitResourceName(invID, wuID, testID, resultID), nil
 	}
@@ -108,7 +115,7 @@ func ResolveTestResultResourceName(ctx context.Context, client pb.ResultDBClient
 }
 
 // ResolveTargetResourceName resolves the canonical resource name for a test result, work unit, or invocation.
-func ResolveTargetResourceName(ctx context.Context, client pb.ResultDBClient, parentType ParentType, invID, wuID, testID, resultID string, legacy bool) (string, error) {
+func ResolveTargetResourceName(ctx context.Context, client rdbpb.ResultDBClient, parentType ParentType, invID, wuID, testID, resultID string, legacy bool) (string, error) {
 	if parentType == ParentTypeUnknown {
 		var err error
 		parentType, err = ResolveParentType(invID, wuID, testID, resultID)
@@ -128,8 +135,22 @@ func ResolveTargetResourceName(ctx context.Context, client pb.ResultDBClient, pa
 	return ResolveTestResultResourceName(ctx, client, invID, wuID, testID, resultID, legacy)
 }
 
-// ResolveArtifactResourceName resolves the full artifact resource name for a test result or work unit.
-func ResolveArtifactResourceName(ctx context.Context, client pb.ResultDBClient, parentType ParentType, invID, wuID, testID, resultID, artID string, legacy bool) (string, error) {
+// ResolveArtifactResourceName resolves the full artifact resource name for a test result, work unit, or invocation.
+func ResolveArtifactResourceName(ctx context.Context, client rdbpb.ResultDBClient, parentType ParentType, invID, wuID, testID, resultID, artID string, legacy bool) (string, error) {
+	if parentType == ParentTypeUnknown {
+		var err error
+		parentType, err = ResolveParentType(invID, wuID, testID, resultID)
+		if err != nil {
+			return "", err
+		}
+	}
+	if parentType == ParentTypeInvocation && !legacy && client != nil {
+		art, err := ResolveInvocationArtifact(ctx, client, invID, artID, io.Discard)
+		if err != nil {
+			return "", err
+		}
+		return art.Name, nil
+	}
 	targetName, err := ResolveTargetResourceName(ctx, client, parentType, invID, wuID, testID, resultID, legacy)
 	if err != nil {
 		return "", err
@@ -137,16 +158,238 @@ func ResolveArtifactResourceName(ctx context.Context, client pb.ResultDBClient, 
 	return targetName + "/artifacts/" + url.PathEscape(artID), nil
 }
 
-func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile string, parentType ParentType, invID, wuID, testID, resultID, artID string, fetcher artifactFetcher) int {
-	if err := af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-		return 1
+const (
+	// DefaultMaxArtifacts is the default maximum number of artifacts to return
+	// and display when listing or resolving artifacts across an invocation.
+	DefaultMaxArtifacts = 100
+
+	// maxQueryArtifactsPageSize is the maximum page size sent in a single
+	// QueryArtifacts RPC when fetching more than DefaultMaxArtifacts.
+	maxQueryArtifactsPageSize = 500
+)
+
+// queryInvocationArtifacts pages through ResultDB.QueryArtifacts across a root
+// invocation with an optional predicate, read mask, and maximum item limit (0
+// for unlimited). It returns the collected artifacts and whether more artifacts
+// exist beyond maxArtifacts.
+func queryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, invTarget string, predicate *rdbpb.ArtifactPredicate, readMask *fieldmaskpb.FieldMask, maxArtifacts int) ([]*rdbpb.Artifact, bool, error) {
+	normInvID := base.NormalizeInvocation(invTarget)
+	var all []*rdbpb.Artifact
+	pageToken := ""
+	hasMore := false
+
+	for {
+		pageSize := int32(maxQueryArtifactsPageSize)
+		if maxArtifacts > 0 {
+			remaining := maxArtifacts - len(all)
+			if remaining <= 0 {
+				break
+			}
+			if int32(remaining) < pageSize {
+				pageSize = int32(remaining)
+			}
+		}
+
+		req := &rdbpb.QueryArtifactsRequest{
+			Parent:    "rootInvocations/" + normInvID,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Predicate: predicate,
+			ReadMask:  readMask,
+		}
+		res, err := client.QueryArtifacts(ctx, req)
+		if err != nil {
+			if base.IsPermissionDenied(err) {
+				return nil, false, errors.Fmt("QueryArtifacts RPC failed (missing ResultDB realm permission): %w", err)
+			}
+			return nil, false, errors.Fmt("QueryArtifacts RPC failed: %w", err)
+		}
+		for i, a := range res.Artifacts {
+			all = append(all, a)
+			if maxArtifacts > 0 && len(all) >= maxArtifacts {
+				if i < len(res.Artifacts)-1 || res.NextPageToken != "" {
+					hasMore = true
+				}
+				break
+			}
+		}
+		if maxArtifacts > 0 && len(all) >= maxArtifacts {
+			break
+		}
+		if res.NextPageToken == "" {
+			break
+		}
+		pageToken = res.NextPageToken
+	}
+	return all, hasMore, nil
+}
+
+// queryArtifactsByRegexp queries artifacts across a root invocation matching
+// the given artifactIDRegexp fragment, up to DefaultMaxArtifacts.
+func queryArtifactsByRegexp(ctx context.Context, client rdbpb.ResultDBClient, normInvID, artifactIDRegexp string) ([]*rdbpb.Artifact, bool, error) {
+	return queryInvocationArtifacts(ctx, client, normInvID, &rdbpb.ArtifactPredicate{
+		ArtifactIdRegexp: artifactIDRegexp,
+	}, nil, DefaultMaxArtifacts)
+}
+
+// extractFallbackPath extracts a normalized path and trailing basename from
+// artID for suffix/basename fallback matching (supporting both fetch_artifact
+// path prefixes and bare filenames whose stored ArtifactId has a directory prefix).
+func extractFallbackPath(artID string) (trimmedPath, baseName string, ok bool) {
+	trimmedPath = strings.Trim(artID, "/")
+	if trimmedPath == "" {
+		return "", "", false
+	}
+	baseName = path.Base(trimmedPath)
+	if baseName == "" || baseName == "." || baseName == ".." || baseName == "/" {
+		return "", "", false
+	}
+	return trimmedPath, baseName, true
+}
+
+// rankPathFallbackMatches ranks candidate artifacts against a slash-delimited
+// path, preferring multi-segment path suffixes over exact basename matches and
+// trailing basename matches.
+func rankPathFallbackMatches(candidates []*rdbpb.Artifact, trimmedPath, baseName string) []*rdbpb.Artifact {
+	var suffixMatches, baseMatches, tailMatches []*rdbpb.Artifact
+	for _, a := range candidates {
+		if strings.Contains(a.ArtifactId, "/") && (a.ArtifactId == trimmedPath || strings.HasSuffix(trimmedPath, "/"+a.ArtifactId)) {
+			suffixMatches = append(suffixMatches, a)
+		} else if a.ArtifactId == baseName {
+			baseMatches = append(baseMatches, a)
+		} else if strings.HasSuffix(a.ArtifactId, "/"+baseName) {
+			tailMatches = append(tailMatches, a)
+		}
+	}
+	if len(suffixMatches) > 0 {
+		return suffixMatches
+	}
+	if len(baseMatches) > 0 {
+		return baseMatches
+	}
+	return tailMatches
+}
+
+// formatAmbiguousArtifactsError builds a numbered disambiguation error listing
+// the copy-pasteable CLI flags, size, and type for each matching artifact.
+func formatAmbiguousArtifactsError(matches []*rdbpb.Artifact, hasMore bool, normInvID, artID string) error {
+	var b strings.Builder
+	if hasMore && len(matches) >= DefaultMaxArtifacts {
+		fmt.Fprintf(&b, "multiple artifacts (%d+) match %q in invocation %q (showing first %d); please re-run with one of the following flag sets to disambiguate:", len(matches), artID, normInvID, len(matches))
+	} else {
+		fmt.Fprintf(&b, "multiple artifacts (%d) match %q in invocation %q; please re-run with one of the following flag sets to disambiguate:", len(matches), artID, normInvID)
+	}
+	for i, m := range matches {
+		meta := base.ExtractArtifactMetadata(m.Name)
+		flags := meta.FormatFlags()
+		if m.ArtifactId != artID {
+			if flags != "" {
+				flags += " "
+			}
+			flags += "-artifactid=" + base.ShellQuoteIfNeeded(m.ArtifactId)
+		}
+		if flags == "" {
+			flags = m.Name
+		}
+		var details []string
+		if m.SizeBytes > 0 {
+			details = append(details, format.FormatSize(m.SizeBytes))
+		}
+		if m.ArtifactType != "" {
+			details = append(details, m.ArtifactType)
+		} else if m.ContentType != "" {
+			details = append(details, m.ContentType)
+		}
+		if len(details) > 0 {
+			fmt.Fprintf(&b, "\n  %d. %s (%s)", i+1, flags, strings.Join(details, ", "))
+		} else {
+			fmt.Fprintf(&b, "\n  %d. %s", i+1, flags)
+		}
+	}
+	return errors.New(b.String())
+}
+
+// ResolveInvocationArtifact queries ResultDB.QueryArtifacts across a root
+// invocation to resolve a single artifact by artID when -workunitid, -testid,
+// and -resultid are omitted.
+//
+// If exact match on artID returns 0 results and artID contains '/', it falls
+// back to matching the trailing filename/path suffix (supporting fetch_artifact
+// paths like "/builds/I.../<bid>/<target>/inv_<n>/<artifact_name>").
+// If multiple artifacts match, it returns a disambiguation error listing the
+// copy-pasteable flags for each match.
+func ResolveInvocationArtifact(ctx context.Context, client rdbpb.ResultDBClient, invID, artID string, errOut io.Writer) (*rdbpb.Artifact, error) {
+	normInvID := base.NormalizeInvocation(invID)
+	candidates, hasMore, err := queryArtifactsByRegexp(ctx, client, normInvID, regexp.QuoteMeta(artID))
+	if err != nil {
+		return nil, err
 	}
 
-	client, _, httpClient, err := af.NewResultDBClient(ctx, host)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
-		return 1
+	var matches []*rdbpb.Artifact
+	for _, a := range candidates {
+		if a.ArtifactId == artID {
+			matches = append(matches, a)
+		}
+	}
+
+	usedPathFallback := false
+	if len(matches) == 0 {
+		if trimmedPath, baseName, ok := extractFallbackPath(artID); ok {
+			fbRegexp := "(?:.*/)?" + regexp.QuoteMeta(baseName)
+			if !strings.Contains(artID, "/") {
+				fbRegexp = ".+/" + regexp.QuoteMeta(baseName)
+			}
+			fbCandidates, fbHasMore, err := queryArtifactsByRegexp(ctx, client, normInvID, fbRegexp)
+			if err != nil {
+				return nil, err
+			}
+			matches = rankPathFallbackMatches(fbCandidates, trimmedPath, baseName)
+			hasMore = fbHasMore
+			usedPathFallback = len(matches) > 0
+		}
+	}
+
+	if len(matches) == 0 {
+		return nil, errors.Fmt("artifact %q not found in invocation %q (run 'luci artifact list -invocationid=%s' to view available artifacts)", artID, normInvID, normInvID)
+	}
+	if len(matches) > 1 {
+		return nil, formatAmbiguousArtifactsError(matches, hasMore, normInvID, artID)
+	}
+
+	matched := matches[0]
+	if usedPathFallback && errOut != nil {
+		meta := base.ExtractArtifactMetadata(matched.Name)
+		if flags := meta.FormatFlags(); flags != "" {
+			fmt.Fprintf(errOut, "Note: resolved path %q to artifact %q (%s)\n", artID, matched.ArtifactId, flags)
+		} else {
+			fmt.Fprintf(errOut, "Note: resolved path %q to artifact %q\n", artID, matched.ArtifactId)
+		}
+	}
+	return matched, nil
+}
+
+func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile string, parentType ParentType, invID, wuID, testID, resultID, artID string, fetcher artifactFetcher) int {
+	return executeArtifactFetchWithClients(ctx, af, nil, nil, host, outputFile, parentType, invID, wuID, testID, resultID, artID, fetcher)
+}
+
+func executeArtifactFetchWithClients(ctx context.Context, af *base.AuthFlags, client rdbpb.ResultDBClient, httpClient *http.Client, host, outputFile string, parentType ParentType, invID, wuID, testID, resultID, artID string, fetcher artifactFetcher) int {
+	if client == nil || httpClient == nil {
+		if err := af.Parse(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			return 1
+		}
+
+		c, _, hc, err := af.NewResultDBClient(ctx, host)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+			return 1
+		}
+		if client == nil {
+			client = c
+		}
+		if httpClient == nil {
+			httpClient = hc
+		}
 	}
 
 	resolved, err := base.ResolveInvocation(ctx, client, invID)
@@ -159,20 +402,47 @@ func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputF
 		return 1
 	}
 
-	artName, err := ResolveArtifactResourceName(ctx, client, parentType, resolved.ID, wuID, testID, resultID, artID, resolved.Legacy)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		return 1
+	var art *rdbpb.Artifact
+	var artName string
+	if parentType == ParentTypeInvocation && !resolved.Legacy {
+		art, err = ResolveInvocationArtifact(ctx, client, resolved.ID, artID, os.Stderr)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			return 1
+		}
+		artName = art.Name
+	} else {
+		artName, err = ResolveArtifactResourceName(ctx, client, parentType, resolved.ID, wuID, testID, resultID, artID, resolved.Legacy)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			return 1
+		}
 	}
 
-	art, err := client.GetArtifact(ctx, &pb.GetArtifactRequest{Name: artName})
-	if err != nil {
-		if base.IsPermissionDenied(err) {
-			fmt.Fprintf(os.Stderr, "GetArtifact RPC failed (missing ResultDB realm permission): %s\n", err)
-		} else {
-			fmt.Fprintf(os.Stderr, "GetArtifact RPC failed: %s\n", err)
+	if art == nil || art.FetchUrl == "" {
+		art, err = client.GetArtifact(ctx, &rdbpb.GetArtifactRequest{Name: artName})
+		if err != nil && parentType != ParentTypeInvocation &&
+			(status.Code(err) == codes.NotFound || status.Code(err) == codes.InvalidArgument) {
+			if _, baseName, ok := extractFallbackPath(artID); ok && baseName != artID {
+				if idx := strings.LastIndex(artName, "/artifacts/"); idx != -1 {
+					fbName := artName[:idx] + "/artifacts/" + url.PathEscape(baseName)
+					if fbArt, fbErr := client.GetArtifact(ctx, &rdbpb.GetArtifactRequest{Name: fbName}); fbErr == nil {
+						fmt.Fprintf(os.Stderr, "Note: resolved path %q to artifact %q\n", artID, baseName)
+						art = fbArt
+						artName = fbName
+						err = nil
+					}
+				}
+			}
 		}
-		return 1
+		if err != nil {
+			if base.IsPermissionDenied(err) {
+				fmt.Fprintf(os.Stderr, "GetArtifact RPC failed (missing ResultDB realm permission): %s\n", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "GetArtifact RPC failed: %s\n", err)
+			}
+			return 1
+		}
 	}
 	if art.FetchUrl == "" {
 		fmt.Fprintf(os.Stderr, "artifact %q has no fetch URL\n", artName)
