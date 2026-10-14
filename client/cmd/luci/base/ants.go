@@ -23,9 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -34,11 +32,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
-
-// DefaultAntsCLIPath is the standard BinFS path to the ants_cli executable.
-//
-// Deprecated: AnTS test results are now resolved directly via the AnTS v4 OnePlatform API.
-const DefaultAntsCLIPath = "/google/bin/releases/android/ants_cli/ants_cli"
 
 // DefaultAntsBaseURL is the default AnTS v4 OnePlatform API endpoint.
 const DefaultAntsBaseURL = "https://androidteststorage.pa.googleapis.com"
@@ -179,40 +172,11 @@ type AntsTestResultInfo struct {
 	IsModuleError bool   `json:"is_module_error,omitempty"`
 }
 
-// FindAntsCLI locates the ants_cli executable on the system.
-//
-// Deprecated: AnTS test results are now resolved directly via the AnTS v4 OnePlatform API.
-func FindAntsCLI() (string, error) {
-	if custom := os.Getenv("ANTS_CLI_PATH"); custom != "" {
-		if custom == "disabled" || custom == "none" {
-			return "", errors.New("AnTS test result ID resolution is disabled (ANTS_CLI_PATH=" + custom + ")")
-		}
-		if _, err := os.Stat(custom); err == nil {
-			return custom, nil
-		}
-		if p, err := exec.LookPath(custom); err == nil {
-			return p, nil
-		}
-		return "", errors.Fmt("AnTS test result ID resolution requires ants_cli (not found at %s)", custom)
-	}
-	if _, err := os.Stat(DefaultAntsCLIPath); err == nil {
-		return DefaultAntsCLIPath, nil
-	}
-	if p, err := exec.LookPath("ants_cli"); err == nil {
-		return p, nil
-	}
-	return "", errors.New("AnTS test result ID resolution requires ants_cli (not found at " + DefaultAntsCLIPath + " or in PATH)")
-}
-
 // ResolveAntsTestResult retrieves test result details for a test result ID directly from the AnTS v4 OnePlatform API.
 func ResolveAntsTestResult(ctx context.Context, testResultID string) (*AntsTestResultInfo, error) {
 	testResultID = strings.TrimSpace(testResultID)
 	if !IsAntsTestResultID(testResultID) {
 		return nil, errors.Fmt("invalid AnTS test result ID %q (expected format TR<digits>)", testResultID)
-	}
-
-	if custom := os.Getenv("ANTS_CLI_PATH"); custom == "disabled" || custom == "none" {
-		return nil, errors.New("AnTS test result ID resolution is disabled (ANTS_CLI_PATH=" + custom + ")")
 	}
 
 	baseURL := antsBaseURL(ctx)
@@ -484,76 +448,5 @@ func normalizeAntsStatus(raw string) string {
 		return "testSkipped"
 	default:
 		return strings.TrimSpace(raw)
-	}
-}
-
-// ParseAntsShowTestOutput parses the output of `ants_cli show-test` (supporting both JSON and key-value text format).
-func ParseAntsShowTestOutput(out string) (*AntsTestResultInfo, error) {
-	trimmed := strings.TrimSpace(out)
-	if strings.HasPrefix(trimmed, "{") {
-		var jsonInfo AntsTestResultInfo
-		if err := json.Unmarshal([]byte(trimmed), &jsonInfo); err == nil && (jsonInfo.TestResultID != "" || jsonInfo.TestCase != "") {
-			if jsonInfo.ModuleName == "" && jsonInfo.TestCase != "" {
-				deconstructTestCase(&jsonInfo)
-			}
-			return &jsonInfo, nil
-		}
-		if info, err := ParseAntsTestResultJSON([]byte(trimmed)); err == nil && (info.TestResultID != "" || info.TestCase != "" || info.InvocationID != "") {
-			return info, nil
-		}
-	}
-
-	info := &AntsTestResultInfo{}
-	lines := strings.Split(out, "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "Test Result ID:") {
-			info.TestResultID = strings.TrimSpace(strings.TrimPrefix(line, "Test Result ID:"))
-		} else if strings.HasPrefix(line, "Test Case:") {
-			info.TestCase = strings.TrimSpace(strings.TrimPrefix(line, "Test Case:"))
-		} else if strings.HasPrefix(line, "Status:") {
-			info.Status = strings.TrimSpace(strings.TrimPrefix(line, "Status:"))
-		} else if strings.HasPrefix(line, "Work Unit ID:") {
-			info.WorkUnitID = strings.TrimSpace(strings.TrimPrefix(line, "Work Unit ID:"))
-		} else if strings.HasPrefix(line, "Invocation ID:") {
-			info.InvocationID = strings.TrimSpace(strings.TrimPrefix(line, "Invocation ID:"))
-		} else if strings.HasPrefix(line, "Run Number:") {
-			val := strings.TrimSpace(strings.TrimPrefix(line, "Run Number:"))
-			info.RunNumber, _ = strconv.Atoi(val)
-		} else if strings.HasPrefix(line, "Attempt Number:") {
-			val := strings.TrimSpace(strings.TrimPrefix(line, "Attempt Number:"))
-			info.AttemptNumber, _ = strconv.Atoi(val)
-		} else if strings.HasPrefix(line, "Test Identifier ID:") {
-			info.TestIdentifierID = strings.TrimSpace(strings.TrimPrefix(line, "Test Identifier ID:"))
-		}
-	}
-
-	if info.TestResultID == "" && info.TestCase == "" && info.InvocationID == "" {
-		return nil, errors.New("failed to parse ants_cli show-test output: no test result details found")
-	}
-
-	deconstructTestCase(info)
-	return info, nil
-}
-
-func deconstructTestCase(info *AntsTestResultInfo) {
-	if info == nil {
-		return
-	}
-	tc := info.TestCase
-	if idx := strings.Index(tc, "#"); idx != -1 {
-		info.ModuleName = tc[:idx]
-		rest := tc[idx+1:]
-		if rest == "." || rest == "" {
-			info.IsModuleError = true
-		} else if lastDot := strings.LastIndex(rest, "."); lastDot != -1 {
-			info.ClassName = rest[:lastDot]
-			info.MethodName = rest[lastDot+1:]
-		} else {
-			info.MethodName = rest
-		}
-	} else if tc != "" {
-		info.ModuleName = tc
-		info.IsModuleError = true
 	}
 }

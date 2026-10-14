@@ -18,8 +18,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -102,73 +100,6 @@ func TestAntsHelpers(t *testing.T) {
 			assert.Loosely(t, NormalizeInvocation("ants-I77100010600769898"), should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, NormalizeInvocation("ants-i77100010600769898"), should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, NormalizeInvocation("invocations/I77100010600769898"), should.Equal("ants-i77100010600769898"))
-		})
-
-		t.Run("ParseAntsShowTestOutput", func(t *ftt.Test) {
-			methodOutput := `Fetching details for test result: TR13830335277435395...
-Test Result ID: TR13830335277435395
-Test Case: CellBroadcastServiceTests#com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest.testResetAreaInfoWithDefaultSubChanged
-Status: pass
-Work Unit ID: WU17100269020689387
-Invocation ID: I77100010600769898
-Run Number: 0
-Attempt Number: 1
-Test Identifier ID: a1a9ab35503045aa069b820825a597e3`
-
-			info, err := ParseAntsShowTestOutput(methodOutput)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, info.TestResultID, should.Equal("TR13830335277435395"))
-			assert.Loosely(t, info.TestCase, should.Equal("CellBroadcastServiceTests#com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest.testResetAreaInfoWithDefaultSubChanged"))
-			assert.Loosely(t, info.ModuleName, should.Equal("CellBroadcastServiceTests"))
-			assert.Loosely(t, info.ClassName, should.Equal("com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest"))
-			assert.Loosely(t, info.MethodName, should.Equal("testResetAreaInfoWithDefaultSubChanged"))
-			assert.Loosely(t, info.Status, should.Equal("pass"))
-			assert.Loosely(t, info.WorkUnitID, should.Equal("WU17100269020689387"))
-			assert.Loosely(t, info.InvocationID, should.Equal("I77100010600769898"))
-			assert.Loosely(t, info.RunNumber, should.Equal(0))
-			assert.Loosely(t, info.AttemptNumber, should.Equal(1))
-			assert.Loosely(t, info.IsModuleError, should.BeFalse)
-
-			moduleErrorOutput := `Fetching details for test result: TR29830335282615697...
-Test Result ID: TR29830335282615697
-Test Case: CellBroadcastReceiverMTS#.
-Status: testError
-Work Unit ID:
-Invocation ID: I77100010600769898
-Run Number: 0
-Attempt Number: 0
-Test Identifier ID: 6fd7643ef8e5a458862c7e4a68e88e2c`
-
-			info2, err := ParseAntsShowTestOutput(moduleErrorOutput)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, info2.TestResultID, should.Equal("TR29830335282615697"))
-			assert.Loosely(t, info2.ModuleName, should.Equal("CellBroadcastReceiverMTS"))
-			assert.Loosely(t, info2.ClassName, should.Equal(""))
-			assert.Loosely(t, info2.MethodName, should.Equal(""))
-			assert.Loosely(t, info2.IsModuleError, should.BeTrue)
-			assert.Loosely(t, info2.Status, should.Equal("testError"))
-			assert.Loosely(t, info2.InvocationID, should.Equal("I77100010600769898"))
-
-			// Test JSON format parsing
-			jsonOutput := `{"test_result_id":"TR55555","test_case":"MyModule#com.example.Test.method1","status":"pass","invocation_id":"I99999"}`
-			info3, err := ParseAntsShowTestOutput(jsonOutput)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, info3.TestResultID, should.Equal("TR55555"))
-			assert.Loosely(t, info3.ModuleName, should.Equal("MyModule"))
-			assert.Loosely(t, info3.ClassName, should.Equal("com.example.Test"))
-			assert.Loosely(t, info3.MethodName, should.Equal("method1"))
-			assert.Loosely(t, info3.InvocationID, should.Equal("I99999"))
-		})
-
-		t.Run("FindAntsCLI with ANTS_CLI_PATH override", func(t *ftt.Test) {
-			tempDir := t.TempDir()
-			fakeBin := filepath.Join(tempDir, "ants_cli")
-			_ = os.WriteFile(fakeBin, []byte("#!/bin/sh\n"), 0755)
-
-			t.Setenv("ANTS_CLI_PATH", fakeBin)
-			p, err := FindAntsCLI()
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, p, should.Equal(fakeBin))
 		})
 	})
 }
@@ -450,13 +381,6 @@ func TestResolveAntsTestResult(t *testing.T) {
 			_, err := ResolveAntsTestResult(context.Background(), "invalid-id")
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid AnTS test result ID"))
-		})
-
-		t.Run("Disabled resolution via ANTS_CLI_PATH", func(t *ftt.Test) {
-			t.Setenv("ANTS_CLI_PATH", "disabled")
-			_, err := ResolveAntsTestResult(context.Background(), "TR13830335277435395")
-			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err.Error(), should.ContainSubstring("disabled"))
 		})
 	})
 }
