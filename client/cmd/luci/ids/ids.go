@@ -137,6 +137,11 @@ func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.E
 	bbClient := r.bbClient
 	if r.af != nil && (rdbClient == nil || bbClient == nil) {
 		if err := r.af.Parse(); err == nil {
+			// Attach parsed auth options to context so downstream resolvers like
+			// base.ResolveAntsTestResult inherit CLI auth flags (e.g. -service-account-json).
+			if r.af.ParsedOpts != nil {
+				ctx = base.WithAuthOptions(ctx, *r.af.ParsedOpts)
+			}
 			if rdbClient == nil {
 				if c, _, _, errClient := r.af.NewResultDBClient(ctx, r.host); errClient == nil {
 					rdbClient = c

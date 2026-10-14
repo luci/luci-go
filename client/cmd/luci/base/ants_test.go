@@ -15,6 +15,9 @@
 package base
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -166,6 +169,294 @@ Test Identifier ID: 6fd7643ef8e5a458862c7e4a68e88e2c`
 			p, err := FindAntsCLI()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, p, should.Equal(fakeBin))
+		})
+	})
+}
+
+func TestParseAntsTestResultJSON(t *testing.T) {
+	ftt.Run("ParseAntsTestResultJSON", t, func(t *ftt.Test) {
+		t.Run("Method test result with module parameters", func(t *ftt.Test) {
+			jsonData := []byte(`{
+					"testResultId": "TR13830335277435395",
+					"invocationId": "I77100010600769898",
+					"workUnitId": "WU17100269020689387",
+					"testStatus": "PASS",
+					"runNumber": 0,
+					"attemptNumber": 1,
+					"testIdentifierId": "a1a9ab35503045aa069b820825a597e3",
+					"testIdentifier": {
+						"module": "CellBroadcastServiceTests",
+						"moduleParameters": [
+							{"name": "module-abi", "value": "arm64-v8a"}
+						],
+						"testClass": "com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest",
+						"method": "testResetAreaInfoWithDefaultSubChanged"
+					},
+					"aggregationDetail": {
+						"aggregationLevel": "METHOD"
+					}
+				}`)
+
+			info, err := ParseAntsTestResultJSON(jsonData)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.TestResultID, should.Equal("TR13830335277435395"))
+			assert.Loosely(t, info.InvocationID, should.Equal("I77100010600769898"))
+			assert.Loosely(t, info.WorkUnitID, should.Equal("WU17100269020689387"))
+			assert.Loosely(t, info.Status, should.Equal("pass"))
+			assert.Loosely(t, info.RunNumber, should.Equal(0))
+			assert.Loosely(t, info.AttemptNumber, should.Equal(1))
+			assert.Loosely(t, info.TestIdentifierID, should.Equal("a1a9ab35503045aa069b820825a597e3"))
+			assert.Loosely(t, info.ModuleName, should.Equal("CellBroadcastServiceTests"))
+			assert.Loosely(t, info.ClassName, should.Equal("com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest"))
+			assert.Loosely(t, info.MethodName, should.Equal("testResetAreaInfoWithDefaultSubChanged"))
+			assert.Loosely(t, info.TestCase, should.Equal("CellBroadcastServiceTests#com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest.testResetAreaInfoWithDefaultSubChanged"))
+			assert.Loosely(t, info.IsModuleError, should.BeFalse)
+			assert.Loosely(t, info.AggregationType, should.Equal("METHOD"))
+			assert.Loosely(t, len(info.ModuleParameters), should.Equal(1))
+			assert.Loosely(t, info.ModuleParameters[0].Name, should.Equal("module-abi"))
+			assert.Loosely(t, info.ModuleParameters[0].Value, should.Equal("arm64-v8a"))
+		})
+
+		t.Run("Module error result with aggregationLevel MODULE", func(t *ftt.Test) {
+			jsonData := []byte(`{
+					"testResultId": "TR29830335282615697",
+					"invocationId": "I77100010600769898",
+					"testStatus": "TEST_ERROR",
+					"testIdentifier": {
+						"module": "CellBroadcastReceiverMTS"
+					},
+					"aggregationDetail": {
+						"aggregationLevel": "MODULE"
+					}
+				}`)
+
+			info, err := ParseAntsTestResultJSON(jsonData)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.TestResultID, should.Equal("TR29830335282615697"))
+			assert.Loosely(t, info.InvocationID, should.Equal("I77100010600769898"))
+			assert.Loosely(t, info.WorkUnitID, should.Equal(""))
+			assert.Loosely(t, info.Status, should.Equal("testError"))
+			assert.Loosely(t, info.ModuleName, should.Equal("CellBroadcastReceiverMTS"))
+			assert.Loosely(t, info.ClassName, should.Equal(""))
+			assert.Loosely(t, info.MethodName, should.Equal(""))
+			assert.Loosely(t, info.TestCase, should.Equal("CellBroadcastReceiverMTS#."))
+			assert.Loosely(t, info.IsModuleError, should.BeTrue)
+			assert.Loosely(t, info.AggregationType, should.Equal("MODULE"))
+		})
+
+		t.Run("Module error result with aggregationType MODULE", func(t *ftt.Test) {
+			jsonData := []byte(`{
+					"testResultId": "TR29830335282615697",
+					"invocationId": "I77100010600769898",
+					"testStatus": "FAIL",
+					"testIdentifier": {
+						"module": "MyModule"
+					},
+					"aggregationDetail": {
+						"aggregationType": "MODULE"
+					}
+				}`)
+
+			info, err := ParseAntsTestResultJSON(jsonData)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.IsModuleError, should.BeTrue)
+			assert.Loosely(t, info.TestCase, should.Equal("MyModule#."))
+			assert.Loosely(t, info.Status, should.Equal("fail"))
+			assert.Loosely(t, info.AggregationType, should.Equal("MODULE"))
+		})
+
+		t.Run("Placeholder test result without module or class", func(t *ftt.Test) {
+			jsonData := []byte(`{
+					"testResultId": "TR98730375213734414",
+					"invocationId": "I56900010616552061",
+					"testStatus": "TEST_ERROR"
+				}`)
+
+			info, err := ParseAntsTestResultJSON(jsonData)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.TestResultID, should.Equal("TR98730375213734414"))
+			assert.Loosely(t, info.InvocationID, should.Equal("I56900010616552061"))
+			assert.Loosely(t, info.TestCase, should.Equal("#."))
+			assert.Loosely(t, info.IsModuleError, should.BeTrue)
+		})
+
+		t.Run("Result without module name but with class and method", func(t *ftt.Test) {
+			jsonData := []byte(`{
+					"testResultId": "TR36130379899461232",
+					"invocationId": "I39300010618643739",
+					"workUnitId": "WU28600269761659804",
+					"testStatus": "FAIL",
+					"testIdentifier": {
+						"testClass": "SdvFWBaselineDHIOneVMTest",
+						"method": "test_stop_start_vm"
+					}
+				}`)
+
+			info, err := ParseAntsTestResultJSON(jsonData)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.TestCase, should.Equal("#SdvFWBaselineDHIOneVMTest.test_stop_start_vm"))
+			assert.Loosely(t, info.ModuleName, should.Equal(""))
+			assert.Loosely(t, info.ClassName, should.Equal("SdvFWBaselineDHIOneVMTest"))
+			assert.Loosely(t, info.MethodName, should.Equal("test_stop_start_vm"))
+			assert.Loosely(t, info.IsModuleError, should.BeFalse)
+		})
+
+		t.Run("Invalid or empty JSON", func(t *ftt.Test) {
+			_, errEmpty := ParseAntsTestResultJSON([]byte(""))
+			assert.Loosely(t, errEmpty, should.NotBeNil)
+
+			_, errMalformed := ParseAntsTestResultJSON([]byte("{not-json"))
+			assert.Loosely(t, errMalformed, should.NotBeNil)
+
+			_, errNoFields := ParseAntsTestResultJSON([]byte("{}"))
+			assert.Loosely(t, errNoFields, should.NotBeNil)
+		})
+	})
+}
+
+func TestResolveAntsTestResult(t *testing.T) {
+	ftt.Run("ResolveAntsTestResult", t, func(t *ftt.Test) {
+		t.Run("200 OK method test result with header validation", func(t *ftt.Test) {
+			// Simulates AnTS v4 OnePlatform API returning a method-level test result
+			// and validates that request path, Accept header, and X-Goog-User-Project header are sent.
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Loosely(t, r.Method, should.Equal("GET"))
+				assert.Loosely(t, r.URL.Path, should.Equal("/v4/tests/TR13830335277435395"))
+				assert.Loosely(t, r.Header.Get("X-Goog-User-Project"), should.Equal(AntsUserProject))
+				assert.Loosely(t, r.Header.Get("Accept"), should.Equal("application/json"))
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{
+						"testResultId": "TR13830335277435395",
+						"invocationId": "I77100010600769898",
+						"workUnitId": "WU17100269020689387",
+						"testStatus": "PASS",
+						"testIdentifier": {
+							"module": "CellBroadcastServiceTests",
+							"testClass": "com.android.cellbroadcastservice.tests.GsmCellBroadcastHandlerTest",
+							"method": "testResetAreaInfoWithDefaultSubChanged"
+						}
+					}`))
+			}))
+			defer srv.Close()
+
+			ctx := WithAntsHTTPClient(context.Background(), srv.Client(), srv.URL)
+			info, err := ResolveAntsTestResult(ctx, "TR13830335277435395")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.TestResultID, should.Equal("TR13830335277435395"))
+			assert.Loosely(t, info.InvocationID, should.Equal("I77100010600769898"))
+			assert.Loosely(t, info.WorkUnitID, should.Equal("WU17100269020689387"))
+			assert.Loosely(t, info.Status, should.Equal("pass"))
+			assert.Loosely(t, info.ModuleName, should.Equal("CellBroadcastServiceTests"))
+		})
+
+		t.Run("200 OK module error aggregate", func(t *ftt.Test) {
+			// Simulates AnTS v4 OnePlatform API returning a module-level failure aggregate
+			// with aggregationLevel MODULE and empty class/method.
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{
+						"testResultId": "TR29830335282615697",
+						"invocationId": "I77100010600769898",
+						"testStatus": "TEST_ERROR",
+						"testIdentifier": {
+							"module": "CellBroadcastReceiverMTS"
+						},
+						"aggregationDetail": {
+							"aggregationLevel": "MODULE"
+						}
+					}`))
+			}))
+			defer srv.Close()
+
+			ctx := WithAntsHTTPClient(context.Background(), srv.Client(), srv.URL)
+			info, err := ResolveAntsTestResult(ctx, "TR29830335282615697")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.TestResultID, should.Equal("TR29830335282615697"))
+			assert.Loosely(t, info.IsModuleError, should.BeTrue)
+			assert.Loosely(t, info.TestCase, should.Equal("CellBroadcastReceiverMTS#."))
+		})
+
+		t.Run("404 Not Found error handling", func(t *ftt.Test) {
+			// Simulates AnTS OnePlatform 404 NOT_FOUND response envelope.
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte(`{
+						"error": {
+							"code": 404,
+							"message": "Requested entity was not found.",
+							"status": "NOT_FOUND"
+						}
+					}`))
+			}))
+			defer srv.Close()
+
+			ctx := WithAntsHTTPClient(context.Background(), srv.Client(), srv.URL)
+			_, err := ResolveAntsTestResult(ctx, "TR00000000000000000")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("not found"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("404"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("Requested entity was not found."))
+		})
+
+		t.Run("401 Unauthorized permission denied error handling", func(t *ftt.Test) {
+			// Simulates OnePlatform 401 UNAUTHENTICATED error response envelope.
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				_, _ = w.Write([]byte(`{
+						"error": {
+							"code": 401,
+							"message": "Request is missing required authentication credential.",
+							"status": "UNAUTHENTICATED"
+						}
+					}`))
+			}))
+			defer srv.Close()
+
+			ctx := WithAntsHTTPClient(context.Background(), srv.Client(), srv.URL)
+			_, err := ResolveAntsTestResult(ctx, "TR13830335277435395")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("permission denied"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("401"))
+		})
+
+		t.Run("403 Forbidden permission denied error handling", func(t *ftt.Test) {
+			// Simulates OnePlatform 403 PERMISSION_DENIED error response envelope.
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				_, _ = w.Write([]byte(`{
+						"error": {
+							"code": 403,
+							"message": "The caller does not have permission",
+							"status": "PERMISSION_DENIED"
+						}
+					}`))
+			}))
+			defer srv.Close()
+
+			ctx := WithAntsHTTPClient(context.Background(), srv.Client(), srv.URL)
+			_, err := ResolveAntsTestResult(ctx, "TR13830335277435395")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("permission denied"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("403"))
+		})
+
+		t.Run("Invalid AnTS test result ID format", func(t *ftt.Test) {
+			_, err := ResolveAntsTestResult(context.Background(), "invalid-id")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid AnTS test result ID"))
+		})
+
+		t.Run("Disabled resolution via ANTS_CLI_PATH", func(t *ftt.Test) {
+			t.Setenv("ANTS_CLI_PATH", "disabled")
+			_, err := ResolveAntsTestResult(context.Background(), "TR13830335277435395")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("disabled"))
 		})
 	})
 }
