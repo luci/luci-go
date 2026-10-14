@@ -207,4 +207,12 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
       borderRadius: '2px !important',
     },
   },
+  // MRT shifts the divider `translateX(4px)` so that it straddles the column
+  // boundary. On the last column that pushes it 1-2px past the table's right
+  // edge, which makes the table container's scrollWidth exceed its clientWidth
+  // and shows a horizontal scrollbar even when every column fits. Keep the
+  // last divider inside its cell instead.
+  '&&:last-of-type .Mui-TableHeadCell-ResizeHandle-Divider': {
+    transform: 'none',
+  },
 };
