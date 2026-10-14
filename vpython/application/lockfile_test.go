@@ -142,6 +142,39 @@ func TestCompileLockfileBoundsPythonVersion(t *testing.T) {
 	})
 }
 
+func TestSyncLockfile_PEP508AndPEP503Normalization(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	ftt.Run("Test SyncLockfile handles PEP 508 != / parenthesized constraints and PEP 503 multi-separator package names", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
+		specPath := filepath.Join(tempDir, "vpython.toml")
+		lockPath := specPath + ".uv.lock"
+
+		assert.NoErr(t, os.WriteFile(specPath, []byte("requires-python = '>=3.11'\n"), 0644))
+
+		lockContent := "" +
+			"urllib3==2.0.0 --hash=sha256:0123456789abcdef\n" +
+			"foo-bar==1.0.0 --hash=sha256:0123456789abcdef\n" +
+			"wheel==0.36.2 --hash=sha256:0123456789abcdef\n"
+		assert.NoErr(t, os.WriteFile(lockPath, []byte(lockContent), 0644))
+
+		spec := &standard.ProjectSpec{
+			RequiresPython: ">=3.11",
+			Dependencies: []string{
+				"urllib3!=1.25.0",
+				"foo__bar>=1.0",
+				"wheel(==0.36.2)",
+			},
+		}
+
+		err := SyncLockfile(ctx, specPath, "uv", "", true, spec)
+		assert.NoErr(t, err)
+		assert.Loosely(t, len(spec.Dependencies), should.Equal(3))
+	})
+}
+
 func BenchmarkSyncLockfileCheck(b *testing.B) {
 	ctx := context.Background()
 	tempDir := b.TempDir()

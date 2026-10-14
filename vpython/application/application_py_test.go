@@ -268,6 +268,44 @@ func TestPythonUpgradeCompanionPrecedence(t *testing.T) {
 	})
 }
 
+func TestPythonSyncLockfilePEP508(t *testing.T) {
+	citest.IntegrationTest(t, "VPYTHON_INTEGRATION_TESTS")
+
+	ftt.Run("Test SyncLockfile with PEP 508 != constraints and PEP 503 multi-separator names", t, func(t *ftt.Test) {
+		ctx := context.Background()
+		dir := t.TempDir()
+
+		tomlPath := filepath.Join(dir, "vpython.toml")
+		tomlContent := "requires-python = '>=3.11,<3.12'\ndependencies = ['urllib3!=1.25.0', 'foo__bar>=1.0', 'wheel(==0.36.2)']\n"
+		assert.Loosely(t, os.WriteFile(tomlPath, []byte(tomlContent), 0644), should.BeNil)
+
+		lockPath := tomlPath + ".uv.lock"
+		lockContent := "urllib3==2.0.0 --hash=sha256:0123456789abcdef\nfoo-bar==1.0.0 --hash=sha256:0123456789abcdef\nwheel==0.36.2 --hash=sha256:0123456789abcdef\n"
+		assert.Loosely(t, os.WriteFile(lockPath, []byte(lockContent), 0644), should.BeNil)
+
+		scriptPath := filepath.Join(dir, "main.py")
+		scriptContent := "import sys\nprint(f'{sys.version_info.major}.{sys.version_info.minor}')\n"
+		assert.Loosely(t, os.WriteFile(scriptPath, []byte(scriptContent), 0755), should.BeNil)
+
+		res, err := ResolveFlow(ctx, python.ScriptTarget{Path: scriptPath}, "", "", ".vpython3", dir)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.Flow, should.Equal(FlowUV))
+		assert.Loosely(t, res.StandardSpec, should.NotBeNil)
+
+		assert.Loosely(t, SyncLockfile(ctx, res.SpecPath, "uv", "", true, res.StandardSpec), should.BeNil)
+		assert.Loosely(t, len(res.StandardSpec.Dependencies), should.Equal(3))
+
+		resolvedVer, err := standard.MatchInterpreter(res.StandardSpec.RequiresPython, []string{"3.8", "3.11"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resolvedVer, should.Equal("3.11"))
+
+		c := cmd(t, &Application{
+			Arguments: []string{scriptPath},
+		}, getPythonEnvironment(resolvedVer))
+		assert.Loosely(t, output(c), should.Equal("3.11"))
+	})
+}
+
 func BenchmarkStartup(b *testing.B) {
 	b.Setenv("VPYTHON_INTEGRATION_TESTS", "1")
 	c := func() *exec.Cmd {

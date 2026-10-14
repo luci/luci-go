@@ -249,7 +249,8 @@ func updateLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin st
 
 // extractBaseName extracts the base package name from a PEP 508 dependency string.
 func extractBaseName(dep string) string {
-	idx := strings.IndexAny(dep, " [=<>~;@")
+	dep = strings.TrimSpace(dep)
+	idx := strings.IndexAny(dep, " \t[(!=<>~;@")
 	if idx != -1 {
 		dep = dep[:idx]
 	}
@@ -258,8 +259,7 @@ func extractBaseName(dep string) string {
 
 // normalizeBaseName normalizes a Python package name for comparison.
 func normalizeBaseName(s string) string {
-	s = strings.ToLower(s)
-	s = strings.ReplaceAll(s, "_", "-")
-	s = strings.ReplaceAll(s, ".", "-")
-	return s
+	return strings.Join(strings.FieldsFunc(strings.ToLower(s), func(r rune) bool {
+		return r == '-' || r == '_' || r == '.'
+	}), "-")
 }
