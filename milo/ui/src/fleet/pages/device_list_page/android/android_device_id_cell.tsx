@@ -21,6 +21,10 @@ import { generateDeviceDetailsURL } from '@/fleet/constants/paths';
 import { getMobileHarnessDeviceListLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 
+const getPathnameWithParams = () => {
+  return window.location.pathname + window.location.search;
+};
+
 export interface AndroidDeviceIdCellProps {
   readonly deviceId: string;
   readonly workspace: AndroidPageWorkspace;
@@ -60,6 +64,9 @@ export const AndroidDeviceIdCell = ({
       <BuganizerLink name={deviceId} project="android" />
       <Link
         to={internalLink}
+        state={{
+          navigatedFromLink: getPathnameWithParams(),
+        }}
         style={{
           whiteSpace: 'nowrap',
           overflow: 'hidden',
