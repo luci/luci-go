@@ -139,7 +139,7 @@ describe('<AndroidRepairDashboard />', () => {
       </QueryClientProvider>,
     );
 
-  it('renders columns for Android and hides Host Group for Pixel', () => {
+  it('renders all columns for Android and hides Host Group for Pixel', () => {
     jest
       .spyOn(UseAndroidRepairQueueModule, 'useAndroidRepairQueue')
       .mockReturnValue({
@@ -163,6 +163,7 @@ describe('<AndroidRepairDashboard />', () => {
     expect(
       screen.getByText('Android Manual Repair Dashboard'),
     ).toBeInTheDocument();
+    expect(screen.getByText('Rank')).toBeInTheDocument();
     expect(screen.getByText('Id')).toBeInTheDocument();
     expect(screen.getByText('Machine Type')).toBeInTheDocument();
     expect(screen.getByText('Lab')).toBeInTheDocument();
@@ -172,9 +173,12 @@ describe('<AndroidRepairDashboard />', () => {
       screen.getByText('Host Group / Run Target Health'),
     ).toBeInTheDocument();
     expect(screen.getByText('State')).toBeInTheDocument();
+    expect(screen.getByText('Priority Score')).toBeInTheDocument();
     expect(screen.getByText('Assignee')).toBeInTheDocument();
     expect(screen.getByText('MTV-1')).toBeInTheDocument();
     expect(screen.getByText('MTV-2')).toBeInTheDocument();
+    expect(screen.getByText('+250 pts')).toBeInTheDocument();
+    expect(screen.getByText('+50 pts')).toBeInTheDocument();
 
     unmount();
 
@@ -183,6 +187,7 @@ describe('<AndroidRepairDashboard />', () => {
     expect(
       screen.getByText('Pixel Manual Repair Dashboard'),
     ).toBeInTheDocument();
+    expect(screen.getByText('Rank')).toBeInTheDocument();
     expect(screen.getByText('Id')).toBeInTheDocument();
     expect(screen.getByText('Machine Type')).toBeInTheDocument();
     expect(screen.getByText('Lab')).toBeInTheDocument();
@@ -192,6 +197,7 @@ describe('<AndroidRepairDashboard />', () => {
       screen.getByText('Host Group / Run Target Health'),
     ).toBeInTheDocument();
     expect(screen.getByText('State')).toBeInTheDocument();
+    expect(screen.getByText('Priority Score')).toBeInTheDocument();
     expect(screen.getByText('Assignee')).toBeInTheDocument();
   });
 

@@ -214,6 +214,58 @@ export function createMockUseFleetConsoleClient(
           matchedRuleIds: [],
         },
       }),
+      ListAndroidPriorityRules: {
+        query: jest.fn().mockReturnValue({
+          queryKey: ['ListAndroidPriorityRules'],
+          queryFn: jest.fn().mockResolvedValue({
+            priorityRules: [],
+          }),
+          data: {
+            priorityRules: [],
+          },
+          isPending: false,
+        }),
+      },
+      CreateAndroidPriorityRule: jest.fn().mockResolvedValue({
+        priorityRule: {
+          id: '1',
+          expressionAip160: '',
+          weight: '0',
+        },
+      }),
+      UpdateAndroidPriorityRule: jest.fn().mockResolvedValue({
+        priorityRule: {
+          id: '1',
+          expressionAip160: '',
+          weight: '0',
+        },
+      }),
+      DeleteAndroidPriorityRule: jest.fn().mockResolvedValue({}),
+      GetDeviceDimensions: {
+        query: jest.fn().mockReturnValue({
+          queryKey: ['GetDeviceDimensions'],
+          queryFn: jest.fn().mockResolvedValue({
+            baseDimensions: {},
+            labels: {},
+          }),
+          data: {
+            baseDimensions: {},
+            labels: {},
+          },
+          isPending: false,
+        }),
+      },
+      CheckPermission: Object.assign(
+        jest.fn().mockResolvedValue({ hasPermission: true }),
+        {
+          query: jest.fn().mockReturnValue({
+            queryKey: ['CheckPermission'],
+            queryFn: jest.fn().mockResolvedValue({ hasPermission: true }),
+            data: { hasPermission: true },
+            isPending: false,
+          }),
+        },
+      ),
     } as unknown as ReturnType<typeof PrpcClients.useFleetConsoleClient>;
   };
 }

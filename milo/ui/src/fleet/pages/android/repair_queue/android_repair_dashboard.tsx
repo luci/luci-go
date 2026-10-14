@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
+import { Box, Divider, Typography } from '@mui/material';
 
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 
+import { AndroidPriorityRulesPanel } from './android_priority_rules_panel';
 import { AndroidRepairQueueTable } from './android_repair_queue_table';
 
 export interface AndroidRepairDashboardProps {
@@ -47,10 +48,39 @@ export const AndroidRepairDashboard = ({
             {workspace} Manual Repair Dashboard
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Manual repair tasks for {workspace} devices.
+            Configure rules and assign points to prioritize devices in the
+            repair queue.
           </Typography>
         </div>
       </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          width: '100%',
+          gap: 3,
+        }}
+      >
+        <Box
+          sx={{
+            flex: '1 1 540px',
+            minWidth: 0,
+          }}
+        >
+          <AndroidPriorityRulesPanel workspace={workspace} />
+        </Box>
+      </Box>
+
+      <Divider sx={{ mt: 4, mb: 4 }} />
+
+      <Typography variant="h6" sx={{ fontSize: '16px' }}>
+        Prioritized Manual Repair Queue
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        Devices ranked by total priority score. Hover over a score to view
+        matching rules.
+      </Typography>
 
       <div css={{ marginTop: 16 }}>
         <AndroidRepairQueueTable workspace={workspace} />

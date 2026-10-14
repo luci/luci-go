@@ -20,6 +20,7 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
+import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
 import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
 import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { AndroidDeviceIdCell } from '@/fleet/pages/device_list_page/android/android_device_id_cell';
@@ -27,9 +28,13 @@ import { getAndroidStatusColor } from '@/fleet/pages/device_list_page/android/an
 import { FC_CellProps } from '@/fleet/types/table';
 import { getMobileHarnessHostListLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
-import { AndroidRepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  AndroidPriorityRule,
+  AndroidRepairQueueItem,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { androidMachineTypeLabel, isAndroidHost } from './android_machine_type';
+import { useAndroidPriorityRules } from './use_android_priority_rules';
 import {
   useClaimAndroidRepairTask,
   useUnclaimAndroidRepairTask,
@@ -46,11 +51,18 @@ export const getAndroidRepairQueueRowId = (row: AndroidRepairQueueRow) =>
     ? row.taskId
     : `${row.deviceId}/${androidMachineTypeLabel(row.fcMachineType)}`;
 
+export interface UseAndroidRepairQueueColumnsOptions {
+  /** Zero-based index of the current page, used to compute the Rank. */
+  pageIndex?: number;
+  pageSize?: number;
+}
+
 // Column ids match the field names of the backend filter map
 // (infra/fleetconsole/internal/core/android/filter_map.go) so they can be
 // used as `order_by` / `filter` fields once sorting and filtering are enabled.
 export const useAndroidRepairQueueColumns = (
   workspace: AndroidPageWorkspace,
+  { pageIndex = 0, pageSize = 100 }: UseAndroidRepairQueueColumnsOptions = {},
 ) => {
   const { mutate: claimTask, isPending: isClaimPending } =
     useClaimAndroidRepairTask();
@@ -60,8 +72,28 @@ export const useAndroidRepairQueueColumns = (
 
   const currentUser = useCurrentUserEmail();
 
+  const { rules } = useAndroidPriorityRules(workspace);
+  const rulesById = useMemo(() => {
+    const map = new Map<string, AndroidPriorityRule>();
+    for (const r of rules) {
+      map.set(r.id, r);
+    }
+    return map;
+  }, [rules]);
+
   const columns: AndroidRepairQueueColumnDef[] = useMemo(() => {
     const allColumns: AndroidRepairQueueColumnDef[] = [
+      {
+        id: 'rank',
+        header: 'Rank',
+        size: 25,
+        minSize: 25,
+        maxSize: 60,
+        enableSorting: false,
+        Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => {
+          return String(pageIndex * pageSize + row.index + 1);
+        },
+      },
       {
         id: 'device_id',
         header: 'Id',
@@ -210,12 +242,36 @@ export const useAndroidRepairQueueColumns = (
           );
         },
       },
+      {
+        id: 'priority_score',
+        header: 'Priority Score',
+        size: 65,
+        minSize: 60,
+        maxSize: 180,
+        enableSorting: false,
+        meta: {
+          infoTooltip:
+            'Devices are ranked in real time by summing active rule weights. Higher score = higher priority.',
+        },
+        Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => (
+          <PriorityScoreCell item={row.original} rulesById={rulesById} />
+        ),
+      },
     ];
     if (workspace === 'Pixel') {
       return allColumns.filter((col) => col.id !== 'host_group');
     }
     return allColumns;
-  }, [claimTask, unclaimTask, currentUser, isPending, workspace]);
+  }, [
+    claimTask,
+    unclaimTask,
+    currentUser,
+    isPending,
+    workspace,
+    pageIndex,
+    pageSize,
+    rulesById,
+  ]);
 
   return { columns };
 };

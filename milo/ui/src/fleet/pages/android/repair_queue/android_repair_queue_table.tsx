@@ -55,9 +55,12 @@ export const AndroidRepairQueueTable = ({
     defaultPageSize: 100,
   });
 
-  const { pageSize, pageToken } = usePager(pagerCtx);
+  const { pageSize, pageToken, pageIndex } = usePager(pagerCtx);
 
-  const { columns: defaultColumns } = useAndroidRepairQueueColumns(workspace);
+  const { columns: defaultColumns } = useAndroidRepairQueueColumns(workspace, {
+    pageIndex,
+    pageSize,
+  });
   const columns = propColumns || defaultColumns;
 
   const request = useMemo(
