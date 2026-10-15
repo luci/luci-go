@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Chip, CircularProgress } from '@mui/material';
+import { Box, Chip, CircularProgress, Typography } from '@mui/material';
 import { useMemo, useCallback, useEffect, useState } from 'react';
 
 import { SemanticStatusType } from '@/common/styles/status_styles';
@@ -36,6 +36,35 @@ import { TestNavigationTreeNode } from '@/test_investigation/components/test_nav
 import { StructuredTreeLevel } from '@/test_investigation/utils/drawer_tree_utils';
 
 import { FailureSummary } from './failure_summary';
+
+/**
+ * Returns the clean test name to copy for a leaf test variant node,
+ * preferring `testMetadata.name` over the tree node label and raw `testId`.
+ */
+function getTestVariantTextToCopy(node: TestNavigationTreeNode): string {
+  const testVariant = node.testVariant;
+  if (!testVariant) {
+    return node.label;
+  }
+  return testVariant.testMetadata?.name || node.label || testVariant.testId;
+}
+
+/**
+ * Recursively collects the copyable test names for all leaf test variant nodes in the tree.
+ */
+function getAllLeafTestNames(
+  nodes: readonly TestNavigationTreeNode[],
+): string[] {
+  const names: string[] = [];
+  for (const node of nodes) {
+    if (node.children?.length) {
+      names.push(...getAllLeafTestNames(node.children));
+    } else if (node.testVariant) {
+      names.push(getTestVariantTextToCopy(node));
+    }
+  }
+  return names;
+}
 
 /**
  * Recursively traverses the node tree to find the IDs of all nodes.
@@ -125,10 +154,7 @@ export function TestVariantsTable({
 
           if (isLeafWithVariant) {
             const testVariant = rowData.testVariant!;
-
-            const testTextToCopy = isTestIdStructured
-              ? rowData.label
-              : testVariant.testId;
+            const testTextToCopy = getTestVariantTextToCopy(rowData);
 
             return (
               <FailureSummary
@@ -218,43 +244,73 @@ export function TestVariantsTable({
         expandedRowIds={expandedNodes}
         onExpandedRowIdsChange={setExpandedNodes}
         headerChildren={
-          <FilterBarContainer
-            showClearAll={
-              selectedStatuses.size > 0 || !!parsedTestId || !!parsedVariantDef
-            }
-            onClearAll={() => {
-              setSelectedStatuses(new Set());
-              handleTestIdChange(null);
-              if (parsedVariantDef) {
-                Object.keys(parsedVariantDef).forEach(
-                  handleRemoveVariantFilter,
-                );
-              }
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
             }}
           >
-            <TextInputFilterChip
-              categoryName="Test ID"
-              value={parsedTestId}
-              onValueChange={handleTestIdChange}
-            />
-            {parsedVariantDef &&
-              Object.entries(parsedVariantDef).map(([key, value]) => (
-                <AppliedFilterChip
-                  key={key}
-                  filterKey={key}
-                  filterValue={value}
-                  onRemove={() => handleRemoveVariantFilter(key)}
-                />
-              ))}
-            <MultiSelectCategoryChip
-              categoryName="Test Status"
-              availableOptions={statusFilterOptions}
-              selectedItems={selectedStatuses}
-              onSelectedItemsChange={(value) =>
-                setSelectedStatuses(value as Set<SemanticStatusType>)
+            <FilterBarContainer
+              showClearAll={
+                selectedStatuses.size > 0 ||
+                !!parsedTestId ||
+                !!parsedVariantDef
               }
-            />
-          </FilterBarContainer>
+              onClearAll={() => {
+                setSelectedStatuses(new Set());
+                handleTestIdChange(null);
+                if (parsedVariantDef) {
+                  Object.keys(parsedVariantDef).forEach(
+                    handleRemoveVariantFilter,
+                  );
+                }
+              }}
+            >
+              <TextInputFilterChip
+                categoryName="Test ID"
+                value={parsedTestId}
+                onValueChange={handleTestIdChange}
+              />
+              {parsedVariantDef &&
+                Object.entries(parsedVariantDef).map(([key, value]) => (
+                  <AppliedFilterChip
+                    key={key}
+                    filterKey={key}
+                    filterValue={value}
+                    onRemove={() => handleRemoveVariantFilter(key)}
+                  />
+                ))}
+              <MultiSelectCategoryChip
+                categoryName="Test Status"
+                availableOptions={statusFilterOptions}
+                selectedItems={selectedStatuses}
+                onSelectedItemsChange={(value) =>
+                  setSelectedStatuses(value as Set<SemanticStatusType>)
+                }
+              />
+            </FilterBarContainer>
+            {filteredHierarchyTreeData.length > 0 && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Typography variant="body2">Copy all test names</Typography>
+                <CopyToClipboard
+                  textToCopy={() =>
+                    getAllLeafTestNames(filteredHierarchyTreeData).join('\n')
+                  }
+                  title="Copy all test names"
+                  aria-label="Copy all test names."
+                  sx={{ ml: 0.5 }}
+                />
+              </Box>
+            )}
+          </Box>
         }
         placeholder={
           selectedStatuses.size > 0 || hasActiveFilters

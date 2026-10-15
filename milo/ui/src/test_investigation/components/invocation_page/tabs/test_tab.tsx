@@ -181,6 +181,7 @@ export function TestTab() {
     const readMask = [
       'test_id',
       'test_id_structured',
+      'test_metadata.name',
       'variant.def',
       'status_v2',
       'results.*.result.failure_reason',
