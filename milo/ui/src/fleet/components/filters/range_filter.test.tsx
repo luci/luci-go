@@ -86,7 +86,7 @@ describe('RangeFilterCategory', () => {
 
     expect(category.value).toEqual({ min: 10, max: 50 });
     expect(category.toAIP160()).toBe('count >= 10 AND count <= 50');
-    expect(category.getChipLabel()).toBe('[ Count ]: from 10 to 50');
+    expect(category.getChipLabel()).toBe('10 <= Count <= 50');
   });
 
   it('should automatically scale utilization filters (0.01 scale factor) for average_7d', () => {
@@ -220,7 +220,7 @@ describe('RangeFilterCategory', () => {
     // 0.8 / 0.01 = 80
     expect(category.value.max).toBe(80);
     expect(category.toAIP160()).toBe('pool_health_pct <= 0.8');
-    expect(category.getChipLabel()).toBe('[ Pool Health ]: to 80');
+    expect(category.getChipLabel()).toBe('Pool Health <= 80');
   });
 
   it('should expose utilization filter constants with expected values', () => {

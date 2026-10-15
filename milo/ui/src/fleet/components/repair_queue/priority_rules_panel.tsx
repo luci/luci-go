@@ -309,7 +309,7 @@ export const PriorityRulesPanel = ({
               gap: 1,
             }}
           >
-            {canEdit && (
+            {canEdit && (!hiddenCount || isExpanded) && (
               <Button
                 variant="toolbar"
                 startIcon={<AddIcon />}

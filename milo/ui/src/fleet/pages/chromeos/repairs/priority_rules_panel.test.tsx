@@ -195,18 +195,25 @@ describe('<PriorityRulesPanel />', () => {
     expect(screen.getByTestId('show-more-rules-button')).toHaveTextContent(
       'Show 1 more rule',
     );
+    expect(
+      screen.queryByTestId('add-priority-rule-button'),
+    ).not.toBeInTheDocument();
   });
 
   it('expands and collapses rules list when clicking expand toggle', async () => {
     setupMockHook();
     renderPanel();
 
+    expect(
+      screen.queryByTestId('add-priority-rule-button'),
+    ).not.toBeInTheDocument();
     const expandButton = screen.getByTestId('show-more-rules-button');
     fireEvent.click(expandButton);
 
     // Now all 4 rules should be visible
     const row4 = screen.getByTestId('priority-rule-row-4');
     expect(within(row4).getByText(/Lab/i)).toBeInTheDocument();
+    expect(screen.getByTestId('add-priority-rule-button')).toBeInTheDocument();
     expect(screen.getByTestId('show-less-rules-button')).toHaveTextContent(
       'Show less rules',
     );
@@ -282,12 +289,12 @@ describe('<PriorityRulesPanel />', () => {
     renderPanel();
 
     const row10 = screen.getByTestId('priority-rule-row-10');
-    expect(within(row10).getByText(/Pool Health/i)).toBeInTheDocument();
-    expect(within(row10).getByText(/to 80/i)).toBeInTheDocument();
+    expect(within(row10).getByText(/Pool Health <= 80/i)).toBeInTheDocument();
 
     const row11 = screen.getByTestId('priority-rule-row-11');
-    expect(within(row11).getByText(/Model Health/i)).toBeInTheDocument();
-    expect(within(row11).getByText(/from 20 to 60/i)).toBeInTheDocument();
+    expect(
+      within(row11).getByText(/20 <= Model Health <= 60/i),
+    ).toBeInTheDocument();
   });
 
   it('allows adding a new rule draft and creates it on Apply', async () => {
@@ -368,8 +375,9 @@ describe('<PriorityRulesPanel />', () => {
 
     // Filter chip for Pool Health should appear in the draft row
     await waitFor(() => {
-      expect(within(rowDraft).getByText(/Pool Health/i)).toBeInTheDocument();
-      expect(within(rowDraft).getByText(/to 80/i)).toBeInTheDocument();
+      expect(
+        within(rowDraft).getByText(/Pool Health <= 80/i),
+      ).toBeInTheDocument();
     });
 
     // Set points weight
@@ -405,6 +413,8 @@ describe('<PriorityRulesPanel />', () => {
     ];
     setupMockHook(tenRules);
     renderPanel();
+
+    fireEvent.click(screen.getByTestId('show-more-rules-button'));
 
     const addRuleButton = screen.getByTestId('add-priority-rule-button');
     expect(addRuleButton).toBeDisabled();

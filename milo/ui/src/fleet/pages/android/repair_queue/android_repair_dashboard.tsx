@@ -59,6 +59,7 @@ export const AndroidRepairDashboard = ({
         sx={{
           display: 'flex',
           flexWrap: 'wrap',
+          alignItems: 'flex-start',
           width: '100%',
           gap: 3,
         }}

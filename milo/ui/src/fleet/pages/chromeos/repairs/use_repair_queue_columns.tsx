@@ -77,6 +77,7 @@ const DeviceIdCell = (props: FC_CellProps<RepairQueueRow>) => {
   }
   return <BaseDeviceIdCell {...props} />;
 };
+// eslint-disable-next-line react-refresh/only-export-components
 export const useRepairQueueColumns = ({
   pageIndex = 0,
   pageSize = 100,
@@ -272,6 +273,7 @@ export const useRepairQueueColumns = ({
           return (
             <Typography
               variant="body2"
+              noWrap
               sx={{ fontSize: '13px' }}
             >{`${poolStr} / ${modelStr}`}</Typography>
           );

@@ -217,6 +217,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       ).toBeInTheDocument();
     });
     expect(screen.getAllByTestId('InfoOutlinedIcon')).toHaveLength(3);
+    expect(screen.queryByLabelText(/Column Actions/i)).not.toBeInTheDocument();
   });
 
   it('populates device rows and health metrics correctly with mock data including rank and priority score', async () => {

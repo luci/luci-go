@@ -260,7 +260,7 @@ describe('useAndroidPriorityRuleFilterBuilders', () => {
       }
       expect(hostGroup.value).toEqual({ max: 50 });
       expect(runTarget.value).toEqual({ min: 20, max: 80 });
-      expect(hostGroup.getChipLabel()).toBe('[ Host Group Health ]: to 50');
+      expect(hostGroup.getChipLabel()).toBe('Host Group Health <= 50');
     });
 
     it('serializes percentages back to the fractions the backend stores', () => {

@@ -85,7 +85,7 @@ export const ActiveIrmTable = ({
       {!isLoading && !isError && (
         <TableContainer
           sx={{
-            maxHeight: 200,
+            maxHeight: 280,
             overflowY: 'auto',
             borderTop: borders.divider,
           }}
@@ -157,7 +157,7 @@ export const ActiveIrmTable = ({
                           overflow: 'hidden',
                         }}
                       >
-                        <EllipsisTooltip>
+                        <EllipsisTooltip tooltip={title}>
                           <Typography variant="body2" noWrap>
                             {title}
                           </Typography>

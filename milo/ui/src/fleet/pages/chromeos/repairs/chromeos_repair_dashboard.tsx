@@ -109,13 +109,14 @@ export const ChromeOSRepairDashboard = () => {
         sx={{
           display: 'flex',
           flexWrap: 'wrap',
+          alignItems: 'flex-start',
           width: '100%',
           gap: 3,
         }}
       >
         <Box
           sx={{
-            flex: '1 1 540px',
+            flex: '1.2 1 520px',
             minWidth: 0,
             ...surfaceCardSx,
             px: 2.5,
@@ -126,7 +127,7 @@ export const ChromeOSRepairDashboard = () => {
         </Box>
         <Box
           sx={{
-            flex: '1 1 360px',
+            flex: '1 1 480px',
             minWidth: 0,
             ...surfaceCardSx,
             px: 2.5,

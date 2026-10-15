@@ -49,6 +49,7 @@ describe('Table and Surface Styling Standards', () => {
     expect(headerInner).toBeDefined();
     expect(headerInner.borderBottom).toBe('1px solid #c4c7c5');
     expect(headerInner.backgroundColor).toBe('var(--header-bg-color)');
+    expect(headerInner.userSelect).toBe('none');
     expect(headerInner.paddingLeft).toBe('var(--cell-padding-horizontal)');
     expect(headerInner['&.select-col']).toEqual({
       paddingLeft: SELECT_COL_PADDING,

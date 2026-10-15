@@ -179,14 +179,19 @@ export class RangeFilterCategory implements FilterCategory {
   }
 
   public getChipLabel() {
-    const parts: string[] = [];
+    if (this.value.min !== undefined && this.value.max !== undefined) {
+      if (this.value.min === this.value.max) {
+        return `${this.label} = ${this.value.min}`;
+      }
+      return `${this.value.min} <= ${this.label} <= ${this.value.max}`;
+    }
     if (this.value.min !== undefined) {
-      parts.push(`from ${this.value.min}`);
+      return `${this.label} >= ${this.value.min}`;
     }
     if (this.value.max !== undefined) {
-      parts.push(`to ${this.value.max}`);
+      return `${this.label} <= ${this.value.max}`;
     }
-    return `[ ${this.label} ]: ${parts.join(' ')}`;
+    return this.label;
   }
 
   public isActive() {

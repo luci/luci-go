@@ -232,6 +232,7 @@ export const useAndroidRepairQueueColumns = (
           return (
             <Typography
               variant="body2"
+              noWrap
               sx={{ fontSize: '13px' }}
             >{`${hostGroupStr} / ${runTargetStr}`}</Typography>
           );

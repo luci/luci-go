@@ -84,6 +84,13 @@ export const ChromeOSRepairTable = ({
       columns,
       data: repairQueueItems,
       enableRowSelection: false,
+      enableColumnActions: false,
+      enableHiding: false,
+      defaultColumn: {
+        enableColumnActions: false,
+        enableColumnFilter: false,
+        enableHiding: false,
+      },
       positionToolbarAlertBanner: 'none',
       renderBottomToolbarCustomActions: ({ table }) => (
         <FleetBottomToolbar

@@ -48,6 +48,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
     fontWeight: 600,
     fontSize: fontSizes.label,
     color: fleetColors.textSecondary,
+    userSelect: 'none',
     paddingTop: 'var(--cell-padding-vertical)',
     paddingBottom: 'var(--cell-padding-vertical)',
     paddingLeft: 'var(--cell-padding-horizontal)',

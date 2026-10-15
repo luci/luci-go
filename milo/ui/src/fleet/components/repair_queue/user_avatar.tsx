@@ -19,21 +19,25 @@ import { colors } from '@/fleet/theme/colors';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AVATAR_COLORS = [
+  colors.blue[700],
   colors.green[700],
-  colors.blue[600],
-  colors.purple[600],
-  colors.orange[600],
+  colors.purple[700],
+  colors.orange[700],
   colors.red[700],
-  colors.cyan[700],
-  colors.blue[800],
-  colors.green[500],
-  colors.pink[600],
   colors.cyan[800],
+  colors.pink[700],
+  colors.yellow[900],
+  colors.blue[900],
+  colors.orange[900],
 ];
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const getAvatarColor = (identifier: string): string => {
-  const normalized = identifier.trim().replace(/^user:/, '');
+  const normalized = identifier
+    .trim()
+    .replace(/^user:/, '')
+    .toLowerCase()
+    .split('@')[0];
   let hash = 0;
   for (let i = 0; i < normalized.length; i++) {
     hash = normalized.charCodeAt(i) + ((hash << 5) - hash);

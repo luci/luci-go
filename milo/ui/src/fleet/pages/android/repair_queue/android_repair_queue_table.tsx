@@ -93,6 +93,13 @@ export const AndroidRepairQueueTable = ({
       data: repairQueueItems,
       enableRowSelection: false,
       enableSorting: false,
+      enableColumnActions: false,
+      enableHiding: false,
+      defaultColumn: {
+        enableColumnActions: false,
+        enableColumnFilter: false,
+        enableHiding: false,
+      },
       positionToolbarAlertBanner: 'none',
       renderBottomToolbarCustomActions: ({ table }) => (
         <FleetBottomToolbar

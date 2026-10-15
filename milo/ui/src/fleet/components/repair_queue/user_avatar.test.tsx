@@ -59,6 +59,12 @@ describe('user_avatar helpers & component', () => {
         getAvatarColor('tech1@google.com'),
       );
     });
+
+    it('produces distinct colors for polarczyk and pietroscutta', () => {
+      expect(getAvatarColor('polarczyk@google.com')).not.toBe(
+        getAvatarColor('pietroscutta@google.com'),
+      );
+    });
   });
 
   describe('<UserAvatar />', () => {

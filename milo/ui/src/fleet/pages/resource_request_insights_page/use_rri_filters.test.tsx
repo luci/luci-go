@@ -158,7 +158,7 @@ describe('useRriFilters', () => {
     const { result } = renderHook(() => useRriFilters(), { wrapper });
     await waitFor(() =>
       expect(result.current.filterValues?.slippage.getChipLabel()).toEqual(
-        '[ Slippage ]: from 5 to 10',
+        '5 <= Slippage <= 10',
       ),
     );
   });
