@@ -27,12 +27,10 @@ const (
 	EnvVpythonArUrl               = "VPYTHON_AR_URL"
 	EnvVpythonCipdPath            = "VPYTHON_CIPD_PATH"
 	EnvVpythonCacheSalt           = "_VPYTHON_CACHE_SALT"
-	EnvVpythonReportMissingUrl    = "VPYTHON_REPORT_MISSING_URL"
 	EnvVpythonNetworkRetryTimeout = "VPYTHON_NETWORK_RETRY_TIMEOUT"
 )
 
 const DefaultARURL = "https://us-python.pkg.dev/chrome-python-ar/chrome-python-ar/simple/"
-const DefaultReportMissingUrl = "https://us-central1-chrome-python-ar.cloudfunctions.net/report-missing-package"
 
 const (
 	// Must be changed +1 to invalidate cache.

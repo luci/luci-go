@@ -13,14 +13,9 @@
 # limitations under the License.
 
 import glob
-import json
 import os
 import re
 import time
-try:
-    from urllib.request import Request, urlopen
-except ImportError:
-    from urllib2 import Request, urlopen
 import subprocess
 import sys
 import tempfile
@@ -88,43 +83,6 @@ def is_network_error(output_str):
     if not output_str:
         return False
     return any(p.search(output_str) for p in NETWORK_ERROR_PATTERNS)
-
-def report_to_endpoint(package, version, context, report_url):
-    data = {
-        "package": package,
-        "version": version,
-        "context": "vpython-" + context
-    }
-    payload = json.dumps(data)
-    if sys.version_info[0] > 2:
-        payload = payload.encode("utf-8")
-    req = Request(
-        report_url,
-        data=payload,
-        headers={"Content-Type": "application/json"}
-    )
-    try:
-        res = urlopen(req, timeout=2)
-        res.close()
-    except Exception:
-        # Ignore all errors to ensure it's non-blocking
-        pass
-
-def try_report_missing_pip(output, report_url):
-    output = " ".join(output.split())
-    match = re.search(r"Could not find a version that satisfies the requirement ([\w.-]+)==([\w.-]+)", output)
-    if not match:
-        match = re.search(r"No matching distribution found for ([\w.-]+)==([\w.-]+)", output)
-
-    if match:
-        package = match.group(1)
-        version = match.group(2)
-        report_to_endpoint(package, version, "pip", report_url)
-    else:
-        match = re.search(r"No matching distribution found for ([\w.-]+)", output)
-        if match:
-            package = match.group(1)
-            report_to_endpoint(package, "", "pip", report_url)
 
 def main():
   # Create virtual environment in ${out} directory
@@ -214,9 +172,6 @@ def main():
           sys.stderr.write("If you see this, it means some python packages are missing from Artifact Registry or installation failed.\n")
           sys.stderr.write("Please report this issue at https://crbug.com/492362903\n")
         sys.stderr.write('=' * 60 + '\n')
-        report_url = os.environ.get("VPYTHON_REPORT_MISSING_URL")
-        if report_url:
-          try_report_missing_pip(output_str, report_url)
         raise
 
   # Generate all .pyc in the output directory. This prevent generating .pyc on the

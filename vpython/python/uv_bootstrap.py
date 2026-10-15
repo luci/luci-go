@@ -22,8 +22,6 @@ import sys
 import shutil
 import tempfile
 import time
-import urllib.request
-import json
 import re
 
 
@@ -82,61 +80,6 @@ def is_network_error(output_str):
     if not output_str:
         return False
     return any(p.search(output_str) for p in NETWORK_ERROR_PATTERNS)
-
-
-def report_to_endpoint(package, version, context, report_url):
-    data = {
-        "package": package,
-        "version": version,
-        "context": f"vpython-{context}"
-    }
-    req = urllib.request.Request(
-        report_url,
-        data=json.dumps(data).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=2) as response:
-            pass
-    except Exception:
-        # Ignore all errors to ensure it's non-blocking
-        pass
-
-
-def try_report_missing_uv(stderr, report_url):
-    stderr = " ".join(stderr.split())
-    # Example: "no versions of foo were found"
-    match = re.search(r"no versions of ([\w.-]+) were found", stderr)
-    if match:
-        package = match.group(1)
-        report_to_endpoint(package, "", "uv", report_url)
-        return
-
-    # Example: "No compatible versions were found in ...: foo==1.2.3"
-    match = re.search(r"No compatible versions were found in [^:]+: ([\w.-]+)==([\w.-]+)", stderr)
-    if match:
-        package = match.group(1)
-        version = match.group(2)
-        report_to_endpoint(package, version, "uv", report_url)
-        return
-
-    # Example: "Because foo was not found in the package registry and you require foo==1.0.0"
-    match = re.search(r"Because ([\w.-]+) was not found in the package registry and you require \1==([\w.-]+)", stderr)
-    if match:
-        package = match.group(1)
-        version = match.group(2)
-        report_to_endpoint(package, version, "uv", report_url)
-        return
-
-    # More general fallback
-    match = re.search(r"Because ([\w.-]+) was not found in the package registry", stderr)
-    if match:
-        package = match.group(1)
-        report_to_endpoint(package, "", "uv", report_url)
-        return
-
-    print("vpython: Failed to parse missing package from uv error", file=sys.stderr)
 
 
 def main():
@@ -235,9 +178,6 @@ def main():
                 print(e.stdout)
             if e.stderr:
                 print(e.stderr, file=sys.stderr)
-            report_url = os.getenv("VPYTHON_REPORT_MISSING_URL")
-            if report_url:
-                try_report_missing_uv(e.stderr, report_url)
             sys.exit(e.returncode)
 
     # Replicate python.exe to python3.exe in the venv from current executable.
