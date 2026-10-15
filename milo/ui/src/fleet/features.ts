@@ -40,10 +40,7 @@ export const enableChromeOsRepairsDashboard = createFeatureFlag({
   description: 'Displays the ChromeOS Repair Dashboard shell.',
   namespace: 'fleet-console',
   name: 'chromeos-repairs-dashboard',
-  percentage: {
-    dev: 100,
-    prod: 0,
-  },
+  percentage: 100,
   trackingBug: '542600108',
   allowedEnvironments: ['dev', 'prod'],
 });
@@ -63,11 +60,9 @@ export const enableChromeOsWorkforceActivity = createFeatureFlag({
     'Displays the ChromeOS Workforce Activity monitoring view in repairs.',
   namespace: 'fleet-console',
   name: 'chromeos-workforce-activity',
-  percentage: {
-    dev: 100,
-    prod: 0,
-  },
-  allowedEnvironments: ['dev'],
+  percentage: 100,
+  trackingBug: '565724356',
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const enableWorkforcePickupRank = createFeatureFlag({
