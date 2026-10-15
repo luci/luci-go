@@ -20,7 +20,6 @@ import { useMemo } from 'react';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
@@ -190,10 +189,9 @@ export const useRepairQueueColumns = ({
         minSize: 70,
         maxSize: 700,
         enableSorting: false,
-        Header: () => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <span>Peripherals</span>
-            <InfoTooltip paperCss={{ maxWidth: 360, p: 2 }}>
+        meta: {
+          infoTooltip: (
+            <Box sx={{ maxWidth: 360 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
                 Peripheral Health States
               </Typography>
@@ -234,9 +232,9 @@ export const useRepairQueueColumns = ({
                   </Typography>
                 </Box>
               </Box>
-            </InfoTooltip>
-          </Box>
-        ),
+            </Box>
+          ),
+        },
         Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
           <PeripheralsCell
             wifiState={row.original.wifiState}
@@ -254,16 +252,12 @@ export const useRepairQueueColumns = ({
         minSize: 70,
         maxSize: 700,
         enableSorting: false,
-        Header: () => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <span>Pool / Model Health</span>
-            <InfoTooltip fontSize="1rem">
-              Percentage of devices in the assigned pool(s) and model(s) that
-              are healthy (not in manual repair or repair failed). For devices
-              with multiple pools or models, the lowest percentage is shown.
-            </InfoTooltip>
-          </Box>
-        ),
+        meta: {
+          infoTooltip:
+            'Percentage of devices in the assigned pool(s) and model(s) that ' +
+            'are healthy (not in manual repair or repair failed). For devices ' +
+            'with multiple pools or models, the lowest percentage is shown.',
+        },
         Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
           const poolHealth = row.original.poolHealthPct;
           const modelHealth = row.original.modelHealthPct;

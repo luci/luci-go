@@ -28,6 +28,8 @@ export type Density = 'spacious' | 'comfortable' | 'compact';
 
 export const TABLE_HEADER_MIN_HEIGHT = '48px';
 export const SELECT_COL_PADDING = '8px';
+export const FIRST_COL_PADDING = '16px';
+export const LAST_COL_PADDING = '16px';
 
 export const getDensityPadding = (density: Density) => {
   const vertical = density === 'spacious' ? 16 : density === 'compact' ? 4 : 12;
@@ -50,6 +52,12 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
     paddingBottom: 'var(--cell-padding-vertical)',
     paddingLeft: 'var(--cell-padding-horizontal)',
     paddingRight: 'var(--cell-padding-horizontal)',
+    '&:first-of-type:not(.select-col)': {
+      paddingLeft: FIRST_COL_PADDING,
+    },
+    '&:last-of-type': {
+      paddingRight: LAST_COL_PADDING,
+    },
     '&.select-col': {
       paddingLeft: SELECT_COL_PADDING,
       paddingRight: SELECT_COL_PADDING,
@@ -249,6 +257,12 @@ export const fleetTableBodyCellFlatSx: SxProps<Theme> = {
   paddingBottom: 'var(--cell-padding-vertical)',
   paddingLeft: 'var(--cell-padding-horizontal)',
   paddingRight: 'var(--cell-padding-horizontal)',
+  '&:first-of-type:not(.select-col)': {
+    paddingLeft: FIRST_COL_PADDING,
+  },
+  '&:last-of-type': {
+    paddingRight: LAST_COL_PADDING,
+  },
   transition: 'padding 0.2s',
 };
 

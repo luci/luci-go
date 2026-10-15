@@ -20,8 +20,10 @@ import {
 import { borders, fleetColors } from '@/fleet/theme/tokens';
 
 import {
+  FIRST_COL_PADDING,
   fleetTableBodyCellSx,
   fleetTableHeaderSx,
+  LAST_COL_PADDING,
   SELECT_COL_PADDING,
 } from './fleet_column_header.styles';
 
@@ -52,6 +54,12 @@ describe('Table and Surface Styling Standards', () => {
       paddingLeft: SELECT_COL_PADDING,
       paddingRight: SELECT_COL_PADDING,
     });
+    expect(headerInner['&:first-of-type:not(.select-col)']).toEqual({
+      paddingLeft: FIRST_COL_PADDING,
+    });
+    expect(headerInner['&:last-of-type']).toEqual({
+      paddingRight: LAST_COL_PADDING,
+    });
   });
 
   it('defines static body cell styles driven by CSS variables and modifier classes', () => {
@@ -61,6 +69,12 @@ describe('Table and Surface Styling Standards', () => {
     expect(bodyCell['&.select-col']).toEqual({
       paddingLeft: SELECT_COL_PADDING,
       paddingRight: SELECT_COL_PADDING,
+    });
+    expect(bodyCell['&:first-of-type:not(.select-col)']).toEqual({
+      paddingLeft: FIRST_COL_PADDING,
+    });
+    expect(bodyCell['&:last-of-type']).toEqual({
+      paddingRight: LAST_COL_PADDING,
     });
     expect(bodyCell['&&.column-highlight']).toEqual({
       backgroundColor: fleetColors.primaryContainer,

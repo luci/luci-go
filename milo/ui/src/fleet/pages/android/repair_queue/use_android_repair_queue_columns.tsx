@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
 import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
@@ -213,16 +212,12 @@ export const useAndroidRepairQueueColumns = (
         minSize: 70,
         maxSize: 700,
         enableSorting: false,
-        Header: () => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <span>Host Group / Run Target Health</span>
-            <InfoTooltip fontSize="1rem">
-              Percentage of devices in the assigned host group(s) and run target
-              that are healthy (not in manual repair). For devices with multiple
-              host groups, the lowest percentage is shown.
-            </InfoTooltip>
-          </Box>
-        ),
+        meta: {
+          infoTooltip:
+            'Percentage of devices in the assigned host group(s) and run target ' +
+            'that are healthy (not in manual repair). For devices with multiple ' +
+            'host groups, the lowest percentage is shown.',
+        },
         Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => {
           const hostGroupHealth = row.original.hostGroupHealthPct;
           const runTargetHealth = row.original.runTargetHealthPct;
