@@ -17,10 +17,11 @@ import {
   Box,
   Button,
   CircularProgress,
+  ClickAwayListener,
   IconButton,
   TextField,
 } from '@mui/material';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import {
@@ -69,9 +70,23 @@ export const PriorityRuleRow = ({
   onApply,
   onDelete,
 }: PriorityRuleRowProps) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!showDeleteConfirm) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        setShowDeleteConfirm(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showDeleteConfirm, isSubmitting]);
+
   const handleFilterChange = useCallback(
     (nextAip160: string) => {
       if (!canEdit) return;
+      setShowDeleteConfirm(false);
       onFilterChange(row.id, nextAip160);
     },
     [canEdit, onFilterChange, row.id],
@@ -92,6 +107,10 @@ export const PriorityRuleRow = ({
   );
 
   const dirty = isRowDirty(row);
+  const isFilterEmpty = row.expressionAip160.trim() === '';
+  const isEmptiedSavedRule = !row.isDraft && isFilterEmpty;
+  const showInlineDelete =
+    !row.isDraft && (isEmptiedSavedRule || showDeleteConfirm);
 
   return (
     <Box
@@ -134,9 +153,17 @@ export const PriorityRuleRow = ({
         label="Pts"
         type="number"
         value={row.weight}
-        onChange={(e) => onWeightChange(row.id, e.target.value)}
+        onChange={(e) => {
+          setShowDeleteConfirm(false);
+          onWeightChange(row.id, e.target.value);
+        }}
         onKeyDown={(e) => {
-          if (canEdit && e.key === 'Enter' && !isSubmitting) {
+          if (
+            canEdit &&
+            e.key === 'Enter' &&
+            !isSubmitting &&
+            !showInlineDelete
+          ) {
             e.preventDefault();
             onApply(row);
           }
@@ -169,7 +196,7 @@ export const PriorityRuleRow = ({
         }}
       />
 
-      {canEdit && dirty && (
+      {canEdit && dirty && !showInlineDelete && (
         <Button
           variant="contained"
           color="primary"
@@ -183,14 +210,48 @@ export const PriorityRuleRow = ({
         </Button>
       )}
 
-      {canEdit && (
+      {canEdit && showInlineDelete && (
+        <ClickAwayListener
+          onClickAway={() => {
+            if (showDeleteConfirm && !isSubmitting) {
+              setShowDeleteConfirm(false);
+            }
+          }}
+        >
+          <Button
+            variant="contained"
+            color="error"
+            size="small"
+            onClick={() => onDelete(row)}
+            disabled={isSubmitting}
+            data-testid={`rule-confirm-delete-button-${row.id}`}
+            sx={{ minWidth: 64, height: 40, flexShrink: 0 }}
+          >
+            {isBusy ? <CircularProgress size={20} color="inherit" /> : 'Delete'}
+          </Button>
+        </ClickAwayListener>
+      )}
+
+      {canEdit && !showInlineDelete && (
         <IconButton
           aria-label={`delete rule ${row.id}`}
           size="small"
-          onClick={() => onDelete(row)}
+          onClick={() => {
+            if (row.isDraft) {
+              onDelete(row);
+            } else {
+              setShowDeleteConfirm(true);
+            }
+          }}
           disabled={isSubmitting}
           data-testid={`rule-delete-button-${row.id}`}
-          sx={{ color: '#d32f2f', flexShrink: 0 }}
+          sx={{
+            flexShrink: 0,
+            color: 'text.secondary',
+            '&:hover': {
+              color: 'error.main',
+            },
+          }}
         >
           <DeleteOutlineIcon fontSize="small" />
         </IconButton>

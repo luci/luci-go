@@ -15,14 +15,7 @@
 import AddIcon from '@mui/icons-material/Add';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Skeleton, Stack, Typography } from '@mui/material';
 import { useCallback, useState } from 'react';
 
 import {
@@ -97,9 +90,15 @@ export const PriorityRulesPanel = ({
   const handleFieldChange = useCallback(
     (id: string, field: 'expressionAip160' | 'weight', value: string) => {
       if (!canEdit) return;
-      setRows((prev) =>
-        prev.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
-      );
+      setRows((prev) => {
+        const current = prev.find((row) => row.id === id);
+        if (!current || current[field] === value) {
+          return prev;
+        }
+        return prev.map((row) =>
+          row.id === id ? { ...row, [field]: value } : row,
+        );
+      });
       setErrorMessage(null);
     },
     [canEdit, setRows],
@@ -132,6 +131,7 @@ export const PriorityRulesPanel = ({
     try {
       setActionInProgressId(row.id);
       await deleteRule({ id: row.id });
+      setRows((prev) => prev.filter((r) => r.id !== row.id));
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : 'Failed to delete priority rule';
@@ -239,19 +239,19 @@ export const PriorityRulesPanel = ({
       )}
 
       {isRulesLoading ? (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            py: 4,
-          }}
-        >
-          <CircularProgress size={32} />
-        </Box>
+        <Stack spacing={1.5} sx={{ mt: 1 }}>
+          {[...Array(DEFAULT_VISIBLE_RULES)].map((_, i) => (
+            <Skeleton
+              key={i}
+              variant="rounded"
+              height={40}
+              sx={{ width: '100%' }}
+            />
+          ))}
+        </Stack>
       ) : (
         <Stack spacing={1.5}>
-          {rows.length === 0 ? (
+          {rules.length === 0 && rows.length === 0 ? (
             <Box
               sx={{
                 p: 2,

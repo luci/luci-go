@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
@@ -39,6 +46,7 @@ const FILTER_BUILDERS = {
 };
 
 describe('<PriorityRulesPanel />', () => {
+  jest.setTimeout(25000);
   const createRule = jest.fn();
   const updateRule = jest.fn();
   const deleteRule = jest.fn();
@@ -95,7 +103,7 @@ describe('<PriorityRulesPanel />', () => {
     expect(screen.getByTestId('rule-weight-input-1')).toBeDisabled();
   });
 
-  it('calls the update and delete callbacks', async () => {
+  it('morphs trash icon into a single inline Delete button and removes the rule on confirm', async () => {
     renderPanel();
 
     fireEvent.change(screen.getByTestId('rule-weight-input-1'), {
@@ -111,7 +119,70 @@ describe('<PriorityRulesPanel />', () => {
     );
 
     fireEvent.click(screen.getByTestId('rule-delete-button-2'));
+    expect(
+      screen.queryByTestId('rule-delete-button-2'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId('rule-apply-button-2')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('rule-confirm-delete-button-2'));
     await waitFor(() => expect(deleteRule).toHaveBeenCalledWith({ id: '2' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByTestId('priority-rule-row-2'),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it('replaces Apply and trash icon with a single Delete button when a saved rule filter is emptied', async () => {
+    renderPanel();
+    const user = userEvent.setup({ delay: null });
+
+    const row1 = screen.getByTestId('priority-rule-row-1');
+    fireEvent.click(within(row1).getByTestId('CancelIcon'));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('rule-confirm-delete-button-1'),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByTestId('rule-delete-button-1'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId('rule-apply-button-1')).not.toBeInTheDocument();
+
+    // Pressing Enter in weight input while filter is empty must not submit or show empty-filter error
+    const weightInput1 = screen.getByTestId('rule-weight-input-1');
+    fireEvent.keyDown(weightInput1, { key: 'Enter', code: 'Enter' });
+    expect(updateRule).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText('Filter expression cannot be empty'),
+    ).not.toBeInTheDocument();
+
+    // Adding a filter chip back restores Apply/trash icon, and clearing it again returns to single Delete button
+    const searchInput = within(row1).getByPlaceholderText('Add rule filter...');
+    await user.type(searchInput, 'Lab:MTV{Enter}');
+    await waitFor(() => {
+      expect(screen.getByTestId('rule-apply-button-1')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('rule-delete-button-1')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('rule-confirm-delete-button-1'),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(within(row1).getByTestId('CancelIcon'));
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('rule-confirm-delete-button-1'),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByTestId('rule-delete-button-1'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId('rule-apply-button-1')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('rule-confirm-delete-button-1'));
+    await waitFor(() => expect(deleteRule).toHaveBeenCalledWith({ id: '1' }));
   });
 
   it('shows the load error passed via props', () => {

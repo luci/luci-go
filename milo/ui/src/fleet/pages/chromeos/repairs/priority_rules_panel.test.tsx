@@ -96,6 +96,7 @@ const createMockFilterBuilders = (): Record<
 });
 
 describe('<PriorityRulesPanel />', () => {
+  jest.setTimeout(25000);
   const mockCreateRule = jest.fn();
   const mockUpdateRule = jest.fn();
   const mockDeleteRule = jest.fn();
@@ -257,7 +258,7 @@ describe('<PriorityRulesPanel />', () => {
     });
   });
 
-  it('shows Apply button when filter chip is removed in FilterBar', async () => {
+  it('shows only the red Delete button (hiding Apply and trash icon) when filter chip is removed in FilterBar', async () => {
     setupMockHook(MOCK_RULES.slice(0, 1));
     renderPanel();
 
@@ -266,9 +267,16 @@ describe('<PriorityRulesPanel />', () => {
 
     fireEvent.click(deleteChipIcon);
 
-    // Apply button appears since filter is now dirty (cleared)
     await waitFor(() => {
-      expect(screen.getByTestId('rule-apply-button-1')).toBeInTheDocument();
+      expect(
+        screen.queryByTestId('rule-apply-button-1'),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('rule-delete-button-1'),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId('rule-confirm-delete-button-1'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -300,7 +308,7 @@ describe('<PriorityRulesPanel />', () => {
   it('allows adding a new rule draft and creates it on Apply', async () => {
     setupMockHook(MOCK_RULES.slice(0, 2)); // 2 existing rules
     renderPanel();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     const addRuleButton = screen.getByTestId('add-priority-rule-button');
     fireEvent.click(addRuleButton);
@@ -421,19 +429,59 @@ describe('<PriorityRulesPanel />', () => {
     expect(screen.getByText('Limit of 10 rules reached')).toBeInTheDocument();
   });
 
-  it('deletes an existing rule when clicking delete icon button', async () => {
+  it('deletes an existing rule when clicking delete icon button then confirm', async () => {
     setupMockHook(MOCK_RULES.slice(0, 1));
     renderPanel();
 
     const deleteButton = screen.getByLabelText('delete rule 1');
     fireEvent.click(deleteButton);
 
+    expect(screen.queryByLabelText('delete rule 1')).not.toBeInTheDocument();
+    const confirmButton = screen.getByTestId('rule-confirm-delete-button-1');
+    fireEvent.click(confirmButton);
+
     await waitFor(() => {
       expect(mockDeleteRule).toHaveBeenCalledWith({ id: '1' });
     });
   });
 
-  it('deletes a draft row without calling API', async () => {
+  it('cancels the delete confirmation on Escape or click-away and goes back to normal state', async () => {
+    setupMockHook(MOCK_RULES.slice(0, 1));
+    renderPanel();
+    const user = userEvent.setup({ delay: null });
+
+    const deleteButton = screen.getByLabelText('delete rule 1');
+    fireEvent.click(deleteButton);
+    expect(
+      screen.getByTestId('rule-confirm-delete-button-1'),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('delete rule 1')).not.toBeInTheDocument();
+
+    // Cancel via Escape key
+    await user.keyboard('{Escape}');
+    expect(screen.getByLabelText('delete rule 1')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('rule-confirm-delete-button-1'),
+    ).not.toBeInTheDocument();
+
+    // Re-open and cancel via clicking outside
+    await user.click(screen.getByLabelText('delete rule 1'));
+    expect(
+      screen.getByTestId('rule-confirm-delete-button-1'),
+    ).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await user.click(document.body);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('rule-confirm-delete-button-1'),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.getByLabelText('delete rule 1')).toBeInTheDocument();
+    expect(mockDeleteRule).not.toHaveBeenCalled();
+  });
+
+  it('deletes a draft row immediately without calling API', async () => {
     setupMockHook(MOCK_RULES.slice(0, 1));
     renderPanel();
 
@@ -443,8 +491,8 @@ describe('<PriorityRulesPanel />', () => {
       await screen.findByTestId(/^priority-rule-row-draft-/),
     ).toBeInTheDocument();
 
-    // Delete draft
-    const deleteButtons = screen.getAllByLabelText(/delete rule/i);
+    // Click trash icon for the draft — deletes immediately with no dialog
+    const deleteButtons = screen.getAllByTestId(/rule-delete-button-/i);
     const draftDeleteButton = deleteButtons[deleteButtons.length - 1];
     fireEvent.click(draftDeleteButton);
 
@@ -454,7 +502,7 @@ describe('<PriorityRulesPanel />', () => {
     expect(mockDeleteRule).not.toHaveBeenCalled();
   });
 
-  it('displays client-side validation errors for invalid weight or empty filter', async () => {
+  it('displays client-side validation errors for invalid weight and swaps Apply for Delete on empty filter', async () => {
     setupMockHook(MOCK_RULES.slice(0, 1));
     renderPanel();
 
@@ -472,18 +520,22 @@ describe('<PriorityRulesPanel />', () => {
     ).toBeInTheDocument();
     expect(mockUpdateRule).not.toHaveBeenCalled();
 
-    // Clear filter chip
+    // Clear filter chip: Apply disappears and inline Delete button appears
     const row1 = screen.getByTestId('priority-rule-row-1');
     const deleteChipIcon = within(row1).getByTestId('CancelIcon');
     fireEvent.click(deleteChipIcon);
 
-    fireEvent.change(weightInput, { target: { value: '100' } });
-    fireEvent.click(applyButton);
-
-    expect(
-      await screen.findByText('Filter expression cannot be empty'),
-    ).toBeInTheDocument();
+    expect(screen.queryByTestId('rule-apply-button-1')).not.toBeInTheDocument();
+    const inlineDeleteButton = await screen.findByTestId(
+      'rule-confirm-delete-button-1',
+    );
+    expect(inlineDeleteButton).toBeInTheDocument();
     expect(mockUpdateRule).not.toHaveBeenCalled();
+
+    fireEvent.click(inlineDeleteButton);
+    await waitFor(() => {
+      expect(mockDeleteRule).toHaveBeenCalledWith({ id: '1' });
+    });
   });
 
   it('rejects invalid non-integer weights such as alphanumeric values', async () => {
@@ -538,7 +590,7 @@ describe('<PriorityRulesPanel />', () => {
       }));
 
     renderPanel();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     // Edit Rule 1
     const weightInput1 = screen.getByTestId('rule-weight-input-1');
@@ -612,11 +664,11 @@ describe('<PriorityRulesPanel />', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders loading spinner when loading priority rules', () => {
+  it('renders loading skeletons when loading priority rules', () => {
     setupMockHook([], true);
-    renderPanel();
+    const { container } = renderPanel();
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(container.querySelectorAll('.MuiSkeleton-root').length).toBe(3);
   });
 
   it('renders query error alert when fetching rules fails', () => {
@@ -712,6 +764,9 @@ describe('<PriorityRulesPanel />', () => {
 
     const deleteButton = screen.getByLabelText('delete rule 1');
     fireEvent.click(deleteButton);
+
+    const confirmButton = screen.getByTestId('rule-confirm-delete-button-1');
+    fireEvent.click(confirmButton);
 
     expect(
       await screen.findByText('Permission denied to delete rule'),

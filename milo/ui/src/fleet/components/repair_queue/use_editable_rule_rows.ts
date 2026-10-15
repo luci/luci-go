@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import {
   EditableRuleRow,
@@ -21,39 +21,49 @@ import {
   ruleToEditableRow,
 } from './editable_rule_row';
 
+function mergeRemoteRules(
+  prevRows: readonly EditableRuleRow[],
+  rules: readonly RepairPriorityRule[],
+): readonly EditableRuleRow[] {
+  if (prevRows.length === 0) {
+    return rules.map(ruleToEditableRow);
+  }
+
+  const updatedRemoteRows: EditableRuleRow[] = rules.map((rule) => {
+    const existing = prevRows.find((r) => r.id === rule.id);
+    if (!existing) {
+      return ruleToEditableRow(rule);
+    }
+    if (isRowDirty(existing)) {
+      return {
+        ...existing,
+        backendExpressionAip160: rule.expressionAip160,
+        backendWeight: rule.weight,
+      };
+    }
+    return ruleToEditableRow(rule);
+  });
+
+  const activeDraftRows = prevRows.filter((r) => r.isDraft);
+  return [...updatedRemoteRows, ...activeDraftRows];
+}
+
 /**
  * Keeps a list of locally editable rule rows in sync with the remote rules,
  * preserving local edits on dirty rows and any unsaved draft rows.
  */
 export const useEditableRuleRows = (rules: readonly RepairPriorityRule[]) => {
-  const [rows, setRows] = useState<readonly EditableRuleRow[]>([]);
+  const [prevRules, setPrevRules] = useState(rules);
+  const [rows, setRows] = useState<readonly EditableRuleRow[]>(() =>
+    rules.map(ruleToEditableRow),
+  );
 
-  // Sync rows with remote rules
-  useEffect(() => {
-    setRows((prevRows) => {
-      if (prevRows.length === 0) {
-        return rules.map(ruleToEditableRow);
-      }
-
-      const updatedRemoteRows: EditableRuleRow[] = rules.map((rule) => {
-        const existing = prevRows.find((r) => r.id === rule.id);
-        if (!existing) {
-          return ruleToEditableRow(rule);
-        }
-        if (isRowDirty(existing)) {
-          return {
-            ...existing,
-            backendExpressionAip160: rule.expressionAip160,
-            backendWeight: rule.weight,
-          };
-        }
-        return ruleToEditableRow(rule);
-      });
-
-      const activeDraftRows = prevRows.filter((r) => r.isDraft);
-      return [...updatedRemoteRows, ...activeDraftRows];
-    });
-  }, [rules]);
+  if (rules !== prevRules) {
+    setPrevRules(rules);
+    const nextRows = mergeRemoteRules(rows, rules);
+    setRows(nextRows);
+    return [nextRows, setRows] as const;
+  }
 
   return [rows, setRows] as const;
 };
