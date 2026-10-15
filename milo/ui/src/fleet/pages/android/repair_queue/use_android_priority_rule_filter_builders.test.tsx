@@ -14,6 +14,10 @@
 
 import { renderHook } from '@testing-library/react';
 
+import {
+  RangeFilterCategory,
+  RangeFilterCategoryBuilder,
+} from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { useFilterState } from '@/fleet/components/filters/use_filters';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
@@ -22,7 +26,12 @@ import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { useAndroidPriorityRuleFilterBuilders } from './use_android_priority_rule_filter_builders';
+import {
+  AndroidPriorityRuleFilterBuilder,
+  HOST_GROUP_HEALTH_FILTER_KEY,
+  RUN_TARGET_HEALTH_FILTER_KEY,
+  useAndroidPriorityRuleFilterBuilders,
+} from './use_android_priority_rule_filter_builders';
 
 const renderFilterBuilders = (workspace: AndroidPageWorkspace = 'Android') =>
   renderHook(() => useAndroidPriorityRuleFilterBuilders(workspace), {
@@ -44,8 +53,21 @@ const mockDimensions = (data: GetDeviceDimensionsResponse) => {
 };
 
 const optionValues = (
-  builder: StringListFilterCategoryBuilder | undefined,
-): string[] => (builder?.options ?? []).map((o) => o.value);
+  builder: AndroidPriorityRuleFilterBuilder | undefined,
+): string[] =>
+  builder instanceof StringListFilterCategoryBuilder
+    ? (builder.options ?? []).map((o) => o.value)
+    : [];
+
+const renderFilterState = (
+  builders: Record<string, AndroidPriorityRuleFilterBuilder>,
+  aip160: string,
+) =>
+  renderHook(() => useFilterState(builders, aip160), {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <FakeContextProvider>{children}</FakeContextProvider>
+    ),
+  });
 
 describe('useAndroidPriorityRuleFilterBuilders', () => {
   beforeEach(() => {
@@ -163,5 +185,100 @@ describe('useAndroidPriorityRuleFilterBuilders', () => {
 
     expect(builders.host_group).toBeUndefined();
     expect(builders.run_target).toBeDefined();
+  });
+
+  describe('health percentage filters', () => {
+    const HEALTH_KEYS = [
+      HOST_GROUP_HEALTH_FILTER_KEY,
+      RUN_TARGET_HEALTH_FILTER_KEY,
+    ];
+
+    it.each<AndroidPageWorkspace>(['Android', 'Pixel'])(
+      'offers host group and run target health as 0-100%% ranges in %s',
+      (workspace) => {
+        mockDimensions({
+          baseDimensions: {},
+          // A device label with the same name must not shadow the column.
+          labels: { host_group_health_pct: { values: ['0.5'] } },
+        });
+
+        const { result } = renderFilterBuilders(workspace);
+        const builders = result.current.filterBuilders;
+
+        expect(builders['labels."host_group_health_pct"']).toBeUndefined();
+        for (const key of HEALTH_KEYS) {
+          const builder = builders[key];
+          expect(builder).toBeInstanceOf(RangeFilterCategoryBuilder);
+          if (!(builder instanceof RangeFilterCategoryBuilder)) continue;
+          expect(builder.min).toBe(0);
+          expect(builder.max).toBe(100);
+          expect(builder.scaleFactor).toBe(0.01);
+        }
+        expect(builders.host_group_health_pct?.label).toBe('Host Group Health');
+        expect(builders.run_target_health_pct?.label).toBe('Run Target Health');
+      },
+    );
+
+    it('offers health filters before the device dimensions load', () => {
+      jest
+        .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
+        .mockReturnValue({
+          data: undefined,
+          isLoading: true,
+          isPending: true,
+          isError: false,
+          error: null,
+        } as unknown as ReturnType<
+          typeof UseDeviceDimensionsModule.useDeviceDimensions
+        >);
+
+      const { result } = renderFilterBuilders('Android');
+
+      expect(result.current.filterBuilders.host_group_health_pct).toBeDefined();
+      expect(result.current.filterBuilders.run_target_health_pct).toBeDefined();
+    });
+
+    it('parses stored fractional rules as percentages without warnings', () => {
+      mockDimensions({ baseDimensions: {}, labels: {} });
+      const { result } = renderFilterBuilders('Android');
+
+      const { result: filterState } = renderFilterState(
+        result.current.filterBuilders,
+        'host_group_health_pct <= 0.5 AND run_target_health_pct >= 0.2 AND run_target_health_pct <= 0.8',
+      );
+
+      expect(filterState.current.filterErrors).toEqual([]);
+      const hostGroup = filterState.current.filterValues?.host_group_health_pct;
+      const runTarget = filterState.current.filterValues?.run_target_health_pct;
+      expect(hostGroup).toBeInstanceOf(RangeFilterCategory);
+      expect(runTarget).toBeInstanceOf(RangeFilterCategory);
+      if (
+        !(hostGroup instanceof RangeFilterCategory) ||
+        !(runTarget instanceof RangeFilterCategory)
+      ) {
+        return;
+      }
+      expect(hostGroup.value).toEqual({ max: 50 });
+      expect(runTarget.value).toEqual({ min: 20, max: 80 });
+      expect(hostGroup.getChipLabel()).toBe('[ Host Group Health ]: to 50');
+    });
+
+    it('serializes percentages back to the fractions the backend stores', () => {
+      mockDimensions({ baseDimensions: {}, labels: {} });
+      const { result } = renderFilterBuilders('Android');
+
+      const { result: filterState } = renderFilterState(
+        result.current.filterBuilders,
+        'run_target_health_pct >= 0.25',
+      );
+      const runTarget = filterState.current.filterValues?.run_target_health_pct;
+      expect(runTarget).toBeInstanceOf(RangeFilterCategory);
+      if (!(runTarget instanceof RangeFilterCategory)) return;
+
+      runTarget.value = { min: 10, max: 75 };
+      expect(runTarget.toAIP160()).toBe(
+        'run_target_health_pct >= 0.1 AND run_target_health_pct <= 0.75',
+      );
+    });
   });
 });

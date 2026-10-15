@@ -14,11 +14,24 @@
 
 import { useMemo } from 'react';
 
+import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+// Health percentages computed by RepopulateAndroidRepairTasks and backing the
+// "Host Group / Run Target Health" column. They are not device dimensions, so
+// they are offered as fixed range filters rather than read from the
+// dimensions API. The backend stores them as fractions in [0, 1]; the editor
+// presents them as percentages in [0, 100], matching the column.
+export const HOST_GROUP_HEALTH_FILTER_KEY = 'host_group_health_pct';
+export const RUN_TARGET_HEALTH_FILTER_KEY = 'run_target_health_pct';
+const HEALTH_PCT_FILTER_LABELS: Readonly<Record<string, string>> = {
+  [HOST_GROUP_HEALTH_FILTER_KEY]: 'Host Group Health',
+  [RUN_TARGET_HEALTH_FILTER_KEY]: 'Run Target Health',
+};
 
 // Maps Android device base dimensions (android_devices columns) to the
 // Android repair task filter map fields they populate
@@ -51,12 +64,18 @@ const SUPERSEDED_LABEL_KEYS: ReadonlySet<string> = new Set([
   'run_target',
   'state',
   'claimed_by',
+  HOST_GROUP_HEALTH_FILTER_KEY,
+  RUN_TARGET_HEALTH_FILTER_KEY,
 ]);
+
+export type AndroidPriorityRuleFilterBuilder =
+  | StringListFilterCategoryBuilder
+  | RangeFilterCategoryBuilder;
 
 export const useAndroidPriorityRuleFilterBuilders = (
   workspace: AndroidPageWorkspace,
 ): {
-  filterBuilders: Record<string, StringListFilterCategoryBuilder>;
+  filterBuilders: Record<string, AndroidPriorityRuleFilterBuilder>;
   isLoading: boolean;
 } => {
   const dimensionsQuery = useDeviceDimensions({ platform: Platform.ANDROID });
@@ -68,7 +87,7 @@ export const useAndroidPriorityRuleFilterBuilders = (
   );
 
   const filterBuilders = useMemo(() => {
-    const builders: Record<string, StringListFilterCategoryBuilder> = {
+    const builders: Record<string, AndroidPriorityRuleFilterBuilder> = {
       device_id: new StringListFilterCategoryBuilder()
         .setLabel('Device ID')
         .setOptions([{ label: BLANK_VALUE, value: BLANK_VALUE }]),
@@ -96,6 +115,14 @@ export const useAndroidPriorityRuleFilterBuilders = (
         .setLabel('Claimed By')
         .setOptions([{ label: BLANK_VALUE, value: BLANK_VALUE }]),
     };
+
+    for (const [filterKey, label] of Object.entries(HEALTH_PCT_FILTER_LABELS)) {
+      builders[filterKey] = new RangeFilterCategoryBuilder()
+        .setLabel(label)
+        .setMin(0)
+        .setMax(100)
+        .setScaleFactor(0.01);
+    }
 
     if (isDimensionsLoaded && dimensionsQuery.data) {
       const data = dimensionsQuery.data;

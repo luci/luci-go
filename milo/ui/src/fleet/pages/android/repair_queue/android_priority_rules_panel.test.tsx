@@ -16,6 +16,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, renderHook, screen } from '@testing-library/react';
 
 import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
+import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
 import * as PrpcClientsModule from '@/fleet/hooks/prpc_clients';
@@ -96,8 +97,14 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
     expect(keys).not.toContain('type');
     expect(keys).not.toContain('hostname');
 
+    expect(keys).toContain('host_group_health_pct');
+    expect(keys).toContain('run_target_health_pct');
+
+    const hostGroupBuilder = result.current.filterBuilders.host_group;
     const hostGroupValues = (
-      result.current.filterBuilders.host_group.options ?? []
+      hostGroupBuilder instanceof StringListFilterCategoryBuilder
+        ? (hostGroupBuilder.options ?? [])
+        : []
     ).map((o) => o.value);
     expect(hostGroupValues).toContain('group-a');
     expect(hostGroupValues).not.toContain('pte_labs');
@@ -391,6 +398,58 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
       screen.getByPlaceholderText(
         'Add rule filter (e.g. state = "DYING" AND run_target = "seahawk")...',
       ),
+    ).toBeInTheDocument();
+  });
+
+  it('renders a saved health percentage rule as a percentage chip', () => {
+    jest
+      .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
+      .mockReturnValue({
+        data: { baseDimensions: {}, labels: {} },
+        isLoading: false,
+      } as unknown as ReturnType<
+        typeof UseDeviceDimensionsModule.useDeviceDimensions
+      >);
+    jest
+      .spyOn(UseAndroidPriorityRulesModule, 'useAndroidPriorityRules')
+      .mockReturnValue({
+        rules: [
+          {
+            id: 'rule-1',
+            expressionAip160: 'host_group_health_pct <= 0.5',
+            weight: '30',
+            workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
+          },
+        ],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: jest.fn(),
+        createRule: jest.fn(),
+        isCreating: false,
+        createError: null,
+        updateRule: jest.fn(),
+        isUpdating: false,
+        updateError: null,
+        deleteRule: jest.fn(),
+        isDeleting: false,
+        deleteError: null,
+      });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <SettingsProvider>
+            <ShortcutProvider>
+              <AndroidPriorityRulesPanel workspace="Android" />
+            </ShortcutProvider>
+          </SettingsProvider>
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      screen.getByText('[ Host Group Health ]: to 50'),
     ).toBeInTheDocument();
   });
 });
