@@ -47,7 +47,11 @@ import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/ap
 import { HEALTH_FILTER_CONFIGS } from './filter_constants';
 import { getHealthStatus } from './health_status_utils';
 import { HealthThresholdsTooltip, HealthTooltip } from './health_tooltip';
-import { calculate24hDelta, HEALTH_COMPARISON_TOOLTIP } from './ranking_utils';
+import {
+  calculate24hDelta,
+  DeltaCalculationResult,
+  HEALTH_COMPARISON_TOOLTIP,
+} from './ranking_utils';
 import {
   getHourAlignedTimeWindow,
   RANKING_HOURS_WINDOW,
@@ -63,12 +67,8 @@ export interface PerformanceRankingCardProps {
   onSelectPool?: (pool: string) => void;
 }
 
-export interface RankedCohortItem {
+export interface RankedCohortItem extends DeltaCalculationResult {
   readonly name: string;
-  readonly availabilityPct: number;
-  readonly prevAvailabilityPct: number;
-  readonly healthDrop: number;
-  readonly trend: 'up' | 'down' | 'flat';
 }
 
 export const PerformanceRankingCard = ({
@@ -457,12 +457,23 @@ export const PerformanceRankingCard = ({
                             ...subMetricRowSx,
                             display: 'inline-flex',
                             alignItems: 'center',
+                            gap: 0.25,
                             cursor: 'pointer',
                             px: 0.5,
                             py: 0.25,
                           }}
                         >
                           <TrendingUp color="success" sx={{ fontSize: 16 }} />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: 'success.main',
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                            }}
+                          >
+                            +{item.healthGain}%
+                          </Typography>
                         </Box>
                       </HealthTooltip>
                     )}

@@ -30,6 +30,7 @@ export interface DeltaCalculationResult {
   readonly availabilityPct: number;
   readonly prevAvailabilityPct: number;
   readonly healthDrop: number;
+  readonly healthGain: number;
   readonly trend: 'up' | 'down' | 'flat';
 }
 
@@ -45,6 +46,7 @@ export const calculate24hDelta = (
       availabilityPct: 0,
       prevAvailabilityPct: 0,
       healthDrop: 0,
+      healthGain: 0,
       trend: 'flat',
     };
   }
@@ -76,6 +78,7 @@ export const calculate24hDelta = (
   const prevAvailabilityPct = Math.max(0, Math.round(prevPoint.value * 100));
 
   const healthDrop = Math.max(0, prevAvailabilityPct - availabilityPct);
+  const healthGain = Math.max(0, availabilityPct - prevAvailabilityPct);
   const trend: 'up' | 'down' | 'flat' =
     availabilityPct > prevAvailabilityPct
       ? 'up'
@@ -87,6 +90,7 @@ export const calculate24hDelta = (
     availabilityPct,
     prevAvailabilityPct,
     healthDrop,
+    healthGain,
     trend,
   };
 };

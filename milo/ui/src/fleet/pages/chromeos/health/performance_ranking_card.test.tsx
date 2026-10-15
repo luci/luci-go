@@ -100,6 +100,7 @@ describe('PerformanceRankingCard', () => {
     expect(modelElements[2]).toHaveTextContent('brya');
     expect(modelElements[2]).toHaveTextContent('88% Available');
     expect(screen.queryByTestId('drop-badge-brya')).not.toBeInTheDocument();
+    expect(screen.getByTestId('gain-badge-brya')).toHaveTextContent('+3%');
   });
 
   it('renders loading state skeletons while fetching data', () => {

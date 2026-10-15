@@ -20,7 +20,24 @@ describe('calculate24hDelta', () => {
       availabilityPct: 0,
       prevAvailabilityPct: 0,
       healthDrop: 0,
+      healthGain: 0,
       trend: 'flat',
+    });
+  });
+
+  it('calculates upward trend with healthGain > 0 and healthDrop = 0', () => {
+    const points = [
+      { timestamp: '2026-09-29T10:00:00Z', value: 0.82 },
+      { timestamp: '2026-09-30T10:00:00Z', value: 0.91 },
+    ];
+
+    const result = calculate24hDelta(points);
+    expect(result).toEqual({
+      availabilityPct: 91,
+      prevAvailabilityPct: 82,
+      healthDrop: 0,
+      healthGain: 9,
+      trend: 'up',
     });
   });
 
@@ -34,6 +51,7 @@ describe('calculate24hDelta', () => {
     expect(result.availabilityPct).toBe(125);
     expect(result.prevAvailabilityPct).toBe(130);
     expect(result.healthDrop).toBe(5);
+    expect(result.healthGain).toBe(0);
     expect(result.trend).toBe('down');
   });
 
@@ -47,6 +65,7 @@ describe('calculate24hDelta', () => {
     expect(result.availabilityPct).toBe(120);
     expect(result.prevAvailabilityPct).toBe(105);
     expect(result.healthDrop).toBe(0);
+    expect(result.healthGain).toBe(15);
     expect(result.trend).toBe('up');
   });
 
@@ -61,6 +80,7 @@ describe('calculate24hDelta', () => {
     expect(result.availabilityPct).toBe(75);
     expect(result.prevAvailabilityPct).toBe(80);
     expect(result.healthDrop).toBe(5);
+    expect(result.healthGain).toBe(0);
     expect(result.trend).toBe('down');
   });
 
@@ -71,6 +91,7 @@ describe('calculate24hDelta', () => {
     expect(result.availabilityPct).toBe(70);
     expect(result.prevAvailabilityPct).toBe(70);
     expect(result.healthDrop).toBe(0);
+    expect(result.healthGain).toBe(0);
     expect(result.trend).toBe('flat');
   });
 
