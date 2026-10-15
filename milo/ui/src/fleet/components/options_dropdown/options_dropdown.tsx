@@ -50,7 +50,15 @@ type OptionsDropdownProps = Omit<MenuProps, 'open' | 'maxHeight'> & {
   anchorOrigin?: PopoverOrigin | undefined;
   transformOrigin?: PopoverOrigin | undefined;
   onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
+  onKeyDownCapture?: React.KeyboardEventHandler<HTMLDivElement>;
   enableSearchInput?: boolean;
+  autoFocusSearchInput?: boolean;
+  disableClickAway?: boolean;
+  disableTypeToSearch?: boolean;
+  externalSearchQuery?: string;
+  controlledSearchQuery?: string;
+  onSearchQueryChange?: (searchQuery: string) => void;
+  resetKey?: unknown;
   maxHeight?: CSSProperties['maxHeight'];
   onResetClick?: MouseEventHandler<HTMLButtonElement>;
   onResetWidthsClick?: MouseEventHandler<HTMLButtonElement>;
@@ -104,7 +112,15 @@ export function OptionsDropdown({
   },
   transformOrigin,
   onKeyDown,
+  onKeyDownCapture,
   enableSearchInput = false,
+  autoFocusSearchInput = true,
+  disableClickAway = false,
+  disableTypeToSearch = false,
+  externalSearchQuery = '',
+  controlledSearchQuery,
+  onSearchQueryChange,
+  resetKey,
   maxHeight = 'auto',
   onResetClick,
   onResetWidthsClick,
@@ -117,22 +133,41 @@ export function OptionsDropdown({
   const searchInput = useRef<HTMLInputElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const popperRef = useRef<{ update: () => void } | null>(null);
+  const [searchQuery, setSearchQuery] = useState(externalSearchQuery);
 
   const placement = mapOriginToPlacement(anchorOrigin, transformOrigin);
+  const effectiveSearchQuery = controlledSearchQuery ?? searchQuery;
+
+  useEffect(() => {
+    setSearchQuery(externalSearchQuery);
+  }, [resetKey, externalSearchQuery]);
+
+  useEffect(() => {
+    if (!open || !paperRef.current || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      popperRef.current?.update();
+    });
+    observer.observe(paperRef.current);
+    return () => observer.disconnect();
+  }, [open, resetKey]);
 
   useEffect(() => {
     if (enableSearchInput) {
       // Small timeout to allow the popover to mount and settle
       if (open) {
-        setTimeout(() => {
-          searchInput.current?.focus();
-        }, 0);
+        if (autoFocusSearchInput) {
+          setTimeout(() => {
+            searchInput.current?.focus();
+          }, 0);
+        }
       } else {
         setSearchQuery('');
       }
     }
-  }, [open, enableSearchInput]);
+  }, [open, enableSearchInput, autoFocusSearchInput]);
 
   useEffect(() => {
     if (!open || !closeOnScroll) return;
@@ -167,6 +202,7 @@ export function OptionsDropdown({
 
   return (
     <Popper
+      popperRef={popperRef as React.ComponentProps<typeof Popper>['popperRef']}
       disablePortal={disablePortal}
       open={open}
       anchorEl={anchorEl}
@@ -174,7 +210,7 @@ export function OptionsDropdown({
       modifiers={[
         {
           name: 'eventListeners',
-          options: { scroll: !disableScrollUpdate },
+          options: { scroll: !disableScrollUpdate, resize: true },
         },
         {
           name: 'flip',
@@ -206,6 +242,9 @@ export function OptionsDropdown({
     >
       <ClickAwayListener
         onClickAway={(e) => {
+          if (disableClickAway) {
+            return;
+          }
           if (shouldIgnoreClickAway(e, anchorEl, paperRef.current)) {
             return;
           }
@@ -217,6 +256,7 @@ export function OptionsDropdown({
           elevation={2}
           className="fc-dropdown-container"
           onClick={(e) => e.stopPropagation()}
+          onKeyDownCapture={onKeyDownCapture}
           onKeyDown={(e) => {
             e.stopPropagation();
 
@@ -228,7 +268,7 @@ export function OptionsDropdown({
               onApply();
             }
 
-            if (enableSearchInput) {
+            if (enableSearchInput && !disableTypeToSearch) {
               keyboardListNavigationHandler(e);
               switch (e.key) {
                 case 'Delete':
@@ -238,13 +278,18 @@ export function OptionsDropdown({
                     return;
                   }
                   setSearchQuery('');
+                  onSearchQueryChange?.('');
                   searchInput?.current?.focus();
               }
               // if the key is a single alphanumeric character without modifier
-              if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
+              if (/^[a-zA-Z0-9_.\-/]$/.test(e.key) && !hasAnyModifier(e)) {
                 if (document.activeElement === searchInput.current) return;
                 searchInput?.current?.focus();
-                setSearchQuery((old) => old + e.key);
+                setSearchQuery((old) => {
+                  const next = old + e.key;
+                  onSearchQueryChange?.(next);
+                  return next;
+                });
                 e.preventDefault(); // Avoid race condition to type twice in the input
               }
             }
@@ -266,16 +311,23 @@ export function OptionsDropdown({
           {enableSearchInput && (
             <SearchInput
               searchInput={searchInput}
-              searchQuery={searchQuery}
+              searchQuery={effectiveSearchQuery}
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus={autoFocusSearchInput}
               fullWidth
               onChange={(e) => {
-                setSearchQuery(e.currentTarget.value);
+                const val = e.currentTarget.value;
+                setSearchQuery(val);
+                onSearchQueryChange?.(val);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowDown' || (e.key === 'j' && e.ctrlKey)) {
                   const firstItem =
                     listContainerRef.current?.querySelector<HTMLElement>(
-                      '[role="menuitem"], [role="option"], button',
+                      '[role="menuitem"], [role="option"]',
+                    ) ??
+                    listContainerRef.current?.querySelector<HTMLElement>(
+                      'button',
                     );
                   firstItem?.focus();
                   e.preventDefault();
@@ -304,7 +356,7 @@ export function OptionsDropdown({
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
           >
-            {renderChild(searchQuery, (e) => {
+            {renderChild(effectiveSearchQuery, (e) => {
               searchInput.current?.focus();
               e.stopPropagation();
               e.preventDefault();

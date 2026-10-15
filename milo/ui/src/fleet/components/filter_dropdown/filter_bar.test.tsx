@@ -1315,4 +1315,34 @@ describe('FilterBar', () => {
     await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toContainElement(option1);
   });
+
+  it('renders shared SearchInput inside open category submenu', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent
+          initialOptions={[
+            {
+              label: 'Option 1',
+              key: 'option-1',
+              options: ['Value 1', 'Other Value', 'other_value'],
+            },
+          ]}
+        />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    await user.click(getSearchBarInput());
+    await user.click(screen.getByText('Option 1'));
+
+    const subSearchInput = await screen.findByPlaceholderText('search');
+    expect(subSearchInput).toBeInTheDocument();
+
+    await user.type(subSearchInput, 'Other Value');
+    expect(subSearchInput).toHaveValue('Other Value');
+    expect(queryByBrokenUpText('Other Value')).toBeInTheDocument();
+    expect(queryByBrokenUpText('other_value')).toBeInTheDocument();
+    // Sub-menu search scopes the parent search bar to the open category.
+    expect(getSearchBarInput()).toHaveValue('Option 1:Other Value');
+  });
 });

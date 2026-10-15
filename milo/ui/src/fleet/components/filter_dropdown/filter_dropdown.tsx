@@ -53,6 +53,7 @@ import { EllipsisTooltip } from '../ellipsis_tooltip';
 import { StringListFilterCategory } from '../filters/string_list_filter';
 import { FilterCategory } from '../filters/use_filters';
 import { HighlightCharacter } from '../highlight_character';
+import { OptionsDropdown } from '../options_dropdown/options_dropdown';
 
 export interface OptionComponentHandle {
   focus: () => void;
@@ -294,7 +295,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
       onSearchBarFocus();
       return;
     }
-    if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
+    if (/^[a-zA-Z0-9_.\-/]$/.test(e.key) && !hasAnyModifier(e)) {
       // allow user to search when any alphanumeric key has been pressed
       onSearchBarFocus();
       onSearchQueryChangeInternal(searchQuery + e.key);
@@ -305,114 +306,117 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
   const renderOpenCategory = () => {
     if (!openCategory) return <></>;
 
-    const content = openCategory.value.render(
-      splitSearchQuery(deferredSearchQuery).childrenSearchQuery,
-      () => {
-        onSearchBarFocus();
-      },
-      applyOptions,
-      closeMenu,
-      openCategoryRef,
-    );
+    const isStringListCategory =
+      openCategory.value instanceof StringListFilterCategory;
+    const {
+      isCategoryScoped: isImmediateCategoryScoped,
+      childrenSearchQuery: immediateChildrenSearchQuery,
+    } = splitSearchQuery(searchQuery);
+    const { childrenSearchQuery: deferredChildrenSearchQuery } =
+      splitSearchQuery(deferredSearchQuery);
+    const hasMatchingChild =
+      openCategory.value.getChildrenSearchScore(
+        deferredChildrenSearchQuery.trim(),
+      ) > 0;
 
     return (
-      <Popper
+      <OptionsDropdown
         open={true}
         anchorEl={openCategory.anchor}
-        placement="right-start"
-        style={{ zIndex: 1301 }}
-        modifiers={[
-          {
-            name: 'eventListeners',
-            enabled: true,
-            options: {
-              scroll: false,
-              resize: true,
-            },
-          },
-          {
-            name: 'flip',
-            enabled: true,
-            options: {
-              boundary: 'viewport',
-            },
-          },
-          {
-            name: 'preventOverflow',
-            enabled: true,
-            options: {
-              boundary: 'viewport',
-            },
-          },
-        ]}
-      >
-        <Paper
-          elevation={2}
-          onClick={(e) => e.stopPropagation()}
-          onKeyDownCapture={(e: React.KeyboardEvent<HTMLDivElement>) => {
-            keyboardFilterDropdownNavigationHandler(e, e.currentTarget, {
-              onFocusFirstList: () => {
-                if (
-                  openCategoryRef.current &&
-                  openCategoryRef.current.focusFirst
-                ) {
-                  openCategoryRef.current.focusFirst();
-                  return true;
-                }
-                return false;
-              },
-              onFocusLastList: () => {
-                if (
-                  openCategoryRef.current &&
-                  openCategoryRef.current.focusLast
-                ) {
-                  openCategoryRef.current.focusLast();
-                  return true;
-                }
-                return false;
-              },
-            });
-          }}
-          onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
-            if (openCategory?.value instanceof StringListFilterCategory) {
-              if (e.key === 'Backspace') {
-                onSearchQueryChangeInternal(
-                  searchQuery.slice(0, searchQuery.length - 1),
-                );
-                onSearchBarFocus();
-                e.preventDefault();
-                return;
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        enableSearchInput={isStringListCategory}
+        autoFocusSearchInput={false}
+        disableClickAway={true}
+        disableTypeToSearch={true}
+        resetKey={openCategory.value}
+        externalSearchQuery={
+          hasMatchingChild ? deferredChildrenSearchQuery : ''
+        }
+        controlledSearchQuery={
+          isImmediateCategoryScoped ? immediateChildrenSearchQuery : undefined
+        }
+        onSearchQueryChange={(val) => {
+          // Always scope sub-menu searches to the open category, even when the
+          // parent search query is empty or unscoped.
+          onSearchQueryChange(
+            openCategory.value.label + categoryValueSeparator + val,
+          );
+        }}
+        footerButtons={[]}
+        onClose={() => {
+          openCategory.anchor.focus();
+          closeInnerMenu();
+        }}
+        onApply={applyOptions}
+        onKeyDownCapture={(e: React.KeyboardEvent<HTMLDivElement>) => {
+          keyboardFilterDropdownNavigationHandler(e, e.currentTarget, {
+            onFocusFirstList: () => {
+              if (
+                openCategoryRef.current &&
+                openCategoryRef.current.focusFirst
+              ) {
+                openCategoryRef.current.focusFirst();
+                return true;
               }
-              if (e.key === 'Delete' || e.key === 'Cancel') {
-                onSearchQueryChangeInternal('');
-                onSearchBarFocus();
-                e.preventDefault();
-                return;
+              return false;
+            },
+            onFocusLastList: () => {
+              if (
+                openCategoryRef.current &&
+                openCategoryRef.current.focusLast
+              ) {
+                openCategoryRef.current.focusLast();
+                return true;
               }
-            }
-            if (e.key === 'Escape') {
-              openCategory?.anchor.focus();
-              closeInnerMenu();
+              return false;
+            },
+          });
+        }}
+        onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+          if (isStringListCategory) {
+            if (e.key === 'Backspace') {
+              onSearchQueryChangeInternal(
+                searchQuery.slice(0, searchQuery.length - 1),
+              );
+              onSearchBarFocus();
+              e.preventDefault();
               return;
             }
-
-            if (openCategory?.value instanceof StringListFilterCategory) {
-              handleRandomTextInput(e);
-              keyboardListNavigationHandler(
-                e,
-                undefined,
-                () => {
-                  openCategory?.anchor.focus();
-                  closeInnerMenu();
-                },
-                'horizontal',
-              );
+            if (e.key === 'Delete' || e.key === 'Cancel') {
+              onSearchQueryChangeInternal('');
+              onSearchBarFocus();
+              e.preventDefault();
+              return;
             }
-          }}
-        >
-          {content}
-        </Paper>
-      </Popper>
+            handleRandomTextInput(e);
+            keyboardListNavigationHandler(
+              e,
+              undefined,
+              () => {
+                openCategory.anchor.focus();
+                closeInnerMenu();
+              },
+              'horizontal',
+            );
+          }
+        }}
+        renderChild={(effectiveChildQuery, onNavigateUp) =>
+          openCategory.value.render(
+            effectiveChildQuery,
+            (e) => {
+              if (isStringListCategory) {
+                onNavigateUp(e);
+              } else {
+                onSearchBarFocus();
+              }
+            },
+            applyOptions,
+            closeMenu,
+            openCategoryRef,
+          )
+        }
+      />
     );
   };
 
