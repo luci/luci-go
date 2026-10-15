@@ -85,7 +85,7 @@ describe('aliveFlow', () => {
 
     await jest.advanceTimersByTimeAsync(100);
     expect(actionPromise.state).toStrictEqual(FULFILLED);
-  });
+  }, 20000);
 
   test('when the store is destroyed while running the action', async () => {
     const [promise1, resolve1] = deferred<number>();

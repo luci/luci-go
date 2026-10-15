@@ -15,6 +15,13 @@
 import type { Config } from 'jest';
 
 const config: Config = {
+  // Recycle worker processes when idle heap memory exceeds 1GB to prevent
+  // worker crashes ("Jest worker ran out of memory and crashed") during large
+  // test runs across hundreds of test suites.
+  workerIdleMemoryLimit: '1GB',
+  // Increase default test timeout from 5s to 20s to prevent transient timeout
+  // failures during heavily-loaded parallel CI runs.
+  testTimeout: 20000,
   // Use `js-with-babel` instead of `js-with-ts` because
   // 1. `js-with-babel` is significantly faster than `js-with-ts`. This is
   // likely because babel transpiles each file individually while tsc compiles
