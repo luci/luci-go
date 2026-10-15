@@ -87,6 +87,10 @@ func validateBuilder(ctx *validation.Context, cfg *configpb.Builder) {
 func validateGerritConfig(ctx *validation.Context, project string, cfg *configpb.GerritConfig) {
 	ctx.Enter("gerrit_config")
 	defer ctx.Exit()
+	if cfg == nil {
+		ctx.Errorf("missing gerrit config")
+		return
+	}
 
 	if cfg.CreateRevertSettings == nil {
 		ctx.Errorf("missing config for creating reverts")

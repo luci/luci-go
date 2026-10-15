@@ -119,6 +119,10 @@ func TestValidateGerritConfig(t *testing.T) {
 		return ctx.Finalize()
 	}
 
+	ftt.Run("gerrit config is nil", t, func(t *ftt.Test) {
+		assert.Loosely(t, validate("chromium", nil), should.ErrLike("missing gerrit config"))
+	})
+
 	ftt.Run("Gerrit config structure", t, func(t *ftt.Test) {
 		t.Run("must not be empty", func(t *ftt.Test) {
 			cfg := &configpb.GerritConfig{}
