@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -59,27 +58,8 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 		ShortDesc: desc,
 		LongDesc:  longDesc,
 		CommandRun: func() subcommands.CommandRun {
-			r := &artifactListRun{af: af, parentType: parentType}
-			if r.af != nil {
-				r.af.Register(&r.Flags)
-			}
-			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
-			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
-			if parentType == ParentTypeTestResult {
-				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
-				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
-				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
-				// -legacy is now unused and will be removed in the future.
-				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
-			} else if parentType == ParentTypeWorkUnit {
-				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
-			} else {
-				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
-				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
-				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
-				// -legacy is now unused and will be removed in the future.
-				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
-			}
+			r := &artifactListRun{}
+			r.registerTargetFlags(af, parentType)
 			r.Flags.IntVar(&r.maxArtifacts, "max-artifacts", DefaultMaxArtifacts, "Maximum number of artifacts to display (default: 100, 0 for all)")
 			r.Flags.BoolVar(&r.allArtifacts, "all", false, "Show all artifacts without truncation")
 			return r
@@ -88,30 +68,14 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 }
 
 type artifactListRun struct {
-	subcommands.CommandRunBase
-	af           *base.AuthFlags
-	client       rdbpb.ResultDBClient
-	parentType   ParentType
-	host         string
-	invocationID string
-	testID       string
-	resultID     string
-	workUnitID   string
+	artifactCommonRun
 	maxArtifacts int
 	allArtifacts bool
-	legacy       bool // Unused; will be removed in the future.
 }
 
 func (r *artifactListRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return 0
-		}
-	}
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments (run 'luci ids <url>' to extract ids)\n")
-		return 1
+	if handled, exitCode := r.checkHelpAndPositionalArgs(args); handled {
+		return exitCode
 	}
 	if r.maxArtifacts < 0 {
 		fmt.Fprintf(os.Stderr, "flag -max-artifacts must be non-negative\n")
@@ -145,19 +109,10 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 
 	ctx := cli.GetContext(a, r, env)
 	ctx = format.WithDiscoveryCache(ctx)
-	client := r.client
-	if client == nil {
-		if err := r.af.Parse(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-			return 1
-		}
-		var err error
-		client, _, _, err = r.af.NewResultDBClient(ctx, r.host)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
-			return 1
-		}
+	if !r.ensureClients(ctx, false) {
+		return 1
 	}
+	client := r.client
 
 	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
 	if err != nil {

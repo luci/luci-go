@@ -148,17 +148,21 @@ func TestListCmd(t *testing.T) {
 				},
 			}
 			run := &artifactListRun{
-				client:       client,
-				parentType:   ParentTypeInvocation,
-				invocationID: "build-123",
+				artifactCommonRun: artifactCommonRun{
+					client:       client,
+					parentType:   ParentTypeInvocation,
+					invocationID: "build-123",
+				},
 			}
 			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(1))
 		})
 
 		t.Run(`rejects negative -max-artifacts`, func(t *ftt.Test) {
 			run := &artifactListRun{
-				parentType:   ParentTypeInvocation,
-				invocationID: "build-123",
+				artifactCommonRun: artifactCommonRun{
+					parentType:   ParentTypeInvocation,
+					invocationID: "build-123",
+				},
 				maxArtifacts: -1,
 			}
 			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(1))
@@ -192,9 +196,11 @@ func TestListCmd(t *testing.T) {
 					},
 				}
 				run := &artifactListRun{
-					client:       client,
-					parentType:   ParentTypeUnknown,
-					invocationID: rawInv,
+					artifactCommonRun: artifactCommonRun{
+						client:       client,
+						parentType:   ParentTypeUnknown,
+						invocationID: rawInv,
+					},
 					maxArtifacts: DefaultMaxArtifacts,
 				}
 				assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))

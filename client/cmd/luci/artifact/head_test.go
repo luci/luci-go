@@ -243,13 +243,15 @@ func TestFetchHeadLines(t *testing.T) {
 				},
 			}
 			run := &artifactHeadRun{
-				client:       client,
-				httpClient:   server.Client(),
-				parentType:   ParentTypeUnknown,
-				invocationID: rawInv,
-				artifactID:   "/builds/I05300010637202289/12345/target/inv_1/host_log.txt",
-				lines:        2,
-				outputFile:   outFile,
+				artifactCommonRun: artifactCommonRun{
+					client:       client,
+					httpClient:   server.Client(),
+					parentType:   ParentTypeUnknown,
+					invocationID: rawInv,
+					artifactID:   "/builds/I05300010637202289/12345/target/inv_1/host_log.txt",
+					outputFile:   outFile,
+				},
+				lines: 2,
 			}
 			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
 			got, err := os.ReadFile(outFile)

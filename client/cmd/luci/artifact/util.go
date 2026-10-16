@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -34,10 +35,112 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 type artifactFetcher func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error
+
+// artifactCommonRun holds the common flags and client state shared across
+// artifact subcommands (list, get, head, tail).
+type artifactCommonRun struct {
+	subcommands.CommandRunBase
+	af           *base.AuthFlags
+	client       rdbpb.ResultDBClient
+	httpClient   *http.Client
+	parentType   ParentType
+	host         string
+	invocationID string
+	testID       string
+	resultID     string
+	workUnitID   string
+	artifactID   string
+	outputFile   string
+	legacy       bool // Unused; will be removed in the future.
+}
+
+func (r *artifactCommonRun) registerTargetFlags(af *base.AuthFlags, parentType ParentType) {
+	r.af = af
+	r.parentType = parentType
+	if r.af != nil {
+		r.af.Register(&r.Flags)
+	}
+	r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
+	r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
+	if parentType == ParentTypeTestResult {
+		r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+		r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+		r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
+		// -legacy is now unused and will be removed in the future.
+		r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
+	} else if parentType == ParentTypeWorkUnit {
+		r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
+	} else {
+		r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
+		r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+		r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+		// -legacy is now unused and will be removed in the future.
+		r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
+	}
+}
+
+func (r *artifactCommonRun) registerFetchFlags(af *base.AuthFlags, parentType ParentType) {
+	r.registerTargetFlags(af, parentType)
+	r.Flags.StringVar(&r.artifactID, "artifactid", "", "Artifact ID (e.g. text_log or test.xml)")
+	r.Flags.StringVar(&r.outputFile, "o", "", "Optional file path to save the artifact content to")
+	r.Flags.StringVar(&r.outputFile, "output", "", "Optional file path to save the artifact content to (alias for -o)")
+}
+
+func (r *artifactCommonRun) checkHelpAndPositionalArgs(args []string) (handled bool, exitCode int) {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" || arg == "-help" {
+			r.Flags.Usage()
+			return true, 0
+		}
+	}
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "unexpected positional arguments (run 'luci ids <url>' to extract ids)\n")
+		return true, 1
+	}
+	return false, 0
+}
+
+func (r *artifactCommonRun) validateFetchFlags(args []string) (effectiveParentType ParentType, handled bool, exitCode int) {
+	if handled, code := r.checkHelpAndPositionalArgs(args); handled {
+		return ParentTypeUnknown, true, code
+	}
+	if err := ValidateArtifactFlags(r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		return ParentTypeUnknown, true, 1
+	}
+	effectiveParentType = r.parentType
+	if effectiveParentType == ParentTypeUnknown {
+		effectiveParentType, _ = ResolveParentType(r.invocationID, r.workUnitID, r.testID, r.resultID)
+	}
+	return effectiveParentType, false, 0
+}
+
+func (r *artifactCommonRun) ensureClients(ctx context.Context, needHTTP bool) bool {
+	if r.client != nil && (!needHTTP || r.httpClient != nil) {
+		return true
+	}
+	if err := r.af.Parse(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+		return false
+	}
+	c, _, hc, err := r.af.NewResultDBClient(ctx, r.host)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+		return false
+	}
+	if r.client == nil {
+		r.client = c
+	}
+	if r.httpClient == nil {
+		r.httpClient = hc
+	}
+	return true
+}
 
 // ResolveParentType determines whether the target is a test result, work unit, or invocation based on provided IDs.
 func ResolveParentType(invID, wuID, testID, resultID string) (ParentType, error) {
@@ -368,31 +471,12 @@ func ResolveInvocationArtifact(ctx context.Context, client rdbpb.ResultDBClient,
 	return matched, nil
 }
 
-func executeArtifactFetch(ctx context.Context, af *base.AuthFlags, host, outputFile string, parentType ParentType, invID, wuID, testID, resultID, artID string, fetcher artifactFetcher) int {
-	return executeArtifactFetchWithClients(ctx, af, nil, nil, host, outputFile, parentType, invID, wuID, testID, resultID, artID, fetcher)
-}
-
-func executeArtifactFetchWithClients(ctx context.Context, af *base.AuthFlags, client rdbpb.ResultDBClient, httpClient *http.Client, host, outputFile string, parentType ParentType, invID, wuID, testID, resultID, artID string, fetcher artifactFetcher) int {
-	if client == nil || httpClient == nil {
-		if err := af.Parse(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-			return 1
-		}
-
-		c, _, hc, err := af.NewResultDBClient(ctx, host)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
-			return 1
-		}
-		if client == nil {
-			client = c
-		}
-		if httpClient == nil {
-			httpClient = hc
-		}
+func (r *artifactCommonRun) executeFetch(ctx context.Context, parentType ParentType, fetcher artifactFetcher) int {
+	if !r.ensureClients(ctx, true) {
+		return 1
 	}
 
-	resolved, err := base.ResolveInvocation(ctx, client, invID)
+	resolved, err := base.ResolveInvocation(ctx, r.client, r.invocationID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to fetch artifact: %s\n", err)
 		return 1
@@ -405,14 +489,14 @@ func executeArtifactFetchWithClients(ctx context.Context, af *base.AuthFlags, cl
 	var art *rdbpb.Artifact
 	var artName string
 	if parentType == ParentTypeInvocation && !resolved.Legacy {
-		art, err = ResolveInvocationArtifact(ctx, client, resolved.ID, artID, os.Stderr)
+		art, err = ResolveInvocationArtifact(ctx, r.client, resolved.ID, r.artifactID, os.Stderr)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			return 1
 		}
 		artName = art.Name
 	} else {
-		artName, err = ResolveArtifactResourceName(ctx, client, parentType, resolved.ID, wuID, testID, resultID, artID, resolved.Legacy)
+		artName, err = ResolveArtifactResourceName(ctx, r.client, parentType, resolved.ID, r.workUnitID, r.testID, r.resultID, r.artifactID, resolved.Legacy)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			return 1
@@ -420,14 +504,14 @@ func executeArtifactFetchWithClients(ctx context.Context, af *base.AuthFlags, cl
 	}
 
 	if art == nil || art.FetchUrl == "" {
-		art, err = client.GetArtifact(ctx, &rdbpb.GetArtifactRequest{Name: artName})
+		art, err = r.client.GetArtifact(ctx, &rdbpb.GetArtifactRequest{Name: artName})
 		if err != nil && parentType != ParentTypeInvocation &&
 			(status.Code(err) == codes.NotFound || status.Code(err) == codes.InvalidArgument) {
-			if _, baseName, ok := extractFallbackPath(artID); ok && baseName != artID {
+			if _, baseName, ok := extractFallbackPath(r.artifactID); ok && baseName != r.artifactID {
 				if idx := strings.LastIndex(artName, "/artifacts/"); idx != -1 {
 					fbName := artName[:idx] + "/artifacts/" + url.PathEscape(baseName)
-					if fbArt, fbErr := client.GetArtifact(ctx, &rdbpb.GetArtifactRequest{Name: fbName}); fbErr == nil {
-						fmt.Fprintf(os.Stderr, "Note: resolved path %q to artifact %q\n", artID, baseName)
+					if fbArt, fbErr := r.client.GetArtifact(ctx, &rdbpb.GetArtifactRequest{Name: fbName}); fbErr == nil {
+						fmt.Fprintf(os.Stderr, "Note: resolved path %q to artifact %q\n", r.artifactID, baseName)
 						art = fbArt
 						artName = fbName
 						err = nil
@@ -450,8 +534,8 @@ func executeArtifactFetchWithClients(ctx context.Context, af *base.AuthFlags, cl
 	}
 
 	var outWriter io.Writer = os.Stdout
-	if outputFile != "" {
-		f, err := os.Create(outputFile)
+	if r.outputFile != "" {
+		f, err := os.Create(r.outputFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to create output file: %s\n", err)
 			return 1
@@ -460,7 +544,7 @@ func executeArtifactFetchWithClients(ctx context.Context, af *base.AuthFlags, cl
 		outWriter = f
 	}
 
-	if err := fetcher(ctx, httpClient, art.FetchUrl, outWriter); err != nil {
+	if err := fetcher(ctx, r.httpClient, art.FetchUrl, outWriter); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to fetch artifact: %s\n", err)
 		return 1
 	}

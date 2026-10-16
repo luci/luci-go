@@ -26,8 +26,6 @@ import (
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
@@ -58,88 +56,32 @@ func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 		ShortDesc: desc,
 		LongDesc:  longDesc,
 		CommandRun: func() subcommands.CommandRun {
-			r := &artifactTailRun{af: af, parentType: parentType, lines: 10}
-			if r.af != nil {
-				r.af.Register(&r.Flags)
-			}
-			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
-			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
-			if parentType == ParentTypeTestResult {
-				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
-				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
-				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
-				// -legacy is now unused and will be removed in the future.
-				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
-			} else if parentType == ParentTypeWorkUnit {
-				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
-			} else {
-				r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
-				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
-				r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
-				// -legacy is now unused and will be removed in the future.
-				r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
-			}
-			r.Flags.StringVar(&r.artifactID, "artifactid", "", "Artifact ID (e.g. text_log or test.xml)")
+			r := &artifactTailRun{lines: 10}
+			r.registerFetchFlags(af, parentType)
 			r.Flags.IntVar(&r.lines, "n", 10, "Number of lines to fetch from the end of the artifact (default 10)")
 			r.Flags.Int64Var(&r.bytes, "c", 0, "Number of bytes to fetch from the end of the artifact")
-			r.Flags.StringVar(&r.outputFile, "o", "", "Optional file path to save the artifact content to")
-			r.Flags.StringVar(&r.outputFile, "output", "", "Optional file path to save the artifact content to (alias for -o)")
 			return r
 		},
 	}
 }
 
 type artifactTailRun struct {
-	subcommands.CommandRunBase
-	af           *base.AuthFlags
-	client       rdbpb.ResultDBClient
-	httpClient   *http.Client
-	parentType   ParentType
-	host         string
-	invocationID string
-	testID       string
-	resultID     string
-	workUnitID   string
-	artifactID   string
-	lines        int
-	bytes        int64
-	outputFile   string
-	legacy       bool // Unused; will be removed in the future.
+	artifactCommonRun
+	lines int
+	bytes int64
 }
 
 func (r *artifactTailRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return 0
-		}
+	effectiveParentType, handled, exitCode := r.validateFetchFlags(args)
+	if handled {
+		return exitCode
 	}
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments (run 'luci ids <url>' to extract ids)\n")
-		return 1
-	}
-	if err := ValidateArtifactFlags(r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		return 1
-	}
-
-	effectiveParentType := r.parentType
-	if effectiveParentType == ParentTypeUnknown {
-		if r.testID != "" || r.resultID != "" {
-			effectiveParentType = ParentTypeTestResult
-		} else if r.workUnitID != "" {
-			effectiveParentType = ParentTypeWorkUnit
-		} else {
-			effectiveParentType = ParentTypeInvocation
-		}
-	}
-
 	if r.lines <= 0 && r.bytes <= 0 {
 		fmt.Fprintf(os.Stderr, "-n/lines or -c/bytes must be positive\n")
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
-	return executeArtifactFetchWithClients(ctx, r.af, r.client, r.httpClient, r.host, r.outputFile, effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
+	return r.executeFetch(ctx, effectiveParentType, func(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 		if r.bytes > 0 {
 			byteRange := &ByteRange{Start: -1, End: r.bytes}
 			_, _, err := FetchHTTPByteRange(ctx, httpClient, fetchURL, byteRange, out)

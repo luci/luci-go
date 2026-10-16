@@ -268,12 +268,14 @@ func TestFetchHTTPByteRange(t *testing.T) {
 					},
 				}
 				run := &artifactGetRun{
-					client:       client,
-					httpClient:   server.Client(),
-					parentType:   ParentTypeUnknown,
-					invocationID: rawInv,
-					artifactID:   "host_log.txt",
-					outputFile:   outFile,
+					artifactCommonRun: artifactCommonRun{
+						client:       client,
+						httpClient:   server.Client(),
+						parentType:   ParentTypeUnknown,
+						invocationID: rawInv,
+						artifactID:   "host_log.txt",
+						outputFile:   outFile,
+					},
 				}
 				assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
 				got, err := os.ReadFile(outFile)
@@ -297,13 +299,15 @@ func TestFetchHTTPByteRange(t *testing.T) {
 				},
 			}
 			run := &artifactGetRun{
-				client:       client,
-				httpClient:   server.Client(),
-				parentType:   ParentTypeUnknown,
-				invocationID: "I05300010637202289",
-				workUnitID:   "ants-wu56200010637202289",
-				artifactID:   "/builds/I05300010637202289/12345/target/inv_1/host_log.txt",
-				outputFile:   outFile,
+				artifactCommonRun: artifactCommonRun{
+					client:       client,
+					httpClient:   server.Client(),
+					parentType:   ParentTypeUnknown,
+					invocationID: "I05300010637202289",
+					workUnitID:   "ants-wu56200010637202289",
+					artifactID:   "/builds/I05300010637202289/12345/target/inv_1/host_log.txt",
+					outputFile:   outFile,
+				},
 			}
 			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
 			got, err := os.ReadFile(outFile)
@@ -329,11 +333,13 @@ func TestFetchHTTPByteRange(t *testing.T) {
 				},
 			}
 			run := &artifactGetRun{
-				client:       client,
-				httpClient:   server.Client(),
-				parentType:   ParentTypeUnknown,
-				invocationID: "ants-i05300010637202289",
-				artifactID:   "logcat.txt",
+				artifactCommonRun: artifactCommonRun{
+					client:       client,
+					httpClient:   server.Client(),
+					parentType:   ParentTypeUnknown,
+					invocationID: "ants-i05300010637202289",
+					artifactID:   "logcat.txt",
+				},
 			}
 			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(1))
 		})
