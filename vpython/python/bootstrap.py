@@ -79,8 +79,47 @@ NETWORK_ERROR_PATTERNS = [
     ]
 ]
 
+PROXY_OR_TLS_ENV_VARS = (
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "http_proxy",
+    "https_proxy",
+    "all_proxy",
+    "SSL_CERT_FILE",
+    "SSL_CERT_DIR",
+    "REQUESTS_CA_BUNDLE",
+    "CURL_CA_BUNDLE",
+    "PIP_CERT",
+    "UV_CERT",
+)
+
+PROXY_ERROR_PATTERNS = [
+    re.compile(p, re.IGNORECASE) for p in [
+        r"\b401\b.*Unauthorized",
+        r"\b403\b.*Forbidden",
+        r"\b407\b.*Proxy Authentication Required",
+        r"not allowed by policy",
+        r"SSLCertVerificationError",
+        r"CertificateError",
+        r"CERTIFICATE_VERIFY_FAILED",
+        r"certificate verify failed",
+        r"invalid peer certificate",
+        r"Could not find a suitable TLS CA certificate bundle",
+    ]
+]
+
+
+def has_proxy_or_tls_env():
+    return any(os.environ.get(k) for k in PROXY_OR_TLS_ENV_VARS)
+
+
 def is_network_error(output_str):
     if not output_str:
+        return False
+    if has_proxy_or_tls_env() and any(
+        p.search(output_str) for p in PROXY_ERROR_PATTERNS
+    ):
         return False
     return any(p.search(output_str) for p in NETWORK_ERROR_PATTERNS)
 
