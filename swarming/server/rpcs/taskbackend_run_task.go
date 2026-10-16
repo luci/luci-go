@@ -127,6 +127,7 @@ func computeTaskSlices(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb
 			Path: c.Path,
 		})
 	}
+	envPrefixes := computeCacheEnvPrefixes(req.Caches)
 
 	dimsByExp, exps, err := computeDimsByExp(req)
 	if err != nil {
@@ -150,6 +151,7 @@ func computeTaskSlices(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb
 				ExecutionTimeoutSecs: int32(req.ExecutionTimeout.Seconds),
 				Command:              cmd,
 				Caches:               caches,
+				EnvPrefixes:          envPrefixes,
 				Dimensions:           dims,
 				CipdInput: &apipb.CipdInput{
 					Packages: []*apipb.CipdPackage{
@@ -181,6 +183,25 @@ func computeTaskSlices(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb
 
 	slices = append(slices, genSlice(dimsByExp[exps[0]], baseExp, cfg.WaitForCapacity))
 	return slices, nil
+}
+
+// computeCacheEnvPrefixes returns env prefixes that point each cache's
+// EnvVar at the cache's path, e.g. VPYTHON_VIRTUALENV_ROOT=cache/vpython.
+func computeCacheEnvPrefixes(caches []*bbpb.CacheEntry) []*apipb.StringListPair {
+	pathsByVar := map[string][]string{}
+	for _, c := range caches {
+		if c.EnvVar != "" {
+			pathsByVar[c.EnvVar] = append(pathsByVar[c.EnvVar], c.Path)
+		}
+	}
+	var envPrefixes []*apipb.StringListPair
+	for _, key := range slices.Sorted(maps.Keys(pathsByVar)) {
+		envPrefixes = append(envPrefixes, &apipb.StringListPair{
+			Key:   key,
+			Value: pathsByVar[key],
+		})
+	}
+	return envPrefixes
 }
 
 // computeDimsByExp returns dimensions grouped by expirations and a sorted list

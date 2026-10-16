@@ -447,6 +447,35 @@ func TestComputeNewTaskRequest(t *testing.T) {
 	})
 }
 
+func TestComputeNewTaskRequestCacheEnvVars(t *testing.T) {
+	t.Parallel()
+
+	now := testclock.TestRecentTimeUTC
+	ctx, _ := testclock.UseTime(t.Context(), now)
+
+	req := validRequest(now)
+	req.Caches = append(req.Caches,
+		&bbpb.CacheEntry{Name: "vpython", Path: "cache/vpython", EnvVar: "VPYTHON_VIRTUALENV_ROOT"},
+		&bbpb.CacheEntry{Name: "a", Path: "cache/a", EnvVar: "MULTI"},
+		&bbpb.CacheEntry{Name: "b", Path: "cache/b", EnvVar: "MULTI"},
+	)
+
+	cfg, err := ingestBackendConfigWithDefaults(req.GetBackendConfig())
+	assert.NoErr(t, err)
+
+	newReq, err := computeNewTaskRequest(ctx, req, cfg)
+	assert.NoErr(t, err)
+
+	expected := []*apipb.StringListPair{
+		{Key: "MULTI", Value: []string{"cache/a", "cache/b"}},
+		{Key: "VPYTHON_VIRTUALENV_ROOT", Value: []string{"cache/vpython"}},
+	}
+	for _, slice := range newReq.TaskSlices {
+		assert.That(t, slice.Properties.EnvPrefixes, should.Match(expected))
+		assert.NoErr(t, validateEnvPrefixes(slice.Properties.EnvPrefixes))
+	}
+}
+
 func toBackendCfg(raw any) *structpb.Struct {
 	cfgJSON, _ := json.Marshal(raw)
 	cfgStruct := &structpb.Struct{}
