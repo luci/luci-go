@@ -60,6 +60,8 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &artifactListRun{}
 			r.registerTargetFlags(af, parentType)
+			r.Flags.StringVar(&r.filter, "filter", "", "Filter artifacts by case-insensitive regular expression or substring (RE2)")
+			r.Flags.StringVar(&r.glob, "glob", "", "Filter artifacts by case-insensitive shell glob pattern (e.g. *-logcat-*.txt)")
 			r.Flags.IntVar(&r.maxArtifacts, "max-artifacts", DefaultMaxArtifacts, "Maximum number of artifacts to display (default: 100, 0 for all)")
 			r.Flags.BoolVar(&r.allArtifacts, "all", false, "Show all artifacts without truncation")
 			return r
@@ -69,6 +71,8 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 
 type artifactListRun struct {
 	artifactCommonRun
+	filter       string
+	glob         string
 	maxArtifacts int
 	allArtifacts bool
 }
@@ -79,6 +83,11 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	}
 	if r.maxArtifacts < 0 {
 		fmt.Fprintf(os.Stderr, "flag -max-artifacts must be non-negative\n")
+		return 1
+	}
+	serverRegexp, filterRe, err := CompileArtifactMatcher(r.filter, r.glob)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
 
@@ -142,6 +151,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 			fmt.Fprintf(os.Stderr, "failed to list artifacts for test result %q: %s\n", cleanTarget, err)
 			return 1
 		}
+		trArtifacts = FilterArtifacts(trArtifacts, filterRe)
 
 		displayedCount := printArtifactHeader("Test Result", format.FormatTestResultBreadcrumb(cleanTarget), len(trArtifacts), maxArtifacts)
 		format.PrintArtifactList(trArtifacts[:displayedCount])
@@ -161,13 +171,14 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 				fmt.Fprintf(os.Stderr, "failed to list artifacts for invocation %q: %s\n", cleanTarget, err)
 				return 1
 			}
+			invArtifacts = FilterArtifacts(invArtifacts, filterRe)
 
 			displayedCount := printArtifactHeader("Invocation", format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), maxArtifacts)
 			format.PrintArtifactList(invArtifacts[:displayedCount])
 			return 0
 		}
 
-		invArtifacts, hasMore, err := QueryInvocationArtifacts(ctx, client, cleanTarget, maxArtifacts)
+		invArtifacts, hasMore, err := QueryInvocationArtifacts(ctx, client, cleanTarget, serverRegexp, maxArtifacts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to list artifacts for invocation %q: %s\n", cleanTarget, err)
 			return 1
@@ -184,6 +195,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		fmt.Fprintf(os.Stderr, "failed to list artifacts for work unit %q: %s\n", cleanTarget, err)
 		return 1
 	}
+	wuArtifacts = FilterArtifacts(wuArtifacts, filterRe)
 
 	displayedCount := printArtifactHeader("Work Unit", format.FormatWorkUnitBreadcrumb(cleanTarget), len(wuArtifacts), maxArtifacts)
 	format.PrintArtifactList(wuArtifacts[:displayedCount])
@@ -338,11 +350,19 @@ func QueryAllArtifacts(ctx context.Context, client rdbpb.ResultDBClient, parent 
 }
 
 // QueryInvocationArtifacts queries work-unit-level and test-result-level
-// artifacts across a root invocation using ResultDB.QueryArtifacts, up to
-// maxArtifacts (or all artifacts if maxArtifacts <= 0).
+// artifacts across a root invocation using ResultDB.QueryArtifacts, optionally
+// filtered by artifactIDRegexp (a case-insensitive RE2 fragment for
+// ArtifactPredicate.ArtifactIdRegexp) and up to maxArtifacts (or all artifacts
+// if maxArtifacts <= 0).
 // It returns the artifacts and whether more artifacts exist beyond maxArtifacts.
-func QueryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, cleanTarget string, maxArtifacts int) ([]*rdbpb.Artifact, bool, error) {
-	return queryInvocationArtifacts(ctx, client, cleanTarget, nil, &fieldmaskpb.FieldMask{
+func QueryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, cleanTarget, artifactIDRegexp string, maxArtifacts int) ([]*rdbpb.Artifact, bool, error) {
+	var predicate *rdbpb.ArtifactPredicate
+	if artifactIDRegexp != "" {
+		predicate = &rdbpb.ArtifactPredicate{
+			ArtifactIdRegexp: artifactIDRegexp,
+		}
+	}
+	return queryInvocationArtifacts(ctx, client, cleanTarget, predicate, &fieldmaskpb.FieldMask{
 		Paths: []string{"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines"},
 	}, maxArtifacts)
 }

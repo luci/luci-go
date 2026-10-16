@@ -327,6 +327,109 @@ func queryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, 
 	return all, hasMore, nil
 }
 
+// CompileArtifactMatcher validates and compiles the mutually exclusive -filter
+// and -glob flags into:
+//   - serverRegexp: a case-insensitive RE2 fragment suitable for
+//     ResultDB's ArtifactPredicate.ArtifactIdRegexp (which ResultDB wraps in ^...$).
+//   - re: a compiled case-insensitive *regexp.Regexp for client-side filtering.
+//
+// If both filter and glob are non-empty, it returns an error stating that
+// -filter and -glob are mutually exclusive.
+func CompileArtifactMatcher(filter, glob string) (serverRegexp string, re *regexp.Regexp, err error) {
+	if filter != "" && glob != "" {
+		return "", nil, errors.New("flags -filter and -glob are mutually exclusive")
+	}
+	if glob != "" {
+		serverRegexp, re = CompileArtifactGlob(glob)
+		return serverRegexp, re, nil
+	}
+	return CompileArtifactFilter(filter)
+}
+
+// CompileArtifactFilter compiles a user-provided RE2 regular expression (or
+// plain substring) filter into:
+//   - serverRegexp: a case-insensitive RE2 fragment suitable for
+//     ResultDB's ArtifactPredicate.ArtifactIdRegexp (which ResultDB wraps in ^...$).
+//   - re: a compiled case-insensitive *regexp.Regexp for client-side filtering.
+//
+// If filter is empty, it returns ("", nil, nil). If filter is not a valid RE2
+// regular expression, it returns a non-nil error.
+func CompileArtifactFilter(filter string) (serverRegexp string, re *regexp.Regexp, err error) {
+	if filter == "" {
+		return "", nil, nil
+	}
+	if _, err := regexp.Compile(filter); err != nil {
+		return "", nil, errors.Fmt("invalid -filter regular expression %q: %w", filter, err)
+	}
+	serverRegexp = fmt.Sprintf("(?i).*(?:%s).*", filter)
+	re, err = regexp.Compile("^" + serverRegexp + "$")
+	if err != nil {
+		return "", nil, errors.Fmt("invalid -filter regular expression %q: %w", filter, err)
+	}
+	return serverRegexp, re, nil
+}
+
+// CompileArtifactGlob compiles a user-provided case-insensitive shell glob
+// pattern (supporting '*' and '?') into:
+//   - serverRegexp: a case-insensitive RE2 fragment suitable for
+//     ResultDB's ArtifactPredicate.ArtifactIdRegexp (which ResultDB wraps in ^...$).
+//   - re: a compiled case-insensitive *regexp.Regexp for client-side filtering.
+//
+// If glob is empty, it returns ("", nil).
+func CompileArtifactGlob(glob string) (serverRegexp string, re *regexp.Regexp) {
+	if glob == "" {
+		return "", nil
+	}
+	if strings.HasPrefix(glob, "*") {
+		trimmed := strings.TrimLeft(glob, "*")
+		if trimmed == "" {
+			serverRegexp = "(?i).*"
+		} else {
+			serverRegexp = fmt.Sprintf("(?i).*(?:%s)", globToRegexp(trimmed))
+		}
+	} else {
+		serverRegexp = fmt.Sprintf("(?i)(?:.*/)?(?:%s)", globToRegexp(glob))
+	}
+	re = regexp.MustCompile("^" + serverRegexp + "$")
+	return serverRegexp, re
+}
+
+// FilterArtifacts returns the subset of artifacts whose ArtifactId matches re.
+// If re is nil, it returns artifacts unchanged.
+func FilterArtifacts(artifacts []*rdbpb.Artifact, re *regexp.Regexp) []*rdbpb.Artifact {
+	if re == nil {
+		return artifacts
+	}
+	var filtered []*rdbpb.Artifact
+	for _, a := range artifacts {
+		if re.MatchString(a.GetArtifactId()) {
+			filtered = append(filtered, a)
+		}
+	}
+	return filtered
+}
+
+func globToRegexp(glob string) string {
+	var b strings.Builder
+	prevStar := false
+	for _, ch := range glob {
+		switch ch {
+		case '*':
+			if !prevStar {
+				b.WriteString(".*")
+				prevStar = true
+			}
+		case '?':
+			b.WriteByte('.')
+			prevStar = false
+		default:
+			b.WriteString(regexp.QuoteMeta(string(ch)))
+			prevStar = false
+		}
+	}
+	return b.String()
+}
+
 // queryArtifactsByRegexp queries artifacts across a root invocation matching
 // the given artifactIDRegexp fragment, up to DefaultMaxArtifacts.
 func queryArtifactsByRegexp(ctx context.Context, client rdbpb.ResultDBClient, normInvID, artifactIDRegexp string) ([]*rdbpb.Artifact, bool, error) {

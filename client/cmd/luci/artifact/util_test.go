@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/common/validate"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -813,4 +814,179 @@ func serveHTTPRange(w http.ResponseWriter, r *http.Request, content []byte) {
 	w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, total))
 	w.WriteHeader(http.StatusPartialContent)
 	w.Write(content[start : end+1])
+}
+
+func TestCompileArtifactFilter(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`CompileArtifactMatcher, CompileArtifactFilter, CompileArtifactGlob, and FilterArtifacts`, t, func(t *ftt.Test) {
+		t.Run(`empty filter and glob return empty regexp and nil matcher`, func(t *ftt.Test) {
+			serverRe, re, err := CompileArtifactMatcher("", "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, serverRe, should.Equal(""))
+			assert.Loosely(t, re, should.BeNil)
+
+			serverRe, re, err = CompileArtifactFilter("")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, serverRe, should.Equal(""))
+			assert.Loosely(t, re, should.BeNil)
+
+			globServerRe, globRe := CompileArtifactGlob("")
+			assert.Loosely(t, globServerRe, should.Equal(""))
+			assert.Loosely(t, globRe, should.BeNil)
+
+			arts := []*rdbpb.Artifact{{ArtifactId: "a"}, {ArtifactId: "b"}}
+			assert.Loosely(t, FilterArtifacts(arts, re), should.Resemble(arts))
+		})
+
+		t.Run(`-filter and -glob are mutually exclusive`, func(t *ftt.Test) {
+			_, _, err := CompileArtifactMatcher("logcat", "*.txt")
+			assert.Loosely(t, err, should.ErrLike("flags -filter and -glob are mutually exclusive"))
+
+			serverReFilter, reFilter, err := CompileArtifactMatcher("logcat", "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, serverReFilter, should.Equal(`(?i).*(?:logcat).*`))
+			assert.Loosely(t, reFilter.MatchString("foo_logcat.txt"), should.BeTrue)
+
+			serverReGlob, reGlob, err := CompileArtifactMatcher("", "*.txt")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, serverReGlob, should.Equal(`(?i).*(?:\.txt)`))
+			assert.Loosely(t, reGlob.MatchString("foo_logcat.txt"), should.BeTrue)
+		})
+
+		t.Run(`plain substring in -filter is case-insensitive and valid RegexpFragment`, func(t *ftt.Test) {
+			serverRe, re, err := CompileArtifactFilter("logcat")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, validate.RegexpFragment(serverRe), should.BeNil)
+			assert.Loosely(t, serverRe, should.Equal(`(?i).*(?:logcat).*`))
+			assert.Loosely(t, re.MatchString("logcat.txt"), should.BeTrue)
+			assert.Loosely(t, re.MatchString("stub/inv_1/FOO-LOGCAT-ON-FAILURE_123.txt"), should.BeTrue)
+			assert.Loosely(t, re.MatchString("bugreport.zip"), should.BeFalse)
+		})
+
+		t.Run(`regex alternation and quantifiers in -filter are evaluated as RE2`, func(t *ftt.Test) {
+			serverRe, re, err := CompileArtifactFilter("bugreport|host_log")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, validate.RegexpFragment(serverRe), should.BeNil)
+			assert.Loosely(t, serverRe, should.Equal(`(?i).*(?:bugreport|host_log).*`))
+			assert.Loosely(t, re.MatchString("dir/bugreport_2026.zip"), should.BeTrue)
+			assert.Loosely(t, re.MatchString("dir/HOST_LOG_1.txt"), should.BeTrue)
+			assert.Loosely(t, re.MatchString("logcat.txt"), should.BeFalse)
+
+			// Ensure '?' quantifier is treated as RE2 (0 or 1 'u'), not a glob wildcard.
+			serverReQuant, reQuant, err := CompileArtifactFilter("^colou?r$")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, validate.RegexpFragment(serverReQuant), should.BeNil)
+			assert.Loosely(t, reQuant.MatchString("color"), should.BeTrue)
+			assert.Loosely(t, reQuant.MatchString("colour"), should.BeTrue)
+			assert.Loosely(t, reQuant.MatchString("coloxr"), should.BeFalse)
+		})
+
+		t.Run(`regex anchors ^ and $ in -filter are preserved inside valid RegexpFragment`, func(t *ftt.Test) {
+			serverRe, re, err := CompileArtifactFilter("^ants-publish")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, validate.RegexpFragment(serverRe), should.BeNil)
+			assert.Loosely(t, serverRe, should.Equal(`(?i).*(?:^ants-publish).*`))
+			assert.Loosely(t, re.MatchString("ants-publish-fa3e9cd6_log.txt"), should.BeTrue)
+			assert.Loosely(t, re.MatchString("injectables-191970884/ants-publish.json"), should.BeFalse)
+
+			serverReEnd, reEnd, err := CompileArtifactFilter(`\.json$`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, validate.RegexpFragment(serverReEnd), should.BeNil)
+			assert.Loosely(t, serverReEnd, should.Equal(`(?i).*(?:\.json$).*`))
+			assert.Loosely(t, reEnd.MatchString("injectables-191970884/ants-publish.json"), should.BeTrue)
+			assert.Loosely(t, reEnd.MatchString("ants-publish.json.bak"), should.BeFalse)
+
+			// Alternation where one branch has '^' and another has '$' preserves per-branch anchors.
+			serverReAlt, reAlt, err := CompileArtifactFilter(`^ants-publish|\.json$`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, validate.RegexpFragment(serverReAlt), should.BeNil)
+			assert.Loosely(t, reAlt.MatchString("ants-publish-fa3e9cd6_log.txt"), should.BeTrue)
+			assert.Loosely(t, reAlt.MatchString("dir/ants-publish-fa3e9cd6_log.txt"), should.BeFalse)
+			assert.Loosely(t, reAlt.MatchString("injectables-191970884/req.json"), should.BeTrue)
+			assert.Loosely(t, reAlt.MatchString("injectables-191970884/req.json.bak"), should.BeFalse)
+
+			// Escaped trailing \$ is a literal '$', not an end anchor.
+			serverReEsc, reEsc, err := CompileArtifactFilter(`price\$`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, validate.RegexpFragment(serverReEsc), should.BeNil)
+			assert.Loosely(t, serverReEsc, should.Equal(`(?i).*(?:price\$).*`))
+			assert.Loosely(t, reEsc.MatchString("dir/price$_1.txt"), should.BeTrue)
+		})
+
+		t.Run(`invalid regex in -filter returns an error`, func(t *ftt.Test) {
+			_, _, err := CompileArtifactFilter("[unclosed")
+			assert.Loosely(t, err, should.ErrLike(`invalid -filter regular expression "[unclosed"`))
+		})
+
+		t.Run(`CompileArtifactGlob translates shell globs to valid RegexpFragment`, func(t *ftt.Test) {
+			// 1. "*-logcat-on-failure_*.txt"
+			serverRe1, re1 := CompileArtifactGlob("*-logcat-on-failure_*.txt")
+			assert.Loosely(t, validate.RegexpFragment(serverRe1), should.BeNil)
+			assert.Loosely(t, serverRe1, should.Equal(`(?i).*(?:-logcat-on-failure_.*\.txt)`))
+			assert.Loosely(t, re1.MatchString("stub/cros-cts-test/inv_123/Test#method-logcat-on-failure_7009134500574910421.txt"), should.BeTrue)
+			assert.Loosely(t, re1.MatchString("stub/cros-cts-test/inv_123/Test#method-logcat-on-failure_7009134500574910421.txt.gz"), should.BeFalse)
+			assert.Loosely(t, re1.MatchString("stub/cros-cts-test/inv_123/Test#method-logcat-on-failure_7009134500574910421.zip"), should.BeFalse)
+			assert.Loosely(t, re1.MatchString("logcat.txt"), should.BeFalse)
+
+			// 2. "*detailed-events*.txt"
+			serverRe2, re2 := CompileArtifactGlob("*detailed-events*.txt")
+			assert.Loosely(t, validate.RegexpFragment(serverRe2), should.BeNil)
+			assert.Loosely(t, serverRe2, should.Equal(`(?i).*(?:detailed-events.*\.txt)`))
+			assert.Loosely(t, re2.MatchString("stub/inv_123/host-detailed-events_999.txt"), should.BeTrue)
+			assert.Loosely(t, re2.MatchString("detailed-events.txt"), should.BeTrue)
+			assert.Loosely(t, re2.MatchString("detailed-events.txt.gz"), should.BeFalse)
+			assert.Loosely(t, re2.MatchString("detailed-events.json"), should.BeFalse)
+
+			// 3. "*.json" matches files ending in .json and excludes .json_123.txt.gz
+			serverReJson, reJson := CompileArtifactGlob("*.json")
+			assert.Loosely(t, validate.RegexpFragment(serverReJson), should.BeNil)
+			assert.Loosely(t, serverReJson, should.Equal(`(?i).*(?:\.json)`))
+			assert.Loosely(t, reJson.MatchString("injectables-191970884/ants-publish.json"), should.BeTrue)
+			assert.Loosely(t, reJson.MatchString("subprocess-DisplayDeviceInfo.deviceinfo.json_181180975.txt.gz"), should.BeFalse)
+
+			// 4. "*" or "**" matches any artifact
+			serverReStar, reStar := CompileArtifactGlob("*")
+			assert.Loosely(t, validate.RegexpFragment(serverReStar), should.BeNil)
+			assert.Loosely(t, serverReStar, should.Equal(`(?i).*`))
+			assert.Loosely(t, reStar.MatchString("anything.txt"), should.BeTrue)
+
+			// 5. Globs without leading '*': "bugreport_*.zip", "ants-publish*", "test?.log", and "test[0]_*.txt"
+			serverRe3, re3 := CompileArtifactGlob("bugreport_*.zip")
+			assert.Loosely(t, validate.RegexpFragment(serverRe3), should.BeNil)
+			assert.Loosely(t, re3.MatchString("bugreport_12345.zip"), should.BeTrue)
+			assert.Loosely(t, re3.MatchString("dir/bugreport_12345.zip"), should.BeTrue)
+			assert.Loosely(t, re3.MatchString("bugreport.zip"), should.BeFalse)
+
+			serverRePrefix, rePrefix := CompileArtifactGlob("ants-publish*")
+			assert.Loosely(t, validate.RegexpFragment(serverRePrefix), should.BeNil)
+			assert.Loosely(t, rePrefix.MatchString("ants-publish-fa3e9cd6_log.txt"), should.BeTrue)
+			assert.Loosely(t, rePrefix.MatchString("injectables-191970884/ants-publish.json"), should.BeTrue)
+
+			serverRe4, re4 := CompileArtifactGlob("test?.log")
+			assert.Loosely(t, validate.RegexpFragment(serverRe4), should.BeNil)
+			assert.Loosely(t, re4.MatchString("test1.log"), should.BeTrue)
+			assert.Loosely(t, re4.MatchString("test12.log"), should.BeFalse)
+
+			serverReBrackets, reBrackets := CompileArtifactGlob("test[0]_*.txt")
+			assert.Loosely(t, validate.RegexpFragment(serverReBrackets), should.BeNil)
+			assert.Loosely(t, reBrackets.MatchString("dir/test[0]_log.txt"), should.BeTrue)
+			assert.Loosely(t, reBrackets.MatchString("dir/test0_log.txt"), should.BeFalse)
+		})
+
+		t.Run(`FilterArtifacts filters slice preserving order`, func(t *ftt.Test) {
+			_, re, err := CompileArtifactFilter("bugreport|logcat")
+			assert.Loosely(t, err, should.BeNil)
+			arts := []*rdbpb.Artifact{
+				{ArtifactId: "stdout.txt"},
+				{ArtifactId: "BUGREPORT.zip"},
+				{ArtifactId: "tradefed-log.txt"},
+				{ArtifactId: "device_logcat_1.txt"},
+			}
+			filtered := FilterArtifacts(arts, re)
+			assert.Loosely(t, len(filtered), should.Equal(2))
+			assert.Loosely(t, filtered[0].ArtifactId, should.Equal("BUGREPORT.zip"))
+			assert.Loosely(t, filtered[1].ArtifactId, should.Equal("device_logcat_1.txt"))
+		})
+	})
 }
