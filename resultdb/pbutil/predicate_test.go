@@ -150,10 +150,37 @@ func TestValidateArtifactPredicate(t *testing.T) {
 			{
 				name: "Root Invocation Query - Valid",
 				predicate: &pb.ArtifactPredicate{
-					WorkUnits:    []string{"rootInvocations/a/workUnits/b"},
-					ArtifactKind: pb.ArtifactPredicate_WORK_UNIT,
+					WorkUnits:          []string{"rootInvocations/a/workUnits/b"},
+					ArtifactKind:       pb.ArtifactPredicate_WORK_UNIT,
+					ContentTypeRegexp:  "text/.*",
+					ArtifactIdRegexp:   "logcat.*",
+					ArtifactTypeRegexp: "LOGCAT",
 				},
 				isRootInvocationQuery: true,
+			},
+			{
+				name: "Invalid ContentTypeRegexp",
+				predicate: &pb.ArtifactPredicate{
+					ContentTypeRegexp: ")",
+				},
+				isRootInvocationQuery: true,
+				errLike:               "content_type_regexp: error parsing regexp",
+			},
+			{
+				name: "Invalid ArtifactIdRegexp",
+				predicate: &pb.ArtifactPredicate{
+					ArtifactIdRegexp: "^foo",
+				},
+				isRootInvocationQuery: true,
+				errLike:               "artifact_id_regexp: must not start with ^",
+			},
+			{
+				name: "Invalid ArtifactTypeRegexp",
+				predicate: &pb.ArtifactPredicate{
+					ArtifactTypeRegexp: "BAR$",
+				},
+				isRootInvocationQuery: true,
+				errLike:               "artifact_type_regexp: must not end with $",
 			},
 			{
 				name: "Root Invocation Query - Invalid Work Unit Name",

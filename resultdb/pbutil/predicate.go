@@ -98,6 +98,12 @@ func ValidateArtifactPredicate(p *pb.ArtifactPredicate, isRootInvocationQuery bo
 	if err := validate.RegexpFragment(p.GetContentTypeRegexp()); err != nil {
 		return errors.Fmt("content_type_regexp: %w", err)
 	}
+	if err := validate.RegexpFragment(p.GetArtifactIdRegexp()); err != nil {
+		return errors.Fmt("artifact_id_regexp: %w", err)
+	}
+	if err := validate.RegexpFragment(p.GetArtifactTypeRegexp()); err != nil {
+		return errors.Fmt("artifact_type_regexp: %w", err)
+	}
 
 	if isRootInvocationQuery {
 		// Validates work unit names.

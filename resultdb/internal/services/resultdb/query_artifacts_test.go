@@ -98,6 +98,26 @@ func TestValidateQueryArtifactsRequest(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.ErrLike(`predicate: test_id_regexp: error parsing regexp`))
 		})
+
+		t.Run(`Invalid artifact_id_regexp`, func(t *ftt.Test) {
+			err := validateQueryArtifactsRequest(&pb.QueryArtifactsRequest{
+				Parent: "rootInvocations/inv1",
+				Predicate: &pb.ArtifactPredicate{
+					ArtifactIdRegexp: ")",
+				},
+			})
+			assert.Loosely(t, err, should.ErrLike(`predicate: artifact_id_regexp: error parsing regexp`))
+		})
+
+		t.Run(`Invalid artifact_type_regexp`, func(t *ftt.Test) {
+			err := validateQueryArtifactsRequest(&pb.QueryArtifactsRequest{
+				Parent: "rootInvocations/inv1",
+				Predicate: &pb.ArtifactPredicate{
+					ArtifactTypeRegexp: ")",
+				},
+			})
+			assert.Loosely(t, err, should.ErrLike(`predicate: artifact_type_regexp: error parsing regexp`))
+		})
 	})
 }
 
