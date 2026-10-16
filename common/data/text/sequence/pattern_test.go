@@ -15,6 +15,7 @@
 package sequence_test
 
 import (
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/data/text/sequence"
@@ -304,4 +305,78 @@ func TestPatternIn_TrailingEdgeWithRepeatedTokens(t *testing.T) {
 	assert.Loosely(t, err, should.BeNil)
 	assert.Loosely(t, emptyPat.In(), should.BeTrue)
 	assert.Loosely(t, emptyPat.In("a"), should.BeFalse)
+}
+
+func FuzzPatternIn(f *testing.F) {
+	const sep = "\x00"
+	f.Add("a"+sep+"$", "a"+sep+"a")
+	f.Add("^"+sep+"$", "a")
+	f.Add("^"+sep+"$", "")
+	f.Add("foo"+sep+"..."+sep+"bar"+sep+"$", "foo"+sep+"bar"+sep+"bar")
+	f.Add("^"+sep+"foo"+sep+"..."+sep+"bar", "foo"+sep+"x"+sep+"bar")
+	f.Add("..."+sep+"a"+sep+"$", "a"+sep+"b"+sep+"a")
+
+	f.Fuzz(func(t *testing.T, rawPat, rawSeq string) {
+		var tokens []string
+		if rawPat != "" {
+			tokens = strings.Split(rawPat, sep)
+		}
+		var seq []string
+		if rawSeq != "" {
+			seq = strings.Split(rawSeq, sep)
+		}
+		if len(tokens) > 8 || len(seq) > 8 {
+			return
+		}
+		for _, tok := range tokens {
+			if tok == "/" {
+				return
+			}
+		}
+
+		pat, err := sequence.NewPattern(tokens...)
+		if err != nil {
+			return
+		}
+
+		var matchAt func(pIdx, sIdx int) bool
+		matchAt = func(pIdx, sIdx int) bool {
+			if pIdx == len(pat) {
+				return true
+			}
+			m := pat[pIdx]
+			if m == sequence.Edge {
+				if pIdx == 0 {
+					return sIdx == 0 && matchAt(pIdx+1, sIdx)
+				}
+				return sIdx == len(seq) && matchAt(pIdx+1, sIdx)
+			}
+			if m == sequence.Ellipsis {
+				if pIdx+1 == len(pat) {
+					return true
+				}
+				for next := sIdx; next <= len(seq); next++ {
+					if matchAt(pIdx+1, next) {
+						return true
+					}
+				}
+				return false
+			}
+			if sIdx >= len(seq) || !m.Matches(seq[sIdx]) {
+				return false
+			}
+			return matchAt(pIdx+1, sIdx+1)
+		}
+
+		want := len(pat) == 0
+		for start := 0; !want && start <= len(seq); start++ {
+			if matchAt(0, start) {
+				want = true
+			}
+		}
+
+		if got := pat.In(seq...); got != want {
+			t.Fatalf("NewPattern(%q).In(%q) = %v, want %v", tokens, seq, got, want)
+		}
+	})
 }
