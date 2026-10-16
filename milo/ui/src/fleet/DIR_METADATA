@@ -1,0 +1,13 @@
+buganizer_public {
+  component_id: 1664178
+}
+team_email: "luci-milo-dev@googlegroups.com"
+agentic_review {
+  capability_groups {
+    review_capability_skills: "milo/ui/src/fleet/.agents/skills/senior-reviewer/SKILL.md"
+    review_capability_skills: "milo/ui/src/fleet/.agents/skills/writing-and-ux-principles/SKILL.md"
+    review_capability_skills: "milo/ui/src/fleet/.agents/skills/high-density-ui/SKILL.md"
+    review_capability_skills: "milo/ui/src/fleet/.agents/skills/frontend-performance-optimization/SKILL.md"
+    review_capability_skills: "milo/ui/src/fleet/.agents/skills/aip160-filtering/SKILL.md"
+  }
+}

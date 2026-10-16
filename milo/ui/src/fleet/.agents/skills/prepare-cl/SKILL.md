@@ -1,6 +1,11 @@
 ---
 name: prepare-cl
-description: Verifies, commits, and uploads code changes as a Gerrit CL. Use when you have completed a task, fixed a bug, or are ready to submit changes for review.
+description: >-
+  Verifies, commits, and uploads Fleet Console code changes as a Gerrit CL with
+  top-of-description App Engine Demo, http://go/ui-diff Before/After proof, and
+  a concise 15-second Why/Context description. Use when completing a task,
+  fixing a bug, or preparing a CL for review. Don't use for read-only code
+  exploration or early static ideation mocks.
 ---
 
 # Prepare CL Skill
@@ -43,63 +48,59 @@ Progress:
    - Run `git status` to see modified files.
    - Stage changes: `git add <files>`.
    - Commit changes with a descriptive message.
-     - **Commit Message Guidelines (3-Second Visual Review & 1-CL Fix Standard)**:
-       - **Title**: Short, imperative summary (`<72` chars), e.g., `[fleet] Unify sentence-case status chips and raw filter search`.
-       - **1. Visual Evidence First (`Screenshots:` & `Demo:` Immediately Below Title)**:
-         Place the **Interactive Before/After Overlay Toggle (`http://go/zhangtiff-labs/before-after?before=<before_id>&after=<after_id>`)**, individual full-resolution `Before:` and `After:` screenshot links, and the **App Engine Live Demo (`luci-milo-dev.appspot.com`)** deep link at the **very top** of the commit message (before `TL;DR / Why:` or `Context:`).
-         - **Multi-Page / Multi-Workflow Coverage**: Whenever a CL modifies visual elements across multiple pages or workflows (e.g., status chips across ChromeOS Devices, Repair Queue, Device Details, Android, and Browser), capture and list `Before` and `After` screenshots (plus `/before-after` toggle links) for **each major workflow that changed**:
+     - **Commit Message Guidelines (15-Second Visual Review & `<= 100`-Word Standard)**:
+       - **Title (`< 70` chars, ending with `.`)**: Imperative summary, e.g., `[fleet] Unify sentence-case status chips and raw filter search.`.
+       - **1. Visual Evidence First (`Demo:`, `UI Diff:`, & `Screenshots:` Immediately Below Title)**:
+         Place `Demo:`, `UI Diff: http://go/ui-diff?before=<before_id>&after=<after_id>&title=<Title>`, and full-resolution `Before:` / `After:` `http://screen/<id>` links at **line 1 immediately below the title** (before `Why:` and `Context:`, **never** buried at the bottom above `Bug:`).
+         - **Zero Fake Mock UIs, Standalone HTML Cards, Preview Harnesses, or Crash Screens**: Every screenshot MUST be a full-app (`1600x1180`) capture of the **real, unedited App Engine Fleet Console UI shell** (top AppBar + populated table/page). Never render standalone HTML mockup cards, stitch side-by-side images (`sbs.png`), mount temporary in-app `"Preview Harness"` components, edit the DOM in DevTools, or upload a crashed React error screen as a `Before:` screenshot.
          ```text
-         [fleet] Unify sentence-case status chips and raw filter search
+         [fleet] Unify sentence-case status chips and raw filter search.
 
-         Before / After (all pages):
-         http://go/zhangtiff-labs/before-after?before=<b1>&after=<a1>&views=ChromeOS+Devices:<b1>:<a1>,Repair+Queue:<b2>:<a2>
+         Demo: https://c8548838-dot-luci-milo-dev.appspot.com/ui/fleet/p/chromeos/devices
+         UI Diff: http://go/ui-diff?before=9s4K8TpryYNNLoQ&after=THfPi6ytvPKNqZU&title=Status+Chips
+         Screenshots:
+         - Before: http://screen/9s4K8TpryYNNLoQ
+         - After:  http://screen/THfPi6ytvPKNqZU
 
-         Screenshots (Before -> After):
-         - ChromeOS Devices: https://screenshot.googleplex.com/<b1> -> https://screenshot.googleplex.com/<a1>
-         - Repair Queue:     https://screenshot.googleplex.com/<b2> -> https://screenshot.googleplex.com/<a2>
-         Demo: https://<short-version>-dot-luci-milo-dev.appspot.com/ui/fleet/p/chromeos/devices
-
-         TL;DR / Why:
-         Device tables across ChromeOS, Android, and Browser previously showed
-         status badges in raw uppercase code strings (like NEEDS_REPAIR) with
-         inconsistent backgrounds. This change updates all status chips and
-         filter menus to use clean, readable labels ("Needs repair", "Ready")
-         with action-based color coding (orange for automated recovery, red for
-         manual repair), while still matching both readable and raw names in
-         filter search.
+         Why:
+         - Device tables showed status badges in raw uppercase enums (like NEEDS_REPAIR) with inconsistent backgrounds (b/444677406).
 
          Context:
-         - Formats status chips in DutStateCell, renderChipCell (Android and
-           Browser), and ResourceStateChip using sentence-case labels and
-           semantic tonal fills.
-         - Updates StringListFilterCategory search and selection to match both
-           display labels and raw enum values while emitting raw values in
-           AIP-160 filter queries.
+         - Format status chips in `dut_state_cell.tsx` and `resource_state_chip.tsx` using sentence-case labels and semantic tonal fills.
+         - Update `string_list_filter_category.tsx` search to match both display labels and raw enum values.
 
          Bug: b/444677406
          ```
-       - **2. Plain-English `TL;DR / Why:` (No Code Jargon)**: Write 1-2 plain-English sentences describing the user-facing visual problem and benefit. Do **not** put `.tsx` filenames, CSS properties, or React hook names in `TL;DR / Why:`.
-       - **3. Technical `Context:`**: Keep component names, file paths, and preserved workflow invariants (row height, URL filter compatibility) in a brief `Context:` section below `TL;DR / Why:`.
-       - **Footer**: Include `Bug: b/XXXXXXX` (with the `b/` prefix). Always update modified first-party file headers to `// Copyright 2026 The LUCI Authors.`.
+         - **Non-Visual `.tsx` Opt-Out Headers (Top of Description Only)**:
+           - *Pattern 1 (Functional / Data-Fetching Demo with No Visual Changes)*:
+             ```text
+             Demo: https://c<CL>-dot-luci-milo-dev.appspot.com/ui/fleet/p/...
+             Demo Notes: <what data or functional behavior to verify>
+             UI Diff: N/A (no visual changes — <concrete reason>)
+             ```
+           - *Pattern 2 (Pure Non-Visual Opt-Out, e.g. telemetry or test IDs)*:
+             ```text
+             Demo: N/A (no user-visible UI changes — <concrete reason>)
+             UI Diff: N/A (no user-visible UI changes — <concrete reason>)
+             ```
+       - **2. Plain-English `Why:` (`<= 35` words, 1-2 sentences/bullets, Zero Code Jargon)**: State the concrete user-facing problem and `b/<id>` without `.tsx` filenames, CSS properties, or React hook names (use `Why:`, not `TL;DR / Why:`, and omit editorial filler like *"Great news"* or *"Unfortunately"*).
+       - **3. Concise `Context:` (`<= 65` words, `<= 2` main bullets + optional `- Spillover:` 3rd bullet)**: Summarize the technical change using **basename file references only** (`dut_state_cell.tsx`, never full `milo/ui/src/fleet/...` paths). Keep `Why:` + `Context:` `<= 100` words combined.
+       - **4. Footers & Anti-Duplication**: Use `Bug: b/XXXXXXX` (with the `b/` slash prefix, **never** `Bug: b:XXXXXXX` colon syntax). Omit automated-test boilerplate (`Test: npm test`) unless manual or live verification was run. When running `git commit --amend`, replace the message cleanly—never concatenate a second commit message onto an existing one.
        - `Change-Id`: When committing a brand new branch for the first time (`-F`), **omit `Change-Id:` from the message file entirely** so Gerrit's `commit-msg` hook generates a unique SHA-1 hash. Only include `Change-Id:` when amending (`--amend`) an existing uploaded CL.
 
 3. **Deploy App Engine UI Demo & Attach Before/After Screenshots (Mandatory for UI/Visual CLs)**:
    - **App Engine Live Demo vs. Static Easy Mock Rule**:
      - Whenever new or modified code is being added live to production in a CL, **always** use the **App Engine Live Demo (`luci-milo-dev.appspot.com`)** workflow ([deploy-ui-demo](../deploy-ui-demo/SKILL.md)).
-     - Never substitute static Easy Mock links on a production Gerrit CL; Easy Mock prototypes are strictly for **longer-term ideas that are not yet at the CL stage**.
+     - Never substitute static Easy Mock links or fake HTML card mockups on a production Gerrit CL; Easy Mock prototypes are strictly for **longer-term ideas that are not yet at the CL stage**.
    - **3a. Deploy App Engine Live Demo (`luci-milo-dev`)**:
      - Follow [deploy-ui-demo](../deploy-ui-demo/SKILL.md) to deploy both `default` and `ui-new` services to `luci-milo-dev` under `--target-version=${MY_VERSION}`.
      - Construct a deep link pointing directly to the affected route, columns, and filters:
        `https://<short-version>-dot-luci-milo-dev.appspot.com/ui/fleet/p/chromeos/devices?c=id&c=dut_state`
-   - **3b. Capture Individual Full-Resolution `Before` and `After` Screenshots & Build `/before-after` Toggle Link**:
-     - Capture full-resolution `before.png` and `after.png` (`1440x1260`) for **each page or workflow where visual elements changed** (do not stitch squished side-by-side images).
+   - **3b. Capture Individual Full-App `Before` and `After` Screenshots & Build `http://go/ui-diff` Link**:
+     - Capture full-app (`1600x1180`) `before.png` (from `https://luci-milo-dev.appspot.com/ui/fleet/p/...`) and `after.png` (from `https://<short-version>-dot-luci-milo-dev.appspot.com/ui/fleet/p/...`) showing the real Fleet Console UI shell (never stitch side-by-side images or render isolated HTML cards).
      - **Uploading Screenshots (Googlers vs. Open-Source Contributors)**:
-       - **Googlers**: Upload each `Before` and `After` PNG using the internal `http://go/screenshot` (`snipit`) CLI:
-         ```bash
-         /google/bin/releases/gemini-agents-snipit-cli/snipit            --file="milo/ui/.tmp/before.png"            --title="Before - ChromeOS Devices"
-         /google/bin/releases/gemini-agents-snipit-cli/snipit            --file="milo/ui/.tmp/after.png"            --title="After - ChromeOS Devices"
-         ```
-         Then construct the 1-click full-resolution overlay toggle URL using `http://go/zhangtiff-labs/before-after?before=<before_id>&after=<after_id>` (and add `&views=Label1:b1:a1,Label2:b2:a2` when the CL spans multiple pages).
+       - **Googlers**: Upload each `Before` and `After` PNG using `snipit` (`http://screen/<id>`) and construct the interactive diff link:
+         `UI Diff: http://go/ui-diff?before=<before_id>&after=<after_id>&title=<Title>`
        - **External / Open-Source Contributors**: Attach the `Before` and `After` screenshots to the linked issue tracker (`b/...` or Monorail/GitHub issue) and paste the attachment URLs under `Screenshots:` at the top of the CL description.
    - *Note*: If App Engine deployment fails with `gcloud` auth errors in a headless environment, notify the developer with the exact one-line deploy command and still place the `Screenshots:` block at the top of the CL description.
 

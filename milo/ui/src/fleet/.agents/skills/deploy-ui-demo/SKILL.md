@@ -1,6 +1,10 @@
 ---
 name: deploy-ui-demo
-description: Builds and deploys UI demos/mocks for the ChromeOS Fleet Console/Milo UI to Google App Engine (GAE) for development and demo purposes. Handles GAE version naming constraints, VPC/cache permission workarounds, and ensures workspace cleanup after deployment.
+description: >-
+  Builds and deploys Fleet Console UI demos to Google App Engine (luci-milo-dev)
+  and captures unedited full-app Before/After screenshots for http://go/ui-diff.
+  Use when deploying local UI changes for manual verification or Gerrit CL
+  review. Don't use for backend-only Go changes or non-visual refactors.
 ---
 
 # Deploy UI Demo Skill
@@ -126,26 +130,22 @@ export PATH=$PATH:~/depot_tools
 
 *Note: The command may fail at the very end when trying to update datastore indexes or cron jobs due to IAM permissions. This is expected and can be ignored if the services themselves were deployed.*
 
-### Step 5: Verify the Deployment, Deep-Link the Route & Capture Side-by-Side Screenshot
-1. Verify that the deployed version is serving:
+### Step 5: Verify the Deployment, Deep-Link the Route & Capture Unedited Full-App `Before` / `After` Screenshots
+1. Verify that the deployed version is serving and matches your `UI_VERSION` in `/ui_version.js` (never rely on `/settings.js`, which falls back to default `ui-new`):
 ```bash
 # Check version status
 gcloud app versions list --project luci-milo-dev --filter="id=${MY_VERSION}"
 
-# Verify endpoint responds with HTTP 200
-curl -s -o /dev/null -w "%{http_code}" https://${MY_VERSION}-dot-luci-milo-dev.appspot.com/ui/fleet/devices
+# Verify /ui_version.js serves your versioned build
+curl -s "https://${MY_VERSION}-dot-luci-milo-dev.appspot.com/ui_version.js"
 ```
-2. **Construct a Direct Action Deep Link**: Include the exact route and query parameters (`?c=<col>&filters=<aip160>&ff=<flag>:on`) so the reviewer sees the UI element in action immediately on click.
-3. **Capture & Upload Side-by-Side Screenshot**:
-   Render a Side-by-Side (`Before | After`) comparison image into `milo/ui/.tmp/sbs.png` using headless Chrome (`--window-size=2600,1320`).
-   - **Googlers**: Upload via the internal `http://go/screenshot` (`snipit`) CLI:
-     ```bash
-     /google/bin/releases/gemini-agents-snipit-cli/snipit \
-       --file="milo/ui/.tmp/sbs.png" \
-       --title="Fleet Console Demo (${MY_VERSION} - Before vs. After)"
-     ```
-   - **External / Open-Source Contributors**: Attach the screenshot on the linked issue tracker and paste the URL in the CL description.
-   Place `Screenshots:` and `Demo:` at the **very top** of the Gerrit CL description immediately below the title line (see [prepare-cl](../prepare-cl/SKILL.md)).
+2. **Construct a Direct Action Deep Link**: Include the exact `/ui/fleet/p/<platform>/...` route and query parameters (`?c=<col>&filters=<aip160>&ff=<flag>:on`) so the reviewer sees the UI element in action immediately on click.
+3. **Capture & Upload Separate Unedited Full-App `Before` and `After` Screenshots (`1600x1180`)**:
+   - Capture `before.png` from `https://luci-milo-dev.appspot.com/ui/fleet/p/...` and `after.png` from `https://${MY_VERSION}-dot-luci-milo-dev.appspot.com/ui/fleet/p/...` at `1600x1180` showing the **real, unedited Fleet Console App Engine UI shell** (top AppBar + populated table/page).
+   - **Strictly Forbidden**: Never render standalone HTML mockup cards, never stitch side-by-side images (`sbs.png`), never mount temporary `"Preview Harness"` components in the app, never edit the DOM in DevTools, and never upload a crashed React error banner as a `Before:` screenshot.
+   - **Googlers**: Upload `before.png` and `after.png` via `snipit` (`http://screen/<id>`) and build `UI Diff: http://go/ui-diff?before=<before_id>&after=<after_id>&title=<Title>`.
+   - **External / Open-Source Contributors**: Attach `before.png` and `after.png` on the linked issue tracker and paste the URLs in the CL description.
+   Place `Demo:`, `UI Diff:`, and `Screenshots:` (`Before:` / `After:`) at the **very top** of the Gerrit CL description immediately below the title line (see [prepare-cl](../prepare-cl/SKILL.md)).
 
 ### Step 6: Workspace Cleanup (CRITICAL)
 
