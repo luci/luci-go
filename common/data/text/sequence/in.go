@@ -90,18 +90,30 @@ func (p Pattern) In(seq ...string) bool {
 				matcher := p[matcherIdx]
 
 				if matcher == Edge {
+					// Edge is only allowed at the start ("^") or end ("$") of a
+					// pattern (middle Edges panic above).
+					isStartEdge := matcherIdx == 0
+					isEndEdge := matcherIdx == len(p)-1
+
 					// edge is a 0-width match if the current sequence item is the start
 					// or end of the sequence.
 					//
 					// Note that we compare against len(seq) rather than len(seq)-1,
 					// because a 1-length sequence would, in fact, have seqIdx==0 and
 					// numMatched==1.
-					if (seqIdx+numMatched) == 0 || (seqIdx+numMatched) == len(seq) {
+					if (isStartEdge && (seqIdx+numMatched) == 0) || (isEndEdge && (seqIdx+numMatched) == len(seq)) {
 						continue
 					}
+					if isEndEdge {
+						// A trailing "$" edge (e.g. "a", "$") may not match at the
+						// current position, but might match if we slide down to a
+						// later position in seq.
+						matches = false
+						break
+					}
 
-					// If the edge doesn't match, there is no use in trying to match it at
-					// other positions.
+					// If the start edge doesn't match, there is no use in trying to
+					// match it at other positions.
 					return false
 				}
 

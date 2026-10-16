@@ -290,3 +290,18 @@ func TestPatternIn_EllipsisTableDriven(t *testing.T) {
 		})
 	}
 }
+
+func TestPatternIn_TrailingEdgeWithRepeatedTokens(t *testing.T) {
+	t.Parallel()
+
+	pat, err := sequence.NewPattern("a", "$")
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, pat.In("a", "a"), should.BeTrue)
+	assert.Loosely(t, pat.In("a", "b", "a"), should.BeTrue)
+	assert.Loosely(t, pat.In("a", "b"), should.BeFalse)
+
+	emptyPat, err := sequence.NewPattern("^", "$")
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, emptyPat.In(), should.BeTrue)
+	assert.Loosely(t, emptyPat.In("a"), should.BeFalse)
+}
