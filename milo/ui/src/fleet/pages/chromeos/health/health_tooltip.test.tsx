@@ -43,12 +43,20 @@ describe('HealthThresholdsTooltipContent', () => {
     render(<HealthThresholdsTooltipContent pct={75} metricLabel="Health" />);
 
     expect(screen.getByTestId('threshold-current-value')).toHaveTextContent(
-      'Current Health:75% (Critical)',
+      'Current Health:75.0% (Critical)',
     );
 
     const criticalRow = screen.getByTestId('threshold-row-critical');
     expect(criticalRow).toHaveTextContent('Critical (Current)');
     expect(criticalRow).toHaveTextContent('< 80%');
+  });
+
+  it('formats non-zero decimal percentages to 1 decimal place', () => {
+    render(<HealthThresholdsTooltipContent pct={75.4} metricLabel="Health" />);
+
+    expect(screen.getByTestId('threshold-current-value')).toHaveTextContent(
+      'Current Health:75.4% (Critical)',
+    );
   });
 });
 
@@ -76,7 +84,7 @@ describe('HealthTooltip and HealthThresholdsTooltip components', () => {
     fireEvent.mouseOver(screen.getByText('Target button'));
     expect(await screen.findByText('Health Thresholds')).toBeInTheDocument();
     expect(screen.getByTestId('threshold-current-value')).toHaveTextContent(
-      'Current Availability:96% (Healthy)',
+      'Current Availability:96.0% (Healthy)',
     );
   });
 });

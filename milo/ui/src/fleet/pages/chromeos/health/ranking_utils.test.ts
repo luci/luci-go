@@ -95,11 +95,37 @@ describe('calculate24hDelta', () => {
     expect(result.trend).toBe('flat');
   });
 
-  it('clamps negative values to 0 without capping upper bound', () => {
+  it('does not clamp negative values if provided by backend', () => {
     const points = [{ timestamp: '2026-09-30T12:00:00Z', value: -0.1 }];
 
     const result = calculate24hDelta(points);
-    expect(result.availabilityPct).toBe(0);
-    expect(result.prevAvailabilityPct).toBe(0);
+    expect(result.availabilityPct).toBe(-10);
+    expect(result.prevAvailabilityPct).toBe(-10);
+  });
+
+  it('preserves floating point precision for availability and health drop', () => {
+    const points = [
+      { timestamp: '2026-09-29T12:00:00Z', value: 0.854 }, // 85.4%
+      { timestamp: '2026-09-30T12:00:00Z', value: 0.721 }, // 72.1%
+    ];
+
+    const result = calculate24hDelta(points);
+    expect(result.availabilityPct).toBeCloseTo(72.1, 1);
+    expect(result.prevAvailabilityPct).toBeCloseTo(85.4, 1);
+    expect(result.healthDrop).toBeCloseTo(13.3, 1);
+    expect(result.trend).toBe('down');
+  });
+
+  it('handles improving availability with floating point values', () => {
+    const points = [
+      { timestamp: '2026-09-29T12:00:00Z', value: 0.721 }, // 72.1%
+      { timestamp: '2026-09-30T12:00:00Z', value: 0.854 }, // 85.4%
+    ];
+
+    const result = calculate24hDelta(points);
+    expect(result.availabilityPct).toBeCloseTo(85.4, 1);
+    expect(result.prevAvailabilityPct).toBeCloseTo(72.1, 1);
+    expect(result.healthDrop).toBe(0);
+    expect(result.trend).toBe('up');
   });
 });

@@ -151,7 +151,7 @@ describe('HealthSlicesCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /save slice/i }));
 
     expect(screen.queryByText('Add New Health Slice')).not.toBeInTheDocument();
-    expect(screen.getByTestId('slice-pct-1')).toHaveTextContent('95%');
+    expect(screen.getByTestId('slice-pct-1')).toHaveTextContent('95.0%');
 
     // Verify no filter description below progress bar
     expect(screen.queryByText(/^Filter:/i)).not.toBeInTheDocument();
@@ -849,5 +849,42 @@ describe('HealthSlicesCard', () => {
     fireEvent.mouseOver(statusLabel);
     expect(await screen.findByText('Health Thresholds')).toBeInTheDocument();
     expect(screen.getByText('Critical')).toBeInTheDocument();
+  });
+
+  it('renders fallback dash when point value is NaN', () => {
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockReturnValue({
+        data: {
+          metricType: TrendlineMetricType.HEALTH,
+          series: [
+            {
+              name: 'Overall',
+              points: [{ timestamp: currentHourIso, value: NaN }],
+            },
+          ],
+        },
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >);
+
+    render(
+      <FakeContextProvider>
+        <ShortcutProvider>
+          <HealthSlicesCard />
+        </ShortcutProvider>
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /add slice/i }));
+    const titleInput = screen.getByLabelText('Slice Title');
+    fireEvent.change(titleInput, { target: { value: 'NaN Test Slice' } });
+    fireEvent.click(screen.getByRole('button', { name: /save slice/i }));
+
+    expect(screen.getByTestId('slice-pct-1')).toHaveTextContent('—');
   });
 });

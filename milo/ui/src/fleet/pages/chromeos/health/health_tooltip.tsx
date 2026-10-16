@@ -135,7 +135,7 @@ export const HealthThresholdsTooltipContent = ({
               variant="caption"
               sx={{ fontWeight: 600, color: `${currentStatus.color}.main` }}
             >
-              {pct}% ({currentStatus.status})
+              {pct.toFixed(1)}% ({currentStatus.status})
             </Typography>
           </Box>
         </Box>

@@ -414,7 +414,7 @@ export const PerformanceRankingCard = ({
                           py: 0.25,
                         }}
                       >
-                        {item.availabilityPct}%{' '}
+                        {item.availabilityPct.toFixed(1)}%{' '}
                         {entityTab === 'models' ? 'Available' : 'Healthy'}
                       </Typography>
                     </HealthThresholdsTooltip>
@@ -442,7 +442,7 @@ export const PerformanceRankingCard = ({
                               fontSize: '0.75rem',
                             }}
                           >
-                            -{item.healthDrop}%
+                            -{item.healthDrop.toFixed(1)}%
                           </Typography>
                         </Box>
                       </HealthTooltip>

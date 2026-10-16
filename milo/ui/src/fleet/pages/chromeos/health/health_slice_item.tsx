@@ -128,9 +128,15 @@ export const HealthSliceItem = ({
   );
 
   const pct = useMemo(() => {
-    if (!activePoint) return undefined;
-    return Math.max(0, Math.round(activePoint.value * 100));
+    if (!activePoint || isNaN(activePoint.value)) return undefined;
+    return activePoint.value * 100;
   }, [activePoint]);
+
+  const formattedPct = useMemo(() => {
+    if (pct === undefined || isNaN(pct)) return undefined;
+    const [intPart, decPart] = pct.toFixed(1).split('.');
+    return { intPart, decPart };
+  }, [pct]);
 
   const isAvailability =
     trendsData?.metricType === TrendlineMetricType.AVAILABILITY;
@@ -409,6 +415,7 @@ export const HealthSliceItem = ({
             <Typography
               variant="h5"
               data-testid={`slice-pct-${slice.id}`}
+              aria-label={pct !== undefined ? `${pct.toFixed(1)}%` : undefined}
               sx={{
                 fontWeight: 800,
                 lineHeight: 1,
@@ -419,7 +426,21 @@ export const HealthSliceItem = ({
                     : 'text.secondary',
               }}
             >
-              {pct !== undefined ? `${pct}%` : isLoading ? '...' : '—'}
+              {formattedPct !== undefined ? (
+                <>
+                  {formattedPct.intPart}
+                  <Box
+                    component="span"
+                    sx={{ fontSize: '0.75em', fontWeight: 700 }}
+                  >
+                    .{formattedPct.decPart}%
+                  </Box>
+                </>
+              ) : isLoading ? (
+                '...'
+              ) : (
+                '—'
+              )}
             </Typography>
             <Typography
               variant="caption"

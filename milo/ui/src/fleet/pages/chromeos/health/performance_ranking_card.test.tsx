@@ -90,15 +90,15 @@ describe('PerformanceRankingCard', () => {
     const modelElements = screen.getAllByRole('listitem');
     expect(modelElements).toHaveLength(3);
     expect(modelElements[0]).toHaveTextContent('volteer');
-    expect(modelElements[0]).toHaveTextContent('62% Available');
-    expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent('-3%');
+    expect(modelElements[0]).toHaveTextContent('62.0% Available');
+    expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent('-3.0%');
 
     expect(modelElements[1]).toHaveTextContent('dedede');
-    expect(modelElements[1]).toHaveTextContent('74% Available');
-    expect(screen.getByTestId('drop-badge-dedede')).toHaveTextContent('-1%');
+    expect(modelElements[1]).toHaveTextContent('74.0% Available');
+    expect(screen.getByTestId('drop-badge-dedede')).toHaveTextContent('-1.0%');
 
     expect(modelElements[2]).toHaveTextContent('brya');
-    expect(modelElements[2]).toHaveTextContent('88% Available');
+    expect(modelElements[2]).toHaveTextContent('88.0% Available');
     expect(screen.queryByTestId('drop-badge-brya')).not.toBeInTheDocument();
     expect(screen.getByTestId('gain-badge-brya')).toHaveTextContent('+3%');
   });
@@ -215,7 +215,9 @@ describe('PerformanceRankingCard', () => {
     );
 
     // Compared to 24h ago (80%), current (60%) is a 20% drop, despite being up from 1h ago (55%)
-    expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent('-20%');
+    expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent(
+      '-20.0%',
+    );
   });
 
   it('calls onSelectModel when a model row is clicked', () => {
@@ -315,15 +317,15 @@ describe('PerformanceRankingCard', () => {
     const poolElements = screen.getAllByRole('listitem');
     expect(poolElements).toHaveLength(2);
     expect(poolElements[0]).toHaveTextContent('DUT_POOL_CQ');
-    expect(poolElements[0]).toHaveTextContent('55% Healthy');
+    expect(poolElements[0]).toHaveTextContent('55.0% Healthy');
     expect(screen.getByTestId('drop-badge-DUT_POOL_CQ')).toHaveTextContent(
-      '-5%',
+      '-5.0%',
     );
 
     expect(poolElements[1]).toHaveTextContent('DUT_POOL_QUOTA');
-    expect(poolElements[1]).toHaveTextContent('85% Healthy');
+    expect(poolElements[1]).toHaveTextContent('85.0% Healthy');
     expect(screen.getByTestId('drop-badge-DUT_POOL_QUOTA')).toHaveTextContent(
-      '-7%',
+      '-7.0%',
     );
 
     // Test clicking a pool row
@@ -751,8 +753,10 @@ describe('PerformanceRankingCard', () => {
     const modelElements = screen.getAllByRole('listitem');
     expect(modelElements).toHaveLength(1);
     expect(modelElements[0]).toHaveTextContent('volteer');
-    expect(modelElements[0]).toHaveTextContent('115% Available');
-    expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent('-10%');
+    expect(modelElements[0]).toHaveTextContent('115.0% Available');
+    expect(screen.getByTestId('drop-badge-volteer')).toHaveTextContent(
+      '-10.0%',
+    );
 
     const progressBar = screen.getByLabelText('volteer availability');
     expect(progressBar).toHaveAttribute('aria-valuenow', '100');
