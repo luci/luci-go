@@ -22,15 +22,13 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
+import { parsePriorityRules } from '@/fleet/components/repair_queue/utils';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { DutStateCell } from '@/fleet/pages/device_list_page/chromeos/dut_state_cell';
 import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
-import {
-  PriorityRule,
-  RepairQueueItem,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { RepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { PeripheralsCell } from './peripheral_state_indicator';
 import {
@@ -38,6 +36,7 @@ import {
   useUnclaimRepairTask,
 } from './use_claim_repair_task';
 import { usePriorityRules } from './use_priority_rules';
+import { useRepairQueueFilterBuilders } from './use_repair_queue_filter_builders';
 
 export type RepairQueueRow = RepairQueueItem;
 export type RepairQueueColumnDef = MRT_ColumnDef<RepairQueueRow>;
@@ -90,14 +89,13 @@ export const useRepairQueueColumns = ({
   const authState = useAuthState();
   const currentUser = (authState.email || authState.identity || '').trim();
 
+  const { filterBuilders } = useRepairQueueFilterBuilders();
+
   const { rules } = usePriorityRules();
-  const rulesById = useMemo(() => {
-    const map = new Map<string, PriorityRule>();
-    for (const r of rules) {
-      map.set(r.id, r);
-    }
-    return map;
-  }, [rules]);
+  const rulesById = useMemo(
+    () => parsePriorityRules(rules, filterBuilders),
+    [rules, filterBuilders],
+  );
 
   const columns: RepairQueueColumnDef[] = useMemo(() => {
     return [

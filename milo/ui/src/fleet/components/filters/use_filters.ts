@@ -24,7 +24,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { LoadingFilterCategory } from './loading_filter';
 import { normalizeFilterKey } from './normalize_filter_key';
 
-type FilterValuesFromBuilders<T> = {
+export type FilterValuesFromBuilders<T> = {
   [Key in keyof T]: T[Key] extends FilterCategoryBuilder<infer FC> ? FC : never;
 };
 
@@ -464,7 +464,7 @@ export const memberToKey = (node: ast.Member): string => {
     ...node.fields.map((f) => (f.quoted ? `"${f.value}"` : f.value)),
   ].join('.');
 };
-function buildFilters<
+export function buildFilters<
   T extends Record<string, FilterCategoryBuilder<FilterCategory>>,
 >(
   builders: T,

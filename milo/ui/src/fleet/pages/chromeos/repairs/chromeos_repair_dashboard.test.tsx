@@ -29,6 +29,7 @@ import * as UsePagerModule from '@/fleet/hooks/use_pager';
 import * as UseClaimRepairTaskModule from '@/fleet/pages/chromeos/repairs/use_claim_repair_task';
 import * as UsePriorityRulesModule from '@/fleet/pages/chromeos/repairs/use_priority_rules';
 import * as UseRepairQueueModule from '@/fleet/pages/chromeos/repairs/use_repair_queue';
+import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import {
   PeripheralState,
   PriorityRule,
@@ -118,6 +119,50 @@ describe('<ChromeOSRepairDashboard />', () => {
       isDeleting: false,
       deleteError: null,
     } as unknown as ReturnType<typeof UsePriorityRulesModule.usePriorityRules>);
+
+    jest
+      .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
+      .mockReturnValue({
+        data: {
+          baseDimensions: {
+            id: {
+              values: [
+                'dut-101',
+                'dut-102',
+                'dut-103',
+                'dut-multi-match',
+                'demoted-dut',
+                'dut-long-rule',
+              ],
+            },
+            dut_state: {
+              values: [
+                'needs_repair',
+                'repair_failed',
+                'needs_manual_repair',
+                'ready',
+              ],
+            },
+          },
+          labels: {
+            'label-model': {
+              values: ['volteer', 'octopus', 'a-very-long-chromeos-board-name'],
+            },
+            'label-pool': {
+              values: ['DUT_POOL_QUOTA', 'DUT_POOL_SHARED'],
+            },
+            tier: {
+              values: ['critical', 'standard'],
+            },
+          },
+        },
+        isLoading: false,
+        isPending: false,
+        isError: false,
+        error: null,
+      } as unknown as ReturnType<
+        typeof UseDeviceDimensionsModule.useDeviceDimensions
+      >);
 
     jest
       .spyOn(UseAdminTaskPermissionModule, 'usePriorityRulesPermission')
@@ -1396,12 +1441,12 @@ describe('<ChromeOSRepairDashboard />', () => {
         },
         {
           id: 'rule-2',
-          expressionAip160: 'pool = "DUT_POOL_QUOTA"',
+          expressionAip160: 'pools = "DUT_POOL_QUOTA"',
           weight: '350',
         },
         {
           id: 'rule-3',
-          expressionAip160: 'dut_id = "demoted-dut"',
+          expressionAip160: 'device_id = "demoted-dut"',
           weight: '-50',
         },
       ];
@@ -1463,15 +1508,26 @@ describe('<ChromeOSRepairDashboard />', () => {
         // Hover over the score cell to trigger MUI Tooltip
         fireEvent.mouseOver(scoreCell);
 
-        // Expression and points are separate grid cells so the points column
-        // can right-align; assert each independently.
+        // Tooltip renders pretty header, condition chips, and points.
         expect(
-          await screen.findByText('model = "volteer"'),
+          await screen.findByText('Priority score breakdown'),
         ).toBeInTheDocument();
-        expect(screen.getByText('+300 pts')).toBeInTheDocument();
-        expect(screen.getByText('pool = "DUT_POOL_QUOTA"')).toBeInTheDocument();
-        expect(screen.getByText('+350 pts')).toBeInTheDocument();
+        expect(screen.getByText('2 rules matched')).toBeInTheDocument();
+
+        const rule1 = screen.getByTestId('matched-rule-rule-1');
+        expect(
+          within(rule1).getByText('1 | Model IN volteer'),
+        ).toBeInTheDocument();
+        expect(within(rule1).getByText('+300 pts')).toBeInTheDocument();
+
+        const rule2 = screen.getByTestId('matched-rule-rule-2');
+        expect(
+          within(rule2).getByText('1 | Pool IN DUT_POOL_QUOTA'),
+        ).toBeInTheDocument();
+        expect(within(rule2).getByText('+350 pts')).toBeInTheDocument();
+
         // Summary line
+        expect(screen.getByText('Total score')).toBeInTheDocument();
         expect(screen.getByText('= 650 pts')).toBeInTheDocument();
       });
 
@@ -1532,8 +1588,15 @@ describe('<ChromeOSRepairDashboard />', () => {
         fireEvent.mouseOver(scoreCell);
 
         expect(
-          await screen.findByText('dut_id = "demoted-dut"'),
+          await screen.findByText('Priority score breakdown'),
         ).toBeInTheDocument();
+
+        const rule3 = await screen.findByTestId('matched-rule-rule-3');
+        expect(
+          within(rule3).getByText('1 | ID IN demoted-dut'),
+        ).toBeInTheDocument();
+        expect(within(rule3).getByText('-50 pts')).toBeInTheDocument();
+
         // '-50 pts' appears twice: once in the trigger cell, once as the
         // rule's right-aligned weight. The demotion keeps its minus sign.
         expect(screen.getAllByText('-50 pts')).toHaveLength(2);
@@ -1706,11 +1769,17 @@ describe('<ChromeOSRepairDashboard />', () => {
         const scoreCell = await screen.findByText('+25 pts');
         fireEvent.mouseOver(scoreCell);
 
-        // The expression is never cut off in the DOM: CSS clamps the rendered
-        // width and the title attribute exposes the untruncated text on hover.
-        const exprCell = await screen.findByText(longExpression);
-        expect(exprCell).toHaveAttribute('title', longExpression);
-        expect(exprCell).toHaveStyle({ textOverflow: 'ellipsis' });
+        const ruleRow = await screen.findByTestId('matched-rule-rule-long');
+        expect(ruleRow).toBeInTheDocument();
+        expect(
+          within(ruleRow).getByText(
+            '1 | Model IN a-very-long-chromeos-board-name',
+          ),
+        ).toBeInTheDocument();
+        expect(
+          within(ruleRow).getByText('1 | Tier IN critical'),
+        ).toBeInTheDocument();
+        expect(within(ruleRow).getByText('+25 pts')).toBeInTheDocument();
       });
     });
   });

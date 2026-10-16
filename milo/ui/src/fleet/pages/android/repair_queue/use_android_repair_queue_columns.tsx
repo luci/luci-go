@@ -21,18 +21,17 @@ import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
 import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
+import { parsePriorityRules } from '@/fleet/components/repair_queue/utils';
 import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { AndroidDeviceIdCell } from '@/fleet/pages/device_list_page/android/android_device_id_cell';
 import { getAndroidStatusColor } from '@/fleet/pages/device_list_page/android/android_state';
 import { FC_CellProps } from '@/fleet/types/table';
 import { getMobileHarnessHostListLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
-import {
-  AndroidPriorityRule,
-  AndroidRepairQueueItem,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { AndroidRepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { androidMachineTypeLabel, isAndroidHost } from './android_machine_type';
+import { useAndroidPriorityRuleFilterBuilders } from './use_android_priority_rule_filter_builders';
 import { useAndroidPriorityRules } from './use_android_priority_rules';
 import {
   useClaimAndroidRepairTask,
@@ -71,14 +70,13 @@ export const useAndroidRepairQueueColumns = (
 
   const currentUser = useCurrentUserEmail();
 
+  const { filterBuilders } = useAndroidPriorityRuleFilterBuilders(workspace);
+
   const { rules } = useAndroidPriorityRules(workspace);
-  const rulesById = useMemo(() => {
-    const map = new Map<string, AndroidPriorityRule>();
-    for (const r of rules) {
-      map.set(r.id, r);
-    }
-    return map;
-  }, [rules]);
+  const rulesById = useMemo(
+    () => parsePriorityRules(rules, filterBuilders),
+    [rules, filterBuilders],
+  );
 
   const columns: AndroidRepairQueueColumnDef[] = useMemo(() => {
     const allColumns: AndroidRepairQueueColumnDef[] = [

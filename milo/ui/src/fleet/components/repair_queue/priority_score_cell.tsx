@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Divider, Tooltip, Typography } from '@mui/material';
-import { Fragment } from 'react';
+import { Box, Chip, Tooltip, Typography } from '@mui/material';
 
 import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
+import { StatusPill } from '@/fleet/components/status_pill/status_pill';
+import { borders, fleetColors, fontSizes, radii } from '@/fleet/theme/tokens';
 
-import { RepairPriorityRule } from './editable_rule_row';
-import { formatPoints } from './utils';
+import { formatPoints, ParsedPriorityRule } from './utils';
 
 /**
  * The fields of a repair queue item that the priority score cell reads.
@@ -31,20 +31,14 @@ export interface PriorityScoredItem {
 
 export interface PriorityScoreCellProps {
   readonly item: PriorityScoredItem;
-  readonly rulesById: ReadonlyMap<string, RepairPriorityRule>;
+  readonly rulesById: ReadonlyMap<string, ParsedPriorityRule>;
+  readonly open?: boolean;
 }
-
-/**
- * Caps how wide a rule's AIP-160 expression may grow inside the breakdown
- * tooltip. Longer expressions are truncated with an ellipsis so that a single
- * verbose rule cannot stretch the tooltip across the viewport, and so the
- * points column stays anchored on the right.
- */
-const RULE_EXPRESSION_MAX_WIDTH = 300;
 
 export const PriorityScoreCell = ({
   item,
   rulesById,
+  open,
 }: PriorityScoreCellProps) => {
   const scoreStr = item.priorityScore || '0';
   const formattedScore = formatPoints(scoreStr);
@@ -53,64 +47,168 @@ export const PriorityScoreCell = ({
   let tooltipContent: React.ReactNode;
   if (matchedIds.length === 0) {
     tooltipContent = (
-      <Typography variant="body2">No matched priority rules (0 pts)</Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5,
+          minWidth: 220,
+        }}
+      >
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 600, color: fleetColors.textPrimary }}
+        >
+          No matched priority rules (0 pts)
+        </Typography>
+        <Typography
+          variant="caption"
+          sx={{ color: fleetColors.textSecondary, lineHeight: 1.4 }}
+        >
+          This device is operating at baseline priority with no matching active
+          rules.
+        </Typography>
+      </Box>
     );
   } else {
     const cleanScore = scoreStr.replace(/^\+/, '');
     tooltipContent = (
       <Box
         sx={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          columnGap: 3,
-          rowGap: 0.5,
-          alignItems: 'baseline',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1.25,
+          minWidth: 280,
+          maxWidth: 420,
         }}
       >
-        {matchedIds.map((id) => {
-          const rule = rulesById.get(id);
-          const expr = rule?.expressionAip160 ?? `Rule #${id}`;
-          const weightStr = rule ? formatPoints(rule.weight) : '';
-          return (
-            <Fragment key={id}>
-              <Typography
-                variant="body2"
-                title={expr}
-                sx={{
-                  maxWidth: RULE_EXPRESSION_MAX_WIDTH,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {expr}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  textAlign: 'right',
-                  whiteSpace: 'nowrap',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {weightStr}
-              </Typography>
-            </Fragment>
-          );
-        })}
-        <Divider sx={{ gridColumn: '1 / -1', my: 0.5 }} />
-        <Typography
-          variant="body2"
+        {/* Header */}
+        <Box
           sx={{
-            gridColumn: 2,
-            textAlign: 'right',
-            whiteSpace: 'nowrap',
-            fontWeight: 600,
-            fontVariantNumeric: 'tabular-nums',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            pb: 0.75,
+            borderBottom: borders.divider,
           }}
         >
-          {`= ${cleanScore} pts`}
-        </Typography>
+          <Typography
+            variant="subtitle2"
+            sx={{ fontWeight: 600, color: fleetColors.textPrimary }}
+          >
+            Priority score breakdown
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              color: fleetColors.textSecondary,
+              fontWeight: 500,
+              bgcolor: fleetColors.surfaceTonal,
+              px: 1,
+              py: 0.25,
+              borderRadius: radii.pill,
+            }}
+          >
+            {matchedIds.length}{' '}
+            {matchedIds.length === 1 ? 'rule matched' : 'rules matched'}
+          </Typography>
+        </Box>
+
+        {/* Rule list */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {matchedIds.map((id) => {
+            const rule = rulesById.get(id);
+            const tooltipTitle = rule?.expressionAip160 ?? `Rule #${id}`;
+            const weightNum = rule ? Number(rule.weight) : 0;
+            const isPositive = weightNum > 0;
+            const isNegative = weightNum < 0;
+            const weightStr = rule ? formatPoints(rule.weight) : '';
+
+            return (
+              <Box
+                key={id}
+                data-testid={`matched-rule-${id}`}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1.5,
+                }}
+              >
+                {/* Condition chips */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 0.5,
+                    alignItems: 'center',
+                    flex: 1,
+                  }}
+                  title={tooltipTitle}
+                >
+                  {rule?.chips ?? (
+                    <Chip
+                      variant="filter"
+                      label={tooltipTitle}
+                      sx={{ cursor: 'default' }}
+                    />
+                  )}
+                </Box>
+
+                {/* Points badge */}
+                {weightStr && (
+                  <StatusPill
+                    tone={
+                      isPositive ? 'success' : isNegative ? 'error' : 'neutral'
+                    }
+                    dot={false}
+                    size="compact"
+                  >
+                    {weightStr}
+                  </StatusPill>
+                )}
+              </Box>
+            );
+          })}
+        </Box>
+
+        {/* Total Summary Footer */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            pt: 0.75,
+            borderTop: borders.divider,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 600, color: fleetColors.textSecondary }}
+          >
+            Total score
+          </Typography>
+          <Box
+            component="span"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              px: 1,
+              py: 0.25,
+              borderRadius: radii.pill,
+              bgcolor: fleetColors.surfaceTonal,
+              fontWeight: 700,
+              fontSize: fontSizes.caption,
+              color: fleetColors.textPrimary,
+              fontVariantNumeric: 'tabular-nums',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {`= ${cleanScore} pts`}
+          </Box>
+        </Box>
       </Box>
     );
   }
@@ -118,6 +216,7 @@ export const PriorityScoreCell = ({
   return (
     <Tooltip
       title={tooltipContent}
+      open={open}
       enterDelay={100}
       placement="bottom-start"
       slotProps={{ tooltip: { sx: INFO_TOOLTIP_PAPER_SX } }}
@@ -125,8 +224,9 @@ export const PriorityScoreCell = ({
       <Typography
         component="span"
         variant="body2"
+        tabIndex={0}
         sx={{
-          fontSize: '13px',
+          fontSize: fontSizes.label,
           fontWeight: 600,
           cursor: 'help',
           display: 'inline-block',
