@@ -55,4 +55,39 @@ describe('RangeFilter', () => {
     // Value should be empty, not 'NaN'
     expect(minInput.value).toBe('');
   });
+
+  it('should render unit next to inputs when unit is provided', () => {
+    const mockOnChange = jest.fn();
+
+    render(
+      <RangeFilter
+        min={0}
+        max={100}
+        value={{ min: 10, max: 90 }}
+        unit="%"
+        onChange={mockOnChange}
+      />,
+    );
+
+    expect(screen.getByText('%')).toBeInTheDocument();
+    expect(screen.getByLabelText('Min')).toBeInTheDocument();
+    expect(screen.getByLabelText('Max')).toBeInTheDocument();
+  });
+
+  it('should not render unit when unit is not provided', () => {
+    const mockOnChange = jest.fn();
+
+    render(
+      <RangeFilter
+        min={0}
+        max={100}
+        value={{ min: 10, max: 90 }}
+        onChange={mockOnChange}
+      />,
+    );
+
+    expect(screen.queryByText('%')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Min')).toBeInTheDocument();
+    expect(screen.getByLabelText('Max')).toBeInTheDocument();
+  });
 });

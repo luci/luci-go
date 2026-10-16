@@ -44,6 +44,7 @@ export class RangeFilterCategory implements FilterCategory {
   public min: number;
   public max: number;
   public scaleFactor: number;
+  public unit?: string;
   private reRender: () => void;
 
   private constructor(
@@ -54,12 +55,14 @@ export class RangeFilterCategory implements FilterCategory {
     value: RangeFilterValue,
     scaleFactor: number,
     reRender: (newFilter: RangeFilterCategory) => void,
+    unit?: string,
   ) {
     this.label = label;
     this.key = key;
     this.min = min;
     this.max = max;
     this.scaleFactor = scaleFactor;
+    this.unit = unit;
     this.value = value;
     this.reRender = () => {
       reRender(this);
@@ -74,6 +77,7 @@ export class RangeFilterCategory implements FilterCategory {
     reRender: (newFilter: RangeFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
     scaleFactor?: number,
+    unit?: string,
   ): BuildResult<RangeFilterCategory> {
     const value: RangeFilterValue = {};
     const normKey = normalizeFilterKey(key).toLowerCase();
@@ -124,6 +128,7 @@ export class RangeFilterCategory implements FilterCategory {
       value,
       effectiveScaleFactor,
       reRender,
+      unit,
     );
     return { isError: false, value: filter, warnings: [] };
   }
@@ -167,6 +172,7 @@ export class RangeFilterCategory implements FilterCategory {
         value={this.value}
         min={this.min}
         max={this.max}
+        unit={this.unit}
         onApply={(newValue) => {
           this.value = newValue;
           onApply();
@@ -179,17 +185,18 @@ export class RangeFilterCategory implements FilterCategory {
   }
 
   public getChipLabel() {
+    const unitSuffix = this.unit ?? '';
     if (this.value.min !== undefined && this.value.max !== undefined) {
       if (this.value.min === this.value.max) {
-        return `${this.label} = ${this.value.min}`;
+        return `${this.label} = ${this.value.min}${unitSuffix}`;
       }
-      return `${this.value.min} <= ${this.label} <= ${this.value.max}`;
+      return `${this.value.min}${unitSuffix} <= ${this.label} <= ${this.value.max}${unitSuffix}`;
     }
     if (this.value.min !== undefined) {
-      return `${this.label} >= ${this.value.min}`;
+      return `${this.label} >= ${this.value.min}${unitSuffix}`;
     }
     if (this.value.max !== undefined) {
-      return `${this.label} <= ${this.value.max}`;
+      return `${this.label} <= ${this.value.max}${unitSuffix}`;
     }
     return this.label;
   }
@@ -212,6 +219,7 @@ const RangeOptionComponent = function RangeOptionComponent({
   value,
   min,
   max,
+  unit,
   onApply,
   onClose,
   ref,
@@ -219,6 +227,7 @@ const RangeOptionComponent = function RangeOptionComponent({
   value: RangeFilterValue;
   min: number;
   max: number;
+  unit?: string;
   onApply: (value: RangeFilterValue) => void;
   onClose: () => void;
   ref?: React.Ref<unknown>;
@@ -244,6 +253,7 @@ const RangeOptionComponent = function RangeOptionComponent({
         onChange={setTempValue}
         min={min}
         max={max}
+        unit={unit}
       />
       <Footer
         onCancelClick={onClose}
@@ -262,6 +272,7 @@ export class RangeFilterCategoryBuilder
   public min: number | undefined;
   public max: number | undefined;
   public scaleFactor: number | undefined;
+  public unit: string | undefined;
 
   constructor() {}
 
@@ -285,6 +296,11 @@ export class RangeFilterCategoryBuilder
     return this;
   }
 
+  public setUnit(unit: string | undefined) {
+    this.unit = unit;
+    return this;
+  }
+
   public isFilledIn(): boolean {
     return (
       this.label !== undefined &&
@@ -298,7 +314,7 @@ export class RangeFilterCategoryBuilder
     reRender: (newFilter: RangeFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ): BuildResult<RangeFilterCategory> {
-    const { label, min, max, scaleFactor } = this;
+    const { label, min, max, scaleFactor, unit } = this;
     if (label === undefined || min === undefined || max === undefined) {
       return {
         isError: true,
@@ -314,6 +330,7 @@ export class RangeFilterCategoryBuilder
       reRender,
       terms,
       scaleFactor,
+      unit,
     );
   }
 }

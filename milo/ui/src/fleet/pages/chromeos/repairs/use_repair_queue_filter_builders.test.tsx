@@ -236,6 +236,7 @@ describe('useRepairQueueFilterBuilders', () => {
     expect(poolHealthBuilder.min).toBe(0);
     expect(poolHealthBuilder.max).toBe(100);
     expect(poolHealthBuilder.scaleFactor).toBe(0.01);
+    expect(poolHealthBuilder.unit).toBe('%');
 
     const modelHealthBuilder = builders[
       MODEL_HEALTH_FILTER_KEY
@@ -245,5 +246,6 @@ describe('useRepairQueueFilterBuilders', () => {
     expect(modelHealthBuilder.min).toBe(0);
     expect(modelHealthBuilder.max).toBe(100);
     expect(modelHealthBuilder.scaleFactor).toBe(0.01);
+    expect(modelHealthBuilder.unit).toBe('%');
   });
 });

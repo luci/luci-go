@@ -58,11 +58,13 @@ export const useAndroidFilters = (
       extraFilters['"average_7d"'] = new RangeFilterCategoryBuilder()
         .setLabel('7 Day Average Utilization')
         .setMin(0)
-        .setMax(100);
+        .setMax(100)
+        .setUnit('%');
       extraFilters['"average_30d"'] = new RangeFilterCategoryBuilder()
         .setLabel('30 Day Average Utilization')
         .setMin(0)
-        .setMax(100);
+        .setMax(100)
+        .setUnit('%');
     }
     if (!isDimensionsQueryProperlyLoaded || !dimensionsQuery.data) {
       return extraFilters;

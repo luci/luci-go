@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { render, screen } from '@testing-library/react';
+
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 
 import {
@@ -227,5 +229,182 @@ describe('RangeFilterCategory', () => {
     expect(UTILIZATION_FILTER_KEYS).toContain('average_7d');
     expect(UTILIZATION_FILTER_KEYS).toContain('average_30d');
     expect(DEFAULT_UTILIZATION_SCALE_FACTOR).toBe(0.01);
+  });
+
+  describe('getChipLabel with unit', () => {
+    it('should format chip label with unit when both min and max are set', () => {
+      const result = RangeFilterCategory.create(
+        'Utilization',
+        'utilization',
+        0,
+        100,
+        jest.fn(),
+        null,
+        1,
+        '%',
+      );
+      expect(result.isError).toBe(false);
+      if (result.isError) return;
+
+      const category = result.value;
+      category.value = { min: 10, max: 90 };
+      expect(category.getChipLabel()).toBe('10% <= Utilization <= 90%');
+    });
+
+    it('should format chip label with unit when min equals max', () => {
+      const result = RangeFilterCategory.create(
+        'Utilization',
+        'utilization',
+        0,
+        100,
+        jest.fn(),
+        null,
+        1,
+        '%',
+      );
+      expect(result.isError).toBe(false);
+      if (result.isError) return;
+
+      const category = result.value;
+      category.value = { min: 50, max: 50 };
+      expect(category.getChipLabel()).toBe('Utilization = 50%');
+    });
+
+    it('should format chip label with unit when only min is set', () => {
+      const result = RangeFilterCategory.create(
+        'Utilization',
+        'utilization',
+        0,
+        100,
+        jest.fn(),
+        null,
+        1,
+        '%',
+      );
+      expect(result.isError).toBe(false);
+      if (result.isError) return;
+
+      const category = result.value;
+      category.value = { min: 25 };
+      expect(category.getChipLabel()).toBe('Utilization >= 25%');
+    });
+
+    it('should format chip label with unit when only max is set', () => {
+      const result = RangeFilterCategory.create(
+        'Utilization',
+        'utilization',
+        0,
+        100,
+        jest.fn(),
+        null,
+        1,
+        '%',
+      );
+      expect(result.isError).toBe(false);
+      if (result.isError) return;
+
+      const category = result.value;
+      category.value = { max: 75 };
+      expect(category.getChipLabel()).toBe('Utilization <= 75%');
+    });
+
+    it('should format chip label without unit when unit is not provided', () => {
+      const result = RangeFilterCategory.create(
+        'Slippage',
+        'slippage',
+        0,
+        1000,
+        jest.fn(),
+        null,
+      );
+      expect(result.isError).toBe(false);
+      if (result.isError) return;
+
+      const category = result.value;
+      category.value = { min: 5, max: 10 };
+      expect(category.getChipLabel()).toBe('5 <= Slippage <= 10');
+    });
+  });
+
+  describe('render', () => {
+    it('should render RangeFilter with unit text', () => {
+      const result = RangeFilterCategory.create(
+        'Utilization',
+        'utilization',
+        0,
+        100,
+        jest.fn(),
+        null,
+        1,
+        '%',
+      );
+      expect(result.isError).toBe(false);
+      if (result.isError) return;
+
+      const category = result.value;
+      category.value = { min: 20, max: 80 };
+
+      render(
+        category.render(
+          '',
+          jest.fn(),
+          jest.fn(),
+          jest.fn(),
+        ) as React.ReactElement,
+      );
+
+      expect(screen.getByText('%')).toBeInTheDocument();
+      expect(screen.getByLabelText('Min')).toBeInTheDocument();
+      expect(screen.getByLabelText('Max')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('RangeFilterCategoryBuilder', () => {
+  it('should build a RangeFilterCategory without unit', () => {
+    const builder = new RangeFilterCategoryBuilder()
+      .setLabel('Utilization')
+      .setMin(0)
+      .setMax(100);
+
+    expect(builder.isFilledIn()).toBe(true);
+
+    const result = builder.build('utilization', jest.fn(), null);
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+
+    expect(result.value.label).toBe('Utilization');
+    expect(result.value.key).toBe('utilization');
+    expect(result.value.min).toBe(0);
+    expect(result.value.max).toBe(100);
+    expect(result.value.unit).toBeUndefined();
+  });
+
+  it('should build a RangeFilterCategory with unit', () => {
+    const builder = new RangeFilterCategoryBuilder()
+      .setLabel('7 Day Average Utilization')
+      .setMin(0)
+      .setMax(100)
+      .setUnit('%');
+
+    expect(builder.isFilledIn()).toBe(true);
+
+    const result = builder.build('average_7d', jest.fn(), null);
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+
+    expect(result.value.label).toBe('7 Day Average Utilization');
+    expect(result.value.key).toBe('average_7d');
+    expect(result.value.min).toBe(0);
+    expect(result.value.max).toBe(100);
+    expect(result.value.unit).toBe('%');
+  });
+
+  it('should return error if builder is not filled in', () => {
+    const builder = new RangeFilterCategoryBuilder().setLabel('Utilization');
+    expect(builder.isFilledIn()).toBe(false);
+
+    const result = builder.build('utilization', jest.fn(), null);
+    expect(result.isError).toBe(true);
   });
 });

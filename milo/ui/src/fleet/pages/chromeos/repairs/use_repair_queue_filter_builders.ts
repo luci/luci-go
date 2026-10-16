@@ -165,13 +165,15 @@ export const useRepairQueueFilterBuilders = (): {
       .setLabel('Pool Health')
       .setMin(0)
       .setMax(100)
-      .setScaleFactor(0.01);
+      .setScaleFactor(0.01)
+      .setUnit('%');
 
     filters[MODEL_HEALTH_FILTER_KEY] = new RangeFilterCategoryBuilder()
       .setLabel('Model Health')
       .setMin(0)
       .setMax(100)
-      .setScaleFactor(0.01);
+      .setScaleFactor(0.01)
+      .setUnit('%');
 
     const supersededLabelKeys = new Set([
       ...CORE_REPAIR_COLUMNS.flatMap((c) =>

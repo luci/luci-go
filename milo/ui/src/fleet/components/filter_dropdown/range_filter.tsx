@@ -31,10 +31,11 @@ export interface RangeFilterProps {
   onChange: (value: RangeFilterValue) => void;
   min?: number;
   max?: number;
+  unit?: string;
 }
 
 export const RangeFilter = forwardRef(function RangeFilter(
-  { value, onChange, min = 0, max = 10000 }: RangeFilterProps,
+  { value, onChange, min = 0, max = 10000, unit }: RangeFilterProps,
   ref,
 ) {
   const minInputRef = useRef<HTMLInputElement>(null);
@@ -187,6 +188,7 @@ export const RangeFilter = forwardRef(function RangeFilter(
             }
           }}
         />
+        {unit && <span>{unit}</span>}
       </div>
     </div>
   );

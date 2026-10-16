@@ -121,7 +121,8 @@ export const useAndroidPriorityRuleFilterBuilders = (
         .setLabel(label)
         .setMin(0)
         .setMax(100)
-        .setScaleFactor(0.01);
+        .setScaleFactor(0.01)
+        .setUnit('%');
     }
 
     if (isDimensionsLoaded && dimensionsQuery.data) {

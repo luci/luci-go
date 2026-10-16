@@ -281,6 +281,7 @@ export const MRTFilterMenuItem_OLD = forwardRef<
                     onChange={setLocalFilterValue}
                     min={def.filterRangeMin}
                     max={def.filterRangeMax}
+                    unit={def.filterRangeUnit}
                   />
                 </Box>
               );

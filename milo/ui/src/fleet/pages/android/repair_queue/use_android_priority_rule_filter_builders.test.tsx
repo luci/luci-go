@@ -213,6 +213,7 @@ describe('useAndroidPriorityRuleFilterBuilders', () => {
           expect(builder.min).toBe(0);
           expect(builder.max).toBe(100);
           expect(builder.scaleFactor).toBe(0.01);
+          expect(builder.unit).toBe('%');
         }
         expect(builders.host_group_health_pct?.label).toBe('Host Group Health');
         expect(builders.run_target_health_pct?.label).toBe('Run Target Health');
@@ -260,7 +261,7 @@ describe('useAndroidPriorityRuleFilterBuilders', () => {
       }
       expect(hostGroup.value).toEqual({ max: 50 });
       expect(runTarget.value).toEqual({ min: 20, max: 80 });
-      expect(hostGroup.getChipLabel()).toBe('Host Group Health <= 50');
+      expect(hostGroup.getChipLabel()).toBe('Host Group Health <= 50%');
     });
 
     it('serializes percentages back to the fractions the backend stores', () => {

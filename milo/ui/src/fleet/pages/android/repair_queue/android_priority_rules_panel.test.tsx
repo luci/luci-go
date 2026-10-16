@@ -448,6 +448,6 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByText('Host Group Health <= 50')).toBeInTheDocument();
+    expect(screen.getByText('Host Group Health <= 50%')).toBeInTheDocument();
   });
 });
