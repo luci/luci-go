@@ -57,9 +57,10 @@ import (
 //     0 in `createVM`, incremented on every stockout rotation in
 //     `rotateVMZone`, persisted via `setActiveVMZone` (while async creation is
 //     pending or wrapping around) and `finalizeVMZone` in `setCreated` (when
-//     creation succeeds), used to disambiguate GCE `requestId`s across
-//     wrap-around passes, and reported via `gce/instances/zone_rotations` in
-//     `checkInstance`.
+//     creation succeeds), used as the fallback index in GCE `requestId`s
+//     ("create-<host>-fz-<index>") for fallback-enabled configs to
+//     disambiguate attempts across rotations, and reported via
+//     `gce/instances/zone_rotations` in `checkInstance`.
 //
 // Template Preservation Across Asynchronous Ticks:
 //   - While `op.GetStatus() != "DONE"`, `{{.Zone}}` templates in `Disk.Type`
@@ -121,16 +122,22 @@ func candidateZones(vm *model.VM) []string {
 	return candidates
 }
 
-// createInstanceRequestID generates a deterministic GCE request ID based on
-// the VM hostname, target zone, and cumulative fallback rotation count.
-// Including FallbackZoneRotations when > 0 ensures that if a VM exhausts all
-// candidate zones and wraps back around to a previously tried zone within GCE's
-// 24-hour requestId cache window, GCE executes a fresh Insert call instead of
-// re-returning the cached failed operation.
-func createInstanceRequestID(vm *model.VM, targetZone string) uuid.UUID {
-	reqKey := fmt.Sprintf("create-%s-%s", vm.Hostname, targetZone)
-	if vm.FallbackZoneRotations > 0 {
-		reqKey = fmt.Sprintf("create-%s-%s-%d", vm.Hostname, targetZone, vm.FallbackZoneRotations)
+// hasFallbackZones reports whether the VM is configured with fallback zones.
+func hasFallbackZones(vm *model.VM) bool {
+	return len(vm.Attributes.GetFallbackZones()) > 0 || vm.FallbackZoneRotations > 0 || vm.Attributes.GetZone() != originalVMZone(vm)
+}
+
+// createInstanceRequestID generates a deterministic GCE request ID for the VM.
+// For configs without fallback_zones, it uses "create-<hostname>". For configs
+// with fallback_zones, it uses "create-<hostname>-fz-<rotations>" (where fz
+// stands for fallback zone and rotations is the fallback attempt index) so each
+// stockout rotation—including wrap-around passes within GCE's 24-hour requestId
+// cache window—issues a fresh Insert call while multi-tick polling of an
+// in-flight operation reuses the same requestId.
+func createInstanceRequestID(vm *model.VM) uuid.UUID {
+	reqKey := fmt.Sprintf("create-%s", vm.Hostname)
+	if hasFallbackZones(vm) {
+		reqKey = fmt.Sprintf("create-%s-fz-%d", vm.Hostname, vm.FallbackZoneRotations)
 	}
 	return uuid.NewSHA1(uuid.Nil, []byte(reqKey))
 }
@@ -299,7 +306,7 @@ func insertInstanceWithFallback(ctx context.Context, vm *model.VM) (Operation, e
 	initialZone := vm.Attributes.GetZone()
 	initialRotations := vm.FallbackZoneRotations
 	candidates := candidateZones(vm)
-	hasFallbacks := len(vm.Attributes.GetFallbackZones()) > 0 || vm.Attributes.GetZone() != origZone
+	hasFallbacks := hasFallbackZones(vm)
 	srv := getCompute(ctx)
 
 	var op Operation
@@ -312,7 +319,7 @@ func insertInstanceWithFallback(ctx context.Context, vm *model.VM) (Operation, e
 		}
 		attemptVM := cloneVMForZone(vm, targetZone)
 		instance := attemptVM.GetInstance()
-		rID := createInstanceRequestID(vm, targetZone)
+		rID := createInstanceRequestID(vm)
 
 		var err error
 		op, err = srv.InsertInstance(ctx, attemptVM.Attributes.GetProject(), targetZone, instance, rID.String())

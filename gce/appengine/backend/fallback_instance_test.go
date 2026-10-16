@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/uuid"
 	"google.golang.org/api/compute/v1"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -83,9 +84,20 @@ func TestFallbackInstance(t *testing.T) {
 			assert.Loosely(t, cloned.Attributes.GetMachineType(), should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
 			assert.Loosely(t, vm.Attributes.GetMachineType(), should.Equal("zones/{{.Zone}}/machineTypes/n2-standard-8"))
 
-			rID0 := createInstanceRequestID(vm, "us-central1-c")
+			nonFallbackVM := &model.VM{
+				ID:       "id-no-fz",
+				Hostname: "name",
+				Attributes: config.VM{
+					Zone: "us-central1-c",
+				},
+			}
+			assert.Loosely(t, createInstanceRequestID(nonFallbackVM), should.Equal(uuid.NewSHA1(uuid.Nil, []byte("create-name"))))
+
+			rID0 := createInstanceRequestID(vm)
+			assert.Loosely(t, rID0, should.Equal(uuid.NewSHA1(uuid.Nil, []byte("create-name-fz-0"))))
 			vm.FallbackZoneRotations = 3
-			rID3 := createInstanceRequestID(vm, "us-central1-c")
+			rID3 := createInstanceRequestID(vm)
+			assert.Loosely(t, rID3, should.Equal(uuid.NewSHA1(uuid.Nil, []byte("create-name-fz-3"))))
 			assert.Loosely(t, rID0, should.NotEqual(rID3))
 			vm.FallbackZoneRotations = 0
 
