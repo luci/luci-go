@@ -408,13 +408,16 @@ func TestCreateBackendTask(t *testing.T) {
 				},
 				{
 					Name: "cipd_client_hash",
-					Path: "cipd_client",
+					Path: "cache/cipd_client",
 				},
 				{
 					Name: "cipd_cache_hash",
-					Path: "cipd_cache",
+					Path: "cache/cipd_cache",
 				},
 			}))
+			// The build's own agent cache entries must not be modified.
+			assert.Loosely(c, infra.Proto.Buildbucket.Agent.CipdClientCache.Path, should.Equal("cipd_client"))
+			assert.Loosely(c, infra.Proto.Buildbucket.Agent.CipdPackagesCache.Path, should.Equal("cipd_cache"))
 			assert.Loosely(c, req.ExecutionTimeout, should.Match(&durationpb.Duration{Seconds: 500}))
 			assert.Loosely(c, req.GracePeriod, should.Match(&durationpb.Duration{Seconds: 230}))
 			assert.Loosely(c, req.Agent.Source["infra/tools/luci/bbagent/linux-amd64"], should.Match(&pb.RunTaskRequest_AgentExecutable_AgentSource{

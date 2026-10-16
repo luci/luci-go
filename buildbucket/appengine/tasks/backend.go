@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -107,11 +108,20 @@ func computeTaskCaches(infra *model.BuildInfra) []*pb.CacheEntry {
 	if len(infra.Proto.Backend.GetCaches()) > 0 {
 		caches = append(caches, infra.Proto.Backend.Caches...)
 	}
-	if infra.Proto.Buildbucket.GetAgent().GetCipdClientCache() != nil {
-		caches = append(caches, infra.Proto.Buildbucket.Agent.CipdClientCache)
-	}
-	if infra.Proto.Buildbucket.GetAgent().GetCipdPackagesCache() != nil {
-		caches = append(caches, infra.Proto.Buildbucket.Agent.CipdPackagesCache)
+	// Backend.Caches paths already include the bbagent cache dir, but the
+	// agent CIPD cache paths don't. bbagent looks for these caches under its
+	// cache dir, so mount them there.
+	cacheDir := infra.Proto.GetBbagent().GetCacheDir()
+	for _, c := range []*pb.CacheEntry{
+		infra.Proto.Buildbucket.GetAgent().GetCipdClientCache(),
+		infra.Proto.Buildbucket.GetAgent().GetCipdPackagesCache(),
+	} {
+		if c == nil {
+			continue
+		}
+		c = proto.Clone(c).(*pb.CacheEntry)
+		c.Path = path.Join(cacheDir, c.Path)
+		caches = append(caches, c)
 	}
 	return caches
 }
