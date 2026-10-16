@@ -24,10 +24,12 @@ import (
 
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/base/workflow"
+	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/vpython/common"
 	"go.chromium.org/luci/vpython/standard"
 )
 
@@ -115,6 +117,79 @@ func TestUVGenerator(tT *testing.T) {
 			assert.Loosely(t, argsStr, should.ContainSubstring("--uv-bin"))
 			assert.Loosely(t, argsStr, should.ContainSubstring("--python-bin"))
 			assert.Loosely(t, argsStr, should.ContainSubstring(fmt.Sprintf("--req-file %s", filepath.Join("{{.vpython_requirements}}", "requirements.txt"))))
+		})
+	})
+}
+
+func TestPassthroughEnv(tT *testing.T) {
+	ftt.Run("PassthroughEnv and Derivation Env isolation", tT, func(t *ftt.Test) {
+		cpython := &generators.ImportTargets{Name: "cpython"}
+		virtualenv := &generators.ImportTargets{Name: "virtualenv"}
+		wheels := &generators.ImportTargets{Name: "wheels"}
+		uvGen := &generators.ImportTargets{Name: "uv"}
+
+		env := Environment{
+			Executable: "python3",
+			CPython:    cpython,
+			Virtualenv: virtualenv,
+		}
+		spec := &standard.ProjectSpec{
+			RequiresPython: ">=3.11",
+			Dependencies:   []string{"six==1.16.0"},
+		}
+
+		tT.Setenv(common.EnvVpythonArUrl, "")
+		tT.Setenv("HTTPS_PROXY", "http://127.0.0.1:8080")
+		tT.Setenv("SSL_CERT_FILE", "/tmp/ephemeral-ca.crt")
+		tT.Setenv(common.EnvVpythonNetworkRetryTimeout, "15")
+
+		t.Run("WithWheels and WithUV exclude passthrough vars from generator Env", func(t *ftt.Test) {
+			wheelsGen := env.WithWheels(wheels).(*workflow.Generator)
+			assert.Loosely(t, wheelsGen.Env.Sorted(), should.Match([]string{
+				fmt.Sprintf("%s=%s", common.EnvVpythonArUrl, common.DefaultARURL),
+			}))
+
+			uvWorkflowGen := env.WithUV(uvGen, spec).(*workflow.Generator)
+			assert.Loosely(t, uvWorkflowGen.Env.Sorted(), should.Match([]string{
+				fmt.Sprintf("%s=%s", common.EnvVpythonArUrl, common.DefaultARURL),
+			}))
+		})
+
+		t.Run("WithPassthroughEnv injects host vars at execution time only for venv derivations", func(t *ftt.Test) {
+			drv := &core.Derivation{
+				Name: "uv_venv",
+				Env:  []string{"VPYTHON_AR_URL=https://example.com/simple/", "cpython=/store/cpython"},
+			}
+			execDrv := WithPassthroughEnv(drv)
+			assert.Loosely(t, execDrv, should.NotEqual(drv))
+			assert.Loosely(t, drv.Env, should.Match([]string{
+				"VPYTHON_AR_URL=https://example.com/simple/",
+				"cpython=/store/cpython",
+			}))
+			assert.Loosely(t, execDrv.Env, should.Contain("HTTPS_PROXY=http://127.0.0.1:8080"))
+			assert.Loosely(t, execDrv.Env, should.Contain("SSL_CERT_FILE=/tmp/ephemeral-ca.crt"))
+			assert.Loosely(t, execDrv.Env, should.Contain("VPYTHON_NETWORK_RETRY_TIMEOUT=15"))
+			assert.Loosely(t, execDrv.Env, should.Contain("VPYTHON_AR_URL=https://example.com/simple/"))
+			assert.Loosely(t, execDrv.Env, should.Contain("cpython=/store/cpython"))
+
+			otherDrv := &core.Derivation{
+				Name: "python_empty_venv",
+				Env:  []string{"cpython=/store/cpython"},
+			}
+			assert.Loosely(t, WithPassthroughEnv(otherDrv), should.Equal(otherDrv))
+		})
+
+		t.Run("WithPassthroughEnv returns derivation unchanged when no passthrough vars are set", func(t *ftt.Test) {
+			for _, k := range passthroughEnvVars {
+				tT.Setenv(k, "")
+			}
+			tT.Setenv(common.EnvVpythonNetworkRetryTimeout, "")
+
+			drv := &core.Derivation{
+				Name: "python_venv",
+				Env:  []string{"VPYTHON_AR_URL=https://example.com/simple/"},
+			}
+			assert.Loosely(t, WithPassthroughEnv(drv), should.Equal(drv))
 		})
 	})
 }

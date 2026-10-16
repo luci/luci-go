@@ -25,7 +25,6 @@ import (
 // Environment variable definitions
 const (
 	EnvVpythonArUrl               = "VPYTHON_AR_URL"
-	EnvVpythonCipdPath            = "VPYTHON_CIPD_PATH"
 	EnvVpythonCacheSalt           = "_VPYTHON_CACHE_SALT"
 	EnvVpythonNetworkRetryTimeout = "VPYTHON_NETWORK_RETRY_TIMEOUT"
 )

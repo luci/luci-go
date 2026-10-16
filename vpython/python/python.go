@@ -27,12 +27,13 @@ import (
 	"runtime"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/base/workflow"
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/system/environ"
 
 	"go.chromium.org/luci/vpython/common"
@@ -40,8 +41,8 @@ import (
 )
 
 // passthroughEnvVars is a list of environment variables forwarded from the
-// host environment to virtualenv generator subprocesses so network tools
-// (pip/uv) can authenticate SSL certs and navigate proxies.
+// host environment to virtualenv generator subprocesses at execution time so
+// network tools (pip/uv) can authenticate SSL certs and navigate proxies.
 var passthroughEnvVars = []string{
 	// Proxy settings
 	"HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
@@ -52,22 +53,48 @@ var passthroughEnvVars = []string{
 	"PIP_CERT", "UV_CERT", "UV_NATIVE_TLS",
 }
 
-func envWithPassthroughs() environ.Env {
+func venvEnv() environ.Env {
 	env := environ.New(nil)
-	for _, k := range passthroughEnvVars {
-		if v := os.Getenv(k); v != "" {
-			env.Set(k, v)
-		}
-	}
 	arURL := os.Getenv(common.EnvVpythonArUrl)
 	if arURL == "" {
 		arURL = common.DefaultARURL
 	}
 	env.Set(common.EnvVpythonArUrl, arURL)
+	return env
+}
+
+// passthroughEnv returns host proxy, TLS certificate, and network retry
+// timeout environment variables to pass to virtualenv builder subprocesses at
+// execution time without hashing them into the derivation ID.
+func passthroughEnv() environ.Env {
+	env := environ.New(nil)
+	for _, k := range passthroughEnvVars {
+		if _, ok := env.Lookup(k); !ok {
+			if v := os.Getenv(k); v != "" {
+				env.Set(k, v)
+			}
+		}
+	}
 	if timeout := os.Getenv(common.EnvVpythonNetworkRetryTimeout); timeout != "" {
 		env.Set(common.EnvVpythonNetworkRetryTimeout, timeout)
 	}
 	return env
+}
+
+// WithPassthroughEnv returns a copy of drv with passthroughEnv merged into Env
+// when drv is a python_venv or uv_venv derivation.
+func WithPassthroughEnv(drv *core.Derivation) *core.Derivation {
+	if drv.Name != "python_venv" && drv.Name != "uv_venv" {
+		return drv
+	}
+	env := passthroughEnv()
+	if env.Len() == 0 {
+		return drv
+	}
+	env.Update(environ.New(drv.Env))
+	cloned := proto.CloneOf(drv)
+	cloned.Env = env.Sorted()
+	return cloned
 }
 
 type Environment struct {
@@ -122,7 +149,7 @@ var bootstrapGen = generators.InitEmbeddedFS("bootstrap", bootstrapEmbed)
 func (e *Environment) Pep425Tags() generators.Generator {
 	// Generate an empty virtual environment to probe the pep425tags
 	empty := &workflow.Generator{
-		Name: "python_venv",
+		Name: "python_empty_venv",
 		Args: []string{
 			common.Python("{{.cpython}}", e.Executable),
 			filepath.Join("{{.bootstrap}}", "bootstrap.py"),
@@ -136,7 +163,7 @@ func (e *Environment) Pep425Tags() generators.Generator {
 	return &workflow.Generator{
 		Name: "python_pep425tags",
 		Args: []string{
-			common.PythonVENV("{{.python_venv}}", e.Executable),
+			common.PythonVENV("{{.python_empty_venv}}", e.Executable),
 			filepath.Join("{{.bootstrap}}", "pep425tags.py"),
 		},
 		Dependencies: []generators.Dependency{
@@ -147,12 +174,6 @@ func (e *Environment) Pep425Tags() generators.Generator {
 }
 
 func (e *Environment) WithWheels(wheels generators.Generator) generators.Generator {
-	env := envWithPassthroughs()
-	cipdPath := "cipd"
-	if path, err := exec.LookPath("cipd"); err == nil {
-		cipdPath = path
-	}
-	env.Set(common.EnvVpythonCipdPath, cipdPath)
 	return &workflow.Generator{
 		Name: "python_venv",
 		Args: []string{
@@ -160,7 +181,7 @@ func (e *Environment) WithWheels(wheels generators.Generator) generators.Generat
 			"-BsE", // -B: no .pyc files; -s: no user site-packages; -E: ignore environment overrides
 			filepath.Join("{{.bootstrap}}", "bootstrap.py"),
 		},
-		Env: env,
+		Env: venvEnv(),
 		Dependencies: []generators.Dependency{
 			{Type: generators.DepsHostTarget, Generator: e.CPython, Runtime: true},
 			{Type: generators.DepsHostTarget, Generator: e.Virtualenv},
@@ -264,8 +285,6 @@ func (s *SpecRequirementsGenerator) Generate(_ context.Context, plats generators
 
 // WithUV returns a workflow.Generator for the UV virtualenv.
 func (e *Environment) WithUV(uv generators.Generator, spec *standard.ProjectSpec) generators.Generator {
-	env := envWithPassthroughs()
-
 	reqGen := &SpecRequirementsGenerator{Spec: spec}
 
 	uvBin := filepath.Join("{{.uv}}", "uv")
@@ -283,7 +302,7 @@ func (e *Environment) WithUV(uv generators.Generator, spec *standard.ProjectSpec
 			"--python-bin", common.Python("{{.cpython}}", e.Executable),
 			"--req-file", filepath.Join("{{.vpython_requirements}}", "requirements.txt"),
 		},
-		Env: env,
+		Env: venvEnv(),
 		Dependencies: []generators.Dependency{
 			{Type: generators.DepsHostTarget, Generator: e.CPython, Runtime: true},
 			{Type: generators.DepsHostTarget, Generator: uv},

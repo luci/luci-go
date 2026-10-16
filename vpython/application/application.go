@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/base/workflow"
+	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -390,6 +391,9 @@ func (a *Application) BuildVENVWithPackage(ctx context.Context, ap *actions.Acti
 
 	b := workflow.NewBuilder(plats, pm, ap)
 	pe := workflow.NewPackageExecutor("", workflow.PackageExecutorConfig{
+		ExecFn: func(ctx context.Context, cfg *workflow.ExecutionConfig, drv *core.Derivation) error {
+			return workflow.Execute(ctx, cfg, python.WithPassthroughEnv(drv))
+		},
 		PostExecFn: func(ctx context.Context, pkg actions.Package, err error) error {
 			if pkg.Derivation.Name == "python_venv" {
 				// Surface bootstrap info (e.g. if we fetched from AR or fell back to CIPD).
