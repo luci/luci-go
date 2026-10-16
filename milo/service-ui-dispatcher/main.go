@@ -46,6 +46,28 @@ var (
 	gcsBucketNameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$`)
 )
 
+var immutableAssetContentTypes = map[string]string{
+	".js":    "text/javascript; charset=utf-8",
+	".mjs":   "text/javascript; charset=utf-8",
+	".css":   "text/css; charset=utf-8",
+	".map":   "application/json; charset=utf-8",
+	".json":  "application/json; charset=utf-8",
+	".wasm":  "application/wasm",
+	".svg":   "image/svg+xml",
+	".png":   "image/png",
+	".jpg":   "image/jpeg",
+	".jpeg":  "image/jpeg",
+	".gif":   "image/gif",
+	".webp":  "image/webp",
+	".ico":   "image/x-icon",
+	".woff":  "font/woff",
+	".woff2": "font/woff2",
+	".ttf":   "font/ttf",
+	".eot":   "application/vnd.ms-fontobject",
+	".txt":   "text/plain; charset=utf-8",
+	".md":    "text/plain; charset=utf-8",
+}
+
 // demoTarget represents a Gerrit CL demo target parsed from the request Host.
 type demoTarget struct {
 	ChangeID string
@@ -108,7 +130,10 @@ func parseDemoHost(host string) (demoTarget, bool) {
 	if m == nil {
 		return demoTarget{}, false
 	}
-	return demoTarget{ChangeID: m[1], Patchset: m[2]}, true
+	return demoTarget{
+		ChangeID: m[1],
+		Patchset: m[2],
+	}, true
 }
 
 type dispatcher struct {
@@ -127,7 +152,10 @@ func noRedirectHTTPClient(base *http.Client) *http.Client {
 	if base != nil && base.CheckRedirect != nil && base.Timeout > 0 {
 		return base
 	}
-	c := &http.Client{Timeout: 30 * time.Second, CheckRedirect: rejectRedirect}
+	c := &http.Client{
+		Timeout:       30 * time.Second,
+		CheckRedirect: rejectRedirect,
+	}
 	if base != nil {
 		c.Transport = base.Transport
 		c.Jar = base.Jar
@@ -157,6 +185,7 @@ func main() {
 		srv.Routes.GET("/ui_version.js", nil, d.dispatch)
 		srv.Routes.GET("/root_sw.js", nil, d.dispatch)
 		srv.Routes.GET("/root_sw.js.map", nil, d.dispatch)
+
 		return nil
 	})
 }
@@ -167,6 +196,65 @@ func setSecurityHeaders(h http.Header) {
 	h.Set("X-Content-Type-Options", "nosniff")
 }
 
+// contentTypeForAsset returns the deterministic Content-Type for an allowed
+// static demo asset path, whether it should receive a sandboxed non-script CSP,
+// and whether the asset path/extension is permitted.
+func contentTypeForAsset(assetPath string) (contentType string, sandboxCSP bool, ok bool) {
+	if assetPath == "/ui/index.html" {
+		return "text/html; charset=utf-8", false, true
+	}
+	if assetPath == "/ui/manifest.webmanifest" {
+		return "application/manifest+json; charset=utf-8", true, true
+	}
+	if !strings.HasPrefix(assetPath, "/ui/immutable/") || len(assetPath) <= len("/ui/immutable/") {
+		return "", false, false
+	}
+	ext := strings.ToLower(path.Ext(assetPath))
+	ct, allowed := immutableAssetContentTypes[ext]
+	if !allowed {
+		return "", false, false
+	}
+	return ct, ext != ".js" && ext != ".mjs", true
+}
+
+// isStaticAssetRequest reports whether u targets a static asset path whose
+// request path is used directly to construct a GCS object path
+// (/ui/immutable/* or /ui/manifest.webmanifest). SPA navigation routes (/ui/*)
+// always serve the constant /ui/index.html object and never pass u.Path to GCS.
+func isStaticAssetRequest(u *url.URL) bool {
+	if u == nil {
+		return false
+	}
+	p := u.Path
+	escaped := u.EscapedPath()
+	return p == "/ui/immutable" || strings.HasPrefix(p, "/ui/immutable/") ||
+		escaped == "/ui/immutable" || strings.HasPrefix(escaped, "/ui/immutable/") ||
+		p == "/ui/manifest.webmanifest" || escaped == "/ui/manifest.webmanifest"
+}
+
+func isSafeStaticAssetURL(u *url.URL) bool {
+	if u == nil || u.RawPath != "" || u.EscapedPath() != u.Path {
+		return false
+	}
+	return isSafeAssetPath(u.Path)
+}
+
+func isSafeAssetPath(assetPath string) bool {
+	if assetPath == "" || !strings.HasPrefix(assetPath, "/") || strings.ContainsAny(assetPath, "%?#\\") {
+		return false
+	}
+	for i := 0; i < len(assetPath); i++ {
+		if assetPath[i] <= 0x20 || assetPath[i] >= 0x7f {
+			return false
+		}
+	}
+	if path.Clean(assetPath) != assetPath {
+		return false
+	}
+	_, _, ok := contentTypeForAsset(assetPath)
+	return ok
+}
+
 func (d *dispatcher) buildGCSObjectURL(demo demoTarget, assetPath string) (*url.URL, error) {
 	if !demo.Valid() {
 		return nil, errors.New("invalid demo target")
@@ -174,7 +262,7 @@ func (d *dispatcher) buildGCSObjectURL(demo demoTarget, assetPath string) (*url.
 	if !gcsBucketNameRe.MatchString(d.demoGCSBucket) {
 		return nil, errors.New("invalid demo GCS bucket name")
 	}
-	if assetPath != "/ui/index.html" {
+	if !isSafeAssetPath(assetPath) {
 		return nil, errors.New("unsafe demo asset path")
 	}
 	baseURL := d.gcsBaseURL
@@ -205,6 +293,7 @@ func (d *dispatcher) buildGCSObjectURL(demo demoTarget, assetPath string) (*url.
 
 func (d *dispatcher) dispatch(c *router.Context) {
 	setSecurityHeaders(c.Writer.Header())
+
 	demo, isDemo := parseDemoHost(c.Request.Host)
 	if isDemo && d.demoGCSBucket != "" {
 		if d.tryServeGCSDemo(c, demo) {
@@ -246,6 +335,7 @@ func (d *dispatcher) dispatch(c *router.Context) {
 		setSecurityHeaders(w.Header())
 		http.Error(w, "upstream proxy error", http.StatusBadGateway)
 	}
+
 	proxy.ModifyResponse = func(resp *http.Response) error {
 		setSecurityHeaders(resp.Header)
 		if !isDemo {
@@ -288,7 +378,28 @@ func (d *dispatcher) tryServeGCSDemo(c *router.Context, demo demoTarget) bool {
 		return false
 	}
 
-	objURL, err := d.buildGCSObjectURL(demo, "/ui/index.html")
+	assetPath := "/ui/index.html"
+	cacheControl := "no-cache"
+	if isStaticAssetRequest(c.Request.URL) {
+		if !isSafeStaticAssetURL(c.Request.URL) {
+			setSecurityHeaders(c.Writer.Header())
+			http.Error(c.Writer, "invalid demo asset path", http.StatusBadRequest)
+			return true
+		}
+		assetPath = reqPath
+		if strings.HasPrefix(assetPath, "/ui/immutable/") {
+			cacheControl = "public, max-age=604800, immutable"
+		}
+	}
+
+	contentType, sandboxCSP, ok := contentTypeForAsset(assetPath)
+	if !ok {
+		setSecurityHeaders(c.Writer.Header())
+		http.Error(c.Writer, "invalid demo asset path", http.StatusBadRequest)
+		return true
+	}
+
+	objURL, err := d.buildGCSObjectURL(demo, assetPath)
 	if err != nil {
 		setSecurityHeaders(c.Writer.Header())
 		http.Error(c.Writer, "invalid demo asset path", http.StatusBadRequest)
@@ -311,6 +422,11 @@ func (d *dispatcher) tryServeGCSDemo(c *router.Context, demo demoTarget) bool {
 		return true
 	}
 	if resp.StatusCode == http.StatusNotFound {
+		if assetPath != "/ui/index.html" && d.gcsBundleExists(ctx, demo) {
+			setSecurityHeaders(c.Writer.Header())
+			http.Error(c.Writer, "demo asset not found", http.StatusNotFound)
+			return true
+		}
 		return false
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -326,8 +442,11 @@ func (d *dispatcher) tryServeGCSDemo(c *router.Context, demo demoTarget) bool {
 
 	h := c.Writer.Header()
 	setSecurityHeaders(h)
-	h.Set("Content-Type", "text/html; charset=utf-8")
-	h.Set("Cache-Control", "no-cache")
+	if sandboxCSP {
+		h.Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox; frame-ancestors 'self'")
+	}
+	h.Set("Content-Type", contentType)
+	h.Set("Cache-Control", cacheControl)
 	c.Writer.WriteHeader(http.StatusOK)
 	_, _ = io.Copy(c.Writer, io.LimitReader(resp.Body, maxDemoAssetBytes))
 	return true
@@ -385,9 +504,11 @@ func (d *dispatcher) guardMissingDemoFallback(ctx context.Context, resp *http.Re
 	} else if !softRouted && resp.StatusCode == http.StatusOK && (reqPath == "/ui" || strings.HasPrefix(reqPath, "/ui/")) {
 		softRouted = d.probeUpstreamSoftRouted(ctx, scheme, host, demo)
 	}
+
 	if !softRouted {
 		return nil
 	}
+
 	if resp.Body != nil {
 		_ = resp.Body.Close()
 	}
@@ -415,7 +536,11 @@ func (d *dispatcher) probeUpstreamSoftRouted(ctx context.Context, scheme, host s
 	if scheme == "" {
 		scheme = "https"
 	}
-	versionURL := &url.URL{Scheme: scheme, Host: host, Path: "/new-ui/ui_version.js"}
+	versionURL := &url.URL{
+		Scheme: scheme,
+		Host:   host,
+		Path:   "/new-ui/ui_version.js",
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, versionURL.String(), nil)
 	if err != nil {
 		return false
@@ -444,5 +569,6 @@ func userInitiatedRollback(c *router.Context) bool {
 		}
 		return false
 	}
+
 	return cookie.Value == "true"
 }

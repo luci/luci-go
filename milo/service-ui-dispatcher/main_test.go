@@ -70,14 +70,34 @@ func TestGCSStaticDemoServing(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("GCS static demo serving", t, func(t *ftt.Test) {
+		var requestedPaths []string
+		var redirectFollowed bool
 		gcsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestedPaths = append(requestedPaths, r.URL.Path)
 			switch r.URL.Path {
 			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/index.html":
+				// Even if GCS metadata is misconfigured, dispatcher enforces text/html for index.html.
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
 				w.WriteHeader(http.StatusOK)
 				if r.Method != http.MethodHead {
 					_, _ = w.Write([]byte("<!doctype html><title>Demo c8509444-p2</title>"))
 				}
+			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/immutable/index-abc.js":
+				// Even if GCS returns text/html on a .js object, dispatcher derives text/javascript from extension.
+				w.Header().Set("Content-Type", "text/html")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("console.log('immutable bundle');"))
+			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/immutable/logo-123.svg":
+				w.Header().Set("Content-Type", "image/svg+xml")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("<svg></svg>"))
+			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/immutable/redirect-asset.js":
+				http.Redirect(w, r, "/attacker-public-bucket/evil.html", http.StatusFound)
+			case "/attacker-public-bucket/evil.html":
+				redirectFollowed = true
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("<script>alert(1)</script>"))
 			default:
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -124,13 +144,84 @@ func TestGCSStaticDemoServing(t *testing.T) {
 			}
 		})
 
-		t.Run("returns 404 directly for /root_sw.js when GCS bundle exists", func(t *ftt.Test) {
-			req := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/root_sw.js", nil)
+		t.Run("serves immutable assets with deterministic Content-Type and sandboxes SVG assets", func(t *ftt.Test) {
+			req := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/index-abc.js", nil)
 			req.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
 			rec := httptest.NewRecorder()
 			d.dispatch(&router.Context{Writer: rec, Request: req})
 
-			assert.Loosely(t, rec.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
+			assert.Loosely(t, rec.Header().Get("Content-Type"), should.Equal("text/javascript; charset=utf-8"))
+			assert.Loosely(t, rec.Header().Get("Cache-Control"), should.ContainSubstring("immutable"))
+			assert.Loosely(t, rec.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
+			assert.Loosely(t, rec.Body.String(), should.ContainSubstring("immutable bundle"))
+
+			svgReq := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/logo-123.svg", nil)
+			svgReq.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			svgRec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: svgRec, Request: svgReq})
+
+			assert.Loosely(t, svgRec.Code, should.Equal(http.StatusOK))
+			assert.Loosely(t, svgRec.Header().Get("Content-Type"), should.Equal("image/svg+xml"))
+			assert.Loosely(t, svgRec.Header().Get("Content-Security-Policy"), should.ContainSubstring("sandbox"))
+		})
+
+		t.Run("returns 404 directly without falling through to App Engine when an asset or root_sw.js is missing in an existing GCS bundle", func(t *ftt.Test) {
+			for _, missingPath := range []string{"/ui/immutable/missing-chunk.js", "/root_sw.js"} {
+				req := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com"+missingPath, nil)
+				req.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+				rec := httptest.NewRecorder()
+				d.dispatch(&router.Context{Writer: rec, Request: req})
+
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusNotFound))
+			}
+		})
+
+		t.Run("rejects percent-encoded, dot-segment, and disallowed-extension static asset paths without calling GCS", func(t *ftt.Test) {
+			badTargets := []string{
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/..%2f..%2f..%2f..%2f..%2fattacker-public-bucket/evil.html",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/%2e%2e/%2e%2e/attacker-public-bucket/evil.html",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/index-abc.js%3falt=media",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/index-abc.js%23fragment",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/sub%5cfile.js",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable//index-abc.js",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/evil.html",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/index%20abc.js",
+			}
+			for _, target := range badTargets {
+				requestedPaths = nil
+				req := httptest.NewRequest(http.MethodGet, target, nil)
+				req.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+				rec := httptest.NewRecorder()
+				d.dispatch(&router.Context{Writer: rec, Request: req})
+
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, requestedPaths, should.BeEmpty)
+			}
+
+			// Also verify unencoded ".." in URL.Path when RawPath is empty.
+			requestedPaths = nil
+			rawTraversalReq := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/index-abc.js", nil)
+			rawTraversalReq.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			rawTraversalReq.URL.Path = "/ui/immutable/../../../../../attacker-public-bucket/evil.html"
+			rawTraversalReq.URL.RawPath = ""
+			rec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: rec, Request: rawTraversalReq})
+
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+			assert.Loosely(t, requestedPaths, should.BeEmpty)
+		})
+
+		t.Run("does not follow upstream GCS 3xx redirects", func(t *ftt.Test) {
+			redirectFollowed = false
+			req := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/redirect-asset.js", nil)
+			req.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			rec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: rec, Request: req})
+
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusBadGateway))
+			assert.Loosely(t, redirectFollowed, should.BeFalse)
+			assert.Loosely(t, rec.Body.String(), should.NotContainSubstring("<script>"))
 		})
 	})
 }
