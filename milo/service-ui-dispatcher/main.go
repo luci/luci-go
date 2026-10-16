@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main contains setup for push-on-green and CL UI demo routing.
+// Package main contains setup for push-on-green and opt-in CL UI demos.
 // See b/367097786 and b/565833471.
 package main
 
@@ -20,12 +20,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -36,12 +38,26 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-var demoHostRe = regexp.MustCompile(`^c(\d+)(?:-p(\d+))?-dot-luci-milo-dev\.appspot\.com$`)
+const maxDemoAssetBytes = 50 << 20 // 50 MiB
+
+var (
+	demoHostRe      = regexp.MustCompile(`^c(\d+)(?:-p(\d+))?-dot-luci-milo-dev\.appspot\.com$`)
+	digitsOnlyRe    = regexp.MustCompile(`^\d+$`)
+	gcsBucketNameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$`)
+)
 
 // demoTarget represents a Gerrit CL demo target parsed from the request Host.
 type demoTarget struct {
 	ChangeID string
 	Patchset string
+}
+
+// Valid reports whether ChangeID and optional Patchset contain only ASCII digits.
+func (d demoTarget) Valid() bool {
+	if !digitsOnlyRe.MatchString(d.ChangeID) {
+		return false
+	}
+	return d.Patchset == "" || digitsOnlyRe.MatchString(d.Patchset)
 }
 
 // VersionID returns the canonical UI_VERSION identifier (e.g. "c8509444-p2" or "c8509444").
@@ -55,6 +71,14 @@ func (d demoTarget) VersionID() string {
 // Host returns the canonical untainted App Engine demo hostname without port.
 func (d demoTarget) Host() string {
 	return fmt.Sprintf("%s-dot-luci-milo-dev.appspot.com", d.VersionID())
+}
+
+// GCSPrefix returns the object prefix inside the demo GCS bucket.
+func (d demoTarget) GCSPrefix() string {
+	if d.Patchset != "" {
+		return fmt.Sprintf("c%s-p%s", d.ChangeID, d.Patchset)
+	}
+	return fmt.Sprintf("c%s/latest", d.ChangeID)
 }
 
 func sanitizeUpstreamHost(host string) (string, bool) {
@@ -88,6 +112,8 @@ func parseDemoHost(host string) (demoTarget, bool) {
 }
 
 type dispatcher struct {
+	demoGCSBucket  string
+	gcsBaseURL     string
 	upstreamScheme string
 	upstreamHost   string
 	httpClient     *http.Client
@@ -116,10 +142,17 @@ var defaultNoRedirectClient = noRedirectHTTPClient(nil)
 
 func main() {
 	d := &dispatcher{
+		gcsBaseURL:     "https://storage.googleapis.com",
 		upstreamScheme: "https",
 		httpClient:     defaultNoRedirectClient,
 	}
 	server.Main(nil, nil, func(srv *server.Server) error {
+		flag.StringVar(
+			&d.demoGCSBucket,
+			"demo-gcs-bucket",
+			"",
+			"Optional GCS bucket containing opt-in Gerrit CL UI demo bundles (e.g. luci-milo-dev-ui-demos).",
+		)
 		srv.Routes.GET("/ui/*path", nil, d.dispatch)
 		srv.Routes.GET("/ui_version.js", nil, d.dispatch)
 		srv.Routes.GET("/root_sw.js", nil, d.dispatch)
@@ -134,9 +167,50 @@ func setSecurityHeaders(h http.Header) {
 	h.Set("X-Content-Type-Options", "nosniff")
 }
 
+func (d *dispatcher) buildGCSObjectURL(demo demoTarget, assetPath string) (*url.URL, error) {
+	if !demo.Valid() {
+		return nil, errors.New("invalid demo target")
+	}
+	if !gcsBucketNameRe.MatchString(d.demoGCSBucket) {
+		return nil, errors.New("invalid demo GCS bucket name")
+	}
+	if assetPath != "/ui/index.html" {
+		return nil, errors.New("unsafe demo asset path")
+	}
+	baseURL := d.gcsBaseURL
+	if baseURL == "" {
+		baseURL = "https://storage.googleapis.com"
+	}
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return nil, fmt.Errorf("unsupported GCS scheme %q", u.Scheme)
+	}
+	if u.Host == "" {
+		return nil, errors.New("missing GCS host")
+	}
+	prefix := path.Join("/", u.Path, d.demoGCSBucket, demo.GCSPrefix())
+	fullPath := path.Join(prefix, assetPath)
+	if !strings.HasPrefix(fullPath, prefix+"/") {
+		return nil, errors.New("asset path escapes demo GCS prefix")
+	}
+	u.Path = fullPath
+	u.RawPath = ""
+	u.RawQuery = ""
+	u.Fragment = ""
+	return u, nil
+}
+
 func (d *dispatcher) dispatch(c *router.Context) {
 	setSecurityHeaders(c.Writer.Header())
 	demo, isDemo := parseDemoHost(c.Request.Host)
+	if isDemo && d.demoGCSBucket != "" {
+		if d.tryServeGCSDemo(c, demo) {
+			return
+		}
+	}
 
 	targetURL := *c.Request.URL
 	targetURL.Scheme = d.upstreamScheme
@@ -181,6 +255,100 @@ func (d *dispatcher) dispatch(c *router.Context) {
 	}
 
 	proxy.ServeHTTP(c.Writer, c.Request)
+}
+
+func (d *dispatcher) tryServeGCSDemo(c *router.Context, demo demoTarget) bool {
+	ctx := c.Request.Context()
+	reqPath := c.Request.URL.Path
+
+	if reqPath == "/ui_version.js" {
+		if !d.gcsBundleExists(ctx, demo) {
+			return false
+		}
+		h := c.Writer.Header()
+		setSecurityHeaders(h)
+		h.Set("Content-Type", "text/javascript; charset=utf-8")
+		h.Set("Cache-Control", "no-cache")
+		body := fmt.Sprintf("\tself.UI_VERSION = '%s';\n\tself.UI_VERSION_TYPE = 'new-ui';\n", demo.VersionID())
+		c.Writer.WriteHeader(http.StatusOK)
+		_, _ = c.Writer.Write([]byte(body))
+		return true
+	}
+
+	if reqPath == "/root_sw.js" || reqPath == "/root_sw.js.map" {
+		if !d.gcsBundleExists(ctx, demo) {
+			return false
+		}
+		setSecurityHeaders(c.Writer.Header())
+		http.Error(c.Writer, "service worker not found", http.StatusNotFound)
+		return true
+	}
+
+	if reqPath != "/ui" && !strings.HasPrefix(reqPath, "/ui/") {
+		return false
+	}
+
+	objURL, err := d.buildGCSObjectURL(demo, "/ui/index.html")
+	if err != nil {
+		setSecurityHeaders(c.Writer.Header())
+		http.Error(c.Writer, "invalid demo asset path", http.StatusBadRequest)
+		return true
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, objURL.String(), nil)
+	if err != nil {
+		return false
+	}
+	req.URL = objURL
+	resp, err := d.client().Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+		setSecurityHeaders(c.Writer.Header())
+		http.Error(c.Writer, "unexpected upstream redirect", http.StatusBadGateway)
+		return true
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return false
+	}
+	if resp.StatusCode != http.StatusOK {
+		setSecurityHeaders(c.Writer.Header())
+		http.Error(c.Writer, "upstream demo storage error", http.StatusBadGateway)
+		return true
+	}
+	if resp.ContentLength > maxDemoAssetBytes {
+		setSecurityHeaders(c.Writer.Header())
+		http.Error(c.Writer, "demo asset exceeds size limit", http.StatusBadGateway)
+		return true
+	}
+
+	h := c.Writer.Header()
+	setSecurityHeaders(h)
+	h.Set("Content-Type", "text/html; charset=utf-8")
+	h.Set("Cache-Control", "no-cache")
+	c.Writer.WriteHeader(http.StatusOK)
+	_, _ = io.Copy(c.Writer, io.LimitReader(resp.Body, maxDemoAssetBytes))
+	return true
+}
+
+func (d *dispatcher) gcsBundleExists(ctx context.Context, demo demoTarget) bool {
+	indexURL, err := d.buildGCSObjectURL(demo, "/ui/index.html")
+	if err != nil {
+		return false
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, indexURL.String(), nil)
+	if err != nil {
+		return false
+	}
+	req.URL = indexURL
+	resp, err := d.client().Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
 }
 
 func (d *dispatcher) client() *http.Client {

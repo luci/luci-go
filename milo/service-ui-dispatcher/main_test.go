@@ -40,6 +40,7 @@ func TestParseDemoHost(t *testing.T) {
 			assert.Loosely(t, demo.Patchset, should.BeEmpty)
 			assert.Loosely(t, demo.VersionID(), should.Equal("c8509444"))
 			assert.Loosely(t, demo.Host(), should.Equal("c8509444-dot-luci-milo-dev.appspot.com"))
+			assert.Loosely(t, demo.GCSPrefix(), should.Equal("c8509444/latest"))
 		})
 
 		t.Run("matches patchset-pinned demo subdomain", func(t *ftt.Test) {
@@ -49,6 +50,7 @@ func TestParseDemoHost(t *testing.T) {
 			assert.Loosely(t, demo.Patchset, should.Equal("3"))
 			assert.Loosely(t, demo.VersionID(), should.Equal("c8509444-p3"))
 			assert.Loosely(t, demo.Host(), should.Equal("c8509444-p3-dot-luci-milo-dev.appspot.com"))
+			assert.Loosely(t, demo.GCSPrefix(), should.Equal("c8509444-p3"))
 		})
 
 		t.Run("rejects default, non-demo, or arbitrary-port hosts", func(t *ftt.Test) {
@@ -60,6 +62,75 @@ func TestParseDemoHost(t *testing.T) {
 
 			_, ok = parseDemoHost("c8509444-dot-luci-milo-dev.appspot.com:9999")
 			assert.Loosely(t, ok, should.BeFalse)
+		})
+	})
+}
+
+func TestGCSStaticDemoServing(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("GCS static demo serving", t, func(t *ftt.Test) {
+		gcsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/index.html":
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusOK)
+				if r.Method != http.MethodHead {
+					_, _ = w.Write([]byte("<!doctype html><title>Demo c8509444-p2</title>"))
+				}
+			default:
+				w.WriteHeader(http.StatusNotFound)
+			}
+		}))
+		defer gcsServer.Close()
+
+		d := &dispatcher{
+			demoGCSBucket: "luci-milo-dev-ui-demos",
+			gcsBaseURL:    gcsServer.URL,
+			httpClient:    gcsServer.Client(),
+		}
+
+		t.Run("serves synthesized /ui_version.js when GCS bundle exists", func(t *ftt.Test) {
+			req := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui_version.js", nil)
+			req.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			rec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: rec, Request: req})
+
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
+			assert.Loosely(t, rec.Header().Get("Content-Security-Policy"), should.Equal("frame-ancestors 'self'"))
+			assert.Loosely(t, rec.Header().Get("X-Frame-Options"), should.Equal("SAMEORIGIN"))
+			assert.Loosely(t, rec.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
+			assert.Loosely(t, rec.Body.String(), should.ContainSubstring("self.UI_VERSION = 'c8509444-p2';"))
+		})
+
+		t.Run("serves SPA index.html for deep /ui/* navigation routes including unencoded // in test IDs, encoded test IDs, and spaces", func(t *ftt.Test) {
+			spaRoutes := []string{
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/fleet/labs/devices",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/p/chromium/builders/ci/Linux%20Tests",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/labs/p/chromium/tests/ninja://chrome/test:browser_tests/MyTest.Case/variants",
+				"https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/labs/p/chromium/tests/ninja%3A%2F%2Fchrome%2Ftest%3Abrowser_tests%2FMyTest.Case/variants",
+			}
+			for _, route := range spaRoutes {
+				req := httptest.NewRequest(http.MethodGet, route, nil)
+				req.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+				rec := httptest.NewRecorder()
+				d.dispatch(&router.Context{Writer: rec, Request: req})
+
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
+				assert.Loosely(t, rec.Header().Get("Cache-Control"), should.Equal("no-cache"))
+				assert.Loosely(t, rec.Header().Get("Content-Type"), should.Equal("text/html; charset=utf-8"))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("Demo c8509444-p2"))
+			}
+		})
+
+		t.Run("returns 404 directly for /root_sw.js when GCS bundle exists", func(t *ftt.Test) {
+			req := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/root_sw.js", nil)
+			req.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			rec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: rec, Request: req})
+
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusNotFound))
 		})
 	})
 }
