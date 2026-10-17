@@ -149,4 +149,87 @@ describe('BrowserSummaryHeader', () => {
     expect(setSelectedOptionsSpy).toHaveBeenCalledWith(['maintenance']);
     expect(setSelectedOptionsSpy).toHaveBeenCalledWith(['SERVING']);
   });
+
+  it('renders exact non-overlapping counts with multi-dimensional group_by records', async () => {
+    FleetConsoleMockAPI.setFixture('CountBrowserDevices', {
+      total: 1000,
+      records: [
+        {
+          dimensions: {
+            'ufs.resource_state': 'SERVING',
+            bot_health_status: 'HEALTHY',
+          },
+          count: '780',
+        },
+        {
+          dimensions: {
+            'ufs.resource_state': 'SERVING',
+            bot_health_status: 'DEAD',
+          },
+          count: '40',
+        },
+        {
+          dimensions: {
+            'ufs.resource_state': 'SERVING',
+            bot_health_status: 'QUARANTINED',
+          },
+          count: '25',
+        },
+        {
+          dimensions: {
+            'ufs.resource_state': 'SERVING',
+            bot_health_status: 'MAINTENANCE',
+          },
+          count: '15',
+        },
+        {
+          dimensions: {
+            'ufs.resource_state': 'SERVING',
+            bot_health_status: 'MISSING',
+          },
+          count: '20',
+        },
+        {
+          dimensions: {
+            'ufs.resource_state': 'NEEDS_REPAIR',
+            bot_health_status: 'MISSING',
+          },
+          count: '10',
+        },
+        {
+          dimensions: {
+            'ufs.resource_state': 'MISSING',
+            bot_health_status: 'MISSING',
+          },
+          count: '10',
+        },
+        {
+          dimensions: {
+            'ufs.resource_state': 'RESERVED',
+            bot_health_status: 'MISSING',
+          },
+          count: '100',
+        },
+      ],
+    });
+
+    render(
+      <FakeContextProvider
+        mountedPath="/p/:platform/devices"
+        routerOptions={{
+          initialEntries: ['/p/chromium/devices'],
+        }}
+      >
+        <BrowserSummaryHeader />
+      </FakeContextProvider>,
+    );
+
+    expect(
+      await screen.findByText('Device Health Summary'),
+    ).toBeInTheDocument();
+    expect((await screen.findAllByText('1,000')).length).toBeGreaterThan(0);
+    expect(await screen.findAllByText('780')).toHaveLength(2); // healthy top-level + submetric
+    expect(await screen.findAllByText('100')).toHaveLength(2); // unhealthy (80 swarming + 20 ufs)
+    expect(await screen.findAllByText('120')).toHaveLength(1); // other (100 reserved + 20 missing bot)
+  });
 });

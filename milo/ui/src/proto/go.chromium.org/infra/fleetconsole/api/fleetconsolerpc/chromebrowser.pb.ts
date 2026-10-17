@@ -6,7 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Column, LabelValues } from "./common_types.pb";
+import { Column, CountRecord, LabelValues } from "./common_types.pb";
 
 export interface BrowserDevice {
   readonly id: string;
@@ -64,11 +64,16 @@ export interface GetBrowserDeviceDimensionsResponse_UfsLabelsEntry {
 
 export interface CountBrowserDevicesRequest {
   readonly filter: string;
+  readonly groupBy?: readonly string[];
+  readonly pageSize?: number;
+  readonly pageToken?: string;
 }
 
 export interface CountBrowserDevicesResponse {
   readonly total: number;
   readonly swarmingState: SwarmingStateCounts | undefined;
+  readonly records: readonly CountRecord[];
+  readonly nextPageToken: string;
 }
 
 export interface SwarmingStateCounts {
@@ -484,10 +489,10 @@ export const ListBrowserDevicesRequest: MessageFns<ListBrowserDevicesRequest> = 
 
   toJSON(message: ListBrowserDevicesRequest): unknown {
     const obj: any = {};
-    if (message.pageSize !== 0) {
+    if (message.pageSize) {
       obj.pageSize = Math.round(message.pageSize);
     }
-    if (message.pageToken !== "") {
+    if (message.pageToken) {
       obj.pageToken = message.pageToken;
     }
     if (message.orderBy !== "") {
@@ -1076,13 +1081,24 @@ export const GetBrowserDeviceDimensionsResponse_UfsLabelsEntry: MessageFns<
 };
 
 function createBaseCountBrowserDevicesRequest(): CountBrowserDevicesRequest {
-  return { filter: "" };
+  return { filter: "", groupBy: [], pageSize: 0, pageToken: "" };
 }
 
 export const CountBrowserDevicesRequest: MessageFns<CountBrowserDevicesRequest> = {
   encode(message: CountBrowserDevicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.filter !== "") {
       writer.uint32(10).string(message.filter);
+    }
+    if (message.groupBy?.length) {
+      message.groupBy.forEach((value) => {
+        writer.uint32(18).string(value);
+      });
+    }
+    if (message.pageSize) {
+      writer.uint32(24).int32(message.pageSize);
+    }
+    if (message.pageToken) {
+      writer.uint32(34).string(message.pageToken);
     }
     return writer;
   },
@@ -1102,6 +1118,30 @@ export const CountBrowserDevicesRequest: MessageFns<CountBrowserDevicesRequest> 
           message.filter = reader.string();
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.groupBy.push(reader.string());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1112,13 +1152,29 @@ export const CountBrowserDevicesRequest: MessageFns<CountBrowserDevicesRequest> 
   },
 
   fromJSON(object: any): CountBrowserDevicesRequest {
-    return { filter: isSet(object.filter) ? globalThis.String(object.filter) : "" };
+    return {
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      groupBy: globalThis.Array.isArray(object?.groupBy)
+        ? object.groupBy.map((e: any) => globalThis.String(e))
+        : [],
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
   },
 
   toJSON(message: CountBrowserDevicesRequest): unknown {
     const obj: any = {};
     if (message.filter !== "") {
       obj.filter = message.filter;
+    }
+    if (message.groupBy?.length) {
+      obj.groupBy = message.groupBy;
+    }
+    if (message.pageSize) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken) {
+      obj.pageToken = message.pageToken;
     }
     return obj;
   },
@@ -1129,12 +1185,15 @@ export const CountBrowserDevicesRequest: MessageFns<CountBrowserDevicesRequest> 
   fromPartial(object: DeepPartial<CountBrowserDevicesRequest>): CountBrowserDevicesRequest {
     const message = createBaseCountBrowserDevicesRequest() as any;
     message.filter = object.filter ?? "";
+    message.groupBy = object.groupBy?.map((e) => e) || [];
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
     return message;
   },
 };
 
 function createBaseCountBrowserDevicesResponse(): CountBrowserDevicesResponse {
-  return { total: 0, swarmingState: undefined };
+  return { total: 0, swarmingState: undefined, records: [], nextPageToken: "" };
 }
 
 export const CountBrowserDevicesResponse: MessageFns<CountBrowserDevicesResponse> = {
@@ -1144,6 +1203,12 @@ export const CountBrowserDevicesResponse: MessageFns<CountBrowserDevicesResponse
     }
     if (message.swarmingState !== undefined) {
       SwarmingStateCounts.encode(message.swarmingState, writer.uint32(18).fork()).join();
+    }
+    message.records.forEach((value) => {
+      CountRecord.encode(value, writer.uint32(26).fork()).join();
+    });
+    if (message.nextPageToken !== "") {
+      writer.uint32(34).string(message.nextPageToken);
     }
     return writer;
   },
@@ -1171,6 +1236,22 @@ export const CountBrowserDevicesResponse: MessageFns<CountBrowserDevicesResponse
           message.swarmingState = SwarmingStateCounts.decode(reader, reader.uint32());
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.records.push(CountRecord.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1184,6 +1265,10 @@ export const CountBrowserDevicesResponse: MessageFns<CountBrowserDevicesResponse
     return {
       total: isSet(object.total) ? globalThis.Number(object.total) : 0,
       swarmingState: isSet(object.swarmingState) ? SwarmingStateCounts.fromJSON(object.swarmingState) : undefined,
+      records: globalThis.Array.isArray(object?.records)
+        ? object.records.map((e: any) => CountRecord.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
     };
   },
 
@@ -1194,6 +1279,12 @@ export const CountBrowserDevicesResponse: MessageFns<CountBrowserDevicesResponse
     }
     if (message.swarmingState !== undefined) {
       obj.swarmingState = SwarmingStateCounts.toJSON(message.swarmingState);
+    }
+    if (message.records?.length) {
+      obj.records = message.records.map((e) => CountRecord.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
     }
     return obj;
   },
@@ -1207,6 +1298,8 @@ export const CountBrowserDevicesResponse: MessageFns<CountBrowserDevicesResponse
     message.swarmingState = (object.swarmingState !== undefined && object.swarmingState !== null)
       ? SwarmingStateCounts.fromPartial(object.swarmingState)
       : undefined;
+    message.records = object.records?.map((e) => CountRecord.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
     return message;
   },
 };

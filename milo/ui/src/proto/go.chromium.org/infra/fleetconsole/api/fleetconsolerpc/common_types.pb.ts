@@ -78,6 +78,26 @@ export interface Column {
   readonly displayName: string;
 }
 
+export interface CountRecord {
+  /**
+   * Map of dimension name to value for this record.
+   * E.g., {"state": "idle", "fc_is_offline": "false"}.
+   * Dimension keys echo the exact requested dimension name from group_by.
+   * All non-string dimension values are serialized to their string representations:
+   * - Booleans serialize as 'true' or 'false'.
+   * - Enums serialize as their string identifier (name), not their numeric value.
+   * - Missing or SQL NULL dimensions (e.g. if a device lacks a grouped label) are omitted from this map.
+   */
+  readonly dimensions: { [key: string]: string };
+  /** The number of devices matching this dimension combination. */
+  readonly count: string;
+}
+
+export interface CountRecord_DimensionsEntry {
+  readonly key: string;
+  readonly value: string;
+}
+
 function createBaseDateOnly(): DateOnly {
   return { year: 0, month: 0, day: 0 };
 }
@@ -459,6 +479,188 @@ export const Column: MessageFns<Column> = {
     const message = createBaseColumn() as any;
     message.name = object.name ?? "";
     message.displayName = object.displayName ?? "";
+    return message;
+  },
+};
+
+function createBaseCountRecord(): CountRecord {
+  return { dimensions: {}, count: "0" };
+}
+
+export const CountRecord: MessageFns<CountRecord> = {
+  encode(message: CountRecord, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    globalThis.Object.entries(message.dimensions).forEach(([key, value]: [string, string]) => {
+      CountRecord_DimensionsEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
+    });
+    if (message.count !== "0") {
+      writer.uint32(16).int64(message.count);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountRecord {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountRecord() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = CountRecord_DimensionsEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.dimensions[entry1.key] = entry1.value;
+          }
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.count = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountRecord {
+    return {
+      dimensions: isObject(object.dimensions)
+        ? (globalThis.Object.entries(object.dimensions) as [string, any][]).reduce(
+          (acc: { [key: string]: string }, [key, value]: [string, any]) => {
+            globalThis.Object.defineProperty(acc, key, {
+              value: globalThis.String(value),
+              enumerable: true,
+              configurable: true,
+              writable: true,
+            });
+            return acc;
+          },
+          {},
+        )
+        : {},
+      count: isSet(object.count) ? globalThis.String(object.count) : "0",
+    };
+  },
+
+  toJSON(message: CountRecord): unknown {
+    const obj: any = {};
+    if (message.dimensions) {
+      const entries = globalThis.Object.entries(message.dimensions) as [string, string][];
+      if (entries.length > 0) {
+        obj.dimensions = {};
+        entries.forEach(([k, v]) => {
+          obj.dimensions[k] = v;
+        });
+      }
+    }
+    if (message.count !== "0") {
+      obj.count = message.count;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountRecord>): CountRecord {
+    return CountRecord.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountRecord>): CountRecord {
+    const message = createBaseCountRecord() as any;
+    message.dimensions = (globalThis.Object.entries(object.dimensions ?? {}) as [string, string][]).reduce(
+      (acc: { [key: string]: string }, [key, value]: [string, string]) => {
+        if (value !== undefined) {
+          acc[key] = globalThis.String(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    message.count = object.count ?? "0";
+    return message;
+  },
+};
+
+function createBaseCountRecord_DimensionsEntry(): CountRecord_DimensionsEntry {
+  return { key: "", value: "" };
+}
+
+export const CountRecord_DimensionsEntry: MessageFns<CountRecord_DimensionsEntry> = {
+  encode(message: CountRecord_DimensionsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountRecord_DimensionsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountRecord_DimensionsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountRecord_DimensionsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: CountRecord_DimensionsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountRecord_DimensionsEntry>): CountRecord_DimensionsEntry {
+    return CountRecord_DimensionsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountRecord_DimensionsEntry>): CountRecord_DimensionsEntry {
+    const message = createBaseCountRecord_DimensionsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
     return message;
   },
 };

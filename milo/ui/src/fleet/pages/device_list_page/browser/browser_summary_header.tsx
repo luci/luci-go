@@ -46,64 +46,11 @@ export function BrowserSummaryHeader() {
 
   const gridStyles = getMetricsGridStyles(theme);
 
-  // Global query matching current active page filters
+  // Consolidated multi-dimensional count query grouping by UFS resource state and bot health status.
   const countQuery = useQuery(
     client.CountBrowserDevices.query({
       filter: aip160(),
-    }),
-  );
-
-  const userFilter = aip160();
-
-  // Subset query restricted to serving devices
-  const servingFilter = userFilter
-    ? `(${userFilter}) AND (ufs.resource_state = "SERVING")`
-    : 'ufs.resource_state = "SERVING"';
-
-  const servingQuery = useQuery(
-    client.CountBrowserDevices.query({
-      filter: servingFilter,
-    }),
-  );
-
-  // Subset query restricted to NEEDS_REPAIR devices
-  const repairFilter = userFilter
-    ? `(${userFilter}) AND (ufs.resource_state = "NEEDS_REPAIR")`
-    : 'ufs.resource_state = "NEEDS_REPAIR"';
-
-  const repairQuery = useQuery(
-    client.CountBrowserDevices.query({
-      filter: repairFilter,
-    }),
-  );
-
-  // Subset query restricted to MISSING devices
-  const missingFilter = userFilter
-    ? `(${userFilter}) AND (ufs.resource_state = "MISSING")`
-    : 'ufs.resource_state = "MISSING"';
-
-  const missingQuery = useQuery(
-    client.CountBrowserDevices.query({
-      filter: missingFilter,
-    }),
-  );
-
-  // Subset query restricted to excluded UFS states (Reserved, Decommissioned, Deployed Testing, Deploying, Registered)
-  const excludedFilter = userFilter
-    ? `(${userFilter}) AND (ufs.resource_state = "RESERVED" OR ` +
-      `ufs.resource_state = "DECOMMISSIONED" OR ` +
-      `ufs.resource_state = "DEPLOYED_TESTING" OR ` +
-      `ufs.resource_state = "DEPLOYING" OR ` +
-      `ufs.resource_state = "REGISTERED")`
-    : `ufs.resource_state = "RESERVED" OR ` +
-      `ufs.resource_state = "DECOMMISSIONED" OR ` +
-      `ufs.resource_state = "DEPLOYED_TESTING" OR ` +
-      `ufs.resource_state = "DEPLOYING" OR ` +
-      `ufs.resource_state = "REGISTERED"`;
-
-  const excludedQuery = useQuery(
-    client.CountBrowserDevices.query({
-      filter: excludedFilter,
+      groupBy: [`${BROWSER_UFS_SOURCE}.resource_state`, 'bot_health_status'],
     }),
   );
 
@@ -115,93 +62,95 @@ export function BrowserSummaryHeader() {
   };
 
   const getContent = () => {
-    if (
-      countQuery.isError ||
-      servingQuery.isError ||
-      repairQuery.isError ||
-      missingQuery.isError ||
-      excludedQuery.isError
-    ) {
+    if (countQuery.isError) {
       return (
         <Alert severity="error">
-          {getErrorMessage(
-            countQuery.error ||
-              servingQuery.error ||
-              repairQuery.error ||
-              missingQuery.error ||
-              excludedQuery.error,
-            'get the main metrics',
-          )}
+          {getErrorMessage(countQuery.error, 'get the main metrics')}
         </Alert>
       );
     }
 
-    const isLoading =
-      countQuery.isPending ||
-      servingQuery.isPending ||
-      repairQuery.isPending ||
-      missingQuery.isPending ||
-      excludedQuery.isPending ||
-      !countQuery.data ||
-      !servingQuery.data ||
-      !repairQuery.data ||
-      !missingQuery.data ||
-      !excludedQuery.data;
+    const isLoading = countQuery.isPending || !countQuery.data;
 
     const totalDevices = countQuery.data?.total ?? 0;
-    const swTotal = countQuery.data?.swarmingState?.total ?? 0;
+    const records = countQuery.data?.records ?? [];
 
-    // Subset counts:
-    const sTotal = servingQuery.data?.total ?? 0;
-    const sAlive = servingQuery.data?.swarmingState?.alive ?? 0;
-    const sDead = servingQuery.data?.swarmingState?.dead ?? 0;
-    const sQuarantined = servingQuery.data?.swarmingState?.quarantined ?? 0;
-    const sMaintenance = servingQuery.data?.swarmingState?.maintenance ?? 0;
+    let swTotal = 0;
+    let healthyCount = 0;
+    let sDead = 0;
+    let sQuarantined = 0;
+    let sMaintenance = 0;
+    let sMissingBots = 0;
+    let ufsNeedsRepair = 0;
+    let ufsMissing = 0;
+    let ufsExcluded = 0;
+    let nonServingOthers = 0;
 
-    const ufsNeedsRepair = repairQuery.data?.total ?? 0;
-    const ufsMissing = missingQuery.data?.total ?? 0;
-    const ufsExcluded = excludedQuery.data?.total ?? 0;
+    const EXCLUDED_UFS_STATES = new Set([
+      'RESERVED',
+      'DECOMMISSIONED',
+      'DEPLOYED_TESTING',
+      'DEPLOYING',
+      'REGISTERED',
+    ]);
 
-    // ACCOUNTING RATIONALE & SHORTCOMINGS:
-    // 1. UFS vs Swarming Nature:
-    //    - UFS resource states (SERVING, NEEDS_REPAIR, MISSING, EXCLUDED) are mutually exclusive.
-    //      A device has exactly one UFS state.
-    //    - Swarming states (alive, dead, quarantined, maintenance) are attribute flags.
-    //      A single bot can carry multiple flags simultaneously (e.g., dead + quarantined,
-    //      alive + maintenance, or alive + quarantined).
-    // 2. Shortcoming of Current CountBrowserDevices API:
-    //    - CountBrowserDevices.swarmingState returns independent marginal counts per flag.
-    //      Because multi-flag bots appear in multiple marginal totals, the sum
-    //      (sDead + sQuarantined + sMaintenance) can exceed total broken bots or overlap with sAlive.
-    // 3. Top-Level Mutually Exclusive Clamping (100% Fleet Accounting):
-    //    - Healthy: A SERVING UFS device is only truly healthy if its bot is Alive and free of
-    //      broken flags (quarantined or maintenance). We subtract sQuarantined and sMaintenance
-    //      from sAlive and clamp with Math.max(0, ...) so overlapping flags never cause negative counts.
-    //    - Other: Cleanly partitions non-serving UFS states (EXCLUDED + other non-serving) plus
-    //      SERVING devices missing bot data (sMissingBots).
-    //    - Unhealthy: Aggregates broken Swarming marginal counts + broken UFS states (NEEDS_REPAIR, MISSING).
-    // 4. Drill-down Items (Marginal Counts):
-    //    - Within the expanded scorecard list, displaying exact marginal counts (sDead, sQuarantined,
-    //      sMaintenance) ensures that clicking a filter item shows 100% of bots with that failure flag.
-    // TODO(b/524930584): Long-term, extend CountBrowserDevices backend or multi-dimensional group_by
-    // to return mutually exclusive composite bot health categories (e.g., applying strict precedence
-    // DEAD > QUARANTINED > MAINTENANCE > HEALTHY on backend) so the frontend receives exact
-    // non-overlapping partition counts without client-side clamping.
+    if (records.length > 0) {
+      for (const record of records) {
+        const cnt = Number(record.count) || 0;
+        const ufsState =
+          record.dimensions[`${BROWSER_UFS_SOURCE}.resource_state`] ||
+          record.dimensions['ufs_labels.resource_state'] ||
+          record.dimensions['state'] ||
+          '';
+        const botHealth = record.dimensions['bot_health_status'] || '';
 
-    // Healthy: SERVING state in UFS AND Alive in Swarming (excluding quarantined/maintenance)
-    const healthyCount = Math.max(0, sAlive - sQuarantined - sMaintenance);
+        if (botHealth !== 'MISSING' && botHealth !== '') {
+          swTotal += cnt;
+        }
+
+        if (ufsState === 'SERVING') {
+          switch (botHealth) {
+            case 'HEALTHY':
+              healthyCount += cnt;
+              break;
+            case 'DEAD':
+              sDead += cnt;
+              break;
+            case 'QUARANTINED':
+              sQuarantined += cnt;
+              break;
+            case 'MAINTENANCE':
+              sMaintenance += cnt;
+              break;
+            case 'MISSING':
+            default:
+              sMissingBots += cnt;
+              break;
+          }
+        } else if (ufsState === 'NEEDS_REPAIR') {
+          ufsNeedsRepair += cnt;
+        } else if (ufsState === 'MISSING') {
+          ufsMissing += cnt;
+        } else if (EXCLUDED_UFS_STATES.has(ufsState)) {
+          ufsExcluded += cnt;
+        } else {
+          nonServingOthers += cnt;
+        }
+      }
+    } else if (countQuery.data?.swarmingState) {
+      // Fallback for flat count responses when group_by records are not present.
+      swTotal = countQuery.data.swarmingState.total ?? 0;
+      const sAlive = countQuery.data.swarmingState.alive ?? 0;
+      sDead = countQuery.data.swarmingState.dead ?? 0;
+      sQuarantined = countQuery.data.swarmingState.quarantined ?? 0;
+      sMaintenance = countQuery.data.swarmingState.maintenance ?? 0;
+      healthyCount = Math.max(0, sAlive - sQuarantined - sMaintenance);
+    }
+
     // Unhealthy (Broken): expected serving but failed + UFS states indicating issues (NEEDS_REPAIR, MISSING)
     const unhealthyCount =
       sDead + sQuarantined + sMaintenance + ufsNeedsRepair + ufsMissing;
     // Other (Reserved / Excluded): Excluded UFS states + serving devices missing bots + unspecified remaining
-    const sMissingBots = Math.max(
-      0,
-      sTotal - (servingQuery.data?.swarmingState?.total ?? 0),
-    );
-    const nonServingOthers = Math.max(
-      0,
-      totalDevices - sTotal - ufsNeedsRepair - ufsMissing - ufsExcluded,
-    );
     const otherCount = ufsExcluded + nonServingOthers + sMissingBots;
 
     const handleHealthyClick = () => {

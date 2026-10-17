@@ -301,6 +301,36 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   },
   CountBrowserDevices: {
     total: sampleBrowserDevices.length,
+    records: [
+      {
+        dimensions: {
+          'ufs.resource_state': 'SERVING',
+          bot_health_status: 'HEALTHY',
+        },
+        count: String(getBrowserStateCount('alive')),
+      },
+      {
+        dimensions: {
+          'ufs.resource_state': 'SERVING',
+          bot_health_status: 'DEAD',
+        },
+        count: String(getBrowserStateCount('dead')),
+      },
+      {
+        dimensions: {
+          'ufs.resource_state': 'SERVING',
+          bot_health_status: 'QUARANTINED',
+        },
+        count: String(getBrowserStateCount('quarantined')),
+      },
+      {
+        dimensions: {
+          'ufs.resource_state': 'SERVING',
+          bot_health_status: 'MAINTENANCE',
+        },
+        count: String(getBrowserStateCount('maintenance')),
+      },
+    ],
     swarmingState: {
       total: sampleBrowserDevices.length,
       alive: getBrowserStateCount('alive'),
@@ -1276,6 +1306,85 @@ export class FleetConsoleMockAPI {
             responseData = buildDynamicListBots(reqPayload);
           } else if (method === 'GetBuild') {
             responseData = buildDynamicGetBuild(reqPayload, responseData);
+          } else if (
+            method === 'CountBrowserDevices' &&
+            Array.isArray(reqPayload.groupBy) &&
+            reqPayload.groupBy.length > 0
+          ) {
+            const allBrowsers = sampleBrowserDevices as Array<
+              Record<string, unknown>
+            >;
+            const filterStr =
+              typeof reqPayload.filter === 'string' ? reqPayload.filter : '';
+            const filtered = filterStr
+              ? allBrowsers.filter((b) =>
+                  FleetConsoleMockAPI.matchesAip160Filter(b, filterStr),
+                )
+              : allBrowsers;
+
+            const recordMap = new Map<
+              string,
+              { dimensions: Record<string, string>; count: number }
+            >();
+            for (const dev of filtered) {
+              const ufsLabels = (dev.ufsLabels || {}) as Record<
+                string,
+                { values?: string[] }
+              >;
+              const swLabels = (dev.swarmingLabels || {}) as Record<
+                string,
+                { values?: string[] }
+              >;
+              const ufsState =
+                (dev.state as string) ||
+                ufsLabels['resource_state']?.values?.[0] ||
+                'SERVING';
+
+              const swStates = swLabels['state']?.values || [];
+              let botHealth = 'MISSING';
+              if (swStates.includes('dead')) {
+                botHealth = 'DEAD';
+              } else if (swStates.includes('quarantined')) {
+                botHealth = 'QUARANTINED';
+              } else if (swStates.includes('maintenance')) {
+                botHealth = 'MAINTENANCE';
+              } else if (swStates.includes('alive')) {
+                botHealth = 'HEALTHY';
+              }
+
+              const dims: Record<string, string> = {};
+              for (const g of reqPayload.groupBy as string[]) {
+                if (
+                  g === 'ufs_labels.resource_state' ||
+                  g === 'ufs.resource_state'
+                ) {
+                  dims[g] = String(ufsState);
+                } else if (g === 'state') {
+                  dims[g] = String((dev.state as string) || '');
+                } else if (g === 'bot_health_status') {
+                  dims[g] = botHealth;
+                } else {
+                  dims[g] = '';
+                }
+              }
+
+              const key = JSON.stringify(dims);
+              const existing = recordMap.get(key);
+              if (existing) {
+                existing.count++;
+              } else {
+                recordMap.set(key, { dimensions: dims, count: 1 });
+              }
+            }
+
+            responseData = {
+              total: filtered.length,
+              records: Array.from(recordMap.values()).map((r) => ({
+                dimensions: r.dimensions,
+                count: String(r.count),
+              })),
+              nextPageToken: '',
+            };
           }
         }
 
