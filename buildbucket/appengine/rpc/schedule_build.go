@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -1095,7 +1096,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	}
 	setTags(req, b, pRunID)
 	setTimeouts(req, cfg, b)
-	setExperiments(ctx, req, cfg, globalCfg, b, params) // Requires setExecutable, setInfra, setInput.
+	setExperiments(ctx, req, cfg, globalCfg, b, params)                 // Requires setExecutable, setInfra, setInput.
 	if err = SetInfraBackend(ctx, req, cfg, b, globalCfg); err != nil { // Requires setExecutable, setInfra, setInput, setExperiments.
 		return nil, err
 	}
@@ -1296,7 +1297,6 @@ func setInfraBackendConfigAgent(b *pb.Build) {
 	b.Infra.Backend.Config.Fields["agent_binary_cipd_filename"] = structpb.NewStringValue("bbagent${EXECUTABLE_SUFFIX}")
 }
 
-
 // setExperimentsFromProto sets experiments in the model (see model/build.go).
 // build.Proto.Input.Experiments and
 // build.Proto.Infra.Buildbucket.ExperimentReasons must be set (see setExperiments).
@@ -1370,12 +1370,68 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 	}
 }
 
+// nonParamScheduleFields are ScheduleBuildRequest fields which do not count as
+// custom build parameters, i.e. setting them only requires
+// bbperms.BuildsAdd. Every other field is considered a custom parameter and
+// requires bbperms.BuildsAddWithParams. New fields are thus treated as custom
+// parameters by default.
+var nonParamScheduleFields = stringset.NewFromSlice(
+	"request_id",
+	"template_build_id",
+	"builder",
+	"tags",
+	"notify",
+	"fields",
+	"mask",
+	"dry_run",
+	// Parent tracking is guarded by separate permissions (addAsChild,
+	// includeChild) or by the parent's build token.
+	"parent_build_id",
+	"can_outlive_parent",
+	"swarming",
+)
+
+// hasCustomParams returns true if the request sets any custom build
+// parameters, e.g. properties, gitiles_commit, gerrit_changes, dimensions,
+// experiments, exe, timeouts, etc.
+func hasCustomParams(req *pb.ScheduleBuildRequest) bool {
+	found := false
+	req.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, _ protoreflect.Value) bool {
+		if !nonParamScheduleFields.Has(string(fd.Name())) {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
+}
+
+// checkSchedulePermission checks the caller is allowed to schedule a build in
+// the bucket.
+//
+// bbperms.BuildsAdd is always required. Scheduling a build with custom
+// parameters additionally requires bbperms.BuildsAddWithParams.
+func checkSchedulePermission(ctx context.Context, project, bucket string, withParams bool) error {
+	if err := perm.HasInBucket(ctx, bbperms.BuildsAdd, project, bucket); err != nil {
+		return err
+	}
+	if withParams {
+		return perm.HasInBucket(ctx, bbperms.BuildsAddWithParams, project, bucket)
+	}
+	return nil
+}
+
 // validateScheduleBuild validates and authorizes the given request, returning
 // a normalized version of the request and the field mask extracted from it.
 //
 // In particular replaces TemplateBuildId with the body of the corresponding
 // build (prefetching its bucket if necessary).
 func validateScheduleBuild(ctx context.Context, op *scheduleBuildOp, req *pb.ScheduleBuildRequest, allowInternalReqID bool) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
+	// Must be computed on the request as sent by the caller, i.e. before
+	// normalization and before applying template_build_id. Parameters copied
+	// from a template build are not considered custom.
+	withParams := hasCustomParams(req)
+
 	pBld, err := op.Parents.parentBuildForRequest(req)
 	if err != nil && req.DryRun {
 		// If the request is to actually create a build, we need to dedup before
@@ -1423,7 +1479,7 @@ func validateScheduleBuild(ctx context.Context, op *scheduleBuildOp, req *pb.Sch
 		bkt = shadow
 	}
 
-	if err = perm.HasInBucket(ctx, bbperms.BuildsAdd, req.Builder.Project, bkt); err != nil {
+	if err = checkSchedulePermission(ctx, req.Builder.Project, bkt, withParams); err != nil {
 		return nil, nil, err
 	}
 	if req.ParentBuildId != 0 {

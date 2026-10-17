@@ -18,8 +18,20 @@ package bbperms
 import "go.chromium.org/luci/server/auth/realms"
 
 var (
-	// BuildsAdd allows to schedule new builds in a bucket.
+	// BuildsAdd allows to schedule new builds in a bucket. It is required to
+	// schedule any build.
+	//
+	// Setting custom parameters (e.g. properties, gitiles_commit,
+	// gerrit_changes, dimensions, experiments, exe, timeouts) additionally
+	// requires BuildsAddWithParams. Retrying a build as-is via
+	// template_build_id does not.
 	BuildsAdd = realms.RegisterPermission("buildbucket.builds.add")
+	// BuildsAddWithParams is required in addition to BuildsAdd to schedule
+	// new builds with custom parameters (properties, gitiles_commit,
+	// gerrit_changes, dimensions, experiments, etc.). Such parameters can
+	// significantly affect what ends up running, so this permission is
+	// intended mostly for automation.
+	BuildsAddWithParams = realms.RegisterPermission("buildbucket.builds.addWithParams")
 	// BuildsAddAsChild allows to set ScheduleBuildRequest.ParentBuildId
 	// when schduling new builds in a bucket.
 	BuildsAddAsChild = realms.RegisterPermission("buildbucket.builds.addAsChild")

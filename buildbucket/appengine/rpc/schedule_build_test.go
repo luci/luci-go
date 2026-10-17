@@ -4135,6 +4135,7 @@ func TestScheduleBuild(t *testing.T) {
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddWithParams),
 					),
 				})
 
@@ -5313,6 +5314,7 @@ func TestScheduleBuild(t *testing.T) {
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
 							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAddWithParams),
 							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAddAsChild),
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
 						),
@@ -5557,9 +5559,11 @@ func TestScheduleBuild(t *testing.T) {
 					FakeDB: authtest.NewFakeDB(
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddWithParams),
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsIncludeChild),
 						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsGet),
 						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsAddWithParams),
 						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsAddAsChild),
 					),
 				})
@@ -5638,8 +5642,10 @@ func TestScheduleBuild(t *testing.T) {
 					FakeDB: authtest.NewFakeDB(
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddWithParams),
 						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsGet),
 						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsAddWithParams),
 					),
 				})
 				reqs := []*pb.ScheduleBuildRequest{

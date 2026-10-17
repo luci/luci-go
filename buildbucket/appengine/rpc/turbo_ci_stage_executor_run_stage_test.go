@@ -95,6 +95,7 @@ func TestRunStage(t *testing.T) {
 			},
 			FakeDB: authtest.NewFakeDB(
 				authtest.MockPermission(testUserID, "project:bucket", bbperms.BuildsAdd),
+				authtest.MockPermission(testUserID, "project:bucket", bbperms.BuildsAddWithParams),
 				authtest.MockPermission(testUserID, "project:bucket", bbperms.BuildsGet),
 			),
 		})

@@ -289,6 +289,7 @@ func TestValidateStage(t *testing.T) {
 				Identity: userID,
 				FakeDB: authtest.NewFakeDB(
 					authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+					authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddWithParams),
 				),
 			})
 
