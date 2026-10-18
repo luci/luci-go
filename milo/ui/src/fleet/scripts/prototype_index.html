@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="theme-color" content="#1976d2" />
+    <title>Fleet Console</title>
+    <script id="fcon-inline-settings">
+      self.UI_VERSION = 'easy-mock-tot';
+      self.UI_VERSION_TYPE = 'new-ui';
+      window.__FCON_EASY_MOCK__ = true;
+      (function () {
+        var defaultRoute = __FCON_DEFAULT_ROUTE__;
+        var params = new URLSearchParams(location.search);
+        var rawHash = location.hash ? location.hash.slice(1) : '';
+        var hashRoute =
+          rawHash.indexOf('/ui/') === 0
+            ? rawHash
+            : rawHash.indexOf('ui/') === 0
+              ? '/' + rawHash
+              : '';
+        var route =
+          hashRoute ||
+          params.get('route') ||
+          params.get('target_route') ||
+          window.__FCON_INITIAL_ROUTE__ ||
+          defaultRoute;
+        var normalized = route
+          .replace(/^\/ui\/fleet\/labs\/home\b/, '/ui/fleet')
+          .replace(
+            /^\/ui\/fleet\/labs\/devices\b/,
+            '/ui/fleet/p/chromeos/devices',
+          )
+          .replace(/^\/ui\/fleet\/labs\//, '/ui/fleet/');
+        window.__FCON_INITIAL_ROUTE__ = normalized;
+        try {
+          var cleanUrl = new URL(location.href);
+          cleanUrl.searchParams.delete('route');
+          cleanUrl.searchParams.delete('target_route');
+          cleanUrl.hash = '#' + normalized;
+          if (location.href !== cleanUrl.toString()) {
+            history.replaceState(null, '', cleanUrl.toString());
+          }
+        } catch (err) {}
+      })();
+      window.dataLayer = window.dataLayer || [];
+      window.gtag =
+        window.gtag ||
+        function () {
+          window.dataLayer.push(arguments);
+        };
+      window.SETTINGS = window.SETTINGS || {
+        firebase: {
+          projectId: 'luci-milo-dev',
+          appId: '1:0000:web:0000',
+          apiKey: 'mock',
+        },
+        buildbucket: { host: 'cr-buildbucket.appspot.com' },
+        swarming: {
+          defaultHost: 'chromium-swarm.appspot.com',
+          allowedHosts: [
+            'chromium-swarm.appspot.com',
+            'chromeos-swarming.appspot.com',
+            'chrome-swarming.appspot.com',
+            'chromium-swarm-dev.appspot.com',
+          ],
+        },
+        resultdb: { host: 'results.api.cr.dev' },
+        luciAnalysis: {
+          host: 'analysis.api.cr.dev',
+          uiHost: 'analysis.cr.dev',
+        },
+        luciBisection: { host: 'bisection.api.cr.dev' },
+        sheriffOMatic: { host: 'sheriff-o-matic.appspot.com' },
+        luciTreeStatus: { host: 'tree-status.api.cr.dev' },
+        luciNotify: { host: 'notify.api.cr.dev' },
+        authService: { host: 'chrome-infra-auth.appspot.com' },
+        crRev: { host: 'crrev.com' },
+        milo: {
+          host: 'luci-milo.appspot.com',
+          project: 'chromium',
+          errorReportingApiKey: '',
+        },
+        luciSourceIndex: { host: 'source-index.api.cr.dev' },
+        fleetConsole: { host: 'fleet-console.api.cr.dev', hats: {} },
+        ufs: { host: 'ufs.api.cr.dev' },
+        testInvestigate: {
+          hatsPositiveRecs: {},
+          hatsNegativeRecs: {},
+          hatsCuj: {},
+        },
+      };
+    </script>
+    <link
+      rel="icon"
+      data-react-helmet="true"
+      href="/src/common/assets/favicons/milo-32.png"
+    />
+    <link rel="stylesheet" href="/src/common/styles/style.css" />
+    <script type="module" src="/src/main.tsx" defer></script>
+  </head>
+  <body>
+    <div id="app-root"></div>
+  </body>
+</html>

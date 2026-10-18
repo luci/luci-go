@@ -17,43 +17,126 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import {
-  buildEasyMockAppModule,
+  buildPrototypeIndexHtml,
   buildPrototypeMetadata,
   formatUntrackedFileDiff,
-  generateOfflineSettingsJs,
   generatePrototypeSourceArtifacts,
   isExcludedFromPrototypePatch,
   parseCliArgs,
+  slimUfsFleetClient,
   stripCrossOriginAttributes,
+  stripProtoBinaryWireMethods,
   validateOutDir,
 } from './build_prototype';
 
 describe('build_prototype utilities', () => {
-  it('strips crossorigin attributes and Trusted Types CSP meta tags from HTML', () => {
-    const rawHtml = [
-      '<meta http-equiv="Content-Security-Policy" content="require-trusted-types-for \'script\';">',
+  it('renders prototype_index.html with inlined boot settings and no external CDN scripts', () => {
+    const html = buildPrototypeIndexHtml('/ui/fleet/catalog');
+
+    expect(html).toContain('window.__FCON_EASY_MOCK__ = true;');
+    expect(html).toContain('<script id="fcon-inline-settings">');
+    expect(html).toContain('var defaultRoute = "/ui/fleet/catalog";');
+    expect(html).toContain('chromeos-swarming.appspot.com');
+    expect(html).toContain('chrome-swarming.appspot.com');
+    expect(html).toContain('src="/src/main.tsx"');
+    expect(html).not.toContain('__FCON_DEFAULT_ROUTE__');
+    expect(html).not.toContain('Content-Security-Policy');
+    expect(html).not.toContain('googletagmanager.com');
+    expect(html).not.toContain('apis.google.com');
+  });
+
+  it('strips crossorigin attributes emitted by vite:build-html', () => {
+    const bundledHtml = [
       '<script type="module" crossorigin src="./assets/fleet.js"></script>',
       '<link rel="stylesheet" crossorigin="anonymous" href="./assets/fleet.css">',
     ].join('');
-    const cleaned = stripCrossOriginAttributes(rawHtml);
+
+    const cleaned = stripCrossOriginAttributes(bundledHtml);
+
     expect(cleaned).not.toContain('crossorigin');
-    expect(cleaned).not.toContain('Content-Security-Policy');
     expect(cleaned).toContain('src="./assets/fleet.js"');
   });
 
-  it('builds a self-contained Easy Mock App module with createMemoryRouter and hash sync', () => {
-    const mod = buildEasyMockAppModule();
-    expect(mod).toContain('FleetConsoleMockAPI.initPrototypeMode(');
-    expect(mod).toContain('createMemoryRouter(');
-    expect(mod).toContain("window.addEventListener('hashchange', onHash)");
-    expect(mod).toContain("window.addEventListener('popstate', onHash)");
+  it('strips unused protobuf binary encode and decode methods while preserving JSON methods', () => {
+    const samplePb = [
+      'export const Device: MessageFns<Device> = {',
+      '  encode(message: Device, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {',
+      '    return writer;',
+      '  },',
+      '  decode(input: BinaryReader | Uint8Array, length?: number): Device {',
+      '    return { id: "" };',
+      '  },',
+      '  fromJSON(object: any): Device {',
+      '    return { id: String(object.id ?? "") };',
+      '  },',
+      '  toJSON(message: Device): unknown {',
+      '    return { id: message.id };',
+      '  },',
+      '};',
+      'export interface MessageFns<T> {',
+      '  encode(message: T, writer?: BinaryWriter): BinaryWriter;',
+      '  decode(input: BinaryReader | Uint8Array, length?: number): T;',
+      '  fromJSON(object: any): T;',
+      '}',
+    ].join('\n');
+
+    const slimmed = stripProtoBinaryWireMethods(samplePb);
+
+    expect(slimmed).toContain('encode(): any { return null; }');
+    expect(slimmed).toContain('decode(): any { return null; }');
+    expect(slimmed).toContain('fromJSON(object: any): Device');
+    expect(slimmed).toContain('export interface MessageFns<T>');
+    expect(slimmed).not.toContain('new BinaryWriter()');
   });
 
-  it('formats untracked new files with 40-char blob SHAs and excludes builder paths from changes.patch', () => {
+  it('preserves message boundaries when a message lacks fromJSON', () => {
+    const multiPb = [
+      'export const MsgWithoutFromJSON = {',
+      '  encode(): void {},',
+      '  decode(): void {},',
+      '};',
+      'export const MsgWithFromJSON = {',
+      '  encode(): void {},',
+      '  decode(): void {},',
+      '  fromJSON(object: any) { return object; },',
+      '};',
+    ].join('\n');
+
+    const slimmed = stripProtoBinaryWireMethods(multiPb);
+
+    expect(slimmed).toContain('export const MsgWithoutFromJSON = {');
+    expect(slimmed).toContain('export const MsgWithFromJSON = {');
+  });
+
+  it('replaces FleetClientImpl with a dynamic Proxy client forwarding UFS RPC methods', () => {
+    const sampleFleetPb = [
+      'export const FleetServiceName = "unifiedfleet.api.v1.rpc.Fleet";',
+      'export class FleetClientImpl implements Fleet {',
+      '  static readonly DEFAULT_SERVICE = FleetServiceName;',
+      '  GetMachine() { return HeavyType.fromJSON({}); }',
+      '}',
+      'interface Rpc {',
+      '  request(service: string, method: string, data: unknown): Promise<unknown>;',
+      '}',
+    ].join('\n');
+
+    const slimmed = slimUfsFleetClient(sampleFleetPb);
+
+    expect(slimmed).not.toContain('HeavyType.fromJSON');
+    expect(slimmed).toContain('new Proxy(this');
+    expect(slimmed).toContain('interface Rpc {');
+  });
+
+  it('formats untracked new files with 40-char blob SHAs and excludes builder scripts from patches', () => {
     const patch = formatUntrackedFileDiff(
       'src/fleet/pages/sample_widget.tsx',
       'export const SampleWidget = () => <div>Hello</div>;\n',
     );
+    const noNewlinePatch = formatUntrackedFileDiff(
+      'src/fleet/pages/no_eof_newline.tsx',
+      'export const NoEofNewline = 1;',
+    );
+
     expect(patch).toContain(
       'diff --git a/src/fleet/pages/sample_widget.tsx b/src/fleet/pages/sample_widget.tsx',
     );
@@ -61,11 +144,6 @@ describe('build_prototype utilities', () => {
       /index 0000000000000000000000000000000000000000\.\.[0-9a-f]{40}/,
     );
     expect(patch).not.toContain('\\ No newline at end of file');
-
-    const noNewlinePatch = formatUntrackedFileDiff(
-      'src/fleet/pages/no_eof_newline.tsx',
-      'export const NoEofNewline = 1;',
-    );
     expect(noNewlinePatch).toContain(
       '+export const NoEofNewline = 1;\n\\ No newline at end of file\n',
     );
@@ -73,9 +151,17 @@ describe('build_prototype utilities', () => {
       isExcludedFromPrototypePatch('src/fleet/scripts/build_prototype.ts'),
     ).toBe(true);
     expect(
+      isExcludedFromPrototypePatch('src/fleet/scripts/prototype_index.html'),
+    ).toBe(true);
+    expect(
+      isExcludedFromPrototypePatch('src/fleet/scripts/prototype_app.tsx'),
+    ).toBe(true);
+    expect(
       isExcludedFromPrototypePatch('src/fleet/pages/home_page/home_page.tsx'),
     ).toBe(false);
+  });
 
+  it('writes changes.patch and metadata for prototype source artifacts', () => {
     const uiRoot = path.resolve(
       process.cwd(),
       fs.existsSync(path.join(process.cwd(), 'src', 'App.tsx'))
@@ -83,6 +169,7 @@ describe('build_prototype utilities', () => {
         : 'milo/ui',
     );
     const tmpOut = fs.mkdtempSync(path.join(os.tmpdir(), 'fcon-proto-test-'));
+
     try {
       const meta = buildPrototypeMetadata(
         {
@@ -94,7 +181,8 @@ describe('build_prototype utilities', () => {
         '2026-10-04T00:00:00.000Z',
       );
       const artifacts = generatePrototypeSourceArtifacts(uiRoot, tmpOut, meta);
-      expect(artifacts.baseCommitSha).toBeTruthy();
+
+      expect(artifacts.baseCommitSha).not.toBe('');
       expect(artifacts.patchContent).toContain('# Base-Commit:');
       expect(fs.existsSync(path.join(tmpOut, 'changes.patch'))).toBe(true);
     } finally {
@@ -102,13 +190,7 @@ describe('build_prototype utilities', () => {
     }
   });
 
-  it('generates offline settings.js and validates --out-dir safety', () => {
-    const settingsJs = generateOfflineSettingsJs('/ui/fleet/catalog');
-    expect(settingsJs).toContain('window.__FCON_EASY_MOCK__ = true;');
-    expect(settingsJs).toContain("cleanUrl.hash = '#' + normalized;");
-    expect(settingsJs).toContain('chromeos-swarming.appspot.com');
-    expect(settingsJs).toContain('chrome-swarming.appspot.com');
-
+  it('validates --out-dir safety and parses CLI flags', () => {
     expect(() => validateOutDir('/workspace/ui', '/workspace/ui')).toThrow(
       /Refusing to clean unsafe --out-dir/,
     );
@@ -124,7 +206,9 @@ describe('build_prototype utilities', () => {
       ['--slug', 'demo-mock', '--title', 'Demo Title'],
       '/workspace/ui',
     );
+
     expect(opts.slug).toBe('demo-mock');
+    expect(opts.title).toBe('Demo Title');
     expect(opts.outDir).toBe('/workspace/ui/.tmp/dist_proto');
   });
 });
