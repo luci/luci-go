@@ -92,6 +92,18 @@ func TestPopulateOwnerKinds(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, removeCreationTimestamps(cls), should.Match(expectedChangelists))
 		})
+		t.Run("With short gerrit hostname", func(t *ftt.Test) {
+			sources["sources-1"].Changelists[0].Host = "chromium"
+
+			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, augmentedSources, should.Match(expectedSources))
+
+			// Verify cache record was created with normalized hostname.
+			cls, err := ReadAll(span.Single(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, removeCreationTimestamps(cls), should.Match(expectedChangelists))
+		})
 		t.Run("With automation CL author", func(t *ftt.Test) {
 			clsByHost["chromium-review.googlesource.com"][0].Owner.Email = "robot@chromium.gserviceaccount.com"
 

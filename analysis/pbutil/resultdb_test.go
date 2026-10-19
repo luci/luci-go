@@ -290,6 +290,12 @@ func TestResultDB(t *testing.T) {
 			assert.Loosely(t, SourcesFromResultDB(rdbSources), should.Match(analysisSources))
 			assert.Loosely(t, SourcesToResultDB(analysisSources), should.Match(rdbSources))
 		})
+		t.Run("with short gerrit hostname", func(t *ftt.Test) {
+			rdbSources.Changelists[0].Host = "googleplex-android"
+			analysisSources.Changelists[0].Host = "googleplex-android-review.googlesource.com"
+
+			assert.Loosely(t, SourcesFromResultDB(rdbSources), should.Match(analysisSources))
+		})
 	})
 	ftt.Run("SourceRef to resultdb", t, func(t *ftt.Test) {
 		t.Run("With gitiles ref", func(t *ftt.Test) {

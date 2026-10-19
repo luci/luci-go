@@ -16,6 +16,8 @@
 package pbutil
 
 import (
+	"strings"
+
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -271,8 +273,15 @@ func SubmittedAndroidBuildFromResultDB(c *rdbpb.SubmittedAndroidBuild) *pb.Submi
 // ChangelistFromResultDB returns the LUCI Analysis gerrit changelist
 // corresponding to a ResultDB gerrit changelist.
 func ChangelistFromResultDB(cl *rdbpb.GerritChange) *pb.GerritChange {
+	host := cl.Host
+	if host != "" && !strings.Contains(host, ".") {
+		// LaunchControl / Android Build uses short Gerrit hostnames without
+		// "-review.googlesource.com" (e.g. "googleplex-android"). Normalize
+		// them to their full googlesource.com hostname.
+		host += "-review.googlesource.com"
+	}
 	return &pb.GerritChange{
-		Host:     cl.Host,
+		Host:     host,
 		Project:  cl.Project,
 		Change:   cl.Change,
 		Patchset: cl.Patchset,

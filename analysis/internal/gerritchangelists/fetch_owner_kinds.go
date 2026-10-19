@@ -158,9 +158,14 @@ func PopulateOwnerKindsBatch(ctx context.Context, project string, sourcesByID ma
 		return make(map[string]*pb.Sources), nil
 	}
 
+	result := make(map[string]*pb.Sources, len(sourcesByID))
+	for id, sources := range sourcesByID {
+		result[id] = pbutil.SourcesFromResultDB(sources)
+	}
+
 	// Create the lookup requests.
 	reqs := make(map[Key]LookupRequest)
-	for _, sources := range sourcesByID {
+	for _, sources := range result {
 		for _, cl := range sources.Changelists {
 			key := Key{
 				Project: project,
@@ -180,10 +185,7 @@ func PopulateOwnerKindsBatch(ctx context.Context, project string, sourcesByID ma
 
 	// Augmenting the original ResultDB sources with the owner kind
 	// of each changelist, as retrieved from gerrit or the cache.
-	result := make(map[string]*pb.Sources)
-	for id, sources := range sourcesByID {
-		augmentedSources := pbutil.SourcesFromResultDB(sources)
-
+	for _, augmentedSources := range result {
 		for _, augmentedCL := range augmentedSources.Changelists {
 			key := Key{
 				Project: project,
@@ -194,7 +196,6 @@ func PopulateOwnerKindsBatch(ctx context.Context, project string, sourcesByID ma
 			// Augment each changelist with the owner kind.
 			augmentedCL.OwnerKind = kinds[key]
 		}
-		result[id] = augmentedSources
 	}
 	return result, nil
 }
