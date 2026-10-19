@@ -155,6 +155,7 @@ export interface ProductCatalogEntry {
   readonly numberOfDevicesPerRack: number;
   readonly unitCost: string;
   readonly productType: string;
+  readonly photoDataUris: readonly string[];
 }
 
 export interface Int32Range {
@@ -2030,6 +2031,7 @@ function createBaseProductCatalogEntry(): ProductCatalogEntry {
     numberOfDevicesPerRack: 0,
     unitCost: "",
     productType: "",
+    photoDataUris: [],
   };
 }
 
@@ -2064,6 +2066,9 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     }
     if (message.productType !== "") {
       writer.uint32(82).string(message.productType);
+    }
+    for (const v of message.photoDataUris) {
+      writer.uint32(90).string(v!);
     }
     return writer;
   },
@@ -2155,6 +2160,14 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
           message.productType = reader.string();
           continue;
         }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.photoDataUris.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2178,6 +2191,9 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
         : 0,
       unitCost: isSet(object.unitCost) ? globalThis.String(object.unitCost) : "",
       productType: isSet(object.productType) ? globalThis.String(object.productType) : "",
+      photoDataUris: globalThis.Array.isArray(object?.photoDataUris)
+        ? object.photoDataUris.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -2213,6 +2229,9 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     if (message.productType !== "") {
       obj.productType = message.productType;
     }
+    if (message.photoDataUris?.length) {
+      obj.photoDataUris = message.photoDataUris;
+    }
     return obj;
   },
 
@@ -2231,6 +2250,7 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     message.numberOfDevicesPerRack = object.numberOfDevicesPerRack ?? 0;
     message.unitCost = object.unitCost ?? "";
     message.productType = object.productType ?? "";
+    message.photoDataUris = object.photoDataUris?.map((e) => e) || [];
     return message;
   },
 };
