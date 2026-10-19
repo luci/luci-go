@@ -37,6 +37,7 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 		LongDesc: "Inspect Buildbucket builds, build status, timing, summary, and step execution.\n\n" +
 			"Available subcommands:\n" +
 			"  get       Get details and step status of a build\n" +
+			"  list      Search and list builds by builder, tag, or status\n" +
 			"  log       Manage build step logs (list, get, head, tail)",
 		CommandRun: func() subcommands.CommandRun {
 			return &buildRun{af: af}
@@ -50,6 +51,9 @@ type buildRun struct {
 }
 
 func (r *buildRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if len(args) > 0 && args[0] == "ls" {
+		args = append([]string{"list"}, args[1:]...)
+	}
 	if len(args) > 0 && args[0] == "logs" {
 		args = append([]string{"log"}, args[1:]...)
 	}
@@ -58,6 +62,7 @@ func (r *buildRun) Run(a subcommands.Application, args []string, env subcommands
 	}
 	return base.RunSubcommandApp(a, "luci build", "Build management", []*subcommands.Command{
 		GetCmd(r.af),
+		ListCmd(r.af),
 		LogCmd(r.af),
 		subcommands.CmdHelp,
 	}, args)

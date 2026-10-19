@@ -36,12 +36,20 @@ import (
 
 type mockBuildsClient struct {
 	grpcpb.BuildsClient
-	getBuild func(ctx context.Context, in *pb.GetBuildRequest, opts ...grpc.CallOption) (*pb.Build, error)
+	getBuild     func(ctx context.Context, in *pb.GetBuildRequest, opts ...grpc.CallOption) (*pb.Build, error)
+	searchBuilds func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error)
 }
 
 func (m *mockBuildsClient) GetBuild(ctx context.Context, in *pb.GetBuildRequest, opts ...grpc.CallOption) (*pb.Build, error) {
 	if m.getBuild != nil {
 		return m.getBuild(ctx, in, opts...)
+	}
+	return nil, status.Errorf(codes.Unimplemented, "not implemented")
+}
+
+func (m *mockBuildsClient) SearchBuilds(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+	if m.searchBuilds != nil {
+		return m.searchBuilds(ctx, in, opts...)
 	}
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
@@ -252,6 +260,8 @@ func TestBuildGetRun(t *testing.T) {
 			assert.Loosely(t, run.Run(nil, []string{}, nil), should.Equal(0))
 			assert.Loosely(t, run.Run(nil, []string{"--help"}, nil), should.Equal(0))
 			assert.Loosely(t, run.Run(nil, []string{"get", "--help"}, nil), should.Equal(0))
+			assert.Loosely(t, run.Run(nil, []string{"list", "--help"}, nil), should.Equal(0))
+			assert.Loosely(t, run.Run(nil, []string{"ls", "--help"}, nil), should.Equal(0))
 			assert.Loosely(t, run.Run(nil, []string{"log", "--help"}, nil), should.Equal(0))
 			assert.Loosely(t, run.Run(nil, []string{"log", "list", "--help"}, nil), should.Equal(0))
 			assert.Loosely(t, run.Run(nil, []string{"log", "get", "--help"}, nil), should.Equal(0))
