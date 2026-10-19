@@ -156,6 +156,34 @@ var (
 		CountSQL: "f.ingested_invocation_id",
 	}.Build()
 
+	// GardenedBuildsFailedByIOSInternalTests counts gardened builds with
+	// failing test runs caused by tests from chrome-internal's ios_internal
+	// repository (test ID prefix "://ios_internal/").
+	GardenedBuildsFailedByIOSInternalTests = metricBuilder{
+		ID:                "gardened-builds-failed-by-ios-internal-tests",
+		HumanReadableName: "Gardened Builds Failed by ios_internal Tests",
+		Description: "The number of builds monitored by a gardener rotation which had failing test runs " +
+			"(i.e. all attempts of a test variant within a single swarming task failed) caused by tests " +
+			"from chrome-internal's ios_internal repository (test ID prefix '://ios_internal/'). " +
+			"Exonerated failures are excluded.",
+		DefaultConfig: Configuration{
+			SortPriority:          310,
+			ShowInMetricsSelector: false,
+		},
+		// Criteria:
+		// - The test result's build is part of a gardener rotation, and
+		// - The test had only unexpected non-passed results
+		//   (excluding skips) in a test run, and
+		// - The verdict was not exonerated, and
+		// - The test ID has the ios_internal prefix.
+		FilterSQL: "ARRAY_LENGTH(f.build_gardener_rotations) > 0 AND " +
+			"f.is_test_run_blocked AND " +
+			"(f.exonerations IS NULL OR ARRAY_LENGTH(f.exonerations) = 0) AND " +
+			"STARTS_WITH(f.test_id, '://ios_internal/')",
+		// Count distinct builds.
+		CountSQL: "f.ingested_invocation_id",
+	}.Build()
+
 	FailuresWithAttributedFilteredTestRuns = metricBuilder{
 		ID:                "failures-with-attributed-filtered-test-runs",
 		HumanReadableName: "Failures with Attributed Filtered Test Runs",
@@ -216,6 +244,7 @@ var (
 		TestRunsFailedInPostsubmit,
 		Failures,
 		BuildsWithTestRunsFailedDueToFlakyTests,
+		GardenedBuildsFailedByIOSInternalTests,
 		FailuresWithAttributedFilteredTestRuns,
 		BuildsWithFlakesInPresubmit,
 		MonitoredBuildsWithTestRunFailures,
