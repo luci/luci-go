@@ -27,58 +27,39 @@ import {
 describe('task utils', () => {
   describe('prettifySwarmingState', () => {
     it('should return SUCCESS for completed tasks without failures', () => {
-      const task = {
+      const task = TaskResultResponse.fromPartial({
         state: TaskState.COMPLETED,
         failure: false,
-      } as unknown as TaskResultResponse;
+      });
       expect(prettifySwarmingState(task)).toBe('SUCCESS');
     });
 
     it('should return FAILURE for completed tasks with failures', () => {
-      const task = {
+      const task = TaskResultResponse.fromPartial({
         state: TaskState.COMPLETED,
         failure: true,
-      } as unknown as TaskResultResponse;
+      });
       expect(prettifySwarmingState(task)).toBe('FAILURE');
     });
 
     it('should return the state as a string for non-completed tasks', () => {
-      const task = {
+      const task = TaskResultResponse.fromPartial({
         state: TaskState.RUNNING,
-      } as unknown as TaskResultResponse;
+      });
       expect(prettifySwarmingState(task)).toBe('RUNNING');
     });
   });
 
   describe('getRowClassName', () => {
-    it('should return row--failure for FAILURE result', () => {
-      const row = { result: 'FAILURE' };
-      expect(getRowClassName(row)).toBe('row--failure');
-    });
-
-    it('should return row--pending for ongoing states', () => {
-      const row = { result: 'RUNNING' };
-      expect(getRowClassName(row)).toBe('row--pending');
-    });
-
-    it('should return row--bot_died for BOT_DIED result', () => {
-      const row = { result: 'BOT_DIED' };
-      expect(getRowClassName(row)).toBe('row--bot_died');
-    });
-
-    it('should return row--client_error for CLIENT_ERROR result', () => {
-      const row = { result: 'CLIENT_ERROR' };
-      expect(getRowClassName(row)).toBe('row--client_error');
-    });
-
-    it('should return row--exception for exceptional states', () => {
-      const row = { result: 'TIMED_OUT' };
-      expect(getRowClassName(row)).toBe('row--exception');
-    });
-
-    it('should return empty string for other states', () => {
-      const row = { result: 'SUCCESS' };
-      expect(getRowClassName(row)).toBe('');
+    it.each([
+      ['FAILURE', 'row--failure'],
+      ['RUNNING', 'row--pending'],
+      ['BOT_DIED', 'row--bot_died'],
+      ['CLIENT_ERROR', 'row--client_error'],
+      ['TIMED_OUT', 'row--exception'],
+      ['SUCCESS', ''],
+    ])('should map result %s to class %s', (result, expected) => {
+      expect(getRowClassName({ result })).toBe(expected);
     });
   });
 
@@ -92,58 +73,63 @@ describe('task utils', () => {
     });
 
     it('should return pretty printed duration if duration is set', () => {
-      const task = { duration: 123 } as unknown as TaskResultResponse;
+      const task = TaskResultResponse.fromPartial({ duration: 123 });
       expect(getTaskDuration(task)).toBe('2 min, 3 sec');
     });
 
     it('should calculate and return duration for running tasks', () => {
       const startedTs = new Date('2025-01-01T00:00:00Z');
       jest.setSystemTime(new Date('2025-01-01T00:01:05Z'));
-      const task = {
+      const task = TaskResultResponse.fromPartial({
         state: TaskState.RUNNING,
         startedTs: startedTs.toISOString(),
-      } as unknown as TaskResultResponse;
+      });
       expect(getTaskDuration(task)).toBe('1 min, 5 sec');
     });
 
     it('should return 0s for tasks without duration and not running', () => {
-      const task = {
+      const task = TaskResultResponse.fromPartial({
         state: TaskState.PENDING,
-      } as unknown as TaskResultResponse;
+      });
       expect(getTaskDuration(task)).toBe('0s');
     });
   });
 
   describe('getTaskTagValue', () => {
-    it('should return the value of an existing tag', () => {
-      const task = {
+    it.each([
+      {
+        description: 'returns the value of an existing tag',
         tags: ['key1:value1', 'key2:value2'],
-      } as unknown as TaskResultResponse;
-      expect(getTaskTagValue(task, 'key1')).toBe('value1');
-    });
-
-    it('should return undefined for a non-existing tag', () => {
-      const task = {
+        tagKey: 'key1',
+        expected: 'value1',
+      },
+      {
+        description: 'returns undefined for a non-existing tag',
         tags: ['key1:value1', 'key2:value2'],
-      } as unknown as TaskResultResponse;
-      expect(getTaskTagValue(task, 'key3')).toBeUndefined();
-    });
-
-    it('should return undefined for a tag without a value', () => {
-      const task = { tags: ['key1:'] } as unknown as TaskResultResponse;
-      expect(getTaskTagValue(task, 'key1')).toBeUndefined();
-    });
-
-    it('should handle tags without a separator', () => {
-      const task = { tags: ['key1'] } as unknown as TaskResultResponse;
-      expect(getTaskTagValue(task, 'key1')).toBeUndefined();
-    });
-
-    it('should return the value for the first matching tag', () => {
-      const task = {
+        tagKey: 'key3',
+        expected: undefined,
+      },
+      {
+        description: 'returns undefined for a tag without a value',
+        tags: ['key1:'],
+        tagKey: 'key1',
+        expected: undefined,
+      },
+      {
+        description: 'handles tags without a separator',
+        tags: ['key1'],
+        tagKey: 'key1',
+        expected: undefined,
+      },
+      {
+        description: 'returns the value for the first matching tag',
         tags: ['key1:value1', 'key1:value2'],
-      } as unknown as TaskResultResponse;
-      expect(getTaskTagValue(task, 'key1')).toBe('value1');
+        tagKey: 'key1',
+        expected: 'value1',
+      },
+    ])('should $description', ({ tags, tagKey, expected }) => {
+      const task = TaskResultResponse.fromPartial({ tags });
+      expect(getTaskTagValue(task, tagKey)).toBe(expected);
     });
   });
 });
