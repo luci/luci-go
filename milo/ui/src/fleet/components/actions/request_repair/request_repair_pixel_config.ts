@@ -73,9 +73,10 @@ export const generatePixelDeviceDetails = (device: AndroidDevice): string => {
     device.omnilabSpec?.labels?.['dut_state']?.values?.[0] ||
     device.omnilabSpec?.labels?.['state']?.values?.[0];
   const isOffline = device.omnilabSpec?.labels?.['fc_is_offline']?.values?.[0];
-  const locationTag =
-    device.omnilabSpec?.labels?.['location_tag']?.values?.[0] ||
-    device.omnilabSpec?.labels?.['ufs.location_tag']?.values?.[0];
+  const locationGroupTag =
+    device.omnilabSpec?.labels?.['location_group_tag']?.values?.[0] ||
+    device.omnilabSpec?.labels?.['ufs.location_group_tag']?.values?.[0] ||
+    device.omnilabSpec?.labels?.['location_tag']?.values?.[0];
   const runTarget =
     device.runTarget ||
     device.omnilabSpec?.labels?.['product_board']?.values?.[0] ||
@@ -91,7 +92,7 @@ export const generatePixelDeviceDetails = (device: AndroidDevice): string => {
     device.fcOfflineSince
       ? md`  * **Offline Since:** ${device.fcOfflineSince}`
       : '',
-    locationTag ? md`  * **Location Tag:** ${locationTag}` : '',
+    locationGroupTag ? md`  * **Location Group Tag:** ${locationGroupTag}` : '',
     md`  * **Mobile Harness:** [View in Mobile Harness](${mhUrl})`,
   ].filter(Boolean);
 

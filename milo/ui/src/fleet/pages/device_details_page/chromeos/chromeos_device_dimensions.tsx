@@ -64,7 +64,7 @@ const PRIORITY_TRIAGE_LABEL_KEYS = [
   'label-rpm_state',
   'ufs_zone',
   'label-zone',
-  'location_tag',
+  'location_group_tag',
   'dut_name',
   'label-associated_hostname',
 ];

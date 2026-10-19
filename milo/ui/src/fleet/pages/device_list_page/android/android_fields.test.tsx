@@ -43,6 +43,27 @@ describe('getAndroidColumnOverrides', () => {
     expect(overrides.host_version.accessorFn?.(dev)).toBe('4.310.0');
     expect(overrides.test_harness.accessorFn?.(dev)).toBe('MH');
   });
+
+  it('resolves location_group_tag with fallback to ufs.location_group_tag and location_tag', () => {
+    const canonicalDev = AndroidDevice.fromPartial({
+      id: 'pixel-device-1',
+      omnilabSpec: {
+        labels: { location_group_tag: { values: ['demo-location-1'] } },
+      },
+    });
+    const legacyDev = AndroidDevice.fromPartial({
+      id: 'pixel-device-1',
+      omnilabSpec: {
+        labels: { location_tag: { values: ['mock-location-2'] } },
+      },
+    });
+    expect(overrides.location_group_tag.accessorFn?.(canonicalDev)).toBe(
+      'demo-location-1',
+    );
+    expect(overrides.location_group_tag.accessorFn?.(legacyDev)).toBe(
+      'mock-location-2',
+    );
+  });
 });
 
 describe('getAndroidColumnHeader', () => {
@@ -55,7 +76,9 @@ describe('getAndroidColumnHeader', () => {
     );
     expect(getAndroidColumnHeader('fc_offline_since')).toBe('Offline Since');
     expect(getAndroidColumnHeader('id')).toBe('ID');
-    expect(getAndroidColumnHeader('location_tag')).toBe('location_tag');
+    expect(getAndroidColumnHeader('location_group_tag')).toBe(
+      'location_group_tag',
+    );
   });
 
   it('falls back to humanizeColumnLabel for general labels and proto fields', () => {

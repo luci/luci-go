@@ -301,12 +301,12 @@ describe('useChromeOSColumns', () => {
     );
   });
 
-  it('should generate proper order_by_field, header, and filterKey for location_tag column', () => {
+  it('should generate proper order_by_field, header, and filterKey for location_group_tag column', () => {
     (useChromeOSFields as jest.Mock).mockReturnValue({
       availableFields: [
         {
-          id: 'location_tag',
-          columnDef: getFieldDefinition('location_tag').columnDef,
+          id: 'location_group_tag',
+          columnDef: getFieldDefinition('location_group_tag').columnDef,
         },
       ],
       isLoading: false,
@@ -324,11 +324,11 @@ describe('useChromeOSColumns', () => {
     );
 
     const columns = result.current.mrtColumnManager.columns;
-    const locationTagCol = columns.find((c) => c.id === 'location_tag');
+    const locationTagCol = columns.find((c) => c.id === 'location_group_tag');
 
     expect(locationTagCol).toBeDefined();
-    expect(locationTagCol?.header).toBe('location_tag');
-    expect(locationTagCol?.orderByField).toBe('labels.location_tag');
-    expect(locationTagCol?.filterKey).toBe('labels."location_tag"');
+    expect(locationTagCol?.header).toBe('location_group_tag');
+    expect(locationTagCol?.orderByField).toBe('labels.location_group_tag');
+    expect(locationTagCol?.filterKey).toBe('labels."location_group_tag"');
   });
 });

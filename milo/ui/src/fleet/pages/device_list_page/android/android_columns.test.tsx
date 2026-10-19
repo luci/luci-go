@@ -68,16 +68,16 @@ describe('Android Columns', () => {
     expect(syncCol.orderByField).toBe('labels.ufs.nlyte_last_sync');
   });
 
-  it('should generate proper order_by_fields and header for location_tag column', () => {
-    const columns = getAndroidColumns(['location_tag'], 'Android');
+  it('should generate proper order_by_fields and header for location_group_tag column', () => {
+    const columns = getAndroidColumns(['location_group_tag'], 'Android');
 
     const locationTagCol = columns.find(
-      (c) => (c.accessorKey || c.id) === 'location_tag',
+      (c) => (c.accessorKey || c.id) === 'location_group_tag',
     ) as AndroidColumnDef;
 
     expect(locationTagCol).toBeDefined();
-    expect(locationTagCol.header).toBe('location_tag');
-    expect(locationTagCol.orderByField).toBe('labels.location_tag');
+    expect(locationTagCol.header).toBe('location_group_tag');
+    expect(locationTagCol.orderByField).toBe('labels.location_group_tag');
     expect(locationTagCol.meta?.infoTooltip).toBe(
       'Location tag / location group tag from UFS',
     );

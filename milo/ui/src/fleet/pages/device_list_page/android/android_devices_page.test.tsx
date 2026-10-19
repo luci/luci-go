@@ -139,7 +139,7 @@ describe('<AndroidDevicesPage /> Integration', () => {
           queryFn: async () => ({
             baseDimensions: {},
             labels: {
-              location_tag: { values: ['atl_rack_42'] },
+              location_group_tag: { values: ['demo-location-1'] },
             },
           }),
         }),
@@ -266,12 +266,12 @@ describe('<AndroidDevicesPage /> Integration', () => {
     expect(screen.getByText('In Service')).toBeInTheDocument();
   });
 
-  it('renders Location Tag column header when ufs.location_tag is requested in URL params', async () => {
+  it('renders Location Group Tag column header when location_group_tag is requested in URL params', async () => {
     render(
       <FakeContextProvider
         mountedPath="/p/:platform/devices"
         routerOptions={{
-          initialEntries: ['/p/android/devices?c=id&c=location_tag'],
+          initialEntries: ['/p/android/devices?c=id&c=location_group_tag'],
         }}
       >
         <SettingsProvider>
@@ -282,7 +282,7 @@ describe('<AndroidDevicesPage /> Integration', () => {
       </FakeContextProvider>,
     );
 
-    expect(await screen.findByText('location_tag')).toBeInTheDocument();
+    expect(await screen.findByText('location_group_tag')).toBeInTheDocument();
   });
 
   it('renders Request Restoration button when devices are selected in Pixel workspace (enabled by default in dev)', async () => {

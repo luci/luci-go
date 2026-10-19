@@ -94,6 +94,19 @@ export const CUSTOM_COLUMNS: Record<string, BrowserColumnDef> = {
   },
 };
 
+// TODO(b/558818868): Remove ufs.location_group_tag and location_tag fallbacks after backend cache migration completes.
+const BROWSER_LOCATION_GROUP_TAG_OVERRIDE: Partial<BrowserColumnDef> = {
+  orderByField: 'ufs.location_group_tag',
+  filterKey: 'ufs."location_group_tag"',
+  accessorFn: (row) => {
+    const values =
+      row.ufsLabels?.['location_group_tag']?.values ??
+      row.ufsLabels?.['ufs.location_group_tag']?.values ??
+      row.ufsLabels?.['location_tag']?.values;
+    return values ? labelValuesToString(values) : undefined;
+  },
+};
+
 export const BROWSER_COLUMN_OVERRIDES: Record<
   string,
   Partial<BrowserColumnDef>
@@ -284,26 +297,9 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       }
     },
   },
-  [`${BROWSER_UFS_SOURCE}.location_tag`]: {
-    orderByField: 'ufs.location_tag',
-    filterKey: 'ufs."location_tag"',
-    accessorFn: (row) => {
-      const values =
-        row.ufsLabels?.['location_tag']?.values ??
-        row.ufsLabels?.['ufs.location_tag']?.values;
-      return values ? labelValuesToString(values) : undefined;
-    },
-  },
-  location_tag: {
-    orderByField: 'ufs.location_tag',
-    filterKey: 'ufs."location_tag"',
-    accessorFn: (row) => {
-      const values =
-        row.ufsLabels?.['location_tag']?.values ??
-        row.ufsLabels?.['ufs.location_tag']?.values;
-      return values ? labelValuesToString(values) : undefined;
-    },
-  },
+  [`${BROWSER_UFS_SOURCE}.location_group_tag`]:
+    BROWSER_LOCATION_GROUP_TAG_OVERRIDE,
+  location_group_tag: BROWSER_LOCATION_GROUP_TAG_OVERRIDE,
   [`${BROWSER_UFS_SOURCE}.last_sync`]: {
     Cell: (params) => renderTimestampCell({ value: params.cell.getValue() }),
   },

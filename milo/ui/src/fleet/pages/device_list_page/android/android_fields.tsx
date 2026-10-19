@@ -261,14 +261,15 @@ export const getAndroidColumnOverrides: (
       );
     },
   },
-  location_tag: {
-    header: 'location_tag',
-    orderByField: 'labels.location_tag',
-    filterKey: 'labels."location_tag"',
+  location_group_tag: {
+    header: 'location_group_tag',
+    orderByField: 'labels.location_group_tag',
+    filterKey: 'labels."location_group_tag"',
     accessorFn: (device) => {
       const labels =
-        device.omnilabSpec?.labels?.['location_tag']?.values ??
-        device.omnilabSpec?.labels?.['ufs.location_tag']?.values;
+        device.omnilabSpec?.labels?.['location_group_tag']?.values ??
+        device.omnilabSpec?.labels?.['ufs.location_group_tag']?.values ??
+        device.omnilabSpec?.labels?.['location_tag']?.values;
       if (!labels) return undefined;
       return labelValuesToString(labels);
     },

@@ -33,7 +33,7 @@ const mockDevice = AndroidDevice.fromPartial({
       battery_level: { values: ['92'] },
       host_group: { values: ['lab_hosts'] },
       'ufs.last_sync': { values: ['2026-03-01T12:00:00Z'] },
-      location_tag: { values: ['shelf-3'] },
+      location_group_tag: { values: ['demo-location-1'] },
     },
   },
 });
@@ -68,7 +68,7 @@ describe('AndroidDeviceDetailsPage', () => {
     expect(screen.getByText('Battery Level')).toBeInTheDocument();
     expect(screen.getByText('Host Group')).toBeInTheDocument();
     expect(screen.getByText('UFS Last Sync')).toBeInTheDocument();
-    expect(screen.getByText('location_tag')).toBeInTheDocument();
+    expect(screen.getByText('location_group_tag')).toBeInTheDocument();
     expect(screen.getByText('Realm')).toBeInTheDocument();
 
     // Verify raw keys without override are not rendered as labels

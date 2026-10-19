@@ -327,10 +327,13 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
       }),
     }),
   },
-  location_tag: {
+  location_group_tag: {
     type: 'label',
-    header: 'location_tag',
-    filterKey: 'labels."location_tag"',
+    header: 'location_group_tag',
+    filterKey: 'labels."location_group_tag"',
+    accessorFn: (device) =>
+      getLabelValueInternal(device, 'location_group_tag') ||
+      getLabelValueInternal(device, 'location_tag'),
   },
   'ufs.last_sync': {
     type: 'label',

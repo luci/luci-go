@@ -48,7 +48,7 @@ const createMockDevice = (
       dut_state: { values: ['ready'] },
       fc_is_offline: { values: ['false'] },
       fc_machine_type: { values: ['device'] },
-      location_tag: { values: ['rack-1-shelf-2'] },
+      location_group_tag: { values: ['demo-location-1'] },
     },
   },
   ...overrides,
@@ -216,7 +216,7 @@ describe('request_repair_pixel_config', () => {
       expect(details).toContain('**State:** ready');
       expect(details).toContain('**Offline:** false');
       expect(details).toContain('**Offline Since:** 2026\\-09\\-29T10:00:00Z');
-      expect(details).toContain('**Location Tag:** rack\\-1\\-shelf\\-2');
+      expect(details).toContain('**Location Group Tag:** demo\\-location\\-1');
       expect(details).toContain('**Mobile Harness:** [View in Mobile Harness]');
     });
 

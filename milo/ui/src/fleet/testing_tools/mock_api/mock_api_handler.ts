@@ -357,7 +357,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     },
     swarmingLabels: {},
     ufsLabels: {
-      'ufs.location_tag': { values: ['atl_rack_42', 'lab_rack_1'] },
+      location_group_tag: { values: ['demo-location-1', 'mock-location-2'] },
     },
   },
   ExportBrowserDevicesToCSV: {
@@ -484,12 +484,20 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
       model: { values: sampleChromeosModels },
       board: { values: sampleChromeosBoards },
     },
-    labels: sampleChromeosLabels,
-    swarmingLabels: sampleChromeosLabels,
+    labels: {
+      ...sampleChromeosLabels,
+      location_group_tag: { values: ['demo-location-1', 'mock-location-2'] },
+    },
+    swarmingLabels: {
+      ...sampleChromeosLabels,
+      location_group_tag: { values: ['demo-location-1', 'mock-location-2'] },
+    },
     ufsLabels: {
       ...sampleChromeosLabels,
-      location_tag: { values: ['atl_rack_42', 'demo_rack_10'] },
-      'ufs.location_tag': { values: ['atl_rack_42', 'lab_rack_1'] },
+      location_group_tag: { values: ['demo-location-1', 'mock-location-2'] },
+      'ufs.location_group_tag': {
+        values: ['demo-location-1', 'mock-location-2'],
+      },
     },
   },
   RepopulateCache: {},

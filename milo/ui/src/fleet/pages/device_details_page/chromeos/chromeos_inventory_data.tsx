@@ -246,7 +246,10 @@ export const ChromeOSInventoryData = ({
   const labstation = lse?.chromeosMachineLse?.deviceLse?.labstation;
   const zone = lse?.zone;
   const rack = lse?.rack;
-  const locationTag = extractDutLabel('location_tag', device) || null;
+  const locationGroupTag =
+    extractDutLabel('location_group_tag', device) ||
+    extractDutLabel('location_tag', device) ||
+    null;
   const rpm = (dut?.peripherals?.rpm as RPMInfo) || null;
 
   const isLabstation = Boolean(labstation);
@@ -334,7 +337,7 @@ export const ChromeOSInventoryData = ({
                   <PhysicalLocationCard
                     zone={zone}
                     rack={rack}
-                    locationTag={locationTag}
+                    locationGroupTag={locationGroupTag}
                     editable={false}
                   />
                 </Grid>
