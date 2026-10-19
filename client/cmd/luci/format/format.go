@@ -25,6 +25,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"text/tabwriter"
 
 	"golang.org/x/net/html"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -512,6 +513,28 @@ func FormatSize(sizeBytes int64) string {
 	return fmt.Sprintf("%d bytes", sizeBytes)
 }
 
+// FormatCompactSize formats a byte count as a compact human-readable string
+// (e.g. "671 B", "45.1 KiB", "18.4 MiB") without the raw byte count suffix.
+func FormatCompactSize(sizeBytes int64) string {
+	if sizeBytes < 0 {
+		return "0 B"
+	}
+	const unit = 1024
+	if sizeBytes < unit {
+		return fmt.Sprintf("%d B", sizeBytes)
+	}
+	div, exp := int64(unit), 0
+	for n := sizeBytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	prefixes := []string{"KiB", "MiB", "GiB", "TiB", "PiB"}
+	if exp < len(prefixes) {
+		return fmt.Sprintf("%.1f %s", float64(sizeBytes)/float64(div), prefixes[exp])
+	}
+	return fmt.Sprintf("%d B", sizeBytes)
+}
+
 // PrintFailureReason prints the failure reason error message(s) and stack trace(s).
 func PrintFailureReason(fr *rdbpb.FailureReason, indent string) {
 	if fr == nil {
@@ -604,26 +627,54 @@ func FormatFailureReasonFirstLine(fr *rdbpb.FailureReason, maxLen int) (string, 
 	return res, truncated || hasMore
 }
 
-// PrintArtifactList prints a formatted list of artifacts to stdout.
+// FormatArtifactFetchHint returns a copy-pasteable CLI command template for
+// fetching an artifact from the same parent or root invocation as sampleArtifactName.
+// Returns "" if sampleArtifactName does not belong to a root invocation.
+func FormatArtifactFetchHint(sampleArtifactName string, invocationWide bool) string {
+	if !strings.HasPrefix(sampleArtifactName, "rootInvocations/") {
+		return ""
+	}
+	meta := base.ExtractArtifactMetadata(sampleArtifactName)
+	if meta.InvocationID == "" {
+		return ""
+	}
+	quotedInv := base.ShellQuoteIfNeeded(meta.InvocationID)
+	if invocationWide {
+		return fmt.Sprintf("luci artifact <get|head|tail> -invocationid=%s -artifactid=<ARTIFACT_ID> [FLAGS]", quotedInv)
+	}
+	if meta.TestID != "" && meta.ResultID != "" {
+		return fmt.Sprintf("luci test-result artifact <get|head|tail> -invocationid=%s -workunitid=%s -testid=%s -resultid=%s -artifactid=<ARTIFACT_ID>",
+			quotedInv,
+			base.ShellQuoteIfNeeded(meta.WorkUnitID),
+			base.ShellQuoteIfNeeded(meta.TestID),
+			base.ShellQuoteIfNeeded(meta.ResultID))
+	}
+	if meta.WorkUnitID != "" {
+		return fmt.Sprintf("luci work-unit artifact <get|head|tail> -invocationid=%s -workunitid=%s -artifactid=<ARTIFACT_ID>",
+			quotedInv,
+			base.ShellQuoteIfNeeded(meta.WorkUnitID))
+	}
+	return ""
+}
+
+// PrintArtifactList prints a formatted 1-line-per-artifact table to stdout.
 func PrintArtifactList(artifacts []*rdbpb.Artifact) {
 	PrintArtifactListTo(os.Stdout, artifacts)
 }
 
-// PrintArtifactListTo prints a formatted list of artifacts to out.
+// PrintArtifactListTo prints a formatted 1-line-per-artifact table to out.
 func PrintArtifactListTo(out io.Writer, artifacts []*rdbpb.Artifact) {
 	printArtifactList(out, artifacts, false)
 }
 
-// PrintInvocationArtifactList prints an invocation-wide list of artifacts to
-// stdout, annotating each artifact with its owning work unit, test ID, result ID,
-// and copy-pasteable CLI flags.
+// PrintInvocationArtifactList prints an invocation-wide 1-line-per-artifact
+// table to stdout, including copy-pasteable target flags for each row.
 func PrintInvocationArtifactList(artifacts []*rdbpb.Artifact) {
 	PrintInvocationArtifactListTo(os.Stdout, artifacts)
 }
 
-// PrintInvocationArtifactListTo prints an invocation-wide list of artifacts to out,
-// annotating each artifact with its owning work unit, test ID, result ID, and
-// copy-pasteable CLI flags.
+// PrintInvocationArtifactListTo prints an invocation-wide 1-line-per-artifact
+// table to out, including copy-pasteable target flags for each row.
 func PrintInvocationArtifactListTo(out io.Writer, artifacts []*rdbpb.Artifact) {
 	printArtifactList(out, artifacts, true)
 }
@@ -633,35 +684,41 @@ func printArtifactList(out io.Writer, artifacts []*rdbpb.Artifact, includeMetada
 		fmt.Fprintf(out, "  (no artifacts)\n\n")
 		return
 	}
+
+	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
+	if includeMetadata {
+		fmt.Fprintln(tw, "  ARTIFACT ID\tTYPE\tSIZE\tCONTENT-TYPE\tFLAGS")
+	} else {
+		fmt.Fprintln(tw, "  ARTIFACT ID\tTYPE\tSIZE\tCONTENT-TYPE")
+	}
 	for _, art := range artifacts {
-		fmt.Fprintf(out, "  - artifact_id: %s\n", art.ArtifactId)
-		var meta base.ArtifactMetadata
-		if includeMetadata {
-			meta = base.ExtractArtifactMetadata(art.Name)
-			if meta.WorkUnitID != "" {
-				fmt.Fprintf(out, "    work_unit:   %s\n", meta.WorkUnitID)
-			}
-			if meta.TestID != "" {
-				fmt.Fprintf(out, "    test_id:     %s\n", meta.TestID)
-			}
-			if meta.ResultID != "" {
-				fmt.Fprintf(out, "    result_id:   %s\n", meta.ResultID)
-			}
+		artType := art.GetArtifactType()
+		if artType == "" {
+			artType = "-"
 		}
-		if art.SizeBytes > 0 {
-			fmt.Fprintf(out, "    size:        %s\n", FormatSize(art.SizeBytes))
+		sizeStr := "-"
+		if art.GetSizeBytes() > 0 {
+			sizeStr = FormatCompactSize(art.GetSizeBytes())
 		}
-		if art.ContentType != "" {
-			fmt.Fprintf(out, "    type:        %s\n", art.ContentType)
-		}
-		if art.ArtifactType != "" {
-			fmt.Fprintf(out, "    category:    %s\n", art.ArtifactType)
+		contentType := art.GetContentType()
+		if contentType == "" {
+			contentType = "-"
 		}
 		if includeMetadata {
-			if flags := meta.FormatFlags(); flags != "" {
-				fmt.Fprintf(out, "    flags:       %s\n", flags)
+			meta := base.ExtractArtifactMetadata(art.GetName())
+			flags := meta.FormatFlags()
+			if flags == "" {
+				flags = "-"
 			}
+			fmt.Fprintf(tw, "  %s\t%s\t%s\t%s\t%s\n", art.GetArtifactId(), artType, sizeStr, contentType, flags)
+		} else {
+			fmt.Fprintf(tw, "  %s\t%s\t%s\t%s\n", art.GetArtifactId(), artType, sizeStr, contentType)
 		}
 	}
+	_ = tw.Flush()
 	fmt.Fprintln(out)
+
+	if hint := FormatArtifactFetchHint(artifacts[0].GetName(), includeMetadata); hint != "" {
+		fmt.Fprintf(out, "To fetch an artifact:\n  %s\n\n", hint)
+	}
 }

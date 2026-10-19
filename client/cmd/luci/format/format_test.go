@@ -271,18 +271,24 @@ func TestFetchArtifactContent(t *testing.T) {
 func TestFormatSize(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run(`FormatSize`, t, func(t *ftt.Test) {
-		t.Run(`zero bytes`, func(t *ftt.Test) {
+	ftt.Run(`FormatSize and FormatCompactSize`, t, func(t *ftt.Test) {
+		t.Run(`zero and negative bytes`, func(t *ftt.Test) {
 			assert.Loosely(t, FormatSize(0), should.Equal("0 B"))
+			assert.Loosely(t, FormatSize(-1), should.Equal("0 B"))
+			assert.Loosely(t, FormatCompactSize(0), should.Equal("0 B"))
+			assert.Loosely(t, FormatCompactSize(-1), should.Equal("0 B"))
 		})
 		t.Run(`bytes under 1024`, func(t *ftt.Test) {
 			assert.Loosely(t, FormatSize(512), should.Equal("512 B"))
+			assert.Loosely(t, FormatCompactSize(512), should.Equal("512 B"))
 		})
 		t.Run(`KiB`, func(t *ftt.Test) {
 			assert.Loosely(t, FormatSize(1536), should.Equal("1.5 KiB (1536 bytes)"))
+			assert.Loosely(t, FormatCompactSize(1536), should.Equal("1.5 KiB"))
 		})
 		t.Run(`MiB`, func(t *ftt.Test) {
 			assert.Loosely(t, FormatSize(2621440), should.Equal("2.5 MiB (2621440 bytes)"))
+			assert.Loosely(t, FormatCompactSize(2621440), should.Equal("2.5 MiB"))
 		})
 	})
 }
@@ -405,11 +411,73 @@ func TestPrintFailureReason(t *testing.T) {
 		})
 	})
 
-	ftt.Run(`PrintInvocationArtifactListTo`, t, func(t *ftt.Test) {
+	ftt.Run(`PrintArtifactListTo and PrintInvocationArtifactListTo`, t, func(t *ftt.Test) {
 		t.Run(`empty artifacts`, func(t *ftt.Test) {
 			var buf bytes.Buffer
 			PrintInvocationArtifactListTo(&buf, nil)
 			assert.Loosely(t, buf.String(), should.Equal("  (no artifacts)\n\n"))
+
+			buf.Reset()
+			PrintArtifactListTo(&buf, nil)
+			assert.Loosely(t, buf.String(), should.Equal("  (no artifacts)\n\n"))
+		})
+
+		t.Run(`single work unit compact table with command template footer`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			arts := []*rdbpb.Artifact{
+				{
+					Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/device_logcat_test_oriole.txt",
+					ArtifactId:   "device_logcat_test_oriole.txt",
+					SizeBytes:    1258291,
+					ContentType:  "text/plain",
+					ArtifactType: "LOGCAT",
+				},
+				{
+					Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/bugreport-oriole-123.zip",
+					ArtifactId:   "bugreport-oriole-123.zip",
+					SizeBytes:    19293798,
+					ContentType:  "application/zip",
+					ArtifactType: "BUGREPORTZ",
+				},
+				{
+					Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/injectables-10101285828505166678.txt",
+					ArtifactId:   "injectables-10101285828505166678.txt",
+					SizeBytes:    671,
+					ContentType:  "text/plain",
+					ArtifactType: "TEXT",
+				},
+			}
+			PrintArtifactListTo(&buf, arts)
+			expected := "" +
+				"  ARTIFACT ID                           TYPE        SIZE      CONTENT-TYPE\n" +
+				"  device_logcat_test_oriole.txt         LOGCAT      1.2 MiB   text/plain\n" +
+				"  bugreport-oriole-123.zip              BUGREPORTZ  18.4 MiB  application/zip\n" +
+				"  injectables-10101285828505166678.txt  TEXT        671 B     text/plain\n" +
+				"\n" +
+				"To fetch an artifact:\n" +
+				"  luci work-unit artifact <get|head|tail> -invocationid=ants-i05300010637202289 -workunitid=ants-wu56200010637202289 -artifactid=<ARTIFACT_ID>\n\n"
+			assert.Loosely(t, buf.String(), should.Equal(expected))
+		})
+
+		t.Run(`single test result compact table with command template footer`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			arts := []*rdbpb.Artifact{
+				{
+					Name:         "rootInvocations/ants-i123/workUnits/wu-1/tests/com.android.FooTest%23testBar/results/0/artifacts/logcat.txt",
+					ArtifactId:   "logcat.txt",
+					SizeBytes:    145715,
+					ContentType:  "text/plain",
+					ArtifactType: "LOGCAT",
+				},
+			}
+			PrintArtifactListTo(&buf, arts)
+			expected := "" +
+				"  ARTIFACT ID  TYPE    SIZE       CONTENT-TYPE\n" +
+				"  logcat.txt   LOGCAT  142.3 KiB  text/plain\n" +
+				"\n" +
+				"To fetch an artifact:\n" +
+				"  luci test-result artifact <get|head|tail> -invocationid=ants-i123 -workunitid=wu-1 -testid=\"com.android.FooTest#testBar\" -resultid=0 -artifactid=<ARTIFACT_ID>\n\n"
+			assert.Loosely(t, buf.String(), should.Equal(expected))
 		})
 
 		t.Run(`root invocation work unit and test result artifacts`, func(t *ftt.Test) {
@@ -431,9 +499,14 @@ func TestPrintFailureReason(t *testing.T) {
 				},
 			}
 			PrintInvocationArtifactListTo(&buf, arts)
-			out := buf.String()
-			assert.Loosely(t, out, should.ContainSubstring("  - artifact_id: bugreport-oriole-123.zip\n    work_unit:   ants-wu56200010637202289\n    size:        18.4 MiB (19293798 bytes)\n    type:        application/zip\n    category:    BUGREPORTZ\n    flags:       -workunitid=ants-wu56200010637202289\n"))
-			assert.Loosely(t, out, should.ContainSubstring("  - artifact_id: logcat_test_foo_123.txt\n    work_unit:   ants-wu56200010637202290\n    test_id:     com.android.FooTest#testBar\n    result_id:   0\n    size:        142.3 KiB (145715 bytes)\n    type:        text/plain\n    category:    LOGCAT\n    flags:       -workunitid=ants-wu56200010637202290 -testid=\"com.android.FooTest#testBar\" -resultid=0\n"))
+			expected := "" +
+				"  ARTIFACT ID               TYPE        SIZE       CONTENT-TYPE     FLAGS\n" +
+				"  bugreport-oriole-123.zip  BUGREPORTZ  18.4 MiB   application/zip  -workunitid=ants-wu56200010637202289\n" +
+				"  logcat_test_foo_123.txt   LOGCAT      142.3 KiB  text/plain       -workunitid=ants-wu56200010637202290 -testid=\"com.android.FooTest#testBar\" -resultid=0\n" +
+				"\n" +
+				"To fetch an artifact:\n" +
+				"  luci artifact <get|head|tail> -invocationid=ants-i05300010637202289 -artifactid=<ARTIFACT_ID> [FLAGS]\n\n"
+			assert.Loosely(t, buf.String(), should.Equal(expected))
 		})
 	})
 }
