@@ -159,3 +159,34 @@ export const statusTones: Record<
   neutral: { fg: fleetColors.textSecondary, bg: '#f1f3f4', dot: '#80868b' },
   special: { fg: '#681da8', bg: '#f3e8fd', dot: '#9334e6' },
 };
+
+/**
+ * Spectrum color tokens for ChromeOS Fleet Health state breakdown and continuous progress bar.
+ * Harmonious spectrum representing:
+ * - Operable capacity (green spectrum):
+ *   - reserved: dark green (#1b5e20)
+ *   - ready: medium green (#43a047)
+ *   - needsRepair: light green (#81c784)
+ *   - repairFailed: light green (#81c784)
+ * - Action required / broken (red spectrum):
+ *   - needsDeploy: red (#d32f2f)
+ *   - needsManualRepair: red (#d32f2f)
+ *   - needsReplacement: red (#d32f2f)
+ * - Administrative / inventory (grey spectrum):
+ *   - registered: grey (#757575)
+ *   - unknown: grey (#9e9e9e)
+ */
+export const healthStateColors = {
+  reserved: '#1b5e20',
+  ready: '#43a047',
+  needsRepair: '#81c784',
+  repairFailed: '#81c784',
+  needsDeploy: '#d32f2f',
+  needsManualRepair: '#d32f2f',
+  needsReplacement: '#d32f2f',
+  registered: '#757575',
+  unknown: '#9e9e9e',
+  macroHealthy: '#2e7d32',
+  macroActionRequired: '#d32f2f',
+  macroAdministrative: '#757575',
+} as const;

@@ -24,6 +24,7 @@ import { useMemo, useRef, useState } from 'react';
 
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { subMetricRowSx } from '@/fleet/theme/recipes';
+import { radii } from '@/fleet/theme/tokens';
 import { combineAipFiltersWithParentheses } from '@/fleet/utils/search_param';
 import {
   HealthSlice,
@@ -35,6 +36,10 @@ import { BaselineChip } from './baseline_chip';
 import { HealthSliceMenu } from './health_slice_menu';
 import { getHealthStatus } from './health_status_utils';
 import { HealthThresholdsTooltip } from './health_tooltip';
+import {
+  convertProtoCountsToBreakdown,
+  SegmentedHealthBar,
+} from './state_breakdown';
 import {
   getHourAlignedTimeWindow,
   RECENT_HOURS_WINDOW,
@@ -137,6 +142,10 @@ export const HealthSliceItem = ({
     const [intPart, decPart] = pct.toFixed(1).split('.');
     return { intPart, decPart };
   }, [pct]);
+
+  const stateBreakdown = useMemo(() => {
+    return convertProtoCountsToBreakdown(activePoint?.stateCounts);
+  }, [activePoint?.stateCounts]);
 
   const isAvailability =
     trendsData?.metricType === TrendlineMetricType.AVAILABILITY;
@@ -485,40 +494,57 @@ export const HealthSliceItem = ({
           </HealthThresholdsTooltip>
         </Box>
 
-        <HealthThresholdsTooltip
-          pct={pct}
-          metricLabel={isAvailability ? 'Availability' : 'Health'}
-        >
-          <Box
-            tabIndex={0}
-            data-testid={`slice-progress-bar-container-${slice.id}`}
-            sx={{
-              ...subMetricRowSx,
-              cursor: 'pointer',
-              py: 0.5,
-              px: 0.5,
-              mx: -0.5,
-              '&:hover .MuiLinearProgress-root, &:focus-visible .MuiLinearProgress-root':
-                {
-                  transform: 'scaleY(1.33)',
-                  filter: 'brightness(1.08)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
-                },
-            }}
+        {isLoading ? (
+          <LinearProgress
+            variant="indeterminate"
+            color={healthMeta?.color ?? 'primary'}
+            sx={{ height: 4, borderRadius: radii.sm }}
+          />
+        ) : stateBreakdown ? (
+          <SegmentedHealthBar
+            title={slice.name}
+            breakdown={stateBreakdown}
+            height={4}
+            availabilityPct={isAvailability ? pct : undefined}
+            baseFilter={effectiveFilter}
+            testId={`slice-health-bar-${slice.id}`}
+          />
+        ) : (
+          <HealthThresholdsTooltip
+            pct={pct}
+            metricLabel={isAvailability ? 'Availability' : 'Health'}
           >
-            <LinearProgress
-              variant={isLoading ? 'indeterminate' : 'determinate'}
-              value={Math.min(100, pct ?? 0)}
-              color={healthMeta?.color ?? 'primary'}
+            <Box
+              tabIndex={0}
+              data-testid={`slice-progress-bar-container-${slice.id}`}
               sx={{
-                height: 4,
-                borderRadius: 2,
-                transition:
-                  'transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease, box-shadow 0.15s ease',
+                ...subMetricRowSx,
+                cursor: 'pointer',
+                py: 0.5,
+                px: 0.5,
+                mx: -0.5,
+                '&:hover .MuiLinearProgress-root, &:focus-visible .MuiLinearProgress-root':
+                  {
+                    transform: 'scaleY(1.33)',
+                    filter: 'brightness(1.08)',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                  },
               }}
-            />
-          </Box>
-        </HealthThresholdsTooltip>
+            >
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(100, Math.max(0, pct ?? 0))}
+                color={healthMeta?.color ?? 'primary'}
+                sx={{
+                  height: 4,
+                  borderRadius: 2,
+                  transition:
+                    'transform 0.15s ease-in-out, filter 0.15s ease-in-out',
+                }}
+              />
+            </Box>
+          </HealthThresholdsTooltip>
+        )}
       </Box>
     </Box>
   );

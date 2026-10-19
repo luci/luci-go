@@ -295,6 +295,18 @@ export interface DeviceStateCounts {
   readonly reserved: number;
 }
 
+export interface AverageDeviceStateCounts {
+  readonly ready: number;
+  readonly needManualRepair: number;
+  readonly needRepair: number;
+  readonly repairFailed: number;
+  readonly needsDeploy: number;
+  readonly needsReplacement: number;
+  readonly reserved: number;
+}
+
+export type DeviceStateDistribution = AverageDeviceStateCounts;
+
 export interface RepopulateCacheRequest {
 }
 
@@ -1008,6 +1020,8 @@ export interface TrendlinePoint {
     | undefined;
   /** Metric value at this timestamp. */
   readonly value: number;
+  /** Breakdown of devices across exact DUT states at this timestamp. */
+  readonly stateCounts?: AverageDeviceStateCounts | undefined;
 }
 
 /** A named sequence of trendline points representing a time series. */
@@ -2362,6 +2376,172 @@ export const DeviceStateCounts: MessageFns<DeviceStateCounts> = {
     return message;
   },
 };
+
+function createBaseAverageDeviceStateCounts(): AverageDeviceStateCounts {
+  return {
+    ready: 0,
+    needManualRepair: 0,
+    needRepair: 0,
+    repairFailed: 0,
+    needsDeploy: 0,
+    needsReplacement: 0,
+    reserved: 0,
+  };
+}
+
+export const AverageDeviceStateCounts: MessageFns<AverageDeviceStateCounts> = {
+  encode(message: AverageDeviceStateCounts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.ready !== 0) {
+      writer.uint32(9).double(message.ready);
+    }
+    if (message.needManualRepair !== 0) {
+      writer.uint32(17).double(message.needManualRepair);
+    }
+    if (message.needRepair !== 0) {
+      writer.uint32(25).double(message.needRepair);
+    }
+    if (message.repairFailed !== 0) {
+      writer.uint32(33).double(message.repairFailed);
+    }
+    if (message.needsDeploy !== 0) {
+      writer.uint32(41).double(message.needsDeploy);
+    }
+    if (message.needsReplacement !== 0) {
+      writer.uint32(49).double(message.needsReplacement);
+    }
+    if (message.reserved !== 0) {
+      writer.uint32(57).double(message.reserved);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AverageDeviceStateCounts {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAverageDeviceStateCounts() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 9) {
+            break;
+          }
+
+          message.ready = reader.double();
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.needManualRepair = reader.double();
+          continue;
+        }
+        case 3: {
+          if (tag !== 25) {
+            break;
+          }
+
+          message.needRepair = reader.double();
+          continue;
+        }
+        case 4: {
+          if (tag !== 33) {
+            break;
+          }
+
+          message.repairFailed = reader.double();
+          continue;
+        }
+        case 5: {
+          if (tag !== 41) {
+            break;
+          }
+
+          message.needsDeploy = reader.double();
+          continue;
+        }
+        case 6: {
+          if (tag !== 49) {
+            break;
+          }
+
+          message.needsReplacement = reader.double();
+          continue;
+        }
+        case 7: {
+          if (tag !== 57) {
+            break;
+          }
+
+          message.reserved = reader.double();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AverageDeviceStateCounts {
+    return {
+      ready: isSet(object.ready) ? globalThis.Number(object.ready) : 0,
+      needManualRepair: isSet(object.needManualRepair) ? globalThis.Number(object.needManualRepair) : 0,
+      needRepair: isSet(object.needRepair) ? globalThis.Number(object.needRepair) : 0,
+      repairFailed: isSet(object.repairFailed) ? globalThis.Number(object.repairFailed) : 0,
+      needsDeploy: isSet(object.needsDeploy) ? globalThis.Number(object.needsDeploy) : 0,
+      needsReplacement: isSet(object.needsReplacement) ? globalThis.Number(object.needsReplacement) : 0,
+      reserved: isSet(object.reserved) ? globalThis.Number(object.reserved) : 0,
+    };
+  },
+
+  toJSON(message: AverageDeviceStateCounts): unknown {
+    const obj: any = {};
+    if (message.ready !== 0) {
+      obj.ready = message.ready;
+    }
+    if (message.needManualRepair !== 0) {
+      obj.needManualRepair = message.needManualRepair;
+    }
+    if (message.needRepair !== 0) {
+      obj.needRepair = message.needRepair;
+    }
+    if (message.repairFailed !== 0) {
+      obj.repairFailed = message.repairFailed;
+    }
+    if (message.needsDeploy !== 0) {
+      obj.needsDeploy = message.needsDeploy;
+    }
+    if (message.needsReplacement !== 0) {
+      obj.needsReplacement = message.needsReplacement;
+    }
+    if (message.reserved !== 0) {
+      obj.reserved = message.reserved;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<AverageDeviceStateCounts>): AverageDeviceStateCounts {
+    return AverageDeviceStateCounts.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<AverageDeviceStateCounts>): AverageDeviceStateCounts {
+    const message = createBaseAverageDeviceStateCounts() as any;
+    message.ready = object.ready ?? 0;
+    message.needManualRepair = object.needManualRepair ?? 0;
+    message.needRepair = object.needRepair ?? 0;
+    message.repairFailed = object.repairFailed ?? 0;
+    message.needsDeploy = object.needsDeploy ?? 0;
+    message.needsReplacement = object.needsReplacement ?? 0;
+    message.reserved = object.reserved ?? 0;
+    return message;
+  },
+};
+
+export const DeviceStateDistribution = AverageDeviceStateCounts;
 
 function createBaseRepopulateCacheRequest(): RepopulateCacheRequest {
   return {};
@@ -9554,6 +9734,9 @@ export const TrendlinePoint: MessageFns<TrendlinePoint> = {
     if (message.value !== 0) {
       writer.uint32(17).double(message.value);
     }
+    if (message.stateCounts !== undefined) {
+      DeviceStateDistribution.encode(message.stateCounts, writer.uint32(26).fork()).join();
+    }
     return writer;
   },
 
@@ -9580,6 +9763,14 @@ export const TrendlinePoint: MessageFns<TrendlinePoint> = {
           message.value = reader.double();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.stateCounts = DeviceStateDistribution.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -9593,6 +9784,7 @@ export const TrendlinePoint: MessageFns<TrendlinePoint> = {
     return {
       timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : undefined,
       value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+      stateCounts: isSet(object.stateCounts) ? DeviceStateDistribution.fromJSON(object.stateCounts) : undefined,
     };
   },
 
@@ -9604,6 +9796,9 @@ export const TrendlinePoint: MessageFns<TrendlinePoint> = {
     if (message.value !== 0) {
       obj.value = message.value;
     }
+    if (message.stateCounts !== undefined) {
+      obj.stateCounts = DeviceStateDistribution.toJSON(message.stateCounts);
+    }
     return obj;
   },
 
@@ -9614,6 +9809,9 @@ export const TrendlinePoint: MessageFns<TrendlinePoint> = {
     const message = createBaseTrendlinePoint() as any;
     message.timestamp = object.timestamp ?? undefined;
     message.value = object.value ?? 0;
+    message.stateCounts = (object.stateCounts !== undefined && object.stateCounts !== null)
+      ? DeviceStateDistribution.fromPartial(object.stateCounts)
+      : undefined;
     return message;
   },
 };
