@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 
@@ -160,9 +160,6 @@ describe('OptionsDropdown', () => {
       />,
     );
 
-    // Wait for ClickAwayListener's useEffect activation setTimeout to run
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
     const detachedButton = document.createElement('button');
     const event = new MouseEvent('click', {
       bubbles: true,
@@ -181,9 +178,10 @@ describe('OptionsDropdown', () => {
       window,
     ];
 
-    document.dispatchEvent(event);
-
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => {
+      document.dispatchEvent(event);
+      expect(onClose).toHaveBeenCalled();
+    });
   });
 
   it('should NOT close when clicking inside a nested dropdown that unmounts on click', async () => {

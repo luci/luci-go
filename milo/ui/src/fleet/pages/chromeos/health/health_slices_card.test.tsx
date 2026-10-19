@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { UseQueryResult } from '@tanstack/react-query';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
@@ -362,14 +362,13 @@ describe('HealthSlicesCard', () => {
       screen.getByRole('button', { name: /^add slice$/i }),
     ).toBeInTheDocument();
 
-    // Wait for ClickAwayListener to activate
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    });
-
     // 3. Click outside (click away) to close the tray
-    fireEvent.click(document.body);
-    expect(screen.queryByTestId('slices-overlay-tray')).not.toBeInTheDocument();
+    await waitFor(() => {
+      fireEvent.click(document.body);
+      expect(
+        screen.queryByTestId('slices-overlay-tray'),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it('selects slice inside overlay tray and auto-collapses tray', () => {

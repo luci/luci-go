@@ -469,10 +469,8 @@ describe('<PriorityRulesPanel />', () => {
     expect(
       screen.getByTestId('rule-confirm-delete-button-1'),
     ).toBeInTheDocument();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await user.click(document.body);
-
-    await waitFor(() => {
+    await waitFor(async () => {
+      await user.click(document.body);
       expect(
         screen.queryByTestId('rule-confirm-delete-button-1'),
       ).not.toBeInTheDocument();
