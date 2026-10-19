@@ -71,7 +71,10 @@ describe('Fleet styling recipes', () => {
 
   it('defines pillInputSx and iconButtonSx with control heights', () => {
     expect(pillInputSx.minHeight).toBe(controlHeights.input);
-    expect(pillInputSx.borderRadius).toBe(radii.pill);
+    expect(pillInputSx.borderRadius).toBe(`${controlHeights.input / 2}px`);
+    expect(pillInputSx['&.MuiOutlinedInput-root fieldset'].borderRadius).toBe(
+      `${controlHeights.input / 2}px`,
+    );
     expect(iconButtonSx.width).toBe(controlHeights.button);
     expect(iconButtonSx.height).toBe(controlHeights.button);
     expect(iconButtonSx.borderRadius).toBe(radii.pill);

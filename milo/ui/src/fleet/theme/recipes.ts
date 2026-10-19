@@ -99,16 +99,21 @@ export const actionRowSx = {
 /**
  * Pill-shaped outlined input. Apply to the `input` slot of a `TextField`
  * (`slotProps={{ input: { sx: pillInputSx } }}`).
+ *
+ * Uses half of `controlHeights.input` (`20px`) rather than `radii.pill`
+ * (`9999px`) so single-line `40px` inputs render as an exact pill while
+ * multi-line wrapped filter bars keep a fixed `20px` corner radius instead of
+ * expanding their semicircular ends to `50%` of the multi-line height.
  */
 export const pillInputSx = {
   minHeight: controlHeights.input,
   backgroundColor: fleetColors.surface,
-  borderRadius: radii.pill,
+  borderRadius: `${controlHeights.input / 2}px`,
   fontSize: fontSizes.label,
   boxShadow: elevations.input,
   '&.MuiOutlinedInput-root fieldset': {
     borderColor: fleetColors.border,
-    borderRadius: radii.pill,
+    borderRadius: `${controlHeights.input / 2}px`,
   },
   '&.MuiOutlinedInput-root:hover fieldset': {
     borderColor: fleetColors.borderHover,

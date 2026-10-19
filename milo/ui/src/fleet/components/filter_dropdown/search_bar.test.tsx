@@ -15,9 +15,11 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { controlHeights } from '@/fleet/theme/tokens';
+
 import { FilterCategory } from '../filters/use_filters';
 
-import { SearchBar } from './search_bar';
+import { SEARCH_BAR_INPUT_SX, SearchBar } from './search_bar';
 
 const createMockFilterCategory = (
   value: string,
@@ -82,5 +84,22 @@ describe('SearchBar', () => {
     const input = screen.getByPlaceholderText('Add a filter');
     await user.click(input);
     expect(onChangeDropdownOpen).toHaveBeenCalledWith(true);
+  });
+
+  it('centers the search icon and reserves left padding so wrapped lines stay aligned', () => {
+    renderComponent();
+
+    expect(SEARCH_BAR_INPUT_SX.padding).toBe('3px 12px 3px 36px');
+    expect(SEARCH_BAR_INPUT_SX.borderRadius).toBe(
+      `${controlHeights.input / 2}px`,
+    );
+
+    const searchIcon = screen.getByTestId('SearchIcon');
+    expect(searchIcon).toHaveStyle({
+      position: 'absolute',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      pointerEvents: 'none',
+    });
   });
 });

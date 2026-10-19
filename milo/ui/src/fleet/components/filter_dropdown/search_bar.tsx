@@ -44,13 +44,13 @@ const SEARCH_BAR_SX = {
   zIndex: 3, // above the filter dropdown backdrop
 };
 
-const SEARCH_BAR_INPUT_SX = {
+export const SEARCH_BAR_INPUT_SX = {
   ...pillInputSx,
   width: '100%',
   display: 'inline-flex',
   flexWrap: 'wrap',
   alignItems: 'center',
-  padding: '3px 12px 3px 10px',
+  padding: '3px 12px 3px 36px',
   '& input': {
     marginLeft: '6px',
     minWidth: '100px',
@@ -247,27 +247,31 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           input: {
             sx: SEARCH_BAR_INPUT_SX,
             startAdornment: (
-              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{ display: 'contents' }}
-              >
+              <>
                 <SearchIcon
                   sx={{
                     fontSize: iconSizes.inline,
                     color: fleetColors.textTertiary,
-                    ml: 0.5,
-                    mr: 0.5,
-                    flexShrink: 0,
+                    position: 'absolute',
+                    left: 14,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none',
                   }}
                 />
-                {renderedChips}
-                {/*
-                     spacer, aligned to the input, allows for correct ref positioning in situations
-                     where the input is moved to next line due to wrapping. There might be a cleaner
-                     way to do it though */}
-                <div css={{ display: 'inline' }} />
-              </div>
+                {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ display: 'contents' }}
+                >
+                  {renderedChips}
+                  {/*
+                       spacer, aligned to the input, allows for correct ref positioning in situations
+                       where the input is moved to next line due to wrapping. There might be a cleaner
+                       way to do it though */}
+                  <div css={{ display: 'inline' }} />
+                </div>
+              </>
             ),
           },
         }}
