@@ -18,7 +18,12 @@ import { SettingsProvider } from '@/fleet/context/providers';
 import { colors } from '@/fleet/theme/colors';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { dutState, getStatusColor } from './dut_state';
+import {
+  dutState,
+  getServoStateColor,
+  getServoUsbStateColor,
+  getStatusColor,
+} from './dut_state';
 import { DutStateCell } from './dut_state_cell';
 
 const mockTrackEvent = jest.fn();
@@ -190,5 +195,37 @@ describe('DutStateCell', () => {
     expect(getStatusColor(dutState.REPAIR_FAILED)).toBe(colors.orange[100]);
     expect(getStatusColor(dutState.NEEDS_REPAIR)).toBe(colors.orange[100]);
     expect(getStatusColor(dutState.NEEDS_MANUAL_REPAIR)).toBe(colors.red[100]);
+  });
+
+  test('should map Servo State values to semantic chip colors across healthy, neutral, and broken states', () => {
+    expect(getServoStateColor('WORKING')).toBe(colors.green[100]);
+    expect(getServoStateColor('working')).toBe(colors.green[100]);
+    expect(getServoStateColor('OK')).toBe(colors.green[100]);
+    expect(getServoStateColor('BROKEN')).toBe(colors.red[100]);
+    expect(getServoStateColor('NEED_REPLACEMENT')).toBe(colors.red[100]);
+    expect(getServoStateColor('NO_SSH')).toBe(colors.red[100]);
+    expect(getServoStateColor('NOT_CONNECTED')).toBe(colors.red[100]);
+    expect(getServoStateColor('SERVOD_ISSUE')).toBe(colors.red[100]);
+    expect(getServoStateColor('CCD_TESTLAB_ISSUE')).toBe(colors.red[100]);
+    expect(getServoStateColor('CR50_CONSOLE_MISSING')).toBe(colors.red[100]);
+    expect(getServoStateColor('SBU_LOW_VOLTAGE')).toBe(colors.red[100]);
+    expect(getServoStateColor('DUT_NOT_CONNECTED')).toBe(colors.red[100]);
+    expect(getServoStateColor('NOT_APPLICABLE')).toBe(colors.transparent);
+    expect(getServoStateColor('UNKNOWN')).toBe(colors.transparent);
+    expect(getServoStateColor('')).toBe(colors.transparent);
+  });
+
+  test('should map Servo USB State values to semantic chip colors across healthy, degraded, neutral, and broken states', () => {
+    expect(getServoUsbStateColor('NORMAL')).toBe(colors.green[100]);
+    expect(getServoUsbStateColor('HARDWARE_NORMAL')).toBe(colors.green[100]);
+    expect(getServoUsbStateColor('ACCEPTABLE')).toBe(colors.yellow[100]);
+    expect(getServoUsbStateColor('HARDWARE_ACCEPTABLE')).toBe(
+      colors.yellow[100],
+    );
+    expect(getServoUsbStateColor('NOT_DETECTED')).toBe(colors.red[100]);
+    expect(getServoUsbStateColor('NEED_REPLACEMENT')).toBe(colors.red[100]);
+    expect(getServoUsbStateColor('NOT_APPLICABLE')).toBe(colors.transparent);
+    expect(getServoUsbStateColor('UNKNOWN')).toBe(colors.transparent);
+    expect(getServoUsbStateColor('')).toBe(colors.transparent);
   });
 });

@@ -18,6 +18,10 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
 import { CellWithTooltip, renderTimestampCell } from '@/fleet/components/table';
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
+import {
+  renderChipCell,
+  StateUnion,
+} from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import {
   generateDutNameRedirectURL,
@@ -38,6 +42,7 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { ChromeOSDevice, FieldDefinition } from './chromeos_types';
+import { getServoStateColor, getServoUsbStateColor } from './dut_state';
 import { DutStateCell } from './dut_state_cell';
 import { TaskResult } from './use_chromeos_current_tasks';
 
@@ -52,6 +57,7 @@ const getLabelValuesInternal = (
   return device.deviceSpec?.labels?.[id]?.values ?? [];
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const getLabelValues = (
   device: ChromeOSDevice,
   id: KnownChromeOSColumnId | (string & {}),
@@ -65,11 +71,53 @@ const getLabelValueInternal = (device: ChromeOSDevice, id: string): string => {
   return labelValuesToString(labels as string[]);
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const getLabelValue = (
   device: ChromeOSDevice,
   id: KnownChromeOSColumnId | (string & {}),
 ): string => {
   return getLabelValueInternal(device, id);
+};
+
+const renderPeripheralStateCell = ({
+  componentName,
+  linkGenerator,
+  getColor,
+}: {
+  componentName: string;
+  linkGenerator: (value: string) => string;
+  getColor: (value: string) => string;
+}) => {
+  const renderPlainLink = renderCellWithLink<ChromeOSDevice>({
+    linkGenerator,
+    getTrackingEvent: (value) => ({
+      eventName: 'state_doc_link_clicked',
+      payload: { componentName, activeTab: value },
+    }),
+  });
+
+  return (props: FC_CellProps<ChromeOSDevice>) => {
+    const rawValue = props.cell.getValue();
+    const values = Array.isArray(rawValue)
+      ? (rawValue as readonly string[])
+      : [String(rawValue ?? '')];
+    const singleValue =
+      values.length === 1 ? String(values[0] ?? '').trim() : '';
+
+    if (!singleValue) {
+      return renderPlainLink(props);
+    }
+
+    return renderChipCell<ChromeOSDevice>({
+      getValueOrUrl: linkGenerator,
+      getColor: (val) => getColor(val),
+      overrideValue: singleValue as StateUnion,
+      getTrackingEvent: (value) => ({
+        eventName: 'state_doc_link_clicked',
+        payload: { componentName, activeTab: value },
+      }),
+    })(props);
+  };
 };
 
 const renderCurrentTaskCell = renderCellWithLink<ChromeOSDevice>({
@@ -237,12 +285,10 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
   'label-servo_state': {
     type: 'label',
     header: 'Servo State',
-    renderCell: renderCellWithLink<ChromeOSDevice>({
+    renderCell: renderPeripheralStateCell({
+      componentName: 'servo_state',
       linkGenerator: getSwarmingStateDocLinkForLabel,
-      getTrackingEvent: (value) => ({
-        eventName: 'state_doc_link_clicked',
-        payload: { componentName: 'servo_state', activeTab: value },
-      }),
+      getColor: getServoStateColor,
     }),
   },
   bluetooth_state: {
@@ -319,12 +365,10 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
   },
   'label-servo_usb_state': {
     type: 'label',
-    renderCell: renderCellWithLink<ChromeOSDevice>({
+    renderCell: renderPeripheralStateCell({
+      componentName: 'servo_usb_state',
       linkGenerator: (value) => getSwarmingStateDocLinkForLabel(`${value}-2`),
-      getTrackingEvent: (value) => ({
-        eventName: 'state_doc_link_clicked',
-        payload: { componentName: 'servo_usb_state', activeTab: value },
-      }),
+      getColor: getServoUsbStateColor,
     }),
   },
   location_group_tag: {

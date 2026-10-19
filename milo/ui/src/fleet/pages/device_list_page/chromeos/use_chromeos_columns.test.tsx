@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { renderHook } from '@testing-library/react';
+import { render, renderHook, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
+import { SettingsProvider } from '@/fleet/context/providers';
+import { colors } from '@/fleet/theme/colors';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { getFieldDefinition } from './chromeos_fields';
 import { useChromeOSFields } from './use_chromeos_available_columns';
@@ -330,5 +333,77 @@ describe('useChromeOSColumns', () => {
     expect(locationTagCol?.header).toBe('location_group_tag');
     expect(locationTagCol?.orderByField).toBe('labels.location_group_tag');
     expect(locationTagCol?.filterKey).toBe('labels."location_group_tag"');
+  });
+
+  it('should render semantic chips for all servo and servo usb states in the column', () => {
+    const servoStateDef = getFieldDefinition('label-servo_state');
+    const servoUsbStateDef = getFieldDefinition('label-servo_usb_state');
+
+    const ServoStateCell = servoStateDef.renderCell!;
+    const ServoUsbStateCell = servoUsbStateDef.renderCell!;
+
+    const makeCellProps = (val: string[], id: string) =>
+      ({
+        cell: { getValue: () => val },
+        row: { original: { id } },
+        column: { columnDef: { meta: {} } },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any;
+
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ServoStateCell {...makeCellProps(['NEED_REPLACEMENT'], 'dut-1')} />
+          <ServoStateCell {...makeCellProps(['WORKING'], 'dut-2')} />
+          <ServoStateCell {...makeCellProps(['NOT_APPLICABLE'], 'dut-3')} />
+          <ServoUsbStateCell {...makeCellProps(['ACCEPTABLE'], 'dut-1')} />
+          <ServoUsbStateCell {...makeCellProps(['NORMAL'], 'dut-2')} />
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    const brokenServoChip = screen.getByText('Need replacement').closest('a');
+    expect(brokenServoChip).toHaveAttribute(
+      'href',
+      'http://goto.google.com/flops-swarming#need-replacement',
+    );
+    expect(brokenServoChip).toHaveClass('MuiChip-root');
+    expect(brokenServoChip).toHaveStyle(`background-color: ${colors.red[100]}`);
+
+    const workingServoChip = screen.getByText('Working').closest('a');
+    expect(workingServoChip).toHaveAttribute(
+      'href',
+      'http://goto.google.com/flops-swarming#working',
+    );
+    expect(workingServoChip).toHaveClass('MuiChip-root');
+    expect(workingServoChip).toHaveStyle(
+      `background-color: ${colors.green[100]}`,
+    );
+
+    const neutralServoChip = screen.getByText('Not applicable').closest('a');
+    expect(neutralServoChip).toHaveAttribute(
+      'href',
+      'http://goto.google.com/flops-swarming#not-applicable',
+    );
+    expect(neutralServoChip).toHaveClass('MuiChip-root');
+    expect(neutralServoChip).toHaveClass('MuiChip-outlined');
+
+    const acceptableUsbChip = screen.getByText('Acceptable').closest('a');
+    expect(acceptableUsbChip).toHaveAttribute(
+      'href',
+      'http://goto.google.com/flops-swarming#acceptable-2',
+    );
+    expect(acceptableUsbChip).toHaveClass('MuiChip-root');
+    expect(acceptableUsbChip).toHaveStyle(
+      `background-color: ${colors.yellow[100]}`,
+    );
+
+    const normalUsbChip = screen.getByText('Normal').closest('a');
+    expect(normalUsbChip).toHaveAttribute(
+      'href',
+      'http://goto.google.com/flops-swarming#normal-2',
+    );
+    expect(normalUsbChip).toHaveClass('MuiChip-root');
+    expect(normalUsbChip).toHaveStyle(`background-color: ${colors.green[100]}`);
   });
 });

@@ -68,3 +68,50 @@ export const getStatusColor = (status: StateUnion) => {
       return unknownStateColor;
   }
 };
+
+/**
+ * Returns a semantic chip color for Servo states (`WORKING`/`OK` -> green,
+ * neutral `NOT_APPLICABLE`/`UNKNOWN` -> outlined transparent, and abnormal/error
+ * states -> red) so all values in the Servo State column share consistent chip
+ * styling.
+ */
+export const getServoStateColor = (status: string): string => {
+  switch (status.trim().toUpperCase()) {
+    case 'WORKING':
+    case 'OK':
+      return colors.green[100];
+    case 'NOT_APPLICABLE':
+    case 'UNKNOWN':
+    case 'N/A':
+    case '':
+      return colors.transparent;
+    default:
+      return colors.red[100];
+  }
+};
+
+/**
+ * Returns a semantic chip color for Servo USB states (`NORMAL` -> green,
+ * `ACCEPTABLE` -> yellow, neutral `NOT_APPLICABLE`/`UNKNOWN` -> outlined
+ * transparent, and failure states -> red) so all values in the Servo USB State
+ * column share consistent chip styling.
+ */
+export const getServoUsbStateColor = (status: string): string => {
+  switch (status.trim().toUpperCase()) {
+    case 'NORMAL':
+    case 'HARDWARE_NORMAL':
+      return colors.green[100];
+    case 'ACCEPTABLE':
+    case 'HARDWARE_ACCEPTABLE':
+      return colors.yellow[100];
+    case 'NOT_APPLICABLE':
+    case 'HARDWARE_NOT_APPLICABLE':
+    case 'UNKNOWN':
+    case 'HARDWARE_UNKNOWN':
+    case 'N/A':
+    case '':
+      return colors.transparent;
+    default:
+      return colors.red[100];
+  }
+};
