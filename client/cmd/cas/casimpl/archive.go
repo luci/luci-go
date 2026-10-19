@@ -128,10 +128,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	root, err := getRoot(c.paths)
 	if err != nil {
-		if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return err
+		return writeExitError(c.dumpJSON, IOError, "", err)
 	}
 
 	is := command.InputSpec{Inputs: make([]string, 0, len(c.paths))}
@@ -150,29 +147,20 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	rootDg, entries, _, err := client.ComputeMerkleTree(ctx, root, "", "", &is, filemetadata.NewNoopCache())
 
 	if err != nil {
-		if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return errors.Fmt("failed to call ComputeMerkleTree: %w", err)
+		return writeExitError(c.dumpJSON, IOError, "", errors.Fmt("failed to call ComputeMerkleTree: %w", err))
 	}
 	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
 
 	start = time.Now()
 	uploadedDigests, moved, err := client.UploadIfMissing(ctx, entries...)
 	if err != nil {
-		if err := writeExitResult(c.dumpJSON, RPCError, ""); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return errors.Fmt("failed to call UploadIfMissing: %w", err)
+		return writeExitError(c.dumpJSON, RPCError, "", errors.Fmt("failed to call UploadIfMissing: %w", err))
 	}
 	logging.Infof(ctx, "UploadIfMissing took %s, moved %d bytes", time.Since(start), moved)
 
 	if dd := c.dumpDigest; dd != "" {
 		if err := os.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
-			if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
-				return errors.Fmt("failed to write json file: %w", err)
-			}
-			return errors.Fmt("failed to dump digest: %w", err)
+			return writeExitError(c.dumpJSON, IOError, "", errors.Fmt("failed to dump digest: %w", err))
 		}
 	} else {
 		fmt.Printf("uploaded digest is %s\n", rootDg.String())

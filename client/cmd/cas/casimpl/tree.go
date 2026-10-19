@@ -178,10 +178,7 @@ func (r *treeRun) doTree(ctx context.Context) error {
 
 	d, err := digest.NewFromString(r.digest)
 	if err != nil {
-		if err := writeExitResult(r.destination, DigestInvalid, r.digest); err != nil {
-			return errors.Fmt("write json file: %w", err)
-		}
-		return errors.Fmt("parse digest %s: %w", r.digest, err)
+		return writeExitError(r.destination, DigestInvalid, r.digest, errors.Fmt("parse digest %s: %w", r.digest, err))
 	}
 
 	if cachedJSON, ok := r.readTreeFromCache(d); ok {

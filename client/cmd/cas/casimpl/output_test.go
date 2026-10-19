@@ -97,5 +97,14 @@ func TestWriteExitResult(t *testing.T) {
 			assert.Loosely(t, result.Result, should.Equal("authentication_error"))
 			assert.Loosely(t, result.ErrorDetails.Digest, should.Equal("foo/123"))
 		})
+
+		t.Run(`writeExitError returns cause or write error`, func(t *ftt.Test) {
+			cause := errors.New("underlying failure")
+			path := filepath.Join(t.TempDir(), "exit_result.json")
+			assert.That(t, writeExitError(path, IOError, "", cause), should.Equal(cause))
+
+			badPath := filepath.Join(path, "not_a_dir", "exit.json")
+			assert.ErrIsLike(t, writeExitError(badPath, IOError, "", cause), "failed to write json file")
+		})
 	})
 }

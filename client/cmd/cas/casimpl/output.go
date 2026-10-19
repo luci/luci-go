@@ -87,6 +87,15 @@ func writeExitResult(path string, statusCode StatusCode, digest string) error {
 	return nil
 }
 
+// writeExitError writes the exit status to path and returns cause, or an error
+// if writing the JSON file fails.
+func writeExitError(path string, statusCode StatusCode, digest string, cause error) error {
+	if err := writeExitResult(path, statusCode, digest); err != nil {
+		return errors.Fmt("failed to write json file: %w", err)
+	}
+	return cause
+}
+
 var notFoundDigestRE = regexp.MustCompile(`Digest ([0-9a-z]*/\d*) not found in the CAS`)
 
 func extractErrorCode(err error) (StatusCode, string) {

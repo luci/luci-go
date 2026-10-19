@@ -365,10 +365,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	d, err := digest.NewFromString(r.digest)
 	if err != nil {
-		if err := writeExitResult(r.dumpJSON, DigestInvalid, r.digest); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return errors.Fmt("failed to parse digest: %s: %w", r.digest, err)
+		return writeExitError(r.dumpJSON, DigestInvalid, r.digest, errors.Fmt("failed to parse digest: %s: %w", r.digest, err))
 	}
 
 	c, err := r.newRBEClient(ctx, r.dumpJSON, true)
@@ -387,10 +384,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	for path, output := range outputs {
 		if err := validateOutputPath(r.dir, path, output); err != nil {
-			if err := writeExitResult(r.dumpJSON, ArgumentsInvalid, ""); err != nil {
-				return errors.Fmt("failed to write json file: %w", err)
-			}
-			return errors.Fmt("invalid path %q in CAS tree: %w", path, err)
+			return writeExitError(r.dumpJSON, ArgumentsInvalid, "", errors.Fmt("invalid path %q in CAS tree: %w", path, err))
 		}
 	}
 
@@ -461,16 +455,10 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		if output.SymlinkTarget != "" {
 			symlinkPath := filepath.Join(r.dir, path)
 			if err := checkContained(r.dir, symlinkPath); err != nil {
-				if err := writeExitResult(r.dumpJSON, ArgumentsInvalid, ""); err != nil {
-					return errors.Fmt("failed to write json file: %w", err)
-				}
-				return errors.Fmt("symlink path %q escapes destination dir %q: %w", path, r.dir, err)
+				return writeExitError(r.dumpJSON, ArgumentsInvalid, "", errors.Fmt("symlink path %q escapes destination dir %q: %w", path, r.dir, err))
 			}
 			if err := os.Symlink(output.SymlinkTarget, symlinkPath); err != nil {
-				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-					return errors.Fmt("failed to write json file: %w", err)
-				}
-				return errors.Fmt("failed to create symlink: %w", err)
+				return writeExitError(r.dumpJSON, IOError, "", errors.Fmt("failed to create symlink: %w", err))
 			}
 			continue
 		}
@@ -483,10 +471,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		if diskcache != nil && diskcache.Touch(cache.HexDigest(output.Digest.Hash)) {
 			destPath := filepath.Join(r.dir, path)
 			if err := checkContained(r.dir, destPath); err != nil {
-				if err := writeExitResult(r.dumpJSON, ArgumentsInvalid, ""); err != nil {
-					return errors.Fmt("failed to write json file: %w", err)
-				}
-				return errors.Fmt("hardlink destination path %q escapes destination dir %q: %w", path, r.dir, err)
+				return writeExitError(r.dumpJSON, ArgumentsInvalid, "", errors.Fmt("hardlink destination path %q escapes destination dir %q: %w", path, r.dir, err))
 			}
 			mode := 0o600
 			if output.IsExecutable {
@@ -494,10 +479,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 			}
 
 			if err := diskcache.Hardlink(cache.HexDigest(output.Digest.Hash), destPath, os.FileMode(mode)); err != nil {
-				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-					return errors.Fmt("failed to write json file: %w", err)
-				}
-				return err
+				return writeExitError(r.dumpJSON, IOError, "", err)
 			}
 			continue
 		}
@@ -515,10 +497,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		start := time.Now()
 
 		if err := copySmallFilesFromCache(ctx, kvs, smallFiles, r.dir); err != nil {
-			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-				return errors.Fmt("failed to write json file: %w", err)
-			}
-			return err
+			return writeExitError(r.dumpJSON, IOError, "", err)
 		}
 
 		// Process non-cached files.
@@ -538,30 +517,21 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	start = time.Now()
 	if _, err := c.DownloadFiles(ctx, r.dir, to); err != nil {
 		errorCode, digest := extractErrorCode(err)
-		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return errors.Fmt("failed to download files: %w", err)
+		return writeExitError(r.dumpJSON, errorCode, digest, errors.Fmt("failed to download files: %w", err))
 	}
 	logger.Infof("finished DownloadFiles api call, took %s", time.Since(start))
 
 	if diskcache != nil {
 		start = time.Now()
 		if err := cacheOutputFiles(ctx, diskcache, kvs, r.dir, to); err != nil {
-			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-				return errors.Fmt("failed to write json file: %w", err)
-			}
-			return err
+			return writeExitError(r.dumpJSON, IOError, "", err)
 		}
 		logger.Infof("finished cache addition, took %s", time.Since(start))
 	}
 
 	start = time.Now()
 	if err := copyFiles(ctx, dups, to, r.dir); err != nil {
-		if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-			return errors.Fmt("failed to write json file: %w", err)
-		}
-		return err
+		return writeExitError(r.dumpJSON, IOError, "", err)
 	}
 	logger.Infof("finished files copy of %d, took %s", len(dups), time.Since(start))
 

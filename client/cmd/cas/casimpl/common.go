@@ -119,10 +119,7 @@ func enableGlogVerbosity(level int) error {
 func (c *commonFlags) newRBEClient(ctx context.Context, dumpJSON string, readOnly bool, opts ...client.Opt) (*client.Client, error) {
 	cl, err := c.authFlags.NewRBEClient(ctx, c.casFlags.Addr, c.casFlags.Instance, readOnly, opts...)
 	if err != nil {
-		if err := writeExitResult(dumpJSON, ClientError, ""); err != nil {
-			return nil, errors.Fmt("failed to write json file: %w", err)
-		}
-		return nil, errors.Fmt("failed to create cas client: %w", err)
+		return nil, writeExitError(dumpJSON, ClientError, "", errors.Fmt("failed to create cas client: %w", err))
 	}
 	return cl, nil
 }
@@ -132,19 +129,13 @@ func fetchAndFlattenTree(ctx context.Context, c *client.Client, d digest.Digest,
 	rootDir := &repb.Directory{}
 	if _, err := c.ReadProto(ctx, d, rootDir); err != nil {
 		errorCode, digestStr := extractErrorCode(err)
-		if err := writeExitResult(dumpJSON, errorCode, digestStr); err != nil {
-			return nil, errors.Fmt("failed to write json file: %w", err)
-		}
-		return nil, errors.Fmt("failed to read root directory proto: %w", err)
+		return nil, writeExitError(dumpJSON, errorCode, digestStr, errors.Fmt("failed to read root directory proto: %w", err))
 	}
 
 	start := time.Now()
 	dirs, err := c.GetDirectoryTree(ctx, d.ToProto())
 	if err != nil {
-		if err := writeExitResult(dumpJSON, RPCError, ""); err != nil {
-			return nil, errors.Fmt("failed to write json file: %w", err)
-		}
-		return nil, errors.Fmt("failed to call GetDirectoryTree: %w", err)
+		return nil, writeExitError(dumpJSON, RPCError, "", errors.Fmt("failed to call GetDirectoryTree: %w", err))
 	}
 	logging.Infof(ctx, "finished GetDirectoryTree api call: %d, took %s", len(dirs), time.Since(start))
 
@@ -156,10 +147,7 @@ func fetchAndFlattenTree(ctx context.Context, c *client.Client, d digest.Digest,
 	outputs, err := c.FlattenTree(t, "")
 	if err != nil {
 		errorCode, digestStr := extractErrorCode(err)
-		if err := writeExitResult(dumpJSON, errorCode, digestStr); err != nil {
-			return nil, errors.Fmt("failed to write json file: %w", err)
-		}
-		return nil, errors.Fmt("failed to call FlattenTree: %w", err)
+		return nil, writeExitError(dumpJSON, errorCode, digestStr, errors.Fmt("failed to call FlattenTree: %w", err))
 	}
 
 	return outputs, nil
@@ -174,10 +162,7 @@ func initCache(cacheDir string, policies cache.Policies, dumpJSON string) (*cach
 	}
 	diskcache, err := cache.New(policies, cacheDir, crypto.SHA256)
 	if err != nil {
-		if err := writeExitResult(dumpJSON, IOError, ""); err != nil {
-			return nil, errors.Fmt("failed to write json file: %w", err)
-		}
-		return nil, errors.Fmt("failed to initialize cache: %w", err)
+		return nil, writeExitError(dumpJSON, IOError, "", errors.Fmt("failed to initialize cache: %w", err))
 	}
 	return diskcache, nil
 }
