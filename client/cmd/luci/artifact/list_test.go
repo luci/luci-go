@@ -336,7 +336,7 @@ func TestQueryInvocationArtifacts(t *testing.T) {
 						"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines",
 					}))
 					if in.PageToken == "" {
-						assert.Loosely(t, in.PageSize, should.Equal(int32(DefaultMaxArtifacts)))
+						assert.Loosely(t, in.PageSize, should.Equal(int32(maxQueryArtifactsPageSize)))
 						return &rdbpb.QueryArtifactsResponse{
 							Artifacts: []*rdbpb.Artifact{
 								{ArtifactId: "art-1", Name: "rootInvocations/ants-i123/workUnits/wu-1/artifacts/art-1"},
@@ -344,7 +344,7 @@ func TestQueryInvocationArtifacts(t *testing.T) {
 							NextPageToken: "page-2",
 						}, nil
 					}
-					assert.Loosely(t, in.PageSize, should.Equal(int32(DefaultMaxArtifacts-1)))
+					assert.Loosely(t, in.PageSize, should.Equal(int32(maxQueryArtifactsPageSize-1)))
 					return &rdbpb.QueryArtifactsResponse{
 						Artifacts: []*rdbpb.Artifact{
 							{ArtifactId: "art-2", Name: "rootInvocations/ants-i123/workUnits/wu-2/tests/t1/results/0/artifacts/art-2"},
@@ -357,22 +357,23 @@ func TestQueryInvocationArtifacts(t *testing.T) {
 			assert.Loosely(t, hasMore, should.BeFalse)
 			assert.Loosely(t, calls, should.Equal(2))
 			assert.Loosely(t, len(arts), should.Equal(2))
-			assert.Loosely(t, arts[0].ArtifactId, should.Equal("art-1"))
-			assert.Loosely(t, arts[1].ArtifactId, should.Equal("art-2"))
+			// Test-result artifact (art-2) sorts before work-unit artifact (art-1) within the same tier.
+			assert.Loosely(t, arts[0].ArtifactId, should.Equal("art-2"))
+			assert.Loosely(t, arts[1].ArtifactId, should.Equal("art-1"))
 		})
 
-		t.Run(`stops early and sets hasMore when maxArtifacts limit is reached`, func(t *ftt.Test) {
+		t.Run(`sorts before truncating to maxArtifacts and sets hasMore when limit is exceeded`, func(t *ftt.Test) {
 			calls := 0
 			client := &mockResultDBClient{
 				queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
 					calls++
-					assert.Loosely(t, in.PageSize, should.Equal(int32(2)))
+					assert.Loosely(t, in.PageSize, should.Equal(int32(maxQueryArtifactsPageSize)))
 					return &rdbpb.QueryArtifactsResponse{
 						Artifacts: []*rdbpb.Artifact{
-							{ArtifactId: "art-1", Name: "rootInvocations/ants-i123/workUnits/wu-1/artifacts/art-1"},
-							{ArtifactId: "art-2", Name: "rootInvocations/ants-i123/workUnits/wu-1/artifacts/art-2"},
+							{ArtifactId: "injectables.txt", Name: "rootInvocations/ants-i123/workUnits/wu-1/artifacts/injectables.txt", ArtifactType: "TEXT"},
+							{ArtifactId: "bugreport.zip", Name: "rootInvocations/ants-i123/workUnits/wu-1/artifacts/bugreport.zip", ArtifactType: "BUGREPORTZ"},
+							{ArtifactId: "logcat.txt", Name: "rootInvocations/ants-i123/workUnits/wu-1/artifacts/logcat.txt", ArtifactType: "LOGCAT"},
 						},
-						NextPageToken: "page-2",
 					}, nil
 				},
 			}
@@ -381,6 +382,8 @@ func TestQueryInvocationArtifacts(t *testing.T) {
 			assert.Loosely(t, hasMore, should.BeTrue)
 			assert.Loosely(t, calls, should.Equal(1))
 			assert.Loosely(t, len(arts), should.Equal(2))
+			assert.Loosely(t, arts[0].ArtifactId, should.Equal("logcat.txt"))
+			assert.Loosely(t, arts[1].ArtifactId, should.Equal("bugreport.zip"))
 		})
 
 		t.Run(`artifactIDRegexp sets Predicate.ArtifactIdRegexp`, func(t *ftt.Test) {

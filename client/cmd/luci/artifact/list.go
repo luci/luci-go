@@ -152,6 +152,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 			return 1
 		}
 		trArtifacts = FilterArtifacts(trArtifacts, filterRe)
+		format.SortArtifacts(trArtifacts)
 
 		displayedCount := printArtifactHeader("Test Result", format.FormatTestResultBreadcrumb(cleanTarget), len(trArtifacts), maxArtifacts)
 		format.PrintArtifactList(trArtifacts[:displayedCount])
@@ -172,6 +173,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 				return 1
 			}
 			invArtifacts = FilterArtifacts(invArtifacts, filterRe)
+			format.SortArtifacts(invArtifacts)
 
 			displayedCount := printArtifactHeader("Invocation", format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), maxArtifacts)
 			format.PrintArtifactList(invArtifacts[:displayedCount])
@@ -196,6 +198,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 	wuArtifacts = FilterArtifacts(wuArtifacts, filterRe)
+	format.SortArtifacts(wuArtifacts)
 
 	displayedCount := printArtifactHeader("Work Unit", format.FormatWorkUnitBreadcrumb(cleanTarget), len(wuArtifacts), maxArtifacts)
 	format.PrintArtifactList(wuArtifacts[:displayedCount])
@@ -352,9 +355,14 @@ func QueryAllArtifacts(ctx context.Context, client rdbpb.ResultDBClient, parent 
 // QueryInvocationArtifacts queries work-unit-level and test-result-level
 // artifacts across a root invocation using ResultDB.QueryArtifacts, optionally
 // filtered by artifactIDRegexp (a case-insensitive RE2 fragment for
-// ArtifactPredicate.ArtifactIdRegexp) and up to maxArtifacts (or all artifacts
-// if maxArtifacts <= 0).
-// It returns the artifacts and whether more artifacts exist beyond maxArtifacts.
+// ArtifactPredicate.ArtifactIdRegexp), sorts them by Huckle ATI priority, and
+// returns up to maxArtifacts (or all artifacts if maxArtifacts <= 0) along with
+// whether more artifacts exist beyond maxArtifacts.
+//
+// When maxArtifacts > 0, up to max(maxArtifacts, maxQueryArtifactsPageSize)
+// artifacts are fetched before sorting so that high-priority artifacts (such as
+// LOGCAT or BUGREPORT) later in the page are promoted ahead of lower-priority
+// artifacts prior to truncation.
 func QueryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, cleanTarget, artifactIDRegexp string, maxArtifacts int) ([]*rdbpb.Artifact, bool, error) {
 	var predicate *rdbpb.ArtifactPredicate
 	if artifactIDRegexp != "" {
@@ -362,7 +370,20 @@ func QueryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, 
 			ArtifactIdRegexp: artifactIDRegexp,
 		}
 	}
-	return queryInvocationArtifacts(ctx, client, cleanTarget, predicate, &fieldmaskpb.FieldMask{
+	fetchLimit := maxArtifacts
+	if maxArtifacts > 0 && fetchLimit < maxQueryArtifactsPageSize {
+		fetchLimit = maxQueryArtifactsPageSize
+	}
+	artifacts, hasMore, err := queryInvocationArtifacts(ctx, client, cleanTarget, predicate, &fieldmaskpb.FieldMask{
 		Paths: []string{"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines"},
-	}, maxArtifacts)
+	}, fetchLimit)
+	if err != nil {
+		return nil, false, err
+	}
+	format.SortArtifacts(artifacts)
+	if maxArtifacts > 0 && len(artifacts) > maxArtifacts {
+		artifacts = artifacts[:maxArtifacts]
+		hasMore = true
+	}
+	return artifacts, hasMore, nil
 }

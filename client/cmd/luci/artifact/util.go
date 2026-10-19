@@ -267,8 +267,8 @@ const (
 	DefaultMaxArtifacts = 100
 
 	// maxQueryArtifactsPageSize is the maximum page size sent in a single
-	// QueryArtifacts RPC when fetching more than DefaultMaxArtifacts.
-	maxQueryArtifactsPageSize = 500
+	// QueryArtifacts RPC when fetching artifacts across a root invocation.
+	maxQueryArtifactsPageSize = 1000
 )
 
 // queryInvocationArtifacts pages through ResultDB.QueryArtifacts across a root

@@ -627,6 +627,97 @@ func FormatFailureReasonFirstLine(fr *rdbpb.FailureReason, maxLen int) (string, 
 	return res, truncated || hasMore
 }
 
+// artifactTypeSortOrder defines priority tiers for common debugging artifact
+// types, matching Huckle ATI's getRecommendedDebugArtifacts / compareArtifacts
+// ordering so the most useful diagnostic logs appear at the top.
+var artifactTypeSortOrder = map[string]int{
+	"LOGCAT":     0,
+	"BUGREPORT":  1,
+	"BUGREPORTZ": 1,
+	"SCREENSHOT": 2,
+	"HOST_LOG":   3,
+}
+
+const (
+	otherTypedArtifactPriority = 100
+	untypedArtifactPriority    = 101
+)
+
+func artifactDisplayName(art *rdbpb.Artifact) string {
+	if id := art.GetArtifactId(); id != "" {
+		return id
+	}
+	return art.GetName()
+}
+
+// effectiveArtifactTypeAndPriority returns the normalized artifact type and
+// priority tier for sorting. When ArtifactType is empty, it falls back to
+// filename-based inference matching Huckle ATI's getRecommendedDebugArtifacts.
+func effectiveArtifactTypeAndPriority(art *rdbpb.Artifact) (string, int) {
+	artType := strings.ToUpper(strings.TrimSpace(art.GetArtifactType()))
+	if artType != "" {
+		if p, ok := artifactTypeSortOrder[artType]; ok {
+			return artType, p
+		}
+		return artType, otherTypedArtifactPriority
+	}
+
+	lowerName := strings.ToLower(artifactDisplayName(art))
+	switch {
+	case strings.Contains(lowerName, "logcat"):
+		return "LOGCAT", artifactTypeSortOrder["LOGCAT"]
+	case strings.Contains(lowerName, "bugreport"):
+		return "BUGREPORT", artifactTypeSortOrder["BUGREPORT"]
+	case strings.Contains(lowerName, "screenshot") && strings.HasSuffix(lowerName, ".png"):
+		return "SCREENSHOT", artifactTypeSortOrder["SCREENSHOT"]
+	case strings.Contains(lowerName, "host_log"):
+		return "HOST_LOG", artifactTypeSortOrder["HOST_LOG"]
+	default:
+		return "", untypedArtifactPriority
+	}
+}
+
+func isTestResultArtifact(art *rdbpb.Artifact) bool {
+	return strings.Contains(art.GetName(), "/tests/")
+}
+
+// SortArtifacts sorts artifacts in place using Huckle ATI's priority ordering:
+//  1. Priority artifact types first: LOGCAT (0) -> BUGREPORT/BUGREPORTZ (1) ->
+//     SCREENSHOT (2) -> HOST_LOG (3) -> other typed artifacts (100, sorted
+//     alphabetically by ArtifactType) -> untyped artifacts (101). Untyped
+//     artifacts with recognizable names (logcat, bugreport, screenshot*.png,
+//     host_log) are promoted to their corresponding priority tier.
+//  2. Within the same type tier, test-result-scoped artifacts come before
+//     work-unit-scoped artifacts (since test-level logs are more targeted).
+//  3. Alphabetical by ArtifactId (case-insensitive, with case-sensitive and
+//     resource Name tie-breakers for determinism).
+func SortArtifacts(artifacts []*rdbpb.Artifact) {
+	sort.SliceStable(artifacts, func(i, j int) bool {
+		a, b := artifacts[i], artifacts[j]
+		typeA, prioA := effectiveArtifactTypeAndPriority(a)
+		typeB, prioB := effectiveArtifactTypeAndPriority(b)
+		if prioA != prioB {
+			return prioA < prioB
+		}
+		if prioA == otherTypedArtifactPriority && typeA != typeB {
+			return typeA < typeB
+		}
+		trA, trB := isTestResultArtifact(a), isTestResultArtifact(b)
+		if trA != trB {
+			return trA
+		}
+		nameA, nameB := artifactDisplayName(a), artifactDisplayName(b)
+		lowerA, lowerB := strings.ToLower(nameA), strings.ToLower(nameB)
+		if lowerA != lowerB {
+			return lowerA < lowerB
+		}
+		if nameA != nameB {
+			return nameA < nameB
+		}
+		return a.GetName() < b.GetName()
+	})
+}
+
 // FormatArtifactFetchHint returns a copy-pasteable CLI command template for
 // fetching an artifact from the same parent or root invocation as sampleArtifactName.
 // Returns "" if sampleArtifactName does not belong to a root invocation.
@@ -657,12 +748,14 @@ func FormatArtifactFetchHint(sampleArtifactName string, invocationWide bool) str
 	return ""
 }
 
-// PrintArtifactList prints a formatted 1-line-per-artifact table to stdout.
+// PrintArtifactList prints a formatted 1-line-per-artifact table to stdout,
+// sorted by Huckle ATI artifact priority.
 func PrintArtifactList(artifacts []*rdbpb.Artifact) {
 	PrintArtifactListTo(os.Stdout, artifacts)
 }
 
-// PrintArtifactListTo prints a formatted 1-line-per-artifact table to out.
+// PrintArtifactListTo prints a formatted 1-line-per-artifact table to out,
+// sorted by Huckle ATI artifact priority.
 func PrintArtifactListTo(out io.Writer, artifacts []*rdbpb.Artifact) {
 	printArtifactList(out, artifacts, false)
 }
@@ -685,13 +778,17 @@ func printArtifactList(out io.Writer, artifacts []*rdbpb.Artifact, includeMetada
 		return
 	}
 
+	sorted := make([]*rdbpb.Artifact, len(artifacts))
+	copy(sorted, artifacts)
+	SortArtifacts(sorted)
+
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	if includeMetadata {
 		fmt.Fprintln(tw, "  ARTIFACT ID\tTYPE\tSIZE\tCONTENT-TYPE\tFLAGS")
 	} else {
 		fmt.Fprintln(tw, "  ARTIFACT ID\tTYPE\tSIZE\tCONTENT-TYPE")
 	}
-	for _, art := range artifacts {
+	for _, art := range sorted {
 		artType := art.GetArtifactType()
 		if artType == "" {
 			artType = "-"
@@ -718,7 +815,7 @@ func printArtifactList(out io.Writer, artifacts []*rdbpb.Artifact, includeMetada
 	_ = tw.Flush()
 	fmt.Fprintln(out)
 
-	if hint := FormatArtifactFetchHint(artifacts[0].GetName(), includeMetadata); hint != "" {
+	if hint := FormatArtifactFetchHint(sorted[0].GetName(), includeMetadata); hint != "" {
 		fmt.Fprintf(out, "To fetch an artifact:\n  %s\n\n", hint)
 	}
 }

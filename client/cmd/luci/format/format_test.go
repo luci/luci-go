@@ -411,6 +411,66 @@ func TestPrintFailureReason(t *testing.T) {
 		})
 	})
 
+	ftt.Run(`SortArtifacts`, t, func(t *ftt.Test) {
+		t.Run(`orders by Huckle ATI priority tiers, test-result before work-unit, and alphabetical`, func(t *ftt.Test) {
+			arts := []*rdbpb.Artifact{
+				{
+					Name:       "rootInvocations/ants-i1/workUnits/wu1/artifacts/zebra.bin",
+					ArtifactId: "zebra.bin",
+				},
+				{
+					Name:         "rootInvocations/ants-i1/workUnits/wu1/artifacts/injectables.txt",
+					ArtifactId:   "injectables.txt",
+					ArtifactType: "TEXT",
+				},
+				{
+					Name:         "rootInvocations/ants-i1/workUnits/wu1/artifacts/host_adb_log.txt",
+					ArtifactId:   "host_adb_log.txt",
+					ArtifactType: "HOST_LOG",
+				},
+				{
+					Name:         "rootInvocations/ants-i1/workUnits/wu1/artifacts/screenshot.png",
+					ArtifactId:   "screenshot.png",
+					ArtifactType: "SCREENSHOT",
+				},
+				{
+					Name:         "rootInvocations/ants-i1/workUnits/wu1/artifacts/bugreport.zip",
+					ArtifactId:   "bugreport.zip",
+					ArtifactType: "BUGREPORTZ",
+				},
+				{
+					Name:         "rootInvocations/ants-i1/workUnits/wu1/artifacts/device_logcat_setup.txt",
+					ArtifactId:   "device_logcat_setup.txt",
+					ArtifactType: "LOGCAT",
+				},
+				{
+					Name:         "rootInvocations/ants-i1/workUnits/wu1/tests/t1/results/0/artifacts/test_logcat.txt",
+					ArtifactId:   "test_logcat.txt",
+					ArtifactType: "LOGCAT",
+				},
+				{
+					Name:       "rootInvocations/ants-i1/workUnits/wu1/artifacts/untyped_logcat_fallback.txt",
+					ArtifactId: "untyped_logcat_fallback.txt",
+				},
+			}
+			SortArtifacts(arts)
+			var gotIDs []string
+			for _, a := range arts {
+				gotIDs = append(gotIDs, a.ArtifactId)
+			}
+			assert.Loosely(t, gotIDs, should.Resemble([]string{
+				"test_logcat.txt",             // LOGCAT (test-result level first)
+				"device_logcat_setup.txt",     // LOGCAT (work-unit level)
+				"untyped_logcat_fallback.txt", // inferred LOGCAT from filename
+				"bugreport.zip",               // BUGREPORTZ
+				"screenshot.png",              // SCREENSHOT
+				"host_adb_log.txt",            // HOST_LOG
+				"injectables.txt",             // other typed (TEXT)
+				"zebra.bin",                   // untyped
+			}))
+		})
+	})
+
 	ftt.Run(`PrintArtifactListTo and PrintInvocationArtifactListTo`, t, func(t *ftt.Test) {
 		t.Run(`empty artifacts`, func(t *ftt.Test) {
 			var buf bytes.Buffer
@@ -426,6 +486,13 @@ func TestPrintFailureReason(t *testing.T) {
 			var buf bytes.Buffer
 			arts := []*rdbpb.Artifact{
 				{
+					Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/injectables-10101285828505166678.txt",
+					ArtifactId:   "injectables-10101285828505166678.txt",
+					SizeBytes:    671,
+					ContentType:  "text/plain",
+					ArtifactType: "TEXT",
+				},
+				{
 					Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/device_logcat_test_oriole.txt",
 					ArtifactId:   "device_logcat_test_oriole.txt",
 					SizeBytes:    1258291,
@@ -438,13 +505,6 @@ func TestPrintFailureReason(t *testing.T) {
 					SizeBytes:    19293798,
 					ContentType:  "application/zip",
 					ArtifactType: "BUGREPORTZ",
-				},
-				{
-					Name:         "rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/injectables-10101285828505166678.txt",
-					ArtifactId:   "injectables-10101285828505166678.txt",
-					SizeBytes:    671,
-					ContentType:  "text/plain",
-					ArtifactType: "TEXT",
 				},
 			}
 			PrintArtifactListTo(&buf, arts)
@@ -501,8 +561,8 @@ func TestPrintFailureReason(t *testing.T) {
 			PrintInvocationArtifactListTo(&buf, arts)
 			expected := "" +
 				"  ARTIFACT ID               TYPE        SIZE       CONTENT-TYPE     FLAGS\n" +
-				"  bugreport-oriole-123.zip  BUGREPORTZ  18.4 MiB   application/zip  -workunitid=ants-wu56200010637202289\n" +
 				"  logcat_test_foo_123.txt   LOGCAT      142.3 KiB  text/plain       -workunitid=ants-wu56200010637202290 -testid=\"com.android.FooTest#testBar\" -resultid=0\n" +
+				"  bugreport-oriole-123.zip  BUGREPORTZ  18.4 MiB   application/zip  -workunitid=ants-wu56200010637202289\n" +
 				"\n" +
 				"To fetch an artifact:\n" +
 				"  luci artifact <get|head|tail> -invocationid=ants-i05300010637202289 -artifactid=<ARTIFACT_ID> [FLAGS]\n\n"
