@@ -45,8 +45,15 @@ func (af *testAuthFlags) Register(_ *flag.FlagSet) {}
 
 func (af *testAuthFlags) Parse() error { return nil }
 
-func (af *testAuthFlags) NewRBEClient(ctx context.Context, _ string, _ string, _ bool) (*client.Client, error) {
-	return af.testEnv.Server.NewTestClient(ctx)
+func (af *testAuthFlags) NewRBEClient(ctx context.Context, _ string, _ string, _ bool, opts ...client.Opt) (*client.Client, error) {
+	cl, err := af.testEnv.Server.NewTestClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, opt := range opts {
+		opt.Apply(cl)
+	}
+	return cl, nil
 }
 
 func TestArchiveDownload(t *testing.T) {

@@ -46,7 +46,7 @@ type AuthFlags interface {
 	Parse() error
 
 	// NewRBEClient creates an authorised RBE Client.
-	NewRBEClient(ctx context.Context, addr string, instance string, readOnly bool) (*client.Client, error)
+	NewRBEClient(ctx context.Context, addr string, instance string, readOnly bool, opts ...client.Opt) (*client.Client, error)
 }
 
 var _ cli.ContextModificator = (*commonFlags)(nil)
@@ -116,8 +116,8 @@ func enableGlogVerbosity(level int) error {
 	return nil
 }
 
-func (c *commonFlags) newRBEClient(ctx context.Context, dumpJSON string, readOnly bool) (*client.Client, error) {
-	cl, err := c.authFlags.NewRBEClient(ctx, c.casFlags.Addr, c.casFlags.Instance, readOnly)
+func (c *commonFlags) newRBEClient(ctx context.Context, dumpJSON string, readOnly bool, opts ...client.Opt) (*client.Client, error) {
+	cl, err := c.authFlags.NewRBEClient(ctx, c.casFlags.Addr, c.casFlags.Instance, readOnly, opts...)
 	if err != nil {
 		if err := writeExitResult(dumpJSON, ClientError, ""); err != nil {
 			return nil, errors.Fmt("failed to write json file: %w", err)

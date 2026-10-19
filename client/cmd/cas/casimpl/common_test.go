@@ -44,7 +44,7 @@ type failingAuthFlags struct {
 
 func (af *failingAuthFlags) Register(_ *flag.FlagSet) {}
 func (af *failingAuthFlags) Parse() error             { return nil }
-func (af *failingAuthFlags) NewRBEClient(ctx context.Context, _ string, _ string, _ bool) (*client.Client, error) {
+func (af *failingAuthFlags) NewRBEClient(ctx context.Context, _ string, _ string, _ bool, _ ...client.Opt) (*client.Client, error) {
 	return nil, af.err
 }
 
@@ -88,10 +88,11 @@ func TestNewRBEClient(t *testing.T) {
 			flags := commonFlags{
 				authFlags: &testAuthFlags{testEnv: testEnv},
 			}
-			cl, err := flags.newRBEClient(ctx, "", true)
+			cl, err := flags.newRBEClient(ctx, "", true, client.StartupCapabilities(false))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cl, should.NotBeNil)
 			defer cl.Close()
+			assert.Loosely(t, cl.StartupCapabilities, should.Equal(client.StartupCapabilities(false)))
 		})
 	})
 }

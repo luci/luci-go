@@ -152,7 +152,7 @@ func perRPCCreds(ctx context.Context, instance string, opts auth.Options, readOn
 // NewLegacy returns luci auth configured legacy Client for RBE.
 // In general, NewClient is preferred.
 // TODO(crbug.com/1225524): remove this.
-func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
+func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Options, readOnly bool, extraOpts ...client.Opt) (*client.Client, error) {
 	useLocal, err := isLocalAddr(addr)
 	if err != nil {
 		return nil, errors.Fmt("invalid addr: %w", err)
@@ -167,7 +167,7 @@ func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Opti
 			Service:    addr,
 			NoSecurity: true,
 		}
-		cl, err := client.NewClient(ctx, "instance", dialParams)
+		cl, err := client.NewClient(ctx, "instance", dialParams, extraOpts...)
 		if err != nil {
 			return nil, errors.Fmt("failed to create client: %w", err)
 		}
@@ -196,7 +196,7 @@ func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Opti
 		},
 	}
 
-	cl, err := client.NewClient(ctx, instance, dialParams, Options()...)
+	cl, err := client.NewClient(ctx, instance, dialParams, append(Options(), extraOpts...)...)
 	if err != nil {
 		logging.Errorf(ctx, "failed to create casclient: %+v", err)
 		return nil, errors.Fmt("failed to create client: %w", err)

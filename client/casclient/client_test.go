@@ -15,8 +15,12 @@
 package casclient
 
 import (
+	"net"
 	"testing"
 
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -42,5 +46,20 @@ func TestIsLocalAddr(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, isLocal, should.Equal(td.want))
 		}
+	})
+}
+
+func TestNewLegacyExtraOpts(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("NewLegacy forwards extraOpts", t, func(t *ftt.Test) {
+		ln, err := net.Listen("tcp", "127.0.0.1:0")
+		assert.NoErr(t, err)
+		t.Cleanup(func() { _ = ln.Close() })
+
+		cl, err := NewLegacy(t.Context(), ln.Addr().String(), "", auth.Options{}, true, client.StartupCapabilities(false))
+		assert.NoErr(t, err)
+		t.Cleanup(func() { _ = cl.Close() })
+		assert.That(t, cl.StartupCapabilities, should.Equal(client.StartupCapabilities(false)))
 	})
 }
