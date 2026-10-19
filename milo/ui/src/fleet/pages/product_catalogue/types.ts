@@ -24,6 +24,9 @@ export interface UnifiedProductCatalogEntry {
   readonly fleetPlmStatus?: string;
   readonly productType: string;
 
+  // Optional inline photo data URIs (e.g. data:image/webp;base64,...)
+  readonly photoDataUris?: readonly string[];
+
   // Standard product catalog fields
   readonly gpn?: string;
   readonly resourceType?: string;
@@ -53,6 +56,7 @@ export function fromStandardCatalogEntry(
     numberOfDevicesPerRack: entry.numberOfDevicesPerRack,
     unitCost: entry.unitCost,
     productType: entry.productType,
+    photoDataUris: entry.photoDataUris,
   };
 }
 

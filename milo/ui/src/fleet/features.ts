@@ -12,7 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createFeatureFlag } from '@/common/feature_flags';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router';
+
+import {
+  createFeatureFlag,
+  getFeatureFlagKey,
+  getFeatureFlagLocalStorageKey,
+  useFeatureFlag,
+} from '@/common/feature_flags';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 export const enableAndroidUtilizationMetrics = createFeatureFlag({
   description:
@@ -134,3 +143,130 @@ export const enableAndroidRepairQueue = createFeatureFlag({
   trackingBug: '568290011',
   allowedEnvironments: ['dev'],
 });
+
+export const enableProductCatalogRevamp = createFeatureFlag({
+  description:
+    'Enables the revamped Product Catalog card view, hardware reference photos, and unified details view.',
+  namespace: 'fleet-console',
+  name: 'product-catalog-revamp',
+  percentage: {
+    dev: 100,
+    prod: 0,
+  },
+  trackingBug: '571288184',
+  allowedEnvironments: ['dev', 'prod'],
+});
+
+function parseRevampUrlOverride(search: string): 'on' | 'off' | null {
+  const params = new URLSearchParams(search);
+  const fullKey = getFeatureFlagKey(enableProductCatalogRevamp);
+  const shortName = enableProductCatalogRevamp.config.name;
+  const direct = params.get(`ff:${fullKey}`) || params.get(`ff:${shortName}`);
+  if (direct) {
+    const lower = direct.toLowerCase();
+    if (lower === 'on' || lower === 'true' || lower === '1') return 'on';
+    if (lower === 'off' || lower === 'false' || lower === '0') return 'off';
+  }
+  for (const val of params.getAll('ff')) {
+    const parts = val.split(':');
+    const isMatch =
+      (parts.length === 2 &&
+        (parts[0] === fullKey || parts[0] === shortName)) ||
+      (parts.length === 3 && `${parts[0]}:${parts[1]}` === fullKey);
+    if (isMatch) {
+      const lower = parts[parts.length - 1].toLowerCase();
+      if (lower === 'on' || lower === 'true' || lower === '1') return 'on';
+      if (lower === 'off' || lower === 'false' || lower === '0') return 'off';
+    }
+  }
+  return null;
+}
+
+/**
+ * Evaluates `enableProductCatalogRevamp` while migrating any URL/session `?ff=`
+ * override into `localStorage` so the top-bar Feature Flags toggle switch can
+ * freely enable and disable the revamp during a session.
+ */
+export function useProductCatalogRevamp(): boolean {
+  const { search } = useLocation();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+
+  // Synchronously migrate any URL or sessionStorage `?ff=` override into
+  // `localStorage` BEFORE calling `useFeatureFlag` so `useLocalStorage` reads
+  // the override on the initial render and the top-bar Feature Flags drawer
+  // switch can freely toggle the revamp on and off during the session.
+  const fullKey = getFeatureFlagKey(enableProductCatalogRevamp);
+  const shortName = enableProductCatalogRevamp.config.name;
+  const localKey = getFeatureFlagLocalStorageKey(enableProductCatalogRevamp);
+
+  if (typeof window !== 'undefined') {
+    const urlOrSessionOverride =
+      parseRevampUrlOverride(window.location.search) ||
+      (window.sessionStorage.getItem(`ff:${fullKey}`) as 'on' | 'off' | null);
+
+    if (urlOrSessionOverride === 'on' || urlOrSessionOverride === 'off') {
+      try {
+        window.sessionStorage.removeItem(`ff:${fullKey}`);
+        window.localStorage.setItem(localKey, urlOrSessionOverride);
+        const url = new URL(window.location.href);
+        if (
+          url.searchParams.has('ff') ||
+          url.searchParams.has(`ff:${fullKey}`) ||
+          url.searchParams.has(`ff:${shortName}`)
+        ) {
+          url.searchParams.delete('ff');
+          url.searchParams.delete(`ff:${fullKey}`);
+          url.searchParams.delete(`ff:${shortName}`);
+          window.history.replaceState(window.history.state, '', url.toString());
+        }
+      } catch {
+        // Ignore storage or history errors
+      }
+    }
+  }
+
+  const flagStatus = useFeatureFlag(enableProductCatalogRevamp);
+
+  // Also strip `ff` from `SyncedSearchParamsContext` in an effect when a
+  // localStorage override is active so filter changes on the Product Catalog
+  // page do not write `ff` back into the URL.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const rawLocal = window.localStorage.getItem(localKey);
+    if (rawLocal !== 'on' && rawLocal !== 'off') return;
+    if (
+      searchParams.has('ff') ||
+      searchParams.has(`ff:${fullKey}`) ||
+      searchParams.has(`ff:${shortName}`)
+    ) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete('ff');
+          next.delete(`ff:${fullKey}`);
+          next.delete(`ff:${shortName}`);
+          return next;
+        },
+        { replace: true },
+      );
+    }
+  }, [fullKey, localKey, searchParams, setSearchParams, shortName]);
+
+  if (typeof window !== 'undefined') {
+    const rawLocal = window.localStorage.getItem(localKey);
+    if (rawLocal === 'on' || rawLocal === 'off') {
+      return flagStatus;
+    }
+    const windowOverride = parseRevampUrlOverride(window.location.search);
+    if (windowOverride !== null) {
+      return windowOverride === 'on';
+    }
+  }
+
+  const routerOverride = parseRevampUrlOverride(search);
+  if (routerOverride !== null) {
+    return routerOverride === 'on';
+  }
+
+  return flagStatus;
+}

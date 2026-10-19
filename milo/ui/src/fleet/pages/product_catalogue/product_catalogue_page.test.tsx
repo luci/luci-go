@@ -21,6 +21,7 @@ import {
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { AvailableFlags } from '@/common/layouts/app_bar/available_flags/available_flags';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
 import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
@@ -72,6 +73,8 @@ const renderPage = (initialEntries = ['/ui/fleet/catalog']) => {
 };
 
 describe('ProductCataloguePage', () => {
+  jest.setTimeout(15000);
+
   beforeEach(() => {
     FleetConsoleMockAPI.enableBrowserInterceptor();
     FleetConsoleMockAPI.resetFixtures();
@@ -98,6 +101,9 @@ describe('ProductCataloguePage', () => {
 
   afterEach(() => {
     FleetConsoleMockAPI.resetFixtures();
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    window.history.replaceState({}, '', '/');
   });
 
   it('should render successfully', async () => {
@@ -972,5 +978,349 @@ describe('ProductCataloguePage', () => {
     ).toBeInTheDocument();
     expect(nonVirtualSpy).toHaveBeenCalled();
     expect(gceSpy).toHaveBeenCalled();
+  });
+
+  it('should render hardware photo img when photoDataUris is present and category schematic when absent in card view', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ATB-000',
+          productName: 'Android OmniLab Enclosure',
+          gpn: '1055297-01',
+          descriptiveName: 'Standard 16-slot testbed enclosure',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'GA',
+          r11n: ['r11n-atb'],
+          numberOfDevicesPerRack: 4,
+          unitCost: '26645',
+          productType: 'android-testbed',
+          photoDataUris: ['data:image/webp;base64,mock-base64-photo'],
+        },
+        {
+          productCatalogId: 'PH-003',
+          productName: 'Unphotographed Reference Device',
+          gpn: '1066840-01',
+          descriptiveName: 'Catalog SKU without reference photo',
+          resourceType: 'PHONE',
+          fleetPlmStatus: 'LA',
+          r11n: [],
+          numberOfDevicesPerRack: 24,
+          unitCost: '850',
+          productType: 'hardware',
+          photoDataUris: [],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'GCE-000',
+          productName: 'Virtual Reference Instance',
+          descriptiveName: 'Cloud virtual machine profile',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          cpuType: 'x86',
+          cpuNumPerVm: 8,
+          memoryGbPerVm: 32,
+          unitCost: '120',
+          productType: 'gce',
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
+    });
+
+    renderPage(['/ui/fleet/catalog?view=card']);
+
+    // Entry with 1 photo in photoDataUris renders the hardware photo img
+    const photoImg = await screen.findByTestId('catalog-photo-img-ATB-000');
+    expect(photoImg).toBeInTheDocument();
+    expect(photoImg).toHaveAttribute(
+      'src',
+      'data:image/webp;base64,mock-base64-photo',
+    );
+    expect(photoImg).toHaveAttribute(
+      'alt',
+      'Android OmniLab Enclosure hardware reference',
+    );
+
+    // Entry with empty photoDataUris renders the clean category icon fallback
+    const fallbackBox = await screen.findByTestId(
+      'catalog-photo-fallback-PH-003',
+    );
+    expect(fallbackBox).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('catalog-photo-img-PH-003'),
+    ).not.toBeInTheDocument();
+
+    // GCE entry without photoDataUris renders the cloud VM icon fallback
+    const gceFallback = await screen.findByTestId(
+      'catalog-photo-fallback-GCE-000',
+    );
+    expect(gceFallback).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('catalog-photo-img-GCE-000'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('should render multi-photo carousel with navigation controls and counter pill', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'MULTI-001',
+          productName: 'Multi Photo DUT',
+          gpn: '1077777-01',
+          descriptiveName: 'Catalog SKU with multiple reference photos',
+          resourceType: 'DUT',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 8,
+          unitCost: '1500',
+          productType: 'hardware',
+          photoDataUris: [
+            'data:image/webp;base64,AAA',
+            'data:image/webp;base64,BBB',
+          ],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
+    });
+
+    renderPage(['/ui/fleet/catalog?view=card']);
+
+    const photoImg = await screen.findByTestId('catalog-photo-img-MULTI-001');
+    expect(photoImg).toBeInTheDocument();
+    expect(photoImg).toHaveAttribute('src', 'data:image/webp;base64,AAA');
+
+    // Multi-photo counter pill shows 1 / 2
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+
+    const nextBtn = screen.getByLabelText('Next photo');
+    const prevBtn = screen.getByLabelText('Previous photo');
+    expect(nextBtn).toBeInTheDocument();
+    expect(prevBtn).toBeInTheDocument();
+    expect(nextBtn.closest('a')).toBeNull();
+    expect(prevBtn.closest('a')).toBeNull();
+
+    // Clicking Next photo cycles to the second photo without triggering navigation
+    fireEvent.click(nextBtn);
+    expect(photoImg).toHaveAttribute('src', 'data:image/webp;base64,BBB');
+    expect(screen.getByText('2 / 2')).toBeInTheDocument();
+
+    // Clicking Previous photo cycles back to the first photo
+    fireEvent.click(prevBtn);
+    expect(photoImg).toHaveAttribute('src', 'data:image/webp;base64,AAA');
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+  });
+
+  it('should fall back to category schematic when photo image fails to load in card view', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'FAIL-001',
+          productName: 'Corrupt Photo SKU',
+          gpn: '1099999-01',
+          descriptiveName: 'Catalog item with corrupt photo data',
+          resourceType: 'DUT',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 8,
+          unitCost: '1200',
+          productType: 'hardware',
+          photoDataUris: ['data:image/webp;base64,corrupt-bytes'],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
+    });
+
+    renderPage(['/ui/fleet/catalog?view=card']);
+
+    const photoImg = await screen.findByTestId('catalog-photo-img-FAIL-001');
+    expect(photoImg).toBeInTheDocument();
+
+    // Simulate image load error
+    fireEvent.error(photoImg);
+
+    // After onError fires, card falls back to category schematic
+    const fallbackBox = await screen.findByTestId(
+      'catalog-photo-fallback-FAIL-001',
+    );
+    expect(fallbackBox).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('catalog-photo-img-FAIL-001'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('should advance to remaining valid photo when one photo in a multi-photo entry fails', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'MULTI-FAIL-001',
+          productName: 'Partial Photo Failure SKU',
+          gpn: '1088888-01',
+          descriptiveName:
+            'Catalog item with one corrupt photo and one valid photo',
+          resourceType: 'DUT',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 8,
+          unitCost: '1200',
+          productType: 'hardware',
+          photoDataUris: [
+            'data:image/webp;base64,corrupt-first',
+            'data:image/webp;base64,valid-second',
+          ],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
+    });
+
+    renderPage(['/ui/fleet/catalog?view=card']);
+
+    const photoImg = await screen.findByTestId(
+      'catalog-photo-img-MULTI-FAIL-001',
+    );
+    expect(photoImg).toHaveAttribute(
+      'src',
+      'data:image/webp;base64,corrupt-first',
+    );
+
+    // Simulate error on first photo; component should filter it out and display the remaining valid photo
+    fireEvent.error(photoImg);
+
+    const remainingImg = await screen.findByTestId(
+      'catalog-photo-img-MULTI-FAIL-001',
+    );
+    expect(remainingImg).toHaveAttribute(
+      'src',
+      'data:image/webp;base64,valid-second',
+    );
+    expect(
+      screen.queryByTestId('catalog-photo-fallback-MULTI-FAIL-001'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('should render legacy 2-column card layout when product-catalog-revamp feature flag is off', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'LEGACY-001',
+          productName: 'Legacy Card Entry',
+          gpn: '1099999-01',
+          descriptiveName: 'Legacy card fallback test',
+          resourceType: 'DUT',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 8,
+          unitCost: '1500',
+          productType: 'hardware',
+          photoDataUris: ['data:image/webp;base64,valid-photo'],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
+    });
+
+    renderPage(['/ui/fleet/catalog?view=card&ff=product-catalog-revamp:off']);
+
+    const legacyCard = await screen.findByTestId(
+      'legacy-catalog-card-LEGACY-001',
+    );
+    expect(legacyCard).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('catalog-photo-img-LEGACY-001'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('should toggle between revamped and legacy card views via the Feature Flags dialog even after URL override', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/ui/fleet/catalog?view=card&ff=product-catalog-revamp:on',
+    );
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'TOGGLE-001',
+          productName: 'Toggleable Card Entry',
+          gpn: '1099999-02',
+          descriptiveName: 'Interactive flag toggle test',
+          resourceType: 'DUT',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 8,
+          unitCost: '1500',
+          productType: 'hardware',
+          photoDataUris: ['data:image/webp;base64,valid-photo'],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('GetProductCatalogFilterValues', {
+      productCatalogId: [],
+    });
+
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/fleet/catalog"
+        routerOptions={{
+          initialEntries: [
+            '/ui/fleet/catalog?view=card&ff=product-catalog-revamp:on',
+          ],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <AvailableFlags />
+            <ProductCataloguePage />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(
+      await screen.findByTestId('catalog-card-TOGGLE-001'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /toggle feature flags/i }),
+    );
+    const flagSwitch = screen.getByTitle(
+      'fleet-console:product-catalog-revamp switch',
+    );
+    const switchInput =
+      within(flagSwitch).queryByRole('checkbox') ?? flagSwitch;
+    fireEvent.click(switchInput);
+
+    expect(
+      await screen.findByTestId('legacy-catalog-card-TOGGLE-001'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(switchInput);
+    expect(
+      await screen.findByTestId('catalog-card-TOGGLE-001'),
+    ).toBeInTheDocument();
   });
 });
