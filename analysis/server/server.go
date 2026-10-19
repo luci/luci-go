@@ -92,8 +92,8 @@ func Main(init func(srv *luciserver.Server) error) {
 	luciserver.Main(nil, modules, init)
 }
 
-// RegisterPRPCHandlers registers pPRC handlers.
-func RegisterPRPCHandlers(srv *luciserver.Server) error {
+// RegisterRPCHandlers registers pPRC handlers.
+func RegisterRPCHandlers(srv *luciserver.Server) error {
 	srv.ConfigurePRPC(func(s *prpc.Server) {
 		s.AccessControl = prpc.AllowOriginAll
 	})

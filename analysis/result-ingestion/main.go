@@ -23,16 +23,14 @@ import (
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
-// Entrypoint for the result-ingestion service.
+// Entrypoint for the LUCI Analysis result-ingestion GAE service.
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
+		// Note: Most tasks are now served via Cloud Run.
+		// Only the update-bug task is handled via this server, even if
+		// more tasks are registered here.
 		if err := server.RegisterTaskQueueHandlers(srv); err != nil {
 			return errors.Fmt("register task queue handlers: %w", err)
-		}
-		// Pub/sub handlers are split between result-ingestion and api services,
-		// according to complexity of the handlers.
-		if err := server.RegisterPubSubHandlers(srv); err != nil {
-			return errors.Fmt("register pubsub handlers: %w", err)
 		}
 		return nil
 	})

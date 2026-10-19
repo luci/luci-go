@@ -15,11 +15,8 @@
 package main
 
 import (
-	"net/http"
-
 	"go.chromium.org/luci/common/errors"
 	luciserver "go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/analysis/server"
 
@@ -30,18 +27,12 @@ import (
 // This is the only service accessible from analysis.api.luci.app.
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
-		if err := server.RegisterPRPCHandlers(srv); err != nil {
+		// Note: Most RPCs are now served via Cloud Run.
+		// Only Buganizer-related RPCs are handled via this server, even if
+		// more RPCs are registered here.
+		if err := server.RegisterRPCHandlers(srv); err != nil {
 			return errors.Fmt("register rpc handlers: %w", err)
 		}
-		if err := server.RegisterPubSubHandlers(srv); err != nil {
-			return errors.Fmt("register pubsub handlers: %w", err)
-		}
-		server.RegisterCrons(srv)
-
-		// Redirect the frontend to RPC explorer.
-		srv.Routes.GET("/", nil, func(ctx *router.Context) {
-			http.Redirect(ctx.Writer, ctx.Request, "/rpcexplorer/", http.StatusFound)
-		})
 		return nil
 	})
 }

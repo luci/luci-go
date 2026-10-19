@@ -30,7 +30,7 @@ import (
 // This is the only service accessible from analysis.api.luci.app.
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
-		if err := server.RegisterPRPCHandlers(srv); err != nil {
+		if err := server.RegisterRPCHandlers(srv); err != nil {
 			return errors.Fmt("register rpc handlers: %w", err)
 		}
 		if err := server.RegisterPubSubHandlers(srv); err != nil {
