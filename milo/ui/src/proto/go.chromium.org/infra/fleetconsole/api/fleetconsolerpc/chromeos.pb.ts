@@ -873,7 +873,62 @@ export interface SetDefaultQuotaResponse {
 }
 
 export interface GetWorkforceActivityRequest {
-  readonly timeframe: string;
+  /**
+   * Timeframe window for activity metrics.
+   * If TIMEFRAME_UNSPECIFIED, defaults to TIMEFRAME_1D.
+   */
+  readonly timeframe: GetWorkforceActivityRequest_Timeframe;
+}
+
+export enum GetWorkforceActivityRequest_Timeframe {
+  TIMEFRAME_UNSPECIFIED = 0,
+  TIMEFRAME_1D = 1,
+  TIMEFRAME_7D = 2,
+  TIMEFRAME_30D = 3,
+  TIMEFRAME_YTD = 4,
+}
+
+export function getWorkforceActivityRequest_TimeframeFromJSON(object: any): GetWorkforceActivityRequest_Timeframe {
+  switch (object) {
+    case 0:
+    case "TIMEFRAME_UNSPECIFIED":
+      return GetWorkforceActivityRequest_Timeframe.TIMEFRAME_UNSPECIFIED;
+    case 1:
+    case "TIMEFRAME_1D":
+      return GetWorkforceActivityRequest_Timeframe.TIMEFRAME_1D;
+    case 2:
+    case "TIMEFRAME_7D":
+      return GetWorkforceActivityRequest_Timeframe.TIMEFRAME_7D;
+    case 3:
+    case "TIMEFRAME_30D":
+      return GetWorkforceActivityRequest_Timeframe.TIMEFRAME_30D;
+    case 4:
+    case "TIMEFRAME_YTD":
+      return GetWorkforceActivityRequest_Timeframe.TIMEFRAME_YTD;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum GetWorkforceActivityRequest_Timeframe",
+      );
+  }
+}
+
+export function getWorkforceActivityRequest_TimeframeToJSON(object: GetWorkforceActivityRequest_Timeframe): string {
+  switch (object) {
+    case GetWorkforceActivityRequest_Timeframe.TIMEFRAME_UNSPECIFIED:
+      return "TIMEFRAME_UNSPECIFIED";
+    case GetWorkforceActivityRequest_Timeframe.TIMEFRAME_1D:
+      return "TIMEFRAME_1D";
+    case GetWorkforceActivityRequest_Timeframe.TIMEFRAME_7D:
+      return "TIMEFRAME_7D";
+    case GetWorkforceActivityRequest_Timeframe.TIMEFRAME_30D:
+      return "TIMEFRAME_30D";
+    case GetWorkforceActivityRequest_Timeframe.TIMEFRAME_YTD:
+      return "TIMEFRAME_YTD";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum GetWorkforceActivityRequest_Timeframe",
+      );
+  }
 }
 
 export interface ClaimedDut {
@@ -8964,13 +9019,13 @@ export const SetDefaultQuotaResponse: MessageFns<SetDefaultQuotaResponse> = {
 };
 
 function createBaseGetWorkforceActivityRequest(): GetWorkforceActivityRequest {
-  return { timeframe: "" };
+  return { timeframe: 0 };
 }
 
 export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest> = {
   encode(message: GetWorkforceActivityRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.timeframe !== "") {
-      writer.uint32(10).string(message.timeframe);
+    if (message.timeframe !== 0) {
+      writer.uint32(8).int32(message.timeframe);
     }
     return writer;
   },
@@ -8989,11 +9044,11 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
         const tag = reader.uint32();
         switch (tag >>> 3) {
           case 1: {
-            if (tag !== 10) {
+            if (tag !== 8) {
               break;
             }
 
-            message.timeframe = reader.string();
+            message.timeframe = reader.int32() as any;
             continue;
           }
         }
@@ -9009,13 +9064,13 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
   },
 
   fromJSON(object: any): GetWorkforceActivityRequest {
-    return { timeframe: isSet(object.timeframe) ? globalThis.String(object.timeframe) : "" };
+    return { timeframe: isSet(object.timeframe) ? getWorkforceActivityRequest_TimeframeFromJSON(object.timeframe) : 0 };
   },
 
   toJSON(message: GetWorkforceActivityRequest): unknown {
     const obj: any = {};
-    if (message.timeframe !== "") {
-      obj.timeframe = message.timeframe;
+    if (message.timeframe !== 0) {
+      obj.timeframe = getWorkforceActivityRequest_TimeframeToJSON(message.timeframe);
     }
     return obj;
   },
@@ -9025,7 +9080,7 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
   },
   fromPartial(object: DeepPartial<GetWorkforceActivityRequest>): GetWorkforceActivityRequest {
     const message = createBaseGetWorkforceActivityRequest() as any;
-    message.timeframe = object.timeframe ?? "";
+    message.timeframe = object.timeframe ?? 0;
     return message;
   },
 };

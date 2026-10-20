@@ -66,6 +66,7 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
   GetWorkforceActivityRequest,
+  GetWorkforceActivityRequest_Timeframe,
   TechnicianActivity,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { Duration as ProtoDuration } from '@/proto/google/protobuf/duration.pb';
@@ -76,6 +77,16 @@ const formatDuration = (d?: ProtoDuration): string =>
   d ? prettySeconds(Number(d.seconds)) : '-';
 
 export type TimeframeOption = '1D' | '7D' | '30D' | 'YTD';
+
+const TIMEFRAME_TO_PROTO: Record<
+  TimeframeOption,
+  GetWorkforceActivityRequest_Timeframe
+> = {
+  '1D': GetWorkforceActivityRequest_Timeframe.TIMEFRAME_1D,
+  '7D': GetWorkforceActivityRequest_Timeframe.TIMEFRAME_7D,
+  '30D': GetWorkforceActivityRequest_Timeframe.TIMEFRAME_30D,
+  YTD: GetWorkforceActivityRequest_Timeframe.TIMEFRAME_YTD,
+};
 
 export interface WorkforceActivityViewProps {
   inProgressCount?: number;
@@ -119,7 +130,7 @@ export const WorkforceActivityView = ({
   const request = useMemo(
     () =>
       GetWorkforceActivityRequest.fromPartial({
-        timeframe,
+        timeframe: TIMEFRAME_TO_PROTO[timeframe],
       }),
     [timeframe],
   );

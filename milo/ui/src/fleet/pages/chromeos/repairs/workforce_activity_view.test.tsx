@@ -24,6 +24,7 @@ import {
   enableWorkforceTimeframeFilter,
 } from '@/fleet/features';
 import * as UseWorkforceActivityModule from '@/fleet/pages/chromeos/repairs/use_workforce_activity';
+import { GetWorkforceActivityRequest_Timeframe } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { Component, WorkforceActivityView } from './workforce_activity_view';
@@ -339,14 +340,42 @@ describe('<WorkforceActivityView />', () => {
 
     renderWorkforceView();
 
-    const weekButton = screen.getByRole('button', {
-      name: /Last Week \(7D\)/i,
-    });
-    fireEvent.click(weekButton);
-
     expect(useWorkforceSpy).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        timeframe: '7D',
+        timeframe: GetWorkforceActivityRequest_Timeframe.TIMEFRAME_1D,
+      }),
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /Last Week \(7D\)/i,
+      }),
+    );
+    expect(useWorkforceSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        timeframe: GetWorkforceActivityRequest_Timeframe.TIMEFRAME_7D,
+      }),
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /Last Month \(30D\)/i,
+      }),
+    );
+    expect(useWorkforceSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        timeframe: GetWorkforceActivityRequest_Timeframe.TIMEFRAME_30D,
+      }),
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /^YTD$/i,
+      }),
+    );
+    expect(useWorkforceSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        timeframe: GetWorkforceActivityRequest_Timeframe.TIMEFRAME_YTD,
       }),
     );
   });
