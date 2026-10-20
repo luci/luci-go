@@ -17,6 +17,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import {
+  safeLocalStorageGet,
+  safeLocalStorageRemove,
+  safeLocalStorageSet,
+} from '@/fleet/utils/storage';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { HealthSlice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -25,26 +30,16 @@ export const DEFAULT_SLICE_STORAGE_KEY =
   'fleet.chromeos.health.default_slice_id';
 
 export const useDefaultSlice = () => {
-  const [defaultSliceId, setDefaultSliceIdState] = useState<string | null>(
-    () => {
-      try {
-        return localStorage.getItem(DEFAULT_SLICE_STORAGE_KEY);
-      } catch {
-        return null;
-      }
-    },
+  const [defaultSliceId, setDefaultSliceIdState] = useState<string | null>(() =>
+    safeLocalStorageGet(DEFAULT_SLICE_STORAGE_KEY),
   );
 
   const setDefaultSliceId = useCallback((id: string | null) => {
     setDefaultSliceIdState(id);
-    try {
-      if (id === null) {
-        localStorage.removeItem(DEFAULT_SLICE_STORAGE_KEY);
-      } else {
-        localStorage.setItem(DEFAULT_SLICE_STORAGE_KEY, id);
-      }
-    } catch {
-      // Ignore localStorage errors (e.g. private mode, sandbox restrictions).
+    if (id === null) {
+      safeLocalStorageRemove(DEFAULT_SLICE_STORAGE_KEY);
+    } else {
+      safeLocalStorageSet(DEFAULT_SLICE_STORAGE_KEY, id);
     }
   }, []);
 

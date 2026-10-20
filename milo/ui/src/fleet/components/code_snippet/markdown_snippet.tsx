@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import { useEffect, useId, useRef, useState } from 'react';
 
+import { logging } from '@/common/tools/logging';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 import CodeSnippet from './code_snippet';
@@ -82,8 +83,7 @@ export function MarkdownSnippet({
       }
       copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('Failed to copy markdown to clipboard:', e);
+      logging.warn('Failed to copy markdown to clipboard:', e);
     }
   };
 

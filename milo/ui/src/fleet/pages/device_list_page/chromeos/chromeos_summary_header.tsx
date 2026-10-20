@@ -19,6 +19,7 @@ import { Alert, Box, Divider, Grid, Link, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 
+import { logging } from '@/common/tools/logging';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
@@ -207,8 +208,7 @@ export function ChromeOSSummaryHeader({
     // timestamps (race condition), causing availableReady to occasionally exceed availableIdle.
     const notReadyValue = availableIdle - availableReady;
     if (notReadyValue < 0) {
-      // eslint-disable-next-line no-console
-      console.warn(
+      logging.warn(
         `Data anomaly: availableReady (${availableReady}) is greater than availableIdle (${availableIdle})`,
       );
     }

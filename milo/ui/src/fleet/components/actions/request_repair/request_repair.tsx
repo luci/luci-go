@@ -15,6 +15,7 @@ import { FeedbackOutlined } from '@mui/icons-material';
 import { Button, Tooltip } from '@mui/material';
 import type { ReactElement } from 'react';
 
+import { logging } from '@/common/tools/logging';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import {
   AndroidDevice,
@@ -102,8 +103,7 @@ export function RequestRepair({
           ? config.hotlistIds(items)
           : config.hotlistIds || '';
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error((e as Error).message);
+      logging.error('Failed to prepare repair request:', e);
       return;
     }
 

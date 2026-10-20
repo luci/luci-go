@@ -16,6 +16,11 @@ import { MRT_ColumnSizingState } from 'material-react-table';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { logging } from '@/common/tools/logging';
+import {
+  safeLocalStorageGet,
+  safeLocalStorageRemove,
+  safeLocalStorageSet,
+} from '@/fleet/utils/storage';
 
 export function useMrtColumnSizing(localStorageKey: string): {
   columnSizing: MRT_ColumnSizingState;
@@ -29,7 +34,9 @@ export function useMrtColumnSizing(localStorageKey: string): {
   const [columnSizing, setColumnSizing] = useState<MRT_ColumnSizingState>(
     () => {
       try {
-        const stored = localStorage.getItem(`${localStorageKey}-sizes`);
+        const stored = safeLocalStorageGet(`${localStorageKey}-sizes`, (e) =>
+          logging.error('Failed to load column sizing from localStorage', e),
+        );
         const parsed = stored ? JSON.parse(stored) : null;
         return parsed || {};
       } catch (e) {
@@ -44,7 +51,9 @@ export function useMrtColumnSizing(localStorageKey: string): {
   useEffect(() => {
     if (currentKeyRef.current !== localStorageKey) {
       try {
-        const stored = localStorage.getItem(`${localStorageKey}-sizes`);
+        const stored = safeLocalStorageGet(`${localStorageKey}-sizes`, (e) =>
+          logging.error('Failed to load column sizing from localStorage', e),
+        );
         const parsed = stored ? JSON.parse(stored) : null;
         setColumnSizing(parsed || {});
       } catch (e) {
@@ -61,14 +70,11 @@ export function useMrtColumnSizing(localStorageKey: string): {
     }
 
     const handler = setTimeout(() => {
-      try {
-        localStorage.setItem(
-          `${localStorageKey}-sizes`,
-          JSON.stringify(columnSizing),
-        );
-      } catch (e) {
-        logging.error('Failed to save column sizing to localStorage', e);
-      }
+      safeLocalStorageSet(
+        `${localStorageKey}-sizes`,
+        JSON.stringify(columnSizing),
+        (e) => logging.error('Failed to save column sizing to localStorage', e),
+      );
     }, 500);
 
     return () => {
@@ -77,11 +83,9 @@ export function useMrtColumnSizing(localStorageKey: string): {
   }, [columnSizing, localStorageKey]);
 
   const resetColumnWidths = useCallback(() => {
-    try {
-      localStorage.removeItem(`${localStorageKey}-sizes`);
-    } catch (e) {
-      logging.error('Failed to remove column sizing from localStorage', e);
-    }
+    safeLocalStorageRemove(`${localStorageKey}-sizes`, (e) =>
+      logging.error('Failed to remove column sizing from localStorage', e),
+    );
     setColumnSizing({});
   }, [localStorageKey]);
 
