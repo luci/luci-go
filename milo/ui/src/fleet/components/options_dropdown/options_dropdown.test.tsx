@@ -61,6 +61,108 @@ describe('OptionsDropdown', () => {
     expect(searchInput).toHaveValue('ab');
   });
 
+  it('supports Ctrl+Z / Cmd+Z undo and Ctrl+Y / Cmd+Shift+Z redo in search input without remounting', async () => {
+    const user = userEvent.setup();
+    const onParentKeyDown = jest.fn();
+    render(
+      // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+      <div onKeyDown={onParentKeyDown}>
+        <TestComponent />
+      </div>,
+    );
+
+    await user.click(screen.getByText('Open'));
+
+    const searchInput = screen.getByRole('textbox');
+    await user.type(searchInput, 'status');
+    expect(searchInput).toHaveValue('status');
+
+    // Undo with Ctrl+Z
+    fireEvent.keyDown(searchInput, { key: 'z', ctrlKey: true });
+    expect(searchInput).toHaveValue('statu');
+    expect(screen.getByRole('textbox')).toBe(searchInput);
+
+    // Undo with Cmd+Z (Meta+Z)
+    fireEvent.keyDown(searchInput, { key: 'z', metaKey: true });
+    expect(searchInput).toHaveValue('stat');
+
+    // Redo with Ctrl+Y
+    fireEvent.keyDown(searchInput, { key: 'y', ctrlKey: true });
+    expect(searchInput).toHaveValue('statu');
+
+    // Redo with Cmd+Shift+Z
+    fireEvent.keyDown(searchInput, { key: 'Z', metaKey: true, shiftKey: true });
+    expect(searchInput).toHaveValue('status');
+
+    // Undo with Ctrl+Z to test redo-stack truncation on new typing
+    fireEvent.keyDown(searchInput, { key: 'z', ctrlKey: true });
+    expect(searchInput).toHaveValue('statu');
+
+    // Typing a new character truncates the redo stack
+    await user.type(searchInput, 'e');
+    expect(searchInput).toHaveValue('statue');
+
+    // Subsequent Ctrl+Y redo is a no-op because the redo stack was truncated
+    fireEvent.keyDown(searchInput, { key: 'y', ctrlKey: true });
+    expect(searchInput).toHaveValue('statue');
+
+    // Ctrl+Shift+Y is guarded with !e.shiftKey and not intercepted as redo
+    fireEvent.keyDown(searchInput, { key: 'y', ctrlKey: true, shiftKey: true });
+    expect(searchInput).toHaveValue('statue');
+
+    // Parent keydown listener should not receive Ctrl+Z / Ctrl+Y events
+    expect(onParentKeyDown).not.toHaveBeenCalled();
+  });
+
+  it('preserves undo/redo history when externalSearchQuery is updated via onSearchQueryChange', async () => {
+    const user = userEvent.setup();
+    const ControlledComponent = () => {
+      const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+      const [query, setQuery] = useState('');
+
+      return (
+        <div>
+          <button onClick={(e) => setAnchorEl(e.currentTarget)}>Open</button>
+          <OptionsDropdown
+            open={!!anchorEl}
+            anchorEl={anchorEl}
+            onClose={() => setAnchorEl(null)}
+            onApply={() => {}}
+            enableSearchInput
+            externalSearchQuery={query}
+            onSearchQueryChange={setQuery}
+            renderChild={() => (
+              <div>
+                <div role="option" aria-selected="false">
+                  Item 1
+                </div>
+              </div>
+            )}
+          />
+        </div>
+      );
+    };
+
+    render(<ControlledComponent />);
+
+    await user.click(screen.getByText('Open'));
+
+    const searchInput = screen.getByRole('textbox');
+    await user.type(searchInput, 'abc');
+    expect(searchInput).toHaveValue('abc');
+
+    // Undo with Ctrl+Z step-by-step
+    fireEvent.keyDown(searchInput, { key: 'z', ctrlKey: true });
+    expect(searchInput).toHaveValue('ab');
+
+    fireEvent.keyDown(searchInput, { key: 'z', ctrlKey: true });
+    expect(searchInput).toHaveValue('a');
+
+    // Redo with Ctrl+Y
+    fireEvent.keyDown(searchInput, { key: 'y', ctrlKey: true });
+    expect(searchInput).toHaveValue('ab');
+  });
+
   it('should clear search query when backspace is pressed OUTSIDE input', async () => {
     const user = userEvent.setup();
     render(<TestComponent />);

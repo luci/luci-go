@@ -135,12 +135,67 @@ export function OptionsDropdown({
   const paperRef = useRef<HTMLDivElement>(null);
   const popperRef = useRef<{ update: () => void } | null>(null);
   const [searchQuery, setSearchQuery] = useState(externalSearchQuery);
+  const historyRef = useRef<{ entries: string[]; index: number }>({
+    entries: [externalSearchQuery],
+    index: 0,
+  });
 
   const placement = mapOriginToPlacement(anchorOrigin, transformOrigin);
   const effectiveSearchQuery = controlledSearchQuery ?? searchQuery;
 
+  const updateSearchQuery = (nextQuery: string) => {
+    const history = historyRef.current;
+    if (history.entries[history.index] !== nextQuery) {
+      const nextEntries = history.entries.slice(0, history.index + 1);
+      nextEntries.push(nextQuery);
+      historyRef.current = {
+        entries: nextEntries,
+        index: nextEntries.length - 1,
+      };
+    }
+    setSearchQuery(nextQuery);
+    onSearchQueryChange?.(nextQuery);
+  };
+
+  const handleUndoRedoKeyDown = (e: KeyboardEvent<HTMLElement>): boolean => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) {
+      return false;
+    }
+    const key = e.key.toLowerCase();
+    const isUndo = key === 'z' && !e.shiftKey;
+    const isRedo = (key === 'y' && !e.shiftKey) || (key === 'z' && e.shiftKey);
+    if (!isUndo && !isRedo) {
+      return false;
+    }
+
+    const history = historyRef.current;
+    const targetIndex = isUndo ? history.index - 1 : history.index + 1;
+    if (targetIndex >= 0 && targetIndex < history.entries.length) {
+      history.index = targetIndex;
+      const nextVal = history.entries[targetIndex];
+      setSearchQuery(nextVal);
+      onSearchQueryChange?.(nextVal);
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    return true;
+  };
+
+  const prevResetKeyRef = useRef(resetKey);
   useEffect(() => {
-    setSearchQuery(externalSearchQuery);
+    const isReset = prevResetKeyRef.current !== resetKey;
+    prevResetKeyRef.current = resetKey;
+    if (
+      isReset ||
+      externalSearchQuery !==
+        historyRef.current.entries[historyRef.current.index]
+    ) {
+      setSearchQuery(externalSearchQuery);
+      historyRef.current = {
+        entries: [externalSearchQuery],
+        index: 0,
+      };
+    }
   }, [resetKey, externalSearchQuery]);
 
   useEffect(() => {
@@ -165,6 +220,10 @@ export function OptionsDropdown({
         }
       } else {
         setSearchQuery('');
+        historyRef.current = {
+          entries: [''],
+          index: 0,
+        };
       }
     }
   }, [open, enableSearchInput, autoFocusSearchInput]);
@@ -268,6 +327,12 @@ export function OptionsDropdown({
               onApply();
             }
 
+            if (enableSearchInput) {
+              if (handleUndoRedoKeyDown(e)) {
+                return;
+              }
+            }
+
             if (enableSearchInput && !disableTypeToSearch) {
               keyboardListNavigationHandler(e);
               switch (e.key) {
@@ -277,19 +342,14 @@ export function OptionsDropdown({
                   if (document.activeElement === searchInput.current) {
                     return;
                   }
-                  setSearchQuery('');
-                  onSearchQueryChange?.('');
+                  updateSearchQuery('');
                   searchInput?.current?.focus();
               }
               // if the key is a single alphanumeric character without modifier
               if (/^[a-zA-Z0-9_.\-/]$/.test(e.key) && !hasAnyModifier(e)) {
                 if (document.activeElement === searchInput.current) return;
                 searchInput?.current?.focus();
-                setSearchQuery((old) => {
-                  const next = old + e.key;
-                  onSearchQueryChange?.(next);
-                  return next;
-                });
+                updateSearchQuery(effectiveSearchQuery + e.key);
                 e.preventDefault(); // Avoid race condition to type twice in the input
               }
             }
@@ -310,17 +370,19 @@ export function OptionsDropdown({
         >
           {enableSearchInput && (
             <SearchInput
+              key="options-search-input"
               searchInput={searchInput}
               searchQuery={effectiveSearchQuery}
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus={autoFocusSearchInput}
               fullWidth
               onChange={(e) => {
-                const val = e.currentTarget.value;
-                setSearchQuery(val);
-                onSearchQueryChange?.(val);
+                updateSearchQuery(e.currentTarget.value);
               }}
               onKeyDown={(e) => {
+                if (handleUndoRedoKeyDown(e)) {
+                  return;
+                }
                 if (e.key === 'ArrowDown' || (e.key === 'j' && e.ctrlKey)) {
                   const firstItem =
                     listContainerRef.current?.querySelector<HTMLElement>(
@@ -331,6 +393,14 @@ export function OptionsDropdown({
                     );
                   firstItem?.focus();
                   e.preventDefault();
+                  e.stopPropagation();
+                  return;
+                }
+                if (
+                  (e.ctrlKey || e.metaKey) &&
+                  e.key !== 'k' &&
+                  e.key !== 'Enter'
+                ) {
                   e.stopPropagation();
                   return;
                 }
