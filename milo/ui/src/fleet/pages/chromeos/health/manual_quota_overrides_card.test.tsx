@@ -46,9 +46,9 @@ describe('ManualQuotaOverridesCard', () => {
         overridesQuery: {
           data: isError
             ? undefined
-            : ({
+            : ListModelQuotaOverridesResponse.fromPartial({
                 overrides,
-              } as unknown as ListModelQuotaOverridesResponse),
+              }),
           isPending,
           isError,
           error: error ?? (isError ? new Error('Failed to load') : null),

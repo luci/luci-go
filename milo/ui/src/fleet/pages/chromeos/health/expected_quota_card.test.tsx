@@ -42,9 +42,9 @@ describe('ExpectedQuotaCard', () => {
         data:
           isError || defaultQuota === undefined
             ? undefined
-            : ({
+            : GetDefaultQuotaResponse.fromPartial({
                 defaultQuota,
-              } as unknown as GetDefaultQuotaResponse),
+              }),
         isPending,
         isError,
         error: error ?? (isError ? new Error('Failed to load') : null),

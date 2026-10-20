@@ -31,12 +31,12 @@ describe('useHealthFilters', () => {
     jest
       .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
       .mockReturnValue({
-        data: {
+        data: GetDeviceDimensionsResponse.fromPartial({
           baseDimensions: {},
           labels: {
             'label-model': { values: ['volteer', 'brya'] },
           },
-        } as unknown as GetDeviceDimensionsResponse,
+        }),
         isPending: false,
         isLoading: false,
         isError: false,
@@ -64,12 +64,12 @@ describe('useHealthFilters', () => {
     jest
       .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
       .mockReturnValue({
-        data: {
+        data: GetDeviceDimensionsResponse.fromPartial({
           baseDimensions: {},
           labels: {
             'label-pool': { values: ['DUT_POOL_QUOTA', 'DUT_POOL_CQ'] },
           },
-        } as unknown as GetDeviceDimensionsResponse,
+        }),
         isPending: false,
         isLoading: false,
         isError: false,
@@ -96,7 +96,7 @@ describe('useHealthFilters', () => {
     jest
       .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
       .mockReturnValue({
-        data: {
+        data: GetDeviceDimensionsResponse.fromPartial({
           baseDimensions: {},
           labels: {
             'label-model': { values: ['volteer'] },
@@ -104,7 +104,7 @@ describe('useHealthFilters', () => {
             'label-board': { values: ['brya', 'volteer'] },
             dut_state: { values: ['ready', 'needs_repair'] },
           },
-        } as unknown as GetDeviceDimensionsResponse,
+        }),
         isPending: false,
         isLoading: false,
         isError: false,

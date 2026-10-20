@@ -429,7 +429,9 @@ describe('<MaterialReactTable />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    const actionButtons = document.querySelectorAll('.ColumnActionsMenuButton');
+    const actionButtons = screen.getAllByRole('button', {
+      name: /Column Actions/i,
+    });
     expect(actionButtons.length).toBeGreaterThan(0);
 
     await act(async () => fireEvent.click(actionButtons[0]));
@@ -452,7 +454,9 @@ describe('<MaterialReactTable />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    const actionButtons = document.querySelectorAll('.ColumnActionsMenuButton');
+    const actionButtons = screen.getAllByRole('button', {
+      name: /Column Actions/i,
+    });
     fireEvent.click(actionButtons[0]);
 
     expect(screen.queryByText('Unsort')).toBeNull();
@@ -478,7 +482,9 @@ describe('<MaterialReactTable />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    const actionButtons = document.querySelectorAll('.ColumnActionsMenuButton');
+    const actionButtons = screen.getAllByRole('button', {
+      name: /Column Actions/i,
+    });
     fireEvent.click(actionButtons[0]);
 
     expect(screen.getByText('Filter')).toBeVisible();
@@ -499,7 +505,7 @@ describe('<MaterialReactTable />', () => {
 
     // The selection column header should have a fixed width of 40
     // In MRT v2, column sizes are often applied via CSS variables on the table
-    const table = document.querySelector('table');
+    const table = screen.getByRole('table');
     expect(table).toHaveStyle('--header-mrt_row_select-size: 40');
   });
 
