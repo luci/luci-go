@@ -26,6 +26,8 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+import fconPlugin from './src/fleet/eslint-plugin-fcon-rules/index.js';
+
 const localPlugin = {
   rules: {
     'copyright-header': {
@@ -359,8 +361,23 @@ export default [
   // 6. Override for Fleet Console Files
   {
     files: ['src/fleet/**/*.{js,mjs,cjs,ts,jsx,tsx}'],
+    plugins: { 'fcon-rules': fconPlugin },
     rules: {
       'local-rules/canonical-go-links': 'error',
+      'fcon-rules/no-window-location-hostname': 'error',
+      'fcon-rules/require-create-fleet-feature-flag': 'error',
+      'fcon-rules/no-legacy-imports': 'error',
+    },
+  },
+  {
+    files: [
+      'src/fleet/features.ts',
+      'src/fleet/**/*.test.{ts,tsx}',
+      'src/fleet/testing_tools/**',
+      'src/fleet/components/fc_data_table/mrt_filter_menu_item.tsx',
+    ],
+    rules: {
+      'no-restricted-syntax': 'off',
     },
   },
 ];

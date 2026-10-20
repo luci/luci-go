@@ -144,6 +144,7 @@ const findNeighborsInList = (target: HTMLElement) => {
 };
 
 export const isProdEnvironment = () => {
+  // eslint-disable-next-line fcon-rules/no-window-location-hostname
   return window.location.hostname === MILO_PROD;
 };
 

@@ -26,8 +26,7 @@ import { DateTime, Settings } from 'luxon';
  * MUI DatePicker can handle invalid inputs gracefully without crashing the app.
  */
 export class SafeAdapterLuxon extends AdapterLuxon {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(props?: any) {
+  constructor(props?: ConstructorParameters<typeof AdapterLuxon>[0]) {
     super(props);
 
     // Override parse after super() which sets the original parse.

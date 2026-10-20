@@ -29,6 +29,7 @@ import { MRT_INTERNAL_COLUMNS } from '@/fleet/components/columns/use_mrt_column_
 import { FC_ColumnDef } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { DateFilter } from '@/fleet/components/filter_dropdown/date_filter';
 import { MenuSkeleton } from '@/fleet/components/filter_dropdown/menu_skeleton';
+// eslint-disable-next-line fcon-rules/no-legacy-imports
 import { OptionsMenuOld } from '@/fleet/components/filter_dropdown/options_menu_old';
 import {
   RangeFilter,

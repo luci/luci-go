@@ -20,13 +20,37 @@ import {
   getFeatureFlagKey,
   getFeatureFlagLocalStorageKey,
   useFeatureFlag,
+  type FeatureEnvironment,
+  type FeatureFlag,
+  type FeatureFlagConfig,
 } from '@/common/feature_flags';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-export const enableAndroidUtilizationMetrics = createFeatureFlag({
+export interface FleetFeatureFlagConfig
+  extends Omit<FeatureFlagConfig, 'namespace' | 'allowedEnvironments'> {
+  readonly namespace?: 'fleet-console';
+  readonly allowedEnvironments: readonly [
+    FeatureEnvironment,
+    ...FeatureEnvironment[],
+  ];
+}
+
+/**
+ * Registers a Fleet Console feature flag with a compile-time requirement for
+ * `allowedEnvironments` (`['dev']` or `['dev', 'prod']`).
+ */
+export function createFleetFeatureFlag(
+  config: FleetFeatureFlagConfig,
+): FeatureFlag {
+  return createFeatureFlag({
+    ...config,
+    namespace: config.namespace ?? 'fleet-console',
+  });
+}
+
+export const enableAndroidUtilizationMetrics = createFleetFeatureFlag({
   description:
     'Displays average Android device utilization metrics, columns, and filters.',
-  namespace: 'fleet-console',
   name: 'android-utilization-metrics',
   percentage: {
     dev: 100,
@@ -36,48 +60,43 @@ export const enableAndroidUtilizationMetrics = createFeatureFlag({
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enablePTE = createFeatureFlag({
+export const enablePTE = createFleetFeatureFlag({
   description: 'Enables PTE support in the fleet console.',
-  namespace: 'fleet-console',
   name: 'pte-support',
   percentage: 100,
   trackingBug: '503760268',
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enableChromeOsRepairsDashboard = createFeatureFlag({
+export const enableChromeOsRepairsDashboard = createFleetFeatureFlag({
   description: 'Displays the ChromeOS Repair Dashboard shell.',
-  namespace: 'fleet-console',
   name: 'chromeos-repairs-dashboard',
   percentage: 100,
   trackingBug: '542600108',
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enableAndroidHealthMetrics = createFeatureFlag({
+export const enableAndroidHealthMetrics = createFleetFeatureFlag({
   description:
     'Displays unified Android device health metrics based on health categories.',
-  namespace: 'fleet-console',
   name: 'android-health-metrics',
   percentage: 100,
   trackingBug: '537412303',
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enableChromeOsWorkforceActivity = createFeatureFlag({
+export const enableChromeOsWorkforceActivity = createFleetFeatureFlag({
   description:
     'Displays the ChromeOS Workforce Activity monitoring view in repairs.',
-  namespace: 'fleet-console',
   name: 'chromeos-workforce-activity',
   percentage: 100,
   trackingBug: '565724356',
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enableWorkforcePickupRank = createFeatureFlag({
+export const enableWorkforcePickupRank = createFleetFeatureFlag({
   description:
     'Displays the Avg Queue Pickup Rank metric and table column in ChromeOS Workforce Activity.',
-  namespace: 'fleet-console',
   name: 'workforce-avg-queue-pickup-rank',
   percentage: {
     dev: 0,
@@ -86,10 +105,9 @@ export const enableWorkforcePickupRank = createFeatureFlag({
   allowedEnvironments: ['dev'],
 });
 
-export const enableWorkforceInProgressRepairs = createFeatureFlag({
+export const enableWorkforceInProgressRepairs = createFleetFeatureFlag({
   description:
     'Displays the Currently Claimed DUTs / In-Progress Repairs metric and table column in ChromeOS Workforce Activity.',
-  namespace: 'fleet-console',
   name: 'workforce-in-progress-repairs',
   percentage: {
     dev: 0,
@@ -98,10 +116,9 @@ export const enableWorkforceInProgressRepairs = createFeatureFlag({
   allowedEnvironments: ['dev'],
 });
 
-export const enableWorkforceTimeframeFilter = createFeatureFlag({
+export const enableWorkforceTimeframeFilter = createFleetFeatureFlag({
   description:
     'Displays the timeframe picker (1D/7D/30D/YTD) in ChromeOS Workforce Activity.',
-  namespace: 'fleet-console',
   name: 'workforce-timeframe-filter',
   percentage: {
     dev: 0,
@@ -110,10 +127,9 @@ export const enableWorkforceTimeframeFilter = createFeatureFlag({
   allowedEnvironments: ['dev'],
 });
 
-export const enableUnifiedTaskHistory = createFeatureFlag({
+export const enableUnifiedTaskHistory = createFleetFeatureFlag({
   description:
     'Enables unified task history (Swarming + Mobile Harness) via the Fleet Console backend RPC for supported pilot devices.',
-  namespace: 'fleet-console',
   name: 'unified-task-history',
   percentage: {
     dev: 100,
@@ -123,9 +139,8 @@ export const enableUnifiedTaskHistory = createFeatureFlag({
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enablePixelDeviceRestoration = createFeatureFlag({
+export const enablePixelDeviceRestoration = createFleetFeatureFlag({
   description: 'Enables creating restoration bugs for Pixel devices.',
-  namespace: 'fleet-console',
   name: 'pixel-device-restoration',
   percentage: {
     dev: 100,
@@ -135,19 +150,17 @@ export const enablePixelDeviceRestoration = createFeatureFlag({
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enableAndroidRepairQueue = createFeatureFlag({
+export const enableAndroidRepairQueue = createFleetFeatureFlag({
   description: 'Enable the manual repair queue dashboard for Android and Pixel',
-  namespace: 'fleet-console',
   name: 'android-repair-queue',
   percentage: { dev: 100, prod: 0 },
   trackingBug: '568290011',
   allowedEnvironments: ['dev'],
 });
 
-export const enableProductCatalogRevamp = createFeatureFlag({
+export const enableProductCatalogRevamp = createFleetFeatureFlag({
   description:
     'Enables the revamped Product Catalog card view, hardware reference photos, and unified details view.',
-  namespace: 'fleet-console',
   name: 'product-catalog-revamp',
   percentage: {
     dev: 100,
