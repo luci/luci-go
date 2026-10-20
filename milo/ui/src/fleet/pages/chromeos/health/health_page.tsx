@@ -16,11 +16,14 @@ import { ArrowBack, Settings } from '@mui/icons-material';
 import { Box, Button, Tooltip, Typography } from '@mui/material';
 import { useCallback, useMemo } from 'react';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useModelQuotaPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
+import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { WarningNotifications } from '@/fleet/utils/use_warnings';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { HealthSlice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -345,5 +348,16 @@ export const HealthPage = () => {
   );
 };
 
-export const Component = HealthPage;
-export default HealthPage;
+export function Component() {
+  return (
+    <TrackLeafRoutePageView contentGroup="fleet-console-chromeos-health">
+      <RecoverableErrorBoundary key="fleet-chromeos-health">
+        <LoggedInBoundary>
+          <HealthPage />
+        </LoggedInBoundary>
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
+}
+
+export default Component;

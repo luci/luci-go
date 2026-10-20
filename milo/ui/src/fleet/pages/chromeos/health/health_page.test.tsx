@@ -28,7 +28,7 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { HealthPage } from './health_page';
+import { Component, HealthPage } from './health_page';
 import * as UseDefaultQuotaModule from './use_default_quota';
 import * as UseFleetAvailabilityTrendsModule from './use_fleet_availability_trends';
 import * as UseHealthFiltersModule from './use_health_filters';
@@ -343,5 +343,19 @@ describe('HealthPage', () => {
     expect(
       screen.queryByText('Fleet Health Configuration'),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders wrapped Component with analytics and error boundaries', () => {
+    render(
+      <FakeContextProvider>
+        <ShortcutProvider>
+          <Component />
+        </ShortcutProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(
+      screen.getByText('ChromeOS Fleet Health Metrics'),
+    ).toBeInTheDocument();
   });
 });
