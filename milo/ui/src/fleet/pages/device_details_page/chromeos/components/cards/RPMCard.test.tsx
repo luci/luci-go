@@ -29,16 +29,24 @@ const mockLseWithRpm = (
     powerunitType?: number | null;
   } | null,
   isLabstation = false,
-) => {
-  const deviceLse = isLabstation
-    ? { labstation: { rpm } }
-    : { dut: { peripherals: { rpm } } };
-
-  return {
+): MachineLSE => {
+  const lse = MachineLSE.fromPartial({
     chromeosMachineLse: {
-      deviceLse,
+      deviceLse: isLabstation
+        ? { labstation: {} }
+        : { dut: { peripherals: {} } },
     },
-  };
+  });
+  if (rpm) {
+    if (isLabstation) {
+      Object.assign(lse.chromeosMachineLse!.deviceLse!.labstation!, { rpm });
+    } else {
+      Object.assign(lse.chromeosMachineLse!.deviceLse!.dut!.peripherals!, {
+        rpm,
+      });
+    }
+  }
+  return lse;
 };
 
 interface RenderOptions {
@@ -63,8 +71,8 @@ const renderCard = (options: RenderOptions = {}) => {
     ...render(
       <FakeContextProvider>
         <InventoryFormProvider
-          originalLse={lse as unknown as MachineLSE}
-          draftLse={lse as unknown as MachineLSE}
+          originalLse={lse}
+          draftLse={lse}
           updateDraftFields={updateDraftFields}
           activeEditingCardId={options.activeEditingCardId ?? null}
           setActiveEditingCardId={setActiveEditingCardId}

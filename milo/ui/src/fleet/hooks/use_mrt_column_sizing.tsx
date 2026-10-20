@@ -40,7 +40,7 @@ export function useMrtColumnSizing(localStorageKey: string): {
         const parsed = stored ? JSON.parse(stored) : null;
         return parsed || {};
       } catch (e) {
-        logging.error('Failed to load column sizing from localStorage', e);
+        logging.error('Failed to parse column sizing from localStorage', e);
         return {};
       }
     },
@@ -57,7 +57,7 @@ export function useMrtColumnSizing(localStorageKey: string): {
         const parsed = stored ? JSON.parse(stored) : null;
         setColumnSizing(parsed || {});
       } catch (e) {
-        logging.error('Failed to load column sizing from localStorage', e);
+        logging.error('Failed to parse column sizing from localStorage', e);
         setColumnSizing({});
       }
       currentKeyRef.current = localStorageKey;
@@ -70,11 +70,14 @@ export function useMrtColumnSizing(localStorageKey: string): {
     }
 
     const handler = setTimeout(() => {
-      safeLocalStorageSet(
-        `${localStorageKey}-sizes`,
-        JSON.stringify(columnSizing),
-        (e) => logging.error('Failed to save column sizing to localStorage', e),
-      );
+      try {
+        const serialized = JSON.stringify(columnSizing);
+        safeLocalStorageSet(`${localStorageKey}-sizes`, serialized, (e) =>
+          logging.error('Failed to save column sizing to localStorage', e),
+        );
+      } catch (e) {
+        logging.error('Failed to serialize column sizing for localStorage', e);
+      }
     }, 500);
 
     return () => {

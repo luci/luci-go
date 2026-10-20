@@ -15,7 +15,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
+import {
+  LogicalZone,
+  MachineLSE,
+} from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { InventoryFormProvider } from '../form/InventoryFormContext';
@@ -27,17 +30,17 @@ const mockLseWithPools = (
   isLabstation = false,
   logicalZone?: number | string | null,
   hive?: string | null,
-) => {
+): MachineLSE => {
   const deviceLse = isLabstation
-    ? { labstation: { pools, hive } }
-    : { dut: { pools, hive } };
+    ? { labstation: { pools, hive: hive ?? undefined } }
+    : { dut: { pools, hive: hive ?? undefined } };
 
-  return {
-    logicalZone,
+  return MachineLSE.fromPartial({
+    logicalZone: logicalZone ? (Number(logicalZone) as LogicalZone) : undefined,
     chromeosMachineLse: {
       deviceLse,
     },
-  };
+  });
 };
 
 interface RenderOptions {
@@ -65,8 +68,8 @@ const renderCard = (options: RenderOptions = {}) => {
     ...render(
       <FakeContextProvider>
         <InventoryFormProvider
-          originalLse={lse as unknown as MachineLSE}
-          draftLse={lse as unknown as MachineLSE}
+          originalLse={lse}
+          draftLse={lse}
           updateDraftFields={updateDraftFields}
           activeEditingCardId={options.activeEditingCardId ?? null}
           setActiveEditingCardId={setActiveEditingCardId}

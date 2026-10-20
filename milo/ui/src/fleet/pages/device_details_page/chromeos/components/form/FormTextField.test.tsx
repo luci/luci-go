@@ -116,17 +116,16 @@ const TestWrapper = ({
 };
 
 describe('<FormTextField />', () => {
-  const initialLse = {
+  const initialLse = MachineLSE.fromPartial({
     chromeosMachineLse: {
       deviceLse: {
         dut: {
           pools: ['pool1', 'pool2'],
           hive: 'hive-1',
-          dummyNumber: 12345,
         },
       },
     },
-  } as unknown as MachineLSE;
+  });
 
   it('renders read-only values when card is not in edit mode', () => {
     render(
@@ -216,7 +215,7 @@ describe('<FormTextField />', () => {
   });
 
   it('does not reset local input immediately when typing transient invalid number values', async () => {
-    const localLse = {
+    const localLse = MachineLSE.fromPartial({
       chromeosMachineLse: {
         deviceLse: {
           dut: {
@@ -224,7 +223,7 @@ describe('<FormTextField />', () => {
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
 
     render(
       <TestWrapper initialLse={localLse}>
@@ -256,7 +255,7 @@ describe('<FormTextField />', () => {
   });
 
   it('validates min and max range for numeric inputs and disables confirm button when out of range', async () => {
-    const localLse = {
+    const localLse = MachineLSE.fromPartial({
       chromeosMachineLse: {
         deviceLse: {
           dut: {
@@ -268,7 +267,7 @@ describe('<FormTextField />', () => {
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
 
     render(
       <TestWrapper initialLse={localLse}>
@@ -306,7 +305,7 @@ describe('<FormTextField />', () => {
   });
 
   it('automatically applies min and max range from schema getFieldConfig when min and max props are omitted', async () => {
-    const localLse = {
+    const localLse = MachineLSE.fromPartial({
       chromeosMachineLse: {
         deviceLse: {
           dut: {
@@ -318,7 +317,7 @@ describe('<FormTextField />', () => {
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
 
     render(
       <TestWrapper initialLse={localLse}>
@@ -432,17 +431,19 @@ describe('<FormTextField />', () => {
   });
 
   it('validates numeric input length and disables confirm button when exceeding limit', async () => {
-    const lseWithLongNum = {
+    const lseWithLongNum = MachineLSE.fromPartial({
       chromeosMachineLse: {
         deviceLse: {
           dut: {
             pools: ['pool1', 'pool2'],
             hive: 'hive-1',
-            dummyNumber: Number('1'.repeat(17)),
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
+    Object.assign(lseWithLongNum.chromeosMachineLse!.deviceLse!.dut!, {
+      dummyNumber: Number('1'.repeat(17)),
+    });
 
     render(
       <TestWrapper initialLse={lseWithLongNum}>
@@ -466,17 +467,19 @@ describe('<FormTextField />', () => {
   });
 
   it('allows backspace to correct an initially too-long numeric value', async () => {
-    const lseWithLongNum = {
+    const lseWithLongNum = MachineLSE.fromPartial({
       chromeosMachineLse: {
         deviceLse: {
           dut: {
             pools: ['pool1', 'pool2'],
             hive: 'hive-1',
-            dummyNumber: Number('1'.repeat(17)),
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
+    Object.assign(lseWithLongNum.chromeosMachineLse!.deviceLse!.dut!, {
+      dummyNumber: Number('1'.repeat(17)),
+    });
 
     render(
       <TestWrapper initialLse={lseWithLongNum}>

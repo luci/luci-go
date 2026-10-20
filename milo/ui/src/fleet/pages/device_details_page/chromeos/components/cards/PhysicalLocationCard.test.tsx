@@ -83,11 +83,11 @@ describe('<PhysicalLocationCard />', () => {
   it('renders FormAutocompleteField for Zone and FormTextField for Rack when editing is enabled and both are editable', async () => {
     const updateDraftFields = jest.fn();
     const setActiveEditingCardId = jest.fn();
-    const lse = {
+    const lse = MachineLSE.fromPartial({
       name: 'machineLSEs/test-host',
       zone: 'ZONE_CHROMEOS1',
       rack: 'rack-1',
-    } as unknown as MachineLSE;
+    });
 
     render(
       <FakeContextProvider>

@@ -29,17 +29,26 @@ const mockLseWithServo = (
     servoPort?: number | null;
   } | null,
   isLabstation = false,
-) => {
-  const peripherals = servo ? { servo } : undefined;
-  const deviceLse = isLabstation
-    ? { labstation: {} }
-    : { dut: { peripherals } };
-
-  return {
+): MachineLSE => {
+  return MachineLSE.fromPartial({
     chromeosMachineLse: {
-      deviceLse,
+      deviceLse: isLabstation
+        ? { labstation: {} }
+        : {
+            dut: {
+              peripherals: {
+                servo: servo
+                  ? {
+                      servoHostname: servo.servoHostname ?? undefined,
+                      servoSerial: servo.servoSerial ?? undefined,
+                      servoPort: servo.servoPort ?? undefined,
+                    }
+                  : undefined,
+              },
+            },
+          },
     },
-  };
+  });
 };
 
 interface RenderOptions {
@@ -64,8 +73,8 @@ const renderCard = (options: RenderOptions = {}) => {
     ...render(
       <FakeContextProvider>
         <InventoryFormProvider
-          originalLse={lse as unknown as MachineLSE}
-          draftLse={lse as unknown as MachineLSE}
+          originalLse={lse}
+          draftLse={lse}
           updateDraftFields={updateDraftFields}
           activeEditingCardId={options.activeEditingCardId ?? null}
           setActiveEditingCardId={setActiveEditingCardId}

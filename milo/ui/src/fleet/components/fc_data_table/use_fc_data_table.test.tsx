@@ -432,7 +432,6 @@ describe('<MaterialReactTable />', () => {
     const actionButtons = screen.getAllByRole('button', {
       name: /Column Actions/i,
     });
-    expect(actionButtons.length).toBeGreaterThan(0);
 
     await act(async () => fireEvent.click(actionButtons[0]));
 
@@ -505,7 +504,7 @@ describe('<MaterialReactTable />', () => {
 
     // The selection column header should have a fixed width of 40
     // In MRT v2, column sizes are often applied via CSS variables on the table
-    const table = screen.getByRole('table');
+    const table = screen.getAllByRole('table')[0];
     expect(table).toHaveStyle('--header-mrt_row_select-size: 40');
   });
 

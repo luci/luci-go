@@ -16,18 +16,22 @@ import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 import { SettingsProvider } from '@/fleet/context/providers';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ChromeOSDevice } from '../../device_list_page/chromeos/chromeos_fields';
+import { ChromeOSDevice as ChromeOSDeviceType } from '../../device_list_page/chromeos/chromeos_fields';
 
 import { ChromeOSDeviceDimensions } from './chromeos_device_dimensions';
 
-const mockDevice = {
+const ChromeOSDevice = {
+  fromPartial: (
+    partial: Parameters<typeof Device.fromPartial>[0],
+  ): ChromeOSDeviceType => Device.fromPartial(partial),
+};
+
+const mockDevice = ChromeOSDevice.fromPartial({
   id: 'device1',
   dutId: 'dut1',
-  name: 'device1',
-  state: 'READY',
-  dutState: 'ready',
   realm: 'chromeos',
   deviceSpec: {
     labels: {
@@ -39,7 +43,7 @@ const mockDevice = {
       'label-phase': { values: ['EVT'] },
     },
   },
-} as unknown as ChromeOSDevice;
+});
 
 describe('ChromeOSDeviceDimensions', () => {
   it('renders priority labels in correct order and allows filtering by key or value', () => {

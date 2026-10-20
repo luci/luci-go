@@ -102,20 +102,24 @@ const TestWrapper = ({
 };
 
 describe('<FormAutocompleteField />', () => {
-  const initialLse = {
+  const initialLse = MachineLSE.fromPartial({
     chromeosMachineLse: {
       deviceLse: {
         dut: {
           pools: ['pool1', 'pool2'],
           peripherals: {
             rpm: {
-              type: 'TYPE_APC',
+              powerunitName: 'test-rpm',
             },
           },
         },
       },
     },
-  } as unknown as MachineLSE;
+  });
+  Object.assign(
+    initialLse.chromeosMachineLse!.deviceLse!.dut!.peripherals!.rpm!,
+    { type: 'TYPE_APC' },
+  );
 
   it('renders read-only values when card is not in edit mode', () => {
     render(
