@@ -330,7 +330,7 @@ describe('useChromeOSColumns', () => {
     const locationTagCol = columns.find((c) => c.id === 'location_group_tag');
 
     expect(locationTagCol).toBeDefined();
-    expect(locationTagCol?.header).toBe('location_group_tag');
+    expect(locationTagCol?.header).toBe('Location Tag');
     expect(locationTagCol?.orderByField).toBe('labels.location_group_tag');
     expect(locationTagCol?.filterKey).toBe('labels."location_group_tag"');
   });

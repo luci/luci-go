@@ -20,6 +20,7 @@ import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api/mock_api_han
 import * as exportUtils from '@/fleet/utils/export';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import { getBrowserColumn } from './browser_columns';
 import { BrowserDevicesPage } from './browser_devices_page';
 
 const mockTrackEvent = jest.fn();
@@ -157,6 +158,13 @@ describe('<BrowserDevicesPage />', () => {
 
     const searchInput = screen.getByPlaceholderText(/search/i);
     expect(searchInput).toBeVisible();
+  });
+
+  it('configures Location Tag header for location_group_tag', () => {
+    expect(getBrowserColumn('ufs.location_group_tag').header).toBe(
+      'Location Tag',
+    );
+    expect(getBrowserColumn('location_group_tag').header).toBe('Location Tag');
   });
 
   it('should call ExportBrowserDevicesToCSV with correct filters and columns', async () => {

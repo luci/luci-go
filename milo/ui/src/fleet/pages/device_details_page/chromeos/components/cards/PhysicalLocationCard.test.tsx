@@ -31,6 +31,7 @@ describe('<PhysicalLocationCard />', () => {
       <PhysicalLocationCard
         zone="ZONE_CHROMEOS15"
         rack="chromeos15-row1-metro1"
+        locationGroupTag="demo-location-1"
       />,
     );
 
@@ -39,9 +40,11 @@ describe('<PhysicalLocationCard />', () => {
     ).toBeVisible();
     expect(screen.getByText('Zone')).toBeVisible();
     expect(screen.getByText('Rack')).toBeVisible();
+    expect(screen.getByText('Location Tag')).toBeVisible();
 
     expect(screen.getByText('ZONE_CHROMEOS15')).toBeVisible();
     expect(screen.getByText('chromeos15-row1-metro1')).toBeVisible();
+    expect(screen.getByText('demo-location-1')).toBeVisible();
   });
 
   it('renders empty message when no location telemetry exists', () => {
@@ -55,6 +58,7 @@ describe('<PhysicalLocationCard />', () => {
     renderWithProviders(<PhysicalLocationCard zone="ZONE_CHROMEOS1" />);
     expect(screen.getByText('ZONE_CHROMEOS1')).toBeInTheDocument();
     expect(screen.queryByText('Rack')).not.toBeInTheDocument();
+    expect(screen.queryByText('Location Tag')).not.toBeInTheDocument();
     expect(screen.queryByText('N/A')).not.toBeInTheDocument();
   });
 

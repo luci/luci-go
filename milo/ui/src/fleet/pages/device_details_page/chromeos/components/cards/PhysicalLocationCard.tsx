@@ -89,7 +89,7 @@ export const PhysicalLocationCard = ({
       <Grid container spacing={2}>
         <PropertyField label="Zone" value={zone} />
         <PropertyField label="Rack" value={rack} />
-        <PropertyField label="location_group_tag" value={locationGroupTag} />
+        <PropertyField label="Location Tag" value={locationGroupTag} />
       </Grid>
     </InventoryDataCard>
   );

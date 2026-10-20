@@ -266,7 +266,7 @@ describe('<AndroidDevicesPage /> Integration', () => {
     expect(screen.getByText('In Service')).toBeInTheDocument();
   });
 
-  it('renders Location Group Tag column header when location_group_tag is requested in URL params', async () => {
+  it('renders Location Tag column header when location_group_tag is requested in URL params', async () => {
     render(
       <FakeContextProvider
         mountedPath="/p/:platform/devices"
@@ -282,7 +282,7 @@ describe('<AndroidDevicesPage /> Integration', () => {
       </FakeContextProvider>,
     );
 
-    expect(await screen.findByText('location_group_tag')).toBeInTheDocument();
+    expect(await screen.findByText('Location Tag')).toBeInTheDocument();
   });
 
   it('renders Request Restoration button when devices are selected in Pixel workspace (enabled by default in dev)', async () => {

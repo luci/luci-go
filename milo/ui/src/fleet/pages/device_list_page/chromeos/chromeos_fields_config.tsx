@@ -373,7 +373,7 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
   },
   location_group_tag: {
     type: 'label',
-    header: 'location_group_tag',
+    header: 'Location Tag',
     filterKey: 'labels."location_group_tag"',
     accessorFn: (device) =>
       getLabelValueInternal(device, 'location_group_tag') ||

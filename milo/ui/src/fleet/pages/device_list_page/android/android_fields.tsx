@@ -262,7 +262,7 @@ export const getAndroidColumnOverrides: (
     },
   },
   location_group_tag: {
-    header: 'location_group_tag',
+    header: 'Location Tag',
     orderByField: 'labels.location_group_tag',
     filterKey: 'labels."location_group_tag"',
     accessorFn: (device) => {

@@ -68,12 +68,13 @@ describe('AndroidDeviceDetailsPage', () => {
     expect(screen.getByText('Battery Level')).toBeInTheDocument();
     expect(screen.getByText('Host Group')).toBeInTheDocument();
     expect(screen.getByText('UFS Last Sync')).toBeInTheDocument();
-    expect(screen.getByText('location_group_tag')).toBeInTheDocument();
+    expect(screen.getByText('Location Tag')).toBeInTheDocument();
     expect(screen.getByText('Realm')).toBeInTheDocument();
 
     // Verify raw keys without override are not rendered as labels
     expect(screen.queryByText('battery_level')).not.toBeInTheDocument();
     expect(screen.queryByText('host_group')).not.toBeInTheDocument();
+    expect(screen.queryByText('location_group_tag')).not.toBeInTheDocument();
 
     // Verify row ordering is based on humanized labels
     const rows = screen.getAllByRole('row');
@@ -81,12 +82,14 @@ describe('AndroidDeviceDetailsPage', () => {
 
     const batteryIdx = rowTexts.findIndex((t) => t?.includes('Battery Level'));
     const hostGroupIdx = rowTexts.findIndex((t) => t?.includes('Host Group'));
+    const locationIdx = rowTexts.findIndex((t) => t?.includes('Location Tag'));
     const realmIdx = rowTexts.findIndex((t) => t?.includes('Realm'));
     const ufsIdx = rowTexts.findIndex((t) => t?.includes('UFS Last Sync'));
 
     expect(batteryIdx).toBeGreaterThan(0);
     expect(batteryIdx).toBeLessThan(hostGroupIdx);
-    expect(hostGroupIdx).toBeLessThan(realmIdx);
+    expect(hostGroupIdx).toBeLessThan(locationIdx);
+    expect(locationIdx).toBeLessThan(realmIdx);
     expect(realmIdx).toBeLessThan(ufsIdx);
   });
 });

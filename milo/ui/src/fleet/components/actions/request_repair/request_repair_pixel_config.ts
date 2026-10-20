@@ -92,7 +92,7 @@ export const generatePixelDeviceDetails = (device: AndroidDevice): string => {
     device.fcOfflineSince
       ? md`  * **Offline Since:** ${device.fcOfflineSince}`
       : '',
-    locationGroupTag ? md`  * **Location Group Tag:** ${locationGroupTag}` : '',
+    locationGroupTag ? md`  * **Location Tag:** ${locationGroupTag}` : '',
     md`  * **Mobile Harness:** [View in Mobile Harness](${mhUrl})`,
   ].filter(Boolean);
 

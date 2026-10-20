@@ -216,7 +216,7 @@ describe('request_repair_pixel_config', () => {
       expect(details).toContain('**State:** ready');
       expect(details).toContain('**Offline:** false');
       expect(details).toContain('**Offline Since:** 2026\\-09\\-29T10:00:00Z');
-      expect(details).toContain('**Location Group Tag:** demo\\-location\\-1');
+      expect(details).toContain('**Location Tag:** demo\\-location\\-1');
       expect(details).toContain('**Mobile Harness:** [View in Mobile Harness]');
     });
 

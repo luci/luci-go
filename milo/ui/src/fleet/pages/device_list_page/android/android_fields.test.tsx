@@ -76,9 +76,7 @@ describe('getAndroidColumnHeader', () => {
     );
     expect(getAndroidColumnHeader('fc_offline_since')).toBe('Offline Since');
     expect(getAndroidColumnHeader('id')).toBe('ID');
-    expect(getAndroidColumnHeader('location_group_tag')).toBe(
-      'location_group_tag',
-    );
+    expect(getAndroidColumnHeader('location_group_tag')).toBe('Location Tag');
   });
 
   it('falls back to humanizeColumnLabel for general labels and proto fields', () => {

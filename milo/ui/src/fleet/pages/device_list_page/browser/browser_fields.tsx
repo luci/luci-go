@@ -96,6 +96,7 @@ export const CUSTOM_COLUMNS: Record<string, BrowserColumnDef> = {
 
 // TODO(b/558818868): Remove ufs.location_group_tag and location_tag fallbacks after backend cache migration completes.
 const BROWSER_LOCATION_GROUP_TAG_OVERRIDE: Partial<BrowserColumnDef> = {
+  header: 'Location Tag',
   orderByField: 'ufs.location_group_tag',
   filterKey: 'ufs."location_group_tag"',
   accessorFn: (row) => {
