@@ -91,6 +91,11 @@ func TestTargets(t *testing.T) {
 			assert.Loosely(t, NormalizeWorkUnit("WU17100269020689387"), should.Equal("ants-wu17100269020689387"))
 			assert.Loosely(t, NormalizeWorkUnit("wu17100269020689387"), should.Equal("ants-wu17100269020689387"))
 			assert.Loosely(t, NormalizeWorkUnit("workUnits/wu-1"), should.Equal("wu-1"))
+			assert.Loosely(t, NormalizeWorkUnit("WU50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"), should.Equal("ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"))
+			assert.Loosely(t, NormalizeWorkUnit("ants-wu78200270526224282-attempt__0:u-f5bacc67-4d7a-428d-a417-be4fe61e05a8"), should.Equal("ants-wu78200270526224282-attempt__0:u-f5bacc67-4d7a-428d-a417-be4fe61e05a8"))
+			assert.Loosely(t, NormalizeWorkUnit("WU78200270526224282-attempt__0"), should.Equal("ants-wu78200270526224282-attempt__0"))
+			assert.Loosely(t, NormalizeWorkUnit("ANTS-WU123-ATTEMPT__0:U-ABC"), should.Equal("ants-wu123-attempt__0:u-abc"))
+			assert.Loosely(t, NormalizeWorkUnit("workUnits/WU123:u-abc"), should.Equal("ants-wu123:u-abc"))
 		})
 
 		t.Run("ResolveInvocation", func(t *ftt.Test) {

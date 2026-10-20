@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -49,7 +50,12 @@ const AntsUserProject = "android-build-fetch-artifact"
 var (
 	antsTRRegex  = regexp.MustCompile(`^(?i)TR[0-9]+$`)
 	antsInvRegex = regexp.MustCompile(`^(?:I[0-9]+|ants-[Ii][0-9]+)$`)
-	antsWURegex  = regexp.MustCompile(`^(?:WU[0-9]+|ants-[Ww][Uu][0-9]+)$`)
+	// antsWURegex matches AnTS work unit IDs in bare ("WU123"), ResultDB-prefixed
+	// ("ants-wu123"), attempt-suffixed ("ants-wu123-attempt__0"), or composite
+	// ("ants-wu123:u-<uuid>", "ants-wu123-attempt__0:u-<uuid>") forms.
+	// Capture group 1 holds the numeric work unit digits; capture group 2 holds
+	// any trailing "-attempt__<N>" and/or ":u-<uuid>" suffix.
+	antsWURegex = regexp.MustCompile(`^(?i)(?:ants-)?wu([0-9]+)((?:-attempt__[0-9]+)?(?::u-[0-9a-fA-F-]+)?)$`)
 )
 
 type antsContextKeyType struct{}
@@ -83,9 +89,27 @@ func IsAntsInvocationID(s string) bool {
 	return antsInvRegex.MatchString(strings.TrimSpace(s))
 }
 
-// IsAntsWorkUnitID returns true if s is an AnTS work unit ID (e.g. WU12345678).
+// IsAntsWorkUnitID returns true if s is an AnTS work unit ID (e.g. WU12345678,
+// ants-wu12345678, ants-wu12345678:u-abc, or ants-wu12345678-attempt__0:u-abc).
 func IsAntsWorkUnitID(s string) bool {
 	return antsWURegex.MatchString(strings.TrimSpace(s))
+}
+
+// ExtractBareAntsWorkUnitID extracts the canonical uppercase AnTS work unit ID
+// ("WU<digits>") from any supported AnTS work unit representation (e.g.,
+// "WU123", "ants-wu123", "workUnits/WU123", "ants-wu123-attempt__0", or
+// "ants-wu123-attempt__0:u-1234abcd"), or returns "" if s is not an AnTS work
+// unit ID.
+func ExtractBareAntsWorkUnitID(s string) string {
+	clean := strings.TrimSpace(s)
+	if idx := strings.LastIndex(clean, "workUnits/"); idx != -1 {
+		clean = clean[idx+len("workUnits/"):]
+	}
+	m := antsWURegex.FindStringSubmatch(clean)
+	if len(m) == 0 {
+		return ""
+	}
+	return "WU" + m[1]
 }
 
 // IsAntsURL returns true if raw is an Android Test Investigate (ATI) URL.
@@ -96,54 +120,60 @@ func IsAntsURL(raw string) bool {
 		strings.Contains(clean, "/test_investigate/")
 }
 
-// ExtractAntsURLComponents extracts the invocation ID and test result ID from an ATI URL.
-func ExtractAntsURLComponents(raw string) (invID, trID string) {
+// extractURLParamOrPath extracts a matching identifier from either URL query
+// parameters (checked first in order of queryKeys) or URL path segments
+// immediately following any of pathPrefixes.
+func extractURLParamOrPath(raw string, queryKeys, pathPrefixes []string, match func(string) bool) string {
 	clean := strings.TrimSpace(raw)
-
-	// Check query parameters first (e.g. ?invocationId=I123, ?testResultId=TR123)
 	if u, err := url.Parse(clean); err == nil {
 		q := u.Query()
-		for _, key := range []string{"invocationId", "invocation_id", "invId", "inv_id"} {
-			if v := q.Get(key); v != "" && IsAntsInvocationID(v) {
-				invID = v
-				break
-			}
-		}
-		for _, key := range []string{"testResultId", "test_result_id", "testId", "trId", "tr_id"} {
-			if v := q.Get(key); v != "" && IsAntsTestResultID(v) {
-				trID = v
-				break
+		for _, key := range queryKeys {
+			if v := q.Get(key); v != "" && match(v) {
+				return v
 			}
 		}
 	}
-
 	if idx := strings.IndexAny(clean, "?#"); idx != -1 {
 		clean = clean[:idx]
 	}
-
-	// Match /invocation/(I[0-9]+) if not already extracted
-	if invID == "" {
-		if idx := strings.Index(clean, "/invocation/"); idx != -1 {
-			after := clean[idx+len("/invocation/"):]
+	for _, prefix := range pathPrefixes {
+		if idx := strings.Index(clean, prefix); idx != -1 {
+			after := clean[idx+len(prefix):]
 			parts := strings.Split(after, "/")
-			if len(parts) > 0 && IsAntsInvocationID(parts[0]) {
-				invID = parts[0]
+			if len(parts) > 0 && match(parts[0]) {
+				return parts[0]
 			}
 		}
 	}
+	return ""
+}
 
-	// Match /test/(TR[0-9]+) if not already extracted
-	if trID == "" {
-		if idx := strings.Index(clean, "/test/"); idx != -1 {
-			after := clean[idx+len("/test/"):]
-			parts := strings.Split(after, "/")
-			if len(parts) > 0 && IsAntsTestResultID(parts[0]) {
-				trID = parts[0]
-			}
-		}
-	}
-
+// ExtractAntsURLComponents extracts the invocation ID and test result ID from an ATI URL.
+func ExtractAntsURLComponents(raw string) (invID, trID string) {
+	invID = extractURLParamOrPath(
+		raw,
+		[]string{"invocationId", "invocation_id", "invId", "inv_id"},
+		[]string{"/invocation/"},
+		IsAntsInvocationID,
+	)
+	trID = extractURLParamOrPath(
+		raw,
+		[]string{"testResultId", "test_result_id", "testId", "trId", "tr_id"},
+		[]string{"/test/"},
+		IsAntsTestResultID,
+	)
 	return invID, trID
+}
+
+// ExtractAntsURLWorkUnit extracts an AnTS work unit ID from an ATI URL's query
+// parameters or path segments, if present.
+func ExtractAntsURLWorkUnit(raw string) string {
+	return extractURLParamOrPath(
+		raw,
+		[]string{"workUnitId", "work_unit_id", "wuId", "wu_id"},
+		[]string{"/workunit/", "/work_unit/", "/workUnit/"},
+		IsAntsWorkUnitID,
+	)
 }
 
 // AntsProperty represents a key-value property in AnTS metadata.
@@ -185,7 +215,7 @@ func ResolveAntsTestResult(ctx context.Context, testResultID string) (*AntsTestR
 		return nil, err
 	}
 
-	body, err := fetchAntsTestResultJSON(ctx, httpClient, baseURL, testResultID)
+	body, err := fetchAntsResourceJSON(ctx, httpClient, baseURL, "tests", "test result", testResultID)
 	if err != nil {
 		return nil, err
 	}
@@ -247,12 +277,14 @@ func antsHTTPClient(ctx context.Context) (*http.Client, error) {
 	return client, nil
 }
 
-// fetchAntsTestResultJSON executes GET /v4/tests/{test_result_id} against the AnTS v4 OnePlatform API.
-func fetchAntsTestResultJSON(ctx context.Context, httpClient *http.Client, baseURL, testResultID string) ([]byte, error) {
+// fetchAntsResourceJSON executes GET /v4/{collection}/{resource_id} against the
+// AnTS v4 OnePlatform API with the required quota project header and a 30s
+// request timeout.
+func fetchAntsResourceJSON(ctx context.Context, httpClient *http.Client, baseURL, collection, resourceKind, resourceID string) ([]byte, error) {
 	callCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	reqURL := fmt.Sprintf("%s/v4/tests/%s", baseURL, url.PathEscape(testResultID))
+	reqURL := fmt.Sprintf("%s/v4/%s/%s", baseURL, collection, url.PathEscape(resourceID))
 	req, err := http.NewRequestWithContext(callCtx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, errors.Fmt("failed to create AnTS API request: %w", err)
@@ -272,30 +304,30 @@ func fetchAntsTestResultJSON(ctx context.Context, httpClient *http.Client, baseU
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, formatAntsAPIError(testResultID, resp.StatusCode, body)
+		return nil, formatAntsResourceAPIError(resourceKind, resourceID, resp.StatusCode, body)
 	}
 	return body, nil
 }
 
-// formatAntsAPIError formats a user-friendly error for non-200 AnTS API responses.
+// formatAntsResourceAPIError formats a user-friendly error for non-200 AnTS API responses.
 //
 // Specific mappings:
-// - HTTP 404 indicates the test result ID does not exist in AnTS.
+// - HTTP 404 indicates the requested resource ID does not exist in AnTS.
 // - HTTP 401/403 indicate missing or insufficient credentials for the AndroidBuild OnePlatform API.
 // - Other status codes return the upstream error message or status code.
-func formatAntsAPIError(testResultID string, statusCode int, body []byte) error {
+func formatAntsResourceAPIError(resourceKind, resourceID string, statusCode int, body []byte) error {
 	msg := parseOnePlatformErrorMessage(body)
 	switch statusCode {
 	case http.StatusNotFound:
 		if msg != "" {
-			return errors.Fmt("AnTS test result %q not found (HTTP 404): %s", testResultID, msg)
+			return errors.Fmt("AnTS %s %q not found (HTTP 404): %s", resourceKind, resourceID, msg)
 		}
-		return errors.Fmt("AnTS test result %q not found (HTTP 404)", testResultID)
+		return errors.Fmt("AnTS %s %q not found (HTTP 404)", resourceKind, resourceID)
 	case http.StatusUnauthorized, http.StatusForbidden:
 		if msg != "" {
-			return errors.Fmt("AnTS API permission denied for test result %q (HTTP %d): %s", testResultID, statusCode, msg)
+			return errors.Fmt("AnTS API permission denied for %s %q (HTTP %d): %s", resourceKind, resourceID, statusCode, msg)
 		}
-		return errors.Fmt("AnTS API permission denied for test result %q (HTTP %d)", testResultID, statusCode)
+		return errors.Fmt("AnTS API permission denied for %s %q (HTTP %d)", resourceKind, resourceID, statusCode)
 	default:
 		if msg != "" {
 			return errors.Fmt("AnTS API request failed with HTTP %d: %s", statusCode, msg)
@@ -449,4 +481,212 @@ func normalizeAntsStatus(raw string) string {
 	default:
 		return strings.TrimSpace(raw)
 	}
+}
+
+// AntsWorkUnitInfo contains parsed details from an AnTS work unit.
+type AntsWorkUnitInfo struct {
+	WorkUnitID               string         `json:"work_unit_id,omitempty"`
+	InvocationID             string         `json:"invocation_id,omitempty"`
+	ParentID                 string         `json:"parent_id,omitempty"`
+	Name                     string         `json:"name,omitempty"`
+	Type                     string         `json:"type,omitempty"`
+	State                    string         `json:"state,omitempty"`
+	ModuleName               string         `json:"module_name,omitempty"`
+	ModuleParameters         []AntsProperty `json:"module_parameters,omitempty"`
+	Properties               []AntsProperty `json:"properties,omitempty"`
+	ResultDBRootInvocationID string         `json:"resultdb_root_invocation_id,omitempty"`
+	ResultDBWorkUnitID       string         `json:"resultdb_work_unit_id,omitempty"`
+	CreationTimestamp        int64          `json:"creation_timestamp,omitempty"`
+	CompleteTimestamp        int64          `json:"complete_timestamp,omitempty"`
+}
+
+// fetchAndParseAntsWorkUnit fetches GET /v4/workunits/{work_unit_id} and
+// parses the response into AntsWorkUnitInfo.
+func fetchAndParseAntsWorkUnit(ctx context.Context, httpClient *http.Client, baseURL, workUnitID string) (*AntsWorkUnitInfo, error) {
+	body, err := fetchAntsResourceJSON(ctx, httpClient, baseURL, "workunits", "work unit", workUnitID)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAntsWorkUnitJSON(body)
+}
+
+// ResolveAntsWorkUnit retrieves work unit details for an AnTS work unit ID
+// directly from the AnTS v4 OnePlatform API (GET /v4/workunits/{work_unit_id}).
+//
+// If the queried work unit is a child work unit (e.g. TF_TEST_RUN or TF_MODULE)
+// that does not directly carry `resultdb_work_unit_id` or `moduleInfo`, it
+// walks up at most 3 ancestor work units via `parentId` to populate the parent
+// task's ResultDB work unit ID and enclosing module metadata.
+func ResolveAntsWorkUnit(ctx context.Context, workUnitID string) (*AntsWorkUnitInfo, error) {
+	bareWUID := ExtractBareAntsWorkUnitID(workUnitID)
+	if bareWUID == "" {
+		return nil, errors.Fmt("invalid AnTS work unit ID %q (expected format WU<digits> or ants-wu<digits>)", workUnitID)
+	}
+
+	baseURL := antsBaseURL(ctx)
+	httpClient, err := antsHTTPClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := fetchAndParseAntsWorkUnit(ctx, httpClient, baseURL, bareWUID)
+	if err != nil {
+		return nil, err
+	}
+	if info.WorkUnitID == "" {
+		info.WorkUnitID = bareWUID
+	}
+
+	// Walk up at most 3 ancestor work units if we are missing the enclosing
+	// task's ResultDB work unit ID, invocation ID, or (for TF_TEST_RUN/TF_MODULE)
+	// the enclosing module metadata. Skip ancestor walk if the caller already
+	// passed a pre-resolved ":u-<uuid>" composite work unit ID.
+	if !strings.Contains(strings.ToLower(workUnitID), ":u-") {
+		needsModule := strings.EqualFold(info.Type, "TF_TEST_RUN") || strings.EqualFold(info.Type, "TF_MODULE")
+		currParentID := ExtractBareAntsWorkUnitID(info.ParentID)
+		for depth := 0; depth < 3 && currParentID != ""; depth++ {
+			if info.ResultDBWorkUnitID != "" && info.InvocationID != "" && (!needsModule || info.ModuleName != "") {
+				break
+			}
+			parentInfo, pErr := fetchAndParseAntsWorkUnit(ctx, httpClient, baseURL, currParentID)
+			if pErr != nil {
+				break
+			}
+			if info.InvocationID == "" && parentInfo.InvocationID != "" {
+				info.InvocationID = parentInfo.InvocationID
+			}
+			if info.ResultDBRootInvocationID == "" && parentInfo.ResultDBRootInvocationID != "" {
+				info.ResultDBRootInvocationID = parentInfo.ResultDBRootInvocationID
+			}
+			if info.ResultDBWorkUnitID == "" && parentInfo.ResultDBWorkUnitID != "" {
+				info.ResultDBWorkUnitID = parentInfo.ResultDBWorkUnitID
+			}
+			if info.ModuleName == "" && parentInfo.ModuleName != "" {
+				info.ModuleName = parentInfo.ModuleName
+			}
+			if len(info.ModuleParameters) == 0 && len(parentInfo.ModuleParameters) > 0 {
+				info.ModuleParameters = parentInfo.ModuleParameters
+			}
+			currParentID = ExtractBareAntsWorkUnitID(parentInfo.ParentID)
+		}
+	}
+
+	// For TF_TEST_RUN work units where module name is still empty after walking
+	// ancestors, extract the module name from the work unit name (e.g.
+	// "x86_64 bluetooth_test_gd_unit" -> "bluetooth_test_gd_unit").
+	if info.ModuleName == "" && strings.EqualFold(info.Type, "TF_TEST_RUN") && info.Name != "" {
+		trimmedName := strings.TrimSpace(info.Name)
+		if idx := strings.LastIndex(trimmedName, " "); idx != -1 {
+			info.ModuleName = strings.TrimSpace(trimmedName[idx+1:])
+		} else {
+			info.ModuleName = trimmedName
+		}
+	}
+
+	return info, nil
+}
+
+// antsV4WorkUnitResponse matches the proto3 JSON schema of
+// google.internal.android.testresults.ants.v4.WorkUnit returned by OnePlatform API.
+type antsV4WorkUnitResponse struct {
+	ID           string            `json:"id"`
+	WorkUnitID   string            `json:"workUnitId"`
+	InvocationID string            `json:"invocationId"`
+	ParentID     string            `json:"parentId"`
+	Name         string            `json:"name"`
+	Type         string            `json:"type"`
+	State        string            `json:"state"`
+	ModuleInfo   *antsV4ModuleInfo `json:"moduleInfo"`
+	Properties   []AntsProperty    `json:"properties"`
+	Timing       *struct {
+		CreationTimestamp json.Number `json:"creationTimestamp"`
+		CompleteTimestamp json.Number `json:"completeTimestamp"`
+	} `json:"timing"`
+	ResultDBInfo *struct {
+		WorkUnit       string `json:"workUnit"`
+		RootInvocation string `json:"rootInvocation"`
+	} `json:"resultdbInfo"`
+}
+
+// antsV4ModuleInfo matches google.internal.android.testresults.ants.v4.ModuleInfo.
+type antsV4ModuleInfo struct {
+	Name             string         `json:"name"`
+	ModuleParameters []AntsProperty `json:"moduleParameters"`
+}
+
+// ParseAntsWorkUnitJSON unmarshals an AnTS v4 OnePlatform WorkUnit JSON
+// response into AntsWorkUnitInfo.
+func ParseAntsWorkUnitJSON(data []byte) (*AntsWorkUnitInfo, error) {
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) == 0 {
+		return nil, errors.New("empty AnTS work unit JSON response")
+	}
+
+	var raw antsV4WorkUnitResponse
+	if err := json.Unmarshal(trimmed, &raw); err != nil {
+		return nil, errors.Fmt("failed to unmarshal AnTS v4 WorkUnit JSON: %w", err)
+	}
+
+	wuID := raw.ID
+	if wuID == "" {
+		wuID = raw.WorkUnitID
+	}
+
+	if wuID == "" && raw.InvocationID == "" && raw.Name == "" && raw.Type == "" && raw.State == "" && len(raw.Properties) == 0 {
+		return nil, errors.New("invalid AnTS v4 WorkUnit JSON: no recognizable fields found")
+	}
+
+	info := &AntsWorkUnitInfo{
+		WorkUnitID:   wuID,
+		InvocationID: raw.InvocationID,
+		ParentID:     raw.ParentID,
+		Name:         raw.Name,
+		Type:         raw.Type,
+		State:        raw.State,
+		Properties:   raw.Properties,
+	}
+
+	if raw.Timing != nil {
+		if ts, err := strconv.ParseInt(string(raw.Timing.CreationTimestamp), 10, 64); err == nil {
+			info.CreationTimestamp = ts
+		}
+		if ts, err := strconv.ParseInt(string(raw.Timing.CompleteTimestamp), 10, 64); err == nil {
+			info.CompleteTimestamp = ts
+		}
+	}
+
+	if raw.ModuleInfo != nil {
+		info.ModuleName = raw.ModuleInfo.Name
+		if len(raw.ModuleInfo.ModuleParameters) > 0 {
+			info.ModuleParameters = raw.ModuleInfo.ModuleParameters
+		}
+	}
+
+	for _, prop := range raw.Properties {
+		switch prop.Name {
+		case "resultdb_root_invocation_id":
+			info.ResultDBRootInvocationID = strings.TrimSpace(prop.Value)
+		case "resultdb_work_unit_id":
+			info.ResultDBWorkUnitID = strings.TrimSpace(prop.Value)
+		}
+	}
+
+	if raw.ResultDBInfo != nil {
+		if info.ResultDBRootInvocationID == "" && raw.ResultDBInfo.RootInvocation != "" {
+			info.ResultDBRootInvocationID = strings.TrimPrefix(raw.ResultDBInfo.RootInvocation, "rootInvocations/")
+		}
+		if info.ResultDBWorkUnitID == "" && raw.ResultDBInfo.WorkUnit != "" {
+			_, rdbWU := ExtractWorkUnitComponents(raw.ResultDBInfo.WorkUnit)
+			if rdbWU != "" {
+				info.ResultDBWorkUnitID = rdbWU
+			}
+		}
+	}
+
+	// For TF_MODULE work units without moduleInfo.name, Name is the module name.
+	if info.ModuleName == "" && strings.EqualFold(info.Type, "TF_MODULE") && info.Name != "" {
+		info.ModuleName = info.Name
+	}
+
+	return info, nil
 }

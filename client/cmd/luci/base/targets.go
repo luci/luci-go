@@ -142,16 +142,14 @@ func NormalizeInvocation(inv string) string {
 	return inv
 }
 
-// NormalizeWorkUnit strips "workUnits/" prefix from a work unit ID.
-// If the work unit ID is an AnTS work unit (WU<digits>), it is normalized to ants-wu<digits>.
+// NormalizeWorkUnit strips a leading "workUnits/" prefix from a work unit ID.
+// If the ID is an AnTS work unit (e.g. WU<digits> or ants-wu<digits>), it is
+// normalized to lowercase "ants-wu<digits>" while preserving any optional
+// attempt (-attempt__<N>) or TradeFed composite (:u-<uuid>) suffixes.
 func NormalizeWorkUnit(wu string) string {
-	wu = strings.TrimSpace(wu)
-	wu = strings.TrimPrefix(wu, "workUnits/")
-	if (strings.HasPrefix(wu, "WU") || strings.HasPrefix(wu, "wu")) && len(wu) > 2 && isAllDigits(wu[2:]) {
-		return "ants-wu" + wu[2:]
-	}
-	if strings.HasPrefix(strings.ToLower(wu), "ants-wu") && len(wu) > 7 && isAllDigits(wu[7:]) {
-		return "ants-wu" + wu[7:]
+	wu = strings.TrimPrefix(strings.TrimSpace(wu), "workUnits/")
+	if m := antsWURegex.FindStringSubmatch(wu); m != nil {
+		return "ants-wu" + m[1] + strings.ToLower(m[2])
 	}
 	return wu
 }

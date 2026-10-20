@@ -49,7 +49,31 @@ func TestAntsHelpers(t *testing.T) {
 			assert.Loosely(t, IsAntsWorkUnitID("WU1"), should.BeTrue)
 			assert.Loosely(t, IsAntsWorkUnitID("ants-WU123"), should.BeTrue)
 			assert.Loosely(t, IsAntsWorkUnitID("ants-wu83500269020198004"), should.BeTrue)
+			assert.Loosely(t, IsAntsWorkUnitID("WU50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"), should.BeTrue)
+			assert.Loosely(t, IsAntsWorkUnitID("ants-wu78200270526224282-attempt__0:u-f5bacc67-4d7a-428d-a417-be4fe61e05a8"), should.BeTrue)
+			assert.Loosely(t, IsAntsWorkUnitID("WU78200270526224282-attempt__0"), should.BeTrue)
+			assert.Loosely(t, IsAntsWorkUnitID("ANTS-WU123-ATTEMPT__0:U-ABC"), should.BeTrue)
 			assert.Loosely(t, IsAntsWorkUnitID("WU"), should.BeFalse)
+		})
+
+		t.Run("ExtractBareAntsWorkUnitID", func(t *ftt.Test) {
+			assert.Loosely(t, ExtractBareAntsWorkUnitID("WU17100269020689387"), should.Equal("WU17100269020689387"))
+			assert.Loosely(t, ExtractBareAntsWorkUnitID("wu17100269020689387"), should.Equal("WU17100269020689387"))
+			assert.Loosely(t, ExtractBareAntsWorkUnitID("ants-wu17100269020689387"), should.Equal("WU17100269020689387"))
+			assert.Loosely(t, ExtractBareAntsWorkUnitID("ANTS-WU17100269020689387"), should.Equal("WU17100269020689387"))
+			assert.Loosely(t, ExtractBareAntsWorkUnitID("workUnits/WU123"), should.Equal("WU123"))
+			assert.Loosely(t, ExtractBareAntsWorkUnitID("WU50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"), should.Equal("WU50500270009982574"))
+			assert.Loosely(t, ExtractBareAntsWorkUnitID("ants-wu78200270526224282-attempt__0:u-f5bacc67"), should.Equal("WU78200270526224282"))
+			assert.Loosely(t, ExtractBareAntsWorkUnitID("invalid"), should.Equal(""))
+			assert.Loosely(t, ExtractBareAntsWorkUnitID(""), should.Equal(""))
+		})
+
+		t.Run("ExtractAntsURLWorkUnit", func(t *ftt.Test) {
+			assert.Loosely(t, ExtractAntsURLWorkUnit("https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898/workunit/WU17100269020689387/"), should.Equal("WU17100269020689387"))
+			assert.Loosely(t, ExtractAntsURLWorkUnit("https://android-build.corp.google.com/test_investigate/work_unit/WU89700270010105897"), should.Equal("WU89700270010105897"))
+			assert.Loosely(t, ExtractAntsURLWorkUnit("https://android-build.googleplex.com/builds/tests/view?invocationId=I123&workUnitId=WU50500270009982574"), should.Equal("WU50500270009982574"))
+			assert.Loosely(t, ExtractAntsURLWorkUnit("https://android-build.googleplex.com/builds/tests/view?wu_id=ants-wu123"), should.Equal("ants-wu123"))
+			assert.Loosely(t, ExtractAntsURLWorkUnit("https://android-build.googleplex.com/builds/tests/view?invocationId=I123"), should.Equal(""))
 		})
 
 		t.Run("IsAntsURL and ExtractAntsURLComponents", func(t *ftt.Test) {
@@ -92,6 +116,8 @@ func TestAntsHelpers(t *testing.T) {
 			assert.Loosely(t, NormalizeWorkUnit("ants-WU17100269020689387"), should.Equal("ants-wu17100269020689387"))
 			assert.Loosely(t, NormalizeWorkUnit("ants-wu17100269020689387"), should.Equal("ants-wu17100269020689387"))
 			assert.Loosely(t, NormalizeWorkUnit("workUnits/WU123"), should.Equal("ants-wu123"))
+			assert.Loosely(t, NormalizeWorkUnit("WU50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"), should.Equal("ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"))
+			assert.Loosely(t, NormalizeWorkUnit("WU78200270526224282-attempt__0:u-f5bacc67"), should.Equal("ants-wu78200270526224282-attempt__0:u-f5bacc67"))
 			assert.Loosely(t, NormalizeWorkUnit("root"), should.Equal("root"))
 		})
 
@@ -381,6 +407,184 @@ func TestResolveAntsTestResult(t *testing.T) {
 			_, err := ResolveAntsTestResult(context.Background(), "invalid-id")
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid AnTS test result ID"))
+		})
+	})
+}
+
+func TestResolveAntsWorkUnit(t *testing.T) {
+	ftt.Run("ResolveAntsWorkUnit", t, func(t *ftt.Test) {
+		t.Run("200 OK task work unit with ResultDB properties", func(t *ftt.Test) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Loosely(t, r.Method, should.Equal("GET"))
+				assert.Loosely(t, r.URL.Path, should.Equal("/v4/workunits/WU50500270009982574"))
+				assert.Loosely(t, r.Header.Get("X-Goog-User-Project"), should.Equal(AntsUserProject))
+				assert.Loosely(t, r.Header.Get("Accept"), should.Equal("application/json"))
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{
+						"id": "WU50500270009982574",
+						"name": "test-task-1",
+						"type": "TFC_COMMAND_TASK",
+						"invocationId": "I71400010624864031",
+						"state": "COMPLETED",
+						"properties": [
+							{"name": "resultdb_root_invocation_id", "value": "ants-i71400010624864031"},
+							{"name": "resultdb_work_unit_id", "value": "ants-wu50500270009982574"}
+						]
+					}`))
+			}))
+			defer srv.Close()
+
+			ctx := WithAntsHTTPClient(context.Background(), srv.Client(), srv.URL)
+			info, err := ResolveAntsWorkUnit(ctx, "WU50500270009982574")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.WorkUnitID, should.Equal("WU50500270009982574"))
+			assert.Loosely(t, info.InvocationID, should.Equal("I71400010624864031"))
+			assert.Loosely(t, info.Type, should.Equal("TFC_COMMAND_TASK"))
+			assert.Loosely(t, info.ResultDBRootInvocationID, should.Equal("ants-i71400010624864031"))
+			assert.Loosely(t, info.ResultDBWorkUnitID, should.Equal("ants-wu50500270009982574"))
+		})
+
+		t.Run("200 OK test run with ancestor walk (child -> module -> task)", func(t *ftt.Test) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				switch r.URL.Path {
+				case "/v4/workunits/WU89700270010105897":
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write([]byte(`{
+							"id": "WU89700270010105897",
+							"name": "x86_64 bluetooth_test_gd_unit",
+							"type": "TF_TEST_RUN",
+							"parentId": "WU97500270010256987",
+							"invocationId": "I71400010624864031",
+							"state": "ERROR"
+						}`))
+				case "/v4/workunits/WU97500270010256987":
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write([]byte(`{
+							"id": "WU97500270010256987",
+							"name": "bluetooth_test_gd_unit",
+							"type": "TF_MODULE",
+							"parentId": "WU50500270009982574",
+							"invocationId": "I71400010624864031",
+							"state": "COMPLETED",
+							"moduleInfo": {
+								"name": "bluetooth_test_gd_unit",
+								"moduleParameters": [
+									{"name": "module-abi", "value": "x86_64"}
+								]
+							}
+						}`))
+				case "/v4/workunits/WU50500270009982574":
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write([]byte(`{
+							"id": "WU50500270009982574",
+							"name": "test-task-1",
+							"type": "TFC_COMMAND_TASK",
+							"invocationId": "I71400010624864031",
+							"state": "COMPLETED",
+							"properties": [
+								{"name": "resultdb_root_invocation_id", "value": "ants-i71400010624864031"},
+								{"name": "resultdb_work_unit_id", "value": "ants-wu50500270009982574"}
+							]
+						}`))
+				default:
+					http.NotFound(w, r)
+				}
+			}))
+			defer srv.Close()
+
+			ctx := WithAntsHTTPClient(context.Background(), srv.Client(), srv.URL)
+			info, err := ResolveAntsWorkUnit(ctx, "WU89700270010105897")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.WorkUnitID, should.Equal("WU89700270010105897"))
+			assert.Loosely(t, info.InvocationID, should.Equal("I71400010624864031"))
+			assert.Loosely(t, info.Type, should.Equal("TF_TEST_RUN"))
+			assert.Loosely(t, info.ModuleName, should.Equal("bluetooth_test_gd_unit"))
+			assert.Loosely(t, len(info.ModuleParameters), should.Equal(1))
+			assert.Loosely(t, info.ModuleParameters[0].Value, should.Equal("x86_64"))
+			assert.Loosely(t, info.ResultDBRootInvocationID, should.Equal("ants-i71400010624864031"))
+			assert.Loosely(t, info.ResultDBWorkUnitID, should.Equal("ants-wu50500270009982574"))
+		})
+
+		t.Run("404 Not Found error handling", func(t *ftt.Test) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte(`{
+						"error": {
+							"code": 404,
+							"message": "WorkUnit WU99999999999999999 not found.",
+							"status": "NOT_FOUND"
+						}
+					}`))
+			}))
+			defer srv.Close()
+
+			ctx := WithAntsHTTPClient(context.Background(), srv.Client(), srv.URL)
+			_, err := ResolveAntsWorkUnit(ctx, "WU99999999999999999")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("not found"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("404"))
+		})
+
+		t.Run("403 Forbidden permission denied error handling", func(t *ftt.Test) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				_, _ = w.Write([]byte(`{
+						"error": {
+							"code": 403,
+							"message": "The caller does not have permission",
+							"status": "PERMISSION_DENIED"
+						}
+					}`))
+			}))
+			defer srv.Close()
+
+			ctx := WithAntsHTTPClient(context.Background(), srv.Client(), srv.URL)
+			_, err := ResolveAntsWorkUnit(ctx, "WU50500270009982574")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("permission denied"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("403"))
+		})
+
+		t.Run("Invalid AnTS work unit ID format", func(t *ftt.Test) {
+			_, err := ResolveAntsWorkUnit(context.Background(), "not-a-wu-id")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid AnTS work unit ID"))
+		})
+	})
+}
+
+func TestParseAntsWorkUnitJSON(t *testing.T) {
+	ftt.Run("ParseAntsWorkUnitJSON", t, func(t *ftt.Test) {
+		t.Run("Parses timing timestamps and properties", func(t *ftt.Test) {
+			jsonData := []byte(`{
+				"id": "WU89700270010105897",
+				"invocationId": "I71400010624864031",
+				"parentId": "WU97500270010256987",
+				"name": "x86_64 bluetooth_test_gd_unit",
+				"type": "TF_TEST_RUN",
+				"state": "ERROR",
+				"timing": {
+					"creationTimestamp": "1789460743760",
+					"completeTimestamp": "1789460782492"
+				},
+				"properties": [
+					{"name": "attempt", "value": "0"},
+					{"name": "resultdb_work_unit_id", "value": "ants-wu50500270009982574"}
+				]
+			}`)
+
+			info, err := ParseAntsWorkUnitJSON(jsonData)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info.WorkUnitID, should.Equal("WU89700270010105897"))
+			assert.Loosely(t, info.CreationTimestamp, should.Equal(int64(1789460743760)))
+			assert.Loosely(t, info.CompleteTimestamp, should.Equal(int64(1789460782492)))
+			assert.Loosely(t, info.State, should.Equal("ERROR"))
+			assert.Loosely(t, info.ResultDBWorkUnitID, should.Equal("ants-wu50500270009982574"))
 		})
 	})
 }
