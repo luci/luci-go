@@ -197,4 +197,28 @@ describe('useRepairQueueOptimisticMutation', () => {
     );
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: TEST_QUERY_KEY });
   });
+
+  it('calls onError callback when mutation fails', async () => {
+    const onError = jest.fn();
+    const error = new Error('RPC Failed');
+    const { result } = renderHook(
+      () =>
+        useRepairQueueOptimisticMutation<unknown, { taskId: string }, TestItem>(
+          {
+            queryKey: TEST_QUERY_KEY,
+            mutationFn: () => Promise.reject(error),
+            updateItem: (item) => ({ ...item, claimedBy: 'me@google.com' }),
+            onError,
+          },
+        ),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.mutate({ taskId: '1' });
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(onError).toHaveBeenCalledWith(error, { taskId: '1' });
+  });
 });

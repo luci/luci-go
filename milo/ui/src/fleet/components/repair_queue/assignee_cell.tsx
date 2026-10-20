@@ -19,19 +19,27 @@ import { UserAvatar } from './user_avatar';
 export interface AssigneeCellProps {
   readonly claimedBy?: string;
   readonly taskId: string;
+  readonly etag?: string;
   readonly currentUser: string;
   readonly isPending: boolean;
-  readonly claimTask: (req: { readonly taskId: string }) => void;
-  readonly unclaimTask: (req: { readonly taskId: string }) => void;
+  readonly claimTask: (req: {
+    readonly taskId: string;
+    readonly etag: string;
+  }) => void;
+  readonly unclaimTask: (req: {
+    readonly taskId: string;
+    readonly etag: string;
+  }) => void;
 }
 
 /**
  * Renders the assignee of a repair task: the claimer's avatar (click to
- * unclaim or steal the task) or a "Claim" button when the task is unclaimed.
+ * unclaim if self, or reassign to yourself) or a "Claim" button when the task is unclaimed.
  */
 export const AssigneeCell = ({
   claimedBy = '',
   taskId,
+  etag = '',
   currentUser,
   isPending,
   claimTask,
@@ -57,9 +65,9 @@ export const AssigneeCell = ({
     const handleClick = () => {
       if (isPending) return;
       if (isSelf) {
-        unclaimTask({ taskId });
+        unclaimTask({ taskId, etag });
       } else {
-        claimTask({ taskId });
+        claimTask({ taskId, etag });
       }
     };
 
@@ -104,7 +112,7 @@ export const AssigneeCell = ({
           minWidth: '64px',
           height: '26px',
         }}
-        onClick={() => claimTask({ taskId })}
+        onClick={() => claimTask({ taskId, etag })}
       >
         Claim
       </Button>

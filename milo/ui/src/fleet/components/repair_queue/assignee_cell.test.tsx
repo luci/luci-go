@@ -37,10 +37,10 @@ describe('<AssigneeCell />', () => {
     );
 
   it('renders a Claim button for unclaimed tasks', () => {
-    renderCell({ claimedBy: '  ' });
+    renderCell({ claimedBy: '  ', etag: 'etag-101' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Claim' }));
-    expect(claimTask).toHaveBeenCalledWith({ taskId: '101' });
+    expect(claimTask).toHaveBeenCalledWith({ taskId: '101', etag: 'etag-101' });
     expect(unclaimTask).not.toHaveBeenCalled();
   });
 
@@ -51,7 +51,7 @@ describe('<AssigneeCell />', () => {
   });
 
   it('unclaims when the current user clicks their own avatar', async () => {
-    renderCell({ claimedBy: 'user:me@google.com' });
+    renderCell({ claimedBy: 'user:me@google.com', etag: 'etag-101' });
 
     const avatar = screen.getByText('M');
     fireEvent.mouseOver(avatar);
@@ -60,12 +60,15 @@ describe('<AssigneeCell />', () => {
     ).toBeInTheDocument();
 
     fireEvent.click(avatar);
-    expect(unclaimTask).toHaveBeenCalledWith({ taskId: '101' });
+    expect(unclaimTask).toHaveBeenCalledWith({
+      taskId: '101',
+      etag: 'etag-101',
+    });
     expect(claimTask).not.toHaveBeenCalled();
   });
 
-  it("claims when clicking another technician's avatar", async () => {
-    renderCell({ claimedBy: 'other@google.com' });
+  it("claims and reassigns when clicking another technician's avatar", async () => {
+    renderCell({ claimedBy: 'other@google.com', etag: 'etag-101' });
 
     const avatar = screen.getByText('O');
     fireEvent.mouseOver(avatar);
@@ -76,7 +79,10 @@ describe('<AssigneeCell />', () => {
     ).toBeInTheDocument();
 
     fireEvent.click(avatar);
-    expect(claimTask).toHaveBeenCalledWith({ taskId: '101' });
+    expect(claimTask).toHaveBeenCalledWith({
+      taskId: '101',
+      etag: 'etag-101',
+    });
     expect(unclaimTask).not.toHaveBeenCalled();
   });
 });

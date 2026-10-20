@@ -45,6 +45,7 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     priorityScore: '0',
     matchedRuleIds: [],
     deviceId: 'chromeos-host-1',
+    etag: 'etag-101',
   },
   {
     taskId: '102',
@@ -60,6 +61,7 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     priorityScore: '0',
     matchedRuleIds: [],
     deviceId: 'chromeos-host-2',
+    etag: 'etag-102',
   },
 ];
 
@@ -138,7 +140,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '101' });
+        result.current.mutate({ taskId: '101', etag: '' });
       });
 
       // Verify cache was optimistically updated while mutation is in-flight
@@ -194,7 +196,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
 
       act(() => {
         // Task 102 is already claimed by other_tech@google.com
-        result.current.mutate({ taskId: '102' });
+        result.current.mutate({ taskId: '102', etag: '' });
       });
 
       await waitFor(() => {
@@ -236,7 +238,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '101' });
+        result.current.mutate({ taskId: '101', etag: '' });
       });
 
       await waitFor(() => expect(result.current.isError).toBe(true));
@@ -262,7 +264,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '101' });
+        result.current.mutate({ taskId: '101', etag: '' });
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -288,6 +290,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
             priorityScore: '0',
             matchedRuleIds: [],
             deviceId: 'chromeos-only-dut',
+            etag: 'etag-chromeos-task-1',
           },
         ],
         nextPageToken: '',
@@ -305,7 +308,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: 'chromeos-task-1' });
+        result.current.mutate({ taskId: 'chromeos-task-1', etag: '' });
       });
 
       await waitFor(() => {
@@ -340,7 +343,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '101' });
+        result.current.mutate({ taskId: '101', etag: '' });
       });
 
       await waitFor(() => {
@@ -370,7 +373,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: 'non-existent-task' });
+        result.current.mutate({ taskId: 'non-existent-task', etag: '' });
       });
 
       await waitFor(() => {
@@ -410,7 +413,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '102' });
+        result.current.mutate({ taskId: '102', etag: '' });
       });
 
       // Verify cache was optimistically updated to empty string while mutation is in-flight
@@ -453,7 +456,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '102' });
+        result.current.mutate({ taskId: '102', etag: '' });
       });
 
       await waitFor(() => expect(result.current.isError).toBe(true));
@@ -484,7 +487,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '102' });
+        result.current.mutate({ taskId: '102', etag: '' });
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));

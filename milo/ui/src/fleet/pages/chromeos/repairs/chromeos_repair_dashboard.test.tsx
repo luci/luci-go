@@ -71,6 +71,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     priorityScore: '650',
     matchedRuleIds: [],
     deviceId: 'chromeos15-row2-rack3-host4',
+    etag: '',
   },
   {
     taskId: '102',
@@ -88,6 +89,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     priorityScore: '500',
     matchedRuleIds: [],
     deviceId: 'chromeos15-row2-rack3-host5',
+    etag: '',
   },
 ];
 
@@ -281,6 +283,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: '400',
         matchedRuleIds: [],
         deviceId: 'chromeos15-row2-rack3-host6',
+        etag: '',
       },
       {
         taskId: '104',
@@ -295,6 +298,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: '300',
         matchedRuleIds: [],
         deviceId: 'chromeos15-row2-rack3-host7',
+        etag: '',
       },
       {
         taskId: '105',
@@ -308,6 +312,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: '200',
         matchedRuleIds: [],
         deviceId: 'chromeos15-row2-rack3-host8',
+        etag: '',
       },
       {
         taskId: '106',
@@ -323,6 +328,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: '100',
         matchedRuleIds: [],
         deviceId: 'chromeos15-row2-rack3-host9',
+        etag: '',
       },
     ];
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -454,6 +460,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: '0',
         matchedRuleIds: [],
         deviceId: 'fallback-dut-1',
+        etag: '',
       },
       {
         dutId: 'fallback-dut-2',
@@ -467,6 +474,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: '100',
         matchedRuleIds: [],
         deviceId: 'fallback-dut-2',
+        etag: '',
       },
       {
         dutId: 'fallback-dut-3',
@@ -480,6 +488,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: '',
         matchedRuleIds: [],
         deviceId: 'fallback-dut-3',
+        etag: '',
       },
       {
         dutId: 'fallback-dut-4',
@@ -493,6 +502,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: undefined,
         matchedRuleIds: [],
         deviceId: 'fallback-dut-4',
+        etag: '',
       },
     ];
 
@@ -548,6 +558,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: '',
         matchedRuleIds: [],
         deviceId: 'score-empty-dut',
+        etag: '',
       },
       {
         dutId: 'score-undefined-dut',
@@ -561,6 +572,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         priorityScore: undefined,
         matchedRuleIds: [],
         deviceId: 'score-undefined-dut',
+        etag: '',
       },
     ];
 
@@ -606,6 +618,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             priorityScore: '0',
             matchedRuleIds: [],
             deviceId: 'chromeos15-row2-rack3-host6',
+            etag: '',
           },
         ],
         totalSize: 3,
@@ -693,6 +706,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       priorityScore: '0',
       matchedRuleIds: [],
       deviceId: 'chromeos15-row2-rack3-host7',
+      etag: '',
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -828,6 +842,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       priorityScore: '0',
       matchedRuleIds: [],
       deviceId: 'chromeos15-row2-rack3-host7',
+      etag: '',
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -985,6 +1000,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           priorityScore: '120',
           matchedRuleIds: [],
           deviceId: 'chromeos15-p2-item1',
+          etag: '',
         },
         {
           dutId: 'chromeos15-p2-item2',
@@ -998,6 +1014,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           priorityScore: '90',
           matchedRuleIds: [],
           deviceId: 'chromeos15-p2-item2',
+          etag: '',
         },
       ];
 
@@ -1047,6 +1064,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           priorityScore: maxInt64,
           matchedRuleIds: [],
           deviceId: 'dut-extreme-max',
+          etag: '',
         },
         {
           dutId: 'dut-extreme-min',
@@ -1060,6 +1078,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           priorityScore: minInt64,
           matchedRuleIds: [],
           deviceId: 'dut-extreme-min',
+          etag: '',
         },
         {
           dutId: 'dut-negative-score',
@@ -1073,6 +1092,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           priorityScore: '-75',
           matchedRuleIds: [],
           deviceId: 'dut-negative-score',
+          etag: '',
         },
         {
           dutId: 'dut-zero-score',
@@ -1086,6 +1106,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           priorityScore: '0',
           matchedRuleIds: [],
           deviceId: 'dut-zero-score',
+          etag: '',
         },
       ];
 
@@ -1258,6 +1279,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           bluetoothState: 0,
           priorityScore: '100',
           matchedRuleIds: [],
+          etag: '',
         },
       ];
 
@@ -1316,6 +1338,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           bluetoothState: 0,
           priorityScore: '100',
           matchedRuleIds: [],
+          etag: '',
         },
       ];
 
@@ -1484,6 +1507,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             priorityScore: '650',
             matchedRuleIds: ['rule-1', 'rule-2'],
             deviceId: 'dut-multi-match',
+            etag: '',
           },
         ];
 
@@ -1564,6 +1588,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             priorityScore: '-50',
             matchedRuleIds: ['rule-3'],
             deviceId: 'dut-demoted',
+            etag: '',
           },
         ];
 
@@ -1617,6 +1642,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             priorityScore: '0',
             matchedRuleIds: [],
             deviceId: 'dut-no-match',
+            etag: '',
           },
         ];
 
@@ -1678,6 +1704,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             priorityScore: '100',
             matchedRuleIds: ['rule-999'],
             deviceId: 'dut-orphan-rule',
+            etag: '',
           },
         ];
 
@@ -1748,6 +1775,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             priorityScore: '25',
             matchedRuleIds: ['rule-long'],
             deviceId: 'dut-long-rule',
+            etag: '',
           },
         ];
 

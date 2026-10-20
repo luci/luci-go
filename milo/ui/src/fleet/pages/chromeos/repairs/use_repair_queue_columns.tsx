@@ -28,6 +28,7 @@ import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { DutStateCell } from '@/fleet/pages/device_list_page/chromeos/dut_state_cell';
 import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { RepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { PeripheralsCell } from './peripheral_state_indicator';
@@ -56,6 +57,7 @@ export const REPAIR_QUEUE_COLUMN_IDS = [
 export interface UseRepairQueueColumnsOptions {
   pageIndex?: number;
   pageSize?: number;
+  onError?: (message: string) => void;
 }
 
 const BaseDeviceIdCell = renderCellWithLink<RepairQueueRow>({
@@ -80,10 +82,19 @@ const DeviceIdCell = (props: FC_CellProps<RepairQueueRow>) => {
 export const useRepairQueueColumns = ({
   pageIndex = 0,
   pageSize = 100,
+  onError,
 }: UseRepairQueueColumnsOptions = {}) => {
-  const { mutate: claimTask, isPending: isClaimPending } = useClaimRepairTask();
+  const { mutate: claimTask, isPending: isClaimPending } = useClaimRepairTask({
+    onError: (err) => {
+      onError?.(getErrorMessage(err, 'claim repair task'));
+    },
+  });
   const { mutate: unclaimTask, isPending: isUnclaimPending } =
-    useUnclaimRepairTask();
+    useUnclaimRepairTask({
+      onError: (err) => {
+        onError?.(getErrorMessage(err, 'unclaim repair task'));
+      },
+    });
   const isPending = isClaimPending || isUnclaimPending;
 
   const authState = useAuthState();
@@ -174,6 +185,7 @@ export const useRepairQueueColumns = ({
           <AssigneeCell
             claimedBy={row.original.claimedBy}
             taskId={row.original.taskId}
+            etag={row.original.etag}
             currentUser={currentUser}
             isPending={isPending}
             claimTask={claimTask}

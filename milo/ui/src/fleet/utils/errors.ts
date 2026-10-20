@@ -41,7 +41,10 @@ export const getErrorMessage = (error: unknown, operation: string): string => {
       case 8: // RESOURCE_EXHAUSTED
         return `We've reached our capacity for ${operation}. Please try again later.`;
       case 10: // ABORTED
-        return `The operation for ${operation} was cancelled due to a conflict. Please try again.`;
+        return (
+          error.description ||
+          `The operation for ${operation} was cancelled due to a conflict. Please try again.`
+        );
       case 12: // UNIMPLEMENTED
         return `The operation ${operation} is not implemented or not supported/enabled in this service.`;
       case 14: // UNAVAILABLE

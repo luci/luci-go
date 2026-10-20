@@ -61,6 +61,7 @@ const MOCK_QUEUE_ITEMS: readonly AndroidRepairQueueItem[] = [
     priorityScore: '250',
     labName: 'MTV-1',
     matchedRuleIds: ['1'],
+    etag: 'etag-101',
   },
   {
     deviceId: 'android-device-102',
@@ -76,6 +77,7 @@ const MOCK_QUEUE_ITEMS: readonly AndroidRepairQueueItem[] = [
     priorityScore: '50',
     labName: 'MTV-2',
     matchedRuleIds: [],
+    etag: 'etag-102',
   },
 ];
 
@@ -245,11 +247,14 @@ describe('<AndroidRepairDashboard />', () => {
 
     const claimButton = screen.getByRole('button', { name: 'Claim' });
     fireEvent.click(claimButton);
-    expect(mockClaim).toHaveBeenCalledWith({ taskId: '101' });
+    expect(mockClaim).toHaveBeenCalledWith({ taskId: '101', etag: 'etag-101' });
 
     const avatar = screen.getByText('U');
     fireEvent.click(avatar);
-    expect(mockUnclaim).toHaveBeenCalledWith({ taskId: '102' });
+    expect(mockUnclaim).toHaveBeenCalledWith({
+      taskId: '102',
+      etag: 'etag-102',
+    });
   });
 
   it('keys device and host rows sharing a deviceId separately and links hosts to the MH lab list', () => {

@@ -73,10 +73,20 @@ describe('getErrorMessage', () => {
       );
     });
 
-    it('returns correct message for ABORTED (code 10)', () => {
+    it('returns correct message for ABORTED (code 10) without description', () => {
       const error = createMockGrpcError(10);
       expect(getErrorMessage(error, mockOperation)).toEqual(
         `The operation for ${mockOperation} was cancelled due to a conflict. Please try again.`,
+      );
+    });
+
+    it('returns error description for ABORTED (code 10) with description', () => {
+      const error = createMockGrpcError(
+        10,
+        'Task is already claimed by someone@google.com',
+      );
+      expect(getErrorMessage(error, mockOperation)).toEqual(
+        'Task is already claimed by someone@google.com',
       );
     });
 

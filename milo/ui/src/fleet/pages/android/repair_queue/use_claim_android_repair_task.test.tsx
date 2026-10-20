@@ -45,6 +45,7 @@ const MOCK_ITEMS: readonly AndroidRepairQueueItem[] = [
     priorityScore: '100',
     labName: 'MTV-1',
     matchedRuleIds: [],
+    etag: 'etag-101',
   },
   {
     deviceId: 'android-device-2',
@@ -60,6 +61,7 @@ const MOCK_ITEMS: readonly AndroidRepairQueueItem[] = [
     priorityScore: '80',
     labName: 'MTV-2',
     matchedRuleIds: [],
+    etag: 'etag-102',
   },
 ];
 
@@ -130,7 +132,7 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '101' });
+        result.current.mutate({ taskId: '101', etag: '' });
       });
 
       await waitFor(() => {
@@ -175,7 +177,7 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '101' });
+        result.current.mutate({ taskId: '101', etag: '' });
       });
 
       await waitFor(() => expect(result.current.isError).toBe(true));
@@ -212,7 +214,7 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
       });
 
       act(() => {
-        result.current.mutate({ taskId: '102' });
+        result.current.mutate({ taskId: '102', etag: '' });
       });
 
       await waitFor(() => {

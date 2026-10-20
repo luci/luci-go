@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, AlertTitle } from '@mui/material';
+import { Alert, AlertTitle, Snackbar } from '@mui/material';
 import { MaterialReactTable } from 'material-react-table';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { usePagerContext } from '@/common/components/params_pager';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
@@ -57,9 +57,12 @@ export const AndroidRepairQueueTable = ({
 
   const { pageSize, pageToken, pageIndex } = usePager(pagerCtx);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const { columns: defaultColumns } = useAndroidRepairQueueColumns(workspace, {
     pageIndex,
     pageSize,
+    onError: setErrorMessage,
   });
   const columns = propColumns || defaultColumns;
 
@@ -153,5 +156,23 @@ export const AndroidRepairQueueTable = ({
     );
   }
 
-  return <MaterialReactTable table={table} />;
+  return (
+    <>
+      <MaterialReactTable table={table} />
+      <Snackbar
+        open={Boolean(errorMessage)}
+        autoHideDuration={6000}
+        onClose={() => setErrorMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setErrorMessage(null)}
+          severity="error"
+          sx={{ width: '100%' }}
+        >
+          {errorMessage}
+        </Alert>
+      </Snackbar>
+    </>
+  );
 };

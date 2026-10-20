@@ -25,7 +25,13 @@ import {
 
 import { ANDROID_REPAIR_QUEUE_QUERY_KEY } from './use_android_repair_queue';
 
-export const useClaimAndroidRepairTask = () => {
+interface UseAndroidRepairTaskMutationOptions {
+  onError?: (err: Error) => void;
+}
+
+export const useClaimAndroidRepairTask = (
+  options?: UseAndroidRepairTaskMutationOptions,
+) => {
   const client = useFleetConsoleClient();
   const currentUser = useCurrentUserEmail();
 
@@ -42,10 +48,13 @@ export const useClaimAndroidRepairTask = () => {
       claimedBy: currentUser,
       claimedAt: new Date().toISOString(),
     }),
+    onError: options?.onError,
   });
 };
 
-export const useUnclaimAndroidRepairTask = () => {
+export const useUnclaimAndroidRepairTask = (
+  options?: UseAndroidRepairTaskMutationOptions,
+) => {
   const client = useFleetConsoleClient();
 
   return useRepairQueueOptimisticMutation<
@@ -61,5 +70,6 @@ export const useUnclaimAndroidRepairTask = () => {
       claimedBy: '',
       claimedAt: undefined,
     }),
+    onError: options?.onError,
   });
 };

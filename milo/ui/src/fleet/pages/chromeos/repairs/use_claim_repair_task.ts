@@ -25,7 +25,11 @@ import {
 
 import { REPAIR_QUEUE_QUERY_KEY } from './use_repair_queue';
 
-export const useClaimRepairTask = () => {
+interface UseRepairTaskMutationOptions {
+  onError?: (err: Error) => void;
+}
+
+export const useClaimRepairTask = (options?: UseRepairTaskMutationOptions) => {
   const client = useFleetConsoleClient();
   const currentUser = useCurrentUserEmail();
 
@@ -41,10 +45,13 @@ export const useClaimRepairTask = () => {
       claimedBy: currentUser,
       claimedAt: new Date().toISOString(),
     }),
+    onError: options?.onError,
   });
 };
 
-export const useUnclaimRepairTask = () => {
+export const useUnclaimRepairTask = (
+  options?: UseRepairTaskMutationOptions,
+) => {
   const client = useFleetConsoleClient();
 
   return useRepairQueueOptimisticMutation<
@@ -60,5 +67,6 @@ export const useUnclaimRepairTask = () => {
       claimedBy: '',
       claimedAt: undefined,
     }),
+    onError: options?.onError,
   });
 };

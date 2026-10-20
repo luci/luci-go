@@ -18,6 +18,7 @@ import { QueryKey, useMutation, useQueryClient } from '@tanstack/react-query';
 export interface OptimisticRepairQueueItem {
   readonly taskId: string;
   readonly claimedBy?: string;
+  readonly etag?: string;
 }
 
 /** The fields of a list repair queue response that the optimistic update reads. */
@@ -36,6 +37,7 @@ interface UseRepairQueueOptimisticMutationOptions<
   queryKey: QueryKey;
   mutationFn: (variables: TVariables) => Promise<TData>;
   updateItem: (item: TItem, variables: TVariables) => TItem;
+  onError?: (err: Error, variables: TVariables) => void;
 }
 
 export const useRepairQueueOptimisticMutation = <
@@ -46,6 +48,7 @@ export const useRepairQueueOptimisticMutation = <
   queryKey,
   mutationFn,
   updateItem,
+  onError,
 }: UseRepairQueueOptimisticMutationOptions<TData, TVariables, TItem>) => {
   const queryClient = useQueryClient();
 
@@ -102,13 +105,13 @@ export const useRepairQueueOptimisticMutation = <
 
       return { previousQueries };
     },
-    onError: (_err, _variables, context) => {
-      // TODO(b/402410880): surface claim/unclaim RPC errors to the user instead of only rolling back.
+    onError: (err, variables, context) => {
       if (context?.previousQueries) {
         for (const [key, data] of context.previousQueries) {
           queryClient.setQueryData(key, data);
         }
       }
+      onError?.(err, variables);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });

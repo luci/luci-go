@@ -26,6 +26,7 @@ import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { AndroidDeviceIdCell } from '@/fleet/pages/device_list_page/android/android_device_id_cell';
 import { getAndroidStatusColor } from '@/fleet/pages/device_list_page/android/android_state';
 import { FC_CellProps } from '@/fleet/types/table';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { getMobileHarnessHostListLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import { AndroidRepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -53,6 +54,7 @@ export interface UseAndroidRepairQueueColumnsOptions {
   /** Zero-based index of the current page, used to compute the Rank. */
   pageIndex?: number;
   pageSize?: number;
+  onError?: (message: string) => void;
 }
 
 // Column ids match the field names of the backend filter map
@@ -60,12 +62,24 @@ export interface UseAndroidRepairQueueColumnsOptions {
 // used as `order_by` / `filter` fields once sorting and filtering are enabled.
 export const useAndroidRepairQueueColumns = (
   workspace: AndroidPageWorkspace,
-  { pageIndex = 0, pageSize = 100 }: UseAndroidRepairQueueColumnsOptions = {},
+  {
+    pageIndex = 0,
+    pageSize = 100,
+    onError,
+  }: UseAndroidRepairQueueColumnsOptions = {},
 ) => {
   const { mutate: claimTask, isPending: isClaimPending } =
-    useClaimAndroidRepairTask();
+    useClaimAndroidRepairTask({
+      onError: (err) => {
+        onError?.(getErrorMessage(err, 'claim repair task'));
+      },
+    });
   const { mutate: unclaimTask, isPending: isUnclaimPending } =
-    useUnclaimAndroidRepairTask();
+    useUnclaimAndroidRepairTask({
+      onError: (err) => {
+        onError?.(getErrorMessage(err, 'unclaim repair task'));
+      },
+    });
   const isPending = isClaimPending || isUnclaimPending;
 
   const currentUser = useCurrentUserEmail();
@@ -196,6 +210,7 @@ export const useAndroidRepairQueueColumns = (
           <AssigneeCell
             claimedBy={row.original.claimedBy}
             taskId={row.original.taskId}
+            etag={row.original.etag}
             currentUser={currentUser}
             isPending={isPending}
             claimTask={claimTask}
