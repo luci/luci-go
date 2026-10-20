@@ -38,8 +38,9 @@ import (
 // When a VM config specifies `fallback_zones` alongside the primary `zone`,
 // GCE Provider attempts to create the instance in the primary zone first and
 // sequentially falls back to `fallback_zones` whenever GCP returns a hard
-// capacity stockout (HTTP 503 or async operation errors such as
-// ZONE_RESOURCE_POOL_EXHAUSTED or ZONE_RESOURCE_POOL_EXHAUSTED_WITH_DETAILS).
+// capacity stockout (such as ZONE_RESOURCE_POOL_EXHAUSTED,
+// ZONE_RESOURCE_POOL_EXHAUSTED_WITH_DETAILS, RESOURCE_POOL_EXHAUSTED, or
+// RESOURCE_EXHAUSTED).
 //
 // Per-VM Fallback State (`model.VM` in Datastore):
 //   - `Attributes.Zone`: The active candidate zone cursor currently being

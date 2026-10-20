@@ -15,7 +15,6 @@
 package backend
 
 import (
-	"net/http"
 	"strings"
 
 	"google.golang.org/api/googleapi"
@@ -81,9 +80,10 @@ func isStockoutMessage(s string) bool {
 }
 
 // isStockoutGoogleAPIError returns whether the given *googleapi.Error indicates
-// a hard GCP capacity stockout (HTTP 503 Service Unavailable or an explicit
-// ZONE_RESOURCE_POOL_EXHAUSTED / RESOURCE_POOL_EXHAUSTED / RESOURCE_EXHAUSTED
-// error) along with the normalized failure reason.
+// a hard GCP capacity stockout (an explicit ZONE_RESOURCE_POOL_EXHAUSTED,
+// ZONE_RESOURCE_POOL_EXHAUSTED_WITH_DETAILS, RESOURCE_POOL_EXHAUSTED, or
+// RESOURCE_EXHAUSTED error code or message) along with the normalized failure
+// reason.
 func isStockoutGoogleAPIError(gerr *googleapi.Error) (bool, string) {
 	if gerr == nil {
 		return false, errReasonHTTPError
@@ -106,7 +106,15 @@ func isStockoutGoogleAPIError(gerr *googleapi.Error) (bool, string) {
 			return true, reason
 		}
 	}
-	if gerr.Code == http.StatusServiceUnavailable {
+	// Check the top-level error message in case GCP returns an HTTP error
+	// response without populating the structured Errors slice. Do not treat bare
+	// HTTP 503 responses without a stockout code or message as stockouts, as GCP
+	// returns HTTP 503 (e.g. backendError) for transient internal errors that
+	// must be retried in the same zone.
+	if isStockoutMessage(gerr.Message) {
+		if reason == errReasonHTTPError {
+			reason = errCodeZoneResourcePoolExhausted
+		}
 		return true, reason
 	}
 	return false, reason

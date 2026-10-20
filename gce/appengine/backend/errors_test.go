@@ -35,12 +35,27 @@ func TestErrors(t *testing.T) {
 			assert.Loosely(t, reason, should.Equal(errReasonHTTPError))
 		})
 
-		t.Run("HTTP 503 Service Unavailable", func(t *ftt.Test) {
+		t.Run("HTTP 503 Service Unavailable without stockout code is not stockout", func(t *ftt.Test) {
 			stockout, reason := isStockoutGoogleAPIError(&googleapi.Error{
 				Code: http.StatusServiceUnavailable,
 			})
-			assert.Loosely(t, stockout, should.BeTrue)
+			assert.Loosely(t, stockout, should.BeFalse)
 			assert.Loosely(t, reason, should.Equal(errReasonHTTPError))
+		})
+
+		t.Run("HTTP 503 backendError is not stockout", func(t *ftt.Test) {
+			stockout, reason := isStockoutGoogleAPIError(&googleapi.Error{
+				Code:    http.StatusServiceUnavailable,
+				Message: "Internal error. Please try again or contact Google Support.",
+				Errors: []googleapi.ErrorItem{
+					{
+						Reason:  "backendError",
+						Message: "Internal error. Please try again or contact Google Support.",
+					},
+				},
+			})
+			assert.Loosely(t, stockout, should.BeFalse)
+			assert.Loosely(t, reason, should.Equal("backendError"))
 		})
 
 		t.Run("explicit stockout reason", func(t *ftt.Test) {
@@ -71,6 +86,15 @@ func TestErrors(t *testing.T) {
 				Errors: []googleapi.ErrorItem{
 					{Message: "The zone 'projects/p/zones/z' does not have enough resources available to fulfill the request."},
 				},
+			})
+			assert.Loosely(t, stockout, should.BeTrue)
+			assert.Loosely(t, reason, should.Equal(errCodeZoneResourcePoolExhausted))
+		})
+
+		t.Run("top-level stockout message without Errors slice", func(t *ftt.Test) {
+			stockout, reason := isStockoutGoogleAPIError(&googleapi.Error{
+				Code:    http.StatusServiceUnavailable,
+				Message: "The zone 'projects/p/zones/z' does not have enough resources available to fulfill the request.",
 			})
 			assert.Loosely(t, stockout, should.BeTrue)
 			assert.Loosely(t, reason, should.Equal(errCodeZoneResourcePoolExhausted))

@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/uuid"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -142,6 +143,16 @@ func TestFallbackInstance(t *testing.T) {
 					},
 				}
 			}
+			httpStockoutErr := func() (int, any) {
+				return http.StatusServiceUnavailable, map[string]any{
+					"error": googleapi.Error{
+						Code: http.StatusServiceUnavailable,
+						Errors: []googleapi.ErrorItem{
+							{Reason: errCodeZoneResourcePoolExhausted, Message: errMsgZoneResourcePoolExhausted},
+						},
+					},
+				}
+			}
 			opErr := func(code, msg string) *compute.Operation {
 				return &compute.Operation{
 					Error: &compute.OperationError{
@@ -157,7 +168,7 @@ func TestFallbackInstance(t *testing.T) {
 				}
 			}
 
-			t.Run("http 503 stockout falls back and succeeds", func(t *ftt.Test) {
+			t.Run("http stockout falls back and succeeds", func(t *ftt.Test) {
 				attempts := 0
 				rt.Handler = func(req any) (int, any) {
 					attempts++
@@ -166,7 +177,7 @@ func TestFallbackInstance(t *testing.T) {
 						inst := req.(*compute.Instance)
 						assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-c/machineTypes/n2-standard-8"))
 						assert.Loosely(t, inst.Disks[0].InitializeParams.DiskType, should.Equal("zones/us-central1-c/diskTypes/pd-ssd"))
-						return http.StatusServiceUnavailable, nil
+						return httpStockoutErr()
 					case 2:
 						inst := req.(*compute.Instance)
 						assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
@@ -194,6 +205,71 @@ func TestFallbackInstance(t *testing.T) {
 				assert.Loosely(t, v.Attributes.GetMachineType(), should.Equal("zones/us-central1-a/machineTypes/n2-standard-8"))
 				assert.Loosely(t, v.Attributes.GetDisk()[0].GetType(), should.Equal("zones/us-central1-a/diskTypes/pd-ssd"))
 				assert.Loosely(t, v.URL, should.Equal("url-fallback-a"))
+			})
+
+			t.Run("transient HTTP 503 backendError during async creation does not rotate zone", func(t *ftt.Test) {
+				attempts := 0
+				rt.Handler = func(req any) (int, any) {
+					attempts++
+					switch attempts {
+					case 1:
+						// Tick 1: primary zone us-central1-c starts async creation (RUNNING).
+						inst := req.(*compute.Instance)
+						assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-c/machineTypes/n2-standard-8"))
+						return http.StatusOK, &compute.Operation{Status: "RUNNING"}
+					case 2:
+						// Tick 2: polling us-central1-c hits transient HTTP 503 backendError.
+						inst := req.(*compute.Instance)
+						assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-c/machineTypes/n2-standard-8"))
+						return http.StatusServiceUnavailable, map[string]any{
+							"error": googleapi.Error{
+								Code:    http.StatusServiceUnavailable,
+								Message: "Internal error. Please try again or contact Google Support.",
+								Errors: []googleapi.ErrorItem{
+									{
+										Reason:  "backendError",
+										Message: "Internal error. Please try again or contact Google Support.",
+									},
+								},
+							},
+						}
+					case 3:
+						// Tick 3: retries same zone us-central1-c with same requestId and completes (DONE).
+						inst := req.(*compute.Instance)
+						assert.Loosely(t, inst.MachineType, should.Equal("zones/us-central1-c/machineTypes/n2-standard-8"))
+						rt.Type = reflect.TypeOf(map[string]string{})
+						return http.StatusOK, opDone("url-primary-c")
+					default:
+						return http.StatusOK, &compute.Instance{
+							CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
+							SelfLink:          "url-primary-c",
+						}
+					}
+				}
+				rt.Type = reflect.TypeOf(compute.Instance{})
+				assert.Loosely(t, datastore.Put(c, makeVM()), should.BeNil)
+
+				// Tick 1: RUNNING in us-central1-c.
+				assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+				assert.Loosely(t, attempts, should.Equal(1))
+
+				// Tick 2: transient 503 backendError does NOT rotate away from us-central1-c.
+				assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.ErrLike("transiently failed to create instance"))
+				assert.Loosely(t, attempts, should.Equal(2))
+				v := &model.VM{ID: "id"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-c"))
+				assert.Loosely(t, v.FallbackFailedZones, should.BeEmpty)
+				assert.Loosely(t, v.FallbackZoneRotations, should.Equal(int64(0)))
+
+				// Tick 3: succeeds in us-central1-c with 0 zone rotations.
+				assert.Loosely(t, createInstance(c, &tasks.CreateInstance{Id: "id"}), should.BeNil)
+				assert.Loosely(t, attempts, should.Equal(4))
+				v = &model.VM{ID: "id"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Attributes.GetZone(), should.Equal("us-central1-c"))
+				assert.Loosely(t, v.FallbackZoneRotations, should.Equal(int64(0)))
+				assert.Loosely(t, v.URL, should.Equal("url-primary-c"))
 			})
 
 			t.Run("operation stockout falls back across multiple zones", func(t *ftt.Test) {
@@ -237,7 +313,7 @@ func TestFallbackInstance(t *testing.T) {
 					attempts++
 					switch attempts {
 					case 1, 2, 3:
-						return http.StatusServiceUnavailable, nil
+						return httpStockoutErr()
 					case 4:
 						// Second pass starts back at original zone us-central1-c, which is now free.
 						inst := req.(*compute.Instance)
@@ -300,7 +376,7 @@ func TestFallbackInstance(t *testing.T) {
 					switch attempts {
 					case 1:
 						// Zone 1 (us-central1-c) fails with stockout -> rotates to us-central1-a.
-						return http.StatusServiceUnavailable, nil
+						return httpStockoutErr()
 					case 2:
 						// Zone 2 (us-central1-a) fails with transient HTTP 500.
 						return http.StatusInternalServerError, nil
@@ -441,7 +517,7 @@ func TestFallbackInstance(t *testing.T) {
 					switch attempts {
 					case 1:
 						// Zone 1 (us-central1-c) fails with stockout -> rotates to us-central1-a.
-						return http.StatusServiceUnavailable, nil
+						return httpStockoutErr()
 					case 2:
 						// Zone 2 (us-central1-a) InsertInstance returns DONE.
 						rt.Type = reflect.TypeOf(map[string]string{})
