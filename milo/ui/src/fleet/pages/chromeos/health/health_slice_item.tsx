@@ -35,9 +35,9 @@ import {
 import { BaselineChip } from './baseline_chip';
 import { HealthSliceMenu } from './health_slice_menu';
 import { getHealthStatus } from './health_status_utils';
-import { HealthThresholdsTooltip } from './health_tooltip';
 import {
   convertProtoCountsToBreakdown,
+  HealthStatePopover,
   SegmentedHealthBar,
 } from './state_breakdown';
 import {
@@ -463,9 +463,12 @@ export const HealthSliceItem = ({
             </Typography>
           </Box>
 
-          <HealthThresholdsTooltip
-            pct={pct}
-            metricLabel={isAvailability ? 'Availability' : 'Health'}
+          <HealthStatePopover
+            title={slice.name}
+            breakdown={stateBreakdown}
+            availabilityPct={isAvailability ? pct : undefined}
+            healthPct={!isAvailability ? pct : undefined}
+            baseFilter={effectiveFilter}
           >
             <Typography
               variant="caption"
@@ -491,7 +494,7 @@ export const HealthSliceItem = ({
                   : 'No data'
                 : (healthMeta?.status ?? 'No data')}
             </Typography>
-          </HealthThresholdsTooltip>
+          </HealthStatePopover>
         </Box>
 
         {isLoading ? (
@@ -500,50 +503,16 @@ export const HealthSliceItem = ({
             color={healthMeta?.color ?? 'primary'}
             sx={{ height: 4, borderRadius: radii.sm }}
           />
-        ) : stateBreakdown ? (
+        ) : (
           <SegmentedHealthBar
             title={slice.name}
             breakdown={stateBreakdown}
             height={4}
             availabilityPct={isAvailability ? pct : undefined}
+            healthPct={!isAvailability ? pct : undefined}
             baseFilter={effectiveFilter}
             testId={`slice-health-bar-${slice.id}`}
           />
-        ) : (
-          <HealthThresholdsTooltip
-            pct={pct}
-            metricLabel={isAvailability ? 'Availability' : 'Health'}
-          >
-            <Box
-              tabIndex={0}
-              data-testid={`slice-progress-bar-container-${slice.id}`}
-              sx={{
-                ...subMetricRowSx,
-                cursor: 'pointer',
-                py: 0.5,
-                px: 0.5,
-                mx: -0.5,
-                '&:hover .MuiLinearProgress-root, &:focus-visible .MuiLinearProgress-root':
-                  {
-                    transform: 'scaleY(1.33)',
-                    filter: 'brightness(1.08)',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
-                  },
-              }}
-            >
-              <LinearProgress
-                variant="determinate"
-                value={Math.min(100, Math.max(0, pct ?? 0))}
-                color={healthMeta?.color ?? 'primary'}
-                sx={{
-                  height: 4,
-                  borderRadius: 2,
-                  transition:
-                    'transform 0.15s ease-in-out, filter 0.15s ease-in-out',
-                }}
-              />
-            </Box>
-          </HealthThresholdsTooltip>
         )}
       </Box>
     </Box>

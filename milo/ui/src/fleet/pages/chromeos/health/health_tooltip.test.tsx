@@ -14,53 +14,9 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import {
-  HealthThresholdsTooltip,
-  HealthThresholdsTooltipContent,
-  HealthTooltip,
-} from './health_tooltip';
+import { HealthTooltip } from './health_tooltip';
 
-describe('HealthThresholdsTooltipContent', () => {
-  it('renders header and all three SLA threshold rows with labels and ranges', () => {
-    render(<HealthThresholdsTooltipContent />);
-
-    expect(screen.getByText('Health Thresholds')).toBeInTheDocument();
-
-    const healthyRow = screen.getByTestId('threshold-row-healthy');
-    expect(healthyRow).toHaveTextContent('Healthy');
-    expect(healthyRow).toHaveTextContent('≥ 95%');
-
-    const warningRow = screen.getByTestId('threshold-row-warning');
-    expect(warningRow).toHaveTextContent('Warning');
-    expect(warningRow).toHaveTextContent('80%–94%');
-
-    const criticalRow = screen.getByTestId('threshold-row-critical');
-    expect(criticalRow).toHaveTextContent('Critical');
-    expect(criticalRow).toHaveTextContent('< 80%');
-  });
-
-  it('renders current value header and highlights active tier when pct is provided', () => {
-    render(<HealthThresholdsTooltipContent pct={75} metricLabel="Health" />);
-
-    expect(screen.getByTestId('threshold-current-value')).toHaveTextContent(
-      'Current Health:75.0% (Critical)',
-    );
-
-    const criticalRow = screen.getByTestId('threshold-row-critical');
-    expect(criticalRow).toHaveTextContent('Critical (Current)');
-    expect(criticalRow).toHaveTextContent('< 80%');
-  });
-
-  it('formats non-zero decimal percentages to 1 decimal place', () => {
-    render(<HealthThresholdsTooltipContent pct={75.4} metricLabel="Health" />);
-
-    expect(screen.getByTestId('threshold-current-value')).toHaveTextContent(
-      'Current Health:75.4% (Critical)',
-    );
-  });
-});
-
-describe('HealthTooltip and HealthThresholdsTooltip components', () => {
+describe('HealthTooltip', () => {
   it('renders HealthTooltip on hover with custom title', async () => {
     render(
       <HealthTooltip title="Custom health explanation">
@@ -72,19 +28,5 @@ describe('HealthTooltip and HealthThresholdsTooltip components', () => {
     expect(
       await screen.findByText('Custom health explanation'),
     ).toBeInTheDocument();
-  });
-
-  it('renders HealthThresholdsTooltip with thresholds content on hover', async () => {
-    render(
-      <HealthThresholdsTooltip pct={96} metricLabel="Availability">
-        <button type="button">Target button</button>
-      </HealthThresholdsTooltip>,
-    );
-
-    fireEvent.mouseOver(screen.getByText('Target button'));
-    expect(await screen.findByText('Health Thresholds')).toBeInTheDocument();
-    expect(screen.getByTestId('threshold-current-value')).toHaveTextContent(
-      'Current Availability:96.0% (Healthy)',
-    );
   });
 });

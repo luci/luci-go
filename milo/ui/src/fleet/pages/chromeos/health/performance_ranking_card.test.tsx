@@ -100,7 +100,7 @@ describe('PerformanceRankingCard', () => {
     expect(modelElements[2]).toHaveTextContent('brya');
     expect(modelElements[2]).toHaveTextContent('88.0% Available');
     expect(screen.queryByTestId('drop-badge-brya')).not.toBeInTheDocument();
-    expect(screen.getByTestId('gain-badge-brya')).toHaveTextContent('+3%');
+    expect(screen.getByTestId('gain-badge-brya')).toHaveTextContent('+3.0%');
   });
 
   it('renders loading state skeletons while fetching data', () => {
@@ -553,13 +553,27 @@ describe('PerformanceRankingCard', () => {
     ).toBeInTheDocument();
   });
 
-  it('displays healthy, warning, and critical thresholds tooltip when hovering over progress bar', async () => {
+  it('displays state breakdown popover with SLA thresholds when hovering over progress bar', async () => {
     const mockTrends: GetFleetAvailabilityTrendsResponse = {
       metricType: TrendlineMetricType.AVAILABILITY,
       series: [
         {
           name: 'volteer',
-          points: [{ timestamp: '2026-09-30T00:00:00Z', value: 0.7 }],
+          points: [
+            {
+              timestamp: '2026-09-30T00:00:00Z',
+              value: 0.7,
+              stateCounts: {
+                ready: 70,
+                needRepair: 10,
+                repairFailed: 0,
+                needManualRepair: 20,
+                needsReplacement: 0,
+                reserved: 0,
+                needsDeploy: 0,
+              },
+            },
+          ],
         },
       ],
     };
@@ -582,32 +596,29 @@ describe('PerformanceRankingCard', () => {
       </FakeContextProvider>,
     );
 
-    const progressBar = screen.getByRole('progressbar', {
-      name: 'volteer availability',
-    });
-    fireEvent.mouseOver(progressBar);
-    expect(await screen.findByText('Health Thresholds')).toBeInTheDocument();
-    expect(screen.getByTestId('threshold-row-healthy')).toHaveTextContent(
-      'Healthy',
+    const progressBar = screen.getByTestId('progress-bar-volteer');
+    fireEvent.mouseEnter(progressBar);
+
+    expect(
+      await screen.findByTestId('popover-thresholds-strip'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('popover-threshold-healthy')).toHaveTextContent(
+      'Healthy ≥ 95%',
     );
-    expect(screen.getByTestId('threshold-row-healthy')).toHaveTextContent(
-      '≥ 95%',
+    expect(screen.getByTestId('popover-threshold-warning')).toHaveTextContent(
+      'Warning 80%–94%',
     );
-    expect(screen.getByTestId('threshold-row-warning')).toHaveTextContent(
-      'Warning',
+    expect(screen.getByTestId('popover-threshold-critical')).toHaveTextContent(
+      'Critical < 80%',
     );
-    expect(screen.getByTestId('threshold-row-warning')).toHaveTextContent(
-      '80%–94%',
-    );
-    expect(screen.getByTestId('threshold-row-critical')).toHaveTextContent(
-      'Critical',
-    );
-    expect(screen.getByTestId('threshold-row-critical')).toHaveTextContent(
-      '< 80%',
-    );
+    expect(screen.getByTestId('state-row-ready')).toBeInTheDocument();
+    expect(screen.getByTestId('state-row-needs_repair')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('state-row-needs_manual_repair'),
+    ).toBeInTheDocument();
   });
 
-  it('displays healthy, warning, and critical thresholds tooltip when hovering over availability label', async () => {
+  it('displays state breakdown and SLA thresholds popover when hovering over availability label', async () => {
     const mockTrends: GetFleetAvailabilityTrendsResponse = {
       metricType: TrendlineMetricType.AVAILABILITY,
       series: [
@@ -637,8 +648,13 @@ describe('PerformanceRankingCard', () => {
     );
 
     const availabilityLabel = screen.getByTestId('availability-label-volteer');
-    fireEvent.mouseOver(availabilityLabel);
-    expect(await screen.findByText('Health Thresholds')).toBeInTheDocument();
+    fireEvent.mouseEnter(availabilityLabel);
+    expect(
+      await screen.findByTestId('popover-thresholds-strip'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('popover-threshold-critical')).toHaveTextContent(
+      'Critical < 80%',
+    );
   });
 
   it('displays comparison tooltip when hovering over flat trend badge', async () => {
@@ -758,7 +774,7 @@ describe('PerformanceRankingCard', () => {
       '-10.0%',
     );
 
-    const progressBar = screen.getByLabelText('volteer availability');
-    expect(progressBar).toHaveAttribute('aria-valuenow', '100');
+    const progressBar = screen.getByTestId('progress-bar-volteer');
+    expect(progressBar).toHaveAttribute('role', 'progressbar');
   });
 });

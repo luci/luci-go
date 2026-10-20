@@ -24,10 +24,10 @@ import * as path from 'path';
  * raise it: use a token, recipe, or theme variant instead.
  */
 const BASELINE = {
-  rgba: 31,
-  radius: 56,
+  rgba: 29,
+  radius: 53,
   hex: 12,
-  shadow: 7,
+  shadow: 5,
 };
 
 const FLEET_ROOT = path.resolve(__dirname, '..');

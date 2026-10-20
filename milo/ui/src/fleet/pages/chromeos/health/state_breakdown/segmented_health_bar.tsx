@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Popover } from '@mui/material';
-import { useMemo, useRef, useState } from 'react';
+import { Box } from '@mui/material';
+import { useMemo } from 'react';
 
 import { focusRingSx } from '@/fleet/theme/recipes';
 import { radii } from '@/fleet/theme/tokens';
@@ -22,43 +22,44 @@ import {
   computeBreakdownStats,
   DeviceStateBreakdown,
 } from './compute_breakdown_stats';
-import { HealthStatePopoverContent } from './health_state_popover_content';
+import { HealthStatePopover } from './health_state_popover';
 
 export interface SegmentedHealthBarProps {
   readonly title: string;
-  readonly breakdown: DeviceStateBreakdown;
+  readonly breakdown?: DeviceStateBreakdown | undefined;
   readonly height?: number;
-  readonly expectedCount?: number;
-  readonly targetAvailabilityPct?: number;
   readonly availabilityPct?: number;
+  readonly healthPct?: number;
   readonly baseFilter?: string;
   readonly testId?: string;
 }
+
+const EMPTY_BREAKDOWN: DeviceStateBreakdown = {
+  total: 0,
+  ready: 0,
+  needsRepair: 0,
+  repairFailed: 0,
+  needsManualRepair: 0,
+  needsReplacement: 0,
+  reserved: 0,
+  needsDeploy: 0,
+};
 
 export const SegmentedHealthBar = ({
   title,
   breakdown,
   height = 4,
-  expectedCount,
-  targetAvailabilityPct,
   availabilityPct,
+  healthPct,
   baseFilter,
   testId,
 }: SegmentedHealthBarProps) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const barRef = useRef<HTMLDivElement | null>(null);
-
-  const stats = useMemo(() => computeBreakdownStats(breakdown), [breakdown]);
-
-  const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMouseLeave = () => {
-    setAnchorEl(null);
-  };
-
-  const open = Boolean(anchorEl);
+  const safeBreakdown = breakdown ?? EMPTY_BREAKDOWN;
+  const stats = useMemo(
+    () => computeBreakdownStats(safeBreakdown),
+    [safeBreakdown],
+  );
+  const hasData = stats.total > 0;
 
   const ariaDescription = stats.states
     .filter((s) => s.count > 0)
@@ -66,19 +67,18 @@ export const SegmentedHealthBar = ({
     .join(', ');
 
   return (
-    <>
+    <HealthStatePopover
+      title={title}
+      breakdown={safeBreakdown}
+      availabilityPct={availabilityPct}
+      healthPct={healthPct}
+      baseFilter={baseFilter}
+    >
       <Box
-        ref={barRef}
         data-testid={testId ?? `segmented-health-bar-${title}`}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={(e) => {
-          e.stopPropagation();
-          setAnchorEl(e.currentTarget);
-        }}
         tabIndex={0}
         role="progressbar"
-        aria-label={`${title} device health state distribution: ${ariaDescription}`}
+        aria-label={`${title} device health state distribution: ${ariaDescription || 'No devices'}`}
         sx={{
           display: 'flex',
           width: '100%',
@@ -86,13 +86,15 @@ export const SegmentedHealthBar = ({
           borderRadius: radii.sm,
           overflow: 'hidden',
           bgcolor: 'grey.200',
-          cursor: 'pointer',
+          cursor: hasData ? 'pointer' : 'default',
           position: 'relative',
           transition: 'all 0.15s ease-in-out',
-          '&:hover': {
-            transform: 'scaleY(1.5)',
-            filter: 'brightness(1.08)',
-          },
+          ...(hasData && {
+            '&:hover': {
+              transform: 'scaleY(1.5)',
+              filter: 'brightness(1.08)',
+            },
+          }),
           ...focusRingSx,
         }}
       >
@@ -111,42 +113,6 @@ export const SegmentedHealthBar = ({
             />
           ))}
       </Box>
-
-      {/* Interactive State Popover */}
-      <Popover
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleMouseLeave}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'center',
-        }}
-        transformOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}
-        disableRestoreFocus
-        slotProps={{
-          paper: {
-            onMouseEnter: () => setAnchorEl(anchorEl),
-            onMouseLeave: handleMouseLeave,
-            sx: {
-              pointerEvents: 'auto',
-              borderRadius: radii.md,
-              mt: -1,
-            },
-          },
-        }}
-      >
-        <HealthStatePopoverContent
-          title={title}
-          breakdown={breakdown}
-          expectedCount={expectedCount}
-          targetAvailabilityPct={targetAvailabilityPct}
-          availabilityPct={availabilityPct}
-          baseFilter={baseFilter}
-        />
-      </Popover>
-    </>
+    </HealthStatePopover>
   );
 };

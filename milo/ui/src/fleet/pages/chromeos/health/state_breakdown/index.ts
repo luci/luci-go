@@ -16,4 +16,5 @@ export * from './health_state_definitions';
 export * from './compute_breakdown_stats';
 export * from './state_navigation_utils';
 export * from './health_state_popover_content';
+export * from './health_state_popover';
 export * from './segmented_health_bar';

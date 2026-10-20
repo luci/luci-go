@@ -22,7 +22,6 @@ import {
   CardHeader,
   Divider,
   FormControl,
-  LinearProgress,
   List,
   ListItem,
   MenuItem,
@@ -41,17 +40,25 @@ import {
 import { getFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
 import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
 import { subMetricRowSx } from '@/fleet/theme/recipes';
-import { getFilterQueryString } from '@/fleet/utils/search_param';
+import {
+  combineAipFiltersWithParentheses,
+  getFilterQueryString,
+} from '@/fleet/utils/search_param';
 import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { HEALTH_FILTER_CONFIGS } from './filter_constants';
-import { getHealthStatus } from './health_status_utils';
-import { HealthThresholdsTooltip, HealthTooltip } from './health_tooltip';
+import { HealthTooltip } from './health_tooltip';
 import {
   calculate24hDelta,
   DeltaCalculationResult,
   HEALTH_COMPARISON_TOOLTIP,
 } from './ranking_utils';
+import {
+  convertProtoCountsToBreakdown,
+  DeviceStateBreakdown,
+  HealthStatePopover,
+  SegmentedHealthBar,
+} from './state_breakdown';
 import {
   getHourAlignedTimeWindow,
   RANKING_HOURS_WINDOW,
@@ -69,6 +76,7 @@ export interface PerformanceRankingCardProps {
 
 export interface RankedCohortItem extends DeltaCalculationResult {
   readonly name: string;
+  readonly stateBreakdown?: DeviceStateBreakdown;
 }
 
 export const PerformanceRankingCard = ({
@@ -102,10 +110,25 @@ export const PerformanceRankingCard = ({
     const list: RankedCohortItem[] = [];
     for (const s of data.series) {
       if (!s.name || s.name === 'Overall') continue;
-      const delta = calculate24hDelta(s.points ?? []);
+      const points = s.points ?? [];
+      const delta = calculate24hDelta(points);
+      const activePoint =
+        points.length > 0
+          ? points.reduce(
+              (freshest, point) =>
+                (point.timestamp ?? '') > (freshest.timestamp ?? '')
+                  ? point
+                  : freshest,
+              points[points.length - 1],
+            )
+          : undefined;
+      const stateBreakdown = convertProtoCountsToBreakdown(
+        activePoint?.stateCounts,
+      );
       list.push({
         name: s.name,
         ...delta,
+        stateBreakdown,
       });
     }
 
@@ -394,11 +417,23 @@ export const PerformanceRankingCard = ({
                       mb: 0.5,
                     }}
                   >
-                    <HealthThresholdsTooltip
-                      pct={item.availabilityPct}
-                      metricLabel={
-                        entityTab === 'models' ? 'Availability' : 'Health'
+                    <HealthStatePopover
+                      title={toCanonical(item.name)}
+                      breakdown={item.stateBreakdown}
+                      availabilityPct={
+                        entityTab === 'models'
+                          ? item.availabilityPct
+                          : undefined
                       }
+                      healthPct={
+                        entityTab === 'pools' ? item.availabilityPct : undefined
+                      }
+                      baseFilter={combineAipFiltersWithParentheses(
+                        filter,
+                        entityTab === 'models'
+                          ? `model = "${toCanonical(item.name)}"`
+                          : `pool = "${toCanonical(item.name)}"`,
+                      )}
                     >
                       <Typography
                         variant="caption"
@@ -417,7 +452,7 @@ export const PerformanceRankingCard = ({
                         {item.availabilityPct.toFixed(1)}%{' '}
                         {entityTab === 'models' ? 'Available' : 'Healthy'}
                       </Typography>
-                    </HealthThresholdsTooltip>
+                    </HealthStatePopover>
                     {item.trend === 'down' && (
                       <HealthTooltip title={HEALTH_COMPARISON_TOOLTIP}>
                         <Box
@@ -472,7 +507,7 @@ export const PerformanceRankingCard = ({
                               fontSize: '0.75rem',
                             }}
                           >
-                            +{item.healthGain}%
+                            +{item.healthGain.toFixed(1)}%
                           </Typography>
                         </Box>
                       </HealthTooltip>
@@ -497,41 +532,24 @@ export const PerformanceRankingCard = ({
                       </HealthTooltip>
                     )}
                   </Box>
-                  <HealthThresholdsTooltip
-                    pct={item.availabilityPct}
-                    metricLabel={
-                      entityTab === 'models' ? 'Availability' : 'Health'
+                  <SegmentedHealthBar
+                    title={toCanonical(item.name)}
+                    breakdown={item.stateBreakdown}
+                    height={6}
+                    availabilityPct={
+                      entityTab === 'models' ? item.availabilityPct : undefined
                     }
-                  >
-                    <Box
-                      tabIndex={0}
-                      sx={{
-                        ...subMetricRowSx,
-                        cursor: 'pointer',
-                        py: 0.5,
-                        '&:hover .MuiLinearProgress-root, &:focus-visible .MuiLinearProgress-root':
-                          {
-                            transform: 'scaleY(1.33)',
-                            filter: 'brightness(1.08)',
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
-                          },
-                      }}
-                    >
-                      <LinearProgress
-                        variant="determinate"
-                        value={Math.min(100, item.availabilityPct)}
-                        color={getHealthStatus(item.availabilityPct).color}
-                        sx={{
-                          height: 6,
-                          borderRadius: 3,
-                          transition:
-                            'transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease, box-shadow 0.15s ease',
-                        }}
-                        aria-label={`${item.name} availability`}
-                        data-testid={`progress-bar-${item.name}`}
-                      />
-                    </Box>
-                  </HealthThresholdsTooltip>
+                    healthPct={
+                      entityTab === 'pools' ? item.availabilityPct : undefined
+                    }
+                    baseFilter={combineAipFiltersWithParentheses(
+                      filter,
+                      entityTab === 'models'
+                        ? `model = "${toCanonical(item.name)}"`
+                        : `pool = "${toCanonical(item.name)}"`,
+                    )}
+                    testId={`progress-bar-${item.name}`}
+                  />
                 </Box>
               </ListItem>
             ))}

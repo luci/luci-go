@@ -828,7 +828,7 @@ describe('HealthSlicesCard', () => {
     ).toBeNull();
   });
 
-  it('displays healthy, warning, and critical thresholds tooltip when hovering over slice status label', async () => {
+  it('displays state breakdown and SLA thresholds popover when hovering over slice status label', async () => {
     render(
       <FakeContextProvider>
         <ShortcutProvider>
@@ -845,9 +845,13 @@ describe('HealthSlicesCard', () => {
     const statusLabel = screen.getByTestId(/^slice-status-label-/);
     expect(statusLabel).toHaveTextContent('Healthy');
 
-    fireEvent.mouseOver(statusLabel);
-    expect(await screen.findByText('Health Thresholds')).toBeInTheDocument();
-    expect(screen.getByText('Critical')).toBeInTheDocument();
+    fireEvent.mouseEnter(statusLabel);
+    expect(
+      await screen.findByTestId('popover-thresholds-strip'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('popover-threshold-healthy')).toHaveTextContent(
+      'Healthy ≥ 95%',
+    );
   });
 
   it('renders fallback dash when point value is NaN', () => {

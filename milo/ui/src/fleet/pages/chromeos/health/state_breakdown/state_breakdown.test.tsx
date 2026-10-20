@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
 
 import { DeviceStateCounts } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -26,6 +31,7 @@ import {
   HEALTH_CATEGORIES,
   STATE_VISUAL_CONFIGS,
 } from './health_state_definitions';
+import { HealthStatePopover } from './health_state_popover';
 import { HealthStatePopoverContent } from './health_state_popover_content';
 import { SegmentedHealthBar } from './segmented_health_bar';
 import {
@@ -240,6 +246,80 @@ describe('SegmentedHealthBar', () => {
     expect(screen.getByText('Availability')).toBeInTheDocument();
     expect(screen.getByText('Health')).toBeInTheDocument();
   });
+
+  it('gracefully handles undefined or empty breakdown without crashing', () => {
+    render(<SegmentedHealthBar title="empty-slice" testId="empty-bar" />);
+
+    const bar = screen.getByTestId('empty-bar');
+    expect(bar).toBeInTheDocument();
+    expect(bar).toHaveAttribute('role', 'progressbar');
+    expect(bar).toHaveAttribute(
+      'aria-label',
+      'empty-slice device health state distribution: No devices',
+    );
+
+    // Hover should not open popover when total is 0
+    fireEvent.mouseEnter(bar);
+    expect(screen.queryByText('total enrolled')).not.toBeInTheDocument();
+  });
+});
+
+describe('HealthStatePopover', () => {
+  it('wraps arbitrary child and opens state popover on hover', () => {
+    render(
+      <HealthStatePopover
+        title="brya"
+        breakdown={mockBreakdown}
+        availabilityPct={95.4}
+      >
+        <span data-testid="test-label">Healthy</span>
+      </HealthStatePopover>,
+    );
+
+    const label = screen.getByTestId('test-label');
+    expect(label).toHaveTextContent('Healthy');
+
+    fireEvent.mouseEnter(label);
+    expect(screen.getByText('brya')).toBeInTheDocument();
+    expect(screen.getByTestId('popover-thresholds-strip')).toBeInTheDocument();
+    expect(screen.getByTestId('popover-threshold-healthy')).toBeInTheDocument();
+    expect(screen.getByText('1,000 total enrolled')).toBeInTheDocument();
+  });
+
+  it('toggles popover open and closed on click', async () => {
+    render(
+      <HealthStatePopover
+        title="brya"
+        breakdown={mockBreakdown}
+        transitionDuration={0}
+      >
+        <button type="button" data-testid="test-btn">
+          Click me
+        </button>
+      </HealthStatePopover>,
+    );
+
+    const btn = screen.getByTestId('test-btn');
+    fireEvent.click(btn);
+    expect(screen.getByText('1,000 total enrolled')).toBeInTheDocument();
+
+    fireEvent.click(btn);
+    await waitForElementToBeRemoved(() =>
+      screen.queryByText('1,000 total enrolled'),
+    );
+  });
+
+  it('does not open when disabled is true', () => {
+    render(
+      <HealthStatePopover title="brya" breakdown={mockBreakdown} disabled>
+        <span data-testid="disabled-label">Disabled</span>
+      </HealthStatePopover>,
+    );
+
+    const label = screen.getByTestId('disabled-label');
+    fireEvent.mouseEnter(label);
+    expect(screen.queryByText('1,000 total enrolled')).not.toBeInTheDocument();
+  });
 });
 
 describe('HealthStatePopoverContent', () => {
@@ -249,7 +329,6 @@ describe('HealthStatePopoverContent', () => {
         title="volteer"
         breakdown={mockBreakdown}
         baseFilter='model = "volteer"'
-        targetAvailabilityPct={90}
       />,
     );
 
@@ -258,9 +337,6 @@ describe('HealthStatePopoverContent', () => {
     expect(screen.getAllByText('94.5%').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Availability')).toBeInTheDocument();
     expect(screen.getByText('Health')).toBeInTheDocument();
-
-    // Target quota
-    expect(screen.getByText('Expected Quota Target')).toBeInTheDocument();
 
     // Macro category headers
     expect(screen.getByText('Healthy (Operable Capacity)')).toBeInTheDocument();
@@ -296,23 +372,21 @@ describe('HealthStatePopoverContent', () => {
     );
   });
 
-  it('calculates availability using expectedCount as denominator from the exact same healthy numerator', () => {
-    // 945 healthy devices out of 1000 total devices
-    // Quota expectedCount = 950
-    // Availability = 945 / 950 * 100 = 99.5%
-    // Health = 945 / 1000 * 100 = 94.5%
+  it('renders explicit availabilityPct formatted to 1 decimal place alongside healthPct', () => {
+    // Availability from SLA/Quota trendline point (e.g. 98.52345% -> formatted to 98.5%)
+    // Health computed from breakdown (945 / 1000 = 94.5%)
     render(
       <HealthStatePopoverContent
         title="brya"
         breakdown={mockBreakdown}
-        expectedCount={950}
+        availabilityPct={98.52345}
       />,
     );
 
-    expect(screen.getByText('99.5%')).toBeInTheDocument();
+    expect(screen.getByText('98.5%')).toBeInTheDocument();
     expect(screen.getByText('94.5%')).toBeInTheDocument();
-    expect(screen.getByText('945 / 950 target')).toBeInTheDocument();
-    expect(screen.getByText('945 / 1,000 fleet')).toBeInTheDocument();
+    expect(screen.queryByText(/target/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/fleet/i)).not.toBeInTheDocument();
   });
 
   it('renders "Other states" section when registered or unknown devices are present', () => {
@@ -344,5 +418,28 @@ describe('HealthStatePopoverContent', () => {
     const unknownRow = screen.getByTestId('state-row-unknown');
     expect(unknownRow).toBeInTheDocument();
     expect(unknownRow).toHaveTextContent('0');
+  });
+
+  it('renders SLA thresholds strip with healthy, warning, and critical tiers', () => {
+    // mockBreakdown has 945 healthy out of 1000 = 94.5% (Warning tier: 80%–94%)
+    render(
+      <HealthStatePopoverContent title="brya" breakdown={mockBreakdown} />,
+    );
+
+    const strip = screen.getByTestId('popover-thresholds-strip');
+    expect(strip).toBeInTheDocument();
+    expect(strip).toHaveTextContent('SLA');
+
+    const healthyTier = screen.getByTestId('popover-threshold-healthy');
+    expect(healthyTier).toBeInTheDocument();
+    expect(healthyTier).toHaveTextContent('Healthy ≥ 95%');
+
+    const warningTier = screen.getByTestId('popover-threshold-warning');
+    expect(warningTier).toBeInTheDocument();
+    expect(warningTier).toHaveTextContent('Warning 80%–94%');
+
+    const criticalTier = screen.getByTestId('popover-threshold-critical');
+    expect(criticalTier).toBeInTheDocument();
+    expect(criticalTier).toHaveTextContent('Critical < 80%');
   });
 });

@@ -20,6 +20,8 @@ import { healthToDeviceFilter } from '@/fleet/adapters/filter_adapters';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { radii } from '@/fleet/theme/tokens';
 
+import { getHealthStatus, HEALTH_THRESHOLDS } from '../health_status_utils';
+
 import {
   computeBreakdownStats,
   DeviceStateBreakdown,
@@ -28,42 +30,49 @@ import {
 import { ExactDutStateKey } from './health_state_definitions';
 import { getDeviceListStateUrl } from './state_navigation_utils';
 
+const EMPTY_BREAKDOWN: DeviceStateBreakdown = {
+  total: 0,
+  ready: 0,
+  needsRepair: 0,
+  repairFailed: 0,
+  needsManualRepair: 0,
+  needsReplacement: 0,
+  reserved: 0,
+  needsDeploy: 0,
+};
+
 export interface HealthStatePopoverContentProps {
   readonly title: string;
-  readonly breakdown: DeviceStateBreakdown;
-  readonly expectedCount?: number;
-  readonly targetAvailabilityPct?: number;
+  readonly breakdown?: DeviceStateBreakdown | undefined;
   readonly availabilityPct?: number;
+  readonly healthPct?: number;
   readonly baseFilter?: string;
 }
 
 export const HealthStatePopoverContent = ({
   title,
-  breakdown,
-  expectedCount,
-  targetAvailabilityPct,
+  breakdown = EMPTY_BREAKDOWN,
   availabilityPct: explicitAvailabilityPct,
+  healthPct: explicitHealthPct,
   baseFilter,
 }: HealthStatePopoverContentProps) => {
   const stats = useMemo(() => computeBreakdownStats(breakdown), [breakdown]);
 
   const total = stats.total;
-  const healthyCount = stats.healthyTotalCount;
-  const healthPct = stats.healthyTotalPct;
+  const healthPct = explicitHealthPct ?? stats.healthyTotalPct;
 
-  // Availability and Health are computed from the EXACT same set of healthy devices
-  // (ready + needs_repair + repair_failed + reserved).
-  // The ONLY difference in Availability is the denominator: expected count (quota target)
-  // instead of total enrolled devices in the fleet.
+  // Availability and Health:
+  // If explicit availabilityPct is provided (e.g. from SLA/Quota BigQuery trendline point),
+  // use that; otherwise fall back to fleet-wide health percentage.
   const displayAvailabilityPct = useMemo(() => {
     if (explicitAvailabilityPct !== undefined) {
       return explicitAvailabilityPct;
     }
-    if (expectedCount !== undefined && expectedCount > 0) {
-      return Math.round((healthyCount / expectedCount) * 1000) / 10;
-    }
     return healthPct;
-  }, [explicitAvailabilityPct, expectedCount, healthyCount, healthPct]);
+  }, [explicitAvailabilityPct, healthPct]);
+
+  const availabilityStatus = getHealthStatus(displayAvailabilityPct);
+  const healthStatus = getHealthStatus(healthPct);
 
   const adaptedBaseFilter = useMemo(
     () => healthToDeviceFilter(baseFilter),
@@ -117,15 +126,10 @@ export const HealthStatePopoverContent = ({
               sx={{
                 fontWeight: 800,
                 lineHeight: 1,
-                color:
-                  displayAvailabilityPct >= 95
-                    ? 'success.main'
-                    : displayAvailabilityPct >= 80
-                      ? 'warning.main'
-                      : 'error.main',
+                color: `${availabilityStatus.color}.main`,
               }}
             >
-              {displayAvailabilityPct}%
+              {displayAvailabilityPct.toFixed(1)}%
             </Typography>
             <Typography
               variant="caption"
@@ -139,21 +143,6 @@ export const HealthStatePopoverContent = ({
             >
               Availability
             </Typography>
-            {expectedCount !== undefined && expectedCount > 0 && (
-              <Typography
-                variant="caption"
-                sx={{
-                  display: 'block',
-                  fontSize: 9.5,
-                  color: 'text.secondary',
-                  lineHeight: 1,
-                  mt: 0.25,
-                }}
-              >
-                {formatStateCount(healthyCount)} /{' '}
-                {formatStateCount(expectedCount)} target
-              </Typography>
-            )}
           </Box>
           <Divider
             orientation="vertical"
@@ -166,15 +155,10 @@ export const HealthStatePopoverContent = ({
               sx={{
                 fontWeight: 800,
                 lineHeight: 1,
-                color:
-                  healthPct >= 95
-                    ? 'success.main'
-                    : healthPct >= 80
-                      ? 'warning.main'
-                      : 'error.main',
+                color: `${healthStatus.color}.main`,
               }}
             >
-              {healthPct}%
+              {healthPct.toFixed(1)}%
             </Typography>
             <Typography
               variant="caption"
@@ -188,57 +172,83 @@ export const HealthStatePopoverContent = ({
             >
               Health
             </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                display: 'block',
-                fontSize: 9.5,
-                color: 'text.secondary',
-                lineHeight: 1,
-                mt: 0.25,
-              }}
-            >
-              {formatStateCount(healthyCount)} / {formatStateCount(total)} fleet
-            </Typography>
           </Box>
         </Box>
       </Box>
 
-      {/* Target Baseline Comparison if provided */}
-      {targetAvailabilityPct !== undefined && (
-        <Box
+      {/* SLA Health Thresholds Strip */}
+      <Box
+        data-testid="popover-thresholds-strip"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 1,
+          py: 0.5,
+          mb: 1.5,
+          borderRadius: radii.sm,
+          bgcolor: 'action.hover',
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <Typography
+          variant="caption"
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            bgcolor: 'action.hover',
-            p: 0.75,
-            px: 1.25,
-            borderRadius: radii.sm,
-            mb: 1.5,
+            fontSize: 10,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            color: 'text.secondary',
           }}
         >
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            Expected Quota Target
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color:
-                displayAvailabilityPct >= targetAvailabilityPct
-                  ? 'success.main'
-                  : 'error.main',
-            }}
-          >
-            {targetAvailabilityPct}% (
-            {displayAvailabilityPct >= targetAvailabilityPct
-              ? 'Met'
-              : `${Math.round(targetAvailabilityPct - displayAvailabilityPct)}% deficit`}
-            )
-          </Typography>
+          SLA
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {HEALTH_THRESHOLDS.map((tier) => {
+            const isCurrentTier = availabilityStatus.status === tier.status;
+            return (
+              <Box
+                key={tier.status}
+                data-testid={`popover-threshold-${tier.status.toLowerCase()}`}
+                title={`${tier.label}: ${tier.range}${isCurrentTier ? ' (Current tier)' : ''}`}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  px: isCurrentTier ? 0.75 : 0.25,
+                  py: 0.2,
+                  borderRadius: radii.sm,
+                  bgcolor: isCurrentTier ? 'action.selected' : 'transparent',
+                  border: '1px solid',
+                  borderColor: isCurrentTier ? 'divider' : 'transparent',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    bgcolor: tier.colorSx,
+                    flexShrink: 0,
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontSize: 10.5,
+                    fontWeight: isCurrentTier ? 700 : 500,
+                    color: isCurrentTier ? 'text.primary' : 'text.secondary',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {tier.label} {tier.range}
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
-      )}
+      </Box>
 
       {/* Mini Color Spectrum Bar */}
       <Box
