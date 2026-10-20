@@ -12,129 +12,192 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useLocation } from 'react-router';
 
+import { AvailableFlags } from '@/common/layouts/app_bar/available_flags/available_flags';
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
+import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ProductCatalogDetailsPage } from './product_catalogue_details_page';
-import { useProductCatalogDetailsData } from './use_product_catalog_details_data';
 
-jest.mock('./use_product_catalog_details_data');
+jest.mock('@/generic_libs/components/google_analytics', () => ({
+  useGoogleAnalytics: () => ({ trackEvent: jest.fn() }),
+}));
 
-const mockUseProductCatalogDetailsData =
-  useProductCatalogDetailsData as jest.Mock;
-
-const renderWithProviders = (ui: React.ReactNode) => {
-  return render(
+const renderDetailsPage = (catalogId: string) =>
+  render(
     <FakeContextProvider
-      mountedPath="/catalog/:id"
-      routerOptions={{
-        initialEntries: ['/catalog/prod-12345'],
-      }}
+      mountedPath="/ui/fleet/catalog/:id"
+      routerOptions={{ initialEntries: [`/ui/fleet/catalog/${catalogId}`] }}
     >
-      <SettingsProvider>{ui}</SettingsProvider>
+      <SettingsProvider>
+        <ShortcutProvider>
+          <ProductCatalogDetailsPage />
+        </ShortcutProvider>
+      </SettingsProvider>
     </FakeContextProvider>,
   );
-};
 
-describe('<ProductCatalogDetailsPage />', () => {
-  it('renders loading by default', async () => {
-    mockUseProductCatalogDetailsData.mockReturnValue({ isLoading: true });
-    renderWithProviders(<ProductCatalogDetailsPage />);
-    expect(screen.getByTestId('loading-spinner')).toBeVisible();
-  });
-
-  it('renders error state', async () => {
-    mockUseProductCatalogDetailsData.mockReturnValue({
-      isError: true,
-      error: new Error('Fake network error'),
-    });
-    renderWithProviders(<ProductCatalogDetailsPage />);
-    expect(
-      screen.getByText(/Something went wrong:.*Fake network error/),
-    ).toBeVisible();
-  });
-
-  it('renders not found state', async () => {
-    mockUseProductCatalogDetailsData.mockReturnValue({
-      isLoading: false,
-      entry: undefined,
-    });
-    renderWithProviders(<ProductCatalogDetailsPage />);
-    expect(screen.getByText('Entry not found!')).toBeVisible();
-    expect(screen.getByText(/The product catalog entry/)).toBeVisible();
-    const ids = screen.getAllByText('prod-12345');
-    expect(ids.length).toBeGreaterThan(0);
-    ids.forEach((el) => expect(el).toBeVisible());
-  });
-
-  it('renders details correctly', async () => {
-    mockUseProductCatalogDetailsData.mockReturnValue({
-      isLoading: false,
-      entry: {
-        productCatalogId: 'prod-12345',
-        productName: 'Google Pixel 9 Pro',
-        gpn: '123-4567-890',
-        descriptiveName: 'Pixel 9 Pro 128GB Obsidian',
-        resourceType: 'device',
-        fleetPlmStatus: 'GA',
-        r11n: ['r11n-us-central', 'r11n-us-east'],
-        numberOfDevicesPerRack: 16,
-        unitCost: '$999.00',
-        productType: 'phone',
+describe('ProductCatalogDetailsPage', () => {
+  beforeEach(() => {
+    FleetConsoleMockAPI.enableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+    FleetConsoleMockAPI.setFixture(
+      'GetResourceRequestsMultiselectFilterValues',
+      {
+        resourceGroups: ['cros-lab'],
       },
+    );
+  });
+
+  afterEach(() => {
+    FleetConsoleMockAPI.resetFixtures();
+    localStorage.clear();
+    sessionStorage.clear();
+    window.history.replaceState({}, '', '/');
+  });
+
+  it('renders full-bleed hardware hero and carousel when photoDataUris is populated', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ATB-000',
+          productName: 'Android OmniLab Enclosure',
+          gpn: '1055297-01',
+          descriptiveName: 'Standard 16-slot testbed enclosure',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'GA',
+          r11n: ['r11n-atb'],
+          numberOfDevicesPerRack: 4,
+          unitCost: '26645',
+          productType: 'android-testbed',
+          photoDataUris: [
+            'data:image/webp;base64,mock-hero-photo-1',
+            'data:image/webp;base64,mock-hero-photo-2',
+          ],
+        },
+      ],
     });
-    renderWithProviders(<ProductCatalogDetailsPage />);
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'Product Catalog Entry:',
-    );
-    expect(screen.getByDisplayValue('prod-12345')).toBeVisible();
+    renderDetailsPage('ATB-000');
 
-    // Verify fields
-    expect(screen.getByText('Product Catalog ID')).toBeVisible();
-    expect(screen.getByText('Product Name')).toBeVisible();
-    expect(screen.getByText('Google Pixel 9 Pro')).toBeVisible();
-    expect(screen.getByText('123-4567-890')).toBeVisible();
-    expect(screen.getByText('Pixel 9 Pro 128GB Obsidian')).toBeVisible();
-    expect(screen.getByText('device')).toBeVisible();
-    expect(screen.getByText('GA')).toBeVisible();
-    expect(screen.getByText('16')).toBeVisible();
-    expect(screen.getByText('$999.00')).toBeVisible();
-    expect(screen.getByText('phone')).toBeVisible();
+    expect(
+      await screen.findByTestId('catalog-details-hero'),
+    ).toBeInTheDocument();
+    const img = await screen.findByTestId('details-photo-img');
+    expect(img).toHaveAttribute(
+      'src',
+      'data:image/webp;base64,mock-hero-photo-1',
+    );
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+    expect(screen.getAllByText('$26,645').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Order Resources')).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Field' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Value' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('CPU Type')).not.toBeInTheDocument();
+    expect(screen.queryByText('CPU Count Per VM')).not.toBeInTheDocument();
+    expect(screen.queryByText('Memory (GB) Per VM')).not.toBeInTheDocument();
 
-    // Verify links
-    const link1 = screen.getByText('r11n-us-central');
-    expect(link1).toHaveAttribute(
-      'href',
-      'http://goto.google.com/ngp-npi/r11n/r11n-us-central',
+    fireEvent.click(screen.getByRole('button', { name: 'Next photo' }));
+    expect(screen.getByTestId('details-photo-img')).toHaveAttribute(
+      'src',
+      'data:image/webp;base64,mock-hero-photo-2',
     );
-    const link2 = screen.getByText('r11n-us-east');
-    expect(link2).toHaveAttribute(
-      'href',
-      'http://goto.google.com/ngp-npi/r11n/r11n-us-east',
-    );
-    // Verify Order Resources form is visible by default
-    expect(screen.getByText('Order Resources')).toBeVisible();
+    expect(screen.getByText('2 / 2')).toBeInTheDocument();
+  });
+
+  it('renders intentional category blueprint fallback when photoDataUris is empty', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'PH-000',
+          productName: 'Unphotographed Reference Device',
+          gpn: '1066840-01',
+          descriptiveName: 'Catalog SKU without reference photo',
+          resourceType: 'PHONE',
+          fleetPlmStatus: 'LA',
+          r11n: [],
+          numberOfDevicesPerRack: 24,
+          unitCost: '850',
+          productType: 'hardware',
+          photoDataUris: [],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('PH-000');
+
+    expect(
+      await screen.findByTestId('details-photo-fallback'),
+    ).toBeInTheDocument();
+  });
+
+  it('falls back to category blueprint when photo image triggers onError', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ERR-001',
+          productName: 'Broken Photo Device',
+          gpn: '1055297-03',
+          descriptiveName: 'Device with broken photo URI',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 4,
+          unitCost: '26645',
+          productType: 'android-testbed',
+          photoDataUris: ['data:image/webp;base64,broken-uri'],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('ERR-001');
+
+    const img = await screen.findByTestId('details-photo-img');
+    fireEvent.error(img);
+
+    expect(
+      await screen.findByTestId('details-photo-fallback'),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('details-photo-img')).not.toBeInTheDocument();
   });
 
   it('navigates back to navigatedFromLink when clicking back arrow', async () => {
-    mockUseProductCatalogDetailsData.mockReturnValue({
-      isLoading: false,
-      entry: {
-        productCatalogId: 'prod-12345',
-        productName: 'Google Pixel 9 Pro',
-        gpn: '123-4567-890',
-        descriptiveName: 'Pixel 9 Pro 128GB Obsidian',
-        resourceType: 'device',
-        fleetPlmStatus: 'GA',
-        r11n: [],
-        numberOfDevicesPerRack: 16,
-        unitCost: '$999.00',
-        productType: 'phone',
-      },
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ATB-000',
+          productName: 'Android OmniLab Enclosure',
+          gpn: '1055297-01',
+          descriptiveName: 'Standard 16-slot testbed enclosure',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'GA',
+          r11n: [],
+          numberOfDevicesPerRack: 4,
+          unitCost: '26645',
+          productType: 'android-testbed',
+          photoDataUris: [],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
     });
 
     const LocationDisplay = () => {
@@ -146,11 +209,11 @@ describe('<ProductCatalogDetailsPage />', () => {
 
     render(
       <FakeContextProvider
-        mountedPath="/catalog/:id"
+        mountedPath="/ui/fleet/catalog/:id"
         routerOptions={{
           initialEntries: [
             {
-              pathname: '/catalog/prod-12345',
+              pathname: '/ui/fleet/catalog/ATB-000',
               state: { navigatedFromLink: '/ui/fleet/catalog?view=card' },
             },
           ],
@@ -163,16 +226,242 @@ describe('<ProductCatalogDetailsPage />', () => {
         ]}
       >
         <SettingsProvider>
-          <ProductCatalogDetailsPage />
+          <ShortcutProvider>
+            <ProductCatalogDetailsPage />
+          </ShortcutProvider>
         </SettingsProvider>
       </FakeContextProvider>,
     );
 
-    const backButton = screen.getByRole('button', { name: /go back/i });
+    const backButton = await screen.findByRole('button', { name: /go back/i });
     fireEvent.click(backButton);
 
     expect(await screen.findByTestId('location-display')).toHaveTextContent(
       '/ui/fleet/catalog?view=card',
     );
+  });
+
+  it('renders legacy details layout without photo hero when product-catalog-revamp feature flag is off', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ATB-000',
+          productName: 'Android OmniLab Enclosure',
+          gpn: '1055297-01',
+          descriptiveName: 'Standard 16-slot testbed enclosure',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'GA',
+          r11n: ['r11n-atb'],
+          numberOfDevicesPerRack: 4,
+          unitCost: '26645',
+          productType: 'android-testbed',
+          photoDataUris: ['data:image/webp;base64,mock-hero-photo-1'],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('ATB-000?ff=product-catalog-revamp:off');
+
+    expect(
+      await screen.findByTestId('legacy-catalog-details-view'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('catalog-details-hero'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Field' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Value' }),
+    ).toBeInTheDocument();
+  });
+
+  it('toggles between revamped hero details and legacy details via the Feature Flags dialog', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/ui/fleet/catalog/ATB-000?ff=product-catalog-revamp:on',
+    );
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ATB-000',
+          productName: 'Android OmniLab Enclosure',
+          gpn: '1055297-01',
+          descriptiveName: 'Standard 16-slot testbed enclosure',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'GA',
+          r11n: ['r11n-atb'],
+          numberOfDevicesPerRack: 4,
+          unitCost: '26645',
+          productType: 'android-testbed',
+          photoDataUris: ['data:image/webp;base64,mock-hero-photo-1'],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/fleet/catalog/:id"
+        routerOptions={{
+          initialEntries: [
+            '/ui/fleet/catalog/ATB-000?ff=product-catalog-revamp:on',
+          ],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <AvailableFlags />
+            <ProductCatalogDetailsPage />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(
+      await screen.findByTestId('catalog-details-hero'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /toggle feature flags/i }),
+    );
+    const flagSwitch = screen.getByTitle(
+      'fleet-console:product-catalog-revamp switch',
+    );
+    const switchInput =
+      within(flagSwitch).queryByRole('checkbox') ?? flagSwitch;
+    fireEvent.click(switchInput);
+
+    expect(
+      await screen.findByTestId('legacy-catalog-details-view'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(switchInput);
+    expect(
+      await screen.findByTestId('catalog-details-hero'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders loading spinner while catalog entries are loading', () => {
+    FleetConsoleMockAPI.setFixture(
+      'ListProductCatalogEntries',
+      () => new Promise(() => {}),
+    );
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('ATB-000');
+
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+  });
+
+  it('renders error alert when ListProductCatalogEntries fails', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', () => {
+      throw new Error('Catalog service unavailable');
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('ATB-000');
+
+    expect(
+      await screen.findByText(/Something went wrong/i),
+    ).toBeInTheDocument();
+  });
+
+  it('renders Entry not found alert when catalog ID is missing', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('MISSING-999');
+
+    expect(await screen.findByText('Entry not found!')).toBeInTheDocument();
+  });
+
+  it('renders non-numeric unitCost as raw text without a leading dollar sign', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ATB-001',
+          productName: 'Pending Price Enclosure',
+          gpn: '1055297-02',
+          descriptiveName: 'Enclosure with non-numeric unitCost',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'NPI',
+          r11n: [],
+          numberOfDevicesPerRack: 4,
+          unitCost: 'TBD',
+          productType: 'android-testbed',
+          photoDataUris: [],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('ATB-001');
+
+    expect(
+      await screen.findByTestId('catalog-details-hero'),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('TBD').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('$TBD')).not.toBeInTheDocument();
+  });
+
+  it('renders GCE entry specifications and hero metrics while omitting hardware-only fields', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'GCE-001',
+          productName: 'Standard Linux Cloudbot VM',
+          cpuType: 'x86_64',
+          cpuNumPerVm: 8,
+          memoryGbPerVm: 32,
+          diskType: ['pd-ssd'],
+          diskSizeGbPerVm: [100],
+          maxNumOfVms: 50,
+          fleetPlmStatus: 'GA',
+          unitCost: '120',
+          productType: 'gce',
+        },
+      ],
+    });
+
+    renderDetailsPage('GCE-001');
+
+    expect(
+      await screen.findByTestId('catalog-details-hero'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('CPU Architecture')).toBeInTheDocument();
+    expect(screen.getAllByText('x86_64').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('VM Compute Profile')).toBeInTheDocument();
+    expect(screen.getByText('8 vCPU • 32 GB')).toBeInTheDocument();
+    expect(screen.getByText('Fulfillment Model')).toBeInTheDocument();
+    expect(screen.getByText('Cloud Virtual Instance')).toBeInTheDocument();
+    expect(screen.getByText('CPU Type')).toBeInTheDocument();
+    expect(screen.getByText('Memory (GB) Per VM')).toBeInTheDocument();
+    expect(screen.queryByText('R11N Build Guides')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Google Part Number (GPN)'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Number of Devices Per Rack'),
+    ).not.toBeInTheDocument();
   });
 });
