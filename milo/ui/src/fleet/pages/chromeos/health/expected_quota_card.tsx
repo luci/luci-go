@@ -32,7 +32,7 @@ import { useEffect, useState } from 'react';
 import { useDefaultQuota } from './use_default_quota';
 import { validateQuota } from './validation_utils';
 
-const isNotFoundError = (err: unknown): boolean => {
+const isQuotaUnconfiguredError = (err: unknown): boolean => {
   if (!err) {
     return false;
   }
@@ -54,7 +54,8 @@ export const ExpectedQuotaCard = () => {
   const { quotaQuery, setQuotaMutation, canEdit, isPermissionLoading } =
     useDefaultQuota();
   const currentQuota = quotaQuery.data?.defaultQuota;
-  const isNotFound = isNotFoundError(quotaQuery.error);
+  const isQuotaUnconfigured = isQuotaUnconfiguredError(quotaQuery.error);
+  const hasQuotaError = quotaQuery.isError && !isQuotaUnconfigured;
 
   const [inputValue, setInputValue] = useState<string>(
     currentQuota !== undefined ? String(currentQuota) : '',
@@ -152,11 +153,11 @@ export const ExpectedQuotaCard = () => {
           >
             <CircularProgress size={24} />
           </Box>
-        ) : quotaQuery.isError && !isNotFound ? (
+        ) : hasQuotaError ? (
           <Alert severity="error">Failed to load default quota.</Alert>
         ) : (
           <Box display="flex" flexDirection="column" gap={2}>
-            {isNotFound && (
+            {isQuotaUnconfigured && (
               <Alert severity="info">
                 No default quota is currently configured. Enter a value below to
                 set it.

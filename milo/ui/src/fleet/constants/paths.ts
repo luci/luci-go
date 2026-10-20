@@ -80,45 +80,52 @@ export const generateAnotherPlatformCorrespondingURL = (
   platform: Platform,
   newPlatform: Platform,
 ) => {
-  const currentUrl = window.location.href;
+  const currentPathname = window.location.pathname;
+  const targetPlatformUrl = platformToURL(newPlatform);
 
   if (
-    currentUrl.includes(`/${DEVICES_SUBROUTE}/`) ||
-    currentUrl.endsWith(`/${DEVICES_SUBROUTE}`)
-  )
-    return generateDeviceListURL(Platform[newPlatform].toLowerCase());
-  else if (
-    currentUrl.includes(`/${REPAIRS_SUBROUTE}/`) ||
-    currentUrl.endsWith(`/${REPAIRS_SUBROUTE}`)
+    currentPathname.includes(`/${DEVICES_SUBROUTE}/`) ||
+    currentPathname.endsWith(`/${DEVICES_SUBROUTE}`)
+  ) {
+    return generateDeviceListURL(targetPlatformUrl);
+  }
+
+  if (
+    currentPathname.includes(`/${REPAIRS_SUBROUTE}/`) ||
+    currentPathname.endsWith(`/${REPAIRS_SUBROUTE}`)
   ) {
     if (
       newPlatform === Platform.CHROMEOS &&
-      currentUrl.includes(`/${WORKFORCE_SUBROUTE}`)
+      currentPathname.includes(`/${WORKFORCE_SUBROUTE}`)
     ) {
-      return generateRepairsWorkforceURL(platformToURL(newPlatform));
+      return generateRepairsWorkforceURL(targetPlatformUrl);
     }
-    return generateRepairsURL(platformToURL(newPlatform));
-  } else if (
-    currentUrl.includes(`/${ADMIN_TASKS_SUBROUTE}/`) ||
-    currentUrl.endsWith(`/${ADMIN_TASKS_SUBROUTE}`)
+    return generateRepairsURL(targetPlatformUrl);
+  }
+
+  if (
+    currentPathname.includes(`/${ADMIN_TASKS_SUBROUTE}/`) ||
+    currentPathname.endsWith(`/${ADMIN_TASKS_SUBROUTE}`)
   ) {
     if (newPlatform === Platform.CHROMEOS) {
-      return generateAdminTasksURL(platformToURL(newPlatform));
+      return generateAdminTasksURL(targetPlatformUrl);
     }
-    return generateDeviceListURL(platformToURL(newPlatform));
-  } else if (
-    currentUrl.includes(`/${HEALTH_SUBROUTE}/`) ||
-    currentUrl.endsWith(`/${HEALTH_SUBROUTE}`)
+    return generateDeviceListURL(targetPlatformUrl);
+  }
+
+  if (
+    currentPathname.includes(`/${HEALTH_SUBROUTE}/`) ||
+    currentPathname.endsWith(`/${HEALTH_SUBROUTE}`)
   ) {
     if (newPlatform === Platform.CHROMEOS) {
-      return generateHealthURL(platformToURL(newPlatform));
+      return generateHealthURL(targetPlatformUrl);
     }
-    return generateDeviceListURL(platformToURL(newPlatform));
+    return generateDeviceListURL(targetPlatformUrl);
   }
 
   return location.pathname.replace(
     'p/' + platformToURL(platform),
-    'p/' + platformToURL(newPlatform),
+    'p/' + targetPlatformUrl,
   );
 };
 

@@ -210,8 +210,8 @@ export const useProductCatalogFilters = (
   onApply?: () => void,
 ) => {
   const [searchParams] = useSyncedSearchParams();
-  const filtersParam = searchParams.get(FILTERS_PARAM_KEY);
-  const hasUrlFiltersParam = searchParams.has(FILTERS_PARAM_KEY);
+  const filterParam = searchParams.get(FILTERS_PARAM_KEY);
+  const hasUrlFiltersParam = filterParam !== null;
   const { trackEvent } = useGoogleAnalytics();
 
   const onFilterChange = useCallback(
@@ -234,13 +234,13 @@ export const useProductCatalogFilters = (
       : `("${FILTERS.productType.filterKey}" = "${selectedTab}")`;
 
   const nonVirtualCombinedFilter = combineAipFilters(
-    filtersParam || '',
+    filterParam || '',
     currentTab,
   );
 
   const { enableNonVirtual, enableGce } = resolveQueryTargets(
     selectedTab,
-    filtersParam,
+    filterParam,
   );
 
   const client = useFleetConsoleClient();
@@ -256,7 +256,7 @@ export const useProductCatalogFilters = (
   const gceFilterOptionsQuery = useQuery({
     ...client.GetGceProductCatalogFilterValues.query(
       GetGceProductCatalogFilterValuesRequest.fromPartial({
-        filter: filtersParam || '',
+        filter: filterParam || '',
       }),
     ),
     enabled: enableGce,
