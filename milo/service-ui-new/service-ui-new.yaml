@@ -16,7 +16,7 @@
 # path prefix).
 
 service: ui-new
-runtime: go125
+runtime: go126
 
 instance_class: F4_1G
 

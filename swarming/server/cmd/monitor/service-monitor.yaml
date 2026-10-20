@@ -1,5 +1,5 @@
 service: monitor
-runtime: go125
+runtime: go126
 
 # For accessing GAE memcache.
 app_engine_apis: true

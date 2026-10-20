@@ -1,5 +1,5 @@
 service: cookieserver
-runtime: go125
+runtime: go126
 
 inbound_services:
 - warmup

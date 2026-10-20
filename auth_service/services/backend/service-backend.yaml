@@ -1,4 +1,4 @@
-runtime: go125
+runtime: go126
 service: backend
 app_engine_apis: true
 
