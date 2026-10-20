@@ -29,6 +29,7 @@ import {
   FilterCategoryBuilder,
   useFilterState,
 } from '@/fleet/components/filters/use_filters';
+import { fleetColors } from '@/fleet/theme/tokens';
 
 import {
   EditableRuleRow,
@@ -54,7 +55,20 @@ export interface PriorityRuleRowProps {
   readonly onWeightChange: (id: string, weight: string) => void;
   readonly onApply: (row: EditableRuleRow) => void;
   readonly onDelete: (row: EditableRuleRow) => void;
+  readonly onCancel: (row: EditableRuleRow) => void;
 }
+
+const cancelButtonSx = {
+  minWidth: 64,
+  height: 40,
+  flexShrink: 0,
+  color: 'text.secondary',
+  borderColor: fleetColors.border,
+  '&:hover': {
+    borderColor: fleetColors.borderEmphasis,
+    backgroundColor: fleetColors.surfaceTonal,
+  },
+} as const;
 
 export const PriorityRuleRow = ({
   row,
@@ -69,6 +83,7 @@ export const PriorityRuleRow = ({
   onWeightChange,
   onApply,
   onDelete,
+  onCancel,
 }: PriorityRuleRowProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -111,6 +126,14 @@ export const PriorityRuleRow = ({
   const isEmptiedSavedRule = !row.isDraft && isFilterEmpty;
   const showInlineDelete =
     !row.isDraft && (isEmptiedSavedRule || showDeleteConfirm);
+
+  const handleCancel = () => {
+    if (showDeleteConfirm) {
+      setShowDeleteConfirm(false);
+    } else {
+      onCancel(row);
+    }
+  };
 
   return (
     <Box
@@ -197,17 +220,36 @@ export const PriorityRuleRow = ({
       />
 
       {canEdit && dirty && !showInlineDelete && (
-        <Button
-          variant="contained"
-          color="primary"
-          size="small"
-          onClick={() => onApply(row)}
-          disabled={isSubmitting}
-          data-testid={`rule-apply-button-${row.id}`}
-          sx={{ minWidth: 64, height: 40, flexShrink: 0 }}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexShrink: 0,
+          }}
         >
-          {isBusy ? <CircularProgress size={20} color="inherit" /> : 'Apply'}
-        </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={() => onApply(row)}
+            disabled={isSubmitting}
+            data-testid={`rule-apply-button-${row.id}`}
+            sx={{ minWidth: 64, height: 40, flexShrink: 0 }}
+          >
+            {isBusy ? <CircularProgress size={20} color="inherit" /> : 'Apply'}
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            data-testid={`rule-cancel-button-${row.id}`}
+            sx={cancelButtonSx}
+          >
+            Cancel
+          </Button>
+        </Box>
       )}
 
       {canEdit && showInlineDelete && (
@@ -218,30 +260,49 @@ export const PriorityRuleRow = ({
             }
           }}
         >
-          <Button
-            variant="contained"
-            color="error"
-            size="small"
-            onClick={() => onDelete(row)}
-            disabled={isSubmitting}
-            data-testid={`rule-confirm-delete-button-${row.id}`}
-            sx={{ minWidth: 64, height: 40, flexShrink: 0 }}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              flexShrink: 0,
+            }}
           >
-            {isBusy ? <CircularProgress size={20} color="inherit" /> : 'Delete'}
-          </Button>
+            <Button
+              variant="contained"
+              color="error"
+              size="small"
+              onClick={() => onDelete(row)}
+              disabled={isSubmitting}
+              data-testid={`rule-confirm-delete-button-${row.id}`}
+              sx={{ minWidth: 64, height: 40, flexShrink: 0 }}
+            >
+              {isBusy ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                'Delete'
+              )}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+              data-testid={`rule-cancel-button-${row.id}`}
+              sx={cancelButtonSx}
+            >
+              Cancel
+            </Button>
+          </Box>
         </ClickAwayListener>
       )}
 
-      {canEdit && !showInlineDelete && (
+      {canEdit && !dirty && !showInlineDelete && (
         <IconButton
           aria-label={`delete rule ${row.id}`}
           size="small"
           onClick={() => {
-            if (row.isDraft) {
-              onDelete(row);
-            } else {
-              setShowDeleteConfirm(true);
-            }
+            setShowDeleteConfirm(true);
           }}
           disabled={isSubmitting}
           data-testid={`rule-delete-button-${row.id}`}

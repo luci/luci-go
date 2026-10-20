@@ -211,6 +211,28 @@ export const PriorityRulesPanel = ({
     }
   };
 
+  const handleCancelRow = useCallback(
+    (row: EditableRuleRow) => {
+      setErrorMessage(null);
+      if (row.isDraft) {
+        setRows((prev) => prev.filter((r) => r.id !== row.id));
+      } else {
+        setRows((prev) =>
+          prev.map((r) =>
+            r.id === row.id
+              ? {
+                  ...r,
+                  expressionAip160: r.backendExpressionAip160,
+                  weight: r.backendWeight,
+                }
+              : r,
+          ),
+        );
+      }
+    },
+    [setRows],
+  );
+
   const isSubmitting = isCreating || isUpdating || isDeleting;
   const visibleRows = isExpanded ? rows : rows.slice(0, DEFAULT_VISIBLE_RULES);
   const hiddenCount = Math.max(0, rows.length - DEFAULT_VISIBLE_RULES);
@@ -295,6 +317,7 @@ export const PriorityRulesPanel = ({
                   }
                   onApply={handleApplyRow}
                   onDelete={handleDeleteRow}
+                  onCancel={handleCancelRow}
                 />
               );
             })

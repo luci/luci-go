@@ -235,9 +235,13 @@ describe('<PriorityRulesPanel />', () => {
     const weightInput = screen.getByTestId('rule-weight-input-1');
     fireEvent.change(weightInput, { target: { value: '300' } });
 
-    // Apply button appears
+    // Apply and Cancel buttons appear, trash icon is hidden
     const applyButton = screen.getByTestId('rule-apply-button-1');
     expect(applyButton).toBeInTheDocument();
+    expect(screen.getByTestId('rule-cancel-button-1')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('rule-delete-button-1'),
+    ).not.toBeInTheDocument();
 
     // Click Apply
     fireEvent.click(applyButton);
@@ -250,12 +254,43 @@ describe('<PriorityRulesPanel />', () => {
       });
     });
 
-    // After successful update, apply button is hidden
+    // After successful update, apply and cancel buttons are hidden and trash icon returns
     await waitFor(() => {
       expect(
         screen.queryByTestId('rule-apply-button-1'),
       ).not.toBeInTheDocument();
     });
+    expect(
+      screen.queryByTestId('rule-cancel-button-1'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId('rule-delete-button-1')).toBeInTheDocument();
+  });
+
+  it('allows canceling modifications to an existing rule and restoring original values', async () => {
+    setupMockHook(MOCK_RULES.slice(0, 1));
+    renderPanel();
+
+    const weightInput = screen.getByTestId('rule-weight-input-1');
+    expect(weightInput).toHaveValue(100);
+    expect(screen.getByTestId('rule-delete-button-1')).toBeInTheDocument();
+
+    fireEvent.change(weightInput, { target: { value: '999' } });
+    expect(weightInput).toHaveValue(999);
+    expect(screen.getByTestId('rule-apply-button-1')).toBeInTheDocument();
+    expect(screen.getByTestId('rule-cancel-button-1')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('rule-delete-button-1'),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('rule-cancel-button-1'));
+
+    expect(screen.getByTestId('rule-weight-input-1')).toHaveValue(100);
+    expect(screen.queryByTestId('rule-apply-button-1')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('rule-cancel-button-1'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId('rule-delete-button-1')).toBeInTheDocument();
+    expect(mockUpdateRule).not.toHaveBeenCalled();
   });
 
   it('shows only the red Delete button (hiding Apply and trash icon) when filter chip is removed in FilterBar', async () => {
@@ -373,12 +408,11 @@ describe('<PriorityRulesPanel />', () => {
     const maxInput = await screen.findByLabelText(/Max/i);
     fireEvent.change(maxInput, { target: { value: '80' } });
 
-    // Click Apply inside RangeFilter popover footer (adjacent to Cancel button)
-    const cancelButton = screen.getByRole('button', { name: /cancel/i });
-    const applyFilterButton = within(cancelButton.parentElement!).getByRole(
-      'button',
-      { name: /apply/i },
-    );
+    // Click Apply inside RangeFilter popover footer
+    const popover = maxInput.closest<HTMLElement>('.MuiPaper-root')!;
+    const applyFilterButton = within(popover).getByRole('button', {
+      name: /apply/i,
+    });
     fireEvent.click(applyFilterButton);
 
     // Filter chip for Pool Health should appear in the draft row
@@ -479,25 +513,35 @@ describe('<PriorityRulesPanel />', () => {
     expect(mockDeleteRule).not.toHaveBeenCalled();
   });
 
-  it('deletes a draft row immediately without calling API', async () => {
+  it('discards a draft row immediately on Cancel without calling API', async () => {
     setupMockHook(MOCK_RULES.slice(0, 1));
     renderPanel();
 
     // Add draft
     fireEvent.click(screen.getByTestId('add-priority-rule-button'));
-    expect(
-      await screen.findByTestId(/^priority-rule-row-draft-/),
-    ).toBeInTheDocument();
+    const draftRow = await screen.findByTestId(/^priority-rule-row-draft-/);
+    expect(draftRow).toBeInTheDocument();
 
-    // Click trash icon for the draft — deletes immediately with no dialog
-    const deleteButtons = screen.getAllByTestId(/rule-delete-button-/i);
-    const draftDeleteButton = deleteButtons[deleteButtons.length - 1];
-    fireEvent.click(draftDeleteButton);
+    // Draft row shows Apply and Cancel buttons, but no trash icon
+    expect(
+      within(draftRow).getByRole('button', { name: /apply/i }),
+    ).toBeInTheDocument();
+    const draftCancelButton = within(draftRow).getByRole('button', {
+      name: /cancel/i,
+    });
+    expect(draftCancelButton).toBeInTheDocument();
+    expect(
+      within(draftRow).queryByTestId(/rule-delete-button-/i),
+    ).not.toBeInTheDocument();
+
+    // Click Cancel for the draft — discards immediately with no dialog
+    fireEvent.click(draftCancelButton);
 
     expect(
       screen.queryByTestId(/^priority-rule-row-draft-/),
     ).not.toBeInTheDocument();
     expect(mockDeleteRule).not.toHaveBeenCalled();
+    expect(mockCreateRule).not.toHaveBeenCalled();
   });
 
   it('displays client-side validation errors for invalid weight and swaps Apply for Delete on empty filter', async () => {

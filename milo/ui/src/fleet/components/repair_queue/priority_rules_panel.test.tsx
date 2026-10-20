@@ -159,13 +159,16 @@ describe('<PriorityRulesPanel />', () => {
       screen.queryByText('Filter expression cannot be empty'),
     ).not.toBeInTheDocument();
 
-    // Adding a filter chip back restores Apply/trash icon, and clearing it again returns to single Delete button
+    // Adding a filter chip back restores Apply/Cancel (no trash icon while dirty), and clearing it again returns to Delete/Cancel
     const searchInput = within(row1).getByPlaceholderText('Add rule filter...');
     await user.type(searchInput, 'Lab:MTV{Enter}');
     await waitFor(() => {
       expect(screen.getByTestId('rule-apply-button-1')).toBeInTheDocument();
     });
-    expect(screen.getByTestId('rule-delete-button-1')).toBeInTheDocument();
+    expect(screen.getByTestId('rule-cancel-button-1')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('rule-delete-button-1'),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByTestId('rule-confirm-delete-button-1'),
     ).not.toBeInTheDocument();
@@ -205,5 +208,85 @@ describe('<PriorityRulesPanel />', () => {
     expect(
       screen.queryByPlaceholderText('Add rule filter...'),
     ).not.toBeInTheDocument();
+  });
+
+  it('cancels edits on an existing rule and restores original values', () => {
+    renderPanel();
+
+    const weightInput = screen.getByTestId('rule-weight-input-1');
+    expect(weightInput).toHaveValue(100);
+
+    fireEvent.change(weightInput, { target: { value: '450' } });
+    expect(weightInput).toHaveValue(450);
+    expect(screen.getByTestId('rule-apply-button-1')).toBeInTheDocument();
+    expect(screen.getByTestId('rule-cancel-button-1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('rule-cancel-button-1'));
+
+    expect(screen.getByTestId('rule-weight-input-1')).toHaveValue(100);
+    expect(screen.queryByTestId('rule-apply-button-1')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('rule-cancel-button-1'),
+    ).not.toBeInTheDocument();
+    expect(updateRule).not.toHaveBeenCalled();
+  });
+
+  it('cancels adding a draft rule and removes the draft row', () => {
+    renderPanel();
+
+    fireEvent.click(screen.getByTestId('add-priority-rule-button'));
+
+    const draftWeightInput = screen.getByDisplayValue('0');
+    expect(draftWeightInput).toBeInTheDocument();
+    const cancelButton = screen.getAllByRole('button', { name: /cancel/i })[0];
+    expect(cancelButton).toBeInTheDocument();
+
+    fireEvent.click(cancelButton);
+
+    expect(screen.queryByDisplayValue('0')).not.toBeInTheDocument();
+    expect(createRule).not.toHaveBeenCalled();
+  });
+
+  it('cancels delete confirmation when clicking the Cancel button', () => {
+    renderPanel();
+
+    fireEvent.click(screen.getByTestId('rule-delete-button-2'));
+    expect(
+      screen.getByTestId('rule-confirm-delete-button-2'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('rule-cancel-button-2')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('rule-cancel-button-2'));
+
+    expect(
+      screen.queryByTestId('rule-confirm-delete-button-2'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId('rule-delete-button-2')).toBeInTheDocument();
+    expect(deleteRule).not.toHaveBeenCalled();
+  });
+
+  it('restores original rule when clicking Cancel after emptying all filter chips', async () => {
+    renderPanel();
+
+    const row1 = screen.getByTestId('priority-rule-row-1');
+    fireEvent.click(within(row1).getByTestId('CancelIcon'));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('rule-confirm-delete-button-1'),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('rule-cancel-button-1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('rule-cancel-button-1'));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('rule-confirm-delete-button-1'),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId('rule-delete-button-1')).toBeInTheDocument();
+    expect(within(row1).getByText(/Type/i)).toBeInTheDocument();
+    expect(deleteRule).not.toHaveBeenCalled();
   });
 });
