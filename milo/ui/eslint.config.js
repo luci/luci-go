@@ -370,14 +370,18 @@ export default [
     },
   },
   {
+    files: ['src/fleet/features.ts', 'src/fleet/**/*.test.{ts,tsx}'],
+    rules: {
+      'fcon-rules/require-create-fleet-feature-flag': 'off',
+    },
+  },
+  {
     files: [
-      'src/fleet/features.ts',
-      'src/fleet/**/*.test.{ts,tsx}',
       'src/fleet/testing_tools/**',
       'src/fleet/components/fc_data_table/mrt_filter_menu_item.tsx',
     ],
     rules: {
-      'no-restricted-syntax': 'off',
+      'fcon-rules/no-legacy-imports': 'off',
     },
   },
 ];

@@ -53,7 +53,7 @@ export default {
         const filename =
           context.filename ||
           (context.getFilename ? context.getFilename() : '');
-        if (filename.endsWith('features.ts')) {
+        if (/(?:^|[\\/])src[\\/]fleet[\\/]features\.ts$/.test(filename)) {
           return {};
         }
         return {
@@ -83,7 +83,7 @@ export default {
       create(context) {
         return {
           ImportDeclaration(node) {
-            if (/_old|_OLD|_deprecated/.test(node.source.value)) {
+            if (/(?:_old|_deprecated)/i.test(node.source.value)) {
               context.report({ node, messageId: 'noLegacy' });
             }
           },
