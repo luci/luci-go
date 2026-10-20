@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
+import {
+  DeepPartial,
+  MachineLSE,
+} from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 
 import {
   areArraysEqual,
@@ -27,6 +30,12 @@ import {
   getEditableFields,
   checkLengthLimit,
 } from './inventory_editing_utils';
+
+const buildMachineLSE = (overrides: DeepPartial<MachineLSE> = {}): MachineLSE =>
+  MachineLSE.fromPartial({
+    name: 'machineLSEs/test-device',
+    ...overrides,
+  });
 
 describe('inventory_editing_utils', () => {
   describe('getNestedValue', () => {
@@ -119,7 +128,7 @@ describe('inventory_editing_utils', () => {
   });
 
   describe('calculateDiff', () => {
-    const original = {
+    const original = buildMachineLSE({
       name: 'machineLSEs/test-device',
       chromeosMachineLse: {
         deviceLse: {
@@ -128,7 +137,7 @@ describe('inventory_editing_utils', () => {
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
 
     it('returns empty diff if no changes', () => {
       const updated = JSON.parse(JSON.stringify(original));
@@ -150,7 +159,7 @@ describe('inventory_editing_utils', () => {
   });
 
   describe('translateDiffToEdits', () => {
-    const original = {
+    const original = buildMachineLSE({
       name: 'machineLSEs/test-device',
       chromeosMachineLse: {
         deviceLse: {
@@ -159,7 +168,7 @@ describe('inventory_editing_utils', () => {
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
 
     it('translates changed array fields to DeviceConfigEdits format', () => {
       const updated = JSON.parse(JSON.stringify(original));
@@ -174,7 +183,7 @@ describe('inventory_editing_utils', () => {
   });
 
   describe('calculateDiff (Labstation)', () => {
-    const original = {
+    const original = buildMachineLSE({
       name: 'machineLSEs/test-device',
       chromeosMachineLse: {
         deviceLse: {
@@ -183,7 +192,7 @@ describe('inventory_editing_utils', () => {
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
 
     it('returns empty diff if no changes', () => {
       const updated = JSON.parse(JSON.stringify(original));
@@ -208,7 +217,7 @@ describe('inventory_editing_utils', () => {
   });
 
   describe('translateDiffToEdits (Labstation)', () => {
-    const original = {
+    const original = buildMachineLSE({
       name: 'machineLSEs/test-device',
       chromeosMachineLse: {
         deviceLse: {
@@ -217,7 +226,7 @@ describe('inventory_editing_utils', () => {
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
 
     it('translates changed array fields to DeviceConfigEdits format', () => {
       const updated = JSON.parse(JSON.stringify(original));
@@ -239,7 +248,7 @@ describe('inventory_editing_utils', () => {
     const ufsNamespace = 'os';
 
     describe('DUT', () => {
-      const original = {
+      const original = buildMachineLSE({
         name: 'machineLSEs/test-host',
         chromeosMachineLse: {
           deviceLse: {
@@ -248,7 +257,7 @@ describe('inventory_editing_utils', () => {
             },
           },
         },
-      } as unknown as MachineLSE;
+      });
 
       it('returns empty array if no changes', () => {
         const updated = JSON.parse(JSON.stringify(original));
@@ -281,7 +290,7 @@ describe('inventory_editing_utils', () => {
     });
 
     describe('Labstation', () => {
-      const original = {
+      const original = buildMachineLSE({
         name: 'machineLSEs/test-host',
         chromeosMachineLse: {
           deviceLse: {
@@ -290,7 +299,7 @@ describe('inventory_editing_utils', () => {
             },
           },
         },
-      } as unknown as MachineLSE;
+      });
 
       it('generates update command for labstation pools', () => {
         const updated = JSON.parse(JSON.stringify(original));
@@ -329,7 +338,7 @@ describe('inventory_editing_utils', () => {
   });
 
   describe('Servo editing', () => {
-    const original = {
+    const original = buildMachineLSE({
       name: 'machineLSEs/test-host',
       chromeosMachineLse: {
         deviceLse: {
@@ -345,7 +354,7 @@ describe('inventory_editing_utils', () => {
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
 
     const updated = JSON.parse(JSON.stringify(original));
     updated.chromeosMachineLse!.deviceLse!.dut!.peripherals!.servo = {
@@ -397,7 +406,7 @@ describe('inventory_editing_utils', () => {
   });
 
   describe('RPM editing', () => {
-    const original = {
+    const original = buildMachineLSE({
       name: 'machineLSEs/test-host',
       chromeosMachineLse: {
         deviceLse: {
@@ -412,7 +421,7 @@ describe('inventory_editing_utils', () => {
           },
         },
       },
-    } as unknown as MachineLSE;
+    });
 
     const updated = JSON.parse(JSON.stringify(original));
     updated.chromeosMachineLse!.deviceLse!.dut!.peripherals!.rpm = {
@@ -555,7 +564,7 @@ describe('inventory_editing_utils', () => {
 
   describe('translateDiffToEdits deterministic zero-clearing', () => {
     it('explicitly clears servo.port to 0 and includes it in paths when servo.hostname is cleared to empty string', () => {
-      const original = {
+      const original = buildMachineLSE({
         chromeosMachineLse: {
           deviceLse: {
             dut: {
@@ -568,8 +577,8 @@ describe('inventory_editing_utils', () => {
             },
           },
         },
-      } as unknown as MachineLSE;
-      const updated = {
+      });
+      const updated = buildMachineLSE({
         chromeosMachineLse: {
           deviceLse: {
             dut: {
@@ -582,7 +591,7 @@ describe('inventory_editing_utils', () => {
             },
           },
         },
-      } as unknown as MachineLSE;
+      });
       const { edits, paths } = translateDiffToEdits(original, updated);
       expect(edits.servo).toEqual({
         hostname: '',
@@ -618,19 +627,19 @@ describe('inventory_editing_utils', () => {
   });
 
   describe('Zone editing', () => {
-    const original = {
+    const original = buildMachineLSE({
       name: 'machineLSEs/test-host',
       zone: 'ZONE_CHROMEOS1',
       rack: 'chromeos1-row1-rack1',
       machines: ['chromeos-machine-1'],
-    } as unknown as MachineLSE;
+    });
 
-    const updated = {
+    const updated = buildMachineLSE({
       name: 'machineLSEs/test-host',
       zone: 'ZONE_ATLANTA',
       rack: 'chromeos1-row1-rack1',
       machines: ['chromeos-machine-1'],
-    } as unknown as MachineLSE;
+    });
 
     it('translates diff to DeviceConfigEdits format and automatically includes rack when zone changes', () => {
       const { edits, paths } = translateDiffToEdits(original, updated);
@@ -652,16 +661,16 @@ describe('inventory_editing_utils', () => {
     });
 
     it('generates shivas update machine command with -zone - when cleared and falls back to hostname when machines array is empty', () => {
-      const origNoMachine = {
+      const origNoMachine = buildMachineLSE({
         name: 'machineLSEs/test-host',
         zone: 'ZONE_CHROMEOS1',
         rack: 'chromeos1-row1-rack1',
-      } as unknown as MachineLSE;
-      const cleared = {
+      });
+      const cleared = buildMachineLSE({
         name: 'machineLSEs/test-host',
         zone: '',
         rack: 'chromeos1-row1-rack1',
-      } as unknown as MachineLSE;
+      });
       const commands = generateShivasCommands(
         origNoMachine,
         cleared,
@@ -674,7 +683,7 @@ describe('inventory_editing_utils', () => {
     });
 
     it('generates both shivas update dut and shivas update machine commands when both dut fields and zone are updated', () => {
-      const origMulti = {
+      const origMulti = buildMachineLSE({
         name: 'machineLSEs/test-host',
         zone: 'ZONE_CHROMEOS1',
         rack: 'chromeos1-row1-rack1',
@@ -686,8 +695,8 @@ describe('inventory_editing_utils', () => {
             },
           },
         },
-      } as unknown as MachineLSE;
-      const updatedMulti = {
+      });
+      const updatedMulti = buildMachineLSE({
         name: 'machineLSEs/test-host',
         zone: 'ZONE_ATLANTA',
         rack: 'chromeos1-row1-rack1',
@@ -699,7 +708,7 @@ describe('inventory_editing_utils', () => {
             },
           },
         },
-      } as unknown as MachineLSE;
+      });
       const commands = generateShivasCommands(
         origMulti,
         updatedMulti,
@@ -714,19 +723,19 @@ describe('inventory_editing_utils', () => {
   });
 
   describe('Rack editing', () => {
-    const original = {
+    const original = buildMachineLSE({
       name: 'machineLSEs/test-host',
       zone: 'ZONE_CHROMEOS1',
       rack: 'chromeos1-row1-rack1',
       machines: ['chromeos-machine-1'],
-    } as unknown as MachineLSE;
+    });
 
-    const updated = {
+    const updated = buildMachineLSE({
       name: 'machineLSEs/test-host',
       zone: 'ZONE_CHROMEOS1',
       rack: 'chromeos1-row1-rack2',
       machines: ['chromeos-machine-1'],
-    } as unknown as MachineLSE;
+    });
 
     it('translates diff to DeviceConfigEdits format', () => {
       const { edits, paths } = translateDiffToEdits(original, updated);
@@ -747,12 +756,12 @@ describe('inventory_editing_utils', () => {
     });
 
     it('generates shivas update machine command with -rack - when rack is cleared', () => {
-      const cleared = {
+      const cleared = buildMachineLSE({
         name: 'machineLSEs/test-host',
         zone: 'ZONE_CHROMEOS1',
         rack: '',
         machines: ['chromeos-machine-1'],
-      } as unknown as MachineLSE;
+      });
       const commands = generateShivasCommands(
         original,
         cleared,
@@ -765,12 +774,12 @@ describe('inventory_editing_utils', () => {
     });
 
     it('generates shivas update machine command with both updated -zone and -rack flags when both change', () => {
-      const updatedBoth = {
+      const updatedBoth = buildMachineLSE({
         name: 'machineLSEs/test-host',
         zone: 'ZONE_ATLANTA',
         rack: 'chromeos1-row1-rack2',
         machines: ['chromeos-machine-1'],
-      } as unknown as MachineLSE;
+      });
       const commands = generateShivasCommands(
         original,
         updatedBoth,
