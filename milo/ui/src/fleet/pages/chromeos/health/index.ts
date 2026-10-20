@@ -34,3 +34,17 @@ export {
   RECENT_HOURS_WINDOW,
   RANKING_HOURS_WINDOW,
 } from './time_window_utils';
+export {
+  AnnotationMarker,
+  type AnnotationMarkerProps,
+  type ReferenceLineShapeProps,
+} from './annotation_marker';
+export {
+  TRENDLINE_ANNOTATIONS,
+  TRENDLINE_EVENTS,
+  type TrendlineAnnotation,
+  type TrendlineEvent,
+  getAnnotationTimestampMs,
+  getAnnotationsInRange,
+  findAnnotationForBucket,
+} from './trendline_annotations';

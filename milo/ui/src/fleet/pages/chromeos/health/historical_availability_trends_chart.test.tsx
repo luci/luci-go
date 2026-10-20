@@ -14,6 +14,7 @@
 
 import { UseQueryResult } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { DateTime } from 'luxon';
 
 import {
   GetFleetAvailabilityTrendsResponse,
@@ -1110,6 +1111,165 @@ describe('HistoricalAvailabilityTrendsChart', () => {
 
       expect(screen.getByLabelText('brya')).toBeChecked();
       expect(isPlotted('brya')).toBe(true);
+    });
+  });
+
+  describe('trendline annotations', () => {
+    const asQueryResult = (data: GetFleetAvailabilityTrendsResponse) =>
+      ({
+        data,
+        isLoading: false,
+        isError: false,
+        error: null,
+      }) as unknown as UseQueryResult<
+        GetFleetAvailabilityTrendsResponse,
+        Error
+      >;
+
+    const todayStart = '2026-10-20T12:00:00Z';
+    const todayEnd = '2026-10-21T00:00:00Z';
+    const todayEventMs = Date.parse('2026-10-20T18:00:00Z');
+
+    const mockTodayData: GetFleetAvailabilityTrendsResponse = {
+      series: [
+        {
+          name: 'Overall',
+          points: [
+            { timestamp: todayStart, value: 0.9 },
+            { timestamp: '2026-10-20T18:00:00Z', value: 0.95 },
+            { timestamp: todayEnd, value: 0.96 },
+          ],
+        },
+      ],
+      metricType: TrendlineMetricType.HEALTH,
+    };
+
+    it('renders vertical reference line and marker when an annotation is within the chart time window', () => {
+      giveChartASize();
+      jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(asQueryResult(mockTodayData));
+
+      render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart />
+        </FakeContextProvider>,
+      );
+
+      const marker = screen.getByTestId(`trendline-annotation-${todayEventMs}`);
+      expect(marker).toBeInTheDocument();
+      expect(
+        screen.getByTestId('trendline-annotation-line'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId('trendline-annotation-badge'),
+      ).toBeInTheDocument();
+      expect(screen.getByText('i')).toBeInTheDocument();
+    });
+
+    it('shows annotation tooltip on hover over the marker', async () => {
+      giveChartASize();
+      jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(asQueryResult(mockTodayData));
+
+      render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart />
+        </FakeContextProvider>,
+      );
+
+      const marker = screen.getByTestId(`trendline-annotation-${todayEventMs}`);
+      fireEvent.mouseOver(marker);
+
+      expect(await screen.findByText('Algorithm change')).toBeInTheDocument();
+      expect(
+        await screen.findByText(
+          /Health calculation updated to include additional device statuses/,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('does not render annotation line when annotation timestamp is outside visible time window', () => {
+      giveChartASize();
+      // mockOverallData uses 2026-09-14, so the 2026-10-20 annotation is not visible
+      jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(asQueryResult(mockOverallData));
+
+      render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart />
+        </FakeContextProvider>,
+      );
+
+      expect(
+        screen.queryByTestId(`trendline-annotation-${todayEventMs}`),
+      ).not.toBeInTheDocument();
+    });
+
+    it('supports custom annotations prop', async () => {
+      giveChartASize();
+      jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(asQueryResult(mockOverallData));
+
+      const customEventDt = DateTime.fromISO('2026-09-14T10:30:00Z', {
+        zone: 'utc',
+      });
+      const customAnnotations = [
+        {
+          timestamp: customEventDt,
+          title: 'Metric calibration',
+          description: 'Recalibrated DUT health sensors.',
+        },
+      ];
+
+      render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart annotations={customAnnotations} />
+        </FakeContextProvider>,
+      );
+
+      const marker = screen.getByTestId(
+        `trendline-annotation-${customEventDt.toMillis()}`,
+      );
+      expect(marker).toBeInTheDocument();
+
+      fireEvent.mouseOver(marker);
+      expect(await screen.findByText('Metric calibration')).toBeInTheDocument();
+      expect(
+        await screen.findByText('Recalibrated DUT health sensors.'),
+      ).toBeInTheDocument();
+    });
+
+    it('renders annotation callout in chart tooltip when hovering over bucket containing the event', () => {
+      giveChartASize();
+      jest
+        .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+        .mockReturnValue(asQueryResult(mockTodayData));
+
+      const { container } = render(
+        <FakeContextProvider>
+          <HistoricalAvailabilityTrendsChart />
+        </FakeContextProvider>,
+      );
+
+      // x=400 lands right in the middle around 2026-10-20T00:00:00Z
+      const surface = container.querySelector('.recharts-wrapper')!;
+      fireEvent.mouseMove(surface, { clientX: 400, clientY: 120 });
+
+      const tooltip = screen.getByTestId('trends-chart-tooltip');
+      expect(tooltip).toBeInTheDocument();
+      expect(
+        within(tooltip).getByTestId('trends-tooltip-annotation'),
+      ).toBeInTheDocument();
+      expect(within(tooltip).getByText('Algorithm change')).toBeInTheDocument();
+      expect(
+        within(tooltip).getByText(
+          /Health calculation updated to include additional device statuses/,
+        ),
+      ).toBeInTheDocument();
     });
   });
 });

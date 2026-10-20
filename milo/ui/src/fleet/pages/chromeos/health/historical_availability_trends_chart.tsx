@@ -42,6 +42,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   TooltipProps,
@@ -51,13 +52,25 @@ import {
 
 import { TRENDS_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
 import { colors } from '@/fleet/theme/colors';
+import { radii } from '@/fleet/theme/tokens';
 import {
   TrendlineGrouping,
   TrendlineMetricType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import {
+  AnnotationMarker,
+  type ReferenceLineShapeProps,
+} from './annotation_marker';
 import { BaselineChip } from './baseline_chip';
 import { HealthChip } from './health_chip';
+import {
+  findAnnotationForBucket,
+  getAnnotationsInRange,
+  getAnnotationTimestampMs,
+  TRENDLINE_ANNOTATIONS,
+  TrendlineAnnotation,
+} from './trendline_annotations';
 import {
   buildTimeAxisTicks,
   buildTrendsChartRows,
@@ -120,6 +133,7 @@ interface TrendsTooltipProps extends TooltipProps<number, string> {
    * the chart can emphasize that line. Must be referentially stable.
    */
   readonly onHoveredSeriesChange?: (name: string | null) => void;
+  readonly annotations?: readonly TrendlineAnnotation[];
 }
 
 type TooltipEntry = NonNullable<
@@ -227,9 +241,14 @@ const TrendsTooltip = ({
   metricLabel,
   maxYScale,
   onHoveredSeriesChange,
+  annotations,
 }: TrendsTooltipProps) => {
   const date = active && typeof label === 'number' ? label : undefined;
   const rows = date !== undefined && payload ? toTooltipRows(payload) : [];
+  const bucketAnnotation =
+    date !== undefined && annotations
+      ? findAnnotationForBucket(annotations, date)
+      : undefined;
 
   // Recharts' shared tooltip reports every series in the hovered bucket, not
   // the line under the cursor, so the hovered line is taken to be the one
@@ -279,6 +298,32 @@ const TrendsTooltip = ({
         {formatTooltipDate(date)}
       </Typography>
 
+      {bucketAnnotation && (
+        <Box
+          data-testid="trends-tooltip-annotation"
+          sx={{
+            mb: 1,
+            p: 0.75,
+            bgcolor: 'action.hover',
+            borderRadius: radii.sm,
+            borderLeft: `3px solid ${colors.grey[400]}`,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 'bold', display: 'block', color: 'text.primary' }}
+          >
+            {bucketAnnotation.title}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', display: 'block', fontSize: 11 }}
+          >
+            {bucketAnnotation.description}
+          </Typography>
+        </Box>
+      )}
+
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
         <MoreSeries count={hiddenAbove} testId="trends-tooltip-more-above" />
         {shown.map((row) => (
@@ -322,6 +367,7 @@ interface TrendLinesProps {
   readonly metricLabel: string;
   readonly syncId: string;
   readonly onHoveredSeriesChange: (name: string | null) => void;
+  readonly annotations?: readonly TrendlineAnnotation[];
 }
 
 /**
@@ -339,6 +385,7 @@ const TrendLines = memo(function TrendLines({
   metricLabel,
   syncId,
   onHoveredSeriesChange,
+  annotations,
 }: TrendLinesProps) {
   return (
     <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
@@ -393,9 +440,24 @@ const TrendLines = memo(function TrendLines({
               metricLabel={metricLabel}
               maxYScale={maxYScale}
               onHoveredSeriesChange={onHoveredSeriesChange}
+              annotations={annotations}
             />
           }
         />
+        {annotations?.map((annotation) => {
+          const ts = getAnnotationTimestampMs(annotation);
+          if (ts === undefined) return null;
+          return (
+            <ReferenceLine
+              key={ts}
+              x={ts}
+              isFront
+              shape={(shapeProps: ReferenceLineShapeProps) => (
+                <AnnotationMarker {...shapeProps} annotation={annotation} />
+              )}
+            />
+          );
+        })}
         {plotted.map(({ name, color }) => (
           // Keyed by name, never by index: an index key lets
           // React reuse the node, so deselecting a series makes
@@ -506,10 +568,12 @@ const HighlightLayer = ({
 
 export interface HistoricalAvailabilityTrendsChartProps {
   filter?: string;
+  annotations?: readonly TrendlineAnnotation[];
 }
 
 export const HistoricalAvailabilityTrendsChart = ({
   filter = '',
+  annotations = TRENDLINE_ANNOTATIONS,
 }: HistoricalAvailabilityTrendsChartProps) => {
   const theme = useTheme();
   const [viewBy, setViewBy] = useState<TrendlineGrouping>(
@@ -674,6 +738,11 @@ export const HistoricalAvailabilityTrendsChart = ({
       ? [first - BUCKET_INTERVAL_MS / 2, last + BUCKET_INTERVAL_MS / 2]
       : [first, last];
   }, [rows]);
+
+  const visibleAnnotations = useMemo(() => {
+    if (!xDomain) return [];
+    return getAnnotationsInRange(annotations, xDomain[0], xDomain[1]);
+  }, [annotations, xDomain]);
 
   const axisTickStyle = useMemo(
     () => ({
@@ -1035,6 +1104,7 @@ export const HistoricalAvailabilityTrendsChart = ({
                       metricLabel={metricLabel}
                       syncId={syncId}
                       onHoveredSeriesChange={setHoveredSeries}
+                      annotations={visibleAnnotations}
                     />
                   </Box>
                   {highlighted && (
