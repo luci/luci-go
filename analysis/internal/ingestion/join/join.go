@@ -215,7 +215,7 @@ func JoinBuildResult(ctx context.Context, buildID int64, buildProject string, is
 func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[int64]*ctlpb.PresubmitResult, presubmitProject string) error {
 	for id, result := range presubmitResultByBuildID {
 		if result == nil {
-			return errors.Fmt("presubmit result for build %q must be specified", id)
+			return errors.Fmt("presubmit result for build %d must be specified", id)
 		}
 	}
 

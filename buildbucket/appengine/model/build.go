@@ -541,18 +541,18 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 		p.Output.Properties = out[i].Proto
 		p.Steps, err = stp[i].ToProto(ctx)
 		if err != nil {
-			return errors.Fmt("error fetching steps for build %q: %w", p.Id, err)
+			return errors.Fmt("error fetching steps for build %d: %w", p.Id, err)
 		}
 		if m.Includes("summary_markdown") {
 			p.SummaryMarkdown = protoutil.MergeSummary(p)
 		}
 		if redact != nil {
 			if err = redact(p); err != nil {
-				return errors.Fmt("error redacting build %q: %w", p.Id, err)
+				return errors.Fmt("error redacting build %d: %w", p.Id, err)
 			}
 		}
 		if err = m.Trim(p); err != nil {
-			return errors.Fmt("error trimming fields for build %q: %w", p.Id, err)
+			return errors.Fmt("error trimming fields for build %d: %w", p.Id, err)
 		}
 	}
 	return nil

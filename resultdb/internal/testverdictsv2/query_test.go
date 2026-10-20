@@ -73,7 +73,7 @@ func TestQuery(t *testing.T) {
 				verdicts, nextToken, err := fetchOne(q, token, opts)
 				if _, ok := seenTokens[nextToken]; ok {
 					assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
-					t.Fatalf("token %q is repeated", nextToken)
+					t.Fatalf("token %+v is repeated", nextToken)
 				}
 				seenTokens[nextToken] = struct{}{}
 
