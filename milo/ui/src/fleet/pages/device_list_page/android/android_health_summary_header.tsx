@@ -43,6 +43,11 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { HealthCategoryBucket } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { UtilizationTooltipContent } from './android_fields';
+import {
+  formatStateLabel,
+  getPlaceholderStatusKeys,
+  getSortedStatusEntries,
+} from './android_health_summary_utils';
 import { androidState } from './android_state';
 
 export interface AndroidHealthSummaryHeaderProps {
@@ -59,19 +64,6 @@ const FILTER_KEYS = {
 
 export const SHOW_ALL_STATES_STORAGE_KEY =
   'fleet-console:android-health-show-all-states';
-
-const PREFERRED_STATUS_ORDER: string[] = [
-  androidState.IDLE,
-  androidState.BUSY,
-  androidState.LAMEDUCK,
-  androidState.MISSING,
-  androidState.FAILED,
-  androidState.DYING,
-  androidState.INIT,
-  androidState.DIRTY,
-  androidState.PREPPING,
-  'BLANK',
-];
 
 const HoverMetricsContainer = styled(MetricsContainer)`
   .health-metrics-toggle {
@@ -125,35 +117,6 @@ export function AndroidHealthSummaryHeader({
   const avg7d = healthData?.average7d;
   const avg30d = healthData?.average30d;
 
-  const formatStateLabel = (state: string): string => {
-    switch (state.toUpperCase()) {
-      case androidState.IDLE:
-        return 'Idle:';
-      case androidState.BUSY:
-        return 'Busy:';
-      case androidState.LAMEDUCK:
-        return 'Lameduck:';
-      case androidState.MISSING:
-        return 'Missing:';
-      case androidState.FAILED:
-        return 'Failed:';
-      case androidState.DYING:
-        return 'Dying:';
-      case androidState.INIT:
-        return 'Init:';
-      case androidState.DIRTY:
-        return 'Dirty:';
-      case androidState.PREPPING:
-        return 'Prepping:';
-      case 'BLANK':
-        return 'Blank states:';
-      default:
-        return (
-          state.charAt(0).toUpperCase() + state.slice(1).toLowerCase() + ':'
-        );
-    }
-  };
-
   const renderStatusBreakdown = (
     bucket: HealthCategoryBucket | undefined,
     categoryKeys: string[],
@@ -164,10 +127,10 @@ export function AndroidHealthSummaryHeader({
     }
     if (isLoading || !bucket?.statusCounts) {
       if (!isLoading) return null;
-      const statesToRender =
-        !showAllStates && alwaysShowBreakdown
-          ? [androidState.IDLE, androidState.BUSY]
-          : PREFERRED_STATUS_ORDER;
+      const statesToRender = getPlaceholderStatusKeys(
+        showAllStates,
+        alwaysShowBreakdown,
+      );
       return statesToRender.map((stateKey) => (
         <SmallMetricItem
           key={stateKey}
@@ -178,22 +141,11 @@ export function AndroidHealthSummaryHeader({
         />
       ));
     }
-    let entries = Object.entries(bucket.statusCounts).sort(([a], [b]) => {
-      const indexA = PREFERRED_STATUS_ORDER.indexOf(a.toUpperCase());
-      const indexB = PREFERRED_STATUS_ORDER.indexOf(b.toUpperCase());
-      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-      if (indexA !== -1) return -1;
-      if (indexB !== -1) return 1;
-      return a.localeCompare(b);
-    });
-
-    if (!showAllStates && alwaysShowBreakdown) {
-      entries = entries.filter(
-        ([k]) =>
-          k.toUpperCase() === androidState.IDLE ||
-          k.toUpperCase() === androidState.BUSY,
-      );
-    }
+    const entries = getSortedStatusEntries(
+      bucket.statusCounts,
+      showAllStates,
+      alwaysShowBreakdown,
+    );
 
     return entries.map(([stateKey, count]) => (
       <SmallMetricItem
