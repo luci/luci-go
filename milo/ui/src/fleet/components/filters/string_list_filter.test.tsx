@@ -16,7 +16,10 @@ import { render, screen } from '@testing-library/react';
 
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 
-import { StringListFilterCategory } from './string_list_filter';
+import {
+  StringListFilterCategory,
+  StringListFilterCategoryBuilder,
+} from './string_list_filter';
 
 describe('StringListFilterCategory', () => {
   it('should get selected options', () => {
@@ -505,5 +508,87 @@ describe('StringListFilterCategory', () => {
 
     // 6. Access chip label (this should crash if bug is present)
     expect(() => cat2.getChipLabel()).not.toThrow();
+  });
+
+  it('should optimistically accept options from terms without warning when isLoading is true', () => {
+    const term = {
+      kind: 'Term' as const,
+      negated: false,
+      simple: {
+        kind: 'Restriction' as const,
+        comparator: '=' as const,
+        comparable: {
+          kind: 'Comparable' as const,
+          member: {
+            kind: 'Member' as const,
+            value: { value: 'model', quoted: false },
+            fields: [],
+          },
+        },
+        arg: {
+          kind: 'Comparable' as const,
+          member: {
+            kind: 'Member' as const,
+            value: { value: 'volteer', quoted: true },
+            fields: [],
+          },
+        },
+      },
+    } as unknown as ast.Term & { simple: ast.Restriction };
+
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [], // options still empty while loading
+      [],
+      () => {},
+      [term],
+      '=',
+      true, // isLoading: true
+    );
+
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    expect(result.warnings).toEqual([]);
+    expect(result.value.getSelectedOptions()).toEqual(['volteer']);
+    expect(result.value.toAIP160()).toBe('(model = "volteer")');
+  });
+
+  it('should pass isLoading from StringListFilterCategoryBuilder to create', () => {
+    const builder = new StringListFilterCategoryBuilder()
+      .setLabel('Model')
+      .setOptions([])
+      .setIsLoading(true);
+
+    const term = {
+      kind: 'Term' as const,
+      negated: false,
+      simple: {
+        kind: 'Restriction' as const,
+        comparator: '=' as const,
+        comparable: {
+          kind: 'Comparable' as const,
+          member: {
+            kind: 'Member' as const,
+            value: { value: 'model', quoted: false },
+            fields: [],
+          },
+        },
+        arg: {
+          kind: 'Comparable' as const,
+          member: {
+            kind: 'Member' as const,
+            value: { value: 'brya', quoted: true },
+            fields: [],
+          },
+        },
+      },
+    } as unknown as ast.Term & { simple: ast.Restriction };
+
+    const result = builder.build('model', () => {}, [term]);
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    expect(result.warnings).toEqual([]);
+    expect(result.value.getSelectedOptions()).toEqual(['brya']);
   });
 });

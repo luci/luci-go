@@ -96,6 +96,7 @@ export class StringListFilterCategory implements FilterCategory {
     reRender: (newFilter: StringListFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
     comparator: ':' | '=' = '=',
+    isLoading = false,
   ): BuildResult<StringListFilterCategory> {
     const warnings: string[] = [];
     const optionsMap: Record<string, OptionWithSelection> = Object.fromEntries(
@@ -123,12 +124,20 @@ export class StringListFilterCategory implements FilterCategory {
     let hasNegative = false;
 
     const processTermValue = (value: string, isNegated: boolean) => {
-      if (!optionsMap[value] && value !== ANY_VALUE) {
-        warnings.push(`Option ${value} doesn't exist for ${key}`);
-        return undefined;
-      }
-
       const isBlank = value === ANY_VALUE;
+      const targetValue = isBlank ? BLANK_VALUE : value;
+
+      if (!optionsMap[targetValue]) {
+        if (isLoading && !isBlank) {
+          optionsMap[targetValue] = {
+            optionValue: { label: targetValue, value: targetValue },
+            isSelected: false,
+          };
+        } else {
+          warnings.push(`Option ${value} doesn't exist for ${key}`);
+          return undefined;
+        }
+      }
 
       // NOT label:* means Is Blank (Include)
       const selectsPositive = isBlank ? isNegated : !isNegated;
@@ -138,7 +147,6 @@ export class StringListFilterCategory implements FilterCategory {
       if (selectsPositive) hasPositive = true;
       if (selectsNegative) hasNegative = true;
 
-      const targetValue = isBlank ? BLANK_VALUE : value;
       optionsMap[targetValue].isSelected = true;
       return undefined;
     };
@@ -726,6 +734,7 @@ export class StringListFilterCategoryBuilder
   public options: OptionValue[] | undefined;
   public defaultOptions: string[] = [];
   public comparator: ':' | '=' = '=';
+  public isLoading = false;
 
   constructor() {}
 
@@ -735,6 +744,10 @@ export class StringListFilterCategoryBuilder
   }
   public setOptions(options: OptionValue[]) {
     this.options = options;
+    return this;
+  }
+  public setIsLoading(isLoading: boolean) {
+    this.isLoading = isLoading;
     return this;
   }
 
@@ -759,7 +772,7 @@ export class StringListFilterCategoryBuilder
     reRender: (newFilter: StringListFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ): BuildResult<StringListFilterCategory> {
-    const { label, options, defaultOptions, comparator } = this;
+    const { label, options, defaultOptions, comparator, isLoading } = this;
     if (label === undefined || options === undefined) {
       return {
         isError: true,
@@ -775,6 +788,7 @@ export class StringListFilterCategoryBuilder
       reRender,
       terms,
       comparator,
+      isLoading,
     );
   }
 }

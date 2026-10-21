@@ -334,14 +334,16 @@ export interface FilterCategory {
   setReRender: (reRender: (newFilter: FilterCategory) => void) => void;
 }
 
-type ParseResult =
+export type ParseResult =
   | {
       isError: false;
       terms: Record<string, (ast.Term & { simple: ast.Restriction })[]>;
     }
   | { isError: true; error: string };
 
-const constructFiltersFromAIP160 = (filtersAIP160: string): ParseResult => {
+export const constructFiltersFromAIP160 = (
+  filtersAIP160: string,
+): ParseResult => {
   const wrapper = (node: ast.Node | null): ParseResult => {
     if (!node) return { isError: false, terms: {} };
 

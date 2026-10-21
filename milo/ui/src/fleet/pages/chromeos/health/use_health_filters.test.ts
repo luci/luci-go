@@ -14,6 +14,7 @@
 
 import { UseQueryResult } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
+import React, { createElement } from 'react';
 
 import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -140,7 +141,7 @@ describe('useHealthFilters', () => {
     ).toBeUndefined();
   });
 
-  it('indicates loading when dimensions are pending', () => {
+  it('indicates loading when dimensions are pending, but provides core builders', () => {
     jest
       .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
       .mockReturnValue({
@@ -156,5 +157,58 @@ describe('useHealthFilters', () => {
     });
 
     expect(result.current.isLoading).toBe(true);
+    expect(result.current.filterValues).toBeDefined();
+    expect(
+      result.current.filterValues?.[HEALTH_FILTER_CONFIGS.MODEL.key],
+    ).toBeDefined();
+    expect(
+      result.current.filterValues?.[HEALTH_FILTER_CONFIGS.POOL.key],
+    ).toBeDefined();
+  });
+
+  it('optimistically parses core and dynamic URL filters when dimensions are pending', () => {
+    jest
+      .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
+      .mockReturnValue({
+        data: undefined,
+        isPending: true,
+        isLoading: true,
+        isError: false,
+        error: null,
+      } as unknown as UseQueryResult<GetDeviceDimensionsResponse, Error>);
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      createElement(
+        FakeContextProvider,
+        {
+          routerOptions: {
+            initialEntries: [
+              '/?filters=model%20%3D%20%22volteer%22%20AND%20labels.%22label-board%22%20%3D%20%22brya%22',
+            ],
+          },
+        } as never,
+        children,
+      );
+
+    const { result } = renderHook(() => useHealthFilters(), { wrapper });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.filterValues).toBeDefined();
+
+    // Model filter should be selected
+    const modelFilter =
+      result.current.filterValues?.[HEALTH_FILTER_CONFIGS.MODEL.key];
+    expect(modelFilter).toBeDefined();
+    expect(modelFilter?.toAIP160()).toBe('(model = "volteer")');
+
+    // Dynamic board filter should be selected
+    const boardFilter = result.current.filterValues?.['labels."label-board"'];
+    expect(boardFilter).toBeDefined();
+    expect(boardFilter?.toAIP160()).toBe('(labels."label-board" = "brya")');
+
+    // aip160() should return serialized string immediately
+    expect(result.current.aip160()).toBe(
+      '(model = "volteer") AND (labels."label-board" = "brya")',
+    );
   });
 });

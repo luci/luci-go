@@ -14,32 +14,38 @@
 
 import { useCallback, useMemo } from 'react';
 
+import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
+  constructFiltersFromAIP160,
   FilterCategory,
   useFilters,
   useFilterState,
 } from '@/fleet/components/filters/use_filters';
+import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
+import { getFieldDefinition } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
 import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { HEALTH_FILTER_CONFIGS, HealthFilterKey } from './filter_constants';
 
 export { HEALTH_FILTER_CONFIGS, type HealthFilterKey };
 
-export const useHealthFilterBuilders = (): {
-  filterBuilders:
-    | Record<HealthFilterKey, StringListFilterCategoryBuilder>
-    | undefined;
+export const useHealthFilterBuilders = (
+  currentFiltersAIP160?: string | null,
+): {
+  filterBuilders: Record<HealthFilterKey, StringListFilterCategoryBuilder>;
   isLoading: boolean;
 } => {
   const { availableFields, getValues, isLoading } = useChromeOSFields();
+  const [searchParams] = useSyncedSearchParams();
+  const rawFilters =
+    currentFiltersAIP160 !== undefined
+      ? currentFiltersAIP160
+      : searchParams.get(FILTERS_PARAM_KEY);
 
   const filterBuilders = useMemo(() => {
-    if (isLoading) {
-      return undefined;
-    }
-
     const builders: Record<string, StringListFilterCategoryBuilder> = {};
 
     // 1. Core health filters (Model, Pool)
@@ -48,7 +54,8 @@ export const useHealthFilterBuilders = (): {
 
       builders[config.key] = new StringListFilterCategoryBuilder()
         .setLabel(config.label)
-        .setOptions(rawValues.map((v) => ({ label: v, value: v })));
+        .setOptions(rawValues.map((v) => ({ label: v, value: v })))
+        .setIsLoading(isLoading);
     }
 
     // 2. Dynamic labels from ChromeOS device dimensions
@@ -71,17 +78,41 @@ export const useHealthFilterBuilders = (): {
       }
 
       const values = getValues(def.id);
-      if (values.length === 0) {
+      if (values.length === 0 && !isLoading) {
         return;
       }
 
       builders[def.filterKey] = new StringListFilterCategoryBuilder()
         .setLabel(def.header)
-        .setOptions(values.map((v) => ({ label: v, value: v })));
+        .setOptions(values.map((v) => ({ label: v, value: v })))
+        .setIsLoading(isLoading);
     });
 
+    // 3. While dimensions are loading, ensure any filter keys currently in the URL have a builder
+    // so they are immediately parsed and active without waiting 10s for dimensions.
+    if (isLoading && rawFilters) {
+      const parsed = constructFiltersFromAIP160(rawFilters);
+      if (!parsed.isError) {
+        for (const rawKey of Object.keys(parsed.terms)) {
+          const matchKey = normalizeFilterKey(rawKey).toLowerCase();
+          const alreadyExists = Object.keys(builders).some(
+            (k) => normalizeFilterKey(k).toLowerCase() === matchKey,
+          );
+          if (!alreadyExists) {
+            const cleanKey = normalizeFilterKey(rawKey);
+            const def = getFieldDefinition(cleanKey);
+
+            builders[def.filterKey] = new StringListFilterCategoryBuilder()
+              .setLabel(def.header)
+              .setOptions([])
+              .setIsLoading(true);
+          }
+        }
+      }
+    }
+
     return builders;
-  }, [availableFields, getValues, isLoading]);
+  }, [availableFields, getValues, isLoading, rawFilters]);
 
   return useMemo(
     () => ({
@@ -147,7 +178,7 @@ export const useHealthFilterState = (
   warnings: string[];
   setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
-  const { filterBuilders, isLoading } = useHealthFilterBuilders();
+  const { filterBuilders, isLoading } = useHealthFilterBuilders(initialAip160);
   const filterState = useFilterState(
     filterBuilders,
     initialAip160 ?? null,
