@@ -29,6 +29,7 @@ import (
 type mockAggResultDBClient struct {
 	pb.ResultDBClient
 	queryTestAggregations func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
+	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
 }
 
 func (m *mockAggResultDBClient) QueryTestAggregations(ctx context.Context, in *pb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*pb.QueryTestAggregationsResponse, error) {
@@ -36,6 +37,13 @@ func (m *mockAggResultDBClient) QueryTestAggregations(ctx context.Context, in *p
 		return m.queryTestAggregations(ctx, in)
 	}
 	return &pb.QueryTestAggregationsResponse{}, nil
+}
+
+func (m *mockAggResultDBClient) QueryTestVerdicts(ctx context.Context, in *pb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*pb.QueryTestVerdictsResponse, error) {
+	if m.queryTestVerdicts != nil {
+		return m.queryTestVerdicts(ctx, in)
+	}
+	return &pb.QueryTestVerdictsResponse{}, nil
 }
 
 func (m *mockAggResultDBClient) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
@@ -217,5 +225,97 @@ func TestCmdVerdict(t *testing.T) {
 		getCmd := GetCmd(nil)
 		assert.Loosely(t, getCmd, should.NotBeNil)
 		assert.Loosely(t, getCmd.UsageLine, should.Equal("get -invocationid <invocation_id> -testid <test_id> [-varianthash <hash>]"))
+	})
+}
+
+func TestQueryRootInvocationVerdicts(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`queryRootInvocationVerdicts`, t, func(t *ftt.Test) {
+		ctx := context.Background()
+		testID := `://\:CtsMediaAudioTestCases!cts:android.media.audio.cts:AudioFocusTest#testAudioFocusRequest_gainTransientMayDuck`
+
+		t.Run(`uses TestPrefixFilter and omits OrderBy when variantHash is provided`, func(t *ftt.Test) {
+			calls := 0
+			client := &mockAggResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					calls++
+					assert.Loosely(t, in.Parent, should.Equal("rootInvocations/ants-i26000010636495227"))
+					assert.Loosely(t, in.OrderBy, should.BeEmpty)
+					assert.Loosely(t, in.Predicate.GetContainsTestResultFilter(), should.BeEmpty)
+					prefix := in.Predicate.GetTestPrefixFilter()
+					assert.Loosely(t, prefix, should.NotBeNil)
+					assert.Loosely(t, prefix.Level, should.Equal(pb.AggregationLevel_CASE))
+					assert.Loosely(t, prefix.Id.ModuleName, should.Equal("//:CtsMediaAudioTestCases"))
+					assert.Loosely(t, prefix.Id.ModuleScheme, should.Equal("cts"))
+					assert.Loosely(t, prefix.Id.ModuleVariantHash, should.Equal("b7de9035241e76cc"))
+					assert.Loosely(t, prefix.Id.CoarseName, should.Equal("android.media.audio.cts"))
+					assert.Loosely(t, prefix.Id.FineName, should.Equal("AudioFocusTest"))
+					assert.Loosely(t, prefix.Id.CaseName, should.Equal("testAudioFocusRequest_gainTransientMayDuck"))
+
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: testID,
+								TestIdStructured: &pb.TestIdentifier{
+									ModuleName:        "//:CtsMediaAudioTestCases",
+									ModuleScheme:      "cts",
+									ModuleVariantHash: "b7de9035241e76cc",
+									CoarseName:        "android.media.audio.cts",
+									FineName:          "AudioFocusTest",
+									CaseName:          "testAudioFocusRequest_gainTransientMayDuck",
+								},
+								Results: []*pb.TestResult{
+									{
+										Name:     "rootInvocations/ants-i26000010636495227/workUnits/wu-1/tests/t1/results/3bc936dc-02514",
+										ResultId: "3bc936dc-02514",
+										StatusV2: pb.TestResult_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+
+			results, _, hasMore, err := QueryVerdictResultsAndExonerations(ctx, client, "ants-i26000010636495227", testID, "b7de9035241e76cc", false, 10)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Equal(1))
+			assert.Loosely(t, hasMore, should.BeFalse)
+			assert.Loosely(t, len(results), should.Equal(1))
+			assert.Loosely(t, results[0].ResultId, should.Equal("3bc936dc-02514"))
+		})
+
+		t.Run(`stops after priority RPC when verdict is found without following synthetic MaxUIPriority token`, func(t *ftt.Test) {
+			calls := 0
+			client := &mockAggResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					calls++
+					if calls > 1 {
+						t.Fatalf("expected only 1 RPC call, got second call with pageToken=%q", in.PageToken)
+					}
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: testID,
+								Results: []*pb.TestResult{
+									{
+										Name:     "rootInvocations/ants-i26000010636495227/workUnits/wu-1/tests/t1/results/3bc936dc-02514",
+										ResultId: "3bc936dc-02514",
+										StatusV2: pb.TestResult_FAILED,
+									},
+								},
+							},
+						},
+						NextPageToken: "synthetic-max-ui-priority-token",
+					}, nil
+				},
+			}
+
+			results, _, _, err := QueryVerdictResultsAndExonerations(ctx, client, "ants-i26000010636495227", testID, "", false, 10)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Equal(1))
+			assert.Loosely(t, len(results), should.Equal(1))
+		})
 	})
 }

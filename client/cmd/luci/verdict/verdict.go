@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -162,6 +163,26 @@ func QueryVerdictResultsAndExonerations(ctx context.Context, client pb.ResultDBC
 func queryRootInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, invID, testID, variantHash string, maxFetch int) ([]*pb.TestResult, []*pb.TestExoneration, bool, error) {
 	rootInvName := "rootInvocations/" + base.NormalizeInvocation(invID)
 
+	// When both a structured testID and variantHash are known, query directly by
+	// TestPrefixFilter (AggregationLevel_CASE) and omit OrderBy: "ui_priority" so
+	// ResultDB uses fetchUsingIteratorQuery (primary key prefix lookup) in 1 RPC.
+	var testPrefixFilter *pb.TestIdentifierPrefix
+	if testID != "" && variantHash != "" {
+		if parsed, err := pbutil.ParseAndValidateTestID(testID, pbutil.QuerySideTestIDLimitCallback); err == nil {
+			testPrefixFilter = &pb.TestIdentifierPrefix{
+				Level: pb.AggregationLevel_CASE,
+				Id: &pb.TestIdentifier{
+					ModuleName:        parsed.ModuleName,
+					ModuleScheme:      parsed.ModuleScheme,
+					ModuleVariantHash: variantHash,
+					CoarseName:        parsed.CoarseName,
+					FineName:          parsed.FineName,
+					CaseName:          parsed.CaseName,
+				},
+			}
+		}
+	}
+
 	var verdictResults []*pb.TestResult
 	var exList []*pb.TestExoneration
 	pageToken := ""
@@ -177,11 +198,17 @@ func queryRootInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, 
 			View:      pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
 			PageSize:  pageSize,
 			PageToken: pageToken,
-			OrderBy:   "ui_priority",
 		}
-		if testID != "" {
+		if testPrefixFilter != nil {
 			req.Predicate = &pb.TestVerdictPredicate{
-				ContainsTestResultFilter: fmt.Sprintf("test_id = %q", testID),
+				TestPrefixFilter: testPrefixFilter,
+			}
+		} else {
+			req.OrderBy = "ui_priority"
+			if testID != "" {
+				req.Predicate = &pb.TestVerdictPredicate{
+					ContainsTestResultFilter: fmt.Sprintf("test_id = %q", testID),
+				}
 			}
 		}
 		res, err := client.QueryTestVerdicts(ctx, req)
@@ -239,7 +266,12 @@ func queryRootInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, 
 			}
 			break
 		}
-		if res.NextPageToken == "" {
+		// When querying a specific testID with OrderBy: "ui_priority", RPC #1
+		// queries UnsuccessfulTestResultsV2 and unconditionally returns a synthetic
+		// NextPageToken (MaxUIPriority) to scan PASSED/SKIPPED verdicts across the
+		// entire table. If RPC #1 already found the verdict, stop immediately
+		// rather than triggering a 15-20s full-table scan on RPC #2.
+		if (testID != "" && len(verdictResults) > 0) || res.NextPageToken == "" {
 			break
 		}
 		pageToken = res.NextPageToken
