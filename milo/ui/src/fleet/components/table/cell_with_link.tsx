@@ -18,11 +18,9 @@ import { Link } from 'react-router';
 
 import { sortLabelValues } from '@/fleet/components/device_table/dimensions';
 import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { FC_CellProps } from '@/fleet/types/table';
-import {
-  useGoogleAnalytics,
-  EventPayload,
-} from '@/generic_libs/components/google_analytics';
+import { EventPayload } from '@/generic_libs/components/google_analytics';
 
 import { CellWithTooltip } from './cell_with_tooltip';
 
@@ -74,7 +72,7 @@ const LinkCell = <R extends MRT_RowData>(props: LinkCellProps<R>) => {
 
   const sortedValues = sortLabelValues(values);
   const displayString = sortedValues.join(DIMENSION_SEPARATOR);
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
 
   return (
     <CellWithTooltip

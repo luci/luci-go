@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 
 import CodeSnippet from '../../code_snippet/code_snippet';
 
@@ -36,7 +36,7 @@ interface LeaseTipProps {
  */
 export function LeaseTip({ hostname }: LeaseTipProps) {
   const [open, setOpen] = useState<boolean>(false);
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const command = `crosfleet dut lease -host ${hostname}`;
 
   const handleClickOpen = () => {

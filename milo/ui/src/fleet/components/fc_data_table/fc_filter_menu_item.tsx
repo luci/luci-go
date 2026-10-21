@@ -19,7 +19,7 @@ import { forwardRef, useRef, useState } from 'react';
 
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { OptionsDropdown } from '@/fleet/components/options_dropdown';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 
 export interface FCFilterMenuItemProps {
   filter: FilterCategory;
@@ -35,7 +35,7 @@ export const FCFilterMenuItem = forwardRef<
   const open = Boolean(anchorEl);
   const innerRef = useRef<HTMLLIElement>(null);
   const handleForkRef = useForkRef(ref, innerRef);
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
 
   const handleOpen = (event: React.MouseEvent<HTMLLIElement>) => {
     setAnchorEl(event.currentTarget);

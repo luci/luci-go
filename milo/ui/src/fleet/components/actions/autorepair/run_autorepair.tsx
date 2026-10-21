@@ -18,7 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import {
   ScheduleAutorepairRequest_AutorepairFlag,
   ScheduleAutorepairRequest,
@@ -35,7 +35,7 @@ interface RunAutorepairProps {
 }
 
 export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const fleetConsoleClient = useFleetConsoleClient();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<boolean>(false);

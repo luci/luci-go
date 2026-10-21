@@ -37,7 +37,7 @@ import { useMemo, useState } from 'react';
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 
 import { UnifiedProductCatalogEntry } from './types';
 
@@ -58,7 +58,7 @@ const TOOLTIP_CONTAINER_STYLE = {
 
 export const OrderForm = ({ entry }: OrderFormProps) => {
   const client = useFleetConsoleClient();
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const { data: filterValuesData, isLoading: isFilterValuesLoading } = useQuery(
     client.GetResourceRequestsMultiselectFilterValues.query({}),
   );

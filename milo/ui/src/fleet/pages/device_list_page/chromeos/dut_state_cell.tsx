@@ -19,7 +19,7 @@ import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { StateUnion } from '@/fleet/components/table/cell_with_chip';
 import { ChipComponent } from '@/fleet/components/table/chip_component';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 
 import { formatDutStateLabel, getStatusColor } from './dut_state';
 
@@ -32,7 +32,7 @@ export const DutStateCell = ({
   state = '',
   comment = '',
 }: DutStateCellProps) => {
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const stateValue = state.trim();
 
   if (stateValue === '') {

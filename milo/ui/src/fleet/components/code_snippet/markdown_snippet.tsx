@@ -26,7 +26,7 @@ import {
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { logging } from '@/common/tools/logging';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 
 import CodeSnippet from './code_snippet';
 
@@ -49,7 +49,7 @@ export function MarkdownSnippet({
   collapsible = false,
   defaultExpanded = false,
 }: MarkdownSnippetProps) {
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const collapseId = useId();
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [copied, setCopied] = useState(false);

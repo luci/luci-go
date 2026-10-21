@@ -33,12 +33,12 @@ import {
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { TaskResultPill } from '@/fleet/components/status_pill/status_pill';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { colors } from '@/fleet/theme/colors';
 import { surfaceCardClippedSx } from '@/fleet/theme/recipes';
 import { fleetColors, fontSizes } from '@/fleet/theme/tokens';
 import { prettyDateTime, prettySeconds } from '@/fleet/utils/dates';
 import { getRowClassName } from '@/fleet/utils/task_utils';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   TaskHistoryItem,
@@ -153,7 +153,7 @@ const TaskCell = ({
 }) => {
   const taskName = cell.getValue<string>();
   const { taskUrl } = row.original;
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
 
   if (!taskUrl) {
     return (
@@ -195,7 +195,7 @@ export const UnifiedTaskDetailPanel = ({
     buildVersion,
     taskUrl,
   } = row.original;
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
 
   return (
     <Box sx={{ p: 2, backgroundColor: fleetColors.surface }}>

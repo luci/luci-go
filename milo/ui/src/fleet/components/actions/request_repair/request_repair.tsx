@@ -16,7 +16,7 @@ import { Button, Tooltip } from '@mui/material';
 import type { ReactElement } from 'react';
 
 import { logging } from '@/common/tools/logging';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import {
   AndroidDevice,
   Platform,
@@ -76,7 +76,7 @@ export function RequestRepair({
   selectedItems: DutToRepair[] | BrowserDeviceToRepair[] | AndroidDevice[];
   platform: Platform.CHROMEOS | Platform.CHROMIUM | Platform.PIXEL;
 }) {
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const showButton = selectedItems?.length > 0;
 
   if (!showButton) {

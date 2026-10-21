@@ -14,8 +14,8 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { isTyping } from '@/fleet/utils/field_typing';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 import { ShortcutContext, ShortcutDefinition } from './context';
 import { ShortcutModal } from './shortcut_modal';
@@ -83,7 +83,7 @@ export const ShortcutProvider = ({
 }) => {
   const [shortcuts, setShortcuts] = useState<ParsedShortcut[]>([]);
   const bufferRef = useRef<KeyChord[]>([]);
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
 
   const register = useCallback((def: ShortcutDefinition) => {
     const keyList = Array.isArray(def.keys) ? def.keys : [def.keys];

@@ -15,6 +15,7 @@
 import { MRT_RowData } from 'material-react-table';
 import React from 'react';
 
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { androidState } from '@/fleet/pages/device_list_page/android/android_state';
 import { swarmingState } from '@/fleet/pages/device_list_page/browser/swarming_state';
 import {
@@ -22,10 +23,7 @@ import {
   formatDeviceStateLabel,
 } from '@/fleet/pages/device_list_page/chromeos/dut_state';
 import { FC_CellProps } from '@/fleet/types/table';
-import {
-  EventPayload,
-  useGoogleAnalytics,
-} from '@/generic_libs/components/google_analytics';
+import { EventPayload } from '@/generic_libs/components/google_analytics';
 
 import { ChipComponent } from './chip_component';
 
@@ -65,7 +63,7 @@ const ChipCell = <R extends MRT_RowData>(props: ChipCellProps<R>) => {
   const paramsOrRow = cellProps.row.original;
   const url = getValueOrUrl(valueStr, paramsOrRow);
   const color = getColor(valueStr as Exclude<StateUnion, ''>);
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
 
   return (
     <ChipComponent

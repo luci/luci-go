@@ -46,6 +46,7 @@ import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_tab
 import { TaskResultPill } from '@/fleet/components/status_pill/status_pill';
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { surfaceCardClippedSx } from '@/fleet/theme/recipes';
 import { fleetColors } from '@/fleet/theme/tokens';
 import {
@@ -64,7 +65,6 @@ import {
   prettifySwarmingState,
 } from '@/fleet/utils/task_utils';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
@@ -117,7 +117,7 @@ const TaskCell = ({
   const taskId = row.original.id as string;
   const task = meta.taskMap.get(taskId);
   const taskName = cell.getValue<string>();
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
 
   let url: string | undefined;
   if (meta.miloHost) {
@@ -172,7 +172,7 @@ export const TasksDetailPanel = ({
 }) => {
   const editorOptions = useRef<EditorConfiguration>(DEFAULT_CODE_MIRROR_CONFIG);
   const buildsClient = useBuildsClient();
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const meta = table.options.meta as TasksGridTableOptionsMeta;
   const taskId = row.original.id as string;
   const task = meta.taskMap.get(taskId);

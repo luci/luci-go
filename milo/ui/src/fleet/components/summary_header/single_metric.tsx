@@ -16,9 +16,9 @@ import { Box, Button, Skeleton, Typography } from '@mui/material';
 import { ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { metricTileSx } from '@/fleet/theme/recipes';
 import { fontSizes } from '@/fleet/theme/tokens';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 type SingleMetricProps = {
   name: string;
@@ -41,7 +41,7 @@ export function SingleMetric({
   loading,
   infoTooltip,
 }: SingleMetricProps) {
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const navigate = useNavigate();
   const percentage = total && typeof value !== 'undefined' ? value / total : -1;
 

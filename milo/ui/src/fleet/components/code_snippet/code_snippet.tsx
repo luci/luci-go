@@ -16,7 +16,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Button, Paper, Tooltip } from '@mui/material';
 import { Box } from '@mui/system';
 
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 
 interface CodeSnippetProps {
   copyText: string;
@@ -33,7 +33,7 @@ export default function CodeSnippet({
   displayText,
   copyKind,
 }: CodeSnippetProps) {
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
   const handleCopy = async () => {
     trackEvent('copy_code', {
       componentName: 'copy_button',

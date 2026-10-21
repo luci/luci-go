@@ -15,7 +15,7 @@
 import PestControlOutlinedIcon from '@mui/icons-material/PestControlOutlined';
 import Tooltip from '@mui/material/Tooltip';
 
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 
 interface Props {
   name: string | string[];
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export const BuganizerLink = ({ name, project }: Props) => {
-  const { trackEvent } = useGoogleAnalytics();
+  const { trackEvent } = useFleetAnalytics();
 
   const query = Array.isArray(name) ? name.join(' OR ') : name;
   const href = `http://b/${encodeURIComponent(query)}`;
