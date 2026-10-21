@@ -48,9 +48,9 @@ const destructureColumnId = (id: string) => {
 
 const getColumnHeader = (labelKey: string, source?: string) => {
   if (source === BROWSER_SWARMING_SOURCE) {
-    return `sw.${labelKey}`;
+    return humanizeColumnLabel(`sw.${labelKey}`);
   } else if (source === BROWSER_UFS_SOURCE) {
-    return `ufs.${labelKey}`;
+    return humanizeColumnLabel(`ufs.${labelKey}`);
   } else {
     return humanizeColumnLabel(labelKey);
   }

@@ -57,7 +57,7 @@ export const CUSTOM_COLUMNS: Record<string, BrowserColumnDef> = {
   unhealthy_devices_ratio: {
     id: 'unhealthy_devices_ratio',
     accessorKey: 'unhealthy_devices_ratio',
-    header: 'unhealthy/total devices',
+    header: 'Unhealthy / Total Devices',
     enableSorting: false,
     orderByField: `unhealthy_devices_ratio`,
     accessorFn: (row) => {
@@ -113,7 +113,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
   Partial<BrowserColumnDef>
 > = {
   id: {
-    header: 'machine',
+    header: 'Machine',
     size: 250,
     minSize: 150,
     accessorFn: (row) => row.id,
@@ -277,7 +277,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
     },
   },
   [`${BROWSER_UFS_SOURCE}.hostname`]: {
-    header: 'host/bot_id',
+    header: 'Host / Bot ID',
     Cell: (params) => {
       const swarmingInstance =
         params.row.original?.ufsLabels?.['swarming_instance']?.values?.[0];

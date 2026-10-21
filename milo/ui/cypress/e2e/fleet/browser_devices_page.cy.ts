@@ -62,11 +62,11 @@ describe('Browser Devices Page', () => {
     cy.get('input[placeholder*="Add a filter"]').click();
     cy.get('[role="menuitem"]').should('have.length.gt', 0);
 
-    cy.get('[role="menuitem"]').contains('sw.os').click();
+    cy.get('[role="menuitem"]').contains('SW OS').click();
     cy.get('[role="menuitem"]').contains('Linux').click();
     cy.contains('button', 'Apply').click();
 
-    cy.contains('[role="button"]', 'os').should('be.visible');
+    cy.contains('[role="button"]', 'SW OS').should('be.visible');
     cy.contains('[role="button"]', 'Linux').should('be.visible');
 
     cy.get('table').should('be.visible');
