@@ -83,18 +83,20 @@ func countVMs(c context.Context, payload proto.Message) error {
 	case err != nil:
 		return errors.Fmt("failed to fetch config: %w", err)
 	default:
-		project := cfg.Config.GetAttributes().GetProject()
+		attrs := cfg.Config.GetAttributes()
+		project := attrs.GetProject()
 		vms.AddConfigured(int(cfg.Config.CurrentAmount), project)
-		// Pre-initialize created and connected counts to 0 for the primary zone
-		// and all configured fallback_zones. Because gce/instances/created and
-		// gce/instances/connected are in-memory tsmon gauges keyed by zone,
-		// any candidate zone that previously hosted VMs but currently has 0 VMs
-		// after a zone rotation must be explicitly present with Count=0 in
-		// InstanceCount so updateInstances resets its gauge to 0 instead of
-		// leaving a stale non-zero value in Monarch.
-		for _, zone := range configuredZones(cfg.Config.GetAttributes()) {
-			vms.AddCreated(0, project, zone)
-			vms.AddConnected(0, project, cfg.Config.GetSwarming(), zone)
+		// Only pre-initialize candidate zone counts to 0 when fallback_zones is
+		// configured. Multi-zone configs emit explicit 0 points for unused
+		// candidate zones so Monarch gauges drop to 0 immediately after VMs
+		// rotate out of a zone instead of interpolating the previous non-zero
+		// zone stream, whereas single-zone configs omit zero-count series when no
+		// VMs exist.
+		if len(attrs.GetFallbackZones()) > 0 {
+			for _, zone := range configuredZones(attrs) {
+				vms.AddCreated(0, project, zone)
+				vms.AddConnected(0, project, cfg.Config.GetSwarming(), zone)
+			}
 		}
 	}
 

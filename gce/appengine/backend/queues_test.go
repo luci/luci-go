@@ -119,6 +119,28 @@ func TestQueues(t *testing.T) {
 					assert.Loosely(t, ic.Connected[1].Count, should.Equal(0))
 					assert.Loosely(t, ic.Connected[2].Count, should.Equal(1))
 				})
+
+				t.Run("without fallback zones and zero VMs", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.Config{
+						ID: "cfg-single-empty",
+						Config: &config.Config{
+							CurrentAmount: 1,
+							Swarming:      "swarming-srv",
+							Attributes: &config.VM{
+								Project: "project",
+								Zone:    "us-central1-b",
+							},
+						},
+					}), should.BeNil)
+
+					assert.Loosely(t, countVMs(c, &tasks.CountVMs{Id: "cfg-single-empty"}), should.BeNil)
+					ic := &metrics.InstanceCount{ID: "cfg-single-empty"}
+					assert.Loosely(t, datastore.Get(c, ic), should.BeNil)
+					assert.Loosely(t, len(ic.Configured), should.Equal(1))
+					assert.Loosely(t, ic.Configured[0].Count, should.Equal(1))
+					assert.Loosely(t, ic.Created, should.BeEmpty)
+					assert.Loosely(t, ic.Connected, should.BeEmpty)
+				})
 			})
 		})
 

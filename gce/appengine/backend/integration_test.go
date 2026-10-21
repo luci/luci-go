@@ -564,6 +564,7 @@ func TestVMCreationIntegration(t *testing.T) {
 			assert.Loosely(t, len(ic.Created), should.Equal(1))
 			assert.Loosely(t, ic.Created[0].Zone, should.Equal("us-central1-a"))
 			assert.Loosely(t, ic.Created[0].Count, should.Equal(2))
+			assert.Loosely(t, ic.Connected, should.BeEmpty)
 		})
 
 		// Scenario 2: Multi-zone fallback config succeeding on the root zone.
