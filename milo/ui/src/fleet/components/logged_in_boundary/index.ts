@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { LoggedInBoundary } from './logged_in_boundary';
+export { LoggedInBoundary, NotSignedInPage } from './logged_in_boundary';

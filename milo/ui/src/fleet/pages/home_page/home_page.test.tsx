@@ -241,8 +241,10 @@ describe('<HomePage />', () => {
       </FakeContextProvider>,
     );
 
-    expect(screen.getByText(/You must/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument();
+    expect(screen.getByText('Sign in to Fleet Console')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /^sign in$/i }),
+    ).toBeInTheDocument();
   });
 
   it('displays the loaded data and calculates healthy percentages', async () => {

@@ -15,6 +15,7 @@
 import { UseQueryResult } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
@@ -26,6 +27,7 @@ import {
   ListSupportRiskIncidentsResponse,
   TrendlineMetricType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { Component, HealthPage } from './health_page';
@@ -357,5 +359,28 @@ describe('HealthPage', () => {
     expect(
       screen.getByText('ChromeOS Fleet Health Metrics'),
     ).toBeInTheDocument();
+  });
+
+  it('requires login in route Component when user is anonymous', () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/fleet/p/chromeos/health"
+        routerOptions={{ initialEntries: ['/ui/fleet/p/chromeos/health'] }}
+      >
+        <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
+          <ShortcutProvider>
+            <Component />
+          </ShortcutProvider>
+        </FakeAuthStateProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getByTestId('fleet-not-signed-in-page')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Sign in to Fleet Console' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('ChromeOS Fleet Health Metrics'),
+    ).not.toBeInTheDocument();
   });
 });

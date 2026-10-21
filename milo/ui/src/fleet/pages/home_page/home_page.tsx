@@ -17,17 +17,17 @@ import ConstructionIcon from '@mui/icons-material/Construction';
 import DevicesIcon from '@mui/icons-material/Devices';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import FeedbackIcon from '@mui/icons-material/Feedback';
-import { Alert, Box, Button, Grid2, Link, Typography } from '@mui/material';
+import { Box, Button, Grid2, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import { useFeatureFlag } from '@/common/feature_flags';
 import { useUserProfile } from '@/common/hooks/use_user_profile';
-import { getLoginUrl } from '@/common/tools/url_utils';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import androidLogo from '@/fleet/assets/logos/android.png';
 import browserLogo from '@/fleet/assets/logos/browser.png';
 import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
 import pixelLogo from '@/fleet/assets/logos/pixel.png';
+import { NotSignedInPage } from '@/fleet/components/logged_in_boundary';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { enableAndroidHealthMetrics, enablePTE } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
@@ -225,18 +225,7 @@ export const HomePage = () => {
           {/* Fleet Summaries */}
 
           {isAnonymous ? (
-            <Alert severity="info" sx={{ mb: 4 }}>
-              You must{' '}
-              <Link
-                href={getLoginUrl(
-                  location.pathname + location.search + location.hash,
-                )}
-                sx={{ textDecoration: 'underline' }}
-              >
-                login
-              </Link>{' '}
-              to load fleet data.
-            </Alert>
+            <NotSignedInPage />
           ) : (
             <Grid2 container spacing={4}>
               {/* ChromeOS Card */}
