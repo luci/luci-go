@@ -33,19 +33,12 @@ func GetDerivationID(drv *Derivation) (string, error) {
 		return "", err
 	}
 
-	// - "name-hash" for usual derivations.
-	// - "name+hash" for derivations with fixed output.
-	infix := "-"
-	if drv.FixedOutput != "" {
-		infix = "+"
-	}
-
 	// We want to keep the hash as short as possible to avoid reaching the path
 	// length limit on windows.
 	// Using base32 instead of base64 because filesystem is not promised to be
 	// case-sensitive.
 	enc := base32.HexEncoding.WithPadding(base32.NoPadding)
-	return drv.Name + infix + strings.ToLower(enc.EncodeToString(h.Sum(nil)[:16])), nil
+	return fmt.Sprintf("%s-%s", drv.Name, strings.ToLower(enc.EncodeToString(h.Sum(nil)[:16]))), nil
 }
 
 func hashDerivation(h hash.Hash, drv *Derivation) error {
