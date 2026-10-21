@@ -47,6 +47,7 @@ import {
 import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { HEALTH_FILTER_CONFIGS } from './filter_constants';
+import { getHealthStatus } from './health_status_utils';
 import { HealthTooltip } from './health_tooltip';
 import {
   calculate24hDelta,
@@ -442,7 +443,7 @@ export const PerformanceRankingCard = ({
                         sx={{
                           ...subMetricRowSx,
                           fontWeight: 'bold',
-                          color: 'text.primary',
+                          color: `${getHealthStatus(item.availabilityPct).color}.main`,
                           fontSize: '0.72rem',
                           cursor: 'pointer',
                           px: 0.5,
@@ -535,7 +536,7 @@ export const PerformanceRankingCard = ({
                   <SegmentedHealthBar
                     title={toCanonical(item.name)}
                     breakdown={item.stateBreakdown}
-                    height={6}
+                    height={4}
                     availabilityPct={
                       entityTab === 'models' ? item.availabilityPct : undefined
                     }

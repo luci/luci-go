@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -230,7 +231,7 @@ describe('SegmentedHealthBar', () => {
     expect(screen.getByTestId('bar-segment-needs_deploy')).toBeInTheDocument();
   });
 
-  it('opens Popover tooltip on hover', () => {
+  it('opens Popover tooltip on hover', async () => {
     render(
       <SegmentedHealthBar
         title="brya"
@@ -242,7 +243,7 @@ describe('SegmentedHealthBar', () => {
     const bar = screen.getByTestId('test-bar');
     fireEvent.mouseEnter(bar);
 
-    expect(screen.getByText('1,000 total enrolled')).toBeInTheDocument();
+    expect(await screen.findByText('1,000 total enrolled')).toBeInTheDocument();
     expect(screen.getByText('Availability')).toBeInTheDocument();
     expect(screen.getByText('Health')).toBeInTheDocument();
   });
@@ -262,10 +263,47 @@ describe('SegmentedHealthBar', () => {
     fireEvent.mouseEnter(bar);
     expect(screen.queryByText('total enrolled')).not.toBeInTheDocument();
   });
+
+  it('renders breakdown segments when availability is 0% but devices exist in non-ready states', () => {
+    const zeroAvailabilityBreakdown: DeviceStateBreakdown = {
+      total: 15,
+      ready: 0,
+      needsRepair: 10,
+      repairFailed: 5,
+      needsManualRepair: 0,
+      needsReplacement: 0,
+      reserved: 0,
+      needsDeploy: 0,
+    };
+
+    render(
+      <SegmentedHealthBar
+        title="zero-ready-model"
+        breakdown={zeroAvailabilityBreakdown}
+        availabilityPct={0}
+        testId="zero-ready-bar"
+      />,
+    );
+
+    const bar = screen.getByTestId('zero-ready-bar');
+    expect(bar).toBeInTheDocument();
+
+    // Breakdown segments should be rendered according to their real states
+    expect(screen.getByTestId('bar-segment-needs_repair')).toBeInTheDocument();
+    expect(screen.getByTestId('bar-segment-repair_failed')).toBeInTheDocument();
+
+    // Accessible description should preserve state distribution
+    expect(bar).toHaveAttribute(
+      'aria-label',
+      expect.stringContaining(
+        'Needs repair: 10 (66.7%), Repair failed: 5 (33.3%)',
+      ),
+    );
+  });
 });
 
 describe('HealthStatePopover', () => {
-  it('wraps arbitrary child and opens state popover on hover', () => {
+  it('wraps arbitrary child and opens state popover on hover', async () => {
     render(
       <HealthStatePopover
         title="brya"
@@ -280,7 +318,7 @@ describe('HealthStatePopover', () => {
     expect(label).toHaveTextContent('Healthy');
 
     fireEvent.mouseEnter(label);
-    expect(screen.getByText('brya')).toBeInTheDocument();
+    expect(await screen.findByText('brya')).toBeInTheDocument();
     expect(screen.getByTestId('popover-thresholds-strip')).toBeInTheDocument();
     expect(screen.getByTestId('popover-threshold-healthy')).toBeInTheDocument();
     expect(screen.getByText('1,000 total enrolled')).toBeInTheDocument();
@@ -319,6 +357,77 @@ describe('HealthStatePopover', () => {
     const label = screen.getByTestId('disabled-label');
     fireEvent.mouseEnter(label);
     expect(screen.queryByText('1,000 total enrolled')).not.toBeInTheDocument();
+  });
+
+  it('closes popover immediately when a wheel or scroll event occurs', async () => {
+    render(
+      <HealthStatePopover
+        title="brya"
+        breakdown={mockBreakdown}
+        transitionDuration={0}
+      >
+        <button type="button" data-testid="scroll-btn">
+          Click me
+        </button>
+      </HealthStatePopover>,
+    );
+
+    const btn = screen.getByTestId('scroll-btn');
+    fireEvent.click(btn);
+    expect(screen.getByText('1,000 total enrolled')).toBeInTheDocument();
+
+    // Trigger wheel on window
+    fireEvent.wheel(window);
+
+    await waitForElementToBeRemoved(() =>
+      screen.queryByText('1,000 total enrolled'),
+    );
+  });
+
+  it('respects enterDelay and cancels opening when cursor leaves before delay', () => {
+    jest.useFakeTimers();
+    try {
+      render(
+        <HealthStatePopover
+          title="brya"
+          breakdown={mockBreakdown}
+          enterDelay={150}
+        >
+          <span data-testid="delay-target">Hover target</span>
+        </HealthStatePopover>,
+      );
+
+      const target = screen.getByTestId('delay-target');
+      fireEvent.mouseEnter(target);
+
+      // Immediately, popover is not in document
+      expect(
+        screen.queryByText('1,000 total enrolled'),
+      ).not.toBeInTheDocument();
+
+      // Mouse leaves after 50ms (before 150ms delay)
+      act(() => {
+        jest.advanceTimersByTime(50);
+      });
+      fireEvent.mouseLeave(target);
+
+      // Advance time past the 150ms mark
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
+      expect(
+        screen.queryByText('1,000 total enrolled'),
+      ).not.toBeInTheDocument();
+
+      // Now enter again and stay past 150ms
+      fireEvent.mouseEnter(target);
+      act(() => {
+        jest.advanceTimersByTime(160);
+      });
+      expect(screen.getByText('1,000 total enrolled')).toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
 
@@ -411,13 +520,10 @@ describe('HealthStatePopoverContent', () => {
     );
 
     expect(screen.getByText('Other states')).toBeInTheDocument();
-    const registeredRow = screen.getByTestId('state-row-registered');
-    expect(registeredRow).toBeInTheDocument();
-    expect(registeredRow).toHaveTextContent('0');
-
-    const unknownRow = screen.getByTestId('state-row-unknown');
-    expect(unknownRow).toBeInTheDocument();
-    expect(unknownRow).toHaveTextContent('0');
+    expect(
+      screen.queryByTestId('state-row-registered'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId('state-row-unknown')).not.toBeInTheDocument();
   });
 
   it('renders SLA thresholds strip with healthy, warning, and critical tiers', () => {
@@ -441,5 +547,30 @@ describe('HealthStatePopoverContent', () => {
     const criticalTier = screen.getByTestId('popover-threshold-critical');
     expect(criticalTier).toBeInTheDocument();
     expect(criticalTier).toHaveTextContent('Critical < 80%');
+  });
+
+  it('renders empty state when total enrolled devices is 0', () => {
+    render(
+      <HealthStatePopoverContent
+        title="empty-model"
+        breakdown={{
+          total: 0,
+          ready: 0,
+          needsRepair: 0,
+          repairFailed: 0,
+          needsManualRepair: 0,
+          needsReplacement: 0,
+          reserved: 0,
+          needsDeploy: 0,
+        }}
+      />,
+    );
+
+    const emptyBox = screen.getByTestId('popover-empty-state');
+    expect(emptyBox).toBeInTheDocument();
+    expect(screen.getByText('No devices enrolled')).toBeInTheDocument();
+    expect(
+      screen.queryByText('HEALTHY (OPERABLE CAPACITY)'),
+    ).not.toBeInTheDocument();
   });
 });

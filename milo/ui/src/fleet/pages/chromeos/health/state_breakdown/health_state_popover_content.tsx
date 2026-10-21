@@ -88,6 +88,8 @@ export const HealthStatePopoverContent = ({
   return (
     <Paper
       elevation={4}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
       sx={{
         p: 2,
         width: 380,
@@ -252,6 +254,7 @@ export const HealthStatePopoverContent = ({
 
       {/* Mini Color Spectrum Bar */}
       <Box
+        data-testid="popover-spectrum-bar"
         sx={{
           display: 'flex',
           height: 6,
@@ -277,151 +280,187 @@ export const HealthStatePopoverContent = ({
           ))}
       </Box>
 
-      {/* Detailed Categorized States */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        {stats.categories.map((cat) => (
-          <Box key={cat.category}>
-            {/* Category Header */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                mb: 0.5,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  fontSize: 10.5,
-                  letterSpacing: 0.5,
-                  color: cat.color,
-                }}
-              >
-                {cat.label}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 700,
-                  color: 'text.secondary',
-                  fontSize: 11,
-                }}
-              >
-                {formatStateCount(cat.count)} ({cat.pct}%)
-              </Typography>
-            </Box>
-
-            {/* Exact State Rows with 1-click AIP-160 drilldown */}
-            <Box
-              sx={{
-                bgcolor: 'background.paper',
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: radii.sm,
-                overflow: 'hidden',
-              }}
-            >
-              {cat.states.map((st, idx) => (
+      {/* Detailed Categorized States or Empty State */}
+      {total === 0 ? (
+        <Box
+          data-testid="popover-empty-state"
+          sx={{
+            py: 2.5,
+            px: 2,
+            textAlign: 'center',
+            bgcolor: 'action.hover',
+            borderRadius: radii.sm,
+            mt: 0.5,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 600, color: 'text.secondary' }}
+          >
+            No devices enrolled
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.disabled', display: 'block', mt: 0.5 }}
+          >
+            There are no devices registered in this cohort.
+          </Typography>
+        </Box>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {stats.categories.map((cat) => {
+            const activeStates = cat.states.filter((st) => st.count > 0);
+            return (
+              <Box key={cat.category}>
+                {/* Category Header */}
                 <Box
-                  key={st.config.key}
-                  component="a"
-                  href={getDeviceListStateUrl(
-                    st.config.key as ExactDutStateKey,
-                    baseFilter,
-                  )}
-                  target="_blank"
-                  rel="noreferrer"
-                  data-testid={`state-row-${st.config.key}`}
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    py: 0.6,
-                    px: 1.25,
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    borderBottom:
-                      idx < cat.states.length - 1 ? '1px solid' : 'none',
-                    borderColor: 'divider',
-                    transition: 'background-color 0.15s ease',
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                      '& .state-link-icon': {
-                        opacity: 1,
-                        color: 'primary.main',
-                      },
-                    },
+                    mb: activeStates.length > 0 ? 0.5 : 0,
                   }}
                 >
-                  <Box
+                  <Typography
+                    variant="caption"
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      minWidth: 0,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      fontSize: 10.5,
+                      letterSpacing: 0.5,
+                      color: cat.color,
                     }}
                   >
-                    <Box
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        bgcolor: st.config.color,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: 'text.primary',
-                      }}
-                    >
-                      {st.config.label}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: 12,
-                        color: 'text.primary',
-                      }}
-                    >
-                      {formatStateCount(st.count)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontSize: 11,
-                        color: 'text.secondary',
-                        width: 42,
-                        textAlign: 'right',
-                      }}
-                    >
-                      {st.pct}%
-                    </Typography>
-                    <OpenInNew
-                      className="state-link-icon"
-                      sx={{
-                        fontSize: 12,
-                        opacity: 0.35,
-                        transition: 'all 0.15s ease',
-                      }}
-                    />
-                  </Box>
+                    {cat.label}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 700,
+                      color: 'text.secondary',
+                      fontSize: 11,
+                    }}
+                  >
+                    {formatStateCount(cat.count)} ({cat.pct}%)
+                  </Typography>
                 </Box>
-              ))}
-            </Box>
-          </Box>
-        ))}
-      </Box>
+
+                {/* Exact State Rows with 1-click AIP-160 drilldown */}
+                {activeStates.length > 0 && (
+                  <Box
+                    sx={{
+                      bgcolor: 'background.paper',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: radii.sm,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {activeStates.map((st, idx) => (
+                      <Box
+                        key={st.config.key}
+                        component="a"
+                        href={getDeviceListStateUrl(
+                          st.config.key as ExactDutStateKey,
+                          baseFilter,
+                        )}
+                        target="_blank"
+                        rel="noreferrer"
+                        data-testid={`state-row-${st.config.key}`}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          py: 0.6,
+                          px: 1.25,
+                          textDecoration: 'none',
+                          color: 'inherit',
+                          borderBottom:
+                            idx < activeStates.length - 1
+                              ? '1px solid'
+                              : 'none',
+                          borderColor: 'divider',
+                          transition: 'background-color 0.15s ease',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                            '& .state-link-icon': {
+                              opacity: 1,
+                              color: 'primary.main',
+                            },
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              bgcolor: st.config.color,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontSize: 12,
+                              fontWeight: 500,
+                              color: 'text.primary',
+                            }}
+                          >
+                            {st.config.label}
+                          </Typography>
+                        </Box>
+
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: 12,
+                              color: 'text.primary',
+                            }}
+                          >
+                            {formatStateCount(st.count)}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: 11,
+                              color: 'text.secondary',
+                              width: 42,
+                              textAlign: 'right',
+                            }}
+                          >
+                            {st.pct}%
+                          </Typography>
+                          <OpenInNew
+                            className="state-link-icon"
+                            sx={{
+                              fontSize: 12,
+                              opacity: 0.35,
+                              transition: 'all 0.15s ease',
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            );
+          })}
+        </Box>
+      )}
 
       {/* Footer Quick Action */}
       <Divider sx={{ my: 1.5 }} />

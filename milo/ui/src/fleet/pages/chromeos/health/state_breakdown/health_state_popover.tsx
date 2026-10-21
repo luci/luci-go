@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Popover, PopoverOrigin } from '@mui/material';
-import { cloneElement, useEffect, useMemo, useRef, useState } from 'react';
-
-import { radii } from '@/fleet/theme/tokens';
+import { Box, Fade, Popper, PopperPlacementType } from '@mui/material';
+import { cloneElement, useMemo } from 'react';
 
 import {
   computeBreakdownStats,
   DeviceStateBreakdown,
 } from './compute_breakdown_stats';
 import { HealthStatePopoverContent } from './health_state_popover_content';
+import { usePopoverHover, VirtualElement } from './use_popover_hover';
+
+export type { VirtualElement };
 
 export interface HealthStatePopoverProps {
   readonly title: string;
@@ -30,8 +31,9 @@ export interface HealthStatePopoverProps {
   readonly healthPct?: number | undefined;
   readonly baseFilter?: string | undefined;
   readonly disabled?: boolean;
-  readonly anchorOrigin?: PopoverOrigin;
-  readonly transformOrigin?: PopoverOrigin;
+  readonly enterDelay?: number;
+  readonly leaveDelay?: number;
+  readonly placement?: PopperPlacementType;
   readonly transitionDuration?: number | { enter?: number; exit?: number };
   readonly children: React.ReactElement<React.HTMLAttributes<HTMLElement>>;
 }
@@ -47,19 +49,10 @@ const EMPTY_BREAKDOWN: DeviceStateBreakdown = {
   needsDeploy: 0,
 };
 
-const DEFAULT_ANCHOR_ORIGIN: PopoverOrigin = {
-  vertical: 'top',
-  horizontal: 'center',
-};
-
-const DEFAULT_TRANSFORM_ORIGIN: PopoverOrigin = {
-  vertical: 'bottom',
-  horizontal: 'center',
-};
-
 /**
  * Reusable hovercard popover wrapper that displays the complete DUT state breakdown
  * and horizontal SLA threshold status for any trigger element (e.g. status labels or progress bars).
+ * Uses Popper and usePopoverHover for clean cursor anchoring and scroll dismissal.
  */
 export const HealthStatePopover = ({
   title,
@@ -68,14 +61,12 @@ export const HealthStatePopover = ({
   healthPct,
   baseFilter,
   disabled = false,
-  anchorOrigin = DEFAULT_ANCHOR_ORIGIN,
-  transformOrigin = DEFAULT_TRANSFORM_ORIGIN,
-  transitionDuration,
+  enterDelay = 120,
+  leaveDelay = 200,
+  placement = 'bottom',
+  transitionDuration = 150,
   children,
 }: HealthStatePopoverProps) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const safeBreakdown = breakdown ?? EMPTY_BREAKDOWN;
   const stats = useMemo(
     () => computeBreakdownStats(safeBreakdown),
@@ -84,43 +75,20 @@ export const HealthStatePopover = ({
 
   const hasData =
     stats.total > 0 || availabilityPct !== undefined || healthPct !== undefined;
+  const enabled = !disabled && hasData;
 
-  const handleOpen = (target: HTMLElement) => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    if (!disabled && hasData) {
-      setAnchorEl(target);
-    }
-  };
-
-  const handleClose = () => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-    }
-    closeTimerRef.current = setTimeout(() => {
-      setAnchorEl(null);
-    }, 120);
-  };
-
-  const handleCloseImmediately = () => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    setAnchorEl(null);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-      }
-    };
-  }, []);
-
-  const open = Boolean(anchorEl && hasData && !disabled);
+  const {
+    anchorEl,
+    open,
+    handleOpen,
+    handleClose,
+    cancelClose,
+    handleCloseImmediately,
+  } = usePopoverHover({
+    enabled,
+    enterDelay,
+    leaveDelay,
+  });
 
   const childProps = children.props as {
     onMouseEnter?: (e: React.MouseEvent<HTMLElement>) => void;
@@ -131,59 +99,81 @@ export const HealthStatePopover = ({
   const trigger = cloneElement<React.HTMLAttributes<HTMLElement>>(children, {
     onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
       childProps.onMouseEnter?.(e);
-      handleOpen(e.currentTarget);
+      handleOpen(e.currentTarget, e.clientX);
     },
     onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
       childProps.onMouseLeave?.(e);
       handleClose();
     },
     onClick: (e: React.MouseEvent<HTMLElement>) => {
+      e.stopPropagation();
       childProps.onClick?.(e);
       if (open) {
         handleCloseImmediately();
       } else {
-        handleOpen(e.currentTarget);
+        handleOpen(e.currentTarget, e.clientX, 0);
       }
     },
   });
 
+  const timeout =
+    typeof transitionDuration === 'number'
+      ? transitionDuration
+      : (transitionDuration?.enter ?? 150);
+
   return (
     <>
       {trigger}
-      {hasData && !disabled && (
-        <Popover
+      {enabled && (
+        <Popper
           open={open}
           anchorEl={anchorEl}
-          onClose={handleCloseImmediately}
-          anchorOrigin={anchorOrigin}
-          transformOrigin={transformOrigin}
-          transitionDuration={transitionDuration}
-          disableRestoreFocus
-          slotProps={{
-            paper: {
-              onMouseEnter: () => {
-                if (closeTimerRef.current) {
-                  clearTimeout(closeTimerRef.current);
-                  closeTimerRef.current = null;
-                }
-              },
-              onMouseLeave: handleClose,
-              sx: {
-                pointerEvents: 'auto',
-                borderRadius: radii.md,
-                mt: -1,
+          placement={placement}
+          transition
+          modifiers={[
+            {
+              name: 'offset',
+              options: {
+                offset: [0, 8],
               },
             },
+            {
+              name: 'flip',
+              options: {
+                fallbackPlacements: ['top', 'bottom'],
+              },
+            },
+            {
+              name: 'preventOverflow',
+              options: {
+                boundary: 'window',
+                padding: 16,
+              },
+            },
+          ]}
+          sx={{
+            zIndex: (theme) => theme.zIndex.tooltip,
+            pointerEvents: 'none',
           }}
         >
-          <HealthStatePopoverContent
-            title={title}
-            breakdown={safeBreakdown}
-            availabilityPct={availabilityPct}
-            healthPct={healthPct}
-            baseFilter={baseFilter}
-          />
-        </Popover>
+          {({ TransitionProps }) => (
+            <Fade {...TransitionProps} timeout={timeout}>
+              <Box
+                sx={{ pointerEvents: 'auto' }}
+                onMouseEnter={cancelClose}
+                onMouseLeave={handleClose}
+              >
+                <HealthStatePopoverContent
+                  title={title}
+                  breakdown={safeBreakdown}
+                  availabilityPct={availabilityPct}
+                  healthPct={healthPct}
+                  baseFilter={baseFilter}
+                />
+              </Box>
+            </Fade>
+          )}
+        </Popper>
       )}
     </>
   );

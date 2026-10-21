@@ -32,6 +32,7 @@ export interface SegmentedHealthBarProps {
   readonly healthPct?: number;
   readonly baseFilter?: string;
   readonly testId?: string;
+  readonly enterDelay?: number;
 }
 
 const EMPTY_BREAKDOWN: DeviceStateBreakdown = {
@@ -53,18 +54,23 @@ export const SegmentedHealthBar = ({
   healthPct,
   baseFilter,
   testId,
+  enterDelay,
 }: SegmentedHealthBarProps) => {
   const safeBreakdown = breakdown ?? EMPTY_BREAKDOWN;
   const stats = useMemo(
     () => computeBreakdownStats(safeBreakdown),
     [safeBreakdown],
   );
-  const hasData = stats.total > 0;
 
-  const ariaDescription = stats.states
-    .filter((s) => s.count > 0)
-    .map((s) => `${s.config.label}: ${s.count} (${s.pct}%)`)
-    .join(', ');
+  const hasData = stats.total > 0;
+  const activeStates = stats.states.filter((s) => s.count > 0);
+
+  const ariaDescription =
+    activeStates.length > 0
+      ? activeStates
+          .map((s) => `${s.config.label}: ${s.count} (${s.pct}%)`)
+          .join(', ')
+      : 'No devices';
 
   return (
     <HealthStatePopover
@@ -73,45 +79,72 @@ export const SegmentedHealthBar = ({
       availabilityPct={availabilityPct}
       healthPct={healthPct}
       baseFilter={baseFilter}
+      enterDelay={enterDelay}
     >
       <Box
         data-testid={testId ?? `segmented-health-bar-${title}`}
         tabIndex={0}
         role="progressbar"
-        aria-label={`${title} device health state distribution: ${ariaDescription || 'No devices'}`}
+        aria-valuenow={availabilityPct ?? healthPct}
+        aria-label={`${title} device health state distribution: ${ariaDescription}`}
         sx={{
           display: 'flex',
+          alignItems: 'center',
           width: '100%',
-          height,
-          borderRadius: radii.sm,
-          overflow: 'hidden',
-          bgcolor: 'grey.200',
+          py: 0.5,
+          boxSizing: 'border-box',
           cursor: hasData ? 'pointer' : 'default',
           position: 'relative',
-          transition: 'all 0.15s ease-in-out',
-          ...(hasData && {
-            '&:hover': {
-              transform: 'scaleY(1.5)',
-              filter: 'brightness(1.08)',
-            },
-          }),
+          bgcolor: 'transparent',
           ...focusRingSx,
+          ...(hasData && {
+            '&:hover .segmented-bar-track, &:focus-visible .segmented-bar-track':
+              {
+                transform: 'scaleY(1.75)',
+                filter: 'brightness(1.08)',
+              },
+          }),
         }}
       >
-        {stats.states
-          .filter((s) => s.count > 0)
-          .map((s) => (
+        <Box
+          className="segmented-bar-track"
+          sx={{
+            display: 'flex',
+            width: '100%',
+            height,
+            borderRadius: radii.pill,
+            overflow: 'hidden',
+            isolation: 'isolate',
+            pointerEvents: 'none',
+            bgcolor: 'grey.200',
+            position: 'relative',
+            transformOrigin: 'center',
+            transition:
+              'transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease',
+          }}
+        >
+          {activeStates.map((s, index) => (
             <Box
               key={s.config.key}
               data-testid={`bar-segment-${s.config.key}`}
               sx={{
                 width: `${s.pct}%`,
+                flex: `${s.count} 0 0%`,
                 bgcolor: s.config.color,
                 height: '100%',
                 transition: 'width 0.3s ease',
+                ...(index === 0 && {
+                  borderTopLeftRadius: 'inherit',
+                  borderBottomLeftRadius: 'inherit',
+                }),
+                ...(index === activeStates.length - 1 && {
+                  borderTopRightRadius: 'inherit',
+                  borderBottomRightRadius: 'inherit',
+                }),
               }}
             />
           ))}
+        </Box>
       </Box>
     </HealthStatePopover>
   );
