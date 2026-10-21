@@ -65,4 +65,4 @@ up-dev:
 # the Milo API service which may not exist.
 deploy-ui-demo:
 	export VITE_OVERRIDE_MILO_HOST=staging.milo.api.luci.app && export VITE_FLEET_CONSOLE_HOST=$(VITE_FLEET_CONSOLE_HOST) && npm run build
-	gae.py upload -p ../ -A luci-milo-dev ui-new -f
+	export DEMO_ID=$$(git config --get branch.$$(git branch --show-current).gerritissue 2>/dev/null || date +%s); echo "Uploading demo c$$DEMO_ID to GCS..."; gsutil -h "Cache-Control:no-cache" -m rsync -r dist/ gs://luci-milo-dev-temp/c$$DEMO_ID/latest/ && echo "View at: https://c$$DEMO_ID-dot-luci-milo-dev.appspot.com/ui/"

@@ -35,15 +35,21 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
-const maxDemoAssetBytes = 50 << 20 // 50 MiB
+const (
+	maxDemoAssetBytes       = 50 << 20 // 50 MiB
+	defaultDevDemoGCSBucket = "luci-milo-dev-temp"
+	gcsReadOnlyScope        = "https://www.googleapis.com/auth/devstorage.read_only"
+)
 
 var (
 	demoHostRe      = regexp.MustCompile(`^c(\d+)(?:-p(\d+))?-dot-luci-milo-dev\.appspot\.com$`)
 	digitsOnlyRe    = regexp.MustCompile(`^\d+$`)
 	gcsBucketNameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$`)
+	uiCommitSHARe   = regexp.MustCompile(`(?m)^\s*self\.UI_COMMIT_SHA\s*=\s*'([0-9a-f]{40})';\s*$`)
 )
 
 var immutableAssetContentTypes = map[string]string{
@@ -142,6 +148,22 @@ type dispatcher struct {
 	upstreamScheme string
 	upstreamHost   string
 	httpClient     *http.Client
+	gcsHTTPClient  *http.Client
+}
+
+func renderUIVersionJS(versionID, commitSHA string) string {
+	if commitSHA != "" {
+		return fmt.Sprintf("\tself.UI_VERSION = '%s';\n\tself.UI_VERSION_TYPE = 'new-ui';\n\tself.UI_COMMIT_SHA = '%s';\n", versionID, commitSHA)
+	}
+	return fmt.Sprintf("\tself.UI_VERSION = '%s';\n\tself.UI_VERSION_TYPE = 'new-ui';\n", versionID)
+}
+
+func extractCommitSHA(body string) string {
+	m := uiCommitSHARe.FindStringSubmatch(body)
+	if len(m) == 2 {
+		return m[1]
+	}
+	return ""
 }
 
 func rejectRedirect(req *http.Request, via []*http.Request) error {
@@ -168,19 +190,39 @@ func noRedirectHTTPClient(base *http.Client) *http.Client {
 
 var defaultNoRedirectClient = noRedirectHTTPClient(nil)
 
+func resolveDemoGCSBucket(explicitBucket, cloudProject string) string {
+	b := strings.TrimSpace(explicitBucket)
+	proj := strings.TrimSpace(cloudProject)
+	if proj == "luci-milo" && b == defaultDevDemoGCSBucket {
+		return ""
+	}
+	if b != "" {
+		return b
+	}
+	if proj == "luci-milo-dev" {
+		return defaultDevDemoGCSBucket
+	}
+	return ""
+}
+
 func main() {
 	d := &dispatcher{
 		gcsBaseURL:     "https://storage.googleapis.com",
 		upstreamScheme: "https",
-		httpClient:     defaultNoRedirectClient,
 	}
+	flag.StringVar(
+		&d.demoGCSBucket,
+		"demo-gcs-bucket",
+		"",
+		"Optional GCS bucket containing opt-in Gerrit CL UI demo bundles (defaults to luci-milo-dev-temp on luci-milo-dev).",
+	)
 	server.Main(nil, nil, func(srv *server.Server) error {
-		flag.StringVar(
-			&d.demoGCSBucket,
-			"demo-gcs-bucket",
-			"",
-			"Optional GCS bucket containing opt-in Gerrit CL UI demo bundles (e.g. luci-milo-dev-ui-demos).",
-		)
+		d.demoGCSBucket = resolveDemoGCSBucket(d.demoGCSBucket, srv.Options.CloudProject)
+		if d.demoGCSBucket != "" && d.httpClient == nil {
+			if tr, err := auth.GetRPCTransport(srv.Context, auth.AsSelf, auth.WithScopes(gcsReadOnlyScope)); err == nil && tr != nil {
+				d.gcsHTTPClient = noRedirectHTTPClient(&http.Client{Transport: tr})
+			}
+		}
 		srv.Routes.GET("/ui/*path", nil, d.dispatch)
 		srv.Routes.GET("/ui_version.js", nil, d.dispatch)
 		srv.Routes.GET("/root_sw.js", nil, d.dispatch)
@@ -202,6 +244,9 @@ func setSecurityHeaders(h http.Header) {
 func contentTypeForAsset(assetPath string) (contentType string, sandboxCSP bool, ok bool) {
 	if assetPath == "/ui/index.html" {
 		return "text/html; charset=utf-8", false, true
+	}
+	if assetPath == "/ui/ui_version.js" {
+		return "text/javascript; charset=utf-8", false, true
 	}
 	if assetPath == "/ui/manifest.webmanifest" {
 		return "application/manifest+json; charset=utf-8", true, true
@@ -350,18 +395,26 @@ func (d *dispatcher) dispatch(c *router.Context) {
 func (d *dispatcher) tryServeGCSDemo(c *router.Context, demo demoTarget) bool {
 	ctx := c.Request.Context()
 	reqPath := c.Request.URL.Path
+	isHead := c.Request.Method == http.MethodHead
 
 	if reqPath == "/ui_version.js" {
-		if !d.gcsBundleExists(ctx, demo) {
-			return false
+		body, ok := d.fetchGCSVersionJS(ctx, demo)
+		if !ok {
+			if !d.gcsBundleExists(ctx, demo) {
+				return false
+			}
+			body = renderUIVersionJS(demo.VersionID(), "")
 		}
+		bodyBytes := []byte(body)
 		h := c.Writer.Header()
 		setSecurityHeaders(h)
 		h.Set("Content-Type", "text/javascript; charset=utf-8")
+		h.Set("Content-Length", strconv.Itoa(len(bodyBytes)))
 		h.Set("Cache-Control", "no-cache")
-		body := fmt.Sprintf("\tself.UI_VERSION = '%s';\n\tself.UI_VERSION_TYPE = 'new-ui';\n", demo.VersionID())
 		c.Writer.WriteHeader(http.StatusOK)
-		_, _ = c.Writer.Write([]byte(body))
+		if !isHead {
+			_, _ = c.Writer.Write(bodyBytes)
+		}
 		return true
 	}
 
@@ -405,12 +458,16 @@ func (d *dispatcher) tryServeGCSDemo(c *router.Context, demo demoTarget) bool {
 		http.Error(c.Writer, "invalid demo asset path", http.StatusBadRequest)
 		return true
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, objURL.String(), nil)
+	method := http.MethodGet
+	if isHead {
+		method = http.MethodHead
+	}
+	req, err := http.NewRequestWithContext(ctx, method, objURL.String(), nil)
 	if err != nil {
 		return false
 	}
 	req.URL = objURL
-	resp, err := d.client().Do(req)
+	resp, err := d.gcsClient(ctx).Do(req)
 	if err != nil {
 		return false
 	}
@@ -440,6 +497,21 @@ func (d *dispatcher) tryServeGCSDemo(c *router.Context, demo demoTarget) bool {
 		return true
 	}
 
+	var bufferedBody []byte
+	if !isHead && resp.ContentLength < 0 {
+		bufferedBody, err = io.ReadAll(io.LimitReader(resp.Body, maxDemoAssetBytes+1))
+		if err != nil {
+			setSecurityHeaders(c.Writer.Header())
+			http.Error(c.Writer, "upstream demo storage error", http.StatusBadGateway)
+			return true
+		}
+		if int64(len(bufferedBody)) > maxDemoAssetBytes {
+			setSecurityHeaders(c.Writer.Header())
+			http.Error(c.Writer, "demo asset exceeds size limit", http.StatusBadGateway)
+			return true
+		}
+	}
+
 	h := c.Writer.Header()
 	setSecurityHeaders(h)
 	if sandboxCSP {
@@ -447,9 +519,56 @@ func (d *dispatcher) tryServeGCSDemo(c *router.Context, demo demoTarget) bool {
 	}
 	h.Set("Content-Type", contentType)
 	h.Set("Cache-Control", cacheControl)
+	if resp.ContentLength >= 0 {
+		h.Set("Content-Length", strconv.FormatInt(resp.ContentLength, 10))
+	} else if !isHead {
+		h.Set("Content-Length", strconv.Itoa(len(bufferedBody)))
+	}
+	if etag := resp.Header.Get("ETag"); etag != "" {
+		h.Set("ETag", etag)
+	}
+	if lastMod := resp.Header.Get("Last-Modified"); lastMod != "" {
+		h.Set("Last-Modified", lastMod)
+	}
 	c.Writer.WriteHeader(http.StatusOK)
-	_, _ = io.Copy(c.Writer, io.LimitReader(resp.Body, maxDemoAssetBytes))
+	if !isHead {
+		if resp.ContentLength < 0 {
+			_, _ = c.Writer.Write(bufferedBody)
+		} else {
+			_, _ = io.Copy(c.Writer, io.LimitReader(resp.Body, maxDemoAssetBytes))
+		}
+	}
 	return true
+}
+
+func (d *dispatcher) fetchGCSVersionJS(ctx context.Context, demo demoTarget) (string, bool) {
+	verURL, err := d.buildGCSObjectURL(demo, "/ui/ui_version.js")
+	if err != nil {
+		return "", false
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, verURL.String(), nil)
+	if err != nil {
+		return "", false
+	}
+	req.URL = verURL
+	resp, err := d.gcsClient(ctx).Do(req)
+	if err != nil {
+		return "", false
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || resp.ContentLength > 64*1024 {
+		return "", false
+	}
+	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
+	if err != nil {
+		return "", false
+	}
+	bodyStr := string(bodyBytes)
+	if !strings.Contains(bodyStr, "self.UI_VERSION =") || isMismatchedUIVersionJS(bodyStr, demo) {
+		return "", false
+	}
+	commitSHA := extractCommitSHA(bodyStr)
+	return renderUIVersionJS(demo.VersionID(), commitSHA), true
 }
 
 func (d *dispatcher) gcsBundleExists(ctx context.Context, demo demoTarget) bool {
@@ -462,12 +581,26 @@ func (d *dispatcher) gcsBundleExists(ctx context.Context, demo demoTarget) bool 
 		return false
 	}
 	req.URL = indexURL
-	resp, err := d.client().Do(req)
+	resp, err := d.gcsClient(ctx).Do(req)
 	if err != nil {
 		return false
 	}
 	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusOK
+}
+
+func (d *dispatcher) gcsClient(ctx context.Context) *http.Client {
+	if d.httpClient != nil {
+		return noRedirectHTTPClient(d.httpClient)
+	}
+	if d.gcsHTTPClient != nil {
+		return d.gcsHTTPClient
+	}
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(gcsReadOnlyScope))
+	if err != nil || tr == nil {
+		return defaultNoRedirectClient
+	}
+	return noRedirectHTTPClient(&http.Client{Transport: tr})
 }
 
 func (d *dispatcher) client() *http.Client {

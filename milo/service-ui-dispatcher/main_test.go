@@ -63,6 +63,15 @@ func TestParseDemoHost(t *testing.T) {
 			_, ok = parseDemoHost("c8509444-dot-luci-milo-dev.appspot.com:9999")
 			assert.Loosely(t, ok, should.BeFalse)
 		})
+
+		t.Run("resolves default demo GCS bucket only for luci-milo-dev and rejects dev bucket on luci-milo", func(t *ftt.Test) {
+			assert.Loosely(t, resolveDemoGCSBucket("", "luci-milo-dev"), should.Equal(defaultDevDemoGCSBucket))
+			assert.Loosely(t, resolveDemoGCSBucket("", "luci-milo"), should.BeEmpty)
+			assert.Loosely(t, resolveDemoGCSBucket("", ""), should.BeEmpty)
+			assert.Loosely(t, resolveDemoGCSBucket(defaultDevDemoGCSBucket, "luci-milo"), should.BeEmpty)
+			assert.Loosely(t, resolveDemoGCSBucket("custom-demo-bucket", "luci-milo-dev"), should.Equal("custom-demo-bucket"))
+			assert.Loosely(t, resolveDemoGCSBucket("custom-demo-bucket", "luci-milo"), should.Equal("custom-demo-bucket"))
+		})
 	})
 }
 
@@ -82,11 +91,39 @@ func TestGCSStaticDemoServing(t *testing.T) {
 				if r.Method != http.MethodHead {
 					_, _ = w.Write([]byte("<!doctype html><title>Demo c8509444-p2</title>"))
 				}
+			case "/luci-milo-dev-ui-demos/c8509444/latest/ui/index.html":
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusOK)
+				if r.Method != http.MethodHead {
+					_, _ = w.Write([]byte("<!doctype html><title>Demo c8509444</title>"))
+				}
+			case "/luci-milo-dev-ui-demos/c8509444/latest/ui/ui_version.js":
+				w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("\tself.UI_VERSION = 'c8509444';\n\tmaliciousPayload();\n\tself.UI_VERSION_TYPE = 'new-ui';\n\tself.UI_COMMIT_SHA = '6f86e190247751075b5778c4d51d3a7d3eab06f9';\n"))
+			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/manifest.webmanifest":
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				if r.Method != http.MethodHead {
+					_, _ = w.Write([]byte(`{"name":"LUCI UI"}`))
+				}
 			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/immutable/index-abc.js":
 				// Even if GCS returns text/html on a .js object, dispatcher derives text/javascript from extension.
+				body := []byte("console.log('immutable bundle');")
 				w.Header().Set("Content-Type", "text/html")
+				w.Header().Set("ETag", `"etag-index-abc"`)
+				w.Header().Set("Last-Modified", "Mon, 19 Oct 2026 00:00:00 GMT")
+				w.Header().Set("Content-Length", "32")
 				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte("console.log('immutable bundle');"))
+				if r.Method != http.MethodHead {
+					_, _ = w.Write(body)
+				}
+			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/immutable/oversized-asset.js":
+				w.Header().Set("Content-Type", "text/javascript")
+				w.Header().Set("Content-Length", "60000000")
+				w.WriteHeader(http.StatusOK)
+			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/immutable/storage-error.js":
+				w.WriteHeader(http.StatusInternalServerError)
 			case "/luci-milo-dev-ui-demos/c8509444-p2/ui/immutable/logo-123.svg":
 				w.Header().Set("Content-Type", "image/svg+xml")
 				w.WriteHeader(http.StatusOK)
@@ -121,6 +158,67 @@ func TestGCSStaticDemoServing(t *testing.T) {
 			assert.Loosely(t, rec.Header().Get("X-Frame-Options"), should.Equal("SAMEORIGIN"))
 			assert.Loosely(t, rec.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
 			assert.Loosely(t, rec.Body.String(), should.ContainSubstring("self.UI_VERSION = 'c8509444-p2';"))
+		})
+
+		t.Run("serves GCS /ui/ui_version.js with UI_COMMIT_SHA when present in bundle and strips extraneous statements", func(t *ftt.Test) {
+			req := httptest.NewRequest(http.MethodGet, "https://c8509444-dot-luci-milo-dev.appspot.com/ui_version.js", nil)
+			req.Host = "c8509444-dot-luci-milo-dev.appspot.com"
+			rec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: rec, Request: req})
+
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
+			assert.Loosely(t, rec.Body.String(), should.ContainSubstring("self.UI_VERSION = 'c8509444';"))
+			assert.Loosely(t, rec.Body.String(), should.ContainSubstring("self.UI_COMMIT_SHA = '6f86e190247751075b5778c4d51d3a7d3eab06f9';"))
+			assert.Loosely(t, rec.Body.String(), should.NotContainSubstring("maliciousPayload"))
+		})
+
+		t.Run("handles HEAD requests on /ui_version.js and static assets without writing body bytes", func(t *ftt.Test) {
+			headVerReq := httptest.NewRequest(http.MethodHead, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui_version.js", nil)
+			headVerReq.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			headVerRec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: headVerRec, Request: headVerReq})
+
+			assert.Loosely(t, headVerRec.Code, should.Equal(http.StatusOK))
+			assert.Loosely(t, headVerRec.Header().Get("Content-Type"), should.Equal("text/javascript; charset=utf-8"))
+			assert.Loosely(t, headVerRec.Header().Get("Content-Length"), should.NotBeEmpty)
+			assert.Loosely(t, headVerRec.Body.Len(), should.BeZero)
+
+			headAssetReq := httptest.NewRequest(http.MethodHead, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/index-abc.js", nil)
+			headAssetReq.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			headAssetRec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: headAssetRec, Request: headAssetReq})
+
+			assert.Loosely(t, headAssetRec.Code, should.Equal(http.StatusOK))
+			assert.Loosely(t, headAssetRec.Header().Get("Content-Type"), should.Equal("text/javascript; charset=utf-8"))
+			assert.Loosely(t, headAssetRec.Header().Get("Content-Length"), should.Equal("32"))
+			assert.Loosely(t, headAssetRec.Header().Get("ETag"), should.Equal(`"etag-index-abc"`))
+			assert.Loosely(t, headAssetRec.Header().Get("Last-Modified"), should.Equal("Mon, 19 Oct 2026 00:00:00 GMT"))
+			assert.Loosely(t, headAssetRec.Body.Len(), should.BeZero)
+		})
+
+		t.Run("serves /ui/manifest.webmanifest with sandboxed CSP and rejects oversized or 5xx upstream responses", func(t *ftt.Test) {
+			manifestReq := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/manifest.webmanifest", nil)
+			manifestReq.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			manifestRec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: manifestRec, Request: manifestReq})
+
+			assert.Loosely(t, manifestRec.Code, should.Equal(http.StatusOK))
+			assert.Loosely(t, manifestRec.Header().Get("Content-Type"), should.Equal("application/manifest+json; charset=utf-8"))
+			assert.Loosely(t, manifestRec.Header().Get("Content-Security-Policy"), should.ContainSubstring("sandbox"))
+
+			oversizedReq := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/oversized-asset.js", nil)
+			oversizedReq.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			oversizedRec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: oversizedRec, Request: oversizedReq})
+			assert.Loosely(t, oversizedRec.Code, should.Equal(http.StatusBadGateway))
+			assert.Loosely(t, oversizedRec.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
+
+			errReq := httptest.NewRequest(http.MethodGet, "https://c8509444-p2-dot-luci-milo-dev.appspot.com/ui/immutable/storage-error.js", nil)
+			errReq.Host = "c8509444-p2-dot-luci-milo-dev.appspot.com"
+			errRec := httptest.NewRecorder()
+			d.dispatch(&router.Context{Writer: errRec, Request: errReq})
+			assert.Loosely(t, errRec.Code, should.Equal(http.StatusBadGateway))
+			assert.Loosely(t, errRec.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
 		})
 
 		t.Run("serves SPA index.html for deep /ui/* navigation routes including unencoded // in test IDs, encoded test IDs, and spaces", func(t *ftt.Test) {
