@@ -41,8 +41,8 @@ require (
 	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/armon/go-radix v1.0.0
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
-	github.com/bazelbuild/remote-apis v0.0.0-20240926071355-6777112ef7de
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20251007172043-4cdfee7bdc2d
+	github.com/bazelbuild/remote-apis v0.0.0-20260216160025-715b73f3f9e4
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20261016172048-0e08b587cfaf
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/danjacques/gofslock v0.0.0-20240212154529-d899e02bfe22
 	github.com/dgraph-io/badger/v3 v3.2103.2
@@ -63,7 +63,7 @@ require (
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/klauspost/compress v1.18.0
+	github.com/klauspost/compress v1.18.3
 	github.com/leemcloughlin/gofarmhash v0.0.0-20160919192320-0a055c5b87a8
 	github.com/luci/gtreap v0.0.0-20161228054646-35df89791e8f
 	github.com/maruel/subcommands v1.1.1
@@ -168,7 +168,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pkg/xattr v0.4.9 // indirect
+	github.com/pkg/xattr v0.4.12 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/spf13/afero v1.15.0 // indirect

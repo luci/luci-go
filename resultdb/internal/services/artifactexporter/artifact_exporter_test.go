@@ -50,6 +50,7 @@ import (
 )
 
 type fakeCASClient struct {
+	repb.ContentAddressableStorageClient
 	ResponseData      map[string][]byte
 	ResponseErrorCode map[string]int
 	Err               error

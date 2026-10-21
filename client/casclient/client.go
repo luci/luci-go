@@ -238,6 +238,12 @@ func Options() []client.Opt {
 
 	return []client.Opt{
 		client.CASConcurrency(casConcurrency),
+		// Enable concurrent file hashing during Merkle tree construction.
+		// Cap at 30 on large multi-core machines: scaling beyond this yields
+		// diminishing SHA-256 and disk I/O returns while increasing contention
+		// behind the single-threaded directory walker, and capping at 30 leaves
+		// headroom when multiple cas archive processes run concurrently.
+		client.FileHashConcurrency(min(30, runtime.NumCPU())),
 		client.UtilizeLocality(true),
 		&client.TreeSymlinkOpts{
 			// Symlinks will be uploaded as-is...
