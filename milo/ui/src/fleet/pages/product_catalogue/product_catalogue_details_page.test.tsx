@@ -632,4 +632,69 @@ describe('ProductCatalogDetailsPage', () => {
       '2. existing_photo_1.webp (retained catalog image)',
     );
   });
+
+  it('validates inline spec edits, supports click-to-edit, and combines diffs in the prompt', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ATB-000',
+          productName: 'Android OmniLab Enclosure',
+          gpn: '1055297-01',
+          descriptiveName: 'Standard 16-slot testbed enclosure',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'GA',
+          r11n: ['r11n-atb'],
+          numberOfDevicesPerRack: 4,
+          unitCost: '26645',
+          productType: 'android-testbed',
+          photoDataUris: ['data:image/webp;base64,mock-hero-photo-1'],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('ATB-000');
+
+    // Click directly on an editable specification cell in read mode to enter edit mode
+    const gpnReadCell = await screen.findByTestId('spec-cell-gpn');
+    fireEvent.click(gpnReadCell);
+
+    const gpnInput = await screen.findByTestId('spec-input-gpn');
+    const unitCostInput = screen.getByTestId('spec-input-unitCost');
+
+    // Enter an invalid GPN and verify inline error + disabled prompt button in toast
+    fireEvent.change(gpnInput, { target: { value: 'invalid-gpn!' } });
+    expect(
+      screen.getAllByText(/Enter a valid part number/i).length,
+    ).toBeGreaterThanOrEqual(1);
+    const toastWithError = await screen.findByTestId('unsaved-changes-toast');
+    expect(toastWithError).toHaveTextContent('1 validation error');
+    expect(toastWithError).toHaveTextContent(/Enter a valid part number/i);
+    expect(screen.getByTestId('review-generate-prompt-btn')).toBeDisabled();
+
+    // Fix GPN and update Unit Cost
+    fireEvent.change(gpnInput, { target: { value: '1055297-02' } });
+    fireEvent.change(unitCostInput, { target: { value: '28500' } });
+
+    expect(screen.getByTestId('unsaved-changes-toast')).toHaveTextContent(
+      '2 unsaved changes',
+    );
+    expect(screen.getByTestId('review-generate-prompt-btn')).not.toBeDisabled();
+
+    fireEvent.click(screen.getByTestId('review-generate-prompt-btn'));
+    const promptPre = await screen.findByTestId('generated-catalog-prompt');
+    expect(promptPre).toHaveTextContent('GPN: 1055297-01 -> 1055297-02');
+    expect(promptPre).toHaveTextContent('Unit Cost: 26645 -> 28500');
+    expect(screen.getByTestId('handoff-guidance')).toHaveTextContent(
+      /Copied prompt for ATB-000/i,
+    );
+
+    // Verify Discard resets edits and hides the toast
+    fireEvent.click(screen.getByTestId('discard-catalog-edits-btn'));
+    expect(
+      screen.queryByTestId('unsaved-changes-toast'),
+    ).not.toBeInTheDocument();
+  });
 });

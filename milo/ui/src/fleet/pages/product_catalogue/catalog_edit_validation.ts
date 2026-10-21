@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CatalogDiffItem } from './catalog_edit_prompt_dialog';
 import { UnifiedProductCatalogEntry } from './types';
 
 export const MIN_PHOTO_WIDTH = 220;
@@ -29,8 +30,247 @@ export const PRODUCT_CATALOG_DOCS_URL =
 export const CAPTAIN_FIN_CHAT_URL = 'http://goto.google.com/captain-fin';
 export const JETSKI_WEB_BASE_URL = 'http://goto.google.com/jetski-web';
 
+export const ALLOWED_PLM_STATUSES = [
+  'GA',
+  'LA',
+  'NPI',
+  'EOL',
+  'DEPRECATED',
+  'ACTIVE',
+] as const;
+
+export interface CatalogEditableFields {
+  readonly productName: string;
+  readonly descriptiveName: string;
+  readonly gpn: string;
+  readonly resourceType: string;
+  readonly fleetPlmStatus: string;
+  readonly r11n: string;
+  readonly numberOfDevicesPerRack: string;
+  readonly unitCost: string;
+}
+
+export type CatalogEditableFieldKey = keyof CatalogEditableFields;
+
+export const EDITABLE_SPEC_FIELD_BY_HEADER: Readonly<
+  Record<string, CatalogEditableFieldKey>
+> = {
+  'Product Name': 'productName',
+  GPN: 'gpn',
+  'Descriptive Name': 'descriptiveName',
+  'Resource Type': 'resourceType',
+  'Fleet PLM Status': 'fleetPlmStatus',
+  R11N: 'r11n',
+  'Number of Devices Per Rack': 'numberOfDevicesPerRack',
+  'Unit Cost': 'unitCost',
+};
+
 const ALLOWED_PHOTO_URL_PREFIX_RE =
   /^(?:https:\/\/\S+|http:\/\/(?:screen|screenshot)\/[A-Za-z0-9_.-]+|http:\/\/goto\.google\.com\/\S+|data:image\/(?:webp|png|jpeg|jpg|gif);base64,[A-Za-z0-9+/=_-]+)$/i;
+
+const GPN_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/;
+const R11N_TOKEN_RE = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * Creates the initial editable specification draft from a catalog entry.
+ */
+export function createCatalogEditableDraft(
+  entry: UnifiedProductCatalogEntry,
+): CatalogEditableFields {
+  return {
+    productName: entry.productName ?? '',
+    descriptiveName: entry.descriptiveName ?? '',
+    gpn: entry.gpn ?? '',
+    resourceType: entry.resourceType ?? '',
+    fleetPlmStatus: entry.fleetPlmStatus ?? '',
+    r11n: (entry.r11n ?? []).join(', '),
+    numberOfDevicesPerRack:
+      entry.numberOfDevicesPerRack !== undefined &&
+      entry.numberOfDevicesPerRack !== null
+        ? String(entry.numberOfDevicesPerRack)
+        : '',
+    unitCost: entry.unitCost ?? '',
+  };
+}
+
+/**
+ * Validates a single editable specification field and returns an error string if invalid.
+ */
+export function validateCatalogSpecField(
+  field: CatalogEditableFieldKey,
+  rawValue: string,
+): string | undefined {
+  const trimmed = rawValue.trim();
+
+  switch (field) {
+    case 'productName':
+      if (!trimmed) {
+        return 'Product Name: Required field.';
+      }
+      if (trimmed.length > 120) {
+        return 'Product Name: Must be 120 characters or fewer.';
+      }
+      return undefined;
+
+    case 'descriptiveName':
+      if (trimmed.length > 240) {
+        return 'Descriptive Name: Must be 240 characters or fewer.';
+      }
+      return undefined;
+
+    case 'gpn':
+      if (!trimmed) return undefined;
+      if (!GPN_RE.test(trimmed)) {
+        return 'GPN: Enter a valid part number (e.g. 1055297-01).';
+      }
+      return undefined;
+
+    case 'resourceType':
+      if (!trimmed) {
+        return 'Resource Type: Required field.';
+      }
+      if (trimmed.length > 64) {
+        return 'Resource Type: Must be 64 characters or fewer.';
+      }
+      return undefined;
+
+    case 'fleetPlmStatus':
+      if (!trimmed) {
+        return 'Fleet PLM Status: Required field.';
+      }
+      if (
+        !ALLOWED_PLM_STATUSES.includes(
+          trimmed.toUpperCase() as (typeof ALLOWED_PLM_STATUSES)[number],
+        )
+      ) {
+        return `Fleet PLM Status: Must be one of ${ALLOWED_PLM_STATUSES.join(', ')}.`;
+      }
+      return undefined;
+
+    case 'r11n': {
+      if (!trimmed) return undefined;
+      const tokens = trimmed
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+      if (!tokens.length) {
+        return 'R11N: Enter at least one valid build ID or clear the field.';
+      }
+      const invalid = tokens.find((t) => !R11N_TOKEN_RE.test(t));
+      if (invalid) {
+        return `R11N: Invalid build ID "${invalid}". Use comma-separated IDs (e.g. r11n-atb).`;
+      }
+      return undefined;
+    }
+
+    case 'numberOfDevicesPerRack': {
+      if (!trimmed) return undefined;
+      if (!/^\d+$/.test(trimmed)) {
+        return 'Devices per Rack: Enter a whole number between 0 and 500.';
+      }
+      const num = Number(trimmed);
+      if (!Number.isInteger(num) || num < 0 || num > 500) {
+        return 'Devices per Rack: Enter a whole number between 0 and 500.';
+      }
+      return undefined;
+    }
+
+    case 'unitCost': {
+      if (!trimmed) return undefined;
+      const normalized = trimmed.replace(/^\$/, '').replace(/,/g, '').trim();
+      const num = Number(normalized);
+      if (!normalized || Number.isNaN(num) || num < 0 || num > 10_000_000) {
+        return 'Unit Cost: Enter a valid non-negative USD amount (e.g. 26645).';
+      }
+      return undefined;
+    }
+  }
+}
+
+function normalizeCatalogSpecValue(
+  key: CatalogEditableFieldKey,
+  rawValue: string,
+): string {
+  const trimmed = rawValue.trim();
+  if (!trimmed) return '';
+  switch (key) {
+    case 'fleetPlmStatus':
+      return trimmed.toUpperCase();
+    case 'unitCost':
+      return trimmed.replace(/^\$/, '').replace(/,/g, '').trim();
+    case 'r11n':
+      return trimmed
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .join(', ');
+    default:
+      return trimmed;
+  }
+}
+
+/**
+ * Validates modified specification fields and returns a map of field errors.
+ * Fields whose normalized value matches the baseline are skipped so pre-existing
+ * empty or non-standard values never trigger false-positive errors.
+ */
+export function validateAllCatalogSpecFields(
+  draft: CatalogEditableFields,
+  baseline?: CatalogEditableFields,
+): Partial<Record<CatalogEditableFieldKey, string>> {
+  const errors: Partial<Record<CatalogEditableFieldKey, string>> = {};
+  (Object.keys(draft) as CatalogEditableFieldKey[]).forEach((key) => {
+    if (
+      baseline &&
+      Boolean(draft[key].trim()) === Boolean(baseline[key].trim()) &&
+      normalizeCatalogSpecValue(key, draft[key]) ===
+        normalizeCatalogSpecValue(key, baseline[key])
+    ) {
+      return;
+    }
+    const err = validateCatalogSpecField(key, draft[key]);
+    if (err) {
+      errors[key] = err;
+    }
+  });
+  return errors;
+}
+
+/**
+ * Computes field-level diffs between the original catalog entry and the edited specification draft.
+ */
+export function computeCatalogSpecDiffs(
+  entry: UnifiedProductCatalogEntry,
+  draft: CatalogEditableFields,
+): CatalogDiffItem[] {
+  const baseline = createCatalogEditableDraft(entry);
+  const diffs: CatalogDiffItem[] = [];
+
+  const fieldLabels: Record<CatalogEditableFieldKey, string> = {
+    productName: 'Product Name',
+    descriptiveName: 'Descriptive Name',
+    gpn: 'GPN',
+    resourceType: 'Resource Type',
+    fleetPlmStatus: 'Fleet PLM Status',
+    r11n: 'R11N',
+    numberOfDevicesPerRack: 'Number of Devices Per Rack',
+    unitCost: 'Unit Cost',
+  };
+
+  (Object.keys(fieldLabels) as CatalogEditableFieldKey[]).forEach((key) => {
+    const beforeVal = normalizeCatalogSpecValue(key, baseline[key]);
+    const afterVal = normalizeCatalogSpecValue(key, draft[key]);
+    if (beforeVal !== afterVal) {
+      diffs.push({
+        label: fieldLabels[key],
+        before: beforeVal || '—',
+        after: afterVal || '—',
+      });
+    }
+  });
+
+  return diffs;
+}
 
 /**
  * Validates a candidate reference photo URL before staging it.
@@ -108,11 +348,12 @@ export function buildBulkDropboxSyncPrompt(productCatalogId: string): string {
 }
 
 /**
- * Builds a deterministic prompt for updating Product Catalog photos via Jetski or Captain Fin.
+ * Builds a deterministic prompt for updating Product Catalog photos and/or metadata specs via Jetski or Captain Fin.
  */
 export function buildCatalogPhotoEditPrompt(
   entry: UnifiedProductCatalogEntry,
   stagedPhotos: readonly string[],
+  specDiffs: readonly CatalogDiffItem[] = [],
   reasonNote?: string,
 ): string {
   const originalPhotos = entry.photoDataUris ?? [];
@@ -128,6 +369,13 @@ export function buildCatalogPhotoEditPrompt(
       'configs/fleet-console-prod/products/ using the fcon-product-catalog skill:',
     ].join(' '),
   ];
+
+  if (specDiffs.length > 0) {
+    lines.push('', 'Specification Field Updates:');
+    specDiffs.forEach((diff) => {
+      lines.push(`- ${diff.label}: ${diff.before} -> ${diff.after}`);
+    });
+  }
 
   if (hasPhotoChanges) {
     const prevSummary =

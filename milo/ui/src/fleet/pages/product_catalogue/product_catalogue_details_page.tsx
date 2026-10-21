@@ -13,13 +13,17 @@
 // limitations under the License.
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckIcon from '@mui/icons-material/Check';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import {
   Alert,
   Box,
+  Button,
   IconButton,
+  InputAdornment,
   Link,
   TextField,
   Tooltip,
@@ -30,7 +34,7 @@ import {
   MRT_ColumnDef,
   MRT_Row,
 } from 'material-react-table';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
@@ -61,15 +65,23 @@ import {
   iconSizes,
   radii,
   StatusTone,
+  statusTones,
 } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import { CatalogPhotoEditDialog } from './catalog_edit_prompt_dialog';
 import {
+  ALLOWED_PLM_STATUSES,
   arePhotoListsEqual,
   buildCatalogPhotoEditPrompt,
+  CatalogEditableFieldKey,
+  CatalogEditableFields,
+  computeCatalogSpecDiffs,
+  createCatalogEditableDraft,
+  EDITABLE_SPEC_FIELD_BY_HEADER,
   MAX_PHOTOS_PER_ENTRY,
+  validateAllCatalogSpecFields,
   validatePhotoDimensions,
   validatePhotoUrlInput,
 } from './catalog_edit_validation';
@@ -83,12 +95,21 @@ import { useProductCatalogDetailsData } from './use_product_catalog_details_data
 interface DetailRow {
   readonly key: string;
   readonly rawValue: unknown;
+  readonly entry?: UnifiedProductCatalogEntry;
+  readonly draftValue?: string;
+  readonly baselineValue?: string;
+  readonly errorMsg?: string;
 }
 
 interface DetailValueCellProps {
   readonly row: MRT_Row<DetailRow>;
-  readonly entry: UnifiedProductCatalogEntry | undefined;
   readonly isRevampEnabled?: boolean;
+  readonly isEditingSpecs?: boolean;
+  readonly onStartEditingSpecs?: () => void;
+  readonly onSpecFieldChange?: (
+    field: CatalogEditableFieldKey,
+    value: string,
+  ) => void;
 }
 
 const GCE_ONLY_ACCESSORS = new Set<keyof UnifiedProductCatalogEntry>([
@@ -172,92 +193,297 @@ const formatUnitCost = (unitCost?: string) => {
 
 const DetailValueCell = ({
   row,
-  entry,
   isRevampEnabled = false,
+  isEditingSpecs = false,
+  onStartEditingSpecs,
+  onSpecFieldChange,
 }: DetailValueCellProps) => {
   const fieldKey = row.original.key;
   const rawValue = row.original.rawValue;
+  const entry = row.original.entry;
+  const editableFieldKey = EDITABLE_SPEC_FIELD_BY_HEADER[fieldKey];
+  const resolvedType = resolveProductType(
+    entry?.productType,
+    entry?.productCatalogId,
+  );
+  const isGce = resolvedType === 'gce';
 
-  const col = COLUMNS.find((c) => c.header === fieldKey);
-  if (!col) return <>{String(rawValue ?? '')}</>;
+  if (
+    isEditingSpecs &&
+    !isGce &&
+    editableFieldKey &&
+    row.original.draftValue !== undefined &&
+    onSpecFieldChange
+  ) {
+    const currentVal = row.original.draftValue;
+    const baselineVal = row.original.baselineValue ?? '';
+    const isModified = currentVal.trim() !== baselineVal.trim();
+    const errorMsg = row.original.errorMsg;
 
-  const accessor = col.accessorKey as keyof UnifiedProductCatalogEntry;
-
-  if (accessor === 'productCatalogId') {
-    if (!isRevampEnabled) {
-      return <>{String(rawValue ?? '')}</>;
-    }
     return (
-      <Typography
-        variant="body2"
+      <Box
         sx={{
-          fontFamily: fontFamilies.mono,
-          fontWeight: 500,
+          width: '100%',
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          height: 32,
+          py: 0,
         }}
       >
-        {String(rawValue ?? '')}
-      </Typography>
+        <TextField
+          size="small"
+          fullWidth
+          value={currentVal}
+          error={Boolean(errorMsg)}
+          title={errorMsg || undefined}
+          onChange={(e) => onSpecFieldChange(editableFieldKey, e.target.value)}
+          sx={{
+            mx: -0.5,
+            width: 'calc(100% + 8px)',
+            '& .MuiInputBase-root': {
+              height: 30,
+              fontSize: fontSizes.body,
+              pr: 0.5,
+              backgroundColor: fleetColors.surface,
+            },
+            ...(isModified && !errorMsg
+              ? {
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: fleetColors.primary,
+                    borderWidth: '1.5px',
+                  },
+                }
+              : {}),
+            '& .MuiOutlinedInput-input': {
+              py: 0.25,
+              pl: '7px',
+              pr: 1,
+            },
+          }}
+          slotProps={{
+            htmlInput: {
+              'data-testid': `spec-input-${editableFieldKey}`,
+              'aria-label': `Edit ${fieldKey}`,
+              ...(editableFieldKey === 'fleetPlmStatus'
+                ? { list: 'catalog-plm-status-options' }
+                : {}),
+            },
+            input: {
+              endAdornment:
+                isModified || errorMsg ? (
+                  <InputAdornment position="end" sx={{ ml: 0.5 }}>
+                    {errorMsg && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: statusTones.error.fg,
+                          fontWeight: 500,
+                          maxWidth: 260,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          mr: isModified ? 0.5 : 0,
+                        }}
+                      >
+                        {errorMsg}
+                      </Typography>
+                    )}
+                    {isModified && (
+                      <Tooltip title={`Reset to ${baselineVal || 'empty'}`}>
+                        <IconButton
+                          size="small"
+                          aria-label={`Reset ${fieldKey}`}
+                          onClick={() =>
+                            onSpecFieldChange(editableFieldKey, baselineVal)
+                          }
+                          sx={{
+                            p: 0.25,
+                            color: fleetColors.primary,
+                          }}
+                        >
+                          <RestartAltIcon
+                            sx={{ fontSize: iconSizes.control }}
+                          />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </InputAdornment>
+                ) : undefined,
+            },
+          }}
+        />
+        {editableFieldKey === 'fleetPlmStatus' && (
+          <datalist id="catalog-plm-status-options">
+            {ALLOWED_PLM_STATUSES.map((status) => (
+              <option key={status} value={status} />
+            ))}
+          </datalist>
+        )}
+      </Box>
     );
   }
 
-  if (isRevampEnabled && accessor === 'fleetPlmStatus') {
-    const statusStr = String(rawValue ?? '').trim();
-    if (!statusStr) return <>—</>;
-    return (
-      <StatusPill tone={getPlmStatusTone(statusStr)} size="compact" dot={false}>
-        {statusStr}
-      </StatusPill>
-    );
-  }
+  const renderReadOnlyContent = () => {
+    const col = COLUMNS.find((c) => c.header === fieldKey);
+    if (!col) return <>{String(rawValue ?? '')}</>;
 
-  if (isRevampEnabled && accessor === 'unitCost') {
-    return <>{formatUnitCost(String(rawValue ?? ''))}</>;
-  }
+    const accessor = col.accessorKey as keyof UnifiedProductCatalogEntry;
 
-  if (col.Cell && entry) {
-    if (
-      isRevampEnabled &&
-      (!rawValue ||
-        (Array.isArray(rawValue) &&
-          rawValue.filter((v) => String(v ?? '').trim()).length === 0))
-    ) {
+    if (accessor === 'productCatalogId') {
+      if (!isRevampEnabled) {
+        return <>{String(rawValue ?? '')}</>;
+      }
+      return (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: fontFamilies.mono,
+            fontWeight: 500,
+          }}
+        >
+          {String(rawValue ?? '')}
+        </Typography>
+      );
+    }
+
+    if (isRevampEnabled && accessor === 'fleetPlmStatus') {
+      const statusStr = String(rawValue ?? '').trim();
+      if (!statusStr) return <>—</>;
+      return (
+        <StatusPill
+          tone={getPlmStatusTone(statusStr)}
+          size="compact"
+          dot={false}
+        >
+          {statusStr}
+        </StatusPill>
+      );
+    }
+
+    if (isRevampEnabled && accessor === 'unitCost') {
+      return <>{formatUnitCost(String(rawValue ?? ''))}</>;
+    }
+
+    if (col.Cell && entry) {
+      if (
+        isRevampEnabled &&
+        (!rawValue ||
+          (Array.isArray(rawValue) &&
+            rawValue.filter((v) => String(v ?? '').trim()).length === 0))
+      ) {
+        return <>—</>;
+      }
+      // SAFETY: We cast the column's Cell renderer to a component accepting our mocked
+      // props. This is safe because our cell renderers in COLUMNS only rely on
+      // cell.getValue() and row.original, which we mock here with compatible shapes.
+      const CellRenderer = col.Cell as unknown as React.ComponentType<{
+        cell: { getValue: () => unknown };
+        row: { original: UnifiedProductCatalogEntry };
+        column: typeof col;
+        table: Record<string, never>;
+      }>;
+
+      return (
+        <CellRenderer
+          cell={{
+            getValue: () => rawValue,
+          }}
+          row={{
+            original: entry,
+          }}
+          column={col}
+          table={{}}
+        />
+      );
+    }
+
+    if (Array.isArray(rawValue)) {
+      const joined = rawValue.join(', ').trim();
+      return <>{joined || (isRevampEnabled ? '—' : '')}</>;
+    }
+
+    const strValue = String(rawValue ?? '').trim();
+    if (!strValue && isRevampEnabled) {
       return <>—</>;
     }
-    // SAFETY: We cast the column's Cell renderer to a component accepting our mocked
-    // props. This is safe because our cell renderers in COLUMNS only rely on
-    // cell.getValue() and row.original, which we mock here with compatible shapes.
-    const CellRenderer = col.Cell as unknown as React.ComponentType<{
-      cell: { getValue: () => unknown };
-      row: { original: UnifiedProductCatalogEntry };
-      column: typeof col;
-      table: Record<string, never>;
-    }>;
+
+    return <>{String(rawValue ?? '')}</>;
+  };
+
+  if (
+    !isEditingSpecs &&
+    isRevampEnabled &&
+    !isGce &&
+    editableFieldKey &&
+    onStartEditingSpecs
+  ) {
+    const isModifiedInReadMode =
+      row.original.draftValue !== undefined &&
+      row.original.baselineValue !== undefined &&
+      row.original.draftValue.trim() !== row.original.baselineValue.trim();
 
     return (
-      <CellRenderer
-        cell={{
-          getValue: () => rawValue,
+      <Box
+        role={editableFieldKey === 'r11n' ? undefined : 'button'}
+        aria-label={
+          editableFieldKey === 'r11n' ? undefined : `Edit ${fieldKey}`
+        }
+        tabIndex={editableFieldKey === 'r11n' ? undefined : 0}
+        data-testid={`spec-cell-${editableFieldKey}`}
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest('a')) return;
+          onStartEditingSpecs();
         }}
-        row={{
-          original: entry,
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if ((e.target as HTMLElement).closest('a')) return;
+            e.preventDefault();
+            onStartEditingSpecs();
+          }
         }}
-        column={col}
-        table={{}}
-      />
+        title={`Click to edit ${fieldKey}`}
+        sx={{
+          ...focusRingSx,
+          width: '100%',
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1,
+          px: 0.75,
+          mx: -0.75,
+          borderRadius: radii.sm,
+          cursor: 'pointer',
+          backgroundColor: 'transparent',
+          '&:hover': {
+            backgroundColor: fleetColors.surfaceTonal,
+            '& .row-edit-affordance': {
+              opacity: 1,
+            },
+          },
+        }}
+      >
+        <Box sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {renderReadOnlyContent()}
+        </Box>
+        <EditOutlinedIcon
+          className="row-edit-affordance"
+          sx={{
+            fontSize: 14,
+            color: isModifiedInReadMode
+              ? fleetColors.primary
+              : fleetColors.textSecondary,
+            opacity: isModifiedInReadMode ? 0.9 : 0,
+            flexShrink: 0,
+            transition: 'opacity 0.15s ease-in-out',
+          }}
+        />
+      </Box>
     );
   }
 
-  if (Array.isArray(rawValue)) {
-    const joined = rawValue.join(', ').trim();
-    return <>{joined || (isRevampEnabled ? '—' : '')}</>;
-  }
-
-  const strValue = String(rawValue ?? '').trim();
-  if (!strValue && isRevampEnabled) {
-    return <>—</>;
-  }
-
-  return <>{String(rawValue ?? '')}</>;
+  return renderReadOnlyContent();
 };
 
 const useNavigatedFromLink = () => {
@@ -829,8 +1055,12 @@ export const ProductCatalogDetailsPage = () => {
   );
 
   const [isPhotoEditorOpen, setIsPhotoEditorOpen] = useState(false);
+  const [isEditingSpecs, setIsEditingSpecs] = useState(false);
   const [stagedPhotosOverride, setStagedPhotosOverride] = useState<
     readonly string[] | undefined
+  >(undefined);
+  const [specDraftOverride, setSpecDraftOverride] = useState<
+    CatalogEditableFields | undefined
   >(undefined);
   const [photoUrlDraft, setPhotoUrlDraft] = useState('');
   const [photoInputError, setPhotoInputError] = useState<string | undefined>(
@@ -844,17 +1074,77 @@ export const ProductCatalogDetailsPage = () => {
   // Reset staged edits when switching catalog entries.
   useEffect(() => {
     setStagedPhotosOverride(undefined);
+    setSpecDraftOverride(undefined);
     setIsPhotoEditorOpen(false);
+    setIsEditingSpecs(false);
     setPhotoUrlDraft('');
     setPhotoInputError(undefined);
     setPhotoDimensionErrors({});
     setCopiedPrompt(false);
   }, [id]);
 
+  const baselineSpecDraft = useMemo(
+    () =>
+      entry
+        ? createCatalogEditableDraft(entry)
+        : {
+            productName: '',
+            descriptiveName: '',
+            gpn: '',
+            resourceType: '',
+            fleetPlmStatus: '',
+            r11n: '',
+            numberOfDevicesPerRack: '',
+            unitCost: '',
+          },
+    [entry],
+  );
+  const activeSpecDraft = specDraftOverride ?? baselineSpecDraft;
+
+  const specErrors = useMemo(
+    () =>
+      specDraftOverride
+        ? validateAllCatalogSpecFields(activeSpecDraft, baselineSpecDraft)
+        : {},
+    [activeSpecDraft, baselineSpecDraft, specDraftOverride],
+  );
+
+  const specDiffs = useMemo(
+    () =>
+      entry && specDraftOverride
+        ? computeCatalogSpecDiffs(entry, activeSpecDraft)
+        : [],
+    [activeSpecDraft, entry, specDraftOverride],
+  );
+
+  const displayEntry = useMemo<UnifiedProductCatalogEntry | undefined>(() => {
+    if (!entry) return undefined;
+    if (!specDraftOverride) return entry;
+    const rawRackCount = activeSpecDraft.numberOfDevicesPerRack.trim();
+    const parsedRackCount = Number(rawRackCount);
+    return {
+      ...entry,
+      productName: activeSpecDraft.productName.trim(),
+      descriptiveName: activeSpecDraft.descriptiveName.trim(),
+      gpn: activeSpecDraft.gpn.trim(),
+      resourceType: activeSpecDraft.resourceType.trim(),
+      fleetPlmStatus: activeSpecDraft.fleetPlmStatus.trim(),
+      r11n: activeSpecDraft.r11n
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      numberOfDevicesPerRack:
+        rawRackCount !== '' && !Number.isNaN(parsedRackCount)
+          ? parsedRackCount
+          : undefined,
+      unitCost: activeSpecDraft.unitCost.trim(),
+    };
+  }, [activeSpecDraft, entry, specDraftOverride]);
+
   const stagedPhotos = stagedPhotosOverride ?? originalPhotos;
   const hasPhotoChanges =
     entry !== undefined && !arePhotoListsEqual(originalPhotos, stagedPhotos);
-  const dirtyCount = hasPhotoChanges ? 1 : 0;
+  const dirtyCount = specDiffs.length + (hasPhotoChanges ? 1 : 0);
 
   const activeDimensionErrorMessages = stagedPhotos
     .filter(
@@ -862,8 +1152,23 @@ export const ProductCatalogDetailsPage = () => {
         Boolean(photoDimensionErrors[uri]) && !originalPhotos.includes(uri),
     )
     .map((uri) => photoDimensionErrors[uri]);
-  const validationErrorCount = activeDimensionErrorMessages.length;
-  const firstValidationErrorMessage = activeDimensionErrorMessages[0];
+  const specErrorMessages = Object.values(specErrors).filter(
+    (msg): msg is string => Boolean(msg),
+  );
+  const validationErrorCount =
+    activeDimensionErrorMessages.length + specErrorMessages.length;
+  const firstValidationErrorMessage =
+    specErrorMessages[0] ?? activeDimensionErrorMessages[0];
+
+  const handleSpecFieldChange = useCallback(
+    (field: CatalogEditableFieldKey, value: string) => {
+      setSpecDraftOverride((prev) => ({
+        ...(prev ?? baselineSpecDraft),
+        [field]: value,
+      }));
+    },
+    [baselineSpecDraft],
+  );
 
   const handleStagePhotoUrl = () => {
     const err = validatePhotoUrlInput(photoUrlDraft, stagedPhotos);
@@ -901,6 +1206,7 @@ export const ProductCatalogDetailsPage = () => {
 
   const handleDiscardEdits = () => {
     setStagedPhotosOverride(undefined);
+    setSpecDraftOverride(undefined);
     setPhotoUrlDraft('');
     setPhotoInputError(undefined);
     setPhotoDimensionErrors({});
@@ -927,8 +1233,8 @@ export const ProductCatalogDetailsPage = () => {
 
   const generatedPrompt = useMemo(() => {
     if (!entry) return '';
-    return buildCatalogPhotoEditPrompt(entry, stagedPhotos);
-  }, [entry, stagedPhotos]);
+    return buildCatalogPhotoEditPrompt(entry, stagedPhotos, specDiffs);
+  }, [entry, specDiffs, stagedPhotos]);
 
   useEffect(() => {
     setCopiedPrompt(false);
@@ -954,6 +1260,12 @@ export const ProductCatalogDetailsPage = () => {
       setCopiedPrompt(false);
     }
   };
+
+  const resolvedProductType = resolveProductType(
+    entry?.productType,
+    entry?.productCatalogId,
+  );
+  const isGceEntry = resolvedProductType === 'gce';
 
   const columns = useMemo<MRT_ColumnDef<DetailRow>[]>(
     () => [
@@ -984,6 +1296,76 @@ export const ProductCatalogDetailsPage = () => {
       {
         accessorKey: 'rawValue',
         header: 'Value',
+        Header: () => (
+          <Box
+            sx={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+            }}
+          >
+            <span>Value</span>
+            {isRevampEnabled && !isGceEntry && (
+              <Tooltip
+                title={
+                  isEditingSpecs
+                    ? 'Done editing specifications'
+                    : 'Edit specifications'
+                }
+              >
+                <Button
+                  size="small"
+                  aria-label={
+                    isEditingSpecs
+                      ? 'Done editing specifications'
+                      : 'Edit specifications'
+                  }
+                  onClick={() => setIsEditingSpecs((prev) => !prev)}
+                  data-testid="toggle-spec-editor-btn"
+                  startIcon={
+                    isEditingSpecs ? (
+                      <CheckIcon sx={{ fontSize: 14 }} />
+                    ) : (
+                      <EditOutlinedIcon sx={{ fontSize: 14 }} />
+                    )
+                  }
+                  sx={{
+                    ml: 'auto',
+                    minHeight: 24,
+                    height: 24,
+                    py: 0,
+                    px: 1,
+                    borderRadius: radii.pill,
+                    fontSize: fontSizes.caption,
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    border: borders.default,
+                    backgroundColor: isEditingSpecs
+                      ? fleetColors.primaryContainer
+                      : fleetColors.surface,
+                    color: isEditingSpecs
+                      ? fleetColors.primary
+                      : fleetColors.textSecondary,
+                    '& .MuiButton-startIcon': {
+                      mr: 0.5,
+                      ml: 0,
+                    },
+                    '&:hover': {
+                      backgroundColor: fleetColors.surfaceTonal,
+                      color: fleetColors.primary,
+                    },
+                  }}
+                >
+                  <Box component="span" aria-hidden="true">
+                    {isEditingSpecs ? 'Done' : 'Edit'}
+                  </Box>
+                </Button>
+              </Tooltip>
+            )}
+          </Box>
+        ),
         size: 240,
         grow: 1,
         muiTableBodyCellProps: {
@@ -1004,20 +1386,23 @@ export const ProductCatalogDetailsPage = () => {
         Cell: ({ row }: { readonly row: MRT_Row<DetailRow> }) => (
           <DetailValueCell
             row={row}
-            entry={entry}
             isRevampEnabled={isRevampEnabled}
+            isEditingSpecs={isEditingSpecs}
+            onStartEditingSpecs={() => setIsEditingSpecs(true)}
+            onSpecFieldChange={handleSpecFieldChange}
           />
         ),
       },
     ],
-    [entry, isRevampEnabled],
+    [handleSpecFieldChange, isEditingSpecs, isGceEntry, isRevampEnabled],
   );
 
   const data = useMemo<DetailRow[]>(() => {
-    if (!entry) return [];
+    const activeEntry = displayEntry ?? entry;
+    if (!activeEntry) return [];
     const resolvedType = resolveProductType(
-      entry.productType,
-      entry.productCatalogId,
+      activeEntry.productType,
+      activeEntry.productCatalogId,
     );
     const isGce = resolvedType === 'gce';
     const filteredCols = isRevampEnabled
@@ -1031,16 +1416,29 @@ export const ProductCatalogDetailsPage = () => {
 
     return filteredCols.map((col) => {
       const accessor = col.accessorKey as keyof UnifiedProductCatalogEntry;
+      const header = col.header as string;
+      const editableKey = EDITABLE_SPEC_FIELD_BY_HEADER[header];
       const val =
         isRevampEnabled && accessor === 'productType'
-          ? entry.productType || resolvedType
-          : entry[accessor];
+          ? activeEntry.productType || resolvedType
+          : activeEntry[accessor];
       return {
-        key: col.header as string,
+        key: header,
         rawValue: val,
+        entry: activeEntry,
+        draftValue: editableKey ? activeSpecDraft[editableKey] : undefined,
+        baselineValue: editableKey ? baselineSpecDraft[editableKey] : undefined,
+        errorMsg: editableKey ? specErrors[editableKey] : undefined,
       };
     });
-  }, [entry, isRevampEnabled]);
+  }, [
+    activeSpecDraft,
+    baselineSpecDraft,
+    displayEntry,
+    entry,
+    isRevampEnabled,
+    specErrors,
+  ]);
 
   const table = useFCDataTable({
     columns,
@@ -1074,6 +1472,17 @@ export const ProductCatalogDetailsPage = () => {
               paddingLeft: '16px',
               paddingRight: '16px',
               boxSizing: 'border-box',
+            },
+            '&& .MuiTableHead-root .MuiTableCell-root:last-of-type': {
+              '& .Mui-TableHeadCell-Content, & .Mui-TableHeadCell-Content-Labels, & .Mui-TableHeadCell-Content-Wrapper':
+                {
+                  width: '100%',
+                  maxWidth: '100%',
+                  flex: '1 1 0%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                },
             },
           },
         }
@@ -1194,9 +1603,7 @@ export const ProductCatalogDetailsPage = () => {
     );
   }
 
-  const resolvedProductType = entry
-    ? resolveProductType(entry.productType, entry.productCatalogId)
-    : '';
+  const activeHeroEntry = displayEntry ?? entry;
 
   return (
     <Box sx={{ p: 3, pb: dirtyCount > 0 || validationErrorCount > 0 ? 12 : 3 }}>
@@ -1261,7 +1668,7 @@ export const ProductCatalogDetailsPage = () => {
         />
       </Box>
 
-      {!entry ? (
+      {!activeHeroEntry ? (
         <AlertWithFeedback
           title="Entry not found!"
           bugErrorMessage={`Product Catalog Entry not found: ${id}`}
@@ -1274,8 +1681,8 @@ export const ProductCatalogDetailsPage = () => {
       ) : (
         <>
           <CatalogDetailsHero
-            key={entry.productCatalogId}
-            entry={entry}
+            key={activeHeroEntry.productCatalogId}
+            entry={activeHeroEntry}
             stagedPhotos={stagedPhotos}
             onOpenPhotoEditor={() => setIsPhotoEditorOpen(true)}
             onPhotoDimensionsEvaluated={handlePhotoDimensionsEvaluated}
@@ -1288,7 +1695,7 @@ export const ProductCatalogDetailsPage = () => {
               alignItems: 'start',
             }}
           >
-            {/* Left Column: Specifications Table (with clean Field | Value header) */}
+            {/* Left Column: Specifications Table (with clean Field | Value header + right-aligned Edit button) */}
             <Box
               data-testid="catalog-specs-card"
               sx={{
@@ -1302,7 +1709,7 @@ export const ProductCatalogDetailsPage = () => {
             </Box>
 
             <Box sx={{ order: { xs: 1, lg: 2 } }}>
-              <OrderForm entry={entry} />
+              <OrderForm entry={activeHeroEntry} />
             </Box>
           </Box>
 
@@ -1312,8 +1719,10 @@ export const ProductCatalogDetailsPage = () => {
             onCopyPrompt={handleCopyPrompt}
             copiedPrompt={copiedPrompt}
             prompt={generatedPrompt}
-            productCatalogId={entry.productCatalogId}
-            productName={entry.productName || entry.descriptiveName}
+            productCatalogId={activeHeroEntry.productCatalogId}
+            productName={
+              activeHeroEntry.productName || activeHeroEntry.descriptiveName
+            }
             resolvedProductType={resolvedProductType}
             originalPhotos={originalPhotos}
             stagedPhotos={stagedPhotos}
@@ -1332,7 +1741,13 @@ export const ProductCatalogDetailsPage = () => {
             }}
             onRemoveStagedPhoto={handleRemoveStagedPhoto}
             onSetPrimaryPhoto={handleSetPrimaryPhoto}
-            onResetPhotos={handleDiscardEdits}
+            onResetPhotos={() => {
+              setStagedPhotosOverride(undefined);
+              setPhotoUrlDraft('');
+              setPhotoInputError(undefined);
+              setPhotoDimensionErrors({});
+              setCopiedPrompt(false);
+            }}
             onPhotoDimensionsEvaluated={handlePhotoDimensionsEvaluated}
           />
 
@@ -1341,7 +1756,7 @@ export const ProductCatalogDetailsPage = () => {
               dirtyCount={dirtyCount}
               validationErrorCount={validationErrorCount}
               errorSummaryText={firstValidationErrorMessage}
-              productCatalogId={entry.productCatalogId}
+              productCatalogId={activeHeroEntry.productCatalogId}
               prompt={generatedPrompt}
               copiedPrompt={copiedPrompt}
               onDiscard={handleDiscardEdits}
