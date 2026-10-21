@@ -980,6 +980,15 @@ func TestTryjobValidation(t *testing.T) {
 			cancel_stale_tryjobs: NO
 			builders {name: "a/b/c"}`)), should.ErrLikeString("use per-builder `cancel_stale` instead"))
 
+		t.Run("host", func(t *ftt.Test) {
+			assert.NoErr(t, validate(`builders {name: "a/b/c"}`))
+			assert.NoErr(t, validate(`builders {name: "a/b/c" host: ""}`))
+			assert.NoErr(t, validate(`builders {name: "a/b/c" host: "cr-buildbucket.appspot.com"}`))
+			assert.NoErr(t, validate(`builders {name: "a/b/c" host: "cr-buildbucket-dev.appspot.com"}`))
+			assert.That(t, validate(`builders {name: "a/b/c" host: "example.com"}`), should.ErrLikeString(
+				`host must be either empty or one of "cr-buildbucket.appspot.com" or "cr-buildbucket-dev.appspot.com" ("example.com" given)`))
+		})
+
 		t.Run("builder name", func(t *ftt.Test) {
 			assert.ErrIsLike(t, validate(`builders {}`), "name is required")
 			assert.ErrIsLike(t, validate(`builders {name: ""}`), "name is required")

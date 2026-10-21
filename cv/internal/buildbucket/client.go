@@ -56,7 +56,7 @@ type prpcClientFactory struct{}
 
 func (prpcClientFactory) MakeClient(ctx context.Context, host, luciProject string) (Client, error) {
 	rt, err := auth.GetRPCTransport(ctx, auth.AsProject,
-		auth.WithProject(luciProject),
+		auth.WithProjectNoFallback(luciProject),
 		auth.WithScopes(scopes.BuildbucketScopeSet()...),
 	)
 	if err != nil {

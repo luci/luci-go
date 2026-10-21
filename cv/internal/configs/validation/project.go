@@ -42,6 +42,10 @@ const (
 	CQStatusHostPublic = "chromium-cq-status.appspot.com"
 	// CQStatusHostInternal is the internal host of the CQ status app.
 	CQStatusHostInternal = "internal-cq-status.appspot.com"
+	// BuildbucketHostPublic is the public host of the Buildbucket service.
+	BuildbucketHostPublic = "cr-buildbucket.appspot.com"
+	// BuildbucketHostDev is the dev host of the Buildbucket service.
+	BuildbucketHostDev = "cr-buildbucket-dev.appspot.com"
 )
 
 var limitNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)
@@ -487,6 +491,11 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 	})
 
 	visitBuilders(func(b *cfgpb.Verifiers_Tryjob_Builder) {
+		switch b.Host {
+		case "", BuildbucketHostPublic, BuildbucketHostDev:
+		default:
+			vd.ctx.Errorf("host must be either empty or one of %q or %q (%q given)", BuildbucketHostPublic, BuildbucketHostDev, b.Host)
+		}
 		if b.EquivalentTo != nil {
 			vd.validateEquivalentBuilder(b.EquivalentTo, equiBuilderNames)
 			if b.ExperimentPercentage != 0 {
