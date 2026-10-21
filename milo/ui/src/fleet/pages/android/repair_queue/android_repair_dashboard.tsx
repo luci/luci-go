@@ -17,6 +17,7 @@ import { Box, Divider, Typography } from '@mui/material';
 import { surfaceCardSx } from '@/fleet/theme/recipes';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 
+import { AndroidMyRepairTasksActions } from './android_my_repair_tasks_actions';
 import { AndroidPriorityRulesPanel } from './android_priority_rules_panel';
 import { AndroidRepairQueueTable } from './android_repair_queue_table';
 
@@ -79,11 +80,24 @@ export const AndroidRepairDashboard = ({
 
       <Divider sx={{ mt: 4, mb: 4 }} />
 
-      <Typography variant="h6">Prioritized Manual Repair Queue</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-        Devices ranked by total priority score. Hover over a score to view
-        matching rules.
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
+        <div>
+          <Typography variant="h6">Prioritized Manual Repair Queue</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Devices ranked by total priority score. Hover over a score to view
+            matching rules.
+          </Typography>
+        </div>
+        <AndroidMyRepairTasksActions workspace={workspace} />
+      </Box>
 
       <div css={{ marginTop: 16 }}>
         <AndroidRepairQueueTable workspace={workspace} />

@@ -28,6 +28,8 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 // presents them as percentages in [0, 100], matching the column.
 export const HOST_GROUP_HEALTH_FILTER_KEY = 'host_group_health_pct';
 export const RUN_TARGET_HEALTH_FILTER_KEY = 'run_target_health_pct';
+export const CLAIMED_BY_FILTER_KEY = 'claimed_by';
+export const FC_MACHINE_TYPE_FILTER_KEY = 'fc_machine_type';
 const HEALTH_PCT_FILTER_LABELS: Readonly<Record<string, string>> = {
   [HOST_GROUP_HEALTH_FILTER_KEY]: 'Host Group Health',
   [RUN_TARGET_HEALTH_FILTER_KEY]: 'Run Target Health',
@@ -44,12 +46,18 @@ const ALLOWED_BASE_DIMENSIONS: Record<
   // The device `id` base dimension is the repair task's `device_id`.
   id: { filterKey: 'device_id', label: 'Device ID' },
   device_id: { filterKey: 'device_id', label: 'Device ID' },
-  fc_machine_type: { filterKey: 'fc_machine_type', label: 'Machine Type' },
+  [FC_MACHINE_TYPE_FILTER_KEY]: {
+    filterKey: FC_MACHINE_TYPE_FILTER_KEY,
+    label: 'Machine Type',
+  },
   lab_name: { filterKey: 'lab_name', label: 'Lab' },
   host_group: { filterKey: 'host_group', label: 'Host Group' },
   run_target: { filterKey: 'run_target', label: 'Run Target' },
   state: { filterKey: 'state', label: 'State' },
-  claimed_by: { filterKey: 'claimed_by', label: 'Claimed By' },
+  [CLAIMED_BY_FILTER_KEY]: {
+    filterKey: CLAIMED_BY_FILTER_KEY,
+    label: 'Claimed By',
+  },
 };
 
 // Device labels that duplicate a first-class repair task column; they are
@@ -57,13 +65,13 @@ const ALLOWED_BASE_DIMENSIONS: Record<
 const SUPERSEDED_LABEL_KEYS: ReadonlySet<string> = new Set([
   'id',
   'device_id',
-  'fc_machine_type',
+  FC_MACHINE_TYPE_FILTER_KEY,
   'lab',
   'lab_name',
   'host_group',
   'run_target',
   'state',
-  'claimed_by',
+  CLAIMED_BY_FILTER_KEY,
   HOST_GROUP_HEALTH_FILTER_KEY,
   RUN_TARGET_HEALTH_FILTER_KEY,
 ]);
@@ -92,7 +100,7 @@ export const useAndroidPriorityRuleFilterBuilders = (
         .setLabel('Device ID')
         .setOptions([{ label: BLANK_VALUE, value: BLANK_VALUE }]),
       // Static: the backend only ever queues `device` and `host` machines.
-      fc_machine_type: new StringListFilterCategoryBuilder()
+      [FC_MACHINE_TYPE_FILTER_KEY]: new StringListFilterCategoryBuilder()
         .setLabel('Machine Type')
         .setOptions([
           { label: BLANK_VALUE, value: BLANK_VALUE },
@@ -111,7 +119,7 @@ export const useAndroidPriorityRuleFilterBuilders = (
       state: new StringListFilterCategoryBuilder()
         .setLabel('State')
         .setOptions([{ label: BLANK_VALUE, value: BLANK_VALUE }]),
-      claimed_by: new StringListFilterCategoryBuilder()
+      [CLAIMED_BY_FILTER_KEY]: new StringListFilterCategoryBuilder()
         .setLabel('Claimed By')
         .setOptions([{ label: BLANK_VALUE, value: BLANK_VALUE }]),
     };
@@ -133,7 +141,7 @@ export const useAndroidPriorityRuleFilterBuilders = (
         if (!mapped) continue;
         // Machine type options are fixed; never replace them with
         // whatever subset the device dimensions currently report.
-        if (mapped.filterKey === 'fc_machine_type') continue;
+        if (mapped.filterKey === FC_MACHINE_TYPE_FILTER_KEY) continue;
         if (mapped.filterKey === 'host_group' && workspace === 'Pixel')
           continue;
 

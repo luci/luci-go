@@ -19,14 +19,20 @@ import { ListAndroidRepairQueueRequest } from '@/proto/go.chromium.org/infra/fle
 
 export const ANDROID_REPAIR_QUEUE_QUERY_KEY = ['androidRepairQueue'] as const;
 
+export interface UseAndroidRepairQueueOptions {
+  enabled?: boolean;
+}
+
 export const useAndroidRepairQueue = (
   request: ListAndroidRepairQueueRequest,
+  options?: UseAndroidRepairQueueOptions,
 ) => {
   const client = useFleetConsoleClient();
   const query = useQuery({
     ...client.ListAndroidRepairQueue.query(request),
     queryKey: [...ANDROID_REPAIR_QUEUE_QUERY_KEY, request],
     refetchInterval: 10000,
+    enabled: options?.enabled,
   });
 
   return {

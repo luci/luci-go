@@ -111,4 +111,24 @@ describe('useAndroidRepairQueue', () => {
     expect(result.current.data).toBeUndefined();
     expect(result.current.inProgressCount).toBe(0);
   });
+
+  it('skips the RPC when enabled is false', () => {
+    const request = ListAndroidRepairQueueRequest.fromPartial({
+      pageSize: 10,
+      workspace: toAndroidWorkspaceEnum('Pixel'),
+    });
+
+    const { result } = renderHook(
+      () => useAndroidRepairQueue(request, { enabled: false }),
+      {
+        wrapper: FakeContextProvider,
+      },
+    );
+
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(result.current.data).toBeUndefined();
+    expect(FleetConsoleMockAPI.getCalls('ListAndroidRepairQueue')).toHaveLength(
+      0,
+    );
+  });
 });

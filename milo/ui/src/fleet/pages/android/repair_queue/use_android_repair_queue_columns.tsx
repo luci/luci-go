@@ -33,6 +33,7 @@ import { AndroidRepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconso
 
 import { androidMachineTypeLabel, isAndroidHost } from './android_machine_type';
 import { useAndroidPriorityRuleFilterBuilders } from './use_android_priority_rule_filter_builders';
+import { FC_MACHINE_TYPE_FILTER_KEY } from './use_android_priority_rule_filter_builders';
 import { useAndroidPriorityRules } from './use_android_priority_rules';
 import {
   useClaimAndroidRepairTask,
@@ -128,7 +129,7 @@ export const useAndroidRepairQueueColumns = (
       {
         // Broken hosts are queued alongside devices; `device_id` is only
         // unique together with `fc_machine_type` (`device` | `host`).
-        id: 'fc_machine_type',
+        id: FC_MACHINE_TYPE_FILTER_KEY,
         header: 'Machine Type',
         accessorFn: (row) => androidMachineTypeLabel(row.fcMachineType),
         size: 70,

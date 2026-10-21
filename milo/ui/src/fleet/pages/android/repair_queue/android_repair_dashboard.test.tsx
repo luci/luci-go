@@ -165,6 +165,8 @@ describe('<AndroidRepairDashboard />', () => {
     expect(
       screen.getByText('Android Manual Repair Dashboard'),
     ).toBeInTheDocument();
+    expect(screen.getByText(/My tasks \(\d+\):/)).toBeInTheDocument();
+    expect(screen.getByText('Show devices')).toBeInTheDocument();
     expect(screen.getByText('Rank')).toBeInTheDocument();
     expect(screen.getByText('Id')).toBeInTheDocument();
     expect(screen.getByText('Machine Type')).toBeInTheDocument();
@@ -326,6 +328,25 @@ describe('<AndroidRepairDashboard />', () => {
         filter: '',
       }),
     );
+    // The "My tasks" actions fetch the current user's claimed tasks in the
+    // same workspace.
+    const allRequests = mockUseQueue.mock.calls.map(([request]) => request);
+    const myTasksRequests = allRequests.filter((request) =>
+      request.filter.startsWith('claimed_by = '),
+    );
+    expect(myTasksRequests.length).toBeGreaterThan(0);
+    for (const request of myTasksRequests) {
+      expect(request.workspace).toBe(AndroidWorkspace.ANDROID_WORKSPACE_PIXEL);
+    }
+    // The queue table issues its own (paged) request for the same workspace.
+    const tableRequests = allRequests.filter(
+      (request) => !myTasksRequests.includes(request),
+    );
+    expect(tableRequests.length).toBeGreaterThan(0);
+    for (const request of tableRequests) {
+      expect(request.workspace).toBe(AndroidWorkspace.ANDROID_WORKSPACE_PIXEL);
+      expect(request.filter).toBe('');
+    }
     expect(mockUseQueue).not.toHaveBeenCalledWith(
       expect.objectContaining({
         workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
