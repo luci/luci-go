@@ -187,6 +187,24 @@ func TestPriority(t *testing.T) {
 				assert.Loosely(t, jd.Info().Priority(), should.Equal(200))
 			},
 		},
+
+		{
+			name:   "backend with nil config",
+			skipSW: true,
+			fn: func(t *ftt.Test, jd *Definition) {
+				jd.GetBuildbucket().BbagentArgs = &bbpb.BBAgentArgs{
+					Build: &bbpb.Build{
+						Infra: &bbpb.BuildInfra{
+							Backend: &bbpb.BuildInfra_Backend{},
+						},
+					},
+				}
+				MustEdit(t, jd, func(je Editor) {
+					je.Priority(100)
+				})
+				assert.Loosely(t, jd.Info().Priority(), should.Equal(100))
+			},
+		},
 	})
 }
 

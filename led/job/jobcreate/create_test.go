@@ -25,6 +25,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -99,5 +100,21 @@ func TestCreateSwarmRaw(t *testing.T) {
 			assert.Loosely(t, jd.FlattenToSwarming(context.Background(), "username", "parent_task_id", job.NoKitchenSupport(), "on"), should.BeNil)
 			assert.Loosely(t, jd.GetSwarming().GetTask().GetResultdb().GetEnable(), should.BeTrue)
 		})
+	})
+}
+
+func TestFromBuild(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`backend build with nil config`, t, func(t *ftt.Test) {
+		b := &bbpb.Build{
+			Input: &bbpb.Build_Input{},
+			Infra: &bbpb.BuildInfra{
+				Buildbucket: &bbpb.BuildInfra_Buildbucket{},
+				Backend:     &bbpb.BuildInfra_Backend{},
+			},
+		}
+		jd := FromBuild(b, "cr-buildbucket.appspot.com", "test_name", 10, nil)
+		assert.Loosely(t, jd.Info().Priority(), should.Equal(int32(20)))
 	})
 }

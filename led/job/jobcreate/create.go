@@ -67,9 +67,18 @@ func setPriority(build *bbpb.Build, priorityDiff int) {
 	if build.Infra.Swarming != nil {
 		build.Infra.Swarming.Priority = calPriority(build.Infra.Swarming.Priority)
 	} else {
-		config := build.Infra.Backend.GetConfig().GetFields()
+		if build.Infra.Backend == nil {
+			build.Infra.Backend = &bbpb.BuildInfra_Backend{}
+		}
+		if build.Infra.Backend.Config == nil {
+			build.Infra.Backend.Config = &structpb.Struct{}
+		}
+		if build.Infra.Backend.Config.Fields == nil {
+			build.Infra.Backend.Config.Fields = map[string]*structpb.Value{}
+		}
+		config := build.Infra.Backend.Config.Fields
 		newPriority := calPriority(int32(config["priority"].GetNumberValue()))
-		build.Infra.Backend.Config.Fields["priority"] = structpb.NewNumberValue(float64(newPriority))
+		config["priority"] = structpb.NewNumberValue(float64(newPriority))
 	}
 }
 
@@ -182,6 +191,9 @@ func FromBuild(build *bbpb.Build, hostname, name string, priorityDiff int, extra
 	enabled.Add(buildbucket.ExperimentNonProduction)
 	build.Input.Experiments = enabled.ToSortedSlice()
 
+	if build.Infra.Buildbucket.ExperimentReasons == nil {
+		build.Infra.Buildbucket.ExperimentReasons = make(map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason)
+	}
 	build.Infra.Buildbucket.ExperimentReasons[buildbucket.ExperimentNonProduction] = bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 	ret.JobType = &job.Definition_Buildbucket{
 		Buildbucket: &job.Buildbucket{

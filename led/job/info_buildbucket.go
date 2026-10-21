@@ -101,7 +101,10 @@ func (b bbInfo) Env() (ret map[string]string, err error) {
 }
 
 func (b bbInfo) Priority() int32 {
-	return b.GetBbagentArgs().GetBuild().GetInfra().GetSwarming().GetPriority()
+	if b.GetBbagentArgs().GetBuild().GetInfra().GetSwarming() != nil {
+		return b.GetBbagentArgs().GetBuild().GetInfra().GetSwarming().GetPriority()
+	}
+	return int32(b.GetBbagentArgs().GetBuild().GetInfra().GetBackend().GetConfig().GetFields()["priority"].GetNumberValue())
 }
 
 func (b bbInfo) PrefixPathEnv() (ret []string, err error) {

@@ -64,6 +64,14 @@ func (b *Buildbucket) EnsureBasics() {
 	if b.BbagentArgs.Build.Infra.Swarming == nil && b.BbagentArgs.Build.Infra.Backend == nil {
 		b.BbagentArgs.Build.Infra.Swarming = &bbpb.BuildInfra_Swarming{}
 	}
+	if b.BbagentArgs.Build.Infra.Backend != nil {
+		if b.BbagentArgs.Build.Infra.Backend.Config == nil {
+			b.BbagentArgs.Build.Infra.Backend.Config = &structpb.Struct{}
+		}
+		if b.BbagentArgs.Build.Infra.Backend.Config.Fields == nil {
+			b.BbagentArgs.Build.Infra.Backend.Config.Fields = map[string]*structpb.Value{}
+		}
+	}
 }
 
 // UpdateBuildbucketAgent updates or populates b.BbagentArgs.Build.Infra.Buildbucket.Agent.
