@@ -935,6 +935,7 @@ export interface ClaimedDut {
   readonly dutId: string;
   readonly score: number;
   readonly duration: Duration | undefined;
+  readonly taskId: string;
 }
 
 export interface TechnicianActivity {
@@ -9086,7 +9087,7 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
 };
 
 function createBaseClaimedDut(): ClaimedDut {
-  return { dutId: "", score: 0, duration: undefined };
+  return { dutId: "", score: 0, duration: undefined, taskId: "0" };
 }
 
 export const ClaimedDut: MessageFns<ClaimedDut> = {
@@ -9099,6 +9100,9 @@ export const ClaimedDut: MessageFns<ClaimedDut> = {
     }
     if (message.duration !== undefined) {
       Duration.encode(message.duration, writer.uint32(26).fork()).join();
+    }
+    if (message.taskId !== "0") {
+      writer.uint32(32).int64(message.taskId);
     }
     return writer;
   },
@@ -9140,6 +9144,14 @@ export const ClaimedDut: MessageFns<ClaimedDut> = {
             message.duration = Duration.decode(reader, reader.uint32());
             continue;
           }
+          case 4: {
+            if (tag !== 32) {
+              break;
+            }
+
+            message.taskId = reader.int64().toString();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -9161,6 +9173,11 @@ export const ClaimedDut: MessageFns<ClaimedDut> = {
         : "",
       score: isSet(object.score) ? globalThis.Number(object.score) : 0,
       duration: isSet(object.duration) ? Duration.fromJSON(object.duration) : undefined,
+      taskId: isSet(object.taskId)
+        ? globalThis.String(object.taskId)
+        : isSet(object.task_id)
+        ? globalThis.String(object.task_id)
+        : "0",
     };
   },
 
@@ -9175,6 +9192,9 @@ export const ClaimedDut: MessageFns<ClaimedDut> = {
     if (message.duration !== undefined) {
       obj.duration = Duration.toJSON(message.duration);
     }
+    if (message.taskId !== "0") {
+      obj.taskId = message.taskId;
+    }
     return obj;
   },
 
@@ -9188,6 +9208,7 @@ export const ClaimedDut: MessageFns<ClaimedDut> = {
     message.duration = (object.duration !== undefined && object.duration !== null)
       ? Duration.fromPartial(object.duration)
       : undefined;
+    message.taskId = object.taskId ?? "0";
     return message;
   },
 };

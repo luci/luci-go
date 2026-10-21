@@ -24,6 +24,7 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { REPAIR_QUEUE_QUERY_KEY } from './use_repair_queue';
+import { WORKFORCE_ACTIVITY_QUERY_KEY } from './use_workforce_activity';
 
 interface UseRepairTaskMutationOptions {
   onError?: (err: Error) => void;
@@ -39,6 +40,7 @@ export const useClaimRepairTask = (options?: UseRepairTaskMutationOptions) => {
     RepairQueueItem
   >({
     queryKey: REPAIR_QUEUE_QUERY_KEY,
+    invalidateQueryKeys: [WORKFORCE_ACTIVITY_QUERY_KEY],
     mutationFn: (req: ClaimRepairTaskRequest) => client.ClaimRepairTask(req),
     updateItem: (item) => ({
       ...item,
@@ -60,6 +62,7 @@ export const useUnclaimRepairTask = (
     RepairQueueItem
   >({
     queryKey: REPAIR_QUEUE_QUERY_KEY,
+    invalidateQueryKeys: [WORKFORCE_ACTIVITY_QUERY_KEY],
     mutationFn: (req: UnclaimRepairTaskRequest) =>
       client.UnclaimRepairTask(req),
     updateItem: (item) => ({

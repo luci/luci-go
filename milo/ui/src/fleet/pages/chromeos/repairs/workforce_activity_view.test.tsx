@@ -15,6 +15,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { AuthState } from '@/common/api/auth_state';
 import { getFeatureFlagLocalStorageKey } from '@/common/feature_flags';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
@@ -23,8 +24,10 @@ import {
   enableWorkforcePickupRank,
   enableWorkforceTimeframeFilter,
 } from '@/fleet/features';
+import * as UseClaimRepairTaskModule from '@/fleet/pages/chromeos/repairs/use_claim_repair_task';
 import * as UseWorkforceActivityModule from '@/fleet/pages/chromeos/repairs/use_workforce_activity';
 import { GetWorkforceActivityRequest_Timeframe } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { Component, WorkforceActivityView } from './workforce_activity_view';
@@ -56,6 +59,7 @@ const MOCK_WORKFORCE_DATA = {
       email: 'andrew@google.com',
       claimedDuts: [
         {
+          taskId: '201',
           dutId: 'chromeos1-row2-rack3-host1',
           score: 250,
           duration: { seconds: '2700', nanos: 0 },
@@ -76,6 +80,7 @@ const MOCK_WORKFORCE_DATA = {
       email: 'beatrice@google.com',
       claimedDuts: [
         {
+          taskId: '202',
           dutId: 'chromeos2-row3-rack1-host2',
           score: 85,
           duration: { seconds: '1800', nanos: 0 },
@@ -125,9 +130,20 @@ const enableAllMetricFlags = () => {
 describe('<WorkforceActivityView />', () => {
   let queryClient: QueryClient;
 
+  let mockUnclaimMutate: jest.Mock;
+
   beforeEach(() => {
     localStorage.clear();
     mockNavigate.mockReset();
+    mockUnclaimMutate = jest.fn();
+    jest
+      .spyOn(UseClaimRepairTaskModule, 'useUnclaimRepairTask')
+      .mockReturnValue({
+        mutate: mockUnclaimMutate,
+        isPending: false,
+      } as unknown as ReturnType<
+        typeof UseClaimRepairTaskModule.useUnclaimRepairTask
+      >);
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -141,7 +157,7 @@ describe('<WorkforceActivityView />', () => {
     jest.restoreAllMocks();
   });
 
-  const renderWorkforceView = (props = {}) =>
+  const renderWorkforceView = (props = {}, authState?: AuthState) =>
     render(
       <QueryClientProvider client={queryClient}>
         <FakeContextProvider
@@ -150,11 +166,13 @@ describe('<WorkforceActivityView />', () => {
             initialEntries: ['/p/chromeos/repairs/workforce'],
           }}
         >
-          <SettingsProvider>
-            <ShortcutProvider>
-              <WorkforceActivityView {...props} />
-            </ShortcutProvider>
-          </SettingsProvider>
+          <FakeAuthStateProvider value={authState}>
+            <SettingsProvider>
+              <ShortcutProvider>
+                <WorkforceActivityView {...props} />
+              </ShortcutProvider>
+            </SettingsProvider>
+          </FakeAuthStateProvider>
         </FakeContextProvider>
       </QueryClientProvider>,
     );
@@ -290,7 +308,7 @@ describe('<WorkforceActivityView />', () => {
     expect(screen.getByText('No active devices claimed')).toBeInTheDocument();
   });
 
-  it('allows unclaiming a claimed DUT from the technician row when in-progress flag is enabled', () => {
+  it('calls unclaimTask with taskId only for the logged-in user row when in-progress flag is enabled', () => {
     localStorage.setItem(
       getFeatureFlagLocalStorageKey(enableWorkforceInProgressRepairs),
       'on',
@@ -308,16 +326,90 @@ describe('<WorkforceActivityView />', () => {
         typeof UseWorkforceActivityModule.useWorkforceActivity
       >);
 
-    renderWorkforceView();
+    renderWorkforceView(
+      {},
+      {
+        identity: 'user:Andrew@Google.com',
+        email: 'Andrew@Google.com',
+        accessToken: '',
+        idToken: '',
+      },
+    );
 
     expect(screen.getByText(/chromeos1-row2-rack3-host1/i)).toBeInTheDocument();
+    expect(screen.getByText(/chromeos2-row3-rack1-host2/i)).toBeInTheDocument();
 
+    // Only Andrew's own row should render a delete icon; Beatrice's row should not.
     const deleteIcons = screen.getAllByTestId('CancelIcon');
+    expect(deleteIcons).toHaveLength(1);
     fireEvent.click(deleteIcons[0]);
 
-    expect(
-      screen.queryByText(/chromeos1-row2-rack3-host1/i),
-    ).not.toBeInTheDocument();
+    expect(mockUnclaimMutate).toHaveBeenCalledWith({
+      taskId: '201',
+      etag: '',
+    });
+  });
+
+  it('disables claimed DUT chips while unclaim is pending and omits onDelete when taskId is empty or 0', () => {
+    localStorage.setItem(
+      getFeatureFlagLocalStorageKey(enableWorkforceInProgressRepairs),
+      'on',
+    );
+    jest
+      .spyOn(UseClaimRepairTaskModule, 'useUnclaimRepairTask')
+      .mockReturnValue({
+        mutate: mockUnclaimMutate,
+        isPending: true,
+      } as unknown as ReturnType<
+        typeof UseClaimRepairTaskModule.useUnclaimRepairTask
+      >);
+    jest
+      .spyOn(UseWorkforceActivityModule, 'useWorkforceActivity')
+      .mockReturnValue({
+        data: {
+          ...MOCK_WORKFORCE_DATA,
+          technicians: [
+            {
+              ...MOCK_WORKFORCE_DATA.technicians[0],
+              claimedDuts: [
+                {
+                  taskId: '0',
+                  dutId: 'dut-zero-task',
+                  score: 100,
+                  duration: { seconds: '600', nanos: 0 },
+                },
+                {
+                  taskId: '',
+                  dutId: 'dut-empty-task',
+                  score: 100,
+                  duration: { seconds: '600', nanos: 0 },
+                },
+              ],
+            },
+          ],
+        },
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<
+        typeof UseWorkforceActivityModule.useWorkforceActivity
+      >);
+
+    renderWorkforceView(
+      {},
+      {
+        identity: 'user:andrew@google.com',
+        email: 'andrew@google.com',
+        accessToken: '',
+        idToken: '',
+      },
+    );
+
+    expect(screen.queryByTestId('CancelIcon')).not.toBeInTheDocument();
+    const chip = screen.getByText(/dut-zero-task/i).closest('.MuiChip-root');
+    expect(chip).toHaveClass('Mui-disabled');
   });
 
   it('changes timeframe when toggle buttons are clicked', () => {

@@ -42,6 +42,7 @@ import {
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
+import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFeatureFlag } from '@/common/feature_flags';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
@@ -68,13 +69,24 @@ import {
   GetWorkforceActivityRequest,
   GetWorkforceActivityRequest_Timeframe,
   TechnicianActivity,
+  UnclaimRepairTaskRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { Duration as ProtoDuration } from '@/proto/google/protobuf/duration.pb';
 
+import { useUnclaimRepairTask } from './use_claim_repair_task';
 import { useWorkforceActivity } from './use_workforce_activity';
 
 const formatDuration = (d?: ProtoDuration): string =>
   d ? prettySeconds(Number(d.seconds)) : '-';
+
+const isSelfTechnician = (techEmail: string, currentUser: string): boolean => {
+  const trimmedEmail = techEmail.trim().toLowerCase();
+  const trimmedCurrent = currentUser.trim().toLowerCase();
+  if (!trimmedCurrent || !trimmedEmail) return false;
+  return (
+    trimmedEmail.replace(/^user:/, '') === trimmedCurrent.replace(/^user:/, '')
+  );
+};
 
 export type TimeframeOption = '1D' | '7D' | '30D' | 'YTD';
 
@@ -107,7 +119,11 @@ export const WorkforceActivityView = ({
   const navigate = useNavigate();
   const currentPlatform = useCurrentPlatform();
   const [timeframe, setTimeframe] = useState<TimeframeOption>('1D');
-  const [unclaimedDuts, setUnclaimedDuts] = useState<Set<string>>(new Set());
+  const { mutate: unclaimTask, isPending: isUnclaimPending } =
+    useUnclaimRepairTask();
+
+  const authState = useAuthState();
+  const currentUser = (authState.email || authState.identity || '').trim();
 
   const showPickupRank = useFeatureFlag(enableWorkforcePickupRank);
   const showInProgressRepairs = useFeatureFlag(
@@ -139,24 +155,7 @@ export const WorkforceActivityView = ({
     useWorkforceActivity(request);
   const loading = Boolean(isLoading || isPending);
 
-  const technicians = useMemo(() => {
-    const rawTechnicians = data?.technicians ?? [];
-    return rawTechnicians.map((tech) => ({
-      ...tech,
-      claimedDuts: (tech.claimedDuts ?? []).filter(
-        (d) => !unclaimedDuts.has(`${tech.id}:${d.dutId}`),
-      ),
-    }));
-  }, [data?.technicians, unclaimedDuts]);
-
-  // TODO: Properly implement this in the backend. This is just a mock.
-  const handleUnclaimDut = (techId: string, dutId: string) => {
-    setUnclaimedDuts((prev) => {
-      const next = new Set(prev);
-      next.add(`${techId}:${dutId}`);
-      return next;
-    });
-  };
+  const technicians = data?.technicians ?? [];
 
   const getColumns = (): WorkforceColumn[] => {
     const allColumns: (WorkforceColumn | false)[] = [
@@ -189,8 +188,9 @@ export const WorkforceActivityView = ({
       showInProgressRepairs && {
         id: 'inProgressRepairs',
         header: 'Currently Claimed DUTs (In-Progress)',
-        renderCell: (tech) =>
-          tech.claimedDuts.length > 0 ? (
+        renderCell: (tech) => {
+          const isSelf = isSelfTechnician(tech.email, currentUser);
+          return tech.claimedDuts.length > 0 ? (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {tech.claimedDuts.map((dut) => (
                 <Chip
@@ -200,7 +200,17 @@ export const WorkforceActivityView = ({
                   variant="outlined"
                   color="primary"
                   size="small"
-                  onDelete={() => handleUnclaimDut(tech.id, dut.dutId)}
+                  disabled={isUnclaimPending}
+                  onDelete={
+                    isSelf && dut.taskId && dut.taskId !== '0'
+                      ? () =>
+                          unclaimTask(
+                            UnclaimRepairTaskRequest.fromPartial({
+                              taskId: dut.taskId,
+                            }),
+                          )
+                      : undefined
+                  }
                   sx={{
                     fontFamily: 'monospace',
                     fontSize: '0.75rem',
@@ -217,7 +227,8 @@ export const WorkforceActivityView = ({
             >
               No active devices claimed
             </Typography>
-          ),
+          );
+        },
       },
       {
         id: 'priorityScoreCleared',

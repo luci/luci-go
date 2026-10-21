@@ -35,6 +35,7 @@ interface UseRepairQueueOptimisticMutationOptions<
   TItem extends OptimisticRepairQueueItem,
 > {
   queryKey: QueryKey;
+  invalidateQueryKeys?: readonly QueryKey[];
   mutationFn: (variables: TVariables) => Promise<TData>;
   updateItem: (item: TItem, variables: TVariables) => TItem;
   onError?: (err: Error, variables: TVariables) => void;
@@ -46,6 +47,7 @@ export const useRepairQueueOptimisticMutation = <
   TItem extends OptimisticRepairQueueItem,
 >({
   queryKey,
+  invalidateQueryKeys,
   mutationFn,
   updateItem,
   onError,
@@ -115,6 +117,11 @@ export const useRepairQueueOptimisticMutation = <
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
+      if (invalidateQueryKeys) {
+        for (const extraKey of invalidateQueryKeys) {
+          queryClient.invalidateQueries({ queryKey: extraKey });
+        }
+      }
     },
   });
 };

@@ -29,6 +29,7 @@ import {
   useUnclaimRepairTask,
 } from './use_claim_repair_task';
 import { REPAIR_QUEUE_QUERY_KEY, useRepairQueue } from './use_repair_queue';
+import { WORKFORCE_ACTIVITY_QUERY_KEY } from './use_workforce_activity';
 
 const MOCK_ITEMS: readonly RepairQueueItem[] = [
   {
@@ -271,6 +272,9 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({
         queryKey: REPAIR_QUEUE_QUERY_KEY,
       });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: WORKFORCE_ACTIVITY_QUERY_KEY,
+      });
     });
 
     it('optimistically updates matching item when taskId matches', async () => {
@@ -493,6 +497,9 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(invalidateSpy).toHaveBeenCalledWith({
         queryKey: REPAIR_QUEUE_QUERY_KEY,
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: WORKFORCE_ACTIVITY_QUERY_KEY,
       });
     });
   });
