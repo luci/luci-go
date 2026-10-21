@@ -21,6 +21,12 @@ import { SettingsProvider } from '@/fleet/context/providers';
 import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import {
+  buildCatalogPhotoEditPrompt,
+  COSMETIC_DROPBOX_GO_LINK,
+  validatePhotoDimensions,
+  validatePhotoUrlInput,
+} from './catalog_edit_validation';
 import { ProductCatalogDetailsPage } from './product_catalogue_details_page';
 
 jest.mock('@/generic_libs/components/google_analytics', () => ({
@@ -429,16 +435,12 @@ describe('ProductCatalogDetailsPage', () => {
       entries: [
         {
           productCatalogId: 'GCE-001',
-          productName: 'Standard Linux Cloudbot VM',
-          cpuType: 'x86_64',
+          productName: 'n2-standard-8',
+          descriptiveName: 'Standard 8-vCPU GCE instance',
+          fleetPlmStatus: 'GA',
+          cpuType: 'Intel Cascade Lake',
           cpuNumPerVm: 8,
           memoryGbPerVm: 32,
-          diskType: ['pd-ssd'],
-          diskSizeGbPerVm: [100],
-          maxNumOfVms: 50,
-          fleetPlmStatus: 'GA',
-          unitCost: '120',
-          productType: 'gce',
         },
       ],
     });
@@ -448,20 +450,186 @@ describe('ProductCatalogDetailsPage', () => {
     expect(
       await screen.findByTestId('catalog-details-hero'),
     ).toBeInTheDocument();
+    expect(screen.getByText('GCE Virtual Machine')).toBeInTheDocument();
     expect(screen.getByText('CPU Architecture')).toBeInTheDocument();
-    expect(screen.getAllByText('x86_64').length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText('Intel Cascade Lake').length,
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('VM Compute Profile')).toBeInTheDocument();
     expect(screen.getByText('8 vCPU • 32 GB')).toBeInTheDocument();
     expect(screen.getByText('Fulfillment Model')).toBeInTheDocument();
     expect(screen.getByText('Cloud Virtual Instance')).toBeInTheDocument();
-    expect(screen.getByText('CPU Type')).toBeInTheDocument();
-    expect(screen.getByText('Memory (GB) Per VM')).toBeInTheDocument();
     expect(screen.queryByText('R11N Build Guides')).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('Google Part Number (GPN)'),
-    ).not.toBeInTheDocument();
+    expect(screen.getByText('CPU Type')).toBeInTheDocument();
+    expect(screen.getByText('CPU Count Per VM')).toBeInTheDocument();
+    expect(screen.getByText('Memory (GB) Per VM')).toBeInTheDocument();
+    expect(screen.queryByText('GPN')).not.toBeInTheDocument();
+    expect(screen.queryByText('Resource Type')).not.toBeInTheDocument();
     expect(
       screen.queryByText('Number of Devices Per Rack'),
     ).not.toBeInTheDocument();
+  });
+
+  it('stages photo URL edits, displays the always-visible unsaved toast, and generates Jetski & Captain Fin prompts', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ATB-000',
+          productName: 'Android OmniLab Enclosure',
+          gpn: '1055297-01',
+          descriptiveName: 'Standard 16-slot testbed enclosure',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'GA',
+          r11n: ['r11n-atb'],
+          numberOfDevicesPerRack: 4,
+          unitCost: '26645',
+          productType: 'android-testbed',
+          photoDataUris: ['data:image/webp;base64,mock-hero-photo-1'],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('ATB-000');
+
+    const editBtn = await screen.findByTestId('toggle-photo-editor-btn');
+    fireEvent.click(editBtn);
+
+    expect(
+      screen.getByTestId('catalog-photo-editor-panel'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('bulk-photo-dropbox-note')).toHaveTextContent(
+      COSMETIC_DROPBOX_GO_LINK,
+    );
+
+    // Reject invalid photo URL
+    const urlInput = screen.getByTestId('photo-url-input');
+    fireEvent.change(urlInput, { target: { value: 'not-a-valid-url' } });
+    fireEvent.click(screen.getByTestId('add-photo-url-btn'));
+    expect(
+      screen.getByText(/Use an https:\/\/ image URL/i),
+    ).toBeInTheDocument();
+
+    // Stage a valid http://screen/ URL
+    fireEvent.change(urlInput, {
+      target: { value: 'http://screen/9kLmN2pQrStUvWx' },
+    });
+    fireEvent.click(screen.getByTestId('add-photo-url-btn'));
+
+    // Promote new photo to primary
+    fireEvent.click(screen.getByTestId('set-primary-photo-1'));
+    expect(screen.getByTestId('details-photo-img')).toHaveAttribute(
+      'src',
+      'http://screen/9kLmN2pQrStUvWx',
+    );
+
+    // Copy prompt directly via "Copy prompt to save" inside the photo modal (no second modal)
+    fireEvent.click(screen.getByTestId('save-photos-by-prompt-btn'));
+    expect(
+      screen.queryByTestId('catalog-edit-prompt-dialog'),
+    ).not.toBeInTheDocument();
+    expect(
+      (await screen.findAllByTestId('handoff-guidance'))[0],
+    ).toHaveTextContent(/Copied prompt for ATB-000/i);
+
+    const openJetskiBtns = screen.getAllByTestId('open-in-jetski-btn');
+    expect(openJetskiBtns[0].getAttribute('href')).toContain(
+      'http://goto.google.com/jetski-web?q=',
+    );
+    expect(
+      screen.getAllByTestId('open-captain-fin-btn')[0].getAttribute('href'),
+    ).toBe('http://goto.google.com/captain-fin');
+    expect(
+      screen.getAllByTestId('generated-catalog-prompt')[0],
+    ).toHaveTextContent('http://screen/9kLmN2pQrStUvWx (primary hero photo)');
+
+    // Close modal via "Keep editing" and verify the bottom unsaved changes toast renders cleanly
+    fireEvent.click(screen.getByTestId('keep-editing-photos-btn'));
+    const toast = await screen.findByTestId('unsaved-changes-toast');
+    expect(toast).toHaveTextContent(/Copied prompt/i);
+  });
+
+  it('allows deleting a photo without triggering ghost validation errors', async () => {
+    FleetConsoleMockAPI.setFixture('ListProductCatalogEntries', {
+      entries: [
+        {
+          productCatalogId: 'ATB-000',
+          productName: 'Android OmniLab Enclosure',
+          gpn: '1055297-01',
+          descriptiveName: 'Standard 16-slot testbed enclosure',
+          resourceType: 'TESTBED',
+          fleetPlmStatus: 'GA',
+          r11n: ['r11n-atb'],
+          numberOfDevicesPerRack: 4,
+          unitCost: '26645',
+          productType: 'android-testbed',
+          photoDataUris: [
+            'data:image/webp;base64,mock-hero-photo-1',
+            'data:image/webp;base64,mock-hero-photo-2',
+          ],
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture('ListGceProductCatalogEntries', {
+      entries: [],
+    });
+
+    renderDetailsPage('ATB-000');
+
+    const editBtn = await screen.findByTestId('toggle-photo-editor-btn');
+    fireEvent.click(editBtn);
+
+    // Trigger an input error on the empty draft URL field first, then delete an existing photo
+    fireEvent.click(screen.getByTestId('add-photo-url-btn'));
+    fireEvent.click(screen.getByTestId('remove-photo-1'));
+    fireEvent.click(screen.getByTestId('keep-editing-photos-btn'));
+
+    const toast = await screen.findByTestId('unsaved-changes-toast');
+    expect(toast).toHaveTextContent('1 unsaved change');
+    expect(toast).not.toHaveTextContent('validation error');
+    expect(screen.getByTestId('review-generate-prompt-btn')).not.toBeDisabled();
+  });
+
+  it('validates photo URLs, dimensions, and preserves original existing_photo index on reorder', () => {
+    expect(validatePhotoUrlInput('', [])).toMatch(/Enter an image URL/i);
+    expect(validatePhotoUrlInput('ftp://bad', [])).toMatch(
+      /Use an https:\/\/ image URL/i,
+    );
+    expect(
+      validatePhotoUrlInput('http://screen/abc123', ['http://screen/abc123']),
+    ).toMatch(/already staged/i);
+    expect(validatePhotoUrlInput('http://screen/abc123', [])).toBeUndefined();
+
+    expect(validatePhotoDimensions(180, 100)).toMatch(/Minimum size/i);
+    expect(validatePhotoDimensions(1000, 200)).toMatch(/Avoid 1U rack-strip/i);
+    expect(validatePhotoDimensions(700, 368)).toBeUndefined();
+
+    const prompt = buildCatalogPhotoEditPrompt(
+      {
+        productCatalogId: 'ATB-000',
+        productName: 'Android OmniLab Enclosure',
+        gpn: '1055297-01',
+        descriptiveName: 'Standard 16-slot testbed enclosure',
+        resourceType: 'TESTBED',
+        fleetPlmStatus: 'GA',
+        r11n: [],
+        numberOfDevicesPerRack: 4,
+        unitCost: '26645',
+        productType: 'android-testbed',
+        photoDataUris: [
+          'data:image/webp;base64,photo-1',
+          'data:image/webp;base64,photo-2',
+        ],
+      },
+      ['data:image/webp;base64,photo-2', 'data:image/webp;base64,photo-1'],
+    );
+    expect(prompt).toContain(
+      '1. existing_photo_2.webp (retained catalog image) (primary hero photo)',
+    );
+    expect(prompt).toContain(
+      '2. existing_photo_1.webp (retained catalog image)',
+    );
   });
 });

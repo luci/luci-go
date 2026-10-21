@@ -15,12 +15,14 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import {
   Alert,
   Box,
   IconButton,
   Link,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import {
@@ -63,10 +65,19 @@ import {
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
+import { CatalogPhotoEditDialog } from './catalog_edit_prompt_dialog';
+import {
+  arePhotoListsEqual,
+  buildCatalogPhotoEditPrompt,
+  MAX_PHOTOS_PER_ENTRY,
+  validatePhotoDimensions,
+  validatePhotoUrlInput,
+} from './catalog_edit_validation';
 import { OrderForm } from './order_form';
 import { CategoryIllustration } from './product_catalogue_card_view';
 import { COLUMNS } from './product_catalogue_columns';
 import { UnifiedProductCatalogEntry } from './types';
+import { UnsavedChangesToast } from './unsaved_changes_toast';
 import { useProductCatalogDetailsData } from './use_product_catalog_details_data';
 
 interface DetailRow {
@@ -172,7 +183,10 @@ const DetailValueCell = ({
 
   const accessor = col.accessorKey as keyof UnifiedProductCatalogEntry;
 
-  if (isRevampEnabled && accessor === 'productCatalogId') {
+  if (accessor === 'productCatalogId') {
+    if (!isRevampEnabled) {
+      return <>{String(rawValue ?? '')}</>;
+    }
     return (
       <Typography
         variant="body2"
@@ -203,8 +217,9 @@ const DetailValueCell = ({
   if (col.Cell && entry) {
     if (
       isRevampEnabled &&
-      Array.isArray(rawValue) &&
-      rawValue.filter((v) => String(v ?? '').trim()).length === 0
+      (!rawValue ||
+        (Array.isArray(rawValue) &&
+          rawValue.filter((v) => String(v ?? '').trim()).length === 0))
     ) {
       return <>—</>;
     }
@@ -264,15 +279,25 @@ const useNavigatedFromLink = () => {
 
 interface CatalogDetailsHeroProps {
   readonly entry: UnifiedProductCatalogEntry;
+  readonly stagedPhotos: readonly string[];
+  readonly onOpenPhotoEditor: () => void;
+  readonly onPhotoDimensionsEvaluated: (
+    uri: string,
+    width: number,
+    height: number,
+  ) => void;
 }
 
-const CatalogDetailsHero = ({ entry }: CatalogDetailsHeroProps) => {
+const CatalogDetailsHero = ({
+  entry,
+  stagedPhotos,
+  onOpenPhotoEditor,
+  onPhotoDimensionsEvaluated,
+}: CatalogDetailsHeroProps) => {
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [failedUris, setFailedUris] = useState<Record<string, boolean>>({});
 
-  const photos = (entry.photoDataUris ?? []).filter(
-    (uri) => Boolean(uri) && !failedUris[uri],
-  );
+  const photos = stagedPhotos.filter((uri) => Boolean(uri) && !failedUris[uri]);
   const safePhotoIdx = photos.length > 0 ? activePhotoIdx % photos.length : 0;
   const currentPhotoUri = photos[safePhotoIdx];
   const hasPhoto = photos.length > 0;
@@ -283,41 +308,65 @@ const CatalogDetailsHero = ({ entry }: CatalogDetailsHeroProps) => {
   const isGce = resolvedProductType === 'gce';
   const formattedCost = formatUnitCost(entry.unitCost);
 
-  const summaryMetrics = [
-    {
-      label: isGce ? 'CPU Architecture' : 'Google Part Number (GPN)',
-      value: isGce ? entry.cpuType || '—' : entry.gpn || '—',
-      mono: Boolean(isGce ? entry.cpuType : entry.gpn),
-    },
-    {
-      label: isGce ? 'VM Compute Profile' : 'Resource Type',
-      value: isGce
-        ? entry.cpuNumPerVm
-          ? `${entry.cpuNumPerVm} vCPU • ${entry.memoryGbPerVm ?? 0} GB`
-          : 'Standard'
-        : entry.resourceType || '—',
-      mono: false,
-    },
-    ...(formattedCost !== '—'
-      ? [
-          {
-            label: 'Estimated Unit Cost',
-            value: formattedCost,
-            mono: false,
-          },
-        ]
-      : []),
-    {
-      label: isGce ? 'Fulfillment Model' : 'Devices per Rack',
-      value: isGce
-        ? 'Cloud Virtual Instance'
-        : entry.numberOfDevicesPerRack !== undefined &&
+  const summaryMetrics = isGce
+    ? [
+        {
+          label: 'CPU Architecture',
+          value: entry.cpuType || '—',
+          mono: false,
+        },
+        {
+          label: 'VM Compute Profile',
+          value: entry.cpuNumPerVm
+            ? `${entry.cpuNumPerVm} vCPU • ${entry.memoryGbPerVm ?? 0} GB`
+            : '—',
+          mono: false,
+        },
+        ...(formattedCost !== '—'
+          ? [
+              {
+                label: 'Estimated Unit Cost',
+                value: formattedCost,
+                mono: false,
+              },
+            ]
+          : []),
+        {
+          label: 'Fulfillment Model',
+          value: 'Cloud Virtual Instance',
+          mono: false,
+        },
+      ]
+    : [
+        {
+          label: 'Google Part Number (GPN)',
+          value: entry.gpn || '—',
+          mono: Boolean(entry.gpn),
+        },
+        {
+          label: 'Resource Type',
+          value: entry.resourceType || '—',
+          mono: false,
+        },
+        ...(formattedCost !== '—'
+          ? [
+              {
+                label: 'Estimated Unit Cost',
+                value: formattedCost,
+                mono: false,
+              },
+            ]
+          : []),
+        {
+          label: 'Devices per Rack',
+          value:
+            entry.numberOfDevicesPerRack !== undefined &&
             entry.numberOfDevicesPerRack > 0
-          ? `${entry.numberOfDevicesPerRack} units / rack`
-          : '—',
-      mono: false,
-    },
-  ];
+              ? `${entry.numberOfDevicesPerRack} units / rack`
+              : '—',
+          mono: false,
+        },
+      ];
   const r11nItems = (entry.r11n ?? []).map((val) => val.trim()).filter(Boolean);
   const totalSummaryCols = summaryMetrics.length + (isGce ? 0 : 1);
 
@@ -357,6 +406,36 @@ const CatalogDetailsHero = ({ entry }: CatalogDetailsHeroProps) => {
             background: `linear-gradient(135deg, ${fleetColors.surfaceTonal} 0%, ${fleetColors.primaryContainer} 100%)`,
           }}
         >
+          {/* Edit Photo Trigger Overlaid on the Photo Stage (opens spacious modal) */}
+          {!isGce && (
+            <Tooltip title="Edit or upload reference photos">
+              <IconButton
+                size="small"
+                aria-label="Edit photos"
+                onClick={onOpenPhotoEditor}
+                data-testid="toggle-photo-editor-btn"
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  zIndex: 5,
+                  width: 32,
+                  height: 32,
+                  backgroundColor: fleetColors.surface,
+                  color: fleetColors.textPrimary,
+                  border: borders.default,
+                  boxShadow: elevations.card,
+                  '&:hover': {
+                    backgroundColor: fleetColors.surfaceTonal,
+                    color: fleetColors.primary,
+                  },
+                }}
+              >
+                <EditOutlinedIcon sx={{ fontSize: iconSizes.control }} />
+              </IconButton>
+            </Tooltip>
+          )}
+
           {hasPhoto ? (
             <>
               <Box
@@ -364,6 +443,16 @@ const CatalogDetailsHero = ({ entry }: CatalogDetailsHeroProps) => {
                 src={currentPhotoUri}
                 alt={`${entry.productName || entry.productCatalogId} hardware reference`}
                 data-testid="details-photo-img"
+                onLoad={(e) => {
+                  const img = e.currentTarget as HTMLImageElement;
+                  if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                    onPhotoDimensionsEvaluated(
+                      currentPhotoUri,
+                      img.naturalWidth,
+                      img.naturalHeight,
+                    );
+                  }
+                }}
                 onError={() =>
                   setFailedUris((prev) => ({
                     ...prev,
@@ -499,6 +588,8 @@ const CatalogDetailsHero = ({ entry }: CatalogDetailsHeroProps) => {
                   alignItems: 'center',
                   gap: 0.5,
                   pointerEvents: 'auto',
+                  overflowX: 'auto',
+                  maxWidth: 'calc(100% - 64px)',
                 }}
               >
                 {photos.map((uri, idx) => (
@@ -513,6 +604,7 @@ const CatalogDetailsHero = ({ entry }: CatalogDetailsHeroProps) => {
                       p: 0,
                       width: 40,
                       height: 28,
+                      flexShrink: 0,
                       borderRadius: radii.sm,
                       overflow: 'hidden',
                       cursor: 'pointer',
@@ -644,7 +736,7 @@ const CatalogDetailsHero = ({ entry }: CatalogDetailsHeroProps) => {
             display: 'grid',
             gridTemplateColumns: {
               xs: 'repeat(2, minmax(0, 1fr))',
-              lg: `repeat(${Math.min(5, Math.max(3, totalSummaryCols))}, minmax(0, 1fr))`,
+              lg: `repeat(${Math.max(totalSummaryCols, 3)}, minmax(0, 1fr))`,
             },
             gap: 2,
             pt: 1.75,
@@ -697,7 +789,7 @@ const CatalogDetailsHero = ({ entry }: CatalogDetailsHeroProps) => {
                       <span key={`${item}-${idx}`}>
                         {idx > 0 && ', '}
                         <Link
-                          href={`https://goto.google.com/ngp-npi/r11n/${item.toLowerCase()}`}
+                          href={`https://goto.google.com/ngp-npi/r11n/${encodeURIComponent(item.toLowerCase())}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -730,6 +822,138 @@ export const ProductCatalogDetailsPage = () => {
   };
 
   const { error, isError, isLoading, entry } = useProductCatalogDetailsData(id);
+
+  const originalPhotos = useMemo(
+    () => entry?.photoDataUris ?? [],
+    [entry?.photoDataUris],
+  );
+
+  const [isPhotoEditorOpen, setIsPhotoEditorOpen] = useState(false);
+  const [stagedPhotosOverride, setStagedPhotosOverride] = useState<
+    readonly string[] | undefined
+  >(undefined);
+  const [photoUrlDraft, setPhotoUrlDraft] = useState('');
+  const [photoInputError, setPhotoInputError] = useState<string | undefined>(
+    undefined,
+  );
+  const [photoDimensionErrors, setPhotoDimensionErrors] = useState<
+    Record<string, string>
+  >({});
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+
+  // Reset staged edits when switching catalog entries.
+  useEffect(() => {
+    setStagedPhotosOverride(undefined);
+    setIsPhotoEditorOpen(false);
+    setPhotoUrlDraft('');
+    setPhotoInputError(undefined);
+    setPhotoDimensionErrors({});
+    setCopiedPrompt(false);
+  }, [id]);
+
+  const stagedPhotos = stagedPhotosOverride ?? originalPhotos;
+  const hasPhotoChanges =
+    entry !== undefined && !arePhotoListsEqual(originalPhotos, stagedPhotos);
+  const dirtyCount = hasPhotoChanges ? 1 : 0;
+
+  const activeDimensionErrorMessages = stagedPhotos
+    .filter(
+      (uri) =>
+        Boolean(photoDimensionErrors[uri]) && !originalPhotos.includes(uri),
+    )
+    .map((uri) => photoDimensionErrors[uri]);
+  const validationErrorCount = activeDimensionErrorMessages.length;
+  const firstValidationErrorMessage = activeDimensionErrorMessages[0];
+
+  const handleStagePhotoUrl = () => {
+    const err = validatePhotoUrlInput(photoUrlDraft, stagedPhotos);
+    if (err) {
+      setPhotoInputError(err);
+      return;
+    }
+    const trimmed = photoUrlDraft.trim();
+    setStagedPhotosOverride([...stagedPhotos, trimmed]);
+    setPhotoUrlDraft('');
+    setPhotoInputError(undefined);
+  };
+
+  const handleRemoveStagedPhoto = (idx: number) => {
+    const removedUri = stagedPhotos[idx];
+    const next = stagedPhotos.filter((_, i) => i !== idx);
+    setStagedPhotosOverride(next);
+    setPhotoInputError(undefined);
+    if (removedUri) {
+      setPhotoDimensionErrors((prev) => {
+        if (!prev[removedUri]) return prev;
+        const copy = { ...prev };
+        delete copy[removedUri];
+        return copy;
+      });
+    }
+  };
+
+  const handleSetPrimaryPhoto = (idx: number) => {
+    if (idx <= 0 || idx >= stagedPhotos.length) return;
+    const target = stagedPhotos[idx];
+    const rest = stagedPhotos.filter((_, i) => i !== idx);
+    setStagedPhotosOverride([target, ...rest]);
+  };
+
+  const handleDiscardEdits = () => {
+    setStagedPhotosOverride(undefined);
+    setPhotoUrlDraft('');
+    setPhotoInputError(undefined);
+    setPhotoDimensionErrors({});
+    setCopiedPrompt(false);
+  };
+
+  const handlePhotoDimensionsEvaluated = (
+    uri: string,
+    width: number,
+    height: number,
+  ) => {
+    const dimErr = validatePhotoDimensions(width, height);
+    setPhotoDimensionErrors((prev) => {
+      if (dimErr ? prev[uri] === dimErr : !prev[uri]) return prev;
+      const next = { ...prev };
+      if (dimErr) {
+        next[uri] = dimErr;
+      } else {
+        delete next[uri];
+      }
+      return next;
+    });
+  };
+
+  const generatedPrompt = useMemo(() => {
+    if (!entry) return '';
+    return buildCatalogPhotoEditPrompt(entry, stagedPhotos);
+  }, [entry, stagedPhotos]);
+
+  useEffect(() => {
+    setCopiedPrompt(false);
+  }, [generatedPrompt]);
+
+  const handleCopyPrompt = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(generatedPrompt);
+        setCopiedPrompt(true);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = generatedPrompt;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand?.('copy') ?? true;
+        document.body.removeChild(textarea);
+        setCopiedPrompt(copied);
+      }
+    } catch {
+      setCopiedPrompt(false);
+    }
+  };
 
   const columns = useMemo<MRT_ColumnDef<DetailRow>[]>(
     () => [
@@ -970,8 +1194,12 @@ export const ProductCatalogDetailsPage = () => {
     );
   }
 
+  const resolvedProductType = entry
+    ? resolveProductType(entry.productType, entry.productCatalogId)
+    : '';
+
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, pb: dirtyCount > 0 || validationErrorCount > 0 ? 12 : 3 }}>
       <Box
         sx={{
           display: 'flex',
@@ -1045,7 +1273,13 @@ export const ProductCatalogDetailsPage = () => {
         </AlertWithFeedback>
       ) : (
         <>
-          <CatalogDetailsHero key={entry.productCatalogId} entry={entry} />
+          <CatalogDetailsHero
+            key={entry.productCatalogId}
+            entry={entry}
+            stagedPhotos={stagedPhotos}
+            onOpenPhotoEditor={() => setIsPhotoEditorOpen(true)}
+            onPhotoDimensionsEvaluated={handlePhotoDimensionsEvaluated}
+          />
           <Box
             sx={{
               display: 'grid',
@@ -1071,6 +1305,49 @@ export const ProductCatalogDetailsPage = () => {
               <OrderForm entry={entry} />
             </Box>
           </Box>
+
+          <CatalogPhotoEditDialog
+            open={isPhotoEditorOpen}
+            onClose={() => setIsPhotoEditorOpen(false)}
+            onCopyPrompt={handleCopyPrompt}
+            copiedPrompt={copiedPrompt}
+            prompt={generatedPrompt}
+            productCatalogId={entry.productCatalogId}
+            productName={entry.productName || entry.descriptiveName}
+            resolvedProductType={resolvedProductType}
+            originalPhotos={originalPhotos}
+            stagedPhotos={stagedPhotos}
+            photoUrlDraft={photoUrlDraft}
+            photoInputError={photoInputError}
+            photoDimensionErrors={photoDimensionErrors}
+            onPhotoUrlDraftChange={(val) => {
+              setPhotoUrlDraft(val);
+              if (photoInputError) setPhotoInputError(undefined);
+            }}
+            onStagePhotoUrl={handleStagePhotoUrl}
+            onStageUploadedDataUrl={(dataUrl) => {
+              if (stagedPhotos.length >= MAX_PHOTOS_PER_ENTRY) return;
+              setStagedPhotosOverride([...stagedPhotos, dataUrl]);
+              setPhotoInputError(undefined);
+            }}
+            onRemoveStagedPhoto={handleRemoveStagedPhoto}
+            onSetPrimaryPhoto={handleSetPrimaryPhoto}
+            onResetPhotos={handleDiscardEdits}
+            onPhotoDimensionsEvaluated={handlePhotoDimensionsEvaluated}
+          />
+
+          {!isPhotoEditorOpen && (
+            <UnsavedChangesToast
+              dirtyCount={dirtyCount}
+              validationErrorCount={validationErrorCount}
+              errorSummaryText={firstValidationErrorMessage}
+              productCatalogId={entry.productCatalogId}
+              prompt={generatedPrompt}
+              copiedPrompt={copiedPrompt}
+              onDiscard={handleDiscardEdits}
+              onCopyPrompt={handleCopyPrompt}
+            />
+          )}
         </>
       )}
     </Box>
