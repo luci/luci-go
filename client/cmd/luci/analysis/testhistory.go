@@ -102,7 +102,7 @@ type testHistoryRun struct {
 type variantStatsSummary struct {
 	VariantHash          string
 	Variant              map[string]string
-	Counts               rdbpb.TestAggregation_VerdictCounts
+	Counts               *rdbpb.TestAggregation_VerdictCounts
 	Total                int32
 	LatestNonPassingDate string
 }
@@ -129,7 +129,7 @@ type testHistoryReport struct {
 	StatsTruncated    bool
 	AllVerdictsPassed bool
 	NewerPassingCount int
-	TotalCounts       rdbpb.TestAggregation_VerdictCounts
+	TotalCounts       *rdbpb.TestAggregation_VerdictCounts
 	VariantStats      []variantStatsSummary
 	Verdicts          []testHistoryVerdictEntry
 }
@@ -350,9 +350,9 @@ func fetchVariantDefinitions(ctx context.Context, client analysispb.TestHistoryC
 
 // fetchVariantStats calls TestHistory.QueryStats across pages and aggregates mutually exclusive
 // effective verdict status counts per variant across 24h partition buckets within the time window.
-func fetchVariantStats(ctx context.Context, client analysispb.TestHistoryClient, project, testID string, predicate *analysispb.TestVerdictPredicate, variantDefs map[string]map[string]string) ([]variantStatsSummary, rdbpb.TestAggregation_VerdictCounts, bool, error) {
+func fetchVariantStats(ctx context.Context, client analysispb.TestHistoryClient, project, testID string, predicate *analysispb.TestVerdictPredicate, variantDefs map[string]map[string]string) ([]variantStatsSummary, *rdbpb.TestAggregation_VerdictCounts, bool, error) {
 	byHash := make(map[string]*variantStatsSummary)
-	var totalCounts rdbpb.TestAggregation_VerdictCounts
+	totalCounts := &rdbpb.TestAggregation_VerdictCounts{}
 	truncated := false
 	pageToken := ""
 	for page := 0; page < maxTestHistoryPages; page++ {
@@ -376,6 +376,7 @@ func fetchVariantStats(ctx context.Context, client analysispb.TestHistoryClient,
 				sum = &variantStatsSummary{
 					VariantHash: hash,
 					Variant:     variantDefs[hash],
+					Counts:      &rdbpb.TestAggregation_VerdictCounts{},
 				}
 				byHash[hash] = sum
 			}
@@ -573,7 +574,7 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 				nonPassingVariants++
 			}
 		}
-		overallInline := format.FormatVerdictCountsInline(&report.TotalCounts)
+		overallInline := format.FormatVerdictCountsInline(report.TotalCounts)
 		truncNote := ""
 		if report.StatsTruncated {
 			truncNote = ", partial stats (page cap reached)"
@@ -588,7 +589,7 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 			shownStats = shownStats[:maxVariantRowsShown]
 		}
 		for _, s := range shownStats {
-			countsStr := format.FormatVerdictCountsInline(&s.Counts)
+			countsStr := format.FormatVerdictCountsInline(s.Counts)
 			var metaParts []string
 			metaParts = append(metaParts, "hash: "+s.VariantHash)
 			if report.Days > 1 && s.LatestNonPassingDate != "" {

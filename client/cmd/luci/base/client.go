@@ -70,7 +70,7 @@ func (af *AuthFlags) NewLogDogClient(ctx context.Context, host string) (logdog.L
 		Host:    host,
 		Options: prpc.DefaultOptions(),
 	}
-	return logdog.NewLogsPRPCClient(prpcClient), nil
+	return logdog.NewLogsClient(prpcClient), nil
 }
 
 // NewAnalysisClients creates authenticated LUCI Analysis Rules, Clusters, and TestHistory

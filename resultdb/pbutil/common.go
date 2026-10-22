@@ -23,11 +23,11 @@ import (
 	"strings"
 	"time"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/text/unicode/norm"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"

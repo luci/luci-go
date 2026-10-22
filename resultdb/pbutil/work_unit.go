@@ -19,8 +19,8 @@ import (
 	"regexp"
 	"unicode/utf8"
 
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
