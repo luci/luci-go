@@ -120,11 +120,8 @@ export const enableWorkforceTimeframeFilter = createFleetFeatureFlag({
   description:
     'Displays the timeframe picker (1D/7D/30D/YTD) in ChromeOS Workforce Activity.',
   name: 'workforce-timeframe-filter',
-  percentage: {
-    dev: 0,
-    prod: 0,
-  },
-  allowedEnvironments: ['dev'],
+  percentage: 100,
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const enableUnifiedTaskHistory = createFleetFeatureFlag({
