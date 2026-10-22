@@ -141,6 +141,7 @@ import {
   HEALTH_AND_TASK_DEFAULT_FIXTURES,
   synthesizeChromeosDevice,
 } from './mock_health_and_tasks';
+import { REPAIR_QUEUE_DEFAULT_FIXTURES } from './mock_repair_queue';
 
 const androidReadyCount = sampleAndroidDevices.filter(
   (d) => (d as { state?: string }).state === 'IDLE',
@@ -539,17 +540,10 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   GetGceProductCatalogFilterValues: {
     filterValues: {},
   },
-  GetSmartRepair: {
-    url: 'https://example.com/smart-repair',
-  },
   GetDeviceACLs: {
     acls: [],
   },
   UpdateChromeOSDevice: {},
-  ListRepairQueue: {
-    tasks: [],
-    nextPageToken: '',
-  },
   ClaimRepairTask: {
     task: {
       id: 'task-claimed-001',
@@ -797,6 +791,7 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
     ],
   },
   ...HEALTH_AND_TASK_DEFAULT_FIXTURES,
+  ...REPAIR_QUEUE_DEFAULT_FIXTURES,
 };
 
 function deepClone<T>(obj: T): T {
