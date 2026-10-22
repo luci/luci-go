@@ -336,3 +336,62 @@ func TestSinkHardening(t *testing.T) {
 		})
 	})
 }
+
+func TestDownloadFile(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`Download single file blob with -file`, t, func(t *ftt.Test) {
+		testEnv, cleanup := fakes.NewTestEnv(t)
+		t.Cleanup(cleanup)
+
+		c, err := testEnv.Server.NewTestClient(t.Context())
+		assert.NoErr(t, err)
+
+		content := []byte("single file payload")
+		dg, err := c.WriteBlob(t.Context(), content)
+		assert.NoErr(t, err)
+
+		cmd := CmdDownload(&testAuthFlags{testEnv: testEnv})
+		parseFlags := func(args ...string) (*downloadRun, error) {
+			dr := cmd.CommandRun().(*downloadRun)
+			base := []string{"-cas-instance", "projects/test/instances/default", "-digest", dg.String()}
+			assert.NoErr(t, dr.Flags.Parse(append(base, args...)))
+			return dr, dr.parse(nil, nil)
+		}
+
+		t.Run(`Flag validation`, func(t *ftt.Test) {
+			targetFile := filepath.Join(t.TempDir(), "file.bin")
+			dr, err := parseFlags("-file", targetFile)
+			assert.NoErr(t, err)
+			assert.That(t, dr.file, should.Equal(targetFile))
+			assert.That(t, dr.dir, should.Equal(filepath.Dir(targetFile)))
+
+			_, err = parseFlags("-dir", t.TempDir(), "-file", targetFile)
+			assert.ErrIsLike(t, err, "-dir and -file are mutually exclusive")
+
+			for _, bad := range []string{".", "..", "/", "a/b/", t.TempDir()} {
+				_, err = parseFlags("-file", bad)
+				assert.Loosely(t, err, should.NotBeNil)
+			}
+		})
+
+		t.Run(`Cold and cached download`, func(t *ftt.Test) {
+			destFile := filepath.Join(t.TempDir(), "nested", "out.bin")
+			cacheDir := filepath.Join(t.TempDir(), "cache")
+
+			dr, err := parseFlags("-file", destFile, "-cache-dir", cacheDir)
+			assert.NoErr(t, err)
+			assert.NoErr(t, dr.doDownload(t.Context()))
+			got, err := os.ReadFile(destFile)
+			assert.NoErr(t, err)
+			assert.That(t, got, should.Match(content))
+
+			// Second download overwrites destFile from cache even after CAS server is cleared.
+			testEnv.Server.Clear()
+			assert.NoErr(t, dr.doDownload(t.Context()))
+			got, err = os.ReadFile(destFile)
+			assert.NoErr(t, err)
+			assert.That(t, got, should.Match(content))
+		})
+	})
+}

@@ -77,17 +77,18 @@ func validateOutputPath(root, p string, output *client.TreeOutput) error {
 func CmdDownload(authFlags AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "download <options>...",
-		ShortDesc: "download directory tree from a CAS server.",
-		LongDesc: `Downloads directory tree from the CAS server.
+		ShortDesc: "download directory tree or file from a CAS server.",
+		LongDesc: `Downloads directory tree or a single file from the CAS server.
 
-Tree is referenced by their digest "<digest hash>/<size bytes>"`,
+Tree or file is referenced by their digest "<digest hash>/<size bytes>"`,
 		CommandRun: func() subcommands.CommandRun {
 			c := downloadRun{}
 			c.Init(authFlags)
 			c.cachePolicies.AddFlags(&c.Flags)
 			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Cache directory to store downloaded files.")
-			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto "<digest hash>/<size bytes>".`)
+			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto or file blob "<digest hash>/<size bytes>".`)
 			c.Flags.StringVar(&c.dir, "dir", "", "Directory to download tree.")
+			c.Flags.StringVar(&c.file, "file", "", "File path to download a single file blob (mutually exclusive with -dir).")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump download stats to json file.")
 			if newSmallFileCache != nil {
 				c.Flags.StringVar(&c.kvs, "kvs-dir", "", "Cache dir for small files.")
@@ -101,6 +102,7 @@ type downloadRun struct {
 	commonFlags
 	digest        string
 	dir           string
+	file          string
 	dumpJSON      string
 	cacheDir      string
 	cachePolicies cache.Policies
@@ -122,6 +124,26 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 
 	if r.kvs != "" && r.cacheDir == "" {
 		return errors.New("if kvs-dir is set, cache-dir should be set")
+	}
+
+	if r.dir != "" && r.file != "" {
+		return errors.New("-dir and -file are mutually exclusive")
+	}
+
+	if r.file != "" {
+		if os.IsPathSeparator(r.file[len(r.file)-1]) {
+			return errors.Fmt("invalid -file path %q", r.file)
+		}
+		absFile, err := filepath.Abs(r.file)
+		if err != nil {
+			return errors.Fmt("failed to get absolute path for -file: %w", err)
+		}
+		if fi, err := os.Stat(absFile); err == nil && fi.IsDir() {
+			return errors.Fmt("-file %q is an existing directory", r.file)
+		}
+		r.file = absFile
+		r.dir = filepath.Dir(absFile)
+		return nil
 	}
 
 	r.dir = filepath.Clean(r.dir)
@@ -353,8 +375,8 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFile
 	return nil
 }
 
-// doDownload downloads directory tree from the CAS server.
-func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
+// doDownload downloads directory tree or a single file from the CAS server.
+func (r *downloadRun) doDownload(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer signals.HandleInterrupt(cancel)()
@@ -368,6 +390,31 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		return writeExitError(r.dumpJSON, DigestInvalid, r.digest, errors.Fmt("failed to parse digest: %s: %w", r.digest, err))
 	}
 
+	if r.file != "" {
+		return r.doDownloadFile(ctx, d)
+	}
+	return r.doDownloadDir(ctx, d)
+}
+
+// doDownloadFile downloads a single file blob referenced by digest d to r.file.
+func (r *downloadRun) doDownloadFile(ctx context.Context, d digest.Digest) error {
+	// Single-file downloads do not use BatchReadBlobs, so skip the extra
+	// StartupCapabilities RPC round-trip.
+	c, err := r.newRBEClient(ctx, r.dumpJSON, true, client.StartupCapabilities(false))
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+
+	name := filepath.Base(r.file)
+	outputs := map[string]*client.TreeOutput{
+		name: {Digest: d, Path: name},
+	}
+	return r.downloadOutputs(ctx, c, outputs)
+}
+
+// doDownloadDir fetches the directory tree for digest d and downloads its files into r.dir.
+func (r *downloadRun) doDownloadDir(ctx context.Context, d digest.Digest) error {
 	c, err := r.newRBEClient(ctx, r.dumpJSON, true)
 	if err != nil {
 		return err
@@ -378,7 +425,11 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	if err != nil {
 		return err
 	}
+	return r.downloadOutputs(ctx, c, outputs)
+}
 
+// downloadOutputs materializes the given CAS tree outputs under r.dir.
+func (r *downloadRun) downloadOutputs(ctx context.Context, c *client.Client, outputs map[string]*client.TreeOutput) (rerr error) {
 	logger := logging.Get(ctx)
 	start := time.Now()
 
