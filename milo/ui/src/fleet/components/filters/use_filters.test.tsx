@@ -21,6 +21,10 @@ import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 
 import {
+  DateFilterCategoryData,
+  DateFilterCategoryDataBuilder,
+} from './date_filter';
+import {
   StringListFilterCategory,
   StringListFilterCategoryBuilder,
 } from './string_list_filter';
@@ -1600,5 +1604,61 @@ describe('useFilterState', () => {
 
     await waitFor(() => expect(result.current.filterValues).toBeDefined());
     expect(result.current.warnings).toEqual([]);
+  });
+
+  it('supports Include/Exclude (Blank) on DateFilterCategoryData alone and combined with datetime or date-only range', async () => {
+    const onFilterChangeMock = jest.fn();
+    const builders = {
+      'labels."ufs.last_sync"': new DateFilterCategoryDataBuilder()
+        .setLabel('ufs.last_sync')
+        .disableFuture(),
+      slippage: new DateFilterCategoryDataBuilder()
+        .setLabel('Slippage')
+        .setIsDateOnly(true),
+    };
+    const initialFilter =
+      '(NOT labels."ufs.last_sync":* OR ' +
+      '(labels."ufs.last_sync" >= "2026-09-24T21:20:00.000Z")) ' +
+      'AND (slippage:* AND slippage >= "2026-09-24")';
+    const { result } = renderHook(() =>
+      useFilterState(builders, initialFilter, onFilterChangeMock),
+    );
+    await waitFor(() => expect(result.current.filterValues).toBeDefined());
+    const category = result.current.filterValues?.[
+      'labels."ufs.last_sync"'
+    ] as DateFilterCategoryData;
+    expect(category.isActive()).toBe(true);
+    expect(category.value.onlyEmpty).toBe(true);
+    expect(category.value.min).toBeInstanceOf(Date);
+    expect(category.getChipLabel()).toContain('2 | ufs.last_sync from ');
+    expect(category.getChipLabel()).toContain(`, ${BLANK_VALUE}`);
+
+    const slippageCat = result.current.filterValues?.[
+      'slippage'
+    ] as DateFilterCategoryData;
+    expect(slippageCat.isActive()).toBe(true);
+    expect(slippageCat.value.excludeEmpty).toBe(true);
+    expect(slippageCat.getChipLabel()).toContain(`2 | Slippage from `);
+    expect(slippageCat.getChipLabel()).toContain(`(NOT ${BLANK_VALUE})`);
+
+    expect(result.current.aip160()).toBe(
+      '(NOT labels."ufs.last_sync":* OR ' +
+        '(labels."ufs.last_sync" >= "2026-09-24T21:20:00.000Z")) ' +
+        'AND slippage:* AND slippage >= "2026-09-24"',
+    );
+    act(() => {
+      slippageCat.clear();
+      result.current.setFiltersBatch({
+        'labels."ufs.last_sync"': [BLANK_VALUE],
+      });
+    });
+    expect(onFilterChangeMock).toHaveBeenCalledWith(
+      'NOT labels."ufs.last_sync":*',
+    );
+    expect(category.getChipLabel()).toBe(`1 | ufs.last_sync IN ${BLANK_VALUE}`);
+    act(() => {
+      result.current.setFiltersBatch({ 'labels."ufs.last_sync"': [] });
+    });
+    expect(onFilterChangeMock).toHaveBeenCalledWith('');
   });
 });

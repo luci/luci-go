@@ -19,6 +19,7 @@ import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_
 
 import { getAndroidColumns } from './android_columns';
 import { AndroidColumnDef } from './android_fields';
+import { EXTRA_COLUMN_IDS } from './use_android_columns';
 
 describe('Android Columns', () => {
   it('should generate proper order_by_fields for base dimensions mapped as labels', () => {
@@ -173,5 +174,16 @@ describe('Android Columns', () => {
     it('should leave plain values untouched', () => {
       expect(normalizeFilterKey('IDLE')).toBe('IDLE');
     });
+  });
+
+  it('should include static sync timestamp columns in EXTRA_COLUMN_IDS', () => {
+    expect(EXTRA_COLUMN_IDS).toEqual(
+      expect.arrayContaining([
+        'ufs.last_sync',
+        'mh.last_sync',
+        'ufs.nlyte_last_sync',
+        'ufs.nlyte_update_time',
+      ]),
+    );
   });
 });

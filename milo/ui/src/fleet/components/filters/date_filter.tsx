@@ -15,6 +15,7 @@
 import { DateTime } from 'luxon';
 import { useImperativeHandle, useMemo, useRef, useState } from 'react';
 
+import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { DateFilterValue } from '@/fleet/types';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 
@@ -23,6 +24,7 @@ import { OptionComponentHandle } from '../filter_dropdown/filter_dropdown';
 import { Footer } from '../options_dropdown/footer';
 
 import { filterDropdownKeyDown } from './filter_dropdown_keydown';
+import { unquote } from './normalize_filter_key';
 import {
   BuildResult,
   FilterCategory,
@@ -73,6 +75,20 @@ export class DateFilterCategoryData implements FilterCategory {
 
     if (terms !== null) {
       for (const term of terms) {
+        if (
+          term.simple.comparator === ':' &&
+          term.simple.arg?.kind === 'Comparable' &&
+          term.simple.arg.member.value.value === '*'
+        ) {
+          if (term.negated) {
+            value.onlyEmpty = true;
+            value.excludeEmpty = undefined;
+          } else {
+            value.excludeEmpty = true;
+            value.onlyEmpty = undefined;
+          }
+          continue;
+        }
         if (term.negated) {
           continue;
         }
@@ -125,21 +141,35 @@ export class DateFilterCategoryData implements FilterCategory {
   }
 
   public toAIP160(): string {
-    const parts: string[] = [];
     const safeKey = this.key.trim();
+    const rangeParts: string[] = [];
     if (this.value.min) {
       const val = this.isDateOnly
         ? DateTime.fromJSDate(this.value.min).toISODate()
         : this.value.min.toISOString();
-      parts.push(`${safeKey} >= "${val}"`);
+      rangeParts.push(`${safeKey} >= "${val}"`);
     }
     if (this.value.max) {
       const val = this.isDateOnly
         ? DateTime.fromJSDate(this.value.max).toISODate()
         : this.value.max.toISOString();
-      parts.push(`${safeKey} <= "${val}"`);
+      rangeParts.push(`${safeKey} <= "${val}"`);
     }
-    return parts.join(' AND ');
+    const rangeExpr = rangeParts.join(' AND ');
+
+    if (this.value.onlyEmpty) {
+      if (!rangeExpr) {
+        return `NOT ${safeKey}:*`;
+      }
+      return `(NOT ${safeKey}:* OR (${rangeExpr}))`;
+    }
+    if (this.value.excludeEmpty) {
+      if (!rangeExpr) {
+        return `${safeKey}:*`;
+      }
+      return `${safeKey}:* AND ${rangeExpr}`;
+    }
+    return rangeExpr;
   }
 
   public render(
@@ -161,30 +191,67 @@ export class DateFilterCategoryData implements FilterCategory {
         onClose={onClose}
         ref={ref}
         isFutureDisabled={this.isFutureDisabled}
+        isDateOnly={this.isDateOnly}
       />
     );
   }
 
   public getChipLabel() {
-    const parts: string[] = [];
+    const formatOpts = this.isDateOnly
+      ? DateTime.DATE_SHORT
+      : DateTime.DATETIME_SHORT;
+    const rangeParts: string[] = [];
     if (this.value.min) {
-      parts.push(
-        `from ${DateTime.fromJSDate(this.value.min).toLocaleString()}`,
+      rangeParts.push(
+        `from ${DateTime.fromJSDate(this.value.min).toLocaleString(formatOpts)}`,
       );
     }
     if (this.value.max) {
-      parts.push(`to ${DateTime.fromJSDate(this.value.max).toLocaleString()}`);
+      rangeParts.push(
+        `to ${DateTime.fromJSDate(this.value.max).toLocaleString(formatOpts)}`,
+      );
     }
-    return `1 | ${this.label} ${parts.join(' ')}`;
+    if (this.value.onlyEmpty) {
+      if (rangeParts.length === 0) {
+        return `1 | ${this.label} IN ${BLANK_VALUE}`;
+      }
+      return `2 | ${this.label} ${rangeParts.join(' ')}, ${BLANK_VALUE}`;
+    }
+    if (this.value.excludeEmpty) {
+      if (rangeParts.length === 0) {
+        return `1 | ${this.label} NOT IN ${BLANK_VALUE}`;
+      }
+      return `2 | ${this.label} ${rangeParts.join(' ')} (NOT ${BLANK_VALUE})`;
+    }
+    return `1 | ${this.label} ${rangeParts.join(' ')}`;
   }
 
   public isActive() {
-    return !!(this.value.min || this.value.max);
+    return !!(
+      this.value.min ||
+      this.value.max ||
+      this.value.onlyEmpty ||
+      this.value.excludeEmpty
+    );
   }
 
   public clear() {
     this.value = {};
     this.reRender();
+  }
+
+  public setSelectedOptions(
+    selectedKeys: string[],
+    silent = false,
+  ): string | undefined {
+    const hasBlank = selectedKeys.some(
+      (k) => unquote(k).toLowerCase() === BLANK_VALUE.toLowerCase(),
+    );
+    this.value = hasBlank ? { onlyEmpty: true } : {};
+    if (!silent) {
+      this.reRender();
+    }
+    return undefined;
   }
 
   public getChildrenSearchScore(_searchQuery: string) {
@@ -198,12 +265,14 @@ const DateOptionComponent = function DateOptionComponent({
   onClose,
   ref,
   isFutureDisabled,
+  isDateOnly,
 }: {
   value: DateFilterValue;
   onApply: (value: DateFilterValue) => void;
   onClose: () => void;
   ref?: React.Ref<unknown>;
   isFutureDisabled?: boolean;
+  isDateOnly?: boolean;
 }) {
   const [tempValue, setTempValue] = useState(value);
   const innerRef = useRef<OptionComponentHandle>(null);
@@ -220,6 +289,11 @@ const DateOptionComponent = function DateOptionComponent({
   return (
     <div
       role="presentation"
+      css={{
+        '& .options-menu-footer': {
+          padding: '10px 16px 12px 16px',
+        },
+      }}
       onKeyDown={(e) => {
         filterDropdownKeyDown(
           e,
@@ -233,6 +307,7 @@ const DateOptionComponent = function DateOptionComponent({
         value={tempValue}
         onChange={setTempValue}
         isFutureDisabled={isFutureDisabled}
+        isDateOnly={isDateOnly}
       />
       <Footer
         applyDisabled={

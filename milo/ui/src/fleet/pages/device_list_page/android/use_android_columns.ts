@@ -29,12 +29,16 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 import { getAndroidColumns } from './android_columns';
 import { getAndroidColumnHeader } from './android_fields';
 
-const EXTRA_COLUMN_IDS = [
+export const EXTRA_COLUMN_IDS = [
   'label-id',
   'label-run_target',
   'label-hostname',
   'fc_offline_since',
   'realm',
+  'ufs.last_sync',
+  'mh.last_sync',
+  'ufs.nlyte_last_sync',
+  'ufs.nlyte_update_time',
 ];
 
 export const useAndroidColumns = (

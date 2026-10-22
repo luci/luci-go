@@ -57,6 +57,8 @@ export type OptionCategory = StringListCategory | DateCategory | RangeCategory;
 export interface DateFilterValue {
   min?: Date;
   max?: Date;
+  onlyEmpty?: boolean;
+  excludeEmpty?: boolean;
 }
 
 /**

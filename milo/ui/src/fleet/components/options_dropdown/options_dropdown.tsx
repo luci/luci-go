@@ -19,6 +19,7 @@ import {
   PopoverOrigin,
   Popper,
   PopperPlacementType,
+  PopperProps,
   SxProps,
 } from '@mui/material';
 import {
@@ -210,6 +211,19 @@ export function OptionsDropdown({
   }, [open, resetKey]);
 
   useEffect(() => {
+    if (!open || !anchorEl || typeof ResizeObserver === 'undefined') return;
+    const updatePosition = () => {
+      popperRef.current?.update();
+    };
+    const resizeObserver = new ResizeObserver(updatePosition);
+    resizeObserver.observe(document.body);
+    if (anchorEl.parentElement) {
+      resizeObserver.observe(anchorEl.parentElement);
+    }
+    return () => resizeObserver.disconnect();
+  }, [open, anchorEl]);
+
+  useEffect(() => {
     if (enableSearchInput) {
       // Small timeout to allow the popover to mount and settle
       if (open) {
@@ -261,7 +275,7 @@ export function OptionsDropdown({
 
   return (
     <Popper
-      popperRef={popperRef as React.ComponentProps<typeof Popper>['popperRef']}
+      popperRef={popperRef as PopperProps['popperRef']}
       disablePortal={disablePortal}
       open={open}
       anchorEl={anchorEl}
@@ -416,7 +430,7 @@ export function OptionsDropdown({
             css={{
               maxHeight: maxHeight,
               overflow: 'auto',
-              paddingTop: '8px',
+              paddingTop: enableSearchInput ? '8px' : 0,
               overscrollBehavior: 'contain',
             }}
             tabIndex={-1}
