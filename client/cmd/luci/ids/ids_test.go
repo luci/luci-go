@@ -41,6 +41,8 @@ type mockResultDBClient struct {
 	queryTestExonerations func(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error)
 	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
 	getInvocation         func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
+	getWorkUnit           func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
+	batchGetWorkUnits     func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error)
 }
 
 func (m *mockResultDBClient) QueryTestVerdicts(ctx context.Context, in *pb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*pb.QueryTestVerdictsResponse, error) {
@@ -76,6 +78,20 @@ func (m *mockResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvoca
 		return m.getInvocation(ctx, in)
 	}
 	return &pb.Invocation{}, nil
+}
+
+func (m *mockResultDBClient) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+	if m.getWorkUnit != nil {
+		return m.getWorkUnit(ctx, in)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
+}
+
+func (m *mockResultDBClient) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*pb.BatchGetWorkUnitsResponse, error) {
+	if m.batchGetWorkUnits != nil {
+		return m.batchGetWorkUnits(ctx, in)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
 }
 
 func legacyMockClient() *mockResultDBClient {
@@ -188,6 +204,59 @@ func newMockAntsServer() *httptest.Server {
 				"aggregationDetail": {
 					"aggregationLevel": "MODULE"
 				}
+			}`))
+		case "/v4/workunits/WU17100269020689387":
+			_, _ = w.Write([]byte(`{
+				"id": "WU17100269020689387",
+				"invocationId": "I77100010600769898",
+				"name": "CellBroadcastServiceTests",
+				"type": "TF_MODULE",
+				"state": "COMPLETED"
+			}`))
+		case "/v4/workunits/WU89700270010105897":
+			_, _ = w.Write([]byte(`{
+				"id": "WU89700270010105897",
+				"invocationId": "I71400010624864031",
+				"parentId": "WU97500270010256987",
+				"name": "x86_64 bluetooth_test_gd_unit",
+				"type": "TF_TEST_RUN",
+				"state": "ERROR"
+			}`))
+		case "/v4/workunits/WU97500270010256987":
+			_, _ = w.Write([]byte(`{
+				"id": "WU97500270010256987",
+				"invocationId": "I71400010624864031",
+				"parentId": "WU50500270009982574",
+				"name": "bluetooth_test_gd_unit",
+				"type": "TF_MODULE",
+				"state": "COMPLETED",
+				"moduleInfo": {
+					"name": "bluetooth_test_gd_unit",
+					"moduleParameters": [
+						{"name": "module-abi", "value": "x86_64"}
+					]
+				}
+			}`))
+		case "/v4/workunits/WU50500270009982574":
+			_, _ = w.Write([]byte(`{
+				"id": "WU50500270009982574",
+				"invocationId": "I71400010624864031",
+				"parentId": "WU98400270010026294",
+				"name": "test-task-1",
+				"type": "TFC_COMMAND_TASK",
+				"state": "COMPLETED",
+				"properties": [
+					{"name": "resultdb_root_invocation_id", "value": "ants-i71400010624864031"},
+					{"name": "resultdb_work_unit_id", "value": "ants-wu50500270009982574"}
+				]
+			}`))
+		case "/v4/workunits/WU98400270010026294":
+			_, _ = w.Write([]byte(`{
+				"id": "WU98400270010026294",
+				"invocationId": "I71400010624864031",
+				"name": "root-invocation-wu",
+				"type": "TF_INVOCATION",
+				"state": "COMPLETED"
 			}`))
 		default:
 			w.WriteHeader(http.StatusNotFound)
@@ -435,15 +504,106 @@ func TestExtractIDs(t *testing.T) {
 		})
 
 		t.Run(`Standalone AnTS Invocation and Work Unit IDs`, func(t *ftt.Test) {
-			ids, err := ExtractIDs(ctx, nil, nil, "I77100010600769898", false)
+			srv := newMockAntsServer()
+			defer srv.Close()
+
+			ctxWithAnts := base.WithAntsHTTPClient(ctx, srv.Client(), srv.URL)
+
+			// 1. Standalone invocation ID
+			ids, err := ExtractIDs(ctxWithAnts, nil, nil, "I77100010600769898", false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids.InvocationID, should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, ids.Legacy, should.BeFalse)
 
-			ids2, err := ExtractIDs(ctx, nil, nil, "WU17100269020689387", false)
+			// 2. Standalone WU17100269020689387 resolves both InvocationID and WorkUnitID
+			ids2, err := ExtractIDs(ctxWithAnts, nil, nil, "WU17100269020689387", false)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids2.InvocationID, should.Equal("ants-i77100010600769898"))
 			assert.Loosely(t, ids2.WorkUnitID, should.Equal("ants-wu17100269020689387"))
+			assert.Loosely(t, ids2.ModuleName, should.Equal("CellBroadcastServiceTests"))
 			assert.Loosely(t, ids2.Legacy, should.BeFalse)
+
+			ids3, err := ExtractIDs(ctxWithAnts, nil, nil, "ants-wu17100269020689387", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids3.InvocationID, should.Equal("ants-i77100010600769898"))
+			assert.Loosely(t, ids3.WorkUnitID, should.Equal("ants-wu17100269020689387"))
+
+			// 3. Standalone leaf WU89700270010105897 with mock ResultDB GetWorkUnit + BatchGetWorkUnits resolves
+			// to InvocationID: "ants-i71400010624864031", ModuleName: "bluetooth_test_gd_unit",
+			// and composite WorkUnitID: "ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64".
+			taskWUName := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574"
+			modWUName := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-db583479-b6d6-4167-88b7-e4ce8af99beb"
+			testRunWUName := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"
+
+			client := &mockResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					if in.Name == taskWUName {
+						return &pb.WorkUnit{
+							Name:           taskWUName,
+							WorkUnitId:     "ants-wu50500270009982574",
+							ChildWorkUnits: []string{modWUName},
+						}, nil
+					}
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				batchGetWorkUnits: func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error) {
+					if len(in.Names) == 1 && in.Names[0] == modWUName {
+						return &pb.BatchGetWorkUnitsResponse{
+							WorkUnits: []*pb.WorkUnit{
+								{
+									Name:       modWUName,
+									WorkUnitId: "ants-wu50500270009982574:u-db583479-b6d6-4167-88b7-e4ce8af99beb",
+									Kind:       "TF_MODULE",
+									ModuleId: &pb.ModuleIdentifier{
+										ModuleName: "bluetooth_test_gd_unit",
+										ModuleVariant: &pb.Variant{
+											Def: map[string]string{"module_abi": "x86_64"},
+										},
+									},
+									ChildWorkUnits: []string{testRunWUName},
+								},
+							},
+						}, nil
+					}
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+			}
+
+			idsLeaf, err := ExtractIDs(ctxWithAnts, client, nil, "WU89700270010105897", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsLeaf.InvocationID, should.Equal("ants-i71400010624864031"))
+			assert.Loosely(t, idsLeaf.ModuleName, should.Equal("bluetooth_test_gd_unit"))
+			assert.Loosely(t, idsLeaf.WorkUnitID, should.Equal("ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"))
+
+			// 4. Standalone composite ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64
+			// resolves InvocationID: "ants-i71400010624864031" and preserves WorkUnitID: "ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64".
+			idsComp, err := ExtractIDs(ctxWithAnts, nil, nil, "ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsComp.InvocationID, should.Equal("ants-i71400010624864031"))
+			assert.Loosely(t, idsComp.WorkUnitID, should.Equal("ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"))
+
+			// 5. ATI URL with /workunit/WU... and ?workUnitId=WU...
+			urlWUPath := "https://android-build.corp.google.com/test_investigate/invocation/I71400010624864031/workunit/WU50500270009982574"
+			idsURLPath, err := ExtractIDs(ctxWithAnts, client, nil, urlWUPath, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsURLPath.InvocationID, should.Equal("ants-i71400010624864031"))
+			assert.Loosely(t, idsURLPath.WorkUnitID, should.Equal("ants-wu50500270009982574"))
+
+			urlWUQuery := "https://android-build.googleplex.com/builds/tests/view?invocationId=I71400010624864031&workUnitId=WU50500270009982574"
+			idsURLQuery, err := ExtractIDs(ctxWithAnts, client, nil, urlWUQuery, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsURLQuery.InvocationID, should.Equal("ants-i71400010624864031"))
+			assert.Loosely(t, idsURLQuery.WorkUnitID, should.Equal("ants-wu50500270009982574"))
+
+			// 6. Standalone composite work unit without AnTS API availability preserves WorkUnitID
+			srv404 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.NotFound(w, r)
+			}))
+			defer srv404.Close()
+			ctx404 := base.WithAntsHTTPClient(ctx, srv404.Client(), srv404.URL)
+			idsCompOffline, err := ExtractIDs(ctx404, nil, nil, "ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsCompOffline.WorkUnitID, should.Equal("ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"))
 		})
 
 		t.Run(`AnTS TR ID and ATI URL with mock AnTS API and ResultDB`, func(t *ftt.Test) {

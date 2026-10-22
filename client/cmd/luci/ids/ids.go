@@ -389,12 +389,12 @@ func extractFromAntsTarget(ctx context.Context, client pb.ResultDBClient, raw st
 		return true, nil
 	}
 
+	wuID := ""
 	if base.IsAntsWorkUnitID(raw) {
-		extracted.WorkUnitID = base.NormalizeWorkUnit(raw)
-		return true, nil
+		wuID = raw
 	}
 
-	if !base.IsAntsURL(raw) && !base.IsAntsTestResultID(raw) {
+	if !base.IsAntsURL(raw) && !base.IsAntsTestResultID(raw) && wuID == "" {
 		return false, nil
 	}
 
@@ -402,8 +402,42 @@ func extractFromAntsTarget(ctx context.Context, client pb.ResultDBClient, raw st
 	invID := ""
 	if base.IsAntsTestResultID(raw) {
 		trID = raw
-	} else {
+	} else if base.IsAntsURL(raw) {
 		invID, trID = base.ExtractAntsURLComponents(raw)
+		if trID == "" {
+			wuID = base.ExtractAntsURLWorkUnit(raw)
+		}
+	}
+
+	// Resolve standalone AnTS work unit IDs or ATI work unit URLs (without a test result ID)
+	// via the AnTS v4 API and ResultDB hierarchy lookup.
+	if wuID != "" && trID == "" {
+		extracted.WorkUnitID = base.NormalizeWorkUnit(wuID)
+		if invID != "" {
+			extracted.InvocationID = base.NormalizeInvocation(invID)
+		}
+
+		info, err := base.ResolveAntsWorkUnit(ctx, wuID)
+		if err != nil {
+			// If we already have an invocation ID from the URL or a pre-resolved
+			// composite/attempt work unit ID, succeed gracefully without AnTS API.
+			if extracted.InvocationID != "" || strings.Contains(extracted.WorkUnitID, ":u-") || strings.Contains(extracted.WorkUnitID, "-attempt__") {
+				return true, nil
+			}
+			return false, err
+		}
+
+		if info.InvocationID != "" {
+			extracted.InvocationID = base.NormalizeInvocation(info.InvocationID)
+		} else if info.ResultDBRootInvocationID != "" {
+			extracted.InvocationID = base.NormalizeInvocation(info.ResultDBRootInvocationID)
+		}
+		if info.ModuleName != "" {
+			extracted.ModuleName = info.ModuleName
+		}
+
+		extracted.WorkUnitID = base.ResolveResultDBAntsWorkUnit(ctx, client, extracted.InvocationID, wuID, info)
+		return true, nil
 	}
 
 	if trID == "" {

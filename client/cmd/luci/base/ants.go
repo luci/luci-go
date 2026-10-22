@@ -31,7 +31,9 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // DefaultAntsBaseURL is the default AnTS v4 OnePlatform API endpoint.
@@ -689,4 +691,337 @@ func ParseAntsWorkUnitJSON(data []byte) (*AntsWorkUnitInfo, error) {
 	}
 
 	return info, nil
+}
+
+// ResolveResultDBAntsWorkUnit resolves an AnTS work unit ID (`WU<digits>` or
+// `ants-wu<digits>`) to its actual ResultDB work unit ID within `invID`.
+//
+// In TradeFed's ResultDB integration, AnTS work units map to ResultDB work
+// units according to their level in the execution hierarchy:
+//   - Top-level invocation work units (`ParentID == ""`) map to ResultDB's
+//     `root` work unit.
+//   - Task-level work units (`TFC_COMMAND_TASK`) exist directly in ResultDB as
+//     `ants-wu<task_id>` (or `ants-wu<task_id>-attempt__<N>`).
+//   - Module (`TF_MODULE`) and test-run (`TF_TEST_RUN`) work units are stored
+//     in ResultDB as composite child work units under their parent task work
+//     unit with IDs of the form `<task_wu_id>:u-<uuid>`, rather than by their
+//     own AnTS `WU<digits>` ID.
+//
+// Resolution steps:
+//  1. If `rawWorkUnitID` already carries a composite `:u-<uuid>` or
+//     `-attempt__<N>` suffix, return its normalized form immediately.
+//  2. Probe `GetWorkUnit(rootInvocations/<inv>/workUnits/<normWU>)`. If the
+//     work unit exists directly in ResultDB, return `normWU`.
+//  3. If `info.ParentID == ""` (top-level AnTS invocation work unit), probe
+//     `rootInvocations/<inv>/workUnits/root` and return `"root"` if found.
+//  4. If `info.ResultDBWorkUnitID` identifies an enclosing task work unit in
+//     ResultDB, fetch that task's `ChildWorkUnits` via `BatchGetWorkUnits` to
+//     locate the matching `TF_MODULE` child work unit (and, for `TF_TEST_RUN`
+//     targets, the best matching `TF_TEST_RUN` grandchild work unit).
+func ResolveResultDBAntsWorkUnit(ctx context.Context, client rdbpb.ResultDBClient, invID, rawWorkUnitID string, info *AntsWorkUnitInfo) string {
+	normWU := NormalizeWorkUnit(rawWorkUnitID)
+	if strings.Contains(normWU, ":u-") || strings.Contains(normWU, "-attempt__") {
+		return normWU
+	}
+	if client == nil || invID == "" {
+		if info != nil && info.ResultDBWorkUnitID != "" && !strings.EqualFold(info.Type, "TF_MODULE") && !strings.EqualFold(info.Type, "TF_TEST_RUN") {
+			return NormalizeWorkUnit(info.ResultDBWorkUnitID)
+		}
+		return normWU
+	}
+
+	normInv := NormalizeInvocation(invID)
+	probeCtx := logging.SetLevel(ctx, logging.Error)
+
+	// 1. Check if normWU exists directly in ResultDB (e.g. TFC_COMMAND_TASK).
+	directName := FormatWorkUnitResourceName(normInv, normWU)
+	if wu, err := client.GetWorkUnit(probeCtx, &rdbpb.GetWorkUnitRequest{
+		Name: directName,
+		View: rdbpb.WorkUnitView_WORK_UNIT_VIEW_BASIC,
+	}); err == nil && wu != nil {
+		return normWU
+	}
+
+	if info == nil {
+		return normWU
+	}
+
+	// 2. Top-level AnTS invocation work units have no parent and map to "root".
+	if info.ParentID == "" {
+		rootName := FormatWorkUnitResourceName(normInv, "root")
+		if wu, err := client.GetWorkUnit(probeCtx, &rdbpb.GetWorkUnitRequest{
+			Name: rootName,
+			View: rdbpb.WorkUnitView_WORK_UNIT_VIEW_BASIC,
+		}); err == nil && wu != nil {
+			return "root"
+		}
+	}
+
+	// 3. Leaf/child AnTS work units (TF_MODULE, TF_TEST_RUN) are stored under
+	// their parent task's ResultDB work unit as `<task_wu_id>:u-<uuid>`.
+	parentTaskWU := NormalizeWorkUnit(info.ResultDBWorkUnitID)
+	if parentTaskWU == "" {
+		return normWU
+	}
+
+	taskName := FormatWorkUnitResourceName(normInv, parentTaskWU)
+	taskWU, err := client.GetWorkUnit(probeCtx, &rdbpb.GetWorkUnitRequest{
+		Name: taskName,
+		View: rdbpb.WorkUnitView_WORK_UNIT_VIEW_BASIC,
+	})
+	if err != nil || taskWU == nil {
+		return normWU
+	}
+
+	// If the AnTS work unit is not a module or test-run work unit and has no
+	// module name, it maps to the task work unit itself.
+	if !strings.EqualFold(info.Type, "TF_MODULE") && !strings.EqualFold(info.Type, "TF_TEST_RUN") && info.ModuleName == "" {
+		return parentTaskWU
+	}
+
+	if len(taskWU.GetChildWorkUnits()) == 0 {
+		return normWU
+	}
+
+	// BatchGet the immediate child work units of the task (typically TF_MODULE work units).
+	batchResp, err := client.BatchGetWorkUnits(probeCtx, &rdbpb.BatchGetWorkUnitsRequest{
+		Parent: "rootInvocations/" + normInv,
+		Names:  taskWU.GetChildWorkUnits(),
+		View:   rdbpb.WorkUnitView_WORK_UNIT_VIEW_FULL,
+	})
+	if err != nil || len(batchResp.GetWorkUnits()) == 0 {
+		return normWU
+	}
+
+	matchedModuleWU := findMatchingModuleWorkUnit(batchResp.GetWorkUnits(), info)
+	if matchedModuleWU == nil {
+		return normWU
+	}
+
+	// If the target AnTS work unit is a TF_MODULE (or the module work unit has
+	// no test-run children), return the module work unit's ResultDB ID.
+	if strings.EqualFold(info.Type, "TF_MODULE") || len(matchedModuleWU.GetChildWorkUnits()) == 0 {
+		return extractWorkUnitID(matchedModuleWU, normWU)
+	}
+
+	// For TF_TEST_RUN (or deeper child work units), select the best matching
+	// test-run child under the matched module work unit.
+	children := matchedModuleWU.GetChildWorkUnits()
+	if len(children) == 1 {
+		if id := extractWorkUnitIDFromName(children[0]); id != "" {
+			return id
+		}
+	}
+
+	if selected := selectTestRunWorkUnit(probeCtx, client, normInv, children, info); selected != "" {
+		return selected
+	}
+
+	return extractWorkUnitID(matchedModuleWU, normWU)
+}
+
+// selectTestRunWorkUnit disambiguates multiple ResultDB TF_TEST_RUN child work
+// units under a module work unit using a 4-tier heuristic:
+//  1. Prefer a child work unit whose ResultDB `State` is `WorkUnit_FAILED`.
+//  2. Query `QueryTestVerdicts` for the module with `ui_priority` ordering and
+//     select the child work unit containing an unexpected or failing test result.
+//  3. If the AnTS work unit includes a `CreationTimestamp`, select the child
+//     work unit with the closest ResultDB `CreateTime`.
+//  4. Fall back to the first child work unit.
+func selectTestRunWorkUnit(ctx context.Context, client rdbpb.ResultDBClient, normInv string, childNames []string, info *AntsWorkUnitInfo) string {
+	if len(childNames) == 0 {
+		return ""
+	}
+
+	childBatch, err := client.BatchGetWorkUnits(ctx, &rdbpb.BatchGetWorkUnitsRequest{
+		Parent: "rootInvocations/" + normInv,
+		Names:  childNames,
+		View:   rdbpb.WorkUnitView_WORK_UNIT_VIEW_FULL,
+	})
+	if err == nil && len(childBatch.GetWorkUnits()) > 0 {
+		wus := childBatch.GetWorkUnits()
+
+		// 1. Prefer a child work unit explicitly in WorkUnit_FAILED state.
+		for _, cw := range wus {
+			if cw.GetState() == rdbpb.WorkUnit_FAILED {
+				if id := extractWorkUnitID(cw, ""); id != "" {
+					return id
+				}
+			}
+		}
+
+		// 2. If we know the module name, check QueryTestVerdicts to find which
+		// child work unit produced a failing or unexpected test result.
+		if info != nil && info.ModuleName != "" {
+			candidateSet := make(map[string]bool, len(childNames))
+			for _, n := range childNames {
+				if id := extractWorkUnitIDFromName(n); id != "" {
+					candidateSet[id] = true
+				}
+			}
+
+			tvResp, tvErr := client.QueryTestVerdicts(ctx, &rdbpb.QueryTestVerdictsRequest{
+				Parent:   "rootInvocations/" + normInv,
+				View:     rdbpb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
+				PageSize: 100,
+				OrderBy:  "ui_priority",
+				Predicate: &rdbpb.TestVerdictPredicate{
+					ContainsTestResultFilter: fmt.Sprintf("test_id_structured.module_name = %q", info.ModuleName),
+				},
+			})
+			if tvErr == nil {
+				var fallbackWUID string
+				for _, v := range tvResp.GetTestVerdicts() {
+					for _, tr := range v.GetResults() {
+						wuID := extractWorkUnitIDFromName(tr.GetName())
+						if !candidateSet[wuID] {
+							continue
+						}
+						if isFailingTestResult(tr) {
+							return wuID
+						}
+						if fallbackWUID == "" {
+							fallbackWUID = wuID
+						}
+					}
+				}
+				if fallbackWUID != "" {
+					return fallbackWUID
+				}
+			}
+		}
+
+		// 3. Match by closest creation timestamp if available.
+		if info != nil && info.CreationTimestamp > 0 {
+			var bestWU *rdbpb.WorkUnit
+			var bestDiff int64 = -1
+			for _, cw := range wus {
+				if cw.GetCreateTime() == nil {
+					continue
+				}
+				diff := cw.GetCreateTime().AsTime().UnixMilli() - info.CreationTimestamp
+				if diff < 0 {
+					diff = -diff
+				}
+				if bestDiff < 0 || diff < bestDiff {
+					bestDiff = diff
+					bestWU = cw
+				}
+			}
+			if bestWU != nil {
+				if id := extractWorkUnitID(bestWU, ""); id != "" {
+					return id
+				}
+			}
+		}
+	}
+
+	// 4. Fallback to the first child work unit.
+	return extractWorkUnitIDFromName(childNames[0])
+}
+
+// isFailingTestResult returns true if a ResultDB TestResult is unexpected or
+// has a failure, crash, abort, precluded, or execution-errored status.
+func isFailingTestResult(tr *rdbpb.TestResult) bool {
+	return tr.GetStatusV2() == rdbpb.TestResult_FAILED ||
+		tr.GetStatusV2() == rdbpb.TestResult_EXECUTION_ERRORED ||
+		tr.GetStatusV2() == rdbpb.TestResult_PRECLUDED ||
+		(!tr.GetExpected() && tr.GetStatusV2() != rdbpb.TestResult_PASSED && tr.GetStatusV2() != rdbpb.TestResult_SKIPPED) ||
+		tr.GetStatus() == rdbpb.TestStatus_FAIL ||
+		tr.GetStatus() == rdbpb.TestStatus_CRASH ||
+		tr.GetStatus() == rdbpb.TestStatus_ABORT
+}
+
+// findMatchingModuleWorkUnit selects the ResultDB child WorkUnit whose module
+// name and variant parameters (such as ABI) best match the AnTS work unit.
+func findMatchingModuleWorkUnit(candidates []*rdbpb.WorkUnit, info *AntsWorkUnitInfo) *rdbpb.WorkUnit {
+	if len(candidates) == 0 {
+		return nil
+	}
+
+	// Filter to TF_MODULE work units (or work units with ModuleId) when present.
+	var moduleWUs []*rdbpb.WorkUnit
+	for _, wu := range candidates {
+		if strings.EqualFold(wu.GetKind(), "TF_MODULE") || wu.GetModuleId() != nil {
+			moduleWUs = append(moduleWUs, wu)
+		}
+	}
+	if len(moduleWUs) == 0 {
+		moduleWUs = candidates
+	}
+
+	if info == nil || info.ModuleName == "" {
+		if len(moduleWUs) == 1 {
+			return moduleWUs[0]
+		}
+		return nil
+	}
+
+	var nameMatches []*rdbpb.WorkUnit
+	for _, wu := range moduleWUs {
+		modName := wu.GetModuleId().GetModuleName()
+		if modName == info.ModuleName || strings.EqualFold(modName, info.ModuleName) || strings.EqualFold(wu.GetName(), info.ModuleName) {
+			nameMatches = append(nameMatches, wu)
+		}
+	}
+	if len(nameMatches) == 0 {
+		if len(moduleWUs) == 1 {
+			return moduleWUs[0]
+		}
+		return nil
+	}
+	if len(nameMatches) == 1 {
+		return nameMatches[0]
+	}
+
+	// Disambiguate multiple modules with the same name by matching module
+	// parameters (e.g., module-abi / module_abi) or work unit name prefix.
+	var wantABI string
+	for _, p := range info.ModuleParameters {
+		if p.Name == "module-abi" || p.Name == "module_abi" || p.Name == "abi" {
+			wantABI = p.Value
+			break
+		}
+	}
+	if wantABI == "" && strings.Contains(info.Name, " ") {
+		if fields := strings.Fields(info.Name); len(fields) > 0 {
+			wantABI = fields[0]
+		}
+	}
+
+	if wantABI != "" {
+		for _, wu := range nameMatches {
+			def := wu.GetModuleId().GetModuleVariant().GetDef()
+			if def["module_abi"] == wantABI || def["module-abi"] == wantABI || def["abi"] == wantABI {
+				return wu
+			}
+		}
+	}
+
+	return nameMatches[0]
+}
+
+// extractWorkUnitID returns a ResultDB WorkUnit's ID from either its WorkUnitId
+// field or its resource Name, falling back to fallback if neither is set.
+func extractWorkUnitID(wu *rdbpb.WorkUnit, fallback string) string {
+	if wu == nil {
+		return fallback
+	}
+	if wu.GetWorkUnitId() != "" {
+		return wu.GetWorkUnitId()
+	}
+	if id := extractWorkUnitIDFromName(wu.GetName()); id != "" {
+		return id
+	}
+	return fallback
+}
+
+// extractWorkUnitIDFromName extracts the work unit ID component from a
+// ResultDB resource name (`rootInvocations/<inv>/workUnits/<wu>[/...]`), or
+// returns name itself if it does not contain a `workUnits/` prefix.
+func extractWorkUnitIDFromName(name string) string {
+	if _, wuID := ExtractWorkUnitComponents(name); wuID != "" {
+		return wuID
+	}
+	return name
 }

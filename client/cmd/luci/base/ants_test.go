@@ -19,10 +19,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestAntsHelpers(t *testing.T) {
@@ -585,6 +592,221 @@ func TestParseAntsWorkUnitJSON(t *testing.T) {
 			assert.Loosely(t, info.CompleteTimestamp, should.Equal(int64(1789460782492)))
 			assert.Loosely(t, info.State, should.Equal("ERROR"))
 			assert.Loosely(t, info.ResultDBWorkUnitID, should.Equal("ants-wu50500270009982574"))
+		})
+	})
+}
+
+func TestResolveResultDBAntsWorkUnit(t *testing.T) {
+	ftt.Run("ResolveResultDBAntsWorkUnit", t, func(t *ftt.Test) {
+		ctx := context.Background()
+
+		const (
+			taskWUName = "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574"
+			modWUName  = "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-mod-1"
+		)
+
+		// newTaskAndModuleMockClient constructs a mock ResultDB client serving a
+		// task work unit (`ants-wu50500270009982574`), its child `TF_MODULE` work
+		// unit (`:u-mod-1`), and optional `TF_TEST_RUN` child work units.
+		newTaskAndModuleMockClient := func(testRunChildNames []string, testRunWUs []*rdbpb.WorkUnit) *mockTargetsResultDBClient {
+			return &mockTargetsResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *rdbpb.GetWorkUnitRequest, opts ...grpc.CallOption) (*rdbpb.WorkUnit, error) {
+					if in.Name == taskWUName {
+						return &rdbpb.WorkUnit{
+							Name:           taskWUName,
+							WorkUnitId:     "ants-wu50500270009982574",
+							ChildWorkUnits: []string{modWUName},
+						}, nil
+					}
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				batchGetWorkUnits: func(ctx context.Context, in *rdbpb.BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*rdbpb.BatchGetWorkUnitsResponse, error) {
+					if len(in.Names) == 1 && in.Names[0] == modWUName {
+						return &rdbpb.BatchGetWorkUnitsResponse{
+							WorkUnits: []*rdbpb.WorkUnit{
+								{
+									Name:       modWUName,
+									WorkUnitId: "ants-wu50500270009982574:u-mod-1",
+									Kind:       "TF_MODULE",
+									ModuleId: &rdbpb.ModuleIdentifier{
+										ModuleName: "bluetooth_test_gd_unit",
+										ModuleVariant: &rdbpb.Variant{
+											Def: map[string]string{"module_abi": "x86_64"},
+										},
+									},
+									ChildWorkUnits: testRunChildNames,
+								},
+							},
+						}, nil
+					}
+					if len(testRunWUs) > 0 && len(in.Names) == len(testRunWUs) {
+						return &rdbpb.BatchGetWorkUnitsResponse{WorkUnits: testRunWUs}, nil
+					}
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+			}
+		}
+
+		t.Run("Already composite or attempt work unit returns as-is", func(t *ftt.Test) {
+			res1 := ResolveResultDBAntsWorkUnit(ctx, nil, "ants-i123", "ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64", nil)
+			assert.Loosely(t, res1, should.Equal("ants-wu50500270009982574:u-354dc939-8efe-4e98-96f7-df0e9bb26b64"))
+
+			res2 := ResolveResultDBAntsWorkUnit(ctx, nil, "ants-i123", "ants-wu123-attempt__0", nil)
+			assert.Loosely(t, res2, should.Equal("ants-wu123-attempt__0"))
+		})
+
+		t.Run("Direct work unit found in ResultDB returns normWU", func(t *ftt.Test) {
+			client := &mockTargetsResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *rdbpb.GetWorkUnitRequest, opts ...grpc.CallOption) (*rdbpb.WorkUnit, error) {
+					if in.Name == taskWUName {
+						return &rdbpb.WorkUnit{Name: in.Name, WorkUnitId: "ants-wu50500270009982574"}, nil
+					}
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+			}
+
+			res := ResolveResultDBAntsWorkUnit(ctx, client, "I71400010624864031", "WU50500270009982574", &AntsWorkUnitInfo{
+				Type: "TFC_COMMAND_TASK",
+			})
+			assert.Loosely(t, res, should.Equal("ants-wu50500270009982574"))
+		})
+
+		t.Run("Top-level AnTS invocation work unit maps to root", func(t *ftt.Test) {
+			client := &mockTargetsResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *rdbpb.GetWorkUnitRequest, opts ...grpc.CallOption) (*rdbpb.WorkUnit, error) {
+					if in.Name == "rootInvocations/ants-i71400010624864031/workUnits/root" {
+						return &rdbpb.WorkUnit{Name: in.Name, WorkUnitId: "root"}, nil
+					}
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+			}
+
+			res := ResolveResultDBAntsWorkUnit(ctx, client, "I71400010624864031", "WU98400270010026294", &AntsWorkUnitInfo{
+				ParentID: "",
+			})
+			assert.Loosely(t, res, should.Equal("root"))
+		})
+
+		t.Run("AnTS leaf work unit resolves to composite child work unit via task and module batch get", func(t *ftt.Test) {
+			testRunWUName := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-run-1"
+			client := newTaskAndModuleMockClient([]string{testRunWUName}, nil)
+
+			info := &AntsWorkUnitInfo{
+				Type:               "TF_TEST_RUN",
+				ModuleName:         "bluetooth_test_gd_unit",
+				ModuleParameters:   []AntsProperty{{Name: "module-abi", Value: "x86_64"}},
+				ResultDBWorkUnitID: "ants-wu50500270009982574",
+			}
+
+			res := ResolveResultDBAntsWorkUnit(ctx, client, "I71400010624864031", "WU89700270010105897", info)
+			assert.Loosely(t, res, should.Equal("ants-wu50500270009982574:u-run-1"))
+		})
+
+		t.Run("AnTS TF_MODULE work unit resolves to module composite work unit", func(t *ftt.Test) {
+			testRunWUName := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-run-1"
+			client := newTaskAndModuleMockClient([]string{testRunWUName}, nil)
+
+			info := &AntsWorkUnitInfo{
+				Type:               "TF_MODULE",
+				ModuleName:         "bluetooth_test_gd_unit",
+				ResultDBWorkUnitID: "ants-wu50500270009982574",
+			}
+
+			res := ResolveResultDBAntsWorkUnit(ctx, client, "I71400010624864031", "WU97500270010256987", info)
+			assert.Loosely(t, res, should.Equal("ants-wu50500270009982574:u-mod-1"))
+		})
+
+		t.Run("Multiple test run children: selects failed child via WorkUnit_FAILED state", func(t *ftt.Test) {
+			run1Name := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-pass"
+			run2Name := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-fail"
+
+			client := newTaskAndModuleMockClient(
+				[]string{run1Name, run2Name},
+				[]*rdbpb.WorkUnit{
+					{Name: run1Name, WorkUnitId: "ants-wu50500270009982574:u-pass", Kind: "TF_TEST_RUN", State: rdbpb.WorkUnit_SUCCEEDED},
+					{Name: run2Name, WorkUnitId: "ants-wu50500270009982574:u-fail", Kind: "TF_TEST_RUN", State: rdbpb.WorkUnit_FAILED},
+				},
+			)
+
+			info := &AntsWorkUnitInfo{
+				Type:               "TF_TEST_RUN",
+				State:              "ERROR",
+				ModuleName:         "bluetooth_test_gd_unit",
+				ResultDBWorkUnitID: "ants-wu50500270009982574",
+			}
+
+			res := ResolveResultDBAntsWorkUnit(ctx, client, "I71400010624864031", "WU89700270010105897", info)
+			assert.Loosely(t, res, should.Equal("ants-wu50500270009982574:u-fail"))
+		})
+
+		t.Run("Multiple test run children: selects failed child via QueryTestVerdicts when both are SUCCEEDED", func(t *ftt.Test) {
+			run1Name := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-pass"
+			run2Name := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-fail"
+
+			client := newTaskAndModuleMockClient(
+				[]string{run1Name, run2Name},
+				[]*rdbpb.WorkUnit{
+					{Name: run1Name, WorkUnitId: "ants-wu50500270009982574:u-pass", Kind: "TF_TEST_RUN", State: rdbpb.WorkUnit_SUCCEEDED},
+					{Name: run2Name, WorkUnitId: "ants-wu50500270009982574:u-fail", Kind: "TF_TEST_RUN", State: rdbpb.WorkUnit_SUCCEEDED},
+				},
+			)
+			client.queryTestVerdicts = func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestVerdictsResponse, error) {
+				return &rdbpb.QueryTestVerdictsResponse{
+					TestVerdicts: []*rdbpb.TestVerdict{
+						{
+							TestId: "://bluetooth_test_gd_unit!::Class#test1",
+							Results: []*rdbpb.TestResult{
+								{
+									Name:     run1Name + "/tests/t1/results/r1",
+									Expected: true,
+									StatusV2: rdbpb.TestResult_PASSED,
+								},
+								{
+									Name:     run2Name + "/tests/t1/results/r2",
+									Expected: false,
+									StatusV2: rdbpb.TestResult_FAILED,
+								},
+							},
+						},
+					},
+				}, nil
+			}
+
+			info := &AntsWorkUnitInfo{
+				Type:               "TF_TEST_RUN",
+				State:              "ERROR",
+				ModuleName:         "bluetooth_test_gd_unit",
+				ResultDBWorkUnitID: "ants-wu50500270009982574",
+			}
+
+			res := ResolveResultDBAntsWorkUnit(ctx, client, "I71400010624864031", "WU89700270010105897", info)
+			assert.Loosely(t, res, should.Equal("ants-wu50500270009982574:u-fail"))
+		})
+
+		t.Run("Multiple test run children: selects child via closest creation timestamp", func(t *ftt.Test) {
+			run1Name := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-run-1"
+			run2Name := "rootInvocations/ants-i71400010624864031/workUnits/ants-wu50500270009982574:u-run-2"
+
+			t1 := timestamppb.New(time.UnixMilli(1700000000000))
+			t2 := timestamppb.New(time.UnixMilli(1700000500000))
+
+			client := newTaskAndModuleMockClient(
+				[]string{run1Name, run2Name},
+				[]*rdbpb.WorkUnit{
+					{Name: run1Name, WorkUnitId: "ants-wu50500270009982574:u-run-1", Kind: "TF_TEST_RUN", State: rdbpb.WorkUnit_SUCCEEDED, CreateTime: t1},
+					{Name: run2Name, WorkUnitId: "ants-wu50500270009982574:u-run-2", Kind: "TF_TEST_RUN", State: rdbpb.WorkUnit_SUCCEEDED, CreateTime: t2},
+				},
+			)
+
+			info := &AntsWorkUnitInfo{
+				Type:               "TF_TEST_RUN",
+				ModuleName:         "bluetooth_test_gd_unit",
+				CreationTimestamp:  1700000490000, // much closer to run2 (1700000500000) than run1
+				ResultDBWorkUnitID: "ants-wu50500270009982574",
+			}
+
+			res := ResolveResultDBAntsWorkUnit(ctx, client, "I71400010624864031", "WU89700270010105897", info)
+			assert.Loosely(t, res, should.Equal("ants-wu50500270009982574:u-run-2"))
 		})
 	})
 }

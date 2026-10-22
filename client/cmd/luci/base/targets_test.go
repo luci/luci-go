@@ -32,6 +32,9 @@ type mockTargetsResultDBClient struct {
 	rdbpb.ResultDBClient
 	getRootInvocation func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error)
 	getInvocation     func(ctx context.Context, in *rdbpb.GetInvocationRequest, opts ...grpc.CallOption) (*rdbpb.Invocation, error)
+	getWorkUnit       func(ctx context.Context, in *rdbpb.GetWorkUnitRequest, opts ...grpc.CallOption) (*rdbpb.WorkUnit, error)
+	batchGetWorkUnits func(ctx context.Context, in *rdbpb.BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*rdbpb.BatchGetWorkUnitsResponse, error)
+	queryTestVerdicts func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestVerdictsResponse, error)
 }
 
 func (m *mockTargetsResultDBClient) GetRootInvocation(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
@@ -44,6 +47,27 @@ func (m *mockTargetsResultDBClient) GetRootInvocation(ctx context.Context, in *r
 func (m *mockTargetsResultDBClient) GetInvocation(ctx context.Context, in *rdbpb.GetInvocationRequest, opts ...grpc.CallOption) (*rdbpb.Invocation, error) {
 	if m.getInvocation != nil {
 		return m.getInvocation(ctx, in, opts...)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
+}
+
+func (m *mockTargetsResultDBClient) GetWorkUnit(ctx context.Context, in *rdbpb.GetWorkUnitRequest, opts ...grpc.CallOption) (*rdbpb.WorkUnit, error) {
+	if m.getWorkUnit != nil {
+		return m.getWorkUnit(ctx, in, opts...)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
+}
+
+func (m *mockTargetsResultDBClient) BatchGetWorkUnits(ctx context.Context, in *rdbpb.BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*rdbpb.BatchGetWorkUnitsResponse, error) {
+	if m.batchGetWorkUnits != nil {
+		return m.batchGetWorkUnits(ctx, in, opts...)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
+}
+
+func (m *mockTargetsResultDBClient) QueryTestVerdicts(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestVerdictsResponse, error) {
+	if m.queryTestVerdicts != nil {
+		return m.queryTestVerdicts(ctx, in, opts...)
 	}
 	return nil, status.Error(codes.NotFound, "not found")
 }
