@@ -536,7 +536,7 @@ func TestPrintFailureReason(t *testing.T) {
 				"  logcat.txt   LOGCAT  142.3 KiB  text/plain\n" +
 				"\n" +
 				"To fetch an artifact:\n" +
-				"  luci test-result artifact <get|head|tail> -invocationid=ants-i123 -workunitid=wu-1 -testid=\"com.android.FooTest#testBar\" -resultid=0 -artifactid=<ARTIFACT_ID>\n\n"
+				"  luci test-result artifact <get|head|tail> -invocationid=ants-i123 -workunitid=wu-1 -testid='com.android.FooTest#testBar' -resultid=0 -artifactid=<ARTIFACT_ID>\n\n"
 			assert.Loosely(t, buf.String(), should.Equal(expected))
 		})
 
@@ -561,7 +561,7 @@ func TestPrintFailureReason(t *testing.T) {
 			PrintInvocationArtifactListTo(&buf, arts)
 			expected := "" +
 				"  ARTIFACT ID               TYPE        SIZE       CONTENT-TYPE     FLAGS\n" +
-				"  logcat_test_foo_123.txt   LOGCAT      142.3 KiB  text/plain       -workunitid=ants-wu56200010637202290 -testid=\"com.android.FooTest#testBar\" -resultid=0\n" +
+				"  logcat_test_foo_123.txt   LOGCAT      142.3 KiB  text/plain       -workunitid=ants-wu56200010637202290 -testid='com.android.FooTest#testBar' -resultid=0\n" +
 				"  bugreport-oriole-123.zip  BUGREPORTZ  18.4 MiB   application/zip  -workunitid=ants-wu56200010637202289\n" +
 				"\n" +
 				"To fetch an artifact:\n" +

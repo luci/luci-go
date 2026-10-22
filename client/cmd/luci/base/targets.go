@@ -17,7 +17,6 @@ package base
 import (
 	"context"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -265,12 +264,17 @@ func ExtractArtifactMetadata(name string) ArtifactMetadata {
 	return meta
 }
 
-// ShellQuoteIfNeeded returns s quoted with double quotes if it contains shell
-// special characters or whitespace (such as '#', '!', spaces, etc.), or s as-is
-// otherwise.
+// ShellQuoteIfNeeded returns s single-quoted for POSIX shells if s is empty or
+// contains characters unsafe to leave unquoted, or s as-is otherwise.
 func ShellQuoteIfNeeded(s string) string {
-	if s == "" || strings.ContainsAny(s, " \t\n\"'#$&;|*?<>()[]{}\\!`~") {
-		return strconv.Quote(s)
+	if s == "" {
+		return "''"
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || strings.IndexByte("_@%+=:,./-", c) != -1) {
+			return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+		}
 	}
 	return s
 }

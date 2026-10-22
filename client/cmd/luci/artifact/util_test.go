@@ -349,7 +349,7 @@ func TestResolveResourceAndArtifactNames(t *testing.T) {
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err.Error(), should.ContainSubstring(`multiple artifacts (2) match "logcat.txt" in invocation "ants-i05300010637202289"; please re-run with one of the following flag sets to disambiguate:`))
 				assert.Loosely(t, err.Error(), should.ContainSubstring(`1. -workunitid=ants-wu56200010637202289 (4.0 KiB (4096 bytes), HOST_LOG)`))
-				assert.Loosely(t, err.Error(), should.ContainSubstring(`2. -workunitid=ants-wu56200010637202290 -testid="com.android.FooTest#testBar" -resultid=0 (2.0 KiB (2048 bytes), LOGCAT)`))
+				assert.Loosely(t, err.Error(), should.ContainSubstring(`2. -workunitid=ants-wu56200010637202290 -testid='com.android.FooTest#testBar' -resultid=0 (2.0 KiB (2048 bytes), LOGCAT)`))
 			})
 
 			t.Run(`zero matches returns not found error`, func(t *ftt.Test) {

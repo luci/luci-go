@@ -206,7 +206,7 @@ func TestTargets(t *testing.T) {
 					ResultID:     "0",
 					ArtifactID:   "logcat.txt",
 				}))
-				assert.Loosely(t, meta.FormatFlags(), should.Equal(`-workunitid=ants-wu56200010637202290 -testid="com.android.FooTest#testBar" -resultid=0`))
+				assert.Loosely(t, meta.FormatFlags(), should.Equal(`-workunitid=ants-wu56200010637202290 -testid='com.android.FooTest#testBar' -resultid=0`))
 			})
 
 			t.Run("resource IDs matching collection keywords are not confused with keys", func(t *ftt.Test) {
@@ -220,5 +220,18 @@ func TestTargets(t *testing.T) {
 				}))
 			})
 		})
+	})
+}
+
+func TestShellQuoteIfNeeded(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("ShellQuoteIfNeeded", t, func(t *ftt.Test) {
+		assert.Loosely(t, ShellQuoteIfNeeded(""), should.Equal("''"))
+		assert.Loosely(t, ShellQuoteIfNeeded("ants-wu56200010637202289"), should.Equal("ants-wu56200010637202289"))
+		assert.Loosely(t, ShellQuoteIfNeeded("dir_a/log.txt"), should.Equal("dir_a/log.txt"))
+		assert.Loosely(t, ShellQuoteIfNeeded("com.android.FooTest$Inner#testBar"), should.Equal(`'com.android.FooTest$Inner#testBar'`))
+		assert.Loosely(t, ShellQuoteIfNeeded(":CellBroadcastServiceTests!junit:com.android.Foo$Inner#testBar"), should.Equal(`':CellBroadcastServiceTests!junit:com.android.Foo$Inner#testBar'`))
+		assert.Loosely(t, ShellQuoteIfNeeded("test'with'quotes"), should.Equal(`'test'\''with'\''quotes'`))
 	})
 }
