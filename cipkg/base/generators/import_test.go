@@ -144,7 +144,8 @@ func TestImport(t *testing.T) {
 			t.Run("source path independent", func(t *ftt.Test) {
 				g := ImportTargets{
 					Targets: map[string]ImportTarget{
-						"dir": {Source: dir, Mode: fs.ModeDir, Version: "123"},
+						"dir":  {Source: dir, Mode: fs.ModeDir},
+						"file": {Source: file},
 					},
 				}
 				a, err := g.Generate(ctx, plats)
@@ -155,7 +156,8 @@ func TestImport(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				g = ImportTargets{
 					Targets: map[string]ImportTarget{
-						"dir": {Source: dir + ".else", Mode: fs.ModeDir, Version: "123"},
+						"dir":  {Source: dir + ".else", Mode: fs.ModeDir},
+						"file": {Source: filepath.Join(dir+".else", "file")},
 					},
 				}
 				a, err = g.Generate(ctx, plats)
@@ -163,11 +165,13 @@ func TestImport(t *testing.T) {
 				imports2 := testutils.Assert[*core.Action_Copy](t, a.Spec)
 
 				assert.Loosely(t, imports1.Copy.Files["dir"].Version, should.Equal(imports2.Copy.Files["dir"].Version))
+				assert.Loosely(t, imports1.Copy.Files["file"].Version, should.Equal(imports2.Copy.Files["file"].Version))
 			})
 			t.Run("source path dependent", func(t *ftt.Test) {
 				g := ImportTargets{
 					Targets: map[string]ImportTarget{
-						"dir": {Source: dir, Mode: fs.ModeDir, Version: "123", SourcePathDependent: true},
+						"dir":  {Source: dir, Mode: fs.ModeDir, SourcePathDependent: true},
+						"file": {Source: file, SourcePathDependent: true},
 					},
 				}
 				a, err := g.Generate(ctx, plats)
@@ -178,7 +182,8 @@ func TestImport(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				g = ImportTargets{
 					Targets: map[string]ImportTarget{
-						"dir": {Source: dir + ".else", Mode: fs.ModeDir, Version: "123", SourcePathDependent: true},
+						"dir":  {Source: dir + ".else", Mode: fs.ModeDir, SourcePathDependent: true},
+						"file": {Source: filepath.Join(dir+".else", "file"), SourcePathDependent: true},
 					},
 				}
 				a, err = g.Generate(ctx, plats)
@@ -186,6 +191,7 @@ func TestImport(t *testing.T) {
 				imports2 := testutils.Assert[*core.Action_Copy](t, a.Spec)
 
 				assert.Loosely(t, imports1.Copy.Files["dir"].Version, should.NotEqual(imports2.Copy.Files["dir"].Version))
+				assert.Loosely(t, imports1.Copy.Files["file"].Version, should.NotEqual(imports2.Copy.Files["file"].Version))
 			})
 		})
 	})

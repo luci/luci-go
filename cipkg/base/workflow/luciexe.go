@@ -123,6 +123,12 @@ func (r *RootStep) End() {
 	if r.IsEnded() {
 		return
 	}
+	if r.ended == nil && r.Err() == nil {
+		r.ended = make(chan struct{})
+		close(r.ended)
+		close(r.substep)
+		return
+	}
 	r.initFn()
 
 	close(r.substep)

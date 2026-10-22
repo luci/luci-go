@@ -125,10 +125,18 @@ func NewPackageExecutor(tempDir string, cfg PackageExecutorConfig) *PackageExecu
 // expanded.
 // preExpandFn will be invoked on the package before on it's dependencies.
 func (p *PackageExecutor) Expand(ctx context.Context, pkg actions.Package) ([]actions.Package, error) {
+	return p.expand(ctx, pkg, stringset.New(0))
+}
+
+func (p *PackageExecutor) expand(ctx context.Context, pkg actions.Package, expanded stringset.Set) ([]actions.Package, error) {
+	if !expanded.Add(pkg.ActionID) {
+		return nil, nil
+	}
+
 	if _, ok := p.refs[pkg.DerivationID]; ok {
 		var newPkgs []actions.Package
 		for _, d := range pkg.RuntimeDependencies {
-			pkgs, err := p.Expand(ctx, d)
+			pkgs, err := p.expand(ctx, d, expanded)
 			if err != nil {
 				return nil, err
 			}
@@ -149,7 +157,7 @@ func (p *PackageExecutor) Expand(ctx context.Context, pkg actions.Package) ([]ac
 
 	// Expand runtime dependencies.
 	for _, d := range pkg.RuntimeDependencies {
-		pkgs, err := p.Expand(ctx, d)
+		pkgs, err := p.expand(ctx, d, expanded)
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +167,7 @@ func (p *PackageExecutor) Expand(ctx context.Context, pkg actions.Package) ([]ac
 	switch err := pkg.Handler.IncRef(); {
 	case errors.Is(err, core.ErrPackageNotExist):
 		for _, d := range pkg.BuildDependencies {
-			pkgs, err := p.Expand(ctx, d)
+			pkgs, err := p.expand(ctx, d, expanded)
 			if err != nil {
 				return nil, err
 			}

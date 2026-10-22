@@ -86,7 +86,7 @@ func (i *ImportTargets) Generate(ctx context.Context, plats Platforms) (*core.Ac
 					return nil, fmt.Errorf("failed to open src: %s: %w", src, err)
 				}
 				defer f.Close()
-				if err := getHashFromFile(src, f, h); err != nil {
+				if err := getHashFromFile(filepath.ToSlash(dst), f, h); err != nil {
 					return nil, fmt.Errorf("failed to generate hash from src: %s: %w", src, err)
 				}
 			}

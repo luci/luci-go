@@ -54,5 +54,14 @@ func TestRootStep(t *testing.T) {
 			root.End()
 			assert.Loosely(t, root.IsEnded(), should.BeTrue)
 		})
+
+		t.Run("End without RunSubstep does not start step", func(t *ftt.Test) {
+			root := NewRootStep(stepCtx, "unstarted-root", "unstarted-id")
+			root.End()
+			assert.Loosely(t, root.IsEnded(), should.BeTrue)
+			assert.Loosely(t, root.RunSubstep(stepCtx, func(ctx context.Context, root *build.Step) error {
+				return nil
+			}), should.ErrLike("root step ended"))
+		})
 	})
 }

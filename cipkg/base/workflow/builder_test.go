@@ -138,6 +138,28 @@ func TestBuilder(t *testing.T) {
 			assert.Loosely(t, res, should.Equal("PrePost"))
 		})
 
+		t.Run("preExpand deduplicated across shared dependencies", func(t *ftt.Test) {
+			var expanded []string
+			pe = NewPackageExecutor("", PackageExecutorConfig{
+				PreExpandFn: func(ctx context.Context, pkg actions.Package) error {
+					expanded = append(expanded, pkg.Derivation.Name)
+					return nil
+				},
+				ExecFn: func(context.Context, *ExecutionConfig, *core.Derivation) error { return nil },
+			})
+
+			shared := &Generator{Name: "shared"}
+			_, err := b.Build(ctx, pe, &Generator{
+				Name: "root",
+				Dependencies: []generators.Dependency{
+					{Generator: &Generator{Name: "left", Dependencies: []generators.Dependency{{Generator: shared, Type: generators.DepsBuildHost}}}, Type: generators.DepsBuildHost},
+					{Generator: &Generator{Name: "right", Dependencies: []generators.Dependency{{Generator: shared, Type: generators.DepsBuildHost}}}, Type: generators.DepsBuildHost},
+				},
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expanded, should.Match([]string{"root", "left", "shared", "right"}))
+		})
+
 		t.Run("exec hooks", func(t *ftt.Test) {
 			t.Run("ok", func(t *ftt.Test) {
 				var res string
