@@ -15,21 +15,27 @@
 package workunit
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// Cmd returns the `luci work-unit` top-level subcommand.
 func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "work-unit <subcommand>",
@@ -57,6 +63,7 @@ func (r *workUnitRun) Run(a subcommands.Application, args []string, env subcomma
 	}, args)
 }
 
+// GetCmd returns the `luci work-unit get` subcommand.
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get -invocationid <invocation_id> -workunitid <work_unit_id>",
@@ -84,6 +91,15 @@ type workUnitGetRun struct {
 	invocationID string
 	workUnitID   string
 	showMetadata bool
+	customCtx    context.Context
+}
+
+// ModifyContext overrides the CLI context when a custom context is injected by tests.
+func (r *workUnitGetRun) ModifyContext(ctx context.Context) context.Context {
+	if r.customCtx != nil {
+		return r.customCtx
+	}
+	return ctx
 }
 
 func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -118,6 +134,9 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 			return 1
 		}
 	}
+	if r.af != nil && r.af.ParsedOpts != nil {
+		ctx = base.WithAuthOptions(ctx, *r.af.ParsedOpts)
+	}
 
 	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
 	if err != nil {
@@ -131,12 +150,45 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 
-	clean := base.FormatWorkUnitResourceName(invID, r.workUnitID)
+	normWUID := base.NormalizeWorkUnit(r.workUnitID)
+	clean := base.FormatWorkUnitResourceName(invID, normWUID)
+	rpcCtx := logging.SetLevel(ctx, logging.Error)
 
-	wu, err := client.GetWorkUnit(ctx, &pb.GetWorkUnitRequest{Name: clean})
+	wu, err := client.GetWorkUnit(rpcCtx, &pb.GetWorkUnitRequest{Name: clean})
+	if err != nil {
+		// In AnTS/TradeFed, leaf module and test-run work units are stored in ResultDB
+		// under composite IDs (<task_work_unit_id>:u-<uuid>) rather than their own
+		// AnTS serial WU<digits> ID. If direct GetWorkUnit returns NotFound for a bare
+		// AnTS work unit ID, query the AnTS v4 API and ResultDB hierarchy to resolve
+		// the composite work unit ID and retry GetWorkUnit.
+		if status.Code(err) == codes.NotFound && base.IsAntsWorkUnitID(normWUID) && !strings.Contains(normWUID, ":u-") {
+			if info, antsErr := base.ResolveAntsWorkUnit(ctx, normWUID); antsErr == nil && info != nil {
+				resolvedWUID := base.ResolveResultDBAntsWorkUnit(ctx, client, invID, normWUID, info)
+				if resolvedWUID != "" && resolvedWUID != normWUID {
+					resolvedClean := base.FormatWorkUnitResourceName(invID, resolvedWUID)
+					if resolvedWU, retryErr := client.GetWorkUnit(rpcCtx, &pb.GetWorkUnitRequest{Name: resolvedClean}); retryErr == nil && resolvedWU != nil {
+						fmt.Fprintf(os.Stderr, "Note: resolved AnTS work unit %q to ResultDB work unit %q\n", r.workUnitID, resolvedWUID)
+						wu = resolvedWU
+						clean = resolvedClean
+						err = nil
+					}
+				}
+			}
+		}
+	}
 	if err != nil {
 		if base.IsPermissionDenied(err) {
 			fmt.Fprintf(os.Stderr, "GetWorkUnit RPC failed (missing ResultDB realm permission): %s\n", err)
+		} else if status.Code(err) == codes.NotFound && base.IsAntsWorkUnitID(normWUID) && !strings.Contains(normWUID, ":u-") {
+			fmt.Fprintf(os.Stderr, "Work unit %q not found in invocation %q.\n\n", normWUID, invID)
+			fmt.Fprintf(os.Stderr, "Note: In Android CI (AnTS / TradeFed), module and test-run work units are stored in ResultDB\n"+
+				"under composite IDs (<task_work_unit_id>:u-<uuid>) rather than AnTS serial WU... IDs.\n"+
+				"  1. If you have an AnTS test result ID (TR...) or ATI URL, run:\n"+
+				"       luci ids <TR_ID_or_ATI_URL>\n"+
+				"  2. To list failing test verdicts and their composite work units, run:\n"+
+				"       luci verdict list -invocationid=%s\n"+
+				"  3. To list artifacts across the invocation without knowing the work unit ID, run:\n"+
+				"       luci artifact list -invocationid=%s\n", invID, invID)
 		} else {
 			fmt.Fprintf(os.Stderr, "GetWorkUnit RPC failed: %s\n", err)
 		}
@@ -152,9 +204,27 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	if wu.Kind != "" {
 		fmt.Printf("Kind:         %s\n", wu.Kind)
 	}
+	if wu.ModuleId != nil && wu.ModuleId.ModuleName != "" {
+		fmt.Printf("Module:       %s\n", wu.ModuleId.ModuleName)
+	}
 	fmt.Printf("State:        %s\n", wu.State)
 	if wu.FinalizationState != pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED {
 		fmt.Printf("Finalization: %s\n", wu.FinalizationState)
+	}
+	if len(wu.ChildWorkUnits) > 0 {
+		fmt.Printf("Child Work Units (%d):\n", len(wu.ChildWorkUnits))
+		const maxChildrenShown = 10
+		for i, child := range wu.ChildWorkUnits {
+			if i >= maxChildrenShown {
+				fmt.Printf("  ... and %d more child work units\n", len(wu.ChildWorkUnits)-maxChildrenShown)
+				break
+			}
+			_, childWUID := base.ExtractWorkUnitComponents(child)
+			if childWUID == "" {
+				childWUID = child
+			}
+			fmt.Printf("  - %s\n", childWUID)
+		}
 	}
 	if wu.SummaryMarkdown != "" {
 		fmt.Printf("Summary:\n%s\n", wu.SummaryMarkdown)
