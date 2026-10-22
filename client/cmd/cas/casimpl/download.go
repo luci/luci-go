@@ -452,12 +452,16 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 			continue
 		}
 
+		destPath := filepath.Join(r.dir, path)
+		if err := checkContained(r.dir, destPath); err != nil {
+			return writeExitError(r.dumpJSON, ArgumentsInvalid, "", errors.Fmt("output path %q escapes destination dir %q: %w", path, r.dir, err))
+		}
+		if err := os.Remove(destPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return writeExitError(r.dumpJSON, IOError, "", errors.Fmt("failed to remove existing output %q: %w", destPath, err))
+		}
+
 		if output.SymlinkTarget != "" {
-			symlinkPath := filepath.Join(r.dir, path)
-			if err := checkContained(r.dir, symlinkPath); err != nil {
-				return writeExitError(r.dumpJSON, ArgumentsInvalid, "", errors.Fmt("symlink path %q escapes destination dir %q: %w", path, r.dir, err))
-			}
-			if err := os.Symlink(output.SymlinkTarget, symlinkPath); err != nil {
+			if err := os.Symlink(output.SymlinkTarget, destPath); err != nil {
 				return writeExitError(r.dumpJSON, IOError, "", errors.Fmt("failed to create symlink: %w", err))
 			}
 			continue
@@ -469,10 +473,6 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		}
 
 		if diskcache != nil && diskcache.Touch(cache.HexDigest(output.Digest.Hash)) {
-			destPath := filepath.Join(r.dir, path)
-			if err := checkContained(r.dir, destPath); err != nil {
-				return writeExitError(r.dumpJSON, ArgumentsInvalid, "", errors.Fmt("hardlink destination path %q escapes destination dir %q: %w", path, r.dir, err))
-			}
 			mode := 0o600
 			if output.IsExecutable {
 				mode = 0o700

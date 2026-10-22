@@ -100,6 +100,12 @@ func TestArchiveDownload(t *testing.T) {
 			dr.cacheDir = filepath.Join(t.TempDir(), "cache")
 			err = dr.doDownload(ctx)
 			assert.Loosely(t, err, should.BeNil)
+			check(t)
+
+			// Re-downloading into the same non-empty directory hits diskcache.Hardlink
+			// and KVS without failing on existing destination files.
+			err = dr.doDownload(ctx)
+			assert.Loosely(t, err, should.BeNil)
 
 			kvs, err := embeddedkvs.New(ctx, dr.kvs)
 			assert.Loosely(t, err, should.BeNil)
