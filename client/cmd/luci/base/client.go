@@ -22,9 +22,13 @@ import (
 	"google.golang.org/grpc/status"
 
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
+	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -57,6 +61,21 @@ func (af *AuthFlags) NewBuildsClient(ctx context.Context, host string) (grpcpb.B
 		Options: prpc.DefaultOptions(),
 	}
 	return grpcpb.NewBuildsClient(prpcClient), httpClient, nil
+}
+
+// NewGerritClient creates an authenticated Gerrit REST client with the required
+// Gerrit OAuth scope.
+func (af *AuthFlags) NewGerritClient(ctx context.Context, host string) (gerritpb.GerritClient, error) {
+	if af.ParsedOpts == nil {
+		return nil, errors.New("AuthFlags.Parse() must be called")
+	}
+	opts := *af.ParsedOpts
+	opts.Scopes = scopes.GerritScopeSet()
+	httpClient, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, opts).Client()
+	if err != nil {
+		return nil, errors.Fmt("failed to create http client: %w", err)
+	}
+	return gerrit.NewRESTClient(httpClient, host, true)
 }
 
 // NewLogDogClient creates an authenticated LogDog Logs pRPC client.
