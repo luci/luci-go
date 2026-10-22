@@ -1164,7 +1164,7 @@ func (x *SourceVerdict) GetInvocationVerdicts() []*SourceVerdict_InvocationTestV
 type QueryTestHistoryStatsResponse_Group struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The start time of this group.
-	// Test verdicts that are paritioned in the 24 hours following this
+	// Test verdicts that are partitioned in the 24 hours following this
 	// timestamp are captured in this group.
 	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
 	// The hash of the variant.

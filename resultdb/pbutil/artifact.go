@@ -254,7 +254,7 @@ func LegacyInvocationArtifactName(invocationID, artifactID string) string {
 	return fmt.Sprintf("invocations/%s/artifacts/%s", invocationID, url.PathEscape(artifactID))
 }
 
-// LegacyTestResultArtifactName synthesizes a name of an test-result-level artifact.
+// LegacyTestResultArtifactName synthesizes a name of a test-result-level artifact.
 // Does not validate IDs, use ValidateInvocationID, ValidateTestID,
 // ValidateResultID and ValidateArtifactID.
 func LegacyTestResultArtifactName(invocationID, testID, resultID, artifactID string) string {

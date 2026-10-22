@@ -75,7 +75,7 @@ func (d *LogStreamDescriptor) Equal(o *LogStreamDescriptor) bool {
 	return reflect.DeepEqual(d, o)
 }
 
-// Path returns a types.StreamPath constructed from the LogStreamDesciptor's
+// Path returns a types.StreamPath constructed from the LogStreamDescriptor's
 // Prefix and Name fields.
 func (d *LogStreamDescriptor) Path() types.StreamPath {
 	return types.StreamName(d.Prefix).Join(types.StreamName(d.Name))

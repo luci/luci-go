@@ -95,7 +95,7 @@ type ValidateToScheme func(id BaseTestIdentifier) error
 
 // ValidateTestResult validates the given test result is suitable for upload.
 //
-// For full valdiation, supply a validateToScheme function that validates the test ID
+// For full validation, supply a validateToScheme function that validates the test ID
 // matches configured scheme. Otherwise, leave it nil.
 func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, getLimits TestIDValidationLimitsCallback, tr *pb.TestResult) error {
 	if tr == nil {
@@ -178,7 +178,7 @@ func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, getLim
 		}
 		// Deprecate use of SkipReason enum for old uploads.
 		if tr.SkipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
-			return errors.New("skip_reason: must not be set in conjuction with status_v2; set skipped_reason.kind instead")
+			return errors.New("skip_reason: must not be set in conjunction with status_v2; set skipped_reason.kind instead")
 		}
 	}
 	if tr.Status != pb.TestStatus_STATUS_UNSPECIFIED {
@@ -608,7 +608,7 @@ func ValidateWebTest(wt *pb.WebTest, statusV2 pb.TestResult_Status) error {
 		}
 	} else {
 		if statusV2 == pb.TestResult_PRECLUDED || statusV2 == pb.TestResult_EXECUTION_ERRORED || statusV2 == pb.TestResult_SKIPPED {
-			return errors.Fmt("status: a result with a top-level status_v2 of %s may not be used in conjunction with with a web test fail, pass, crash or timeout", statusV2.String())
+			return errors.Fmt("status: a result with a top-level status_v2 of %s may not be used in conjunction with a web test fail, pass, crash or timeout", statusV2.String())
 		}
 	}
 

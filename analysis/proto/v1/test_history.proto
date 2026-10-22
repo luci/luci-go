@@ -157,7 +157,7 @@ message QueryTestHistoryStatsRequest {
 message QueryTestHistoryStatsResponse {
   message Group {
     // The start time of this group.
-    // Test verdicts that are paritioned in the 24 hours following this
+    // Test verdicts that are partitioned in the 24 hours following this
     // timestamp are captured in this group.
     google.protobuf.Timestamp partition_time = 1;
 

@@ -219,7 +219,7 @@ message LogIndex {
    * Entry is a single index entry.
    *
    * The index is composed of a series of entries, each corresponding to a
-   * sequential snapshot of of the log stream.
+   * sequential snapshot of the log stream.
    */
   message Entry {
     /*

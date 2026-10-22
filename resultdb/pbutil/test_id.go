@@ -596,7 +596,7 @@ func ValidateBaseTestIdentifier(id BaseTestIdentifier, getLimits TestIDValidatio
 // Errors are annotated using field names in snake_case.
 func validatePartialBaseTestIdentifier(id BaseTestIdentifier, level pb.AggregationLevel, getLimits TestIDValidationLimitsCallback) error {
 	limits := getLimits(id)
-	// Set to true if the the module name is "legacy". Only use this variable
+	// Set to true if the module name is "legacy". Only use this variable
 	// if the test identifier is at least a module-level prefix.
 	isLegacyModule := id.ModuleName == LegacyModuleName
 
@@ -822,7 +822,7 @@ func EncodeTestID(id BaseTestIdentifier) string {
 	// For module name, coarse name and fine name, the characters : ! # and \ are escaped.
 	// For module scheme, no escaping is required as it uses a safe alphabet.
 	// For case name, only ! and # are escaped. ':' is a valid delimiter between components
-	// of the case name and should lift to the top-level encoding. Moreover, '\' and occurances of
+	// of the case name and should lift to the top-level encoding. Moreover, '\' and occurrences of
 	// ':' that are not intended to be delimieters should already be escaped for valid case names.
 
 	var builder strings.Builder

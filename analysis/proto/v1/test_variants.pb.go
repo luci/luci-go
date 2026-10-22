@@ -1186,7 +1186,7 @@ type TestStabilityCriteria_FlakeRateCriteria struct {
 	//     on Saturday, the queried interval will be from 0:00 UTC
 	//     on Friday to 0:00 UTC on Tuesday.
 	//
-	// Setting this thresold to a non-zero value may substantially
+	// Setting this threshold to a non-zero value may substantially
 	// desensitise flaky test detection, but offers more guarantees
 	// that exoneration will stop within a given period of time
 	// if a test is fixed.

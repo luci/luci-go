@@ -466,7 +466,7 @@ func (inst *packageInstance) open(ctx context.Context, opts OpenInstanceOpts) er
 			Fmt("invalid verification mode %q", opts.VerificationMode))
 	}
 
-	// Assert instanceID is well-formated and uses a hash known to us, if given.
+	// Assert instanceID is well-formatted and uses a hash known to us, if given.
 	// This is important for SkipHashVerification mode, where the user can pass
 	// whatever, and for VerifyHash that parses the instance ID.
 	if opts.InstanceID != "" {

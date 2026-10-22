@@ -449,7 +449,7 @@ func TestValidateTestResult(t *testing.T) {
 				})
 				t.Run("with skip reason is invalid", func(t *ftt.Test) {
 					msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-					assert.Loosely(t, validateTR(msg), should.ErrLike("skip_reason: must not be set in conjuction with status_v2; set skipped_reason.kind instead"))
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skip_reason: must not be set in conjunction with status_v2; set skipped_reason.kind instead"))
 				})
 			})
 		})
@@ -1082,7 +1082,7 @@ func TestValidateTestResult(t *testing.T) {
 						t.Run("wrong status", func(t *ftt.Test) {
 							msg.FrameworkExtensions.WebTest.Status = pb.WebTest_PASS
 							assert.Loosely(t, validateTR(msg), should.ErrLike(
-								"framework_extensions: web_test: status: a result with a top-level status_v2 of SKIPPED may not be used in conjunction with with a web test fail, pass, crash or timeout"))
+								"framework_extensions: web_test: status: a result with a top-level status_v2 of SKIPPED may not be used in conjunction with a web test fail, pass, crash or timeout"))
 						})
 					})
 					t.Run("execution errored", func(t *ftt.Test) {
@@ -1101,7 +1101,7 @@ func TestValidateTestResult(t *testing.T) {
 						t.Run("wrong status", func(t *ftt.Test) {
 							msg.FrameworkExtensions.WebTest.Status = pb.WebTest_FAIL
 							assert.Loosely(t, validateTR(msg), should.ErrLike(
-								"framework_extensions: web_test: status: a result with a top-level status_v2 of EXECUTION_ERRORED may not be used in conjunction with with a web test fail, pass, crash or timeout"))
+								"framework_extensions: web_test: status: a result with a top-level status_v2 of EXECUTION_ERRORED may not be used in conjunction with a web test fail, pass, crash or timeout"))
 						})
 					})
 					t.Run("precluded", func(t *ftt.Test) {
@@ -1120,7 +1120,7 @@ func TestValidateTestResult(t *testing.T) {
 						t.Run("wrong status", func(t *ftt.Test) {
 							msg.FrameworkExtensions.WebTest.Status = pb.WebTest_CRASH
 							assert.Loosely(t, validateTR(msg), should.ErrLike(
-								"framework_extensions: web_test: status: a result with a top-level status_v2 of PRECLUDED may not be used in conjunction with with a web test fail, pass, crash or timeout"))
+								"framework_extensions: web_test: status: a result with a top-level status_v2 of PRECLUDED may not be used in conjunction with a web test fail, pass, crash or timeout"))
 						})
 					})
 				})

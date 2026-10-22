@@ -754,7 +754,7 @@ func (x *Datagram_Partial) GetLast() bool {
 // Entry is a single index entry.
 //
 // The index is composed of a series of entries, each corresponding to a
-// sequential snapshot of of the log stream.
+// sequential snapshot of the log stream.
 type LogIndex_Entry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The byte offset in the emitted log stream of the RecordIO entry for the

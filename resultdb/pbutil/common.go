@@ -78,7 +78,7 @@ var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
 
 // Allow hostnames permitted by
 // https://www.rfc-editor.org/rfc/rfc1123#page-13. (Note that
-// the 255 character limit must be seperately applied.)
+// the 255 character limit must be separately applied.)
 var hostnameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]+(\.[a-z0-9-]+)*$`)
 
 // The maximum hostname permitted by
