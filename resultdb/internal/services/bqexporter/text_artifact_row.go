@@ -132,8 +132,10 @@ func estimateJSONSize(content string) int {
 	// Assume leading and trailing double quotes (").
 	estimate := 2
 	for _, r := range content {
-		if r == '\\' {
-			estimate += 2 // Encoded as "\\".
+		if r == '\\' || r == '"' {
+			estimate += 2 // Encoded as "\\" or "\"".
+		} else if r == '<' || r == '>' || r == '&' {
+			estimate += 6 // Encoded as "\u00xx" by Go JSON serializer.
 		} else if r >= ' ' && r <= '~' { // Standard ASCII printables.
 			estimate += 1 // Encoded as itself.
 		} else if r < ' ' { // Range below 0x20

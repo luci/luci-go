@@ -15,6 +15,7 @@
 package bqexporter
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -98,6 +99,18 @@ func TestEstimateJSONSize(t *testing.T) {
 				actual := estimateJSONSize(tc.content)
 				assert.Loosely(t, actual, should.Equal(tc.expected))
 			})
+		}
+	})
+}
+
+func TestEstimateJSONSizeEscapedASCII(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("EstimateJSONSize accounts for escaped quotes and HTML characters", t, func(t *ftt.Test) {
+		for _, s := range []string{`"`, `<>&`, `<script attr="x">&</script>`} {
+			marshaled, err := json.Marshal(s)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, estimateJSONSize(s), should.Equal(len(marshaled)))
 		}
 	})
 }
