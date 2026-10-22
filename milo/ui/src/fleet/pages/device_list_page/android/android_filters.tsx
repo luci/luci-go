@@ -23,6 +23,18 @@ export const ANDROID_EXTRA_FILTERS = {
   ['"fc_offline_since"']: new DateFilterCategoryDataBuilder()
     .setLabel(`Offline Since`)
     .disableFuture(),
+  ['labels."mh.last_sync"']: new DateFilterCategoryDataBuilder()
+    .setLabel('mh.last_sync')
+    .disableFuture(),
+  ['labels."ufs.last_sync"']: new DateFilterCategoryDataBuilder()
+    .setLabel('ufs.last_sync')
+    .disableFuture(),
+  ['labels."ufs.nlyte_last_sync"']: new DateFilterCategoryDataBuilder()
+    .setLabel('Nlyte Last Sync')
+    .disableFuture(),
+  ['labels."ufs.nlyte_update_time"']: new DateFilterCategoryDataBuilder()
+    .setLabel('Nlyte Update Time')
+    .disableFuture(),
   ['"state"']: new StringListFilterCategoryBuilder()
     .setLabel('State')
     .setOptions([

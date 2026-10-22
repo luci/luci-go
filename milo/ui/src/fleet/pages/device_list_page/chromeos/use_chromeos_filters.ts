@@ -15,9 +15,11 @@
 import _ from 'lodash';
 import { useMemo } from 'react';
 
+import { DateFilterCategoryDataBuilder } from '@/fleet/components/filters/date_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
   FilterCategory,
+  FilterCategoryBuilder,
   useFilters,
   useTrackedFilterChange,
 } from '@/fleet/components/filters/use_filters';
@@ -27,8 +29,17 @@ import { ChromeOSFilterKey } from './chromeos_fields';
 import { formatDeviceStateLabel } from './dut_state';
 import { useChromeOSFields } from './use_chromeos_available_columns';
 
+const CHROMEOS_TIMESTAMP_FIELD_IDS = new Set([
+  'ufs.last_sync',
+  'ufs.nlyte_last_sync',
+  'ufs.nlyte_update_time',
+]);
+
 export const useChromeOSFilterBuilders = (): {
-  filterBuilders: Record<ChromeOSFilterKey, StringListFilterCategoryBuilder>;
+  filterBuilders: Record<
+    ChromeOSFilterKey,
+    FilterCategoryBuilder<FilterCategory>
+  >;
   isLoading: boolean;
 } => {
   const { availableFields, getValues, isLoading } = useChromeOSFields();
@@ -36,10 +47,16 @@ export const useChromeOSFilterBuilders = (): {
   const filterBuilders = useMemo(() => {
     const filters = {} as Record<
       ChromeOSFilterKey,
-      StringListFilterCategoryBuilder
+      FilterCategoryBuilder<FilterCategory>
     >;
 
     availableFields.forEach((def) => {
+      if (CHROMEOS_TIMESTAMP_FIELD_IDS.has(def.id)) {
+        filters[def.filterKey] = new DateFilterCategoryDataBuilder()
+          .setLabel(def.header)
+          .disableFuture();
+        return;
+      }
       const values = getValues(def.id);
       if (values.length === 0) return;
 

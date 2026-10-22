@@ -14,11 +14,13 @@
 
 import { useMemo } from 'react';
 
+import { DateFilterCategoryDataBuilder } from '@/fleet/components/filters/date_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
   useFilters,
   useTrackedFilterChange,
   FilterCategory,
+  FilterCategoryBuilder,
 } from '@/fleet/components/filters/use_filters';
 import { BROWSER_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import {
@@ -63,7 +65,19 @@ export const useBrowserFilters = (
   const filterOptions = useMemo(() => {
     if (!isDimensionsQueryProperlyLoaded) return {};
 
-    const filters: Record<string, StringListFilterCategoryBuilder> = {};
+    const filters: Record<string, FilterCategoryBuilder<FilterCategory>> = {
+      [`${BROWSER_SWARMING_SOURCE}."last_seen"`]:
+        new DateFilterCategoryDataBuilder()
+          .setLabel('sw.last_seen')
+          .disableFuture(),
+      [`${BROWSER_SWARMING_SOURCE}."last_sync"`]:
+        new DateFilterCategoryDataBuilder()
+          .setLabel('sw.last_sync')
+          .disableFuture(),
+      [`${BROWSER_UFS_SOURCE}."last_sync"`]: new DateFilterCategoryDataBuilder()
+        .setLabel('ufs.last_sync')
+        .disableFuture(),
+    };
 
     const addDimensions = (
       dimensions: Record<string, { values: readonly string[] }>,
@@ -73,7 +87,7 @@ export const useBrowserFilters = (
         const key = getColumnId(filterKey);
         const label = (columnsRecord[key]?.header || key) as string;
         const value = columnsRecord[key]?.filterKey || key;
-
+        if (filters[value]) continue;
         filters[value] = new StringListFilterCategoryBuilder()
           .setLabel(label)
           .setOptions([

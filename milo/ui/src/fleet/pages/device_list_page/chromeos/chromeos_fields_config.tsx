@@ -388,6 +388,26 @@ export const CHROMEOS_FIELD_DEFINITIONS = {
     },
     renderCell: renderTimestampCell,
   },
+  'ufs.nlyte_last_sync': {
+    type: 'label',
+    header: 'Nlyte Last Sync',
+    orderByField: 'labels.ufs.nlyte_last_sync',
+    filterKey: 'labels."ufs.nlyte_last_sync"',
+    meta: {
+      infoTooltip: 'Time when Nlyte last synced state for this device',
+    },
+    renderCell: renderTimestampCell,
+  },
+  'ufs.nlyte_update_time': {
+    type: 'label',
+    header: 'Nlyte Update Time',
+    orderByField: 'labels.ufs.nlyte_update_time',
+    filterKey: 'labels."ufs.nlyte_update_time"',
+    meta: {
+      infoTooltip: 'Time when Nlyte last updated this device',
+    },
+    renderCell: renderTimestampCell,
+  },
   bot_id: {
     type: 'label',
     renderCell: renderCellWithLink<ChromeOSDevice>({

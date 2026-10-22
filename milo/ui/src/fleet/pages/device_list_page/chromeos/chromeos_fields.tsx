@@ -172,4 +172,6 @@ export const EXTRA_COLUMN_IDS = [
   'current_task',
   'realm',
   'ufs.last_sync',
+  'ufs.nlyte_last_sync',
+  'ufs.nlyte_update_time',
 ] satisfies (keyof typeof CHROMEOS_FIELD_DEFINITIONS)[];
