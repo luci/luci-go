@@ -47,6 +47,7 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     matchedRuleIds: [],
     deviceId: 'chromeos-host-1',
     etag: 'etag-101',
+    activeIrmIds: [],
   },
   {
     taskId: '102',
@@ -63,6 +64,7 @@ const MOCK_ITEMS: readonly RepairQueueItem[] = [
     matchedRuleIds: [],
     deviceId: 'chromeos-host-2',
     etag: 'etag-102',
+    activeIrmIds: [],
   },
 ];
 
@@ -295,6 +297,7 @@ describe('useClaimRepairTask and useUnclaimRepairTask', () => {
             matchedRuleIds: [],
             deviceId: 'chromeos-only-dut',
             etag: 'etag-chromeos-task-1',
+            activeIrmIds: [],
           },
         ],
         nextPageToken: '',

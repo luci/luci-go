@@ -99,7 +99,6 @@ const TIMEFRAME_TO_PROTO: Record<
   '30D': GetWorkforceActivityRequest_Timeframe.TIMEFRAME_30D,
   YTD: GetWorkforceActivityRequest_Timeframe.TIMEFRAME_YTD,
 };
-
 export interface WorkforceActivityViewProps {
   inProgressCount?: number;
   onBackToQueue?: () => void;

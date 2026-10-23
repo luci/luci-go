@@ -98,6 +98,7 @@ export interface FleetConsoleMockFixtures {
   GetDefaultQuota: unknown;
   SetDefaultQuota: unknown;
   ListIrmIncidents: unknown;
+  UpdateIrmIncident: unknown;
   ListSupportRiskIncidents: unknown;
   ListModelQuotaOverrides: unknown;
   SetModelQuotaOverride: unknown;
@@ -624,6 +625,15 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
   },
   SetDefaultQuota: {
     defaultQuota: 49,
+  },
+  UpdateIrmIncident: {
+    irmIncident: {
+      id: '1',
+      masterBugId: '12345678',
+      title: 'Sample IRM incident',
+      expressionsAip160: [],
+      affectedDevicesCount: 0,
+    },
   },
   ListSupportRiskIncidents: {
     incidents: [

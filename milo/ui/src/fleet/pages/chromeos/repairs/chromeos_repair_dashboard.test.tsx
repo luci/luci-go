@@ -72,6 +72,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     matchedRuleIds: [],
     deviceId: 'chromeos15-row2-rack3-host4',
     etag: '',
+    activeIrmIds: [],
   },
   {
     taskId: '102',
@@ -90,6 +91,7 @@ const MOCK_QUEUE_ITEMS: readonly RepairQueueItem[] = [
     matchedRuleIds: [],
     deviceId: 'chromeos15-row2-rack3-host5',
     etag: '',
+    activeIrmIds: [],
   },
 ];
 
@@ -284,6 +286,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'chromeos15-row2-rack3-host6',
         etag: '',
+        activeIrmIds: [],
       },
       {
         taskId: '104',
@@ -299,6 +302,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'chromeos15-row2-rack3-host7',
         etag: '',
+        activeIrmIds: [],
       },
       {
         taskId: '105',
@@ -313,6 +317,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'chromeos15-row2-rack3-host8',
         etag: '',
+        activeIrmIds: [],
       },
       {
         taskId: '106',
@@ -329,6 +334,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'chromeos15-row2-rack3-host9',
         etag: '',
+        activeIrmIds: [],
       },
     ];
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -461,6 +467,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'fallback-dut-1',
         etag: '',
+        activeIrmIds: [],
       },
       {
         dutId: 'fallback-dut-2',
@@ -475,6 +482,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'fallback-dut-2',
         etag: '',
+        activeIrmIds: [],
       },
       {
         dutId: 'fallback-dut-3',
@@ -489,6 +497,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'fallback-dut-3',
         etag: '',
+        activeIrmIds: [],
       },
       {
         dutId: 'fallback-dut-4',
@@ -503,6 +512,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'fallback-dut-4',
         etag: '',
+        activeIrmIds: [],
       },
     ];
 
@@ -559,6 +569,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'score-empty-dut',
         etag: '',
+        activeIrmIds: [],
       },
       {
         dutId: 'score-undefined-dut',
@@ -573,6 +584,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         matchedRuleIds: [],
         deviceId: 'score-undefined-dut',
         etag: '',
+        activeIrmIds: [],
       },
     ];
 
@@ -707,6 +719,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       matchedRuleIds: [],
       deviceId: 'chromeos15-row2-rack3-host7',
       etag: '',
+      activeIrmIds: [],
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -843,6 +856,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       matchedRuleIds: [],
       deviceId: 'chromeos15-row2-rack3-host7',
       etag: '',
+      activeIrmIds: [],
     };
 
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
@@ -1001,6 +1015,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           matchedRuleIds: [],
           deviceId: 'chromeos15-p2-item1',
           etag: '',
+          activeIrmIds: [],
         },
         {
           dutId: 'chromeos15-p2-item2',
@@ -1015,6 +1030,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           matchedRuleIds: [],
           deviceId: 'chromeos15-p2-item2',
           etag: '',
+          activeIrmIds: [],
         },
       ];
 
@@ -1065,6 +1081,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           matchedRuleIds: [],
           deviceId: 'dut-extreme-max',
           etag: '',
+          activeIrmIds: [],
         },
         {
           dutId: 'dut-extreme-min',
@@ -1079,6 +1096,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           matchedRuleIds: [],
           deviceId: 'dut-extreme-min',
           etag: '',
+          activeIrmIds: [],
         },
         {
           dutId: 'dut-negative-score',
@@ -1093,6 +1111,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           matchedRuleIds: [],
           deviceId: 'dut-negative-score',
           etag: '',
+          activeIrmIds: [],
         },
         {
           dutId: 'dut-zero-score',
@@ -1107,6 +1126,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           matchedRuleIds: [],
           deviceId: 'dut-zero-score',
           etag: '',
+          activeIrmIds: [],
         },
       ];
 
@@ -1280,6 +1300,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           priorityScore: '100',
           matchedRuleIds: [],
           etag: '',
+          activeIrmIds: [],
         },
       ];
 
@@ -1339,6 +1360,7 @@ describe('<ChromeOSRepairDashboard />', () => {
           priorityScore: '100',
           matchedRuleIds: [],
           etag: '',
+          activeIrmIds: [],
         },
       ];
 
@@ -1508,6 +1530,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             matchedRuleIds: ['rule-1', 'rule-2'],
             deviceId: 'dut-multi-match',
             etag: '',
+            activeIrmIds: [],
           },
         ];
 
@@ -1589,6 +1612,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             matchedRuleIds: ['rule-3'],
             deviceId: 'dut-demoted',
             etag: '',
+            activeIrmIds: [],
           },
         ];
 
@@ -1643,6 +1667,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             matchedRuleIds: [],
             deviceId: 'dut-no-match',
             etag: '',
+            activeIrmIds: [],
           },
         ];
 
@@ -1705,6 +1730,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             matchedRuleIds: ['rule-999'],
             deviceId: 'dut-orphan-rule',
             etag: '',
+            activeIrmIds: [],
           },
         ];
 
@@ -1776,6 +1802,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             matchedRuleIds: ['rule-long'],
             deviceId: 'dut-long-rule',
             etag: '',
+            activeIrmIds: [],
           },
         ];
 

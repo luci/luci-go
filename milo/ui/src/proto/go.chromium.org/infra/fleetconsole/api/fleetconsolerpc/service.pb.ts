@@ -123,6 +123,8 @@ import {
   UpdateChromeOSDeviceResponse,
   UpdateHealthSliceRequest,
   UpdateHealthSliceResponse,
+  UpdateIrmIncidentRequest,
+  UpdateIrmIncidentResponse,
   UpdatePriorityRuleRequest,
   UpdatePriorityRuleResponse,
 } from "./chromeos.pb";
@@ -419,6 +421,7 @@ export interface FleetConsole {
   UpdatePriorityRule(request: UpdatePriorityRuleRequest): Promise<UpdatePriorityRuleResponse>;
   DeletePriorityRule(request: DeletePriorityRuleRequest): Promise<DeletePriorityRuleResponse>;
   ListIrmIncidents(request: ListIrmIncidentsRequest): Promise<ListIrmIncidentsResponse>;
+  UpdateIrmIncident(request: UpdateIrmIncidentRequest): Promise<UpdateIrmIncidentResponse>;
   ListCustomerSlos(request: ListCustomerSlosRequest): Promise<ListCustomerSlosResponse>;
   GetDefaultQuota(request: GetDefaultQuotaRequest): Promise<GetDefaultQuotaResponse>;
   SetDefaultQuota(request: SetDefaultQuotaRequest): Promise<SetDefaultQuotaResponse>;
@@ -502,6 +505,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.UpdatePriorityRule = this.UpdatePriorityRule.bind(this);
     this.DeletePriorityRule = this.DeletePriorityRule.bind(this);
     this.ListIrmIncidents = this.ListIrmIncidents.bind(this);
+    this.UpdateIrmIncident = this.UpdateIrmIncident.bind(this);
     this.ListCustomerSlos = this.ListCustomerSlos.bind(this);
     this.GetDefaultQuota = this.GetDefaultQuota.bind(this);
     this.SetDefaultQuota = this.SetDefaultQuota.bind(this);
@@ -839,6 +843,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ListIrmIncidentsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListIrmIncidents", data);
     return promise.then((data) => ListIrmIncidentsResponse.fromJSON(data));
+  }
+
+  UpdateIrmIncident(request: UpdateIrmIncidentRequest): Promise<UpdateIrmIncidentResponse> {
+    const data = UpdateIrmIncidentRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdateIrmIncident", data);
+    return promise.then((data) => UpdateIrmIncidentResponse.fromJSON(data));
   }
 
   ListCustomerSlos(request: ListCustomerSlosRequest): Promise<ListCustomerSlosResponse> {

@@ -771,6 +771,8 @@ export interface RepairQueueItem {
    * the mutable state of the repair task.
    */
   readonly etag: string;
+  /** Master Bug IDs of active IRM incidents matching this repair task. */
+  readonly activeIrmIds: readonly string[];
 }
 
 export interface ListRepairQueueResponse {
@@ -848,6 +850,8 @@ export interface IrmIncident {
   readonly id: string;
   readonly masterBugId: string;
   readonly title: string;
+  readonly expressionsAip160: readonly string[];
+  readonly affectedDevicesCount: number;
 }
 
 export interface ListIrmIncidentsRequest {
@@ -855,6 +859,15 @@ export interface ListIrmIncidentsRequest {
 
 export interface ListIrmIncidentsResponse {
   readonly irmIncidents: readonly IrmIncident[];
+}
+
+export interface UpdateIrmIncidentRequest {
+  readonly id: string;
+  readonly expressionsAip160: readonly string[];
+}
+
+export interface UpdateIrmIncidentResponse {
+  readonly irmIncident: IrmIncident | undefined;
 }
 
 export interface GetDefaultQuotaRequest {
@@ -6970,6 +6983,7 @@ function createBaseRepairQueueItem(): RepairQueueItem {
     chameleonState: undefined,
     audioboxJackpluggerState: undefined,
     etag: "",
+    activeIrmIds: [],
   };
 }
 
@@ -7030,6 +7044,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     if (message.etag !== "") {
       writer.uint32(146).string(message.etag);
+    }
+    for (const v of message.activeIrmIds) {
+      writer.uint32(154).string(v!);
     }
     return writer;
   },
@@ -7201,6 +7218,14 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
             message.etag = reader.string();
             continue;
           }
+          case 19: {
+            if (tag !== 154) {
+              break;
+            }
+
+            message.activeIrmIds.push(reader.string());
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -7289,6 +7314,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
         ? peripheralStateFromJSON(object.audiobox_jackplugger_state)
         : undefined,
       etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
+      activeIrmIds: globalThis.Array.isArray(object?.activeIrmIds)
+        ? object.activeIrmIds.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -7348,6 +7376,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.etag !== "") {
       obj.etag = message.etag;
     }
+    if (message.activeIrmIds?.length) {
+      obj.activeIrmIds = message.activeIrmIds;
+    }
     return obj;
   },
 
@@ -7374,6 +7405,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.chameleonState = object.chameleonState ?? undefined;
     message.audioboxJackpluggerState = object.audioboxJackpluggerState ?? undefined;
     message.etag = object.etag ?? "";
+    message.activeIrmIds = object.activeIrmIds?.map((e) => e) || [];
     return message;
   },
 };
@@ -8519,7 +8551,7 @@ export const DeletePriorityRuleResponse: MessageFns<DeletePriorityRuleResponse> 
 };
 
 function createBaseIrmIncident(): IrmIncident {
-  return { id: "0", masterBugId: "", title: "" };
+  return { id: "0", masterBugId: "", title: "", expressionsAip160: [], affectedDevicesCount: 0 };
 }
 
 export const IrmIncident: MessageFns<IrmIncident> = {
@@ -8532,6 +8564,12 @@ export const IrmIncident: MessageFns<IrmIncident> = {
     }
     if (message.title !== "") {
       writer.uint32(26).string(message.title);
+    }
+    for (const v of message.expressionsAip160) {
+      writer.uint32(34).string(v!);
+    }
+    if (message.affectedDevicesCount !== 0) {
+      writer.uint32(40).int32(message.affectedDevicesCount);
     }
     return writer;
   },
@@ -8573,6 +8611,22 @@ export const IrmIncident: MessageFns<IrmIncident> = {
             message.title = reader.string();
             continue;
           }
+          case 4: {
+            if (tag !== 34) {
+              break;
+            }
+
+            message.expressionsAip160.push(reader.string());
+            continue;
+          }
+          case 5: {
+            if (tag !== 40) {
+              break;
+            }
+
+            message.affectedDevicesCount = reader.int32();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -8594,6 +8648,10 @@ export const IrmIncident: MessageFns<IrmIncident> = {
         ? globalThis.String(object.master_bug_id)
         : "",
       title: isSet(object.title) ? globalThis.String(object.title) : "",
+      expressionsAip160: globalThis.Array.isArray(object?.expressionsAip160)
+        ? object.expressionsAip160.map((e: any) => globalThis.String(e))
+        : [],
+      affectedDevicesCount: isSet(object.affectedDevicesCount) ? globalThis.Number(object.affectedDevicesCount) : 0,
     };
   },
 
@@ -8608,6 +8666,12 @@ export const IrmIncident: MessageFns<IrmIncident> = {
     if (message.title !== "") {
       obj.title = message.title;
     }
+    if (message.expressionsAip160?.length) {
+      obj.expressionsAip160 = message.expressionsAip160;
+    }
+    if (message.affectedDevicesCount !== 0) {
+      obj.affectedDevicesCount = Math.round(message.affectedDevicesCount);
+    }
     return obj;
   },
 
@@ -8619,6 +8683,8 @@ export const IrmIncident: MessageFns<IrmIncident> = {
     message.id = object.id ?? "0";
     message.masterBugId = object.masterBugId ?? "";
     message.title = object.title ?? "";
+    message.expressionsAip160 = object.expressionsAip160?.map((e) => e) || [];
+    message.affectedDevicesCount = object.affectedDevicesCount ?? 0;
     return message;
   },
 };
@@ -8744,6 +8810,144 @@ export const ListIrmIncidentsResponse: MessageFns<ListIrmIncidentsResponse> = {
   fromPartial(object: DeepPartial<ListIrmIncidentsResponse>): ListIrmIncidentsResponse {
     const message = createBaseListIrmIncidentsResponse() as any;
     message.irmIncidents = object.irmIncidents?.map((e) => IrmIncident.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseUpdateIrmIncidentRequest(): UpdateIrmIncidentRequest {
+  return { id: "0", expressionsAip160: [] };
+}
+
+export const UpdateIrmIncidentRequest: MessageFns<UpdateIrmIncidentRequest> = {
+  encode(message: UpdateIrmIncidentRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "0") {
+      writer.uint32(8).int64(message.id);
+    }
+    for (const v of message.expressionsAip160) {
+      writer.uint32(18).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateIrmIncidentRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateIrmIncidentRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.expressionsAip160.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateIrmIncidentRequest {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "0",
+      expressionsAip160: globalThis.Array.isArray(object?.expressionsAip160)
+        ? object.expressionsAip160.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: UpdateIrmIncidentRequest): unknown {
+    const obj: any = {};
+    if (message.id !== "0") {
+      obj.id = message.id;
+    }
+    if (message.expressionsAip160?.length) {
+      obj.expressionsAip160 = message.expressionsAip160;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateIrmIncidentRequest>): UpdateIrmIncidentRequest {
+    return UpdateIrmIncidentRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateIrmIncidentRequest>): UpdateIrmIncidentRequest {
+    const message = createBaseUpdateIrmIncidentRequest() as any;
+    message.id = object.id ?? "0";
+    message.expressionsAip160 = object.expressionsAip160?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseUpdateIrmIncidentResponse(): UpdateIrmIncidentResponse {
+  return { irmIncident: undefined };
+}
+
+export const UpdateIrmIncidentResponse: MessageFns<UpdateIrmIncidentResponse> = {
+  encode(message: UpdateIrmIncidentResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.irmIncident !== undefined) {
+      IrmIncident.encode(message.irmIncident, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateIrmIncidentResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateIrmIncidentResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.irmIncident = IrmIncident.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateIrmIncidentResponse {
+    return { irmIncident: isSet(object.irmIncident) ? IrmIncident.fromJSON(object.irmIncident) : undefined };
+  },
+
+  toJSON(message: UpdateIrmIncidentResponse): unknown {
+    const obj: any = {};
+    if (message.irmIncident !== undefined) {
+      obj.irmIncident = IrmIncident.toJSON(message.irmIncident);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateIrmIncidentResponse>): UpdateIrmIncidentResponse {
+    return UpdateIrmIncidentResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateIrmIncidentResponse>): UpdateIrmIncidentResponse {
+    const message = createBaseUpdateIrmIncidentResponse() as any;
+    message.irmIncident = (object.irmIncident !== undefined && object.irmIncident !== null)
+      ? IrmIncident.fromPartial(object.irmIncident)
+      : undefined;
     return message;
   },
 };

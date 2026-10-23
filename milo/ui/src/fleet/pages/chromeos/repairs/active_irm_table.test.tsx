@@ -25,8 +25,16 @@ const MOCK_INCIDENTS: readonly IrmIncident[] = [
     id: '1',
     masterBugId: '  12345678  ',
     title: 'ChromeOS fleet wide lab issue',
+    expressionsAip160: [],
+    affectedDevicesCount: 0,
   },
-  { id: '2', masterBugId: '', title: '' },
+  {
+    id: '2',
+    masterBugId: '',
+    title: '',
+    expressionsAip160: [],
+    affectedDevicesCount: 0,
+  },
 ];
 
 describe('<ActiveIrmTable />', () => {
