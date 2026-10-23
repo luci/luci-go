@@ -19,6 +19,7 @@ import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_
 
 import { getAndroidColumns } from './android_columns';
 import { AndroidColumnDef } from './android_fields';
+import { ANDROID_EXTRA_FILTERS } from './android_filters';
 import { EXTRA_COLUMN_IDS } from './use_android_columns';
 
 describe('Android Columns', () => {
@@ -184,6 +185,12 @@ describe('Android Columns', () => {
         'ufs.nlyte_last_sync',
         'ufs.nlyte_update_time',
       ]),
+    );
+    expect(ANDROID_EXTRA_FILTERS['labels."mh.last_sync"'].label).toBe(
+      'MH Last Sync',
+    );
+    expect(ANDROID_EXTRA_FILTERS['labels."ufs.last_sync"'].label).toBe(
+      'UFS Last Sync',
     );
   });
 });

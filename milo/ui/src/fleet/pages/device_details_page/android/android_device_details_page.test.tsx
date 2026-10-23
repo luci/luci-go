@@ -91,5 +91,9 @@ describe('AndroidDeviceDetailsPage', () => {
     expect(hostGroupIdx).toBeLessThan(locationIdx);
     expect(locationIdx).toBeLessThan(realmIdx);
     expect(realmIdx).toBeLessThan(ufsIdx);
+
+    // Verify timestamp labels render formatted timestamps rather than [object Object]
+    expect(screen.queryByText('[object Object]')).not.toBeInTheDocument();
+    expect(rowTexts[ufsIdx]).not.toContain('[object Object]');
   });
 });

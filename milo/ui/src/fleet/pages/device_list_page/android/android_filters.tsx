@@ -17,26 +17,27 @@ import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/stri
 
 import { formatDeviceStateLabel } from '../chromeos/dut_state';
 
+import { getAndroidColumnHeader } from './android_fields';
 import { androidState } from './android_state';
 
 export const ANDROID_EXTRA_FILTERS = {
   ['"fc_offline_since"']: new DateFilterCategoryDataBuilder()
-    .setLabel(`Offline Since`)
+    .setLabel(getAndroidColumnHeader('fc_offline_since'))
     .disableFuture(),
   ['labels."mh.last_sync"']: new DateFilterCategoryDataBuilder()
-    .setLabel('mh.last_sync')
+    .setLabel(getAndroidColumnHeader('mh.last_sync'))
     .disableFuture(),
   ['labels."ufs.last_sync"']: new DateFilterCategoryDataBuilder()
-    .setLabel('ufs.last_sync')
+    .setLabel(getAndroidColumnHeader('ufs.last_sync'))
     .disableFuture(),
   ['labels."ufs.nlyte_last_sync"']: new DateFilterCategoryDataBuilder()
-    .setLabel('Nlyte Last Sync')
+    .setLabel(getAndroidColumnHeader('ufs.nlyte_last_sync'))
     .disableFuture(),
   ['labels."ufs.nlyte_update_time"']: new DateFilterCategoryDataBuilder()
-    .setLabel('Nlyte Update Time')
+    .setLabel(getAndroidColumnHeader('ufs.nlyte_update_time'))
     .disableFuture(),
   ['"state"']: new StringListFilterCategoryBuilder()
-    .setLabel('State')
+    .setLabel(getAndroidColumnHeader('state'))
     .setOptions([
       { label: '(Blank)', value: '(Blank)' },
       ...Object.values(androidState).map((val) => ({

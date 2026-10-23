@@ -81,4 +81,16 @@ describe('renderTimestampCell', () => {
     );
     expect(container).not.toBeEmptyDOMElement();
   });
+
+  it('passes through pre-rendered React elements without coercing to [object Object]', () => {
+    render(
+      <>
+        {renderTimestampCell({
+          value: <span>2 hours ago</span>,
+        })}
+      </>,
+    );
+    expect(screen.getByText('2 hours ago')).toBeInTheDocument();
+    expect(screen.queryByText('[object Object]')).not.toBeInTheDocument();
+  });
 });

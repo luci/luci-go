@@ -68,14 +68,29 @@ export const useBrowserFilters = (
     const filters: Record<string, FilterCategoryBuilder<FilterCategory>> = {
       [`${BROWSER_SWARMING_SOURCE}."last_seen"`]:
         new DateFilterCategoryDataBuilder()
-          .setLabel('sw.last_seen')
+          .setLabel(
+            String(
+              columnsRecord[`${BROWSER_SWARMING_SOURCE}.last_seen`]?.header ??
+                getBrowserColumn(`${BROWSER_SWARMING_SOURCE}.last_seen`).header,
+            ),
+          )
           .disableFuture(),
       [`${BROWSER_SWARMING_SOURCE}."last_sync"`]:
         new DateFilterCategoryDataBuilder()
-          .setLabel('sw.last_sync')
+          .setLabel(
+            String(
+              columnsRecord[`${BROWSER_SWARMING_SOURCE}.last_sync`]?.header ??
+                getBrowserColumn(`${BROWSER_SWARMING_SOURCE}.last_sync`).header,
+            ),
+          )
           .disableFuture(),
       [`${BROWSER_UFS_SOURCE}."last_sync"`]: new DateFilterCategoryDataBuilder()
-        .setLabel('ufs.last_sync')
+        .setLabel(
+          String(
+            columnsRecord[`${BROWSER_UFS_SOURCE}.last_sync`]?.header ??
+              getBrowserColumn(`${BROWSER_UFS_SOURCE}.last_sync`).header,
+          ),
+        )
         .disableFuture(),
     };
 

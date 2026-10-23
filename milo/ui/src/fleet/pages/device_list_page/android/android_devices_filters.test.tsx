@@ -12,7 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { renderHook } from '@testing-library/react';
+
 import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
+import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { useAndroidFilters } from './use_android_filters';
+
+jest.mock('@/fleet/pages/device_list_page/common/use_device_dimensions');
 
 describe('normalizeFilterKey', () => {
   it('should strip labels. prefix and quotes', () => {
@@ -31,5 +39,45 @@ describe('Android Devices Table Filtering', () => {
     const keys = ['labels."build"', 'host_group', 'hostname'];
     const normalized = keys.map(normalizeFilterKey);
     expect(normalized).toEqual(['build', 'host_group', 'hostname']);
+  });
+
+  it('does not create a duplicate Offline Since filter category when fc_offline_since is returned in labels', () => {
+    (useDeviceDimensions as jest.Mock).mockReturnValue({
+      data: {
+        baseDimensions: {
+          hostname: { values: ['android-lab-host-01'] },
+        },
+        labels: {
+          fc_offline_since: { values: ['2026-09-24T20:00:00Z'] },
+          'ufs.last_sync': { values: ['2026-09-24T21:30:00Z'] },
+          model: { values: ['husky'] },
+        },
+      },
+      isLoading: false,
+    });
+
+    const { result } = renderHook(() => useAndroidFilters('Android'), {
+      wrapper: ({ children }) => (
+        <FakeContextProvider
+          mountedPath="/ui/fleet/p/android/devices"
+          routerOptions={{
+            initialEntries: [
+              '/ui/fleet/p/android/devices?filters=NOT+%22fc_offline_since%22%3A*',
+            ],
+          }}
+        >
+          {children}
+        </FakeContextProvider>
+      ),
+    });
+
+    const filterValues = result.current.filterValues ?? {};
+    expect(filterValues['"fc_offline_since"']?.label).toBe('Offline Since');
+    expect(filterValues['labels."fc_offline_since"']).toBeUndefined();
+    const activeCategories = Object.values(filterValues).filter((c) =>
+      c.isActive(),
+    );
+    expect(activeCategories).toHaveLength(1);
+    expect(activeCategories[0].label).toBe('Offline Since');
   });
 });

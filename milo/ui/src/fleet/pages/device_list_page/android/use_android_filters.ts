@@ -56,12 +56,12 @@ export const useAndroidFilters = (
     };
     if (showAvgUtilization) {
       extraFilters['"average_7d"'] = new RangeFilterCategoryBuilder()
-        .setLabel('7 Day Average Utilization')
+        .setLabel(getAndroidColumnHeader('average_7d', workspace))
         .setMin(0)
         .setMax(100)
         .setUnit('%');
       extraFilters['"average_30d"'] = new RangeFilterCategoryBuilder()
-        .setLabel('30 Day Average Utilization')
+        .setLabel(getAndroidColumnHeader('average_30d', workspace))
         .setMin(0)
         .setMax(100)
         .setUnit('%');
@@ -96,7 +96,13 @@ export const useAndroidFilters = (
       const isBase = baseKeys.includes(key);
       const filterKey = isBase ? `"${key}"` : `labels."${key}"`;
 
-      if (filters[filterKey]) continue;
+      if (
+        filters[filterKey] ||
+        filters[`"${key}"`] ||
+        filters[`labels."${key}"`]
+      ) {
+        continue;
+      }
 
       const label = getAndroidColumnHeader(key, workspace);
 

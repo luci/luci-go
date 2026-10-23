@@ -14,7 +14,7 @@
 
 import { DateTime } from 'luxon';
 import { MRT_RowData } from 'material-react-table';
-import React from 'react';
+import React, { isValidElement } from 'react';
 
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { FC_CellProps } from '@/fleet/types/table';
@@ -34,6 +34,9 @@ export function renderTimestampCell<R extends MRT_RowData>(
   const rawValue = Array.isArray(value) ? value[0] : value;
   if (rawValue === null || rawValue === undefined || rawValue === '') {
     return '-';
+  }
+  if (isValidElement(rawValue)) {
+    return rawValue;
   }
   const strValue = String(rawValue);
   try {

@@ -22,7 +22,6 @@ import {
   Button,
   TextField,
 } from '@mui/material';
-import { DateTime } from 'luxon';
 import { MaterialReactTable, MRT_ColumnDef } from 'material-react-table';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
@@ -35,7 +34,6 @@ import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { useShortcut } from '@/fleet/components/shortcut_provider';
-import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import {
   generateDeviceListURL,
   ANDROID_PLATFORM,
@@ -154,38 +152,13 @@ export const AndroidDeviceDetailsPage = ({
 
   const labels = useMemo<AndroidDimensionRow[]>(() => {
     if (!device) return [];
-    const l = Object.entries(device.omnilabSpec?.labels ?? {}).map(
-      ([key, value]) => {
-        const strVal = labelValuesToString(value.values);
-        const label = getAndroidColumnHeader(key, workspace);
-        if (
-          [
-            'ufs.last_sync',
-            'mh.last_sync',
-            'ufs.nlyte_update_time',
-            'ufs.nlyte_last_sync',
-          ].includes(key)
-        ) {
-          try {
-            const dt = DateTime.fromISO(strVal);
-            if (dt.isValid) {
-              return {
-                key,
-                label,
-                value: <SmartRelativeTimestamp date={dt} />,
-              };
-            }
-          } catch (_) {
-            // Falls through to return plain text below.
-          }
-        }
-        return {
-          key,
-          label,
-          value: strVal,
-        };
-      },
-    );
+    const l: AndroidDimensionRow[] = Object.entries(
+      device.omnilabSpec?.labels ?? {},
+    ).map(([key, value]) => ({
+      key,
+      label: getAndroidColumnHeader(key, workspace),
+      value: labelValuesToString(value.values),
+    }));
     if (device.realm) {
       l.push({
         key: 'realm',
