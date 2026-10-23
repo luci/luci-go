@@ -32,5 +32,8 @@ export interface DutToRepair {
 
   // Note that this is label-pool, not Swarming pool.
   pool?: string;
+  servoState?: string;
+  servoUsbState?: string;
+  servoSerial?: string;
   namespace?: string | readonly string[];
 }

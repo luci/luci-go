@@ -78,11 +78,16 @@ const ChromeOSActions = ({
 
   const selectedDuts = selectedRows.map((row) => ({
     name: `${row.id}`,
-    dutId: `${row.dutId}`,
+    dutId: extractDutId(row),
     state: extractDutState(row),
     pool: getLabelValue(row, 'label-pool'),
     board: getLabelValue(row, 'label-board'),
     model: getLabelValue(row, 'label-model'),
+    servoState: getLabelValue(row, 'label-servo_state'),
+    servoUsbState: getLabelValue(row, 'label-servo_usb_state'),
+    servoSerial:
+      getLabelValue(row, 'servo_serial') ||
+      getLabelValue(row, 'label-servo_serial'),
     namespace: getLabelValues(row, 'ufs_namespace'),
   }));
 

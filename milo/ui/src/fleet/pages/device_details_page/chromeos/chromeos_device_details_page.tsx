@@ -228,9 +228,14 @@ export const ChromeOSDeviceDetailsPage = () => {
       // populates the "ID" for a DUT using the DUT's hostname.
       dutId,
       state: extractDutState(device),
-      pool: extractDutLabel('label-pool', device),
+      pool: extractDutLabels('label-pool', device).join(', '),
       board: extractDutLabel('label-board', device),
       model: extractDutLabel('label-model', device),
+      servoState: extractDutLabel('label-servo_state', device),
+      servoUsbState: extractDutLabel('label-servo_usb_state', device),
+      servoSerial:
+        extractDutLabel('servo_serial', device) ||
+        extractDutLabel('label-servo_serial', device),
       namespace: extractDutLabels('ufs_namespace', device),
     },
   ];

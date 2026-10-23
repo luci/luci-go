@@ -106,10 +106,53 @@ describe('<RequestRepair />', () => {
     expect(decodeURIComponent(openedUrl.searchParams.get('description')!)).toBe(
       decodeURIComponent(expectedDescription),
     );
+    expect(openedUrl.searchParams.getAll('customFields')).toEqual([
+      '1180197:dut1, dut2, dut3, dut4',
+      '994275:board1, board2, board3, board4',
+      '994317:model1, model2, model3, model4',
+      '1061740:pool1, pool2, pool3, pool4',
+      '1002699:needs_manual_repair, ready, repair_failed',
+      '994318:4',
+    ]);
     expect(windowOpenSpy).toHaveBeenCalledWith(
       expect.stringContaining(''),
       '_blank',
     );
+  });
+
+  it('should append ChromeOS repair customFields for a single ChromeOS DUT', () => {
+    const selectedDuts: DutToRepair[] = [
+      {
+        name: 'dut1',
+        dutId: 'C123456',
+        state: 'needs_manual_repair',
+        board: 'demo-board-alpha',
+        model: 'demo-model-one',
+        pool: 'pool1',
+      },
+    ];
+
+    render(
+      <FakeAuthStateProvider>
+        <RequestRepair
+          selectedItems={selectedDuts}
+          platform={Platform.CHROMEOS}
+        />
+      </FakeAuthStateProvider>,
+    );
+    fireEvent.click(screen.getByTestId('file-repair-bug-button'));
+
+    expect(windowOpenSpy).toHaveBeenCalledTimes(1);
+    const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
+    expect(openedUrl.searchParams.getAll('customFields')).toEqual([
+      '998417:dut1',
+      '1180197:C123456',
+      '994275:demo-board-alpha',
+      '994317:demo-model-one',
+      '1061740:pool1',
+      '1002699:needs_manual_repair',
+      '994318:1',
+    ]);
   });
 
   it.each([

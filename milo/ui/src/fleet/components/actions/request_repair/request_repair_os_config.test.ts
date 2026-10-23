@@ -69,4 +69,145 @@ describe('ChromeOSRepairConfig', () => {
       );
     });
   });
+
+  describe('customFields', () => {
+    it('should generate ChromeOS repair custom fields for a single DUT in needs_manual_repair', () => {
+      const duts: DutToRepair[] = [
+        {
+          name: 'dut1',
+          board: 'demo-board-alpha',
+          model: 'demo-model-one',
+          pool: 'pool1, pool2',
+          dutId: 'C123456',
+          state: 'needs_manual_repair',
+          servoState: 'WORKING',
+          servoUsbState: 'NORMAL',
+          servoSerial: 'SERVOV4P1-S-2105',
+        },
+      ];
+      const getFields = ChromeOSRepairConfig.customFields as (
+        items: DutToRepair[],
+      ) => string[];
+      expect(getFields(duts)).toEqual([
+        '998417:dut1',
+        '1180197:C123456',
+        '994275:demo-board-alpha',
+        '994317:demo-model-one',
+        '1061740:pool1, pool2',
+        '1002699:needs_manual_repair',
+        '1002733:WORKING',
+        '1002657:NORMAL',
+        '1180248:SERVOV4P1-S-2105',
+        '994318:1',
+      ]);
+    });
+
+    it('should omit Host Name when a single DUT is not in a manual-repair state', () => {
+      const getFields = ChromeOSRepairConfig.customFields as (
+        items: DutToRepair[],
+      ) => string[];
+      expect(
+        getFields([
+          {
+            name: 'dut1',
+            board: 'demo-board-alpha',
+            model: 'demo-model-one',
+            pool: 'pool1',
+            dutId: 'C123456',
+            state: 'ready',
+          },
+        ]),
+      ).toEqual([
+        '1180197:C123456',
+        '994275:demo-board-alpha',
+        '994317:demo-model-one',
+        '1061740:pool1',
+        '1002699:ready',
+        '994318:1',
+      ]);
+    });
+
+    it('should omit DUT Asset # when dutId is empty or default 0', () => {
+      const getFields = ChromeOSRepairConfig.customFields as (
+        items: DutToRepair[],
+      ) => string[];
+      expect(
+        getFields([
+          {
+            name: 'dut1',
+            board: 'demo-board-alpha',
+            model: 'demo-model-one',
+            pool: 'pool1',
+            dutId: '',
+            state: 'needs_replacement',
+          },
+        ]),
+      ).toEqual([
+        '998417:dut1',
+        '994275:demo-board-alpha',
+        '994317:demo-model-one',
+        '1061740:pool1',
+        '1002699:needs_replacement',
+        '994318:1',
+      ]);
+      expect(
+        getFields([
+          {
+            name: 'dut1',
+            board: 'demo-board-alpha',
+            model: 'demo-model-one',
+            pool: 'pool1',
+            dutId: '0',
+            state: 'NEEDS_MANUAL_REPAIR',
+          },
+        ]),
+      ).toEqual([
+        '998417:dut1',
+        '994275:demo-board-alpha',
+        '994317:demo-model-one',
+        '1061740:pool1',
+        '1002699:NEEDS_MANUAL_REPAIR',
+        '994318:1',
+      ]);
+    });
+
+    it('should omit Host Name and aggregate unique custom field values when multiple DUTs are selected', () => {
+      const getFields = ChromeOSRepairConfig.customFields as (
+        items: DutToRepair[],
+      ) => string[];
+      expect(
+        getFields([
+          {
+            name: 'dut1',
+            board: 'demo-board-alpha',
+            model: 'demo-model-one',
+            pool: 'pool1, pool2',
+            dutId: 'C123456',
+            state: 'needs_manual_repair',
+            servoState: 'NOT_CONNECTED',
+            servoUsbState: 'HARDWARE_NOT_DETECTED',
+          },
+          {
+            name: 'dut2',
+            board: 'demo-board-alpha',
+            model: 'demo-model-two',
+            pool: 'pool2, pool3',
+            dutId: 'C654321',
+            state: 'needs_manual_repair',
+            servoState: 'NOT_CONNECTED',
+            servoUsbState: 'NORMAL',
+          },
+        ]),
+      ).toEqual([
+        '1180197:C123456, C654321',
+        '994275:demo-board-alpha',
+        '994317:demo-model-one, demo-model-two',
+        '1061740:pool1, pool2, pool3',
+        '1002699:needs_manual_repair',
+        '1002733:NOT_CONNECTED',
+        '1002657:HARDWARE_NOT_DETECTED, NORMAL',
+        '994318:2',
+      ]);
+    });
+  });
 });

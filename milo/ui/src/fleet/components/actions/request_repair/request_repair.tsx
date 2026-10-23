@@ -47,6 +47,7 @@ export interface RepairConfig<T> {
   generateTitle: (items: T[]) => string;
   generateDescription: (items: T[]) => string;
   hotlistIds?: string | ((items: T[]) => string);
+  customFields?: string | string[] | ((items: T[]) => string | string[]);
   baseUrl?: string;
 }
 
@@ -89,6 +90,7 @@ export function RequestRepair({
     let templateId = '';
     let hotlistIds = '';
     let componentId = '';
+    let customFields: string[] = [];
 
     try {
       componentId =
@@ -102,6 +104,13 @@ export function RequestRepair({
         typeof config.hotlistIds === 'function'
           ? config.hotlistIds(items)
           : config.hotlistIds || '';
+      const rawCustomFields =
+        typeof config.customFields === 'function'
+          ? config.customFields(items)
+          : config.customFields || [];
+      customFields = (
+        Array.isArray(rawCustomFields) ? rawCustomFields : [rawCustomFields]
+      ).filter(Boolean);
     } catch (e) {
       logging.error('Failed to prepare repair request:', e);
       return;
@@ -125,6 +134,9 @@ export function RequestRepair({
     });
     if (hotlistIds) {
       params.set('hotlistIds', hotlistIds);
+    }
+    for (const customField of customFields) {
+      params.append('customFields', customField);
     }
     const baseUrl = config.baseUrl || 'http://b';
     const url = `${baseUrl}/issues/new?${params.toString()}`;
