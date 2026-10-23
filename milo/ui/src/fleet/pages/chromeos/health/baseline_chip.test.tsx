@@ -31,9 +31,11 @@ describe('BaselineChip', () => {
     fireEvent.mouseOver(chip);
 
     expect(
-      await screen.findByText(
-        /Availability is calculated as the percentage of READY devices against the model's expected quota target/i,
-      ),
+      await screen.findByText(/Compares ready devices against the/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText('target quota')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Active whenever the view has a defined quota target/i),
     ).toBeInTheDocument();
   });
 
@@ -49,8 +51,12 @@ describe('BaselineChip', () => {
     fireEvent.mouseOver(chip);
 
     expect(
-      await screen.findByText(
-        /Health is calculated as the percentage of READY devices out of actual enrolled physical DUTs/i,
+      await screen.findByText(/Compares ready devices against/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText('enrolled devices')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Active when viewing any group without a defined quota target/i,
       ),
     ).toBeInTheDocument();
   });

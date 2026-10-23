@@ -150,19 +150,20 @@ export const HealthPage = () => {
                           display="block"
                           sx={{ mb: 0.5 }}
                         >
-                          • <b>Availability (Quota Baseline):</b> % of devices
-                          available out of expected quota target configured per
-                          model.
+                          • <b>Availability (Quota Baseline):</b> Compares ready
+                          devices against the <b>target quota</b> (how many
+                          devices we need). Active whenever the view has a
+                          defined quota target.
                         </Typography>
                         <Typography
                           variant="caption"
                           display="block"
                           sx={{ mb: 0.5 }}
                         >
-                          • <b>Health (Enrolled Baseline):</b> Expected quotas
-                          are configured per model overall. When filtered by
-                          pool, zone, or arbitrary labels, baseline falls back
-                          to actual enrolled physical DUTs.
+                          • <b>Health (Enrolled Baseline):</b> Compares ready
+                          devices against <b>enrolled devices</b> (physical
+                          machines present in the lab). Active when viewing any
+                          group without a defined quota target.
                         </Typography>
                         <Typography
                           variant="caption"

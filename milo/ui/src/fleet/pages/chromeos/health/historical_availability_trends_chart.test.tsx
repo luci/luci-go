@@ -262,10 +262,9 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     expect(baselineChip).toHaveTextContent('Enrolled Baseline');
     fireEvent.mouseOver(baselineChip);
     expect(
-      await screen.findByText(
-        /Health is calculated as the percentage of READY devices/i,
-      ),
+      await screen.findByText(/Compares ready devices against/i),
     ).toBeInTheDocument();
+    expect(screen.getByText('enrolled devices')).toBeInTheDocument();
     expect(
       screen.getByText(
         'Overall fleet health percentage trendline over the last 72 hours.',

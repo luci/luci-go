@@ -41,10 +41,18 @@ export const BaselineChip = ({
       : baselineType === 'expected';
 
   const label = isAvailability ? 'Quota Baseline' : 'Enrolled Baseline';
-  const description = isAvailability
-    ? "Availability is calculated as the percentage of READY devices against the model's expected quota target."
-    : 'Health is calculated as the percentage of READY devices out of actual enrolled physical DUTs' +
-      ' (used when not tracking against model quota targets, such as filtering or grouping by pool, zone, or labels).';
+  const description = isAvailability ? (
+    <>
+      Compares ready devices against the <b>target quota</b> (how many devices
+      we need). Active whenever the view has a defined quota target.
+    </>
+  ) : (
+    <>
+      Compares ready devices against <b>enrolled devices</b> (physical machines
+      present in the lab). Active when viewing any group without a defined quota
+      target.
+    </>
+  );
 
   return (
     <HealthChip
