@@ -88,6 +88,7 @@ import {
   MAX_TOOLTIP_ROWS,
   selectTooltipRows,
   SeriesColorSlots,
+  sortModelSeries,
   sortPoolSeries,
   TrendsChartRow,
   valueAtCursor,
@@ -600,6 +601,9 @@ export const HistoricalAvailabilityTrendsChart = ({
     const series = data?.series ?? [];
     if (viewBy === TrendlineGrouping.GROUP_BY_POOL) {
       return sortPoolSeries(series);
+    }
+    if (viewBy === TrendlineGrouping.GROUP_BY_MODEL) {
+      return sortModelSeries(series);
     }
     return series;
   }, [data?.series, viewBy]);

@@ -326,6 +326,65 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     expect(isPlotted('volteer')).toBe(true);
   });
 
+  it('sorts models by health drop descending in By Model tab', () => {
+    const multiModelData: GetFleetAvailabilityTrendsResponse = {
+      series: [
+        {
+          name: 'stable',
+          points: [
+            { timestamp: t0, value: 0.9 },
+            { timestamp: t1, value: 0.9 },
+          ],
+        },
+        {
+          name: 'dropping',
+          points: [
+            { timestamp: t0, value: 0.9 },
+            { timestamp: t1, value: 0.7 },
+          ],
+        },
+      ],
+      metricType: TrendlineMetricType.AVAILABILITY,
+    };
+    jest
+      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
+      .mockImplementation((req) => {
+        if (req.grouping === TrendlineGrouping.GROUP_BY_MODEL) {
+          return {
+            data: multiModelData,
+            isLoading: false,
+            isError: false,
+            error: null,
+          } as unknown as UseQueryResult<
+            GetFleetAvailabilityTrendsResponse,
+            Error
+          >;
+        }
+        return {
+          data: mockOverallData,
+          isLoading: false,
+          isError: false,
+          error: null,
+        } as unknown as UseQueryResult<
+          GetFleetAvailabilityTrendsResponse,
+          Error
+        >;
+      });
+
+    render(
+      <FakeContextProvider>
+        <HistoricalAvailabilityTrendsChart />
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'By Model' }));
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes[1]).toHaveAccessibleName('dropping');
+    expect(checkboxes[2]).toHaveAccessibleName('stable');
+    expect(screen.getByLabelText('dropping')).toBeChecked();
+  });
+
   it('switches to By Pool tab and selects 2 pools by default', () => {
     const multiPoolData: GetFleetAvailabilityTrendsResponse = {
       series: [

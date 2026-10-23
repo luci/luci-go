@@ -17,6 +17,8 @@ import { DateTime } from 'luxon';
 import { colors } from '@/fleet/theme/colors';
 import { TrendlineSeries } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { calculate24hDelta, TrendlinePointLike } from './ranking_utils';
+
 export const PALETTE = [
   colors.blue[600],
   colors.green[600],
@@ -84,6 +86,25 @@ export const DEFAULT_VISIBLE_SERIES_MODEL = 5;
 
 /** How many pool series are plotted by default before the user picks their own. */
 export const DEFAULT_VISIBLE_SERIES_POOL = 2;
+
+/**
+ * Sorts model series in descending order of 24h health drop so that models
+ * with the highest health degradation appear first and are selected by default.
+ */
+export const sortModelSeries = <
+  T extends {
+    readonly name: string;
+    readonly points?: readonly TrendlinePointLike[];
+  },
+>(
+  series: readonly T[],
+): readonly T[] => {
+  const drops = new Map<T, number>();
+  for (const s of series) {
+    drops.set(s, calculate24hDelta(s.points ?? []).healthDrop);
+  }
+  return [...series].sort((a, b) => (drops.get(b) ?? 0) - (drops.get(a) ?? 0));
+};
 
 /**
  * Prioritizes primary quota ("DUT_POOL_QUOTA") and FAFT ("faft-test") pools

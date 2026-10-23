@@ -33,7 +33,7 @@ describe('PerformanceRankingCard', () => {
     jest.restoreAllMocks();
   });
 
-  it('renders hardware models ordered ascending by availability % (worst first)', () => {
+  it('renders hardware models ordered by health drop descending by default (worst first)', () => {
     const mockTrends: GetFleetAvailabilityTrendsResponse = {
       metricType: TrendlineMetricType.AVAILABILITY,
       series: [
@@ -85,8 +85,11 @@ describe('PerformanceRankingCard', () => {
 
     expect(screen.getByRole('tab', { name: /^models$/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /^pools$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: /sort by/i }),
+    ).toHaveTextContent('Health Drop');
 
-    // Verify ordering: volteer (62%) -> dedede (74%) -> brya (88%)
+    // Verify ordering by health drop descending: volteer (-3%) -> dedede (-1%) -> brya (+3% gain, 0% drop)
     const modelElements = screen.getAllByRole('listitem');
     expect(modelElements).toHaveLength(3);
     expect(modelElements[0]).toHaveTextContent('volteer');
@@ -313,19 +316,19 @@ describe('PerformanceRankingCard', () => {
       }),
     );
 
-    // Verify pool list ordering: DUT_POOL_CQ (55%) -> DUT_POOL_QUOTA (85%)
+    // Verify pool list ordering by health drop descending: DUT_POOL_QUOTA (-7%) -> DUT_POOL_CQ (-5%)
     const poolElements = screen.getAllByRole('listitem');
     expect(poolElements).toHaveLength(2);
-    expect(poolElements[0]).toHaveTextContent('DUT_POOL_CQ');
-    expect(poolElements[0]).toHaveTextContent('55.0% Healthy');
-    expect(screen.getByTestId('drop-badge-DUT_POOL_CQ')).toHaveTextContent(
-      '-5.0%',
-    );
-
-    expect(poolElements[1]).toHaveTextContent('DUT_POOL_QUOTA');
-    expect(poolElements[1]).toHaveTextContent('85.0% Healthy');
+    expect(poolElements[0]).toHaveTextContent('DUT_POOL_QUOTA');
+    expect(poolElements[0]).toHaveTextContent('85.0% Healthy');
     expect(screen.getByTestId('drop-badge-DUT_POOL_QUOTA')).toHaveTextContent(
       '-7.0%',
+    );
+
+    expect(poolElements[1]).toHaveTextContent('DUT_POOL_CQ');
+    expect(poolElements[1]).toHaveTextContent('55.0% Healthy');
+    expect(screen.getByTestId('drop-badge-DUT_POOL_CQ')).toHaveTextContent(
+      '-5.0%',
     );
 
     // Test clicking a pool row
@@ -333,7 +336,7 @@ describe('PerformanceRankingCard', () => {
     expect(onSelectPool).toHaveBeenCalledWith('DUT_POOL_CQ');
   });
 
-  it('sorts cohorts by Health Drop descending when selected in Sort by dropdown', () => {
+  it('sorts cohorts by Health Drop descending by default and sorts by Availability ascending when selected in Sort by dropdown', () => {
     const mockTrends: GetFleetAvailabilityTrendsResponse = {
       metricType: TrendlineMetricType.AVAILABILITY,
       series: [
@@ -379,22 +382,24 @@ describe('PerformanceRankingCard', () => {
       </FakeContextProvider>,
     );
 
-    // Initial default sorting by Availability ascending: volteer (62%) -> dedede (75%) -> brya (80%)
+    // Initial default sorting by Health Drop descending: dedede (-10%) -> volteer (-3%) -> brya (0%)
     let rows = screen.getAllByRole('listitem');
-    expect(rows[0]).toHaveTextContent('volteer');
-    expect(rows[1]).toHaveTextContent('dedede');
-    expect(rows[2]).toHaveTextContent('brya');
-
-    // Switch sort to Health Drop
-    const sortSelect = screen.getByRole('combobox', { name: /sort by/i });
-    fireEvent.mouseDown(sortSelect);
-    const dropOption = screen.getByRole('option', { name: /^health drop$/i });
-    fireEvent.click(dropOption);
-
-    // Sorted descending by health drop: dedede (-10%) -> volteer (-3%) -> brya (0%)
-    rows = screen.getAllByRole('listitem');
     expect(rows[0]).toHaveTextContent('dedede');
     expect(rows[1]).toHaveTextContent('volteer');
+    expect(rows[2]).toHaveTextContent('brya');
+
+    // Switch sort to Availability
+    const sortSelect = screen.getByRole('combobox', { name: /sort by/i });
+    fireEvent.mouseDown(sortSelect);
+    const availabilityOption = screen.getByRole('option', {
+      name: /^availability$/i,
+    });
+    fireEvent.click(availabilityOption);
+
+    // Sorted ascending by availability: volteer (62%) -> dedede (75%) -> brya (80%)
+    rows = screen.getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('volteer');
+    expect(rows[1]).toHaveTextContent('dedede');
     expect(rows[2]).toHaveTextContent('brya');
   });
 

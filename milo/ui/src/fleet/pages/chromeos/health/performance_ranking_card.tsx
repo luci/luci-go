@@ -86,7 +86,7 @@ export const PerformanceRankingCard = ({
   onSelectPool,
 }: PerformanceRankingCardProps) => {
   const [entityTab, setEntityTab] = useState<RankingEntityTab>('models');
-  const [sortBy, setSortBy] = useState<RankingSortOption>('availability');
+  const [sortBy, setSortBy] = useState<RankingSortOption>('drop');
 
   const queryRequest = useMemo(() => {
     const { startTime, endTime } =

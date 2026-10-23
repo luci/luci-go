@@ -24,6 +24,7 @@ import {
   getSeriesColor,
   PALETTE,
   selectTooltipRows,
+  sortModelSeries,
   sortPoolSeries,
   valueAtCursor,
 } from './trends_chart_data';
@@ -306,6 +307,51 @@ describe('sortPoolSeries', () => {
 
     sortPoolSeries(input);
 
+    expect(input).toEqual(copy);
+  });
+});
+
+describe('sortModelSeries', () => {
+  it('sorts models in descending order of 24h health drop', () => {
+    const input = [
+      series('mild-drop', [
+        [at(0), 0.9],
+        [at(24), 0.85],
+      ]),
+      series('severe-drop', [
+        [at(0), 0.9],
+        [at(24), 0.6],
+      ]),
+      series('stable', [
+        [at(0), 0.9],
+        [at(24), 0.9],
+      ]),
+      series('improving', [
+        [at(0), 0.7],
+        [at(24), 0.85],
+      ]),
+    ];
+    expect(sortModelSeries(input).map((s) => s.name)).toEqual([
+      'severe-drop',
+      'mild-drop',
+      'stable',
+      'improving',
+    ]);
+  });
+
+  it('preserves order when drops are equal and does not mutate input', () => {
+    const input = [
+      series('a', [
+        [at(0), 0.9],
+        [at(24), 0.8],
+      ]),
+      series('b', [
+        [at(0), 0.9],
+        [at(24), 0.8],
+      ]),
+    ];
+    const copy = [...input];
+    expect(sortModelSeries(input).map((s) => s.name)).toEqual(['a', 'b']);
     expect(input).toEqual(copy);
   });
 });
