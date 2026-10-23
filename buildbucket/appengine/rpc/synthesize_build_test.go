@@ -234,7 +234,8 @@ func TestSynthesizeBuild(t *testing.T) {
 			})
 
 			t.Run("template build", func(t *ftt.Test) {
-				assert.Loosely(t, datastore.Put(ctx, &model.Build{
+				bld := &model.Build{
+					ID: 1,
 					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
@@ -254,6 +255,17 @@ func TestSynthesizeBuild(t *testing.T) {
 						// Non-retriable build can still be synthesized.
 						Retriable: pb.Trinary_NO,
 					},
+				}
+				inputProps := &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"a":     structpb.NewStringValue("b"),
+						"b":     structpb.NewStringValue("overridden_b"),
+						"extra": structpb.NewStringValue("extra_val"),
+					},
+				}
+				assert.Loosely(t, datastore.Put(ctx, bld, &model.BuildInputProperties{
+					Build: datastore.KeyForObj(ctx, bld),
+					Proto: inputProps,
 				}), should.BeNil)
 
 				req := &pb.SynthesizeBuildRequest{
@@ -283,7 +295,8 @@ func TestSynthesizeBuild(t *testing.T) {
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
+							Hostname:            "app.appspot.com",
+							RequestedProperties: inputProps,
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -352,7 +365,12 @@ func TestSynthesizeBuild(t *testing.T) {
 								},
 								"b": {
 									Kind: &structpb.Value_StringValue{
-										StringValue: "b",
+										StringValue: "overridden_b",
+									},
+								},
+								"extra": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "extra_val",
 									},
 								},
 							},
@@ -380,6 +398,50 @@ func TestSynthesizeBuild(t *testing.T) {
 					},
 				}
 				assert.Loosely(t, b, should.Match(expected))
+
+				t.Run("with shadow", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(ctx, &model.Bucket{
+						ID:     "bucket",
+						Parent: model.ProjectKey(ctx, "project"),
+						Proto: &pb.Bucket{
+							Shadow: "bucket.shadow",
+						},
+					}), should.BeNil)
+
+					b, err := srv.SynthesizeBuild(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+
+					expected.Builder.Bucket = "bucket.shadow"
+					expected.Infra.Backend.Config.Fields["service_account"] = structpb.NewStringValue("shadow@chops-service-accounts.iam.gserviceaccount.com")
+					expected.Infra.Backend.TaskDimensions = []*pb.RequestedDimension{
+						{
+							Key:   "pool",
+							Value: "pool2",
+						},
+					}
+					expected.Input.Properties = &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"$recipe_engine/led": {
+								Kind: &structpb.Value_StructValue{
+									StructValue: &structpb.Struct{
+										Fields: map[string]*structpb.Value{
+											"shadowed_bucket": {
+												Kind: &structpb.Value_StringValue{
+													StringValue: "bucket",
+												},
+											},
+										},
+									},
+								},
+							},
+							"a":     structpb.NewStringValue("b2"),
+							"b":     structpb.NewStringValue("overridden_b"),
+							"c":     structpb.NewStringValue("c"),
+							"extra": structpb.NewStringValue("extra_val"),
+						},
+					}
+					assert.Loosely(t, b, should.Match(expected))
+				})
 			})
 
 			t.Run("builder", func(t *ftt.Test) {

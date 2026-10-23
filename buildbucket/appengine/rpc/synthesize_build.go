@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/reflectutil"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
@@ -91,17 +92,20 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 func synthesizeShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, ancestors []int64, shadowBucket string, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) (*pb.Build, error) {
 	origBucket := schReq.Builder.Bucket
 
-	cfgCopy := cfg
+	var cfgCopy *pb.BuilderConfig
 	if shadowBucket != "" && shadowBucket != origBucket {
 		cfgCopy = applyShadowAdjustment(cfg)
+	} else {
+		cfgCopy = reflectutil.ShallowCopy(cfg).(*pb.BuilderConfig)
 	}
-
-	bld, err := buildFromScheduleRequest(ctx, schReq, ancestors, "", cfgCopy, globalCfg, nil)
 	// When synthesizing shadow builds, we allow property overrides. The intent
 	// is to generate a new build to pass to CreateBuild. If the caller has
 	// permission to call CreateBuild, then they can already set properties to
 	// whatever they want.
-	if err != nil && !errors.Is(err, errInvalidPropertyOverride) {
+	cfgCopy.AllowedPropertyOverrides = []string{"*"}
+
+	bld, err := buildFromScheduleRequest(ctx, schReq, ancestors, "", cfgCopy, globalCfg, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -112,6 +116,7 @@ func synthesizeShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest,
 		ShadowedBucket: origBucket,
 	}
 	if shadowBucket != "" && shadowBucket != origBucket {
+		adjustShadowProperties(cfg, bld.Input.Properties)
 		bld.Input.Properties.Fields["$recipe_engine/led"] = &structpb.Value{
 			Kind: &structpb.Value_StructValue{
 				StructValue: &structpb.Struct{

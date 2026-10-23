@@ -111,18 +111,11 @@ func applyShadowAdjustment(cfg *pb.BuilderConfig) *pb.BuilderConfig {
 			rtnCfg.Properties = shadowBldrCfg.Properties
 		} else {
 			origProp := &structpb.Struct{}
-			shadowProp := &structpb.Struct{}
 			if err := protojson.Unmarshal([]byte(rtnCfg.Properties), origProp); err != nil {
 				// Builder config should have been validated already.
 				panic(errors.Fmt("error unmarshaling builder properties for %q: %w", rtnCfg.Name, err))
 			}
-			if err := protojson.Unmarshal([]byte(shadowBldrCfg.Properties), shadowProp); err != nil {
-				// Builder config should have been validated already.
-				panic(errors.Fmt("error unmarshaling builder shadow properties for %q: %w", rtnCfg.Name, err))
-			}
-			for k, v := range shadowProp.GetFields() {
-				origProp.Fields[k] = v
-			}
+			adjustShadowProperties(cfg, origProp)
 			updatedProp, err := protojson.Marshal(origProp)
 			if err != nil {
 				panic(errors.Fmt("error marshaling builder properties for %q: %w", rtnCfg.Name, err))
@@ -132,6 +125,23 @@ func applyShadowAdjustment(cfg *pb.BuilderConfig) *pb.BuilderConfig {
 	}
 	rtnCfg.ShadowBuilderAdjustments = nil
 	return rtnCfg
+}
+
+func adjustShadowProperties(cfg *pb.BuilderConfig, props *structpb.Struct) {
+	if cfg.GetShadowBuilderAdjustments().GetProperties() == "" {
+		return
+	}
+	shadowProp := &structpb.Struct{}
+	if err := protojson.Unmarshal([]byte(cfg.ShadowBuilderAdjustments.Properties), shadowProp); err != nil {
+		// Builder config should have been validated already.
+		panic(errors.Fmt("error unmarshaling builder shadow properties for %q: %w", cfg.Name, err))
+	}
+	if props.Fields == nil {
+		props.Fields = make(map[string]*structpb.Value, len(shadowProp.GetFields()))
+	}
+	for k, v := range shadowProp.GetFields() {
+		props.Fields[k] = v
+	}
 }
 
 func trySynthesizeFromShadowedBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb.BuilderItem, error) {

@@ -5615,6 +5615,13 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"a":     structpb.NewStringValue("b"),
+								"b":     structpb.NewStringValue("overridden_b"),
+								"extra": structpb.NewStringValue("extra_val"),
+							},
+						},
 						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{
 							InheritFromParent: true,
 						},
@@ -5634,6 +5641,23 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				assert.That(t, blds[0].Infra.Buildbucket.Agent, should.Match(expectedAgent))
 				assert.That(t, blds[0].Exe, should.Match(parentBuild.Proto.Exe))
+				assert.That(t, blds[0].Input.Properties, should.Match(&structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"$recipe_engine/led": {
+							Kind: &structpb.Value_StructValue{
+								StructValue: &structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"shadowed_bucket": structpb.NewStringValue("bucket"),
+									},
+								},
+							},
+						},
+						"a":     structpb.NewStringValue("b2"),
+						"b":     structpb.NewStringValue("overridden_b"),
+						"c":     structpb.NewStringValue("c"),
+						"extra": structpb.NewStringValue("extra_val"),
+					},
+				}))
 			})
 
 			t.Run("one shadow, one original, and one with no shadow bucket", func(t *ftt.Test) {
