@@ -13,14 +13,14 @@
 // limitations under the License.
 
 import { OpenInNew } from '@mui/icons-material';
-import { Box, Button, Divider, Paper, Typography } from '@mui/material';
+import { Box, Divider, Paper, Typography } from '@mui/material';
 import { useMemo } from 'react';
 
 import { healthToDeviceFilter } from '@/fleet/adapters/filter_adapters';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { radii } from '@/fleet/theme/tokens';
 
-import { getHealthStatus, HEALTH_THRESHOLDS } from '../health_status_utils';
+import { getHealthStatus } from '../health_status_utils';
 
 import {
   computeBreakdownStats,
@@ -107,21 +107,61 @@ export const HealthStatePopoverContent = ({
           alignItems: 'flex-start',
           justifyContent: 'space-between',
           mb: 1.5,
-          gap: 1,
+          gap: 1.5,
         }}
       >
         <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography
+              variant="subtitle1"
+              component="a"
+              href={allDevicesUrl}
+              target="_blank"
+              rel="noreferrer"
+              sx={{
+                fontWeight: 700,
+                lineHeight: 1.2,
+                color: 'text.primary',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
+                '&:hover': {
+                  color: 'primary.main',
+                  '& .title-link-icon': {
+                    opacity: 1,
+                    color: 'primary.main',
+                  },
+                },
+              }}
+            >
+              {title}
+              <OpenInNew
+                className="title-link-icon"
+                sx={{
+                  fontSize: 14,
+                  opacity: 0.5,
+                  transition: 'all 0.15s ease',
+                }}
+              />
+            </Typography>
+          </Box>
           <Typography
-            variant="subtitle1"
-            sx={{ fontWeight: 700, lineHeight: 1.2, color: 'text.primary' }}
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: 'block', mt: 0.25 }}
           >
-            {title}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
             {formatStateCount(total)} total enrolled
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1.5,
+            alignItems: 'flex-start',
+            flexShrink: 0,
+          }}
+        >
           <Box sx={{ textAlign: 'right' }}>
             <Typography
               variant="h6"
@@ -175,80 +215,6 @@ export const HealthStatePopoverContent = ({
               Health
             </Typography>
           </Box>
-        </Box>
-      </Box>
-
-      {/* SLA Health Thresholds Strip */}
-      <Box
-        data-testid="popover-thresholds-strip"
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 1,
-          py: 0.5,
-          mb: 1.5,
-          borderRadius: radii.sm,
-          bgcolor: 'action.hover',
-          border: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Typography
-          variant="caption"
-          sx={{
-            fontSize: 10,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            color: 'text.secondary',
-          }}
-        >
-          SLA
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {HEALTH_THRESHOLDS.map((tier) => {
-            const isCurrentTier = availabilityStatus.status === tier.status;
-            return (
-              <Box
-                key={tier.status}
-                data-testid={`popover-threshold-${tier.status.toLowerCase()}`}
-                title={`${tier.label}: ${tier.range}${isCurrentTier ? ' (Current tier)' : ''}`}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  px: isCurrentTier ? 0.75 : 0.25,
-                  py: 0.2,
-                  borderRadius: radii.sm,
-                  bgcolor: isCurrentTier ? 'action.selected' : 'transparent',
-                  border: '1px solid',
-                  borderColor: isCurrentTier ? 'divider' : 'transparent',
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    bgcolor: tier.colorSx,
-                    flexShrink: 0,
-                  }}
-                />
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontSize: 10.5,
-                    fontWeight: isCurrentTier ? 700 : 500,
-                    color: isCurrentTier ? 'text.primary' : 'text.secondary',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {tier.label} {tier.range}
-                </Typography>
-              </Box>
-            );
-          })}
         </Box>
       </Box>
 
@@ -345,152 +311,114 @@ export const HealthStatePopoverContent = ({
                   </Typography>
                 </Box>
 
-                {/* Exact State Rows with 1-click AIP-160 drilldown */}
-                {activeStates.length > 0 && (
-                  <Box
-                    sx={{
-                      bgcolor: 'background.paper',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: radii.sm,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {activeStates.map((st, idx) => (
+                {/* Exact State Rows with 1-click AIP-160 drilldown (borderless) */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.25,
+                  }}
+                >
+                  {activeStates.map((st) => (
+                    <Box
+                      key={st.config.key}
+                      component="a"
+                      href={getDeviceListStateUrl(
+                        st.config.key as ExactDutStateKey,
+                        baseFilter,
+                      )}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-testid={`state-row-${st.config.key}`}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        py: 0.5,
+                        px: 1,
+                        borderRadius: radii.sm,
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        transition: 'background-color 0.15s ease',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                          '& .state-link-icon': {
+                            opacity: 1,
+                            color: 'primary.main',
+                          },
+                        },
+                      }}
+                    >
                       <Box
-                        key={st.config.key}
-                        component="a"
-                        href={getDeviceListStateUrl(
-                          st.config.key as ExactDutStateKey,
-                          baseFilter,
-                        )}
-                        target="_blank"
-                        rel="noreferrer"
-                        data-testid={`state-row-${st.config.key}`}
                         sx={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
-                          py: 0.6,
-                          px: 1.25,
-                          textDecoration: 'none',
-                          color: 'inherit',
-                          borderBottom:
-                            idx < activeStates.length - 1
-                              ? '1px solid'
-                              : 'none',
-                          borderColor: 'divider',
-                          transition: 'background-color 0.15s ease',
-                          '&:hover': {
-                            bgcolor: 'action.hover',
-                            '& .state-link-icon': {
-                              opacity: 1,
-                              color: 'primary.main',
-                            },
-                          },
+                          gap: 1,
+                          minWidth: 0,
                         }}
                       >
                         <Box
                           sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            minWidth: 0,
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            bgcolor: st.config.color,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: 'text.primary',
                           }}
                         >
-                          <Box
-                            sx={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: '50%',
-                              bgcolor: st.config.color,
-                              flexShrink: 0,
-                            }}
-                          />
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontSize: 12,
-                              fontWeight: 500,
-                              color: 'text.primary',
-                            }}
-                          >
-                            {st.config.label}
-                          </Typography>
-                        </Box>
-
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: 12,
-                              color: 'text.primary',
-                            }}
-                          >
-                            {formatStateCount(st.count)}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontSize: 11,
-                              color: 'text.secondary',
-                              width: 42,
-                              textAlign: 'right',
-                            }}
-                          >
-                            {st.pct}%
-                          </Typography>
-                          <OpenInNew
-                            className="state-link-icon"
-                            sx={{
-                              fontSize: 12,
-                              opacity: 0.35,
-                              transition: 'all 0.15s ease',
-                            }}
-                          />
-                        </Box>
+                          {st.config.label}
+                        </Typography>
                       </Box>
-                    ))}
-                  </Box>
-                )}
+
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: 12,
+                            color: 'text.primary',
+                          }}
+                        >
+                          {formatStateCount(st.count)}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontSize: 11,
+                            color: 'text.secondary',
+                            width: 42,
+                            textAlign: 'right',
+                          }}
+                        >
+                          {st.pct}%
+                        </Typography>
+                        <OpenInNew
+                          className="state-link-icon"
+                          sx={{
+                            fontSize: 12,
+                            opacity: 0.35,
+                            transition: 'all 0.15s ease',
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
               </Box>
             );
           })}
         </Box>
       )}
-
-      {/* Footer Quick Action */}
-      <Divider sx={{ my: 1.5 }} />
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Typography variant="caption" color="text.secondary">
-          Click any state to filter device list
-        </Typography>
-        <Button
-          size="small"
-          variant="text"
-          component="a"
-          href={allDevicesUrl}
-          target="_blank"
-          rel="noreferrer"
-          sx={{
-            textTransform: 'none',
-            fontSize: 11,
-            fontWeight: 600,
-            p: 0.2,
-          }}
-        >
-          View all devices
-        </Button>
-      </Box>
     </Paper>
   );
 };

@@ -600,17 +600,8 @@ describe('PerformanceRankingCard', () => {
     fireEvent.mouseEnter(progressBar);
 
     expect(
-      await screen.findByTestId('popover-thresholds-strip'),
+      await screen.findByTestId('popover-spectrum-bar'),
     ).toBeInTheDocument();
-    expect(screen.getByTestId('popover-threshold-healthy')).toHaveTextContent(
-      'Healthy ≥ 95%',
-    );
-    expect(screen.getByTestId('popover-threshold-warning')).toHaveTextContent(
-      'Warning 80%–94%',
-    );
-    expect(screen.getByTestId('popover-threshold-critical')).toHaveTextContent(
-      'Critical < 80%',
-    );
     expect(screen.getByTestId('state-row-ready')).toBeInTheDocument();
     expect(screen.getByTestId('state-row-needs_repair')).toBeInTheDocument();
     expect(
@@ -618,7 +609,7 @@ describe('PerformanceRankingCard', () => {
     ).toBeInTheDocument();
   });
 
-  it('displays state breakdown and SLA thresholds popover when hovering over availability label', async () => {
+  it('displays state breakdown popover when hovering over availability label', async () => {
     const mockTrends: GetFleetAvailabilityTrendsResponse = {
       metricType: TrendlineMetricType.AVAILABILITY,
       series: [
@@ -650,11 +641,12 @@ describe('PerformanceRankingCard', () => {
     const availabilityLabel = screen.getByTestId('availability-label-volteer');
     fireEvent.mouseEnter(availabilityLabel);
     expect(
-      await screen.findByTestId('popover-thresholds-strip'),
+      await screen.findByTestId('popover-empty-state'),
     ).toBeInTheDocument();
-    expect(screen.getByTestId('popover-threshold-critical')).toHaveTextContent(
-      'Critical < 80%',
-    );
+    expect(
+      screen.queryByTestId('popover-thresholds-strip'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('No devices enrolled')).toBeInTheDocument();
   });
 
   it('displays comparison tooltip when hovering over flat trend badge', async () => {

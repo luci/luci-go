@@ -847,11 +847,12 @@ describe('HealthSlicesCard', () => {
 
     fireEvent.mouseEnter(statusLabel);
     expect(
-      await screen.findByTestId('popover-thresholds-strip'),
+      await screen.findByTestId('popover-empty-state'),
     ).toBeInTheDocument();
-    expect(screen.getByTestId('popover-threshold-healthy')).toHaveTextContent(
-      'Healthy ≥ 95%',
-    );
+    expect(
+      screen.queryByTestId('popover-thresholds-strip'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('No devices enrolled')).toBeInTheDocument();
   });
 
   it('renders fallback dash when point value is NaN', () => {

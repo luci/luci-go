@@ -319,8 +319,7 @@ describe('HealthStatePopover', () => {
 
     fireEvent.mouseEnter(label);
     expect(await screen.findByText('brya')).toBeInTheDocument();
-    expect(screen.getByTestId('popover-thresholds-strip')).toBeInTheDocument();
-    expect(screen.getByTestId('popover-threshold-healthy')).toBeInTheDocument();
+    expect(screen.getByTestId('popover-spectrum-bar')).toBeInTheDocument();
     expect(screen.getByText('1,000 total enrolled')).toBeInTheDocument();
   });
 
@@ -473,9 +472,9 @@ describe('HealthStatePopoverContent', () => {
       expect.stringContaining('dut_state%22%20%3D%20%22needs_deploy%22'),
     );
 
-    // "View all devices" footer button
-    const viewAllBtn = screen.getByRole('link', { name: /view all devices/i });
-    expect(viewAllBtn).toHaveAttribute(
+    // Title links to all devices for this cohort
+    const titleLink = screen.getByRole('link', { name: /volteer/i });
+    expect(titleLink).toHaveAttribute(
       'href',
       '/ui/fleet/p/chromeos/devices?filters=labels.model%20%3D%20%22volteer%22',
     );
@@ -524,29 +523,6 @@ describe('HealthStatePopoverContent', () => {
       screen.queryByTestId('state-row-registered'),
     ).not.toBeInTheDocument();
     expect(screen.queryByTestId('state-row-unknown')).not.toBeInTheDocument();
-  });
-
-  it('renders SLA thresholds strip with healthy, warning, and critical tiers', () => {
-    // mockBreakdown has 945 healthy out of 1000 = 94.5% (Warning tier: 80%–94%)
-    render(
-      <HealthStatePopoverContent title="brya" breakdown={mockBreakdown} />,
-    );
-
-    const strip = screen.getByTestId('popover-thresholds-strip');
-    expect(strip).toBeInTheDocument();
-    expect(strip).toHaveTextContent('SLA');
-
-    const healthyTier = screen.getByTestId('popover-threshold-healthy');
-    expect(healthyTier).toBeInTheDocument();
-    expect(healthyTier).toHaveTextContent('Healthy ≥ 95%');
-
-    const warningTier = screen.getByTestId('popover-threshold-warning');
-    expect(warningTier).toBeInTheDocument();
-    expect(warningTier).toHaveTextContent('Warning 80%–94%');
-
-    const criticalTier = screen.getByTestId('popover-threshold-critical');
-    expect(criticalTier).toBeInTheDocument();
-    expect(criticalTier).toHaveTextContent('Critical < 80%');
   });
 
   it('renders empty state when total enrolled devices is 0', () => {
