@@ -68,8 +68,6 @@ const MOCK_WORKFORCE_DATA = {
       priorityScoreCleared: 680,
       avgPtsPerDut: 85,
       avgQueuePickupRank: 1.8,
-      pickupRankSum: 14,
-      pickupRankLabel: 'Top Priority',
       isRankSkewed: false,
       completedRepairs: 8,
       avgDuration: { seconds: '1920', nanos: 0 },
@@ -89,8 +87,6 @@ const MOCK_WORKFORCE_DATA = {
       priorityScoreCleared: 940,
       avgPtsPerDut: 85,
       avgQueuePickupRank: 1.2,
-      pickupRankSum: 13,
-      pickupRankLabel: 'Top Priority',
       isRankSkewed: true,
       completedRepairs: 11,
       avgDuration: { seconds: '1440', nanos: 0 },
@@ -103,8 +99,6 @@ const MOCK_WORKFORCE_DATA = {
       priorityScoreCleared: 0,
       avgPtsPerDut: 0,
       avgQueuePickupRank: 0,
-      pickupRankSum: 0,
-      pickupRankLabel: 'None',
       isRankSkewed: false,
       completedRepairs: 0,
       avgDuration: undefined,
@@ -238,6 +232,7 @@ describe('<WorkforceActivityView />', () => {
     expect(screen.getByText('940 pts')).toBeInTheDocument();
     expect(screen.getByText('#1.2')).toBeInTheDocument();
     expect(screen.getByText('11 devices')).toBeInTheDocument();
+    expect(screen.queryByText(/Sum:/i)).not.toBeInTheDocument();
 
     expect(screen.getByText('No active devices claimed')).toBeInTheDocument();
   });

@@ -276,30 +276,18 @@ export const WorkforceActivityView = ({
           </Box>
         ),
         renderCell: (tech) => (
-          <Box
+          <Chip
+            label={`#${tech.avgQueuePickupRank}`}
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 0.5,
+              bgcolor: tech.isRankSkewed
+                ? colors.yellow[700]
+                : colors.green[700],
+              color: colors.white,
+              fontWeight: 700,
+              height: 28,
+              fontSize: '0.875rem',
             }}
-          >
-            <Chip
-              label={`#${tech.avgQueuePickupRank}`}
-              size="small"
-              sx={{
-                bgcolor: tech.isRankSkewed
-                  ? colors.yellow[700]
-                  : colors.green[700],
-                color: colors.white,
-                fontWeight: 700,
-                height: 24,
-              }}
-            />
-            <Typography variant="caption" color="text.secondary">
-              Sum: {tech.pickupRankSum} | {tech.pickupRankLabel}
-            </Typography>
-          </Box>
+          />
         ),
       },
       {
