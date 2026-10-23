@@ -150,10 +150,14 @@ func TestReader(t *testing.T) {
 
 		t.Run(`Will refuse to read a compressed protobuf larger than our maximum size.`, func(t *ftt.Test) {
 			// We are crafting this data such that its compressed (frame) size is
-			// below our threshold (16), but its compressed size exceeds it. Repeated
+			// below our threshold (16), but its decompressed size exceeds it. Repeated
 			// bytes compress very well :)
 			//
-			// Because the frame it smaller than our threshold, our FrameReader will
+			// Note: Go 1.27's compress/flate fast encoder emits a 77-byte stored block
+			// for 64-byte inputs, whereas >= 128 repeated bytes compress to 12 bytes
+			// on both Go 1.26 and Go 1.27.
+			//
+			// Because the frame is smaller than our threshold, our FrameReader will
 			// not outright reject the frame. However, the data is still larger than
 			// we're allowed, and we must reject it.
 			r.maxSize = 16
@@ -162,7 +166,7 @@ func TestReader(t *testing.T) {
 				CompressThreshold: 0,
 			}
 			assert.Loosely(t, w.writeData(recordio.NewWriter(&buf), logpb.ButlerMetadata_ButlerLogBundle,
-				bytes.Repeat([]byte{0x55}, 64)), should.BeNil)
+				bytes.Repeat([]byte{0x55}, 128)), should.BeNil)
 
 			err := r.Read(&buf)
 			assert.Loosely(t, err, should.NotBeNil)
