@@ -12,12 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { usePriorityRulesPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { ActiveIrmTable as SharedActiveIrmTable } from '@/fleet/components/repair_queue/active_irm_table';
 
-import { useIrmIncidents } from './use_irm_incidents';
+import { useIrmIncidents, useUpdateIrmIncident } from './use_irm_incidents';
+import { useRepairQueueFilterBuilders } from './use_repair_queue_filter_builders';
 
 export const ActiveIrmTable = () => {
   const { data, isLoading, isError, error } = useIrmIncidents();
+  const { updateIncident, isSyncingIncident } = useUpdateIrmIncident();
+  const { filterBuilders, isLoading: isBuildersLoading } =
+    useRepairQueueFilterBuilders();
+  const { hasPermission } = usePriorityRulesPermission();
+  const canEdit = hasPermission === true;
 
   const incidents = data?.irmIncidents ?? [];
 
@@ -27,6 +34,11 @@ export const ActiveIrmTable = () => {
       isLoading={isLoading}
       isError={isError}
       error={error}
+      filterBuilders={filterBuilders}
+      isBuildersLoading={isBuildersLoading}
+      canEdit={canEdit}
+      isSyncingIncident={isSyncingIncident}
+      updateIncident={updateIncident}
     />
   );
 };

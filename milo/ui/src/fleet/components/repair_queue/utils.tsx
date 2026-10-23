@@ -44,6 +44,19 @@ export const formatPoints = (value?: string | number): string => {
 export const getBugUrl = (bugId: string): string =>
   `https://b.corp.google.com/issues/${encodeURIComponent(bugId)}`;
 
+/**
+ * Sentinel expression list representing a match against all devices across
+ * the fleet. By convention, a single empty string denotes a universal match.
+ */
+export const ALL_DEVICES_EXPRESSIONS: readonly string[] = [''];
+
+/**
+ * Checks whether an AIP-160 filter expression list represents a universal
+ * match ("All devices across the fleet").
+ */
+export const isAllDevicesFilter = (expressions?: readonly string[]): boolean =>
+  expressions?.length === 1 && expressions[0].trim() === '';
+
 export interface ParsedPriorityRule {
   readonly id: string;
   readonly expressionAip160: string;
