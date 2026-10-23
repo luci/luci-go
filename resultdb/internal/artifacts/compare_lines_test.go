@@ -279,6 +279,52 @@ line c`
 	})
 }
 
+func TestProcessFailingReaderTrailingNewlineAndLeadingEmptyLine(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("ProcessFailingReader trailing newline and leading empty line", t, func(t *ftt.Test) {
+		t.Run("newline-terminated file ending in failure range has exact EndLine", func(t *ftt.Test) {
+			resp, err := ProcessFailingReader(
+				context.Background(),
+				strings.NewReader("alpha\n"),
+				make(map[int64]struct{}),
+				pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT,
+				1000, 0, 0,
+			)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.FailureOnlyRanges, should.Resemble([]*pb.CompareArtifactLinesResponse_FailureOnlyRange{
+				{
+					StartLine: 0,
+					EndLine:   1,
+					StartByte: 0,
+					EndByte:   6,
+					Lines:     []string{"alpha"},
+				},
+			}))
+		})
+
+		t.Run("failure range starting with empty line preserves leading empty string in Lines", func(t *ftt.Test) {
+			resp, err := ProcessFailingReader(
+				context.Background(),
+				strings.NewReader("\nalpha\n"),
+				make(map[int64]struct{}),
+				pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT,
+				1000, 0, 0,
+			)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.FailureOnlyRanges, should.Resemble([]*pb.CompareArtifactLinesResponse_FailureOnlyRange{
+				{
+					StartLine: 0,
+					EndLine:   2,
+					StartByte: 0,
+					EndByte:   7,
+					Lines:     []string{"", "alpha"},
+				},
+			}))
+		})
+	})
+}
+
 // mustHash is a test helper that computes a hash and panics on error.
 func mustHash(line string) int64 {
 	h, err := hashLine([]byte(line))

@@ -142,6 +142,7 @@ func processStreamByLine(ctx context.Context, r io.Reader, startLine int32, star
 		if err := processor(buffer, currentLine, currentByte); err != nil {
 			return currentLine, currentByte, err // final line not processed.  Note iterator.Done will be passed back to the caller.
 		}
+		currentLine++
 	}
 
 	// Check that the stream actually finished, not that the context was cancelled
@@ -201,7 +202,7 @@ func ProcessFailingReader(ctx context.Context, r io.Reader, comparisonHashes map
 				rangeStartByte = currentByte
 			}
 			if view == pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT {
-				if currentRangeContent.Len() > 0 {
+				if currentLine > rangeStartLine {
 					currentRangeContent.WriteByte('\n')
 					totalContentBytesInResponse += 1
 				}
@@ -237,12 +238,8 @@ func ProcessFailingReader(ctx context.Context, r io.Reader, comparisonHashes map
 
 	// If a range was still open when we finished, close it.
 	if rangeStartLine != -1 {
-		endLine := lastProcessedLine + 1
-		if pageFull {
-			endLine = lastProcessedLine
-		}
 		r := &pb.CompareArtifactLinesResponse_FailureOnlyRange{
-			StartLine: rangeStartLine, EndLine: endLine,
+			StartLine: rangeStartLine, EndLine: lastProcessedLine,
 			StartByte: rangeStartByte, EndByte: lastProcessedByte,
 		}
 		if view == pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT {
