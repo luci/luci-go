@@ -30,7 +30,8 @@ func TestResultArtifactCmd(af *base.AuthFlags) *subcommands.Command {
 			"  list      List artifacts for a test result\n" +
 			"  get       Download or print full content of an artifact\n" +
 			"  head      Print first N lines/bytes of an artifact\n" +
-			"  tail      Print last N lines/bytes of an artifact",
+			"  tail      Print last N lines/bytes of an artifact\n" +
+			"  compare   Compare a log artifact against recent passing runs",
 		CommandRun: func() subcommands.CommandRun {
 			return &artifactRun{af: af, parentType: ParentTypeTestResult}
 		},
@@ -47,7 +48,8 @@ func WorkUnitArtifactCmd(af *base.AuthFlags) *subcommands.Command {
 			"  list      List artifacts for a work unit\n" +
 			"  get       Download or print full content of an artifact\n" +
 			"  head      Print first N lines/bytes of an artifact\n" +
-			"  tail      Print last N lines/bytes of an artifact",
+			"  tail      Print last N lines/bytes of an artifact\n" +
+			"  compare   Compare a log artifact against recent passing runs",
 		CommandRun: func() subcommands.CommandRun {
 			return &artifactRun{af: af, parentType: ParentTypeWorkUnit}
 		},
@@ -64,7 +66,8 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 			"  list      List artifacts for a work unit or test result\n" +
 			"  get       Download or print full content of an artifact\n" +
 			"  head      Print first N lines/bytes of an artifact\n" +
-			"  tail      Print last N lines/bytes of an artifact\n\n" +
+			"  tail      Print last N lines/bytes of an artifact\n" +
+			"  compare   Compare a log artifact against recent passing runs\n\n" +
 			"Tip: Run 'luci ids <url>' to extract the appropriate resource IDs.",
 		CommandRun: func() subcommands.CommandRun {
 			return &artifactRun{af: af, parentType: ParentTypeUnknown}
@@ -96,6 +99,7 @@ func (r *artifactRun) Run(a subcommands.Application, args []string, env subcomma
 		GetCmd(r.af, r.parentType),
 		HeadCmd(r.af, r.parentType),
 		TailCmd(r.af, r.parentType),
+		CompareCmd(r.af, r.parentType),
 		subcommands.CmdHelp,
 	}, args)
 }

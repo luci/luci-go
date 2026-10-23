@@ -43,6 +43,9 @@ type mockResultDBClient struct {
 	queryTestVerdicts     func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest) (*rdbpb.QueryTestVerdictsResponse, error)
 	queryTestResults      func(ctx context.Context, in *rdbpb.QueryTestResultsRequest) (*rdbpb.QueryTestResultsResponse, error)
 	queryTestExonerations func(ctx context.Context, in *rdbpb.QueryTestExonerationsRequest) (*rdbpb.QueryTestExonerationsResponse, error)
+	batchGetTestVariants  func(ctx context.Context, in *rdbpb.BatchGetTestVariantsRequest) (*rdbpb.BatchGetTestVariantsResponse, error)
+	queryTestVariants     func(ctx context.Context, in *rdbpb.QueryTestVariantsRequest) (*rdbpb.QueryTestVariantsResponse, error)
+	compareArtifactLines  func(ctx context.Context, in *rdbpb.CompareArtifactLinesRequest) (*rdbpb.CompareArtifactLinesResponse, error)
 }
 
 func (m *mockResultDBClient) GetRootInvocation(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
@@ -113,6 +116,27 @@ func (m *mockResultDBClient) QueryTestExonerations(ctx context.Context, in *rdbp
 		return m.queryTestExonerations(ctx, in)
 	}
 	return &rdbpb.QueryTestExonerationsResponse{}, nil
+}
+
+func (m *mockResultDBClient) BatchGetTestVariants(ctx context.Context, in *rdbpb.BatchGetTestVariantsRequest, opts ...grpc.CallOption) (*rdbpb.BatchGetTestVariantsResponse, error) {
+	if m.batchGetTestVariants != nil {
+		return m.batchGetTestVariants(ctx, in)
+	}
+	return &rdbpb.BatchGetTestVariantsResponse{}, nil
+}
+
+func (m *mockResultDBClient) QueryTestVariants(ctx context.Context, in *rdbpb.QueryTestVariantsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestVariantsResponse, error) {
+	if m.queryTestVariants != nil {
+		return m.queryTestVariants(ctx, in)
+	}
+	return &rdbpb.QueryTestVariantsResponse{}, nil
+}
+
+func (m *mockResultDBClient) CompareArtifactLines(ctx context.Context, in *rdbpb.CompareArtifactLinesRequest, opts ...grpc.CallOption) (*rdbpb.CompareArtifactLinesResponse, error) {
+	if m.compareArtifactLines != nil {
+		return m.compareArtifactLines(ctx, in)
+	}
+	return &rdbpb.CompareArtifactLinesResponse{}, nil
 }
 
 func TestListCmd(t *testing.T) {

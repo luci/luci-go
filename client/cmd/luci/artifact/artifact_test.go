@@ -73,5 +73,18 @@ func TestArtifactCmds(t *testing.T) {
 		unknownTailCmd := TailCmd(nil, ParentTypeUnknown)
 		assert.Loosely(t, unknownTailCmd, should.NotBeNil)
 		assert.Loosely(t, unknownTailCmd.ShortDesc, should.Equal("Print the last N lines of a work unit or test result artifact"))
+
+		compareTrCmd := CompareCmd(nil, ParentTypeTestResult)
+		assert.Loosely(t, compareTrCmd, should.NotBeNil)
+		assert.Loosely(t, compareTrCmd.ShortDesc, should.Equal("Compare a failing test result artifact against recent passing runs"))
+
+		compareWuCmd := CompareCmd(nil, ParentTypeWorkUnit)
+		assert.Loosely(t, compareWuCmd, should.NotBeNil)
+		assert.Loosely(t, compareWuCmd.ShortDesc, should.Equal("Compare a work unit artifact against recent passing runs"))
+
+		unknownCompareCmd := CompareCmd(nil, ParentTypeUnknown)
+		assert.Loosely(t, unknownCompareCmd, should.NotBeNil)
+		assert.Loosely(t, unknownCompareCmd.ShortDesc, should.Equal("Compare a log artifact against recent passing runs"))
+		assert.Loosely(t, run.Run(nil, []string{"compare", "--help"}, nil), should.Equal(0))
 	})
 }
