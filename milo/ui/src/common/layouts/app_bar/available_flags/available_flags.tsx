@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import CloseIcon from '@mui/icons-material/Close';
+import LinkIcon from '@mui/icons-material/Link';
 import ScienceIcon from '@mui/icons-material/Science';
 import {
+  Box,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -25,6 +27,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 
@@ -175,9 +178,38 @@ export function AvailableFlags() {
             <TableBody>
               {flagDisplayList.map(({ flag, activeStatus }) => {
                 const flagKey = getFeatureFlagKey(flag);
+                let shareHref = '';
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('ff', `${flagKey}:on`);
+                  shareHref = url.href;
+                }
+
                 return (
                   <TableRow key={flagKey}>
-                    <TableCell>{flagKey}</TableCell>
+                    <TableCell>
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        {flagKey}
+                        {shareHref && (
+                          <Tooltip title="Copy link to enable flag">
+                            <IconButton
+                              size="small"
+                              component="a"
+                              href={shareHref}
+                              aria-label={`Copy link to enable ${flagKey}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigator.clipboard.writeText(shareHref);
+                              }}
+                            >
+                              <LinkIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </TableCell>
                     <TableCell>{flag.config.description}</TableCell>
                     <TableCell>
                       <Switch

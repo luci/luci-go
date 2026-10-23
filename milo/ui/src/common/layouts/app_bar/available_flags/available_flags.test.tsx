@@ -100,4 +100,32 @@ describe('<AvailableFlags />', () => {
       expect(screen.getAllByText('flag is on')).toHaveLength(1);
     });
   });
+
+  it('should build a URL-encoded share link and copy it to the clipboard', async () => {
+    const writeTextSpy = jest.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: { writeText: writeTextSpy },
+    });
+
+    render(
+      <FakeContextProvider>
+        <AvailableFlags />
+        <TestComponent />
+      </FakeContextProvider>,
+    );
+    await userEvent.click(screen.getByTitle('Toggle feature flags'));
+
+    const shareLink = screen.getByRole('link', {
+      name: 'Copy link to enable flagKey:test-flag',
+    });
+    expect(shareLink).toHaveAttribute(
+      'href',
+      expect.stringContaining('?ff=flagKey%3Atest-flag%3Aon'),
+    );
+
+    await userEvent.click(shareLink);
+    expect(writeTextSpy).toHaveBeenCalledWith(
+      expect.stringContaining('?ff=flagKey%3Atest-flag%3Aon'),
+    );
+  });
 });
