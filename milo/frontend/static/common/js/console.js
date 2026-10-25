@@ -211,10 +211,25 @@ $(function () {
     $('.control-expand').first().click();
   }
 
-  // Hides or shows builders that are completely passing.
+  function isCellFailing(cell) {
+    return cell.classList.contains('status-Failure') ||
+      cell.classList.contains('status-InfraFailure') ||
+      cell.classList.contains('status-Exception');
+  }
+
+  function isCellEmptyOrRunning(cell) {
+    return cell.classList.contains('console-empty-cell') ||
+      cell.classList.contains('status-None') ||
+      cell.classList.contains('status-Running') ||
+      cell.classList.contains('status-NotRun');
+  }
+
+  // Hides or shows builders based on the active filter radio buttons.
   function updateColumnVisibility() {
-    const shouldHide = $('#hide-passing').is(':checked');
-    setHidePassingCookie(shouldHide);
+    const hidePassing = $('#hide-passing').is(':checked');
+    const showCurrentlyFailing = $('#show-currently-failing').is(':checked');
+    setHidePassingCookie(hidePassing);
+    setShowCurrentlyFailingCookie(showCurrentlyFailing);
 
     $('.console-column').each(function () {
       const column = $(this);
@@ -224,24 +239,38 @@ $(function () {
         return;
       }
 
-      let columnHasNonSuccess = false;
+      let columnHasVisibleBuilder = false;
       builders.each(function () {
         const builder = $(this);
-        const hasNonSuccess = builder.find('.console-cell-container').is(function () {
-          const cell = $(this).find('a').first()[0];
-          return cell.classList.contains('status-Failure') ||
-            cell.classList.contains('status-InfraFailure') ||
-            cell.classList.contains('status-Exception');
-        });
-        if (shouldHide && !hasNonSuccess) {
+        let shouldHideBuilder = false;
+        if (showCurrentlyFailing) {
+          let isCurrentlyFailing = false;
+          builder.find('.console-cell-container').each(function () {
+            const cell = $(this).find('a').first()[0];
+            if (!cell || isCellEmptyOrRunning(cell)) {
+              return true;
+            }
+            isCurrentlyFailing = isCellFailing(cell);
+            return false;
+          });
+          shouldHideBuilder = !isCurrentlyFailing;
+        } else if (hidePassing) {
+          const hasNonSuccess = builder.find('.console-cell-container').is(function () {
+            const cell = $(this).find('a').first()[0];
+            return Boolean(cell && isCellFailing(cell));
+          });
+          shouldHideBuilder = !hasNonSuccess;
+        }
+
+        if (shouldHideBuilder) {
           builder.addClass('hidden-column');
         } else {
           builder.removeClass('hidden-column');
+          columnHasVisibleBuilder = true;
         }
-        columnHasNonSuccess = columnHasNonSuccess || hasNonSuccess;
       });
 
-      if (shouldHide && !columnHasNonSuccess) {
+      if (!columnHasVisibleBuilder) {
         column.addClass('hidden-column');
       } else {
         column.removeClass('hidden-column');
@@ -262,10 +291,21 @@ $(function () {
     }
   }
 
-  $('#hide-passing').change(updateColumnVisibility);
+  function setShowCurrentlyFailingCookie(show) {
+    if (show) {
+      Cookies.set('show-currently-failing', 1, {path: ''});
+    } else {
+      Cookies.remove('show-currently-failing', {path: ''});
+    }
+  }
+
+  $('input[name="builder-filter"]').change(updateColumnVisibility);
 
   // Restore state from cookie.
-  if (Cookies.get('hide-passing')) {
+  if (Cookies.get('show-currently-failing')) {
+    $('#show-currently-failing').prop('checked', true);
+    updateColumnVisibility();
+  } else if (Cookies.get('hide-passing')) {
     $('#hide-passing').prop('checked', true);
     updateColumnVisibility();
   }

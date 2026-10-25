@@ -178,8 +178,14 @@
   <!-- Commits -->
   <div class="console-column console-commits-column">
     <div class="console-controls">
-      <input type="checkbox" id="hide-passing">
+      <input type="radio" id="show-all-builders" name="builder-filter" checked>
+      <label for="show-all-builders">Show all builders</label>
+      <br>
+      <input type="radio" id="hide-passing" name="builder-filter">
       <label for="hide-passing">Hide builders with no failures</label>
+      <br>
+      <input type="radio" id="show-currently-failing" name="builder-filter">
+      <label for="show-currently-failing">Show currently failing builders</label>
       <br>
       <br>
 
