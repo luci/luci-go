@@ -59,13 +59,13 @@ func coordinator(ctx context.Context, f *coordinatorFlags) (*bundleServicesClien
 	if err != nil {
 		return nil, errors.Fmt("failed to get the token source: %w", err)
 	}
+	opts := prpc.DefaultOptions()
+	opts.PerRPCTimeout = time.Minute
+	opts.Insecure = f.Insecure
 	prpcClient := &prpc.Client{
 		C:       &http.Client{Transport: tr},
 		Host:    f.Host,
-		Options: prpc.DefaultOptions(),
-	}
-	if f.Insecure {
-		prpcClient.Options.Insecure = true
+		Options: opts,
 	}
 	return &bundleServicesClient.Client{
 		ServicesClient:       logdog.NewServicesPRPCClient(prpcClient),
