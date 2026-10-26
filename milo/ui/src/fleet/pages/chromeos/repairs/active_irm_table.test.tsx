@@ -34,9 +34,9 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ActiveIrmTable } from './active_irm_table';
+import * as UseIrmIncidentFilterBuildersModule from './use_irm_incident_filter_builders';
 import * as UseIrmIncidentsModule from './use_irm_incidents';
 import { REPAIR_QUEUE_QUERY_KEY } from './use_repair_queue';
-import * as UseRepairQueueFilterBuildersModule from './use_repair_queue_filter_builders';
 
 const MOCK_INCIDENTS: readonly IrmIncident[] = [
   {
@@ -89,7 +89,7 @@ describe('<ActiveIrmTable />', () => {
       });
 
     jest
-      .spyOn(UseRepairQueueFilterBuildersModule, 'useRepairQueueFilterBuilders')
+      .spyOn(UseIrmIncidentFilterBuildersModule, 'useIrmIncidentFilterBuilders')
       .mockReturnValue({
         filterBuilders: {
           board: new StringListFilterCategoryBuilder()

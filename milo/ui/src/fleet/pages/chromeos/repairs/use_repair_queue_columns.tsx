@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
 import CircleIcon from '@mui/icons-material/Circle';
-import { Box, Typography } from '@mui/material';
+import { Box, Chip, Tooltip, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 
@@ -22,7 +23,10 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
-import { parsePriorityRules } from '@/fleet/components/repair_queue/utils';
+import {
+  getBugUrl,
+  parsePriorityRules,
+} from '@/fleet/components/repair_queue/utils';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { DutStateCell } from '@/fleet/pages/device_list_page/chromeos/dut_state_cell';
@@ -36,6 +40,7 @@ import {
   useClaimRepairTask,
   useUnclaimRepairTask,
 } from './use_claim_repair_task';
+import { useIrmIncidents } from './use_irm_incidents';
 import { usePriorityRules } from './use_priority_rules';
 import { useRepairQueueFilterBuilders } from './use_repair_queue_filter_builders';
 
@@ -48,6 +53,7 @@ export const REPAIR_QUEUE_COLUMN_IDS = [
   'label-pool',
   'label-model',
   'dut_state',
+  'active_irm',
   'assignee',
   'peripherals',
   'pool_model_health',
@@ -108,6 +114,18 @@ export const useRepairQueueColumns = ({
     [rules, filterBuilders],
   );
 
+  const { data: irmData } = useIrmIncidents();
+  const irmTitleByBugId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const inc of irmData?.irmIncidents ?? []) {
+      const bugId = inc.masterBugId?.trim();
+      if (bugId) {
+        map.set(bugId, inc.title?.trim() || `Incident ${bugId}`);
+      }
+    }
+    return map;
+  }, [irmData]);
+
   const columns: RepairQueueColumnDef[] = useMemo(() => {
     return [
       {
@@ -166,6 +184,66 @@ export const useRepairQueueColumns = ({
         Cell: ({ cell }: FC_CellProps<RepairQueueRow>) => (
           <DutStateCell state={cell.getValue<string>()} />
         ),
+      },
+      {
+        id: 'active_irm',
+        header: 'Active IRM',
+        size: 110,
+        minSize: 80,
+        maxSize: 400,
+        enableSorting: false,
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
+          const activeIrmIds = Array.from(
+            new Set(
+              (row.original.activeIrmIds || [])
+                .map((id) => id.trim())
+                .filter(Boolean),
+            ),
+          );
+          if (activeIrmIds.length === 0) {
+            return (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontSize: '13px' }}
+              >
+                -
+              </Typography>
+            );
+          }
+          return (
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 0.5,
+                alignItems: 'center',
+              }}
+            >
+              {activeIrmIds.map((bugId) => {
+                const title = irmTitleByBugId.get(bugId) ?? `b/${bugId}`;
+                return (
+                  <Tooltip key={bugId} title={title} enterDelay={100}>
+                    <Chip
+                      component="a"
+                      href={getBugUrl(bugId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      icon={<BugReportOutlinedIcon />}
+                      label={`b/${bugId}`}
+                      clickable
+                      size="small"
+                      color="error"
+                      variant="outlined"
+                      sx={{ fontWeight: 600 }}
+                    />
+                  </Tooltip>
+                );
+              })}
+            </Box>
+          );
+        },
       },
       {
         id: 'assignee',
@@ -313,6 +391,7 @@ export const useRepairQueueColumns = ({
     pageIndex,
     pageSize,
     rulesById,
+    irmTitleByBugId,
   ]);
 
   return { columns };

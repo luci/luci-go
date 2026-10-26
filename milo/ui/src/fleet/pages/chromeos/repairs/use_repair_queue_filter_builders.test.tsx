@@ -21,19 +21,22 @@ import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/commo
 import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import { useIrmIncidentFilterBuilders } from './use_irm_incident_filter_builders';
+import * as UseIrmIncidentsModule from './use_irm_incidents';
 import {
+  ACTIVE_IRM_FILTER_KEY,
   MODEL_HEALTH_FILTER_KEY,
   POOL_HEALTH_FILTER_KEY,
   RepairQueueFilterBuilder,
   useRepairQueueFilterBuilders,
 } from './use_repair_queue_filter_builders';
 
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <FakeContextProvider>{children}</FakeContextProvider>
+);
+
 const renderFilterBuilders = () =>
-  renderHook(() => useRepairQueueFilterBuilders(), {
-    wrapper: ({ children }: { children: React.ReactNode }) => (
-      <FakeContextProvider>{children}</FakeContextProvider>
-    ),
-  });
+  renderHook(() => useRepairQueueFilterBuilders(), { wrapper });
 
 const mockDimensions = (data: GetDeviceDimensionsResponse) => {
   jest.spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions').mockReturnValue({
@@ -47,6 +50,21 @@ const mockDimensions = (data: GetDeviceDimensionsResponse) => {
   >);
 };
 
+const mockIrmIncidents = (
+  overrides: Partial<
+    ReturnType<typeof UseIrmIncidentsModule.useIrmIncidents>
+  > = {},
+) => {
+  jest.spyOn(UseIrmIncidentsModule, 'useIrmIncidents').mockReturnValue({
+    data: { irmIncidents: [] },
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: jest.fn(),
+    ...overrides,
+  } as unknown as ReturnType<typeof UseIrmIncidentsModule.useIrmIncidents>);
+};
+
 const optionValues = (
   builder: RepairQueueFilterBuilder | undefined,
 ): string[] =>
@@ -57,6 +75,7 @@ const optionValues = (
 describe('useRepairQueueFilterBuilders', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIrmIncidents();
   });
 
   afterEach(() => {
@@ -247,5 +266,85 @@ describe('useRepairQueueFilterBuilders', () => {
     expect(modelHealthBuilder.max).toBe(100);
     expect(modelHealthBuilder.scaleFactor).toBe(0.01);
     expect(modelHealthBuilder.unit).toBe('%');
+  });
+
+  it('builds Active IRM filter with deduplicated bug IDs in useRepairQueueFilterBuilders', () => {
+    mockDimensions({ baseDimensions: {}, labels: {} });
+    mockIrmIncidents({
+      data: {
+        irmIncidents: [
+          {
+            id: '1',
+            masterBugId: '12345678',
+            title: 'Volteer issue',
+            expressionsAip160: [],
+            affectedDevicesCount: 0,
+          },
+          {
+            id: '2',
+            masterBugId: '  12345678  ',
+            title: 'Duplicate bug',
+            expressionsAip160: [],
+            affectedDevicesCount: 0,
+          },
+          {
+            id: '3',
+            masterBugId: '87654321',
+            title: 'Second issue',
+            expressionsAip160: [],
+            affectedDevicesCount: 0,
+          },
+        ],
+      },
+    });
+
+    const builders = renderFilterBuilders().result.current.filterBuilders;
+
+    expect(builders[ACTIVE_IRM_FILTER_KEY]).toBeDefined();
+    expect(builders[ACTIVE_IRM_FILTER_KEY].label).toBe('Active IRM');
+    expect(optionValues(builders[ACTIVE_IRM_FILTER_KEY])).toEqual([
+      BLANK_VALUE,
+      '12345678',
+      '87654321',
+    ]);
+  });
+
+  it('reports isLoading true when IRM incidents are still loading', () => {
+    mockDimensions({ baseDimensions: {}, labels: {} });
+    mockIrmIncidents({ data: undefined, isLoading: true });
+
+    const { result } = renderFilterBuilders();
+    expect(result.current.isLoading).toBe(true);
+  });
+});
+
+describe('useIrmIncidentFilterBuilders', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('offers device dimensions and labels while excluding health metrics and active_irm_ids', () => {
+    mockDimensions({
+      baseDimensions: { id: { values: ['dut-1'] } },
+      labels: {
+        'label-board': { values: ['brya'] },
+        'label-phase': { values: ['MP'] },
+      },
+    });
+    const useIrmSpy = jest.spyOn(UseIrmIncidentsModule, 'useIrmIncidents');
+
+    const { result } = renderHook(() => useIrmIncidentFilterBuilders(), {
+      wrapper,
+    });
+    const builders = result.current.filterBuilders;
+
+    expect(result.current.isLoading).toBe(false);
+    expect(useIrmSpy).not.toHaveBeenCalled();
+    expect(optionValues(builders.device_id)).toEqual([BLANK_VALUE, 'dut-1']);
+    expect(optionValues(builders.board)).toEqual([BLANK_VALUE, 'brya']);
+    expect(builders['labels."label-phase"']).toBeDefined();
+    expect(builders[POOL_HEALTH_FILTER_KEY]).toBeUndefined();
+    expect(builders[MODEL_HEALTH_FILTER_KEY]).toBeUndefined();
+    expect(builders[ACTIVE_IRM_FILTER_KEY]).toBeUndefined();
   });
 });

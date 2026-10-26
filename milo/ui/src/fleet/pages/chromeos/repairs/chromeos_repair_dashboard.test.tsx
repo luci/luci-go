@@ -231,7 +231,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders all 9 columns in the expected order', async () => {
+  it('renders all 10 columns in the expected order', async () => {
     jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
       data: {
         repairQueueItems: MOCK_QUEUE_ITEMS,
@@ -254,6 +254,7 @@ describe('<ChromeOSRepairDashboard />', () => {
       'Pool',
       'Model',
       'State',
+      'Active IRM',
       'Assignee',
       'Peripherals',
       'Pool / Model Health',
@@ -631,6 +632,7 @@ describe('<ChromeOSRepairDashboard />', () => {
             matchedRuleIds: [],
             deviceId: 'chromeos15-row2-rack3-host6',
             etag: '',
+            activeIrmIds: [],
           },
         ],
         totalSize: 3,
@@ -1327,7 +1329,7 @@ describe('<ChromeOSRepairDashboard />', () => {
 
       // Verify cells in row: column 0 = Rank, column 1 = ID
       const cells = within(row!).getAllByRole('cell');
-      expect(cells).toHaveLength(9);
+      expect(cells).toHaveLength(10);
       // Cell 0 contains Rank '1'
       expect(within(cells[0]).getByText('1')).toBeInTheDocument();
       // Cell 1 contains ID 'device-select-1' and links to device details
@@ -1340,8 +1342,10 @@ describe('<ChromeOSRepairDashboard />', () => {
         '/ui/fleet/p/chromeos/devices/device-select-1',
       );
       expect(idLink).toHaveAttribute('target', '_blank');
-      // Cell 8 contains Priority Score '+100 pts' with 13px font size
-      const scoreText = within(cells[8]).getByText('+100 pts');
+      // Cell 5 contains Active IRM fallback '-'
+      expect(within(cells[5]).getByText('-')).toBeInTheDocument();
+      // Cell 9 contains Priority Score '+100 pts' with 13px font size
+      const scoreText = within(cells[9]).getByText('+100 pts');
       expect(scoreText).toHaveStyle({ fontSize: '13px' });
     });
 
@@ -1386,6 +1390,55 @@ describe('<ChromeOSRepairDashboard />', () => {
       expect(within(cells[1]).getByText('-')).toBeInTheDocument();
     });
 
+    it('renders deduplicated Active IRM badges in the repair queue table when activeIrmIds are present', async () => {
+      const queueItems: readonly RepairQueueItem[] = [
+        {
+          deviceId: 'dut-irm-1',
+          dutId: 'dut-irm-1',
+          pools: ['quota'],
+          model: 'volteer',
+          state: 'needs_repair',
+          taskId: 'task-irm-1',
+          servoState: 0,
+          wifiState: 0,
+          bluetoothState: 0,
+          priorityScore: '100',
+          matchedRuleIds: [],
+          etag: '',
+          activeIrmIds: ['12345678', '  12345678  ', '87654321'],
+        },
+      ];
+
+      jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+        data: {
+          repairQueueItems: queueItems,
+          totalSize: 1,
+          nextPageToken: '',
+        },
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+      renderDashboard();
+
+      const chips1 = await screen.findAllByRole('link', {
+        name: 'b/12345678',
+      });
+      expect(chips1).toHaveLength(1);
+      expect(chips1[0]).toHaveAttribute(
+        'href',
+        'https://b.corp.google.com/issues/12345678',
+      );
+
+      const chip2 = screen.getByRole('link', { name: 'b/87654321' });
+      expect(chip2).toHaveAttribute(
+        'href',
+        'https://b.corp.google.com/issues/87654321',
+      );
+    });
     it('configures columns in expected order with compact rank and priority score sizes and sorting disabled', () => {
       const { result } = renderHook(() => useRepairQueueColumns(), {
         wrapper: ({ children }: { children: React.ReactNode }) => (
@@ -1403,6 +1456,7 @@ describe('<ChromeOSRepairDashboard />', () => {
         'label-pool',
         'label-model',
         'dut_state',
+        'active_irm',
         'assignee',
         'peripherals',
         'pool_model_health',
@@ -1410,8 +1464,8 @@ describe('<ChromeOSRepairDashboard />', () => {
       ]);
       expect(result.current.columns[0].size).toBe(25);
       expect(result.current.columns[0].minSize).toBe(25);
-      expect(result.current.columns[8].size).toBe(65);
-      expect(result.current.columns[8].minSize).toBe(60);
+      expect(result.current.columns[9].size).toBe(65);
+      expect(result.current.columns[9].minSize).toBe(60);
       for (const col of result.current.columns) {
         expect(col.enableSorting).toBe(false);
       }

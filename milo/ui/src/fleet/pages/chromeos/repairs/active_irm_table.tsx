@@ -15,14 +15,14 @@
 import { usePriorityRulesPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { ActiveIrmTable as SharedActiveIrmTable } from '@/fleet/components/repair_queue/active_irm_table';
 
+import { useIrmIncidentFilterBuilders } from './use_irm_incident_filter_builders';
 import { useIrmIncidents, useUpdateIrmIncident } from './use_irm_incidents';
-import { useRepairQueueFilterBuilders } from './use_repair_queue_filter_builders';
 
 export const ActiveIrmTable = () => {
   const { data, isLoading, isError, error } = useIrmIncidents();
   const { updateIncident, isSyncingIncident } = useUpdateIrmIncident();
   const { filterBuilders, isLoading: isBuildersLoading } =
-    useRepairQueueFilterBuilders();
+    useIrmIncidentFilterBuilders();
   const { hasPermission } = usePriorityRulesPermission();
   const canEdit = hasPermission === true;
 
