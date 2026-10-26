@@ -70,7 +70,7 @@ func (c *Client) DownloadFile(ctx context.Context, req *gitilespb.DownloadFileRe
 	return c.gitilesClient.DownloadFile(ctx, req)
 }
 
-var hostnameRe = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])*.googlesource.com$`)
+var hostnameRe = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])*\.googlesource\.com$`)
 
 func validHostname(hostname string) error {
 	if !hostnameRe.MatchString(hostname) {

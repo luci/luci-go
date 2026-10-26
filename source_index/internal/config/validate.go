@@ -15,7 +15,6 @@
 package config
 
 import (
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/config/validation"
 
@@ -39,7 +38,7 @@ func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
 
 func validateHost(ctx *validation.Context, host *configpb.Config_Host) {
 	ctx.Enter("host")
-	if err := gitiles.ValidateRepoHost(host.Host); err != nil {
+	if err := validationutil.ValidateRepoHost(host.Host); err != nil {
 		ctx.Error(err)
 	}
 	ctx.Exit()

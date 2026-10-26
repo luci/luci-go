@@ -44,12 +44,16 @@ func TestKey(t *testing.T) {
 			})
 
 			t.Run("invalid host", func(t *ftt.Test) {
-				host = "chromium.invalidsource.com"
+				for _, badHost := range []string{
+					"chromium.invalidsource.com",
+					"notgooglesource.com",
+					"attacker-googlesource.com",
+				} {
+					key, err := NewKey(badHost, repository, commitHash)
 
-				key, err := NewKey(host, repository, commitHash)
-
-				assert.That(t, err, should.ErrLike("invalid host"))
-				assert.That(t, key, ShouldMatchKey(Key{}))
+					assert.That(t, err, should.ErrLike("invalid host"))
+					assert.That(t, key, ShouldMatchKey(Key{}))
+				}
 			})
 
 			t.Run("invalid repository", func(t *ftt.Test) {

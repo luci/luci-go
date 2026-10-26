@@ -19,7 +19,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -49,13 +48,23 @@ func (si *sourceIndexServer) QueryCommitHash(ctx context.Context, req *pb.QueryC
 		return nil, appstatus.Attachf(err, codes.InvalidArgument, "invalid QueryCommitHashRequest %s", err)
 	}
 
-	if err := ensureCanKnowRepoExists(ctx, req.Host, req.Repository); err != nil {
-		return nil, err
-	}
-
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return nil, errors.Fmt("service-level config: %w", err)
+	}
+
+	// Reject unconfigured Gitiles hosts before making outbound ACL checks so
+	// unindexed or nonexistent subdomains cannot trigger outbound requests or
+	// credential forwarding. Configured hostnames are public, whereas
+	// repository-level config (ShouldIndexRepo) must still be checked only after
+	// ensureCanKnowRepoExists to avoid leaking private repository existence.
+	if !cfg.HasHost(req.Host) {
+		return nil, appstatus.Errorf(codes.InvalidArgument,
+			"host %q is not configured to be indexed", req.Host)
+	}
+
+	if err := ensureCanKnowRepoExists(ctx, req.Host, req.Repository); err != nil {
+		return nil, err
 	}
 
 	// If the commit is missing because the repository is not configured to be
@@ -96,7 +105,7 @@ func (si *sourceIndexServer) QueryCommitHash(ctx context.Context, req *pb.QueryC
 }
 
 func validateQueryCommitHashRequest(req *pb.QueryCommitHashRequest) error {
-	if err := gitiles.ValidateRepoHost(req.Host); err != nil {
+	if err := validationutil.ValidateRepoHost(req.Host); err != nil {
 		return errors.Fmt("host: %w", err)
 	}
 

@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/luci/common/api/gitiles"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/source_index/internal/validationutil"
 )
 
 // testClientFactoryKey is the context key controls the use of gitiles client
@@ -68,6 +70,9 @@ func realClientFactory(ctx context.Context, host string, as auth.RPCAuthorityKin
 
 // NewClient creates a new Gitiles client.
 func NewClient(ctx context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (gitilespb.GitilesClient, error) {
+	if err := validationutil.ValidateRepoHost(host); err != nil {
+		return nil, err
+	}
 	testClientFactory, ok := ctx.Value(&testClientFactoryKey).(clientFactory)
 	if ok {
 		return testClientFactory(ctx, host, as, opts...)

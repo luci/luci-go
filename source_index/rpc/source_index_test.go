@@ -140,6 +140,21 @@ func TestSourceIndexServer(t *testing.T) {
 				assert.Loosely(t, res, should.BeNil)
 			})
 
+			t.Run(`with invalid host`, func(t *ftt.Test) {
+				for _, badHost := range []string{"notgooglesource.com", "attacker-googlesource.com"} {
+					res, err := s.QueryCommitHash(ctx, &pb.QueryCommitHashRequest{
+						Host:           badHost,
+						Repository:     queryRepository,
+						PositionRef:    "refs/heads/main",
+						PositionNumber: queryPosition,
+					})
+
+					assert.That(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLikeString("invalid QueryCommitHashRequest"))
+					assert.Loosely(t, res, should.BeNil)
+				}
+			})
+
 			t.Run(`with unauthorized repository`, func(t *ftt.Test) {
 				queryRepository = confidentialRepository
 
@@ -152,6 +167,19 @@ func TestSourceIndexServer(t *testing.T) {
 
 				assert.That(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 				assert.That(t, err, should.ErrLikeString("cannot access repository"))
+				assert.Loosely(t, res, should.BeNil)
+			})
+
+			t.Run(`host not indexed`, func(t *ftt.Test) {
+				res, err := s.QueryCommitHash(ctx, &pb.QueryCommitHashRequest{
+					Host:           "unindexed.googlesource.com",
+					Repository:     queryRepository,
+					PositionRef:    "refs/heads/main",
+					PositionNumber: queryPosition,
+				})
+
+				assert.That(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLikeString("is not configured to be indexed"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 

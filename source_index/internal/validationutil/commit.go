@@ -17,10 +17,13 @@ package validationutil
 import (
 	"regexp"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
 )
 
 var (
+	repoHostRE = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])*\.googlesource\.com$`)
+
 	// The GoB repository naming restriction doesn't appear to be well documented.
 	// The following is derived from
 	//  * GitHub repository naming restriction, and
@@ -33,6 +36,14 @@ var (
 	sha1MinLen = 40
 	sha1MaxLen = 40
 )
+
+// ValidateRepoHost checks whether the specified host is a valid Gitiles host.
+func ValidateRepoHost(host string) error {
+	if !repoHostRE.MatchString(host) {
+		return errors.Fmt("hostname %s is not a valid Gitiles host", host)
+	}
+	return nil
+}
 
 // ValidateRepoName checks whether the specified name is a valid repository
 // name.

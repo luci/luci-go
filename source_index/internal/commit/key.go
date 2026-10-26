@@ -22,7 +22,6 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
@@ -48,7 +47,7 @@ func (k Key) CommitHash() string {
 
 // NewKey creates a new Commit key.
 func NewKey(host, repository, commitHash string) (Key, error) {
-	if err := gitiles.ValidateRepoHost(host); err != nil {
+	if err := validationutil.ValidateRepoHost(host); err != nil {
 		return Key{}, errors.Fmt("invalid host: %w", err)
 	}
 

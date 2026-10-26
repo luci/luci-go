@@ -72,12 +72,18 @@ func TestValidateConfig(t *testing.T) {
 		})
 
 		t.Run("reject invalid gitiles host", func(t *ftt.Test) {
-			cfg.Hosts[1].Host = "chromium.not-googlesource.com"
+			for _, badHost := range []string{
+				"chromium.not-googlesource.com",
+				"notgooglesource.com",
+				"attacker-googlesource.com",
+			} {
+				cfg.Hosts[1].Host = badHost
 
-			err := validateCfg(cfg)
+				err := validateCfg(cfg)
 
-			assert.That(t, err, should.ErrLike("hosts #2 / host"))
-			assert.That(t, err, should.ErrLike("is not a valid Gitiles host"))
+				assert.That(t, err, should.ErrLike("hosts #2 / host"))
+				assert.That(t, err, should.ErrLike("is not a valid Gitiles host"))
+			}
 		})
 
 		t.Run("reject invalid repo", func(t *ftt.Test) {
