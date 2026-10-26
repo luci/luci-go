@@ -28,6 +28,7 @@ import { usePager } from '@/fleet/hooks/use_pager';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { ListRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { useRepairLab } from './use_repair_lab';
 import { useRepairQueue } from './use_repair_queue';
 import {
   RepairQueueColumnDef,
@@ -39,11 +40,16 @@ const CHROMEOS_REPAIRS_LOCAL_STORAGE_KEY = 'fleet_chromeos_repairs_table';
 
 interface ChromeOSRepairTableProps {
   columns?: RepairQueueColumnDef[];
+  lab?: string;
 }
 
 export const ChromeOSRepairTable = ({
   columns: propColumns,
+  lab: labProp,
 }: ChromeOSRepairTableProps) => {
+  const { lab: contextLab } = useRepairLab();
+  const lab = labProp ?? contextLab;
+
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100],
     defaultPageSize: 100,
@@ -67,8 +73,9 @@ export const ChromeOSRepairTable = ({
       ListRepairQueueRequest.fromPartial({
         pageSize,
         pageToken,
+        lab,
       }),
-    [pageSize, pageToken],
+    [pageSize, pageToken, lab],
   );
 
   const queueQuery = useRepairQueue(request);
@@ -78,6 +85,7 @@ export const ChromeOSRepairTable = ({
     nextPageToken = '',
     totalSize = 0,
   } = queueQuery.data || {};
+
   const { columnSizing, onColumnSizingChange } = useMrtColumnSizing(
     CHROMEOS_REPAIRS_LOCAL_STORAGE_KEY,
   );

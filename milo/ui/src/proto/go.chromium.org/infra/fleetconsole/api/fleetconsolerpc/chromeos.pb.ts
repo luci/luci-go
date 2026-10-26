@@ -743,6 +743,7 @@ export interface ListRepairQueueRequest {
   readonly pageToken: string;
   readonly orderBy: string;
   readonly filter: string;
+  readonly lab?: string;
 }
 
 export interface RepairQueueItem {
@@ -812,9 +813,11 @@ export interface PriorityRule {
   readonly id: string;
   readonly expressionAip160: string;
   readonly weight: string;
+  readonly lab?: string;
 }
 
 export interface ListPriorityRulesRequest {
+  readonly lab?: string;
 }
 
 export interface ListPriorityRulesResponse {
@@ -891,6 +894,7 @@ export interface GetWorkforceActivityRequest {
    * If TIMEFRAME_UNSPECIFIED, defaults to TIMEFRAME_1D.
    */
   readonly timeframe: GetWorkforceActivityRequest_Timeframe;
+  readonly lab?: string;
 }
 
 export enum GetWorkforceActivityRequest_Timeframe {
@@ -6835,7 +6839,7 @@ export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceRespon
 };
 
 function createBaseListRepairQueueRequest(): ListRepairQueueRequest {
-  return { pageSize: 0, pageToken: "", orderBy: "", filter: "" };
+  return { pageSize: 0, pageToken: "", orderBy: "", filter: "", lab: "" };
 }
 
 export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
@@ -6851,6 +6855,9 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
     }
     if (message.filter !== "") {
       writer.uint32(34).string(message.filter);
+    }
+    if (message.lab !== undefined && message.lab !== "") {
+      writer.uint32(42).string(message.lab);
     }
     return writer;
   },
@@ -6900,6 +6907,14 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
             message.filter = reader.string();
             continue;
           }
+          case 5: {
+            if (tag !== 42) {
+              break;
+            }
+
+            message.lab = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -6930,6 +6945,7 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
         ? globalThis.String(object.order_by)
         : "",
       filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      lab: isSet(object.lab) ? globalThis.String(object.lab) : "",
     };
   },
 
@@ -6947,6 +6963,9 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
     if (message.filter !== "") {
       obj.filter = message.filter;
     }
+    if (message.lab !== undefined && message.lab !== "") {
+      obj.lab = message.lab;
+    }
     return obj;
   },
 
@@ -6959,6 +6978,7 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
     message.pageToken = object.pageToken ?? "";
     message.orderBy = object.orderBy ?? "";
     message.filter = object.filter ?? "";
+    message.lab = object.lab ?? "";
     return message;
   },
 };
@@ -7872,7 +7892,7 @@ export const UnclaimRepairTaskResponse: MessageFns<UnclaimRepairTaskResponse> = 
 };
 
 function createBasePriorityRule(): PriorityRule {
-  return { id: "0", expressionAip160: "", weight: "0" };
+  return { id: "0", expressionAip160: "", weight: "0", lab: "" };
 }
 
 export const PriorityRule: MessageFns<PriorityRule> = {
@@ -7885,6 +7905,9 @@ export const PriorityRule: MessageFns<PriorityRule> = {
     }
     if (message.weight !== "0") {
       writer.uint32(24).int64(message.weight);
+    }
+    if (message.lab !== undefined && message.lab !== "") {
+      writer.uint32(34).string(message.lab);
     }
     return writer;
   },
@@ -7926,6 +7949,14 @@ export const PriorityRule: MessageFns<PriorityRule> = {
             message.weight = reader.int64().toString();
             continue;
           }
+          case 4: {
+            if (tag !== 34) {
+              break;
+            }
+
+            message.lab = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -7947,6 +7978,7 @@ export const PriorityRule: MessageFns<PriorityRule> = {
         ? globalThis.String(object.expression_aip160)
         : "",
       weight: isSet(object.weight) ? globalThis.String(object.weight) : "0",
+      lab: isSet(object.lab) ? globalThis.String(object.lab) : "",
     };
   },
 
@@ -7961,6 +7993,9 @@ export const PriorityRule: MessageFns<PriorityRule> = {
     if (message.weight !== "0") {
       obj.weight = message.weight;
     }
+    if (message.lab !== undefined && message.lab !== "") {
+      obj.lab = message.lab;
+    }
     return obj;
   },
 
@@ -7972,16 +8007,20 @@ export const PriorityRule: MessageFns<PriorityRule> = {
     message.id = object.id ?? "0";
     message.expressionAip160 = object.expressionAip160 ?? "";
     message.weight = object.weight ?? "0";
+    message.lab = object.lab ?? "";
     return message;
   },
 };
 
 function createBaseListPriorityRulesRequest(): ListPriorityRulesRequest {
-  return {};
+  return { lab: "" };
 }
 
 export const ListPriorityRulesRequest: MessageFns<ListPriorityRulesRequest> = {
-  encode(_: ListPriorityRulesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(message: ListPriorityRulesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.lab !== undefined && message.lab !== "") {
+      writer.uint32(10).string(message.lab);
+    }
     return writer;
   },
 
@@ -7998,6 +8037,14 @@ export const ListPriorityRulesRequest: MessageFns<ListPriorityRulesRequest> = {
       while (reader.pos < end) {
         const tag = reader.uint32();
         switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.lab = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -8010,20 +8057,26 @@ export const ListPriorityRulesRequest: MessageFns<ListPriorityRulesRequest> = {
     }
   },
 
-  fromJSON(_: any): ListPriorityRulesRequest {
-    return {};
+  fromJSON(object: any): ListPriorityRulesRequest {
+    return {
+      lab: isSet(object.lab) ? globalThis.String(object.lab) : "",
+    };
   },
 
-  toJSON(_: ListPriorityRulesRequest): unknown {
+  toJSON(message: ListPriorityRulesRequest): unknown {
     const obj: any = {};
+    if (message.lab !== undefined && message.lab !== "") {
+      obj.lab = message.lab;
+    }
     return obj;
   },
 
   create(base?: DeepPartial<ListPriorityRulesRequest>): ListPriorityRulesRequest {
     return ListPriorityRulesRequest.fromPartial(base ?? {});
   },
-  fromPartial(_: DeepPartial<ListPriorityRulesRequest>): ListPriorityRulesRequest {
+  fromPartial(object: DeepPartial<ListPriorityRulesRequest>): ListPriorityRulesRequest {
     const message = createBaseListPriorityRulesRequest() as any;
+    message.lab = object.lab ?? "";
     return message;
   },
 };
@@ -9224,13 +9277,16 @@ export const SetDefaultQuotaResponse: MessageFns<SetDefaultQuotaResponse> = {
 };
 
 function createBaseGetWorkforceActivityRequest(): GetWorkforceActivityRequest {
-  return { timeframe: 0 };
+  return { timeframe: 0, lab: "" };
 }
 
 export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest> = {
   encode(message: GetWorkforceActivityRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.timeframe !== 0) {
       writer.uint32(8).int32(message.timeframe);
+    }
+    if (message.lab !== undefined && message.lab !== "") {
+      writer.uint32(18).string(message.lab);
     }
     return writer;
   },
@@ -9256,6 +9312,14 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
             message.timeframe = reader.int32() as any;
             continue;
           }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.lab = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -9269,13 +9333,19 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
   },
 
   fromJSON(object: any): GetWorkforceActivityRequest {
-    return { timeframe: isSet(object.timeframe) ? getWorkforceActivityRequest_TimeframeFromJSON(object.timeframe) : 0 };
+    return {
+      timeframe: isSet(object.timeframe) ? getWorkforceActivityRequest_TimeframeFromJSON(object.timeframe) : 0,
+      lab: isSet(object.lab) ? globalThis.String(object.lab) : "",
+    };
   },
 
   toJSON(message: GetWorkforceActivityRequest): unknown {
     const obj: any = {};
     if (message.timeframe !== 0) {
       obj.timeframe = getWorkforceActivityRequest_TimeframeToJSON(message.timeframe);
+    }
+    if (message.lab !== undefined && message.lab !== "") {
+      obj.lab = message.lab;
     }
     return obj;
   },
@@ -9286,6 +9356,7 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
   fromPartial(object: DeepPartial<GetWorkforceActivityRequest>): GetWorkforceActivityRequest {
     const message = createBaseGetWorkforceActivityRequest() as any;
     message.timeframe = object.timeframe ?? 0;
+    message.lab = object.lab ?? "";
     return message;
   },
 };

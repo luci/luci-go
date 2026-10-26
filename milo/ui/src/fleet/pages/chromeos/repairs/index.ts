@@ -13,4 +13,5 @@
 // limitations under the License.
 
 import { Component } from './chromeos_repair_dashboard';
+
 export default Component;

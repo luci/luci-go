@@ -26,11 +26,9 @@ export const ActiveIrmTable = () => {
   const { hasPermission } = usePriorityRulesPermission();
   const canEdit = hasPermission === true;
 
-  const incidents = data?.irmIncidents ?? [];
-
   return (
     <SharedActiveIrmTable
-      incidents={incidents}
+      incidents={data?.irmIncidents ?? []}
       isLoading={isLoading}
       isError={isError}
       error={error}

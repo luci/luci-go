@@ -99,6 +99,7 @@ describe('<ChromeOSRepairDashboard />', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    localStorage.clear();
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -219,6 +220,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     expect(
       screen.getByText('ChromeOS Manual Repair Dashboard'),
     ).toBeInTheDocument();
+    expect(screen.getByTestId('repair-lab-select')).toBeInTheDocument();
     expect(
       screen.getByText(
         'Configure rules and assign points to prioritize devices in the repair queue.',
@@ -1498,7 +1500,7 @@ describe('<ChromeOSRepairDashboard />', () => {
     fireEvent.click(workforceButton);
 
     expect(mockNavigate).toHaveBeenCalledWith(
-      '/ui/fleet/p/chromeos/repairs/workforce',
+      '/ui/fleet/p/chromeos/repairs/workforce?lab=MTV',
     );
   });
 

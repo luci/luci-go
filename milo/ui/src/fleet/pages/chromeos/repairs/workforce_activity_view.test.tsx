@@ -422,7 +422,9 @@ describe('<WorkforceActivityView />', () => {
     });
     fireEvent.click(backButton);
 
-    expect(mockNavigate).toHaveBeenCalledWith('/ui/fleet/p/chromeos/repairs');
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/ui/fleet/p/chromeos/repairs?lab=MTV',
+    );
   });
 
   it('calls onBackToQueue prop when supplied on back button click', () => {
@@ -589,5 +591,33 @@ describe('<WorkforceActivityView />', () => {
     );
 
     expect(screen.getByText('Page not found')).toBeInTheDocument();
+  });
+
+  it('passes lab to useWorkforceActivity', () => {
+    const spy = jest
+      .spyOn(UseWorkforceActivityModule, 'useWorkforceActivity')
+      .mockReturnValue({
+        data: MOCK_WORKFORCE_DATA,
+        isPending: false,
+        isError: false,
+        error: null,
+      } as unknown as ReturnType<
+        typeof UseWorkforceActivityModule.useWorkforceActivity
+      >);
+
+    render(
+      <FakeContextProvider>
+        <WorkforceActivityView lab="HTL" />
+      </FakeContextProvider>,
+    );
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lab: 'HTL',
+      }),
+    );
+    expect(screen.getByTestId('repair-lab-select')).toHaveTextContent(
+      'Lab: HTL',
+    );
   });
 });

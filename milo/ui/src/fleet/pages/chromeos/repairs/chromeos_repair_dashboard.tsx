@@ -35,21 +35,25 @@ import { ListRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconso
 
 import { ActiveIrmTable } from './active_irm_table';
 import { ChromeOSRepairTable } from './chromeos_repair_table';
+import { LabSelector } from './lab_selector';
 import { PriorityRulesPanel } from './priority_rules_panel';
+import { useRepairLab } from './use_repair_lab';
 import { useRepairQueue } from './use_repair_queue';
 
 export const ChromeOSRepairDashboard = () => {
   const navigate = useNavigate();
   const currentPlatform = useCurrentPlatform();
   const isWorkforceEnabled = useFeatureFlag(enableChromeOsWorkforceActivity);
+  const { lab } = useRepairLab();
 
   const request = useMemo(
     () =>
       ListRepairQueueRequest.fromPartial({
         pageSize: 100,
         pageToken: '',
+        lab,
       }),
-    [],
+    [lab],
   );
 
   const queueQuery = useRepairQueue(request);
@@ -81,28 +85,38 @@ export const ChromeOSRepairDashboard = () => {
           </Typography>
         </div>
 
-        {isWorkforceEnabled && (
-          <Button
-            variant="toolbar"
-            onClick={() =>
-              navigate(
-                generateRepairsWorkforceURL(
-                  currentPlatform
-                    ? platformToURL(currentPlatform)
-                    : CHROMEOS_PLATFORM,
-                ),
-              )
-            }
-            startIcon={<GroupIcon />}
-          >
-            Workforce Activity
-            <Box component="span" sx={{ ml: 1 }}>
-              <StatusPill tone="info" dot={false} size="compact">
-                {`${inProgressCount} In-Progress`}
-              </StatusPill>
-            </Box>
-          </Button>
-        )}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          <LabSelector />
+          {isWorkforceEnabled && (
+            <Button
+              variant="toolbar"
+              onClick={() =>
+                navigate(
+                  generateRepairsWorkforceURL(
+                    currentPlatform
+                      ? platformToURL(currentPlatform)
+                      : CHROMEOS_PLATFORM,
+                  ) + `?lab=${lab}`,
+                )
+              }
+              startIcon={<GroupIcon />}
+            >
+              Workforce Activity
+              <Box component="span" sx={{ ml: 1 }}>
+                <StatusPill tone="info" dot={false} size="compact">
+                  {`${inProgressCount} In-Progress`}
+                </StatusPill>
+              </Box>
+            </Button>
+          )}
+        </Box>
       </Box>
 
       <Box
@@ -123,7 +137,7 @@ export const ChromeOSRepairDashboard = () => {
             py: 2,
           }}
         >
-          <PriorityRulesPanel />
+          <PriorityRulesPanel lab={lab} />
         </Box>
         <Box
           sx={{
@@ -147,7 +161,7 @@ export const ChromeOSRepairDashboard = () => {
       </Typography>
 
       <div css={{ marginTop: 16 }}>
-        <ChromeOSRepairTable />
+        <ChromeOSRepairTable lab={lab} />
       </div>
     </div>
   );

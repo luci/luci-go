@@ -18,7 +18,11 @@ import { PriorityRulesPanel as SharedPriorityRulesPanel } from '@/fleet/componen
 import { usePriorityRules } from './use_priority_rules';
 import { useRepairQueueFilterBuilders } from './use_repair_queue_filter_builders';
 
-export const PriorityRulesPanel = () => {
+export interface PriorityRulesPanelProps {
+  lab?: string;
+}
+
+export const PriorityRulesPanel = ({ lab }: PriorityRulesPanelProps = {}) => {
   const {
     rules,
     isLoading,
@@ -30,7 +34,7 @@ export const PriorityRulesPanel = () => {
     isUpdating,
     deleteRule,
     isDeleting,
-  } = usePriorityRules();
+  } = usePriorityRules(lab);
 
   const { filterBuilders, isLoading: isBuildersLoading } =
     useRepairQueueFilterBuilders();

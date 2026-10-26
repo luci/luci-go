@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
@@ -23,19 +24,27 @@ import {
   UpdatePriorityRuleRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { useRepairLab } from './use_repair_lab';
 import { REPAIR_QUEUE_QUERY_KEY } from './use_repair_queue';
 
-export const PRIORITY_RULES_QUERY_KEY = ['ListPriorityRules'];
+export const PRIORITY_RULES_QUERY_KEY = ['ListPriorityRules'] as const;
+
+export const getPriorityRulesQueryKey = (lab: string) =>
+  [...PRIORITY_RULES_QUERY_KEY, lab] as const;
 
 const EMPTY_RULES: readonly PriorityRule[] = [];
 
-export const usePriorityRules = () => {
+export const usePriorityRules = (labProp?: string) => {
+  const { lab: contextLab } = useRepairLab();
+  const lab = labProp ?? contextLab;
   const client = useFleetConsoleClient();
   const queryClient = useQueryClient();
 
+  const queryKey = useMemo(() => getPriorityRulesQueryKey(lab), [lab]);
+
   const rulesQuery = useQuery({
-    ...client.ListPriorityRules.query({}),
-    queryKey: PRIORITY_RULES_QUERY_KEY,
+    ...client.ListPriorityRules.query({ lab }),
+    queryKey,
   });
 
   const invalidateRepairQueueQueries = () => {
@@ -45,10 +54,17 @@ export const usePriorityRules = () => {
   };
 
   const createRuleMutation = useMutation({
-    mutationFn: (req: CreatePriorityRuleRequest) =>
-      client.CreatePriorityRule(req),
+    mutationFn: (req: CreatePriorityRuleRequest) => {
+      const priorityRule = req.priorityRule
+        ? {
+            ...req.priorityRule,
+            lab: req.priorityRule.lab || lab,
+          }
+        : undefined;
+      return client.CreatePriorityRule({ ...req, priorityRule });
+    },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: PRIORITY_RULES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey });
       invalidateRepairQueueQueries();
     },
   });
@@ -57,46 +73,40 @@ export const usePriorityRules = () => {
     mutationFn: (req: UpdatePriorityRuleRequest) =>
       client.UpdatePriorityRule(req),
     onMutate: async (updatedReq) => {
-      await queryClient.cancelQueries({ queryKey: PRIORITY_RULES_QUERY_KEY });
-      const previousData = queryClient.getQueryData<ListPriorityRulesResponse>(
-        PRIORITY_RULES_QUERY_KEY,
-      );
+      await queryClient.cancelQueries({ queryKey });
+      const previousData =
+        queryClient.getQueryData<ListPriorityRulesResponse>(queryKey);
       if (previousData) {
-        queryClient.setQueryData<ListPriorityRulesResponse>(
-          PRIORITY_RULES_QUERY_KEY,
-          {
-            ...previousData,
-            priorityRules: previousData.priorityRules.map((rule) => {
-              if (rule.id === updatedReq.id) {
-                return {
-                  ...rule,
-                  expressionAip160:
-                    updatedReq.expressionAip160 !== undefined
-                      ? updatedReq.expressionAip160
-                      : rule.expressionAip160,
-                  weight:
-                    updatedReq.weight !== undefined
-                      ? updatedReq.weight
-                      : rule.weight,
-                };
-              }
-              return rule;
-            }),
-          },
-        );
+        queryClient.setQueryData<ListPriorityRulesResponse>(queryKey, {
+          ...previousData,
+          priorityRules: previousData.priorityRules.map((rule) => {
+            if (rule.id === updatedReq.id) {
+              return {
+                ...rule,
+                expressionAip160:
+                  updatedReq.expressionAip160 !== undefined
+                    ? updatedReq.expressionAip160
+                    : rule.expressionAip160,
+                weight:
+                  updatedReq.weight !== undefined
+                    ? updatedReq.weight
+                    : rule.weight,
+                lab: rule.lab || lab,
+              };
+            }
+            return rule;
+          }),
+        });
       }
       return { previousData };
     },
     onError: (_err, _variables, context) => {
       if (context?.previousData) {
-        queryClient.setQueryData(
-          PRIORITY_RULES_QUERY_KEY,
-          context.previousData,
-        );
+        queryClient.setQueryData(queryKey, context.previousData);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: PRIORITY_RULES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey });
       invalidateRepairQueueQueries();
     },
   });
@@ -105,33 +115,26 @@ export const usePriorityRules = () => {
     mutationFn: (req: DeletePriorityRuleRequest) =>
       client.DeletePriorityRule(req),
     onMutate: async (deleteReq) => {
-      await queryClient.cancelQueries({ queryKey: PRIORITY_RULES_QUERY_KEY });
-      const previousData = queryClient.getQueryData<ListPriorityRulesResponse>(
-        PRIORITY_RULES_QUERY_KEY,
-      );
+      await queryClient.cancelQueries({ queryKey });
+      const previousData =
+        queryClient.getQueryData<ListPriorityRulesResponse>(queryKey);
       if (previousData) {
-        queryClient.setQueryData<ListPriorityRulesResponse>(
-          PRIORITY_RULES_QUERY_KEY,
-          {
-            ...previousData,
-            priorityRules: previousData.priorityRules.filter(
-              (rule) => rule.id !== deleteReq.id,
-            ),
-          },
-        );
+        queryClient.setQueryData<ListPriorityRulesResponse>(queryKey, {
+          ...previousData,
+          priorityRules: previousData.priorityRules.filter(
+            (rule) => rule.id !== deleteReq.id,
+          ),
+        });
       }
       return { previousData };
     },
     onError: (_err, _variables, context) => {
       if (context?.previousData) {
-        queryClient.setQueryData(
-          PRIORITY_RULES_QUERY_KEY,
-          context.previousData,
-        );
+        queryClient.setQueryData(queryKey, context.previousData);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: PRIORITY_RULES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey });
       invalidateRepairQueueQueries();
     },
   });

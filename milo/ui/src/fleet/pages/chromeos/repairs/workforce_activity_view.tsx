@@ -73,7 +73,9 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { Duration as ProtoDuration } from '@/proto/google/protobuf/duration.pb';
 
+import { LabSelector } from './lab_selector';
 import { useUnclaimRepairTask } from './use_claim_repair_task';
+import { RepairLab, useRepairLab } from './use_repair_lab';
 import { useWorkforceActivity } from './use_workforce_activity';
 
 const formatDuration = (d?: ProtoDuration): string =>
@@ -102,6 +104,7 @@ const TIMEFRAME_TO_PROTO: Record<
 export interface WorkforceActivityViewProps {
   inProgressCount?: number;
   onBackToQueue?: () => void;
+  lab?: RepairLab;
 }
 
 interface WorkforceColumn {
@@ -114,9 +117,12 @@ interface WorkforceColumn {
 export const WorkforceActivityView = ({
   inProgressCount = 0,
   onBackToQueue,
+  lab: labProp,
 }: WorkforceActivityViewProps) => {
   const navigate = useNavigate();
   const currentPlatform = useCurrentPlatform();
+  const { lab: contextLab } = useRepairLab();
+  const lab = labProp ?? contextLab;
   const [timeframe, setTimeframe] = useState<TimeframeOption>('1D');
   const { mutate: unclaimTask, isPending: isUnclaimPending } =
     useUnclaimRepairTask();
@@ -137,7 +143,7 @@ export const WorkforceActivityView = ({
       navigate(
         generateRepairsURL(
           currentPlatform ? platformToURL(currentPlatform) : CHROMEOS_PLATFORM,
-        ),
+        ) + `?lab=${lab}`,
       );
     }
   };
@@ -146,8 +152,9 @@ export const WorkforceActivityView = ({
     () =>
       GetWorkforceActivityRequest.fromPartial({
         timeframe: TIMEFRAME_TO_PROTO[timeframe],
+        lab,
       }),
-    [timeframe],
+    [timeframe, lab],
   );
 
   const { data, isLoading, isPending, isError, error } =
@@ -383,6 +390,8 @@ export const WorkforceActivityView = ({
           >
             Prioritized Manual Repair Queue
           </Button>
+
+          <LabSelector value={lab} />
 
           {showTimeframeFilter && (
             <Box

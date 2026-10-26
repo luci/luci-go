@@ -48,6 +48,7 @@ describe('usePriorityRules', () => {
   let mockDeletePriorityRule: jest.Mock;
 
   beforeEach(() => {
+    localStorage.clear();
     jest.clearAllMocks();
 
     mockListPriorityRules = jest.fn().mockReturnValue({
@@ -130,6 +131,7 @@ describe('usePriorityRules', () => {
         id: '0',
         expressionAip160: 'model = "volteer"',
         weight: '500',
+        lab: 'MTV',
       },
     });
     expect(createdRes.priorityRule?.id).toBe('3');
@@ -266,6 +268,33 @@ describe('usePriorityRules', () => {
     await waitFor(() => {
       expect(result.current.rules.length).toBe(2);
       expect(result.current.rules.find((r) => r.id === '1')).toBeDefined();
+    });
+  });
+
+  it('scopes query and rule creation by lab', async () => {
+    const { result } = renderHook(() => usePriorityRules('HTL'), {
+      wrapper: FakeContextProvider,
+    });
+
+    expect(mockListPriorityRules).toHaveBeenCalledWith({ lab: 'HTL' });
+
+    await act(async () => {
+      await result.current.createRule({
+        priorityRule: {
+          id: '0',
+          expressionAip160: 'model = "volteer"',
+          weight: '500',
+        },
+      });
+    });
+
+    expect(mockCreatePriorityRule).toHaveBeenCalledWith({
+      priorityRule: {
+        id: '0',
+        expressionAip160: 'model = "volteer"',
+        weight: '500',
+        lab: 'HTL',
+      },
     });
   });
 });
