@@ -44,6 +44,7 @@ func getApplication() *cli.Application {
 		Title: "Unified CLI tool to access LUCI resources.\n\n" +
 			"Commands are stateless and require explicit resource ID flags (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -modulename, -testid, -resultid, -workunitid, -artifactid).\n" +
 			"Use 'luci ids <url>' to extract IDs from URLs (Milo UI, LUCI Analysis, AnTS/ATI) or canonical resource names.\n\n" +
+			base.AgentSkillHint + "\n\n" +
 			"Typical Investigation Workflow Examples:\n" +
 			"  1. Resolve a LUCI Analysis bug or rule to variant breakdown & failing invocations:\n" +
 			"     $ luci analysis failures -bugid 553974454\n\n" +
@@ -89,7 +90,7 @@ func getApplication() *cli.Application {
 			authcli.SubcommandLogout(authOpts, "auth-logout", false),
 
 			subcommands.Section("Other\n"),
-			subcommands.CmdHelp,
+			base.HelpCmd(),
 		},
 	}
 }

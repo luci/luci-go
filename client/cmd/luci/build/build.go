@@ -57,9 +57,6 @@ func (r *buildRun) Run(a subcommands.Application, args []string, env subcommands
 	if len(args) > 0 && args[0] == "logs" {
 		args = append([]string{"log"}, args[1:]...)
 	}
-	if len(args) > 1 && args[0] == "log" && base.HasHelpFlag(args[1:2]) {
-		args = append([]string{"log", "help"}, args[2:]...)
-	}
 	return base.RunSubcommandApp(a, "luci build", "Build management", []*subcommands.Command{
 		GetCmd(r.af),
 		ListCmd(r.af),

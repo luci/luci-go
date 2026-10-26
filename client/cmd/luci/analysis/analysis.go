@@ -49,9 +49,6 @@ type analysisRun struct {
 }
 
 func (r *analysisRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if len(args) > 1 && args[0] == "rule" && base.HasHelpFlag(args[1:2]) {
-		args = append([]string{"rule", "help"}, args[2:]...)
-	}
 	return base.RunSubcommandApp(a, "luci analysis", "LUCI Analysis inspection", []*subcommands.Command{
 		RuleCmd(r.af),
 		FailuresCmd(r.af),

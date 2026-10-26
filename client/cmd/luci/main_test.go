@@ -15,12 +15,28 @@
 package main
 
 import (
+	"bytes"
+	"io"
+	"strings"
 	"testing"
 
+	"github.com/maruel/subcommands"
+
+	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
+
+type capturedApp struct {
+	*cli.Application
+	out bytes.Buffer
+	err bytes.Buffer
+}
+
+func (a *capturedApp) GetOut() io.Writer { return &a.out }
+func (a *capturedApp) GetErr() io.Writer { return &a.err }
 
 func TestGetApplication(t *testing.T) {
 	t.Parallel()
@@ -30,5 +46,42 @@ func TestGetApplication(t *testing.T) {
 		assert.Loosely(t, app, should.NotBeNil)
 		assert.Loosely(t, app.Name, should.Equal("luci"))
 		assert.Loosely(t, len(app.Commands), should.BeGreaterThan(2))
+		assert.Loosely(t, app.Title, should.ContainSubstring(base.AgentSkillHint))
+		assert.Loosely(t, app.Title, should.ContainSubstring("go/luci-skill"))
+
+		helpInvocations := [][]string{
+			{},
+			{"help"},
+			{"-h"},
+			{"--help"},
+			{"-help"},
+			{"ids", "-h"},
+			{"help", "ids"},
+			{"verdict"},
+			{"verdict", "-h"},
+			{"verdict", "--help"},
+			{"verdict", "-h", "-invocationid", "build-123"},
+			{"verdict", "-invocationid", "build-123", "-h"},
+			{"verdict", "help"},
+			{"verdict", "list", "-h"},
+			{"help", "verdict", "list"},
+			{"build", "log", "-h"},
+			{"build", "log", "-buildid", "123", "-h"},
+			{"build", "log", "tail", "-h"},
+			{"help", "build", "log", "tail"},
+			{"test-result", "artifact", "-h"},
+			{"test-result", "artifact", "list", "-h"},
+			{"analysis", "rule", "-h"},
+			{"analysis", "rule", "get", "-h"},
+		}
+
+		for _, rawArgs := range helpInvocations {
+			cApp := &capturedApp{Application: getApplication()}
+			normArgs := base.NormalizeAppArgs(cApp.Commands, rawArgs)
+			code := subcommands.Run(cApp, normArgs)
+			combined := cApp.out.String() + cApp.err.String()
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, strings.Count(combined, base.AgentSkillHint), should.Equal(1))
+		}
 	})
 }
