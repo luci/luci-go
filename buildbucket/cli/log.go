@@ -85,13 +85,14 @@ func (r *logRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	// Find the step.
-	steps, err := r.getSteps(ctx)
+	build, err := r.fetchBuild(ctx)
 	if err != nil {
 		return r.done(ctx, err)
 	}
+
+	// Find the step.
 	var step *pb.Step
-	for _, s := range steps {
+	for _, s := range build.Steps {
 		if s.Name == r.step {
 			step = s
 			break
@@ -99,7 +100,7 @@ func (r *logRun) Run(a subcommands.Application, args []string, env subcommands.E
 	}
 	if step == nil {
 		fmt.Fprintf(os.Stderr, "step %q not found in build %q. Available steps:\n", r.step, r.build)
-		for _, s := range steps {
+		for _, s := range build.Steps {
 			fmt.Fprintf(os.Stderr, "  %s\n", s.Name)
 		}
 		return 1
@@ -128,7 +129,7 @@ func (r *logRun) Run(a subcommands.Application, args []string, env subcommands.E
 		}
 	}
 
-	return r.done(ctx, r.printLogs(ctx, logs))
+	return r.done(ctx, r.printLogs(ctx, build.GetInfra().GetLogdog().GetHostname(), logs))
 }
 
 func (r *logRun) parseArgs(args []string) error {
@@ -155,13 +156,13 @@ func (r *logRun) defaultLogs(available map[string]*pb.Log) []*pb.Log {
 	return logs
 }
 
-// getSteps fetches steps of the build.
-func (r *logRun) getSteps(ctx context.Context) ([]*pb.Step, error) {
-	r.getBuild.Fields = &field_mask.FieldMask{Paths: []string{"steps"}}
+// fetchBuild fetches the build with steps and LogDog hostname.
+func (r *logRun) fetchBuild(ctx context.Context) (*pb.Build, error) {
+	r.getBuild.Fields = &field_mask.FieldMask{Paths: []string{"steps", "infra.logdog.hostname"}}
 	build, err := r.buildsClient.GetBuild(ctx, r.getBuild, prpc.ExpectedCode(codes.NotFound))
 	switch status.Code(err) {
 	case codes.OK:
-		return build.Steps, nil
+		return build, nil
 	case codes.NotFound:
 		return nil, fmt.Errorf("build not found")
 	default:
@@ -171,9 +172,12 @@ func (r *logRun) getSteps(ctx context.Context) ([]*pb.Step, error) {
 
 // printLogs fetches and prints the logs to io.Stdout/io.Stderr.
 // Entries from different logs are multiplexed by timestamps.
-func (r *logRun) printLogs(ctx context.Context, logs []*pb.Log) error {
+func (r *logRun) printLogs(ctx context.Context, logdogHost string, logs []*pb.Log) error {
 	if len(logs) == 0 {
 		return nil
+	}
+	if logdogHost == "" {
+		return fmt.Errorf("build does not have a logdog hostname")
 	}
 
 	// Parse Log URLs.
@@ -185,16 +189,15 @@ func (r *logRun) printLogs(ctx context.Context, logs []*pb.Log) error {
 			return fmt.Errorf("log %q has unsupported URL %q", l.Name, l.Url)
 		}
 
-		if addrs[0].Host != addrs[i].Host {
-			// unrealistic
-			return fmt.Errorf("multiple different logdog hosts are not supported")
+		if addrs[i].Host != logdogHost {
+			return fmt.Errorf("log %q has host %q which does not match build logdog host %q", l.Name, addrs[i].Host, logdogHost)
 		}
 	}
 
 	// Create a client.
 	client := coordinator.NewClient(&prpc.Client{
 		C:    r.httpClient,
-		Host: addrs[0].Host,
+		Host: logdogHost,
 	})
 
 	// Fetch descriptors and create fetchers.
