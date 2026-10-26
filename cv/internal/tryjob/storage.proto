@@ -237,6 +237,13 @@ message ExecutionState {
       //  * the Tryjob was triggered by CV for a previous Run, or
       //  * the Tryjob was triggered by non-CV (e.g. `git cl try`).
       bool reused = 5;
+      // ReusedCommitDistance is the evaluated commit distance between the
+      // target branch tip and the candidate tryjob's base commit position
+      // (tip_commit_position - candidate_base_commit_position).
+      //
+      // Populated if and only if this attempt reused an existing tryjob
+      // (`reused == true`) via the commit-distance reuse window.
+      optional int64 reused_commit_distance = 6;
     }
     // Attempts records all attempts (including retries) to verify the Run with
     // this Tryjob Execution.

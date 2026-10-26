@@ -202,7 +202,9 @@ message Build {
   // Information about whether this build was triggered previously and reused,
   // or triggered because there was no reusable build, or because builds by
   // this builder are all not reusable.
-  Origin origin = 3;
+  //
+  // Deprecated: use `reuse` instead.
+  Origin origin = 3 [deprecated = true];
 
   // Whether the CQ must wait for this build to pass in order for the CLs to be
   // considered ready to submit. True means this builder must pass, false means
@@ -214,6 +216,44 @@ message Build {
   // Tip: join this with the Buildbucket BigQuery table to figure out which
   // builder this build belongs to.
   bool critical = 4;
+
+  // Reuse contains metadata regarding tryjob reuse evaluation for this build.
+  message Reuse {
+    // Outcome describes the result of the tryjob reuse evaluation.
+    enum Outcome {
+      // Default, unset outcome.
+      OUTCOME_UNSPECIFIED = 0;
+      // Build was triggered as part of this attempt because reuse was disabled
+      // for its builder.
+      OUTCOME_NOT_REUSABLE = 1;
+      // Build was triggered as part of this attempt, but if there was an
+      // already existing reusable build it would have been reused.
+      OUTCOME_NOT_REUSED = 2;
+      // Build was reused via the time-based reuse window, either by default
+      // (when max_commit_distance is not configured) or as a fallback when
+      // commit-distance verification is unavailable (e.g., for in-flight
+      // builds or Gitiles errors).
+      OUTCOME_REUSE_TIME_WINDOW = 3;
+      // Build was reused because its base commit position was within the
+      // target branch tip by max_commit_distance.
+      OUTCOME_REUSE_COMMIT_WINDOW = 4;
+    }
+    // Final outcome of the reuse evaluation.
+    Outcome outcome = 1;
+
+    // CommitWindow holds metadata for the commit-distance reuse scenario.
+    // Populated when outcome is OUTCOME_REUSE_COMMIT_WINDOW.
+    message CommitWindow {
+      // Maximum commit distance configured for this tryjob definition.
+      uint32 max_commit_distance = 1;
+      // Evaluated commit distance between target branch tip and candidate base
+      // commit position (tip_commit_position - candidate_base_commit_position).
+      int64 commit_distance = 2;
+    }
+    CommitWindow commit_window = 2;
+  }
+  // Information about whether and how this build was reused.
+  Reuse reuse = 5;
 }
 
 enum AttemptStatus {

@@ -365,6 +365,73 @@ func (Build_Origin) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_rawDescGZIP(), []int{2, 0}
 }
 
+// Outcome describes the result of the tryjob reuse evaluation.
+type Build_Reuse_Outcome int32
+
+const (
+	// Default, unset outcome.
+	Build_Reuse_OUTCOME_UNSPECIFIED Build_Reuse_Outcome = 0
+	// Build was triggered as part of this attempt because reuse was disabled
+	// for its builder.
+	Build_Reuse_OUTCOME_NOT_REUSABLE Build_Reuse_Outcome = 1
+	// Build was triggered as part of this attempt, but if there was an
+	// already existing reusable build it would have been reused.
+	Build_Reuse_OUTCOME_NOT_REUSED Build_Reuse_Outcome = 2
+	// Build was reused via the time-based reuse window, either by default
+	// (when max_commit_distance is not configured) or as a fallback when
+	// commit-distance verification is unavailable (e.g., for in-flight
+	// builds or Gitiles errors).
+	Build_Reuse_OUTCOME_REUSE_TIME_WINDOW Build_Reuse_Outcome = 3
+	// Build was reused because its base commit position was within the
+	// target branch tip by max_commit_distance.
+	Build_Reuse_OUTCOME_REUSE_COMMIT_WINDOW Build_Reuse_Outcome = 4
+)
+
+// Enum value maps for Build_Reuse_Outcome.
+var (
+	Build_Reuse_Outcome_name = map[int32]string{
+		0: "OUTCOME_UNSPECIFIED",
+		1: "OUTCOME_NOT_REUSABLE",
+		2: "OUTCOME_NOT_REUSED",
+		3: "OUTCOME_REUSE_TIME_WINDOW",
+		4: "OUTCOME_REUSE_COMMIT_WINDOW",
+	}
+	Build_Reuse_Outcome_value = map[string]int32{
+		"OUTCOME_UNSPECIFIED":         0,
+		"OUTCOME_NOT_REUSABLE":        1,
+		"OUTCOME_NOT_REUSED":          2,
+		"OUTCOME_REUSE_TIME_WINDOW":   3,
+		"OUTCOME_REUSE_COMMIT_WINDOW": 4,
+	}
+)
+
+func (x Build_Reuse_Outcome) Enum() *Build_Reuse_Outcome {
+	p := new(Build_Reuse_Outcome)
+	*p = x
+	return p
+}
+
+func (x Build_Reuse_Outcome) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Build_Reuse_Outcome) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_enumTypes[5].Descriptor()
+}
+
+func (Build_Reuse_Outcome) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_enumTypes[5]
+}
+
+func (x Build_Reuse_Outcome) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Build_Reuse_Outcome.Descriptor instead.
+func (Build_Reuse_Outcome) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_rawDescGZIP(), []int{2, 0, 0}
+}
+
 // Attempt includes the state of one CQ attempt.
 //
 // An attempt involves doing checks for one or more CLs that could
@@ -709,6 +776,10 @@ type Build struct {
 	// Information about whether this build was triggered previously and reused,
 	// or triggered because there was no reusable build, or because builds by
 	// this builder are all not reusable.
+	//
+	// Deprecated: use `reuse` instead.
+	//
+	// Deprecated: Marked as deprecated in go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto.
 	Origin Build_Origin `protobuf:"varint,3,opt,name=origin,proto3,enum=bigquery.Build_Origin" json:"origin,omitempty"`
 	// Whether the CQ must wait for this build to pass in order for the CLs to be
 	// considered ready to submit. True means this builder must pass, false means
@@ -719,7 +790,9 @@ type Build struct {
 	//
 	// Tip: join this with the Buildbucket BigQuery table to figure out which
 	// builder this build belongs to.
-	Critical      bool `protobuf:"varint,4,opt,name=critical,proto3" json:"critical,omitempty"`
+	Critical bool `protobuf:"varint,4,opt,name=critical,proto3" json:"critical,omitempty"`
+	// Information about whether and how this build was reused.
+	Reuse         *Build_Reuse `protobuf:"bytes,5,opt,name=reuse,proto3" json:"reuse,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -768,6 +841,7 @@ func (x *Build) GetHost() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto.
 func (x *Build) GetOrigin() Build_Origin {
 	if x != nil {
 		return x.Origin
@@ -780,6 +854,124 @@ func (x *Build) GetCritical() bool {
 		return x.Critical
 	}
 	return false
+}
+
+func (x *Build) GetReuse() *Build_Reuse {
+	if x != nil {
+		return x.Reuse
+	}
+	return nil
+}
+
+// Reuse contains metadata regarding tryjob reuse evaluation for this build.
+type Build_Reuse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Final outcome of the reuse evaluation.
+	Outcome       Build_Reuse_Outcome       `protobuf:"varint,1,opt,name=outcome,proto3,enum=bigquery.Build_Reuse_Outcome" json:"outcome,omitempty"`
+	CommitWindow  *Build_Reuse_CommitWindow `protobuf:"bytes,2,opt,name=commit_window,json=commitWindow,proto3" json:"commit_window,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Build_Reuse) Reset() {
+	*x = Build_Reuse{}
+	mi := &file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Build_Reuse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Build_Reuse) ProtoMessage() {}
+
+func (x *Build_Reuse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Build_Reuse.ProtoReflect.Descriptor instead.
+func (*Build_Reuse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_rawDescGZIP(), []int{2, 0}
+}
+
+func (x *Build_Reuse) GetOutcome() Build_Reuse_Outcome {
+	if x != nil {
+		return x.Outcome
+	}
+	return Build_Reuse_OUTCOME_UNSPECIFIED
+}
+
+func (x *Build_Reuse) GetCommitWindow() *Build_Reuse_CommitWindow {
+	if x != nil {
+		return x.CommitWindow
+	}
+	return nil
+}
+
+// CommitWindow holds metadata for the commit-distance reuse scenario.
+// Populated when outcome is OUTCOME_REUSE_COMMIT_WINDOW.
+type Build_Reuse_CommitWindow struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Maximum commit distance configured for this tryjob definition.
+	MaxCommitDistance uint32 `protobuf:"varint,1,opt,name=max_commit_distance,json=maxCommitDistance,proto3" json:"max_commit_distance,omitempty"`
+	// Evaluated commit distance between target branch tip and candidate base
+	// commit position (tip_commit_position - candidate_base_commit_position).
+	CommitDistance int64 `protobuf:"varint,2,opt,name=commit_distance,json=commitDistance,proto3" json:"commit_distance,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Build_Reuse_CommitWindow) Reset() {
+	*x = Build_Reuse_CommitWindow{}
+	mi := &file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Build_Reuse_CommitWindow) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Build_Reuse_CommitWindow) ProtoMessage() {}
+
+func (x *Build_Reuse_CommitWindow) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Build_Reuse_CommitWindow.ProtoReflect.Descriptor instead.
+func (*Build_Reuse_CommitWindow) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_rawDescGZIP(), []int{2, 0, 0}
+}
+
+func (x *Build_Reuse_CommitWindow) GetMaxCommitDistance() uint32 {
+	if x != nil {
+		return x.MaxCommitDistance
+	}
+	return 0
+}
+
+func (x *Build_Reuse_CommitWindow) GetCommitDistance() int64 {
+	if x != nil {
+		return x.CommitDistance
+	}
+	return 0
 }
 
 var File_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto protoreflect.FileDescriptor
@@ -823,12 +1015,25 @@ const file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_rawDesc = "" +
 	"\aUNKNOWN\x10\x02\x12\v\n" +
 	"\aFAILURE\x10\x03\x12\v\n" +
 	"\aSUCCESS\x10\x04J\x04\b\t\x10\n" +
-	"\"\xc7\x01\n" +
+	"\"\x84\x05\n" +
 	"\x05Build\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
-	"\x04host\x18\x02 \x01(\tR\x04host\x12.\n" +
-	"\x06origin\x18\x03 \x01(\x0e2\x16.bigquery.Build.OriginR\x06origin\x12\x1a\n" +
-	"\bcritical\x18\x04 \x01(\bR\bcritical\"N\n" +
+	"\x04host\x18\x02 \x01(\tR\x04host\x122\n" +
+	"\x06origin\x18\x03 \x01(\x0e2\x16.bigquery.Build.OriginB\x02\x18\x01R\x06origin\x12\x1a\n" +
+	"\bcritical\x18\x04 \x01(\bR\bcritical\x12+\n" +
+	"\x05reuse\x18\x05 \x01(\v2\x15.bigquery.Build.ReuseR\x05reuse\x1a\x89\x03\n" +
+	"\x05Reuse\x127\n" +
+	"\aoutcome\x18\x01 \x01(\x0e2\x1d.bigquery.Build.Reuse.OutcomeR\aoutcome\x12G\n" +
+	"\rcommit_window\x18\x02 \x01(\v2\".bigquery.Build.Reuse.CommitWindowR\fcommitWindow\x1ag\n" +
+	"\fCommitWindow\x12.\n" +
+	"\x13max_commit_distance\x18\x01 \x01(\rR\x11maxCommitDistance\x12'\n" +
+	"\x0fcommit_distance\x18\x02 \x01(\x03R\x0ecommitDistance\"\x94\x01\n" +
+	"\aOutcome\x12\x17\n" +
+	"\x13OUTCOME_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14OUTCOME_NOT_REUSABLE\x10\x01\x12\x16\n" +
+	"\x12OUTCOME_NOT_REUSED\x10\x02\x12\x1d\n" +
+	"\x19OUTCOME_REUSE_TIME_WINDOW\x10\x03\x12\x1f\n" +
+	"\x1bOUTCOME_REUSE_COMMIT_WINDOW\x10\x04\"N\n" +
 	"\x06Origin\x12\x16\n" +
 	"\x12ORIGIN_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fNOT_REUSABLE\x10\x01\x12\x0e\n" +
@@ -871,36 +1076,42 @@ func file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_rawDescGZIP() []
 	return file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_goTypes = []any{
-	(Mode)(0),                      // 0: bigquery.Mode
-	(AttemptStatus)(0),             // 1: bigquery.AttemptStatus
-	(AttemptSubstatus)(0),          // 2: bigquery.AttemptSubstatus
-	(GerritChange_SubmitStatus)(0), // 3: bigquery.GerritChange.SubmitStatus
-	(Build_Origin)(0),              // 4: bigquery.Build.Origin
-	(*Attempt)(nil),                // 5: bigquery.Attempt
-	(*GerritChange)(nil),           // 6: bigquery.GerritChange
-	(*Build)(nil),                  // 7: bigquery.Build
-	(*timestamppb.Timestamp)(nil),  // 8: google.protobuf.Timestamp
+	(Mode)(0),                        // 0: bigquery.Mode
+	(AttemptStatus)(0),               // 1: bigquery.AttemptStatus
+	(AttemptSubstatus)(0),            // 2: bigquery.AttemptSubstatus
+	(GerritChange_SubmitStatus)(0),   // 3: bigquery.GerritChange.SubmitStatus
+	(Build_Origin)(0),                // 4: bigquery.Build.Origin
+	(Build_Reuse_Outcome)(0),         // 5: bigquery.Build.Reuse.Outcome
+	(*Attempt)(nil),                  // 6: bigquery.Attempt
+	(*GerritChange)(nil),             // 7: bigquery.GerritChange
+	(*Build)(nil),                    // 8: bigquery.Build
+	(*Build_Reuse)(nil),              // 9: bigquery.Build.Reuse
+	(*Build_Reuse_CommitWindow)(nil), // 10: bigquery.Build.Reuse.CommitWindow
+	(*timestamppb.Timestamp)(nil),    // 11: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_depIdxs = []int32{
-	8,  // 0: bigquery.Attempt.start_time:type_name -> google.protobuf.Timestamp
-	8,  // 1: bigquery.Attempt.actual_start_time:type_name -> google.protobuf.Timestamp
-	8,  // 2: bigquery.Attempt.end_time:type_name -> google.protobuf.Timestamp
-	6,  // 3: bigquery.Attempt.gerrit_changes:type_name -> bigquery.GerritChange
-	7,  // 4: bigquery.Attempt.builds:type_name -> bigquery.Build
+	11, // 0: bigquery.Attempt.start_time:type_name -> google.protobuf.Timestamp
+	11, // 1: bigquery.Attempt.actual_start_time:type_name -> google.protobuf.Timestamp
+	11, // 2: bigquery.Attempt.end_time:type_name -> google.protobuf.Timestamp
+	7,  // 3: bigquery.Attempt.gerrit_changes:type_name -> bigquery.GerritChange
+	8,  // 4: bigquery.Attempt.builds:type_name -> bigquery.Build
 	1,  // 5: bigquery.Attempt.status:type_name -> bigquery.AttemptStatus
 	2,  // 6: bigquery.Attempt.substatus:type_name -> bigquery.AttemptSubstatus
-	8,  // 7: bigquery.GerritChange.trigger_time:type_name -> google.protobuf.Timestamp
+	11, // 7: bigquery.GerritChange.trigger_time:type_name -> google.protobuf.Timestamp
 	0,  // 8: bigquery.GerritChange.mode:type_name -> bigquery.Mode
 	3,  // 9: bigquery.GerritChange.submit_status:type_name -> bigquery.GerritChange.SubmitStatus
 	4,  // 10: bigquery.Build.origin:type_name -> bigquery.Build.Origin
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	9,  // 11: bigquery.Build.reuse:type_name -> bigquery.Build.Reuse
+	5,  // 12: bigquery.Build.Reuse.outcome:type_name -> bigquery.Build.Reuse.Outcome
+	10, // 13: bigquery.Build.Reuse.commit_window:type_name -> bigquery.Build.Reuse.CommitWindow
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_init() }
@@ -913,8 +1124,8 @@ func file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_rawDesc), len(file_go_chromium_org_luci_cv_api_bigquery_v1_attempt_proto_rawDesc)),
-			NumEnums:      5,
-			NumMessages:   3,
+			NumEnums:      6,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

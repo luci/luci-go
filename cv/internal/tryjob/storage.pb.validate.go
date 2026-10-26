@@ -2373,6 +2373,10 @@ func (m *ExecutionState_Execution_Attempt) validate(all bool) error {
 
 	// no validation rules for Reused
 
+	if m.ReusedCommitDistance != nil {
+		// no validation rules for ReusedCommitDistance
+	}
+
 	if len(errors) > 0 {
 		return ExecutionState_Execution_AttemptMultiError(errors)
 	}

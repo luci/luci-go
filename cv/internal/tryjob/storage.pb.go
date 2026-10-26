@@ -1286,9 +1286,16 @@ type ExecutionState_Execution_Attempt struct {
 	// In other words, either:
 	//   - the Tryjob was triggered by CV for a previous Run, or
 	//   - the Tryjob was triggered by non-CV (e.g. `git cl try`).
-	Reused        bool `protobuf:"varint,5,opt,name=reused,proto3" json:"reused,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Reused bool `protobuf:"varint,5,opt,name=reused,proto3" json:"reused,omitempty"`
+	// ReusedCommitDistance is the evaluated commit distance between the
+	// target branch tip and the candidate tryjob's base commit position
+	// (tip_commit_position - candidate_base_commit_position).
+	//
+	// Populated if and only if this attempt reused an existing tryjob
+	// (`reused == true`) via the commit-distance reuse window.
+	ReusedCommitDistance *int64 `protobuf:"varint,6,opt,name=reused_commit_distance,json=reusedCommitDistance,proto3,oneof" json:"reused_commit_distance,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ExecutionState_Execution_Attempt) Reset() {
@@ -1354,6 +1361,13 @@ func (x *ExecutionState_Execution_Attempt) GetReused() bool {
 		return x.Reused
 	}
 	return false
+}
+
+func (x *ExecutionState_Execution_Attempt) GetReusedCommitDistance() int64 {
+	if x != nil && x.ReusedCommitDistance != nil {
+		return *x.ReusedCommitDistance
+	}
+	return 0
 }
 
 // LaunchFailure describes why a Tryjob fails to launch. For example, CV
@@ -1955,7 +1969,7 @@ const file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDesc = "" +
 	"\x12FAILED_PERMANENTLY\x10\x03\x12\x16\n" +
 	"\x12FAILED_TRANSIENTLY\x10\x04\x12\v\n" +
 	"\aTIMEOUT\x10\x05B\t\n" +
-	"\abackend\"\x86\n" +
+	"\abackend\"\xdc\n" +
 	"\n" +
 	"\x0eExecutionState\x12L\n" +
 	"\n" +
@@ -1966,18 +1980,20 @@ const file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDesc = "" +
 	"\x06status\x18\x03 \x01(\x0e2).cv.internal.tryjob.ExecutionState.StatusR\x06status\x12G\n" +
 	"\bfailures\x18\b \x01(\v2+.cv.internal.tryjob.ExecutionState.FailuresR\bfailures\x125\n" +
 	"\bend_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\x12P\n" +
-	"%first_tryjob_latency_metrics_reported\x18\t \x01(\bR!firstTryjobLatencyMetricsReported\x1a\xc6\x02\n" +
+	"%first_tryjob_latency_metrics_reported\x18\t \x01(\bR!firstTryjobLatencyMetricsReported\x1a\x9c\x03\n" +
 	"\tExecution\x12P\n" +
 	"\battempts\x18\x02 \x03(\v24.cv.internal.tryjob.ExecutionState.Execution.AttemptR\battempts\x12\x1d\n" +
 	"\n" +
-	"used_quota\x18\x03 \x01(\x05R\tusedQuota\x1a\xc7\x01\n" +
+	"used_quota\x18\x03 \x01(\x05R\tusedQuota\x1a\x9d\x02\n" +
 	"\aAttempt\x12\x1b\n" +
 	"\ttryjob_id\x18\x01 \x01(\x03R\btryjobId\x12\x1f\n" +
 	"\vexternal_id\x18\x02 \x01(\tR\n" +
 	"externalId\x122\n" +
 	"\x06status\x18\x03 \x01(\x0e2\x1a.cv.internal.tryjob.StatusR\x06status\x122\n" +
 	"\x06result\x18\x04 \x01(\v2\x1a.cv.internal.tryjob.ResultR\x06result\x12\x16\n" +
-	"\x06reused\x18\x05 \x01(\bR\x06reused\x1a\xfd\x02\n" +
+	"\x06reused\x18\x05 \x01(\bR\x06reused\x129\n" +
+	"\x16reused_commit_distance\x18\x06 \x01(\x03H\x00R\x14reusedCommitDistance\x88\x01\x01B\x19\n" +
+	"\x17_reused_commit_distance\x1a\xfd\x02\n" +
 	"\bFailures\x12b\n" +
 	"\x0flaunch_failures\x18\x01 \x03(\v29.cv.internal.tryjob.ExecutionState.Failures.LaunchFailureR\x0elaunchFailures\x12q\n" +
 	"\x14unsuccessful_results\x18\x02 \x03(\v2>.cv.internal.tryjob.ExecutionState.Failures.UnsuccessfulResultR\x13unsuccessfulResults\x1ag\n" +
@@ -2175,6 +2191,7 @@ func file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_init() {
 		(*ExecutionLogEntry_TryjobDiscarded_)(nil),
 		(*ExecutionLogEntry_RetryDenied_)(nil),
 	}
+	file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[12].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
