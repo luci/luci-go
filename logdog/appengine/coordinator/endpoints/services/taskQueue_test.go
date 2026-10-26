@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/taskqueue"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
@@ -64,6 +66,30 @@ func TestTaskQueue(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(tasks.Tasks), should.BeZero)
+		})
+
+		t.Run(`Lease a task without lease_time returns InvalidArgument`, func(t *ftt.Test) {
+			_, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
+				MaxTasks: 10,
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+		})
+
+		t.Run(`Delete a task with invalid TaskName returns InvalidArgument`, func(t *ftt.Test) {
+			_, err := svr.DeleteArchiveTasks(c, &logdog.DeleteRequest{
+				Tasks: []*logdog.ArchiveTask{{}},
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+
+			_, err = svr.DeleteArchiveTasks(c, &logdog.DeleteRequest{
+				Tasks: []*logdog.ArchiveTask{{TaskName: "not-a-number:task1"}},
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+
+			_, err = svr.DeleteArchiveTasks(c, &logdog.DeleteRequest{
+				Tasks: []*logdog.ArchiveTask{{TaskName: "0:task1:extra"}},
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 		task1 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef1", Realm: "foo:bar"}
 		task2 := &logdog.ArchiveTask{Project: "foo", Id: "deadbeef2", Realm: "foo:bar"}

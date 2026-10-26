@@ -39,7 +39,7 @@ func (s *server) DeletePrefix(ctx context.Context, req *logdog.DeletePrefixReque
 
 	prefix := types.StreamName(req.Prefix)
 	if err := prefix.Validate(); err != nil {
-		return nil, errors.Fmt(".prefix: %w", err)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid prefix: %v", err)
 	}
 
 	var prefixEnt *coordinator.LogPrefix
@@ -55,7 +55,11 @@ func (s *server) DeletePrefix(ctx context.Context, req *logdog.DeletePrefixReque
 	err := ds.RunInTransaction(ctx, func(ctx context.Context) error {
 		// 1) load the prefix
 		if err := ds.Get(ctx, prefixEnt); err != nil {
-			return err
+			if errors.Is(err, ds.ErrNoSuchEntity) {
+				return status.Error(codes.NotFound, "prefix not found")
+			}
+			log.WithError(err).Errorf(ctx, "Failed to fetch LogPrefix.")
+			return status.Error(codes.Internal, "internal server error")
 		}
 
 		// 2) check caller acl on prefix realm
@@ -73,14 +77,14 @@ func (s *server) DeletePrefix(ctx context.Context, req *logdog.DeletePrefixReque
 		// This will prevent any new streams from being added.
 		if prefixEnt.Expiration.After(now) {
 			prefixEnt.Expiration = now
-			err = ds.Put(ctx, prefixEnt)
+			if err := ds.Put(ctx, prefixEnt); err != nil {
+				log.WithError(err).Errorf(ctx, "Failed to update LogPrefix expiration.")
+				return status.Error(codes.Internal, "internal server error")
+			}
 		}
 		return nil
 	}, nil)
 	if err != nil {
-		if errors.Is(err, ds.ErrNoSuchEntity) {
-			return nil, status.Errorf(codes.NotFound, "prefix not found")
-		}
 		return nil, err
 	}
 
@@ -124,11 +128,13 @@ func (s *server) DeletePrefix(ctx context.Context, req *logdog.DeletePrefixReque
 	// 4) Scan all LogStreams+State for this prefix and delete them in batches.
 	lsq, err := coordinator.NewLogStreamQuery(prefixEnt.Prefix)
 	if err != nil {
-		return nil, err
+		log.WithError(err).Errorf(ctx, "Failed to create LogStream query.")
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 	for ls, err := range lsq.Run(ctx).Results {
 		if err != nil {
-			return nil, err
+			log.WithError(err).Errorf(ctx, "Failed to query LogStreams for deletion.")
+			return nil, status.Error(codes.Internal, "internal server error")
 		}
 		addEntry(ls)
 	}
@@ -136,10 +142,14 @@ func (s *server) DeletePrefix(ctx context.Context, req *logdog.DeletePrefixReque
 	flushBatch()
 
 	if err := eg.Wait(); err != nil {
-		return nil, err
+		log.WithError(err).Errorf(ctx, "Failed to delete LogStreams.")
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	// 5) Delete the prefix
-	err = ds.Delete(ctx, prefixEnt)
-	return &logdog.DeletePrefixResponse{}, err
+	if err := ds.Delete(ctx, prefixEnt); err != nil {
+		log.WithError(err).Errorf(ctx, "Failed to delete LogPrefix.")
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	return &logdog.DeletePrefixResponse{}, nil
 }

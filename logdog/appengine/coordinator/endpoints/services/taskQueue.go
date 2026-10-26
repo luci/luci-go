@@ -141,7 +141,7 @@ func tqTask(task *logdog.ArchiveTask) (*taskqueue.Task, error) {
 // archive task.
 func tqTaskLeased(task *logdog.ArchiveTask) (queueNumber int32, t *taskqueue.Task, err error) {
 	if task.TaskName == "" {
-		panic("task.TaskName is unset while deleting task")
+		return 0, nil, status.Error(codes.InvalidArgument, "task_name is required")
 	}
 
 	t = &taskqueue.Task{
@@ -159,15 +159,14 @@ func tqTaskLeased(task *logdog.ArchiveTask) (queueNumber int32, t *taskqueue.Tas
 		var queueNumberInt int
 
 		if queueNumberInt, err = strconv.Atoi(toks[0]); err != nil {
-			err = errors.Fmt("parsing TaskName %q: %w", task.TaskName, err)
-			return
+			return 0, nil, status.Errorf(codes.InvalidArgument, "parsing TaskName %q: %v", task.TaskName, err)
 		}
 
 		queueNumber = int32(queueNumberInt)
 		t.Name = toks[1]
 
 	default:
-		err = errors.Fmt("unknown TaskName format %q", task.TaskName)
+		return 0, nil, status.Errorf(codes.InvalidArgument, "unknown TaskName format %q", task.TaskName)
 	}
 
 	return
@@ -208,7 +207,7 @@ func isArchived(c context.Context, task *logdog.ArchiveTask) bool {
 // LeaseArchiveTasks leases archive tasks to the requestor from a pull queue.
 func (s *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) (*logdog.LeaseResponse, error) {
 	if err := req.LeaseTime.CheckValid(); err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.InvalidArgument, "invalid lease time: %v", err)
 	}
 	duration := req.LeaseTime.AsDuration()
 
@@ -227,18 +226,20 @@ func (s *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 				// TODO(iannucci): There probably should be a better API for this error
 				// detection stuff, but since taskqueue is deprecated, I don't think it's
 				// worth the effort.
-				err := errors.Fmt("leasing archive tasks: %w", err)
+				err = errors.Fmt("leasing archive tasks: %w", err)
 				if strings.Contains(err.Error(), "TRANSIENT_ERROR") {
 					// for HTTP response code 429.
 					err = grpcutil.ResourceExhaustedTag.Apply(err)
 					err = transient.Tag.Apply(err)
+				} else {
+					err = grpcutil.InternalTag.Apply(err)
 				}
 			}
 			return err
 		},
 		retry.LogCallback(c, "taskqueue.Lease"))
 	if err != nil {
-		return nil, err
+		return nil, grpcutil.GRPCifyAndLogErr(c, err)
 	}
 
 	logging.Infof(c, "got %d raw tasks from taskqueue", len(tasks))

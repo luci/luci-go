@@ -262,12 +262,14 @@ func initParams(c context.Context, stream *coordinator.LogStream, desc *logpb.Lo
 		err = coordinator.ErrPathNotFound
 		return
 	case err != nil:
+		err = grpcutil.InternalTag.Apply(err)
 		return
 	}
 
 	// Get the backend storage instances.  These will be closed in fetch.
 	st, err := flex.GetServices(c).StorageForStream(c, state, project)
 	if err != nil {
+		err = grpcutil.InternalTag.Apply(err)
 		return
 	}
 	return fetchParams{
@@ -306,6 +308,7 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 	}
 
 	if data.logDesc, err = fetcher.Stream.DescriptorProto(); err != nil {
+		err = grpcutil.InternalTag.Apply(err)
 		return
 	}
 

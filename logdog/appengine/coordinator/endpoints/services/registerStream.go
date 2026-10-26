@@ -163,7 +163,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	if err := ds.Get(c, ls, lst); err != nil {
 		if !anyNoSuchEntity(err) {
 			log.WithError(err).Errorf(c, "Failed to check for log stream.")
-			return nil, err
+			return nil, status.Error(codes.Internal, "internal server error")
 		}
 
 		// The stream does not exist. Proceed with transactional registration.
@@ -176,7 +176,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 
 			case !anyNoSuchEntity(err):
 				log.WithError(err).Errorf(c, "Failed to check for stream registration (transactional).")
-				return err
+				return status.Error(codes.Internal, "internal server error")
 			}
 
 			// The stream is not yet registered.

@@ -88,6 +88,17 @@ func TestDeletePrefix(t *testing.T) {
 		assert.Loosely(t, streams, should.BeEmpty)
 	})
 
+	t.Run(`invalid_prefix`, func(t *testing.T) {
+		t.Parallel()
+
+		srv, _, ctx := setup(t)
+		_, err := srv.DeletePrefix(ctx, &logdog.DeletePrefixRequest{
+			Project: "project",
+			Prefix:  "///invalid///",
+		})
+		assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+	})
+
 	t.Run(`noexist`, func(t *testing.T) {
 		t.Parallel()
 

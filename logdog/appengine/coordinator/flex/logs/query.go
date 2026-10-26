@@ -237,7 +237,8 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		if len(resp.Streams) == r.limit {
 			cursor, err := it.Cursor()
 			if err != nil {
-				return err
+				log.WithError(err).Errorf(r.ctx, "Failed to get query cursor.")
+				return status.Error(codes.Internal, "internal server error")
 			}
 			resp.Next = cursor.String()
 			return nil
