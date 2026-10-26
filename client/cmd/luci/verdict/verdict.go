@@ -18,9 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/maruel/subcommands"
@@ -28,9 +26,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -98,271 +94,13 @@ type verdictGetRun struct {
 }
 
 func ParseVerdictName(name string) (invName, variantHash, testIDRegexp string, matchFunc func(*pb.TestResult) bool, err error) {
-	name = base.TrimResourceURL(name)
-
-	varIdx := strings.Index(name, "/variants/")
-	if varIdx == -1 {
-		return "", "", "", nil, errors.New("invalid verdict name: missing /variants/")
-	}
-
-	afterVar := name[varIdx+len("/variants/"):]
-	parts := strings.SplitN(afterVar, "/", 2)
-	variantHash = parts[0]
-
-	beforeVar := name[:varIdx]
-	if modIdx := strings.Index(beforeVar, "/modules/"); modIdx != -1 {
-		invName = beforeVar[:modIdx]
-		caseIdx := strings.Index(name, "/cases/")
-		if caseIdx != -1 {
-			afterCase := name[caseIdx+len("/cases/"):]
-			caseParts := strings.Split(afterCase, "/")
-			caseName, err := url.PathUnescape(caseParts[0])
-			if err != nil {
-				return "", "", "", nil, errors.Fmt("failed to unescape case name %q: %w", caseParts[0], err)
-			}
-			testIDRegexp = ".*" + regexp.QuoteMeta(caseName)
-			matchFunc = func(tr *pb.TestResult) bool {
-				if tr.VariantHash != variantHash {
-					return false
-				}
-				if tr.TestIdStructured != nil && tr.TestIdStructured.CaseName == caseName {
-					return true
-				}
-				return strings.HasSuffix(tr.TestId, caseName)
-			}
-			return invName, variantHash, testIDRegexp, matchFunc, nil
-		}
-	}
-
-	if testIdx := strings.Index(beforeVar, "/tests/"); testIdx != -1 {
-		invName = beforeVar[:testIdx]
-		encodedTestID := beforeVar[testIdx+len("/tests/"):]
-		testID, err := url.PathUnescape(encodedTestID)
-		if err != nil {
-			return "", "", "", nil, errors.Fmt("failed to unescape test ID %q: %w", encodedTestID, err)
-		}
-		testIDRegexp = regexp.QuoteMeta(testID)
-		matchFunc = func(tr *pb.TestResult) bool {
-			return tr.VariantHash == variantHash && tr.TestId == testID
-		}
-		return invName, variantHash, testIDRegexp, matchFunc, nil
-	}
-
-	return "", "", "", nil, errors.New("invalid verdict name format: could not parse test ID or case name")
+	return base.ParseVerdictName(name)
 }
 
 // QueryVerdictResultsAndExonerations queries test results and exonerations for a verdict by invocation ID and test ID.
 // Defaults to querying as a root invocation using QueryTestVerdicts unless legacy is true.
 func QueryVerdictResultsAndExonerations(ctx context.Context, client pb.ResultDBClient, invID, testID, variantHash string, legacy bool, maxFetch int) ([]*pb.TestResult, []*pb.TestExoneration, bool, error) {
-	if legacy {
-		return queryLegacyInvocationVerdicts(ctx, client, invID, testID, variantHash, maxFetch)
-	}
-	return queryRootInvocationVerdicts(ctx, client, invID, testID, variantHash, maxFetch)
-}
-
-func queryRootInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, invID, testID, variantHash string, maxFetch int) ([]*pb.TestResult, []*pb.TestExoneration, bool, error) {
-	rootInvName := "rootInvocations/" + base.NormalizeInvocation(invID)
-
-	// When both a structured testID and variantHash are known, query directly by
-	// TestPrefixFilter (AggregationLevel_CASE) and omit OrderBy: "ui_priority" so
-	// ResultDB uses fetchUsingIteratorQuery (primary key prefix lookup) in 1 RPC.
-	var testPrefixFilter *pb.TestIdentifierPrefix
-	if testID != "" && variantHash != "" {
-		if parsed, err := pbutil.ParseAndValidateTestID(testID, pbutil.QuerySideTestIDLimitCallback); err == nil {
-			testPrefixFilter = &pb.TestIdentifierPrefix{
-				Level: pb.AggregationLevel_CASE,
-				Id: &pb.TestIdentifier{
-					ModuleName:        parsed.ModuleName,
-					ModuleScheme:      parsed.ModuleScheme,
-					ModuleVariantHash: variantHash,
-					CoarseName:        parsed.CoarseName,
-					FineName:          parsed.FineName,
-					CaseName:          parsed.CaseName,
-				},
-			}
-		}
-	}
-
-	var verdictResults []*pb.TestResult
-	var exList []*pb.TestExoneration
-	pageToken := ""
-	hasMore := false
-
-	for {
-		pageSize := int32(1000)
-		if maxFetch > 0 && int32(maxFetch) < pageSize {
-			pageSize = int32(maxFetch)
-		}
-		req := &pb.QueryTestVerdictsRequest{
-			Parent:    rootInvName,
-			View:      pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
-			PageSize:  pageSize,
-			PageToken: pageToken,
-		}
-		if testPrefixFilter != nil {
-			req.Predicate = &pb.TestVerdictPredicate{
-				TestPrefixFilter: testPrefixFilter,
-			}
-		} else {
-			req.OrderBy = "ui_priority"
-			if testID != "" {
-				req.Predicate = &pb.TestVerdictPredicate{
-					ContainsTestResultFilter: fmt.Sprintf("test_id = %q", testID),
-				}
-			}
-		}
-		res, err := client.QueryTestVerdicts(ctx, req)
-		if err != nil {
-			if base.IsPermissionDenied(err) {
-				return nil, nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s (missing ResultDB realm permission): %w", rootInvName, err)
-			}
-			return nil, nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s: %w", rootInvName, err)
-		}
-		for _, tv := range res.TestVerdicts {
-			for _, tr := range tv.Results {
-				if tr.TestIdStructured == nil && tv.TestIdStructured != nil {
-					tr.TestIdStructured = tv.TestIdStructured
-				}
-				if tr.Variant == nil && tv.TestIdStructured != nil {
-					tr.Variant = tv.TestIdStructured.ModuleVariant
-				}
-				if tr.VariantHash == "" && tv.TestIdStructured != nil {
-					tr.VariantHash = tv.TestIdStructured.ModuleVariantHash
-				}
-				if tr.TestId == "" {
-					tr.TestId = tv.TestId
-				}
-				if tr.TestMetadata == nil {
-					tr.TestMetadata = tv.TestMetadata
-				}
-				if testID != "" && tr.TestId != testID {
-					continue
-				}
-				if variantHash != "" && tr.VariantHash != variantHash {
-					continue
-				}
-				verdictResults = append(verdictResults, tr)
-			}
-			for _, ex := range tv.Exonerations {
-				if ex.VariantHash == "" && tv.TestIdStructured != nil {
-					ex.VariantHash = tv.TestIdStructured.ModuleVariantHash
-				}
-				if ex.TestId == "" {
-					ex.TestId = tv.TestId
-				}
-				if testID != "" && ex.TestId != testID {
-					continue
-				}
-				if variantHash != "" && ex.VariantHash != variantHash {
-					continue
-				}
-				exList = append(exList, ex)
-			}
-		}
-		if maxFetch > 0 && len(verdictResults) >= maxFetch {
-			if res.NextPageToken != "" || len(verdictResults) > maxFetch {
-				hasMore = true
-				verdictResults = verdictResults[:maxFetch]
-			}
-			break
-		}
-		// When querying a specific testID with OrderBy: "ui_priority", RPC #1
-		// queries UnsuccessfulTestResultsV2 and unconditionally returns a synthetic
-		// NextPageToken (MaxUIPriority) to scan PASSED/SKIPPED verdicts across the
-		// entire table. If RPC #1 already found the verdict, stop immediately
-		// rather than triggering a 15-20s full-table scan on RPC #2.
-		if (testID != "" && len(verdictResults) > 0) || res.NextPageToken == "" {
-			break
-		}
-		pageToken = res.NextPageToken
-	}
-	return verdictResults, exList, hasMore, nil
-}
-
-func queryLegacyInvocationVerdicts(ctx context.Context, client pb.ResultDBClient, invID, testID, variantHash string, maxFetch int) ([]*pb.TestResult, []*pb.TestExoneration, bool, error) {
-	legacyInvName := "invocations/" + base.NormalizeInvocation(invID)
-
-	var verdictResults []*pb.TestResult
-	pageToken := ""
-	hasMore := false
-
-	for {
-		pageSize := int32(1000)
-		if maxFetch > 0 && int32(maxFetch) < pageSize {
-			pageSize = int32(maxFetch)
-		}
-		req := &pb.QueryTestResultsRequest{
-			Invocations: []string{legacyInvName},
-			PageSize:    pageSize,
-			PageToken:   pageToken,
-		}
-		if testID != "" {
-			req.Predicate = &pb.TestResultPredicate{
-				TestIdRegexp: regexp.QuoteMeta(testID),
-			}
-			if variantHash != "" {
-				req.Predicate.Variant = &pb.VariantPredicate{
-					Predicate: &pb.VariantPredicate_Contains{
-						Contains: &pb.Variant{
-							Def: map[string]string{},
-						},
-					},
-				}
-			}
-		}
-		res, err := client.QueryTestResults(ctx, req)
-		if err != nil {
-			if base.IsPermissionDenied(err) {
-				return nil, nil, false, errors.Fmt("QueryTestResults RPC failed for %s (missing ResultDB realm permission): %w", legacyInvName, err)
-			}
-			return nil, nil, false, errors.Fmt("QueryTestResults RPC failed for %s: %w", legacyInvName, err)
-		}
-		for _, tr := range res.TestResults {
-			if testID != "" && tr.TestId != testID {
-				continue
-			}
-			if variantHash != "" && tr.VariantHash != variantHash {
-				continue
-			}
-			verdictResults = append(verdictResults, tr)
-		}
-		if maxFetch > 0 && len(verdictResults) >= maxFetch {
-			if res.NextPageToken != "" || len(verdictResults) > maxFetch {
-				hasMore = true
-				verdictResults = verdictResults[:maxFetch]
-			}
-			break
-		}
-		if res.NextPageToken == "" {
-			break
-		}
-		pageToken = res.NextPageToken
-	}
-
-	var exList []*pb.TestExoneration
-	reqEx := &pb.QueryTestExonerationsRequest{
-		Invocations: []string{legacyInvName},
-		PageSize:    1000,
-	}
-	if testID != "" {
-		reqEx.Predicate = &pb.TestExonerationPredicate{
-			TestIdRegexp: regexp.QuoteMeta(testID),
-		}
-	}
-	resEx, err := client.QueryTestExonerations(ctx, reqEx)
-	if err == nil && resEx != nil {
-		for _, ex := range resEx.TestExonerations {
-			if testID != "" && ex.TestId != testID {
-				continue
-			}
-			if variantHash != "" && ex.VariantHash != variantHash {
-				continue
-			}
-			exList = append(exList, ex)
-		}
-	}
-
-	return verdictResults, exList, hasMore, nil
+	return base.QueryVerdictResultsAndExonerations(ctx, client, invID, testID, variantHash, legacy, maxFetch)
 }
 
 func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {

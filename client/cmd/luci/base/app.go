@@ -24,6 +24,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 )
 
 // AgentSkillHint is printed in help output to point users and AI agents to the luci skill.
@@ -72,6 +73,36 @@ func (r *skillHelpRun) Run(a subcommands.Application, args []string, env subcomm
 		fmt.Fprintf(a.GetErr(), "\n%s\n", AgentSkillHint)
 	}
 	return code
+}
+
+// ParsePositionalTarget extracts at most one positional target argument from args
+// and parses any leading or trailing flags into fs.
+func ParsePositionalTarget(fs *flag.FlagSet, args []string) (string, error) {
+	if len(args) == 0 {
+		return "", nil
+	}
+	if fs != nil && strings.HasPrefix(args[0], "-") && args[0] != "-" {
+		if err := fs.Parse(args); err != nil {
+			return "", err
+		}
+		args = fs.Args()
+		if len(args) == 0 {
+			return "", nil
+		}
+	}
+	target := strings.TrimSpace(args[0])
+	if len(args) > 1 {
+		if fs == nil || !strings.HasPrefix(args[1], "-") || args[1] == "-" {
+			return "", errors.New("unexpected positional arguments")
+		}
+		if err := fs.Parse(args[1:]); err != nil {
+			return "", err
+		}
+		if len(fs.Args()) > 0 {
+			return "", errors.New("unexpected positional arguments")
+		}
+	}
+	return target, nil
 }
 
 // HasHelpFlag reports whether args contains -h, --help, or -help.

@@ -17,6 +17,8 @@ package ids
 import (
 	"bytes"
 	"context"
+	"flag"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,13 +26,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -1230,9 +1236,128 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, printExtractedIDs(&textBuf, ids, false), should.BeNil)
 			assert.Loosely(t, textBuf.String(), should.ContainSubstring("Bug ID:            553974454\n"))
 
+			var derivedBuf bytes.Buffer
+			PrintDerivedIDs(&derivedBuf, ids)
+			assert.Loosely(t, derivedBuf.String(), should.Equal("Bug ID:            553974454\n\n"))
+
 			var jsonBuf bytes.Buffer
 			assert.Loosely(t, printExtractedIDs(&jsonBuf, ids, true), should.BeNil)
 			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"bug_id": "553974454"`))
+		})
+
+		t.Run(`PrintMissingFlagsError prints derived IDs and next-step hints`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			PrintMissingFlagsError(&buf, &ExtractedIDs{BugID: "553974454"}, "flag -buildid (or a positional build URL/ID) is required")
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Bug ID:            553974454\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Hint: to find failing invocations and tests for this bug, run:\n  luci analysis failures -bugid 553974454\n"))
+
+			buf.Reset()
+			PrintMissingFlagsError(&buf, &ExtractedIDs{InvocationID: "ants-i123"}, "flags -invocationid and -testid (or a positional URL/ID containing them) are required")
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Invocation ID:     ants-i123\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Hint: to list failing test verdicts and test IDs in this invocation, run:\n  luci verdict list -invocationid ants-i123\n"))
+
+			buf.Reset()
+			PrintMissingFlagsError(&buf, &ExtractedIDs{InvocationID: "ants-i123", TestID: ":Mod!junit:pkg:Cls#m", VariantHash: "abcd"}, "flags -invocationid, -testid, and -resultid (or a positional URL/ID containing them) are required")
+			assert.Loosely(t, buf.String(), should.ContainSubstring(`luci verdict get -invocationid ants-i123 -testid ":Mod!junit:pkg:Cls#m" -varianthash abcd`))
+
+			buf.Reset()
+			PrintMissingFlagsError(&buf, &ExtractedIDs{InvocationID: "ants-i123", TestID: ":Mod!junit:pkg:Cls#m", ResultID: "r1"}, "flag -artifactid is required (or a positional URL/ID containing an artifact ID)")
+			assert.Loosely(t, buf.String(), should.ContainSubstring(`luci artifact list -invocationid ants-i123 -testid ":Mod!junit:pkg:Cls#m" -resultid r1`))
+		})
+	})
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func TestCustomHostsForwarding(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`Lazy client creation respects custom ResultDB and Buildbucket hosts`, t, func(t *ftt.Test) {
+		var seenRDBHost, seenBBHost string
+		transport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			header := make(http.Header)
+			header.Set("Content-Type", "application/prpc; encoding=binary")
+			header.Set("X-Prpc-Grpc-Code", "0")
+			var msg proto.Message
+			switch req.URL.Path {
+			case "/prpc/buildbucket.v2.Builds/GetBuild":
+				seenBBHost = req.URL.Host
+				msg = &bbpb.Build{Id: 8765432109876543210}
+			case "/prpc/luci.resultdb.v1.ResultDB/GetRootInvocation":
+				seenRDBHost = req.URL.Host
+				msg = &pb.RootInvocation{Name: "rootInvocations/build-8765432109876543210"}
+			case "/prpc/luci.resultdb.v1.ResultDB/QueryTestVerdicts":
+				seenRDBHost = req.URL.Host
+				msg = &pb.QueryTestVerdictsResponse{}
+			default:
+				msg = &pb.QueryTestVerdictsResponse{}
+			}
+			rawBody, err := proto.Marshal(msg)
+			if err != nil {
+				return nil, err
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Header:     header,
+				Body:       io.NopCloser(bytes.NewReader(rawBody)),
+				Request:    req,
+			}, nil
+		})
+
+		newTestAuthFlags := func() *base.AuthFlags {
+			opts := chromeinfra.DefaultAuthOptions()
+			opts.Method = auth.UserCredentialsMethod
+			opts.SecretsDir = t.TempDir()
+			opts.Transport = transport
+			return &base.AuthFlags{DefaultOpts: opts}
+		}
+
+		t.Run(`idsRun.Run forwards -host and -bb-host flags`, func(t *ftt.Test) {
+			seenRDBHost, seenBBHost = "", ""
+			af := newTestAuthFlags()
+			cmd := Cmd(af)
+			run := cmd.CommandRun().(*idsRun)
+			var out bytes.Buffer
+			run.out = &out
+
+			code := run.Run(&cli.Application{Name: "luci"}, []string{
+				"-host=custom-rdb.example.com",
+				"-bb-host=custom-bb.example.com",
+				"https://ci.chromium.org/ui/p/chromium/builders/ci/Linux%20Tests/12345",
+			}, nil)
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, seenBBHost, should.Equal("custom-bb.example.com"))
+			assert.Loosely(t, seenRDBHost, should.Equal("custom-rdb.example.com"))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Build ID:          8765432109876543210"))
+		})
+
+		t.Run(`ExtractWithAuth forwards TargetBindings ResultDBHost and BuildbucketHost`, func(t *ftt.Test) {
+			seenRDBHost, seenBBHost = "", ""
+			af := newTestAuthFlags()
+			var fs flag.FlagSet
+			af.Register(&fs)
+			ctx := context.Background()
+
+			var buildID string
+			_, err := ExtractWithAuth(ctx, af, nil, nil, "chromium/ci/Linux Tests/12345", TargetBindings{
+				BuildID:         &buildID,
+				BuildbucketHost: "staging-bb.example.com",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, seenBBHost, should.Equal("staging-bb.example.com"))
+			assert.Loosely(t, buildID, should.Equal("8765432109876543210"))
+
+			var testID string
+			_, err = ExtractWithAuth(ctx, af, nil, nil, "https://ci.chromium.org/ui/test-investigate/invocations/build-8765432109876543210/modules/ModA/schemes/junit/variants/abcd1234abcd1234/cases/pkg.Cls%23method", TargetBindings{
+				TestID:       &testID,
+				ResultDBHost: "staging-rdb.example.com",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, seenRDBHost, should.Equal("staging-rdb.example.com"))
 		})
 	})
 }

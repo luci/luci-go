@@ -220,6 +220,12 @@ func TestTargets(t *testing.T) {
 				}))
 			})
 		})
+
+		t.Run("ExtractModuleNameFromTestID", func(t *ftt.Test) {
+			assert.Loosely(t, ExtractModuleNameFromTestID(":CtsMediaAudioTestCases!junit:android.media:AudioTest#testPlay"), should.Equal("CtsMediaAudioTestCases"))
+			assert.Loosely(t, ExtractModuleNameFromTestID(`://chrome/test\:browser_tests!gtest::Suite#Case`), should.Equal("//chrome/test:browser_tests"))
+			assert.Loosely(t, ExtractModuleNameFromTestID("ninja://chrome/test:browser_tests/Suite.Case"), should.BeEmpty)
+		})
 	})
 }
 

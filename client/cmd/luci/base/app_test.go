@@ -16,6 +16,7 @@ package base
 
 import (
 	"bytes"
+	"flag"
 	"strings"
 	"testing"
 
@@ -90,6 +91,42 @@ func TestNormalizeAppArgs(t *testing.T) {
 			assert.Loosely(t, NormalizeAppArgs(cmds, []string{"get", "-"}), should.Match([]string{"get", "-"}))
 			assert.Loosely(t, NormalizeAppArgs(cmds, []string{"list", "name"}), should.Match([]string{"list", "name"}))
 			assert.Loosely(t, NormalizeAppArgs(cmds, []string{"test-result", "get", "-"}), should.Match([]string{"test-result", "get", "-"}))
+		})
+	})
+
+	ftt.Run(`ParsePositionalTarget`, t, func(t *ftt.Test) {
+		t.Run(`empty args`, func(t *ftt.Test) {
+			fs := flag.NewFlagSet("test", flag.ContinueOnError)
+			target, err := ParsePositionalTarget(fs, nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, target, should.BeEmpty)
+		})
+
+		t.Run(`single positional arg`, func(t *ftt.Test) {
+			fs := flag.NewFlagSet("test", flag.ContinueOnError)
+			target, err := ParsePositionalTarget(fs, []string{"https://ci.chromium.org/ui/b/123"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, target, should.Equal("https://ci.chromium.org/ui/b/123"))
+		})
+
+		t.Run(`positional arg followed by trailing flags`, func(t *ftt.Test) {
+			fs := flag.NewFlagSet("test", flag.ContinueOnError)
+			var all bool
+			var limit int
+			fs.BoolVar(&all, "all", false, "")
+			fs.IntVar(&limit, "limit", 10, "")
+
+			target, err := ParsePositionalTarget(fs, []string{"https://ci.chromium.org/ui/b/123", "-all", "-limit", "25"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, target, should.Equal("https://ci.chromium.org/ui/b/123"))
+			assert.Loosely(t, all, should.BeTrue)
+			assert.Loosely(t, limit, should.Equal(25))
+		})
+
+		t.Run(`multiple positional args rejected`, func(t *ftt.Test) {
+			fs := flag.NewFlagSet("test", flag.ContinueOnError)
+			_, err := ParsePositionalTarget(fs, []string{"arg1", "arg2"})
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }
