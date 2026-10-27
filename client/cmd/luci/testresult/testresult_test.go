@@ -17,9 +17,6 @@ package testresult
 import (
 	"bytes"
 	"context"
-	"io"
-	"os"
-	"sync"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -113,26 +110,6 @@ func (m *mockResultDBClient) QueryArtifacts(ctx context.Context, in *pb.QueryArt
 	return &pb.QueryArtifactsResponse{}, nil
 }
 
-var stdoutMu sync.Mutex
-
-func captureStdout(fn func()) string {
-	stdoutMu.Lock()
-	defer stdoutMu.Unlock()
-	r, w, _ := os.Pipe()
-	old := os.Stdout
-	os.Stdout = w
-	outC := make(chan string)
-	go func() {
-		var buf bytes.Buffer
-		_, _ = io.Copy(&buf, r)
-		outC <- buf.String()
-	}()
-	fn()
-	w.Close()
-	os.Stdout = old
-	return <-outC
-}
-
 func TestCmdTestResult(t *testing.T) {
 	t.Parallel()
 
@@ -143,7 +120,43 @@ func TestCmdTestResult(t *testing.T) {
 
 		getCmd := GetCmd(nil)
 		assert.Loosely(t, getCmd, should.NotBeNil)
-		assert.Loosely(t, getCmd.UsageLine, should.Equal("get -invocationid <invocation_id> -testid <test_id> -resultid <result_id>"))
+		assert.Loosely(t, getCmd.UsageLine, should.Equal("get [-invocationid <invocation_id> -testid <test_id> -resultid <result_id>] [<target>]"))
+
+		t.Run(`testResultGetRun accepts positional test result resource name and prints derived IDs`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: ":ModA!junit:pkg:Cls#testOne",
+								Results: []*pb.TestResult{
+									{
+										Name:        "rootInvocations/ants-i123/workUnits/wu-1/tests/:ModA!junit:pkg:Cls%23testOne/results/res-1",
+										TestId:      ":ModA!junit:pkg:Cls#testOne",
+										ResultId:    "res-1",
+										VariantHash: "vhash1",
+										StatusV2:    pb.TestResult_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			var buf bytes.Buffer
+			run := getCmd.CommandRun().(*testResultGetRun)
+			run.client = client
+			run.out = &buf
+			rc := run.Run(nil, []string{"rootInvocations/ants-i123/workUnits/wu-1/tests/:ModA!junit:pkg:Cls%23testOne/results/res-1"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i123"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Name:       ModA"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      wu-1"))
+			assert.Loosely(t, out, should.ContainSubstring("Test ID:           :ModA!junit:pkg:Cls#testOne"))
+			assert.Loosely(t, out, should.ContainSubstring("Result ID:         res-1"))
+			assert.Loosely(t, out, should.ContainSubstring("Result ID: res-1"))
+		})
 	})
 }
 
@@ -284,10 +297,10 @@ func TestPrintTestResult(t *testing.T) {
 				StatusV2: pb.TestResult_FAILED,
 			}
 
-			run := &testResultGetRun{invocationID: "ants-i123"}
-			out := captureStdout(func() {
-				run.printTestResult(ctx, client, nil, nil, "ants-i123", res, false)
-			})
+			var buf bytes.Buffer
+			run := &testResultGetRun{invocationID: "ants-i123", out: &buf}
+			run.printTestResult(ctx, &buf, client, nil, nil, "ants-i123", res, false)
+			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring(`Artifact Count: 1 (run 'luci test-result artifact list -invocationid ants-i123 -testid "test1" -resultid res1' to view)`))
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
@@ -325,10 +338,10 @@ func TestPrintTestResult(t *testing.T) {
 				StatusV2: pb.TestResult_FAILED,
 			}
 
-			run := &testResultGetRun{invocationID: "ants-i123"}
-			out := captureStdout(func() {
-				run.printTestResult(ctx, client, nil, nil, "ants-i123", res, false)
-			})
+			var buf bytes.Buffer
+			run := &testResultGetRun{invocationID: "ants-i123", out: &buf}
+			run.printTestResult(ctx, &buf, client, nil, nil, "ants-i123", res, false)
+			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Artifact Count: 0\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))

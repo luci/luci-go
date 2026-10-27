@@ -17,6 +17,7 @@ package verdict
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -25,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -59,12 +61,17 @@ func (r *verdictRun) Run(a subcommands.Application, args []string, env subcomman
 
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get -invocationid <invocation_id> -testid <test_id> [-varianthash <hash>]",
+		UsageLine: "get [-invocationid <invocation_id> -testid <test_id>] [-varianthash <hash>] [<target>]",
 		ShortDesc: "Get a test verdict",
-		LongDesc:  "Get details of an invocation test verdict by its invocation ID and test ID. Displays combined retry history and exonerations.",
+		LongDesc: "Get details of an invocation test verdict by a positional URL/ID or by its invocation ID and test ID. Displays combined retry history and exonerations.\n\n" +
+			"Examples:\n" +
+			"  $ luci verdict get https://ci.chromium.org/ui/test-investigate/invocations/build-123/tests/ninja:%2F%2Fchrome%2Ftest/variants/b7de9035241e76cc\n" +
+			"  $ luci verdict get -invocationid build-123 -testid ninja://chrome/test",
 		CommandRun: func() subcommands.CommandRun {
 			r := &verdictGetRun{af: af, maxResults: 10}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
 			r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
@@ -83,6 +90,7 @@ type verdictGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
 	client       pb.ResultDBClient
+	out          io.Writer
 	host         string
 	invocationID string
 	testID       string
@@ -104,18 +112,17 @@ func QueryVerdictResultsAndExonerations(ctx context.Context, client pb.ResultDBC
 }
 
 func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return 0
-		}
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
 	}
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -invocationid and -testid (run 'luci ids <url>' to extract ids)\n")
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
-	if r.invocationID == "" || r.testID == "" {
-		fmt.Fprintf(os.Stderr, "flags -invocationid and -testid are required (run 'luci ids <url>' to extract ids)\n")
+	if target == "" && (r.invocationID == "" || r.testID == "") {
+		fmt.Fprintf(os.Stderr, "flags -invocationid and -testid (or a positional URL/ID) are required\n")
 		return 1
 	}
 
@@ -124,7 +131,7 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 	client := r.client
 	var schemasClient pb.SchemasClient
 	var httpClient *http.Client
-	if client == nil {
+	if client == nil && r.af != nil {
 		if err := r.af.Parse(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 			return 1
@@ -137,6 +144,20 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		}
 	}
 
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, client, nil, target, ids.TargetBindings{
+		InvocationID: &r.invocationID,
+		TestID:       &r.testID,
+		VariantHash:  &r.variantHash,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
+		return 1
+	}
+	if r.invocationID == "" || r.testID == "" {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "flags -invocationid and -testid (or a positional URL/ID containing them) are required")
+		return 1
+	}
+
 	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to query verdict: %s\n", err)
@@ -144,6 +165,9 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 	}
 	format.CacheResolvedInvocation(ctx, resolved)
 	invID, legacy := resolved.ID, resolved.Legacy
+	if extracted != nil {
+		extracted.Legacy = legacy
+	}
 
 	maxFetch := 0
 	if !r.allResults && r.maxResults > 0 {
@@ -167,6 +191,13 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		return 1
 	}
 
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+	extracted.EnrichFromTestResult(verdictResults[0])
+	ids.PrintDerivedIDs(out, extracted)
+
 	vg := &VerdictGroup{
 		Key:          VerdictKey{TestID: verdictResults[0].TestId, VariantHash: r.variantHash},
 		Variant:      verdictResults[0].Variant,
@@ -175,11 +206,11 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		HasMore:      hasMore,
 	}
 
-	printVerdictSummary(ctx, schemasClient, client, httpClient, invID, vg, r.showMetadata, legacy)
+	printVerdictSummary(out, ctx, schemasClient, client, httpClient, invID, vg, r.showMetadata, legacy)
 	return 0
 }
 
-func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rdbClient pb.ResultDBClient, httpClient *http.Client, invID string, g *VerdictGroup, showMetadata, legacy bool) {
+func printVerdictSummary(out io.Writer, ctx context.Context, schemasClient pb.SchemasClient, rdbClient pb.ResultDBClient, httpClient *http.Client, invID string, g *VerdictGroup, showMetadata, legacy bool) {
 	status := g.DisplayStatus()
 
 	var firstRes *pb.TestResult
@@ -191,25 +222,25 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 	if c := format.FormatVerdictCountsInline(aggs.GetInvocation()); c != "" {
 		invLine += " " + c
 	}
-	fmt.Printf("Invocation:   %s\n", invLine)
+	fmt.Fprintf(out, "Invocation:   %s\n", invLine)
 	if firstRes != nil {
-		format.PrintTestIDWithAggregations(ctx, schemasClient, firstRes, aggs)
+		format.FprintTestIDWithAggregations(out, ctx, schemasClient, firstRes, aggs)
 		if firstRes.TestMetadata != nil && firstRes.TestMetadata.Name != "" {
-			fmt.Printf("Test Name:    %s\n", firstRes.TestMetadata.Name)
+			fmt.Fprintf(out, "Test Name:    %s\n", firstRes.TestMetadata.Name)
 		}
 	}
-	fmt.Printf("Status:       %s\n", status)
+	fmt.Fprintf(out, "Status:       %s\n", status)
 	if g.Variant != nil && len(g.Variant.GetDef()) > 0 {
-		fmt.Printf("Variant:      %s\n", format.FormatVariant(g.Variant))
+		fmt.Fprintf(out, "Variant:      %s\n", format.FormatVariant(g.Variant))
 	}
 	if len(g.Exonerations) > 0 {
-		fmt.Printf("Exonerations:\n")
+		fmt.Fprintf(out, "Exonerations:\n")
 		for _, ex := range g.Exonerations {
 			reasonStr := format.StripHTML(ex.ExplanationHtml)
 			if reasonStr == "" {
 				reasonStr = "No explanation provided"
 			}
-			fmt.Printf("  - Reason: %s [%s]\n", reasonStr, ex.Reason)
+			fmt.Fprintf(out, "  - Reason: %s [%s]\n", reasonStr, ex.Reason)
 		}
 	}
 	type groupedRuns struct {
@@ -231,9 +262,9 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 	}
 
 	if g.HasMore {
-		fmt.Printf("Runs (showing %d results, use -all to see all):\n", len(g.Results))
+		fmt.Fprintf(out, "Runs (showing %d results, use -all to see all):\n", len(g.Results))
 	} else {
-		fmt.Printf("Runs (%d):\n", len(g.Results))
+		fmt.Fprintf(out, "Runs (%d):\n", len(g.Results))
 	}
 	for _, grp := range groups {
 		runCountStr := ""
@@ -242,7 +273,7 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 		} else {
 			runCountStr = fmt.Sprintf("%d runs", len(grp.items))
 		}
-		fmt.Printf("- %s (%s):\n", grp.parent.Label, runCountStr)
+		fmt.Fprintf(out, "- %s (%s):\n", grp.parent.Label, runCountStr)
 		if !legacy && grp.parent.ID != "" {
 			modErr, _ := format.DiscoverWorkUnitError(ctx, rdbClient, httpClient, grp.parent.ID)
 			if modErr != nil {
@@ -252,12 +283,12 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 					if truncated {
 						label = "Module Error (truncated):"
 					}
-					fmt.Printf("  %s %s\n", label, firstLine)
+					fmt.Fprintf(out, "  %s %s\n", label, firstLine)
 				}
 			}
 		}
 		for _, tr := range grp.items {
-			fmt.Printf("  - %s (%s) - result_id: %s\n", tr.StatusV2, format.FormatDuration(tr.Duration), tr.ResultId)
+			fmt.Fprintf(out, "  - %s (%s) - result_id: %s\n", tr.StatusV2, format.FormatDuration(tr.Duration), tr.ResultId)
 			if tr.FailureReason != nil {
 				firstLine, truncated := format.FormatFailureReasonFirstLine(tr.FailureReason, 120)
 				if firstLine != "" {
@@ -265,7 +296,7 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 					if truncated {
 						label = "Error (truncated):"
 					}
-					fmt.Printf("    %s %s\n", label, firstLine)
+					fmt.Fprintf(out, "    %s %s\n", label, firstLine)
 				}
 			}
 			if tr.SummaryHtml != "" {
@@ -275,13 +306,13 @@ func printVerdictSummary(ctx context.Context, schemasClient pb.SchemasClient, rd
 					if truncated {
 						label = "Summary (truncated):"
 					}
-					fmt.Printf("    %s %s\n", label, firstLine)
+					fmt.Fprintf(out, "    %s %s\n", label, firstLine)
 				}
 			}
 		}
 	}
 	if showMetadata && len(g.Results) > 0 {
-		fmt.Println()
-		format.PrintAdditionalMetadata(g.Results[0])
+		fmt.Fprintln(out)
+		format.FprintAdditionalMetadata(out, g.Results[0])
 	}
 }

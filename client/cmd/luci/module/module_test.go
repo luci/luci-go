@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/testutil"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -471,6 +472,40 @@ func TestModuleDetails(t *testing.T) {
 				moduleName:   "ModA",
 			}
 			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(1))
+		})
+
+		t.Run(`accepts positional URL and prints derived IDs`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								Id: &pb.TestIdentifierPrefix{
+									Id: &pb.TestIdentifier{ModuleName: "CellBroadcastReceiverMTS"},
+								},
+								ModuleStatus: pb.TestAggregation_FAILED,
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
+									Passed: 5,
+									Failed: 1,
+								},
+							},
+						},
+					}, nil
+				},
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{Name: in.Name}, nil
+				},
+			}
+			cmd := GetCmd(nil)
+			r := cmd.CommandRun().(*moduleGetRun)
+			r.client = client
+			out := testutil.CaptureStdout(func() {
+				rc := r.Run(nil, []string{"rootInvocations/ants-i14600010609614895/workUnits/ants-wu1/tests/:CellBroadcastReceiverMTS!junit:pkg:Cls%23testOne/results/res-1"}, nil)
+				assert.Loosely(t, rc, should.Equal(0))
+			})
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i14600010609614895"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Name:       CellBroadcastReceiverMTS"))
+			assert.Loosely(t, out, should.ContainSubstring("Module:        CellBroadcastReceiverMTS"))
 		})
 	})
 }

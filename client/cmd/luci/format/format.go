@@ -291,38 +291,42 @@ func FormatSummaryHTML(ctx context.Context, rdbClient rdbpb.ResultDBClient, http
 }
 
 func PrintAdditionalMetadata(res *rdbpb.TestResult) {
+	FprintAdditionalMetadata(os.Stdout, res)
+}
+
+func FprintAdditionalMetadata(out io.Writer, res *rdbpb.TestResult) {
 	if tm := res.TestMetadata; tm != nil {
 		if loc := tm.Location; loc != nil {
-			fmt.Printf("Location:  repo: %s, file: %s", loc.Repo, loc.FileName)
+			fmt.Fprintf(out, "Location:  repo: %s, file: %s", loc.Repo, loc.FileName)
 			if loc.Line > 0 {
-				fmt.Printf(", line: %d", loc.Line)
+				fmt.Fprintf(out, ", line: %d", loc.Line)
 			}
-			fmt.Println()
+			fmt.Fprintln(out)
 		}
 		if bc := tm.BugComponent; bc != nil {
 			if bc.GetIssueTracker() != nil {
-				fmt.Printf("Bug Component: issue tracker %d\n", bc.GetIssueTracker().ComponentId)
+				fmt.Fprintf(out, "Bug Component: issue tracker %d\n", bc.GetIssueTracker().ComponentId)
 			} else if bc.GetMonorail() != nil {
-				fmt.Printf("Bug Component: monorail %s/%s\n", bc.GetMonorail().Project, bc.GetMonorail().Value)
+				fmt.Fprintf(out, "Bug Component: monorail %s/%s\n", bc.GetMonorail().Project, bc.GetMonorail().Value)
 			}
 		}
 		if tm.PreviousTestId != "" {
-			fmt.Printf("Prev ID:   %s\n", tm.PreviousTestId)
+			fmt.Fprintf(out, "Prev ID:   %s\n", tm.PreviousTestId)
 		}
 		if tm.Properties != nil {
-			out, _ := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(tm.Properties)
-			fmt.Printf("Metadata Properties:\n%s\n", string(out))
+			b, _ := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(tm.Properties)
+			fmt.Fprintf(out, "Metadata Properties:\n%s\n", string(b))
 		}
 	}
 	if len(res.Tags) > 0 {
-		fmt.Println("Tags:")
+		fmt.Fprintln(out, "Tags:")
 		for _, tag := range res.Tags {
-			fmt.Printf("  %s: %s\n", tag.Key, tag.Value)
+			fmt.Fprintf(out, "  %s: %s\n", tag.Key, tag.Value)
 		}
 	}
 	if res.Properties != nil {
-		out, _ := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(res.Properties)
-		fmt.Printf("Properties:\n%s\n", string(out))
+		b, _ := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(res.Properties)
+		fmt.Fprintf(out, "Properties:\n%s\n", string(b))
 	}
 }
 
@@ -537,12 +541,17 @@ func FormatCompactSize(sizeBytes int64) string {
 
 // PrintFailureReason prints the failure reason error message(s) and stack trace(s).
 func PrintFailureReason(fr *rdbpb.FailureReason, indent string) {
+	FprintFailureReason(os.Stdout, fr, indent)
+}
+
+// FprintFailureReason prints the failure reason error message(s) and stack trace(s) to out.
+func FprintFailureReason(out io.Writer, fr *rdbpb.FailureReason, indent string) {
 	if fr == nil {
 		return
 	}
 	if len(fr.Errors) == 0 {
 		if fr.PrimaryErrorMessage != "" {
-			fmt.Printf("%sError:     %s\n", indent, fr.PrimaryErrorMessage)
+			fmt.Fprintf(out, "%sError:     %s\n", indent, fr.PrimaryErrorMessage)
 		}
 		return
 	}
@@ -563,20 +572,20 @@ func PrintFailureReason(fr *rdbpb.FailureReason, indent string) {
 
 			lines := strings.Split(strings.TrimRight(errMsg, "\n"), "\n")
 			if len(lines) == 1 {
-				fmt.Printf("%s%s\n", prefix, lines[0])
+				fmt.Fprintf(out, "%s%s\n", prefix, lines[0])
 			} else {
-				fmt.Printf("%s\n", strings.TrimRight(prefix, " "))
+				fmt.Fprintf(out, "%s\n", strings.TrimRight(prefix, " "))
 				for _, l := range lines {
-					fmt.Printf("%s  %s\n", indent, l)
+					fmt.Fprintf(out, "%s  %s\n", indent, l)
 				}
 			}
 		}
 
 		if errItem.Trace != "" {
 			traceIndent := indent + "  "
-			fmt.Printf("%sStack Trace:\n", indent)
+			fmt.Fprintf(out, "%sStack Trace:\n", indent)
 			for _, l := range strings.Split(strings.TrimRight(errItem.Trace, "\n"), "\n") {
-				fmt.Printf("%s%s\n", traceIndent, l)
+				fmt.Fprintf(out, "%s%s\n", traceIndent, l)
 			}
 		}
 	}

@@ -17,6 +17,7 @@ package verdict
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -24,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -32,13 +34,16 @@ import (
 
 func ListCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "list -invocationid <invocation_id>",
+		UsageLine: "list [-invocationid <invocation_id>] [<target>]",
 		ShortDesc: "List test verdicts in an invocation",
 		LongDesc: "List test verdicts in an invocation in UI priority order.\n\n" +
 			"By default, only failed or execution errored verdicts are printed, up to 100.\n" +
 			"Flags can be used to include other verdict statuses (e.g. -flaky, -exonerated, -passed, -all-statuses),\n" +
 			"filter by module or test substring (-modulename, -filter), and list more than 100 results (-max-verdicts 200, -all).\n\n" +
-			"Works with both root invocations and legacy invocations.",
+			"Works with both root invocations and legacy invocations.\n\n" +
+			"Examples:\n" +
+			"  $ luci verdict list https://ci.chromium.org/ui/b/8765432109876543210\n" +
+			"  $ luci verdict list -invocationid build-123",
 		CommandRun: func() subcommands.CommandRun {
 			r := &verdictListRun{af: af, maxVerdicts: 100}
 			if r.af != nil {
@@ -75,6 +80,7 @@ type verdictListRun struct {
 	subcommands.CommandRunBase
 	af                *base.AuthFlags
 	client            pb.ResultDBClient
+	out               io.Writer
 	host              string
 	invocationID      string
 	moduleName        string
@@ -517,30 +523,30 @@ func QueryVerdictList(ctx context.Context, client pb.ResultDBClient, invID strin
 	return QueryRootInvocationListedVerdicts(ctx, client, invID, filter, maxVerdicts)
 }
 
-func printListedVerdicts(invID string, verdicts []*ListedVerdict, hasMore bool, isDefaultFilter bool) {
+func printListedVerdicts(out io.Writer, invID string, verdicts []*ListedVerdict, hasMore bool, isDefaultFilter bool) {
 	if len(verdicts) == 0 {
 		if isDefaultFilter {
-			fmt.Printf("No failed or execution errored verdicts found in invocation %q (use -all-statuses or status flags to see other verdicts)\n", invID)
+			fmt.Fprintf(out, "No failed or execution errored verdicts found in invocation %q (use -all-statuses or status flags to see other verdicts)\n", invID)
 		} else {
-			fmt.Printf("No matching verdicts found in invocation %q\n", invID)
+			fmt.Fprintf(out, "No matching verdicts found in invocation %q\n", invID)
 		}
 		return
 	}
 
 	if hasMore {
-		fmt.Printf("Verdicts (showing %d, use -max-verdicts or -all to see more):\n", len(verdicts))
+		fmt.Fprintf(out, "Verdicts (showing %d, use -max-verdicts or -all to see more):\n", len(verdicts))
 	} else {
-		fmt.Printf("Verdicts (%d):\n", len(verdicts))
+		fmt.Fprintf(out, "Verdicts (%d):\n", len(verdicts))
 	}
 
 	for _, v := range verdicts {
-		fmt.Printf("- %s %s\n", v.Status, v.TestID)
+		fmt.Fprintf(out, "- %s %s\n", v.Status, v.TestID)
 		if v.Variant != nil && len(v.Variant.GetDef()) > 0 {
 			varStr := format.FormatVariant(v.Variant)
 			if v.VariantHash != "" {
-				fmt.Printf("    Variant: %s (hash: %s)\n", varStr, v.VariantHash)
+				fmt.Fprintf(out, "    Variant: %s (hash: %s)\n", varStr, v.VariantHash)
 			} else {
-				fmt.Printf("    Variant: %s\n", varStr)
+				fmt.Fprintf(out, "    Variant: %s\n", varStr)
 			}
 		}
 		if v.FailureReason != "" {
@@ -548,16 +554,16 @@ func printListedVerdicts(invID string, verdicts []*ListedVerdict, hasMore bool, 
 			if v.FailureReasonTruncated {
 				label = "Error (truncated):"
 			}
-			fmt.Printf("    %s %s\n", label, v.FailureReason)
+			fmt.Fprintf(out, "    %s %s\n", label, v.FailureReason)
 		}
 		if len(v.Exonerations) > 0 {
 			for _, ex := range v.Exonerations {
 				reasonStr := format.StripHTML(ex.ExplanationHtml)
 				if reasonStr != "" {
 					reasonStr, _ = format.TruncateFirstLine(reasonStr, 120)
-					fmt.Printf("    Exoneration: %s [%s]\n", reasonStr, ex.Reason)
+					fmt.Fprintf(out, "    Exoneration: %s [%s]\n", reasonStr, ex.Reason)
 				} else if ex.Reason != pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED {
-					fmt.Printf("    Exoneration: [%s]\n", ex.Reason)
+					fmt.Fprintf(out, "    Exoneration: [%s]\n", ex.Reason)
 				}
 			}
 		}
@@ -565,18 +571,17 @@ func printListedVerdicts(invID string, verdicts []*ListedVerdict, hasMore bool, 
 }
 
 func (r *verdictListRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return 0
-		}
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
 	}
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flag -invocationid (run 'luci ids <url>' to extract ids)\n")
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
-	if r.invocationID == "" {
-		fmt.Fprintf(os.Stderr, "flag -invocationid is required (run 'luci ids <url>' to extract ids)\n")
+	if target == "" && r.invocationID == "" {
+		fmt.Fprintf(os.Stderr, "flag -invocationid (or a positional URL/ID) is required\n")
 		return 1
 	}
 	if r.maxVerdicts < 0 {
@@ -589,13 +594,11 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
-	filter.moduleName = strings.TrimSpace(r.moduleName)
-	filter.containsFilter = strings.TrimSpace(r.filter)
 
 	ctx := cli.GetContext(a, r, env)
 	ctx = format.WithDiscoveryCache(ctx)
 	client := r.client
-	if client == nil {
+	if client == nil && r.af != nil {
 		if err := r.af.Parse(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 			return 1
@@ -607,6 +610,21 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 		}
 	}
 
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, client, nil, target, ids.TargetBindings{
+		InvocationID: &r.invocationID,
+		ModuleName:   &r.moduleName,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
+		return 1
+	}
+	if r.invocationID == "" {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "flag -invocationid (or a positional URL/ID containing an invocation ID) is required")
+		return 1
+	}
+	filter.moduleName = strings.TrimSpace(r.moduleName)
+	filter.containsFilter = strings.TrimSpace(r.filter)
+
 	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to list verdicts: %s\n", err)
@@ -614,6 +632,9 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 	}
 	format.CacheResolvedInvocation(ctx, resolved)
 	invID, legacy := resolved.ID, resolved.Legacy
+	if extracted != nil {
+		extracted.Legacy = legacy
+	}
 
 	maxVerdicts := r.maxVerdicts
 	if r.allVerdicts {
@@ -626,6 +647,11 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 
-	printListedVerdicts(invID, verdicts, hasMore, filter.IsDefault())
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+	ids.PrintDerivedIDs(out, extracted)
+	printListedVerdicts(out, invID, verdicts, hasMore, filter.IsDefault())
 	return 0
 }

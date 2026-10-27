@@ -15,6 +15,7 @@
 package verdict
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -55,6 +56,10 @@ func (m *mockAggResultDBClient) GetWorkUnit(ctx context.Context, in *pb.GetWorkU
 
 func (m *mockAggResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
 	return &pb.RootInvocation{Name: in.Name}, nil
+}
+
+func (m *mockAggResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+	return &pb.Invocation{Name: in.Name}, nil
 }
 
 func (m *mockAggResultDBClient) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
@@ -147,9 +152,9 @@ func TestPrintVerdictSummaryWithAggregations(t *testing.T) {
 			},
 		}
 
-		out := captureStdout(func() {
-			printVerdictSummary(ctx, &mockSchemasClient{}, client, nil, "ants-i85300010634749400", vg, false, false)
-		})
+		var buf bytes.Buffer
+		printVerdictSummary(&buf, ctx, &mockSchemasClient{}, client, nil, "ants-i85300010634749400", vg, false, false)
+		out := buf.String()
 
 		assert.Loosely(t, out, should.ContainSubstring("Invocation:   ants-i85300010634749400 [312 failed, 4498 passed]"))
 		assert.Loosely(t, out, should.ContainSubstring("Module (JUnit): VtsAidlKeyMintTargetTest [245 failed, 218 passed, 7 skipped]"))
@@ -227,7 +232,51 @@ func TestCmdVerdict(t *testing.T) {
 
 		getCmd := GetCmd(nil)
 		assert.Loosely(t, getCmd, should.NotBeNil)
-		assert.Loosely(t, getCmd.UsageLine, should.Equal("get -invocationid <invocation_id> -testid <test_id> [-varianthash <hash>]"))
+		assert.Loosely(t, getCmd.UsageLine, should.Equal("get [-invocationid <invocation_id> -testid <test_id>] [-varianthash <hash>] [<target>]"))
+
+		t.Run(`verdictGetRun accepts positional verdict URL and prints derived IDs`, func(t *ftt.Test) {
+			client := &mockAggResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: ":ModA!junit:pkg:Cls#testOne",
+								TestIdStructured: &pb.TestIdentifier{
+									ModuleName:        "ModA",
+									ModuleScheme:      "junit",
+									ModuleVariantHash: "vhash1",
+									CoarseName:        "pkg",
+									FineName:          "Cls",
+									CaseName:          "testOne",
+								},
+								Results: []*pb.TestResult{
+									{
+										Name:        "rootInvocations/ants-i123/workUnits/wu-1/tests/:ModA!junit:pkg:Cls%23testOne/results/res-1",
+										TestId:      ":ModA!junit:pkg:Cls#testOne",
+										ResultId:    "res-1",
+										VariantHash: "vhash1",
+										StatusV2:    pb.TestResult_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			var buf bytes.Buffer
+			run := getCmd.CommandRun().(*verdictGetRun)
+			run.client = client
+			run.out = &buf
+			rc := run.Run(nil, []string{"rootInvocations/ants-i123/workUnits/wu-1/tests/:ModA!junit:pkg:Cls%23testOne/results/res-1"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i123"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Name:       ModA"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      wu-1"))
+			assert.Loosely(t, out, should.ContainSubstring("Test ID:           :ModA!junit:pkg:Cls#testOne"))
+			assert.Loosely(t, out, should.ContainSubstring("Result ID:         res-1"))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation:   ants-i123"))
+		})
 	})
 }
 

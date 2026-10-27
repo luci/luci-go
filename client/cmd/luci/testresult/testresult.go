@@ -17,6 +17,7 @@ package testresult
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -25,6 +26,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
@@ -61,12 +63,17 @@ func (r *testResultRun) Run(a subcommands.Application, args []string, env subcom
 
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get -invocationid <invocation_id> -testid <test_id> -resultid <result_id>",
+		UsageLine: "get [-invocationid <invocation_id> -testid <test_id> -resultid <result_id>] [<target>]",
 		ShortDesc: "Get a test result",
-		LongDesc:  "Get details of an individual test result by its invocation ID, test ID, and result ID.",
+		LongDesc: "Get details of an individual test result by a positional URL/ID or by its invocation ID, test ID, and result ID.\n\n" +
+			"Examples:\n" +
+			"  $ luci test-result get rootInvocations/ants-i123/workUnits/wu-1/tests/:ModA!junit:pkg:Cls%23testOne/results/res-1\n" +
+			"  $ luci test-result get -invocationid build-123 -testid ninja://chrome/test -resultid 0",
 		CommandRun: func() subcommands.CommandRun {
 			r := &testResultGetRun{af: af}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
 			r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
@@ -83,6 +90,7 @@ type testResultGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
 	client       pb.ResultDBClient
+	out          io.Writer
 	host         string
 	invocationID string
 	testID       string
@@ -106,18 +114,17 @@ func FetchTestResult(ctx context.Context, client pb.ResultDBClient, invID, testI
 }
 
 func (r *testResultGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return 0
-		}
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
 	}
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -invocationid, -testid, -resultid (run 'luci ids <url>' to extract ids)\n")
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
-	if r.invocationID == "" || r.testID == "" || r.resultID == "" {
-		fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, and -resultid are required (run 'luci ids <url>' to extract ids)\n")
+	if target == "" && (r.invocationID == "" || r.testID == "" || r.resultID == "") {
+		fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, and -resultid (or a positional URL/ID) are required\n")
 		return 1
 	}
 	ctx := cli.GetContext(a, r, env)
@@ -125,7 +132,7 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 	client := r.client
 	var schemasClient pb.SchemasClient
 	var httpClient *http.Client
-	if client == nil {
+	if client == nil && r.af != nil {
 		if err := r.af.Parse(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 			return 1
@@ -138,6 +145,20 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		}
 	}
 
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, client, nil, target, ids.TargetBindings{
+		InvocationID: &r.invocationID,
+		TestID:       &r.testID,
+		ResultID:     &r.resultID,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
+		return 1
+	}
+	if r.invocationID == "" || r.testID == "" || r.resultID == "" {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "flags -invocationid, -testid, and -resultid (or a positional URL/ID containing them) are required")
+		return 1
+	}
+
 	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get test result: %s\n", err)
@@ -145,6 +166,9 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 	}
 	format.CacheResolvedInvocation(ctx, resolved)
 	invID, legacy := resolved.ID, resolved.Legacy
+	if extracted != nil {
+		extracted.Legacy = legacy
+	}
 
 	res, err := FetchTestResult(ctx, client, invID, r.testID, r.resultID, legacy)
 	if err != nil {
@@ -152,23 +176,33 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		return 1
 	}
 
-	r.printTestResult(ctx, client, schemasClient, httpClient, invID, res, legacy)
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+	extracted.EnrichFromTestResult(res)
+	ids.PrintDerivedIDs(out, extracted)
+
+	r.printTestResult(ctx, out, client, schemasClient, httpClient, invID, res, legacy)
 	return 0
 }
 
-func (r *testResultGetRun) printTestResult(ctx context.Context, client pb.ResultDBClient, schemasClient pb.SchemasClient, httpClient *http.Client, invID string, res *pb.TestResult, legacy bool) {
+func (r *testResultGetRun) printTestResult(ctx context.Context, out io.Writer, client pb.ResultDBClient, schemasClient pb.SchemasClient, httpClient *http.Client, invID string, res *pb.TestResult, legacy bool) {
+	if out == nil {
+		out = os.Stdout
+	}
 	aggs := verdict.FetchHierarchyAggregations(ctx, client, invID, res, legacy)
 	if c := format.FormatVerdictCountsInline(aggs.GetInvocation()); c != "" {
-		fmt.Printf("Invocation: %s %s\n", invID, c)
+		fmt.Fprintf(out, "Invocation: %s %s\n", invID, c)
 	}
-	fmt.Printf("Result ID: %s\n", res.ResultId)
-	format.PrintTestIDWithAggregations(ctx, schemasClient, res, aggs)
+	fmt.Fprintf(out, "Result ID: %s\n", res.ResultId)
+	format.FprintTestIDWithAggregations(out, ctx, schemasClient, res, aggs)
 	if res.TestMetadata != nil && res.TestMetadata.Name != "" {
-		fmt.Printf("Test Name: %s\n", res.TestMetadata.Name)
+		fmt.Fprintf(out, "Test Name: %s\n", res.TestMetadata.Name)
 	}
 	pg := format.GetParentGroup(res.Name)
 	if pg.Label != "" {
-		fmt.Printf("Run in:    %s\n", pg.Label)
+		fmt.Fprintf(out, "Run in:    %s\n", pg.Label)
 		if !legacy && pg.ID != "" {
 			modErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, pg.ID)
 			if modErr != nil {
@@ -178,43 +212,43 @@ func (r *testResultGetRun) printTestResult(ctx context.Context, client pb.Result
 					if truncated {
 						label = "Module Error (truncated):"
 					}
-					fmt.Printf("  %s %s\n", label, firstLine)
+					fmt.Fprintf(out, "  %s %s\n", label, firstLine)
 				}
 			}
 		}
 	}
-	printVerdictContext(ctx, client, invID, res, legacy)
+	printVerdictContext(ctx, out, client, invID, res, legacy)
 	if res.Variant != nil && len(res.Variant.GetDef()) > 0 {
-		fmt.Printf("Variant:   %s\n", format.FormatVariant(res.Variant))
+		fmt.Fprintf(out, "Variant:   %s\n", format.FormatVariant(res.Variant))
 	}
-	fmt.Printf("Status:    %s\n", res.StatusV2)
-	fmt.Printf("Duration:  %s\n", format.FormatDuration(res.Duration))
+	fmt.Fprintf(out, "Status:    %s\n", res.StatusV2)
+	fmt.Fprintf(out, "Duration:  %s\n", format.FormatDuration(res.Duration))
 	if res.FailureReason != nil {
-		format.PrintFailureReason(res.FailureReason, "")
+		format.FprintFailureReason(out, res.FailureReason, "")
 	}
 	if res.SummaryHtml != "" {
-		fmt.Printf("Summary:\n%s\n", format.FormatSummaryHTML(ctx, client, httpClient, res.Name, res.SummaryHtml))
+		fmt.Fprintf(out, "Summary:\n%s\n", format.FormatSummaryHTML(ctx, client, httpClient, res.Name, res.SummaryHtml))
 	}
 	if r.showMetadata {
-		fmt.Println()
-		fmt.Printf("Full Name: %s\n", res.Name)
-		format.PrintAdditionalMetadata(res)
+		fmt.Fprintln(out)
+		fmt.Fprintf(out, "Full Name: %s\n", res.Name)
+		format.FprintAdditionalMetadata(out, res)
 	}
 	if arts, err := artifact.QueryAllArtifacts(ctx, client, res.Name); err == nil {
 		if len(arts) > 0 {
-			fmt.Printf("Artifact Count: %d (run 'luci test-result artifact list -invocationid %s -testid %q -resultid %s' to view)\n", len(arts), invID, res.TestId, res.ResultId)
+			fmt.Fprintf(out, "Artifact Count: %d (run 'luci test-result artifact list -invocationid %s -testid %q -resultid %s' to view)\n", len(arts), invID, res.TestId, res.ResultId)
 		} else {
-			fmt.Printf("Artifact Count: 0\n")
+			fmt.Fprintf(out, "Artifact Count: 0\n")
 		}
 	}
 	if legacy {
-		artifact.PrintImmediateParentInvocationNotice(ctx, client, res.Name, os.Stdout)
+		artifact.PrintImmediateParentInvocationNotice(ctx, client, res.Name, out)
 	} else {
-		artifact.PrintAncestorWorkUnitNotices(ctx, client, res.Name, artifact.ParentTypeTestResult, os.Stdout)
+		artifact.PrintAncestorWorkUnitNotices(ctx, client, res.Name, artifact.ParentTypeTestResult, out)
 	}
 }
 
-func printVerdictContext(ctx context.Context, rdbClient pb.ResultDBClient, invID string, res *pb.TestResult, legacy bool) {
+func printVerdictContext(ctx context.Context, out io.Writer, rdbClient pb.ResultDBClient, invID string, res *pb.TestResult, legacy bool) {
 	verdictResults, exList, _, err := verdict.QueryVerdictResultsAndExonerations(ctx, rdbClient, invID, res.TestId, res.VariantHash, legacy, 1000)
 	if err != nil || (len(verdictResults) <= 1 && len(exList) == 0) {
 		return
@@ -223,5 +257,5 @@ func printVerdictContext(ctx context.Context, rdbClient pb.ResultDBClient, invID
 	vg := &verdict.VerdictGroup{Results: verdictResults, Exonerations: exList}
 	verdictStatus := vg.DisplayStatus()
 
-	fmt.Printf("Verdict:   One of %d results in this verdict (overall status: %s)\n", len(verdictResults), verdictStatus)
+	fmt.Fprintf(out, "Verdict:   One of %d results in this verdict (overall status: %s)\n", len(verdictResults), verdictStatus)
 }

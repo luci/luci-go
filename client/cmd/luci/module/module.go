@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -60,10 +61,11 @@ func (r *moduleRun) Run(a subcommands.Application, args []string, env subcommand
 // GetCmd returns the subcommand for `luci module get`.
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get -invocationid <invocation_id> -modulename <module_name>",
+		UsageLine: "get [-invocationid <invocation_id> -modulename <module_name>] [<target>]",
 		ShortDesc: "Get module status, verdict counts, and shard errors",
 		LongDesc: "Get details and shard execution status for a specific test module within a root invocation.\n\n" +
-			"Example:\n" +
+			"Examples:\n" +
+			"  $ luci module get https://ci.chromium.org/ui/inv/ants-i14600010609614895/modules/CellBroadcastReceiverMTS\n" +
 			"  $ luci module get -invocationid ants-i14600010609614895 -modulename CellBroadcastReceiverMTS",
 		CommandRun: func() subcommands.CommandRun {
 			r := &moduleGetRun{af: af}
@@ -93,18 +95,17 @@ type moduleGetRun struct {
 }
 
 func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return 0
-		}
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
 	}
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -invocationid and -modulename (run 'luci ids <url>' to extract ids)\n")
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
-	if r.invocationID == "" || r.moduleName == "" {
-		fmt.Fprintf(os.Stderr, "flags -invocationid and -modulename are required (run 'luci ids <url>' to extract ids)\n")
+	if target == "" && (r.invocationID == "" || r.moduleName == "") {
+		fmt.Fprintf(os.Stderr, "flags -invocationid and -modulename (or a positional URL/ID) are required\n")
 		return 1
 	}
 
@@ -112,7 +113,7 @@ func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcomm
 	ctx = format.WithDiscoveryCache(ctx)
 	client := r.client
 	var httpClient *http.Client
-	if client == nil {
+	if client == nil && r.af != nil {
 		if err := r.af.Parse(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 			return 1
@@ -123,6 +124,19 @@ func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcomm
 			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
 			return 1
 		}
+	}
+
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, client, nil, target, ids.TargetBindings{
+		InvocationID: &r.invocationID,
+		ModuleName:   &r.moduleName,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
+		return 1
+	}
+	if r.invocationID == "" || r.moduleName == "" {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "flags -invocationid and -modulename (or a positional URL/ID containing them) are required")
+		return 1
 	}
 
 	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
@@ -143,6 +157,7 @@ func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcomm
 	}
 
 	if r.jsonOut {
+		ids.PrintDerivedIDs(os.Stderr, extracted)
 		data, err := json.MarshalIndent(modDetails, "", "  ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to marshal JSON: %s\n", err)
@@ -151,6 +166,8 @@ func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcomm
 		fmt.Println(string(data))
 		return 0
 	}
+
+	ids.PrintDerivedIDs(os.Stdout, extracted)
 
 	printModuleDetails(modDetails, r.showMetadata)
 	return 0

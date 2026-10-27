@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -66,9 +67,12 @@ func (r *workUnitRun) Run(a subcommands.Application, args []string, env subcomma
 // GetCmd returns the `luci work-unit get` subcommand.
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get -invocationid <invocation_id> -workunitid <work_unit_id>",
+		UsageLine: "get [-invocationid <invocation_id> -workunitid <work_unit_id>] [<target>]",
 		ShortDesc: "Get a work unit",
-		LongDesc:  "Get details of a work unit by its root invocation ID and work unit ID.",
+		LongDesc: "Get details of a work unit by a positional URL/ID or by its root invocation ID and work unit ID.\n\n" +
+			"Examples:\n" +
+			"  $ luci work-unit get rootInvocations/ants-i77100010600769898/workUnits/ants-wu123\n" +
+			"  $ luci work-unit get -invocationid build-123 -workunitid run-tests",
 		CommandRun: func() subcommands.CommandRun {
 			r := &workUnitGetRun{af: af}
 			if r.af != nil {
@@ -103,18 +107,17 @@ func (r *workUnitGetRun) ModifyContext(ctx context.Context) context.Context {
 }
 
 func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return 0
-		}
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
 	}
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -invocationid and -workunitid (run 'luci ids <url>' to extract ids)\n")
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
-	if r.invocationID == "" || r.workUnitID == "" {
-		fmt.Fprintf(os.Stderr, "flags -invocationid and -workunitid are required (run 'luci ids <url>' to extract ids)\n")
+	if target == "" && (r.invocationID == "" || r.workUnitID == "") {
+		fmt.Fprintf(os.Stderr, "flags -invocationid and -workunitid (or a positional URL/ID) are required\n")
 		return 1
 	}
 
@@ -122,7 +125,7 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	ctx = format.WithDiscoveryCache(ctx)
 	client := r.client
 	var httpClient *http.Client
-	if client == nil {
+	if client == nil && r.af != nil {
 		if err := r.af.Parse(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 			return 1
@@ -136,6 +139,20 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	}
 	if r.af != nil && r.af.ParsedOpts != nil {
 		ctx = base.WithAuthOptions(ctx, *r.af.ParsedOpts)
+	}
+
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, client, nil, target, ids.TargetBindings{
+		InvocationID:           &r.invocationID,
+		WorkUnitID:             &r.workUnitID,
+		DefaultRootForWorkUnit: true,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
+		return 1
+	}
+	if r.invocationID == "" || r.workUnitID == "" {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "flags -invocationid and -workunitid (or a positional URL/ID containing them) are required")
+		return 1
 	}
 
 	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
@@ -195,7 +212,10 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 
-	if wu.WorkUnitId != "" {
+	extracted.EnrichFromWorkUnit(wu)
+	ids.PrintDerivedIDs(os.Stdout, extracted)
+
+	if wu.WorkUnitId != "" && (extracted == nil || extracted.WorkUnitID == "") {
 		fmt.Printf("Work Unit ID: %s\n", wu.WorkUnitId)
 	}
 	if wu.Parent != "" {

@@ -17,9 +17,6 @@ package verdict
 import (
 	"bytes"
 	"context"
-	"io"
-	"os"
-	"sync"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -68,33 +65,13 @@ func (m *mockListResultDBClient) QueryTestVariants(ctx context.Context, in *pb.Q
 	return &pb.QueryTestVariantsResponse{}, nil
 }
 
-var stdoutMu sync.Mutex
-
-func captureStdout(fn func()) string {
-	stdoutMu.Lock()
-	defer stdoutMu.Unlock()
-	r, w, _ := os.Pipe()
-	old := os.Stdout
-	os.Stdout = w
-	outC := make(chan string)
-	go func() {
-		var buf bytes.Buffer
-		_, _ = io.Copy(&buf, r)
-		outC <- buf.String()
-	}()
-	fn()
-	w.Close()
-	os.Stdout = old
-	return <-outC
-}
-
 func TestListCmd(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`ListCmd`, t, func(t *ftt.Test) {
 		cmd := ListCmd(nil)
 		assert.Loosely(t, cmd, should.NotBeNil)
-		assert.Loosely(t, cmd.UsageLine, should.Equal("list -invocationid <invocation_id>"))
+		assert.Loosely(t, cmd.UsageLine, should.Equal("list [-invocationid <invocation_id>] [<target>]"))
 		assert.Loosely(t, cmd.ShortDesc, should.Equal("List test verdicts in an invocation"))
 
 		run := cmd.CommandRun().(*verdictListRun)
@@ -385,9 +362,9 @@ func TestPrintListedVerdicts(t *testing.T) {
 
 	ftt.Run(`printListedVerdicts`, t, func(t *ftt.Test) {
 		t.Run(`empty with default filter`, func(t *ftt.Test) {
-			out := captureStdout(func() {
-				printListedVerdicts("build-123", nil, false, true)
-			})
+			var buf bytes.Buffer
+			printListedVerdicts(&buf, "build-123", nil, false, true)
+			out := buf.String()
 			assert.Loosely(t, out, should.ContainSubstring("No failed or execution errored verdicts found in invocation \"build-123\""))
 			assert.Loosely(t, out, should.ContainSubstring("-all-statuses"))
 		})
@@ -418,9 +395,9 @@ func TestPrintListedVerdicts(t *testing.T) {
 				},
 			}
 
-			out := captureStdout(func() {
-				printListedVerdicts("build-123", verdicts, true, false)
-			})
+			var buf bytes.Buffer
+			printListedVerdicts(&buf, "build-123", verdicts, true, false)
+			out := buf.String()
 			assert.Loosely(t, out, should.ContainSubstring("Verdicts (showing 2, use -max-verdicts or -all to see more):"))
 			assert.Loosely(t, out, should.ContainSubstring("- FAILED :no-module-name!junit:pkg.Class#testA"))
 			assert.Loosely(t, out, should.ContainSubstring("Error (truncated): keymint_test.cc:154: Expected ErrorCode::OK"))
@@ -450,15 +427,15 @@ func TestVerdictListRunAutoDetect(t *testing.T) {
 					return &pb.QueryTestVariantsResponse{}, nil
 				},
 			}
+			var buf bytes.Buffer
 			run := &verdictListRun{
 				client:       client,
+				out:          &buf,
 				invocationID: "8697111068122866129",
 				maxVerdicts:  10,
 			}
-			_ = captureStdout(func() {
-				rc := run.Run(nil, nil, nil)
-				assert.Loosely(t, rc, should.Equal(0))
-			})
+			rc := run.Run(nil, nil, nil)
+			assert.Loosely(t, rc, should.Equal(0))
 			assert.Loosely(t, legacyQueried, should.BeTrue)
 		})
 
@@ -473,14 +450,45 @@ func TestVerdictListRunAutoDetect(t *testing.T) {
 					return &pb.QueryTestVariantsResponse{}, nil
 				},
 			}
+			var buf bytes.Buffer
 			run := &verdictListRun{
 				client:       client,
+				out:          &buf,
 				invocationID: "build-123",
 				maxVerdicts:  10,
 			}
 			rc := run.Run(nil, nil, nil)
 			assert.Loosely(t, rc, should.Equal(1))
 			assert.Loosely(t, legacyQueried, should.BeFalse)
+		})
+
+		t.Run(`accepts positional URL and prints derived IDs`, func(t *ftt.Test) {
+			var gotParent string
+			client := &mockListResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					gotParent = in.Parent
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: ":ModA!junit:pkg:Cls#testOne",
+								Status: pb.TestVerdict_FAILED,
+							},
+						},
+					}, nil
+				},
+			}
+			var buf bytes.Buffer
+			cmd := ListCmd(nil)
+			run := cmd.CommandRun().(*verdictListRun)
+			run.client = client
+			run.out = &buf
+			rc := run.Run(nil, []string{"https://ci.chromium.org/ui/p/chromium/builders/try/linux-rel/b8765432109876543210"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, gotParent, should.Equal("rootInvocations/build-8765432109876543210"))
+			assert.Loosely(t, out, should.ContainSubstring("Build ID:          8765432109876543210"))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     build-8765432109876543210"))
+			assert.Loosely(t, out, should.ContainSubstring("- FAILED :ModA!junit:pkg:Cls#testOne"))
 		})
 	})
 }

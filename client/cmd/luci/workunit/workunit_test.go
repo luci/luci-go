@@ -15,14 +15,10 @@
 package workunit
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"sync"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -30,62 +26,12 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/testutil"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
-
-var stdMu sync.Mutex
-
-func captureOutput(fn func()) (stdout, stderr string) {
-	stdMu.Lock()
-	defer stdMu.Unlock()
-	rOut, wOut, _ := os.Pipe()
-	rErr, wErr, _ := os.Pipe()
-	oldOut := os.Stdout
-	oldErr := os.Stderr
-	os.Stdout = wOut
-	os.Stderr = wErr
-
-	defer func() {
-		os.Stdout = oldOut
-		os.Stderr = oldErr
-	}()
-
-	outC := make(chan string, 1)
-	errC := make(chan string, 1)
-	go func() {
-		var buf bytes.Buffer
-		_, _ = io.Copy(&buf, rOut)
-		outC <- buf.String()
-	}()
-	go func() {
-		var buf bytes.Buffer
-		_, _ = io.Copy(&buf, rErr)
-		errC <- buf.String()
-	}()
-
-	func() {
-		defer func() {
-			_ = wOut.Close()
-			_ = wErr.Close()
-		}()
-		fn()
-	}()
-
-	return <-outC, <-errC
-}
-
-func captureStdout(fn func()) string {
-	out, _ := captureOutput(fn)
-	return out
-}
-
-func captureStderr(fn func()) string {
-	_, err := captureOutput(fn)
-	return err
-}
 
 type mockWorkUnitResultDBClient struct {
 	pb.ResultDBClient
@@ -131,7 +77,7 @@ func TestCmdWorkUnit(t *testing.T) {
 
 		getCmd := GetCmd(nil)
 		assert.Loosely(t, getCmd, should.NotBeNil)
-		assert.Loosely(t, getCmd.UsageLine, should.Equal("get -invocationid <invocation_id> -workunitid <work_unit_id>"))
+		assert.Loosely(t, getCmd.UsageLine, should.Equal("get [-invocationid <invocation_id> -workunitid <work_unit_id>] [<target>]"))
 
 		t.Run(`rejects legacy invocation`, func(t *ftt.Test) {
 			r := &workUnitGetRun{
@@ -206,7 +152,7 @@ func TestCmdWorkUnit(t *testing.T) {
 				workUnitID:   "build-root",
 			}
 
-			out := captureStdout(func() {
+			out := testutil.CaptureStdout(func() {
 				assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
 			})
 
@@ -328,7 +274,7 @@ func TestCmdWorkUnit(t *testing.T) {
 			var exitCode int
 			var stdoutStr, stderrStr string
 
-			stdoutStr, stderrStr = captureOutput(func() {
+			stdoutStr, stderrStr = testutil.CaptureOutput(func() {
 				exitCode = r.Run(nil, nil, nil)
 			})
 
@@ -360,7 +306,7 @@ func TestCmdWorkUnit(t *testing.T) {
 			}
 
 			var exitCode int
-			stderrStr := captureStderr(func() {
+			stderrStr := testutil.CaptureStderr(func() {
 				exitCode = r.Run(nil, nil, nil)
 			})
 
@@ -370,6 +316,33 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, stderrStr, should.ContainSubstring("luci ids <TR_ID_or_ATI_URL>"))
 			assert.Loosely(t, stderrStr, should.ContainSubstring("luci verdict list -invocationid=ants-i71400010624864031"))
 			assert.Loosely(t, stderrStr, should.ContainSubstring("luci artifact list -invocationid=ants-i71400010624864031"))
+		})
+
+		t.Run(`accepts positional work unit resource name and prints derived IDs`, func(t *ftt.Test) {
+			var gotName string
+			client := &mockWorkUnitResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					gotName = in.Name
+					return &pb.WorkUnit{
+						Name:            in.Name,
+						WorkUnitId:      "ants-wu123",
+						State:           pb.WorkUnit_SUCCEEDED,
+						SummaryMarkdown: "ok",
+						ModuleId:        &pb.ModuleIdentifier{ModuleName: "ModA", ModuleScheme: "junit"},
+					}, nil
+				},
+			}
+			r := getCmd.CommandRun().(*workUnitGetRun)
+			r.client = client
+			out := testutil.CaptureStdout(func() {
+				rc := r.Run(nil, []string{"rootInvocations/ants-i77100010600769898/workUnits/ants-wu123"}, nil)
+				assert.Loosely(t, rc, should.Equal(0))
+			})
+			assert.Loosely(t, gotName, should.Equal("rootInvocations/ants-i77100010600769898/workUnits/ants-wu123"))
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i77100010600769898"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Name:       ModA"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      ants-wu123"))
+			assert.Loosely(t, out, should.NotContainSubstring("Work Unit ID: ants-wu123"))
 		})
 	})
 }
