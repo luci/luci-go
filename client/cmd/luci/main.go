@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/build"
 	"go.chromium.org/luci/client/cmd/luci/ids"
+	"go.chromium.org/luci/client/cmd/luci/invocation"
 	"go.chromium.org/luci/client/cmd/luci/module"
 	"go.chromium.org/luci/client/cmd/luci/testresult"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
@@ -57,7 +58,8 @@ func getApplication() *cli.Application {
 			"     $ luci build list -builder \"chromium/ci/Linux UBSan Tests\" -n 5\n" +
 			"     $ luci build get -buildid 8738491827364512345\n" +
 			"     $ luci build log tail -buildid 8738491827364512345 -step compile -n 50\n\n" +
-			"  4. List test verdicts in an invocation:\n" +
+			"  4. Inspect an invocation's build, branch, target, sources, and test verdicts:\n" +
+			"     $ luci invocation get -invocationid ants-i123\n" +
 			"     $ luci verdict list -invocationid build-123\n\n" +
 			"  5. Inspect a module and its shards/errors:\n" +
 			"     $ luci module get -invocationid ants-i123 -modulename CellBroadcastReceiverMTS\n\n" +
@@ -81,6 +83,7 @@ func getApplication() *cli.Application {
 			analysis.Cmd(af),
 			artifact.Cmd(af),
 			build.Cmd(af),
+			invocation.Cmd(af),
 			module.Cmd(af),
 			testresult.Cmd(af),
 			verdict.Cmd(af),

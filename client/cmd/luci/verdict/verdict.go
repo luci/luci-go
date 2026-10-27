@@ -311,8 +311,17 @@ func printVerdictSummary(out io.Writer, ctx context.Context, schemasClient pb.Sc
 			}
 		}
 	}
-	if showMetadata && len(g.Results) > 0 {
-		fmt.Fprintln(out)
-		format.FprintAdditionalMetadata(out, g.Results[0])
+	if showMetadata {
+		if len(g.Results) > 0 {
+			fmt.Fprintln(out)
+			format.FprintAdditionalMetadata(out, g.Results[0])
+		}
+		if !legacy {
+			if rootInv := format.FetchRootInvocation(ctx, rdbClient, invID); rootInv != nil {
+				fmt.Fprintln(out)
+				format.FprintRootInvocationMetadata(out, rootInv)
+				format.FprintRootInvocationAdditionalMetadata(out, rootInv)
+			}
+		}
 	}
 }

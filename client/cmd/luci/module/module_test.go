@@ -15,12 +15,14 @@
 package module
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/testutil"
@@ -506,6 +508,114 @@ func TestModuleDetails(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i14600010609614895"))
 			assert.Loosely(t, out, should.ContainSubstring("Module Name:       CellBroadcastReceiverMTS"))
 			assert.Loosely(t, out, should.ContainSubstring("Module:        CellBroadcastReceiverMTS"))
+		})
+
+		t.Run(`surfaces RootInvocation metadata and honors -show-metadata`, func(t *ftt.Test) {
+			wuProps, _ := structpb.NewStruct(map[string]any{"abi": "x86_64"})
+			invProps, _ := structpb.NewStruct(map[string]any{"scheduler": "ATP"})
+			wu := &pb.WorkUnit{
+				Name:       "rootInvocations/ants-i14600010609614895/workUnits/ants-wu981",
+				Parent:     "rootInvocations/ants-i14600010609614895/workUnits/root",
+				WorkUnitId: "ants-wu981",
+				Kind:       "TF_MODULE",
+				State:      pb.WorkUnit_SUCCEEDED,
+				ModuleId: &pb.ModuleIdentifier{
+					ModuleName:        "CellBroadcastReceiverMTS",
+					ModuleScheme:      "junit",
+					ModuleVariantHash: "abcd1234",
+					ModuleVariant: &pb.Variant{
+						Def: map[string]string{"abi": "x86_64"},
+					},
+				},
+				ModuleShardKey: "0",
+				Tags: []*pb.StringPair{
+					{Key: "module_tag", Value: "val1"},
+				},
+				Properties: wuProps,
+			}
+			rootInv := &pb.RootInvocation{
+				Name:              "rootInvocations/ants-i14600010609614895",
+				State:             pb.RootInvocation_SUCCEEDED,
+				FinalizationState: pb.RootInvocation_FINALIZED,
+				Realm:             "google:android-test-results",
+				PrimaryBuild: &pb.BuildDescriptor{
+					Definition: &pb.BuildDescriptor_AndroidBuild{
+						AndroidBuild: &pb.AndroidBuildDescriptor{
+							DataRealm:   "prod",
+							Branch:      "git_main",
+							BuildTarget: "cf_x86_64_phone-trunk_staging-userdebug",
+							BuildId:     "16133789",
+						},
+					},
+				},
+				Definition: &pb.RootInvocationDefinition{
+					System: "atp",
+					Name:   "v2/android-mts/mts-cellbroadcast",
+				},
+				Properties: invProps,
+			}
+
+			client := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return rootInv, nil
+				},
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								Id: &pb.TestIdentifierPrefix{
+									Id: &pb.TestIdentifier{ModuleName: "CellBroadcastReceiverMTS"},
+								},
+								ModuleStatus: pb.TestAggregation_SUCCEEDED,
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
+									Passed: 10,
+								},
+							},
+						},
+					}, nil
+				},
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					if in.Name == "rootInvocations/ants-i14600010609614895/workUnits/root" {
+						return &pb.WorkUnit{
+							Name:           in.Name,
+							ChildWorkUnits: []string{wu.Name},
+						}, nil
+					}
+					return wu, nil
+				},
+				batchGetWorkUnits: func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error) {
+					return &pb.BatchGetWorkUnitsResponse{WorkUnits: []*pb.WorkUnit{wu}}, nil
+				},
+			}
+
+			details, err := FetchModuleDetails(context.Background(), client, nil, "ants-i14600010609614895", "CellBroadcastReceiverMTS")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, details.RootInvocation, should.Equal(rootInv))
+			assert.Loosely(t, len(details.WorkUnits), should.Equal(1))
+			assert.Loosely(t, details.WorkUnits[0].ModuleScheme, should.Equal("junit"))
+			assert.Loosely(t, details.WorkUnits[0].VariantHash, should.Equal("abcd1234"))
+			assert.Loosely(t, len(details.WorkUnits[0].Tags), should.Equal(1))
+			assert.Loosely(t, details.WorkUnits[0].Properties, should.NotBeNil)
+
+			var defaultBuf bytes.Buffer
+			fprintModuleDetails(&defaultBuf, details, false)
+			defaultOut := defaultBuf.String()
+			assert.Loosely(t, defaultOut, should.NotContainSubstring("Primary Build:"))
+			assert.Loosely(t, defaultOut, should.NotContainSubstring("Definition:"))
+			assert.Loosely(t, defaultOut, should.NotContainSubstring("Scheme:"))
+			assert.Loosely(t, defaultOut, should.NotContainSubstring("Realm:"))
+
+			var buf bytes.Buffer
+			fprintModuleDetails(&buf, details, true)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Primary Build: branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=16133789\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Definition:    system=atp name=v2/android-mts/mts-cellbroadcast\n"))
+			assert.Loosely(t, out, should.ContainSubstring("    Scheme:       junit\n"))
+			assert.Loosely(t, out, should.ContainSubstring("    Variant:      abi=x86_64 (hash: abcd1234)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("    Tags:\n      module_tag: val1\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Realm:        google:android-test-results\n"))
+			assert.Loosely(t, out, should.ContainSubstring(`"scheduler"`))
+			assert.Loosely(t, out, should.ContainSubstring(`"ATP"`))
 		})
 	})
 }

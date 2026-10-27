@@ -490,5 +490,43 @@ func TestVerdictListRunAutoDetect(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     build-8765432109876543210"))
 			assert.Loosely(t, out, should.ContainSubstring("- FAILED :ModA!junit:pkg:Cls#testOne"))
 		})
+
+		t.Run(`prints RootInvocation metadata by default for root invocations`, func(t *ftt.Test) {
+			client := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:  in.Name,
+						State: pb.RootInvocation_FAILED,
+						PrimaryBuild: &pb.BuildDescriptor{
+							Definition: &pb.BuildDescriptor_AndroidBuild{
+								AndroidBuild: &pb.AndroidBuildDescriptor{
+									Branch:      "git_main",
+									BuildTarget: "cf_x86_64_phone-trunk_staging-userdebug",
+									BuildId:     "16133789",
+								},
+							},
+						},
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{TestId: ":mod!junit:pkg.Class#testA", Status: pb.TestVerdict_FAILED},
+						},
+					}, nil
+				},
+			}
+			var buf bytes.Buffer
+			run := &verdictListRun{
+				client:       client,
+				out:          &buf,
+				invocationID: "ants-i123",
+				maxVerdicts:  10,
+			}
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Primary Build: branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=16133789\n"))
+			assert.Loosely(t, out, should.ContainSubstring("- FAILED :mod!junit:pkg.Class#testA\n"))
+		})
 	})
 }

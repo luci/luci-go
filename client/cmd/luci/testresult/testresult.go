@@ -233,6 +233,13 @@ func (r *testResultGetRun) printTestResult(ctx context.Context, out io.Writer, c
 		fmt.Fprintln(out)
 		fmt.Fprintf(out, "Full Name: %s\n", res.Name)
 		format.FprintAdditionalMetadata(out, res)
+		if !legacy {
+			if rootInv := format.FetchRootInvocation(ctx, client, invID); rootInv != nil {
+				fmt.Fprintln(out)
+				format.FprintRootInvocationMetadata(out, rootInv)
+				format.FprintRootInvocationAdditionalMetadata(out, rootInv)
+			}
+		}
 	}
 	if arts, err := artifact.QueryAllArtifacts(ctx, client, res.Name); err == nil {
 		if len(arts) > 0 {

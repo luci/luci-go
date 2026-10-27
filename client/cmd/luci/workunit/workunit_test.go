@@ -163,6 +163,70 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("  ... and 2 more child work units"))
 		})
 
+		t.Run(`gates RootInvocation and work unit metadata behind -show-metadata`, func(t *ftt.Test) {
+			client := &mockWorkUnitResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:  in.Name,
+						State: pb.RootInvocation_SUCCEEDED,
+						Realm: "google:android-test-results",
+						PrimaryBuild: &pb.BuildDescriptor{
+							Definition: &pb.BuildDescriptor_AndroidBuild{
+								AndroidBuild: &pb.AndroidBuildDescriptor{
+									Branch:      "git_main",
+									BuildTarget: "cf_x86_64_phone-trunk_staging-userdebug",
+									BuildId:     "16133789",
+								},
+							},
+						},
+					}, nil
+				},
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{
+						Name:            in.Name,
+						WorkUnitId:      "ants-wu123",
+						Kind:            "TF_MODULE",
+						State:           pb.WorkUnit_SUCCEEDED,
+						SummaryMarkdown: "ok",
+						ModuleId: &pb.ModuleIdentifier{
+							ModuleName:        "CtsModule",
+							ModuleScheme:      "junit",
+							ModuleVariantHash: "abcd1234",
+							ModuleVariant:     &pb.Variant{Def: map[string]string{"abi": "x86_64"}},
+						},
+					}, nil
+				},
+			}
+
+			defaultRun := &workUnitGetRun{
+				client:       client,
+				invocationID: "ants-i123",
+				workUnitID:   "ants-wu123",
+				showMetadata: false,
+			}
+			defaultOut := testutil.CaptureStdout(func() {
+				assert.Loosely(t, defaultRun.Run(nil, nil, nil), should.Equal(0))
+			})
+			assert.Loosely(t, defaultOut, should.NotContainSubstring("Primary Build:"))
+			assert.Loosely(t, defaultOut, should.NotContainSubstring("Scheme:"))
+			assert.Loosely(t, defaultOut, should.NotContainSubstring("Realm:"))
+
+			metaRun := &workUnitGetRun{
+				client:       client,
+				invocationID: "ants-i123",
+				workUnitID:   "ants-wu123",
+				showMetadata: true,
+			}
+			metaOut := testutil.CaptureStdout(func() {
+				assert.Loosely(t, metaRun.Run(nil, nil, nil), should.Equal(0))
+			})
+			assert.Loosely(t, metaOut, should.ContainSubstring("Full Name:    rootInvocations/ants-i123/workUnits/ants-wu123\n"))
+			assert.Loosely(t, metaOut, should.ContainSubstring("Scheme:       junit\n"))
+			assert.Loosely(t, metaOut, should.ContainSubstring("Variant:      abi=x86_64 (hash: abcd1234)\n"))
+			assert.Loosely(t, metaOut, should.ContainSubstring("Primary Build: branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=16133789\n"))
+			assert.Loosely(t, metaOut, should.ContainSubstring("Realm:        google:android-test-results\n"))
+		})
+
 		t.Run(`automatic fallback resolution when GetWorkUnit returns NotFound on leaf AnTS work unit`, func(t *ftt.Test) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")

@@ -828,3 +828,279 @@ func printArtifactList(out io.Writer, artifacts []*rdbpb.Artifact, includeMetada
 		fmt.Fprintf(out, "To fetch an artifact:\n  %s\n\n", hint)
 	}
 }
+
+// FormatRootInvocationState formats the state and finalization state of a RootInvocation.
+func FormatRootInvocationState(rootInv *rdbpb.RootInvocation) string {
+	if rootInv == nil {
+		return ""
+	}
+	var stateStr string
+	if rootInv.GetState() != rdbpb.RootInvocation_STATE_UNSPECIFIED {
+		stateStr = rootInv.GetState().String()
+	}
+	var finStr string
+	if rootInv.GetFinalizationState() != rdbpb.RootInvocation_FINALIZATION_STATE_UNSPECIFIED {
+		finStr = rootInv.GetFinalizationState().String()
+	}
+	if stateStr != "" && finStr != "" {
+		return fmt.Sprintf("%s (%s)", stateStr, finStr)
+	}
+	if stateStr != "" {
+		return stateStr
+	}
+	return finStr
+}
+
+// FormatBuildDescriptor formats a BuildDescriptor (such as an AndroidBuildDescriptor or URL)
+// into a concise single-line string.
+func FormatBuildDescriptor(bd *rdbpb.BuildDescriptor) string {
+	if bd == nil {
+		return ""
+	}
+	if ab := bd.GetAndroidBuild(); ab != nil {
+		var parts []string
+		if ab.GetBranch() != "" {
+			parts = append(parts, fmt.Sprintf("branch=%s", ab.GetBranch()))
+		}
+		if ab.GetBuildTarget() != "" {
+			parts = append(parts, fmt.Sprintf("build_target=%s", ab.GetBuildTarget()))
+		}
+		if ab.GetBuildId() != "" {
+			parts = append(parts, fmt.Sprintf("build_id=%s", ab.GetBuildId()))
+		}
+		if ab.GetDataRealm() != "" && ab.GetDataRealm() != "prod" {
+			parts = append(parts, fmt.Sprintf("data_realm=%s", ab.GetDataRealm()))
+		}
+		if len(parts) > 0 {
+			return strings.Join(parts, " ")
+		}
+	}
+	return bd.GetUrl()
+}
+
+// FormatExtraBuilds formats a slice of extra BuildDescriptors into a semicolon-separated string.
+func FormatExtraBuilds(builds []*rdbpb.BuildDescriptor) string {
+	if len(builds) == 0 {
+		return ""
+	}
+	var formatted []string
+	for _, b := range builds {
+		if s := FormatBuildDescriptor(b); s != "" {
+			formatted = append(formatted, s)
+		}
+	}
+	return strings.Join(formatted, "; ")
+}
+
+// FormatSources formats a ResultDB Sources message (submitted_android_build, gitiles_commit,
+// changelists, and is_dirty) into a concise human-readable string.
+func FormatSources(src *rdbpb.Sources) string {
+	if src == nil {
+		return ""
+	}
+	var parts []string
+	if sab := src.GetSubmittedAndroidBuild(); sab != nil {
+		var sub []string
+		if sab.GetBranch() != "" {
+			sub = append(sub, fmt.Sprintf("branch=%s", sab.GetBranch()))
+		}
+		if sab.GetBuildId() > 0 {
+			sub = append(sub, fmt.Sprintf("build_id=%d", sab.GetBuildId()))
+		}
+		if sab.GetDataRealm() != "" && sab.GetDataRealm() != "prod" {
+			sub = append(sub, fmt.Sprintf("data_realm=%s", sab.GetDataRealm()))
+		}
+		if len(sub) > 0 {
+			parts = append(parts, fmt.Sprintf("submitted_android_build(%s)", strings.Join(sub, " ")))
+		}
+	}
+	if gc := src.GetGitilesCommit(); gc != nil {
+		var sub []string
+		if gc.GetHost() != "" {
+			sub = append(sub, fmt.Sprintf("host=%s", gc.GetHost()))
+		}
+		if gc.GetProject() != "" {
+			sub = append(sub, fmt.Sprintf("project=%s", gc.GetProject()))
+		}
+		if gc.GetRef() != "" {
+			sub = append(sub, fmt.Sprintf("ref=%s", gc.GetRef()))
+		}
+		if gc.GetCommitHash() != "" {
+			sub = append(sub, fmt.Sprintf("commit_hash=%s", gc.GetCommitHash()))
+		}
+		if gc.GetPosition() > 0 {
+			sub = append(sub, fmt.Sprintf("position=%d", gc.GetPosition()))
+		}
+		if len(sub) > 0 {
+			parts = append(parts, fmt.Sprintf("gitiles_commit(%s)", strings.Join(sub, " ")))
+		}
+	}
+	for _, cl := range src.GetChangelists() {
+		var sub []string
+		if cl.GetHost() != "" {
+			sub = append(sub, fmt.Sprintf("host=%s", cl.GetHost()))
+		}
+		if cl.GetProject() != "" {
+			sub = append(sub, fmt.Sprintf("project=%s", cl.GetProject()))
+		}
+		if cl.GetChange() > 0 {
+			sub = append(sub, fmt.Sprintf("change=%d", cl.GetChange()))
+		}
+		if cl.GetPatchset() > 0 {
+			sub = append(sub, fmt.Sprintf("patchset=%d", cl.GetPatchset()))
+		}
+		if len(sub) > 0 {
+			parts = append(parts, fmt.Sprintf("changelist(%s)", strings.Join(sub, " ")))
+		}
+	}
+	if src.GetIsDirty() {
+		parts = append(parts, "is_dirty=true")
+	}
+	return strings.Join(parts, "; ")
+}
+
+// FormatRootInvocationDefinition formats a RootInvocationDefinition (system, name, and properties).
+func FormatRootInvocationDefinition(def *rdbpb.RootInvocationDefinition) string {
+	if def == nil {
+		return ""
+	}
+	var parts []string
+	if def.GetSystem() != "" {
+		parts = append(parts, fmt.Sprintf("system=%s", def.GetSystem()))
+	}
+	if def.GetName() != "" {
+		parts = append(parts, fmt.Sprintf("name=%s", def.GetName()))
+	}
+	if props := def.GetProperties().GetDef(); len(props) > 0 {
+		keys := make([]string, 0, len(props))
+		for k := range props {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		var propParts []string
+		for _, k := range keys {
+			propParts = append(propParts, fmt.Sprintf("%s=%s", k, props[k]))
+		}
+		parts = append(parts, fmt.Sprintf("[%s]", strings.Join(propParts, " ")))
+	}
+	return strings.Join(parts, " ")
+}
+
+// FormatProducerResource formats a ProducerResource into a human-readable string.
+func FormatProducerResource(pr *rdbpb.ProducerResource) string {
+	if pr == nil {
+		return ""
+	}
+	var parts []string
+	if pr.GetSystem() != "" {
+		parts = append(parts, fmt.Sprintf("system=%s", pr.GetSystem()))
+	}
+	if pr.GetName() != "" {
+		parts = append(parts, fmt.Sprintf("name=%s", pr.GetName()))
+	}
+	if pr.GetUrl() != "" {
+		parts = append(parts, fmt.Sprintf("(%s)", pr.GetUrl()))
+	}
+	return strings.Join(parts, " ")
+}
+
+// FprintRootInvocationMetadata prints populated RootInvocation build, branch, target,
+// sources, definition, and state metadata to out.
+func FprintRootInvocationMetadata(out io.Writer, rootInv *rdbpb.RootInvocation) {
+	if rootInv == nil {
+		return
+	}
+	if s := FormatRootInvocationState(rootInv); s != "" {
+		fmt.Fprintf(out, "Inv State:     %s\n", s)
+	}
+	if s := FormatBuildDescriptor(rootInv.GetPrimaryBuild()); s != "" {
+		fmt.Fprintf(out, "Primary Build: %s\n", s)
+	}
+	if s := FormatExtraBuilds(rootInv.GetExtraBuilds()); s != "" {
+		fmt.Fprintf(out, "Extra Builds:  %s\n", s)
+	}
+	if s := FormatSources(rootInv.GetSources()); s != "" {
+		fmt.Fprintf(out, "Sources:       %s\n", s)
+	}
+	if s := FormatRootInvocationDefinition(rootInv.GetDefinition()); s != "" {
+		fmt.Fprintf(out, "Definition:    %s\n", s)
+	}
+	if s := FormatProducerResource(rootInv.GetProducerResource()); s != "" {
+		fmt.Fprintf(out, "Producer:      %s\n", s)
+	}
+}
+
+// FprintRootInvocationAdditionalMetadata prints extended RootInvocation metadata
+// (realm, baseline ID, tags, and properties) to out.
+func FprintRootInvocationAdditionalMetadata(out io.Writer, rootInv *rdbpb.RootInvocation) {
+	if rootInv == nil {
+		return
+	}
+	if rootInv.GetRealm() != "" {
+		fmt.Fprintf(out, "Realm:        %s\n", rootInv.GetRealm())
+	}
+	if rootInv.GetBaselineId() != "" {
+		fmt.Fprintf(out, "Baseline ID:  %s\n", rootInv.GetBaselineId())
+	}
+	if len(rootInv.GetTags()) > 0 {
+		fmt.Fprintln(out, "Invocation Tags:")
+		for _, tag := range rootInv.GetTags() {
+			fmt.Fprintf(out, "  %s: %s\n", tag.GetKey(), tag.GetValue())
+		}
+	}
+	if rootInv.GetProperties() != nil {
+		b, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(rootInv.GetProperties())
+		if err == nil {
+			fmt.Fprintf(out, "Invocation Properties:\n%s\n", string(b))
+		}
+	}
+}
+
+// FprintWorkUnitMetadata prints work unit metadata (full name, optional parent
+// breadcrumb, module scheme, variant/hash, tags, and JSON properties) to out
+// with the given line prefix indent.
+func FprintWorkUnitMetadata(out io.Writer, wu *rdbpb.WorkUnit, indent string, includeParent bool) {
+	if wu == nil {
+		return
+	}
+	if wu.GetName() != "" {
+		fmt.Fprintf(out, "%sFull Name:    %s\n", indent, wu.GetName())
+	}
+	if includeParent && wu.GetParent() != "" {
+		fmt.Fprintf(out, "%sParent:       %s\n", indent, FormatWorkUnitBreadcrumb(wu.GetParent()))
+	}
+	if modID := wu.GetModuleId(); modID != nil {
+		if modID.GetModuleScheme() != "" {
+			fmt.Fprintf(out, "%sScheme:       %s\n", indent, modID.GetModuleScheme())
+		}
+		if varStr := FormatVariant(modID.GetModuleVariant()); varStr != "" {
+			if modID.GetModuleVariantHash() != "" {
+				fmt.Fprintf(out, "%sVariant:      %s (hash: %s)\n", indent, varStr, modID.GetModuleVariantHash())
+			} else {
+				fmt.Fprintf(out, "%sVariant:      %s\n", indent, varStr)
+			}
+		} else if modID.GetModuleVariantHash() != "" {
+			fmt.Fprintf(out, "%sVariant Hash: %s\n", indent, modID.GetModuleVariantHash())
+		}
+	}
+	if len(wu.GetTags()) > 0 {
+		fmt.Fprintf(out, "%sTags:\n", indent)
+		for _, tag := range wu.GetTags() {
+			fmt.Fprintf(out, "%s  %s: %s\n", indent, tag.GetKey(), tag.GetValue())
+		}
+	}
+	if wu.GetProperties() != nil {
+		b, err := (protojson.MarshalOptions{Multiline: true, Indent: "  "}).Marshal(wu.GetProperties())
+		if err == nil {
+			propIndent := indent
+			if indent != "" {
+				propIndent = indent + "  "
+			}
+			s := string(b)
+			if propIndent != "" {
+				s = propIndent + strings.ReplaceAll(s, "\n", "\n"+propIndent)
+			}
+			fmt.Fprintf(out, "%sProperties:\n%s\n", indent, s)
+		}
+	}
+}

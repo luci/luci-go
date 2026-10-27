@@ -184,6 +184,35 @@ func CacheResolvedInvocation(ctx context.Context, resolved *base.ResolvedInvocat
 	cache.mu.Unlock()
 }
 
+// GetCachedRootInvocation returns a previously cached RootInvocation from the
+// context's DiscoveryCache, or nil if not found.
+func GetCachedRootInvocation(ctx context.Context, invID string) *pb.RootInvocation {
+	cache := cacheFromContext(ctx)
+	if cache == nil || invID == "" {
+		return nil
+	}
+	name := "rootInvocations/" + base.NormalizeInvocation(invID)
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
+	return cache.rootInvocations[name]
+}
+
+// FetchRootInvocation returns the RootInvocation for invID, using the context's
+// DiscoveryCache if available to avoid duplicate RPCs.
+func FetchRootInvocation(ctx context.Context, client pb.ResultDBClient, invID string) *pb.RootInvocation {
+	if invID == "" {
+		return nil
+	}
+	if rootInv := GetCachedRootInvocation(ctx, invID); rootInv != nil {
+		return rootInv
+	}
+	if client == nil {
+		return nil
+	}
+	name := "rootInvocations/" + base.NormalizeInvocation(invID)
+	return getRootInvocationWithCache(ctx, client, name, cacheFromContext(ctx))
+}
+
 func getWorkUnitWithCache(ctx context.Context, client pb.ResultDBClient, name string, cache *DiscoveryCache) *pb.WorkUnit {
 	if cache != nil {
 		cache.mu.RLock()

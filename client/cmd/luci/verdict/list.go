@@ -652,6 +652,9 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 		out = os.Stdout
 	}
 	ids.PrintDerivedIDs(out, extracted)
+	if !legacy {
+		format.FprintRootInvocationMetadata(out, resolved.RootInvocation)
+	}
 	printListedVerdicts(out, invID, verdicts, hasMore, filter.IsDefault())
 	return 0
 }

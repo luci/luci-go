@@ -24,7 +24,6 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
@@ -224,8 +223,11 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	if wu.Kind != "" {
 		fmt.Printf("Kind:         %s\n", wu.Kind)
 	}
-	if wu.ModuleId != nil && wu.ModuleId.ModuleName != "" {
-		fmt.Printf("Module:       %s\n", wu.ModuleId.ModuleName)
+	if modID := wu.GetModuleId(); modID != nil && modID.GetModuleName() != "" {
+		fmt.Printf("Module:       %s\n", modID.GetModuleName())
+	}
+	if wu.ModuleShardKey != "" {
+		fmt.Printf("Shard Key:    %s\n", wu.ModuleShardKey)
 	}
 	fmt.Printf("State:        %s\n", wu.State)
 	if wu.FinalizationState != pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED {
@@ -256,20 +258,11 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	}
 	if r.showMetadata {
 		fmt.Println()
-		fmt.Printf("Full Name:    %s\n", wu.Name)
-		if len(wu.Tags) > 0 {
-			fmt.Println("Tags:")
-			for _, tag := range wu.Tags {
-				fmt.Printf("  %s: %s\n", tag.Key, tag.Value)
-			}
-		}
-		if wu.Properties != nil {
-			out, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(wu.Properties)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "failed to marshal properties: %s\n", err)
-			} else {
-				fmt.Printf("Properties:\n%s\n", string(out))
-			}
+		format.FprintWorkUnitMetadata(os.Stdout, wu, "", false)
+		if resolved.RootInvocation != nil {
+			fmt.Println()
+			format.FprintRootInvocationMetadata(os.Stdout, resolved.RootInvocation)
+			format.FprintRootInvocationAdditionalMetadata(os.Stdout, resolved.RootInvocation)
 		}
 	}
 

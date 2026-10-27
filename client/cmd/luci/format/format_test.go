@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -567,6 +568,236 @@ func TestPrintFailureReason(t *testing.T) {
 				"To fetch an artifact:\n" +
 				"  luci artifact <get|head|tail> -invocationid=ants-i05300010637202289 -artifactid=<ARTIFACT_ID> [FLAGS]\n\n"
 			assert.Loosely(t, buf.String(), should.Equal(expected))
+		})
+	})
+
+	ftt.Run(`RootInvocation formatting helpers`, t, func(t *ftt.Test) {
+		t.Run(`FormatRootInvocationState`, func(t *ftt.Test) {
+			assert.Loosely(t, FormatRootInvocationState(nil), should.Equal(""))
+			assert.Loosely(t, FormatRootInvocationState(&rdbpb.RootInvocation{}), should.Equal(""))
+			assert.Loosely(t, FormatRootInvocationState(&rdbpb.RootInvocation{
+				State:             rdbpb.RootInvocation_SUCCEEDED,
+				FinalizationState: rdbpb.RootInvocation_FINALIZED,
+			}), should.Equal("SUCCEEDED (FINALIZED)"))
+			assert.Loosely(t, FormatRootInvocationState(&rdbpb.RootInvocation{
+				State: rdbpb.RootInvocation_RUNNING,
+			}), should.Equal("RUNNING"))
+		})
+
+		t.Run(`FormatBuildDescriptor and FormatExtraBuilds`, func(t *ftt.Test) {
+			assert.Loosely(t, FormatBuildDescriptor(nil), should.Equal(""))
+			bd1 := &rdbpb.BuildDescriptor{
+				Definition: &rdbpb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &rdbpb.AndroidBuildDescriptor{
+						DataRealm:   "prod",
+						Branch:      "git_main",
+						BuildTarget: "cf_x86_64_phone-trunk_staging-userdebug",
+						BuildId:     "16133789",
+					},
+				},
+			}
+			assert.Loosely(t, FormatBuildDescriptor(bd1), should.Equal("branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=16133789"))
+
+			bd2 := &rdbpb.BuildDescriptor{
+				Definition: &rdbpb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &rdbpb.AndroidBuildDescriptor{
+						DataRealm:   "staging",
+						Branch:      "aosp-main",
+						BuildTarget: "test_suites_x86_64",
+						BuildId:     "P999999",
+					},
+				},
+			}
+			assert.Loosely(t, FormatExtraBuilds([]*rdbpb.BuildDescriptor{bd1, bd2}), should.Equal(
+				"branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=16133789; branch=aosp-main build_target=test_suites_x86_64 build_id=P999999 data_realm=staging",
+			))
+		})
+
+		t.Run(`FormatSources`, func(t *ftt.Test) {
+			assert.Loosely(t, FormatSources(nil), should.Equal(""))
+			src := &rdbpb.Sources{
+				BaseSources: &rdbpb.Sources_SubmittedAndroidBuild{
+					SubmittedAndroidBuild: &rdbpb.SubmittedAndroidBuild{
+						DataRealm: "prod",
+						Branch:    "git_main",
+						BuildId:   16133789,
+					},
+				},
+				Changelists: []*rdbpb.GerritChange{
+					{
+						Host:     "android-review.googlesource.com",
+						Project:  "platform/packages/apps/CellBroadcastReceiver",
+						Change:   3456789,
+						Patchset: 2,
+					},
+				},
+				IsDirty: true,
+			}
+			assert.Loosely(t, FormatSources(src), should.Equal(
+				"submitted_android_build(branch=git_main build_id=16133789); changelist(host=android-review.googlesource.com project=platform/packages/apps/CellBroadcastReceiver change=3456789 patchset=2); is_dirty=true",
+			))
+
+			gitSrc := &rdbpb.Sources{
+				BaseSources: &rdbpb.Sources_GitilesCommit{
+					GitilesCommit: &rdbpb.GitilesCommit{
+						Host:       "chromium.googlesource.com",
+						Project:    "chromium/src",
+						Ref:        "refs/heads/main",
+						CommitHash: "abcdef123456",
+						Position:   12345,
+					},
+				},
+			}
+			assert.Loosely(t, FormatSources(gitSrc), should.Equal(
+				"gitiles_commit(host=chromium.googlesource.com project=chromium/src ref=refs/heads/main commit_hash=abcdef123456 position=12345)",
+			))
+		})
+
+		t.Run(`FormatRootInvocationDefinition and FormatProducerResource`, func(t *ftt.Test) {
+			def := &rdbpb.RootInvocationDefinition{
+				System: "atp",
+				Name:   "v2/android-crystalball-eng/health/microbench/uibench/HotAppStartTest",
+				Properties: &rdbpb.RootInvocationDefinition_Properties{
+					Def: map[string]string{
+						"run_target": "brya_device_on_satlab",
+						"cluster_id": "freeform-test-runner",
+					},
+				},
+			}
+			assert.Loosely(t, FormatRootInvocationDefinition(def), should.Equal(
+				"system=atp name=v2/android-crystalball-eng/health/microbench/uibench/HotAppStartTest [cluster_id=freeform-test-runner run_target=brya_device_on_satlab]",
+			))
+
+			pr := &rdbpb.ProducerResource{
+				System: "ants",
+				Name:   "ants-i14600010609614895",
+				Url:    "https://android-build.corp.google.com/test_investigate/invocation/I14600010609614895",
+			}
+			assert.Loosely(t, FormatProducerResource(pr), should.Equal(
+				"system=ants name=ants-i14600010609614895 (https://android-build.corp.google.com/test_investigate/invocation/I14600010609614895)",
+			))
+		})
+
+		t.Run(`FprintRootInvocationMetadata and FprintRootInvocationAdditionalMetadata`, func(t *ftt.Test) {
+			props, _ := structpb.NewStruct(map[string]any{
+				"scheduler": "ATP",
+			})
+			rootInv := &rdbpb.RootInvocation{
+				Name:              "rootInvocations/ants-i14600010609614895",
+				State:             rdbpb.RootInvocation_SUCCEEDED,
+				FinalizationState: rdbpb.RootInvocation_FINALIZED,
+				Realm:             "google:android-test-results",
+				BaselineId:        "atp:v2/test",
+				PrimaryBuild: &rdbpb.BuildDescriptor{
+					Definition: &rdbpb.BuildDescriptor_AndroidBuild{
+						AndroidBuild: &rdbpb.AndroidBuildDescriptor{
+							DataRealm:   "prod",
+							Branch:      "git_main",
+							BuildTarget: "cf_x86_64_phone-trunk_staging-userdebug",
+							BuildId:     "16133789",
+						},
+					},
+				},
+				ExtraBuilds: []*rdbpb.BuildDescriptor{
+					{
+						Definition: &rdbpb.BuildDescriptor_AndroidBuild{
+							AndroidBuild: &rdbpb.AndroidBuildDescriptor{
+								DataRealm:   "prod",
+								Branch:      "git_main",
+								BuildTarget: "test_suites_x86_64",
+								BuildId:     "16133790",
+							},
+						},
+					},
+				},
+				Sources: &rdbpb.Sources{
+					BaseSources: &rdbpb.Sources_SubmittedAndroidBuild{
+						SubmittedAndroidBuild: &rdbpb.SubmittedAndroidBuild{
+							DataRealm: "prod",
+							Branch:    "git_main",
+							BuildId:   16133789,
+						},
+					},
+				},
+				Definition: &rdbpb.RootInvocationDefinition{
+					System: "atp",
+					Name:   "v2/android-mts/mts-cellbroadcast",
+					Properties: &rdbpb.RootInvocationDefinition_Properties{
+						Def: map[string]string{
+							"run_target": "cf_x86_64_phone",
+						},
+					},
+				},
+				ProducerResource: &rdbpb.ProducerResource{
+					System: "ants",
+					Name:   "ants-i14600010609614895",
+				},
+				Tags: []*rdbpb.StringPair{
+					{Key: "test_plan", Value: "mts"},
+				},
+				Properties: props,
+			}
+
+			var buf bytes.Buffer
+			FprintRootInvocationMetadata(&buf, rootInv)
+			expectedMeta := "" +
+				"Inv State:     SUCCEEDED (FINALIZED)\n" +
+				"Primary Build: branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=16133789\n" +
+				"Extra Builds:  branch=git_main build_target=test_suites_x86_64 build_id=16133790\n" +
+				"Sources:       submitted_android_build(branch=git_main build_id=16133789)\n" +
+				"Definition:    system=atp name=v2/android-mts/mts-cellbroadcast [run_target=cf_x86_64_phone]\n" +
+				"Producer:      system=ants name=ants-i14600010609614895\n"
+			assert.Loosely(t, buf.String(), should.Equal(expectedMeta))
+
+			buf.Reset()
+			FprintRootInvocationAdditionalMetadata(&buf, rootInv)
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Realm:        google:android-test-results\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Baseline ID:  atp:v2/test\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Invocation Tags:\n  test_plan: mts\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Invocation Properties:\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring(`"scheduler"`))
+			assert.Loosely(t, buf.String(), should.ContainSubstring(`"ATP"`))
+		})
+
+		t.Run(`FprintWorkUnitMetadata`, func(t *ftt.Test) {
+			wuProps, _ := structpb.NewStruct(map[string]any{"abi": "x86_64"})
+			wu := &rdbpb.WorkUnit{
+				Name:   "rootInvocations/ants-i123/workUnits/ants-wu456",
+				Parent: "rootInvocations/ants-i123/workUnits/root",
+				ModuleId: &rdbpb.ModuleIdentifier{
+					ModuleScheme:      "junit",
+					ModuleVariantHash: "abcd1234",
+					ModuleVariant: &rdbpb.Variant{
+						Def: map[string]string{"abi": "x86_64"},
+					},
+				},
+				Tags: []*rdbpb.StringPair{
+					{Key: "module_tag", Value: "val1"},
+				},
+				Properties: wuProps,
+			}
+
+			var buf bytes.Buffer
+			FprintWorkUnitMetadata(&buf, wu, "", false)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Full Name:    rootInvocations/ants-i123/workUnits/ants-wu456\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("Parent:"))
+			assert.Loosely(t, out, should.ContainSubstring("Scheme:       junit\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Variant:      abi=x86_64 (hash: abcd1234)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Tags:\n  module_tag: val1\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Properties:\n"))
+			assert.Loosely(t, out, should.ContainSubstring(`"abi"`))
+			assert.Loosely(t, out, should.ContainSubstring(`"x86_64"`))
+
+			buf.Reset()
+			FprintWorkUnitMetadata(&buf, wu, "    ", true)
+			indentedOut := buf.String()
+			assert.Loosely(t, indentedOut, should.ContainSubstring("    Full Name:    rootInvocations/ants-i123/workUnits/ants-wu456\n"))
+			assert.Loosely(t, indentedOut, should.ContainSubstring("    Parent:       Work Unit root in invocation ants-i123\n"))
+			assert.Loosely(t, indentedOut, should.ContainSubstring("    Scheme:       junit\n"))
+			assert.Loosely(t, indentedOut, should.ContainSubstring("    Variant:      abi=x86_64 (hash: abcd1234)\n"))
+			assert.Loosely(t, indentedOut, should.ContainSubstring("    Tags:\n      module_tag: val1\n"))
+			assert.Loosely(t, indentedOut, should.ContainSubstring("    Properties:\n      {"))
 		})
 	})
 }

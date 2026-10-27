@@ -349,5 +349,46 @@ func TestPrintTestResult(t *testing.T) {
 			assert.Loosely(t, out, should.NotContainSubstring("wu_2"))
 			assert.Loosely(t, out, should.NotContainSubstring("wu_3 contains"))
 		})
+
+		t.Run(`gates RootInvocation metadata behind -show-metadata`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:  in.Name,
+						State: pb.RootInvocation_FAILED,
+						Realm: "google:android-test-results",
+						PrimaryBuild: &pb.BuildDescriptor{
+							Definition: &pb.BuildDescriptor_AndroidBuild{
+								AndroidBuild: &pb.AndroidBuildDescriptor{
+									Branch:      "git_main",
+									BuildTarget: "cf_x86_64_phone-trunk_staging-userdebug",
+									BuildId:     "16133789",
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			res := &pb.TestResult{
+				Name:     trName,
+				TestId:   "test1",
+				ResultId: "res1",
+				StatusV2: pb.TestResult_FAILED,
+			}
+
+			var defaultBuf bytes.Buffer
+			defaultRun := &testResultGetRun{invocationID: "ants-i123", showMetadata: false, out: &defaultBuf}
+			defaultRun.printTestResult(ctx, &defaultBuf, client, nil, nil, "ants-i123", res, false)
+			defaultOut := defaultBuf.String()
+			assert.Loosely(t, defaultOut, should.NotContainSubstring("Primary Build:"))
+			assert.Loosely(t, defaultOut, should.NotContainSubstring("Realm:"))
+
+			var metaBuf bytes.Buffer
+			metaRun := &testResultGetRun{invocationID: "ants-i123", showMetadata: true, out: &metaBuf}
+			metaRun.printTestResult(ctx, &metaBuf, client, nil, nil, "ants-i123", res, false)
+			metaOut := metaBuf.String()
+			assert.Loosely(t, metaOut, should.ContainSubstring("Primary Build: branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=16133789\n"))
+			assert.Loosely(t, metaOut, should.ContainSubstring("Realm:        google:android-test-results\n"))
+		})
 	})
 }

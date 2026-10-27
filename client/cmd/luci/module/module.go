@@ -18,11 +18,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
@@ -175,11 +177,12 @@ func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcomm
 
 // ModuleDetails contains aggregate information, test counts, and work unit details for a module.
 type ModuleDetails struct {
-	InvocationID  string             `json:"invocation_id"`
-	ModuleName    string             `json:"module_name"`
-	ModuleStatus  string             `json:"module_status"`
-	TotalVerdicts *VerdictCountsJSON `json:"total_verdicts,omitempty"`
-	WorkUnits     []*WorkUnitInfo    `json:"work_units,omitempty"`
+	InvocationID   string             `json:"invocation_id"`
+	ModuleName     string             `json:"module_name"`
+	ModuleStatus   string             `json:"module_status"`
+	TotalVerdicts  *VerdictCountsJSON `json:"total_verdicts,omitempty"`
+	WorkUnits      []*WorkUnitInfo    `json:"work_units,omitempty"`
+	RootInvocation *pb.RootInvocation `json:"-"`
 }
 
 // VerdictCountsJSON contains test verdict counts for JSON output.
@@ -197,9 +200,16 @@ type VerdictCountsJSON struct {
 // WorkUnitInfo contains details about a work unit executing part of a module.
 type WorkUnitInfo struct {
 	WorkUnitID   string                  `json:"work_unit_id"`
+	FullName     string                  `json:"full_name,omitempty"`
+	Parent       string                  `json:"parent,omitempty"`
 	Kind         string                  `json:"kind,omitempty"`
 	State        string                  `json:"state"`
 	ShardKey     string                  `json:"shard_key,omitempty"`
+	ModuleScheme string                  `json:"module_scheme,omitempty"`
+	Variant      *pb.Variant             `json:"variant,omitempty"`
+	VariantHash  string                  `json:"variant_hash,omitempty"`
+	Tags         []*pb.StringPair        `json:"tags,omitempty"`
+	Properties   *structpb.Struct        `json:"properties,omitempty"`
 	Summary      string                  `json:"summary,omitempty"`
 	Error        *format.DiscoveredError `json:"error,omitempty"`
 	ArtifactList []string                `json:"artifacts,omitempty"`
@@ -211,9 +221,10 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 	rootInvName := "rootInvocations/" + normInv
 
 	details := &ModuleDetails{
-		InvocationID: normInv,
-		ModuleName:   moduleName,
-		ModuleStatus: "STATUS_UNSPECIFIED",
+		InvocationID:   normInv,
+		ModuleName:     moduleName,
+		ModuleStatus:   "STATUS_UNSPECIFIED",
+		RootInvocation: format.FetchRootInvocation(ctx, client, normInv),
 	}
 
 	// 1. Query Test Aggregations for the module
@@ -401,11 +412,18 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 	var results []*WorkUnitInfo
 	for _, wu := range matchedWUs {
 		info := &WorkUnitInfo{
-			WorkUnitID: wu.WorkUnitId,
-			Kind:       wu.Kind,
-			State:      wu.State.String(),
-			ShardKey:   wu.ModuleShardKey,
-			Summary:    wu.SummaryMarkdown,
+			WorkUnitID:   wu.WorkUnitId,
+			FullName:     wu.Name,
+			Parent:       wu.Parent,
+			Kind:         wu.Kind,
+			State:        wu.State.String(),
+			ShardKey:     wu.ModuleShardKey,
+			ModuleScheme: wu.GetModuleId().GetModuleScheme(),
+			Variant:      wu.GetModuleId().GetModuleVariant(),
+			VariantHash:  wu.GetModuleId().GetModuleVariantHash(),
+			Tags:         wu.GetTags(),
+			Properties:   wu.GetProperties(),
+			Summary:      wu.SummaryMarkdown,
 		}
 		if wu.State == pb.WorkUnit_FAILED {
 			discErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, wu.Name)
@@ -419,16 +437,41 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 	return results, nil
 }
 
+func (wu *WorkUnitInfo) toWorkUnitProto() *pb.WorkUnit {
+	if wu == nil {
+		return nil
+	}
+	var modID *pb.ModuleIdentifier
+	if wu.ModuleScheme != "" || wu.Variant != nil || wu.VariantHash != "" {
+		modID = &pb.ModuleIdentifier{
+			ModuleScheme:      wu.ModuleScheme,
+			ModuleVariant:     wu.Variant,
+			ModuleVariantHash: wu.VariantHash,
+		}
+	}
+	return &pb.WorkUnit{
+		Name:       wu.FullName,
+		Parent:     wu.Parent,
+		ModuleId:   modID,
+		Tags:       wu.Tags,
+		Properties: wu.Properties,
+	}
+}
+
 func printModuleDetails(details *ModuleDetails, showMetadata bool) {
+	fprintModuleDetails(os.Stdout, details, showMetadata)
+}
+
+func fprintModuleDetails(out io.Writer, details *ModuleDetails, showMetadata bool) {
 	statusClean := strings.TrimPrefix(details.ModuleStatus, "MODULE_STATUS_")
-	fmt.Printf("Module:        %s\n", details.ModuleName)
-	fmt.Printf("Invocation:    rootInvocations/%s\n", details.InvocationID)
-	fmt.Printf("Status:        %s\n", statusClean)
+	fmt.Fprintf(out, "Module:        %s\n", details.ModuleName)
+	fmt.Fprintf(out, "Invocation:    rootInvocations/%s\n", details.InvocationID)
+	fmt.Fprintf(out, "Status:        %s\n", statusClean)
 
 	if details.TotalVerdicts != nil {
 		v := details.TotalVerdicts
 		if v.Total == 0 {
-			fmt.Printf("Test Verdicts: 0 tests ran\n")
+			fmt.Fprintf(out, "Test Verdicts: 0 tests ran\n")
 		} else {
 			var parts []string
 			if v.Failed > 0 {
@@ -453,12 +496,12 @@ func printModuleDetails(details *ModuleDetails, showMetadata bool) {
 			if summary == "" {
 				summary = fmt.Sprintf("%d tests", v.Total)
 			}
-			fmt.Printf("Test Verdicts: %s (%d tests ran)\n", summary, v.Total)
+			fmt.Fprintf(out, "Test Verdicts: %s (%d tests ran)\n", summary, v.Total)
 		}
 	}
 
 	if len(details.WorkUnits) > 0 {
-		fmt.Println("\nShards & Work Units:")
+		fmt.Fprintln(out, "\nShards & Work Units:")
 		for _, wu := range details.WorkUnits {
 			stateClean := strings.TrimPrefix(wu.State, "STATE_")
 			var meta []string
@@ -472,20 +515,30 @@ func printModuleDetails(details *ModuleDetails, showMetadata bool) {
 			if len(meta) > 0 {
 				metaDesc = fmt.Sprintf(" (%s)", strings.Join(meta, ", "))
 			}
-			fmt.Printf("  [%s] %s%s\n", stateClean, wu.WorkUnitID, metaDesc)
+			fmt.Fprintf(out, "  [%s] %s%s\n", stateClean, wu.WorkUnitID, metaDesc)
 
 			if wu.Error != nil {
 				if wu.Error.Message != "" {
-					fmt.Printf("    Error: %s\n", wu.Error.Message)
+					fmt.Fprintf(out, "    Error: %s\n", wu.Error.Message)
 				} else if wu.Error.RawSummary != "" {
-					fmt.Printf("    Summary:\n      %s\n", strings.ReplaceAll(wu.Error.RawSummary, "\n", "\n      "))
+					fmt.Fprintf(out, "    Summary:\n      %s\n", strings.ReplaceAll(wu.Error.RawSummary, "\n", "\n      "))
 				}
 				if wu.Error.StackTrace != "" {
-					fmt.Printf("    Stack Trace:\n      %s\n", strings.ReplaceAll(wu.Error.StackTrace, "\n", "\n      "))
+					fmt.Fprintf(out, "    Stack Trace:\n      %s\n", strings.ReplaceAll(wu.Error.StackTrace, "\n", "\n      "))
 				}
 			} else if strings.TrimSpace(wu.Summary) != "" {
-				fmt.Printf("    Summary:\n      %s\n", strings.ReplaceAll(strings.TrimSpace(wu.Summary), "\n", "\n      "))
+				fmt.Fprintf(out, "    Summary:\n      %s\n", strings.ReplaceAll(strings.TrimSpace(wu.Summary), "\n", "\n      "))
+			}
+
+			if showMetadata {
+				format.FprintWorkUnitMetadata(out, wu.toWorkUnitProto(), "    ", true)
 			}
 		}
+	}
+
+	if showMetadata && details.RootInvocation != nil {
+		fmt.Fprintln(out)
+		format.FprintRootInvocationMetadata(out, details.RootInvocation)
+		format.FprintRootInvocationAdditionalMetadata(out, details.RootInvocation)
 	}
 }

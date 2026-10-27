@@ -32,6 +32,7 @@ import (
 
 type mockAggResultDBClient struct {
 	pb.ResultDBClient
+	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
 	queryTestAggregations func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
 	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
 }
@@ -55,6 +56,9 @@ func (m *mockAggResultDBClient) GetWorkUnit(ctx context.Context, in *pb.GetWorkU
 }
 
 func (m *mockAggResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+	if m.getRootInvocation != nil {
+		return m.getRootInvocation(ctx, in)
+	}
 	return &pb.RootInvocation{Name: in.Name}, nil
 }
 
@@ -94,6 +98,22 @@ func TestPrintVerdictSummaryWithAggregations(t *testing.T) {
 	ftt.Run(`FetchHierarchyAggregations and printVerdictSummary`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		client := &mockAggResultDBClient{
+			getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+				return &pb.RootInvocation{
+					Name:  in.Name,
+					State: pb.RootInvocation_FAILED,
+					Realm: "google:android-test-results",
+					PrimaryBuild: &pb.BuildDescriptor{
+						Definition: &pb.BuildDescriptor_AndroidBuild{
+							AndroidBuild: &pb.AndroidBuildDescriptor{
+								Branch:      "git_main",
+								BuildTarget: "cf_x86_64_phone-trunk_staging-userdebug",
+								BuildId:     "16133789",
+							},
+						},
+					},
+				}, nil
+			},
 			queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
 				assert.Loosely(t, in.Parent, should.Equal("rootInvocations/ants-i85300010634749400"))
 				switch in.Predicate.AggregationLevel {
@@ -161,6 +181,14 @@ func TestPrintVerdictSummaryWithAggregations(t *testing.T) {
 		assert.Loosely(t, out, should.ContainSubstring("Package: no-package-name [245 failed, 218 passed, 7 skipped]"))
 		assert.Loosely(t, out, should.ContainSubstring("Class: PerInstance/NewKeyGenerationTest [42 failed, 36 passed]"))
 		assert.Loosely(t, out, should.ContainSubstring("Method: TripleDesInvalidSize/0_strongbox"))
+		assert.Loosely(t, out, should.NotContainSubstring("Primary Build:"))
+		assert.Loosely(t, out, should.NotContainSubstring("Realm:"))
+
+		var metaBuf bytes.Buffer
+		printVerdictSummary(&metaBuf, ctx, &mockSchemasClient{}, client, nil, "ants-i85300010634749400", vg, true, false)
+		metaOut := metaBuf.String()
+		assert.Loosely(t, metaOut, should.ContainSubstring("Primary Build: branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=16133789\n"))
+		assert.Loosely(t, metaOut, should.ContainSubstring("Realm:        google:android-test-results\n"))
 
 		t.Run(`returns nil for legacy invocations`, func(t *ftt.Test) {
 			aggs := FetchHierarchyAggregations(ctx, client, "build-123", vg.Results[0], true)

@@ -32,7 +32,9 @@ INTEGRATION_TESTS=1 go test ./...
 *   `base/`: Shared CLI utilities and authentication flags.
 *   `format/`: Common formatting and HTML summary processing helpers.
 *   `ids/`: Subcommand `luci ids <target>` to parse URLs / resource names and extract component IDs.
+*   `invocation/`: Subpackage for `invocation` resource inspection (`luci invocation get`).
 *   `build/`: Subpackage for `build` resource management (`luci build get`, `luci build log`).
+*   `module/`: Subpackage for `module` resource inspection (`luci module get`).
 *   `testresult/`: Subpackage for `test-result` resource management (`luci test-result get`, `luci test-result artifact ...`).
 *   `workunit/`: Subpackage for `work-unit` resource management (`luci work-unit get`, `luci work-unit artifact ...`).
 *   `verdict/`: Subpackage for `verdict` resource management (`luci verdict get`, `luci verdict list`).
@@ -55,6 +57,9 @@ The tool automatically integrates with your local credentials. If running on cor
 # Inspect a Buildbucket build and fetch step logs
 ./luci build get -buildid 8738491827364512345
 ./luci build log tail -buildid 8738491827364512345 -step compile -n 50
+
+# Inspect invocation metadata (build, branch, target, sources, state)
+./luci invocation get -invocationid ants-i...
 
 # Get a test verdict
 ./luci verdict get -invocationid build-8676... -testid "ninja://..." [-varianthash ...]
