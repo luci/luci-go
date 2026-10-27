@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -341,6 +342,9 @@ func QueryAllArtifacts(ctx context.Context, client rdbpb.ResultDBClient, parent 
 			PageToken: pageToken,
 		})
 		if err != nil {
+			if base.IsPermissionDenied(err) {
+				return nil, errors.Fmt("ListArtifacts RPC failed (%s): %w", base.ResultDBPermissionReason(parent, err), err)
+			}
 			return nil, err
 		}
 		all = append(all, res.Artifacts...)

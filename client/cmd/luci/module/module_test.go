@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -397,8 +398,14 @@ func TestModuleDetails(t *testing.T) {
 			}
 			details, err := FetchModuleDetails(ctx, client, nil, "inv-1", "MyModule")
 			assert.Loosely(t, details, should.BeNil)
-			assert.Loosely(t, err, should.ErrLike("failed to query test aggregations"))
+			assert.Loosely(t, err, should.ErrLike("query test aggregations"))
+			assert.Loosely(t, err, should.ErrLike("missing ResultDB realm permission"))
+			assert.Loosely(t, err.Error(), should.NotContainSubstring("mdb/android-build-access"))
 			assert.Loosely(t, err, should.ErrLike("access denied"))
+
+			_, errAndroid := FetchModuleDetails(ctx, client, nil, "I77100010600769898", "MyModule")
+			assert.Loosely(t, errAndroid, should.ErrLike("missing ResultDB realm permission"))
+			assert.Loosely(t, errAndroid, should.ErrLike(base.AndroidAccessHint))
 		})
 
 		t.Run(`discoverModuleWorkUnits root WU error propagated`, func(t *ftt.Test) {
@@ -409,8 +416,8 @@ func TestModuleDetails(t *testing.T) {
 			}
 			details, err := FetchModuleDetails(ctx, client, nil, "inv-1", "MyModule")
 			assert.Loosely(t, details, should.BeNil)
-			assert.Loosely(t, err, should.ErrLike("failed to discover module work units"))
-			assert.Loosely(t, err, should.ErrLike("failed to get root work unit"))
+			assert.Loosely(t, err, should.ErrLike("discover module work units"))
+			assert.Loosely(t, err, should.ErrLike("get root work unit"))
 			assert.Loosely(t, err, should.ErrLike("permission denied"))
 		})
 
@@ -428,8 +435,8 @@ func TestModuleDetails(t *testing.T) {
 			}
 			details, err := FetchModuleDetails(ctx, client, nil, "inv-1", "MyModule")
 			assert.Loosely(t, details, should.BeNil)
-			assert.Loosely(t, err, should.ErrLike("failed to discover module work units"))
-			assert.Loosely(t, err, should.ErrLike("failed to batch get work units"))
+			assert.Loosely(t, err, should.ErrLike("discover module work units"))
+			assert.Loosely(t, err, should.ErrLike("batch get work units"))
 			assert.Loosely(t, err, should.ErrLike("quota exceeded or network failure"))
 		})
 	})

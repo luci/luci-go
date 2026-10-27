@@ -178,7 +178,7 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	}
 	if err != nil {
 		if base.IsPermissionDenied(err) {
-			fmt.Fprintf(os.Stderr, "GetWorkUnit RPC failed (missing ResultDB realm permission): %s\n", err)
+			fmt.Fprintf(os.Stderr, "GetWorkUnit RPC failed (%s): %s\n", base.ResultDBPermissionReason(clean, err), err)
 		} else if status.Code(err) == codes.NotFound && base.IsAntsWorkUnitID(normWUID) && !strings.Contains(normWUID, ":u-") {
 			fmt.Fprintf(os.Stderr, "Work unit %q not found in invocation %q.\n\n", normWUID, invID)
 			fmt.Fprintf(os.Stderr, "Note: In Android CI (AnTS / TradeFed), module and test-run work units are stored in ResultDB\n"+

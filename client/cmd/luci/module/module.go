@@ -212,9 +212,9 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 	resAgg, errAgg := client.QueryTestAggregations(ctx, reqAgg)
 	if errAgg != nil {
 		if base.IsPermissionDenied(errAgg) {
-			return nil, errors.Fmt("failed to query test aggregations for %s (missing ResultDB realm permission): %w", rootInvName, errAgg)
+			return nil, errors.Fmt("query test aggregations for %s (%s): %w", rootInvName, base.ResultDBPermissionReason(rootInvName, errAgg), errAgg)
 		}
-		return nil, errors.Fmt("failed to query test aggregations for %s: %w", rootInvName, errAgg)
+		return nil, errors.Fmt("query test aggregations for %s: %w", rootInvName, errAgg)
 	}
 	if resAgg != nil {
 		for _, agg := range resAgg.Aggregations {
@@ -242,7 +242,7 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 	// 2. Discover Work Units for this module
 	workUnits, err := discoverModuleWorkUnits(ctx, client, httpClient, rootInvName, moduleName)
 	if err != nil {
-		return nil, errors.Fmt("failed to discover module work units: %w", err)
+		return nil, errors.Fmt("discover module work units: %w", err)
 	}
 	details.WorkUnits = workUnits
 
@@ -300,7 +300,10 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 		View: pb.WorkUnitView_WORK_UNIT_VIEW_BASIC,
 	})
 	if err != nil {
-		return nil, errors.Fmt("failed to get root work unit %s: %w", rootWUName, err)
+		if base.IsPermissionDenied(err) {
+			return nil, errors.Fmt("get root work unit %s (%s): %w", rootWUName, base.ResultDBPermissionReason(rootInvName, err), err)
+		}
+		return nil, errors.Fmt("get root work unit %s: %w", rootWUName, err)
 	}
 	if rootWU == nil {
 		return nil, errors.Fmt("root work unit %s not found", rootWUName)
@@ -343,7 +346,10 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 					View:   pb.WorkUnitView_WORK_UNIT_VIEW_BASIC,
 				})
 				if err != nil {
-					return nil, errors.Fmt("failed to batch get work units: %w", err)
+					if base.IsPermissionDenied(err) {
+						return nil, errors.Fmt("batch get work units (%s): %w", base.ResultDBPermissionReason(rootInvName, err), err)
+					}
+					return nil, errors.Fmt("batch get work units: %w", err)
 				}
 				if batchRes == nil {
 					continue

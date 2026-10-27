@@ -303,7 +303,7 @@ func queryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, 
 		res, err := client.QueryArtifacts(ctx, req)
 		if err != nil {
 			if base.IsPermissionDenied(err) {
-				return nil, false, errors.Fmt("QueryArtifacts RPC failed (missing ResultDB realm permission): %w", err)
+				return nil, false, errors.Fmt("QueryArtifacts RPC failed (%s): %w", base.ResultDBPermissionReason(normInvID, err), err)
 			}
 			return nil, false, errors.Fmt("QueryArtifacts RPC failed: %w", err)
 		}
@@ -624,7 +624,7 @@ func (r *artifactCommonRun) executeFetch(ctx context.Context, parentType ParentT
 		}
 		if err != nil {
 			if base.IsPermissionDenied(err) {
-				fmt.Fprintf(os.Stderr, "GetArtifact RPC failed (missing ResultDB realm permission): %s\n", err)
+				fmt.Fprintf(os.Stderr, "GetArtifact RPC failed (%s): %s\n", base.ResultDBPermissionReason(artName, err), err)
 			} else {
 				fmt.Fprintf(os.Stderr, "GetArtifact RPC failed: %s\n", err)
 			}

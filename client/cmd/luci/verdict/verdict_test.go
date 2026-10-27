@@ -19,7 +19,10 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -316,6 +319,22 @@ func TestQueryRootInvocationVerdicts(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, calls, should.Equal(1))
 			assert.Loosely(t, len(results), should.Equal(1))
+		})
+
+		t.Run(`includes AndroidAccessHint on PermissionDenied only for Android invocations`, func(t *ftt.Test) {
+			client := &mockAggResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return nil, status.Error(codes.PermissionDenied, "caller does not have permission")
+				},
+			}
+
+			_, _, _, errBuild := QueryVerdictResultsAndExonerations(ctx, client, "build-123", testID, "", false, 10)
+			assert.Loosely(t, errBuild, should.ErrLike("missing ResultDB realm permission"))
+			assert.Loosely(t, errBuild.Error(), should.NotContainSubstring("mdb/android-build-access"))
+
+			_, _, _, errAndroid := QueryVerdictResultsAndExonerations(ctx, client, "ants-i26000010636495227", testID, "", false, 10)
+			assert.Loosely(t, errAndroid, should.ErrLike("missing ResultDB realm permission"))
+			assert.Loosely(t, errAndroid, should.ErrLike(base.AndroidAccessHint))
 		})
 	})
 }

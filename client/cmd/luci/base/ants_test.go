@@ -386,6 +386,7 @@ func TestResolveAntsTestResult(t *testing.T) {
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("permission denied"))
 			assert.Loosely(t, err.Error(), should.ContainSubstring("401"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring(AndroidAccessHint))
 		})
 
 		t.Run("403 Forbidden permission denied error handling", func(t *ftt.Test) {
@@ -408,6 +409,7 @@ func TestResolveAntsTestResult(t *testing.T) {
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("permission denied"))
 			assert.Loosely(t, err.Error(), should.ContainSubstring("403"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring(AndroidAccessHint))
 		})
 
 		t.Run("Invalid AnTS test result ID format", func(t *ftt.Test) {

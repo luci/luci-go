@@ -49,6 +49,10 @@ const DefaultAntsBaseURL = "https://androidteststorage.pa.googleapis.com"
 // quota project for Android Build / AnTS v4 CLI tools.
 const AntsUserProject = "android-build-fetch-artifact"
 
+// AndroidAccessHint explains the MDB group requirements for accessing Android
+// Build (AnTS) and Android ResultDB test data.
+const AndroidAccessHint = "accessing Android (AnTS / ResultDB) test data requires membership in mdb/android-build-access for users (http://go/android-build-access) or mdb/android-build-access-agent-identities for agent identities (http://go/android-agent-identity-access)"
+
 var (
 	antsTRRegex  = regexp.MustCompile(`^(?i)TR[0-9]+$`)
 	antsInvRegex = regexp.MustCompile(`^(?:I[0-9]+|ants-[Ii][0-9]+)$`)
@@ -327,9 +331,9 @@ func formatAntsResourceAPIError(resourceKind, resourceID string, statusCode int,
 		return errors.Fmt("AnTS %s %q not found (HTTP 404)", resourceKind, resourceID)
 	case http.StatusUnauthorized, http.StatusForbidden:
 		if msg != "" {
-			return errors.Fmt("AnTS API permission denied for %s %q (HTTP %d): %s", resourceKind, resourceID, statusCode, msg)
+			return errors.Fmt("AnTS API permission denied for %s %q (HTTP %d): %s (%s)", resourceKind, resourceID, statusCode, msg, AndroidAccessHint)
 		}
-		return errors.Fmt("AnTS API permission denied for %s %q (HTTP %d)", resourceKind, resourceID, statusCode)
+		return errors.Fmt("AnTS API permission denied for %s %q (HTTP %d) (%s)", resourceKind, resourceID, statusCode, AndroidAccessHint)
 	default:
 		if msg != "" {
 			return errors.Fmt("AnTS API request failed with HTTP %d: %s", statusCode, msg)

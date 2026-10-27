@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -42,6 +43,105 @@ func IsPermissionDenied(err error) bool {
 		code = appstatus.Code(err)
 	}
 	return code == codes.PermissionDenied
+}
+
+// LooksLikeAndroidTarget heuristically reports whether target (an invocation ID,
+// work unit ID, test result ID, URL, or ResultDB resource name) appears to
+// refer to Android (AnTS) data based on naming conventions.
+//
+// NOTE: This check is a best-effort heuristic and is NOT definitive. It must
+// only be used for deciding whether to display user-facing hints in error
+// messages, never for enabling, disabling, or gating functionality.
+func LooksLikeAndroidTarget(target string) bool {
+	target = strings.TrimSpace(target)
+	if target == "" {
+		return false
+	}
+	if IsAntsURL(target) || IsAntsTestResultID(target) || IsAntsWorkUnitID(target) {
+		return true
+	}
+	if meta := ExtractArtifactMetadata(target); meta.InvocationID != "" || meta.WorkUnitID != "" {
+		if meta.InvocationID != "" && IsAntsInvocationID(NormalizeInvocation(meta.InvocationID)) {
+			return true
+		}
+		if meta.WorkUnitID != "" && IsAntsWorkUnitID(meta.WorkUnitID) {
+			return true
+		}
+		return false
+	}
+	return IsAntsInvocationID(NormalizeInvocation(target))
+}
+
+// ExtractDeniedProjectAndRealm extracts the denied LUCI project and (when
+// disclosed) full realm from a ResultDB PermissionDenied error, inspecting both
+// structured errdetails.ErrorInfo metadata and the error message text.
+func ExtractDeniedProjectAndRealm(err error) (project, realm string) {
+	if err == nil {
+		return "", ""
+	}
+	st := status.Convert(err)
+	if st.Code() == codes.Unknown {
+		if appSt, ok := appstatus.Get(err); ok {
+			st = appSt
+		}
+	}
+	for _, d := range st.Details() {
+		if info, ok := d.(*errdetails.ErrorInfo); ok {
+			project = info.Metadata["project"]
+			realm = info.Metadata["realm"]
+			if project == "" && realm != "" {
+				if p, _, ok := strings.Cut(realm, ":"); ok {
+					project = p
+				}
+			}
+			if project != "" || realm != "" {
+				return project, realm
+			}
+		}
+	}
+
+	msg := err.Error()
+	if _, after, ok := strings.Cut(msg, `in realm "`); ok {
+		if r, _, ok := strings.Cut(after, `"`); ok && r != "" {
+			realm = r
+			if p, _, ok := strings.Cut(realm, ":"); ok {
+				project = p
+			}
+			return project, realm
+		}
+	}
+	for _, marker := range []string{`(project "`, `in any realm in project "`} {
+		if _, after, ok := strings.Cut(msg, marker); ok {
+			if p, _, ok := strings.Cut(after, `"`); ok && p != "" {
+				return p, ""
+			}
+		}
+	}
+	return "", ""
+}
+
+// ResultDBPermissionReason returns the parenthetical explanation for a ResultDB
+// PermissionDenied error on target. When the error or target includes a LUCI
+// project or realm, it is included in the message; when it refers to Android
+// (AnTS) data, actionable MDB group onboarding instructions are appended.
+func ResultDBPermissionReason(target string, errs ...error) string {
+	var project, realm string
+	for _, err := range errs {
+		if p, r := ExtractDeniedProjectAndRealm(err); p != "" || r != "" {
+			project, realm = p, r
+			break
+		}
+	}
+	reason := "missing ResultDB realm permission"
+	if realm != "" {
+		reason = fmt.Sprintf("missing ResultDB realm permission in realm %q", realm)
+	} else if project != "" {
+		reason = fmt.Sprintf("missing ResultDB realm permission in project %q", project)
+	}
+	if project == "android" || (project == "" && LooksLikeAndroidTarget(target)) {
+		return reason + "; " + AndroidAccessHint
+	}
+	return reason
 }
 
 // ResolvedInvocation holds the normalized invocation ID, whether it is a legacy
@@ -98,7 +198,7 @@ func ResolveInvocation(ctx context.Context, client rdbpb.ResultDBClient, rawInvI
 		}, nil
 	}
 	if IsPermissionDenied(rootErr) {
-		return nil, errors.Fmt("permission denied for rootInvocations/%s (missing ResultDB realm permission): %w", normalized, rootErr)
+		return nil, errors.Fmt("permission denied for rootInvocations/%s (%s): %w", normalized, ResultDBPermissionReason(normalized, rootErr), rootErr)
 	}
 	if legacyErr == nil {
 		return &ResolvedInvocation{
@@ -108,7 +208,7 @@ func ResolveInvocation(ctx context.Context, client rdbpb.ResultDBClient, rawInvI
 		}, nil
 	}
 	if IsPermissionDenied(legacyErr) {
-		return nil, errors.Fmt("permission denied for invocations/%s (missing ResultDB realm permission): %w", normalized, legacyErr)
+		return nil, errors.Fmt("permission denied for invocations/%s (%s): %w", normalized, ResultDBPermissionReason(normalized, legacyErr), legacyErr)
 	}
 
 	return &ResolvedInvocation{
@@ -417,7 +517,7 @@ func queryRootInvocationVerdicts(ctx context.Context, client rdbpb.ResultDBClien
 		res, err := client.QueryTestVerdicts(ctx, req)
 		if err != nil {
 			if IsPermissionDenied(err) {
-				return nil, nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s (missing ResultDB realm permission): %w", rootInvName, err)
+				return nil, nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s (%s): %w", rootInvName, ResultDBPermissionReason(rootInvName, err), err)
 			}
 			return nil, nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s: %w", rootInvName, err)
 		}
@@ -516,7 +616,7 @@ func queryLegacyInvocationVerdicts(ctx context.Context, client rdbpb.ResultDBCli
 		res, err := client.QueryTestResults(ctx, req)
 		if err != nil {
 			if IsPermissionDenied(err) {
-				return nil, nil, false, errors.Fmt("QueryTestResults RPC failed for %s (missing ResultDB realm permission): %w", legacyInvName, err)
+				return nil, nil, false, errors.Fmt("QueryTestResults RPC failed for %s (%s): %w", legacyInvName, ResultDBPermissionReason(legacyInvName, err), err)
 			}
 			return nil, nil, false, errors.Fmt("QueryTestResults RPC failed for %s: %w", legacyInvName, err)
 		}

@@ -397,7 +397,7 @@ func QueryRootInvocationListedVerdicts(ctx context.Context, client pb.ResultDBCl
 		res, err := client.QueryTestVerdicts(ctx, req)
 		if err != nil {
 			if base.IsPermissionDenied(err) {
-				return nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s (missing ResultDB realm permission): %w", rootInvName, err)
+				return nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s (%s): %w", rootInvName, base.ResultDBPermissionReason(rootInvName, err), err)
 			}
 			return nil, false, errors.Fmt("QueryTestVerdicts RPC failed for %s: %w", rootInvName, err)
 		}
@@ -466,7 +466,7 @@ func QueryLegacyInvocationListedVerdicts(ctx context.Context, client pb.ResultDB
 		res, err := client.QueryTestVariants(ctx, req)
 		if err != nil {
 			if base.IsPermissionDenied(err) {
-				return nil, false, errors.Fmt("QueryTestVariants RPC failed for %s (missing ResultDB realm permission): %w", legacyInvName, err)
+				return nil, false, errors.Fmt("QueryTestVariants RPC failed for %s (%s): %w", legacyInvName, base.ResultDBPermissionReason(legacyInvName, err), err)
 			}
 			return nil, false, errors.Fmt("QueryTestVariants RPC failed for %s: %w", legacyInvName, err)
 		}

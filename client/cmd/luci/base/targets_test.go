@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -25,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/appstatus"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -122,6 +124,84 @@ func TestTargets(t *testing.T) {
 			assert.Loosely(t, NormalizeWorkUnit("workUnits/WU123:u-abc"), should.Equal("ants-wu123:u-abc"))
 		})
 
+		t.Run("LooksLikeAndroidTarget and ResultDBPermissionReason", func(t *ftt.Test) {
+			for _, androidTarget := range []string{
+				"I77100010600769898",
+				"i77100010600769898",
+				"ants-i77100010600769898",
+				"WU17100269020689387",
+				"ants-wu17100269020689387:u-abc",
+				"TR13830335277435395",
+				"rootInvocations/ants-i77100010600769898",
+				"invocations/ants-i77100010600769898",
+				"rootInvocations/ants-i77100010600769898/workUnits/ants-wu123/artifacts/logcat.txt",
+				"https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898/test/TR13830335277435395/",
+			} {
+				assert.Loosely(t, LooksLikeAndroidTarget(androidTarget), should.BeTrue)
+				assert.Loosely(t, ResultDBPermissionReason(androidTarget), should.ContainSubstring("missing ResultDB realm permission"))
+				assert.Loosely(t, ResultDBPermissionReason(androidTarget), should.ContainSubstring(AndroidAccessHint))
+			}
+
+			for _, nonAndroidTarget := range []string{
+				"",
+				"build-8676886509240051393",
+				"8676886509240051393",
+				"task-chromium-swarm.appspot.com-123",
+				"u-swarming-123",
+				"rootInvocations/build-123/workUnits/root/artifacts/stdout.txt",
+				"invocations/build-123/tests/test_foo/results/0/artifacts/log.txt",
+			} {
+				assert.Loosely(t, LooksLikeAndroidTarget(nonAndroidTarget), should.BeFalse)
+				assert.Loosely(t, ResultDBPermissionReason(nonAndroidTarget), should.Equal("missing ResultDB realm permission"))
+			}
+
+			// Structured errdetails.ErrorInfo with project="android" on a non-ants build ID
+			// should still surface the project name and Android MDB guidance.
+			stAndroid := appstatus.MustWithDetails(
+				status.New(codes.PermissionDenied, `caller does not have permission resultdb.rootInvocations.get in realm of root invocation "rootInvocations/build-123" (project "android")`),
+				&errdetails.ErrorInfo{
+					Reason:   "PERMISSION_DENIED",
+					Domain:   "resultdb.api.luci.app",
+					Metadata: map[string]string{"project": "android"},
+				},
+			)
+			reasonAndroid := ResultDBPermissionReason("build-123", stAndroid.Err())
+			assert.Loosely(t, reasonAndroid, should.ContainSubstring(`missing ResultDB realm permission in project "android"`))
+			assert.Loosely(t, reasonAndroid, should.ContainSubstring(AndroidAccessHint))
+
+			// Structured errdetails.ErrorInfo with project="chromium" should surface the
+			// project name without Android MDB guidance.
+			stChromium := appstatus.MustWithDetails(
+				status.New(codes.PermissionDenied, `caller does not have permission resultdb.rootInvocations.get in realm of root invocation "rootInvocations/build-123" (project "chromium")`),
+				&errdetails.ErrorInfo{
+					Reason:   "PERMISSION_DENIED",
+					Domain:   "resultdb.api.luci.app",
+					Metadata: map[string]string{"project": "chromium"},
+				},
+			)
+			reasonChromium := ResultDBPermissionReason("build-123", stChromium.Err())
+			assert.Loosely(t, reasonChromium, should.Equal(`missing ResultDB realm permission in project "chromium"`))
+
+			// Upgrade-limited-to-full error disclosing the full work unit realm.
+			errUpgrade := status.Error(codes.PermissionDenied, `caller does not have permission resultdb.workUnits.get in realm "android:al/board/model" of work unit "rootInvocations/ants-i123/workUnits/ants-wu456" (trying to upgrade limited access to full access)`)
+			reasonUpgrade := ResultDBPermissionReason("build-123", errUpgrade)
+			assert.Loosely(t, reasonUpgrade, should.ContainSubstring(`missing ResultDB realm permission in realm "android:al/board/model"`))
+			assert.Loosely(t, reasonUpgrade, should.ContainSubstring(AndroidAccessHint))
+
+			// Realm without a colon does not mistakenly populate project.
+			stNoColon := appstatus.MustWithDetails(
+				status.New(codes.PermissionDenied, `caller does not have permission in realm "subrealm"`),
+				&errdetails.ErrorInfo{
+					Reason:   "PERMISSION_DENIED",
+					Domain:   "resultdb.api.luci.app",
+					Metadata: map[string]string{"realm": "subrealm"},
+				},
+			)
+			projNoColon, realmNoColon := ExtractDeniedProjectAndRealm(stNoColon.Err())
+			assert.Loosely(t, projNoColon, should.BeEmpty)
+			assert.Loosely(t, realmNoColon, should.Equal("subrealm"))
+		})
+
 		t.Run("ResolveInvocation", func(t *ftt.Test) {
 			ctx := context.Background()
 
@@ -170,6 +250,11 @@ func TestTargets(t *testing.T) {
 				}
 				_, err := ResolveInvocation(ctx, client, "build-123")
 				assert.Loosely(t, err, should.ErrLike("missing ResultDB realm permission"))
+				assert.Loosely(t, err.Error(), should.NotContainSubstring("mdb/android-build-access"))
+
+				_, errAndroid := ResolveInvocation(ctx, client, "I77100010600769898")
+				assert.Loosely(t, errAndroid, should.ErrLike("missing ResultDB realm permission"))
+				assert.Loosely(t, errAndroid, should.ErrLike(AndroidAccessHint))
 			})
 
 			t.Run("PermissionDenied on GetInvocation fails immediately", func(t *ftt.Test) {
@@ -183,6 +268,11 @@ func TestTargets(t *testing.T) {
 				}
 				_, err := ResolveInvocation(ctx, client, "build-123")
 				assert.Loosely(t, err, should.ErrLike("missing ResultDB realm permission"))
+				assert.Loosely(t, err.Error(), should.NotContainSubstring("mdb/android-build-access"))
+
+				_, errAndroid := ResolveInvocation(ctx, client, "ants-i77100010600769898")
+				assert.Loosely(t, errAndroid, should.ErrLike("missing ResultDB realm permission"))
+				assert.Loosely(t, errAndroid, should.ErrLike(AndroidAccessHint))
 			})
 		})
 

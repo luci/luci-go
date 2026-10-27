@@ -278,7 +278,7 @@ func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env s
 	}
 	if err != nil {
 		if base.IsPermissionDenied(err) {
-			fmt.Fprintf(os.Stderr, "CompareArtifactLines RPC failed (missing ResultDB realm permission): %s\n", err)
+			fmt.Fprintf(os.Stderr, "CompareArtifactLines RPC failed (%s): %s\n", base.ResultDBPermissionReason(artName, err), err)
 		} else {
 			fmt.Fprintf(os.Stderr, "CompareArtifactLines RPC failed: %s\n", err)
 		}

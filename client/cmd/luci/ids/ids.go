@@ -1451,6 +1451,9 @@ func queryAntsResultDBVerdict(ctx context.Context, client pb.ResultDBClient, roo
 		}
 		res, err := client.QueryTestVerdicts(ctx, req)
 		if err != nil {
+			if base.IsPermissionDenied(err) {
+				return nil, nil, errors.Fmt("QueryTestVerdicts RPC failed for %s (%s): %w", rootInvName, base.ResultDBPermissionReason(rootInvName, err), err)
+			}
 			return nil, nil, errors.Fmt("QueryTestVerdicts RPC failed for %s: %w", rootInvName, err)
 		}
 		for _, tv := range res.TestVerdicts {
