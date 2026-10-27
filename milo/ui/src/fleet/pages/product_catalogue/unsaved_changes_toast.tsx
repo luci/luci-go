@@ -21,8 +21,8 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import { Box, Button, Paper, Typography } from '@mui/material';
 
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
+import { actionRowSx } from '@/fleet/theme/recipes';
 import {
-  controlHeights,
   fleetColors,
   fontSizes,
   iconSizes,
@@ -160,21 +160,14 @@ export const UnsavedChangesToast = ({
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={actionRowSx}>
         <Button
           variant="outlined"
           size="small"
+          color="inherit"
           onClick={onDiscard}
           data-testid="discard-catalog-edits-btn"
           startIcon={<RestartAltIcon sx={{ fontSize: iconSizes.control }} />}
-          sx={{
-            minHeight: controlHeights.button,
-            borderRadius: radii.pill,
-            fontSize: fontSizes.label,
-            textTransform: 'none',
-            borderColor: fleetColors.border,
-            color: fleetColors.textSecondary,
-          }}
         >
           Discard
         </Button>
@@ -184,6 +177,7 @@ export const UnsavedChangesToast = ({
             <Button
               variant="outlined"
               size="small"
+              color="inherit"
               component="a"
               href={CAPTAIN_FIN_CHAT_URL}
               target="_blank"
@@ -191,20 +185,13 @@ export const UnsavedChangesToast = ({
               onClick={onCopyPrompt}
               endIcon={<OpenInNewIcon sx={{ fontSize: iconSizes.control }} />}
               data-testid="open-captain-fin-btn"
-              sx={{
-                minHeight: controlHeights.button,
-                borderRadius: radii.pill,
-                fontSize: fontSizes.label,
-                textTransform: 'none',
-                borderColor: fleetColors.border,
-                color: fleetColors.textPrimary,
-              }}
             >
               @Captain Fin
             </Button>
             <Button
               variant="outlined"
               size="small"
+              color="inherit"
               component="a"
               href={buildJetskiPrefilledPromptUrl(prompt)}
               target="_blank"
@@ -212,14 +199,6 @@ export const UnsavedChangesToast = ({
               onClick={onCopyPrompt}
               endIcon={<OpenInNewIcon sx={{ fontSize: iconSizes.control }} />}
               data-testid="open-in-jetski-btn"
-              sx={{
-                minHeight: controlHeights.button,
-                borderRadius: radii.pill,
-                fontSize: fontSizes.label,
-                textTransform: 'none',
-                borderColor: fleetColors.border,
-                color: fleetColors.textPrimary,
-              }}
             >
               Jetski
             </Button>
@@ -239,16 +218,6 @@ export const UnsavedChangesToast = ({
             )
           }
           data-testid="review-generate-prompt-btn"
-          sx={{
-            minHeight: controlHeights.button,
-            borderRadius: radii.pill,
-            fontSize: fontSizes.label,
-            textTransform: 'none',
-            backgroundColor: fleetColors.primary,
-            '&:hover': {
-              backgroundColor: fleetColors.primaryHover,
-            },
-          }}
         >
           {isCopiedState ? 'Copy again' : 'Copy prompt to save'}
         </Button>

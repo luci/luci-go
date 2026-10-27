@@ -263,24 +263,22 @@ export const useProductCatalogFilters = (
     placeholderData: keepPreviousData,
   });
 
-  const nonVirtualData = nonVirtualFilterOptionsQuery.data as
-    | Record<string, unknown>
-    | undefined;
-  const gceData = gceFilterOptionsQuery.data as
-    | Record<string, unknown>
-    | undefined;
-
   const tabColumns = useMemo(
     () => getColumnsForTab(selectedTab),
     [selectedTab],
   );
 
   const nextFilterOptions = useMemo(() => {
+    const nonVirtualData = nonVirtualFilterOptionsQuery.data as
+      | Record<string, unknown>
+      | undefined;
+    const gceData = gceFilterOptionsQuery.data as
+      | Record<string, unknown>
+      | undefined;
     const hasData =
-      (!isGceTab && nonVirtualFilterOptionsQuery.data) ||
-      (isGceTab && gceFilterOptionsQuery.data) ||
-      (isAllTab &&
-        (nonVirtualFilterOptionsQuery.data || gceFilterOptionsQuery.data));
+      (!isGceTab && nonVirtualData) ||
+      (isGceTab && gceData) ||
+      (isAllTab && (nonVirtualData || gceData));
 
     if (!hasData) return undefined;
 
@@ -380,19 +378,34 @@ export const useProductCatalogFilters = (
     onApply?.();
   }, [onApply]);
 
-  const nonVirtualFilter = isAllTab
-    ? aip160()
-    : combineAipFilters(aip160(), currentTab);
-  const gceFilter = aip160();
+  const baseAipFilter = useMemo(() => aip160(), [aip160]);
+  const nonVirtualFilter = useMemo(
+    () =>
+      isAllTab ? baseAipFilter : combineAipFilters(baseAipFilter, currentTab),
+    [baseAipFilter, currentTab, isAllTab],
+  );
+  const gceFilter = baseAipFilter;
 
-  return {
-    filterValues,
-    nonVirtualFilter,
-    gceFilter,
-    isNonVirtualQueryEnabled: enableNonVirtual,
-    isGceQueryEnabled: enableGce,
-    onApplyFilter,
-    isLoading: isFiltersLoading,
-    warnings,
-  };
+  return useMemo(
+    () => ({
+      filterValues,
+      nonVirtualFilter,
+      gceFilter,
+      isNonVirtualQueryEnabled: enableNonVirtual,
+      isGceQueryEnabled: enableGce,
+      onApplyFilter,
+      isLoading: isFiltersLoading,
+      warnings,
+    }),
+    [
+      filterValues,
+      nonVirtualFilter,
+      gceFilter,
+      enableNonVirtual,
+      enableGce,
+      onApplyFilter,
+      isFiltersLoading,
+      warnings,
+    ],
+  );
 };

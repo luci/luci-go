@@ -25,6 +25,7 @@ import {
   IconButton,
   InputAdornment,
   Link,
+  MenuItem,
   TextField,
   Tooltip,
   Typography,
@@ -39,6 +40,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { fleetTableHeaderSx } from '@/fleet/components/fc_data_table/fleet_column_header.styles';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
@@ -65,7 +67,6 @@ import {
   iconSizes,
   radii,
   StatusTone,
-  statusTones,
 } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -106,6 +107,7 @@ interface DetailValueCellProps {
   readonly isRevampEnabled?: boolean;
   readonly isEditingSpecs?: boolean;
   readonly onStartEditingSpecs?: () => void;
+  readonly onStopEditingSpecs?: () => void;
   readonly onSpecFieldChange?: (
     field: CatalogEditableFieldKey,
     value: string,
@@ -196,17 +198,13 @@ const DetailValueCell = ({
   isRevampEnabled = false,
   isEditingSpecs = false,
   onStartEditingSpecs,
+  onStopEditingSpecs,
   onSpecFieldChange,
 }: DetailValueCellProps) => {
-  const fieldKey = row.original.key;
-  const rawValue = row.original.rawValue;
-  const entry = row.original.entry;
+  const { key: fieldKey, rawValue, entry } = row.original;
   const editableFieldKey = EDITABLE_SPEC_FIELD_BY_HEADER[fieldKey];
-  const resolvedType = resolveProductType(
-    entry?.productType,
-    entry?.productCatalogId,
-  );
-  const isGce = resolvedType === 'gce';
+  const isGce =
+    resolveProductType(entry?.productType, entry?.productCatalogId) === 'gce';
 
   if (
     isEditingSpecs &&
@@ -219,107 +217,156 @@ const DetailValueCell = ({
     const baselineVal = row.original.baselineValue ?? '';
     const isModified = currentVal.trim() !== baselineVal.trim();
     const errorMsg = row.original.errorMsg;
+    const isPlmStatusField = editableFieldKey === 'fleetPlmStatus';
+    const normalizedPlmVal = currentVal.trim().toUpperCase();
+    const plmStatusOptions =
+      isPlmStatusField &&
+      normalizedPlmVal &&
+      !ALLOWED_PLM_STATUSES.includes(
+        normalizedPlmVal as (typeof ALLOWED_PLM_STATUSES)[number],
+      )
+        ? [...ALLOWED_PLM_STATUSES, normalizedPlmVal]
+        : ALLOWED_PLM_STATUSES;
+
+    const endAdornmentContent =
+      errorMsg || isModified ? (
+        <InputAdornment
+          position="end"
+          sx={{ gap: 0.5, mr: isPlmStatusField ? 2.5 : -0.5, maxWidth: '55%' }}
+        >
+          {errorMsg && (
+            <Typography
+              variant="caption"
+              color="error"
+              title={errorMsg}
+              sx={{
+                fontSize: fontSizes.caption,
+                lineHeight: 1.1,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {errorMsg}
+            </Typography>
+          )}
+          {isModified && (
+            <Tooltip title={`Reset to ${baselineVal || 'empty'}`}>
+              <IconButton
+                size="small"
+                aria-label={`Reset ${fieldKey}`}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSpecFieldChange(editableFieldKey, baselineVal);
+                }}
+                sx={{ p: 0.25, color: fleetColors.primary, flexShrink: 0 }}
+              >
+                <RestartAltIcon sx={{ fontSize: iconSizes.control }} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </InputAdornment>
+      ) : undefined;
 
     return (
       <Box
         sx={{
           width: '100%',
-          flex: 1,
+          height: controlHeights.button,
           display: 'flex',
           alignItems: 'center',
-          height: 32,
-          py: 0,
         }}
       >
         <TextField
+          select={isPlmStatusField}
           size="small"
+          variant="outlined"
           fullWidth
-          value={currentVal}
+          value={isPlmStatusField ? normalizedPlmVal : currentVal}
           error={Boolean(errorMsg)}
           title={errorMsg || undefined}
           onChange={(e) => onSpecFieldChange(editableFieldKey, e.target.value)}
+          onKeyDown={(e) => {
+            if (e.defaultPrevented) {
+              return;
+            }
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              e.stopPropagation();
+              if (isModified) {
+                onSpecFieldChange(editableFieldKey, baselineVal);
+              } else {
+                onStopEditingSpecs?.();
+              }
+            }
+          }}
           sx={{
-            mx: -0.5,
-            width: 'calc(100% + 8px)',
-            '& .MuiInputBase-root': {
-              height: 30,
-              fontSize: fontSizes.body,
-              pr: 0.5,
+            flex: 1,
+            '& .MuiOutlinedInput-root': {
+              height: controlHeights.button,
+              fontSize: fontSizes.label,
               backgroundColor: fleetColors.surface,
-            },
-            ...(isModified && !errorMsg
-              ? {
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: fleetColors.primary,
-                    borderWidth: '1.5px',
-                  },
-                }
-              : {}),
-            '& .MuiOutlinedInput-input': {
-              py: 0.25,
-              pl: '7px',
-              pr: 1,
             },
           }}
           slotProps={{
+            select: isPlmStatusField
+              ? {
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    const statusStr = String(selected ?? '').trim();
+                    return statusStr ? (
+                      <StatusPill
+                        tone={getPlmStatusTone(statusStr)}
+                        size="compact"
+                        dot={false}
+                      >
+                        {statusStr}
+                      </StatusPill>
+                    ) : (
+                      <Box
+                        component="span"
+                        sx={{ color: fleetColors.textTertiary }}
+                      >
+                        Select status
+                      </Box>
+                    );
+                  },
+                  SelectDisplayProps: {
+                    'aria-label': `Edit ${fieldKey}`,
+                    ...({
+                      'data-testid': `spec-select-${editableFieldKey}`,
+                    } as Record<string, string>),
+                  },
+                }
+              : undefined,
+            input: endAdornmentContent
+              ? { endAdornment: endAdornmentContent }
+              : undefined,
             htmlInput: {
               'data-testid': `spec-input-${editableFieldKey}`,
               'aria-label': `Edit ${fieldKey}`,
-              ...(editableFieldKey === 'fleetPlmStatus'
-                ? { list: 'catalog-plm-status-options' }
-                : {}),
-            },
-            input: {
-              endAdornment:
-                isModified || errorMsg ? (
-                  <InputAdornment position="end" sx={{ ml: 0.5 }}>
-                    {errorMsg && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: statusTones.error.fg,
-                          fontWeight: 500,
-                          maxWidth: 260,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          mr: isModified ? 0.5 : 0,
-                        }}
-                      >
-                        {errorMsg}
-                      </Typography>
-                    )}
-                    {isModified && (
-                      <Tooltip title={`Reset to ${baselineVal || 'empty'}`}>
-                        <IconButton
-                          size="small"
-                          aria-label={`Reset ${fieldKey}`}
-                          onClick={() =>
-                            onSpecFieldChange(editableFieldKey, baselineVal)
-                          }
-                          sx={{
-                            p: 0.25,
-                            color: fleetColors.primary,
-                          }}
-                        >
-                          <RestartAltIcon
-                            sx={{ fontSize: iconSizes.control }}
-                          />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </InputAdornment>
-                ) : undefined,
             },
           }}
-        />
-        {editableFieldKey === 'fleetPlmStatus' && (
-          <datalist id="catalog-plm-status-options">
-            {ALLOWED_PLM_STATUSES.map((status) => (
-              <option key={status} value={status} />
+        >
+          {isPlmStatusField && (
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+          )}
+          {isPlmStatusField &&
+            plmStatusOptions.map((status) => (
+              <MenuItem key={status} value={status}>
+                <StatusPill
+                  tone={getPlmStatusTone(status)}
+                  size="compact"
+                  dot={false}
+                >
+                  {status}
+                </StatusPill>
+              </MenuItem>
             ))}
-          </datalist>
-        )}
+        </TextField>
       </Box>
     );
   }
@@ -365,36 +412,31 @@ const DetailValueCell = ({
       return <>{formatUnitCost(String(rawValue ?? ''))}</>;
     }
 
-    if (col.Cell && entry) {
-      if (
-        isRevampEnabled &&
-        (!rawValue ||
-          (Array.isArray(rawValue) &&
-            rawValue.filter((v) => String(v ?? '').trim()).length === 0))
-      ) {
-        return <>—</>;
-      }
-      // SAFETY: We cast the column's Cell renderer to a component accepting our mocked
-      // props. This is safe because our cell renderers in COLUMNS only rely on
-      // cell.getValue() and row.original, which we mock here with compatible shapes.
-      const CellRenderer = col.Cell as unknown as React.ComponentType<{
-        cell: { getValue: () => unknown };
-        row: { original: UnifiedProductCatalogEntry };
-        column: typeof col;
-        table: Record<string, never>;
-      }>;
-
+    if (accessor === 'r11n') {
+      const items = (
+        Array.isArray(rawValue)
+          ? (rawValue as readonly string[])
+          : [String(rawValue ?? '')]
+      ).filter((v) => v.trim().length > 0);
+      if (items.length === 0) return <>{isRevampEnabled ? '—' : ''}</>;
       return (
-        <CellRenderer
-          cell={{
-            getValue: () => rawValue,
-          }}
-          row={{
-            original: entry,
-          }}
-          column={col}
-          table={{}}
-        />
+        <>
+          {items.map((item, idx) => {
+            const trimmed = item.trim();
+            return (
+              <span key={`${trimmed}-${idx}`}>
+                {idx > 0 && ', '}
+                <Link
+                  href={`https://goto.google.com/ngp-npi/r11n/${encodeURIComponent(trimmed.toLowerCase())}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {trimmed}
+                </Link>
+              </span>
+            );
+          })}
+        </>
       );
     }
 
@@ -502,6 +544,17 @@ const useNavigatedFromLink = () => {
 
   return navigatedFromLink;
 };
+
+const FLOATING_OVERLAY_ICON_BTN_SX = {
+  ...iconButtonSx,
+  backgroundColor: fleetColors.surface,
+  border: borders.default,
+  boxShadow: elevations.card,
+  '&:hover': {
+    ...iconButtonSx['&:hover'],
+    backgroundColor: fleetColors.surfaceTonal,
+  },
+} as const;
 
 interface CatalogDetailsHeroProps {
   readonly entry: UnifiedProductCatalogEntry;
@@ -641,20 +694,11 @@ const CatalogDetailsHero = ({
                 onClick={onOpenPhotoEditor}
                 data-testid="toggle-photo-editor-btn"
                 sx={{
+                  ...FLOATING_OVERLAY_ICON_BTN_SX,
                   position: 'absolute',
                   top: 8,
                   right: 8,
                   zIndex: 5,
-                  width: 32,
-                  height: 32,
-                  backgroundColor: fleetColors.surface,
-                  color: fleetColors.textPrimary,
-                  border: borders.default,
-                  boxShadow: elevations.card,
-                  '&:hover': {
-                    backgroundColor: fleetColors.surfaceTonal,
-                    color: fleetColors.primary,
-                  },
                 }}
               >
                 <EditOutlinedIcon sx={{ fontSize: iconSizes.control }} />
@@ -709,22 +753,13 @@ const CatalogDetailsHero = ({
                     }
                     size="small"
                     sx={{
-                      ...focusRingSx,
+                      ...FLOATING_OVERLAY_ICON_BTN_SX,
                       position: 'absolute',
                       left: 8,
                       top: '50%',
                       transform: 'translateY(-50%)',
                       zIndex: 3,
-                      width: controlHeights.button,
-                      height: controlHeights.button,
                       p: 0,
-                      backgroundColor: fleetColors.surface,
-                      color: fleetColors.textPrimary,
-                      border: borders.default,
-                      boxShadow: elevations.card,
-                      '&:hover': {
-                        backgroundColor: fleetColors.surfaceTonal,
-                      },
                     }}
                   >
                     <ChevronLeftIcon
@@ -745,22 +780,13 @@ const CatalogDetailsHero = ({
                     }
                     size="small"
                     sx={{
-                      ...focusRingSx,
+                      ...FLOATING_OVERLAY_ICON_BTN_SX,
                       position: 'absolute',
                       right: 8,
                       top: '50%',
                       transform: 'translateY(-50%)',
                       zIndex: 3,
-                      width: controlHeights.button,
-                      height: controlHeights.button,
                       p: 0,
-                      backgroundColor: fleetColors.surface,
-                      color: fleetColors.textPrimary,
-                      border: borders.default,
-                      boxShadow: elevations.card,
-                      '&:hover': {
-                        backgroundColor: fleetColors.surfaceTonal,
-                      },
                     }}
                   >
                     <ChevronRightIcon
@@ -1252,7 +1278,7 @@ export const ProductCatalogDetailsPage = () => {
         textarea.style.opacity = '0';
         document.body.appendChild(textarea);
         textarea.select();
-        const copied = document.execCommand?.('copy') ?? true;
+        const copied = document.execCommand?.('copy') ?? false;
         document.body.removeChild(textarea);
         setCopiedPrompt(copied);
       }
@@ -1296,78 +1322,56 @@ export const ProductCatalogDetailsPage = () => {
       {
         accessorKey: 'rawValue',
         header: 'Value',
-        Header: () => (
-          <Box
-            sx={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 1,
-            }}
-          >
-            <span>Value</span>
-            {isRevampEnabled && !isGceEntry && (
-              <Tooltip
-                title={
-                  isEditingSpecs
-                    ? 'Done editing specifications'
-                    : 'Edit specifications'
-                }
-              >
-                <Button
-                  size="small"
-                  aria-label={
-                    isEditingSpecs
-                      ? 'Done editing specifications'
-                      : 'Edit specifications'
-                  }
-                  onClick={() => setIsEditingSpecs((prev) => !prev)}
-                  data-testid="toggle-spec-editor-btn"
-                  startIcon={
-                    isEditingSpecs ? (
-                      <CheckIcon sx={{ fontSize: 14 }} />
-                    ) : (
-                      <EditOutlinedIcon sx={{ fontSize: 14 }} />
-                    )
-                  }
-                  sx={{
-                    ml: 'auto',
-                    minHeight: 24,
-                    height: 24,
-                    py: 0,
-                    px: 1,
-                    borderRadius: radii.pill,
-                    fontSize: fontSizes.caption,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    border: borders.default,
-                    backgroundColor: isEditingSpecs
-                      ? fleetColors.primaryContainer
-                      : fleetColors.surface,
-                    color: isEditingSpecs
-                      ? fleetColors.primary
-                      : fleetColors.textSecondary,
-                    '& .MuiButton-startIcon': {
-                      mr: 0.5,
-                      ml: 0,
-                    },
-                    '&:hover': {
-                      backgroundColor: fleetColors.surfaceTonal,
-                      color: fleetColors.primary,
-                    },
-                  }}
-                >
-                  <Box component="span" aria-hidden="true">
-                    {isEditingSpecs ? 'Done' : 'Edit'}
-                  </Box>
-                </Button>
-              </Tooltip>
-            )}
-          </Box>
-        ),
         size: 240,
         grow: 1,
+        muiTableHeadCellProps:
+          isRevampEnabled && !isGceEntry
+            ? {
+                'aria-label': 'Value',
+                sx: {
+                  ...fleetTableHeaderSx,
+                  py: 0.5,
+                  '& .Mui-TableHeadCell-Content, & .Mui-TableHeadCell-Content-Labels, & .Mui-TableHeadCell-Content-Wrapper':
+                    { width: '100%' },
+                },
+              }
+            : undefined,
+        Header:
+          isRevampEnabled && !isGceEntry
+            ? () => {
+                const editLabel = isEditingSpecs
+                  ? 'Done editing specifications'
+                  : 'Edit specifications';
+                return (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      gap: 1,
+                    }}
+                  >
+                    <span>Value</span>
+                    <Tooltip title={editLabel}>
+                      <Button
+                        variant={isEditingSpecs ? 'contained' : 'outlined'}
+                        color="primary"
+                        size="small"
+                        aria-label={editLabel}
+                        onClick={() => setIsEditingSpecs((prev) => !prev)}
+                        data-testid="toggle-spec-editor-btn"
+                        startIcon={
+                          isEditingSpecs ? <CheckIcon /> : <EditOutlinedIcon />
+                        }
+                      >
+                        {isEditingSpecs ? 'Done' : 'Edit'}
+                      </Button>
+                    </Tooltip>
+                  </Box>
+                );
+              }
+            : undefined,
         muiTableBodyCellProps: {
           sx: {
             ...(isRevampEnabled
@@ -1389,6 +1393,7 @@ export const ProductCatalogDetailsPage = () => {
             isRevampEnabled={isRevampEnabled}
             isEditingSpecs={isEditingSpecs}
             onStartEditingSpecs={() => setIsEditingSpecs(true)}
+            onStopEditingSpecs={() => setIsEditingSpecs(false)}
             onSpecFieldChange={handleSpecFieldChange}
           />
         ),
@@ -1472,17 +1477,6 @@ export const ProductCatalogDetailsPage = () => {
               paddingLeft: '16px',
               paddingRight: '16px',
               boxSizing: 'border-box',
-            },
-            '&& .MuiTableHead-root .MuiTableCell-root:last-of-type': {
-              '& .Mui-TableHeadCell-Content, & .Mui-TableHeadCell-Content-Labels, & .Mui-TableHeadCell-Content-Wrapper':
-                {
-                  width: '100%',
-                  maxWidth: '100%',
-                  flex: '1 1 0%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                },
             },
           },
         }
@@ -1695,7 +1689,7 @@ export const ProductCatalogDetailsPage = () => {
               alignItems: 'start',
             }}
           >
-            {/* Left Column: Specifications Table (with clean Field | Value header + right-aligned Edit button) */}
+            {/* Left Column: Specifications Card */}
             <Box
               data-testid="catalog-specs-card"
               sx={{

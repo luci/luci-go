@@ -49,6 +49,11 @@ const renderDetailsPage = (catalogId: string) =>
 
 describe('ProductCatalogDetailsPage', () => {
   beforeEach(() => {
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: jest.fn().mockResolvedValue(undefined),
+      },
+    });
     FleetConsoleMockAPI.enableBrowserInterceptor();
     FleetConsoleMockAPI.resetFixtures();
     FleetConsoleMockAPI.setFixture(
@@ -60,6 +65,7 @@ describe('ProductCatalogDetailsPage', () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     FleetConsoleMockAPI.resetFixtures();
     localStorage.clear();
     sessionStorage.clear();
@@ -674,18 +680,28 @@ describe('ProductCatalogDetailsPage', () => {
     expect(toastWithError).toHaveTextContent(/Enter a valid part number/i);
     expect(screen.getByTestId('review-generate-prompt-btn')).toBeDisabled();
 
-    // Fix GPN and update Unit Cost
+    // Fix GPN, update Unit Cost, and select a new Fleet PLM Status from the MUI Select dropdown
     fireEvent.change(gpnInput, { target: { value: '1055297-02' } });
     fireEvent.change(unitCostInput, { target: { value: '28500' } });
 
+    const plmSelect = screen.getByRole('combobox', {
+      name: 'Edit Fleet PLM Status',
+    });
+    fireEvent.mouseDown(plmSelect);
+    const laOption = await screen.findByRole('option', { name: 'LA' });
+    expect(screen.getByRole('option', { name: 'GA' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'NPI' })).toBeInTheDocument();
+    fireEvent.click(laOption);
+
     expect(screen.getByTestId('unsaved-changes-toast')).toHaveTextContent(
-      '2 unsaved changes',
+      '3 unsaved changes',
     );
     expect(screen.getByTestId('review-generate-prompt-btn')).not.toBeDisabled();
 
     fireEvent.click(screen.getByTestId('review-generate-prompt-btn'));
     const promptPre = await screen.findByTestId('generated-catalog-prompt');
     expect(promptPre).toHaveTextContent('GPN: 1055297-01 -> 1055297-02');
+    expect(promptPre).toHaveTextContent('Fleet PLM Status: GA -> LA');
     expect(promptPre).toHaveTextContent('Unit Cost: 26645 -> 28500');
     expect(screen.getByTestId('handoff-guidance')).toHaveTextContent(
       /Copied prompt for ATB-000/i,

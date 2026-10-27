@@ -34,9 +34,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
-import { tonalPanelSx } from '@/fleet/theme/recipes';
+import { actionRowSx, tonalPanelSx } from '@/fleet/theme/recipes';
 import {
   borders,
   controlHeights,
@@ -131,6 +131,16 @@ export const CatalogPhotoEditDialog = ({
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [copiedBulkPrompt, setCopiedBulkPrompt] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const bulkCopyTimeoutRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (bulkCopyTimeoutRef.current !== null) {
+        window.clearTimeout(bulkCopyTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const safeIdx =
     stagedPhotos.length > 0
@@ -159,7 +169,13 @@ export const CatalogPhotoEditDialog = ({
         document.execCommand('copy');
       }
       setCopiedBulkPrompt(true);
-      window.setTimeout(() => setCopiedBulkPrompt(false), 2500);
+      if (bulkCopyTimeoutRef.current !== null) {
+        window.clearTimeout(bulkCopyTimeoutRef.current);
+      }
+      bulkCopyTimeoutRef.current = window.setTimeout(
+        () => setCopiedBulkPrompt(false),
+        2500,
+      );
     } catch {
       setCopiedBulkPrompt(false);
     }
@@ -571,13 +587,7 @@ export const CatalogPhotoEditDialog = ({
                     handleStageUrlAndSelect();
                   }
                 }}
-                sx={{
-                  '& .MuiInputBase-root': {
-                    height: controlHeights.button,
-                    fontSize: fontSizes.label,
-                    backgroundColor: fleetColors.surface,
-                  },
-                }}
+                sx={{ backgroundColor: fleetColors.surface }}
                 slotProps={{
                   htmlInput: {
                     'data-testid': 'photo-url-input',
@@ -589,15 +599,7 @@ export const CatalogPhotoEditDialog = ({
                 size="small"
                 onClick={handleStageUrlAndSelect}
                 data-testid="add-photo-url-btn"
-                sx={{
-                  minHeight: controlHeights.button,
-                  borderRadius: radii.pill,
-                  fontSize: fontSizes.label,
-                  textTransform: 'none',
-                  px: 2,
-                  whiteSpace: 'nowrap',
-                  backgroundColor: fleetColors.surface,
-                }}
+                sx={{ height: controlHeights.input, px: 2, flexShrink: 0 }}
               >
                 Add
               </Button>
@@ -626,25 +628,12 @@ export const CatalogPhotoEditDialog = ({
                 data-testid="upload-photo-file-input"
               />
               <Button
-                variant="outlined"
-                size="small"
-                startIcon={
-                  <CloudUploadOutlinedIcon
-                    sx={{ fontSize: iconSizes.control }}
-                  />
-                }
+                variant="toolbar"
+                color="inherit"
+                startIcon={<CloudUploadOutlinedIcon />}
                 disabled={stagedPhotos.length >= MAX_PHOTOS_PER_ENTRY}
                 onClick={() => fileInputRef.current?.click()}
                 data-testid="upload-photo-file-btn"
-                sx={{
-                  minHeight: controlHeights.chipCompact,
-                  borderRadius: radii.pill,
-                  fontSize: fontSizes.caption,
-                  textTransform: 'none',
-                  borderColor: fleetColors.border,
-                  color: fleetColors.textPrimary,
-                  backgroundColor: fleetColors.surface,
-                }}
               >
                 Upload image from computer
               </Button>
@@ -695,14 +684,6 @@ export const CatalogPhotoEditDialog = ({
                     )
                   }
                   data-testid="copy-bulk-dropbox-prompt-btn"
-                  sx={{
-                    minHeight: controlHeights.chipCompact,
-                    py: 0.25,
-                    px: 1,
-                    borderRadius: radii.pill,
-                    fontSize: fontSizes.caption,
-                    textTransform: 'none',
-                  }}
                 >
                   {copiedBulkPrompt
                     ? 'Copied drop-box sync prompt!'
@@ -729,41 +710,28 @@ export const CatalogPhotoEditDialog = ({
             <Button
               variant="text"
               size="small"
+              color="inherit"
               onClick={onResetPhotos}
               data-testid="reset-staged-photos-btn"
-              sx={{
-                minHeight: controlHeights.button,
-                borderRadius: radii.pill,
-                fontSize: fontSizes.label,
-                textTransform: 'none',
-                color: fleetColors.textSecondary,
-              }}
             >
               Reset photos
             </Button>
           )}
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={actionRowSx}>
           <Button
             variant="outlined"
             size="small"
             onClick={onClose}
             data-testid="keep-editing-photos-btn"
-            sx={{
-              minHeight: controlHeights.button,
-              borderRadius: radii.pill,
-              fontSize: fontSizes.label,
-              textTransform: 'none',
-              borderColor: fleetColors.border,
-              color: fleetColors.textPrimary,
-            }}
           >
             Keep editing
           </Button>
           <Button
             variant="contained"
             size="small"
+            color={copiedPrompt ? 'success' : 'primary'}
             disabled={activeDimErrors.length > 0 || !hasPhotoChanges}
             onClick={onCopyPrompt}
             startIcon={
@@ -774,20 +742,6 @@ export const CatalogPhotoEditDialog = ({
               )
             }
             data-testid="save-photos-by-prompt-btn"
-            sx={{
-              minHeight: controlHeights.button,
-              borderRadius: radii.pill,
-              fontSize: fontSizes.label,
-              textTransform: 'none',
-              backgroundColor: copiedPrompt
-                ? statusTones.success.fg
-                : fleetColors.primary,
-              '&:hover': {
-                backgroundColor: copiedPrompt
-                  ? statusTones.success.fg
-                  : fleetColors.primaryHover,
-              },
-            }}
           >
             {copiedPrompt ? 'Copied prompt!' : 'Copy prompt to save'}
           </Button>
