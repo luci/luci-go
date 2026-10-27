@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
@@ -98,6 +100,26 @@ func TestCheckLegacy(t *testing.T) {
 			})
 
 			t.Run("request by non-Googler is not allowed", func(t *ftt.Test) {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:hacker@example.com",
+					IdentityGroups: []string{},
+				})
+				allowed, err := checkLegacyCQStatusAccess(ctx, "internal")
+				assert.NoErr(t, err)
+				assert.Loosely(t, allowed, should.BeFalse)
+			})
+
+			t.Run("global cache is not consulted", func(t *ftt.Test) {
+				ctx = caching.WithGlobalCache(ctx, func(namespace string) caching.BlobCache {
+					return cachingtest.NewBlobCache()
+				})
+				err := caching.GlobalCache(ctx, "acls_legacy_cqstatus_v1").Set(
+					ctx,
+					"internal",
+					append([]byte{1, 0, 0, 0, 0, 0, 0, 0, 0}, []byte(validation.CQStatusHostPublic)...),
+					0,
+				)
+				assert.NoErr(t, err)
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:hacker@example.com",
 					IdentityGroups: []string{},

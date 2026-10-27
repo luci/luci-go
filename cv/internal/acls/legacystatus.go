@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/caching/layered"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/validation"
@@ -32,16 +32,7 @@ const (
 )
 
 // legacyCQStatusHostCache caches CQ status hosts per LUCI project.
-var legacyCQStatusHostCache = layered.RegisterCache(layered.Parameters[string]{
-	ProcessCacheCapacity: 100,
-	GlobalNamespace:      "acls_legacy_cqstatus_v1",
-	Marshal: func(host string) ([]byte, error) {
-		return []byte(host), nil
-	},
-	Unmarshal: func(blob []byte) (string, error) {
-		return string(blob), nil
-	},
-})
+var legacyCQStatusHostCache = caching.RegisterLRUCache[string, string](100)
 
 // checkLegacyCQStatusAccess checks if the calling user has access to the Runs
 // of the given LUCI project via the legacy CQ status app.
@@ -75,7 +66,11 @@ func checkLegacyCQStatusAccess(ctx context.Context, luciProject string) (bool, e
 
 // loadCQStatusHost returns CQ status host configured for a LUCI projects.
 func loadCQStatusHost(ctx context.Context, luciProject string) (string, error) {
-	return legacyCQStatusHostCache.GetOrCreate(ctx, luciProject, func() (string, time.Duration, error) {
+	cache := legacyCQStatusHostCache.LRU(ctx)
+	if cache == nil {
+		return "", caching.ErrNoProcessCache
+	}
+	return cache.GetOrCreate(ctx, luciProject, func() (string, time.Duration, error) {
 		m, err := prjcfg.GetLatestMeta(ctx, luciProject)
 		switch {
 		case err != nil:
