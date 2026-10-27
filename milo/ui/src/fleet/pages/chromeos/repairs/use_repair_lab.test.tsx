@@ -68,7 +68,7 @@ describe('useRepairLab', () => {
         <FakeContextProvider
           mountedPath="/ui/fleet/p/chromeos/repairs"
           routerOptions={{
-            initialEntries: ['/ui/fleet/p/chromeos/repairs?lab=HTL'],
+            initialEntries: ['/ui/fleet/p/chromeos/repairs?lab=EM25'],
           }}
         >
           {children}
@@ -76,12 +76,12 @@ describe('useRepairLab', () => {
       ),
     });
 
-    expect(result.current.lab).toBe('HTL');
-    expect(localStorage.getItem(REPAIR_LAB_LOCAL_STORAGE_KEY)).toBe('HTL');
+    expect(result.current.lab).toBe('EM25');
+    expect(localStorage.getItem(REPAIR_LAB_LOCAL_STORAGE_KEY)).toBe('EM25');
   });
 
   it('reads lab from localStorage when search param is not provided', () => {
-    localStorage.setItem(REPAIR_LAB_LOCAL_STORAGE_KEY, 'HTL');
+    localStorage.setItem(REPAIR_LAB_LOCAL_STORAGE_KEY, 'IAD65');
 
     const { result } = renderHook(() => useRepairLab(), {
       wrapper: ({ children }) => (
@@ -96,7 +96,7 @@ describe('useRepairLab', () => {
       ),
     });
 
-    expect(result.current.lab).toBe('HTL');
+    expect(result.current.lab).toBe('IAD65');
   });
 
   it('updates both localStorage and URL search params when setLab is called', () => {
@@ -116,11 +116,11 @@ describe('useRepairLab', () => {
     expect(result.current.lab).toBe('MTV');
 
     act(() => {
-      result.current.setLab('HTL');
+      result.current.setLab('EM25');
     });
 
-    expect(result.current.lab).toBe('HTL');
-    expect(localStorage.getItem(REPAIR_LAB_LOCAL_STORAGE_KEY)).toBe('HTL');
+    expect(result.current.lab).toBe('EM25');
+    expect(localStorage.getItem(REPAIR_LAB_LOCAL_STORAGE_KEY)).toBe('EM25');
   });
 
   it('clears cursor pagination param when switching labs', () => {
@@ -148,11 +148,11 @@ describe('useRepairLab', () => {
     expect(result.current.location.search).toContain('cursor=page2token');
 
     act(() => {
-      result.current.repairLab.setLab('HTL');
+      result.current.repairLab.setLab('IAD65');
     });
 
-    expect(result.current.repairLab.lab).toBe('HTL');
-    expect(result.current.location.search).toContain('lab=HTL');
+    expect(result.current.repairLab.lab).toBe('IAD65');
+    expect(result.current.location.search).toContain('lab=IAD65');
     expect(result.current.location.search).not.toContain('cursor=');
   });
 });

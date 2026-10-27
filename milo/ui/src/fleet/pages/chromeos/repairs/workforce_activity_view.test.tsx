@@ -607,17 +607,17 @@ describe('<WorkforceActivityView />', () => {
 
     render(
       <FakeContextProvider>
-        <WorkforceActivityView lab="HTL" />
+        <WorkforceActivityView lab="EM25" />
       </FakeContextProvider>,
     );
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        lab: 'HTL',
+        lab: 'EM25',
       }),
     );
     expect(screen.getByTestId('repair-lab-select')).toHaveTextContent(
-      'Lab: HTL',
+      'Lab: EM25',
     );
   });
 });

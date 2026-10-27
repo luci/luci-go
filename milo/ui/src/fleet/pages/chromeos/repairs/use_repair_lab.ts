@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-export const REPAIR_LABS = ['MTV', 'HTL'] as const;
+export const REPAIR_LABS = ['MTV', 'EM25', 'IAD65'] as const;
 export type RepairLab = (typeof REPAIR_LABS)[number];
 export const DEFAULT_REPAIR_LAB: RepairLab = 'MTV';
 export const REPAIR_LAB_SEARCH_PARAM = 'lab';

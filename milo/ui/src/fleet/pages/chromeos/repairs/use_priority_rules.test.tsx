@@ -272,11 +272,11 @@ describe('usePriorityRules', () => {
   });
 
   it('scopes query and rule creation by lab', async () => {
-    const { result } = renderHook(() => usePriorityRules('HTL'), {
+    const { result } = renderHook(() => usePriorityRules('EM25'), {
       wrapper: FakeContextProvider,
     });
 
-    expect(mockListPriorityRules).toHaveBeenCalledWith({ lab: 'HTL' });
+    expect(mockListPriorityRules).toHaveBeenCalledWith({ lab: 'EM25' });
 
     await act(async () => {
       await result.current.createRule({
@@ -293,7 +293,7 @@ describe('usePriorityRules', () => {
         id: '0',
         expressionAip160: 'model = "volteer"',
         weight: '500',
-        lab: 'HTL',
+        lab: 'EM25',
       },
     });
   });

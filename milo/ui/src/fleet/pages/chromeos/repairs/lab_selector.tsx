@@ -39,7 +39,8 @@ import { REPAIR_LABS, RepairLab, useRepairLab } from './use_repair_lab';
 
 const LAB_LABELS: Record<RepairLab, { name: string; location: string }> = {
   MTV: { name: 'MTV', location: 'Mountain View' },
-  HTL: { name: 'HTL', location: 'Hotrod' },
+  EM25: { name: 'EM25', location: 'Palo Alto' },
+  IAD65: { name: 'IAD65', location: 'Ashburn' },
 };
 
 export interface LabSelectorProps {

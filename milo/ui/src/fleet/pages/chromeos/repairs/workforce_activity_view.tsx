@@ -371,27 +371,23 @@ export const WorkforceActivityView = ({
             },
           }}
         >
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBackToQueue}
+          <Box
             sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              borderRadius: '8px',
-              px: 1.75,
-              py: 0.75,
-              whiteSpace: 'nowrap',
-              '@container (max-width: 730px)': {
-                padding: '4px 8px !important',
-                fontSize: '0.75rem !important',
-              },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              flexWrap: 'wrap',
             }}
           >
-            Prioritized Manual Repair Queue
-          </Button>
-
-          <LabSelector value={lab} />
+            <LabSelector value={lab} />
+            <Button
+              variant="toolbar"
+              startIcon={<ArrowBackIcon />}
+              onClick={handleBackToQueue}
+            >
+              Prioritized Manual Repair Queue
+            </Button>
+          </Box>
 
           {showTimeframeFilter && (
             <Box

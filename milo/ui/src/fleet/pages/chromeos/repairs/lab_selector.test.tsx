@@ -42,23 +42,25 @@ describe('LabSelector', () => {
 
     // Click button to open popover
     fireEvent.click(button);
-    expect(screen.getByText('HTL (Hotrod)')).toBeInTheDocument();
+    expect(screen.getByText('MTV (Mountain View)')).toBeInTheDocument();
+    expect(screen.getByText('EM25 (Palo Alto)')).toBeInTheDocument();
+    expect(screen.getByText('IAD65 (Ashburn)')).toBeInTheDocument();
 
-    // Select HTL
-    fireEvent.click(screen.getByTestId('repair-lab-option-HTL'));
-    expect(button).toHaveTextContent('Lab: HTL');
+    // Select EM25
+    fireEvent.click(screen.getByTestId('repair-lab-option-EM25'));
+    expect(button).toHaveTextContent('Lab: EM25');
   });
 
   it('supports controlled value and onChange props', () => {
     const handleChange = jest.fn();
     render(
       <FakeContextProvider>
-        <LabSelector value="HTL" onChange={handleChange} />
+        <LabSelector value="IAD65" onChange={handleChange} />
       </FakeContextProvider>,
     );
 
     const button = screen.getByTestId('repair-lab-select');
-    expect(button).toHaveTextContent('Lab: HTL');
+    expect(button).toHaveTextContent('Lab: IAD65');
 
     fireEvent.click(button);
     fireEvent.click(screen.getByTestId('repair-lab-option-MTV'));
