@@ -168,17 +168,17 @@ describe('compute_breakdown_stats', () => {
 describe('state_navigation_utils', () => {
   it('adapts health filters (model, pool, device_id) to device list syntax', () => {
     expect(adaptHealthFilterToDeviceList('model = "brya"')).toBe(
-      'labels.model = "brya"',
+      'labels."label-model" = "brya"',
     );
     expect(adaptHealthFilterToDeviceList('pool = "DUT_POOL_QUOTA"')).toBe(
-      'labels.pool = "DUT_POOL_QUOTA"',
+      'labels."label-pool" = "DUT_POOL_QUOTA"',
     );
     expect(adaptHealthFilterToDeviceList('device_id = "cros-1"')).toBe(
       'id = "cros-1"',
     );
     // Already adapted labels remain untouched
-    expect(adaptHealthFilterToDeviceList('labels.model = "brya"')).toBe(
-      'labels.model = "brya"',
+    expect(adaptHealthFilterToDeviceList('labels."label-model" = "brya"')).toBe(
+      'labels."label-model" = "brya"',
     );
     expect(adaptHealthFilterToDeviceList('')).toBe('');
     expect(adaptHealthFilterToDeviceList(undefined)).toBe('');
@@ -195,7 +195,7 @@ describe('state_navigation_utils', () => {
       'model = "brya"',
     );
     const expectedParam =
-      '(labels.model%20%3D%20%22brya%22)%20AND%20' +
+      '(labels.%22label-model%22%20%3D%20%22brya%22)%20AND%20' +
       '(labels.%22dut_state%22%20%3D%20%22needs_manual_repair%22)';
     expect(urlWithBase).toBe(
       `/ui/fleet/p/chromeos/devices?filters=${expectedParam}`,
@@ -455,6 +455,10 @@ describe('HealthStatePopoverContent', () => {
       'href',
       expect.stringContaining('dut_state%22%20%3D%20%22ready%22'),
     );
+    expect(screen.getByTestId('state-row-ready')).toHaveAttribute(
+      'title',
+      'Open device list in new tab',
+    );
     expect(screen.getByTestId('state-row-needs_repair')).toHaveAttribute(
       'href',
       expect.stringContaining('dut_state%22%20%3D%20%22needs_repair%22'),
@@ -476,8 +480,9 @@ describe('HealthStatePopoverContent', () => {
     const titleLink = screen.getByRole('link', { name: /volteer/i });
     expect(titleLink).toHaveAttribute(
       'href',
-      '/ui/fleet/p/chromeos/devices?filters=labels.model%20%3D%20%22volteer%22',
+      '/ui/fleet/p/chromeos/devices?filters=labels.%22label-model%22%20%3D%20%22volteer%22',
     );
+    expect(titleLink).toHaveAttribute('title', 'Open device list in new tab');
   });
 
   it('renders explicit availabilityPct formatted to 1 decimal place alongside healthPct', () => {

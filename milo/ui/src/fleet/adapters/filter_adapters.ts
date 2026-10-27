@@ -20,8 +20,8 @@ import { remapFilterDimensions } from '@/fleet/utils/aip160/transform';
  * whereas Devices List inventory queries require label prefixes (labels.model, labels.pool, id).
  */
 export const HEALTH_TO_DEVICE_DIMENSION_MAP: Record<string, string> = {
-  model: 'labels.model',
-  pool: 'labels.pool',
+  model: 'labels."label-model"',
+  pool: 'labels."label-pool"',
   device_id: 'id',
 };
 

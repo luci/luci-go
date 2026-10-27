@@ -23,10 +23,10 @@ describe('healthToDeviceFilter', () => {
 
   it('remaps model and pool dimensions to label prefixes', () => {
     expect(healthToDeviceFilter('model = "brya"')).toBe(
-      'labels.model = "brya"',
+      'labels."label-model" = "brya"',
     );
     expect(healthToDeviceFilter('pool = "DUT_POOL_QUOTA"')).toBe(
-      'labels.pool = "DUT_POOL_QUOTA"',
+      'labels."label-pool" = "DUT_POOL_QUOTA"',
     );
     expect(healthToDeviceFilter('device_id = "dut-01"')).toBe('id = "dut-01"');
   });
@@ -35,7 +35,7 @@ describe('healthToDeviceFilter', () => {
     const input =
       '(model = "brya" OR model = "corsola") AND labels.board = "volteer"';
     expect(healthToDeviceFilter(input)).toBe(
-      '(labels.model = "brya" OR labels.model = "corsola") AND labels.board = "volteer"',
+      '(labels."label-model" = "brya" OR labels."label-model" = "corsola") AND labels.board = "volteer"',
     );
   });
 });

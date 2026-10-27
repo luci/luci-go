@@ -118,6 +118,7 @@ export const HealthStatePopoverContent = ({
               href={allDevicesUrl}
               target="_blank"
               rel="noreferrer"
+              title="Open device list in new tab"
               sx={{
                 fontWeight: 700,
                 lineHeight: 1.2,
@@ -329,6 +330,7 @@ export const HealthStatePopoverContent = ({
                       )}
                       target="_blank"
                       rel="noreferrer"
+                      title="Open device list in new tab"
                       data-testid={`state-row-${st.config.key}`}
                       sx={{
                         display: 'flex',

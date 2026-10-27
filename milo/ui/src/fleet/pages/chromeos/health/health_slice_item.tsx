@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { useMemo, useRef, useState } from 'react';
 
+import { healthToDeviceFilter } from '@/fleet/adapters/filter_adapters';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { subMetricRowSx } from '@/fleet/theme/recipes';
 import { radii } from '@/fleet/theme/tokens';
@@ -154,7 +155,7 @@ export const HealthSliceItem = ({
 
   const deviceListUrl = `/ui/fleet/p/chromeos/devices${
     effectiveFilter
-      ? `?${FILTERS_PARAM_KEY}=${encodeURIComponent(effectiveFilter)}`
+      ? `?${FILTERS_PARAM_KEY}=${encodeURIComponent(healthToDeviceFilter(effectiveFilter))}`
       : ''
   }`;
 
