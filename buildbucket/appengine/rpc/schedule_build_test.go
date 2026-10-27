@@ -4627,6 +4627,8 @@ func TestScheduleBuild(t *testing.T) {
 			FakeDB: authtest.NewFakeDB(
 				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+				// Needed to set tags other than user_agent.
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddWithParams),
 			),
 		})
 		globalCfg := &pb.SettingsCfg{
@@ -5250,10 +5252,12 @@ func TestScheduleBuild(t *testing.T) {
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
 							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddWithParams),
 							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddAsChild),
 							// Because it's using TemplateBuildId
 							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAddWithParams),
 							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAddAsChild),
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildersGet),
 						),
@@ -5269,6 +5273,7 @@ func TestScheduleBuild(t *testing.T) {
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
 							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddWithParams),
 							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddAsChild),
 							// Because it's using TemplateBuildId
 							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
@@ -5286,9 +5291,11 @@ func TestScheduleBuild(t *testing.T) {
 						Identity: userID,
 						FakeDB: authtest.NewFakeDB(
 							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddWithParams),
 							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAddAsChild),
 							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAdd),
+							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAddWithParams),
 							authtest.MockPermission(userID, "project:bucket1", bbperms.BuildsAddAsChild),
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
 						),

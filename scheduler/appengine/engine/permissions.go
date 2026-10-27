@@ -25,11 +25,21 @@ import (
 const adminGroup = "administrators"
 
 var (
-	PermJobsGet               = realms.RegisterPermission("scheduler.jobs.get")
-	PermJobsPause             = realms.RegisterPermission("scheduler.jobs.pause")
-	PermJobsResume            = realms.RegisterPermission("scheduler.jobs.resume")
-	PermJobsAbort             = realms.RegisterPermission("scheduler.jobs.abort")
-	PermJobsTrigger           = realms.RegisterPermission("scheduler.jobs.trigger")
+	PermJobsGet    = realms.RegisterPermission("scheduler.jobs.get")
+	PermJobsPause  = realms.RegisterPermission("scheduler.jobs.pause")
+	PermJobsResume = realms.RegisterPermission("scheduler.jobs.resume")
+	PermJobsAbort  = realms.RegisterPermission("scheduler.jobs.abort")
+	// PermJobsTrigger allows to trigger a job. It is required to emit any
+	// trigger.
+	//
+	// Emitting triggers with non-trivial payloads additionally requires
+	// PermJobsTriggerWithParams. See internal.IsTrivialTrigger.
+	PermJobsTrigger = realms.RegisterPermission("scheduler.jobs.trigger")
+	// PermJobsTriggerWithParams is required in addition to PermJobsTrigger to
+	// emit triggers with non-trivial payloads, e.g. cron or gitiles triggers,
+	// or Buildbucket triggers with properties or with tags other than
+	// allowlisted keys such as user_agent. Such payloads can affect what ends
+	// up running, so this permission is intended mostly for automation.
 	PermJobsTriggerWithParams = realms.RegisterPermission("scheduler.jobs.triggerWithParams")
 )
 

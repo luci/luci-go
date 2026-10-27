@@ -16,8 +16,11 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/buildbucket/protoutil"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 )
@@ -48,8 +51,37 @@ func ToPublicTrigger(t *Trigger) *scheduler.Trigger {
 	return ret
 }
 
+// isTrivialBuildbucketTrigger is true if the trigger has no properties and
+// only sets well-formed "key:value" tags with keys for which
+// protoutil.IsBenignTagKey is true, i.e. tags Buildbucket allows to be set
+// without buildbucket.builds.addWithParams.
+//
+// Note that the Buildbucket task manager always adds its own user_agent tag,
+// so a trigger with a user_agent tag results in a build with two user_agent
+// tags. This is intended.
+func isTrivialBuildbucketTrigger(t *scheduler.BuildbucketTrigger) bool {
+	if t == nil {
+		// Preserve historical behavior: proto.Equal(nil, &{}) is false.
+		return false
+	}
+	for _, tag := range t.Tags {
+		key, _, ok := strings.Cut(tag, ":")
+		if !ok || !protoutil.IsBenignTagKey(key) {
+			return false
+		}
+	}
+	// Check the remaining fields, so that any new field is considered tweakable
+	// by default.
+	stripped := proto.CloneOf(t)
+	stripped.Tags = nil
+	return proto.Equal(stripped, &scheduler.BuildbucketTrigger{})
+}
+
 // IsTrivialTrigger is true if the trigger's payload doesn't have any tweakable
 // parts that can affect what ends up running when the trigger is consumed.
+//
+// Buildbucket build tags with keys for which protoutil.IsBenignTagKey is
+// true are not considered tweakable.
 func IsTrivialTrigger(t *Trigger) bool {
 	switch p := t.GetPayload().(type) {
 	case nil:
@@ -57,7 +89,7 @@ func IsTrivialTrigger(t *Trigger) bool {
 	case *Trigger_Cron:
 		return false
 	case *Trigger_Buildbucket:
-		return proto.Equal(p.Buildbucket, &scheduler.BuildbucketTrigger{})
+		return isTrivialBuildbucketTrigger(p.Buildbucket)
 	case *Trigger_Gitiles:
 		return false
 	case *Trigger_Noop:

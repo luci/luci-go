@@ -114,3 +114,12 @@ func TestStringPairs(t *testing.T) {
 		assert.Loosely(t, StringPairMap(stringPairs), should.Match(expected))
 	})
 }
+
+func TestIsBenignTagKey(t *testing.T) {
+	t.Parallel()
+
+	assert.That(t, IsBenignTagKey("user_agent"), should.BeTrue)
+	assert.That(t, IsBenignTagKey("User_Agent"), should.BeFalse)
+	assert.That(t, IsBenignTagKey("buildset"), should.BeFalse)
+	assert.That(t, IsBenignTagKey(""), should.BeFalse)
+}

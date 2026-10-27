@@ -1391,6 +1391,15 @@ func TestEmitTriggers(t *testing.T) {
 						Webui: &api.WebUITrigger{},
 					},
 				},
+				{
+					Id:           "t3",
+					OrderInBatch: 3,
+					Payload: &internal.Trigger_Buildbucket{
+						Buildbucket: &api.BuildbucketTrigger{
+							Tags: []string{"user_agent:agent"},
+						},
+					},
+				},
 			}
 
 			nonTrivialTriggers := []*internal.Trigger{
@@ -1406,6 +1415,30 @@ func TestEmitTriggers(t *testing.T) {
 					OrderInBatch: 2,
 					Payload: &internal.Trigger_Gitiles{
 						Gitiles: &api.GitilesTrigger{},
+					},
+				},
+			}
+
+			nonTrivialTagTriggers := []*internal.Trigger{
+				{
+					Id:           "t1",
+					OrderInBatch: 1,
+					Payload: &internal.Trigger_Buildbucket{
+						Buildbucket: &api.BuildbucketTrigger{
+							Tags: []string{"key:value"},
+						},
+					},
+				},
+			}
+
+			mixedTagTriggers := []*internal.Trigger{
+				{
+					Id:           "t1",
+					OrderInBatch: 1,
+					Payload: &internal.Trigger_Buildbucket{
+						Buildbucket: &api.BuildbucketTrigger{
+							Tags: []string{"user_agent:agent", "key:value"},
+						},
 					},
 				},
 			}
@@ -1426,6 +1459,28 @@ func TestEmitTriggers(t *testing.T) {
 					triggers:  nonTrivialTriggers,
 					callerCtx: mockRestrictedTriggererCtx,
 					wantErr:   ErrNoPermission,
+				},
+				{
+					name:      "restricted_caller_non_trivial_tag_triggers",
+					triggers:  nonTrivialTagTriggers,
+					callerCtx: mockRestrictedTriggererCtx,
+					wantErr:   ErrNoPermission,
+				},
+				{
+					name:      "trusted_caller_non_trivial_tag_triggers",
+					triggers:  nonTrivialTagTriggers,
+					callerCtx: mockTrustedTriggererCtx,
+				},
+				{
+					name:      "restricted_caller_mixed_tag_triggers",
+					triggers:  mixedTagTriggers,
+					callerCtx: mockRestrictedTriggererCtx,
+					wantErr:   ErrNoPermission,
+				},
+				{
+					name:      "trusted_caller_mixed_tag_triggers",
+					triggers:  mixedTagTriggers,
+					callerCtx: mockTrustedTriggererCtx,
 				},
 				{
 					name:      "trusted_caller_trivial_triggers",

@@ -1375,11 +1375,12 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 // bbperms.BuildsAdd. Every other field is considered a custom parameter and
 // requires bbperms.BuildsAddWithParams. New fields are thus treated as custom
 // parameters by default.
+//
+// "tags" is handled separately, see protoutil.IsBenignTagKey.
 var nonParamScheduleFields = stringset.NewFromSlice(
 	"request_id",
 	"template_build_id",
 	"builder",
-	"tags",
 	"notify",
 	"fields",
 	"mask",
@@ -1391,12 +1392,29 @@ var nonParamScheduleFields = stringset.NewFromSlice(
 	"swarming",
 )
 
+// hasCustomTags returns true if any of the tags has a key for which
+// protoutil.IsBenignTagKey is false.
+func hasCustomTags(tags []*pb.StringPair) bool {
+	for _, t := range tags {
+		if !protoutil.IsBenignTagKey(t.GetKey()) {
+			return true
+		}
+	}
+	return false
+}
+
 // hasCustomParams returns true if the request sets any custom build
 // parameters, e.g. properties, gitiles_commit, gerrit_changes, dimensions,
-// experiments, exe, timeouts, etc.
+// experiments, exe, timeouts, tags other than protoutil.IsBenignTagKey, etc.
 func hasCustomParams(req *pb.ScheduleBuildRequest) bool {
+	if hasCustomTags(req.GetTags()) {
+		return true
+	}
 	found := false
 	req.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, _ protoreflect.Value) bool {
+		if fd.Name() == "tags" {
+			return true
+		}
 		if !nonParamScheduleFields.Has(string(fd.Name())) {
 			found = true
 			return false

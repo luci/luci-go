@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -60,6 +61,23 @@ func StringPairMap(pairs []*pb.StringPair) strpair.Map {
 		m.Add(pair.Key, pair.Value)
 	}
 	return m
+}
+
+// benignTagKeys are build tag keys assumed to not affect what is executed in
+// the build in any way. See IsBenignTagKey.
+var benignTagKeys = stringset.NewFromSlice(
+	"user_agent",
+)
+
+// IsBenignTagKey returns true if build tags with this key are assumed to not
+// affect what is executed in the build in any way. Keys are case-sensitive.
+//
+// Such tags can be set with only buildbucket.builds.add (or
+// scheduler.jobs.trigger when triggering via LUCI Scheduler). Setting a tag
+// with any other key requires buildbucket.builds.addWithParams (or
+// scheduler.jobs.triggerWithParams).
+func IsBenignTagKey(key string) bool {
+	return benignTagKeys.Has(key)
 }
 
 // BuildSets returns all of the buildsets of the build.

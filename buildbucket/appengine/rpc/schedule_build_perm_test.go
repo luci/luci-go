@@ -58,7 +58,7 @@ func TestHasCustomParams(t *testing.T) {
 				RequestId:        "request-id",
 				TemplateBuildId:  1,
 				Builder:          builder,
-				Tags:             []*pb.StringPair{{Key: "k", Value: "v"}},
+				Tags:             []*pb.StringPair{{Key: "user_agent", Value: "v"}},
 				Notify:           &pb.NotificationConfig{PubsubTopic: "topic"},
 				Mask:             &pb.BuildMask{AllFields: true},
 				DryRun:           true,
@@ -75,21 +75,28 @@ func TestHasCustomParams(t *testing.T) {
 			"properties": {Properties: &structpb.Struct{
 				Fields: map[string]*structpb.Value{"a": structpb.NewStringValue("b")},
 			}},
-			"gitiles_commit":     {GitilesCommit: &pb.GitilesCommit{Host: "host"}},
-			"gerrit_changes":     {GerritChanges: []*pb.GerritChange{{Host: "host"}}},
-			"dimensions":         {Dimensions: []*pb.RequestedDimension{{Key: "k", Value: "v"}}},
-			"experiments":        {Experiments: map[string]bool{"e": true}},
-			"canary":             {Canary: pb.Trinary_YES},
-			"experimental":       {Experimental: pb.Trinary_YES},
-			"priority":           {Priority: 1},
-			"critical":           {Critical: pb.Trinary_YES},
-			"exe":                {Exe: &pb.Executable{CipdVersion: "v"}},
-			"scheduling_timeout": {SchedulingTimeout: durationpb.New(60)},
-			"execution_timeout":  {ExecutionTimeout: durationpb.New(60)},
-			"grace_period":       {GracePeriod: durationpb.New(60)},
-			"retriable":          {Retriable: pb.Trinary_NO},
-			"shadow_input":       {ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{}},
-			"resultdb":           {Resultdb: &pb.ScheduleBuildRequest_ResultDB{IsExportRootOverride: true}},
+			"gitiles_commit":            {GitilesCommit: &pb.GitilesCommit{Host: "host"}},
+			"gerrit_changes":            {GerritChanges: []*pb.GerritChange{{Host: "host"}}},
+			"dimensions":                {Dimensions: []*pb.RequestedDimension{{Key: "k", Value: "v"}}},
+			"experiments":               {Experiments: map[string]bool{"e": true}},
+			"canary":                    {Canary: pb.Trinary_YES},
+			"experimental":              {Experimental: pb.Trinary_YES},
+			"priority":                  {Priority: 1},
+			"critical":                  {Critical: pb.Trinary_YES},
+			"exe":                       {Exe: &pb.Executable{CipdVersion: "v"}},
+			"scheduling_timeout":        {SchedulingTimeout: durationpb.New(60)},
+			"execution_timeout":         {ExecutionTimeout: durationpb.New(60)},
+			"grace_period":              {GracePeriod: durationpb.New(60)},
+			"retriable":                 {Retriable: pb.Trinary_NO},
+			"shadow_input":              {ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{}},
+			"resultdb":                  {Resultdb: &pb.ScheduleBuildRequest_ResultDB{IsExportRootOverride: true}},
+			"tags":                      {Tags: []*pb.StringPair{{Key: "k", Value: "v"}}},
+			"empty tag key":             {Tags: []*pb.StringPair{{Key: "", Value: "v"}}},
+			"differently cased tag key": {Tags: []*pb.StringPair{{Key: "User_Agent", Value: "v"}}},
+			"allowed and other tags": {Tags: []*pb.StringPair{
+				{Key: "user_agent", Value: "v"},
+				{Key: "k", Value: "v"},
+			}},
 		}
 		for name, req := range cases {
 			t.Run(name, func(t *ftt.Test) {
@@ -228,6 +235,24 @@ func TestScheduleBuildPermissions(t *testing.T) {
 				assert.That(t, err, should.ErrLike(`does not have permission "buildbucket.builds.addWithParams"`))
 			})
 
+			t.Run("with allowed tags", func(t *ftt.Test) {
+				req := plainReq()
+				req.Tags = []*pb.StringPair{{Key: "user_agent", Value: "agent"}}
+				_, err := schedule(ctx, req)
+				assert.NoErr(t, err)
+			})
+
+			t.Run("with other tags", func(t *ftt.Test) {
+				req := plainReq()
+				req.Tags = []*pb.StringPair{
+					{Key: "user_agent", Value: "agent"},
+					{Key: "k", Value: "v"},
+				}
+				_, err := schedule(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike(`does not have permission "buildbucket.builds.addWithParams"`))
+			})
+
 			t.Run("with other params", func(t *ftt.Test) {
 				req := plainReq()
 				req.GitilesCommit = &pb.GitilesCommit{
@@ -236,6 +261,21 @@ func TestScheduleBuildPermissions(t *testing.T) {
 					Ref:     "refs/heads/main",
 					Id:      "1234567890123456789012345678901234567890",
 				}
+				_, err := schedule(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike(`does not have permission "buildbucket.builds.addWithParams"`))
+			})
+
+			t.Run("template with allowed tags", func(t *ftt.Test) {
+				req := templateReq()
+				req.Tags = []*pb.StringPair{{Key: "user_agent", Value: "agent"}}
+				_, err := schedule(ctx, req)
+				assert.NoErr(t, err)
+			})
+
+			t.Run("template with other tags", func(t *ftt.Test) {
+				req := templateReq()
+				req.Tags = []*pb.StringPair{{Key: "k", Value: "v"}}
 				_, err := schedule(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 				assert.That(t, err, should.ErrLike(`does not have permission "buildbucket.builds.addWithParams"`))
@@ -286,6 +326,13 @@ func TestScheduleBuildPermissions(t *testing.T) {
 				bld, err := schedule(ctx, paramsReq())
 				assert.NoErr(t, err)
 				assert.Loosely(t, bld.Input.Properties.Fields["a"].GetStringValue(), should.Equal("b"))
+			})
+
+			t.Run("with other tags", func(t *ftt.Test) {
+				req := plainReq()
+				req.Tags = []*pb.StringPair{{Key: "k", Value: "v"}}
+				_, err := schedule(ctx, req)
+				assert.NoErr(t, err)
 			})
 		})
 	})
