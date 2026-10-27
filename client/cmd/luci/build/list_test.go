@@ -27,10 +27,23 @@ import (
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
+
+type mockGerritClient struct {
+	gerritpb.GerritClient
+	getChange func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error)
+}
+
+func (m *mockGerritClient) GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+	if m.getChange != nil {
+		return m.getChange(ctx, in, opts...)
+	}
+	return nil, status.Errorf(codes.Unimplemented, "not implemented")
+}
 
 func TestParseBuilderFilter(t *testing.T) {
 	ftt.Run(`parseBuilderFilter`, t, func(t *ftt.Test) {
@@ -115,6 +128,50 @@ func TestParseTagAndStatusFilters(t *testing.T) {
 		t.Run(`Invalid status`, func(t *ftt.Test) {
 			_, err := parseBuildStatus("unknown_status")
 			assert.Loosely(t, err, should.NotBeNil)
+		})
+	})
+}
+
+func TestBuildSearchPredicate(t *testing.T) {
+	ftt.Run(`buildSearchPredicate`, t, func(t *ftt.Test) {
+		t.Run(`GerritChanges predicate alone`, func(t *ftt.Test) {
+			gc := &pb.GerritChange{
+				Host:     "chromium-review.googlesource.com",
+				Project:  "infra/luci/luci-go",
+				Change:   8565529,
+				Patchset: 10,
+			}
+			p, err := buildSearchPredicate("", nil, "", gc)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p.GerritChanges, should.Match([]*pb.GerritChange{gc}))
+			assert.Loosely(t, p.Builder, should.BeNil)
+			assert.Loosely(t, p.Status, should.Equal(pb.Status_STATUS_UNSPECIFIED))
+		})
+
+		t.Run(`Combined with builder, status, and tag`, func(t *ftt.Test) {
+			gc := &pb.GerritChange{
+				Host:     "chromium-review.googlesource.com",
+				Change:   8565529,
+				Patchset: 3,
+			}
+			p, err := buildSearchPredicate("chromium/try/linux-rel", []string{"os:linux"}, "failure", gc)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p.GerritChanges, should.Match([]*pb.GerritChange{gc}))
+			assert.Loosely(t, p.Builder, should.Match(&pb.BuilderID{
+				Project: "chromium",
+				Bucket:  "try",
+				Builder: "linux-rel",
+			}))
+			assert.Loosely(t, p.Status, should.Equal(pb.Status_FAILURE))
+			assert.Loosely(t, p.Tags, should.Match([]*pb.StringPair{
+				{Key: "os", Value: "linux"},
+			}))
+		})
+
+		t.Run(`All empty returns error`, func(t *ftt.Test) {
+			_, err := buildSearchPredicate("", nil, "", nil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("at least one filter flag"))
 		})
 	})
 }
@@ -217,7 +274,7 @@ func TestBuildListRun(t *testing.T) {
 			assert.Loosely(t, ret, should.Equal(1))
 		})
 
-		t.Run(`Execution with mock client - builder, tag, and status flags`, func(t *ftt.Test) {
+		t.Run(`Returns builds matching builder, tag, and status flags`, func(t *ftt.Test) {
 			mock := &mockBuildsClient{
 				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
 					assert.Loosely(t, in.PageSize, should.Equal(int32(5)))
@@ -268,6 +325,145 @@ func TestBuildListRun(t *testing.T) {
 			run := cmd.CommandRun().(*buildListRun)
 			run.client = mock
 			err := run.Flags.Parse([]string{"-builder", "chromium/ci/linux-rel"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(1))
+		})
+
+		t.Run(`Returns builds for -cl URL with patchset`, func(t *ftt.Test) {
+			mock := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					assert.Loosely(t, in.Predicate.GerritChanges, should.Match([]*pb.GerritChange{
+						{
+							Host:     "chromium-review.googlesource.com",
+							Project:  "infra/luci/luci-go",
+							Change:   8565529,
+							Patchset: 10,
+						},
+					}))
+					return &pb.SearchBuildsResponse{
+						Builds: []*pb.Build{
+							{
+								Id:     8738491827364512347,
+								Status: pb.Status_SUCCESS,
+							},
+						},
+					}, nil
+				},
+			}
+
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mock
+			err := run.Flags.Parse([]string{
+				"-cl", "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529/10",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+		})
+
+		t.Run(`Returns builds for latest patchset when omitted from -cl`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					assert.Loosely(t, in.Number, should.Equal(8565529))
+					return &gerritpb.ChangeInfo{
+						Number:          8565529,
+						Project:         "infra/luci/luci-go",
+						CurrentRevision: "rev_8",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"rev_8": {Number: 8},
+						},
+					}, nil
+				},
+			}
+
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					assert.Loosely(t, in.Predicate.GerritChanges, should.Match([]*pb.GerritChange{
+						{
+							Host:     "chromium-review.googlesource.com",
+							Project:  "infra/luci/luci-go",
+							Change:   8565529,
+							Patchset: 8,
+						},
+					}))
+					return &pb.SearchBuildsResponse{
+						Builds: []*pb.Build{
+							{
+								Id:     8738491827364512348,
+								Status: pb.Status_SUCCESS,
+							},
+						},
+					}, nil
+				},
+			}
+
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			run.gerritClient = mockGerrit
+			err := run.Flags.Parse([]string{
+				"-cl", "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+		})
+
+		t.Run(`Returns correct patchset with -patchset flag`, func(t *ftt.Test) {
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					assert.Loosely(t, in.Predicate.GerritChanges, should.Match([]*pb.GerritChange{
+						{
+							Host:     "chromium-review.googlesource.com",
+							Change:   8565529,
+							Patchset: 4,
+						},
+					}))
+					return &pb.SearchBuildsResponse{
+						Builds: []*pb.Build{
+							{
+								Id:     8738491827364512349,
+								Status: pb.Status_SUCCESS,
+							},
+						},
+					}, nil
+				},
+			}
+
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			err := run.Flags.Parse([]string{
+				"-cl", "8565529",
+				"-patchset", "4",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+		})
+
+		t.Run(`Invalid -cl returns 1`, func(t *ftt.Test) {
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			err := run.Flags.Parse([]string{"-cl", "not-a-cl"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(1))
+		})
+
+		t.Run(`Gerrit patchset resolution error returns 1`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return nil, status.Errorf(codes.NotFound, "CL not found")
+				},
+			}
+
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.gerritClient = mockGerrit
+			err := run.Flags.Parse([]string{"-cl", "8565529"})
 			assert.Loosely(t, err, should.BeNil)
 			ret := run.Run(nil, run.Flags.Args(), nil)
 			assert.Loosely(t, ret, should.Equal(1))

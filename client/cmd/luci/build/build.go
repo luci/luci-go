@@ -60,7 +60,7 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 		LongDesc: "Inspect Buildbucket builds, build status, timing, summary, and step execution.\n\n" +
 			"Available subcommands:\n" +
 			"  get       Get details and step status of a build\n" +
-			"  list      Search and list builds by builder, tag, or status\n" +
+			"  list      Search and list builds by builder, tag, status, or Gerrit CL\n" +
 			"  log       Manage build step logs (list, get, head, tail)",
 		CommandRun: func() subcommands.CommandRun {
 			return &buildRun{af: af}

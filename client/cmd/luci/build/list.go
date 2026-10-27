@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
@@ -38,15 +39,17 @@ const defaultBuildListLimit = 10
 // ListCmd returns the subcommand for `luci build list`.
 func ListCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "list [-builder <project/bucket/builder>] [-tag <key:value>] [-status <status>] [-limit <n>]",
-		ShortDesc: "Search and list builds by builder, tag, or status",
-		LongDesc: "Search Buildbucket builds by builder, tag, or status.\n\n" +
+		UsageLine: "list [-builder <project/bucket/builder>] [-tag <key:value>] [-status <status>] [-cl <gerrit_url_or_change_id>] [-patchset <n>] [-limit <n>]",
+		ShortDesc: "Search and list builds by builder, tag, status, or Gerrit CL",
+		LongDesc: "Search Buildbucket builds by builder, tag, status, or Gerrit CL.\n\n" +
 			"By default, prints up to 10 matching builds with their status, builder/number, -buildid and -invocationid flags, timing, and summary.\n" +
 			"Use -limit / -n to change the maximum number of builds returned.\n\n" +
 			"Examples:\n" +
 			"  $ luci build list -builder \"chromium/ci/Linux UBSan Tests\" -n 5\n" +
 			"  $ luci build list -builder chromium/ci/linux-rel -status failure\n" +
-			"  $ luci build list -tag dut-name:chromeos8-row1-rack10-host45",
+			"  $ luci build list -tag dut-name:chromeos8-row1-rack10-host45\n" +
+			"  $ luci build list -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529\n" +
+			"  $ luci build list -cl 8565529 -status failure",
 		CommandRun: func() subcommands.CommandRun {
 			r := &buildListRun{af: af, limit: defaultBuildListLimit}
 			if r.af != nil {
@@ -57,6 +60,9 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.Var(&r.tags, "tag", "Filter by key:value tag (repeatable, e.g. -tag dut-name:host1)")
 			r.Flags.Var(&r.tags, "t", "Alias for -tag")
 			r.Flags.StringVar(&r.status, "status", "", "Filter by status (scheduled, started, ended, success, failure, infra_failure, canceled)")
+			r.Flags.StringVar(&r.cl, "cl", "", "Filter by Gerrit CL (URL, e.g. https://chromium-review.googlesource.com/c/..., crrev.com/c/..., or change ID)")
+			r.Flags.IntVar(&r.patchset, "patchset", 0, "Filter by specific patchset number (defaults to latest patchset or patchset in -cl URL)")
+			r.Flags.IntVar(&r.patchset, "ps", 0, "Alias for -patchset")
 			r.Flags.IntVar(&r.limit, "limit", defaultBuildListLimit, "Maximum number of builds to return (default: 10)")
 			r.Flags.IntVar(&r.limit, "n", defaultBuildListLimit, "Alias for -limit")
 			return r
@@ -66,14 +72,17 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 
 type buildListRun struct {
 	subcommands.CommandRunBase
-	af     *base.AuthFlags
-	client grpcpb.BuildsClient
+	af           *base.AuthFlags
+	client       grpcpb.BuildsClient
+	gerritClient gerritpb.GerritClient
 
-	host    string
-	builder string
-	tags    stringlistflag.Flag
-	status  string
-	limit   int
+	host     string
+	builder  string
+	tags     stringlistflag.Flag
+	status   string
+	limit    int
+	cl       string
+	patchset int
 }
 
 func (r *buildListRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -84,7 +93,7 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 		}
 	}
 	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -builder, -tag, or -status\n")
+		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -builder, -tag, -status, or -cl\n")
 		return 1
 	}
 	if r.limit <= 0 {
@@ -92,13 +101,41 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 		return 1
 	}
 
-	predicate, err := buildSearchPredicate(r.builder, r.tags, r.status)
+	var gerritChange *pb.GerritChange
+	if r.cl != "" {
+		parsed, err := base.ParseGerritCL(r.cl)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "invalid -cl: %s\n", err)
+			return 1
+		}
+		if r.patchset > 0 {
+			parsed.Patchset = int64(r.patchset)
+		}
+		gerritChange = parsed
+	}
+
+	predicate, err := buildSearchPredicate(r.builder, r.tags, r.status, gerritChange)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
 
 	ctx := cli.GetContext(a, r, env)
+	if gerritChange != nil && gerritChange.Patchset == 0 {
+		if r.gerritClient == nil && r.af != nil {
+			if err := r.af.Parse(); err == nil {
+				r.gerritClient, _ = r.af.NewGerritClient(ctx, gerritChange.Host)
+			}
+		}
+		resolvedChange, errPatchset := base.ResolveGerritPatchset(ctx, r.gerritClient, gerritChange)
+		if errPatchset != nil {
+			fmt.Fprintf(os.Stderr, "failed to resolve latest patchset for CL %d: %s\n", gerritChange.Change, errPatchset)
+			return 1
+		}
+		gerritChange = resolvedChange
+		predicate.GerritChanges = []*pb.GerritChange{gerritChange}
+	}
+
 	client := r.client
 	if client == nil {
 		if err := r.af.Parse(); err != nil {
@@ -147,10 +184,10 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 	return 0
 }
 
-// buildSearchPredicate parses the CLI filter flags (-builder, -tag, -status)
+// buildSearchPredicate parses the CLI filter flags (-builder, -tag, -status, -cl)
 // into a Buildbucket BuildPredicate, which specifies the filter criteria that
 // builds must match in a SearchBuilds RPC request.
-func buildSearchPredicate(builderRaw string, tagsRaw []string, statusRaw string) (*pb.BuildPredicate, error) {
+func buildSearchPredicate(builderRaw string, tagsRaw []string, statusRaw string, gerritChange *pb.GerritChange) (*pb.BuildPredicate, error) {
 	builderID, err := parseBuilderFilter(builderRaw)
 	if err != nil {
 		return nil, err
@@ -166,14 +203,20 @@ func buildSearchPredicate(builderRaw string, tagsRaw []string, statusRaw string)
 		return nil, err
 	}
 
-	if builderID == nil && len(tags) == 0 && status == pb.Status_STATUS_UNSPECIFIED {
-		return nil, errors.New("at least one filter flag (-builder, -tag, or -status) is required")
+	if builderID == nil && len(tags) == 0 && status == pb.Status_STATUS_UNSPECIFIED && gerritChange == nil {
+		return nil, errors.New("at least one filter flag (-builder, -tag, -status, or -cl) is required")
+	}
+
+	var gerritChanges []*pb.GerritChange
+	if gerritChange != nil {
+		gerritChanges = []*pb.GerritChange{gerritChange}
 	}
 
 	return &pb.BuildPredicate{
-		Builder: builderID,
-		Tags:    tags,
-		Status:  status,
+		Builder:       builderID,
+		Tags:          tags,
+		Status:        status,
+		GerritChanges: gerritChanges,
 	}, nil
 }
 
