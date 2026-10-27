@@ -26,6 +26,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -33,10 +34,11 @@ import (
 // LogListCmd returns the subcommand for `luci build log list`.
 func LogListCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "list -buildid <build_id> [-step <step_name>]",
+		UsageLine: "list [-buildid <build_id>] [-step <step_name>] [<target>]",
 		ShortDesc: "List logs for a build or build step",
-		LongDesc: "List LogDog logs for all steps in a build, or for a specific step when -step is specified.\n\n" +
+		LongDesc: "List LogDog logs for all steps in a build, or for a specific step when -step (or a LogDog step URL <target>) is specified.\n\n" +
 			"Examples:\n" +
+			"  $ luci build log list https://ci.chromium.org/ui/b/8738491827364512345\n" +
 			"  $ luci build log list -buildid 8738491827364512345\n" +
 			"  $ luci build log list -buildid 8738491827364512345 -step compile",
 		CommandRun: func() subcommands.CommandRun {
@@ -65,34 +67,35 @@ type buildLogListRun struct {
 }
 
 func (r *buildLogListRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return 0
-		}
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
 	}
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -buildid and -step (run 'luci ids <url>' to extract IDs)\n")
-		return 1
-	}
-	if r.id <= 0 {
-		fmt.Fprintf(os.Stderr, "flag -buildid is required (run 'luci ids <url>' to extract IDs)\n")
+
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
 
 	ctx := cli.GetContext(a, r, env)
-	buildsClient := r.buildsClient
-	if buildsClient == nil {
-		if err := r.af.Parse(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-			return 1
-		}
-		var errClient error
-		buildsClient, _, errClient = r.af.NewBuildsClient(ctx, r.host)
-		if errClient != nil {
-			fmt.Fprintf(os.Stderr, "failed to create buildbucket client: %s\n", errClient)
-			return 1
-		}
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, nil, r.buildsClient, target, ids.TargetBindings{
+		BuildIDInt64: &r.id,
+		StepName:     &r.step,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
+		return 1
+	}
+
+	if r.id <= 0 {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "flag -buildid or a positional target is required")
+		return 1
+	}
+
+	buildsClient, ok := ensureBuildsClient(ctx, r.af, r.host, r.buildsClient)
+	if !ok {
+		return 1
 	}
 
 	b, err := buildsClient.GetBuild(ctx, &pb.GetBuildRequest{
@@ -119,6 +122,10 @@ func (r *buildLogListRun) Run(a subcommands.Application, args []string, env subc
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			return 1
 		}
+		if extracted != nil {
+			extracted.StepName = matchedStep.Name
+		}
+		ids.PrintDerivedIDs(out, extracted)
 		fmt.Fprintf(out, "Step: %s (%s)\n", matchedStep.Name, matchedStep.Status)
 		if len(matchedStep.Logs) == 0 {
 			fmt.Fprintf(out, "  (no logs)\n")
@@ -133,6 +140,8 @@ func (r *buildLogListRun) Run(a subcommands.Application, args []string, env subc
 		}
 		return 0
 	}
+
+	ids.PrintDerivedIDs(out, extracted)
 
 	printed := false
 	if buildLogs := b.GetOutput().GetLogs(); len(buildLogs) > 0 {

@@ -240,10 +240,40 @@ func TestBuildGetRun(t *testing.T) {
 			assert.Loosely(t, ret, should.Equal(1))
 		})
 
-		t.Run(`Positional arguments return 1`, func(t *ftt.Test) {
+		t.Run(`Too many positional arguments return 1`, func(t *ftt.Test) {
 			cmd := GetCmd(af)
-			ret := cmd.CommandRun().Run(nil, []string{"8738491827364512345"}, nil)
+			ret := cmd.CommandRun().Run(nil, []string{"8738491827364512345", "extra"}, nil)
 			assert.Loosely(t, ret, should.Equal(1))
+		})
+
+		t.Run(`Execution with mock client - positional build URL`, func(t *ftt.Test) {
+			mock := &mockBuildsClient{
+				getBuild: func(ctx context.Context, in *pb.GetBuildRequest, opts ...grpc.CallOption) (*pb.Build, error) {
+					assert.Loosely(t, in.Id, should.Equal(8738491827364512345))
+					return &pb.Build{
+						Id:     8738491827364512345,
+						Status: pb.Status_SUCCESS,
+						Builder: &pb.BuilderID{
+							Project: "chromium",
+							Bucket:  "ci",
+							Builder: "linux-rel",
+						},
+					}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := GetCmd(af)
+			run := cmd.CommandRun().(*buildGetRun)
+			run.client = mock
+			run.out = &out
+			err := run.Flags.Parse([]string{"https://ci.chromium.org/ui/b/8738491827364512345"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Build ID:          8738491827364512345"))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Invocation ID:     build-8738491827364512345"))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Status:        SUCCESS"))
 		})
 
 		t.Run(`Invalid -buildid returns error on parse`, func(t *ftt.Test) {

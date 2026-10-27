@@ -28,6 +28,7 @@ import (
 
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
@@ -52,19 +53,22 @@ var priorityVariantKeys = []string{
 // FailuresCmd returns the subcommand for `luci analysis failures`.
 func FailuresCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "failures [-bugid <bug_id> | -project <project> -ruleid <rule_id> | -project <project> -clusteralgorithm <alg> -clusterid <id>] [-variant <k:v>] [-limit <n>]",
+		UsageLine: "failures [-bugid <bug_id> | -project <project> -ruleid <rule_id> | -project <project> -clusteralgorithm <alg> -clusterid <id>] [-variant <k:v>] [-limit <n>] [<target>]",
 		ShortDesc: "Summarize variant breakdown and recent failing invocations for a bug, rule, or cluster",
 		LongDesc: "Query cluster failure examples from LUCI Analysis, summarize failure distribution across\n" +
 			"variant dimensions (builder, board, test_environment, test_suite, os), and list recent\n" +
 			"failing ResultDB -invocationid and -testid flags ready for 'luci verdict get'.\n\n" +
 			"Examples:\n" +
+			"  luci analysis failures b/553974454\n" +
 			"  luci analysis failures -bugid 553974454\n" +
 			"  luci analysis failures -bugid 553974454 -variant board:vim3\n" +
 			"  luci analysis failures -project turquoise -ruleid 32ae75255a4aa807897d8fa20137e7d5\n" +
 			"  luci analysis failures -project chromium -clusteralgorithm reason-v6 -clusterid 0123456789abcdef",
 		CommandRun: func() subcommands.CommandRun {
 			r := &failuresRun{af: af, limit: defaultFailuresLimit}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.AnalysisHost, "LUCI Analysis host")
 			r.Flags.StringVar(&r.bugID, "bugid", "", "Buganizer bug ID (e.g. 553974454)")
 			r.Flags.StringVar(&r.project, "project", "", "LUCI project (e.g. chromium, turquoise)")
@@ -81,16 +85,19 @@ func FailuresCmd(af *base.AuthFlags) *subcommands.Command {
 
 type failuresRun struct {
 	subcommands.CommandRunBase
-	af         *base.AuthFlags
-	host       string
-	bugID      string
-	project    string
-	ruleID     string
-	clusterAlg string
-	clusterID  string
-	variants   stringlistflag.Flag
-	limit      int
-	metric     string
+	af             *base.AuthFlags
+	rulesClient    analysispb.RulesClient
+	clustersClient analysispb.ClustersClient
+	out            io.Writer
+	host           string
+	bugID          string
+	project        string
+	ruleID         string
+	clusterAlg     string
+	clusterID      string
+	variants       stringlistflag.Flag
+	limit          int
+	metric         string
 }
 
 type variantValueBucket struct {
@@ -129,8 +136,14 @@ type clusterFailuresReport struct {
 }
 
 func (r *failuresRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; pass -bugid <id>, -project <p> -ruleid <r>, or -project <p> -clusteralgorithm <a> -clusterid <c>\n")
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
+	}
+
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
 
@@ -148,13 +161,25 @@ func (r *failuresRun) Run(a subcommands.Application, args []string, env subcomma
 	}
 
 	ctx := cli.GetContext(a, r, env)
-	if err := r.af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, nil, nil, target, ids.TargetBindings{
+		BugID:            &r.bugID,
+		Project:          &r.project,
+		RuleID:           &r.ruleID,
+		ClusterAlgorithm: &r.clusterAlg,
+		ClusterID:        &r.clusterID,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
 		return 1
 	}
-	rulesClient, clustersClient, _, err := r.af.NewAnalysisClients(ctx, r.host)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+
+	if strings.TrimSpace(r.bugID) == "" && strings.TrimSpace(r.ruleID) == "" && strings.TrimSpace(r.clusterAlg) == "" && strings.TrimSpace(r.clusterID) == "" {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "must specify one of -bugid, (-project and -ruleid), (-project, -clusteralgorithm, and -clusterid), or a positional bug/rule/cluster target")
+		return 1
+	}
+
+	rulesClient, clustersClient, ok := ensureAnalysisClients(ctx, r.af, r.host, r.rulesClient, r.clustersClient)
+	if !ok {
 		return 1
 	}
 
@@ -164,7 +189,14 @@ func (r *failuresRun) Run(a subcommands.Application, args []string, env subcomma
 		return 1
 	}
 
-	if err := printClusterFailuresReport(os.Stdout, report); err != nil {
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+	extracted.EnrichFromAnalysis(report.Project, "", report.ClusterAlgorithm, report.ClusterID, "")
+	ids.PrintDerivedIDs(out, extracted)
+
+	if err := printClusterFailuresReport(out, report); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}

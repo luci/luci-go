@@ -15,7 +15,9 @@
 package build
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/maruel/subcommands"
@@ -25,9 +27,30 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
+
+func ensureBuildsClient(ctx context.Context, af *base.AuthFlags, host string, existing grpcpb.BuildsClient) (grpcpb.BuildsClient, bool) {
+	if existing != nil {
+		return existing, true
+	}
+	if af == nil {
+		fmt.Fprintf(os.Stderr, "auth flags not configured\n")
+		return nil, false
+	}
+	if err := af.Parse(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+		return nil, false
+	}
+	client, _, err := af.NewBuildsClient(ctx, host)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create buildbucket client: %s\n", err)
+		return nil, false
+	}
+	return client, true
+}
 
 // Cmd returns the top-level command for `luci build`.
 func Cmd(af *base.AuthFlags) *subcommands.Command {
@@ -68,14 +91,16 @@ func (r *buildRun) Run(a subcommands.Application, args []string, env subcommands
 // GetCmd returns the subcommand for `luci build get`.
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get -buildid <build_id>",
+		UsageLine: "get [-buildid <build_id>] [<target>]",
 		ShortDesc: "Get details and status of a build",
-		LongDesc: "Get build details from Buildbucket by build ID (run 'luci ids <url>' to extract ids).\n\n" +
+		LongDesc: "Get build details from Buildbucket by build ID or positional URL/ID <target>.\n\n" +
 			"By default, prints high-level build status, duration, code changes, summary, and any failed steps.\n" +
 			"Use -steps to print the full hierarchical step tree, or -json for raw JSON output.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &buildGetRun{af: af}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.BuildbucketHost, "Buildbucket host")
 			r.Flags.Int64Var(&r.id, "buildid", 0, "Build ID (e.g. 8738491827364512345)")
 			r.Flags.Int64Var(&r.id, "id", 0, "Alias for -buildid")
@@ -93,6 +118,7 @@ type buildGetRun struct {
 	subcommands.CommandRunBase
 	af          *base.AuthFlags
 	client      grpcpb.BuildsClient
+	out         io.Writer
 	host        string
 	id          int64
 	steps       bool
@@ -102,13 +128,28 @@ type buildGetRun struct {
 }
 
 func (r *buildGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flag -buildid (run 'luci ids <url>' to extract ids)\n")
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
+	}
+
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		return 1
+	}
+
+	ctx := cli.GetContext(a, r, env)
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, nil, r.client, target, ids.TargetBindings{
+		BuildIDInt64: &r.id,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
 		return 1
 	}
 
 	if r.id <= 0 {
-		fmt.Fprintf(os.Stderr, "flag -buildid is required (run 'luci ids <url>' to extract ids)\n")
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "flag -buildid or a positional target is required")
 		return 1
 	}
 
@@ -148,20 +189,9 @@ func (r *buildGetRun) Run(a subcommands.Application, args []string, env subcomma
 		}
 	}
 
-	ctx := cli.GetContext(a, r, env)
-	client := r.client
-	if client == nil {
-		if err := r.af.Parse(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-			return 1
-		}
-
-		var errClient error
-		client, _, errClient = r.af.NewBuildsClient(ctx, r.host)
-		if errClient != nil {
-			fmt.Fprintf(os.Stderr, "failed to create buildbucket client: %s\n", errClient)
-			return 1
-		}
+	client, ok := ensureBuildsClient(ctx, r.af, r.host, r.client)
+	if !ok {
+		return 1
 	}
 
 	b, err := client.GetBuild(ctx, req)
@@ -170,22 +200,30 @@ func (r *buildGetRun) Run(a subcommands.Application, args []string, env subcomma
 		return 1
 	}
 
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+
 	if r.json {
-		out, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(b)
+		ids.PrintDerivedIDs(os.Stderr, extracted)
+		jsonOut, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(b)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to marshal build to JSON: %s\n", err)
 			return 1
 		}
-		fmt.Println(string(out))
+		fmt.Fprintln(out, string(jsonOut))
 		return 0
 	}
+
+	ids.PrintDerivedIDs(out, extracted)
 
 	opts := FormatOptions{
 		AllSteps:    r.steps,
 		FailedSteps: r.failedSteps,
 		Properties:  r.properties,
 	}
-	if err := FormatBuild(os.Stdout, b, opts); err != nil {
+	if err := FormatBuild(out, b, opts); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to format build: %s\n", err)
 		return 1
 	}

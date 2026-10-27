@@ -29,6 +29,7 @@ import (
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
@@ -49,13 +50,14 @@ const (
 // TestHistoryCmd returns the subcommand for `luci analysis test-history`.
 func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "test-history -project <project> (-testid <test_id> | -modulename <mod> -scheme <scheme> -case <case> [-coarse <coarse>] [-fine <fine>]) [-variant <k:v>] [-days <n>] [-limit <n>] [-subrealm <realm>]",
+		UsageLine: "test-history [-project <project>] [-testid <test_id> | -modulename <mod> -scheme <scheme> -case <case> [-coarse <coarse>] [-fine <fine>]] [-variant <k:v>] [-days <n>] [-limit <n>] [-subrealm <realm>] [<target>]",
 		ShortDesc: "Summarize cross-build pass/flaky/failed stats and recent verdicts for a test ID",
 		LongDesc: "Query LUCI Analysis TestHistory for a test ID across recent builds to inspect per-variant\n" +
 			"pass, flaky, failed, and exonerated counts (TestHistory.QueryStats) alongside recent verdicts\n" +
 			"(TestHistory.Query) with -invocationid and -varianthash flags ready for 'luci verdict get'.\n\n" +
-			"Accepts either a flat/encoded -testid or structured test ID flags (-modulename, -scheme, -coarse, -fine, -case).\n\n" +
+			"Accepts a positional URL/ID <target>, a flat/encoded -testid, or structured test ID flags (-modulename, -scheme, -coarse, -fine, -case).\n\n" +
 			"Examples:\n" +
+			"  luci analysis test-history https://ci.chromium.org/ui/test/turquoise/fuchsia-pkg%3A%2F%2Ffuchsia.com%2Fnetstack-fidl-test%23meta%2Fnetstack-fidl-test.cm\n" +
 			"  luci analysis test-history -project turquoise -testid \"fuchsia-pkg://fuchsia.com/netstack-fidl-test#meta/netstack-fidl-test.cm\"\n" +
 			"  luci analysis test-history -project chromium -modulename \"//chrome/test:browser_tests\" -scheme gtest -fine WebAppBrowserTest -case \"BrowserDisplayNotInstallable/All.0\"",
 		CommandRun: func() subcommands.CommandRun {
@@ -64,7 +66,9 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 				days:  defaultTestHistoryDays,
 				limit: defaultTestHistoryLimit,
 			}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.AnalysisHost, "LUCI Analysis host")
 			r.Flags.StringVar(&r.project, "project", "", "LUCI project (required, e.g. chromium, turquoise)")
 			r.Flags.StringVar(&r.testID, "testid", "", "Flat or structured test ID to query history for")
@@ -84,19 +88,23 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 
 type testHistoryRun struct {
 	subcommands.CommandRunBase
-	af           *base.AuthFlags
-	host         string
-	project      string
-	testID       string
-	moduleName   string
-	moduleScheme string
-	coarseName   string
-	fineName     string
-	caseName     string
-	variants     stringlistflag.Flag
-	days         int
-	limit        int
-	subRealm     string
+	af            *base.AuthFlags
+	thClient      analysispb.TestHistoryClient
+	rdbClient     rdbpb.ResultDBClient
+	schemasClient rdbpb.SchemasClient
+	out           io.Writer
+	host          string
+	project       string
+	testID        string
+	moduleName    string
+	moduleScheme  string
+	coarseName    string
+	fineName      string
+	caseName      string
+	variants      stringlistflag.Flag
+	days          int
+	limit         int
+	subRealm      string
 }
 
 type variantStatsSummary struct {
@@ -135,10 +143,17 @@ type testHistoryReport struct {
 }
 
 func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; pass -project <p> -testid <t> (or -modulename/-scheme/-case)\n")
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
+	}
+
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
+
 	limitExplicit := false
 	for _, setFlag := range flagSetNames(&r.Flags) {
 		if setFlag == "limit" {
@@ -146,23 +161,57 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		}
 	}
 
-	resolvedTestID, err := resolveTestHistoryTestID(r.testID, r.moduleName, r.moduleScheme, r.coarseName, r.fineName, r.caseName)
+	ctx := cli.GetContext(a, r, env)
+	schemasClient := r.schemasClient
+	hasStructuredFlags := strings.TrimSpace(r.moduleName) != "" || strings.TrimSpace(r.moduleScheme) != "" || strings.TrimSpace(r.coarseName) != "" || strings.TrimSpace(r.fineName) != "" || strings.TrimSpace(r.caseName) != ""
+	var testIDBinding *string
+	if !hasStructuredFlags {
+		testIDBinding = &r.testID
+	}
+
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, r.rdbClient, nil, target, ids.TargetBindings{
+		Project: &r.project,
+		TestID:  testIDBinding,
+	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
 		return 1
 	}
 
-	ctx := cli.GetContext(a, r, env)
-	if err := r.af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-		return 1
-	}
-	_, _, thClient, err := r.af.NewAnalysisClients(ctx, r.host)
+	resolvedTestID, err := resolveTestHistoryTestID(r.testID, r.moduleName, r.moduleScheme, r.coarseName, r.fineName, r.caseName)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		ids.PrintMissingFlagsError(os.Stderr, extracted, err.Error())
 		return 1
 	}
-	_, schemasClient, _, _ := r.af.NewResultDBClient(ctx, chromeinfra.ResultDBHost)
+	if strings.TrimSpace(r.project) == "" {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "missing required -project flag (e.g. -project chromium)")
+		return 1
+	}
+	if strings.TrimSpace(resolvedTestID) == "" {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "missing required -testid flag (or -modulename, -scheme, -case)")
+		return 1
+	}
+
+	thClient := r.thClient
+	if thClient == nil {
+		if r.af == nil {
+			fmt.Fprintf(os.Stderr, "auth flags not configured\n")
+			return 1
+		}
+		if err := r.af.Parse(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			return 1
+		}
+		var errClient error
+		_, _, thClient, errClient = r.af.NewAnalysisClients(ctx, r.host)
+		if errClient != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", errClient)
+			return 1
+		}
+		if schemasClient == nil {
+			_, schemasClient, _, _ = r.af.NewResultDBClient(ctx, chromeinfra.ResultDBHost)
+		}
+	}
 
 	report, err := fetchTestHistory(
 		ctx,
@@ -180,7 +229,21 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
-	if err := printTestHistoryReport(ctx, os.Stdout, schemasClient, report); err != nil {
+
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+	if extracted != nil {
+		if extracted.TestID == "" {
+			extracted.TestID = resolvedTestID
+		}
+		if extracted.ModuleName == "" {
+			extracted.ModuleName = base.ExtractModuleNameFromTestID(extracted.TestID)
+		}
+	}
+	ids.PrintDerivedIDs(out, extracted)
+	if err := printTestHistoryReport(ctx, out, schemasClient, report); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}

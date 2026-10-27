@@ -38,7 +38,7 @@ INTEGRATION_TESTS=1 go test ./...
 *   `verdict/`: Subpackage for `verdict` resource management (`luci verdict get`, `luci verdict list`).
 *   `artifact/`: Core package for artifact queries and streaming (`list`, `get`, `head`, `tail`).
 
-Commands are completely stateless and require explicit flags (`-buildid`, `-invocationid`, `-testid`, `-resultid`, `-workunitid`, `-artifactid`). Use `luci ids <url>` to extract IDs from URLs or canonical resource names.
+Commands are completely stateless and accept either a positional URL/ID `<target>` (which automatically extracts and prints derived IDs) or explicit flags (`-buildid`, `-invocationid`, `-testid`, `-resultid`, `-workunitid`, `-artifactid`). You can also run `luci ids <url>` standalone to extract IDs from URLs or canonical resource names.
 
 ## Manual Testing & Authentication
 

@@ -25,6 +25,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -67,27 +68,30 @@ func newBuildLogFetchCmd(af *base.AuthFlags, mode string) *subcommands.Command {
 	var usage, shortDesc, longDesc string
 	switch mode {
 	case "head":
-		usage = "head -buildid <build_id> -step <step_name> [-log <log_name>] [-n <lines>] [-c <bytes>] [-o <file>]"
+		usage = "head [-buildid <build_id>] [-step <step_name>] [-log <log_name>] [-n <lines>] [-c <bytes>] [-o <file>] [<target>]"
 		shortDesc = "Print the first N lines of a build step log"
 		longDesc = "Print the first N lines (default 10) of a Buildbucket step log via LogDog.\n" +
 			"If -log is omitted, defaults to 'stdout' (or 'failure_summary' / the single log if only one exists).\n\n" +
 			"Examples:\n" +
+			"  $ luci build log head https://logs.chromium.org/logs/chromium/buildbucket/cr-buildbucket/8738491827364512345/+/u/compile/stdout -n 50\n" +
 			"  $ luci build log head -buildid 8738491827364512345 -step compile -n 50\n" +
 			"  $ luci build log head -buildid 8738491827364512345 -step compile -log failure_summary"
 	case "tail":
-		usage = "tail -buildid <build_id> -step <step_name> [-log <log_name>] [-n <lines>] [-c <bytes>] [-o <file>]"
+		usage = "tail [-buildid <build_id>] [-step <step_name>] [-log <log_name>] [-n <lines>] [-c <bytes>] [-o <file>] [<target>]"
 		shortDesc = "Print the last N lines of a build step log"
 		longDesc = "Print the last N lines (default 10) of a Buildbucket step log via LogDog.\n" +
 			"If -log is omitted, defaults to 'stdout' (or 'failure_summary' / the single log if only one exists).\n\n" +
 			"Examples:\n" +
+			"  $ luci build log tail https://logs.chromium.org/logs/chromium/buildbucket/cr-buildbucket/8738491827364512345/+/u/compile/stdout -n 50\n" +
 			"  $ luci build log tail -buildid 8738491827364512345 -step compile -n 50\n" +
 			"  $ luci build log tail -buildid 8738491827364512345 -step compile -log failure_summary"
 	default:
-		usage = "get -buildid <build_id> -step <step_name> [-log <log_name>] [-c <bytes>] [-o <file>]"
+		usage = "get [-buildid <build_id>] [-step <step_name>] [-log <log_name>] [-c <bytes>] [-o <file>] [<target>]"
 		shortDesc = "Download or print full content of a build step log"
 		longDesc = "Fetch or save the full content of a Buildbucket step log via LogDog.\n" +
 			"If -log is omitted, defaults to 'stdout' (or 'failure_summary' / the single log if only one exists).\n\n" +
 			"Examples:\n" +
+			"  $ luci build log get https://logs.chromium.org/logs/chromium/buildbucket/cr-buildbucket/8738491827364512345/+/u/compile/failure_summary\n" +
 			"  $ luci build log get -buildid 8738491827364512345 -step compile -log failure_summary\n" +
 			"  $ luci build log get -buildid 8738491827364512345 -step \"test|browser_tests\" -log stdout -o /tmp/step.log"
 	}
@@ -136,25 +140,39 @@ type buildLogRun struct {
 }
 
 func (r *buildLogRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return 0
-		}
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
 	}
 
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -buildid, -step, and -log (run 'luci ids <url>' to extract IDs)\n")
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		return 1
+	}
+
+	ctx := cli.GetContext(a, r, env)
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, nil, r.buildsClient, target, ids.TargetBindings{
+		BuildIDInt64: &r.id,
+		StepName:     &r.step,
+		LogName:      &r.logName,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
 		return 1
 	}
 
 	if r.id <= 0 {
-		fmt.Fprintf(os.Stderr, "flag -buildid is required (run 'luci ids <url>' to extract IDs)\n")
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "flag -buildid or a positional target is required")
 		return 1
 	}
 
 	if r.step == "" && r.logName == "" {
-		fmt.Fprintf(os.Stderr, "flag -step is required (run 'luci build get -buildid %d' to see steps and logs)\n", r.id)
+		if extracted != nil && !extracted.IsEmpty() {
+			ids.PrintMissingFlagsError(os.Stderr, extracted, "flag -step (or a positional LogDog step log URL) is required")
+		} else {
+			fmt.Fprintf(os.Stderr, "flag -step is required (run 'luci build get -buildid %d' to see steps and logs)\n", r.id)
+		}
 		return 1
 	}
 
@@ -172,19 +190,9 @@ func (r *buildLogRun) Run(a subcommands.Application, args []string, env subcomma
 		r.lines = 0
 	}
 
-	ctx := cli.GetContext(a, r, env)
-	buildsClient := r.buildsClient
-	if buildsClient == nil {
-		if err := r.af.Parse(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
-			return 1
-		}
-		var errClient error
-		buildsClient, _, errClient = r.af.NewBuildsClient(ctx, r.host)
-		if errClient != nil {
-			fmt.Fprintf(os.Stderr, "failed to create buildbucket client: %s\n", errClient)
-			return 1
-		}
+	buildsClient, ok := ensureBuildsClient(ctx, r.af, r.host, r.buildsClient)
+	if !ok {
+		return 1
 	}
 
 	req := &pb.GetBuildRequest{
@@ -221,6 +229,10 @@ func (r *buildLogRun) Run(a subcommands.Application, args []string, env subcomma
 
 	logsClient := r.logsClient
 	if logsClient == nil {
+		if r.af == nil {
+			fmt.Fprintf(os.Stderr, "auth flags not configured\n")
+			return 1
+		}
 		var errClient error
 		logsClient, errClient = r.af.NewLogDogClient(ctx, addr.Host)
 		if errClient != nil {
@@ -229,7 +241,11 @@ func (r *buildLogRun) Run(a subcommands.Application, args []string, env subcomma
 		}
 	}
 
-	out := r.out
+	stdoutOut := r.out
+	if stdoutOut == nil {
+		stdoutOut = os.Stdout
+	}
+	out := stdoutOut
 	if r.outputFile != "" {
 		f, err := os.Create(r.outputFile)
 		if err != nil {
@@ -238,9 +254,12 @@ func (r *buildLogRun) Run(a subcommands.Application, args []string, env subcomma
 		}
 		defer f.Close()
 		out = f
-	} else if out == nil {
-		out = os.Stdout
 	}
+
+	if extracted != nil && extracted.LogName == "" {
+		extracted.LogName = targetLog.Name
+	}
+	ids.PrintDerivedIDs(stdoutOut, extracted)
 
 	var fetchErr error
 	switch r.mode {

@@ -295,5 +295,47 @@ func TestTestHistorySubcommand(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Recent Passing Verdicts (no failing/flaky verdicts in window; showing 1):"))
 			assert.Loosely(t, out, should.ContainSubstring("luci verdict get -invocationid ants-i999"))
 		})
+
+		t.Run("Executes testHistoryRun.Run with positional Milo test history URL", func(t *ftt.Test) {
+			thMock := &mockTestHistoryClient{
+				queryStats: func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
+					assert.Loosely(t, in.Project, should.Equal("turquoise"))
+					assert.Loosely(t, in.TestId, should.Equal("fuchsia-pkg://fuchsia.com/netstack#meta/test.cm"))
+					return &analysispb.QueryTestHistoryStatsResponse{
+						Groups: []*analysispb.QueryTestHistoryStatsResponse_Group{
+							{
+								VariantHash:   "hash-1",
+								VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Failed: 1},
+							},
+						},
+					}, nil
+				},
+				query: func(ctx context.Context, in *analysispb.QueryTestHistoryRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryResponse, error) {
+					return &analysispb.QueryTestHistoryResponse{
+						Verdicts: []*analysispb.TestVerdict{
+							{
+								TestId:       in.TestId,
+								VariantHash:  "hash-1",
+								InvocationId: "build-8888888888888888882",
+								StatusV2:     analysispb.TestVerdict_FAILED,
+							},
+						},
+					}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := TestHistoryCmd(&base.AuthFlags{})
+			run := cmd.CommandRun().(*testHistoryRun)
+			run.thClient = thMock
+			run.out = &out
+			miloURL := "https://ci.chromium.org/ui/test/turquoise/fuchsia-pkg%3A%2F%2Ffuchsia.com%2Fnetstack%23meta%2Ftest.cm"
+			assert.Loosely(t, run.Flags.Parse([]string{miloURL, "-days", "14"}), should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Project:           turquoise"))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Test ID:           fuchsia-pkg://fuchsia.com/netstack#meta/test.cm"))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Window:    last 14d"))
+		})
 	})
 }

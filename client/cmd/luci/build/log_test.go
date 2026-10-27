@@ -221,10 +221,10 @@ func TestBuildLogRun(t *testing.T) {
 				assert.Loosely(t, run.Run(nil, run.Flags.Args(), nil), should.Equal(1))
 			})
 
-			t.Run(`Unexpected positional arguments return 1`, func(t *ftt.Test) {
+			t.Run(`Too many positional arguments return 1`, func(t *ftt.Test) {
 				cmd := LogGetCmd(af)
 				run := cmd.CommandRun().(*buildLogRun)
-				assert.Loosely(t, run.Flags.Parse([]string{"-buildid", "8738491827364512345", "-step", "compile", "extra"}), should.BeNil)
+				assert.Loosely(t, run.Flags.Parse([]string{"https://ci.chromium.org/ui/b/8738491827364512345", "extra"}), should.BeNil)
 				assert.Loosely(t, run.Run(nil, run.Flags.Args(), nil), should.Equal(1))
 			})
 
@@ -488,6 +488,80 @@ func TestBuildLogRun(t *testing.T) {
 			assert.Loosely(t, run.Flags.Parse([]string{"-buildid", "8738491827364512345", "-step", "compile"}), should.BeNil)
 			ret := run.Run(nil, run.Flags.Args(), nil)
 			assert.Loosely(t, ret, should.Equal(1))
+		})
+
+		t.Run(`Positional target URLs for list, get, head, and tail`, func(t *ftt.Test) {
+			mockLD := &mockLogsClient{
+				get: func(ctx context.Context, in *logdog.GetRequest, opts ...grpc.CallOption) (*logdog.GetResponse, error) {
+					return &logdog.GetResponse{
+						State: &logdog.LogStreamState{TerminalIndex: 0},
+						Desc:  &logpb.LogStreamDescriptor{StreamType: logpb.StreamType_TEXT},
+						Logs: []*logpb.LogEntry{
+							makeTextEntry(0, "line 1", "line 2"),
+						},
+					}, nil
+				},
+				tail: func(ctx context.Context, in *logdog.TailRequest, opts ...grpc.CallOption) (*logdog.GetResponse, error) {
+					return &logdog.GetResponse{
+						State: &logdog.LogStreamState{TerminalIndex: 0},
+						Desc:  &logpb.LogStreamDescriptor{StreamType: logpb.StreamType_TEXT},
+						Logs: []*logpb.LogEntry{
+							makeTextEntry(0, "line 1", "line 2"),
+						},
+					}, nil
+				},
+			}
+
+			logDogURL := "https://logs.chromium.org/logs/chromium/buildbucket/cr-buildbucket/8738491827364512345/+/u/compile/stdout"
+
+			// 1. build log list with build URL
+			var listOut bytes.Buffer
+			listCmd := LogListCmd(af)
+			listRun := listCmd.CommandRun().(*buildLogListRun)
+			listRun.buildsClient = mockBB
+			listRun.out = &listOut
+			assert.Loosely(t, listRun.Flags.Parse([]string{"https://ci.chromium.org/ui/b/8738491827364512345"}), should.BeNil)
+			assert.Loosely(t, listRun.Run(nil, listRun.Flags.Args(), nil), should.Equal(0))
+			assert.Loosely(t, listOut.String(), should.ContainSubstring("Build ID:          8738491827364512345"))
+			assert.Loosely(t, listOut.String(), should.ContainSubstring("compile (FAILURE): stdout"))
+
+			// 2. build log get with LogDog URL
+			var getOut bytes.Buffer
+			getCmd := LogGetCmd(af)
+			getRun := getCmd.CommandRun().(*buildLogRun)
+			getRun.buildsClient = mockBB
+			getRun.logsClient = mockLD
+			getRun.out = &getOut
+			assert.Loosely(t, getRun.Flags.Parse([]string{logDogURL}), should.BeNil)
+			assert.Loosely(t, getRun.Run(nil, getRun.Flags.Args(), nil), should.Equal(0))
+			assert.Loosely(t, getOut.String(), should.ContainSubstring("Build ID:          8738491827364512345"))
+			assert.Loosely(t, getOut.String(), should.ContainSubstring("Step Name:         compile"))
+			assert.Loosely(t, getOut.String(), should.ContainSubstring("Log Name:          stdout"))
+			assert.Loosely(t, getOut.String(), should.ContainSubstring("line 1\nline 2\n"))
+
+			// 3. build log head with LogDog URL and trailing -n flag
+			var headOut bytes.Buffer
+			headCmd := LogHeadCmd(af)
+			headRun := headCmd.CommandRun().(*buildLogRun)
+			headRun.buildsClient = mockBB
+			headRun.logsClient = mockLD
+			headRun.out = &headOut
+			assert.Loosely(t, headRun.Flags.Parse([]string{logDogURL, "-n", "1"}), should.BeNil)
+			assert.Loosely(t, headRun.Run(nil, headRun.Flags.Args(), nil), should.Equal(0))
+			assert.Loosely(t, headOut.String(), should.ContainSubstring("Build ID:          8738491827364512345"))
+			assert.Loosely(t, headOut.String(), should.ContainSubstring("line 1\n"))
+
+			// 4. build log tail with LogDog URL and trailing -n flag
+			var tailOut bytes.Buffer
+			tailCmd := LogTailCmd(af)
+			tailRun := tailCmd.CommandRun().(*buildLogRun)
+			tailRun.buildsClient = mockBB
+			tailRun.logsClient = mockLD
+			tailRun.out = &tailOut
+			assert.Loosely(t, tailRun.Flags.Parse([]string{logDogURL, "-n", "1"}), should.BeNil)
+			assert.Loosely(t, tailRun.Run(nil, tailRun.Flags.Args(), nil), should.Equal(0))
+			assert.Loosely(t, tailOut.String(), should.ContainSubstring("Build ID:          8738491827364512345"))
+			assert.Loosely(t, tailOut.String(), should.ContainSubstring("line 2\n"))
 		})
 	})
 }

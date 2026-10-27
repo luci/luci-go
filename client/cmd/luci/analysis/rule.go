@@ -26,6 +26,7 @@ import (
 
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -62,16 +63,19 @@ func (r *ruleRun) Run(a subcommands.Application, args []string, env subcommands.
 // RuleGetCmd returns the subcommand for `luci analysis rule get`.
 func RuleGetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get [-bugid <bug_id> | -project <project> -ruleid <rule_id>] [-limit <n>]",
+		UsageLine: "get [-bugid <bug_id> | -project <project> -ruleid <rule_id>] [-limit <n>] [<target>]",
 		ShortDesc: "Get a LUCI Analysis rule, its cluster impact, and example failures",
 		LongDesc: "Retrieve a LUCI Analysis failure association rule, its cluster impact metrics,\n" +
 			"and recent example failures ready for 'luci verdict get'.\n\n" +
 			"Examples:\n" +
+			"  luci analysis rule get b/553974454\n" +
 			"  luci analysis rule get -bugid 553974454\n" +
 			"  luci analysis rule get -project turquoise -ruleid 32ae75255a4aa807897d8fa20137e7d5",
 		CommandRun: func() subcommands.CommandRun {
 			r := &ruleGetRun{af: af, limit: defaultRuleFailuresLimit}
-			r.af.Register(&r.Flags)
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.AnalysisHost, "LUCI Analysis host")
 			r.Flags.StringVar(&r.bugID, "bugid", "", "Buganizer bug ID (e.g. 553974454)")
 			r.Flags.StringVar(&r.project, "project", "", "LUCI project (e.g. chromium, turquoise)")
@@ -84,12 +88,15 @@ func RuleGetCmd(af *base.AuthFlags) *subcommands.Command {
 
 type ruleGetRun struct {
 	subcommands.CommandRunBase
-	af      *base.AuthFlags
-	host    string
-	bugID   string
-	project string
-	ruleID  string
-	limit   int
+	af             *base.AuthFlags
+	rulesClient    analysispb.RulesClient
+	clustersClient analysispb.ClustersClient
+	out            io.Writer
+	host           string
+	bugID          string
+	project        string
+	ruleID         string
+	limit          int
 }
 
 type ruleDetail struct {
@@ -100,19 +107,35 @@ type ruleDetail struct {
 }
 
 func (r *ruleGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; pass -bugid <id> or -project <p> -ruleid <r>\n")
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
+	}
+
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}
 
 	ctx := cli.GetContext(a, r, env)
-	if err := r.af.Parse(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, nil, nil, target, ids.TargetBindings{
+		BugID:   &r.bugID,
+		Project: &r.project,
+		RuleID:  &r.ruleID,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
 		return 1
 	}
-	rulesClient, clustersClient, _, err := r.af.NewAnalysisClients(ctx, r.host)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+
+	if strings.TrimSpace(r.bugID) == "" && strings.TrimSpace(r.ruleID) == "" {
+		ids.PrintMissingFlagsError(os.Stderr, extracted, "either -bugid, (-project and -ruleid), or a positional bug/rule target is required")
+		return 1
+	}
+
+	rulesClient, clustersClient, ok := ensureAnalysisClients(ctx, r.af, r.host, r.rulesClient, r.clustersClient)
+	if !ok {
 		return 1
 	}
 
@@ -122,7 +145,17 @@ func (r *ruleGetRun) Run(a subcommands.Application, args []string, env subcomman
 		return 1
 	}
 
-	if err := printRuleDetails(os.Stdout, details); err != nil {
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+	if len(details) > 0 && details[0].Rule != nil {
+		rule := details[0].Rule
+		extracted.EnrichFromAnalysis(rule.GetProject(), rule.GetRuleId(), "rules", rule.GetRuleId(), rule.GetBug().GetId())
+	}
+	ids.PrintDerivedIDs(out, extracted)
+
+	if err := printRuleDetails(out, details); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
 	}

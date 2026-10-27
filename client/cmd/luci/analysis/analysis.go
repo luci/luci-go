@@ -18,6 +18,7 @@ package analysis
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/maruel/subcommands"
@@ -26,6 +27,26 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/errors"
 )
+
+func ensureAnalysisClients(ctx context.Context, af *base.AuthFlags, host string, rulesClient analysispb.RulesClient, clustersClient analysispb.ClustersClient) (analysispb.RulesClient, analysispb.ClustersClient, bool) {
+	if rulesClient != nil && clustersClient != nil {
+		return rulesClient, clustersClient, true
+	}
+	if af == nil {
+		fmt.Fprintf(os.Stderr, "auth flags not configured\n")
+		return nil, nil, false
+	}
+	if err := af.Parse(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+		return nil, nil, false
+	}
+	rc, cc, _, err := af.NewAnalysisClients(ctx, host)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		return nil, nil, false
+	}
+	return rc, cc, true
+}
 
 // Cmd returns the top-level subcommand for `luci analysis`.
 func Cmd(af *base.AuthFlags) *subcommands.Command {

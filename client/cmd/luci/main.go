@@ -42,15 +42,17 @@ func getApplication() *cli.Application {
 	return &cli.Application{
 		Name: "luci",
 		Title: "Unified CLI tool to access LUCI resources.\n\n" +
-			"Commands are stateless and require explicit resource ID flags (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -modulename, -testid, -resultid, -workunitid, -artifactid).\n" +
-			"Use 'luci ids <url>' to extract IDs from URLs (Milo UI, LUCI Analysis, AnTS/ATI) or canonical resource names.\n\n" +
+			"Commands are stateless and accept either a positional URL/ID <target> (Milo UI, LUCI Analysis, AnTS/ATI, Buganizer, or canonical resource names) or explicit resource ID flags (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -modulename, -testid, -resultid, -workunitid, -artifactid).\n" +
+			"When a positional <target> is passed, derived IDs are printed automatically so follow-up commands can use explicit flags.\n\n" +
 			base.AgentSkillHint + "\n\n" +
 			"Typical Investigation Workflow Examples:\n" +
 			"  1. Resolve a LUCI Analysis bug or rule to variant breakdown & failing invocations:\n" +
+			"     $ luci analysis failures b/553974454\n" +
 			"     $ luci analysis failures -bugid 553974454\n\n" +
-			"  2. Extract IDs from a Milo or ATI test URL:\n" +
-			"     $ luci ids https://ci.chromium.org/ui/test-investigate/invocations/build-123/...\n" +
-			"     $ luci ids https://android-build.corp.google.com/test_investigate/invocation/I.../test/TR...\n\n" +
+			"  2. Inspect a test verdict or build directly from a Milo or ATI URL:\n" +
+			"     $ luci verdict get https://ci.chromium.org/ui/test-investigate/invocations/build-123/...\n" +
+			"     $ luci verdict get https://android-build.corp.google.com/test_investigate/invocation/I.../test/TR...\n" +
+			"     $ luci build get https://ci.chromium.org/ui/b/8738491827364512345\n\n" +
 			"  3. Search or inspect Buildbucket builds, their status, summary, failed steps, and step logs:\n" +
 			"     $ luci build list -builder \"chromium/ci/Linux UBSan Tests\" -n 5\n" +
 			"     $ luci build get -buildid 8738491827364512345\n" +

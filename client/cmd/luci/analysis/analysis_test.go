@@ -601,16 +601,84 @@ func TestSubcommandRunners(t *testing.T) {
 		assert.Loosely(t, ruleCmd.CommandRun().Run(app, []string{"help"}, nil), should.Equal(0))
 	})
 
-	ftt.Run(`RuleGetCmd and FailuresCmd CLI validation`, t, func(t *ftt.Test) {
+	ftt.Run(`RuleGetCmd and FailuresCmd CLI validation and positional target execution`, t, func(t *ftt.Test) {
 		getRun := RuleGetCmd(af).CommandRun().(*ruleGetRun)
-		// Reject positional arguments
+		// Reject invalid positional arguments or too many positional arguments
 		assert.Loosely(t, getRun.Run(app, []string{"unexpected"}, nil), should.Equal(1))
+		assert.Loosely(t, getRun.Run(app, []string{"b/553974454", "extra"}, nil), should.Equal(1))
 
 		failRun := FailuresCmd(af).CommandRun().(*failuresRun)
-		// Reject positional arguments
+		// Reject invalid positional arguments or too many positional arguments
 		assert.Loosely(t, failRun.Run(app, []string{"unexpected"}, nil), should.Equal(1))
+		assert.Loosely(t, failRun.Run(app, []string{"b/553974454", "extra"}, nil), should.Equal(1))
 		// Reject invalid variant filter
 		failRun.variants = []string{"badvariant"}
 		assert.Loosely(t, failRun.Run(app, nil, nil), should.Equal(1))
+
+		rulesMock := &mockRulesClient{
+			lookupBug: func(ctx context.Context, in *analysispb.LookupBugRequest) (*analysispb.LookupBugResponse, error) {
+				assert.Loosely(t, in.Id, should.Equal("553974454"))
+				return &analysispb.LookupBugResponse{
+					Rules: []string{"projects/turquoise/rules/32ae75255a4aa807897d8fa20137e7d5"},
+				}, nil
+			},
+			get: func(ctx context.Context, in *analysispb.GetRuleRequest) (*analysispb.Rule, error) {
+				return &analysispb.Rule{
+					Name:           in.Name,
+					Project:        "turquoise",
+					RuleId:         "32ae75255a4aa807897d8fa20137e7d5",
+					RuleDefinition: `test = "boot_test"`,
+					IsActive:       true,
+					Bug: &analysispb.AssociatedBug{
+						System:   "buganizer",
+						Id:       "553974454",
+						LinkText: "b/553974454",
+					},
+				}, nil
+			},
+		}
+		clustersMock := &mockClustersClient{
+			get: func(ctx context.Context, in *analysispb.GetClusterRequest) (*analysispb.Cluster, error) {
+				return &analysispb.Cluster{Name: in.Name}, nil
+			},
+			queryClusterFailures: func(ctx context.Context, in *analysispb.QueryClusterFailuresRequest) (*analysispb.QueryClusterFailuresResponse, error) {
+				return &analysispb.QueryClusterFailuresResponse{
+					Failures: []*analysispb.DistinctClusterFailure{
+						{
+							IngestedInvocationId: "build-8700000000000000009",
+							TestId:               "fuchsia-pkg://fuchsia.com/boot-test#meta/boot.cm",
+							Count:                2,
+						},
+					},
+				}, nil
+			},
+		}
+
+		// 1. analysis rule get with positional Buganizer shorthand b/553974454
+		var ruleOut bytes.Buffer
+		rulePosRun := RuleGetCmd(af).CommandRun().(*ruleGetRun)
+		rulePosRun.rulesClient = rulesMock
+		rulePosRun.clustersClient = clustersMock
+		rulePosRun.out = &ruleOut
+		assert.Loosely(t, rulePosRun.Flags.Parse([]string{"b/553974454"}), should.BeNil)
+		assert.Loosely(t, rulePosRun.Run(app, rulePosRun.Flags.Args(), nil), should.Equal(0))
+		assert.Loosely(t, ruleOut.String(), should.ContainSubstring("Project:           turquoise"))
+		assert.Loosely(t, ruleOut.String(), should.ContainSubstring("Bug ID:            553974454"))
+		assert.Loosely(t, ruleOut.String(), should.ContainSubstring("Rule ID:           32ae75255a4aa807897d8fa20137e7d5"))
+		assert.Loosely(t, ruleOut.String(), should.ContainSubstring("Cluster Algorithm: rules"))
+		assert.Loosely(t, ruleOut.String(), should.ContainSubstring("Cluster ID:        32ae75255a4aa807897d8fa20137e7d5"))
+		assert.Loosely(t, ruleOut.String(), should.ContainSubstring("Resource Name:   projects/turquoise/rules/32ae75255a4aa807897d8fa20137e7d5"))
+
+		// 2. analysis failures with positional LUCI Analysis rule URL and trailing -limit flag
+		var failOut bytes.Buffer
+		failPosRun := FailuresCmd(af).CommandRun().(*failuresRun)
+		failPosRun.rulesClient = rulesMock
+		failPosRun.clustersClient = clustersMock
+		failPosRun.out = &failOut
+		assert.Loosely(t, failPosRun.Flags.Parse([]string{"https://ci.chromium.org/ui/tests/p/turquoise/rules/32ae75255a4aa807897d8fa20137e7d5", "-limit", "1"}), should.BeNil)
+		assert.Loosely(t, failPosRun.Run(app, failPosRun.Flags.Args(), nil), should.Equal(0))
+		assert.Loosely(t, failOut.String(), should.ContainSubstring("Project:           turquoise"))
+		assert.Loosely(t, failOut.String(), should.ContainSubstring("Rule ID:           32ae75255a4aa807897d8fa20137e7d5"))
+		assert.Loosely(t, failOut.String(), should.ContainSubstring("Project: turquoise | Cluster: rules/32ae75255a4aa807897d8fa20137e7d5"))
 	})
 }
