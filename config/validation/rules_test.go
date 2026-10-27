@@ -94,6 +94,40 @@ func TestRuleSet(t *testing.T) {
 			}))
 		})
 
+		t.Run("Multi-file rule works", func(t *ftt.Test) {
+			r := NewRuleSet()
+			r.Vars.Register("a", func(context.Context) (string, error) { return "a_val", nil })
+
+			var gotCS string
+			var gotFiles map[string][]byte
+			r.AddMulti("services/${a}", []string{"paths/a", "regex:scripts/.*\\.py"}, func(ctx *Context, configSet string, files map[string][]byte) error {
+				gotCS = configSet
+				gotFiles = files
+				return nil
+			})
+
+			patterns, err := r.ConfigPatterns(ctx)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(patterns), should.Equal(2))
+			assert.Loosely(t, patterns[0].ConfigSet.String(), should.Equal("exact:services/a_val"))
+			assert.Loosely(t, patterns[0].Path.String(), should.Equal("exact:paths/a"))
+			assert.Loosely(t, patterns[1].ConfigSet.String(), should.Equal("exact:services/a_val"))
+			assert.Loosely(t, patterns[1].Path.String(), should.Equal(`regex:^scripts/.*\.py$`))
+
+			c := Context{Context: ctx}
+			err = r.ValidateConfigSet(&c, "services/a_val", map[string][]byte{
+				"paths/a":        []byte("cfg-a"),
+				"scripts/foo.py": []byte("print(1)"),
+				"unmatched.txt":  []byte("ignored"),
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, gotCS, should.Equal("services/a_val"))
+			assert.Loosely(t, gotFiles, should.Resemble(map[string][]byte{
+				"paths/a":        []byte("cfg-a"),
+				"scripts/foo.py": []byte("print(1)"),
+			}))
+		})
+
 		t.Run("Error in the var callback", func(t *ftt.Test) {
 			r := NewRuleSet()
 			r.Vars.Register("a", func(context.Context) (string, error) { return "", fmt.Errorf("boom") })

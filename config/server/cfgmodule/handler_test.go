@@ -379,6 +379,56 @@ func TestConsumerServer(t *testing.T) {
 					},
 				}))
 			})
+
+			t.Run("Multi-file rule cross-file validation", func(t *ftt.Test) {
+				rules.AddMulti(configSet, []string{"main.cfg", "regex:sub/.*\\.cfg"}, func(vc *validation.Context, cs string, files map[string][]byte) error {
+					ref := string(files["main.cfg"])
+					if _, ok := files[ref]; !ok {
+						vc.SetFile("main.cfg")
+						vc.Errorf("referenced file %q is missing", ref)
+					}
+					return nil
+				})
+
+				req := &config.ValidateConfigsRequest{
+					ConfigSet: configSet,
+					Files: &config.ValidateConfigsRequest_Files{
+						Files: []*config.ValidateConfigsRequest_File{
+							{
+								Path: "main.cfg",
+								Content: &config.ValidateConfigsRequest_File_RawContent{
+									RawContent: []byte("sub/missing.cfg"),
+								},
+							},
+							{
+								Path: "sub/present.cfg",
+								Content: &config.ValidateConfigsRequest_File_RawContent{
+									RawContent: []byte("ok"),
+								},
+							},
+							{
+								// Uncovered file with a non-existent signed URL must not be fetched.
+								Path: "unmatched.cfg",
+								Content: &config.ValidateConfigsRequest_File_SignedUrl{
+									SignedUrl: ts.URL + "/unmatched_404.cfg",
+								},
+							},
+						},
+					},
+				}
+
+				res, err := srv.ValidateConfigs(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Match(&config.ValidationResult{
+					Messages: []*config.ValidationResult_Message{
+						{
+							Path:     "main.cfg",
+							Text:     `in "main.cfg": referenced file "sub/missing.cfg" is missing`,
+							Severity: config.ValidationResult_ERROR,
+						},
+					},
+				}))
+			})
 		})
 	})
 }

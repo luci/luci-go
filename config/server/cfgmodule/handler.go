@@ -17,6 +17,8 @@ package cfgmodule
 import (
 	"context"
 	"fmt"
+	"slices"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
@@ -24,6 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	cfgpb "go.chromium.org/luci/common/proto/config"
@@ -79,26 +82,57 @@ func (srv *ConsumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.Valid
 		return nil, err
 	}
 
-	result := make([][]*cfgpb.ValidationResult_Message, len(req.GetFiles().GetFiles()))
-	eg, ectx := errgroup.WithContext(ctx)
-	eg.SetLimit(8)
-	for i, file := range req.GetFiles().GetFiles() {
-		eg.Go(func() error {
-			var content []byte
-			switch file.GetContent().(type) {
+	patterns, err := srv.Rules.ConfigPatterns(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "encounter internal error: %s", err)
+	}
+	configSet := req.GetConfigSet()
+	var pathPatterns []pattern.Pattern
+	for _, pat := range patterns {
+		if pat.ConfigSet.Match(configSet) {
+			pathPatterns = append(pathPatterns, pat.Path)
+		}
+	}
+
+	files := make(map[string][]byte, len(req.GetFiles().GetFiles()))
+
+	var toFetch []*cfgpb.ValidateConfigsRequest_File
+	for _, file := range req.GetFiles().GetFiles() {
+		if slices.ContainsFunc(pathPatterns, func(p pattern.Pattern) bool { return p.Match(file.GetPath()) }) {
+			switch x := file.GetContent().(type) {
 			case *cfgpb.ValidateConfigsRequest_File_RawContent:
-				content = file.GetRawContent()
+				files[file.GetPath()] = x.RawContent
+
 			case *cfgpb.ValidateConfigsRequest_File_SignedUrl:
-				var err error
-				if content, err = config.DownloadConfigFromSignedURL(ectx, srvhttp.DefaultClient(ctx), file.GetSignedUrl()); err != nil {
-					return fmt.Errorf("failed to download file %s from the signed url: %w", file.Path, err)
-				}
+				toFetch = append(toFetch, file)
+
 			default:
 				panic(fmt.Errorf("unrecognized file content type: %T", file.GetContent()))
 			}
-			var err error
-			result[i], err = srv.validateOneFile(ectx, req.GetConfigSet(), file.GetPath(), content)
-			return err
+		}
+	}
+
+	// If nothing matched any rules, we can quit.
+	if len(files) == 0 && len(toFetch) == 0 {
+		return &cfgpb.ValidationResult{}, nil
+	}
+
+	var mu sync.Mutex
+
+	httpClient := srvhttp.DefaultClient(ctx)
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(8)
+
+	for _, file := range toFetch {
+		eg.Go(func() error {
+			raw, err := config.DownloadConfigFromSignedURL(ectx, httpClient, file.GetSignedUrl())
+			if err != nil {
+				return fmt.Errorf("failed to download file %s from the signed url: %w", file.Path, err)
+			}
+			mu.Lock()
+			files[file.GetPath()] = raw
+			mu.Unlock()
+			return nil
 		})
 	}
 
@@ -106,10 +140,23 @@ func (srv *ConsumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.Valid
 		return nil, status.Errorf(codes.Internal, "encounter internal error: %s", err)
 	}
 
-	// Flatten the messages
+	vc := &validation.Context{Context: ctx}
+	if err := srv.Rules.ValidateConfigSet(vc, configSet, files); err != nil {
+		return nil, status.Errorf(codes.Internal, "encounter internal error: %s", err)
+	}
+
 	ret := &cfgpb.ValidationResult{}
-	for _, msgs := range result {
-		ret.Messages = append(ret.Messages, msgs...)
+	var vErr *validation.Error
+	switch err := vc.Finalize(); {
+	case errors.As(err, &vErr):
+		ret.Messages = vErr.ToValidationResultMsgs(ctx)
+	case err != nil:
+		ret.Messages = []*cfgpb.ValidationResult_Message{
+			{
+				Severity: cfgpb.ValidationResult_ERROR,
+				Text:     err.Error(),
+			},
+		}
 	}
 	return ret, nil
 }
@@ -151,27 +198,4 @@ func checkValidateInput(req *cfgpb.ValidateConfigsRequest) error {
 		}
 	}
 	return nil
-}
-
-func (srv *ConsumerServer) validateOneFile(ctx context.Context, configSet, path string, content []byte) ([]*cfgpb.ValidationResult_Message, error) {
-	vc := &validation.Context{Context: ctx}
-	vc.SetFile(path)
-	if err := srv.Rules.ValidateConfig(vc, configSet, path, content); err != nil {
-		return nil, err
-	}
-	var vErr *validation.Error
-	switch err := vc.Finalize(); {
-	case errors.As(err, &vErr):
-		return vErr.ToValidationResultMsgs(ctx), nil
-	case err != nil:
-		return []*cfgpb.ValidationResult_Message{
-			{
-				Path:     path,
-				Severity: cfgpb.ValidationResult_ERROR,
-				Text:     err.Error(),
-			},
-		}, nil
-	default:
-		return nil, nil
-	}
 }
