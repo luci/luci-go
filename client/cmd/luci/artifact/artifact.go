@@ -68,7 +68,7 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 			"  head      Print first N lines/bytes of an artifact\n" +
 			"  tail      Print last N lines/bytes of an artifact\n" +
 			"  compare   Compare a log artifact against recent passing runs\n\n" +
-			"Tip: Run 'luci ids <url>' to extract the appropriate resource IDs.",
+			"Tip: Pass a positional URL/ID (or explicit ID flags) to any subcommand.",
 		CommandRun: func() subcommands.CommandRun {
 			return &artifactRun{af: af, parentType: ParentTypeUnknown}
 		},

@@ -253,6 +253,7 @@ func TestListCmd(t *testing.T) {
 				run := &artifactListRun{
 					artifactCommonRun: artifactCommonRun{
 						client:       client,
+						out:          &bytes.Buffer{},
 						parentType:   ParentTypeUnknown,
 						invocationID: rawInv,
 					},
@@ -282,6 +283,7 @@ func TestListCmd(t *testing.T) {
 			invRun := &artifactListRun{
 				artifactCommonRun: artifactCommonRun{
 					client:       invClient,
+					out:          &bytes.Buffer{},
 					parentType:   ParentTypeUnknown,
 					invocationID: "I123",
 				},
@@ -306,6 +308,7 @@ func TestListCmd(t *testing.T) {
 			wuRun := &artifactListRun{
 				artifactCommonRun: artifactCommonRun{
 					client:       wuClient,
+					out:          &bytes.Buffer{},
 					parentType:   ParentTypeWorkUnit,
 					invocationID: "ants-i123",
 					workUnitID:   "wu-1",
@@ -329,6 +332,7 @@ func TestListCmd(t *testing.T) {
 			trRun := &artifactListRun{
 				artifactCommonRun: artifactCommonRun{
 					client:       trClient,
+					out:          &bytes.Buffer{},
 					parentType:   ParentTypeTestResult,
 					invocationID: "ants-i123",
 					workUnitID:   "wu-1",
@@ -339,6 +343,66 @@ func TestListCmd(t *testing.T) {
 				maxArtifacts: DefaultMaxArtifacts,
 			}
 			assert.Loosely(t, trRun.Run(nil, nil, nil), should.Equal(0))
+		})
+
+		t.Run(`accepts positional targets and prints derived IDs for invocation, work unit, and test result`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+					return &rdbpb.QueryArtifactsResponse{
+						Artifacts: []*rdbpb.Artifact{
+							{
+								Name:       "rootInvocations/ants-i123/workUnits/wu-1/artifacts/host_log.txt",
+								ArtifactId: "host_log.txt",
+							},
+						},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
+					return &rdbpb.ListArtifactsResponse{
+						Artifacts: []*rdbpb.Artifact{
+							{
+								Name:       in.Parent + "/artifacts/logcat.txt",
+								ArtifactId: "logcat.txt",
+							},
+						},
+					}, nil
+				},
+			}
+
+			// 1. Invocation positional target
+			var invBuf bytes.Buffer
+			invCmd := ListCmd(nil, ParentTypeUnknown)
+			invRun := invCmd.CommandRun().(*artifactListRun)
+			invRun.client = client
+			invRun.out = &invBuf
+			assert.Loosely(t, invRun.Run(nil, []string{"I123"}, nil), should.Equal(0))
+			outInv := invBuf.String()
+			assert.Loosely(t, outInv, should.ContainSubstring("Invocation ID:     ants-i123"))
+
+			// 2. Work unit positional target
+			var wuBuf bytes.Buffer
+			wuCmd := ListCmd(nil, ParentTypeWorkUnit)
+			wuRun := wuCmd.CommandRun().(*artifactListRun)
+			wuRun.client = client
+			wuRun.out = &wuBuf
+			assert.Loosely(t, wuRun.Run(nil, []string{"rootInvocations/ants-i123/workUnits/wu-1"}, nil), should.Equal(0))
+			outWU := wuBuf.String()
+			assert.Loosely(t, outWU, should.ContainSubstring("Invocation ID:     ants-i123"))
+			assert.Loosely(t, outWU, should.ContainSubstring("Work Unit ID:      wu-1"))
+
+			// 3. Test result positional target
+			var trBuf bytes.Buffer
+			trCmd := ListCmd(nil, ParentTypeTestResult)
+			trRun := trCmd.CommandRun().(*artifactListRun)
+			trRun.client = client
+			trRun.out = &trBuf
+			assert.Loosely(t, trRun.Run(nil, []string{"rootInvocations/ants-i123/workUnits/wu-1/tests/:ModA!junit:pkg:Cls%23testOne/results/res-1"}, nil), should.Equal(0))
+			outTR := trBuf.String()
+			assert.Loosely(t, outTR, should.ContainSubstring("Invocation ID:     ants-i123"))
+			assert.Loosely(t, outTR, should.ContainSubstring("Module Name:       ModA"))
+			assert.Loosely(t, outTR, should.ContainSubstring("Work Unit ID:      wu-1"))
+			assert.Loosely(t, outTR, should.ContainSubstring("Test ID:           :ModA!junit:pkg:Cls#testOne"))
+			assert.Loosely(t, outTR, should.ContainSubstring("Result ID:         res-1"))
 		})
 	})
 }

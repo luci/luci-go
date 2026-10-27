@@ -298,5 +298,30 @@ func TestFetchTailLines(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, string(got), should.Equal("line 2\nline 3\n"))
 		}
+
+		t.Run(`accepts positional artifact resource name and prints derived IDs`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				getArtifact: func(ctx context.Context, in *rdbpb.GetArtifactRequest) (*rdbpb.Artifact, error) {
+					return &rdbpb.Artifact{
+						Name:       in.Name,
+						ArtifactId: "host_log.txt",
+						FetchUrl:   server.URL,
+					}, nil
+				},
+			}
+			var outBuf bytes.Buffer
+			cmd := TailCmd(nil, ParentTypeUnknown)
+			run := cmd.CommandRun().(*artifactTailRun)
+			run.client = client
+			run.httpClient = server.Client()
+			run.out = &outBuf
+			rc := run.Run(nil, []string{"rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/host_log.txt", "-n", "2"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := outBuf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i05300010637202289"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      ants-wu56200010637202289"))
+			assert.Loosely(t, out, should.ContainSubstring("Artifact ID:       host_log.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("line 2\nline 3\n"))
+		})
 	})
 }

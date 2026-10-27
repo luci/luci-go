@@ -343,5 +343,62 @@ func TestFetchHTTPByteRange(t *testing.T) {
 			}
 			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(1))
 		})
+
+		t.Run(`accepts positional artifact resource name and prints derived IDs`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				getArtifact: func(ctx context.Context, in *rdbpb.GetArtifactRequest) (*rdbpb.Artifact, error) {
+					return &rdbpb.Artifact{
+						Name:       in.Name,
+						ArtifactId: "host_log.txt",
+						FetchUrl:   server.URL,
+					}, nil
+				},
+			}
+			var outBuf bytes.Buffer
+			cmd := GetCmd(nil, ParentTypeUnknown)
+			run := cmd.CommandRun().(*artifactGetRun)
+			run.client = client
+			run.httpClient = server.Client()
+			run.out = &outBuf
+			rc := run.Run(nil, []string{"rootInvocations/ants-i05300010637202289/workUnits/ants-wu56200010637202289/artifacts/host_log.txt"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := outBuf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i05300010637202289"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      ants-wu56200010637202289"))
+			assert.Loosely(t, out, should.ContainSubstring("Artifact ID:       host_log.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("artifact payload from get"))
+		})
+
+		t.Run(`updates derived IDs with canonical artifact ID and fallback work unit on shorthand resolution`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				getArtifact: func(ctx context.Context, in *rdbpb.GetArtifactRequest) (*rdbpb.Artifact, error) {
+					return nil, status.Error(codes.NotFound, "not found on parent work unit")
+				},
+				queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+					return &rdbpb.QueryArtifactsResponse{
+						Artifacts: []*rdbpb.Artifact{
+							{
+								Name:       "rootInvocations/ants-i05300010637202289/workUnits/ants-wu-descendant/artifacts/stub%2Fhost_log.txt",
+								ArtifactId: "stub/host_log.txt",
+								FetchUrl:   server.URL,
+							},
+						},
+					}, nil
+				},
+			}
+			var outBuf bytes.Buffer
+			cmd := GetCmd(nil, ParentTypeUnknown)
+			run := cmd.CommandRun().(*artifactGetRun)
+			run.client = client
+			run.httpClient = server.Client()
+			run.out = &outBuf
+			rc := run.Run(nil, []string{"-artifactid", "host_log.txt", "rootInvocations/ants-i05300010637202289/workUnits/root"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := outBuf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i05300010637202289"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      ants-wu-descendant"))
+			assert.Loosely(t, out, should.ContainSubstring("Artifact ID:       stub/host_log.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("artifact payload from get"))
+		})
 	})
 }

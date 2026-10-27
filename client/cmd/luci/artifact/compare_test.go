@@ -15,6 +15,7 @@
 package artifact
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
@@ -393,6 +394,83 @@ func TestCompareCmd(t *testing.T) {
 			assert.Loosely(t, code, should.Equal(0))
 			assert.Loosely(t, capturedCompareReq, should.NotBeNil)
 			assert.Loosely(t, capturedCompareReq.Name, should.Equal("invocations/u-task-1/artifacts/tast%2Ffull.txt"))
+		})
+
+		t.Run(`accepts positional artifact resource name and prints derived IDs`, func(t *ftt.Test) {
+			var capturedCompareReq *rdbpb.CompareArtifactLinesRequest
+			rdb := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest) (*rdbpb.RootInvocation, error) {
+					return &rdbpb.RootInvocation{
+						Name:  "rootInvocations/ants-i123",
+						Realm: "android:ci",
+						Sources: &rdbpb.Sources{
+							BaseSources: &rdbpb.Sources_SubmittedAndroidBuild{
+								SubmittedAndroidBuild: &rdbpb.SubmittedAndroidBuild{
+									DataRealm: "prod",
+									Branch:    "git_main",
+									BuildId:   12345678,
+								},
+							},
+						},
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest) (*rdbpb.QueryTestVerdictsResponse, error) {
+					return &rdbpb.QueryTestVerdictsResponse{
+						TestVerdicts: []*rdbpb.TestVerdict{
+							{
+								TestId: ":module!junit:pkg:Class#testFoo",
+								Results: []*rdbpb.TestResult{
+									{
+										Name:        "rootInvocations/ants-i123/workUnits/wu-1/tests/:module%21junit:pkg:Class%23testFoo/results/r1",
+										TestId:      ":module!junit:pkg:Class#testFoo",
+										ResultId:    "r1",
+										VariantHash: "0123456789abcdef",
+									},
+								},
+							},
+						},
+					}, nil
+				},
+				compareArtifactLines: func(ctx context.Context, in *rdbpb.CompareArtifactLinesRequest) (*rdbpb.CompareArtifactLinesResponse, error) {
+					capturedCompareReq = in
+					return &rdbpb.CompareArtifactLinesResponse{
+						Artifacts: []string{
+							"rootInvocations/ants-i100/workUnits/wu-pass/tests/:module%21junit:pkg:Class%23testFoo/results/r0/artifacts/logcat.txt",
+						},
+					}, nil
+				},
+			}
+			th := &mockTestHistoryClient{
+				queryRecentPasses: func(ctx context.Context, in *analysispb.QueryRecentPassesRequest) (*analysispb.QueryRecentPassesResponse, error) {
+					return &analysispb.QueryRecentPassesResponse{
+						PassingResults: []*analysispb.QueryRecentPassesResponse_PassingResult{
+							{Name: "rootInvocations/ants-i100/workUnits/wu-pass/tests/:module%21junit:pkg:Class%23testFoo/results/r0"},
+						},
+					}, nil
+				},
+			}
+
+			var outBuf bytes.Buffer
+			cmd := CompareCmd(nil, ParentTypeUnknown)
+			run := cmd.CommandRun().(*artifactCompareRun)
+			run.client = rdb
+			run.thClient = th
+			run.out = &outBuf
+
+			code := run.Run(nil, []string{"rootInvocations/ants-i123/workUnits/wu-1/tests/:module%21junit:pkg:Class%23testFoo/results/r1/artifacts/logcat.txt"}, nil)
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, capturedCompareReq, should.NotBeNil)
+			assert.Loosely(t, capturedCompareReq.Name, should.Equal("rootInvocations/ants-i123/workUnits/wu-1/tests/:module%21junit:pkg:Class%23testFoo/results/r1/artifacts/logcat.txt"))
+
+			out := outBuf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Invocation ID:     ants-i123"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Name:       module"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      wu-1"))
+			assert.Loosely(t, out, should.ContainSubstring("Test ID:           :module!junit:pkg:Class#testFoo"))
+			assert.Loosely(t, out, should.ContainSubstring("Result ID:         r1"))
+			assert.Loosely(t, out, should.ContainSubstring("Artifact ID:       logcat.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("Variant Hash:      0123456789abcdef"))
+			assert.Loosely(t, out, should.ContainSubstring("Removed lines matching these 1 passing artifact(s):"))
 		})
 	})
 }

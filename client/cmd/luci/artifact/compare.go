@@ -31,6 +31,7 @@ import (
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
@@ -43,17 +44,17 @@ func CompareCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command 
 	var usage, desc, longDesc string
 	switch parentType {
 	case ParentTypeTestResult:
-		usage = "compare -invocationid <invocation_id> -testid <test_id> -resultid <result_id> -artifactid <artifact_id>"
+		usage = "compare [-invocationid <invocation_id> -testid <test_id> -resultid <result_id>] [-artifactid <artifact_id>] [<target>]"
 		desc = "Compare a failing test result artifact against recent passing runs"
-		longDesc = desc + " using LUCI Analysis (TestHistory.QueryRecentPasses) and ResultDB (CompareArtifactLines)."
+		longDesc = desc + " by a positional URL/ID or explicit ID flags, using LUCI Analysis (TestHistory.QueryRecentPasses) and ResultDB (CompareArtifactLines)."
 	case ParentTypeWorkUnit:
-		usage = "compare -invocationid <invocation_id> -workunitid <work_unit_id> [-testid <test_id>] -artifactid <artifact_id>"
+		usage = "compare [-invocationid <invocation_id> -workunitid <work_unit_id>] [-testid <test_id>] [-artifactid <artifact_id>] [<target>]"
 		desc = "Compare a work unit artifact against recent passing runs"
-		longDesc = desc + " using LUCI Analysis (TestHistory.QueryRecentPasses) and ResultDB (CompareArtifactLines)."
+		longDesc = desc + " by a positional URL/ID or explicit ID flags, using LUCI Analysis (TestHistory.QueryRecentPasses) and ResultDB (CompareArtifactLines)."
 	default:
-		usage = "compare -invocationid <invocation_id> [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>] -artifactid <artifact_id>"
+		usage = "compare [-invocationid <invocation_id>] [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>] [-artifactid <artifact_id>] [<target>]"
 		desc = "Compare a log artifact against recent passing runs"
-		longDesc = desc + " using LUCI Analysis (TestHistory.QueryRecentPasses) and ResultDB (CompareArtifactLines).\n\n" +
+		longDesc = desc + " by a positional URL/ID or explicit ID flags, using LUCI Analysis (TestHistory.QueryRecentPasses) and ResultDB (CompareArtifactLines).\n\n" +
 			"Unless explicit -passing-result or -compare-artifact flags are provided, queries LUCI Analysis\n" +
 			"(TestHistory.QueryRecentPasses) for recent passing test results of the specified -testid\n" +
 			"(or an unexpected test variant in the invocation if -testid is omitted on a work unit artifact)\n" +
@@ -101,25 +102,55 @@ type artifactCompareRun struct {
 	viewStr          string
 }
 
+func (r *artifactCompareRun) effectiveCompareParentType() ParentType {
+	if r.parentType != ParentTypeUnknown {
+		return r.parentType
+	}
+	if r.resultID != "" {
+		return ParentTypeTestResult
+	}
+	if r.workUnitID != "" {
+		return ParentTypeWorkUnit
+	}
+	return ParentTypeInvocation
+}
+
+func (r *artifactCompareRun) resolveComparePositionalTarget(ctx context.Context) bool {
+	if r.posTarget == "" {
+		return true
+	}
+	bindings := ids.TargetBindings{
+		InvocationID: &r.invocationID,
+		WorkUnitID:   &r.workUnitID,
+		ArtifactID:   &r.artifactID,
+		VariantHash:  &r.variantHash,
+	}
+	switch r.parentType {
+	case ParentTypeWorkUnit:
+		bindings.TestID = &r.testID
+		bindings.DefaultRootForWorkUnit = true
+	case ParentTypeTestResult:
+		bindings.TestID = &r.testID
+		bindings.ResultID = &r.resultID
+	default:
+		if r.workUnitID == "" {
+			bindings.TestID = &r.testID
+			bindings.ResultID = &r.resultID
+			bindings.IgnoreWorkUnitOnSummaryPlaceholder = true
+		}
+	}
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, r.client, nil, r.posTarget, bindings)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", r.posTarget, err)
+		return false
+	}
+	r.extracted = extracted
+	return true
+}
+
 func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if handled, exitCode := r.checkHelpAndPositionalArgs(args); handled {
 		return exitCode
-	}
-
-	effectiveParentType := r.parentType
-	if effectiveParentType == ParentTypeUnknown {
-		if r.resultID != "" {
-			effectiveParentType = ParentTypeTestResult
-		} else if r.workUnitID != "" {
-			effectiveParentType = ParentTypeWorkUnit
-		} else {
-			effectiveParentType = ParentTypeInvocation
-		}
-	}
-
-	if err := ValidateArtifactFlags(effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		return 1
 	}
 
 	var view pb.CompareArtifactLinesRequest_View
@@ -133,10 +164,28 @@ func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env s
 		return 1
 	}
 
+	effectiveParentType := r.effectiveCompareParentType()
+	if r.posTarget == "" {
+		if err := ValidateArtifactFlags(effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID); err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			return 1
+		}
+	}
+
 	ctx := cli.GetContext(a, r, env)
 	ctx = format.WithDiscoveryCache(ctx)
 	if !r.ensureClients(ctx, false) {
 		return 1
+	}
+	if r.posTarget != "" {
+		if !r.resolveComparePositionalTarget(ctx) {
+			return 1
+		}
+		effectiveParentType = r.effectiveCompareParentType()
+		if err := ValidateArtifactFlags(effectiveParentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID); err != nil {
+			ids.PrintMissingFlagsError(os.Stderr, r.extracted, err.Error())
+			return 1
+		}
 	}
 	rdbClient := r.client
 
@@ -146,12 +195,16 @@ func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env s
 		return 1
 	}
 	format.CacheResolvedInvocation(ctx, resolved)
+	if r.extracted != nil {
+		r.extracted.Legacy = resolved.Legacy
+	}
 	if resolved.Legacy && effectiveParentType == ParentTypeWorkUnit {
 		fmt.Fprintf(os.Stderr, "work unit artifacts are only supported for root invocations (invocation %q is a legacy invocation)\n", resolved.ID)
 		return 1
 	}
 
 	var artName string
+	var resolvedArtID string
 	discoveredVariantHash := r.variantHash
 	if effectiveParentType == ParentTypeInvocation && !resolved.Legacy {
 		art, err := ResolveInvocationArtifact(ctx, rdbClient, resolved.ID, r.artifactID, os.Stderr)
@@ -160,6 +213,7 @@ func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env s
 			return 1
 		}
 		artName = art.Name
+		resolvedArtID = art.ArtifactId
 	} else if effectiveParentType == ParentTypeInvocation && resolved.Legacy {
 		artName, err = resolveLegacyInvocationArtifact(ctx, rdbClient, resolved.ID, r.testID, r.artifactID, os.Stderr)
 		if err != nil {
@@ -221,17 +275,9 @@ func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env s
 				resolvedProject, resolvedTestID, resolvedVariantHash)
 			return 1
 		}
-	}
-
-	var out io.Writer = os.Stdout
-	if r.outputFile != "" {
-		f, err := os.Create(r.outputFile)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create output file: %s\n", err)
-			return 1
+		if discoveredVariantHash == "" && resolvedVariantHash != "" {
+			discoveredVariantHash = resolvedVariantHash
 		}
-		defer f.Close()
-		out = f
 	}
 
 	resp, err := rdbClient.CompareArtifactLines(ctx, &pb.CompareArtifactLinesRequest{
@@ -257,6 +303,7 @@ func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env s
 				}); fbErr == nil {
 					fmt.Fprintf(os.Stderr, "Note: resolved path %q to artifact %q\n", r.artifactID, baseName)
 					artName = fbName
+					resolvedArtID = baseName
 					resp = fbResp
 					err = nil
 				}
@@ -265,6 +312,7 @@ func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env s
 		if err != nil && !resolved.Legacy {
 			if fbArt, fbErr := ResolveInvocationArtifact(ctx, rdbClient, resolved.ID, r.artifactID, os.Stderr); fbErr == nil && fbArt.Name != artName {
 				artName = fbArt.Name
+				resolvedArtID = fbArt.ArtifactId
 				resp, err = rdbClient.CompareArtifactLines(ctx, &pb.CompareArtifactLinesRequest{
 					Name:           artName,
 					PassingResults: passingResults,
@@ -273,6 +321,12 @@ func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env s
 					PageSize:       int32(r.pageSize),
 					PageToken:      r.pageToken,
 				})
+				if err == nil && r.extracted != nil {
+					r.extracted.WorkUnitID = ""
+					r.extracted.TestID = ""
+					r.extracted.ResultID = ""
+					r.extracted.ModuleName = ""
+				}
 			}
 		}
 	}
@@ -284,6 +338,37 @@ func (r *artifactCompareRun) Run(a subcommands.Application, args []string, env s
 		}
 		return 1
 	}
+
+	stdoutOut := r.out
+	if stdoutOut == nil {
+		stdoutOut = os.Stdout
+	}
+	out := stdoutOut
+	if r.outputFile != "" {
+		f, err := os.Create(r.outputFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create output file: %s\n", err)
+			return 1
+		}
+		defer f.Close()
+		out = f
+	}
+
+	if r.extracted != nil {
+		if r.extracted.VariantHash == "" && discoveredVariantHash != "" {
+			r.extracted.VariantHash = discoveredVariantHash
+		}
+		fallbackArtID := resolvedArtID
+		if fallbackArtID == "" {
+			fallbackArtID = base.ExtractArtifactMetadata(artName).ArtifactID
+		}
+		if fallbackArtID == "" {
+			fallbackArtID = r.artifactID
+		}
+		r.extracted.ArtifactID = ""
+		r.extracted.EnrichFromArtifactName(artName, fallbackArtID)
+	}
+	ids.PrintDerivedIDs(stdoutOut, r.extracted)
 
 	if len(resp.Artifacts) == 0 {
 		fmt.Fprintf(out, "No matching comparison artifacts found in passing runs (all lines in the failing artifact will appear below).\n\n")

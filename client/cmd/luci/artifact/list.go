@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -35,19 +36,19 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 	var usage, desc, longDesc string
 	switch parentType {
 	case ParentTypeTestResult:
-		usage = "list -invocationid <invocation_id> -testid <test_id> -resultid <result_id>"
+		usage = "list [-invocationid <invocation_id> -testid <test_id> -resultid <result_id>] [<target>]"
 		desc = "List artifacts for a test result"
-		longDesc = desc + " in ResultDB by explicit ID flags.\n\n" +
+		longDesc = desc + " in ResultDB by a positional URL/ID or explicit ID flags.\n\n" +
 			"Ancestor work units are also checked and a notice is displayed if artifacts exist."
 	case ParentTypeWorkUnit:
-		usage = "list -invocationid <invocation_id> -workunitid <work_unit_id>"
+		usage = "list [-invocationid <invocation_id> -workunitid <work_unit_id>] [<target>]"
 		desc = "List artifacts for a work unit"
-		longDesc = desc + " in ResultDB by explicit ID flags.\n\n" +
+		longDesc = desc + " in ResultDB by a positional URL/ID or explicit ID flags.\n\n" +
 			"Ancestor work units are also checked and a notice is displayed if artifacts exist."
 	default:
-		usage = "list -invocationid <invocation_id> [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>]"
+		usage = "list [-invocationid <invocation_id>] [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>] [<target>]"
 		desc = "List artifacts for a work unit or test result"
-		longDesc = desc + " in ResultDB by explicit ID flags.\n\n" +
+		longDesc = desc + " in ResultDB by a positional URL/ID or explicit ID flags.\n\n" +
 			"Specify -invocationid to list invocation-level artifacts,\n" +
 			"-invocationid and -workunitid for work unit artifacts,\n" +
 			"or -invocationid, -testid, and -resultid for test result artifacts.\n\n" +
@@ -78,6 +79,34 @@ type artifactListRun struct {
 	allArtifacts bool
 }
 
+func (r *artifactListRun) validateListParentType() (ParentType, bool) {
+	effectiveParentType := r.parentType
+	if effectiveParentType == ParentTypeUnknown {
+		var err error
+		effectiveParentType, err = ResolveParentType(r.invocationID, r.workUnitID, r.testID, r.resultID)
+		if err != nil {
+			ids.PrintMissingFlagsError(os.Stderr, r.extracted, err.Error())
+			return ParentTypeUnknown, false
+		}
+	} else if effectiveParentType == ParentTypeTestResult {
+		if r.invocationID == "" || r.testID == "" || r.resultID == "" {
+			ids.PrintMissingFlagsError(os.Stderr, r.extracted, "flags -invocationid, -testid, and -resultid (or a positional URL/ID) are required")
+			return ParentTypeUnknown, false
+		}
+	} else if effectiveParentType == ParentTypeWorkUnit {
+		if r.invocationID == "" || r.workUnitID == "" {
+			ids.PrintMissingFlagsError(os.Stderr, r.extracted, "flags -invocationid and -workunitid (or a positional URL/ID) are required")
+			return ParentTypeUnknown, false
+		}
+	} else if effectiveParentType == ParentTypeInvocation {
+		if r.invocationID == "" {
+			ids.PrintMissingFlagsError(os.Stderr, r.extracted, "flag -invocationid (or a positional URL/ID) are required")
+			return ParentTypeUnknown, false
+		}
+	}
+	return effectiveParentType, true
+}
+
 func (r *artifactListRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if handled, exitCode := r.checkHelpAndPositionalArgs(args); handled {
 		return exitCode
@@ -92,33 +121,15 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 
-	effectiveParentType := r.parentType
-	if effectiveParentType == ParentTypeUnknown {
-		var err error
-		effectiveParentType, err = ResolveParentType(r.invocationID, r.workUnitID, r.testID, r.resultID)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
-			return 1
-		}
-	} else if effectiveParentType == ParentTypeTestResult {
-		if r.invocationID == "" || r.testID == "" || r.resultID == "" {
-			fmt.Fprintf(os.Stderr, "flags -invocationid, -testid, and -resultid are required (run 'luci ids <url>' to extract ids)\n")
-			return 1
-		}
-	} else if effectiveParentType == ParentTypeWorkUnit {
-		if r.invocationID == "" || r.workUnitID == "" {
-			fmt.Fprintf(os.Stderr, "flags -invocationid and -workunitid are required (run 'luci ids <url>' to extract ids)\n")
-			return 1
-		}
-	} else if effectiveParentType == ParentTypeInvocation {
-		if r.invocationID == "" {
-			fmt.Fprintf(os.Stderr, "flag -invocationid is required (run 'luci ids <url>' to extract ids)\n")
-			return 1
-		}
-	}
-
 	ctx := cli.GetContext(a, r, env)
 	ctx = format.WithDiscoveryCache(ctx)
+	if !r.resolvePositionalTarget(ctx) {
+		return 1
+	}
+	effectiveParentType, ok := r.validateListParentType()
+	if !ok {
+		return 1
+	}
 	if !r.ensureClients(ctx, false) {
 		return 1
 	}
@@ -130,6 +141,9 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 	format.CacheResolvedInvocation(ctx, resolved)
+	if r.extracted != nil {
+		r.extracted.Legacy = resolved.Legacy
+	}
 	if resolved.Legacy && effectiveParentType == ParentTypeWorkUnit {
 		fmt.Fprintf(os.Stderr, "work unit artifacts are only supported for root invocations (invocation %q is a legacy invocation)\n", resolved.ID)
 		return 1
@@ -146,6 +160,11 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		maxArtifacts = 0
 	}
 
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+
 	if effectiveParentType == ParentTypeTestResult {
 		trArtifacts, err := QueryAllArtifacts(ctx, client, cleanTarget)
 		if err != nil {
@@ -155,13 +174,15 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		trArtifacts = FilterArtifacts(trArtifacts, filterRe)
 		format.SortArtifacts(trArtifacts)
 
-		displayedCount := printArtifactHeader("Test Result", format.FormatTestResultBreadcrumb(cleanTarget), len(trArtifacts), maxArtifacts)
-		format.PrintArtifactList(trArtifacts[:displayedCount])
+		r.extracted.EnrichFromArtifactName(cleanTarget, "")
+		ids.PrintDerivedIDs(out, r.extracted)
+		displayedCount := printArtifactHeaderTo(out, "Test Result", format.FormatTestResultBreadcrumb(cleanTarget), len(trArtifacts), maxArtifacts)
+		format.PrintArtifactListTo(out, trArtifacts[:displayedCount])
 
 		if resolved.Legacy {
-			PrintImmediateParentInvocationNotice(ctx, client, cleanTarget, os.Stdout)
+			PrintImmediateParentInvocationNotice(ctx, client, cleanTarget, out)
 		} else {
-			PrintAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
+			PrintAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, out)
 		}
 		return 0
 	}
@@ -176,8 +197,9 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 			invArtifacts = FilterArtifacts(invArtifacts, filterRe)
 			format.SortArtifacts(invArtifacts)
 
-			displayedCount := printArtifactHeader("Invocation", format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), maxArtifacts)
-			format.PrintArtifactList(invArtifacts[:displayedCount])
+			ids.PrintDerivedIDs(out, r.extracted)
+			displayedCount := printArtifactHeaderTo(out, "Invocation", format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), maxArtifacts)
+			format.PrintArtifactListTo(out, invArtifacts[:displayedCount])
 			return 0
 		}
 
@@ -187,8 +209,9 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 			return 1
 		}
 
-		printInvocationArtifactHeader(os.Stdout, format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), hasMore)
-		format.PrintInvocationArtifactList(invArtifacts)
+		ids.PrintDerivedIDs(out, r.extracted)
+		printInvocationArtifactHeader(out, format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), hasMore)
+		format.PrintInvocationArtifactListTo(out, invArtifacts)
 		return 0
 	}
 
@@ -201,10 +224,11 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	wuArtifacts = FilterArtifacts(wuArtifacts, filterRe)
 	format.SortArtifacts(wuArtifacts)
 
-	displayedCount := printArtifactHeader("Work Unit", format.FormatWorkUnitBreadcrumb(cleanTarget), len(wuArtifacts), maxArtifacts)
-	format.PrintArtifactList(wuArtifacts[:displayedCount])
+	ids.PrintDerivedIDs(out, r.extracted)
+	displayedCount := printArtifactHeaderTo(out, "Work Unit", format.FormatWorkUnitBreadcrumb(cleanTarget), len(wuArtifacts), maxArtifacts)
+	format.PrintArtifactListTo(out, wuArtifacts[:displayedCount])
 
-	PrintAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, os.Stdout)
+	PrintAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, out)
 	return 0
 }
 

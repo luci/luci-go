@@ -32,19 +32,19 @@ func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 	var usage, desc, longDesc string
 	switch parentType {
 	case ParentTypeTestResult:
-		usage = "tail -invocationid <invocation_id> -testid <test_id> -resultid <result_id> -artifactid <artifact_id>"
+		usage = "tail [-invocationid <invocation_id> -testid <test_id> -resultid <result_id>] [-artifactid <artifact_id>] [<target>]"
 		desc = "Print the last N lines of a test result artifact"
-		longDesc = desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
+		longDesc = desc + " by a positional URL/ID or explicit ID flags using optimized HTTP Range requests.\n\n" +
 			"By default, prints the last 10 lines. You can customize the number of lines with -n / -lines, or bytes with -c / -bytes."
 	case ParentTypeWorkUnit:
-		usage = "tail -invocationid <invocation_id> -workunitid <work_unit_id> -artifactid <artifact_id>"
+		usage = "tail [-invocationid <invocation_id> -workunitid <work_unit_id>] [-artifactid <artifact_id>] [<target>]"
 		desc = "Print the last N lines of a work unit artifact"
-		longDesc = desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
+		longDesc = desc + " by a positional URL/ID or explicit ID flags using optimized HTTP Range requests.\n\n" +
 			"By default, prints the last 10 lines. You can customize the number of lines with -n / -lines, or bytes with -c / -bytes."
 	default:
-		usage = "tail -invocationid <invocation_id> [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>] -artifactid <artifact_id>"
+		usage = "tail [-invocationid <invocation_id>] [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>] [-artifactid <artifact_id>] [<target>]"
 		desc = "Print the last N lines of a work unit or test result artifact"
-		longDesc = desc + " by explicit ID flags using optimized HTTP Range requests.\n\n" +
+		longDesc = desc + " by a positional URL/ID or explicit ID flags using optimized HTTP Range requests.\n\n" +
 			"Specify -invocationid for invocation artifacts,\n" +
 			"-invocationid and -workunitid for work unit artifacts,\n" +
 			"or -invocationid, -testid, and -resultid for test result artifacts.\n\n" +

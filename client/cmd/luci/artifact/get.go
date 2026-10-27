@@ -34,21 +34,21 @@ func GetCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 	var usage, desc, longDesc string
 	switch parentType {
 	case ParentTypeTestResult:
-		usage = "get -invocationid <invocation_id> -testid <test_id> -resultid <result_id> -artifactid <artifact_id>"
+		usage = "get [-invocationid <invocation_id> -testid <test_id> -resultid <result_id>] [-artifactid <artifact_id>] [<target>]"
 		desc = "Get a test result artifact"
-		longDesc = desc + " by explicit ID flags.\n\n" +
+		longDesc = desc + " by a positional URL/ID or explicit ID flags.\n\n" +
 			"Supports fetching the full artifact content or a specific byte range:\n" +
 			"  - By byte range: -byte-range <start>-<end> (e.g. 0-100, 500-, -500)"
 	case ParentTypeWorkUnit:
-		usage = "get -invocationid <invocation_id> -workunitid <work_unit_id> -artifactid <artifact_id>"
+		usage = "get [-invocationid <invocation_id> -workunitid <work_unit_id>] [-artifactid <artifact_id>] [<target>]"
 		desc = "Get a work unit artifact"
-		longDesc = desc + " by explicit ID flags.\n\n" +
+		longDesc = desc + " by a positional URL/ID or explicit ID flags.\n\n" +
 			"Supports fetching the full artifact content or a specific byte range:\n" +
 			"  - By byte range: -byte-range <start>-<end> (e.g. 0-100, 500-, -500)"
 	default:
-		usage = "get -invocationid <invocation_id> [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>] -artifactid <artifact_id>"
+		usage = "get [-invocationid <invocation_id>] [-workunitid <work_unit_id> | -testid <test_id> -resultid <result_id>] [-artifactid <artifact_id>] [<target>]"
 		desc = "Get a work unit or test result artifact"
-		longDesc = desc + " by explicit ID flags.\n\n" +
+		longDesc = desc + " by a positional URL/ID or explicit ID flags.\n\n" +
 			"Specify -invocationid for invocation artifacts,\n" +
 			"-invocationid and -workunitid for work unit artifacts,\n" +
 			"or -invocationid, -testid, and -resultid for test result artifacts.\n\n" +

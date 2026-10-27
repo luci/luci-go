@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
+	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -48,6 +49,7 @@ type artifactCommonRun struct {
 	af           *base.AuthFlags
 	client       rdbpb.ResultDBClient
 	httpClient   *http.Client
+	out          io.Writer
 	parentType   ParentType
 	host         string
 	invocationID string
@@ -57,6 +59,8 @@ type artifactCommonRun struct {
 	artifactID   string
 	outputFile   string
 	legacy       bool // Unused; will be removed in the future.
+	posTarget    string
+	extracted    *ids.ExtractedIDs
 }
 
 func (r *artifactCommonRun) registerTargetFlags(af *base.AuthFlags, parentType ParentType) {
@@ -92,22 +96,56 @@ func (r *artifactCommonRun) registerFetchFlags(af *base.AuthFlags, parentType Pa
 }
 
 func (r *artifactCommonRun) checkHelpAndPositionalArgs(args []string) (handled bool, exitCode int) {
-	for _, arg := range args {
-		if arg == "-h" || arg == "--help" || arg == "-help" {
-			r.Flags.Usage()
-			return true, 0
-		}
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return true, 0
 	}
-	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments (run 'luci ids <url>' to extract ids)\n")
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return true, 1
 	}
+	r.posTarget = target
 	return false, 0
+}
+
+func (r *artifactCommonRun) resolvePositionalTarget(ctx context.Context) bool {
+	if r.posTarget == "" {
+		return true
+	}
+	bindings := ids.TargetBindings{
+		InvocationID: &r.invocationID,
+		WorkUnitID:   &r.workUnitID,
+		ArtifactID:   &r.artifactID,
+	}
+	switch r.parentType {
+	case ParentTypeWorkUnit:
+		bindings.DefaultRootForWorkUnit = true
+	case ParentTypeTestResult:
+		bindings.TestID = &r.testID
+		bindings.ResultID = &r.resultID
+	default:
+		if r.workUnitID == "" {
+			bindings.TestID = &r.testID
+			bindings.ResultID = &r.resultID
+			bindings.IgnoreWorkUnitOnSummaryPlaceholder = true
+		}
+	}
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, r.client, nil, r.posTarget, bindings)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", r.posTarget, err)
+		return false
+	}
+	r.extracted = extracted
+	return true
 }
 
 func (r *artifactCommonRun) validateFetchFlags(args []string) (effectiveParentType ParentType, handled bool, exitCode int) {
 	if handled, code := r.checkHelpAndPositionalArgs(args); handled {
 		return ParentTypeUnknown, true, code
+	}
+	if r.posTarget != "" {
+		return r.parentType, false, 0
 	}
 	if err := ValidateArtifactFlags(r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
@@ -123,6 +161,9 @@ func (r *artifactCommonRun) validateFetchFlags(args []string) (effectiveParentTy
 func (r *artifactCommonRun) ensureClients(ctx context.Context, needHTTP bool) bool {
 	if r.client != nil && (!needHTTP || r.httpClient != nil) {
 		return true
+	}
+	if r.af == nil {
+		return r.client != nil
 	}
 	if err := r.af.Parse(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
@@ -146,18 +187,18 @@ func (r *artifactCommonRun) ensureClients(ctx context.Context, needHTTP bool) bo
 func ResolveParentType(invID, wuID, testID, resultID string) (ParentType, error) {
 	if testID != "" || resultID != "" {
 		if invID == "" || testID == "" || resultID == "" {
-			return ParentTypeUnknown, errors.New("flags -invocationid, -testid, and -resultid are required for test result artifacts (run 'luci ids <url>' to extract ids)")
+			return ParentTypeUnknown, errors.New("flags -invocationid, -testid, and -resultid are required for test result artifacts (or a positional URL/ID)")
 		}
 		return ParentTypeTestResult, nil
 	}
 	if wuID != "" {
 		if invID == "" {
-			return ParentTypeUnknown, errors.New("flags -invocationid and -workunitid are required (run 'luci ids <url>' to extract ids)")
+			return ParentTypeUnknown, errors.New("flags -invocationid and -workunitid are required (or a positional URL/ID)")
 		}
 		return ParentTypeWorkUnit, nil
 	}
 	if invID == "" {
-		return ParentTypeUnknown, errors.New("flags -invocationid and either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) are required (run 'luci ids <url>' to extract ids)")
+		return ParentTypeUnknown, errors.New("flags -invocationid and either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) are required (or a positional URL/ID)")
 	}
 	return ParentTypeInvocation, nil
 }
@@ -165,33 +206,33 @@ func ResolveParentType(invID, wuID, testID, resultID string) (ParentType, error)
 // ValidateArtifactFlags verifies that required ID flags are provided for an artifact query.
 func ValidateArtifactFlags(parentType ParentType, invID, wuID, testID, resultID, artID string) error {
 	if artID == "" {
-		return errors.New("flag -artifactid is required (run 'luci ids <url>' to extract ids)")
+		return errors.New("flag -artifactid is required (or a positional URL/ID containing an artifact ID)")
 	}
 	switch parentType {
 	case ParentTypeTestResult:
 		if invID == "" || testID == "" || resultID == "" {
-			return errors.New("flags -invocationid, -testid, -resultid, and -artifactid are required (run 'luci ids <url>' to extract ids)")
+			return errors.New("flags -invocationid, -testid, -resultid, and -artifactid are required (or a positional URL/ID)")
 		}
 	case ParentTypeWorkUnit:
 		if invID == "" || wuID == "" {
-			return errors.New("flags -invocationid, -workunitid, and -artifactid are required (run 'luci ids <url>' to extract ids)")
+			return errors.New("flags -invocationid, -workunitid, and -artifactid are required (or a positional URL/ID)")
 		}
 	case ParentTypeInvocation:
 		if invID == "" {
-			return errors.New("flags -invocationid and -artifactid are required (run 'luci ids <url>' to extract ids)")
+			return errors.New("flags -invocationid and -artifactid are required (or a positional URL/ID)")
 		}
 	default:
 		if testID != "" || resultID != "" {
 			if invID == "" || testID == "" || resultID == "" {
-				return errors.New("flags -invocationid, -testid, -resultid, and -artifactid are required for test result artifacts (run 'luci ids <url>' to extract ids)")
+				return errors.New("flags -invocationid, -testid, -resultid, and -artifactid are required for test result artifacts (or a positional URL/ID)")
 			}
 		} else if wuID != "" {
 			if invID == "" {
-				return errors.New("flags -invocationid, -workunitid, and -artifactid are required (run 'luci ids <url>' to extract ids)")
+				return errors.New("flags -invocationid, -workunitid, and -artifactid are required (or a positional URL/ID)")
 			}
 		} else {
 			if invID == "" {
-				return errors.New("flags -invocationid, -artifactid, and either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) are required (run 'luci ids <url>' to extract ids)")
+				return errors.New("flags -invocationid, -artifactid, and either -workunitid (for work unit artifacts) or -testid and -resultid (for test result artifacts) are required (or a positional URL/ID)")
 			}
 		}
 	}
@@ -578,11 +619,27 @@ func (r *artifactCommonRun) executeFetch(ctx context.Context, parentType ParentT
 	if !r.ensureClients(ctx, true) {
 		return 1
 	}
+	if r.posTarget != "" {
+		if !r.resolvePositionalTarget(ctx) {
+			return 1
+		}
+		if err := ValidateArtifactFlags(r.parentType, r.invocationID, r.workUnitID, r.testID, r.resultID, r.artifactID); err != nil {
+			ids.PrintMissingFlagsError(os.Stderr, r.extracted, err.Error())
+			return 1
+		}
+		parentType = r.parentType
+		if parentType == ParentTypeUnknown {
+			parentType, _ = ResolveParentType(r.invocationID, r.workUnitID, r.testID, r.resultID)
+		}
+	}
 
 	resolved, err := base.ResolveInvocation(ctx, r.client, r.invocationID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to fetch artifact: %s\n", err)
 		return 1
+	}
+	if r.extracted != nil {
+		r.extracted.Legacy = resolved.Legacy
 	}
 	if resolved.Legacy && parentType == ParentTypeWorkUnit {
 		fmt.Fprintf(os.Stderr, "work unit artifacts are only supported for root invocations (invocation %q is a legacy invocation)\n", resolved.ID)
@@ -621,6 +678,22 @@ func (r *artifactCommonRun) executeFetch(ctx context.Context, parentType ParentT
 					}
 				}
 			}
+			if err != nil && r.extracted != nil && r.parentType == ParentTypeUnknown && !resolved.Legacy {
+				if invArt, invErr := ResolveInvocationArtifact(ctx, r.client, resolved.ID, r.artifactID, os.Stderr); invErr == nil {
+					art = invArt
+					artName = invArt.Name
+					err = nil
+					if invArt.FetchUrl == "" {
+						art, err = r.client.GetArtifact(ctx, &rdbpb.GetArtifactRequest{Name: artName})
+					}
+					if err == nil {
+						r.extracted.WorkUnitID = ""
+						r.extracted.TestID = ""
+						r.extracted.ResultID = ""
+						r.extracted.ModuleName = ""
+					}
+				}
+			}
 		}
 		if err != nil {
 			if base.IsPermissionDenied(err) {
@@ -636,7 +709,11 @@ func (r *artifactCommonRun) executeFetch(ctx context.Context, parentType ParentT
 		return 1
 	}
 
-	var outWriter io.Writer = os.Stdout
+	stdoutOut := r.out
+	if stdoutOut == nil {
+		stdoutOut = os.Stdout
+	}
+	outWriter := stdoutOut
 	if r.outputFile != "" {
 		f, err := os.Create(r.outputFile)
 		if err != nil {
@@ -646,6 +723,19 @@ func (r *artifactCommonRun) executeFetch(ctx context.Context, parentType ParentT
 		defer f.Close()
 		outWriter = f
 	}
+
+	fallbackArtID := art.ArtifactId
+	if fallbackArtID == "" {
+		fallbackArtID = base.ExtractArtifactMetadata(artName).ArtifactID
+	}
+	if fallbackArtID == "" {
+		fallbackArtID = r.artifactID
+	}
+	if r.extracted != nil {
+		r.extracted.ArtifactID = ""
+	}
+	r.extracted.EnrichFromArtifactName(artName, fallbackArtID)
+	ids.PrintDerivedIDs(stdoutOut, r.extracted)
 
 	if err := fetcher(ctx, r.httpClient, art.FetchUrl, outWriter); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to fetch artifact: %s\n", err)
