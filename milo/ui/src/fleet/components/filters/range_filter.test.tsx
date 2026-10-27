@@ -407,4 +407,33 @@ describe('RangeFilterCategoryBuilder', () => {
     const result = builder.build('utilization', jest.fn(), null);
     expect(result.isError).toBe(true);
   });
+
+  it('should support helperText on builder and render it in option component', () => {
+    const builder = new RangeFilterCategoryBuilder()
+      .setLabel('Pool Health')
+      .setMin(0)
+      .setMax(100)
+      .setScaleFactor(0.01)
+      .setHelperText('* Note: Claimed devices count as healthy');
+
+    const result = builder.build('pool_health_pct', () => {}, null);
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+    expect(category.helperText).toBe(
+      '* Note: Claimed devices count as healthy',
+    );
+
+    const { getByText } = render(
+      category.render(
+        '',
+        () => {},
+        () => {},
+        () => {},
+      ) as React.ReactElement,
+    );
+    expect(
+      getByText('* Note: Claimed devices count as healthy'),
+    ).toBeInTheDocument();
+  });
 });

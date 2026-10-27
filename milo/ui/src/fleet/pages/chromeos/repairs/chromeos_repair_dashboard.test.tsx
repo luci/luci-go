@@ -1893,5 +1893,65 @@ describe('<ChromeOSRepairDashboard />', () => {
         expect(within(ruleRow).getByText('+25 pts')).toBeInTheDocument();
       });
     });
+
+    describe('Pool and Model Health in-flight repairs (+X%)', () => {
+      it('renders in-repair percentage with dashed underline and tooltip breakdown', async () => {
+        const itemWithInRepair: RepairQueueItem = {
+          taskId: 'task-in-repair',
+          dutId: 'dut-in-repair',
+          pools: ['DUT_POOL_QUOTA'],
+          model: 'volteer',
+          state: 'needs_repair',
+          servoState: PeripheralState.PERIPHERAL_STATE_OK,
+          wifiState: PeripheralState.PERIPHERAL_STATE_OK,
+          bluetoothState: PeripheralState.PERIPHERAL_STATE_OK,
+          poolHealthPct: 0.48,
+          poolInRepairPct: 0.02,
+          modelHealthPct: 0.95,
+          modelInRepairPct: 0.01,
+          priorityScore: '100',
+          matchedRuleIds: [],
+          deviceId: 'dut-in-repair',
+          etag: '',
+          activeIrmIds: [],
+        };
+
+        jest.spyOn(UseRepairQueueModule, 'useRepairQueue').mockReturnValue({
+          data: {
+            repairQueueItems: [itemWithInRepair],
+            totalSize: 1,
+            nextPageToken: '',
+          },
+          isPending: false,
+          isError: false,
+          isFetching: false,
+          isLoading: false,
+          isPlaceholderData: false,
+        } as unknown as ReturnType<typeof UseRepairQueueModule.useRepairQueue>);
+
+        renderDashboard();
+
+        expect(await screen.findByText('dut-in-repair')).toBeInTheDocument();
+        expect(screen.getByText('48%')).toBeInTheDocument();
+        expect(screen.getByText('95%')).toBeInTheDocument();
+
+        const poolBadge = screen.getByTestId('pool-in-repair-badge');
+        expect(poolBadge).toHaveTextContent('(+2%)');
+        expect(poolBadge).toHaveStyle({ cursor: 'help' });
+
+        const modelBadge = screen.getByTestId('model-in-repair-badge');
+        expect(modelBadge).toHaveTextContent('(+1%)');
+        expect(modelBadge).toHaveStyle({ cursor: 'help' });
+
+        fireEvent.mouseOver(poolBadge);
+        expect(
+          await screen.findByText('Pool Health Breakdown'),
+        ).toBeInTheDocument();
+        expect(screen.getByText('Actual available:')).toBeInTheDocument();
+        expect(screen.getByText('In repair (claimed):')).toBeInTheDocument();
+        expect(screen.getByText('Effective health:')).toBeInTheDocument();
+        expect(screen.getByText('50%')).toBeInTheDocument();
+      });
+    });
   });
 });

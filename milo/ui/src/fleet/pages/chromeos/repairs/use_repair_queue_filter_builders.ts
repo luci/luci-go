@@ -27,14 +27,14 @@ import { useIrmIncidents } from './use_irm_incidents';
 export type { RepairQueueFilterBuilder };
 export type RepairQueueFilterKey = string;
 
-export const POOL_HEALTH_FILTER_KEY = 'pool_health_pct';
-export const MODEL_HEALTH_FILTER_KEY = 'model_health_pct';
+export const POOL_HEALTH_FILTER_KEY = 'effective_pool_health_pct';
+export const MODEL_HEALTH_FILTER_KEY = 'effective_model_health_pct';
 export const ACTIVE_IRM_FILTER_KEY = 'active_irm_ids';
 
 /**
  * Filter builders for ChromeOS repair queue priority scoring rules
- * (`RepairTasksFilterMap`), extending device attribute filters with pool/model
- * health percentages and `active_irm_ids`.
+ * (`PriorityRulesFilterMap`), extending device attribute filters with pool/model
+ * effective health percentages and `active_irm_ids`.
  */
 export const useRepairQueueFilterBuilders = (): {
   filterBuilders: Record<string, RepairQueueFilterBuilder>;
@@ -62,13 +62,15 @@ export const useRepairQueueFilterBuilders = (): {
         .setMin(0)
         .setMax(100)
         .setScaleFactor(0.01)
-        .setUnit('%'),
+        .setUnit('%')
+        .setHelperText('* Note: Claimed devices count as healthy'),
       [MODEL_HEALTH_FILTER_KEY]: new RangeFilterCategoryBuilder()
         .setLabel('Model Health')
         .setMin(0)
         .setMax(100)
         .setScaleFactor(0.01)
-        .setUnit('%'),
+        .setUnit('%')
+        .setHelperText('* Note: Claimed devices count as healthy'),
       [ACTIVE_IRM_FILTER_KEY]: buildStringListFilter(
         'Active IRM',
         irmBugIds,

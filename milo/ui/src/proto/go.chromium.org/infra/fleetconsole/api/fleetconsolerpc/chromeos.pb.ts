@@ -759,6 +759,8 @@ export interface RepairQueueItem {
   readonly bluetoothState: PeripheralState;
   readonly poolHealthPct?: number | undefined;
   readonly modelHealthPct?: number | undefined;
+  readonly poolInRepairPct?: number | undefined;
+  readonly modelInRepairPct?: number | undefined;
   readonly priorityScore: string;
   /** IDs of active priority rules that matched this repair task and contributed to priority_score. */
   readonly matchedRuleIds: readonly string[];
@@ -6997,6 +6999,8 @@ function createBaseRepairQueueItem(): RepairQueueItem {
     bluetoothState: 0,
     poolHealthPct: undefined,
     modelHealthPct: undefined,
+    poolInRepairPct: undefined,
+    modelInRepairPct: undefined,
     priorityScore: "0",
     matchedRuleIds: [],
     deviceId: "",
@@ -7067,6 +7071,12 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     for (const v of message.activeIrmIds) {
       writer.uint32(154).string(v!);
+    }
+    if (message.poolInRepairPct !== undefined) {
+      writer.uint32(161).double(message.poolInRepairPct);
+    }
+    if (message.modelInRepairPct !== undefined) {
+      writer.uint32(169).double(message.modelInRepairPct);
     }
     return writer;
   },
@@ -7246,6 +7256,22 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
             message.activeIrmIds.push(reader.string());
             continue;
           }
+          case 20: {
+            if (tag !== 161) {
+              break;
+            }
+
+            message.poolInRepairPct = reader.double();
+            continue;
+          }
+          case 21: {
+            if (tag !== 169) {
+              break;
+            }
+
+            message.modelInRepairPct = reader.double();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -7307,6 +7333,16 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
         ? globalThis.Number(object.modelHealthPct)
         : isSet(object.model_health_pct)
         ? globalThis.Number(object.model_health_pct)
+        : undefined,
+      poolInRepairPct: isSet(object.poolInRepairPct)
+        ? globalThis.Number(object.poolInRepairPct)
+        : isSet(object.pool_in_repair_pct)
+        ? globalThis.Number(object.pool_in_repair_pct)
+        : undefined,
+      modelInRepairPct: isSet(object.modelInRepairPct)
+        ? globalThis.Number(object.modelInRepairPct)
+        : isSet(object.model_in_repair_pct)
+        ? globalThis.Number(object.model_in_repair_pct)
         : undefined,
       priorityScore: isSet(object.priorityScore)
         ? globalThis.String(object.priorityScore)
@@ -7378,6 +7414,12 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.modelHealthPct !== undefined) {
       obj.modelHealthPct = message.modelHealthPct;
     }
+    if (message.poolInRepairPct !== undefined) {
+      obj.poolInRepairPct = message.poolInRepairPct;
+    }
+    if (message.modelInRepairPct !== undefined) {
+      obj.modelInRepairPct = message.modelInRepairPct;
+    }
     if (message.priorityScore !== "0") {
       obj.priorityScore = message.priorityScore;
     }
@@ -7419,6 +7461,8 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.bluetoothState = object.bluetoothState ?? 0;
     message.poolHealthPct = object.poolHealthPct ?? undefined;
     message.modelHealthPct = object.modelHealthPct ?? undefined;
+    message.poolInRepairPct = object.poolInRepairPct ?? undefined;
+    message.modelInRepairPct = object.modelInRepairPct ?? undefined;
     message.priorityScore = object.priorityScore ?? "0";
     message.matchedRuleIds = object.matchedRuleIds?.map((e) => e) || [];
     message.deviceId = object.deviceId ?? "";

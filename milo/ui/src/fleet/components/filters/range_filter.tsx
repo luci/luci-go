@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Typography } from '@mui/material';
 import { useImperativeHandle, useRef, useState } from 'react';
 
 import * as ast from '@/fleet/utils/aip160/ast/ast';
@@ -45,6 +46,7 @@ export class RangeFilterCategory implements FilterCategory {
   public max: number;
   public scaleFactor: number;
   public unit?: string;
+  public helperText?: string;
   private reRender: () => void;
 
   private constructor(
@@ -56,6 +58,7 @@ export class RangeFilterCategory implements FilterCategory {
     scaleFactor: number,
     reRender: (newFilter: RangeFilterCategory) => void,
     unit?: string,
+    helperText?: string,
   ) {
     this.label = label;
     this.key = key;
@@ -64,6 +67,7 @@ export class RangeFilterCategory implements FilterCategory {
     this.scaleFactor = scaleFactor;
     this.unit = unit;
     this.value = value;
+    this.helperText = helperText;
     this.reRender = () => {
       reRender(this);
     };
@@ -78,6 +82,7 @@ export class RangeFilterCategory implements FilterCategory {
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
     scaleFactor?: number,
     unit?: string,
+    helperText?: string,
   ): BuildResult<RangeFilterCategory> {
     const value: RangeFilterValue = {};
     const normKey = normalizeFilterKey(key).toLowerCase();
@@ -129,6 +134,7 @@ export class RangeFilterCategory implements FilterCategory {
       effectiveScaleFactor,
       reRender,
       unit,
+      helperText,
     );
     return { isError: false, value: filter, warnings: [] };
   }
@@ -173,6 +179,7 @@ export class RangeFilterCategory implements FilterCategory {
         min={this.min}
         max={this.max}
         unit={this.unit}
+        helperText={this.helperText}
         onApply={(newValue) => {
           this.value = newValue;
           onApply();
@@ -220,6 +227,7 @@ const RangeOptionComponent = function RangeOptionComponent({
   min,
   max,
   unit,
+  helperText,
   onApply,
   onClose,
   ref,
@@ -228,6 +236,7 @@ const RangeOptionComponent = function RangeOptionComponent({
   min: number;
   max: number;
   unit?: string;
+  helperText?: string;
   onApply: (value: RangeFilterValue) => void;
   onClose: () => void;
   ref?: React.Ref<unknown>;
@@ -255,6 +264,15 @@ const RangeOptionComponent = function RangeOptionComponent({
         max={max}
         unit={unit}
       />
+      {helperText && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ px: 2, pb: 1, display: 'block', fontStyle: 'italic' }}
+        >
+          {helperText}
+        </Typography>
+      )}
       <Footer
         onCancelClick={onClose}
         onApplyClick={() => {
@@ -273,6 +291,7 @@ export class RangeFilterCategoryBuilder
   public max: number | undefined;
   public scaleFactor: number | undefined;
   public unit: string | undefined;
+  public helperText: string | undefined;
 
   constructor() {}
 
@@ -301,6 +320,11 @@ export class RangeFilterCategoryBuilder
     return this;
   }
 
+  public setHelperText(helperText: string) {
+    this.helperText = helperText;
+    return this;
+  }
+
   public isFilledIn(): boolean {
     return (
       this.label !== undefined &&
@@ -314,7 +338,7 @@ export class RangeFilterCategoryBuilder
     reRender: (newFilter: RangeFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ): BuildResult<RangeFilterCategory> {
-    const { label, min, max, scaleFactor, unit } = this;
+    const { label, min, max, scaleFactor, unit, helperText } = this;
     if (label === undefined || min === undefined || max === undefined) {
       return {
         isError: true,
@@ -331,6 +355,7 @@ export class RangeFilterCategoryBuilder
       terms,
       scaleFactor,
       unit,
+      helperText,
     );
   }
 }

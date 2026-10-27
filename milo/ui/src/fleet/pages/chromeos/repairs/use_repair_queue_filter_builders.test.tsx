@@ -256,6 +256,9 @@ describe('useRepairQueueFilterBuilders', () => {
     expect(poolHealthBuilder.max).toBe(100);
     expect(poolHealthBuilder.scaleFactor).toBe(0.01);
     expect(poolHealthBuilder.unit).toBe('%');
+    expect(poolHealthBuilder.helperText).toBe(
+      '* Note: Claimed devices count as healthy',
+    );
 
     const modelHealthBuilder = builders[
       MODEL_HEALTH_FILTER_KEY
@@ -266,6 +269,9 @@ describe('useRepairQueueFilterBuilders', () => {
     expect(modelHealthBuilder.max).toBe(100);
     expect(modelHealthBuilder.scaleFactor).toBe(0.01);
     expect(modelHealthBuilder.unit).toBe('%');
+    expect(modelHealthBuilder.helperText).toBe(
+      '* Note: Claimed devices count as healthy',
+    );
   });
 
   it('builds Active IRM filter with deduplicated bug IDs in useRepairQueueFilterBuilders', () => {

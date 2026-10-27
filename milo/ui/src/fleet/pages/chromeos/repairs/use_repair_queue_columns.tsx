@@ -14,13 +14,14 @@
 
 import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
 import CircleIcon from '@mui/icons-material/Circle';
-import { Box, Chip, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, Divider, Tooltip, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
 import {
@@ -84,6 +85,104 @@ const DeviceIdCell = (props: FC_CellProps<RepairQueueRow>) => {
   }
   return <BaseDeviceIdCell {...props} />;
 };
+
+const renderHealthMetric = (
+  label: string,
+  actualPct?: number,
+  inRepairPct?: number,
+) => {
+  if (actualPct === undefined || actualPct === null) {
+    return <span>-</span>;
+  }
+  const actualStr = `${Math.round(actualPct * 100)}%`;
+  const inRepairRound =
+    inRepairPct !== undefined && inRepairPct !== null
+      ? Math.round(inRepairPct * 100)
+      : 0;
+
+  if (inRepairRound <= 0) {
+    return <span>{actualStr}</span>;
+  }
+
+  const effectiveRound = Math.round(actualPct * 100) + inRepairRound;
+
+  const tooltipContent = (
+    <Box>
+      <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+        {label} Health Breakdown
+      </Typography>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'auto auto',
+          columnGap: 2,
+          rowGap: 0.25,
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          Actual available:
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 500, textAlign: 'right' }}
+        >
+          {actualStr}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          In repair (claimed):
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 500, textAlign: 'right' }}
+        >
+          +{inRepairRound}%
+        </Typography>
+        <Divider sx={{ gridColumn: '1 / -1', my: 0.5 }} />
+        <Typography variant="body2" color="text.secondary">
+          Effective health:
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, textAlign: 'right' }}
+        >
+          {effectiveRound}%
+        </Typography>
+      </Box>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mt: 0.75, display: 'block', fontStyle: 'italic' }}
+      >
+        * Effective health counts claimed devices as healthy for priority rules.
+      </Typography>
+    </Box>
+  );
+
+  return (
+    <span>
+      {actualStr}{' '}
+      <Tooltip
+        title={tooltipContent}
+        arrow
+        enterDelay={100}
+        placement="bottom-start"
+        slotProps={{ tooltip: { sx: INFO_TOOLTIP_PAPER_SX } }}
+      >
+        <span
+          data-testid={`${label.toLowerCase()}-in-repair-badge`}
+          style={{
+            borderBottom: '1px dashed currentColor',
+            cursor: 'help',
+            fontWeight: 500,
+          }}
+        >
+          (+{inRepairRound}%)
+        </span>
+      </Tooltip>
+    </span>
+  );
+};
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const useRepairQueueColumns = ({
   pageIndex = 0,
@@ -344,26 +443,58 @@ export const useRepairQueueColumns = ({
         meta: {
           infoTooltip:
             'Percentage of devices in the assigned pool(s) and model(s) that ' +
-            'are healthy (not in manual repair or repair failed). For devices ' +
-            'with multiple pools or models, the lowest percentage is shown.',
+            'are healthy (not in manual repair or repair failed). When devices ' +
+            'in that pool or model are currently claimed in repair, in-flight ' +
+            'repairs (+X%) are indicated with a dashed underline and count ' +
+            'toward priority scoring rules.',
         },
         Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
           const poolHealth = row.original.poolHealthPct;
+          const poolInRepair = row.original.poolInRepairPct;
           const modelHealth = row.original.modelHealthPct;
-          const poolStr =
-            poolHealth !== undefined && poolHealth !== null
-              ? `${Math.round(poolHealth * 100)}%`
-              : '-';
-          const modelStr =
-            modelHealth !== undefined && modelHealth !== null
-              ? `${Math.round(modelHealth * 100)}%`
-              : '-';
+          const modelInRepair = row.original.modelInRepairPct;
+
+          const poolInRepairRound =
+            poolInRepair !== undefined && poolInRepair !== null
+              ? Math.round(poolInRepair * 100)
+              : 0;
+          const modelInRepairRound =
+            modelInRepair !== undefined && modelInRepair !== null
+              ? Math.round(modelInRepair * 100)
+              : 0;
+
+          if (poolInRepairRound <= 0 && modelInRepairRound <= 0) {
+            const poolStr =
+              poolHealth !== undefined && poolHealth !== null
+                ? `${Math.round(poolHealth * 100)}%`
+                : '-';
+            const modelStr =
+              modelHealth !== undefined && modelHealth !== null
+                ? `${Math.round(modelHealth * 100)}%`
+                : '-';
+            return (
+              <Typography
+                variant="body2"
+                sx={{ fontSize: '13px' }}
+              >{`${poolStr} / ${modelStr}`}</Typography>
+            );
+          }
+
           return (
             <Typography
               variant="body2"
-              noWrap
-              sx={{ fontSize: '13px' }}
-            >{`${poolStr} / ${modelStr}`}</Typography>
+              sx={{
+                fontSize: '13px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {renderHealthMetric('Pool', poolHealth, poolInRepair)}
+              <span>/</span>
+              {renderHealthMetric('Model', modelHealth, modelInRepair)}
+            </Typography>
           );
         },
       },
