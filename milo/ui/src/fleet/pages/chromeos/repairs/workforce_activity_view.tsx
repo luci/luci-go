@@ -17,7 +17,6 @@ import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import GroupIcon from '@mui/icons-material/Group';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
-import PersonIcon from '@mui/icons-material/Person';
 import TimerIcon from '@mui/icons-material/Timer';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import {
@@ -39,10 +38,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { Duration } from 'luxon';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFeatureFlag } from '@/common/feature_flags';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
@@ -78,16 +77,22 @@ import { useUnclaimRepairTask } from './use_claim_repair_task';
 import { RepairLab, useRepairLab } from './use_repair_lab';
 import { useWorkforceActivity } from './use_workforce_activity';
 
+const MAX_VISIBLE_DUTS = 5;
+const CLAIMED_DUTS_MAX_WIDTH = 480;
+
 const formatDuration = (d?: ProtoDuration): string =>
   d ? prettySeconds(Number(d.seconds)) : '-';
 
-const isSelfTechnician = (techEmail: string, currentUser: string): boolean => {
-  const trimmedEmail = techEmail.trim().toLowerCase();
-  const trimmedCurrent = currentUser.trim().toLowerCase();
-  if (!trimmedCurrent || !trimmedEmail) return false;
-  return (
-    trimmedEmail.replace(/^user:/, '') === trimmedCurrent.replace(/^user:/, '')
-  );
+const formatChipDuration = (d?: ProtoDuration): string => {
+  if (!d) return '-';
+  if (!Number(d.seconds)) return '0s';
+
+  return Duration.fromObject({ seconds: Number(d.seconds) })
+    .rescale()
+    .toHuman({ unitDisplay: 'short' })
+    .split(', ')
+    .slice(0, 2)
+    .join(', ');
 };
 
 export type TimeframeOption = '1D' | '7D' | '30D' | 'YTD';
@@ -110,6 +115,7 @@ export interface WorkforceActivityViewProps {
 interface WorkforceColumn {
   id: string;
   align?: 'center';
+  maxWidth?: number;
   header: React.ReactNode;
   renderCell: (tech: TechnicianActivity) => React.ReactNode;
 }
@@ -124,11 +130,11 @@ export const WorkforceActivityView = ({
   const { lab: contextLab } = useRepairLab();
   const lab = labProp ?? contextLab;
   const [timeframe, setTimeframe] = useState<TimeframeOption>('1D');
+  const [expandedTechIds, setExpandedTechIds] = useState<
+    Record<string, boolean>
+  >({});
   const { mutate: unclaimTask, isPending: isUnclaimPending } =
     useUnclaimRepairTask();
-
-  const authState = useAuthState();
-  const currentUser = (authState.email || authState.identity || '').trim();
 
   const showPickupRank = useFeatureFlag(enableWorkforcePickupRank);
   const showInProgressRepairs = useFeatureFlag(
@@ -193,22 +199,35 @@ export const WorkforceActivityView = ({
       },
       showInProgressRepairs && {
         id: 'inProgressRepairs',
+        maxWidth: CLAIMED_DUTS_MAX_WIDTH,
         header: 'Currently Claimed DUTs (In-Progress)',
         renderCell: (tech) => {
-          const isSelf = isSelfTechnician(tech.email, currentUser);
+          const isExpanded = Boolean(expandedTechIds[tech.id]);
+          const visibleDuts = isExpanded
+            ? tech.claimedDuts
+            : tech.claimedDuts.slice(0, MAX_VISIBLE_DUTS);
+          const hiddenCount = tech.claimedDuts.length - visibleDuts.length;
+
           return tech.claimedDuts.length > 0 ? (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {tech.claimedDuts.map((dut) => (
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: 1,
+                maxWidth: CLAIMED_DUTS_MAX_WIDTH,
+              }}
+            >
+              {visibleDuts.map((dut) => (
                 <Chip
                   key={dut.dutId}
-                  icon={<PersonIcon sx={{ fontSize: 16 }} />}
-                  label={`${dut.dutId} (Score: ${dut.score} | ${formatDuration(dut.duration)})`}
+                  label={`${dut.dutId} (Score: ${dut.score} | ${formatChipDuration(dut.duration)})`}
                   variant="outlined"
                   color="primary"
                   size="small"
                   disabled={isUnclaimPending}
                   onDelete={
-                    isSelf && dut.taskId && dut.taskId !== '0'
+                    dut.taskId && dut.taskId !== '0'
                       ? () =>
                           unclaimTask(
                             UnclaimRepairTaskRequest.fromPartial({
@@ -221,9 +240,39 @@ export const WorkforceActivityView = ({
                     fontFamily: 'monospace',
                     fontSize: '0.75rem',
                     bgcolor: colors.blue[50],
+                    height: 'auto',
+                    minHeight: 24,
+                    py: 0.25,
+                    '& .MuiChip-label': {
+                      display: 'block',
+                      whiteSpace: 'normal',
+                    },
                   }}
                 />
               ))}
+              {tech.claimedDuts.length > MAX_VISIBLE_DUTS && (
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() =>
+                    setExpandedTechIds((prev) => ({
+                      ...prev,
+                      [tech.id]: !isExpanded,
+                    }))
+                  }
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    py: 0,
+                    px: 1,
+                    minWidth: 'auto',
+                    height: 24,
+                  }}
+                >
+                  {isExpanded ? 'Show less' : `And ${hiddenCount} more...`}
+                </Button>
+              )}
             </Box>
           ) : (
             <Typography
@@ -721,7 +770,11 @@ export const WorkforceActivityView = ({
                 <TableCell
                   key={col.id}
                   align={col.align}
-                  sx={{ fontWeight: 700, color: 'text.secondary' }}
+                  sx={{
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    ...(col.maxWidth ? { maxWidth: col.maxWidth } : {}),
+                  }}
                 >
                   {col.header}
                 </TableCell>
@@ -767,7 +820,11 @@ export const WorkforceActivityView = ({
               technicians.map((tech) => (
                 <TableRow key={tech.id} hover>
                   {columns.map((col) => (
-                    <TableCell key={col.id} align={col.align}>
+                    <TableCell
+                      key={col.id}
+                      align={col.align}
+                      sx={col.maxWidth ? { maxWidth: col.maxWidth } : undefined}
+                    >
                       {col.renderCell(tech)}
                     </TableCell>
                   ))}

@@ -237,7 +237,7 @@ describe('<WorkforceActivityView />', () => {
     expect(screen.getByText('No active devices claimed')).toBeInTheDocument();
   });
 
-  it('calls unclaimTask with taskId only for the logged-in user row when in-progress flag is enabled', () => {
+  it('calls unclaimTask with taskId for any technician row when in-progress flag is enabled', () => {
     localStorage.setItem(
       getFeatureFlagLocalStorageKey(enableWorkforceInProgressRepairs),
       'on',
@@ -268,15 +268,138 @@ describe('<WorkforceActivityView />', () => {
     expect(screen.getByText(/chromeos1-row2-rack3-host1/i)).toBeInTheDocument();
     expect(screen.getByText(/chromeos2-row3-rack1-host2/i)).toBeInTheDocument();
 
-    // Only Andrew's own row should render a delete icon; Beatrice's row should not.
+    // Both Andrew's and Beatrice's rows should render delete icons.
     const deleteIcons = screen.getAllByTestId('CancelIcon');
-    expect(deleteIcons).toHaveLength(1);
-    fireEvent.click(deleteIcons[0]);
+    expect(deleteIcons).toHaveLength(2);
 
+    fireEvent.click(deleteIcons[0]);
     expect(mockUnclaimMutate).toHaveBeenCalledWith({
       taskId: '201',
       etag: '',
     });
+
+    fireEvent.click(deleteIcons[1]);
+    expect(mockUnclaimMutate).toHaveBeenCalledWith({
+      taskId: '202',
+      etag: '',
+    });
+  });
+
+  it('shows at most two highest time units in claimed DUT chips', () => {
+    localStorage.setItem(
+      getFeatureFlagLocalStorageKey(enableWorkforceInProgressRepairs),
+      'on',
+    );
+    jest
+      .spyOn(UseWorkforceActivityModule, 'useWorkforceActivity')
+      .mockReturnValue({
+        data: {
+          ...MOCK_WORKFORCE_DATA,
+          technicians: [
+            {
+              ...MOCK_WORKFORCE_DATA.technicians[0],
+              claimedDuts: [
+                {
+                  taskId: '301',
+                  dutId: 'dut-multi-units',
+                  score: 120,
+                  // 1 day, 2 hr, 15 min, 30 sec = 86400 + 7200 + 900 + 30 = 94530
+                  duration: { seconds: '94530', nanos: 0 },
+                },
+                {
+                  taskId: '302',
+                  dutId: 'dut-three-units',
+                  score: 90,
+                  // 1 hr, 2 min, 30 sec = 3750
+                  duration: { seconds: '3750', nanos: 0 },
+                },
+              ],
+            },
+          ],
+        },
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<
+        typeof UseWorkforceActivityModule.useWorkforceActivity
+      >);
+
+    renderWorkforceView();
+
+    expect(
+      screen.getByText('dut-multi-units (Score: 120 | 1 day, 2 hr)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('dut-three-units (Score: 90 | 1 hr, 2 min)'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows at most 5 claimed DUTs initially, expands all on "And x more...", and collapses on "Show less"', () => {
+    localStorage.setItem(
+      getFeatureFlagLocalStorageKey(enableWorkforceInProgressRepairs),
+      'on',
+    );
+    const manyDuts = Array.from({ length: 7 }, (_, i) => ({
+      taskId: `40${i + 1}`,
+      dutId: `chromeos-dut-${i + 1}`,
+      score: 100,
+      duration: { seconds: '1800', nanos: 0 },
+    }));
+
+    jest
+      .spyOn(UseWorkforceActivityModule, 'useWorkforceActivity')
+      .mockReturnValue({
+        data: {
+          ...MOCK_WORKFORCE_DATA,
+          technicians: [
+            {
+              ...MOCK_WORKFORCE_DATA.technicians[0],
+              claimedDuts: manyDuts,
+            },
+          ],
+        },
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<
+        typeof UseWorkforceActivityModule.useWorkforceActivity
+      >);
+
+    renderWorkforceView();
+
+    for (let i = 1; i <= 5; i++) {
+      expect(
+        screen.getByText(new RegExp(`chromeos-dut-${i}\\b`, 'i')),
+      ).toBeInTheDocument();
+    }
+    expect(screen.queryByText(/chromeos-dut-6/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/chromeos-dut-7/i)).not.toBeInTheDocument();
+
+    const moreButton = screen.getByRole('button', { name: 'And 2 more...' });
+    expect(moreButton).toBeInTheDocument();
+
+    fireEvent.click(moreButton);
+
+    expect(screen.getByText(/chromeos-dut-6/i)).toBeInTheDocument();
+    expect(screen.getByText(/chromeos-dut-7/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /And \d+ more\.\.\./i }),
+    ).not.toBeInTheDocument();
+
+    const showLessButton = screen.getByRole('button', { name: 'Show less' });
+    expect(showLessButton).toBeInTheDocument();
+
+    fireEvent.click(showLessButton);
+
+    expect(screen.queryByText(/chromeos-dut-6/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/chromeos-dut-7/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'And 2 more...' }),
+    ).toBeInTheDocument();
   });
 
   it('disables claimed DUT chips while unclaim is pending and omits onDelete when taskId is empty or 0', () => {
