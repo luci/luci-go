@@ -472,8 +472,13 @@ function Graph() {
     () => (
       <>
         <Background />
-        <Controls />
+        <Controls
+          showInteractive={false}
+          position="bottom-left"
+          style={{ marginBottom: 180 }}
+        />
         <MiniMap
+          position="bottom-left"
           pannable
           zoomable
           nodeStrokeColor="var(--greyed-out-text-color)"

@@ -511,4 +511,19 @@ describe('GraphView filter match navigation', () => {
       expect(mockFitView).toHaveBeenCalled();
     });
   });
+
+  it('renders MiniMap and Controls at bottom-left position with Controls stacked above MiniMap without interactive toggle', async () => {
+    render(<TestWrapper />);
+    await screen.findByText('Alpha Stage 1');
+
+    const minimap = screen.getByTestId('rf__minimap');
+    expect(minimap).toHaveClass('bottom', 'left');
+
+    const controls = screen.getByTestId('rf__controls');
+    expect(controls).toHaveClass('bottom', 'left');
+    expect(controls).toHaveStyle({ marginBottom: '180px' });
+    expect(
+      screen.queryByLabelText('toggle interactivity'),
+    ).not.toBeInTheDocument();
+  });
 });
