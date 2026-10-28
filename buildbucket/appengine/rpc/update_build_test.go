@@ -150,7 +150,7 @@ func TestValidateUpdate(t *testing.T) {
 		t.Run("fails", func(t *ftt.Test) {
 			props, _ := structpb.NewStruct(map[string]any{"key": nil})
 			req.Build.Output = &pb.Build_Output{Properties: props}
-			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("value is not set"))
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("value cannot be null"))
 		})
 	})
 
@@ -199,7 +199,7 @@ func TestValidateUpdate(t *testing.T) {
 				Properties:      props,
 				SummaryMarkdown: "summary",
 			}
-			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("value is not set"))
+			assert.Loosely(t, validateUpdate(ctx, req, nil), should.ErrLike("value cannot be null"))
 		})
 		t.Run("summary_markdown is invalid", func(t *ftt.Test) {
 			req.Build.Output = &pb.Build_Output{

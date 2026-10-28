@@ -183,7 +183,7 @@ func validateOutput(output *pb.Build_Output, subMasks stringset.Set) error {
 func validateOutputProperties(properties *structpb.Struct) error {
 	for k, v := range properties.AsMap() {
 		if v == nil {
-			return errors.Fmt("build.output.properties[%q]: value is not set; if necessary, use null_value instead", k)
+			return errors.Fmt("build.output.properties[%q]: value cannot be null", k)
 		}
 	}
 	return nil
