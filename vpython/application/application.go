@@ -376,6 +376,11 @@ func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor
 // BuildVENVWithPackage builds the derivation for the venv, updates applications'
 // PythonExecutable, and returns the full built actions.Package.
 func (a *Application) BuildVENVWithPackage(ctx context.Context, ap *actions.ActionProcessor, venv generators.Generator) (actions.Package, error) {
+	if a.CIPDCacheDir != "" {
+		if err := os.Setenv(cipd.EnvCacheDir, a.CIPDCacheDir); err != nil {
+			return actions.Package{}, errors.Fmt("failed to set %s: %w", cipd.EnvCacheDir, err)
+		}
+	}
 	pm, err := workflow.NewLocalPackageManager(filepath.Join(a.VpythonRoot, "store"))
 	if err != nil {
 		return actions.Package{}, errors.Fmt("failed to load storage: %w", err)

@@ -179,5 +179,36 @@ func TestVersionParsingAndMatching(tT *testing.T) {
 			satisfied := invalidSub.isSatisfied(Version{Major: 3, Minor: 11, Patch: 0, Segments: 2})
 			assert.Loosely(t, satisfied, should.BeFalse)
 		})
+
+		t.Run("ResolveTargetVersion prefers defaultVer when satisfied", func(t *ftt.Test) {
+			multiAvailable := []string{"3.8", "3.11", "3.14"}
+
+			for _, constraint := range []string{"", ">=3.8", ">=3.11", ">=3.11,<3.12", "~=3.11.0"} {
+				matched, err := ResolveTargetVersion(constraint, DefaultPythonVersion, multiAvailable)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, matched, should.Equal("3.11"))
+			}
+
+			for _, constraint := range []string{">=3.8,<3.9", "==3.8.*", "~=3.8.0"} {
+				matched, err := ResolveTargetVersion(constraint, DefaultPythonVersion, multiAvailable)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, matched, should.Equal("3.8"))
+			}
+
+			for _, constraint := range []string{">=3.14", ">=3.14,<3.15", "==3.14.*", "~=3.14.0"} {
+				matched, err := ResolveTargetVersion(constraint, DefaultPythonVersion, multiAvailable)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, matched, should.Equal("3.14"))
+			}
+
+			_, err := ResolveTargetVersion(">=3.12,<3.14", DefaultPythonVersion, multiAvailable)
+			assert.Loosely(t, err, should.NotBeNil)
+
+			_, err = ResolveTargetVersion(">=abc", DefaultPythonVersion, multiAvailable)
+			assert.Loosely(t, err, should.NotBeNil)
+
+			_, err = ResolveTargetVersion("", "abc", []string{"abc", "3.11"})
+			assert.Loosely(t, err, should.NotBeNil)
+		})
 	})
 }

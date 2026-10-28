@@ -17,9 +17,14 @@ package standard
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
+
+// DefaultPythonVersion is the default CPython major.minor version targeted when
+// a spec's requires-python constraint is empty or satisfied by the default interpreter.
+const DefaultPythonVersion = "3.11"
 
 // pep440Regex is a prefix-only PEP 440 regular expression.
 // By matching only the leading release and optional pre-release blocks without a trailing anchor ($),
@@ -249,4 +254,24 @@ func MatchInterpreter(constraintStr string, available []string) (string, error) 
 		return "", fmt.Errorf("no available python interpreters satisfy constraint %q (available: %v)", constraintStr, available)
 	}
 	return bestTarget, nil
+}
+
+// ResolveTargetVersion matches a constraint string against available Python
+// runtime versions, preferring defaultVer when it is present in available and
+// satisfies constraintStr, and falling back to MatchInterpreter otherwise.
+func ResolveTargetVersion(constraintStr, defaultVer string, available []string) (string, error) {
+	if defaultVer != "" && slices.Contains(available, defaultVer) {
+		c, err := parseConstraint(constraintStr)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse constraint %q: %w", constraintStr, err)
+		}
+		defV, err := ParseVersion(defaultVer)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse default version %q: %w", defaultVer, err)
+		}
+		if c.isSatisfied(defV) {
+			return defaultVer, nil
+		}
+	}
+	return MatchInterpreter(constraintStr, available)
 }

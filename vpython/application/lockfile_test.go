@@ -48,10 +48,21 @@ func TestResolveTargetPythonVersion(t *testing.T) {
 		assert.NoErr(t, err)
 		assert.Loosely(t, ver, should.Equal("3.11"))
 
+		ver, err = resolveTargetPythonVersion(">=3.14")
+		assert.NoErr(t, err)
+		assert.Loosely(t, ver, should.Equal("3.14"))
+
+		ver, err = resolveTargetPythonVersion("==3.14.*")
+		assert.NoErr(t, err)
+		assert.Loosely(t, ver, should.Equal("3.14"))
+
 		_, err = resolveTargetPythonVersion(">=2.7,<2.8")
 		assert.Loosely(t, err, should.NotBeNil)
 
-		_, err = resolveTargetPythonVersion(">=3.12")
+		_, err = resolveTargetPythonVersion(">=3.12,<3.14")
+		assert.Loosely(t, err, should.NotBeNil)
+
+		_, err = resolveTargetPythonVersion(">=3.15")
 		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

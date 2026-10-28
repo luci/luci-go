@@ -116,14 +116,14 @@ func SyncLockfile(ctx context.Context, specPath, uvBin, pythonBin string, isBot 
 	return nil
 }
 
-// DefaultSupportedPythonVersions lists the CPython major.minor versions bundled with vpython3.
-var DefaultSupportedPythonVersions = []string{"3.8", "3.11"}
+// DefaultSupportedPythonVersions lists the CPython major.minor versions supported by vpython3.
+var DefaultSupportedPythonVersions = []string{"3.8", "3.11", "3.14"}
 
 // resolveTargetPythonVersion resolves a PEP 440 requires-python constraint
-// against vpython's bundled Python versions, defaulting to the highest
-// bundled version ("3.11") when requiresPython is empty.
+// against vpython's supported Python versions, preferring the default
+// bundled version ("3.11") when satisfied.
 func resolveTargetPythonVersion(requiresPython string) (string, error) {
-	ver, err := standard.MatchInterpreter(requiresPython, DefaultSupportedPythonVersions)
+	ver, err := standard.ResolveTargetVersion(requiresPython, standard.DefaultPythonVersion, DefaultSupportedPythonVersions)
 	if err != nil {
 		return "", errors.Fmt("failed to resolve compatible Python interpreter for constraint %q: %w", requiresPython, err)
 	}
@@ -199,6 +199,9 @@ func compileLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin s
 
 	if pythonBin == "" {
 		pythonBin = resolveBundledPythonBin(targetVer)
+		if pythonBin == "" {
+			pythonBin = resolveBundledPythonBin(standard.DefaultPythonVersion)
+		}
 	}
 
 	arURL := os.Getenv(common.EnvVpythonArUrl)
