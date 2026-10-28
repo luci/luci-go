@@ -444,23 +444,23 @@ describe('<PriorityRulesPanel />', () => {
     });
   });
 
-  it('disables "Add rule" button when 10 rules exist', () => {
-    const tenRules: readonly PriorityRule[] = [
+  it('disables "Add rule" button when 15 rules exist', () => {
+    const maxRules: readonly PriorityRule[] = [
       ...MOCK_RULES,
-      ...Array.from({ length: 6 }, (_, i) => ({
+      ...Array.from({ length: 11 }, (_, i) => ({
         id: String(i + 5),
         expressionAip160: 'state = "READY"',
         weight: '10',
       })),
     ];
-    setupMockHook(tenRules);
+    setupMockHook(maxRules);
     renderPanel();
 
     fireEvent.click(screen.getByTestId('show-more-rules-button'));
 
     const addRuleButton = screen.getByTestId('add-priority-rule-button');
     expect(addRuleButton).toBeDisabled();
-    expect(screen.getByText('Limit of 10 rules reached')).toBeInTheDocument();
+    expect(screen.getByText('Limit of 15 rules reached')).toBeInTheDocument();
   });
 
   it('deletes an existing rule when clicking delete icon button then confirm', async () => {
