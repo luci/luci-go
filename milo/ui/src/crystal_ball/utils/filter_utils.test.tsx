@@ -246,6 +246,86 @@ describe('buildFilterString', () => {
     const result = buildFilterString(filters);
     expect(result).toBe('build_type IN ("Postsubmit", "Presubmit")');
   });
+
+  it('resolves IN_PAST on text input filters to an absolute timestamp', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'invocation_complete_timestamp',
+        displayName: 'Invocation Complete',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['7d'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toMatch(
+      /^invocation_complete_timestamp >= "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+    );
+    expect(result).not.toContain('7d');
+  });
+
+  it('omits IN_PAST text input filters with an invalid duration', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'invocation_complete_timestamp',
+        displayName: 'Invocation Complete',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['last week'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
+          },
+        },
+      },
+    ];
+    expect(buildFilterString(filters)).toBe('');
+  });
+
+  it('expands BETWEEN on text input filters into a range', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'invocation_complete_timestamp',
+        displayName: 'Invocation Complete',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['2026-03-01T00:00:00Z', '2026-03-04T00:00:00Z'],
+            filterOperator: PerfFilterDefault_FilterOperator.BETWEEN,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toBe(
+      'invocation_complete_timestamp >= "2026-03-01T00:00:00Z" AND invocation_complete_timestamp <= "2026-03-04T00:00:00Z"',
+    );
+  });
+
+  it('expands BETWEEN on number input filters into an unquoted range', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'metric_value',
+        displayName: 'Metric Value',
+        dataSpecId: 'data-spec-id',
+        numberInput: {
+          defaultValue: {
+            values: ['10', '20'],
+            filterOperator: PerfFilterDefault_FilterOperator.BETWEEN,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toBe('metric_value >= 10 AND metric_value <= 20');
+  });
 });
 
 describe('formatColumnNameFallback and getColumnDisplayNameMap', () => {

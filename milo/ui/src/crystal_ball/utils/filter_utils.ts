@@ -103,8 +103,83 @@ export interface ParsedFilter {
 }
 
 /**
+ * Maps relative duration units (e.g. the 'd' in '7d') to luxon duration units.
+ */
+const RELATIVE_DURATION_UNITS: Record<string, string> = {
+  d: 'days',
+  h: 'hours',
+  m: 'minutes',
+  w: 'weeks',
+};
+
+/**
+ * Expands IN_PAST and BETWEEN operators into AIP-160 compatible comparisons.
+ * IN_PAST values (e.g. '7d') are resolved to an absolute UTC timestamp, since
+ * relative durations are not valid filter values on the backend.
+ *
+ * @returns The expanded filters, or undefined if the operator is not a range
+ * operator.
+ */
+const expandRangeOperator = (
+  column: string,
+  operator: PerfFilterDefault_FilterOperator,
+  values: readonly string[],
+  type: ParsedFilter['type'],
+): ParsedFilter[] | undefined => {
+  if (operator === PerfFilterDefault_FilterOperator.IN_PAST) {
+    const match = values[0]?.match(/^(\d+)([a-zA-Z])$/);
+    if (!match) {
+      return [];
+    }
+    const amount = parseInt(match[1], 10);
+    const luxonUnit = RELATIVE_DURATION_UNITS[match[2]] ?? 'days';
+    const computedDate = DateTime.now()
+      .minus({ [luxonUnit]: amount })
+      .toUTC()
+      .toISO();
+    return computedDate
+      ? [
+          {
+            column,
+            value: computedDate,
+            operator: PerfFilterDefault_FilterOperator.GREATER_THAN_OR_EQUAL,
+            type: 'string',
+          },
+        ]
+      : [];
+  }
+
+  if (operator === PerfFilterDefault_FilterOperator.BETWEEN) {
+    if (values.length < 2) {
+      return [];
+    }
+    const results: ParsedFilter[] = [];
+    if (values[0]) {
+      results.push({
+        column,
+        value: values[0],
+        operator: PerfFilterDefault_FilterOperator.GREATER_THAN_OR_EQUAL,
+        type,
+      });
+    }
+    if (values[1]) {
+      results.push({
+        column,
+        value: values[1],
+        operator: PerfFilterDefault_FilterOperator.LESS_THAN_OR_EQUAL,
+        type,
+      });
+    }
+    return results;
+  }
+
+  return undefined;
+};
+
+/**
  * Parses a single PerfFilter into an array of internal ParsedFilter objects.
- * Handles range filters (IN_PAST, BETWEEN) and simple text/number filters.
+ * Handles range operators (IN_PAST, BETWEEN) for both range and text/number
+ * input filters, as well as simple text/number filters.
  * Returns empty array if the filter should be excluded (wrong column or current filter ID).
  */
 export const parseSingleFilter = (
@@ -115,8 +190,6 @@ export const parseSingleFilter = (
     return [];
   }
 
-  const results: ParsedFilter[] = [];
-
   if (f.range) {
     const rangeOp =
       f.range.defaultValue?.filterOperator !== undefined
@@ -125,92 +198,57 @@ export const parseSingleFilter = (
           )
         : PerfFilterDefault_FilterOperator.IN_PAST;
     const values = f.range.defaultValue?.values ?? [];
+    return expandRangeOperator(f.column, rangeOp, values, 'string') ?? [];
+  }
 
-    if (rangeOp === PerfFilterDefault_FilterOperator.IN_PAST && values[0]) {
-      const match = values[0].match(/^(\d+)([a-zA-Z])$/);
-      if (match) {
-        const amount = parseInt(match[1], 10);
-        const unit = match[2];
-        const luxonUnitMap: Record<string, string> = {
-          m: 'minutes',
-          h: 'hours',
-          d: 'days',
-          w: 'weeks',
-        };
-        const luxonUnit = luxonUnitMap[unit] ?? 'days';
-        const computedDate = DateTime.now()
-          .minus({ [luxonUnit]: amount })
-          .toUTC()
-          .toISO();
-        if (computedDate) {
-          results.push({
-            column: f.column,
-            value: computedDate,
-            operator: PerfFilterDefault_FilterOperator.GREATER_THAN_OR_EQUAL,
-            type: 'string',
-          });
-        }
-      }
-    } else if (
-      rangeOp === PerfFilterDefault_FilterOperator.BETWEEN &&
-      values.length >= 2
-    ) {
-      if (values[0]) {
-        results.push({
-          column: f.column,
-          value: values[0],
-          operator: PerfFilterDefault_FilterOperator.GREATER_THAN_OR_EQUAL,
-          type: 'string',
-        });
-      }
-      if (values[1]) {
-        results.push({
-          column: f.column,
-          value: values[1],
-          operator: PerfFilterDefault_FilterOperator.LESS_THAN_OR_EQUAL,
-          type: 'string',
-        });
-      }
+  const results: ParsedFilter[] = [];
+  const values =
+    f.textInput?.defaultValue?.values ??
+    f.numberInput?.defaultValue?.values ??
+    [];
+  const isNumber = Boolean(f.numberInput);
+  const op =
+    f.textInput?.defaultValue?.filterOperator !== undefined
+      ? perfFilterDefault_FilterOperatorFromJSON(
+          f.textInput.defaultValue.filterOperator,
+        )
+      : f.numberInput?.defaultValue?.filterOperator !== undefined
+        ? perfFilterDefault_FilterOperatorFromJSON(
+            f.numberInput.defaultValue.filterOperator,
+          )
+        : PerfFilterDefault_FilterOperator.EQUAL;
+
+  const expandedRange = expandRangeOperator(
+    f.column,
+    op,
+    values,
+    isNumber ? 'number' : 'string',
+  );
+  if (expandedRange) {
+    return expandedRange;
+  }
+
+  if (
+    op === PerfFilterDefault_FilterOperator.IN ||
+    op === PerfFilterDefault_FilterOperator.NOT_IN
+  ) {
+    if (values.length > 0) {
+      results.push({
+        column: f.column,
+        value: values,
+        operator: op,
+        type: isNumber ? 'number' : 'string',
+      });
     }
   } else {
-    const values =
-      f.textInput?.defaultValue?.values ??
-      f.numberInput?.defaultValue?.values ??
-      [];
-    const isNumber = Boolean(f.numberInput);
-    const op =
-      f.textInput?.defaultValue?.filterOperator !== undefined
-        ? perfFilterDefault_FilterOperatorFromJSON(
-            f.textInput.defaultValue.filterOperator,
-          )
-        : f.numberInput?.defaultValue?.filterOperator !== undefined
-          ? perfFilterDefault_FilterOperatorFromJSON(
-              f.numberInput.defaultValue.filterOperator,
-            )
-          : PerfFilterDefault_FilterOperator.EQUAL;
-
-    if (
-      op === PerfFilterDefault_FilterOperator.IN ||
-      op === PerfFilterDefault_FilterOperator.NOT_IN
-    ) {
-      if (values.length > 0) {
-        results.push({
-          column: f.column,
-          value: values,
-          operator: op,
-          type: isNumber ? 'number' : 'string',
-        });
-      }
-    } else {
-      const val = values[0];
-      if (val) {
-        results.push({
-          column: f.column,
-          value: val,
-          operator: op,
-          type: isNumber ? 'number' : 'string',
-        });
-      }
+    const val = values[0];
+    if (val) {
+      results.push({
+        column: f.column,
+        value: val,
+        operator: op,
+        type: isNumber ? 'number' : 'string',
+      });
     }
   }
 
