@@ -593,7 +593,7 @@ describe('<WorkforceActivityView />', () => {
     renderWorkforceView();
 
     const skeletons = screen.getAllByTestId('kpi-skeleton');
-    expect(skeletons).toHaveLength(3);
+    expect(skeletons).toHaveLength(5);
     expect(screen.getByTestId('workforce-loading-spinner')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     expect(screen.queryByText('Andrew Miller')).not.toBeInTheDocument();

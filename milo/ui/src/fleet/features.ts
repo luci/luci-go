@@ -98,22 +98,16 @@ export const enableWorkforcePickupRank = createFleetFeatureFlag({
   description:
     'Displays the Avg Queue Pickup Rank metric and table column in ChromeOS Workforce Activity.',
   name: 'workforce-avg-queue-pickup-rank',
-  percentage: {
-    dev: 0,
-    prod: 0,
-  },
-  allowedEnvironments: ['dev'],
+  percentage: 100,
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const enableWorkforceInProgressRepairs = createFleetFeatureFlag({
   description:
     'Displays the Currently Claimed DUTs / In-Progress Repairs metric and table column in ChromeOS Workforce Activity.',
   name: 'workforce-in-progress-repairs',
-  percentage: {
-    dev: 0,
-    prod: 0,
-  },
-  allowedEnvironments: ['dev'],
+  percentage: 100,
+  allowedEnvironments: ['dev', 'prod'],
 });
 
 export const enableWorkforceTimeframeFilter = createFleetFeatureFlag({
