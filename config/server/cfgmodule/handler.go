@@ -58,7 +58,7 @@ func (srv *ConsumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*
 	}
 	patterns, err := srv.Rules.ConfigPatterns(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to collect the list of validation patterns: %s", err)
+		return nil, status.Errorf(codes.Internal, "collecting config patterns: %s", err)
 	}
 	ret := &cfgpb.ServiceMetadata{}
 	if len(patterns) > 0 {
@@ -84,7 +84,7 @@ func (srv *ConsumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.Valid
 
 	patterns, err := srv.Rules.ConfigPatterns(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "encounter internal error: %s", err)
+		return nil, status.Errorf(codes.Internal, "collecting config patterns: %s", err)
 	}
 	configSet := req.GetConfigSet()
 	var pathPatterns []pattern.Pattern
@@ -127,7 +127,7 @@ func (srv *ConsumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.Valid
 		eg.Go(func() error {
 			raw, err := config.DownloadConfigFromSignedURL(ectx, httpClient, file.GetSignedUrl())
 			if err != nil {
-				return fmt.Errorf("failed to download file %s from the signed url: %w", file.Path, err)
+				return fmt.Errorf("downloading %q: %w", file.Path, err)
 			}
 			mu.Lock()
 			files[file.GetPath()] = raw
@@ -137,12 +137,12 @@ func (srv *ConsumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.Valid
 	}
 
 	if err := eg.Wait(); err != nil {
-		return nil, status.Errorf(codes.Internal, "encounter internal error: %s", err)
+		return nil, status.Errorf(codes.Internal, "%s", err)
 	}
 
 	vc := &validation.Context{Context: ctx}
 	if err := srv.Rules.ValidateConfigSet(vc, configSet, files); err != nil {
-		return nil, status.Errorf(codes.Internal, "encounter internal error: %s", err)
+		return nil, status.Errorf(codes.Internal, "validating: %s", err)
 	}
 
 	ret := &cfgpb.ValidationResult{}
@@ -166,7 +166,7 @@ func (srv *ConsumerServer) checkCaller(ctx context.Context) error {
 	configServiceAccount, err := srv.GetConfigServiceAccountFn(ctx)
 	if err != nil {
 		logging.Errorf(ctx, "Failed to get LUCI Config service account: %s", err)
-		return status.Errorf(codes.Internal, "failed to get LUCI Config service account")
+		return status.Errorf(codes.Internal, "getting LUCI Config service account failed")
 	}
 	caller := auth.CurrentIdentity(ctx)
 	if caller.Kind() == identity.User && caller.Value() == configServiceAccount {
@@ -175,7 +175,7 @@ func (srv *ConsumerServer) checkCaller(ctx context.Context) error {
 	switch admin, err := auth.IsMember(ctx, adminGroup); {
 	case err != nil:
 		logging.Errorf(ctx, "Failed to check ACL: %s", err)
-		return status.Errorf(codes.Internal, "failed to check ACL")
+		return status.Errorf(codes.Internal, "checking ACL failed")
 	case admin:
 		return nil
 	}
@@ -185,16 +185,16 @@ func (srv *ConsumerServer) checkCaller(ctx context.Context) error {
 func checkValidateInput(req *cfgpb.ValidateConfigsRequest) error {
 	switch {
 	case req.GetConfigSet() == "":
-		return status.Errorf(codes.InvalidArgument, "must specify the config_set of the file to validate")
+		return status.Errorf(codes.InvalidArgument, "req.config_set: required")
 	case len(req.GetFiles().GetFiles()) == 0:
-		return status.Errorf(codes.InvalidArgument, "must provide at least 1 file to validate")
+		return status.Errorf(codes.InvalidArgument, "req.files: at least 1 file required")
 	}
 	for i, file := range req.GetFiles().GetFiles() {
 		if file.GetPath() == "" {
-			return status.Errorf(codes.InvalidArgument, "must specify path for file[%d]", i)
+			return status.Errorf(codes.InvalidArgument, "req.file[%d].path: required", i)
 		}
 		if file.GetRawContent() == nil && file.GetSignedUrl() == "" {
-			return status.Errorf(codes.InvalidArgument, "must either provide raw_content or signed_url for file %q", file.GetPath())
+			return status.Errorf(codes.InvalidArgument, "req.file[%d (path=%q)].content: must provide raw_content or signed_url", i, file.GetPath())
 		}
 	}
 	return nil
