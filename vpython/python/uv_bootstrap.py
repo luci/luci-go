@@ -17,9 +17,10 @@
 import argparse
 import glob
 import os
+import shutil
+import stat
 import subprocess
 import sys
-import shutil
 import tempfile
 import time
 import re
@@ -230,11 +231,13 @@ def main():
         p3 = os.path.join(scripts_dir, "python3.exe")
         for p in (p1, p3):
             if os.path.exists(p):
+                os.chmod(p, stat.S_IWRITE)
                 os.remove(p)
             shutil.copyfile(sys.executable, p)
         for dll in glob.glob(os.path.join(cpython_dir, '*.dll')):
             target_dll = os.path.join(scripts_dir, os.path.basename(dll))
             if os.path.exists(target_dll):
+                os.chmod(target_dll, stat.S_IWRITE)
                 os.remove(target_dll)
             shutil.copyfile(dll, target_dll)
 
