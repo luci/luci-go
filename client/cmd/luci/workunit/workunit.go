@@ -214,11 +214,20 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	extracted.EnrichFromWorkUnit(wu)
 	ids.PrintDerivedIDs(os.Stdout, extracted)
 
+	isRoot := wu.WorkUnitId == "root"
+	var rootAgg *pb.TestAggregation
+	if isRoot {
+		rootAgg = fetchRootInvocationAggregation(rpcCtx, client, invID)
+	}
+
 	if wu.WorkUnitId != "" && (extracted == nil || extracted.WorkUnitID == "") {
 		fmt.Printf("Work Unit ID: %s\n", wu.WorkUnitId)
 	}
 	if wu.Parent != "" {
 		fmt.Printf("Parent:       %s\n", format.FormatWorkUnitBreadcrumb(wu.Parent))
+	}
+	if isRoot {
+		printRootInvocationMetadata(resolved.RootInvocation)
 	}
 	if wu.Kind != "" {
 		fmt.Printf("Kind:         %s\n", wu.Kind)
@@ -232,6 +241,14 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	fmt.Printf("State:        %s\n", wu.State)
 	if wu.FinalizationState != pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED {
 		fmt.Printf("Finalization: %s\n", wu.FinalizationState)
+	}
+	if rootAgg != nil {
+		if modSummary := format.FormatModuleStatusCountsSummary(rootAgg.GetModuleStatusCounts()); modSummary != "" {
+			fmt.Printf("Module Statuses: %s\n", modSummary)
+		}
+		if verdictSummary := format.FormatVerdictCountsSummary(rootAgg.GetTotalVerdictCounts()); verdictSummary != "" {
+			fmt.Printf("Test Verdicts:   %s\n", verdictSummary)
+		}
 	}
 	if len(wu.ChildWorkUnits) > 0 {
 		fmt.Printf("Child Work Units (%d):\n", len(wu.ChildWorkUnits))
@@ -267,4 +284,64 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	}
 
 	return 0
+}
+
+func fetchRootInvocationAggregation(ctx context.Context, client pb.ResultDBClient, normInv string) *pb.TestAggregation {
+	if client == nil || normInv == "" {
+		return nil
+	}
+	resp, err := client.QueryTestAggregations(ctx, &pb.QueryTestAggregationsRequest{
+		Parent: "rootInvocations/" + normInv,
+		Predicate: &pb.TestAggregationPredicate{
+			AggregationLevel: pb.AggregationLevel_INVOCATION,
+		},
+		PageSize: 1,
+	})
+	if err != nil || resp == nil || len(resp.Aggregations) == 0 {
+		return nil
+	}
+	return resp.Aggregations[0]
+}
+
+func printRootInvocationMetadata(rootInv *pb.RootInvocation) {
+	if rootInv == nil {
+		return
+	}
+	if realm := rootInv.GetRealm(); realm != "" {
+		fmt.Printf("Realm:        %s\n", realm)
+	}
+	if ab := rootInv.GetPrimaryBuild().GetAndroidBuild(); ab != nil {
+		if ab.GetBranch() != "" {
+			fmt.Printf("Branch:       %s\n", ab.GetBranch())
+		}
+		if ab.GetBuildTarget() != "" {
+			fmt.Printf("Target:       %s\n", ab.GetBuildTarget())
+		}
+		if ab.GetBuildId() != "" {
+			fmt.Printf("Build ID:     %s\n", ab.GetBuildId())
+		}
+	}
+	if sys := rootInv.GetProducerResource().GetSystem(); sys != "" {
+		fmt.Printf("Scheduler:    %s\n", sys)
+	}
+	tags := make(map[string]string, len(rootInv.GetTags()))
+	for _, t := range rootInv.GetTags() {
+		if k, v := t.GetKey(), t.GetValue(); k != "" && v != "" && tags[k] == "" {
+			tags[k] = v
+		}
+	}
+	for _, item := range []struct {
+		key   string
+		label string
+	}{
+		{key: "runner", label: "Runner:       "},
+		{key: "result_link", label: "Result Link:  "},
+		{key: "sponge_invocation_id", label: "Sponge Invocation ID: "},
+		{key: "test_uri", label: "Test URI:     "},
+		{key: "runner_url", label: "Runner URL:   "},
+	} {
+		if v := tags[item.key]; v != "" {
+			fmt.Printf("%s%s\n", item.label, v)
+		}
+	}
 }

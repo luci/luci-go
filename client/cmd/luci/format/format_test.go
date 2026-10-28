@@ -195,6 +195,51 @@ func TestFormatVerdictCountsInline(t *testing.T) {
 			assert.Loosely(t, FormatVerdictCountsInline(vc), should.Equal("[50 passed]"))
 		})
 	})
+
+	ftt.Run(`FormatVerdictCountsSummary`, t, func(t *ftt.Test) {
+		t.Run(`nil returns empty`, func(t *ftt.Test) {
+			assert.Loosely(t, FormatVerdictCountsSummary(nil), should.Equal(""))
+		})
+
+		t.Run(`zero counts returns 0 tests ran`, func(t *ftt.Test) {
+			assert.Loosely(t, FormatVerdictCountsSummary(&rdbpb.TestAggregation_VerdictCounts{}), should.Equal("0 tests ran"))
+		})
+
+		t.Run(`populated counts includes total`, func(t *ftt.Test) {
+			vc := &rdbpb.TestAggregation_VerdictCounts{
+				Failed:           3,
+				ExecutionErrored: 1,
+				Flaky:            2,
+				Passed:           144,
+				Skipped:          5,
+			}
+			assert.Loosely(t, FormatVerdictCountsSummary(vc), should.Equal("[3 failed, 1 execution_errored, 2 flaky, 144 passed, 5 skipped] (155 total)"))
+		})
+	})
+
+	ftt.Run(`FormatModuleStatusCountsSummary`, t, func(t *ftt.Test) {
+		t.Run(`nil or zero returns empty`, func(t *ftt.Test) {
+			assert.Loosely(t, FormatModuleStatusCountsSummary(nil), should.Equal(""))
+			assert.Loosely(t, FormatModuleStatusCountsSummary(&rdbpb.TestAggregation_ModuleStatusCounts{}), should.Equal(""))
+		})
+
+		t.Run(`failed with zero succeeded explicitly shows 0 succeeded`, func(t *ftt.Test) {
+			mc := &rdbpb.TestAggregation_ModuleStatusCounts{
+				Failed: 2,
+			}
+			assert.Loosely(t, FormatModuleStatusCountsSummary(mc), should.Equal("[2 failed, 0 succeeded] (2 total)"))
+		})
+
+		t.Run(`mixed module statuses`, func(t *ftt.Test) {
+			mc := &rdbpb.TestAggregation_ModuleStatusCounts{
+				Failed:    1,
+				Flaky:     1,
+				Succeeded: 18,
+				Skipped:   2,
+			}
+			assert.Loosely(t, FormatModuleStatusCountsSummary(mc), should.Equal("[1 failed, 1 flaky, 18 succeeded, 2 skipped] (22 total)"))
+		})
+	})
 }
 
 func TestFormatSummaryHTML(t *testing.T) {

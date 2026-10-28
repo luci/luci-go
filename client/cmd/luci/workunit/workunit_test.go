@@ -35,10 +35,11 @@ import (
 
 type mockWorkUnitResultDBClient struct {
 	pb.ResultDBClient
-	getRootInvocation func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
-	getInvocation     func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
-	getWorkUnit       func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
-	batchGetWorkUnits func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error)
+	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
+	getInvocation         func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
+	getWorkUnit           func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
+	batchGetWorkUnits     func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error)
+	queryTestAggregations func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
 }
 
 func (m *mockWorkUnitResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
@@ -67,6 +68,21 @@ func (m *mockWorkUnitResultDBClient) BatchGetWorkUnits(ctx context.Context, in *
 		return m.batchGetWorkUnits(ctx, in)
 	}
 	return nil, status.Error(codes.NotFound, "not found")
+}
+
+func (m *mockWorkUnitResultDBClient) QueryTestAggregations(ctx context.Context, in *pb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*pb.QueryTestAggregationsResponse, error) {
+	if m.queryTestAggregations != nil {
+		return m.queryTestAggregations(ctx, in)
+	}
+	return &pb.QueryTestAggregationsResponse{}, nil
+}
+
+func (m *mockWorkUnitResultDBClient) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
+	return &pb.QueryWorkUnitsResponse{}, nil
+}
+
+func (m *mockWorkUnitResultDBClient) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest, opts ...grpc.CallOption) (*pb.QueryArtifactsResponse, error) {
+	return &pb.QueryArtifactsResponse{}, nil
 }
 
 func TestCmdWorkUnit(t *testing.T) {
@@ -407,6 +423,128 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Module Name:       ModA"))
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID:      ants-wu123"))
 			assert.Loosely(t, out, should.NotContainSubstring("Work Unit ID: ants-wu123"))
+		})
+
+		t.Run(`displays RootInvocation metadata and invocation-level verdict and module counts on root work unit only`, func(t *ftt.Test) {
+			var gotAggReq *pb.QueryTestAggregationsRequest
+			client := &mockWorkUnitResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:  in.Name,
+						Realm: "android:prod",
+						PrimaryBuild: &pb.BuildDescriptor{
+							Definition: &pb.BuildDescriptor_AndroidBuild{
+								AndroidBuild: &pb.AndroidBuildDescriptor{
+									DataRealm:   "prod",
+									Branch:      "git_main",
+									BuildTarget: "cf_x86_64_phone-trunk_staging-userdebug",
+									BuildId:     "12345678",
+								},
+							},
+						},
+						ProducerResource: &pb.ProducerResource{
+							System: "atp",
+							Name:   "testRuns/98765432",
+						},
+						Tags: []*pb.StringPair{
+							{Key: "runner_url", Value: "https://tradefed.example.com/run/123"},
+							{Key: "test_uri", Value: ""},
+							{Key: "runner", Value: "Tradefed"},
+							{Key: "result_link", Value: "https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898"},
+							{Key: "sponge_invocation_id", Value: "d1234567-89ab-cdef-0123-456789abcdef"},
+						},
+					}, nil
+				},
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					if in.Name == "rootInvocations/ants-i77100010600769898/workUnits/root" {
+						return &pb.WorkUnit{
+							Name:              in.Name,
+							WorkUnitId:        "root",
+							Kind:              "ATP_INVOCATION",
+							State:             pb.WorkUnit_FAILED,
+							FinalizationState: pb.WorkUnit_FINALIZED,
+							ChildWorkUnits: []string{
+								"rootInvocations/ants-i77100010600769898/workUnits/ants-wu1",
+								"rootInvocations/ants-i77100010600769898/workUnits/ants-wu2",
+							},
+						}, nil
+					}
+					return &pb.WorkUnit{
+						Name:       in.Name,
+						WorkUnitId: "ants-wu1",
+						State:      pb.WorkUnit_SUCCEEDED,
+					}, nil
+				},
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					gotAggReq = in
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
+									Failed:  3,
+									Flaky:   2,
+									Passed:  145,
+									Skipped: 5,
+								},
+								ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{
+									Failed:    1,
+									Flaky:     1,
+									Succeeded: 18,
+								},
+							},
+						},
+					}, nil
+				},
+			}
+
+			r := &workUnitGetRun{
+				client:       client,
+				invocationID: "I77100010600769898",
+				workUnitID:   "root",
+			}
+
+			out := testutil.CaptureStdout(func() {
+				assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			})
+
+			assert.Loosely(t, gotAggReq, should.NotBeNil)
+			assert.Loosely(t, gotAggReq.Parent, should.Equal("rootInvocations/ants-i77100010600769898"))
+			assert.Loosely(t, gotAggReq.Predicate.GetAggregationLevel(), should.Equal(pb.AggregationLevel_INVOCATION))
+
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit ID: root\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Realm:        android:prod\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Branch:       git_main\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Target:       cf_x86_64_phone-trunk_staging-userdebug\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Build ID:     12345678\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Scheduler:    atp\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Runner:       Tradefed\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Result Link:  https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Sponge Invocation ID: d1234567-89ab-cdef-0123-456789abcdef\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("Test URI:"))
+			assert.Loosely(t, out, should.ContainSubstring("Runner URL:   https://tradefed.example.com/run/123\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Kind:         ATP_INVOCATION\n"))
+			assert.Loosely(t, out, should.ContainSubstring("State:        FAILED\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Finalization: FINALIZED\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Statuses: [1 failed, 1 flaky, 18 succeeded] (20 total)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   [3 failed, 2 flaky, 145 passed, 5 skipped] (155 total)\n"))
+
+			gotAggReq = nil
+			rChild := &workUnitGetRun{
+				client:       client,
+				invocationID: "I77100010600769898",
+				workUnitID:   "ants-wu1",
+			}
+
+			outChild := testutil.CaptureStdout(func() {
+				assert.Loosely(t, rChild.Run(nil, nil, nil), should.Equal(0))
+			})
+
+			assert.Loosely(t, gotAggReq, should.BeNil)
+			assert.Loosely(t, outChild, should.ContainSubstring("Work Unit ID: ants-wu1\n"))
+			assert.Loosely(t, outChild, should.NotContainSubstring("Realm:"))
+			assert.Loosely(t, outChild, should.NotContainSubstring("Branch:"))
+			assert.Loosely(t, outChild, should.NotContainSubstring("Target:"))
+			assert.Loosely(t, outChild, should.NotContainSubstring("Build ID:"))
 		})
 	})
 }

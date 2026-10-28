@@ -117,6 +117,57 @@ func FormatVerdictCountsInline(vc *rdbpb.TestAggregation_VerdictCounts) string {
 	return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
 }
 
+// FormatVerdictCountsSummary formats verdict counts with a total count suffix,
+// e.g. "[245 failed, 218 passed, 7 skipped] (470 total)", or "0 tests ran" if
+// all counts are zero. Returns "" if vc is nil.
+func FormatVerdictCountsSummary(vc *rdbpb.TestAggregation_VerdictCounts) string {
+	if vc == nil {
+		return ""
+	}
+	total := vc.Failed + vc.ExecutionErrored + vc.Precluded + vc.Flaky + vc.Exonerated + vc.Passed + vc.Skipped
+	if total == 0 {
+		return "0 tests ran"
+	}
+	return fmt.Sprintf("%s (%d total)", FormatVerdictCountsInline(vc), total)
+}
+
+// FormatModuleStatusCountsSummary formats module status counts as a bracketed
+// summary with a total count suffix, e.g. "[1 failed, 1 flaky, 18 succeeded] (20 total)".
+// Returns "" if mc is nil or all counts are zero.
+func FormatModuleStatusCountsSummary(mc *rdbpb.TestAggregation_ModuleStatusCounts) string {
+	if mc == nil {
+		return ""
+	}
+	hasProblems := mc.Failed > 0 || mc.Flaky > 0 || mc.Cancelled > 0
+	total := mc.Failed + mc.Flaky + mc.Cancelled + mc.Running + mc.Pending + mc.Succeeded + mc.Skipped
+	if total == 0 {
+		return ""
+	}
+	var parts []string
+	if mc.Failed > 0 {
+		parts = append(parts, fmt.Sprintf("%d failed", mc.Failed))
+	}
+	if mc.Flaky > 0 {
+		parts = append(parts, fmt.Sprintf("%d flaky", mc.Flaky))
+	}
+	if mc.Cancelled > 0 {
+		parts = append(parts, fmt.Sprintf("%d cancelled", mc.Cancelled))
+	}
+	if mc.Running > 0 {
+		parts = append(parts, fmt.Sprintf("%d running", mc.Running))
+	}
+	if mc.Pending > 0 {
+		parts = append(parts, fmt.Sprintf("%d pending", mc.Pending))
+	}
+	if mc.Succeeded > 0 || hasProblems {
+		parts = append(parts, fmt.Sprintf("%d succeeded", mc.Succeeded))
+	}
+	if mc.Skipped > 0 {
+		parts = append(parts, fmt.Sprintf("%d skipped", mc.Skipped))
+	}
+	return fmt.Sprintf("[%s] (%d total)", strings.Join(parts, ", "), total)
+}
+
 // FetchArtifactContent downloads the artifact content from fetchURL using an HTTP request with context.
 func FetchArtifactContent(ctx context.Context, httpClient *http.Client, fetchURL string, out io.Writer) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", fetchURL, nil)
