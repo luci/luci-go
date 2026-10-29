@@ -77,7 +77,7 @@ import { useUnclaimRepairTask } from './use_claim_repair_task';
 import { RepairLab, useRepairLab } from './use_repair_lab';
 import { useWorkforceActivity } from './use_workforce_activity';
 
-const MAX_VISIBLE_DUTS = 5;
+const MAX_VISIBLE_DUTS = 2;
 const CLAIMED_DUTS_MAX_WIDTH = 480;
 
 const formatDuration = (d?: ProtoDuration): string =>

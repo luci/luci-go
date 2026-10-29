@@ -336,12 +336,12 @@ describe('<WorkforceActivityView />', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows at most 5 claimed DUTs initially, expands all on "And x more...", and collapses on "Show less"', () => {
+  it('shows at most 2 claimed DUTs initially, expands all on "And x more...", and collapses on "Show less"', () => {
     localStorage.setItem(
       getFeatureFlagLocalStorageKey(enableWorkforceInProgressRepairs),
       'on',
     );
-    const manyDuts = Array.from({ length: 7 }, (_, i) => ({
+    const manyDuts = Array.from({ length: 4 }, (_, i) => ({
       taskId: `40${i + 1}`,
       dutId: `chromeos-dut-${i + 1}`,
       score: 100,
@@ -371,21 +371,18 @@ describe('<WorkforceActivityView />', () => {
 
     renderWorkforceView();
 
-    for (let i = 1; i <= 5; i++) {
-      expect(
-        screen.getByText(new RegExp(`chromeos-dut-${i}\\b`, 'i')),
-      ).toBeInTheDocument();
-    }
-    expect(screen.queryByText(/chromeos-dut-6/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/chromeos-dut-7/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/chromeos-dut-1/i)).toBeInTheDocument();
+    expect(screen.getByText(/chromeos-dut-2/i)).toBeInTheDocument();
+    expect(screen.queryByText(/chromeos-dut-3/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/chromeos-dut-4/i)).not.toBeInTheDocument();
 
     const moreButton = screen.getByRole('button', { name: 'And 2 more...' });
     expect(moreButton).toBeInTheDocument();
 
     fireEvent.click(moreButton);
 
-    expect(screen.getByText(/chromeos-dut-6/i)).toBeInTheDocument();
-    expect(screen.getByText(/chromeos-dut-7/i)).toBeInTheDocument();
+    expect(screen.getByText(/chromeos-dut-3/i)).toBeInTheDocument();
+    expect(screen.getByText(/chromeos-dut-4/i)).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /And \d+ more\.\.\./i }),
     ).not.toBeInTheDocument();
@@ -395,8 +392,8 @@ describe('<WorkforceActivityView />', () => {
 
     fireEvent.click(showLessButton);
 
-    expect(screen.queryByText(/chromeos-dut-6/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/chromeos-dut-7/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/chromeos-dut-3/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/chromeos-dut-4/i)).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'And 2 more...' }),
     ).toBeInTheDocument();
