@@ -16,6 +16,7 @@ package handler
 
 import (
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
@@ -149,9 +150,10 @@ func TestShouldCreditRunQuotaOnPostAction(t *testing.T) {
 		}
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:     "chromium/1111111111111-1-deadbeef",
-				Status: run.Status_FAILED,
-				Mode:   run.DryRun,
+				ID:           "chromium/1111111111111-1-deadbeef",
+				Status:       run.Status_FAILED,
+				Mode:         run.DryRun,
+				QuotaDebited: true,
 				Tryjobs: &run.Tryjobs{
 					State: execState,
 				},
@@ -220,6 +222,28 @@ func TestShouldCreditRunQuotaOnPostAction(t *testing.T) {
 			rs.CreditQuotaRequested = true
 			addCritical(1, tryjob.Status_ENDED)
 			assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
+		})
+
+		t.Run("returns false if quota was not debited and run never started", func(t *ftt.Test) {
+			rs.Status = run.Status_CANCELLED
+			rs.QuotaDebited = false
+			rs.Tryjobs = nil
+			assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
+		})
+
+		t.Run("returns true if quota was debited before computation failed", func(t *ftt.Test) {
+			rs.Status = run.Status_FAILED
+			rs.QuotaDebited = true
+			rs.Tryjobs = nil
+			assert.That(t, shouldCreditRunQuota(rs), should.BeTrue)
+		})
+
+		t.Run("returns true for older run with QuotaDebited=false if StartTime is set", func(t *ftt.Test) {
+			rs.Status = run.Status_FAILED
+			rs.QuotaDebited = false
+			rs.StartTime = time.Unix(1, 0).UTC()
+			addCritical(1, tryjob.Status_ENDED)
+			assert.That(t, shouldCreditRunQuota(rs), should.BeTrue)
 		})
 	})
 }

@@ -138,6 +138,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.BilledTo.Email())
 		switch quotaOp, userLimit, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
 		case err == nil && quotaOp != nil:
+			rs.QuotaDebited = true
 			rs.LogInfof(ctx, logEntryLabelRunQuotaBalanceMessage, "Run quota debited from %s; balance: %d", rs.Run.BilledTo.Email(), quotaOp.GetNewBalance())
 		case errors.Is(err, quota.ErrQuotaApply) && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
 			// run quota isn't currently available for the user; leave the run in pending.

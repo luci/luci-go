@@ -58,6 +58,7 @@ func TestCancel(t *testing.T) {
 				ConfigGroupID: cg.ID,
 				CreateTime:    clock.Now(ctx).UTC().Add(-2 * time.Minute),
 				CLs:           common.CLIDs{clid},
+				Mode:          run.DryRun,
 			},
 		}
 		assert.Loosely(t, datastore.Put(ctx, &changelist.CL{
@@ -73,6 +74,7 @@ func TestCancel(t *testing.T) {
 		t.Run("Cancel works", func(t *ftt.Test) {
 			rs.Status = run.Status_RUNNING
 			rs.StartTime = now.Add(-1 * time.Minute)
+			rs.QuotaDebited = true
 			res, err := h.Cancel(ctx, rs, []string{"user request"})
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
@@ -81,6 +83,15 @@ func TestCancel(t *testing.T) {
 			assert.That(t, res.State.CancellationReasons, should.Match([]string{"user request"}))
 			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.That(t, res.State.CreditQuotaRequested, should.BeTrue)
+		})
+
+		t.Run("Cancels PENDING Run without crediting un-debited quota", func(t *ftt.Test) {
+			rs.Status = run.Status_PENDING
+			res, err := h.Cancel(ctx, rs, []string{"user request"})
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
+			assert.That(t, res.State.CreditQuotaRequested, should.BeFalse)
 		})
 
 		t.Run("Filter cancellation reasons", func(t *ftt.Test) {

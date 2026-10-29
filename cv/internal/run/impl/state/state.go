@@ -111,6 +111,7 @@ func (rs *RunState) DeepCopy() *RunState {
 			LatestCLsRefresh:                  rs.LatestCLsRefresh,
 			LatestTryjobsRefresh:              rs.LatestTryjobsRefresh,
 			QuotaExhaustionMsgLongOpRequested: rs.QuotaExhaustionMsgLongOpRequested,
+			QuotaDebited:                      rs.QuotaDebited,
 			CreditQuotaRequested:              rs.CreditQuotaRequested,
 		},
 		SubmissionScheduled: rs.SubmissionScheduled,

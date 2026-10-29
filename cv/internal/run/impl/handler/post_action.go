@@ -93,6 +93,11 @@ func shouldCreditRunQuota(rs *state.RunState) bool {
 		return false
 	case rs.CreditQuotaRequested: // only credit once
 		return false
+	// TODO(b/576279201): drop the StartTime check once Runs started before
+	// QuotaDebited existed have ended
+	case !rs.QuotaDebited && rs.StartTime.IsZero():
+		// Don't credit quota that was never debited. Every started Run was.
+		return false
 	default:
 		return tryjob.AreAllCriticalTryjobsEnded(rs.Tryjobs.GetState())
 	}

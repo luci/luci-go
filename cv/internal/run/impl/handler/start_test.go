@@ -172,6 +172,7 @@ func TestStart(t *testing.T) {
 			assert.Loosely(t, deps.qm.debitRunQuotaCalls, should.Equal(1))
 
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+			assert.That(t, res.State.QuotaDebited, should.BeTrue)
 			assert.That(t, res.State.StartTime, should.Match(ct.Clock.Now().UTC()))
 			assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 				Requirement: &tryjob.Requirement{
@@ -223,6 +224,7 @@ func TestStart(t *testing.T) {
 			assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
+			assert.That(t, res.State.QuotaDebited, should.BeFalse)
 			ops := res.State.OngoingLongOps.GetOps()
 			assert.Loosely(t, len(ops), should.Equal(1))
 			assert.Loosely(t, ops, should.ContainKey("1-1"))
@@ -515,6 +517,7 @@ func TestStart(t *testing.T) {
 			assert.Loosely(t, deps.qm.debitRunQuotaCalls, should.Equal(0))
 
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+			assert.That(t, res.State.QuotaDebited, should.BeFalse)
 			assert.That(t, res.State.StartTime, should.Match(ct.Clock.Now().UTC()))
 			assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 				Requirement:           &tryjob.Requirement{},

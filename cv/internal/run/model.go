@@ -150,6 +150,8 @@ type Run struct {
 	// - will be submitted only after all the deps are submitted.
 	DepRuns common.RunIDs
 
+	// QuotaDebited is true once run quota has been debited for this Run.
+	QuotaDebited bool `gae:",noindex"`
 	// CreditQuotaRequested is true when the run has already requested a long
 	// op to credit the quota.
 	CreditQuotaRequested bool `gae:",noindex"`

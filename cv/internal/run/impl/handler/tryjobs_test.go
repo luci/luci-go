@@ -784,9 +784,10 @@ func TestShouldCreditRunQuotaOnTryjobsUpdated(t *testing.T) {
 		}
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:     "chromium/1111111111111-1-deadbeef",
-				Status: run.Status_FAILED,
-				Mode:   run.DryRun,
+				ID:           "chromium/1111111111111-1-deadbeef",
+				Status:       run.Status_FAILED,
+				Mode:         run.DryRun,
+				QuotaDebited: true,
 				Tryjobs: &run.Tryjobs{
 					State: execState,
 				},
