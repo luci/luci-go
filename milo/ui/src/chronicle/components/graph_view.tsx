@@ -22,6 +22,7 @@ import {
   useEdgesState,
   ReactFlowProvider,
   useReactFlow,
+  useStore,
   Node,
   FitViewOptions,
   Edge,
@@ -60,6 +61,14 @@ import { InspectorPanel } from './inspector_panel/inspector_panel';
 const SELECTION_FIT_MAX_ZOOM = 0.7;
 // Chosen to feel snappy when iterating through search results.
 const SELECTION_FIT_DURATION = 200;
+// The amount of blank canvas that extends horizontally beyond the graph, in
+// screen pixels. Large enough to let the user pull nodes out from behind the
+// overlay panels (search panel, controls, minimap) at any zoom level.
+const LEFT_PADDING_PX = 400;
+// Comfortable margin so nodes don't press directly against the viewport borders.
+const RIGHT_PADDING_PX = 50;
+const TOP_PADDING_PX = 50;
+const BOTTOM_PADDING_PX = 50;
 
 function Graph() {
   const {
@@ -72,6 +81,11 @@ function Graph() {
   const [nodes, setNodes, onNodesChange] = useNodesState<ChronicleNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { fitView } = useReactFlow();
+  // React Flow stores the viewport as a `[x, y, zoom]` tuple, so `transform[2]`
+  // is the current zoom scale (1 = 100%). Selecting just that number means this
+  // component only re-renders when the user zooms, not on every pan frame
+  // (unlike `useViewport()`, which returns a new object on every move).
+  const zoom = useStore((s) => s.transform[2]);
   const [showAssignmentEdges, setShowAssignmentEdges] = useState(false);
   const [showCriticalPath, setShowCriticalPath] = useState(false);
   const [autoFitSelection, setAutoFitSelection] = useState(true);
@@ -515,15 +529,19 @@ function Graph() {
       maxY = Math.max(maxY, y + h);
     }
 
-    // Comfortable margin so nodes aren't pressed directly against the screen edges
-    const PADDING_X = 300;
-    const PADDING_Y = 150;
+    // Convert the screen-pixel margins to graph units at the current zoom so
+    // the amount of blank canvas that can be panned into view is the same at
+    // every zoom level.
+    const paddingLeft = LEFT_PADDING_PX / zoom;
+    const paddingRight = RIGHT_PADDING_PX / zoom;
+    const paddingTop = TOP_PADDING_PX / zoom;
+    const paddingBottom = BOTTOM_PADDING_PX / zoom;
 
     return [
-      [minX - PADDING_X, minY - PADDING_Y],
-      [maxX + PADDING_X, maxY + PADDING_Y],
+      [minX - paddingLeft, minY - paddingTop],
+      [maxX + paddingRight, maxY + paddingBottom],
     ];
-  }, [nodes]);
+  }, [nodes, zoom]);
 
   return (
     <PanelGroup
