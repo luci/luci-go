@@ -12,10 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {
+  IrmIncident,
+  PriorityRule,
+  RepairQueueItem,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 
 import sampleAndroidDevices from './data/android_devices.json';
 import sampleChromeosDevices from './data/chromeos_devices.json';
+import { createFakeFleetConsoleBackend } from './fake_fleet_console_backend';
 import { FleetConsoleMockAPI } from './mock_api_handler';
 
 describe('FleetConsoleMockAPI', () => {
@@ -579,5 +585,185 @@ describe('FleetConsoleMockAPI', () => {
     );
 
     FleetConsoleMockAPI.disableBrowserInterceptor();
+  });
+
+  it('mutates repair queue claims and priority rules statefully over pRPC', async () => {
+    const backend = createFakeFleetConsoleBackend();
+    backend.setAuthState({
+      identity: 'user:tech@google.com',
+      email: 'tech@google.com',
+    });
+    backend.repairQueue.seed({
+      repairQueueItems: [
+        RepairQueueItem.create({
+          taskId: 'task-1',
+          dutId: 'dut-1',
+          pools: ['wificell'],
+          priorityScore: '100',
+          matchedRuleIds: ['rule-1'],
+        }),
+      ],
+    });
+    backend.priorityRules.seed([
+      PriorityRule.create({
+        id: 'rule-1',
+        expressionAip160: 'labels."label-pool" = "wificell"',
+        weight: '100',
+      }),
+    ]);
+    backend.install();
+
+    try {
+      // Claim task-1
+      await fetch('/prpc/fleetconsole.FleetConsole/ClaimRepairTask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: 'task-1' }),
+      });
+      const listAfterClaimRes = await fetch(
+        '/prpc/fleetconsole.FleetConsole/ListRepairQueue',
+        { method: 'POST', body: '{}' },
+      );
+      const listAfterClaim = JSON.parse(
+        (await listAfterClaimRes.text()).replace(")]}'\n", ''),
+      );
+      expect(listAfterClaim.repairQueueItems[0].claimedBy).toBe(
+        'tech@google.com',
+      );
+      expect(listAfterClaim.inProgressCount).toBe(1);
+
+      // Update rule-1 weight from 100 -> 250 and verify score recomputation
+      await fetch('/prpc/fleetconsole.FleetConsole/UpdatePriorityRule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'rule-1',
+          expressionAip160: 'labels."label-pool" = "wificell"',
+          weight: '250',
+        }),
+      });
+      const listAfterRuleRes = await fetch(
+        '/prpc/fleetconsole.FleetConsole/ListRepairQueue',
+        { method: 'POST', body: '{}' },
+      );
+      const listAfterRule = JSON.parse(
+        (await listAfterRuleRes.text()).replace(")]}'\n", ''),
+      );
+      expect(listAfterRule.repairQueueItems[0].priorityScore).toBe('250');
+    } finally {
+      backend.uninstall();
+    }
+  });
+
+  it('supports direct typed calls on composable domain fake services', async () => {
+    const backend = createFakeFleetConsoleBackend();
+    backend.repairQueue.seed({
+      repairQueueItems: [
+        RepairQueueItem.create({
+          taskId: 'task-001',
+          dutId: 'dut-001',
+          pools: ['mock-pool-dev'],
+        }),
+      ],
+    });
+    backend.irm.seed([
+      IrmIncident.create({
+        id: 'irm-001',
+        masterBugId: '458449804',
+        title: 'OS provision failures on sim-model-nine',
+      }),
+    ]);
+
+    // 1. Create a priority rule directly via typed protobuf method
+    const createRes = await backend.priorityRules.CreatePriorityRule({
+      priorityRule: {
+        id: 'rule-direct-1',
+        expressionAip160: 'labels."label-pool" = "mock-pool-dev"',
+        weight: '420',
+        lab: 'EM25',
+      },
+    });
+    expect(createRes.priorityRule?.id).toBe('rule-direct-1');
+
+    // 2. Composed FakeRepairQueueService recomputes priorityScore from FakePriorityRulesService
+    const queueRes = await backend.repairQueue.ListRepairQueue({
+      filter: '',
+      pageSize: 50,
+      pageToken: '',
+      orderBy: '',
+      lab: '',
+    });
+    const devItem = queueRes.repairQueueItems.find(
+      (i) => i.taskId === 'task-001',
+    );
+    expect(devItem?.priorityScore).toBe('420');
+    expect(devItem?.matchedRuleIds).toContain('rule-direct-1');
+
+    // 3. Direct IRM update persists in FakeIrmService
+    const updateIrmRes = await backend.irm.UpdateIrmIncident({
+      id: 'irm-001',
+      expressionsAip160: ['labels."label-pool" = "mock-pool-dev"'],
+    });
+    expect(updateIrmRes.irmIncident?.expressionsAip160).toEqual([
+      'labels."label-pool" = "mock-pool-dev"',
+    ]);
+
+    // 4. Direct Permissions check reflects configured state
+    backend.permissions.setGroupPermission('fleet-console-admins', false);
+    const permRes = await backend.permissions.CheckPermission({
+      group: 'fleet-console-admins',
+    });
+    expect(permRes.hasPermission).toBe(false);
+  });
+
+  it('generates monotonic rule IDs after deletion and binds globalThis on passthrough fetch', async () => {
+    const backend = createFakeFleetConsoleBackend();
+    backend.priorityRules.seed([
+      PriorityRule.create({
+        id: 'rule-1',
+        expressionAip160: 'model = "volteer"',
+        weight: '100',
+      }),
+    ]);
+
+    const second = await backend.priorityRules.CreatePriorityRule({
+      priorityRule: {
+        id: '0',
+        expressionAip160: 'model = "brya"',
+        weight: '200',
+      },
+    });
+    expect(second.priorityRule?.id).toBe('rule-2');
+
+    await backend.priorityRules.DeletePriorityRule({ id: 'rule-1' });
+
+    const third = await backend.priorityRules.CreatePriorityRule({
+      priorityRule: {
+        id: '0',
+        expressionAip160: 'model = "rex"',
+        weight: '300',
+      },
+    });
+    expect(third.priorityRule?.id).toBe('rule-3');
+
+    const prevFetch = globalThis.fetch;
+    let capturedThis: unknown;
+    globalThis.fetch = function mockNativeFetch(
+      this: unknown,
+    ): Promise<Response> {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      capturedThis = this;
+      return Promise.resolve(new Response('ok', { status: 200 }));
+    };
+
+    backend.install();
+    try {
+      const res = await fetch('/api/healthz');
+      expect(res.status).toBe(200);
+      expect(capturedThis).toBe(globalThis);
+    } finally {
+      backend.uninstall();
+      globalThis.fetch = prevFetch;
+    }
   });
 });

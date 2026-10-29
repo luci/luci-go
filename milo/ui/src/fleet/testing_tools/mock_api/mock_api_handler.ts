@@ -826,6 +826,11 @@ export interface MockCallRecord {
   headers?: unknown;
 }
 
+/**
+ * @deprecated Legacy prototype/test fixture mock. New integration tests should
+ * use the standalone stateful protobuf fake backend (`fakeFleetConsoleBackend` /
+ * `createFakeFleetConsoleBackend`).
+ */
 export class FleetConsoleMockAPI {
   private static fixtures: Record<string, unknown> =
     deepClone(DEFAULT_FIXTURES);
