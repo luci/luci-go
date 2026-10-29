@@ -56,6 +56,7 @@ func getApplication() *cli.Application {
 			"     $ luci build get https://ci.chromium.org/ui/b/8738491827364512345\n\n" +
 			"  3. Search or inspect Buildbucket builds, their status, summary, failed steps, and step logs:\n" +
 			"     $ luci build list -builder \"chromium/ci/Linux UBSan Tests\" -n 5\n" +
+			"     $ luci build list -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529\n" +
 			"     $ luci build get -buildid 8738491827364512345\n" +
 			"     $ luci build log tail -buildid 8738491827364512345 -step compile -n 50\n\n" +
 			"  4. Inspect an invocation's build, branch, target, sources, and test verdicts:\n" +

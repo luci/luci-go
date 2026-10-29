@@ -1245,8 +1245,58 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"bug_id": "553974454"`))
 		})
 
+		t.Run(`Gerrit CL URL detection and hint`, func(t *ftt.Test) {
+			ctx := context.Background()
+
+			t.Run(`Gerrit URL emits Gerrit CL`, func(t *ftt.Test) {
+				url := "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529/10"
+				extracted, err := ExtractIDs(ctx, nil, nil, url, false)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, extracted.GerritURL, should.Equal(url))
+				assert.Loosely(t, extracted.IsEmpty(), should.BeFalse)
+
+				var textBuf bytes.Buffer
+				assert.Loosely(t, printExtractedIDs(&textBuf, extracted, false), should.BeNil)
+				assert.Loosely(t, textBuf.String(), should.Equal("Gerrit CL:         https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529/10\n"))
+
+				var jsonBuf bytes.Buffer
+				assert.Loosely(t, printExtractedIDs(&jsonBuf, extracted, true), should.BeNil)
+				assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"gerrit_url": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529/10"`))
+			})
+
+			t.Run(`Short Gerrit URL crrev.com/c/...`, func(t *ftt.Test) {
+				url := "https://crrev.com/c/8565529"
+				extracted, err := ExtractIDs(ctx, nil, nil, url, false)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, extracted.GerritURL, should.Equal(url))
+
+				var textBuf bytes.Buffer
+				assert.Loosely(t, printExtractedIDs(&textBuf, extracted, false), should.BeNil)
+				assert.Loosely(t, textBuf.String(), should.Equal("Gerrit CL:         https://crrev.com/c/8565529\n"))
+			})
+
+			t.Run(`ids command prints Gerrit CL and hint`, func(t *ftt.Test) {
+				cmd := Cmd(nil)
+				run := cmd.CommandRun().(*idsRun)
+				var out bytes.Buffer
+				run.out = &out
+
+				code := run.Run(&cli.Application{Name: "luci"}, []string{
+					"https://crrev.com/c/8565529",
+				}, nil)
+				assert.Loosely(t, code, should.Equal(0))
+				expected := "Gerrit CL:         https://crrev.com/c/8565529\n\nHint: a Gerrit CL has multiple tryjob builds; to list them, run:\n  luci build list -cl https://crrev.com/c/8565529\n"
+				assert.Loosely(t, out.String(), should.Equal(expected))
+			})
+		})
+
 		t.Run(`PrintMissingFlagsError prints derived IDs and next-step hints`, func(t *ftt.Test) {
 			var buf bytes.Buffer
+			PrintMissingFlagsError(&buf, &ExtractedIDs{GerritURL: "https://crrev.com/c/8565529"}, "flag -buildid (or a positional build URL/ID) is required")
+			expected := "Gerrit CL:         https://crrev.com/c/8565529\n\nflag -buildid (or a positional build URL/ID) is required\nHint: a Gerrit CL has multiple tryjob builds; to list them, run:\n  luci build list -cl https://crrev.com/c/8565529\n"
+			assert.Loosely(t, buf.String(), should.Equal(expected))
+
+			buf.Reset()
 			PrintMissingFlagsError(&buf, &ExtractedIDs{BugID: "553974454"}, "flag -buildid (or a positional build URL/ID) is required")
 			assert.Loosely(t, buf.String(), should.ContainSubstring("Bug ID:            553974454\n"))
 			assert.Loosely(t, buf.String(), should.ContainSubstring("Hint: to find failing invocations and tests for this bug, run:\n  luci analysis failures -bugid 553974454\n"))

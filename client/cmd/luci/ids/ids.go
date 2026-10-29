@@ -53,6 +53,7 @@ type ExtractedIDs struct {
 	ResultID           string `json:"result_id,omitempty"`
 	ArtifactID         string `json:"artifact_id,omitempty"`
 	VariantHash        string `json:"variant_hash,omitempty"`
+	GerritURL          string `json:"gerrit_url,omitempty"`
 	SummaryPlaceholder bool   `json:"summary_placeholder,omitempty"`
 	Legacy             bool   `json:"legacy,omitempty"`
 
@@ -81,7 +82,8 @@ func (e *ExtractedIDs) IsEmpty() bool {
 		e.TestID == "" &&
 		e.ResultID == "" &&
 		e.ArtifactID == "" &&
-		e.VariantHash == ""
+		e.VariantHash == "" &&
+		e.GerritURL == ""
 }
 
 // Cmd returns the subcommand for `luci ids`.
@@ -89,7 +91,7 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "ids [-json] <target>",
 		ShortDesc: "Extract resource IDs from a URL or resource name",
-		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog / LUCI Analysis URLs, ResultDB / LUCI Analysis resource names, bug URLs / shorthands, and AnTS / ATI URLs)\n" +
+		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog / LUCI Analysis URLs, Gerrit CL URLs / shorthands, ResultDB / LUCI Analysis resource names, bug URLs / shorthands, and AnTS / ATI URLs)\n" +
 			"and extract the canonical IDs (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
 			"for use with other commands.",
 		CommandRun: func() subcommands.CommandRun {
@@ -150,6 +152,9 @@ func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.E
 	if err := printExtractedIDs(out, extracted, r.jsonOut); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
+	}
+	if !r.jsonOut && extracted.GerritURL != "" {
+		fmt.Fprintf(out, "\nHint: a Gerrit CL has multiple tryjob builds; to list them, run:\n  luci build list -cl %s\n", extracted.GerritURL)
 	}
 	return 0
 }
@@ -378,6 +383,10 @@ func nextStepHint(extracted *ExtractedIDs, msg string) string {
 		return ""
 	}
 
+	if extracted.GerritURL != "" {
+		return fmt.Sprintf("Hint: a Gerrit CL has multiple tryjob builds; to list them, run:\n  luci build list -cl %s", extracted.GerritURL)
+	}
+
 	// 1. Target has Bug / Rule / Cluster IDs, and command does not accept -bugid.
 	if !strings.Contains(msg, "-bugid") {
 		if extracted.BugID != "" {
@@ -510,6 +519,9 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 	if extracted.VariantHash != "" {
 		fmt.Fprintf(out, "Variant Hash:      %s\n", extracted.VariantHash)
 	}
+	if extracted.GerritURL != "" {
+		fmt.Fprintf(out, "Gerrit CL:         %s\n", extracted.GerritURL)
+	}
 	if extracted.Legacy {
 		fmt.Fprintf(out, "Legacy:            true\n")
 	}
@@ -573,7 +585,13 @@ func extractIDs(ctx context.Context, af *base.AuthFlags, rdbClient pb.ResultDBCl
 		return extracted, nil
 	}
 
-	// 1. Android Test Investigate (ATI) URL or AnTS target
+	// 1. Gerrit CL URL or shorthand (e.g. https://<host>-review.googlesource.com/c/<project>/+/<change>[/<patchset>], crrev.com/c/...)
+	if base.IsGerritURL(raw) {
+		extracted.GerritURL = raw
+		return extracted, nil
+	}
+
+	// 2. Android Test Investigate (ATI) URL or AnTS target
 	if ok, err := extractFromAntsTarget(ctx, ensureRDBClient, raw, extracted); err != nil {
 		return nil, err
 	} else if !ok && !extractFromLogDogBuildURL(raw, extracted) && !extractFromLUCIAnalysisTarget(raw, extracted) {
