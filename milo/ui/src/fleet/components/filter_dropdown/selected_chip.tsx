@@ -13,13 +13,15 @@
 // limitations under the License.
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Chip, ChipProps, ClickAwayListener } from '@mui/material';
+import { ChipProps, ClickAwayListener } from '@mui/material';
 import { useState, forwardRef } from 'react';
 
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 
 import { FilterCategory } from '../filters/use_filters';
 import { OptionsDropdown } from '../options_dropdown/options_dropdown';
+
+import { FilterChip } from './filter_chip';
 
 export interface SelectedChipProps {
   enableSearchInput?: boolean;
@@ -45,8 +47,9 @@ export const SelectedChip = forwardRef<
 
   return (
     <>
-      <Chip
+      <FilterChip
         ref={ref}
+        maxWidth={300}
         onClick={(event) => {
           event.stopPropagation();
           if (anchorEl) {
@@ -77,13 +80,11 @@ export const SelectedChip = forwardRef<
           </p>
         }
         sx={{
-          maxWidth: 300,
           margin: '2px',
           ':hover': {
             cursor: 'pointer', // without it probably the textfield overrides the cursor
           },
         }}
-        variant="filter"
         onDelete={onDelete}
         onKeyDown={(e) => {
           e.stopPropagation();

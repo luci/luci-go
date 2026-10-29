@@ -66,6 +66,16 @@ The canonical guide is [theme/README.md](./theme/README.md). In short:
 - **No Redundant `pageSize: 1` Summary RPCs**: Never fire a separate `pageSize: 1` `List*` RPC solely to read a total or summary count that is already returned by the primary table query on the same page.
 - **Deterministic Test Mock Cleanup**: Always restore mocks (`jest.restoreAllMocks()` / `mockRestore()`) inside `afterEach()` hooks rather than at the end of `it()` / `test()` bodies so assertion failures never leak mocks into subsequent tests.
 
+### 4d. Testing Strategy & Anti-Brittleness Rules
+- **Frontend Test Hierarchy**:
+  - **Component & Page Integration Tests (`*.test.tsx`)**: Complex stateful widgets (e.g., `FilterBar`, `FCDataTable`, filter dropdowns) and page components (`*Page.test.tsx`) serve as the frontend front-door integration layer. Mount real child component trees and mock **only the network boundary** (`FleetConsoleClient` pRPC methods).
+  - **Pure Logic Unit Tests (`*.test.ts`)**: Write unit tests for pure, self-contained logic (AIP-160 filter parsers, filter adapters, formatters, math/SLA helpers, validators) and non-integration-testable edge cases.
+- **Anti-Brittleness Rules**:
+  - **No raw style / CSS layout unit tests**: Do not add unit tests asserting 1:1 on raw `sx` style objects (`expect(STYLE_OBJ.padding).toBe(...)`) or JSDOM layout properties (`toHaveStyle({ minWidth: ..., padding: ... })`). Visual consistency is enforced by `style_conventions.test.ts`, ESLint, and real App Engine screenshots (`go/ui-diff`).
+  - **No redundant thin-wrapper unit tests**: Do not add separate unit tests for thin presentational wrappers (`FilterChip`, individual table cells/rows) that have no independent business logic and are already exercised through parent integration tests.
+  - **No hardcoded domain/config lists**: Iterate over exported constants/enums dynamically rather than duplicating literal values in tests.
+  - **No internal hook mocking**: Do not mock internal helper hooks (`jest.mock('./use_...')`) when testing components; test through the user-facing interface (`getByRole`, `getByLabelText`, `findByText`, `userEvent`).
+
 ### 5. Temporary File Hygiene
 - Do not run `rm` commands to delete temporary files.
 - Store transient test outputs in the gitignored `.tmp/` directory.

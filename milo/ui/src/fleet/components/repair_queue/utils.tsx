@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Chip } from '@mui/material';
 import { ReactNode } from 'react';
 
+import { FilterChip } from '@/fleet/components/filter_dropdown/filter_chip';
 import {
   buildFilters,
   FilterCategory,
@@ -65,8 +65,8 @@ export interface ParsedPriorityRule {
 }
 
 /**
- * Extracts rule condition chips for breakdown display using native
- * SelectedChip components and AIP-160 buildFilters.
+ * Extracts rule condition chips for breakdown display using shared
+ * FilterChip components and AIP-160 buildFilters.
  */
 export const extractRuleChips = (
   rawExpr: string,
@@ -75,9 +75,8 @@ export const extractRuleChips = (
   if (!rawExpr?.trim()) return [];
   if (!filterBuilders) {
     return [
-      <Chip
+      <FilterChip
         key="fallback"
-        variant="filter"
         label={rawExpr.trim()}
         sx={{ cursor: 'default' }}
       />,
@@ -98,9 +97,8 @@ export const extractRuleChips = (
 
     if (active.length > 0) {
       return active.map((cat, idx) => (
-        <Chip
+        <FilterChip
           key={`${cat.key}-${idx}`}
-          variant="filter"
           label={cat.getChipLabel()}
           sx={{
             cursor: 'default',
@@ -113,9 +111,8 @@ export const extractRuleChips = (
   }
 
   return [
-    <Chip
+    <FilterChip
       key="fallback"
-      variant="filter"
       label={rawExpr.trim()}
       sx={{ cursor: 'default' }}
     />,

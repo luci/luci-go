@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Chip, Tooltip, Typography } from '@mui/material';
+import { Box, Tooltip, Typography } from '@mui/material';
 
+import { FilterChip } from '@/fleet/components/filter_dropdown/filter_chip';
 import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
 import { borders, fleetColors, fontSizes, radii } from '@/fleet/theme/tokens';
@@ -144,12 +145,12 @@ export const PriorityScoreCell = ({
                     gap: 0.5,
                     alignItems: 'center',
                     flex: 1,
+                    minWidth: 0,
                   }}
                   title={tooltipTitle}
                 >
                   {rule?.chips ?? (
-                    <Chip
-                      variant="filter"
+                    <FilterChip
                       label={tooltipTitle}
                       sx={{ cursor: 'default' }}
                     />
@@ -158,15 +159,21 @@ export const PriorityScoreCell = ({
 
                 {/* Points badge */}
                 {weightStr && (
-                  <StatusPill
-                    tone={
-                      isPositive ? 'success' : isNegative ? 'error' : 'neutral'
-                    }
-                    dot={false}
-                    size="compact"
-                  >
-                    {weightStr}
-                  </StatusPill>
+                  <Box sx={{ flexShrink: 0 }}>
+                    <StatusPill
+                      tone={
+                        isPositive
+                          ? 'success'
+                          : isNegative
+                            ? 'error'
+                            : 'neutral'
+                      }
+                      dot={false}
+                      size="compact"
+                    >
+                      {weightStr}
+                    </StatusPill>
+                  </Box>
                 )}
               </Box>
             );

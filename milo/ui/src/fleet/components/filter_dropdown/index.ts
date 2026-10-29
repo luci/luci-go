@@ -13,3 +13,4 @@
 // limitations under the License.
 
 export { DeviceListFilterBar } from '../device_table/device_list_filter_bar';
+export { FilterChip, type FilterChipProps } from './filter_chip';
