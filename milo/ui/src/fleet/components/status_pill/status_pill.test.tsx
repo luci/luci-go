@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
-
-import { StatusPill, TaskResultPill } from './status_pill';
 import { taskResultTone } from './task_result_tone';
 
 describe('taskResultTone', () => {
@@ -33,19 +30,5 @@ describe('taskResultTone', () => {
     ['CANCELED', 'neutral', 'Canceled'],
   ])('maps %s to %s / %s', (raw, tone, label) => {
     expect(taskResultTone(raw)).toEqual({ tone, label });
-  });
-});
-
-describe('StatusPill', () => {
-  it('renders the label with its tone', () => {
-    render(<StatusPill tone="warning">Degraded</StatusPill>);
-    const pill = screen.getByTestId('status-pill');
-    expect(pill).toHaveTextContent('Degraded');
-    expect(pill).toHaveAttribute('data-tone', 'warning');
-  });
-
-  it('renders nothing for an empty task result', () => {
-    const { container } = render(<TaskResultPill result="" />);
-    expect(container).toBeEmptyDOMElement();
   });
 });

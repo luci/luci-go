@@ -289,4 +289,43 @@ describe('<PriorityRulesPanel />', () => {
     expect(within(row1).getByText(/Type/i)).toBeInTheDocument();
     expect(deleteRule).not.toHaveBeenCalled();
   });
+
+  it('expands and collapses rules list when more than 3 rules exist', () => {
+    const fourRules: readonly RepairPriorityRule[] = [
+      ...MOCK_RULES,
+      { id: '3', expressionAip160: 'type = "PHYSICAL"', weight: '50' },
+      { id: '4', expressionAip160: 'lab_name = "MTV"', weight: '25' },
+    ];
+    renderPanel({ rules: fourRules });
+
+    expect(screen.queryByTestId('priority-rule-row-4')).not.toBeInTheDocument();
+    expect(screen.getByTestId('show-more-rules-button')).toHaveTextContent(
+      'Show 1 more rule',
+    );
+
+    fireEvent.click(screen.getByTestId('show-more-rules-button'));
+    expect(screen.getByTestId('priority-rule-row-4')).toBeInTheDocument();
+    expect(screen.getByTestId('show-less-rules-button')).toHaveTextContent(
+      'Show less rules',
+    );
+
+    fireEvent.click(screen.getByTestId('show-less-rules-button'));
+    expect(screen.queryByTestId('priority-rule-row-4')).not.toBeInTheDocument();
+  });
+
+  it('disables Add rule button when 15 rules exist', () => {
+    const maxRules: readonly RepairPriorityRule[] = Array.from(
+      { length: 15 },
+      (_, i) => ({
+        id: String(i + 1),
+        expressionAip160: 'type = "PHYSICAL"',
+        weight: '10',
+      }),
+    );
+    renderPanel({ rules: maxRules });
+
+    fireEvent.click(screen.getByTestId('show-more-rules-button'));
+    expect(screen.getByTestId('add-priority-rule-button')).toBeDisabled();
+    expect(screen.getByText('Limit of 15 rules reached')).toBeInTheDocument();
+  });
 });

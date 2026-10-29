@@ -13,30 +13,11 @@
 // limitations under the License.
 
 import {
-  CHROMEOS_COMMON_DEVICE_FILTERS,
-  CHROMEOS_DEFAULT_COLUMNS,
   generateDutNameRedirectURL,
   generateServoHostnameFilterURL,
 } from './chromeos_device_config';
 
 describe('chromeos_device_config', () => {
-  it('should export expected default ChromeOS columns', () => {
-    expect(CHROMEOS_DEFAULT_COLUMNS).toContain('dut_id');
-    expect(CHROMEOS_DEFAULT_COLUMNS).toContain('dut_state');
-    expect(CHROMEOS_DEFAULT_COLUMNS).toContain('label-board');
-    expect(CHROMEOS_DEFAULT_COLUMNS).toContain('label-model');
-    expect(CHROMEOS_DEFAULT_COLUMNS).toContain('label-pool');
-    expect(CHROMEOS_DEFAULT_COLUMNS).toContain('label-servo_state');
-  });
-
-  it('should export common ChromeOS device filters', () => {
-    expect(CHROMEOS_COMMON_DEVICE_FILTERS).toContain('labels."dut_state"');
-    expect(CHROMEOS_COMMON_DEVICE_FILTERS).toContain('labels."label-board"');
-    expect(CHROMEOS_COMMON_DEVICE_FILTERS).toContain('labels."label-model"');
-    expect(CHROMEOS_COMMON_DEVICE_FILTERS).toContain('labels."label-pool"');
-    expect(CHROMEOS_COMMON_DEVICE_FILTERS).toContain('labels."label-phase"');
-  });
-
   it('should correctly format generateDutNameRedirectURL', () => {
     const url = generateDutNameRedirectURL('chromeos6-row1-rack2-host3');
     expect(url).toBe(

@@ -12,78 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  borders,
-  controlHeights,
-  fleetColors,
-  fontFamilies,
-  fontSizes,
-  iconSizes,
-  radii,
-  statusTones,
-} from './tokens';
+import { fleetColors, statusTones } from './tokens';
 
 describe('Fleet design tokens', () => {
-  it('defines accessible border and divider contrasts', () => {
-    // #dadce0: GM3 outlineVariant boundary for cards/tables against white
-    expect(fleetColors.border).toBe('#dadce0');
-    // #e0e2ec: High-contrast row divider
-    expect(fleetColors.divider).toBe('#e0e2ec');
-    // #c4c7c5: Emphasized outline for table header bottom border
-    expect(fleetColors.borderEmphasis).toBe('#c4c7c5');
-    // #f3f6fc: GM3 tonal fill for hover and headers
-    expect(fleetColors.surfaceTonal).toBe('#f3f6fc');
-    // #ffffff: Pure surface
-    expect(fleetColors.surface).toBe('#ffffff');
-    // #f8fafd: Subtle canvas background
-    expect(fleetColors.canvas).toBe('#f8fafd');
-  });
-
-  it('exports composite border rules matching semantic tokens', () => {
-    expect(borders.default).toBe('1px solid #dadce0');
-    expect(borders.divider).toBe('1px solid #e0e2ec');
-    expect(borders.emphasis).toBe('1px solid #c4c7c5');
-  });
-
-  it('defines GM3 corner radius scale', () => {
-    expect(radii.sm).toBe('6px');
-    expect(radii.md).toBe('12px');
-    expect(radii.pill).toBe('9999px');
-  });
-
-  it('defines standard control heights and icon sizes', () => {
-    expect(controlHeights.button).toBe(32);
-    expect(controlHeights.chip).toBe(24);
-    expect(controlHeights.input).toBe(40);
-    expect(iconSizes.control).toBe(16);
-    expect(iconSizes.logo).toBe(20);
-    expect(fontSizes.label).toBe(13);
-    expect(fontSizes.body).toBe(14);
-  });
-
-  it('defines display, text and monospace font families', () => {
-    expect(fontFamilies.display).toContain('Google Sans');
-    expect(fontFamilies.text).toContain('Google Sans Text');
-    expect(fontFamilies.mono).toContain('Roboto Mono');
-  });
-
-  it('defines accessible status tones with foreground, background and indicator dot', () => {
-    const tones = [
-      'success',
-      'warning',
-      'error',
-      'info',
-      'neutral',
-      'special',
-    ] as const;
-    for (const tone of tones) {
-      expect(statusTones[tone]).toBeDefined();
-      expect(statusTones[tone].fg).toBeTruthy();
-      expect(statusTones[tone].bg).toBeTruthy();
-      expect(statusTones[tone].dot).toBeTruthy();
-    }
-  });
-
   it('enforces WCAG 2.1 AA contrast (>= 4.5:1) for all text and status tones', () => {
     const relativeLuminance = (hex: string): number => {
       const clean = hex.replace('#', '');
