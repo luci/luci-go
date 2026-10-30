@@ -1238,15 +1238,25 @@ func (q *Query) Fetch(ctx context.Context) (Page, error) {
 	}
 }
 
+var baseQuerySQLTmpl = template.Must(template.New("base").Parse(`
+	{{define "testResultFilter"}}
+		InvocationId in UNNEST(@testResultInvIDs)
+		{{if .HasTestIds}}
+			AND TestId in UNNEST(@testIDs)
+		{{end}}
+	{{end}}
+`))
+
 // testVariantsWithUnexpectedResultsSQLTmpl queries the test verdicts with statuses:
 // - if sorting by v1 verdict status: UNEXPECTED, UNEXPECTEDLY_SKIPPED, FLAKY, EXONERATED
 // - if sorting by v2 effective verdict status: FAILED, EXECUTION_ERROR, PRECLUDED, FLAKY, EXONERATED.
-var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testVariantsWithUnexpectedResultsSQL").Parse(`
+var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.Must(baseQuerySQLTmpl.Clone()).New("testVariantsWithUnexpectedResultsSQL").Parse(`
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
 	WITH unexpectedTestVariants AS (
 		SELECT DISTINCT TestId, VariantHash
 		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
-		WHERE IsUnexpected AND InvocationId in UNNEST(@testResultInvIDs)
+		WHERE IsUnexpected
+			AND {{template "testResultFilter" .}}
 	),
 
 	-- Get test variants and their results.
@@ -1268,7 +1278,7 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 			ARRAY_AGG(STRUCT({{.ResultColumns}})) results,
 		FROM unexpectedTestVariants vur
 		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
-		WHERE InvocationId in UNNEST(@testResultInvIDs)
+		WHERE {{template "testResultFilter" .}}
 		GROUP BY TestId, VariantHash
 	),
 
@@ -1282,6 +1292,9 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 			ARRAY_AGG(Reason) ExonerationReasons
 		FROM TestExonerations
 		WHERE InvocationId IN UNNEST(@testExonerationInvIDs)
+		{{if .HasTestIds}}
+			AND TestId in UNNEST(@testIDs)
+		{{end}}
 		GROUP BY TestId, VariantHash
 	),
 
@@ -1392,7 +1405,7 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 	LIMIT @limit
 `))
 
-var allTestResultsSQLTmpl = template.Must(template.New("allTestResultsSQL").Parse(`
+var allTestResultsSQLTmpl = template.Must(template.Must(baseQuerySQLTmpl.Clone()).New("allTestResultsSQL").Parse(`
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
 	SELECT
 		TestId,
@@ -1405,10 +1418,7 @@ var allTestResultsSQLTmpl = template.Must(template.New("allTestResultsSQL").Pars
 		-- Wrap it in an array instead.
 		ARRAY(SELECT STRUCT({{.ResultColumns}})) AS results,
 	FROM TestResults
-	WHERE InvocationId in UNNEST(@testResultInvIDs)
-	{{if .HasTestIds}}
-		AND TestId in UNNEST(@testIDs)
-	{{end}}
+	WHERE {{template "testResultFilter" .}}
 	{{if .HasAipFilterClause}}
 		AND ({{.AipFilterClause}})
 	{{end}}

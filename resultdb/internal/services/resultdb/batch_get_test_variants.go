@@ -17,6 +17,7 @@ package resultdb
 import (
 	"context"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -117,6 +119,9 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 	invs, err := graph.Reachable(ctx, invocations.NewIDSet(requestedLegacyInvID))
 	if err != nil {
 		return nil, errors.Fmt("failed to fetch invocations: %w", err)
+	}
+	if err := pruneInvocationsByTestIDs(ctx, invs, testIDs); err != nil {
+		return nil, errors.Fmt("failed to prune invocations: %w", err)
 	}
 
 	// Query test variants with an empty predicate and a list of test IDs,
@@ -237,4 +242,61 @@ func verifyBatchGetTestVariantPermissions(ctx context.Context, in *pb.BatchGetTe
 		return testvariants.AccessLevelInvalid, err // PermissionDenied, NotFound error.
 	}
 	return testvariants.AccessLevelUnrestricted, nil
+}
+
+// pruneInvocationsByTestIDs marks HasTestResults = false on invocations whose
+// CommonTestIDPrefix cannot match any of testIDs.
+func pruneInvocationsByTestIDs(ctx context.Context, invs graph.ReachableInvocations, testIDs []string) error {
+	if len(testIDs) == 0 {
+		return nil
+	}
+	testResultInvs, err := invs.WithTestResultsIDSet()
+	if err != nil {
+		return err
+	}
+	if len(testResultInvs) == 0 {
+		return nil
+	}
+
+	matched := invocations.NewIDSet()
+	var b spanutil.Buffer
+	if err := spanutil.Query(ctx, spanner.Statement{
+		SQL: `
+			SELECT i.InvocationId
+			FROM Invocations i
+			WHERE i.InvocationId IN UNNEST(@invIDs)
+				AND (
+					-- WorkUnit shadow rows in Invocations have CommonTestIDPrefix IS NULL.
+					-- i.CommonTestIDPrefix IS NULL is needed to avoid dropping test results
+					-- when called on a RootInvocation.
+					i.CommonTestIDPrefix IS NULL
+					OR EXISTS (
+						SELECT 1 FROM UNNEST(@testIDs) testId
+						WHERE STARTS_WITH(testId, i.CommonTestIDPrefix)
+					)
+				)
+		`,
+		Params: map[string]any{
+			"invIDs":  testResultInvs,
+			"testIDs": testIDs,
+		},
+	}, func(row *spanner.Row) error {
+		var id invocations.ID
+		if err := b.FromSpanner(row, &id); err != nil {
+			return err
+		}
+		matched.Add(id)
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	for id := range testResultInvs {
+		if !matched.Has(id) {
+			inv := invs.Invocations[id]
+			inv.HasTestResults = false
+			invs.Invocations[id] = inv
+		}
+	}
+	return nil
 }

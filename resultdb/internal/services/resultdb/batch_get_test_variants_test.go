@@ -501,6 +501,52 @@ func TestBatchGetTestVariants(t *testing.T) {
 				}
 				assert.Loosely(t, res.Sources, should.HaveLength(0))
 			})
+
+			t.Run(`CommonTestIDPrefix pruning`, func(t *ftt.Test) {
+				testutil.MustApply(
+					ctx, t,
+					insert.InvocationWithInclusions("inv-root", pb.Invocation_ACTIVE, map[string]any{
+						"Realm": "testproject:testrealm",
+					}, "inv-matching", "inv-nonmatching", "inv-null")...,
+				)
+				testutil.MustApply(
+					ctx, t,
+					insert.Invocation("inv-matching", pb.Invocation_ACTIVE, map[string]any{
+						"Realm":              "testproject:testrealm",
+						"CommonTestIDPrefix": "pkg://matching/",
+					}),
+					insert.Invocation("inv-nonmatching", pb.Invocation_ACTIVE, map[string]any{
+						"Realm":              "testproject:testrealm",
+						"CommonTestIDPrefix": "pkg://other/",
+					}),
+					insert.Invocation("inv-null", pb.Invocation_ACTIVE, map[string]any{
+						"Realm": "testproject:testrealm",
+					}),
+				)
+				testutil.MustApply(ctx, t, testutil.CombineMutations(
+					insert.TestResults(t, "inv-matching", "pkg://matching/test_unexpected", nil, pb.TestResult_FAILED),
+					insert.TestResults(t, "inv-matching", "pkg://matching/test_expected", nil, pb.TestResult_PASSED),
+					insert.TestResults(t, "inv-nonmatching", "pkg://matching/test_should_be_pruned", nil, pb.TestResult_FAILED),
+					insert.TestResults(t, "inv-null", "pkg://null/test_expected", nil, pb.TestResult_PASSED),
+				)...)
+
+				emptyVariantHash := pbutil.VariantHash(nil)
+				res, err := srv.BatchGetTestVariants(ctx, &pb.BatchGetTestVariantsRequest{
+					Invocation: "invocations/inv-root",
+					TestVariants: []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
+						{TestId: "pkg://matching/test_unexpected", VariantHash: emptyVariantHash},
+						{TestId: "pkg://matching/test_expected", VariantHash: emptyVariantHash},
+						{TestId: "pkg://matching/test_should_be_pruned", VariantHash: emptyVariantHash},
+						{TestId: "pkg://null/test_expected", VariantHash: emptyVariantHash},
+					},
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
+					fmt.Sprintf("10/pkg://matching/test_unexpected/%s/FAILED", emptyVariantHash),
+					fmt.Sprintf("50/pkg://matching/test_expected/%s/PASSED", emptyVariantHash),
+					fmt.Sprintf("50/pkg://null/test_expected/%s/PASSED", emptyVariantHash),
+				}))
+			})
 		})
 	})
 }

@@ -1018,3 +1018,87 @@ func TestAdjustResultLimit(t *testing.T) {
 		})
 	})
 }
+
+func TestQueryTestVariantsWithTestIDs(t *testing.T) {
+	ftt.Run(`QueryTestVariants with TestIDs`, t, func(t *ftt.Test) {
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: rdbperms.PermGetTestResult},
+				{Realm: "testproject:testrealm", Permission: rdbperms.PermGetTestExoneration},
+			},
+		})
+
+		testutil.MustApply(ctx, t,
+			insert.Invocation("inv-a", pb.Invocation_ACTIVE, map[string]any{
+				"Realm": "testproject:testrealm",
+			}),
+			insert.Invocation("inv-b", pb.Invocation_ACTIVE, map[string]any{
+				"Realm": "testproject:testrealm",
+			}),
+		)
+
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
+			insert.TestResults(t, "inv-a", "pkg://a/test_unexpected", nil, pb.TestResult_FAILED),
+			insert.TestResults(t, "inv-a", "pkg://a/test_expected", nil, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv-b", "pkg://b/test_unexpected", nil, pb.TestResult_FAILED),
+			insert.TestResults(t, "inv-b", "pkg://b/test_expected", nil, pb.TestResult_PASSED),
+		)...)
+
+		reachableInvs := graph.NewReachableInvocations()
+		reachableInvs.Invocations["inv-a"] = graph.ReachableInvocation{
+			HasTestResults: true,
+			Realm:          "testproject:testrealm",
+		}
+		reachableInvs.Invocations["inv-b"] = graph.ReachableInvocation{
+			HasTestResults: true,
+			Realm:          "testproject:testrealm",
+		}
+
+		fetch := func(testIDs []string) ([]*pb.TestVariant, error) {
+			q := &Query{
+				ReachableInvocations: reachableInvs,
+				TestIDs:              testIDs,
+				Predicate:            &pb.TestVariantPredicate{},
+				PageSize:             100,
+				ResultLimit:          10,
+				ResponseLimitBytes:   DefaultResponseLimitBytes,
+				AccessLevel:          AccessLevelUnrestricted,
+				OrderBy:              SortOrderStatusV2Effective,
+			}
+			txn, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			var tvs []*pb.TestVariant
+			for {
+				page, err := q.Fetch(txn)
+				if err != nil {
+					return nil, err
+				}
+				tvs = append(tvs, page.TestVariants...)
+				if page.NextPageToken == "" {
+					break
+				}
+				q.PageToken = page.NextPageToken
+			}
+			return tvs, nil
+		}
+
+		t.Run(`Unexpected test variant`, func(t *ftt.Test) {
+			tvs, err := fetch([]string{"pkg://a/test_unexpected"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(tvs), should.Equal(1))
+			assert.Loosely(t, tvs[0].TestId, should.Equal("pkg://a/test_unexpected"))
+			assert.Loosely(t, tvs[0].Status, should.Equal(pb.TestVariantStatus_UNEXPECTED))
+			assert.Loosely(t, tvs[0].StatusV2, should.Equal(pb.TestVerdict_FAILED))
+		})
+
+		t.Run(`Expected test variant`, func(t *ftt.Test) {
+			tvs, err := fetch([]string{"pkg://a/test_expected"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(tvs), should.Equal(1))
+			assert.Loosely(t, tvs[0].TestId, should.Equal("pkg://a/test_expected"))
+			assert.Loosely(t, tvs[0].Status, should.Equal(pb.TestVariantStatus_EXPECTED))
+			assert.Loosely(t, tvs[0].StatusV2, should.Equal(pb.TestVerdict_PASSED))
+		})
+	})
+}
