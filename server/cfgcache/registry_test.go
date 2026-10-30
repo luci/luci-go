@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/config/vars"
@@ -258,5 +259,87 @@ func TestValidationAndTransform(t *testing.T) {
 
 		assert.That(t, a, should.Equal(10*time.Second))
 		assert.That(t, b, should.Equal(100*time.Second))
+	})
+}
+
+func TestCompileFileRegex(t *testing.T) {
+	t.Parallel()
+
+	t.Run(`single`, func(t *testing.T) {
+		t.Parallel()
+
+		ctx, ts := TestingContext(t.Context())
+		(&ServicePipeline[*durationpb.Duration]{
+			ID:    "svc-pipeline",
+			Store: &noopStore[*durationpb.Duration]{},
+			Files: []File{
+				&SingleFile[*durationpb.Duration]{Path: "afile"},
+			},
+		}).Register(ts.Registry)
+		(&ProjectPipeline[*durationpb.Duration]{
+			ID:    "proj-pipeline",
+			Store: &noopStore[*durationpb.Duration]{},
+			Files: []File{
+				&SingleFile[*durationpb.Duration]{Path: "afile"},
+			},
+		}).Register(ts.Registry)
+		assert.NoErr(t, ts.Initialize(ctx))
+
+		check.Loosely(t, ts.Registry.projectFileRegex, should.BeNil)
+		check.Loosely(t, ts.Registry.serviceFileRegexes["services/my-app"].String(),
+			should.Match("^(?:(?:afile))$"))
+		check.Loosely(t, ts.Registry.singleProjectFile, should.Equal("afile"))
+	})
+
+	t.Run(`multi single-file`, func(t *testing.T) {
+		t.Parallel()
+
+		ctx, ts := TestingContext(t.Context())
+		(&ProjectPipeline[*durationpb.Duration]{
+			ID:               "the-pipeline",
+			Store:            &noopStore[*durationpb.Duration]{},
+			TransformVersion: 1,
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
+				return nil, nil
+			},
+			Files: []File{
+				&SingleFile[*durationpb.Duration]{Path: "cf.ile"},
+				&SingleFile[*durationpb.Duration]{Path: "afi*le"},
+				&SingleFile[*durationpb.Duration]{Path: "qfile"},
+				&SingleFile[*durationpb.Duration]{Path: "afi*le"},
+			},
+		}).Register(ts.Registry)
+		assert.NoErr(t, ts.Initialize(ctx))
+
+		check.That(t, ts.Registry.projectFileRegex.String(), should.Equal(
+			`^(?:(?:afi\*le)|(?:cf\.ile)|(?:qfile))$`))
+		check.Loosely(t, ts.Registry.serviceFileRegexes, should.BeEmpty)
+		check.Loosely(t, ts.Registry.singleProjectFile, should.Equal(""))
+	})
+
+	t.Run(`mixed`, func(t *testing.T) {
+		t.Parallel()
+
+		ctx, ts := TestingContext(t.Context())
+		(&ProjectPipeline[*durationpb.Duration]{
+			ID:               "the-pipeline",
+			Store:            &noopStore[*durationpb.Duration]{},
+			TransformVersion: 1,
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
+				return nil, nil
+			},
+			Files: []File{
+				&SingleFile[*durationpb.Duration]{Path: "cf.ile"},
+				&RegexFile[*durationpb.Duration]{PathRegex: "afile.+"},
+				&SingleFile[*durationpb.Duration]{Path: "qfile"},
+				&SingleFile[*durationpb.Duration]{Path: "afile"},
+			},
+		}).Register(ts.Registry)
+		assert.NoErr(t, ts.Initialize(ctx))
+
+		check.That(t, ts.Registry.projectFileRegex.String(), should.Equal(
+			`^(?:(?:afile)|(?:afile.+)|(?:cf\.ile)|(?:qfile))$`))
+		check.Loosely(t, ts.Registry.serviceFileRegexes, should.BeEmpty)
+		check.Loosely(t, ts.Registry.singleProjectFile, should.Equal(""))
 	})
 }

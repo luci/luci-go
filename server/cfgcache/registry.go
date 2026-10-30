@@ -18,6 +18,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"regexp"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
@@ -36,7 +37,24 @@ type Registry struct {
 	errs                 []error
 	finishedRegistration bool
 	initialized          bool
-	ingestConfigs        map[string]*ingestConfig
+
+	ingestConfigs map[string]*ingestConfig
+
+	// One regexp to match all config files per Service config.Set.
+	serviceFileRegexes map[config.Set]*regexp.Regexp
+
+	// One regexp to match all config files per Project.
+	//
+	// Only one of `singleProjectFile` or `projectFileRegex` will be set (or
+	// neither).
+	projectFileRegex *regexp.Regexp
+
+	// If this registry only is interested in a single statically name project
+	// file (e.g. `${appid}.cfg`), we can do a slight optimization.
+	//
+	// Only one of `singleProjectFile` or `projectFileRegex` will be set (or
+	// neither).
+	singleProjectFile string
 }
 
 // register records `ingestConfig` into this Registry.
@@ -164,6 +182,16 @@ func (r *Registry) Initialize(ctx context.Context, v *vars.VarSet) (err error) {
 		}
 	}()
 	v = cmp.Or(v, &vars.Vars)
+	csToIC := map[config.Set][]*ingestConfig{}
+	var projectICs []*ingestConfig
+	// projectsMultiFile indicates if any project ingestConfig potentially
+	// requires more than one file (multiple SingleFile or has a RegexFile).
+	//
+	// If we only have a single projectIC which only wants a single file, we can
+	// use the more performant GetProjectConfigs RPC. Otherwise we need to
+	// combine GetProjects with GetConfigs.
+	projectsMultiFile := false
+
 	for _, ingest := range r.ingestConfigs {
 		if ingest.serviceNamePattern != "" {
 			var err error
@@ -171,9 +199,16 @@ func (r *Registry) Initialize(ctx context.Context, v *vars.VarSet) (err error) {
 			if err != nil {
 				return errors.Fmt("%s.Register(): bad serviceNamePattern: %w", ingest, err)
 			}
-			if _, err := config.ServiceSet(ingest.serviceName); err != nil {
+			cs, err := config.ServiceSet(ingest.serviceName)
+			if err != nil {
 				return errors.Fmt("%s.Register(): bad ServiceName: %w", ingest, err)
 			}
+			csToIC[cs] = append(csToIC[cs], ingest)
+		} else {
+			projectICs = append(projectICs, ingest)
+			// We should use GetConfigs with a filter on a per-project basis if
+			// we have multiple project ICs OR this newly added IC is multi-file.
+			projectsMultiFile = projectsMultiFile || len(projectICs) > 1 || ingest.multiFile()
 		}
 
 		for i, rf := range ingest.files {
@@ -181,6 +216,7 @@ func (r *Registry) Initialize(ctx context.Context, v *vars.VarSet) (err error) {
 			if err != nil {
 				return errors.Fmt("%s.Register(): Files[%d]: bad path template: %w", ingest, i, err)
 			}
+			rf.path = rendered
 			if rf.isRegex() {
 				pat, err := pattern.Parse("regex:" + rendered)
 				if err != nil {
@@ -188,10 +224,19 @@ func (r *Registry) Initialize(ctx context.Context, v *vars.VarSet) (err error) {
 				}
 				rf.pat = pat
 			} else {
-				rf.path = rendered
 				rf.pat = pattern.Exact(rendered)
 			}
 		}
+	}
+
+	r.serviceFileRegexes = make(map[config.Set]*regexp.Regexp, len(csToIC))
+	for cs, ics := range csToIC {
+		r.serviceFileRegexes[cs] = compileFilesRegex(ics)
+	}
+	if projectsMultiFile {
+		r.projectFileRegex = compileFilesRegex(projectICs)
+	} else if len(projectICs) > 0 {
+		r.singleProjectFile = projectICs[0].files[0].path
 	}
 	return nil
 }

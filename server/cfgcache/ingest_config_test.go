@@ -221,3 +221,61 @@ func TestRegistryLifecycle(t *testing.T) {
 		assert.That(t, projDesc.String(), should.Equal(`ProjectPipeline{ID: "proj-multi"}`))
 	})
 }
+
+func TestMultiFile(t *testing.T) {
+	t.Parallel()
+
+	t.Run(`single`, func(t *testing.T) {
+		t.Parallel()
+
+		ctx, ts := TestingContext(t.Context())
+		(&ProjectPipeline[*durationpb.Duration]{
+			ID:    "the-pipeline",
+			Store: &noopStore[*durationpb.Duration]{},
+			Files: []File{
+				&SingleFile[*durationpb.Duration]{Path: "afile"},
+			},
+		}).Register(ts.Registry)
+		assert.NoErr(t, ts.Initialize(ctx))
+		assert.That(t, ts.Registry.ingestConfigs["the-pipeline"].multiFile(), should.BeFalse)
+	})
+
+	t.Run(`regex`, func(t *testing.T) {
+		t.Parallel()
+
+		ctx, ts := TestingContext(t.Context())
+		(&ProjectPipeline[*durationpb.Duration]{
+			ID:               "the-pipeline",
+			Store:            &noopStore[*durationpb.Duration]{},
+			TransformVersion: 1,
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
+				return nil, nil
+			},
+			Files: []File{
+				&RegexFile[*durationpb.Duration]{PathRegex: "afile.*"},
+			},
+		}).Register(ts.Registry)
+		assert.NoErr(t, ts.Initialize(ctx))
+		assert.That(t, ts.Registry.ingestConfigs["the-pipeline"].multiFile(), should.BeTrue)
+	})
+
+	t.Run(`multi-single`, func(t *testing.T) {
+		t.Parallel()
+
+		ctx, ts := TestingContext(t.Context())
+		(&ProjectPipeline[*durationpb.Duration]{
+			ID:               "the-pipeline",
+			Store:            &noopStore[*durationpb.Duration]{},
+			TransformVersion: 1,
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
+				return nil, nil
+			},
+			Files: []File{
+				&SingleFile[*durationpb.Duration]{Path: "afile"},
+				&SingleFile[*durationpb.Duration]{Path: "bfile"},
+			},
+		}).Register(ts.Registry)
+		assert.NoErr(t, ts.Initialize(ctx))
+		assert.That(t, ts.Registry.ingestConfigs["the-pipeline"].multiFile(), should.BeTrue)
+	})
+}

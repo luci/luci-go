@@ -16,7 +16,9 @@ package cfgcache
 
 import (
 	"maps"
+	"regexp"
 	"slices"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
 
@@ -25,14 +27,13 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
-// A [File]
 type resolvedFile struct {
 	File
 
 	unmarshal genericUnmarshalFunc
 
 	// Set in [Registry.Initialize]:
-	path string          // set when !isRegex
+	path string          // rendered Path or PathRegex
 	pat  pattern.Pattern // exact:<path> or regex:<rendered>
 }
 
@@ -64,6 +65,40 @@ type ingestConfig struct {
 
 func (ic *ingestConfig) String() string {
 	return ic.desc
+}
+
+// multiFile returns true if this ingestConfig consumes more than one file
+// from config.
+func (ic *ingestConfig) multiFile() bool {
+	if len(ic.files) > 1 {
+		return true
+	}
+	for _, rf := range ic.files {
+		if rf.isRegex() {
+			return true
+		}
+	}
+	return false
+}
+
+// compileFilesRegex returns a compiled regular expression that matches any file
+// path matched by any of `ics`.
+//
+// Must be called after `rf.path` has been populated in [Registry.Initialize].
+func compileFilesRegex(ics []*ingestConfig) *regexp.Regexp {
+	var branches []string
+	for _, ic := range ics {
+		for _, rf := range ic.files {
+			if rf.isRegex() {
+				branches = append(branches, "(?:"+rf.path+")")
+			} else {
+				branches = append(branches, "(?:"+regexp.QuoteMeta(rf.path)+")")
+			}
+		}
+	}
+	slices.Sort(branches)
+	branches = slices.Compact(branches)
+	return regexp.MustCompile("^(?:" + strings.Join(branches, "|") + ")$")
 }
 
 // validateAndTransform unmarshals all files in rawFiles into a [Snapshot] and
