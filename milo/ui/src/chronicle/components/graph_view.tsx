@@ -106,11 +106,17 @@ function Graph() {
       return graph;
     }
 
-    const criticalPathStageIds = computeCriticalPath(graph.stages);
+    const { stageIds, checkIds } = computeCriticalPath(
+      graph.stages,
+      graph.checks,
+    );
     return {
       ...graph,
       stages: graph.stages.filter(
-        (s) => s.identifier?.id && criticalPathStageIds.has(s.identifier.id),
+        (s) => s.identifier?.id && stageIds.has(s.identifier.id),
+      ),
+      checks: graph.checks.filter(
+        (c) => c.identifier?.id && checkIds.has(c.identifier.id),
       ),
     };
   }, [graph, showCriticalPath]);

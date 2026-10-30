@@ -148,11 +148,12 @@ function TimelineView() {
   // Filters the displayed stage rows when the critical path toggle is active.
   const visibleItems = useMemo(() => {
     if (!showCriticalPath) return items;
-    const criticalPathIds = computeCriticalPath(
-      items.map((item) => item.stage),
+    const { stageIds } = computeCriticalPath(
+      graph?.stages ?? [],
+      graph?.checks,
     );
-    return items.filter((item) => criticalPathIds.has(item.id));
-  }, [items, showCriticalPath]);
+    return items.filter((item) => stageIds.has(item.id));
+  }, [items, graph?.stages, graph?.checks, showCriticalPath]);
 
   const baseSelectedNodeId = useMemo(
     () => getBaseNodeId(selectedNodeId, { includePrefix: false }),
