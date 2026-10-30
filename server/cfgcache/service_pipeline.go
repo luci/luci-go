@@ -86,3 +86,19 @@ type ServicePipeline[StoreMsg proto.Message] struct {
 func (s *ServicePipeline[StoreMsg]) String() string {
 	return fmt.Sprintf("ServicePipeline{ID: %q, ServiceName: %q}", s.ID, cmp.Or(s.ServiceName, "${appid}"))
 }
+
+// Register registers this pipeline with the given registry.
+//
+// Errors are buffered until [Registry.Initialize] is called. Panics if r is
+// nil or already initialized.
+//
+// Registering enables the pipeline when the Registry is used with the server:
+//   - Validation handlers will call TransformFunc.
+func (s *ServicePipeline[StoreMsg]) Register(r *Registry) {
+	register(r, s.Files, s.Transform, &ingestConfig{
+		id:                 s.ID,
+		desc:               s.String(),
+		serviceNamePattern: cmp.Or(s.ServiceName, "${appid}"),
+		transformVersion:   s.TransformVersion,
+	})
+}

@@ -74,3 +74,18 @@ type ProjectPipeline[StoreMsg proto.Message] struct {
 func (pp *ProjectPipeline[StoreMsg]) String() string {
 	return fmt.Sprintf("ProjectPipeline{ID: %q}", pp.ID)
 }
+
+// Register registers this pipeline with the given registry.
+//
+// Errors are buffered until [Registry.Initialize] is called. Panics if r is
+// nil or already initialized.
+//
+// Registering enables the pipeline when the Registry is used with the server:
+//   - Validation handlers will call TransformFunc.
+func (pp *ProjectPipeline[StoreMsg]) Register(r *Registry) {
+	register(r, pp.Files, pp.Transform, &ingestConfig{
+		id:               pp.ID,
+		desc:             pp.String(),
+		transformVersion: pp.TransformVersion,
+	})
+}
