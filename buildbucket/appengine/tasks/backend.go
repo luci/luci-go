@@ -46,9 +46,11 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/common"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildstatus"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -184,9 +186,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Seconds: build.Proto.GetGracePeriod().GetSeconds() + bbagentReservedGracePeriod,
 	}
 
-	startDeadline := &timestamppb.Timestamp{
-		Seconds: build.Proto.GetCreateTime().GetSeconds() + build.Proto.GetSchedulingTimeout().GetSeconds(),
-	}
+	startDeadline := timestamppb.New(schedulingDeadline(build))
 
 	pubsubTopic, err := computeBackendPubsubTopic(ctx, backend.Task.Id.Target, globalCfg)
 	if err != nil {
@@ -351,6 +351,71 @@ func isFatalError(err error) bool {
 	}
 }
 
+// schedulingDeadline returns the time by which the build must start, i.e.
+// create_time + scheduling_timeout.
+func schedulingDeadline(bld *model.Build) time.Time {
+	return bld.Proto.GetCreateTime().AsTime().Add(bld.Proto.GetSchedulingTimeout().AsDuration())
+}
+
+// isSchedulingTimeoutExceeded returns true if the build is still SCHEDULED and
+// its scheduling deadline has passed.
+func isSchedulingTimeoutExceeded(bld *model.Build, now time.Time) bool {
+	return bld.Proto.GetStatus() == pb.Status_SCHEDULED && !schedulingDeadline(bld).After(now)
+}
+
+// expireBuild marks the given SCHEDULED build as INFRA_FAILURE with a timeout
+// status detail, because the build hasn't started before its scheduling
+// timeout.
+//
+// It's a noop if the build has ended or is not found.
+func expireBuild(ctx context.Context, buildID int64) error {
+	bld := &model.Build{ID: buildID}
+	statusUpdated := false
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		statusUpdated = false
+		switch err := datastore.Get(ctx, bld); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			logging.Warningf(ctx, "build %d not found: %s", buildID, err)
+			return nil
+		case err != nil:
+			return errors.Fmt("failed to fetch build: %d: %w", buildID, err)
+		}
+		if protoutil.IsEnded(bld.Proto.Status) {
+			return nil
+		}
+
+		bld.Proto.SummaryMarkdown = fmt.Sprintf(
+			"Build expired: it did not start within its scheduling timeout (%s).",
+			bld.Proto.GetSchedulingTimeout().AsDuration())
+		statusUpdater := buildstatus.Updater{
+			Build: bld,
+			BuildStatus: &buildstatus.StatusWithDetails{
+				Status: pb.Status_INFRA_FAILURE,
+				Details: &pb.StatusDetails{
+					ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
+					Timeout:            &pb.StatusDetails_Timeout{},
+				},
+			},
+			UpdateTime:  clock.Now(ctx),
+			PostProcess: SendOnBuildStatusChange,
+		}
+		bs, err := statusUpdater.Do(ctx)
+		if err != nil {
+			return errors.Fmt("failed to update status: %w", err)
+		}
+		statusUpdated = true
+		return datastore.Put(ctx, bld, bs)
+	}, nil)
+	if err != nil {
+		return transient.Tag.Apply(errors.Fmt("failed to expire build: %d: %w", buildID, err))
+	}
+	if statusUpdated {
+		logging.Infof(ctx, "Build %d expired after exceeding its scheduling timeout", buildID)
+		metrics.BuildCompleted(ctx, bld)
+	}
+	return nil
+}
+
 // CreateBackendTask creates a backend task for the build.
 func CreateBackendTask(ctx context.Context, buildID int64, requestID string, dequeueTime *timestamppb.Timestamp) (err error) {
 	defer func() {
@@ -394,6 +459,17 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 		// Bail out.
 		logging.Infof(ctx, "build %d has associated with task %q", buildID, infra.Proto.Backend.Task.Id)
 		return nil
+	}
+
+	// The backend requires start_deadline (create_time + scheduling_timeout) to
+	// be in the future. This can be violated if the build waited too long
+	// before getting here, e.g. in the BuilderQueue pending_builds queue or in
+	// the CreateBackendTask retries. Such a build has already exceeded its
+	// scheduling timeout, so mark it as expired instead of attempting to create
+	// a backend task for it.
+	if isSchedulingTimeoutExceeded(bld, clock.Now(ctx)) {
+		logging.Warningf(ctx, "build %d has exceeded its scheduling deadline %s before creating a backend task", buildID, schedulingDeadline(bld))
+		return expireBuild(ctx, buildID)
 	}
 
 	globalCfg, err := config.GetSettingsCfg(ctx)
@@ -456,10 +532,21 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 		// Give up if err is Fatal. Otherwise re-throw the
 		// error so Cloud Tasks retries the task.
 		if !isFatalError(err) {
-			if now.Sub(bld.CreateTime) < runTaskGiveUpTimeout {
+			// Measure from sentToBackendTime rather than the build creation time,
+			// so that a build popped from the pending_builds queue still gets the
+			// full runTaskGiveUpTimeout window to retry.
+			if now.Sub(sentToBackendTime) < runTaskGiveUpTimeout {
 				return transient.Tag.Apply(errors.Fmt("failed to create a backend task: %w", err))
 			}
 			logging.Errorf(ctx, "Give up backend task creation retry after %s", runTaskGiveUpTimeout.String())
+		} else if isSchedulingTimeoutExceeded(bld, now) {
+			// The start deadline passed while creating the backend task, so the
+			// backend likely rejected it for that (e.g. Swarming requires
+			// start_deadline to be in the future). Either way the build can no
+			// longer start in time, so expire it instead of failing it as a
+			// backend task creation failure.
+			logging.Warningf(ctx, "build %d exceeded its scheduling deadline %s while creating a backend task: %s", buildID, schedulingDeadline(bld), err)
+			return expireBuild(ctx, buildID)
 		}
 		logging.Errorf(ctx, "Backend task creation failure:%s. RunTask request: %+v", err, taskReq)
 		return tq.Fatal.Apply(errors.Fmt("failed to create a backend task: %w", err))

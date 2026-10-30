@@ -64,6 +64,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // This will help track the number of times the cipd server is called to test if the cache is working as intended.
@@ -531,8 +532,9 @@ func TestCreateBackendTask(t *testing.T) {
 					Bucket:  "bucket",
 					Project: "project",
 				},
-				CreateTime:       timestamppb.New(now.Add(-5 * time.Minute)),
-				ExecutionTimeout: &durationpb.Duration{Seconds: 500},
+				CreateTime:        timestamppb.New(now.Add(-5 * time.Minute)),
+				SchedulingTimeout: durationpb.New(6 * time.Hour),
+				ExecutionTimeout:  &durationpb.Duration{Seconds: 500},
 				Input: &pb.Build_Input{
 					Experiments: []string{
 						"cow_eggs_experiment",
@@ -669,6 +671,53 @@ func TestCreateBackendTask(t *testing.T) {
 			assert.Loosely(c, expectedBuild.Proto.SummaryMarkdown, should.ContainSubstring("Backend task creation failure."))
 		})
 
+		c.Run("transient error", func(c *ftt.Test) {
+			unavailable := status.Errorf(codes.Unavailable, "try again")
+
+			c.Run("retry within the give up timeout", func(c *ftt.Test) {
+				mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, unavailable)
+				err = CreateBackendTask(ctx, 1, "request_id", nil)
+				assert.Loosely(c, err, should.ErrLike("failed to create a backend task"))
+				assert.Loosely(c, transient.Tag.In(err), should.BeTrue)
+			})
+
+			c.Run("build popped from the pending queue late", func(c *ftt.Test) {
+				mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(nil, unavailable)
+				// The build was created an hour ago, but just dequeued from the
+				// pending_builds queue, so it should still be retried.
+				build.Proto.CreateTime = timestamppb.New(now.Add(-time.Hour))
+				build.CreateTime = now.Add(-time.Hour)
+				assert.Loosely(c, datastore.Put(ctx, build), should.BeNil)
+				err = CreateBackendTask(ctx, 1, "request_id", timestamppb.New(now))
+				assert.Loosely(c, err, should.ErrLike("failed to create a backend task"))
+				assert.Loosely(c, transient.Tag.In(err), should.BeTrue)
+				expectedBuild := &model.Build{ID: 1}
+				assert.Loosely(c, datastore.Get(ctx, expectedBuild), should.BeNil)
+				assert.Loosely(c, protoutil.IsEnded(expectedBuild.Proto.Status), should.BeFalse)
+			})
+
+			c.Run("give up after the give up timeout since dequeued", func(c *ftt.Test) {
+				bldr := &model.Builder{
+					ID:     "builder",
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+				}
+				assert.Loosely(c, datastore.Put(ctx, bldr), should.BeNil)
+				ctx, tc := testclock.UseTime(ctx, now)
+				mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, *pb.RunTaskRequest, ...any) (*pb.RunTaskResponse, error) {
+					// The RunTask call returns after the 8m task creating timeout.
+					tc.Add(9 * time.Minute)
+					return nil, unavailable
+				})
+				err = CreateBackendTask(ctx, 1, "request_id", timestamppb.New(now))
+				assert.Loosely(c, err, should.ErrLike("failed to create a backend task"))
+				assert.Loosely(c, tq.Fatal.In(err), should.BeTrue)
+				expectedBuild := &model.Build{ID: 1}
+				assert.Loosely(c, datastore.Get(ctx, expectedBuild), should.BeNil)
+				assert.Loosely(c, expectedBuild.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
+				assert.Loosely(c, expectedBuild.Proto.SummaryMarkdown, should.ContainSubstring("Backend task creation failure."))
+			})
+		})
+
 		c.Run("bail out if the build has a task associated", func(c *ftt.Test) {
 			infra.Proto.Backend.Task.Id.Id = "task"
 			assert.Loosely(c, datastore.Put(ctx, infra), should.BeNil)
@@ -697,6 +746,76 @@ func TestCreateBackendTask(t *testing.T) {
 			assert.Loosely(c, expectedBuild.Proto.SummaryMarkdown, should.ContainSubstring("Backend task creation failure."))
 		})
 
+		c.Run("scheduling timeout exceeded", func(c *ftt.Test) {
+			bldr := &model.Builder{
+				ID:     "builder",
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+			}
+			build.Proto.Status = pb.Status_SCHEDULED
+			check := func(c *ftt.Test) {
+				// No RunTask call is expected.
+				err = CreateBackendTask(ctx, 1, "request_id", timestamppb.New(now))
+				assert.Loosely(c, err, should.BeNil)
+				expectedBuild := &model.Build{ID: 1}
+				assert.Loosely(c, datastore.Get(ctx, expectedBuild), should.BeNil)
+				assert.Loosely(c, expectedBuild.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
+				assert.Loosely(c, expectedBuild.Proto.StatusDetails, should.Match(&pb.StatusDetails{
+					ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
+					Timeout:            &pb.StatusDetails_Timeout{},
+				}))
+				assert.Loosely(c, expectedBuild.Proto.SummaryMarkdown, should.ContainSubstring("Build expired"))
+				assert.Loosely(c, expectedBuild.Proto.EndTime.AsTime(), should.Match(now))
+			}
+
+			c.Run("start_deadline in the past", func(c *ftt.Test) {
+				// The build was created 5 minutes ago.
+				build.Proto.SchedulingTimeout = durationpb.New(5 * time.Minute)
+				assert.Loosely(c, datastore.Put(ctx, build, bldr), should.BeNil)
+				check(c)
+			})
+
+			c.Run("start_deadline passed while creating the backend task", func(c *ftt.Test) {
+				// The build was created 5 minutes ago, so it has 30s left.
+				build.Proto.SchedulingTimeout = durationpb.New(5*time.Minute + 30*time.Second)
+				assert.Loosely(c, datastore.Put(ctx, build, bldr), should.BeNil)
+				ctx, tc := testclock.UseTime(ctx, now)
+				mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, *pb.RunTaskRequest, ...any) (*pb.RunTaskResponse, error) {
+					tc.Add(time.Minute)
+					return nil, status.Errorf(codes.InvalidArgument, "bad request: start_deadline must be in the future")
+				})
+				err = CreateBackendTask(ctx, 1, "request_id", timestamppb.New(now))
+				assert.Loosely(c, err, should.BeNil)
+				expectedBuild := &model.Build{ID: 1}
+				assert.Loosely(c, datastore.Get(ctx, expectedBuild), should.BeNil)
+				assert.Loosely(c, expectedBuild.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
+				assert.Loosely(c, expectedBuild.Proto.StatusDetails, should.Match(&pb.StatusDetails{
+					ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
+					Timeout:            &pb.StatusDetails_Timeout{},
+				}))
+				assert.Loosely(c, expectedBuild.Proto.SummaryMarkdown, should.ContainSubstring("Build expired"))
+				assert.Loosely(c, expectedBuild.Proto.EndTime.AsTime(), should.Match(now.Add(time.Minute)))
+			})
+		})
+
+		c.Run("start_deadline close but not passed", func(c *ftt.Test) {
+			// The build was created 5 minutes ago, so it has 30s left. It should
+			// still be sent to the backend.
+			build.Proto.Status = pb.Status_SCHEDULED
+			build.Proto.SchedulingTimeout = durationpb.New(5*time.Minute + 30*time.Second)
+			assert.Loosely(c, datastore.Put(ctx, build), should.BeNil)
+			mockTaskCreator.EXPECT().RunTask(gomock.Any(), gomock.Any()).Return(&pb.RunTaskResponse{
+				Task: &pb.Task{
+					Id:       &pb.TaskID{Id: "abc123", Target: "swarming://chromium-swarm"},
+					UpdateId: 1,
+				},
+			}, nil)
+			err = CreateBackendTask(ctx, 1, "request_id", timestamppb.New(now))
+			assert.Loosely(c, err, should.BeNil)
+			expectedBuild := &model.Build{ID: 1}
+			assert.Loosely(c, datastore.Get(ctx, expectedBuild), should.BeNil)
+			assert.Loosely(c, expectedBuild.Proto.Status, should.Equal(pb.Status_SCHEDULED))
+		})
+
 		c.Run("Lite backend", func(c *ftt.Test) {
 			bkt := &model.Bucket{
 				ID:     "bucket",
@@ -710,6 +829,7 @@ func TestCreateBackendTask(t *testing.T) {
 					HeartbeatTimeoutSecs: 5,
 				},
 			}
+			build.Proto.CreateTime = timestamppb.New(now)
 			build.Proto.SchedulingTimeout = durationpb.New(1 * time.Minute)
 			infra.Proto.Backend.Task.Id.Target = "lite://foo-lite"
 			assert.Loosely(c, datastore.Put(ctx, build, infra, bkt, bldr), should.BeNil)
