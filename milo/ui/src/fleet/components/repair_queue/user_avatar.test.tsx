@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
 import {
   AVATAR_COLORS,
@@ -22,6 +24,10 @@ import {
 } from './user_avatar';
 
 describe('user_avatar helpers & component', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   describe('getInitial', () => {
     it('extracts uppercase initial from name', () => {
       expect(getInitial('Andrew Miller', 'andrew@google.com')).toBe('A');
@@ -81,6 +87,53 @@ describe('user_avatar helpers & component', () => {
     it('allows custom children override', () => {
       render(<UserAvatar name="Alice Smith">AS</UserAvatar>);
       expect(screen.getByText('AS')).toBeInTheDocument();
+    });
+
+    it('renders photo with no-referrer policy and falls back to monogram on load error', () => {
+      let createdImage: HTMLImageElement | undefined;
+      const NativeImage = window.Image;
+      jest.spyOn(window, 'Image').mockImplementation(() => {
+        createdImage = new NativeImage();
+        return createdImage;
+      });
+
+      render(
+        <FakeAuthStateProvider
+          value={{
+            identity: 'user:viewer@google.com',
+            email: 'viewer@google.com',
+          }}
+        >
+          <UserAvatar name="Alice Smith" email="user:alice@google.com" />
+        </FakeAuthStateProvider>,
+      );
+
+      const img = screen.getByRole('img', { name: 'Alice Smith' });
+      expect(img).toHaveAttribute(
+        'src',
+        'https://moma-teams-photos.corp.google.com/photos/alice%40google.com?sz=96&type=preferred&no_default_image=true&force_no_redirect=true',
+      );
+      expect(img).toHaveAttribute('referrerpolicy', 'no-referrer');
+
+      act(() => {
+        createdImage?.onerror?.(new Event('error'));
+      });
+      expect(screen.getByText('A')).toBeInTheDocument();
+    });
+
+    it('respects an explicit src prop override', () => {
+      render(
+        <UserAvatar
+          name="Alice Smith"
+          email="alice@google.com"
+          src="https://example.com/custom.png"
+        />,
+      );
+
+      expect(screen.getByRole('img', { name: 'Alice Smith' })).toHaveAttribute(
+        'src',
+        'https://example.com/custom.png',
+      );
     });
   });
 });

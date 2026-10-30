@@ -17,6 +17,8 @@ import { forwardRef } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
 
+import { normalizeEmail, useUserPhoto } from './use_user_photo';
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const AVATAR_COLORS = [
   colors.blue[700],
@@ -33,11 +35,7 @@ export const AVATAR_COLORS = [
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const getAvatarColor = (identifier: string): string => {
-  const normalized = identifier
-    .trim()
-    .replace(/^user:/, '')
-    .toLowerCase()
-    .split('@')[0];
+  const normalized = normalizeEmail(identifier).split('@')[0];
   let hash = 0;
   for (let i = 0; i < normalized.length; i++) {
     hash = normalized.charCodeAt(i) + ((hash << 5) - hash);
@@ -47,7 +45,7 @@ export const getAvatarColor = (identifier: string): string => {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const getInitial = (name?: string, email?: string): string => {
-  const text = (name?.trim() || email?.trim() || '').replace(/^user:/, '');
+  const text = (name?.trim() || email?.trim() || '').replace(/^user:/i, '');
   return text.charAt(0).toUpperCase() || '?';
 };
 
@@ -62,6 +60,7 @@ export const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
     const identifier = name || email || id || '';
     const bgColor = getAvatarColor(identifier);
     const initial = children ?? getInitial(name, email || id);
+    const photoProps = useUserPhoto({ name, email, id });
 
     return (
       <Avatar
@@ -73,6 +72,7 @@ export const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
           },
           ...(Array.isArray(sx) ? sx : [sx]),
         ]}
+        {...photoProps}
         {...rest}
       >
         {initial}
