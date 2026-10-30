@@ -45,7 +45,8 @@ func TestServerModule(t *testing.T) {
 		opts := newTestOpts()
 
 		(&ServicePipeline[*durationpb.Duration]{
-			ID: "service-cfg",
+			ID:    "service-cfg",
+			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{
 				&SingleFile[*durationpb.Duration]{Path: "service.cfg"},
 			},
@@ -53,7 +54,7 @@ func TestServerModule(t *testing.T) {
 
 		mod := NewModule(opts)
 		assert.That(t, mod.Name(), should.Equal(ModuleName))
-		assert.That(t, len(mod.Dependencies()), should.Equal(2))
+		assert.That(t, len(mod.Dependencies()), should.Equal(3))
 
 		outCtx, err := mod.Initialize(ctx, nil, module.HostOptions{})
 		assert.NoErr(t, err)
@@ -70,7 +71,8 @@ func TestServerModule(t *testing.T) {
 		opts := newTestOpts()
 
 		(&ServicePipeline[*durationpb.Duration]{
-			ID: "flag-cfg",
+			ID:    "flag-cfg",
+			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{
 				&SingleFile[*durationpb.Duration]{Path: "flag.cfg"},
 			},
@@ -100,4 +102,19 @@ func TestServerModule(t *testing.T) {
 		_, err := badMod.Initialize(ctx, nil, module.HostOptions{})
 		assert.ErrIsLike(t, err, "Files must not be empty")
 	})
+}
+
+func TestModuleDependencies(t *testing.T) {
+	t.Parallel()
+
+	reg := &Registry{}
+	(&ServicePipeline[*durationpb.Duration]{
+		ID:    "dep-1",
+		Files: []File{&SingleFile[*durationpb.Duration]{Path: "dep.cfg"}},
+		Store: &noopStore[*durationpb.Duration]{},
+	}).Register(reg)
+
+	mod := NewModule(&ModuleOptions{Registry: reg})
+	// Our noopStore added a bonus dependency over the default 2.
+	assert.That(t, len(mod.Dependencies()), should.Equal(3))
 }

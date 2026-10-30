@@ -108,6 +108,7 @@ func TestTransformFunc(t *testing.T) {
 		f := &SingleFile[*durationpb.Duration]{Path: "some.cfg"}
 		(&ServicePipeline[*durationpb.Duration]{
 			ID:          "test",
+			Store:       &noopStore[*durationpb.Duration]{},
 			ServiceName: "my-app",
 			Files:       []File{f},
 		}).Register(reg)
@@ -126,6 +127,7 @@ func TestTransformFunc(t *testing.T) {
 		f := &SingleFile[*durationpb.Duration]{Path: "some.cfg"}
 		(&ServicePipeline[*timestamppb.Timestamp]{
 			ID:               "test",
+			Store:            &noopStore[*timestamppb.Timestamp]{},
 			ServiceName:      "my-app",
 			Files:            []File{f},
 			TransformVersion: 1,

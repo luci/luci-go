@@ -47,7 +47,8 @@ func TestValidationAndTransform(t *testing.T) {
 		t.Parallel()
 		reg := &Registry{}
 		(&ServicePipeline[*durationpb.Duration]{
-			ID: "svc-colon",
+			ID:    "svc-colon",
+			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{&SingleFile[*durationpb.Duration]{
 				// NOTE: This matches the file called `regex:literal.cfg` in order
 				// to prove that we're escaping the magical pattern prefix stuff.
@@ -80,6 +81,7 @@ func TestValidationAndTransform(t *testing.T) {
 
 		(&ProjectPipeline[*durationpb.Duration]{
 			ID:               "proj-defaults",
+			Store:            &noopStore[*durationpb.Duration]{},
 			Files:            []File{noDefault},
 			TransformVersion: 1,
 			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
@@ -110,6 +112,7 @@ func TestValidationAndTransform(t *testing.T) {
 
 		(&ProjectPipeline[*durationpb.Duration]{
 			ID:               "proj-defaults",
+			Store:            &noopStore[*durationpb.Duration]{},
 			Files:            []File{defaulted},
 			TransformVersion: 1,
 			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
@@ -140,6 +143,7 @@ func TestValidationAndTransform(t *testing.T) {
 		var gotSum int
 		(&ProjectPipeline[*timestamppb.Timestamp]{
 			ID:               "proj-silly",
+			Store:            &noopStore[*timestamppb.Timestamp]{},
 			Files:            []File{projShards},
 			TransformVersion: 1,
 			Transform: func(c *validation.Context, snap *Snapshot) (*timestamppb.Timestamp, error) {
@@ -183,6 +187,7 @@ func TestValidationAndTransform(t *testing.T) {
 		}
 		(&ServicePipeline[*durationpb.Duration]{
 			ID:               "svc-overlap",
+			Store:            &noopStore[*durationpb.Duration]{},
 			Files:            []File{strLike, intLike},
 			TransformVersion: 1,
 			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
@@ -206,6 +211,7 @@ func TestValidationAndTransform(t *testing.T) {
 		f := &SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
 		(&ProjectPipeline[*durationpb.Duration]{
 			ID:    "proj-fatal",
+			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{f},
 			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				return nil, errors.New("fatal transform failure")
@@ -230,6 +236,7 @@ func TestValidationAndTransform(t *testing.T) {
 
 		(&ServicePipeline[*durationpb.Duration]{
 			ID:               "svc-colon",
+			Store:            &noopStore[*durationpb.Duration]{},
 			TransformVersion: 1,
 			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				a = aHandle.Get(snap).AsDuration()

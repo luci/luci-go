@@ -32,17 +32,19 @@ import (
 // Registry holds registered [ServicePipeline] and [ProjectPipeline]
 // definitions.
 type Registry struct {
-	mu            sync.Mutex
-	errs          []error
-	initialized   bool
-	ingestConfigs map[string]*ingestConfig
+	mu                   sync.Mutex
+	errs                 []error
+	finishedRegistration bool
+	initialized          bool
+	ingestConfigs        map[string]*ingestConfig
 }
 
 // register records `ingestConfig` into this Registry.
 //
 // Panics on a nil registry, but otherwise buffers all errors until
+// register adds ic to r, buffering any structural validation errors until
 // [Registry.Initialize] is called.
-func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformFunc[StoreMsg], ic *ingestConfig) {
+func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformFunc[StoreMsg], store Store[StoreMsg], ic *ingestConfig) {
 	if r == nil {
 		panic("cannot call Register with a nil Registry")
 	}
@@ -52,6 +54,9 @@ func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformF
 
 	if r.initialized {
 		panic("cannot call Register after Registry.Initialize")
+	}
+	if r.finishedRegistration {
+		panic("cannot call Register after Module.Dependencies() have been gathered")
 	}
 
 	// Do all the common validation stuff between ServicePipeline and ProjectPipeline.
@@ -65,7 +70,6 @@ func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformF
 		if ic.transformVersion < 0 {
 			return errors.New("TransformVersion must not be negative")
 		}
-
 		if len(files) == 0 {
 			return errors.New("Files must not be empty")
 		}
@@ -112,7 +116,13 @@ func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformF
 		default:
 			return errors.New("Transform must be set unless Files has a single SingleFile[StoreMsg]")
 		}
-		return err
+
+		if store == nil {
+			return errors.New("Storage is required")
+		}
+
+		ic.store = storeAdapter[StoreMsg]{store}
+		return nil
 	}()
 	if err != nil {
 		r.errs = append(r.errs, errors.Fmt("%s.Register(): %w", ic, err))
@@ -124,11 +134,21 @@ func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformF
 	r.ingestConfigs[ic.id] = ic
 }
 
+func (r *Registry) finishRegistration() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.finishedRegistration {
+		panic(errors.Fmt("cannot finishRegistration more than once."))
+	}
+	r.finishedRegistration = true
+}
+
 // Initialize freezes registration and resolves template variables for all
 // registered configs using v (or &vars.Vars if v is nil).
 func (r *Registry) Initialize(ctx context.Context, v *vars.VarSet) (err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.finishedRegistration = true
 	if err := errors.Join(r.errs...); err != nil {
 		r.initialized = true
 		return err

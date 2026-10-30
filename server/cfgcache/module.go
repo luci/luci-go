@@ -104,11 +104,33 @@ func (*serverModule) Name() module.Name {
 }
 
 // Dependencies is part of module.Module interface.
-func (*serverModule) Dependencies() []module.Dependency {
-	return []module.Dependency{
-		module.RequiredDependency(cfgmodule.ModuleName),
-		module.OptionalDependency(cron.ModuleName),
+//
+// This freezes registration of new pipelines with the Registry (but does not
+// fully initialize it yet, that will happen in Initialize).
+func (m *serverModule) Dependencies() []module.Dependency {
+	reg := m.registry()
+	reg.finishRegistration()
+
+	ret := make([]module.Dependency, 0, 2+len(reg.ingestConfigs))
+	seen := map[module.Dependency]bool{}
+
+	add := func(dep module.Dependency) {
+		if seen[dep] {
+			return
+		}
+		seen[dep] = true
+		ret = append(ret, dep)
 	}
+
+	add(module.RequiredDependency(cfgmodule.ModuleName))
+	add(module.OptionalDependency(cron.ModuleName))
+	for _, ic := range reg.ingestConfigs {
+		for _, dep := range ic.store.ModuleDependencies() {
+			add(dep)
+		}
+	}
+
+	return ret
 }
 
 // Initialize is part of module.Module interface.

@@ -33,6 +33,12 @@ type ProjectPipeline[StoreMsg proto.Message] struct {
 	// Required.
 	ID string
 
+	// Store is the required storage for storing the transformed configuration.
+	//
+	// See 'dsstore' for a datastore-backed implementation (or 'memstore' for
+	// testing).
+	Store Store[StoreMsg]
+
 	// Files is one or more [*SingleFile] or [*RegexFile] entries to consume
 	// per-project.
 	//
@@ -78,12 +84,14 @@ func (pp *ProjectPipeline[StoreMsg]) String() string {
 // Register registers this pipeline with the given registry.
 //
 // Errors are buffered until [Registry.Initialize] is called. Panics if r is
-// nil or already initialized.
+// nil or already initialized. If using the Registry with the server Module,
+// this must be called before server.Main, because the registered config
+// implies module Dependencies.
 //
 // Registering enables the pipeline when the Registry is used with the server:
 //   - Validation handlers will call TransformFunc.
 func (pp *ProjectPipeline[StoreMsg]) Register(r *Registry) {
-	register(r, pp.Files, pp.Transform, &ingestConfig{
+	register(r, pp.Files, pp.Transform, pp.Store, &ingestConfig{
 		id:               pp.ID,
 		desc:             pp.String(),
 		transformVersion: pp.TransformVersion,

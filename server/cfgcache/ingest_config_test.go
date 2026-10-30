@@ -37,6 +37,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 			name: "empty ID",
 			register: func(reg *Registry) {
 				(&ServicePipeline[*durationpb.Duration]{
+					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{&SingleFile[*durationpb.Duration]{Path: "some.cfg"}},
 				}).Register(reg)
 			},
@@ -47,6 +48,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 			register: func(reg *Registry) {
 				(&ServicePipeline[*durationpb.Duration]{
 					ID:               "svc",
+					Store:            &noopStore[*durationpb.Duration]{},
 					Files:            []File{&SingleFile[*durationpb.Duration]{Path: "some.cfg"}},
 					TransformVersion: -1,
 				}).Register(reg)
@@ -58,10 +60,12 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 			register: func(reg *Registry) {
 				(&ServicePipeline[*durationpb.Duration]{
 					ID:    "dup",
+					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{&SingleFile[*durationpb.Duration]{Path: "a.cfg"}},
 				}).Register(reg)
 				(&ProjectPipeline[*durationpb.Duration]{
 					ID:    "dup",
+					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{&SingleFile[*durationpb.Duration]{Path: "b.cfg"}},
 				}).Register(reg)
 			},
@@ -71,7 +75,8 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 			name: "invalid RegexFile pattern",
 			register: func(reg *Registry) {
 				(&ServicePipeline[*durationpb.Duration]{
-					ID: "svc",
+					ID:    "svc",
+					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{
 						&RegexFile[*durationpb.Duration]{PathRegex: `[unclosed`},
 					},
@@ -88,6 +93,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 			register: func(reg *Registry) {
 				(&ServicePipeline[*durationpb.Duration]{
 					ID:          "svc",
+					Store:       &noopStore[*durationpb.Duration]{},
 					ServiceName: "${bad_svc}",
 					Files:       []File{&SingleFile[*durationpb.Duration]{Path: "some.cfg"}},
 				}).Register(reg)
@@ -99,6 +105,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 			register: func(reg *Registry) {
 				(&ServicePipeline[*durationpb.Duration]{
 					ID:    "svc",
+					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{&SingleFile[*durationpb.Duration]{Path: "${bad_path}.cfg"}},
 				}).Register(reg)
 			},
@@ -109,6 +116,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 			register: func(reg *Registry) {
 				(&ServicePipeline[*durationpb.Duration]{
 					ID:          "svc",
+					Store:       &noopStore[*durationpb.Duration]{},
 					ServiceName: "Bad/Service",
 					Files:       []File{&SingleFile[*durationpb.Duration]{Path: "some.cfg"}},
 				}).Register(reg)
@@ -190,8 +198,8 @@ func TestRegistryLifecycle(t *testing.T) {
 	t.Run("stateless descriptors can be registered across multiple registries", func(t *testing.T) {
 		t.Parallel()
 		f := &SingleFile[*durationpb.Duration]{Path: "${appid}.cfg"}
-		svcCfg := &ServicePipeline[*durationpb.Duration]{ID: "svc", Files: []File{f}}
-		projCfg := &ProjectPipeline[*durationpb.Duration]{ID: "proj", Files: []File{f}}
+		svcCfg := &ServicePipeline[*durationpb.Duration]{ID: "svc", Store: &noopStore[*durationpb.Duration]{}, Files: []File{f}}
+		projCfg := &ProjectPipeline[*durationpb.Duration]{ID: "proj", Store: &noopStore[*durationpb.Duration]{}, Files: []File{f}}
 
 		ctx1, ts1 := TestingContext(t.Context())
 		svcCfg.Register(ts1.Registry)

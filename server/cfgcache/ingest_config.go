@@ -55,6 +55,7 @@ type ingestConfig struct {
 	// Original TransformVersion and a genericized version of TransformFunc.
 	transformVersion int
 	transformFunc    genericTransformFunc
+	store            genericStore
 
 	// serviceName is the *resolved* serviceNamePattern. Set in
 	// [Registry.Initialize].
