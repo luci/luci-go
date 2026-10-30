@@ -17,6 +17,7 @@ export * from './colors';
 export * from './date_time';
 export * from './errors';
 export * from './filter_utils';
+export * from './markdown_utils';
 export * from './string';
 export * from './unit_scaling';
 export * from './widget_utils';

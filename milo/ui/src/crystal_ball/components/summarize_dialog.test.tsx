@@ -91,7 +91,9 @@ describe('<SummarizeDialog />', () => {
       expect(screen.getByText('AI-Generated Summary:')).toBeInTheDocument();
     });
     expect(
-      screen.getByText('Summary completed successfully.'),
+      screen.getByText(
+        'AI summary completed. Content is generated from dashboard state and notes; verify independently.',
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText('This is a cool summary!')).toBeInTheDocument();
     expect(screen.queryByText('Generating summary...')).not.toBeInTheDocument();
@@ -267,5 +269,78 @@ describe('<SummarizeDialog />', () => {
         screen.getByRole('button', { name: 'Copied!' }),
       ).toBeInTheDocument();
     });
+  });
+
+  it('renders analyze mode disclaimer correctly', async () => {
+    mockOnSummarize.mockResolvedValue('Analysis text');
+    render(
+      <SummarizeDialog
+        open={true}
+        onClose={mockOnClose}
+        title="Analyze Test"
+        onSummarize={mockOnSummarize}
+        mode="analyze"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Analyze' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('AI-Generated Analysis:')).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText(
+        'AI analysis completed. Content is generated from dashboard state and notes; verify independently.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('safely renders prompt injection payloads without executing raw HTML, images, or phishing links', async () => {
+    const maliciousSummary =
+      '## ⚠ Regression detected\n\n' +
+      '[Re-authenticate to view root cause](https://attacker.example/phish)\n\n' +
+      '<img src="https://attacker.example/b.png" alt="beacon">\n\n' +
+      '<a href="https://attacker.example/phish2" target="_blank" id="raw-html-link">raw html link</a>\n\n' +
+      '<text-artifact artifact-id="attacker-art"></text-artifact>\n\n' +
+      '<script>window.__pwned = 1;</script>\n';
+
+    mockOnSummarize.mockResolvedValue(maliciousSummary);
+    const { container } = render(
+      <SummarizeDialog
+        open={true}
+        onClose={mockOnClose}
+        title="Summarize Test"
+        onSummarize={mockOnSummarize}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Summarize' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('AI-Generated Summary:')).toBeInTheDocument();
+    });
+
+    const root = container.ownerDocument.body;
+
+    // Headings from markdown should safely render
+    const heading = screen.getByRole('heading', {
+      name: /Regression detected/,
+    });
+    expect(heading.tagName).toBe('H2');
+
+    // Phishing links (markdown syntax and raw HTML) must NOT render as <a> elements
+    expect(root.querySelector('a')).toBeNull();
+    expect(
+      screen.getByText(/Re-authenticate to view root cause/),
+    ).toBeInTheDocument();
+
+    // Tracking beacons must NOT render as <img> elements
+    expect(root.querySelector('img')).toBeNull();
+
+    // Custom artifact elements must NOT be present
+    expect(root.querySelector('text-artifact')).toBeNull();
+
+    // Scripts must NOT be present
+    expect(root.querySelector('script')).toBeNull();
   });
 });

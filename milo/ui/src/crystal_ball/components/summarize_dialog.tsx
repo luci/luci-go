@@ -26,10 +26,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { renderMarkdown } from '@/common/tools/markdown/utils';
+import { renderAiMarkdown } from '@/crystal_ball/utils';
 
 export interface SummarizeDialogProps {
   /**
@@ -74,6 +74,11 @@ export function SummarizeDialog({
   const [copied, setCopied] = useState(false);
 
   const isAnalyze = mode === 'analyze';
+
+  const renderedSummaryHtml = useMemo(
+    () => (summary ? renderAiMarkdown(summary) : ''),
+    [summary],
+  );
 
   const handleCopy = async () => {
     if (!summary) return;
@@ -165,10 +170,9 @@ export function SummarizeDialog({
           </Box>
         ) : summary ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Alert severity="success" sx={{ mb: 0.5 }}>
-              {isAnalyze
-                ? 'Analysis completed successfully.'
-                : 'Summary completed successfully.'}
+            <Alert severity="info" sx={{ mb: 0.5 }}>
+              AI {isAnalyze ? 'analysis' : 'summary'} completed. Content is
+              generated from dashboard state and notes; verify independently.
             </Alert>
             <Typography
               variant="subtitle2"
@@ -187,7 +191,7 @@ export function SummarizeDialog({
                 borderColor: 'divider',
               }}
             >
-              <SanitizedHtml html={renderMarkdown(summary)} />
+              <SanitizedHtml html={renderedSummaryHtml} />
             </Box>
           </Box>
         ) : (
