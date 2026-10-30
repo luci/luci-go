@@ -163,11 +163,11 @@ func updateService(ctx context.Context, srvInfo *cfgcommonpb.Service) error {
 		service := &model.Service{
 			Name: srvInfo.GetId(),
 		}
-		switch err := datastore.Get(ectx, service); err {
-		case datastore.ErrNoSuchEntity:
+		switch err := datastore.Get(ectx, service); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
 			// Expect entity missing for the first time updating service.
 			logging.Warningf(ectx, "missing Service datastore entity for %q. This is common for first time updating service", srvInfo.GetId())
-		case nil:
+		case err == nil:
 			existing = service
 		default:
 			return err

@@ -57,16 +57,16 @@ func TestModel(t *testing.T) {
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "latest"),
 			}
 			latest.Content, err = gzipCompress([]byte("latest"))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			stale := &File{
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "stale"),
 			}
 			stale.Content, err = gzipCompress([]byte("stale"))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, datastore.Put(ctx, latest, stale), should.BeNil)
 			actual, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, actual, should.Resemble(&File{
 				Path:     "file",
 				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "latest"),
@@ -77,12 +77,12 @@ func TestModel(t *testing.T) {
 		t.Run("error", func(t *ftt.Test) {
 			t.Run("configset not exist", func(t *ftt.Test) {
 				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("nonexist"), "file")
-				assert.Loosely(t, err, should.ErrLike(`can not find config set entity "services/nonexist"`))
+				assert.ErrIsLike(t, err, `can not find config set entity "services/nonexist"`)
 			})
 
 			t.Run("file not exist", func(t *ftt.Test) {
 				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
-				assert.Loosely(t, err, should.ErrLike(`can not find file entity "file" from datastore for config set: services/service, revision: latest`))
+				assert.ErrIsLike(t, err, `can not find file entity "file" from datastore for config set: services/service, revision: latest`)
 			})
 		})
 	})
@@ -93,7 +93,7 @@ func TestModel(t *testing.T) {
 
 		t.Run("by content hash", func(t *ftt.Test) {
 			content, err := gzipCompress([]byte("content"))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			now := clock.Now(ctx).UTC()
 			assert.Loosely(t, datastore.Put(ctx, &File{
 				Path:          "file",
@@ -119,7 +119,7 @@ func TestModel(t *testing.T) {
 			}), should.BeNil)
 
 			file, err := GetConfigFileByHash(ctx, config.MustServiceSet("service"), "hash")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, file, should.Resemble(&File{
 				Path:          "file",
 				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev2"),
@@ -132,7 +132,7 @@ func TestModel(t *testing.T) {
 
 		t.Run("not found", func(t *ftt.Test) {
 			_, err := GetConfigFileByHash(ctx, config.MustServiceSet("service"), "hash")
-			assert.Loosely(t, err, should.ErrLike(`can not find matching file entity from datastore with hash "hash"`))
+			assert.ErrIsLike(t, err, `can not find matching file entity from datastore with hash "hash"`)
 		})
 	})
 }
@@ -153,29 +153,29 @@ func TestGetRawContent(t *testing.T) {
 
 		t.Run("should read File.Content first", func(t *ftt.Test) {
 			content, err := gzipCompress([]byte("raw content"))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			file.Content = content
 			file.GcsURI = gs.MakePath("test-bucket", "test-object")
 			rawContent, err := file.GetRawContent(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, rawContent, should.Match([]byte("raw content")))
 			assert.Loosely(t, file.rawContent, should.Match([]byte("raw content")))
 		})
 
 		t.Run("should resolve GcsUri", func(t *ftt.Test) {
 			content, err := gzipCompress([]byte("raw content"))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			file.GcsURI = gs.MakePath("test-bucket", "test-object")
 			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(content, nil)
 			rawContent, err := file.GetRawContent(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, rawContent, should.Match([]byte("raw content")))
 			assert.Loosely(t, file.rawContent, should.Match([]byte("raw content")))
 
 			t.Run("use cache when calling agin", func(t *ftt.Test) {
 				mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(nil, errors.New("should not be called")).AnyTimes()
 				rawContent, err := file.GetRawContent(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, rawContent, should.Match([]byte("raw content")))
 			})
 		})
@@ -184,23 +184,23 @@ func TestGetRawContent(t *testing.T) {
 			file.GcsURI = gs.MakePath("test-bucket", "test-object")
 			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(nil, errors.New("GCS internal error"))
 			rawContent, err := file.GetRawContent(ctx)
-			assert.Loosely(t, err, should.ErrLike("failed to read from gs://test-bucket/test-object: GCS internal error"))
+			assert.ErrIsLike(t, err, "read from gs://test-bucket/test-object: GCS internal error")
 			assert.Loosely(t, rawContent, should.BeNil)
 		})
 
 		t.Run("invalid file", func(t *ftt.Test) {
 			rawContent, err := file.GetRawContent(ctx)
-			assert.Loosely(t, err, should.ErrLike("both content and gcs_uri are empty"))
+			assert.ErrIsLike(t, err, "both content and gcs_uri are empty")
 			assert.Loosely(t, rawContent, should.BeNil)
 		})
 
 		t.Run("empty raw content", func(t *ftt.Test) {
 			content, err := gzipCompress([]byte(""))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			file.Content = content
 			file.GcsURI = gs.MakePath("test-bucket", "test-object")
 			rawContent, err := file.GetRawContent(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, rawContent, should.Match([]byte("")))
 			assert.Loosely(t, file.rawContent, should.Match([]byte("")))
 		})

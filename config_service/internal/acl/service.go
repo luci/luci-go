@@ -64,7 +64,7 @@ func CanReadService(ctx context.Context, service string) (bool, error) {
 
 	srv := &model.Service{Name: service}
 	switch err := datastore.Get(ctx, srv); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return false, nil // Deny access for non-existing service.
 	case err != nil:
 		return false, fmt.Errorf("failed to load service %q: %w", service, err)

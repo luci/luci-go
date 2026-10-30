@@ -17,10 +17,10 @@ package model
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
@@ -142,7 +142,7 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 	case f.GcsURI != "":
 		compressed, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename(), false)
 		if err != nil {
-			return nil, errors.Fmt("failed to read from %s: %w", f.GcsURI, err)
+			return nil, fmt.Errorf("read from %s: %w", f.GcsURI, err)
 		}
 		rawContent, err := decompress.Gzip(compressed)
 		if err != nil {
@@ -253,10 +253,10 @@ func (e *NoSuchConfigError) IsUnknownFileHash() bool {
 func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath string) (*File, error) {
 	cfgSet := &ConfigSet{ID: configSet}
 	switch err := datastore.Get(ctx, cfgSet); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, &NoSuchConfigError{unknownConfigSet: string(configSet)}
 	case err != nil:
-		return nil, errors.Fmt("failed to fetch ConfigSet %q: %w", configSet, err)
+		return nil, fmt.Errorf("fetch ConfigSet %q: %w", configSet, err)
 	}
 	f := &File{
 		Path:     filePath,
@@ -273,7 +273,7 @@ func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath str
 				file:      f.Path,
 			}}
 	case err != nil:
-		return nil, errors.Fmt("failed to fetch file %q: %w", f.Path, err)
+		return nil, fmt.Errorf("fetch file %q: %w", f.Path, err)
 	}
 	return f, nil
 }
@@ -288,7 +288,7 @@ func GetConfigFileByHash(ctx context.Context, configSet config.Set, contentSha25
 	var latestFile *File
 	for file, err := range datastore.RunQuery[*File](ctx, datastore.NewQuery(FileKind).Eq("content_sha256", contentSha256)).Results {
 		if err != nil {
-			return nil, errors.Fmt("failed to query file by sha256 hash %q: %w", contentSha256, err)
+			return nil, fmt.Errorf("query file by sha256 hash %q: %w", contentSha256, err)
 		}
 		if file.Revision.Root().StringID() == string(configSet) &&
 			(latestFile == nil || file.CreateTime.After(latestFile.CreateTime)) {
