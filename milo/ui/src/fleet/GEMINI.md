@@ -121,7 +121,7 @@ Follow [gerrit-workflows](./.agents/skills/gerrit-workflows/SKILL.md) before cre
 ## 8. Shared Infrastructure Protection
 When working on Fleet Console code:
 - **Do not modify shared layout guards**: Never remove environment checks in `src/common/` or shared app shells (`Header.tsx`, `fleet_layout.tsx`).
-- **Feature flags (`createFleetFeatureFlag` & ESLint)**: Register flags in `src/fleet/features.ts` via `createFleetFeatureFlag` (which requires `allowedEnvironments: ['dev']` or `['dev', 'prod']` at compile time); direct `createFeatureFlag` imports and `window.location.hostname` checks in `src/fleet/` are blocked by `eslint.config.js`.
+- **Feature flags (`createFleetFeatureFlag` & ESLint)**: Register flags in `src/fleet/features.ts` via `createFleetFeatureFlag` (which requires `allowedEnvironments: ['dev']` or `['dev', 'prod']` at compile time); direct `createFeatureFlag` imports and `window.location.hostname` checks in `src/fleet/` are blocked by `src/fleet/eslint_config.js`.
 
 
 

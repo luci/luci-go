@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/** @type {import('eslint').ESLint.Plugin} */
 export default {
   rules: {
     'no-window-location-hostname': {

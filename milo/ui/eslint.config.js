@@ -14,6 +14,7 @@
 
 // @ts-check
 
+import { defineConfig } from 'eslint/config';
 import prettierConfig from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import jestPlugin from 'eslint-plugin-jest';
@@ -26,7 +27,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-import fconPlugin from './src/fleet/eslint-plugin-fcon-rules/index.js';
+import fleetEslintConfig from './src/fleet/eslint_config.js';
 
 const localPlugin = {
   rules: {
@@ -359,29 +360,8 @@ export default [
   },
 
   // 6. Override for Fleet Console Files
-  {
-    files: ['src/fleet/**/*.{js,mjs,cjs,ts,jsx,tsx}'],
-    plugins: { 'fcon-rules': fconPlugin },
-    rules: {
-      'local-rules/canonical-go-links': 'error',
-      'fcon-rules/no-window-location-hostname': 'error',
-      'fcon-rules/require-create-fleet-feature-flag': 'error',
-      'fcon-rules/no-legacy-imports': 'error',
-    },
-  },
-  {
-    files: ['src/fleet/features.ts', 'src/fleet/**/*.test.{ts,tsx}'],
-    rules: {
-      'fcon-rules/require-create-fleet-feature-flag': 'off',
-    },
-  },
-  {
-    files: [
-      'src/fleet/testing_tools/**',
-      'src/fleet/components/fc_data_table/mrt_filter_menu_item.tsx',
-    ],
-    rules: {
-      'fcon-rules/no-legacy-imports': 'off',
-    },
-  },
+  ...defineConfig({
+    basePath: 'src/fleet',
+    extends: [fleetEslintConfig],
+  }),
 ];
