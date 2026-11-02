@@ -12,10 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { renderHook, waitFor, act } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+  act,
+} from '@testing-library/react';
+import { DateTime, Settings } from 'luxon';
 import React from 'react';
 import { MemoryRouter } from 'react-router';
 
+import { DateFilter } from '@/fleet/components/filter_dropdown/date_filter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
@@ -1660,5 +1669,69 @@ describe('useFilterState', () => {
       result.current.setFiltersBatch({ 'labels."ufs.last_sync"': [] });
     });
     expect(onFilterChangeMock).toHaveBeenCalledWith('');
+  });
+
+  const initialDefaultZone = Settings.defaultZone;
+  afterEach(() => {
+    Settings.defaultZone = initialDefaultZone;
+  });
+
+  it('preserves UTC calendar day for isDateOnly filters in negative UTC offset timezones', async () => {
+    Settings.defaultZone = 'America/Los_Angeles';
+    const onFilterChangeMock = jest.fn();
+    const builders = {
+      resource_request_actual_delivery_date: new DateFilterCategoryDataBuilder()
+        .setLabel('Actual Delivery Date')
+        .setIsDateOnly(true),
+    };
+    const initialFilter =
+      'resource_request_actual_delivery_date >= "2026-10-21" AND ' +
+      'resource_request_actual_delivery_date <= "2026-10-28"';
+    const { result } = renderHook(() =>
+      useFilterState(builders, initialFilter, onFilterChangeMock),
+    );
+    await waitFor(() => expect(result.current.filterValues).toBeDefined());
+
+    const deliveryCat = result.current.filterValues?.[
+      'resource_request_actual_delivery_date'
+    ] as DateFilterCategoryData;
+    expect(deliveryCat.isActive()).toBe(true);
+    const expectedFrom = DateTime.fromISO('2026-10-21', {
+      zone: 'utc',
+    }).toLocaleString(DateTime.DATE_SHORT);
+    const expectedTo = DateTime.fromISO('2026-10-28', {
+      zone: 'utc',
+    }).toLocaleString(DateTime.DATE_SHORT);
+    expect(deliveryCat.getChipLabel()).toBe(
+      `1 | Actual Delivery Date from ${expectedFrom} to ${expectedTo}`,
+    );
+    expect(deliveryCat.toAIP160()).toBe(initialFilter);
+
+    const handleChange = jest.fn();
+    render(
+      <DateFilter
+        isDateOnly
+        value={deliveryCat.value}
+        onChange={handleChange}
+      />,
+    );
+    const fromInput = screen.getByLabelText('From') as HTMLInputElement;
+    const toInput = screen.getByLabelText('To') as HTMLInputElement;
+    expect(fromInput.value).toContain('10/21/2026');
+    expect(toInput.value).toContain('10/28/2026');
+
+    const calendarButtons = screen.getAllByRole('button', {
+      name: /Choose date/i,
+    });
+    fireEvent.click(calendarButtons[0]);
+    const day22Button = await screen.findByRole('gridcell', { name: '22' });
+    fireEvent.click(day22Button);
+
+    expect(handleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        min: new Date('2026-10-22T00:00:00.000Z'),
+        max: new Date('2026-10-28T00:00:00.000Z'),
+      }),
+    );
   });
 });

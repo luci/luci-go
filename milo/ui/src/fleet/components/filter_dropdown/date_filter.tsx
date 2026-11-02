@@ -186,8 +186,18 @@ export const DateFilter = forwardRef(function DateFilter(
 
   const getValidDate = (date?: Date) => {
     if (!date || isNaN(date.getTime())) return null;
-    const dateTime = DateTime.fromJSDate(date);
+    const dateTime = isDateOnly
+      ? DateTime.fromJSDate(date, { zone: 'utc' }).setZone('default', {
+          keepLocalTime: true,
+        })
+      : DateTime.fromJSDate(date);
     return dateTime.isValid ? dateTime : null;
+  };
+  const toFilterDate = (date: DateTime | null): Date | undefined => {
+    if (!date || !date.isValid) return undefined;
+    return isDateOnly
+      ? date.setZone('utc', { keepLocalTime: true }).startOf('day').toJSDate()
+      : date.toJSDate();
   };
   const FULL_DAY = 24 * 60 * 60 * 1000;
   const maxAllowedDate = isFutureDisabled
@@ -337,7 +347,7 @@ export const DateFilter = forwardRef(function DateFilter(
             setActivePresetId(null);
             updateFilter({
               ...value,
-              min: date?.toJSDate() || undefined,
+              min: toFilterDate(date),
             });
           }}
           inputRef={firstInputRef}
@@ -354,7 +364,7 @@ export const DateFilter = forwardRef(function DateFilter(
             setActivePresetId(null);
             updateFilter({
               ...value,
-              max: date?.toJSDate() || undefined,
+              max: toFilterDate(date),
             });
           }}
           open={openId === 'max'}

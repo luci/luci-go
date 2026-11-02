@@ -145,13 +145,13 @@ export class DateFilterCategoryData implements FilterCategory {
     const rangeParts: string[] = [];
     if (this.value.min) {
       const val = this.isDateOnly
-        ? DateTime.fromJSDate(this.value.min).toISODate()
+        ? DateTime.fromJSDate(this.value.min, { zone: 'utc' }).toISODate()
         : this.value.min.toISOString();
       rangeParts.push(`${safeKey} >= "${val}"`);
     }
     if (this.value.max) {
       const val = this.isDateOnly
-        ? DateTime.fromJSDate(this.value.max).toISODate()
+        ? DateTime.fromJSDate(this.value.max, { zone: 'utc' }).toISODate()
         : this.value.max.toISOString();
       rangeParts.push(`${safeKey} <= "${val}"`);
     }
@@ -200,15 +200,16 @@ export class DateFilterCategoryData implements FilterCategory {
     const formatOpts = this.isDateOnly
       ? DateTime.DATE_SHORT
       : DateTime.DATETIME_SHORT;
+    const dtOpts = this.isDateOnly ? { zone: 'utc' } : undefined;
     const rangeParts: string[] = [];
     if (this.value.min) {
       rangeParts.push(
-        `from ${DateTime.fromJSDate(this.value.min).toLocaleString(formatOpts)}`,
+        `from ${DateTime.fromJSDate(this.value.min, dtOpts).toLocaleString(formatOpts)}`,
       );
     }
     if (this.value.max) {
       rangeParts.push(
-        `to ${DateTime.fromJSDate(this.value.max).toLocaleString(formatOpts)}`,
+        `to ${DateTime.fromJSDate(this.value.max, dtOpts).toLocaleString(formatOpts)}`,
       );
     }
     if (this.value.onlyEmpty) {
