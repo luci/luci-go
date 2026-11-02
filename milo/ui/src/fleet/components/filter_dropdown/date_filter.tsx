@@ -32,7 +32,11 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { colors } from '@/fleet/theme/colors';
-import { fleetColors, radii } from '@/fleet/theme/tokens';
+import {
+  datePickerPaperSx,
+  datePickerTextFieldSx,
+} from '@/fleet/theme/recipes';
+import { radii } from '@/fleet/theme/tokens';
 import { DateFilterValue } from '@/fleet/types';
 
 import { OptionComponentHandle } from './filter_dropdown';
@@ -56,6 +60,21 @@ interface CustomDateInputProps {
   isDateOnly?: boolean;
 }
 
+const DATE_PICKER_POPPER_SLOT_PROPS = {
+  placement: 'right-start' as const,
+  modifiers: [
+    {
+      name: 'offset',
+      options: {
+        offset: [0, 24],
+      },
+    },
+  ],
+  sx: {
+    zIndex: 1500,
+  },
+};
+
 const CustomDateInput = ({
   label,
   value,
@@ -71,10 +90,9 @@ const CustomDateInput = ({
     field: {
       clearable: true,
     },
-    popper: {
-      sx: {
-        zIndex: 1500,
-      },
+    popper: DATE_PICKER_POPPER_SLOT_PROPS,
+    desktopPaper: {
+      sx: datePickerPaperSx,
     },
     textField: {
       inputRef,
@@ -83,29 +101,7 @@ const CustomDateInput = ({
       InputLabelProps: {
         shrink: true,
       },
-      sx: {
-        width: '100%',
-        '& .MuiOutlinedInput-root, & .MuiPickersOutlinedInput-root': {
-          borderRadius: radii.sm,
-          backgroundColor: fleetColors.surface,
-          '& fieldset': {
-            borderColor: colors.grey[300],
-          },
-          '&:hover fieldset': {
-            borderColor: colors.grey[500],
-          },
-          '&.Mui-focused fieldset': {
-            borderColor: colors.blue[600],
-          },
-        },
-        '& .MuiInputLabel-root': {
-          color: colors.grey[700],
-          fontWeight: 500,
-          '&.Mui-focused': {
-            color: colors.blue[600],
-          },
-        },
-      },
+      sx: datePickerTextFieldSx,
     },
   };
 

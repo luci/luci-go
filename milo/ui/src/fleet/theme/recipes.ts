@@ -32,6 +32,7 @@ import {
   controlHeights,
   elevations,
   fleetColors,
+  fontFamilies,
   fontSizes,
   radii,
 } from './tokens';
@@ -179,5 +180,156 @@ export const subMetricRowSx = {
     backgroundColor: fleetColors.surfaceTonal,
     outline: `2px solid ${fleetColors.primary}`,
     outlineOffset: 2,
+  },
+} as const satisfies SxProps<Theme>;
+
+/** Outlined text field inside a date/time filter dropdown. */
+export const datePickerTextFieldSx = {
+  width: '100%',
+  '& .MuiOutlinedInput-root, & .MuiPickersOutlinedInput-root': {
+    borderRadius: radii.sm,
+    backgroundColor: fleetColors.surface,
+    '& fieldset': {
+      borderColor: fleetColors.border,
+    },
+    '&:hover fieldset': {
+      borderColor: fleetColors.borderEmphasis,
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: fleetColors.primary,
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: fleetColors.textSecondary,
+    fontWeight: 500,
+    '&.Mui-focused': {
+      color: fleetColors.primary,
+    },
+  },
+} as const satisfies SxProps<Theme>;
+
+/**
+ * Floating Paper surface for `@mui/x-date-pickers` desktop calendar and
+ * multi-section digital clock poppers.
+ *
+ * Aligns the calendar grid, clock columns, and action bar with GM3 tokens and
+ * suppresses native scrollbar tracks inside narrow 56px clock columns.
+ */
+export const datePickerPaperSx = {
+  backgroundColor: fleetColors.surface,
+  backgroundImage: 'none',
+  border: borders.default,
+  borderRadius: radii.md,
+  boxShadow: elevations.card,
+  overflow: 'hidden',
+  '& .MuiPickersLayout-root': {
+    backgroundColor: fleetColors.surface,
+  },
+  '& .MuiDateCalendar-root': {
+    width: 304,
+    height: 296,
+    maxHeight: 296,
+  },
+  '& .MuiPickersCalendarHeader-root': {
+    marginTop: '10px',
+    marginBottom: '4px',
+    paddingLeft: '18px',
+    paddingRight: '10px',
+  },
+  '& .MuiPickersCalendarHeader-label': {
+    fontFamily: fontFamilies.display,
+    fontSize: fontSizes.body,
+    fontWeight: 500,
+    color: fleetColors.textPrimary,
+  },
+  '& .MuiDayCalendar-weekDayLabel': {
+    fontFamily: fontFamilies.text,
+    fontSize: fontSizes.caption,
+    fontWeight: 500,
+    color: fleetColors.textTertiary,
+  },
+  '& .MuiPickersDay-root': {
+    fontFamily: fontFamilies.text,
+    fontSize: fontSizes.label,
+    color: fleetColors.textPrimary,
+    borderRadius: radii.pill,
+    '&:hover': {
+      backgroundColor: fleetColors.surfaceTonal,
+    },
+    '&.MuiPickersDay-today:not(.Mui-selected)': {
+      borderColor: fleetColors.primary,
+      color: fleetColors.primary,
+      fontWeight: 500,
+    },
+    '&.Mui-selected': {
+      backgroundColor: fleetColors.primary,
+      color: fleetColors.surface,
+      fontWeight: 500,
+      '&:hover, &:focus': {
+        backgroundColor: fleetColors.primaryHover,
+        color: fleetColors.surface,
+      },
+    },
+  },
+  '& .MuiMultiSectionDigitalClock-root': {
+    borderBottom: 'none',
+    borderLeft: borders.divider,
+    maxHeight: 296,
+  },
+  '& .MuiMultiSectionDigitalClockSection-root': {
+    width: 56,
+    maxHeight: 296,
+    padding: '4px 4px',
+    scrollbarWidth: 'none',
+    '&::-webkit-scrollbar': {
+      display: 'none',
+    },
+    '&:not(:first-of-type)': {
+      borderLeft: borders.divider,
+    },
+  },
+  '& .MuiMultiSectionDigitalClockSection-item': {
+    width: 44,
+    minHeight: controlHeights.button,
+    height: controlHeights.button,
+    margin: '2px auto',
+    padding: 0,
+    borderRadius: radii.sm,
+    fontFamily: fontFamilies.text,
+    fontSize: fontSizes.label,
+    color: fleetColors.textPrimary,
+    justifyContent: 'center',
+    '&:first-of-type': {
+      marginTop: '4px',
+    },
+    '&:hover, &:focus': {
+      backgroundColor: fleetColors.surfaceTonal,
+    },
+    '&.Mui-selected': {
+      backgroundColor: fleetColors.primary,
+      color: fleetColors.surface,
+      fontWeight: 500,
+      '&:hover, &:focus, &:active': {
+        backgroundColor: fleetColors.primaryHover,
+        color: fleetColors.surface,
+      },
+    },
+  },
+  '& .MuiPickersLayout-actionBar': {
+    borderTop: borders.divider,
+    padding: '6px 12px',
+    minHeight: controlHeights.tab,
+    '& .MuiButton-root': {
+      fontFamily: fontFamilies.display,
+      fontSize: fontSizes.label,
+      fontWeight: 500,
+      textTransform: 'none',
+      color: fleetColors.primary,
+      borderRadius: radii.pill,
+      padding: '4px 16px',
+      '&:hover': {
+        backgroundColor: fleetColors.primaryContainer,
+      },
+    },
   },
 } as const satisfies SxProps<Theme>;
