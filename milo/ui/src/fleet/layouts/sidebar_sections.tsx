@@ -19,6 +19,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
 import HomeIcon from '@mui/icons-material/Home';
 import LanIcon from '@mui/icons-material/Lan';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import TaskIcon from '@mui/icons-material/Task';
 import TopicIcon from '@mui/icons-material/Topic';
@@ -26,10 +27,14 @@ import WarningIcon from '@mui/icons-material/Warning';
 import React from 'react';
 
 import { getFeatureFlagValue } from '@/common/feature_flags';
-import { enableChromeOsRepairsDashboard } from '@/fleet/features';
+import {
+  enableChromeOsRepairsDashboard,
+  enablePhysicalSites,
+} from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
+  SITES_PATH,
   generateAdminTasksURL,
   generateDeviceListURL,
   generateHealthURL,
@@ -66,6 +71,7 @@ export function generateSidebarSections(
 }
 
 function generateOverviewSection(): SidebarSection {
+  const showPhysicalSites = getFeatureFlagValue(enablePhysicalSites);
   return {
     title: 'Overview',
     pages: [
@@ -74,6 +80,15 @@ function generateOverviewSection(): SidebarSection {
         url: '/ui/fleet/',
         icon: <HomeIcon />,
       },
+      ...(showPhysicalSites
+        ? [
+            {
+              label: 'Sites',
+              url: SITES_PATH,
+              icon: <LocationOnIcon />,
+            },
+          ]
+        : []),
       {
         label: 'Metrics',
         url: '/ui/fleet/labs/metrics',

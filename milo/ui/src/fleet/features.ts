@@ -68,6 +68,22 @@ export const enablePTE = createFleetFeatureFlag({
   allowedEnvironments: ['dev', 'prod'],
 });
 
+// Gates the Physical Sites directory at /ui/fleet/sites
+// (http://goto.google.com/fcon-labs-directory-design). Named "Physical Sites" (/sites) over
+// "Physical Labs" via a 6-candidate naming tournament to match FLOPS site
+// terminology without colliding with /ui/fleet/labs experimental routes.
+export const enablePhysicalSites = createFleetFeatureFlag({
+  description:
+    'Displays the Physical Sites directory page and sidebar navigation link.',
+  name: 'physical-sites',
+  percentage: {
+    dev: 100,
+    prod: 0,
+  },
+  trackingBug: '572906043',
+  allowedEnvironments: ['dev', 'prod'],
+});
+
 export const enableChromeOsRepairsDashboard = createFleetFeatureFlag({
   description: 'Displays the ChromeOS Repair Dashboard shell.',
   name: 'chromeos-repairs-dashboard',

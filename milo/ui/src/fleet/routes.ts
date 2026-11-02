@@ -25,6 +25,7 @@ import {
   generateDeviceListURL,
   generateRepairsURL,
   REQUESTS_SUBROUTE,
+  SITES_SUBROUTE,
 } from './constants/paths';
 import { platformRoutes } from './routing/platform_routes';
 
@@ -177,6 +178,12 @@ export const fleetRoutes: RouteObject[] = [
         path: 'planners',
         lazy: loadRouteForGooglersOnly(
           () => import('@/fleet/pages/resource_planner_insights_page'),
+        ),
+      },
+      {
+        path: SITES_SUBROUTE,
+        lazy: loadRouteForGooglersOnly(
+          () => import('@/fleet/pages/sites_page'),
         ),
       },
       { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },

@@ -25,6 +25,7 @@ export const WORKFORCE_SUBROUTE = 'workforce';
 export const ADMIN_TASKS_SUBROUTE = 'admin-tasks';
 export const HEALTH_SUBROUTE = 'health';
 export const REQUESTS_SUBROUTE = 'requests';
+export const SITES_SUBROUTE = 'sites';
 
 export const PLATFORM_PATH = `${FLEET_CONSOLE_BASE_URL}/${PLATFORM_SUBROUTE}`;
 export const DEVICE_LIST_PATH = `${PLATFORM_PATH}/${DEVICES_SUBROUTE}`;
@@ -35,6 +36,7 @@ export const ADMIN_TASKS_PATH = `${PLATFORM_PATH}/${ADMIN_TASKS_SUBROUTE}`;
 export const HEALTH_PATH = `${PLATFORM_PATH}/${HEALTH_SUBROUTE}`;
 
 export const REQUESTS_PATH = `${FLEET_CONSOLE_BASE_URL}/${REQUESTS_SUBROUTE}`;
+export const SITES_PATH = `${FLEET_CONSOLE_BASE_URL}/${SITES_SUBROUTE}`;
 
 export const CATALOG_PATH = `${FLEET_CONSOLE_BASE_URL}/catalog`;
 export const CATALOG_DETAILS_PATH = `${CATALOG_PATH}/:id`;

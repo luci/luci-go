@@ -209,4 +209,10 @@ describe('legacy labs redirects', () => {
       }),
     );
   });
+
+  it('registers the top-level sites route', () => {
+    const sitesRoute = fleetRoutes[0].children?.find((r) => r.path === 'sites');
+    expect(sitesRoute).toBeDefined();
+    expect(sitesRoute?.lazy).toBeInstanceOf(Function);
+  });
 });

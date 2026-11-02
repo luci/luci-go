@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import { getFeatureFlagValue } from '@/common/feature_flags';
-import { enableChromeOsRepairsDashboard } from '@/fleet/features';
+import {
+  enableChromeOsRepairsDashboard,
+  enablePhysicalSites,
+} from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { generateSidebarSections } from './sidebar_sections';
@@ -34,11 +37,32 @@ describe('generateSidebarSections', () => {
     });
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('groups Home and Metrics under the top-level Overview section', () => {
     const sections = generateSidebarSections(Platform.CHROMEOS);
     const overview = sections.find((s) => s.title === 'Overview');
     expect(overview).toBeDefined();
     expect(overview?.pages.map((p) => p.label)).toEqual(['Home', 'Metrics']);
+  });
+
+  it('includes Sites under Overview when enablePhysicalSites flag is enabled', () => {
+    mockGetFeatureFlagValue.mockImplementation((flag) => {
+      if (flag === enablePhysicalSites) return true;
+      return false;
+    });
+    const sections = generateSidebarSections(Platform.CHROMEOS);
+    const overview = sections.find((s) => s.title === 'Overview');
+    expect(overview).toBeDefined();
+    expect(overview?.pages.map((p) => p.label)).toEqual([
+      'Home',
+      'Sites',
+      'Metrics',
+    ]);
+    const sitesPage = overview?.pages.find((p) => p.label === 'Sites');
+    expect(sitesPage?.url).toBe('/ui/fleet/sites');
   });
 
   it('enables Admin tasks for ChromeOS platform', () => {
