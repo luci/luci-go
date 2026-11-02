@@ -27,7 +27,14 @@ import {
   LocalizationProvider,
 } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
@@ -35,9 +42,16 @@ import { colors } from '@/fleet/theme/colors';
 import {
   datePickerPaperSx,
   datePickerTextFieldSx,
+  datePresetChipSx,
 } from '@/fleet/theme/recipes';
-import { radii } from '@/fleet/theme/tokens';
+import { fontSizes } from '@/fleet/theme/tokens';
 import { DateFilterValue } from '@/fleet/types';
+import {
+  getValidDateTime,
+  inferActivePresetId,
+  QUICK_RELATIVE_PRESETS,
+  QuickRelativePreset,
+} from '@/fleet/utils/dates';
 
 import { OptionComponentHandle } from './filter_dropdown';
 
@@ -138,20 +152,7 @@ const CustomDateInput = ({
   );
 };
 
-interface QuickRelativePreset {
-  id: string;
-  label: string;
-  bound: 'min' | 'max';
-  minutesAgo: number;
-}
-
-const QUICK_RELATIVE_PRESETS: QuickRelativePreset[] = [
-  { id: 'last_15m', label: 'Last 15m', bound: 'min', minutesAgo: 15 },
-  { id: 'last_1h', label: 'Last 1h', bound: 'min', minutesAgo: 60 },
-  { id: 'older_30m', label: '> 30m ago', bound: 'max', minutesAgo: 30 },
-  { id: 'older_1h', label: '> 1h ago', bound: 'max', minutesAgo: 60 },
-  { id: 'older_24h', label: '> 24h ago', bound: 'max', minutesAgo: 24 * 60 },
-];
+const FULL_DAY = 24 * 60 * 60 * 1000;
 
 export const DateFilter = forwardRef(function DateFilter(
   { value, onChange, isFutureDisabled, isDateOnly = false }: DateFilterProps,
@@ -159,7 +160,27 @@ export const DateFilter = forwardRef(function DateFilter(
 ) {
   const firstInputRef = useRef<HTMLInputElement>(null);
   const [openId, setOpenId] = useState<'min' | 'max' | null>(null);
-  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const minTime = value.min?.getTime();
+  const maxTime = value.max?.getTime();
+  const [activePresetId, setActivePresetId] = useState<string | null>(() =>
+    inferActivePresetId({ min: value.min, max: value.max }),
+  );
+  const lastInternalBoundsRef = useRef<{
+    minTime?: number;
+    maxTime?: number;
+  }>({ minTime, maxTime });
+
+  useEffect(() => {
+    if (
+      minTime === lastInternalBoundsRef.current.minTime &&
+      maxTime === lastInternalBoundsRef.current.maxTime
+    ) {
+      return;
+    }
+    lastInternalBoundsRef.current = { minTime, maxTime };
+    setActivePresetId(inferActivePresetId({ min: value.min, max: value.max }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minTime, maxTime]);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -180,30 +201,36 @@ export const DateFilter = forwardRef(function DateFilter(
     onChange(newDate);
   };
 
-  const getValidDate = (date?: Date) => {
-    if (!date || isNaN(date.getTime())) return null;
-    const dateTime = isDateOnly
-      ? DateTime.fromJSDate(date, { zone: 'utc' }).setZone('default', {
-          keepLocalTime: true,
-        })
-      : DateTime.fromJSDate(date);
-    return dateTime.isValid ? dateTime : null;
-  };
+  const minDateValue = useMemo(
+    () => getValidDateTime(value.min, isDateOnly),
+    [value.min, isDateOnly],
+  );
+  const maxDateValue = useMemo(
+    () => getValidDateTime(value.max, isDateOnly),
+    [value.max, isDateOnly],
+  );
   const toFilterDate = (date: DateTime | null): Date | undefined => {
     if (!date || !date.isValid) return undefined;
     return isDateOnly
       ? date.setZone('utc', { keepLocalTime: true }).startOf('day').toJSDate()
       : date.toJSDate();
   };
-  const FULL_DAY = 24 * 60 * 60 * 1000;
-  const maxAllowedDate = isFutureDisabled
-    ? isDateOnly
-      ? DateTime.now().plus(FULL_DAY)
-      : DateTime.now()
-    : undefined;
+  const maxAllowedDate = useMemo(
+    () =>
+      isFutureDisabled
+        ? isDateOnly
+          ? DateTime.now().plus(FULL_DAY)
+          : DateTime.now()
+        : undefined,
+    [isFutureDisabled, isDateOnly],
+  );
 
   const handlePresetClick = (preset: QuickRelativePreset) => {
     if (activePresetId === preset.id) {
+      lastInternalBoundsRef.current = {
+        minTime: undefined,
+        maxTime: undefined,
+      };
       setActivePresetId(null);
       updateFilter({
         ...value,
@@ -216,11 +243,17 @@ export const DateFilter = forwardRef(function DateFilter(
       .minus({ minutes: preset.minutesAgo })
       .startOf('minute')
       .toJSDate();
+    const nextMin = preset.bound === 'min' ? cutoff : undefined;
+    const nextMax = preset.bound === 'max' ? cutoff : undefined;
+    lastInternalBoundsRef.current = {
+      minTime: nextMin?.getTime(),
+      maxTime: nextMax?.getTime(),
+    };
     setActivePresetId(preset.id);
     updateFilter({
       ...value,
-      min: preset.bound === 'min' ? cutoff : undefined,
-      max: preset.bound === 'max' ? cutoff : undefined,
+      min: nextMin,
+      max: nextMax,
     });
   };
 
@@ -279,8 +312,8 @@ export const DateFilter = forwardRef(function DateFilter(
           <Box
             sx={{
               display: 'flex',
-              flexWrap: 'nowrap',
-              gap: '6px',
+              flexWrap: 'wrap',
+              gap: '4px',
             }}
           >
             {QUICK_RELATIVE_PRESETS.map((preset) => {
@@ -291,33 +324,9 @@ export const DateFilter = forwardRef(function DateFilter(
                   label={preset.label}
                   size="small"
                   variant="outlined"
+                  aria-pressed={isSelected}
                   onClick={() => handlePresetClick(preset)}
-                  sx={{
-                    flex: '1 1 auto',
-                    height: 28,
-                    borderRadius: radii.sm,
-                    fontSize: '0.75rem',
-                    padding: 0,
-                    '& .MuiChip-label, & .MuiChip-labelSmall': {
-                      paddingLeft: '6px',
-                      paddingRight: '6px',
-                    },
-                    borderColor: isSelected
-                      ? colors.blue[600]
-                      : colors.grey[300],
-                    backgroundColor: isSelected
-                      ? colors.blue[50]
-                      : 'transparent',
-                    color: isSelected ? colors.blue[600] : colors.grey[800],
-                    fontWeight: isSelected ? 500 : 400,
-                    transition: 'all 0.15s ease',
-                    '&:hover': {
-                      backgroundColor: colors.blue[50],
-                      borderColor: isSelected
-                        ? colors.blue[600]
-                        : colors.blue[400],
-                    },
-                  }}
+                  sx={datePresetChipSx}
                 />
               );
             })}
@@ -338,12 +347,17 @@ export const DateFilter = forwardRef(function DateFilter(
       >
         <CustomDateInput
           label="From"
-          value={getValidDate(value.min)}
+          value={minDateValue}
           onChange={(date) => {
+            const nextMin = toFilterDate(date);
+            lastInternalBoundsRef.current = {
+              minTime: nextMin?.getTime(),
+              maxTime,
+            };
             setActivePresetId(null);
             updateFilter({
               ...value,
-              min: toFilterDate(date),
+              min: nextMin,
             });
           }}
           inputRef={firstInputRef}
@@ -355,12 +369,17 @@ export const DateFilter = forwardRef(function DateFilter(
         />
         <CustomDateInput
           label="To"
-          value={getValidDate(value.max)}
+          value={maxDateValue}
           onChange={(date) => {
+            const nextMax = toFilterDate(date);
+            lastInternalBoundsRef.current = {
+              minTime,
+              maxTime: nextMax?.getTime(),
+            };
             setActivePresetId(null);
             updateFilter({
               ...value,
-              max: toFilterDate(date),
+              max: nextMax,
             });
           }}
           open={openId === 'max'}
@@ -371,7 +390,7 @@ export const DateFilter = forwardRef(function DateFilter(
         />
       </Box>
       <Divider sx={{ borderColor: colors.grey[200] }} />
-      <Box sx={{ padding: '6px 0' }}>
+      <Box role="group" aria-label="Blank options" sx={{ padding: '6px 0' }}>
         <MenuItem
           disableRipple
           onClick={() => {
@@ -414,6 +433,10 @@ export const DateFilter = forwardRef(function DateFilter(
             color="primary"
             onClick={(e) => {
               e.stopPropagation();
+              lastInternalBoundsRef.current = {
+                minTime: undefined,
+                maxTime: undefined,
+              };
               setActivePresetId(null);
               updateFilter({
                 onlyEmpty: true,
@@ -423,7 +446,7 @@ export const DateFilter = forwardRef(function DateFilter(
               minWidth: 'unset',
               padding: '2px 6px',
               textTransform: 'none',
-              fontSize: '0.75rem',
+              fontSize: fontSizes.caption,
               fontWeight: 'bold',
             }}
           >
@@ -465,28 +488,6 @@ export const DateFilter = forwardRef(function DateFilter(
               {BLANK_VALUE}
             </Box>
           </Typography>
-          <Button
-            className="only-button"
-            size="small"
-            variant="text"
-            color="primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              setActivePresetId(null);
-              updateFilter({
-                excludeEmpty: true,
-              });
-            }}
-            sx={{
-              minWidth: 'unset',
-              padding: '2px 6px',
-              textTransform: 'none',
-              fontSize: '0.75rem',
-              fontWeight: 'bold',
-            }}
-          >
-            Only
-          </Button>
         </MenuItem>
       </Box>
     </Box>

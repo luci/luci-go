@@ -14,7 +14,77 @@
 
 import { DateTime, Duration } from 'luxon';
 
+import { DateFilterValue } from '@/fleet/types';
 import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
+
+export interface QuickRelativePreset {
+  id: string;
+  label: string;
+  bound: 'min' | 'max';
+  minutesAgo: number;
+}
+
+export const QUICK_RELATIVE_PRESETS: QuickRelativePreset[] = [
+  { id: 'last_15m', label: 'Last 15m', bound: 'min', minutesAgo: 15 },
+  { id: 'last_1h', label: 'Last 1h', bound: 'min', minutesAgo: 60 },
+  { id: 'older_30m', label: '> 30m ago', bound: 'max', minutesAgo: 30 },
+  { id: 'older_1h', label: '> 1h ago', bound: 'max', minutesAgo: 60 },
+  { id: 'older_24h', label: '> 24h ago', bound: 'max', minutesAgo: 24 * 60 },
+];
+
+export const getValidDateTime = (
+  date?: Date,
+  isDateOnly = false,
+): DateTime<true> | null => {
+  if (!date || isNaN(date.getTime())) return null;
+  const dateTime = isDateOnly
+    ? DateTime.fromJSDate(date, { zone: 'utc' }).setZone('default', {
+        keepLocalTime: true,
+      })
+    : DateTime.fromJSDate(date);
+  return dateTime.isValid ? dateTime : null;
+};
+
+/**
+ * Infers which quick relative preset matches the current DateFilterValue,
+ * allowing preset chip selection state to survive URL round-trips when
+ * reopening an applied filter chip or dropdown.
+ */
+export function inferActivePresetId(
+  value: DateFilterValue,
+  now: DateTime = DateTime.now(),
+): string | null {
+  const minDate = getValidDateTime(value.min);
+  const maxDate = getValidDateTime(value.max);
+  if (Boolean(minDate) === Boolean(maxDate)) {
+    return null;
+  }
+  const bound: 'min' | 'max' = minDate ? 'min' : 'max';
+  const targetDate = (minDate ?? maxDate)!;
+  const diffMinutes = now
+    .startOf('minute')
+    .diff(targetDate.startOf('minute'), 'minutes').minutes;
+
+  let bestPresetId: string | null = null;
+  let bestDelta = Infinity;
+  for (const preset of QUICK_RELATIVE_PRESETS) {
+    if (preset.bound !== bound) continue;
+    const delta = Math.abs(diffMinutes - preset.minutesAgo);
+    const maxForwardTolerance = Math.max(
+      5,
+      Math.round(preset.minutesAgo * 0.1),
+    );
+    if (
+      diffMinutes >= preset.minutesAgo - 1 &&
+      diffMinutes <= preset.minutesAgo + maxForwardTolerance &&
+      delta < bestDelta
+    ) {
+      bestDelta = delta;
+      bestPresetId = preset.id;
+    }
+  }
+  return bestPresetId;
+}
 
 export const toIsoString = (dateOnly: DateOnly | undefined): string => {
   if (!dateOnly) {

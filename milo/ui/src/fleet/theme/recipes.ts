@@ -209,6 +209,42 @@ export const datePickerTextFieldSx = {
 } as const satisfies SxProps<Theme>;
 
 /**
+ * Selectable pill chip for quick relative presets inside `DateFilter`.
+ * Uses `&&:hover` to override `theme.tsx`'s `&.MuiChip-clickable:hover` rule on
+ * outlined chips so hovering a selected preset keeps its primary tonal tint.
+ */
+export const datePresetChipSx = {
+  flex: '0 1 auto',
+  height: 28,
+  borderRadius: radii.pill,
+  fontSize: fontSizes.caption,
+  padding: 0,
+  borderColor: fleetColors.border,
+  backgroundColor: 'transparent',
+  color: fleetColors.textPrimary,
+  fontWeight: 400,
+  transition: 'all 0.15s ease',
+  '& .MuiChip-label, & .MuiChip-labelSmall': {
+    paddingLeft: '5px',
+    paddingRight: '5px',
+  },
+  '&&:hover': {
+    backgroundColor: fleetColors.primaryContainer,
+    borderColor: fleetColors.borderHover,
+  },
+  '&[aria-pressed="true"]': {
+    borderColor: fleetColors.primary,
+    backgroundColor: fleetColors.primaryContainer,
+    color: fleetColors.primary,
+    fontWeight: 500,
+    '&&:hover': {
+      backgroundColor: fleetColors.primaryContainerHover,
+      borderColor: fleetColors.primary,
+    },
+  },
+} as const satisfies SxProps<Theme>;
+
+/**
  * Floating Paper surface for `@mui/x-date-pickers` desktop calendar and
  * multi-section digital clock poppers.
  *
