@@ -122,6 +122,12 @@ func TestBatchCreateTestResults(t *testing.T) {
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.Loosely(t, err, should.ErrLike("parent: does not match pattern"))
 				})
+				t.Run("root invocation", func(t *ftt.Test) {
+					req.Parent = rootInvID.Name()
+					_, err := recorder.BatchCreateTestResults(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: does not match pattern"))
+				})
 				t.Run("both parent and invocation set", func(t *ftt.Test) {
 					req.Parent = wuID1.Name()
 					req.Invocation = "invocations/inv-id"
@@ -161,6 +167,12 @@ func TestBatchCreateTestResults(t *testing.T) {
 					})
 					t.Run("invalid", func(t *ftt.Test) {
 						req.Requests[1].Parent = "invalid value"
+						_, err := recorder.BatchCreateTestResults(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("requests[1]: parent: does not match pattern "))
+					})
+					t.Run("root invocation", func(t *ftt.Test) {
+						req.Requests[1].Parent = rootInvID.Name()
 						_, err := recorder.BatchCreateTestResults(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 						assert.Loosely(t, err, should.ErrLike("requests[1]: parent: does not match pattern "))

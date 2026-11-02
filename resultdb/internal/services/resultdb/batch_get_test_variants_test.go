@@ -15,6 +15,7 @@
 package resultdb
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -27,7 +28,9 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -627,6 +630,79 @@ func TestValidateBatchGetTestVariantsRequest(t *testing.T) {
 
 			err := validateBatchGetTestVariantsRequest(req)
 			assert.Loosely(t, err, should.ErrLike(`a maximum of 500 test variants can be requested at once`))
+		})
+	})
+}
+
+func TestPruneInvocationsByTestIDs(t *testing.T) {
+	ftt.Run(`pruneInvocationsByTestIDs`, t, func(t *ftt.Test) {
+		t.Run(`skips Spanner query when only work units have test results`, func(t *ftt.Test) {
+			ctx := testutil.SpannerTestContext(t)
+			rootInv := rootinvocations.NewBuilder("r1").WithFinalizationState(pb.RootInvocation_ACTIVE).WithRealm("testproject:rootrealm").Build()
+			rootWU := workunits.NewBuilder(rootInv.RootInvocationID, "root").WithFinalizationState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
+			wu1 := workunits.NewBuilder(rootInv.RootInvocationID, "wu1").WithFinalizationState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
+			tr := insert.MakeTestResults(wu1.ID.LegacyInvocationID(), "test1", pbutil.Variant("a", "b"), pb.TestResult_PASSED)[0]
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				rootinvocations.InsertForTesting(rootInv),
+				workunits.InsertForTesting(rootWU),
+				workunits.InsertForTesting(wu1),
+				insert.TestResultMessages(t, []*pb.TestResult{tr}),
+			)...)
+
+			txnCtx, cancel := span.ReadOnlyTransaction(ctx)
+			invs, err := graph.Reachable(txnCtx, invocations.NewIDSet(rootInv.RootInvocationID.LegacyInvocationID()))
+			cancel()
+			assert.Loosely(t, err, should.BeNil)
+
+			// Root invocations never directly contain test results, so
+			// WithTestResultsIDSet excludes "root:r1" and returns only "workunit:r1:wu1".
+			assert.Loosely(t, invs.Invocations[rootInv.RootInvocationID.LegacyInvocationID()].HasTestResults, should.BeFalse)
+			testResultInvs, err := invs.WithTestResultsIDSet()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, testResultInvs, should.Match(invocations.NewIDSet(wu1.ID.LegacyInvocationID())))
+
+			// Pass context.Background() without a Spanner transaction to ensure no
+			// Spanner query is issued when only work unit invocations have test
+			// results.
+			err = pruneInvocationsByTestIDs(context.Background(), invs, []string{"pkg://a/test"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs.Invocations[rootInv.RootInvocationID.LegacyInvocationID()].HasTestResults, should.BeFalse)
+			assert.Loosely(t, invs.Invocations[wu1.ID.LegacyInvocationID()].HasTestResults, should.BeTrue)
+		})
+
+		t.Run(`excludes work units while pruning legacy invocations`, func(t *ftt.Test) {
+			ctx := testutil.SpannerTestContext(t)
+			testutil.MustApply(
+				ctx, t,
+				insert.Invocation("inv-matching", pb.Invocation_ACTIVE, map[string]any{
+					"Realm":              "testproject:testrealm",
+					"CommonTestIDPrefix": "pkg://matching/",
+				}),
+				insert.Invocation("inv-nonmatching", pb.Invocation_ACTIVE, map[string]any{
+					"Realm":              "testproject:testrealm",
+					"CommonTestIDPrefix": "pkg://other/",
+				}),
+				insert.Invocation("inv-null", pb.Invocation_ACTIVE, map[string]any{
+					"Realm": "testproject:testrealm",
+				}),
+			)
+
+			// Intentionally omit "workunit:r1:wu1" from Spanner to verify it is
+			// excluded from @invIDs before querying Invocations and remains unpruned
+			// afterward.
+			invs := graph.NewReachableInvocations()
+			for _, id := range []invocations.ID{"workunit:r1:wu1", "inv-matching", "inv-nonmatching", "inv-null"} {
+				invs.Invocations[id] = graph.ReachableInvocation{HasTestResults: true}
+			}
+
+			txnCtx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			err := pruneInvocationsByTestIDs(txnCtx, invs, []string{"pkg://matching/test"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs.Invocations["workunit:r1:wu1"].HasTestResults, should.BeTrue)
+			assert.Loosely(t, invs.Invocations["inv-matching"].HasTestResults, should.BeTrue)
+			assert.Loosely(t, invs.Invocations["inv-null"].HasTestResults, should.BeTrue)
+			assert.Loosely(t, invs.Invocations["inv-nonmatching"].HasTestResults, should.BeFalse)
 		})
 	})
 }

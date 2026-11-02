@@ -244,8 +244,8 @@ func verifyBatchGetTestVariantPermissions(ctx context.Context, in *pb.BatchGetTe
 	return testvariants.AccessLevelUnrestricted, nil
 }
 
-// pruneInvocationsByTestIDs marks HasTestResults = false on invocations whose
-// CommonTestIDPrefix cannot match any of testIDs.
+// pruneInvocationsByTestIDs marks HasTestResults = false on legacy invocations
+// whose CommonTestIDPrefix cannot match any of testIDs.
 func pruneInvocationsByTestIDs(ctx context.Context, invs graph.ReachableInvocations, testIDs []string) error {
 	if len(testIDs) == 0 {
 		return nil
@@ -253,6 +253,16 @@ func pruneInvocationsByTestIDs(ctx context.Context, invs graph.ReachableInvocati
 	testResultInvs, err := invs.WithTestResultsIDSet()
 	if err != nil {
 		return err
+	}
+	// Work unit shadow rows in Invocations always have CommonTestIDPrefix IS NULL
+	// and will never be pruned. Exclude them so we shrink @invIDs and skip the
+	// query entirely when no legacy invocations remain. (Root invocations never
+	// directly contain test results, so WithTestResultsIDSet already excludes
+	// them.)
+	for id := range testResultInvs {
+		if id.IsWorkUnit() {
+			testResultInvs.Remove(id)
+		}
 	}
 	if len(testResultInvs) == 0 {
 		return nil
@@ -266,9 +276,8 @@ func pruneInvocationsByTestIDs(ctx context.Context, invs graph.ReachableInvocati
 			FROM Invocations i
 			WHERE i.InvocationId IN UNNEST(@invIDs)
 				AND (
-					-- WorkUnit shadow rows in Invocations have CommonTestIDPrefix IS NULL.
-					-- i.CommonTestIDPrefix IS NULL is needed to avoid dropping test results
-					-- when called on a RootInvocation.
+					-- Legacy invocations created before CommonTestIDPrefix was populated
+					-- have CommonTestIDPrefix IS NULL.
 					i.CommonTestIDPrefix IS NULL
 					OR EXISTS (
 						SELECT 1 FROM UNNEST(@testIDs) testId
