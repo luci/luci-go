@@ -396,6 +396,7 @@ describe('useNodeSearch', () => {
 
     const { result } = renderHook(() => useTestNodeSearch());
 
+    expect(result.current.isIndexReady).toBe(false);
     expect(workerInstance).not.toBeNull();
     expect(workerInstance!.postMessage).toHaveBeenCalledWith({
       nodes: SAMPLE_NODES,
@@ -423,6 +424,7 @@ describe('useNodeSearch', () => {
     });
 
     expect(workerInstance!.terminate).toHaveBeenCalled();
+    expect(result.current.isIndexReady).toBe(true);
     expect(result.current.matchedNodeIds).toEqual(['check-gamma']);
     expect(result.current.selectedNodeId).toBe('check-gamma');
   });

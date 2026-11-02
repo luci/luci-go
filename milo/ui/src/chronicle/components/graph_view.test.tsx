@@ -526,4 +526,54 @@ describe('GraphView filter match navigation', () => {
       screen.queryByLabelText('toggle interactivity'),
     ).not.toBeInTheDocument();
   });
+
+  it('disables search input until search index worker completes', async () => {
+    let indexCallback: (() => void) | null = null;
+    class DeferredIndexWorker {
+      onmessage: ((e: { data: unknown }) => void) | null = null;
+      postMessage(data: unknown) {
+        if (data && typeof data === 'object' && 'nodes' in data) {
+          const req = data as SearchIndexWorkerRequest;
+          indexCallback = () => {
+            this.onmessage?.({
+              data: {
+                searchIndexMap: buildSearchIndexMap(
+                  req.nodes,
+                  req.valueDataMap,
+                ),
+              },
+            });
+          };
+          return;
+        }
+        queueMicrotask(() => {
+          if (this.onmessage) {
+            this.onmessage({
+              data: {
+                nodes: mockNodes,
+                edges: [],
+              },
+            });
+          }
+        });
+      }
+      terminate() {}
+    }
+
+    global.Worker = DeferredIndexWorker as unknown as typeof Worker;
+
+    render(<TestWrapper />);
+
+    await screen.findByText('Alpha Stage 1');
+
+    const searchInput = screen.getByPlaceholderText('Search nodes...');
+    expect(searchInput).toBeDisabled();
+
+    // Now complete the search index worker
+    act(() => {
+      indexCallback?.();
+    });
+
+    expect(searchInput).toBeEnabled();
+  });
 });

@@ -24,6 +24,7 @@ export interface NodeSearchBoxProps {
   safeMatchIndex: number;
   isCurrentMatchSelected?: boolean;
   selectedNodeId: string | undefined;
+  disabled?: boolean;
   onSearchChange: (query: string) => void;
   onClearSearch: () => void;
   onNextMatch: () => void;
@@ -43,6 +44,7 @@ export function NodeSearchBox({
   safeMatchIndex,
   isCurrentMatchSelected = true,
   selectedNodeId,
+  disabled = false,
   onSearchChange,
   onClearSearch,
   onNextMatch,
@@ -65,6 +67,7 @@ export function NodeSearchBox({
         <input
           ref={searchInputRef}
           type="text"
+          disabled={disabled}
           placeholder={placeholder}
           aria-label={placeholder}
           value={searchQuery}
@@ -87,9 +90,10 @@ export function NodeSearchBox({
             padding: '8px 28px 8px 8px',
             width: '100%',
             boxSizing: 'border-box',
+            cursor: disabled ? 'not-allowed' : undefined,
           }}
         />
-        {searchQuery && (
+        {searchQuery && !disabled && (
           <IconButton
             size="small"
             aria-label="Clear search"
@@ -146,7 +150,7 @@ export function NodeSearchBox({
                 size="small"
                 aria-label="Previous match"
                 title="Previous match"
-                disabled={matchedNodeIds.length === 0}
+                disabled={disabled || matchedNodeIds.length === 0}
                 onClick={onPrevMatch}
                 sx={{
                   minWidth: '28px',
@@ -162,7 +166,7 @@ export function NodeSearchBox({
                 size="small"
                 aria-label="Next match"
                 title="Next match"
-                disabled={matchedNodeIds.length === 0}
+                disabled={disabled || matchedNodeIds.length === 0}
                 onClick={onNextMatch}
                 sx={{
                   minWidth: '28px',

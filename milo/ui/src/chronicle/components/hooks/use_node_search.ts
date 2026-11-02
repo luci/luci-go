@@ -103,6 +103,10 @@ export interface UseNodeSearchResult {
    * neighbor/edge highlighting—so rapid match iteration stays responsive.
    */
   effectiveSettledNodeId: string | undefined;
+  /**
+   * Whether the background search index worker has finished indexing the nodes.
+   */
+  isIndexReady: boolean;
   handleSearchChange: (query: string) => void;
   handleClearSearch: () => void;
   handleNextMatch: () => void;
@@ -540,6 +544,7 @@ export function useNodeSearch({
     safeMatchIndex,
     isCurrentMatchSelected,
     effectiveSettledNodeId,
+    isIndexReady,
     handleSearchChange,
     handleClearSearch,
     handleNextMatch,

@@ -86,6 +86,7 @@ export function GraphControlPanel({
     matchedNodeIds,
     safeMatchIndex,
     isCurrentMatchSelected,
+    isIndexReady,
     handleSearchChange,
     handleClearSearch,
     handleNextMatch,
@@ -112,6 +113,7 @@ export function GraphControlPanel({
           safeMatchIndex={safeMatchIndex}
           isCurrentMatchSelected={isCurrentMatchSelected}
           selectedNodeId={selectedNodeId}
+          disabled={!isIndexReady}
           onSearchChange={handleSearchChange}
           onClearSearch={handleClearSearch}
           onNextMatch={handleNextMatch}
