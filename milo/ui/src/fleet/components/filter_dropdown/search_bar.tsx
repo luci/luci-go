@@ -20,6 +20,7 @@ import { pillInputSx } from '@/fleet/theme/recipes';
 import { fleetColors, iconSizes } from '@/fleet/theme/tokens';
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 
+import { normalizeFilterKey } from '../filters/normalize_filter_key';
 import { StringListFilterCategory } from '../filters/string_list_filter';
 import { FilterCategory } from '../filters/use_filters';
 
@@ -183,8 +184,15 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             const match = value.match(/^([^:]+):(.+)$/);
             if (match) {
               const [, filterKey, filterValue] = match;
+              const normalizedFilterKey =
+                normalizeFilterKey(filterKey).toLowerCase();
               const category = filterCategoryDatas.find(
-                (c) => c.key === filterKey || c.label === filterKey,
+                (c) =>
+                  c.key === filterKey ||
+                  c.label === filterKey ||
+                  normalizeFilterKey(c.key).toLowerCase() ===
+                    normalizedFilterKey ||
+                  c.label.toLowerCase() === normalizedFilterKey,
               );
               if (category && category instanceof StringListFilterCategory) {
                 const current = category.getSelectedOptions();
@@ -195,6 +203,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
                 if (!error) {
                   onChange('');
                   onChipEditApplied();
+                  onChangeDropdownOpen(false);
                   e.preventDefault();
                 }
               }

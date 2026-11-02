@@ -842,6 +842,36 @@ describe('FilterBar', () => {
 
     expect(screen.getByText('1 | Option 1 IN Value 1')).toBeInTheDocument();
     expect(searchInput).toHaveValue('');
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+  });
+
+  it('should match normalized keys and case-insensitive labels on Enter and close dropdown', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent
+          initialOptions={[
+            { label: 'Pool', key: 'pools', options: ['DUT_POOL_QUOTA'] },
+            { label: 'Lab', key: 'labels."lab"', options: ['MTV'] },
+          ]}
+        />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBarInput();
+    await user.type(searchInput, 'pool:DUT_POOL_QUOTA');
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByText('1 | Pool IN DUT_POOL_QUOTA')).toBeInTheDocument();
+    expect(searchInput).toHaveValue('');
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+
+    await user.type(searchInput, 'lab:MTV');
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByText('1 | Lab IN MTV')).toBeInTheDocument();
+    expect(searchInput).toHaveValue('');
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
   });
 
   it('should NOT clear search query if typed value is invalid', async () => {
