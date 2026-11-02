@@ -222,8 +222,7 @@ export const WorkforceActivityView = ({
                 <Chip
                   key={dut.dutId}
                   label={`${dut.dutId} (Score: ${dut.score} | ${formatChipDuration(dut.duration)})`}
-                  variant="outlined"
-                  color="primary"
+                  variant="filter"
                   size="small"
                   disabled={isUnclaimPending}
                   onDelete={
@@ -239,7 +238,6 @@ export const WorkforceActivityView = ({
                   sx={{
                     fontFamily: 'monospace',
                     fontSize: '0.75rem',
-                    bgcolor: colors.blue[50],
                     height: 'auto',
                     minHeight: 24,
                     py: 0.25,

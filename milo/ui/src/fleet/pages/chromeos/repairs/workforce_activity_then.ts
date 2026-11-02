@@ -104,7 +104,9 @@ export const then = {
   },
 
   async claimedDutChipIsVisible(dutId: string) {
-    expect(await findChipForDut(dutId)).toBeInTheDocument();
+    const chip = await findChipForDut(dutId);
+    expect(chip).toBeInTheDocument();
+    expect(chip).toHaveClass('MuiChip-filter');
   },
 
   claimedDutChipIsNotVisible(dutId: string) {
