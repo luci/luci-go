@@ -202,11 +202,19 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 			return nil, err
 		}
 		if projectSpec != nil {
+			// The lockfile belongs next to the symlink's target, which declares
+			// the spec.
+			declaringPath := scriptPath
+			if runtime.GOOS != "windows" {
+				if realPath, err := filepath.EvalSymlinks(scriptPath); err == nil {
+					declaringPath = realPath
+				}
+			}
 			return &DiscoveredFlow{
 				Flow:         FlowUV,
 				StandardSpec: projectSpec,
 				ProjectRoot:  filepath.Dir(scriptPath),
-				SpecPath:     scriptPath,
+				SpecPath:     declaringPath,
 			}, nil
 		}
 

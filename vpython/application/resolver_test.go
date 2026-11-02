@@ -55,6 +55,35 @@ print("OK")
 			assert.Loosely(t, res.ProjectRoot, should.Equal(tempDir))
 		})
 
+		t.Run("Uses the target of a symlink to a PEP 723 script as SpecPath", func(t *ftt.Test) {
+			if runtime.GOOS == "windows" {
+				t.Skip("Symlinks are not reliably supported on Windows tests")
+			}
+
+			targetPath := filepath.Join(tempDir, "pep723_target.py")
+			targetContent := `
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["requests>=2.0"]
+# ///
+print("OK")
+`
+			err := os.WriteFile(targetPath, []byte(strings.TrimSpace(targetContent)), 0755)
+			assert.NoErr(t, err)
+
+			symlinkPath := filepath.Join(tempDir, "pep723-symlink")
+			err = os.Symlink(filepath.Base(targetPath), symlinkPath)
+			assert.NoErr(t, err)
+
+			realTargetPath, err := filepath.EvalSymlinks(targetPath)
+			assert.NoErr(t, err)
+
+			res, err := ResolveFlow(ctx, python.ScriptTarget{Path: symlinkPath}, "", "", ".vpython3", tempDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Flow, should.Equal(FlowUV))
+			assert.Loosely(t, res.SpecPath, should.Equal(realTargetPath))
+		})
+
 		t.Run("Resolves to FlowLegacy when inline wheels spec is present", func(t *ftt.Test) {
 			scriptPath := filepath.Join(tempDir, "script.py")
 			scriptContent := `
