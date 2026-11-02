@@ -19,6 +19,8 @@ package cv.config;
 option go_package = "go.chromium.org/luci/cv/api/config/v2;cfgpb";
 
 import "google/protobuf/duration.proto";
+import "google/type/dayofweek.proto";
+import "google/type/timeofday.proto";
 import "validate/validate.proto";
 
 import "go.chromium.org/luci/common/proto/options.proto";
@@ -957,10 +959,83 @@ message UserLimit {
         Limit max_active = 1;
     }
 
+    // Override specifies limits that override the base limits of the
+    // UserLimit while its schedule is active.
+    //
+    // Only Run limits can be overridden; Tryjob limits always come from the
+    // parent UserLimit.
+    message Override {
+        // Schedule specifies a recurring weekly time window.
+        message Schedule {
+            // Timezone in IANA Time Zone Database format (e.g.
+            // "America/Los_Angeles" or "UTC") in which `days` and
+            // `start_time` are evaluated.
+            //
+            // Required. "Local" is not allowed.
+            string timezone = 1;
+
+            // Days of the week on which the time window starts.
+            //
+            // Required. Must contain at least one valid day
+            // (MONDAY..SUNDAY) and must not contain duplicates.
+            repeated google.type.DayOfWeek days = 2;
+
+            // Local time of day at which the time window starts on each day
+            // in `days`, inclusive.
+            //
+            // Required. `hours` must be in [0, 23] and `minutes` in [0, 59];
+            // `seconds` and `nanos` must not be set.
+            //
+            // On days with a daylight saving time transition:
+            //   * if `start_time` occurs twice (e.g. 01:30 when clocks fall
+            //     back from 02:00 to 01:00), the window starts at the first
+            //     occurrence;
+            //   * if `start_time` doesn't exist (e.g. 02:30 when clocks spring
+            //     forward from 02:00 to 03:00), the window starts later by the
+            //     length of the gap (e.g. at 03:30).
+            google.type.TimeOfDay start_time = 3;
+
+            // Length of the time window, measured from `start_time`.
+            //
+            // Required. Must be positive and at most 24 hours. The window
+            // may extend past midnight into the following day; e.g. a
+            // `start_time` of 20:00 with a `duration` of 12h on FRIDAY covers
+            // Friday 20:00 to Saturday 08:00.
+            //
+            // The window is [start, start + duration), where `duration` is
+            // elapsed (absolute) time. Therefore, the local wall-clock end of
+            // a window that spans a daylight saving time transition shifts by
+            // the DST offset.
+            google.protobuf.Duration duration = 4;
+        }
+
+        // Schedule during which this override is active.
+        //
+        // Required.
+        Schedule schedule = 1;
+
+        // Run limits to apply while the schedule is active.
+        //
+        // Required.
+        Run run = 2;
+
+        // Field 3 is intentionally left unused for future Tryjob limits.
+    }
+
     // Run limits. Required.
     Run run = 5;
     // Tryjob limits. Required
     Tryjob tryjob = 6;
+    // Optional limit overrides, evaluated in order.
+    //
+    // The first override whose schedule is active at the current time overrides
+    // the base `run` limits on this UserLimit. If no override is active, the
+    // base `run` limits apply.
+    //
+    // Limits are re-evaluated whenever Runs are started or ended. Runs that are
+    // waiting for quota are re-checked periodically, so they may start up to a
+    // few minutes after an override raises the limit.
+    repeated Override overrides = 7;
 }
 
 // ReuseWindow specifies the conditions under which a tryjob can be reused.

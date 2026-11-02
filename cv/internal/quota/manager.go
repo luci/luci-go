@@ -23,10 +23,12 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	srvquota "go.chromium.org/luci/server/quota"
@@ -38,6 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/metrics"
+	"go.chromium.org/luci/cv/internal/quota/schedule"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -225,7 +228,7 @@ func (qm *Manager) findRunLimit(ctx context.Context, r *run.Run) (*cfgpb.UserLim
 				// Each entry can be either an identity string "user:<email>" or a LUCI group reference "group:<name>".
 				return nil, fmt.Errorf("improper format for principal: %s", principal)
 			case parts[0] == "user" && parts[1] == user.Email():
-				return userLimit, nil
+				return resolveOverrideRunLimit(ctx, userLimit, ""), nil
 			case parts[0] == "group":
 				groups = append(groups, parts[1])
 			}
@@ -239,23 +242,75 @@ func (qm *Manager) findRunLimit(ctx context.Context, r *run.Run) (*cfgpb.UserLim
 		case err != nil:
 			return nil, err
 		case result:
-			return userLimit, nil
+			return resolveOverrideRunLimit(ctx, userLimit, ""), nil
 		}
 	}
 
 	// Check default run limit if user is not a part of any defined user limit groups.
 	if config.GetUserLimitDefault().GetRun() != nil {
-		userLimit := config.GetUserLimitDefault()
-
 		// Override default userLimit name to `defaultUserLimit`. The name field
 		// is assumed to be `optional` and hence standardized to
 		// `defaultUserLimit`. This field is used by policyId.
-		userLimit.Name = defaultUserLimit
-		return userLimit, nil
+		return resolveOverrideRunLimit(ctx, config.GetUserLimitDefault(), defaultUserLimit), nil
 	}
 
 	// No limits configured for this user.
 	return nil, nil
+}
+
+// scheduleOverridePolicyName returns the quota policy key name for the i-th
+// override of a UserLimit. Since UserLimit names cannot contain ':', this
+// format cannot collide with any top-level UserLimit name.
+func scheduleOverridePolicyName(userLimitName string, overrideIndex int) string {
+	return fmt.Sprintf("%s:schedule_override:%d", userLimitName, overrideIndex)
+}
+
+// resolveOverrideRunLimit returns the UserLimit in effect at the current time.
+//
+// If nameOverride is not empty, it is used as the name of userLimit instead of
+// userLimit.Name.
+//
+// If the schedule of an override of userLimit is active, the returned
+// UserLimit carries that override's Run limit and policy name. Otherwise, it is
+// a copy of userLimit. In both cases, the returned UserLimit has no overrides.
+// userLimit and its overrides must have a non-nil Run; this is guaranteed by
+// config validation.
+//
+// Overrides with a malformed schedule are logged and skipped, so that they
+// fall back to the base limit instead of blocking the Run. Validated configs
+// never contain malformed schedules.
+//
+// The returned UserLimit may share data with userLimit and must be treated as
+// read-only.
+func resolveOverrideRunLimit(ctx context.Context, userLimit *cfgpb.UserLimit, nameOverride string) *cfgpb.UserLimit {
+	name := userLimit.GetName()
+	if nameOverride != "" {
+		name = nameOverride
+	}
+	for i, o := range userLimit.GetOverrides() {
+		switch active, err := schedule.IsActive(ctx, o.GetSchedule()); {
+		case err != nil:
+			logging.Errorf(ctx, "user limit %q: override #%d: skipping malformed schedule: %s", name, i+1, err)
+		case active:
+			runLimit := proto.CloneOf(o.GetRun())
+			if runLimit.GetReachLimitMsg() == "" {
+				runLimit.ReachLimitMsg = userLimit.GetRun().GetReachLimitMsg()
+			}
+			return &cfgpb.UserLimit{
+				Name:       scheduleOverridePolicyName(name, i),
+				Principals: userLimit.GetPrincipals(),
+				Run:        runLimit,
+				Tryjob:     userLimit.GetTryjob(),
+			}
+		}
+	}
+
+	// No override is active. Return a copy of userLimit without its overrides,
+	// since they don't apply to the returned limit.
+	ret := proto.CloneOf(userLimit)
+	ret.Name = name
+	ret.Overrides = nil
+	return ret
 }
 
 // policyConfigID is a helper to generate quota policyConfigID.
@@ -290,6 +345,30 @@ func runPolicyEntry(polkey *quotapb.PolicyKey, limit uint64) *quotapb.PolicyConf
 	}
 }
 
+// appendUserLimitRunPolicies appends the base and override run quota policies
+// for a single UserLimit, keyed by userLimit.Name.
+func appendUserLimitRunPolicies(policies []*quotapb.PolicyConfig_Entry, configGroupName string, userLimit *cfgpb.UserLimit) []*quotapb.PolicyConfig_Entry {
+	if userLimit == nil {
+		return policies
+	}
+	if runLimit := userLimit.GetRun(); runLimit != nil {
+		// limit is set to 0 when unlimited = True. The unlimited attribute
+		// will be handled by setting `IGNORE_POLICY_BOUNDS` for each
+		// quota op.
+		runLimitVal := uint64(runLimit.GetMaxActive().GetValue())
+		polkey := runPolicyKey(configGroupName, userLimit.GetName())
+		policies = append(policies, runPolicyEntry(polkey, runLimitVal))
+	}
+
+	for i, o := range userLimit.GetOverrides() {
+		overrideLimitVal := uint64(o.GetRun().GetMaxActive().GetValue())
+		overrideKey := runPolicyKey(configGroupName, scheduleOverridePolicyName(userLimit.GetName(), i))
+		policies = append(policies, runPolicyEntry(overrideKey, overrideLimitVal))
+	}
+
+	return policies
+}
+
 // makeRunQuotaPolicies is a a helper to format run quota policies for the given config groups.
 func makeRunQuotaPolicies(project string, configGroups []*prjcfg.ConfigGroup) []*quotapb.PolicyConfig_Entry {
 	var policies []*quotapb.PolicyConfig_Entry
@@ -301,33 +380,17 @@ func makeRunQuotaPolicies(project string, configGroups []*prjcfg.ConfigGroup) []
 		}
 
 		for _, userLimit := range config.GetUserLimits() {
-			runLimit := userLimit.GetRun()
-			if runLimit == nil {
-				continue
-			}
-
-			// limit is set to 0 when unlimited = True. The unlimited attribute
-			// will be handled by setting `IGNORE_POLICY_BOUNDS` for each
-			// quota op.
-			runLimitVal := uint64(runLimit.GetMaxActive().GetValue())
-			polkey := runPolicyKey(config.GetName(), userLimit.GetName())
-
-			policies = append(policies, runPolicyEntry(polkey, runLimitVal))
+			policies = appendUserLimitRunPolicies(policies, config.GetName(), userLimit)
 		}
 
-		// Add default run quota policy.
-		defaultRunLimit := config.GetUserLimitDefault().GetRun()
-		if defaultRunLimit == nil {
-			continue
+		// Add default run quota policy (and any overrides). The default
+		// UserLimit's name is optional and hence standardized to
+		// `defaultUserLimit`.
+		if defaultLimit := config.GetUserLimitDefault(); defaultLimit != nil {
+			defaultLimit = proto.CloneOf(defaultLimit)
+			defaultLimit.Name = defaultUserLimit
+			policies = appendUserLimitRunPolicies(policies, config.GetName(), defaultLimit)
 		}
-
-		// default limit is set to 0 when unlimited = True || not configured.
-		// Accounts using this policy will set `IGNORE_POLICY_BOUNDS` for each
-		// quota op.
-		defaultRunLimitVal := uint64(defaultRunLimit.GetMaxActive().GetValue())
-		defaultkey := runPolicyKey(config.GetName(), defaultUserLimit)
-
-		policies = append(policies, runPolicyEntry(defaultkey, defaultRunLimitVal))
 	}
 
 	return policies

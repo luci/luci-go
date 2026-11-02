@@ -19,6 +19,8 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	cvpb "go.chromium.org/luci/cv/api/v1"
+
+	dayofweek "google.golang.org/genproto/googleapis/type/dayofweek"
 )
 
 // ensure the imports are used
@@ -37,6 +39,8 @@ var (
 	_ = sort.Sort
 
 	_ = cvpb.Run_Status(0)
+
+	_ = dayofweek.DayOfWeek(0)
 )
 
 // Validate checks the field values on Config with the rules defined in the
@@ -1356,6 +1360,40 @@ func (m *UserLimit) validate(all bool) error {
 				cause:  err,
 			}
 		}
+	}
+
+	for idx, item := range m.GetOverrides() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UserLimitValidationError{
+						field:  fmt.Sprintf("Overrides[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UserLimitValidationError{
+						field:  fmt.Sprintf("Overrides[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UserLimitValidationError{
+					field:  fmt.Sprintf("Overrides[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
@@ -4469,3 +4507,326 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UserLimit_TryjobValidationError{}
+
+// Validate checks the field values on UserLimit_Override with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UserLimit_Override) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UserLimit_Override with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UserLimit_OverrideMultiError, or nil if none found.
+func (m *UserLimit_Override) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UserLimit_Override) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetSchedule()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UserLimit_OverrideValidationError{
+					field:  "Schedule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UserLimit_OverrideValidationError{
+					field:  "Schedule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetSchedule()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UserLimit_OverrideValidationError{
+				field:  "Schedule",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetRun()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UserLimit_OverrideValidationError{
+					field:  "Run",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UserLimit_OverrideValidationError{
+					field:  "Run",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetRun()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UserLimit_OverrideValidationError{
+				field:  "Run",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UserLimit_OverrideMultiError(errors)
+	}
+
+	return nil
+}
+
+// UserLimit_OverrideMultiError is an error wrapping multiple validation errors
+// returned by UserLimit_Override.ValidateAll() if the designated constraints
+// aren't met.
+type UserLimit_OverrideMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UserLimit_OverrideMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UserLimit_OverrideMultiError) AllErrors() []error { return m }
+
+// UserLimit_OverrideValidationError is the validation error returned by
+// UserLimit_Override.Validate if the designated constraints aren't met.
+type UserLimit_OverrideValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UserLimit_OverrideValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UserLimit_OverrideValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UserLimit_OverrideValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UserLimit_OverrideValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UserLimit_OverrideValidationError) ErrorName() string {
+	return "UserLimit_OverrideValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UserLimit_OverrideValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUserLimit_Override.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UserLimit_OverrideValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UserLimit_OverrideValidationError{}
+
+// Validate checks the field values on UserLimit_Override_Schedule with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UserLimit_Override_Schedule) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UserLimit_Override_Schedule with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UserLimit_Override_ScheduleMultiError, or nil if none found.
+func (m *UserLimit_Override_Schedule) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UserLimit_Override_Schedule) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Timezone
+
+	if all {
+		switch v := interface{}(m.GetStartTime()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UserLimit_Override_ScheduleValidationError{
+					field:  "StartTime",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UserLimit_Override_ScheduleValidationError{
+					field:  "StartTime",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetStartTime()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UserLimit_Override_ScheduleValidationError{
+				field:  "StartTime",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetDuration()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UserLimit_Override_ScheduleValidationError{
+					field:  "Duration",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UserLimit_Override_ScheduleValidationError{
+					field:  "Duration",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetDuration()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UserLimit_Override_ScheduleValidationError{
+				field:  "Duration",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UserLimit_Override_ScheduleMultiError(errors)
+	}
+
+	return nil
+}
+
+// UserLimit_Override_ScheduleMultiError is an error wrapping multiple
+// validation errors returned by UserLimit_Override_Schedule.ValidateAll() if
+// the designated constraints aren't met.
+type UserLimit_Override_ScheduleMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UserLimit_Override_ScheduleMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UserLimit_Override_ScheduleMultiError) AllErrors() []error { return m }
+
+// UserLimit_Override_ScheduleValidationError is the validation error returned
+// by UserLimit_Override_Schedule.Validate if the designated constraints
+// aren't met.
+type UserLimit_Override_ScheduleValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UserLimit_Override_ScheduleValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UserLimit_Override_ScheduleValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UserLimit_Override_ScheduleValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UserLimit_Override_ScheduleValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UserLimit_Override_ScheduleValidationError) ErrorName() string {
+	return "UserLimit_Override_ScheduleValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UserLimit_Override_ScheduleValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUserLimit_Override_Schedule.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UserLimit_Override_ScheduleValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UserLimit_Override_ScheduleValidationError{}

@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/genproto/googleapis/type/dayofweek"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
@@ -35,6 +36,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apipb "go.chromium.org/luci/cv/api/v1"
+	"go.chromium.org/luci/cv/internal/quota/schedule"
 )
 
 const (
@@ -769,15 +771,90 @@ func (vd *projectConfigValidator) validateUserLimit(limit *cfgpb.UserLimit, name
 	}
 
 	vd.ctx.Enter("run")
-	switch r := limit.GetRun(); {
-	case r == nil:
-		vd.ctx.Errorf("missing; set all limits with `unlimited` if there are no limits")
-	default:
-		vd.ctx.Enter("max_active")
-		if err := vd.validateLimit(r.GetMaxActive()); err != nil {
-			vd.ctx.Errorf("%s", err)
+	vd.validateRunLimits(limit.GetRun())
+	vd.ctx.Exit()
+
+	for i, o := range limit.GetOverrides() {
+		vd.ctx.Enter("overrides #%d", i+1)
+		if o == nil {
+			vd.ctx.Errorf("cannot be nil")
+		} else {
+			vd.validateUserLimitOverride(o)
 		}
 		vd.ctx.Exit()
+	}
+}
+
+// validateRunLimits validates the run limits of a UserLimit or of one of its
+// overrides. The caller is expected to have entered the "run" context.
+func (vd *projectConfigValidator) validateRunLimits(r *cfgpb.UserLimit_Run) {
+	if r == nil {
+		vd.ctx.Errorf("missing; set all limits with `unlimited` if there are no limits")
+		return
+	}
+	vd.ctx.Enter("max_active")
+	if err := vd.validateLimit(r.GetMaxActive()); err != nil {
+		vd.ctx.Errorf("%s", err)
+	}
+	vd.ctx.Exit()
+}
+
+// validateUserLimitOverride validates a single UserLimit.Override.
+func (vd *projectConfigValidator) validateUserLimitOverride(o *cfgpb.UserLimit_Override) {
+	vd.ctx.Enter("schedule")
+	if s := o.GetSchedule(); s == nil {
+		vd.ctx.Errorf("missing")
+	} else {
+		vd.validateUserLimitSchedule(s)
+	}
+	vd.ctx.Exit()
+
+	vd.ctx.Enter("run")
+	vd.validateRunLimits(o.GetRun())
+	vd.ctx.Exit()
+}
+
+// validateUserLimitSchedule validates a single UserLimit.Schedule.
+func (vd *projectConfigValidator) validateUserLimitSchedule(s *cfgpb.UserLimit_Override_Schedule) {
+	vd.ctx.Enter("timezone")
+	switch tz := s.GetTimezone(); {
+	case tz == "":
+		vd.ctx.Errorf(`missing; must be a valid IANA timezone (e.g. "America/Los_Angeles" or "UTC")`)
+	default:
+		if _, err := schedule.LoadTimezone(tz); err != nil {
+			vd.ctx.Errorf("invalid timezone %q: %s", tz, err)
+		}
+	}
+	vd.ctx.Exit()
+
+	vd.ctx.Enter("days")
+	if len(s.GetDays()) == 0 {
+		vd.ctx.Errorf("must have at least one day")
+	}
+	daysSeen := make(map[dayofweek.DayOfWeek]bool, len(s.GetDays()))
+	for i, d := range s.GetDays() {
+		vd.ctx.Enter("days #%d", i+1)
+		switch {
+		case d < dayofweek.DayOfWeek_MONDAY || d > dayofweek.DayOfWeek_SUNDAY:
+			vd.ctx.Errorf("invalid day of week %q; must be MONDAY..SUNDAY", d)
+		case daysSeen[d]:
+			vd.ctx.Errorf("duplicate day %q", d)
+		default:
+			daysSeen[d] = true
+		}
+		vd.ctx.Exit()
+	}
+	vd.ctx.Exit()
+
+	vd.ctx.Enter("start_time")
+	if err := schedule.ValidateStartTime(s.GetStartTime()); err != nil {
+		vd.ctx.Errorf("%s", err)
+	}
+	vd.ctx.Exit()
+
+	vd.ctx.Enter("duration")
+	if err := schedule.ValidateDuration(s.GetDuration()); err != nil {
+		vd.ctx.Errorf("%s", err)
 	}
 	vd.ctx.Exit()
 }

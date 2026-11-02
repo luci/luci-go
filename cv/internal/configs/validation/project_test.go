@@ -17,7 +17,10 @@ package validation
 import (
 	"fmt"
 	"testing"
+	"time"
 
+	"google.golang.org/genproto/googleapis/type/dayofweek"
+	"google.golang.org/genproto/googleapis/type/timeofday"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -931,6 +934,106 @@ func TestValidateProjectDetailed(t *testing.T) {
 				fail(ulimit.Run.MaxActive, 0, false, "invalid limit 0;")
 				ok(ulimit.Run.MaxActive, 3, false)
 				ok(ulimit.Run.MaxActive, 0, true)
+			})
+			t.Run("overrides", func(t *ftt.Test) {
+				o := &cfgpb.UserLimit_Override{
+					Schedule: &cfgpb.UserLimit_Override_Schedule{
+						Timezone: "America/Los_Angeles",
+						Days: []dayofweek.DayOfWeek{
+							dayofweek.DayOfWeek_MONDAY,
+							dayofweek.DayOfWeek_TUESDAY,
+							dayofweek.DayOfWeek_WEDNESDAY,
+							dayofweek.DayOfWeek_THURSDAY,
+							dayofweek.DayOfWeek_FRIDAY,
+						},
+						StartTime: &timeofday.TimeOfDay{Hours: 8},
+						Duration:  durationpb.New(12 * time.Hour),
+					},
+					Run: &cfgpb.UserLimit_Run{
+						MaxActive: &cfgpb.UserLimit_Limit{
+							Limit: &cfgpb.UserLimit_Limit_Value{Value: 6},
+						},
+					},
+				}
+				s := o.Schedule
+				cg.UserLimitDefault.Overrides = []*cfgpb.UserLimit_Override{o}
+
+				ok := func() {
+					vctx := &validation.Context{Context: ctx}
+					validateProjectConfig(vctx, &cfg)
+					assert.NoErr(t, vctx.Finalize())
+				}
+				fail := func(msg string) {
+					vctx := &validation.Context{Context: ctx}
+					validateProjectConfig(vctx, &cfg)
+					assert.ErrIsLike(t, vctx.Finalize(), msg)
+				}
+
+				t.Run("valid same-day, overnight, and full-day overrides", func(t *ftt.Test) {
+					ok()
+					s.StartTime, s.Duration = &timeofday.TimeOfDay{Hours: 20, Minutes: 30}, durationpb.New(12*time.Hour)
+					ok()
+					s.StartTime, s.Duration = &timeofday.TimeOfDay{}, durationpb.New(24*time.Hour)
+					o.Run.MaxActive.Limit = &cfgpb.UserLimit_Limit_Unlimited{Unlimited: true}
+					ok()
+				})
+
+				t.Run("nil override", func(t *ftt.Test) {
+					cg.UserLimitDefault.Overrides = []*cfgpb.UserLimit_Override{nil}
+					fail("overrides #1): cannot be nil")
+				})
+
+				t.Run("missing schedule", func(t *ftt.Test) {
+					o.Schedule = nil
+					fail("overrides #1 / schedule): missing")
+				})
+
+				t.Run("timezone", func(t *ftt.Test) {
+					s.Timezone = ""
+					fail("schedule / timezone): missing")
+					s.Timezone = "Mars/Olympus_Mons"
+					fail(`invalid timezone "Mars/Olympus_Mons"`)
+					s.Timezone = "Local"
+					fail(`invalid timezone "Local": "Local" is not allowed`)
+				})
+
+				t.Run("days", func(t *ftt.Test) {
+					s.Days = nil
+					fail("schedule / days): must have at least one day")
+					s.Days = []dayofweek.DayOfWeek{dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED}
+					fail("invalid day of week")
+					s.Days = []dayofweek.DayOfWeek{dayofweek.DayOfWeek(8)}
+					fail("invalid day of week")
+					s.Days = []dayofweek.DayOfWeek{dayofweek.DayOfWeek_MONDAY, dayofweek.DayOfWeek_MONDAY}
+					fail(`duplicate day "MONDAY"`)
+				})
+
+				// Detailed checks are covered by schedule.TestValidateStartTime and
+				// schedule.TestValidateDuration.
+				t.Run("start_time", func(t *ftt.Test) {
+					s.StartTime = nil
+					fail("schedule / start_time): missing")
+					s.StartTime = &timeofday.TimeOfDay{Hours: 24}
+					fail("schedule / start_time): hours must be between 0 and 23; got 24")
+					s.StartTime = &timeofday.TimeOfDay{Hours: 8, Seconds: 30}
+					fail("schedule / start_time): seconds must not be set; got 30")
+				})
+
+				t.Run("duration", func(t *ftt.Test) {
+					s.Duration = nil
+					fail("schedule / duration): missing")
+					s.Duration = durationpb.New(0)
+					fail("schedule / duration): must be positive")
+					s.Duration = durationpb.New(24*time.Hour + time.Second)
+					fail("schedule / duration): must not exceed 24h0m0s")
+				})
+
+				t.Run("run limits", func(t *ftt.Test) {
+					o.Run = nil
+					fail("overrides #1 / run): missing")
+					o.Run = &cfgpb.UserLimit_Run{}
+					fail("overrides #1 / run / max_active): missing")
+				})
 			})
 		})
 	})

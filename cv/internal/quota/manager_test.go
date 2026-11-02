@@ -19,9 +19,14 @@ import (
 	"encoding/hex"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gomodule/redigo/redis"
+	"google.golang.org/genproto/googleapis/type/dayofweek"
+	"google.golang.org/genproto/googleapis/type/timeofday"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -631,6 +636,485 @@ func TestManager(t *testing.T) {
 				Name:         hex.EncodeToString(emailHash[:]),
 				ResourceType: "runs",
 			}))
+		})
+
+		t.Run("user limit overrides", func(t *ftt.Test) {
+			laLoc, err := time.LoadLocation("America/Los_Angeles")
+			assert.NoErr(t, err)
+
+			// Base limit (off-peak): 12
+			// Override 0 (Mon-Fri 08:00-20:00 America/Los_Angeles): 6
+			defaultLimit := genUserLimit("default_user_limit", 12, nil)
+			defaultLimit.Run.ReachLimitMsg = "Base limit message."
+			defaultLimit.Overrides = []*cfgpb.UserLimit_Override{
+				{
+					Schedule: &cfgpb.UserLimit_Override_Schedule{
+						Timezone: "America/Los_Angeles",
+						Days: []dayofweek.DayOfWeek{
+							dayofweek.DayOfWeek_MONDAY,
+							dayofweek.DayOfWeek_TUESDAY,
+							dayofweek.DayOfWeek_WEDNESDAY,
+							dayofweek.DayOfWeek_THURSDAY,
+							dayofweek.DayOfWeek_FRIDAY,
+						},
+						StartTime: &timeofday.TimeOfDay{Hours: 8},
+						Duration:  durationpb.New(12 * time.Hour),
+					},
+					Run: &cfgpb.UserLimit_Run{
+						MaxActive: &cfgpb.UserLimit_Limit{
+							Limit: &cfgpb.UserLimit_Limit_Value{Value: 6},
+						},
+					},
+				},
+			}
+			cg.UserLimitDefault = defaultLimit
+			prjcfgtest.Update(ctx, lProject, cfg)
+
+			r := &run.Run{
+				ID:            rid,
+				ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
+				BilledTo:      makeIdentity(tEmail),
+				CLs:           clIDs,
+			}
+
+			t.Run("makeRunQuotaPolicies() registers a policy per override", func(t *ftt.Test) {
+				cg.UserLimits = []*cfgpb.UserLimit{genUserLimit("googlers-limit", 5, []string{"group:googlers"})}
+				unlimitedOverride := proto.CloneOf(defaultLimit.Overrides[0])
+				unlimitedOverride.Run.MaxActive.Limit = &cfgpb.UserLimit_Limit_Unlimited{Unlimited: true}
+				cg.UserLimits[0].Overrides = []*cfgpb.UserLimit_Override{defaultLimit.Overrides[0], unlimitedOverride}
+
+				limits := map[string]uint64{}
+				var names []string
+				for _, p := range makeRunQuotaPolicies(lProject, []*prjcfg.ConfigGroup{{Content: cg}}) {
+					names = append(names, p.GetKey().GetName())
+					limits[p.GetKey().GetName()] = p.GetPolicy().GetLimit()
+				}
+				assert.That(t, names, should.Match([]string{
+					"googlers-limit",
+					"googlers-limit:schedule_override:0",
+					"googlers-limit:schedule_override:1",
+					"default",
+					"default:schedule_override:0",
+				}))
+				assert.That(t, limits, should.Match(map[string]uint64{
+					"googlers-limit":                     5,
+					"googlers-limit:schedule_override:0": 6,
+					// Unlimited is registered as 0 and enforced via IGNORE_POLICY_BOUNDS.
+					"googlers-limit:schedule_override:1": 0,
+					"default":                            12,
+					"default:schedule_override:0":        6,
+				}))
+				// The config itself isn't mutated by renaming the default limit.
+				assert.That(t, cg.UserLimitDefault.GetName(), should.Equal("default_user_limit"))
+			})
+
+			t.Run("transitions dynamically between peak and off-peak", func(t *ftt.Test) {
+				// Wednesday 10:00 AM PT (peak -> limit 6, policy "default:schedule_override:0").
+				wedPeak := time.Date(2026, time.October, 21, 10, 0, 0, 0, laLoc)
+				ct.Clock.Set(wedPeak.UTC())
+				s.SetTime(clock.Now(ctx))
+
+				res, ul, err := qm.runQuotaOp(ctx, r, "peak-debit-6", -6)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("default:schedule_override:0"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(6)))
+				// Inherits ReachLimitMsg from parent UserLimit when Override.Run.ReachLimitMsg is empty.
+				assert.That(t, ul.GetRun().GetReachLimitMsg(), should.Equal("Base limit message."))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
+					NewBalance:    0,
+					AccountStatus: quotapb.OpResult_CREATED,
+				}))
+
+				// 7th run during peak underflows.
+				res, ul, err = qm.runQuotaOp(ctx, r, "peak-debit-7", -1)
+				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
+				assert.That(t, res.GetStatus(), should.Equal(quotapb.OpResult_ERR_UNDERFLOW))
+
+				// Advance to Wednesday 8:00 PM PT (exact off-peak boundary -> limit 12, policy "default").
+				wedOffPeak := time.Date(2026, time.October, 21, 20, 0, 0, 0, laLoc)
+				ct.Clock.Set(wedOffPeak.UTC())
+				s.SetTime(clock.Now(ctx))
+
+				// 7th run now succeeds! Balance adjusts by +(12-6) = +6 before debiting -1 -> NewBalance = 5.
+				res, ul, err = qm.runQuotaOp(ctx, r, "offpeak-debit-7", -1)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("default"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(12)))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
+					NewBalance:              5,
+					PreviousBalance:         0,
+					PreviousBalanceAdjusted: 6,
+					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
+				}))
+
+				// Advance to Thursday 8:00 AM PT (exact peak start -> limit 6) while 7 runs are still active.
+				thuPeak := time.Date(2026, time.October, 22, 8, 0, 0, 0, laLoc)
+				ct.Clock.Set(thuPeak.UTC())
+				s.SetTime(clock.Now(ctx))
+
+				// Starting an 8th run during peak underflows (adjusted balance is 5 + (6-12) = -1).
+				res, ul, err = qm.runQuotaOp(ctx, r, "thu-peak-debit-8", -1)
+				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
+				assert.That(t, ul.GetName(), should.Equal("default:schedule_override:0"))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
+					PreviousBalance:         5,
+					PreviousBalanceAdjusted: -1,
+					Status:                  quotapb.OpResult_ERR_UNDERFLOW,
+				}))
+
+				// Crediting 2 finished runs during peak brings balance from -1 -> +1.
+				res, ul, err = qm.runQuotaOp(ctx, r, "thu-peak-credit-2", 2)
+				assert.NoErr(t, err)
+				assert.That(t, res, should.Match(&quotapb.OpResult{
+					NewBalance:              1,
+					PreviousBalance:         5,
+					PreviousBalanceAdjusted: -1,
+					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
+				}))
+
+				// Weekend at 12:00 PM PT (Saturday -> off-peak limit 12).
+				satNoon := time.Date(2026, time.October, 24, 12, 0, 0, 0, laLoc)
+				ct.Clock.Set(satNoon.UTC())
+				s.SetTime(clock.Now(ctx))
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("default"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(12)))
+				// The returned limit has no overrides, and the config isn't mutated.
+				assert.Loosely(t, ul.GetOverrides(), should.BeEmpty)
+				assert.That(t, cg.UserLimitDefault.GetName(), should.Equal("default_user_limit"))
+				assert.That(t, len(cg.UserLimitDefault.GetOverrides()), should.Equal(1))
+			})
+
+			t.Run("overnight schedule wrapping past midnight", func(t *ftt.Test) {
+				// Overnight schedule: Mon-Fri 22:00 to 06:00 America/Los_Angeles -> limit 12, base 6.
+				cg.UserLimitDefault = genUserLimit("default_user_limit", 6, nil)
+				cg.UserLimitDefault.Overrides = []*cfgpb.UserLimit_Override{
+					{
+						Schedule: &cfgpb.UserLimit_Override_Schedule{
+							Timezone: "America/Los_Angeles",
+							Days: []dayofweek.DayOfWeek{
+								dayofweek.DayOfWeek_MONDAY,
+								dayofweek.DayOfWeek_TUESDAY,
+								dayofweek.DayOfWeek_WEDNESDAY,
+								dayofweek.DayOfWeek_THURSDAY,
+								dayofweek.DayOfWeek_FRIDAY,
+							},
+							StartTime: &timeofday.TimeOfDay{Hours: 22},
+							Duration:  durationpb.New(8 * time.Hour),
+						},
+						Run: &cfgpb.UserLimit_Run{
+							MaxActive: &cfgpb.UserLimit_Limit{
+								Limit: &cfgpb.UserLimit_Limit_Value{Value: 12},
+							},
+							ReachLimitMsg: "Overnight message.",
+						},
+					},
+				}
+				prjcfgtest.Update(ctx, lProject, cfg)
+				r.ConfigGroupID = prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra")
+
+				// Monday 03:00 AM PT (started Sunday 22:00, Sunday is NOT in Mon-Fri -> inactive, base limit 6!).
+				monEarly := time.Date(2026, time.October, 19, 3, 0, 0, 0, laLoc)
+				ct.Clock.Set(monEarly.UTC())
+				ul, err := qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("default"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(6)))
+
+				// Tuesday 03:00 AM PT (started Monday 22:00, Monday IS in Mon-Fri -> active, limit 12!).
+				tueEarly := time.Date(2026, time.October, 20, 3, 0, 0, 0, laLoc)
+				ct.Clock.Set(tueEarly.UTC())
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("default:schedule_override:0"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(12)))
+				assert.That(t, ul.GetRun().GetReachLimitMsg(), should.Equal("Overnight message."))
+
+				// Friday 23:00 PM PT (started Friday 22:00, Friday IS in Mon-Fri -> active, limit 12!).
+				friLate := time.Date(2026, time.October, 23, 23, 0, 0, 0, laLoc)
+				ct.Clock.Set(friLate.UTC())
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("default:schedule_override:0"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(12)))
+
+				// Saturday 03:00 AM PT (started Friday 22:00, Friday IS in Mon-Fri -> active, limit 12!).
+				satEarly := time.Date(2026, time.October, 24, 3, 0, 0, 0, laLoc)
+				ct.Clock.Set(satEarly.UTC())
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("default:schedule_override:0"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(12)))
+
+				// Saturday 06:00 AM PT (exact window end boundary -> inactive, base limit 6!).
+				satEnd := time.Date(2026, time.October, 24, 6, 0, 0, 0, laLoc)
+				ct.Clock.Set(satEnd.UTC())
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("default"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(6)))
+
+				// Saturday 23:00 PM PT (started Saturday 22:00, Saturday is NOT in Mon-Fri -> inactive, base limit 6!).
+				satLate := time.Date(2026, time.October, 24, 23, 0, 0, 0, laLoc)
+				ct.Clock.Set(satLate.UTC())
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("default"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(6)))
+			})
+
+			t.Run("named user_limits with multiple overrides and boundary timestamps", func(t *ftt.Test) {
+				googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
+				googlerLimit.Overrides = []*cfgpb.UserLimit_Override{
+					// Override 0: Narrower peak override (09:00-17:00 -> limit 2).
+					{
+						Schedule: &cfgpb.UserLimit_Override_Schedule{
+							Timezone:  "America/Los_Angeles",
+							Days:      []dayofweek.DayOfWeek{dayofweek.DayOfWeek_WEDNESDAY},
+							StartTime: &timeofday.TimeOfDay{Hours: 9},
+							Duration:  durationpb.New(8 * time.Hour),
+						},
+						Run: &cfgpb.UserLimit_Run{
+							MaxActive: &cfgpb.UserLimit_Limit{
+								Limit: &cfgpb.UserLimit_Limit_Value{Value: 2},
+							},
+						},
+					},
+					// Override 1: Broader weekday override (08:00-20:00 -> limit 4).
+					{
+						Schedule: &cfgpb.UserLimit_Override_Schedule{
+							Timezone:  "America/Los_Angeles",
+							Days:      []dayofweek.DayOfWeek{dayofweek.DayOfWeek_WEDNESDAY},
+							StartTime: &timeofday.TimeOfDay{Hours: 8},
+							Duration:  durationpb.New(12 * time.Hour),
+						},
+						Run: &cfgpb.UserLimit_Run{
+							MaxActive: &cfgpb.UserLimit_Limit{
+								Limit: &cfgpb.UserLimit_Limit_Value{Value: 4},
+							},
+						},
+					},
+					// Override 2: Full-day weekend override (00:00 + 24h -> unlimited).
+					{
+						Schedule: &cfgpb.UserLimit_Override_Schedule{
+							Timezone:  "America/Los_Angeles",
+							Days:      []dayofweek.DayOfWeek{dayofweek.DayOfWeek_SATURDAY, dayofweek.DayOfWeek_SUNDAY},
+							StartTime: &timeofday.TimeOfDay{Hours: 0},
+							Duration:  durationpb.New(24 * time.Hour),
+						},
+						Run: &cfgpb.UserLimit_Run{
+							MaxActive: &cfgpb.UserLimit_Limit{
+								Limit: &cfgpb.UserLimit_Limit_Unlimited{Unlimited: true},
+							},
+						},
+					},
+				}
+				cg.UserLimits = []*cfgpb.UserLimit{googlerLimit}
+				cg.UserLimitDefault = nil
+				prjcfgtest.Update(ctx, lProject, cfg)
+				r.ConfigGroupID = prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra")
+
+				// 08:59:59 PT on Wednesday -> Override 0 is inactive, Override 1 is active (limit 4, "googlers-limit:schedule_override:1").
+				ct.Clock.Set(time.Date(2026, time.October, 21, 8, 59, 59, 0, laLoc).UTC())
+				ul, err := qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:1"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(4)))
+
+				// 09:00:00 PT on Wednesday -> Override 0 wins over Override 1 (limit 2, "googlers-limit:schedule_override:0").
+				ct.Clock.Set(time.Date(2026, time.October, 21, 9, 0, 0, 0, laLoc).UTC())
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:0"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(2)))
+
+				// 16:59:59 PT on Wednesday -> Override 0 still active (limit 2).
+				ct.Clock.Set(time.Date(2026, time.October, 21, 16, 59, 59, 0, laLoc).UTC())
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:0"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(2)))
+
+				// 17:00:00 PT on Wednesday -> Override 0 ends (exclusive), Override 1 is active (limit 4).
+				ct.Clock.Set(time.Date(2026, time.October, 21, 17, 0, 0, 0, laLoc).UTC())
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:1"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(4)))
+
+				// Saturday 23:59:59 PT -> Full-day Override 2 is active (unlimited).
+				ct.Clock.Set(time.Date(2026, time.October, 24, 23, 59, 59, 0, laLoc).UTC())
+				s.SetTime(clock.Now(ctx))
+				res, ul, err := qm.runQuotaOp(ctx, r, "sat-unlimited-debit", -100)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:2"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetUnlimited(), should.BeTrue)
+				assert.That(t, res, should.Match(&quotapb.OpResult{
+					NewBalance:    -100,
+					AccountStatus: quotapb.OpResult_CREATED,
+				}))
+			})
+
+			t.Run("unlimited base limit overridden by finite override and DST transitions", func(t *ftt.Test) {
+				// Base limit: unlimited (0).
+				// Override 0: Mon-Fri 09:00-17:00 America/Los_Angeles -> finite limit 2.
+				googlerLimit := genUserLimit("googlers-limit", 0, []string{"user:t@example.org"})
+				googlerLimit.Overrides = []*cfgpb.UserLimit_Override{
+					{
+						Schedule: &cfgpb.UserLimit_Override_Schedule{
+							Timezone: "America/Los_Angeles",
+							Days: []dayofweek.DayOfWeek{
+								dayofweek.DayOfWeek_MONDAY,
+								dayofweek.DayOfWeek_TUESDAY,
+								dayofweek.DayOfWeek_WEDNESDAY,
+								dayofweek.DayOfWeek_THURSDAY,
+								dayofweek.DayOfWeek_FRIDAY,
+							},
+							StartTime: &timeofday.TimeOfDay{Hours: 9},
+							Duration:  durationpb.New(8 * time.Hour),
+						},
+						Run: &cfgpb.UserLimit_Run{
+							MaxActive: &cfgpb.UserLimit_Limit{
+								Limit: &cfgpb.UserLimit_Limit_Value{Value: 2},
+							},
+						},
+					},
+				}
+				cg.UserLimits = []*cfgpb.UserLimit{googlerLimit}
+				cg.UserLimitDefault = nil
+				prjcfgtest.Update(ctx, lProject, cfg)
+				r.ConfigGroupID = prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra")
+
+				// Summer PDT (UTC-7): Wednesday July 15, 2026 at 16:00 UTC == 09:00 PDT -> active (limit 2).
+				summerPDT := time.Date(2026, time.July, 15, 16, 0, 0, 0, time.UTC)
+				ct.Clock.Set(summerPDT)
+				s.SetTime(clock.Now(ctx))
+				res, ul, err := qm.runQuotaOp(ctx, r, "pdt-debit-3", -3)
+				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:0"))
+				assert.That(t, res.GetStatus(), should.Equal(quotapb.OpResult_ERR_UNDERFLOW))
+
+				// Winter PST (UTC-8): Wednesday November 18, 2026 at 16:00 UTC == 08:00 PST -> inactive (base unlimited!).
+				winterPST8AM := time.Date(2026, time.November, 18, 16, 0, 0, 0, time.UTC)
+				ct.Clock.Set(winterPST8AM)
+				s.SetTime(clock.Now(ctx))
+				res, ul, err = qm.runQuotaOp(ctx, r, "pst-8am-debit-3", -3)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetUnlimited(), should.BeTrue)
+				assert.That(t, res.GetStatus(), should.Equal(quotapb.OpResult_SUCCESS))
+
+				// Winter PST (UTC-8): Wednesday November 18, 2026 at 17:00 UTC == 09:00 PST -> active (limit 2).
+				winterPST9AM := time.Date(2026, time.November, 18, 17, 0, 0, 0, time.UTC)
+				ct.Clock.Set(winterPST9AM)
+				ul, err = qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:0"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(2)))
+			})
+
+			t.Run("balance adjusts across unlimited base and finite override", func(t *ftt.Test) {
+				// Base limit: unlimited (registered as 0).
+				// Override 0: Wednesday 09:00-17:00 America/Los_Angeles -> limit 2.
+				googlerLimit := genUserLimit("googlers-limit", 0, []string{"user:t@example.org"})
+				googlerLimit.Overrides = []*cfgpb.UserLimit_Override{
+					{
+						Schedule: &cfgpb.UserLimit_Override_Schedule{
+							Timezone:  "America/Los_Angeles",
+							Days:      []dayofweek.DayOfWeek{dayofweek.DayOfWeek_WEDNESDAY},
+							StartTime: &timeofday.TimeOfDay{Hours: 9},
+							Duration:  durationpb.New(8 * time.Hour),
+						},
+						Run: &cfgpb.UserLimit_Run{
+							MaxActive: &cfgpb.UserLimit_Limit{
+								Limit: &cfgpb.UserLimit_Limit_Value{Value: 2},
+							},
+						},
+					},
+				}
+				cg.UserLimits = []*cfgpb.UserLimit{googlerLimit}
+				cg.UserLimitDefault = nil
+				prjcfgtest.Update(ctx, lProject, cfg)
+				r.ConfigGroupID = prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra")
+				setTime := func(hour int) {
+					ct.Clock.Set(time.Date(2026, time.October, 21, hour, 0, 0, 0, laLoc).UTC())
+					s.SetTime(clock.Now(ctx))
+				}
+
+				// 08:00 (base, unlimited): start 3 runs.
+				setTime(8)
+				res, ul, err := qm.runQuotaOp(ctx, r, "base-debit-3", -3)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit"))
+				assert.That(t, res.GetNewBalance(), should.Equal(int64(-3)))
+
+				// 09:00 (override, limit 2): 3 runs are active, so the adjusted
+				// balance is -3 + (2 - 0) = -1 and starting another run fails.
+				setTime(9)
+				res, ul, err = qm.runQuotaOp(ctx, r, "override-debit-1", -1)
+				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:0"))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
+					PreviousBalance:         -3,
+					PreviousBalanceAdjusted: -1,
+					Status:                  quotapb.OpResult_ERR_UNDERFLOW,
+				}))
+
+				// A run that was debited under the base limit ends under the override.
+				res, _, err = qm.runQuotaOp(ctx, r, "override-credit-1", 1)
+				assert.NoErr(t, err)
+				assert.That(t, res, should.Match(&quotapb.OpResult{
+					NewBalance:              0,
+					PreviousBalance:         -3,
+					PreviousBalanceAdjusted: -1,
+					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
+				}))
+
+				// 17:00 (back to base, unlimited): a run that was active under the
+				// override ends under the base limit. The adjusted balance is
+				// 0 + (0 - 2) = -2, i.e. 2 active runs, and becomes -1 after the credit.
+				setTime(17)
+				res, ul, err = qm.runQuotaOp(ctx, r, "base-credit-1", 1)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit"))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
+					NewBalance:              -1,
+					PreviousBalance:         0,
+					PreviousBalanceAdjusted: -2,
+					AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
+				}))
+			})
+
+			t.Run("malformed override schedule is skipped", func(t *ftt.Test) {
+				googlerLimit := genUserLimit("googlers-limit", 5, []string{"user:t@example.org"})
+				googlerLimit.Overrides = []*cfgpb.UserLimit_Override{
+					{
+						Schedule: &cfgpb.UserLimit_Override_Schedule{
+							Timezone:  "Invalid/Timezone",
+							Days:      []dayofweek.DayOfWeek{dayofweek.DayOfWeek_WEDNESDAY},
+							StartTime: &timeofday.TimeOfDay{Hours: 9},
+							Duration:  durationpb.New(8 * time.Hour),
+						},
+						Run: &cfgpb.UserLimit_Run{
+							MaxActive: &cfgpb.UserLimit_Limit{
+								Limit: &cfgpb.UserLimit_Limit_Value{Value: 2},
+							},
+						},
+					},
+				}
+				cg.UserLimits = []*cfgpb.UserLimit{googlerLimit}
+				cg.UserLimitDefault = nil
+				prjcfgtest.Update(ctx, lProject, cfg)
+				r.ConfigGroupID = prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra")
+
+				ct.Clock.Set(time.Date(2026, time.October, 21, 10, 0, 0, 0, laLoc).UTC())
+				ul, err := qm.findRunLimit(ctx, r)
+				assert.NoErr(t, err)
+				assert.That(t, ul.GetName(), should.Equal("googlers-limit"))
+				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(5)))
+				assert.Loosely(t, ul.GetOverrides(), should.BeEmpty)
+			})
 		})
 	})
 }
