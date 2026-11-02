@@ -38,6 +38,7 @@ load(
 )
 load("@proto//google/protobuf/duration.proto", duration_pb = "google.protobuf")
 load("@proto//google/protobuf/wrappers.proto", wrappers_pb = "google.protobuf")
+load("@proto//google/type/timeofday.proto", timeofday_pb = "google.type")
 
 # If set, do not generate legacy Buildbucket and Scheduler ACLs.
 #
@@ -1414,6 +1415,26 @@ def _cq_user_limit(limit):
         name = limit.name,
         principals = limit.principals,
         run = _cq_user_limit_run(limit.run),
+        overrides = [_cq_user_limit_override(o) for o in limit.overrides],
+    )
+
+def _cq_user_limit_override(override):
+    """cq.user_limit_override(...) => cq_pb.UserLimit.Override."""
+    return cq_pb.UserLimit.Override(
+        schedule = _cq_user_limit_schedule(override.schedule),
+        run = _cq_user_limit_run(override.run),
+    )
+
+def _cq_user_limit_schedule(sched):
+    """cq.user_limit_schedule(...) => cq_pb.UserLimit.Override.Schedule."""
+    return cq_pb.UserLimit.Override.Schedule(
+        timezone = sched.timezone,
+        days = sched.days,
+        start_time = timeofday_pb.TimeOfDay(
+            hours = sched.start_hours,
+            minutes = sched.start_minutes,
+        ),
+        duration = duration_pb.Duration(seconds = sched.duration // time.second),
     )
 
 def _cq_user_limit_run(limits):

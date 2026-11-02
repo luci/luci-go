@@ -3816,6 +3816,7 @@ cq.user_limit(
     users = None,
     groups = None,
     run = None,
+    overrides = None,
 )
 ```
 
@@ -3837,7 +3838,65 @@ find how user_limit(s) are used in cq_group(...).
 * **users**: a list of user identities to apply the limits to. User identities are the email addresses in most cases.
 * **groups**: a list of chrome infra auth groups to apply the limits to the members of.
 * **run**: [cq.run_limits(...)](#cq.run-limits). If omitted, runs are unlimited for the users.
+* **overrides**: a list of [cq.user_limit_override(...)](#cq.user-limit-override), evaluated in order. The first override whose schedule is active at the current time overrides `run`. If no override is active, `run` applies.
 
+
+
+
+### cq.user_limit_schedule {#cq.user-limit-schedule}
+
+```python
+cq.user_limit_schedule(
+    # Required arguments.
+    timezone,
+    days,
+    start_time,
+    duration,
+)
+```
+
+
+
+Constructs a recurring weekly time window for [cq.user_limit_override(...)](#cq.user-limit-override).
+
+The time window starts at `start_time` on each day in `days` and lasts for
+`duration`. The window may extend past midnight into the following day;
+e.g. `start_time = "20:00"` with `duration = 12 * time.hour` on Friday
+covers Friday 20:00 to Saturday 08:00.
+
+#### Arguments {#cq.user-limit-schedule-args}
+
+* **timezone**: IANA timezone name (e.g. "America/Los_Angeles" or "UTC") in which `days` and `start_time` are evaluated. "Local" is not allowed. Required.
+* **days**: days of the week on which the time window starts, as a string accepted by [time.days_of_week(...)](#time.days-of-week) (e.g. "Mon-Fri" or "Sat,Sun"). Required.
+* **start_time**: local start time of the window in 24-hour "HH:MM" format (00:00 to 23:59), inclusive. On days with a daylight saving time transition, a start time that occurs twice uses the first occurrence, and a start time that doesn't exist is shifted later by the length of the gap. Required.
+* **duration**: length of the time window as a duration with whole seconds, e.g. `12 * time.hour`. Must be positive and at most 24 hours. The duration is elapsed time, so the local end time of a window that spans a daylight saving time transition shifts by the DST offset. Required.
+
+
+#### Returns  {#cq.user-limit-schedule-returns}
+
+cq.user_limit_schedule struct.
+
+
+
+### cq.user_limit_override {#cq.user-limit-override}
+
+```python
+cq.user_limit_override(schedule, run = None)
+```
+
+
+
+Constructs a scheduled limit override for [cq.user_limit(...)](#cq.user-limit).
+
+#### Arguments {#cq.user-limit-override-args}
+
+* **schedule**: [cq.user_limit_schedule(...)](#cq.user-limit-schedule) during which this override is active. Required.
+* **run**: [cq.run_limits(...)](#cq.run-limits). If omitted, runs are unlimited while the schedule is active. Only run limits can be overridden.
+
+
+#### Returns  {#cq.user-limit-override-returns}
+
+cq.user_limit_override struct.
 
 
 

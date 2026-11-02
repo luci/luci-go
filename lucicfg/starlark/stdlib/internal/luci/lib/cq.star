@@ -15,6 +15,7 @@
 """CQ related supporting structs and functions."""
 
 load("@stdlib//internal/luci/proto.star", "cq_pb", "cv_v1pb")
+load("@stdlib//internal/time.star", "time")
 load("@stdlib//internal/validate.star", "validate")
 
 # A struct returned by cq.refset(...).
@@ -42,6 +43,12 @@ _location_filter_ctor = __native__.genstruct("cq.location_filter")
 
 # A struct returned by cq.user_limit(...).
 _user_limit_ctor = __native__.genstruct("cq.user_limit")
+
+# A struct returned by cq.user_limit_schedule(...).
+_user_limit_schedule_ctor = __native__.genstruct("cq.user_limit_schedule")
+
+# A struct returned by cq.user_limit_override(...).
+_user_limit_override_ctor = __native__.genstruct("cq.user_limit_override")
 
 # A struct returned by cq.run_limits(...).
 _run_limits_ctor = __native__.genstruct("cq.run_limits")
@@ -278,7 +285,8 @@ def _user_limit(
         name = None,
         users = None,
         groups = None,
-        run = None):
+        run = None,
+        overrides = None):
     """Construct a user_limit for run and tryjob limits.
 
     At the time of Run creation, CV looks up a user_limit applicable for
@@ -301,6 +309,9 @@ def _user_limit(
       groups: a list of chrome infra auth groups to apply the limits to
         the members of.
       run: cq.run_limits(...). If omitted, runs are unlimited for the users.
+      overrides: a list of cq.user_limit_override(...), evaluated in order.
+        The first override whose schedule is active at the current time
+        overrides `run`. If no override is active, `run` applies.
     """
     name = validate.string(
         "name",
@@ -318,12 +329,124 @@ def _user_limit(
         p = "group:%s" % validate.string("groups[%d]" % i, g, required = True)
         principals.append(p)
     _validate_run_limits("run", run, required = False)
+    overrides = _validate_user_limit_overrides("overrides", overrides, required = False)
 
     return _user_limit_ctor(
         name = name,
         principals = principals,
         run = run,
+        overrides = overrides,
     )
+
+def _validate_timezone(attr, val):
+    """Validates that `val` is a known IANA timezone name and returns it."""
+    val = validate.string(attr, val)
+    if val == "Local":
+        fail("bad %r: \"Local\" is not allowed, use an IANA timezone name" % attr)
+
+    # Starlark has no direct timezone lookup. time.epoch(...) loads the location
+    # and fails with "unknown time zone ..." if it doesn't exist.
+    time.epoch(time.short_date, "2020-01-01 00:00:00", val)
+    return val
+
+def _validate_schedule_days(attr, val):
+    """Parses a time.days_of_week(...) spec into a list of 1..7 day indexes."""
+    days = time.days_of_week(validate.string(attr, val))
+    if not days:
+        fail("bad %r: must specify at least one day of the week" % attr)
+    return days
+
+def _user_limit_schedule(
+        timezone = None,
+        days = None,
+        start_time = None,
+        duration = None):
+    """Constructs a recurring weekly time window for cq.user_limit_override(...).
+
+    The time window starts at `start_time` on each day in `days` and lasts for
+    `duration`. The window may extend past midnight into the following day;
+    e.g. `start_time = "20:00"` with `duration = 12 * time.hour` on Friday
+    covers Friday 20:00 to Saturday 08:00.
+
+    Args:
+      timezone: IANA timezone name (e.g. "America/Los_Angeles" or "UTC") in
+        which `days` and `start_time` are evaluated. "Local" is not allowed.
+        Required.
+      days: days of the week on which the time window starts, as a string
+        accepted by time.days_of_week(...) (e.g. "Mon-Fri" or "Sat,Sun").
+        Required.
+      start_time: local start time of the window in 24-hour "HH:MM" format
+        (00:00 to 23:59), inclusive. On days with a daylight saving time
+        transition, a start time that occurs twice uses the first occurrence,
+        and a start time that doesn't exist is shifted later by the length of
+        the gap. Required.
+      duration: length of the time window as a duration with whole seconds,
+        e.g. `12 * time.hour`. Must be positive and at most 24 hours. The
+        duration is elapsed time, so the local end time of a window that spans
+        a daylight saving time transition shifts by the DST offset. Required.
+
+    Returns:
+      cq.user_limit_schedule struct.
+    """
+    timezone = _validate_timezone("timezone", timezone)
+    days = _validate_schedule_days("days", days)
+    start_time = validate.string(
+        "start_time",
+        start_time,
+        required = True,
+        regexp = r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+    )
+    duration = validate.duration(
+        "duration",
+        duration,
+        min = time.second,
+        max = 24 * time.hour,
+        required = True,
+    )
+    return _user_limit_schedule_ctor(
+        timezone = timezone,
+        days = days,
+        start_time = start_time,
+        start_hours = int(start_time[:2]),
+        start_minutes = int(start_time[3:]),
+        duration = duration,
+    )
+
+def _user_limit_override(schedule = None, run = None):
+    """Constructs a scheduled limit override for cq.user_limit(...).
+
+    Args:
+      schedule: cq.user_limit_schedule(...) during which this override is
+        active. Required.
+      run: cq.run_limits(...). If omitted, runs are unlimited while the
+        schedule is active. Only run limits can be overridden.
+
+    Returns:
+      cq.user_limit_override struct.
+    """
+    schedule = validate.struct(
+        "schedule",
+        schedule,
+        _user_limit_schedule_ctor,
+        required = True,
+    )
+    _validate_run_limits("run", run, required = False)
+    return _user_limit_override_ctor(
+        schedule = schedule,
+        run = run,
+    )
+
+def _validate_user_limit_overrides(attr, val, *, required = False):
+    """Validates that `val` is a list of cq.user_limit_override(...)."""
+    overrides = validate.list(attr, val, required = required)
+    for i, o in enumerate(overrides):
+        overrides[i] = validate.struct(
+            "%s[%d]" % (attr, i),
+            o,
+            _user_limit_override_ctor,
+            required = True,
+        )
+    return overrides
 
 def _validate_run_limits(attr, val, *, default = None, required = False):
     """Validates that `val` was constructed via cq.run_limits(...)."""
@@ -606,6 +729,8 @@ cq = struct(
     post_action_gerrit_label_votes = _post_action_gerrit_label_votes,
     tryjob_experiment = _tryjob_experiment,
     user_limit = _user_limit,
+    user_limit_schedule = _user_limit_schedule,
+    user_limit_override = _user_limit_override,
     run_limits = _run_limits,
     ACTION_NONE = cq_pb.Verifiers.GerritCQAbility.UNSET,
     ACTION_DRY_RUN = cq_pb.Verifiers.GerritCQAbility.DRY_RUN,
