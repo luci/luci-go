@@ -74,6 +74,7 @@ func TestWorkUnitAccessChecker(t *testing.T) {
 
 				checker, err := NewWorkUnitAccessChecker(ctx, rootInvID, opts)
 				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, checker.RootInvocationRealm, should.Equal("testproject:root"))
 				assert.That(t, checker.RootInvovcationAccess, should.Equal(NoAccess))
 			})
 			t.Run("full access on root invocation", func(t *ftt.Test) {

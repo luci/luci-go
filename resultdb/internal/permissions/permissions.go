@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"strings"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -33,6 +35,48 @@ import (
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/rdbperms"
 )
+
+// permissionDeniedMinimumErrorf creates a PermissionDenied appstatus error with
+// structured errdetails.ErrorInfo metadata containing only the LUCI project.
+// This should be used when the caller has no access to the resource, so the
+// subrealm is not disclosed.
+func permissionDeniedMinimumErrorf(project, format string, args ...any) error {
+	s := status.Newf(codes.PermissionDenied, format, args...)
+	if project != "" {
+		s = appstatus.MustWithDetails(s, &errdetails.ErrorInfo{
+			Reason:   "PERMISSION_DENIED",
+			Domain:   "resultdb.api.luci.app",
+			Metadata: map[string]string{"project": project},
+		})
+	}
+	return appstatus.ToError(s)
+}
+
+// permissionDeniedErrorf creates a PermissionDenied appstatus error with
+// structured errdetails.ErrorInfo metadata containing both the LUCI project and
+// the full realm.
+//
+// IMPORTANT: Only use this function when the caller already has limited access
+// to the resource (so disclosing the full realm is safe). Otherwise, use
+// permissionDeniedMinimumErrorf.
+func permissionDeniedErrorf(project, realm, format string, args ...any) error {
+	s := status.Newf(codes.PermissionDenied, format, args...)
+	if project != "" || realm != "" {
+		meta := make(map[string]string, 2)
+		if project != "" {
+			meta["project"] = project
+		}
+		if realm != "" {
+			meta["realm"] = realm
+		}
+		s = appstatus.MustWithDetails(s, &errdetails.ErrorInfo{
+			Reason:   "PERMISSION_DENIED",
+			Domain:   "resultdb.api.luci.app",
+			Metadata: meta,
+		})
+	}
+	return appstatus.ToError(s)
+}
 
 // VerifyInvocation checks if the caller has the specified permissions on the
 // realm that the invocation with the specified id belongs to.
@@ -53,18 +97,19 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/permissions.VerifyInvocations")
 	defer func() { tracing.End(ts, err) }()
 
-	realms, err := invocations.ReadRealms(ctx, ids)
+	invRealms, err := invocations.ReadRealms(ctx, ids)
 	if err != nil {
 		return err
 	}
 
 	// Note: HasPermissionsInRealms does not make RPCs.
-	verified, desc, err := HasPermissionsInRealms(ctx, realms, permissions...)
+	verified, desc, deniedRealm, err := HasPermissionsInRealms(ctx, invRealms, permissions...)
 	if err != nil {
 		return err
 	}
 	if !verified {
-		return appstatus.Error(codes.PermissionDenied, desc)
+		project, _ := realms.Split(deniedRealm)
+		return permissionDeniedMinimumErrorf(project, "%s", desc)
 	}
 
 	return nil
@@ -84,13 +129,14 @@ func VerifyRootInvocation(ctx context.Context, id rootinvocations.ID, permission
 		return err
 	}
 
+	project, _ := realms.Split(realm)
 	// Note: HasPermission does not make RPCs.
 	for _, permission := range permissions {
 		switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
 		case err != nil:
 			return err
 		case !allowed:
-			return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm of root invocation %q`, permission, id.Name())
+			return permissionDeniedMinimumErrorf(project, `caller does not have permission %s in realm of root invocation %q (project %q)`, permission, id.Name(), project)
 		}
 	}
 	return nil
@@ -274,7 +320,7 @@ func VerifyWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts VerifyW
 	}
 	if !allowed {
 		if minimumAccessLevel != NoAccess {
-			return nil, NoRootInvocationAccessError(ids[0].RootInvocationID, opts)
+			return nil, NoRootInvocationAccessError(ids[0].RootInvocationID, rootInvRealm, opts)
 		}
 		return repeatAccessLevel(NoAccess, len(ids)), nil
 	}
@@ -372,7 +418,7 @@ func VerifyAllWorkUnitsAccess(ctx context.Context, id rootinvocations.ID, opts V
 		// upgrade limited access to full access for given work units
 		// is not viable here, as it is not data-race safe (new work units
 		// may be added after we queried all work units realms above).
-		return RootInvocationAccess{}, noFullRootInvocationAccessError(id, opts)
+		return RootInvocationAccess{}, noFullRootInvocationAccessError(id, rootInvRealm, opts)
 	}
 
 	// At this point the user does not have full access, could they have
@@ -386,7 +432,7 @@ func VerifyAllWorkUnitsAccess(ctx context.Context, id rootinvocations.ID, opts V
 		// Break out early, we have no access to the root invocation or
 		// its work units.
 		if minimumAccessLevel != NoAccess {
-			return RootInvocationAccess{}, NoRootInvocationAccessError(id, opts)
+			return RootInvocationAccess{}, NoRootInvocationAccessError(id, rootInvRealm, opts)
 		}
 		return RootInvocationAccess{Level: NoAccess}, nil
 	}
@@ -413,24 +459,26 @@ func VerifyAllWorkUnitsAccess(ctx context.Context, id rootinvocations.ID, opts V
 
 // NoRootInvocationAccessError returns a PermissionDenied appstatus error
 // indicating that the user has no access to a root invocation.
-func NoRootInvocationAccessError(id rootinvocations.ID, opts VerifyWorkUnitAccessOptions) error {
+func NoRootInvocationAccessError(id rootinvocations.ID, rootInvRealm string, opts VerifyWorkUnitAccessOptions) error {
+	project, _ := realms.Split(rootInvRealm)
 	// There are two access paths: limited access and full access. Neither were satisfied.
 	if len(opts.Full) == 1 && len(opts.Limited) == 1 {
-		return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s (or %s) in realm of root invocation %q", opts.Full[0], opts.Limited[0], id.Name())
+		return permissionDeniedMinimumErrorf(project, "caller does not have permission %s (or %s) in realm of root invocation %q (project %q)", opts.Full[0], opts.Limited[0], id.Name(), project)
 	}
-	return appstatus.Errorf(codes.PermissionDenied, "caller does not have permissions %s (or %s) in realm of root invocation %q",
-		permissionsList(opts.Limited...), permissionsList(opts.Full...), id.Name())
+	return permissionDeniedMinimumErrorf(project, "caller does not have permissions %s (or %s) in realm of root invocation %q (project %q)",
+		permissionsList(opts.Limited...), permissionsList(opts.Full...), id.Name(), project)
 }
 
 // noFullRootInvocationAccessError returns a PermissionDenied appstatus error
 // indicating that the user does not have full access to a root invocation.
-func noFullRootInvocationAccessError(id rootinvocations.ID, opts VerifyWorkUnitAccessOptions) error {
+func noFullRootInvocationAccessError(id rootinvocations.ID, rootInvRealm string, opts VerifyWorkUnitAccessOptions) error {
+	project, _ := realms.Split(rootInvRealm)
 	// There are two access paths: limited access and full access. Neither were satisfied.
 	if len(opts.Full) == 1 {
-		return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s in realm of root invocation %q", opts.Full[0], id.Name())
+		return permissionDeniedMinimumErrorf(project, "caller does not have permission %s in realm of root invocation %q (project %q)", opts.Full[0], id.Name(), project)
 	}
-	return appstatus.Errorf(codes.PermissionDenied, "caller does not have permissions %s in realm of root invocation %q",
-		permissionsList(opts.Full...), id.Name())
+	return permissionDeniedMinimumErrorf(project, "caller does not have permissions %s in realm of root invocation %q (project %q)",
+		permissionsList(opts.Full...), id.Name(), project)
 }
 
 // noUpgradeAccessError returns a PermissionDenied appstatus error
@@ -440,10 +488,11 @@ func noUpgradeAccessError(id workunits.ID, realm string, opts VerifyWorkUnitAcce
 	// Unlike root invocation errors, where we do not disclose the realm, this permission
 	// error is only returned if the user already has limited access to the root invocation.
 	// This is sufficient to allow us to disclose the realm of the work unit.
+	project, _ := realms.Split(realm)
 	if len(opts.UpgradeLimitedToFull) == 1 {
-		return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s in realm %q of work unit %q (trying to upgrade limited access to full access)", opts.UpgradeLimitedToFull[0], realm, id.Name())
+		return permissionDeniedErrorf(project, realm, "caller does not have permission %s in realm %q of work unit %q (trying to upgrade limited access to full access)", opts.UpgradeLimitedToFull[0], realm, id.Name())
 	}
-	return appstatus.Errorf(codes.PermissionDenied, "caller does not have permissions %s in realm %q of work unit %q (trying to upgrade limited access to full access)", permissionsList(opts.UpgradeLimitedToFull...), realm, id.Name())
+	return permissionDeniedErrorf(project, realm, "caller does not have permissions %s in realm %q of work unit %q (trying to upgrade limited access to full access)", permissionsList(opts.UpgradeLimitedToFull...), realm, id.Name())
 }
 
 // permissionsList returns a string representation of the given list of permissions.
@@ -521,19 +570,20 @@ type NamedResource interface {
 // HasPermissionsInRealms checks if the caller has a given set of permissions
 // for a collection of invocations, rootInvocations or workunits.
 //
-// The realms map is from a resource identifier (like invocations.ID) to the
+// The resRealms map is from a resource identifier (like invocations.ID) to the
 // resource's realm (e.g. "project:realm").
 // Returns:
 //   - whether the caller has all permissions in all realms
 //   - description of the first identified missing permission for an invocation/rootInvocation/workunit.
 //     (if applicable)
+//   - the realm where the permission was missing (if applicable)
 //   - an error if one occurred
 func HasPermissionsInRealms[T interface {
 	NamedResource
 	comparable
-}](ctx context.Context, realms map[T]string, permissions ...realms.Permission) (bool, string, error) {
+}](ctx context.Context, resRealms map[T]string, permissions ...realms.Permission) (hasPermissions bool, description string, deniedRealm string, err error) {
 	checked := stringset.New(1)
-	for res, realm := range realms {
+	for res, realm := range resRealms {
 		if !checked.Add(realm) {
 			continue
 		}
@@ -541,13 +591,14 @@ func HasPermissionsInRealms[T interface {
 		for _, permission := range permissions {
 			switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
 			case err != nil:
-				return false, "", err
+				return false, "", "", err
 			case !allowed:
-				return false, fmt.Sprintf(`caller does not have permission %s in realm of %q`, permission, res.Name()), nil
+				project, _ := realms.Split(realm)
+				return false, fmt.Sprintf(`caller does not have permission %s in realm of %q (project %q)`, permission, res.Name(), project), realm, nil
 			}
 		}
 	}
-	return true, "", nil
+	return true, "", "", nil
 }
 
 // QuerySubRealmsNonEmpty returns subRealms that the user has the given permission in the given project.
@@ -561,7 +612,7 @@ func QuerySubRealmsNonEmpty(ctx context.Context, project string, attrs realms.At
 		return nil, err
 	}
 	if len(allowedRealms) == 0 {
-		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %v in any realm in project %q`, permission, project)
+		return nil, permissionDeniedMinimumErrorf(project, `caller does not have permission %v in any realm in project %q`, permission, project)
 	}
 	subRealms := make([]string, 0, len(allowedRealms))
 	for _, r := range allowedRealms {

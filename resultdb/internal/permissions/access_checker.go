@@ -32,6 +32,8 @@ type WorkUnitAccessChecker struct {
 	// The permission(s) required on the work unit's realm to upgrade limited
 	// access to full access.
 	upgradeLimitedToFull []realms.Permission
+	// The realm of the root invocation.
+	RootInvocationRealm string
 	// The access user has on the root invocation.
 	RootInvovcationAccess AccessLevel
 }
@@ -63,6 +65,7 @@ func NewWorkUnitAccessChecker(ctx context.Context, rootInvID rootinvocations.ID,
 
 	return &WorkUnitAccessChecker{
 		upgradeLimitedToFull:  opts.UpgradeLimitedToFull,
+		RootInvocationRealm:   rootInvRealm,
 		RootInvovcationAccess: access,
 	}, nil
 }

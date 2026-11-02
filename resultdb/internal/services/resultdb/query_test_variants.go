@@ -73,7 +73,7 @@ func determineListAccessLevel(ctx context.Context, in *pb.QueryTestVariantsReque
 	}
 
 	// Check for unrestricted access
-	hasUnrestricted, _, err := permissions.HasPermissionsInRealms(ctx, realmMap,
+	hasUnrestricted, _, _, err := permissions.HasPermissionsInRealms(ctx, realmMap,
 		rdbperms.PermListTestResults, rdbperms.PermListTestExonerations)
 	if err != nil {
 		return testvariants.AccessLevelInvalid, err // Internal error.
@@ -83,7 +83,7 @@ func determineListAccessLevel(ctx context.Context, in *pb.QueryTestVariantsReque
 	}
 
 	// Check for limited access
-	hasLimited, desc, err := permissions.HasPermissionsInRealms(ctx, realmMap,
+	hasLimited, desc, _, err := permissions.HasPermissionsInRealms(ctx, realmMap,
 		rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations)
 	if err != nil {
 		return testvariants.AccessLevelInvalid, err // Internal error.

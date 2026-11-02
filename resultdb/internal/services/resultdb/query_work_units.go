@@ -94,7 +94,7 @@ func (s *resultDBServer) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUni
 		return nil, err
 	}
 	if accessChecker.RootInvovcationAccess == permissions.NoAccess {
-		return nil, permissions.NoRootInvocationAccessError(rootInvID, permissions.ListWorkUnitsAccessModel)
+		return nil, permissions.NoRootInvocationAccessError(rootInvID, accessChecker.RootInvocationRealm, permissions.ListWorkUnitsAccessModel)
 	}
 
 	if err := validateQueryWorkUnitsRequest(in); err != nil {

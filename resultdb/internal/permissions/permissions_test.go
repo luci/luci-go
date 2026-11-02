@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -72,17 +73,26 @@ func TestVerifyInvocations(t *testing.T) {
 			ids := invocations.NewIDSet(invocations.ID("i0"))
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of \"invocations/i0\""))
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of \"invocations/i0\" (project \"testproject\")"))
+			st, ok := appstatus.Get(err)
+			assert.That(t, ok, should.BeTrue)
+			assert.Loosely(t, st.Details(), should.Match([]any{
+				&errdetails.ErrorInfo{
+					Reason:   "PERMISSION_DENIED",
+					Domain:   "resultdb.api.luci.app",
+					Metadata: map[string]string{"project": "testproject"},
+				},
+			}))
 
 			ids = invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts, rdbperms.PermListTestExonerations)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("resultdb.testExonerations.list in realm of \"invocations/i1\""))
+			assert.Loosely(t, err, should.ErrLike("resultdb.testExonerations.list in realm of \"invocations/i1\" (project \"testproject\")"))
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of \"invocations/i3\""))
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of \"invocations/i3\" (project \"testproject\")"))
 		})
 		t.Run("Duplicate invocations", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3"))
@@ -256,12 +266,30 @@ func TestVerifyWorkUnitAccess(t *testing.T) {
 				_, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, FullAccess)
 				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.get, resultdb.testExonerations.get] in realm \"testproject:workunit\" of work unit \"rootInvocations/root-inv/workUnits/work-unit\" (trying to upgrade limited access to full access)"))
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				st, ok := appstatus.Get(err)
+				assert.That(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Details(), should.Match([]any{
+					&errdetails.ErrorInfo{
+						Reason:   "PERMISSION_DENIED",
+						Domain:   "resultdb.api.luci.app",
+						Metadata: map[string]string{"project": "testproject", "realm": "testproject:workunit"},
+					},
+				}))
 			})
 			t.Run("required LimitedAccess, have NoAccess", func(t *ftt.Test) {
 				authState.IdentityPermissions = nil
 				_, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, LimitedAccess)
-				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.listLimited, resultdb.testExonerations.listLimited] (or [resultdb.testResults.list, resultdb.testExonerations.list]) in realm of root invocation \"rootInvocations/root-inv\""))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.listLimited, resultdb.testExonerations.listLimited] (or [resultdb.testResults.list, resultdb.testExonerations.list]) in realm of root invocation \"rootInvocations/root-inv\" (project \"testproject\")"))
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				st, ok := appstatus.Get(err)
+				assert.That(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Details(), should.Match([]any{
+					&errdetails.ErrorInfo{
+						Reason:   "PERMISSION_DENIED",
+						Domain:   "resultdb.api.luci.app",
+						Metadata: map[string]string{"project": "testproject"},
+					},
+				}))
 			})
 		})
 	})
@@ -532,13 +560,22 @@ func TestVerifyAllWorkUnitsAccess(t *testing.T) {
 					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
 				}
 				_, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, FullAccess)
-				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list, resultdb.testExonerations.list] in realm of root invocation \"rootInvocations/root-inv\""))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list, resultdb.testExonerations.list] in realm of root invocation \"rootInvocations/root-inv\" (project \"testproject\")"))
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				st, ok := appstatus.Get(err)
+				assert.That(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Details(), should.Match([]any{
+					&errdetails.ErrorInfo{
+						Reason:   "PERMISSION_DENIED",
+						Domain:   "resultdb.api.luci.app",
+						Metadata: map[string]string{"project": "testproject"},
+					},
+				}))
 			})
 			t.Run("required LimitedAccess, have NoAccess", func(t *ftt.Test) {
 				authState.IdentityPermissions = nil
 				_, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, LimitedAccess)
-				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.listLimited, resultdb.testExonerations.listLimited] (or [resultdb.testResults.list, resultdb.testExonerations.list]) in realm of root invocation \"rootInvocations/root-inv\""))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.listLimited, resultdb.testExonerations.listLimited] (or [resultdb.testResults.list, resultdb.testExonerations.list]) in realm of root invocation \"rootInvocations/root-inv\" (project \"testproject\")"))
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			})
 		})

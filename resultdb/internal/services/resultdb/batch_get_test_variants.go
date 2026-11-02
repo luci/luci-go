@@ -217,7 +217,7 @@ func verifyBatchGetTestVariantPermissions(ctx context.Context, in *pb.BatchGetTe
 			rootInvID: realm,
 		}
 		// Check for unrestricted access.
-		hasUnrestricted, _, err := permissions.HasPermissionsInRealms(ctx, realmMap, rdbperms.PermGetTestResult, rdbperms.PermGetTestExoneration)
+		hasUnrestricted, _, _, err := permissions.HasPermissionsInRealms(ctx, realmMap, rdbperms.PermGetTestResult, rdbperms.PermGetTestExoneration)
 		if err != nil {
 			return testvariants.AccessLevelInvalid, err // Internal error.
 		}
@@ -226,7 +226,7 @@ func verifyBatchGetTestVariantPermissions(ctx context.Context, in *pb.BatchGetTe
 		}
 
 		// Check for limited access.
-		hasLimited, desc, err := permissions.HasPermissionsInRealms(ctx, realmMap, rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations)
+		hasLimited, desc, _, err := permissions.HasPermissionsInRealms(ctx, realmMap, rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations)
 		if err != nil {
 			return testvariants.AccessLevelInvalid, err // Internal error.
 		}
