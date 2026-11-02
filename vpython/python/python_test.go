@@ -112,11 +112,43 @@ func TestUVGenerator(tT *testing.T) {
 
 			// Verify Args contain exact bootstrap scripts parameters!
 			argsStr := strings.Join(workflowGen.Args, " ")
+			assert.Loosely(t, argsStr, should.ContainSubstring("-BsE"))
 			assert.Loosely(t, argsStr, should.ContainSubstring("uv_bootstrap.py"))
 
 			assert.Loosely(t, argsStr, should.ContainSubstring("--uv-bin"))
 			assert.Loosely(t, argsStr, should.ContainSubstring("--python-bin"))
 			assert.Loosely(t, argsStr, should.ContainSubstring(fmt.Sprintf("--req-file %s", filepath.Join("{{.vpython_requirements}}", "requirements.txt"))))
+		})
+
+		t.Run("Pep425Tags and WithWheels pass -BsE to suppress host .pyc generation", func(t *ftt.Test) {
+			cpython := &generators.ImportTargets{Name: "cpython"}
+			virtualenv := &generators.ImportTargets{Name: "virtualenv"}
+			wheels := &generators.ImportTargets{Name: "wheels"}
+
+			env := Environment{
+				Executable: "python3",
+				CPython:    cpython,
+				Virtualenv: virtualenv,
+			}
+
+			pepGen, ok := env.Pep425Tags().(*workflow.Generator)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, pepGen.Name, should.Equal("python_pep425tags"))
+			assert.Loosely(t, pepGen.Args, should.Contain("-BsE"))
+
+			var emptyGen *workflow.Generator
+			for _, dep := range pepGen.Dependencies {
+				if wg, ok := dep.Generator.(*workflow.Generator); ok && wg.Name == "python_empty_venv" {
+					emptyGen = wg
+					break
+				}
+			}
+			assert.Loosely(t, emptyGen, should.NotBeNil)
+			assert.Loosely(t, emptyGen.Args, should.Contain("-BsE"))
+
+			wheelsGen, ok := env.WithWheels(wheels).(*workflow.Generator)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, wheelsGen.Args, should.Contain("-BsE"))
 		})
 	})
 }

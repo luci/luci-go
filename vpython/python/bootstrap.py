@@ -220,7 +220,7 @@ def main():
   # correctness if .pyc can't be written to the directory anyway.
   try:
     subprocess.check_call([
-        sys.executable, ISOLATION_FLAG, '-m', 'compileall', '-j',
+        sys.executable, '-B', ISOLATION_FLAG, '-m', 'compileall', '-j',
         str(COMPILE_WORKERS), os.environ['out']
     ])
   except subprocess.CalledProcessError as e:

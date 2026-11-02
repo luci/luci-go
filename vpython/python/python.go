@@ -152,6 +152,7 @@ func (e *Environment) Pep425Tags() generators.Generator {
 		Name: "python_empty_venv",
 		Args: []string{
 			common.Python("{{.cpython}}", e.Executable),
+			"-BsE", // -B: no .pyc files; -s: no user site-packages; -E: ignore environment overrides
 			filepath.Join("{{.bootstrap}}", "bootstrap.py"),
 		},
 		Dependencies: []generators.Dependency{
@@ -164,6 +165,7 @@ func (e *Environment) Pep425Tags() generators.Generator {
 		Name: "python_pep425tags",
 		Args: []string{
 			common.PythonVENV("{{.python_empty_venv}}", e.Executable),
+			"-BsE", // -B: no .pyc files; -s: no user site-packages; -E: ignore environment overrides
 			filepath.Join("{{.bootstrap}}", "pep425tags.py"),
 		},
 		Dependencies: []generators.Dependency{
