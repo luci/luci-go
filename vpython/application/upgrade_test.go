@@ -20,6 +20,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -776,6 +777,99 @@ func TestUpgradeSpecs_CompanionSpec_Vpython3Precedence(t *testing.T) {
 			spec, err := standard.ParseVpythonTOML(tomlPath)
 			assert.NoErr(t, err)
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11,<3.12"))
+		})
+	})
+}
+
+func TestUpgradeSpecs_Symlinks(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("The upgrade subcommand is not supported on Windows")
+	}
+	ctx := context.Background()
+
+	ftt.Run("Test specs upgrade around symlinks", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
+		t.Setenv("VPYTHON_UV_BIN", filepath.Join(tempDir, "no-uv"))
+
+		wrapperContent := "#!/usr/bin/env vpython3\nprint(\"OK\")\n"
+		specContent := "python_version: \"3.11\"\n"
+		write := func(name, content string) string {
+			path := filepath.Join(tempDir, name)
+			assert.NoErr(t, os.WriteFile(path, []byte(content), 0755))
+			return path
+		}
+		symlink := func(target, name string) string {
+			path := filepath.Join(tempDir, name)
+			assert.NoErr(t, os.Symlink(target, path))
+			return path
+		}
+		assertContent := func(path, want string) {
+			data, err := os.ReadFile(path)
+			assert.NoErr(t, err)
+			assert.Loosely(t, string(data), should.Equal(want))
+		}
+		assertSymlink := func(path string) {
+			st, err := os.Lstat(path)
+			assert.NoErr(t, err)
+			assert.Loosely(t, st.Mode()&os.ModeSymlink, should.NotEqual(0))
+		}
+		wrapper := write("wrapper.py", wrapperContent)
+
+		t.Run("Leaves the companion spec of a symlink alone", func(t *ftt.Test) {
+			link := symlink("wrapper.py", "tool")
+			specPath := write("tool.vpython3", specContent)
+
+			assert.NoErr(t, UpgradeSpecs(ctx, specPath, false, true, true))
+
+			assertSymlink(link)
+			assertContent(specPath, specContent)
+			assertContent(wrapper, wrapperContent)
+		})
+
+		t.Run("Leaves the companion spec of a symlink alone if <name>.py exists", func(t *ftt.Test) {
+			link := symlink("wrapper.py", "run_tests")
+			module := write("run_tests.py", "print(\"module\")\n")
+			specPath := write("run_tests.vpython3", specContent)
+
+			assert.NoErr(t, UpgradeSpecs(ctx, specPath, false, true, true))
+
+			assertSymlink(link)
+			assertContent(specPath, specContent)
+			assertContent(module, "print(\"module\")\n")
+		})
+
+		t.Run("Does not merge a companion spec into a symlinked <name>.py", func(t *ftt.Test) {
+			link := symlink("wrapper.py", "other.py")
+			specPath := write("other.vpython3", specContent)
+
+			assert.NoErr(t, UpgradeSpecs(ctx, specPath, false, true, true))
+
+			assertSymlink(link)
+			assertContent(specPath, specContent)
+			assertContent(wrapper, wrapperContent)
+		})
+
+		t.Run("Skips a symlinked spec file", func(t *ftt.Test) {
+			write("docs.py", wrapperContent)
+			shared := write("shared.vpython3", specContent)
+			link := symlink("shared.vpython3", "docs.vpython3")
+
+			assert.NoErr(t, UpgradeSpecs(ctx, link, false, true, true))
+
+			assertSymlink(link)
+			assertContent(shared, specContent)
+			assertContent(filepath.Join(tempDir, "docs.py"), wrapperContent)
+		})
+
+		t.Run("Does not regenerate a lockfile next to a symlinked script", func(t *ftt.Test) {
+			pep723Content := "#!/usr/bin/env vpython3\n# /// script\n# requires-python = '>=3.11,<3.12'\n# dependencies = ['six==1.15.0']\n# ///\n"
+			write("pep723.py", pep723Content)
+			link := symlink("pep723.py", "pep723-link")
+
+			assert.NoErr(t, UpgradeSpecs(ctx, link, false, false, true))
+
+			_, err := os.Lstat(link + ".uv.lock")
+			assert.Loosely(t, errors.Is(err, os.ErrNotExist), should.BeTrue)
 		})
 	})
 }

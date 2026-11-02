@@ -132,6 +132,11 @@ func upgradeDir(ctx context.Context, dirPath string, keepLegacy bool) error {
 }
 
 func upgradeFile(ctx context.Context, filePath string, keepLegacy bool, isDirectTarget bool) error {
+	if isSymlink(filePath) {
+		warnSkipped(ctx, "Skipped symlink %s. Upgrade the file it points to instead.", filePath)
+		return nil
+	}
+
 	ext := strings.ToLower(filepath.Ext(filePath))
 	if ext == ".vpython" || ext == ".vpython3" {
 		return convertStandaloneSpec(ctx, filePath, keepLegacy)
@@ -188,6 +193,11 @@ func marshalScriptMetadataSpec(spec *standard.ProjectSpec) (string, error) {
 }
 
 func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool) error {
+	if link := symlinkOwningSpec(srcPath); link != "" {
+		warnSkipped(ctx, "Skipped %s: it is the companion spec of symlink %s, which standard specs cannot express.", srcPath, link)
+		return nil
+	}
+
 	// Check if this standalone spec is a script companion spec.
 	dir := filepath.Dir(srcPath)
 	base := filepath.Base(srcPath)
@@ -239,6 +249,10 @@ func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool)
 	}
 
 	if scriptPath != "" {
+		if isSymlink(scriptPath) {
+			warnSkipped(ctx, "Skipped %s: merging it would replace symlink %s.", srcPath, scriptPath)
+			return nil
+		}
 		// Merge companion spec inline.
 		return mergeSpecIntoScript(ctx, scriptPath, srcPath, keepLegacy)
 	}
@@ -635,6 +649,31 @@ func hasCompanionSpecFile(scriptPath string) bool {
 	return false
 }
 
+func warnSkipped(ctx context.Context, format string, args ...any) {
+	msg := fmt.Sprintf("Warning: "+format, args...)
+	fmt.Fprintln(os.Stderr, msg)
+	logging.Warningf(ctx, "%s", msg)
+}
+
+func isSymlink(path string) bool {
+	fi, err := os.Lstat(path)
+	return err == nil && fi.Mode()&os.ModeSymlink != 0
+}
+
+// symlinkOwningSpec returns the symlink whose companion spec is at specPath,
+// or "" if there is none.
+func symlinkOwningSpec(specPath string) string {
+	base := filepath.Base(specPath)
+	for _, suffix := range []string{".vpython3", ".vpython"} {
+		if name, found := strings.CutSuffix(base, suffix); found && name != "" {
+			if owner := filepath.Join(filepath.Dir(specPath), name); isSymlink(owner) {
+				return owner
+			}
+		}
+	}
+	return ""
+}
+
 func hasVpython3Precedence(srcPath, scriptPath string) bool {
 	if st, err := os.Stat(srcPath + "3"); err == nil && !st.IsDir() {
 		return true
@@ -836,6 +875,11 @@ func forceRegenerateLockfile(ctx context.Context, specPath string) error {
 }
 
 func forceRegenerateFile(ctx context.Context, filePath string, isDirectTarget bool) error {
+	if isSymlink(filePath) {
+		warnSkipped(ctx, "Skipped symlink %s. Regenerate the lockfile of the file it points to instead.", filePath)
+		return nil
+	}
+
 	base := filepath.Base(filePath)
 
 	if isStandardSpecTOML(base) {
