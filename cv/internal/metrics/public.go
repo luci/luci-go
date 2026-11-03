@@ -43,6 +43,7 @@ var Public = struct {
 	TryjobLaunched        metric.Counter
 	TryjobEnded           metric.Counter
 	TryjobBuilderPresence metric.Bool
+	TryjobReuseEvaluated  metric.Counter
 
 	RunQuotaRejection metric.Counter
 
@@ -172,6 +173,15 @@ var Public = struct {
 		field.Bool("includable_only"),
 		field.Bool("path_cond"),
 		field.Bool("experimental"),
+	),
+	TryjobReuseEvaluated: metric.NewCounter(
+		"cv/tryjobs/reuse/evaluated",
+		"Count of tryjob reuse window evaluations performed by LUCI CV",
+		nil,
+		field.String("project"),
+		field.String("config_group"),
+		field.String("window"), // "time" or "commit_position"
+		field.Bool("reusable"),
 	),
 	RunQuotaRejection: metric.NewCounter(
 		"cv/runs/quota/rejected",

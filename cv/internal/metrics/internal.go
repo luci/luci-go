@@ -26,19 +26,20 @@ import (
 
 // Internal contains a collection of metric definitions internal to LUCI CV.
 var Internal = struct {
-	BuildbucketRPCCount            metric.Counter
-	BuildbucketRPCDurations        metric.CumulativeDistribution
-	CLIngestionAttempted           metric.Counter
-	CLIngestionLatency             metric.CumulativeDistribution
-	CLIngestionLatencyWithoutFetch metric.CumulativeDistribution
-	CLTriggererTaskCompleted       metric.Counter
-	CLTriggererTaskDuration        metric.CumulativeDistribution
-	BigQueryExportDelay            metric.CumulativeDistribution
-	RunTryjobResultReportDelay     metric.CumulativeDistribution
-	RunResetTriggerAttempted       metric.Counter
-	QuotaOp                        metric.Counter
-	CreateToFirstTryjobLatency     metric.CumulativeDistribution
-	StartToFirstTryjobLatency      metric.CumulativeDistribution
+	BuildbucketRPCCount                  metric.Counter
+	BuildbucketRPCDurations              metric.CumulativeDistribution
+	CLIngestionAttempted                 metric.Counter
+	CLIngestionLatency                   metric.CumulativeDistribution
+	CLIngestionLatencyWithoutFetch       metric.CumulativeDistribution
+	CLTriggererTaskCompleted             metric.Counter
+	CLTriggererTaskDuration              metric.CumulativeDistribution
+	BigQueryExportDelay                  metric.CumulativeDistribution
+	RunTryjobResultReportDelay           metric.CumulativeDistribution
+	RunResetTriggerAttempted             metric.Counter
+	QuotaOp                              metric.Counter
+	CreateToFirstTryjobLatency           metric.CumulativeDistribution
+	StartToFirstTryjobLatency            metric.CumulativeDistribution
+	TryjobReuseGitilesResolutionDuration metric.CumulativeDistribution
 }{
 	BuildbucketRPCCount: metric.NewCounter(
 		"cv/internal/buildbucket_rpc/count",
@@ -214,5 +215,15 @@ var Internal = struct {
 		field.String("project"),
 		field.String("config_group"),
 		field.String("mode"),
+	),
+	TryjobReuseGitilesResolutionDuration: metric.NewCumulativeDistribution(
+		"cv/internal/tryjob/gitiles_resolution_duration",
+		"Distribution of Gitiles target branch tip resolution duration",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		distribution.GeometricBucketer(math.Pow(float64(10*time.Second/time.Millisecond), 1.0/nBuckets), nBuckets),
+		field.String("project"),
+		field.String("host"),
+		field.Bool("cache_hit"),
+		field.String("outcome"),
 	),
 }

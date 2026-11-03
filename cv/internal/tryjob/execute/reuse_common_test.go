@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gitiles"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -45,9 +46,16 @@ func TestCanReuse(t *testing.T) {
 	ftt.Run("canReuseTryjob works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)
-		runID := common.MakeRunID("chromium", ct.Clock.Now().Add(-1*time.Hour), 1, []byte("abcd"))
+		const (
+			lProject    = "chromium"
+			configGroup = "cq"
+		)
+		runID := common.MakeRunID(lProject, ct.Clock.Now().Add(-1*time.Hour), 1, []byte("abcd"))
 		w := &worker{
-			run:            &run.Run{ID: runID},
+			run: &run.Run{
+				ID:            runID,
+				ConfigGroupID: "deadbeef/cq",
+			},
 			gitilesFactory: ct.GitilesFactory(),
 		}
 
@@ -61,6 +69,7 @@ func TestCanReuse(t *testing.T) {
 					},
 				}
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseAllowed))
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, true), should.Equal(1))
 			})
 
 			t.Run("explicitly allowed in mode allowlist", func(t *ftt.Test) {
@@ -77,6 +86,7 @@ func TestCanReuse(t *testing.T) {
 					},
 				}
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseAllowed))
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, true), should.Equal(1))
 			})
 		})
 
@@ -89,6 +99,7 @@ func TestCanReuse(t *testing.T) {
 					},
 				}
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseMaybe))
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, true), should.Equal(1))
 			})
 
 			t.Run("pending tryjob", func(t *ftt.Test) {
@@ -108,6 +119,7 @@ func TestCanReuse(t *testing.T) {
 					},
 				}
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseDenied))
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, false), should.Equal(1))
 			})
 
 			t.Run("successfully ended tryjob but stale", func(t *ftt.Test) {
@@ -119,13 +131,14 @@ func TestCanReuse(t *testing.T) {
 					},
 				}
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseDenied))
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, false), should.Equal(1))
 			})
 
 			t.Run("failed tryjob", func(t *ftt.Test) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
-						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge * 2)),
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge / 2)),
 						Status:     tryjob.Result_FAILED_PERMANENTLY,
 					},
 				}
@@ -136,7 +149,7 @@ func TestCanReuse(t *testing.T) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
-						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge * 2)),
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge / 2)),
 						Status:     tryjob.Result_SUCCEEDED,
 						Output: &recipe.Output{
 							Reusability: &recipe.Output_Reusability{
@@ -196,11 +209,13 @@ func TestCanReuse(t *testing.T) {
 			t.Run("within commit-distance reuse window (older than 24h)", func(t *ftt.Test) {
 				tj := makeGitilesTryjob(950, 26*time.Hour)
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowCommitPosition, true), should.Equal(1))
 			})
 
 			t.Run("exceeds commit-distance reuse window (fresher than 24h)", func(t *ftt.Test) {
 				tj := makeGitilesTryjob(850, 12*time.Hour)
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowCommitPosition, false), should.Equal(1))
 			})
 
 			t.Run("ref mismatch falls back to time-based window", func(t *ftt.Test) {
@@ -208,12 +223,14 @@ func TestCanReuse(t *testing.T) {
 					tj := makeGitilesTryjob(950, 12*time.Hour)
 					tj.Result.GetBuildbucket().OutputGitilesCommit.Ref = "refs/branch-heads/7922"
 					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, true), should.Equal(1))
 				})
 
 				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
 					tj := makeGitilesTryjob(950, 26*time.Hour)
 					tj.Result.GetBuildbucket().OutputGitilesCommit.Ref = "refs/branch-heads/7922"
 					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, false), should.Equal(1))
 				})
 			})
 
@@ -227,6 +244,7 @@ func TestCanReuse(t *testing.T) {
 						},
 					}
 					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, true), should.Equal(1))
 				})
 
 				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
@@ -238,22 +256,25 @@ func TestCanReuse(t *testing.T) {
 						},
 					}
 					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, false), should.Equal(1))
 				})
 			})
 
 			t.Run("gitiles error falls back to time-based window", func(t *ftt.Test) {
 				wFail := &worker{
-					run:            &run.Run{ID: runID},
+					run:            w.run,
 					gitilesFactory: failFactory{},
 				}
 				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
 					tj := makeGitilesTryjob(950, 12*time.Hour)
 					assert.Loosely(t, wFail.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, true), should.Equal(1))
 				})
 
 				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
 					tj := makeGitilesTryjob(950, 26*time.Hour)
 					assert.Loosely(t, wFail.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, false), should.Equal(1))
 				})
 			})
 
@@ -262,11 +283,13 @@ func TestCanReuse(t *testing.T) {
 				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
 					tj := makeGitilesTryjob(950, 12*time.Hour)
 					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, defNoConfig), should.Equal(reuseAllowed))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, true), should.Equal(1))
 				})
 
 				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
 					tj := makeGitilesTryjob(950, 26*time.Hour)
 					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, defNoConfig), should.Equal(reuseDenied))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, false), should.Equal(1))
 				})
 			})
 
@@ -274,27 +297,31 @@ func TestCanReuse(t *testing.T) {
 				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
 					tj := makeGitilesTryjob(1005, 12*time.Hour)
 					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, true), should.Equal(1))
 				})
 
 				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
 					tj := makeGitilesTryjob(1005, 26*time.Hour)
 					assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, false), should.Equal(1))
 				})
 			})
 
 			t.Run("nil gitilesFactory falls back to time-based window", func(t *ftt.Test) {
 				wNil := &worker{
-					run:            &run.Run{ID: runID},
+					run:            w.run,
 					gitilesFactory: nil,
 				}
 				t.Run("fresh tryjob (< 24h)", func(t *ftt.Test) {
 					tj := makeGitilesTryjob(950, 12*time.Hour)
 					assert.Loosely(t, wNil.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, true), should.Equal(1))
 				})
 
 				t.Run("stale tryjob (> 24h)", func(t *ftt.Test) {
 					tj := makeGitilesTryjob(950, 26*time.Hour)
 					assert.Loosely(t, wNil.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, false), should.Equal(1))
 				})
 			})
 		})
@@ -518,6 +545,9 @@ func TestResolveBranchTip(t *testing.T) {
 			pos, err := resolveBranchTip(ctx, ct.GitilesFactory(), host, project, ref, "chromium")
 			assert.NoErr(t, err)
 			assert.That(t, pos, should.Equal(int64(1607281)))
+			distSuccess := ct.TSMonSentDistr(ctx, metrics.Internal.TryjobReuseGitilesResolutionDuration, "chromium", host, false, "success")
+			assert.Loosely(t, distSuccess, should.NotBeNil)
+			assert.Loosely(t, distSuccess.Count(), should.Equal(1))
 
 			// Update the repository state behind the cache.
 			ct.GitilesFake.SetRepository(host, project, map[string]string{
@@ -535,6 +565,9 @@ func TestResolveBranchTip(t *testing.T) {
 			pos, err = resolveBranchTip(ctx, failFactory{}, host, project, ref, "chromium")
 			assert.NoErr(t, err)
 			assert.That(t, pos, should.Equal(int64(1607281)))
+			distCacheHit := ct.TSMonSentDistr(ctx, metrics.Internal.TryjobReuseGitilesResolutionDuration, "chromium", host, true, "success")
+			assert.Loosely(t, distCacheHit, should.NotBeNil)
+			assert.Loosely(t, distCacheHit.Count(), should.Equal(1))
 
 			// Advance clock past TTL to expire cache.
 			ct.Clock.Add(gitilesTipCacheTTL + 1*time.Second)
@@ -543,6 +576,9 @@ func TestResolveBranchTip(t *testing.T) {
 			// Since we use failFactory{}, it should fail, proving it tried to hit the network.
 			_, err = resolveBranchTip(ctx, failFactory{}, host, project, ref, "chromium")
 			assert.That(t, err, should.ErrLike("failed to make Gitiles client"))
+			distErr := ct.TSMonSentDistr(ctx, metrics.Internal.TryjobReuseGitilesResolutionDuration, "chromium", host, false, "error")
+			assert.Loosely(t, distErr, should.NotBeNil)
+			assert.Loosely(t, distErr.Count(), should.Equal(1))
 
 			// Fourth call using real factory, succeeding and getting the new value.
 			pos, err = resolveBranchTip(ctx, ct.GitilesFactory(), host, project, ref, "chromium")

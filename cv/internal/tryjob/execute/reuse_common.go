@@ -39,6 +39,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/gitiles"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -85,6 +86,23 @@ func (w *worker) canReuseTryjob(ctx context.Context, tj *tryjob.Tryjob, mode run
 	}
 }
 
+const (
+	reuseWindowCommitPosition = "commit_position"
+	reuseWindowTime           = "time"
+)
+
+func (w *worker) reportReuseEvaluation(ctx context.Context, window string, reusable bool) {
+	if w == nil || w.run == nil || w.run.ID == "" {
+		return
+	}
+	project := w.run.ID.LUCIProject()
+	configGroup := ""
+	if w.run.ConfigGroupID != "" {
+		configGroup = w.run.ConfigGroupID.Name()
+	}
+	metrics.Public.TryjobReuseEvaluated.Add(ctx, 1, project, configGroup, window, reusable)
+}
+
 // canReuseResult checks if the result of the Tryjob can be reused.
 func (w *worker) canReuseResult(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode, def *tryjob.Definition) bool {
 	switch result := tj.Result; {
@@ -93,14 +111,13 @@ func (w *worker) canReuseResult(ctx context.Context, tj *tryjob.Tryjob, mode run
 	case result == nil:
 		logging.Errorf(ctx, "tryjob %d has nil result but it has ended already", tj.ID)
 		return false
-	case !w.evaluateReuseWindow(ctx, tj, def):
-		return false
 	case result.GetStatus() != tryjob.Result_SUCCEEDED:
 		return false // Only a succeeded Tryjob can be reused.
-	case isModeAllowed(mode, result.GetOutput().GetReusability().GetModeAllowlist()):
-		return true
+	case !isModeAllowed(mode, result.GetOutput().GetReusability().GetModeAllowlist()):
+		return false
+	default:
+		return w.evaluateReuseWindow(ctx, tj, def)
 	}
-	return false
 }
 
 // isTryjobStale checks whether the Tryjob is too old to use.
@@ -133,11 +150,14 @@ func (w *worker) evaluateReuseWindow(ctx context.Context, tj *tryjob.Tryjob, def
 	if maxDist := def.GetReuseWindow().GetMaxCommitDistance(); maxDist > 0 {
 		reusable, err := w.verifyCommitDistance(ctx, tj, maxDist)
 		if err == nil {
+			w.reportReuseEvaluation(ctx, reuseWindowCommitPosition, reusable)
 			return reusable
 		}
 		logging.Warningf(ctx, "Commit distance verification failed for tryjob %d: %s; falling back to time-based reuse window", tj.ID, err)
 	}
-	return !isTryjobStale(ctx, tj)
+	reusable := !isTryjobStale(ctx, tj)
+	w.reportReuseEvaluation(ctx, reuseWindowTime, reusable)
+	return reusable
 }
 
 func (w *worker) verifyCommitDistance(ctx context.Context, tj *tryjob.Tryjob, maxDist uint32) (bool, error) {
@@ -228,9 +248,7 @@ func sortFooters(footers []*changelist.StringPair) {
 	})
 }
 
-// commitPositionPattern matches the Cr-Commit-Position footer format.
-// See https://chromium.googlesource.com/infra/gerrit-plugins/git-numberer/
-var commitPositionPattern = regexp.MustCompile(`^(.+)@{#(\d+)}$`)
+const gitilesTipCacheTTL = 15 * time.Second
 
 // gitilesTipCache caches resolved target branch tip commit positions.
 var gitilesTipCache = layered.RegisterCache(layered.Parameters[int64]{
@@ -244,13 +262,12 @@ var gitilesTipCache = layered.RegisterCache(layered.Parameters[int64]{
 	},
 })
 
-const gitilesTipCacheTTL = 15 * time.Second
-
-// resolveBranchTip queries Gitiles to resolve the target branch tip commit
-// position.
+// resolveBranchTip resolves the target branch tip commit position integer.
 //
-// Results are cached in a process-level layered cache for a short duration.
-// Network queries against Gitiles are executed with a bounded 5-second timeout.
+// Cached in-memory via gitilesTipCache for gitilesTipCacheTTL. On cache misses,
+// it delegates to fetchTipCommitPosition to query Gitiles via RPC. Telemetry is
+// recorded to TryjobReuseGitilesResolutionDuration across cache hits, RPC
+// successes, and errors.
 //
 // Returns an error if the branch ref extracted from the Cr-Commit-Position
 // footer does not match the requested target ref. Note that when a new branch
@@ -258,73 +275,98 @@ const gitilesTipCacheTTL = 15 * time.Second
 // Cr-Commit-Position footer. This ref mismatch causes resolveBranchTip to
 // return an error, safely falling back to the time-based window until the
 // first new commit lands on the branch.
-func resolveBranchTip(ctx context.Context, gf gitiles.Factory, host, project, ref, luciProject string) (int64, error) {
+func resolveBranchTip(ctx context.Context, gf gitiles.Factory, host, project, ref, luciProject string) (pos int64, err error) {
+	var cacheHit bool
+	startTime := clock.Now(ctx)
+	defer func() {
+		if luciProject == "" {
+			return
+		}
+		if err != nil {
+			metrics.Internal.TryjobReuseGitilesResolutionDuration.Add(
+				ctx, float64(clock.Since(ctx, startTime).Milliseconds()), luciProject, host, cacheHit, "error")
+		} else {
+			metrics.Internal.TryjobReuseGitilesResolutionDuration.Add(
+				ctx, float64(clock.Since(ctx, startTime).Milliseconds()), luciProject, host, cacheHit, "success")
+		}
+	}()
+
 	if gf == nil {
 		return 0, errors.New("gitiles factory is nil")
 	}
 
 	cacheKey := fmt.Sprintf("%s/%s/%s/%s", luciProject, host, url.PathEscape(project), url.PathEscape(ref))
-
-	pos, err := gitilesTipCache.GetOrCreate(ctx, cacheKey, func() (int64, time.Duration, error) {
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-
-		client, err := gf.MakeClient(ctx, host, luciProject)
+	cacheHit = true
+	return gitilesTipCache.GetOrCreate(ctx, cacheKey, func() (int64, time.Duration, error) {
+		cacheHit = false
+		pos, err := fetchTipCommitPosition(ctx, gf, host, project, ref, luciProject)
 		if err != nil {
-			return 0, 0, fmt.Errorf("failed to make Gitiles client: %w", err)
+			return 0, 0, err
 		}
-		resp, err := client.Log(ctx, &gitilespb.LogRequest{
-			Project:    project,
-			Committish: ref,
-			PageSize:   1,
-		})
-		if err != nil {
-			return 0, 0, fmt.Errorf("failed to get Gitiles log: %w", err)
-		}
-
-		if len(resp.GetLog()) == 0 {
-			return 0, 0, errors.New("empty Gitiles log")
-		}
-
-		commit := resp.GetLog()[0]
-		message := commit.GetMessage()
-
-		footers := footer.ParseMessage(message)
-		cpFooters := footers[footer.NormalizeKey("Cr-Commit-Position")]
-		if len(cpFooters) == 0 {
-			return 0, 0, errors.New("missing Cr-Commit-Position footer")
-		}
-		if len(cpFooters) > 1 {
-			return 0, 0, fmt.Errorf("multiple Cr-Commit-Position footers found (%d)", len(cpFooters))
-		}
-		rawFooter := cpFooters[0]
-
-		match := commitPositionPattern.FindStringSubmatch(rawFooter)
-		if match == nil {
-			return 0, 0, fmt.Errorf("malformed Cr-Commit-Position: %q", rawFooter)
-		}
-
-		extractedRef := match[1]
-		posStr := match[2]
-
-		// Ensure the extracted branch ref matches the requested target branch
-		// ref. On newly cut branches prior to their first commit, extractedRef
-		// still points to the parent branch (e.g., refs/heads/main). Rejecting
-		// the mismatch causes CV to safely fall back to the time-based window
-		// until a commit lands on the branch.
-		if extractedRef != ref {
-			return 0, 0, fmt.Errorf("branch ref %q in Cr-Commit-Position footer does not match requested target ref %q", extractedRef, ref)
-		}
-
-		pos, err := strconv.ParseInt(posStr, 10, 64)
-		if err != nil {
-			return 0, 0, fmt.Errorf("failed to parse commit position %q: %w", posStr, err)
-		}
-
 		return pos, gitilesTipCacheTTL, nil
 	})
+}
+
+// commitPositionPattern matches the Cr-Commit-Position footer format.
+// See https://chromium.googlesource.com/infra/gerrit-plugins/git-numberer/
+var commitPositionPattern = regexp.MustCompile(`^(.+)@{#(\d+)}$`)
+
+// fetchTipCommitPosition queries Gitiles for the target ref log via RPC and
+// extracts the commit position integer from the Cr-Commit-Position footer.
+func fetchTipCommitPosition(ctx context.Context, gf gitiles.Factory, host, project, ref, luciProject string) (int64, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	client, err := gf.MakeClient(ctx, host, luciProject)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to make Gitiles client: %w", err)
+	}
+	resp, err := client.Log(ctx, &gitilespb.LogRequest{
+		Project:    project,
+		Committish: ref,
+		PageSize:   1,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get Gitiles log: %w", err)
+	}
+
+	if len(resp.GetLog()) == 0 {
+		return 0, errors.New("empty Gitiles log")
+	}
+
+	commit := resp.GetLog()[0]
+	message := commit.GetMessage()
+
+	footers := footer.ParseMessage(message)
+	cpFooters := footers[footer.NormalizeKey("Cr-Commit-Position")]
+	if len(cpFooters) == 0 {
+		return 0, errors.New("missing Cr-Commit-Position footer")
+	}
+	if len(cpFooters) > 1 {
+		return 0, fmt.Errorf("multiple Cr-Commit-Position footers found (%d)", len(cpFooters))
+	}
+	rawFooter := cpFooters[0]
+
+	match := commitPositionPattern.FindStringSubmatch(rawFooter)
+	if match == nil {
+		return 0, fmt.Errorf("malformed Cr-Commit-Position: %q", rawFooter)
+	}
+
+	extractedRef := match[1]
+	posStr := match[2]
+
+	// Ensure the extracted branch ref matches the requested target branch
+	// ref. On newly cut branches prior to their first commit, extractedRef
+	// still points to the parent branch (e.g., refs/heads/main). Rejecting
+	// the mismatch causes CV to safely fall back to the time-based window
+	// until a commit lands on the branch.
+	if extractedRef != ref {
+		return 0, fmt.Errorf("branch ref %q in Cr-Commit-Position footer does not match requested target ref %q", extractedRef, ref)
+	}
+
+	pos, err := strconv.ParseInt(posStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse commit position %q: %w", posStr, err)
 	}
 	return pos, nil
 }
