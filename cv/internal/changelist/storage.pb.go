@@ -1411,9 +1411,12 @@ type CLError_InvalidDeps struct {
 	// CQ-ed deps of a different mode.
 	CombinableMismatchedMode []*Dep `protobuf:"bytes,5,rep,name=combinable_mismatched_mode,json=combinableMismatchedMode,proto3" json:"combinable_mismatched_mode,omitempty"`
 	// There are more non-submitted deps than is supported by CV.
-	TooMany       *CLError_InvalidDeps_TooMany `protobuf:"bytes,6,opt,name=too_many,json=tooMany,proto3" json:"too_many,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	TooMany *CLError_InvalidDeps_TooMany `protobuf:"bytes,6,opt,name=too_many,json=tooMany,proto3" json:"too_many,omitempty"`
+	// Deps that are not submittable (e.g. missing approvals) and therefore
+	// cannot have a full run triggered on them via chained CQ votes.
+	UnsubmittableDeps []*Dep `protobuf:"bytes,7,rep,name=unsubmittable_deps,json=unsubmittableDeps,proto3" json:"unsubmittable_deps,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *CLError_InvalidDeps) Reset() {
@@ -1484,6 +1487,13 @@ func (x *CLError_InvalidDeps) GetCombinableMismatchedMode() []*Dep {
 func (x *CLError_InvalidDeps) GetTooMany() *CLError_InvalidDeps_TooMany {
 	if x != nil {
 		return x.TooMany
+	}
+	return nil
+}
+
+func (x *CLError_InvalidDeps) GetUnsubmittableDeps() []*Dep {
+	if x != nil {
+		return x.UnsubmittableDeps
 	}
 	return nil
 }
@@ -1766,7 +1776,7 @@ const file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDesc = "
 	"\x0eno_access_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\fnoAccessTime\x1ad\n" +
 	"\x0eByProjectEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12<\n" +
-	"\x05value\x18\x02 \x01(\v2&.cv.internal.changelist.Access.ProjectR\x05value:\x028\x01\"\x86\x0e\n" +
+	"\x05value\x18\x02 \x01(\v2&.cv.internal.changelist.Access.ProjectR\x05value:\x028\x01\"\xd2\x0e\n" +
 	"\aCLError\x12,\n" +
 	"\x11owner_lacks_email\x18\x01 \x01(\bH\x00R\x0fownerLacksEmail\x12}\n" +
 	"\x1dwatched_by_many_config_groups\x18\x02 \x01(\v29.cv.internal.changelist.CLError.WatchedByManyConfigGroupsH\x00R\x19watchedByManyConfigGroups\x12p\n" +
@@ -1784,14 +1794,15 @@ const file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDesc = "
 	"\x19WatchedByManyConfigGroups\x12#\n" +
 	"\rconfig_groups\x18\x01 \x03(\tR\fconfigGroups\x1a3\n" +
 	"\x15WatchedByManyProjects\x12\x1a\n" +
-	"\bprojects\x18\x01 \x03(\tR\bprojects\x1a\x9d\x04\n" +
+	"\bprojects\x18\x01 \x03(\tR\bprojects\x1a\xe9\x04\n" +
 	"\vInvalidDeps\x129\n" +
 	"\tunwatched\x18\x01 \x03(\v2\x1b.cv.internal.changelist.DepR\tunwatched\x12I\n" +
 	"\x12wrong_config_group\x18\x02 \x03(\v2\x1b.cv.internal.changelist.DepR\x10wrongConfigGroup\x12E\n" +
 	"\x10single_full_deps\x18\x03 \x03(\v2\x1b.cv.internal.changelist.DepR\x0esingleFullDeps\x12R\n" +
 	"\x16combinable_untriggered\x18\x04 \x03(\v2\x1b.cv.internal.changelist.DepR\x15combinableUntriggered\x12Y\n" +
 	"\x1acombinable_mismatched_mode\x18\x05 \x03(\v2\x1b.cv.internal.changelist.DepR\x18combinableMismatchedMode\x12N\n" +
-	"\btoo_many\x18\x06 \x01(\v23.cv.internal.changelist.CLError.InvalidDeps.TooManyR\atooMany\x1aB\n" +
+	"\btoo_many\x18\x06 \x01(\v23.cv.internal.changelist.CLError.InvalidDeps.TooManyR\atooMany\x12J\n" +
+	"\x12unsubmittable_deps\x18\a \x03(\v2\x1b.cv.internal.changelist.DepR\x11unsubmittableDeps\x1aB\n" +
 	"\aTooMany\x12\x16\n" +
 	"\x06actual\x18\x01 \x01(\x05R\x06actual\x12\x1f\n" +
 	"\vmax_allowed\x18\x02 \x01(\x05R\n" +
@@ -1889,12 +1900,13 @@ var file_go_chromium_org_luci_cv_internal_changelist_storage_proto_depIdxs = []i
 	2,  // 24: cv.internal.changelist.CLError.InvalidDeps.combinable_untriggered:type_name -> cv.internal.changelist.Dep
 	2,  // 25: cv.internal.changelist.CLError.InvalidDeps.combinable_mismatched_mode:type_name -> cv.internal.changelist.Dep
 	21, // 26: cv.internal.changelist.CLError.InvalidDeps.too_many:type_name -> cv.internal.changelist.CLError.InvalidDeps.TooMany
-	22, // 27: cv.internal.changelist.CLError.TriggerDeps.permission_denied:type_name -> cv.internal.changelist.CLError.TriggerDeps.PermissionDenied
-	28, // [28:28] is the sub-list for method output_type
-	28, // [28:28] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	2,  // 27: cv.internal.changelist.CLError.InvalidDeps.unsubmittable_deps:type_name -> cv.internal.changelist.Dep
+	22, // 28: cv.internal.changelist.CLError.TriggerDeps.permission_denied:type_name -> cv.internal.changelist.CLError.TriggerDeps.PermissionDenied
+	29, // [29:29] is the sub-list for method output_type
+	29, // [29:29] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_internal_changelist_storage_proto_init() }

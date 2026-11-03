@@ -113,6 +113,9 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		case len(d.GetSingleFullDeps()) > 0:
 			bad, t = d.GetSingleFullDeps(), tmplSingleFullOpenDeps
 			args["mode"] = string(mode)
+		case len(d.GetUnsubmittableDeps()) > 0:
+			bad, t = d.GetUnsubmittableDeps(), tmplUnsubmittableDeps
+			args["mode"] = string(mode)
 		case len(d.GetCombinableUntriggered()) > 0:
 			bad, t = d.GetCombinableUntriggered(), tmplCombinableUntriggered
 		case len(d.GetCombinableMismatchedMode()) > 0:
@@ -270,6 +273,13 @@ var tmplSingleFullOpenDeps = tmplMust(`
 {{range $url := .deps}}  * {{$url}}
 {{end}}
 Please submit directly or via CQ the dependencies first.
+`)
+
+var tmplUnsubmittableDeps = tmplMust(`
+{{CQ_OR_CV}} can't process the CL in {{.mode | printf "%q"}} mode because it has dependencies that are not submittable (e.g. missing required approvals):
+{{range $url := .deps}}  * {{$url}}
+{{end}}
+Please ensure the dependencies are approved and submittable before triggering {{.mode | printf "%q"}}.
 `)
 
 var tmplCombinableUntriggered = tmplMust(`

@@ -353,6 +353,7 @@ func TestCLsTriage(t *testing.T) {
 					Status:             prjpb.PCL_OK,
 					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
 					Submitted:          false,
+					Submittable:        true,
 					Deps:               nil,
 				},
 				{
@@ -361,6 +362,7 @@ func TestCLsTriage(t *testing.T) {
 					Status:             prjpb.PCL_OK,
 					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
 					Submitted:          false,
+					Submittable:        true,
 					Deps:               []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_HARD}},
 				},
 				{
@@ -369,6 +371,7 @@ func TestCLsTriage(t *testing.T) {
 					Status:             prjpb.PCL_OK,
 					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
 					Submitted:          false,
+					Submittable:        true,
 					Deps:               []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}, {Clid: 2, Kind: changelist.DepKind_HARD}},
 				},
 			}
@@ -586,6 +589,7 @@ func TestCLsTriage(t *testing.T) {
 					ConfigGroupIndexes: []int32{singIdx},
 					Status:             prjpb.PCL_OK,
 					Submitted:          false,
+					Submittable:        true,
 					Deps:               deps,
 				}
 			}

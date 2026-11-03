@@ -123,7 +123,7 @@ func TestTriage(t *testing.T) {
 		voter := gf.U("user-2")
 		depKind := changelist.DepKind_SOFT
 		putPCL := func(clid int, grpIndex int32, mode run.Mode, triggerTime time.Time, depsCLIDs ...int) (*changelist.CL, *prjpb.PCL) {
-			mods := []gf.CIModifier{gf.PS(1), gf.Owner("user-1"), gf.Updated(triggerTime)}
+			mods := []gf.CIModifier{gf.PS(1), gf.Owner("user-1"), gf.Updated(triggerTime), gf.Approve()}
 			switch mode {
 			case run.FullRun:
 				mods = append(mods, gf.CQ(+2, triggerTime, voter))
@@ -177,6 +177,7 @@ func TestTriage(t *testing.T) {
 				Eversion:           1,
 				Status:             prjpb.PCL_OK,
 				ConfigGroupIndexes: []int32{grpIndex},
+				Submittable:        true,
 				Triggers:           pclTriggers,
 				Deps:               cl.Snapshot.GetDeps(),
 			}
@@ -245,6 +246,89 @@ func TestTriage(t *testing.T) {
 				// CL31 and CL32 should be in CLsToTriggerDeps.
 				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
+			})
+			t.Run("does not trigger CQ+2 on an unsubmittable dep", func(t *ftt.Test) {
+				t.Run("immediate parent is unsubmittable", func(t *ftt.Test) {
+					_, pcl31 := putPCL(cl31, singIdx, run.DryRun, now.Add(-time.Minute))
+					pcl31.Submittable = false
+					_, pcl32 := putPCL(cl32, singIdx, run.FullRun, now, cl31)
+					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32}
+					oldC := &prjpb.Component{
+						Clids:          []int64{cl31, cl32},
+						Pruns:          makePrunsWithMode(run.DryRun, "dry-run-31", cl31),
+						TriageRequired: true,
+					}
+					res := mustTriage(oldC)
+
+					// Should NOT schedule CLsToTriggerDeps on cl31 (which would overwrite
+					// its active CQ+1 DryRun with CQ+2 and fail ACL check), and instead
+					// should purge CQ+2 on cl32 only.
+					assert.Loosely(t, res.CLsToTriggerDeps, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
+					assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
+					assert.That(t, res.CLsToPurge[0].GetPurgingCl().GetClid(), should.Equal(int64(cl32)))
+					assert.That(t, res.CLsToPurge[0].GetPurgeReasons(), should.Match([]*prjpb.PurgeReason{
+						{
+							ClError: &changelist.CLError{
+								Kind: &changelist.CLError_InvalidDeps_{
+									InvalidDeps: &changelist.CLError_InvalidDeps{
+										UnsubmittableDeps: []*changelist.Dep{
+											{Clid: cl31, Kind: changelist.DepKind_HARD},
+										},
+									},
+								},
+							},
+							ApplyTo: &prjpb.PurgeReason_Triggers{
+								Triggers: &run.Triggers{
+									CqVoteTrigger: pcl32.GetTriggers().GetCqVoteTrigger(),
+								},
+							},
+						},
+					}))
+				})
+
+				t.Run("grandparent is unsubmittable while intermediate parent is submittable", func(t *ftt.Test) {
+					// cl31 is unsubmittable and running a CQ+1 Dry Run.
+					_, pcl31 := putPCL(cl31, singIdx, run.DryRun, now.Add(-time.Minute))
+					pcl31.Submittable = false
+					// cl32 is submittable but untriggered (CQ=0).
+					_, pcl32 := putPCL(cl32, singIdx, "", now.Add(-time.Second), cl31)
+					// cl33 is triggered with CQ+2 (Full Run).
+					_, pcl33 := putPCL(cl33, singIdx, run.FullRun, now, cl31, cl32)
+					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
+					oldC := &prjpb.Component{
+						Clids:          []int64{cl31, cl32, cl33},
+						Pruns:          makePrunsWithMode(run.DryRun, "dry-run-31", cl31),
+						TriageRequired: true,
+					}
+					res := mustTriage(oldC)
+
+					// Even though cl32 is submittable and would otherwise be added to
+					// needToTrigger, cl31's unsubmittable status must prevent triggering
+					// ANY dependencies in the stack. Only cl33 should be purged.
+					assert.Loosely(t, res.CLsToTriggerDeps, should.BeEmpty)
+					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
+					assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
+					assert.That(t, res.CLsToPurge[0].GetPurgingCl().GetClid(), should.Equal(int64(cl33)))
+					assert.That(t, res.CLsToPurge[0].GetPurgeReasons(), should.Match([]*prjpb.PurgeReason{
+						{
+							ClError: &changelist.CLError{
+								Kind: &changelist.CLError_InvalidDeps_{
+									InvalidDeps: &changelist.CLError_InvalidDeps{
+										UnsubmittableDeps: []*changelist.Dep{
+											{Clid: cl31, Kind: changelist.DepKind_HARD},
+										},
+									},
+								},
+							},
+							ApplyTo: &prjpb.PurgeReason_Triggers{
+								Triggers: &run.Triggers{
+									CqVoteTrigger: pcl33.GetTriggers().GetCqVoteTrigger(),
+								},
+							},
+						},
+					}))
+				})
 			})
 			t.Run("with CQ vote on some dep CLs, but not all", func(t *ftt.Test) {
 				_, pcl31 := putPCL(cl31, singIdx, run.FullRun, now.Add(-time.Second))

@@ -159,7 +159,8 @@ message Gerrit {
   repeated GerritSoftDep soft_deps = 4;
 }
 
-// GerritGitDep is a dependency discovered via Git child->parent chain for one Gerrit CL.
+// GerritGitDep is a dependency discovered via Git child->parent chain for one
+// Gerrit CL.
 message GerritGitDep {
   // Host is omitted because it's always the same as that of the CL.
 
@@ -368,6 +369,10 @@ message CLError {
     }
     // There are more non-submitted deps than is supported by CV.
     TooMany too_many = 6;
+
+    // Deps that are not submittable (e.g. missing approvals) and therefore
+    // cannot have a full run triggered on them via chained CQ votes.
+    repeated Dep unsubmittable_deps = 7;
   }
 
   // ReusedTrigger means a CL trigger (e.g. CQ+1 vote) has already resulted in
@@ -380,8 +385,9 @@ message CLError {
   //     The old Run is finalized, but the new Run has the exact same trigger,
   //     which in CQDaemon-compatible mode means the new Run's ID is exactly the
   //     same as the old one, so CV can't create a new Run.
-  //     TODO(crbug/1223349): after CQDaemon is deleted, the Run ID generation scheme
-  //     can take into account the ref of a CL, and this use case can be allowed.
+  //     TODO(crbug/1223349): after CQDaemon is deleted, the Run ID generation
+  //     scheme can take into account the ref of a CL, and this use case can be
+  //     allowed.
   //  2. The same as above but instead of moving CL between refs, abandon and
   //     restore the CL.
   message ReusedTrigger {

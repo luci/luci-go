@@ -174,6 +174,16 @@ func TestFormatCLError(t *testing.T) {
 				  * https://x-review.googlesource.com/c/102
 			`)))
 				})
+				t.Run("Unsubmittable dependencies", func(t *ftt.Test) {
+					mode = run.FullRun
+					invalidDeps.UnsubmittableDeps = []*changelist.Dep{deps[102], deps[101]}
+					s := mustFormat()
+					assert.Loosely(t, s, should.ContainSubstring(text.Doc(`
+				in "FULL_RUN" mode because it has dependencies that are not submittable (e.g. missing required approvals):
+				  * https://x-review.googlesource.com/c/101
+				  * https://x-review.googlesource.com/c/102
+			`)))
+				})
 				t.Run("Combinable not triggered deps", func(t *ftt.Test) {
 					invalidDeps.CombinableUntriggered = []*changelist.Dep{deps[102], deps[101]}
 					s := mustFormat()

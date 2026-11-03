@@ -209,12 +209,14 @@ func TestDepsTriage(t *testing.T) {
 			sup.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid: 31, ConfigGroupIndexes: []int32{singIdx},
-					Triggers: dryRun(epoch.Add(3 * time.Second)),
+					Triggers:    dryRun(epoch.Add(3 * time.Second)),
+					Submittable: true,
 				},
 				{
 					Clid: 32, ConfigGroupIndexes: []int32{singIdx},
-					Triggers: fullRun(epoch.Add(2 * time.Second)),
-					Deps:     []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
+					Triggers:    fullRun(epoch.Add(2 * time.Second)),
+					Submittable: true,
+					Deps:        []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
 				},
 				{
 					Clid: 33, ConfigGroupIndexes: []int32{singIdx},
@@ -261,15 +263,18 @@ func TestDepsTriage(t *testing.T) {
 			sup.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid: 31, ConfigGroupIndexes: []int32{singIdx},
+					Submittable: true,
 				},
 				{
 					Clid: 32, ConfigGroupIndexes: []int32{singIdx},
+					Submittable: true,
 					Deps: []*changelist.Dep{
 						{Clid: 31, Kind: changelist.DepKind_HARD},
 					},
 				},
 				{
 					Clid: 33, ConfigGroupIndexes: []int32{singIdx},
+					Submittable: true,
 					Deps: []*changelist.Dep{
 						{Clid: 31, Kind: changelist.DepKind_HARD},
 						{Clid: 32, Kind: changelist.DepKind_HARD},
@@ -314,13 +319,33 @@ func TestDepsTriage(t *testing.T) {
 				pcl33.Triggers.CqVoteTrigger.Email = voter
 
 				// triageDep should still put the dep with CQ+1 in
-				// needToTrigger, so that PM will schedule a TQ task to override
-				// the CQ vote with CQ+2.
+				// needToTrigger if it is submittable, so that PM will schedule
+				// a TQ task to override the CQ vote with CQ+2.
 				td := do(pcl33, singIdx)
 				assert.Loosely(t, td.OK(), should.BeTrue)
 				assert.That(t, td.needToTrigger, should.Match([]*changelist.Dep{
 					{Clid: 31, Kind: changelist.DepKind_HARD},
 					{Clid: 32, Kind: changelist.DepKind_HARD},
+				}))
+			})
+			t.Run("a dep is not submittable", func(t *ftt.Test) {
+				pcl31 := sup.PCL(31)
+				pcl31.Triggers = dryRun(epoch)
+				pcl31.Triggers.CqVoteTrigger.Email = voter
+				pcl31.Submittable = false
+				pcl33 := sup.PCL(33)
+				pcl33.Triggers = fullRun(epoch)
+				pcl33.Triggers.CqVoteTrigger.Email = voter
+
+				td := do(pcl33, singIdx)
+				assert.Loosely(t, td.OK(), should.BeFalse)
+				assert.That(t, td.needToTrigger, should.Match([]*changelist.Dep{
+					{Clid: 32, Kind: changelist.DepKind_HARD},
+				}))
+				assert.That(t, td.invalidDeps, should.Match(&changelist.CLError_InvalidDeps{
+					UnsubmittableDeps: []*changelist.Dep{
+						{Clid: 31, Kind: changelist.DepKind_HARD},
+					},
 				}))
 			})
 		})

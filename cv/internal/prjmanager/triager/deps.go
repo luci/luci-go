@@ -160,7 +160,7 @@ func (t *triagedDeps) categorize(ctx context.Context, pcl *prjpb.PCL, cgIndex in
 	tr := pcl.GetTriggers().GetCqVoteTrigger()
 	dtr := dPCL.GetTriggers().GetCqVoteTrigger()
 	if cg.GetCombineCls() == nil {
-		t.categorizeSingle(ctx, tr, dtr, dep, cg)
+		t.categorizeSingle(ctx, tr, dtr, dPCL, dep, cg)
 	} else {
 		t.categorizeCombinable(tr, dtr, dep)
 	}
@@ -194,7 +194,7 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 	}
 }
 
-func (t *triagedDeps) categorizeSingle(ctx context.Context, tr, dtr *run.Trigger, dep *changelist.Dep, cg *cfgpb.ConfigGroup) {
+func (t *triagedDeps) categorizeSingle(ctx context.Context, tr, dtr *run.Trigger, dPCL *prjpb.PCL, dep *changelist.Dep, cg *cfgpb.ConfigGroup) {
 	// TODO(yiwzhang) - remove ctx if instant trigger is launched and
 	// ctx is not used.
 
@@ -218,6 +218,15 @@ func (t *triagedDeps) categorizeSingle(ctx context.Context, tr, dtr *run.Trigger
 		// into needToTrigger, which results in the Run creation to be
 		// postponed.
 		if tr.GetMode() != dtr.GetMode() {
+			if !dPCL.GetSubmittable() {
+				// Do not propagate CQ+2 to a dependency that is not
+				// submittable (e.g. waiting for Code-Review/Code-Owners), as
+				// voting CQ+2 on the dependency would fail Run creation ACL
+				// checks and needlessly cancel any active Dry Runs.
+				t.ensureInvalidDeps()
+				t.invalidDeps.UnsubmittableDeps = append(t.invalidDeps.UnsubmittableDeps, dep)
+				return
+			}
 			t.needToTrigger = append(t.needToTrigger, dep)
 			return
 		}
