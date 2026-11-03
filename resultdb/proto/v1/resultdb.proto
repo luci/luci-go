@@ -457,6 +457,7 @@ message GetArtifactRequest {
 }
 
 // A request message for ListArtifacts RPC.
+// Next ID: 6
 message ListArtifactsRequest {
   // Name of the parent, e.g. a work unit (see WorkUnit.name),
   // a test result (see TestResult.name), or a legacy invocation name
@@ -483,6 +484,11 @@ message ListArtifactsRequest {
   // In particular, the fetch_url field can slow down the request or in some cases introduce
   // quota errors, so it is encouraged to not read the fetch_url field unless necessary.
   google.protobuf.FieldMask read_mask = 4;
+
+  // An artifact in the response must satisfy this predicate.
+  // Only `content_type_regexp`, `artifact_id_regexp`, and `artifact_type_regexp`
+  // are supported for `ListArtifacts`.
+  ArtifactPredicate predicate = 5;
 }
 
 // A response message for ListArtifacts RPC.

@@ -142,6 +142,40 @@ func ValidateArtifactPredicate(p *pb.ArtifactPredicate, isRootInvocationQuery bo
 	return nil
 }
 
+// ValidateListArtifactPredicate returns a non-nil error if p is determined to
+// be invalid for a ListArtifacts request.
+//
+// In ListArtifacts, the parent field already scopes the target work unit, test
+// result, or legacy invocation, so only content_type_regexp,
+// artifact_id_regexp, and artifact_type_regexp are supported.
+func ValidateListArtifactPredicate(p *pb.ArtifactPredicate) error {
+	if p == nil {
+		return nil
+	}
+	if err := validate.RegexpFragment(p.GetContentTypeRegexp()); err != nil {
+		return errors.Fmt("content_type_regexp: %w", err)
+	}
+	if err := validate.RegexpFragment(p.GetArtifactIdRegexp()); err != nil {
+		return errors.Fmt("artifact_id_regexp: %w", err)
+	}
+	if err := validate.RegexpFragment(p.GetArtifactTypeRegexp()); err != nil {
+		return errors.Fmt("artifact_type_regexp: %w", err)
+	}
+	if len(p.WorkUnits) > 0 {
+		return errors.New("work_units: not supported for ListArtifacts")
+	}
+	if p.ArtifactKind != pb.ArtifactPredicate_ARTIFACT_KIND_UNSPECIFIED {
+		return errors.New("artifact_kind: not supported for ListArtifacts")
+	}
+	if p.TestResultPredicate != nil {
+		return errors.New("test_result_predicate: not supported for ListArtifacts")
+	}
+	if p.FollowEdges != nil {
+		return errors.New("follow_edges: not supported for ListArtifacts")
+	}
+	return nil
+}
+
 // ValidateTestMetadataPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateTestMetadataPredicate(p *pb.TestMetadataPredicate) error {

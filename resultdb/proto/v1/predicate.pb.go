@@ -401,19 +401,21 @@ type ArtifactPredicate struct {
 	// Deprecated: Marked as deprecated in go.chromium.org/luci/resultdb/proto/v1/predicate.proto.
 	FollowEdges *ArtifactPredicate_EdgeTypeSet `protobuf:"bytes,1,opt,name=follow_edges,json=followEdges,proto3" json:"follow_edges,omitempty"` // defaults to All.
 	// Specifies which kind of artifacts are returned.
+	// Only supported for `QueryArtifacts` RPC; not supported for `ListArtifacts`.
 	ArtifactKind ArtifactPredicate_ArtifactKind `protobuf:"varint,7,opt,name=artifact_kind,json=artifactKind,proto3,enum=luci.resultdb.v1.ArtifactPredicate_ArtifactKind" json:"artifact_kind,omitempty"`
 	// The resource names of the work units to filter the response to.
 	// See WorkUnit.name. The work units must be from the same root invocation as
 	// the parent field.
 	//
 	// If set, only artifacts from the specified work units are returned.
+	// Only supported for `QueryArtifacts` RPC; not supported for `ListArtifacts`.
 	WorkUnits []string `protobuf:"bytes,8,rep,name=work_units,json=workUnits,proto3" json:"work_units,omitempty"`
 	// If an Artifact belongs to a TestResult, then the test result must satisfy
 	// this predicate.
 	// Note: this predicate does NOT apply to invocation-level artifacts.
 	// To exclude them from the response, use follow_edges.
 	//
-	// DEPRECATED: This option is not supported for root invocations.
+	// DEPRECATED: This option is not supported for root invocations or `ListArtifacts`.
 	//
 	// Deprecated: Marked as deprecated in go.chromium.org/luci/resultdb/proto/v1/predicate.proto.
 	TestResultPredicate *TestResultPredicate `protobuf:"bytes,2,opt,name=test_result_predicate,json=testResultPredicate,proto3" json:"test_result_predicate,omitempty"`

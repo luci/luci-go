@@ -251,3 +251,93 @@ func TestValidateArtifactPredicate(t *testing.T) {
 		}
 	})
 }
+
+func TestValidateListArtifactPredicate(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`ValidateListArtifactPredicate`, t, func(t *ftt.Test) {
+		type testCase struct {
+			name      string
+			predicate *pb.ArtifactPredicate
+			errLike   string
+		}
+
+		testCases := []testCase{
+			{
+				name:      "Nil predicate",
+				predicate: nil,
+			},
+			{
+				name:      "Empty predicate",
+				predicate: &pb.ArtifactPredicate{},
+			},
+			{
+				name: "Valid regexps",
+				predicate: &pb.ArtifactPredicate{
+					ContentTypeRegexp:  "text/.*",
+					ArtifactIdRegexp:   "logcat.*",
+					ArtifactTypeRegexp: "LOGCAT",
+				},
+			},
+			{
+				name: "Invalid ContentTypeRegexp",
+				predicate: &pb.ArtifactPredicate{
+					ContentTypeRegexp: ")",
+				},
+				errLike: "content_type_regexp: error parsing regexp",
+			},
+			{
+				name: "Invalid ArtifactIdRegexp",
+				predicate: &pb.ArtifactPredicate{
+					ArtifactIdRegexp: "^foo",
+				},
+				errLike: "artifact_id_regexp: must not start with ^",
+			},
+			{
+				name: "Invalid ArtifactTypeRegexp",
+				predicate: &pb.ArtifactPredicate{
+					ArtifactTypeRegexp: "BAR$",
+				},
+				errLike: "artifact_type_regexp: must not end with $",
+			},
+			{
+				name: "WorkUnits set",
+				predicate: &pb.ArtifactPredicate{
+					WorkUnits: []string{"rootInvocations/a/workUnits/b"},
+				},
+				errLike: "work_units: not supported for ListArtifacts",
+			},
+			{
+				name: "ArtifactKind set",
+				predicate: &pb.ArtifactPredicate{
+					ArtifactKind: pb.ArtifactPredicate_WORK_UNIT,
+				},
+				errLike: "artifact_kind: not supported for ListArtifacts",
+			},
+			{
+				name: "TestResultPredicate set",
+				predicate: &pb.ArtifactPredicate{
+					TestResultPredicate: &pb.TestResultPredicate{},
+				},
+				errLike: "test_result_predicate: not supported for ListArtifacts",
+			},
+			{
+				name: "FollowEdges set",
+				predicate: &pb.ArtifactPredicate{
+					FollowEdges: &pb.ArtifactPredicate_EdgeTypeSet{},
+				},
+				errLike: "follow_edges: not supported for ListArtifacts",
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *ftt.Test) {
+				err := ValidateListArtifactPredicate(tc.predicate)
+				if tc.errLike != "" {
+					assert.Loosely(t, err, should.ErrLike(tc.errLike))
+				} else {
+					assert.Loosely(t, err, should.BeNil)
+				}
+			})
+		}
+	})
+}
