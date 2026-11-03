@@ -1147,9 +1147,14 @@ func TestCreateRootInvocation(t *testing.T) {
 						ModuleScheme:  "gtest",
 						ModuleVariant: pbutil.Variant("k", "v"),
 					},
-					ModuleShardKey:     "shard_key",
-					Tags:               workUnitTags,
-					Properties:         wuProperties,
+					ModuleShardKey: "shard_key",
+					Tags:           workUnitTags,
+					Properties:     wuProperties,
+					InheritedProperties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"inherited_key": structpb.NewStringValue("inherited_value"),
+						},
+					},
 					ExtendedProperties: extendedProperties,
 					Instructions:       instructions,
 				},
@@ -1254,8 +1259,13 @@ func TestCreateRootInvocation(t *testing.T) {
 					DataRealm: "prod",
 					Name:      "builds/1",
 				},
-				Tags:               pbutil.StringPairs("wu_key", "wu_value"),
-				Properties:         wuProperties,
+				Tags:       pbutil.StringPairs("wu_key", "wu_value"),
+				Properties: wuProperties,
+				InheritedProperties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"inherited_key": structpb.NewStringValue("inherited_value"),
+					},
+				},
 				Instructions:       instructionutil.InstructionsWithNames(instructions, wuID.Name()),
 				ExtendedProperties: extendedProperties,
 			}

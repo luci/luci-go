@@ -206,6 +206,7 @@ func createIdempotentRootInvocation(
 			Deadline:                deadline,
 			Tags:                    req.RootWorkUnit.Tags,
 			Properties:              req.RootWorkUnit.Properties,
+			InheritedProperties:     req.RootWorkUnit.InheritedProperties,
 			Instructions:            req.RootWorkUnit.Instructions,
 			ExtendedProperties:      req.RootWorkUnit.ExtendedProperties,
 		}

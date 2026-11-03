@@ -667,6 +667,11 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					"key":   structpb.NewStringValue("workunit"),
 				},
 			}
+			wuInheritedProperties := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"inherited_key": structpb.NewStringValue("inherited_value"),
+				},
+			}
 			instructions := testutil.TestInstructions()
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": {
@@ -695,10 +700,11 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					DataRealm: "prod",
 					Name:      "builds/123",
 				},
-				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
-				Properties:         wuProperties,
-				ExtendedProperties: extendedProperties,
-				Instructions:       instructions,
+				Tags:                pbutil.StringPairs("e2e_key", "e2e_value"),
+				Properties:          wuProperties,
+				InheritedProperties: wuInheritedProperties,
+				ExtendedProperties:  extendedProperties,
+				Instructions:        instructions,
 			}
 
 			// Expected work units in the response.
@@ -769,11 +775,12 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					DataRealm: "prod",
 					Name:      "builds/123",
 				},
-				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
-				Properties:         wuProperties,
-				Instructions:       instructionutil.InstructionsWithNames(instructions, workUnitID1.Name()),
-				ExtendedProperties: extendedProperties,
-				ChildWorkUnits:     []workunits.ID{workUnitID11},
+				Tags:                pbutil.StringPairs("e2e_key", "e2e_value"),
+				Properties:          wuProperties,
+				InheritedProperties: wuInheritedProperties,
+				Instructions:        instructionutil.InstructionsWithNames(instructions, workUnitID1.Name()),
+				ExtendedProperties:  extendedProperties,
+				ChildWorkUnits:      []workunits.ID{workUnitID11},
 			}
 
 			expectWURow11 := &workunits.WorkUnitRow{

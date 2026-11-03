@@ -199,7 +199,7 @@ func createWorkUnitsIdempotent(
 				ID:                      ids[i],
 				ParentWorkUnitID:        spanner.NullString{Valid: true, StringVal: parentIDs[i].WorkUnitID},
 				Kind:                    wu.Kind,
-				State:                   wu.State,
+				State:                   state,
 				FinalizationState:       pb.WorkUnit_ACTIVE,
 				SummaryMarkdown:         wu.SummaryMarkdown,
 				Realm:                   wu.Realm,
@@ -212,6 +212,7 @@ func createWorkUnitsIdempotent(
 				ProducerResource:        wu.ProducerResource,
 				Tags:                    wu.Tags,
 				Properties:              wu.Properties,
+				InheritedProperties:     wu.InheritedProperties,
 				Instructions:            wu.Instructions,
 				ExtendedProperties:      wu.ExtendedProperties,
 			}
