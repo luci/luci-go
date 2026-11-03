@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/server/cfgcache"
+	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 )
 
 func TestContentMetaProperty(t *testing.T) {
@@ -32,26 +32,24 @@ func TestContentMetaProperty(t *testing.T) {
 
 		prop := contentMetaProperty{
 			PipelineID: "stuff",
-			Meta: cfgcache.Meta{
+			Meta: &cfgcachepb.Meta{
 				InputHash:        "coolbeans",
 				InputSize:        20,
 				TransformVersion: 10,
-				ContentSize:      1000,
+				TransformedSize:  1000,
 			},
 		}
 
-		propEnc := "c3R1ZmY|coolbeans|20|10|1000"
-
-		assert.That(t, prop.String(), should.Equal(propEnc))
+		// NOTE: We only care about determinism of the prefix portion of the
+		// property (before the `|`) and *technically* proto.Marshal is
+		// non-deterministic - so just assert the prefix we care about, and make
+		// sure we can round trip the full encoded string.
+		encoded := prop.String()
+		assert.Loosely(t, encoded, should.HavePrefix("c3R1ZmY|"))
 
 		dec := contentMetaProperty{}
-		assert.NoErr(t, dec.FromProperty(datastore.MkProperty(propEnc)))
+		assert.NoErr(t, dec.FromProperty(datastore.MkProperty(encoded)))
 
 		assert.That(t, dec, should.Match(prop))
-		assert.That(t, dec.SameInput(prop.Meta), should.BeTrue)
-
-		diffInputSize := prop.Meta
-		diffInputSize.InputSize = 21
-		assert.That(t, dec.SameInput(diffInputSize), should.BeFalse)
 	})
 }

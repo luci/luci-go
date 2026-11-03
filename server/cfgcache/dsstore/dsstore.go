@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 
-	"go.chromium.org/luci/server/cfgcache"
+	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 )
@@ -49,21 +49,19 @@ type cachedConfig[StoreMsg proto.Message] struct {
 // stored config is compressed with `zstd`.
 type Store[StoreMsg proto.Message] struct{}
 
-var _ cfgcache.Store[proto.Message] = (*Store[proto.Message])(nil)
-
 func (Store[StoreMsg]) ModuleDependencies() []module.Dependency {
 	return []module.Dependency{
 		module.RequiredDependency(gaeemulation.ModuleName),
 	}
 }
 
-func (Store[StoreMsg]) LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]cfgcache.Meta, error) {
+func (Store[StoreMsg]) LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]*cfgcachepb.Meta, error) {
 	ctx, err := info.Namespace(datastore.WithoutTransaction(ctx), "")
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make(map[config.Set]cfgcache.Meta)
+	ret := make(map[config.Set]*cfgcachepb.Meta)
 	encID := base64.RawURLEncoding.EncodeToString([]byte(pipelineID))
 	q := datastore.NewQuery(cachedConfigKind).Project("Meta").Gt("Meta", encID+"|").Lt("Meta", encID+"}")
 	for row, err := range datastore.RunQuery[*cachedConfig[StoreMsg]](ctx, q).Results {
@@ -75,7 +73,7 @@ func (Store[StoreMsg]) LoadMeta(ctx context.Context, pipelineID string) (map[con
 	return ret, nil
 }
 
-func (Store[StoreMsg]) Put(ctx context.Context, pipelineID string, cs config.Set, m cfgcache.Meta, out StoreMsg) error {
+func (Store[StoreMsg]) Put(ctx context.Context, pipelineID string, cs config.Set, m *cfgcachepb.Meta, out StoreMsg) error {
 	ctx, err := info.Namespace(datastore.WithoutTransaction(ctx), "")
 	if err != nil {
 		return err

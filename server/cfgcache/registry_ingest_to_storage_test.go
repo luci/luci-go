@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgcache_test
+package cfgcache
 
 import (
 	"context"
@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 
-	"go.chromium.org/luci/server/cfgcache"
 	"go.chromium.org/luci/server/cfgcache/memstore"
 )
 
@@ -68,13 +67,13 @@ func TestIngestToStorage(t *testing.T) {
 
 	t.Run("missing cfgclient in context returns error", func(t *testing.T) {
 		t.Parallel()
-		ctx, ts := cfgcache.TestingContext(t.Context())
+		ctx, ts := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 
-		(&cfgcache.ServicePipeline[*durationpb.Duration]{
+		(&ServicePipeline[*durationpb.Duration]{
 			ID:    "svc",
 			Store: s,
-			Files: []cfgcache.File{&cfgcache.SingleFile[*durationpb.Duration]{Path: "some.cfg"}},
+			Files: []File{&SingleFile[*durationpb.Duration]{Path: "some.cfg"}},
 		}).Register(ts.Registry)
 		assert.NoErr(t, ts.Initialize(ctx))
 		assert.ErrIsLike(t, ts.IngestToStorage(memory.Use(t.Context())), "LUCI Config client is not available in the context")
@@ -82,16 +81,16 @@ func TestIngestToStorage(t *testing.T) {
 
 	t.Run("missing service config in LUCI Config is ignored", func(t *testing.T) {
 		t.Parallel()
-		ctx, ts := cfgcache.TestingContext(t.Context())
+		ctx, ts := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 
 		var svcTransforms atomic.Int32
-		svcFile := &cfgcache.SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-		(&cfgcache.ServicePipeline[*durationpb.Duration]{
+		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
+		(&ServicePipeline[*durationpb.Duration]{
 			ID:    "svc-settings",
 			Store: s,
-			Files: []cfgcache.File{svcFile},
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Files: []File{svcFile},
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				svcTransforms.Add(1)
 				return svcFile.Get(snap), nil
 			},
@@ -104,29 +103,29 @@ func TestIngestToStorage(t *testing.T) {
 
 	t.Run("creates, skips unchanged, updates modified, and deletes removed configs", func(t *testing.T) {
 		t.Parallel()
-		ctx, ts := cfgcache.TestingContext(t.Context())
+		ctx, ts := TestingContext(t.Context())
 		sd := &memstore.Store[*durationpb.Duration]{}
 		st := &memstore.Store[*timestamppb.Timestamp]{}
 
 		var svcTransforms, projTransforms atomic.Int32
-		svcFile := &cfgcache.SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-		projFile := &cfgcache.SingleFile[*durationpb.Duration]{Path: "${appid}.cfg"}
-		(&cfgcache.ServicePipeline[*durationpb.Duration]{
+		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
+		projFile := &SingleFile[*durationpb.Duration]{Path: "${appid}.cfg"}
+		(&ServicePipeline[*durationpb.Duration]{
 			ID:    "svc-settings",
 			Store: sd,
-			Files: []cfgcache.File{svcFile},
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Files: []File{svcFile},
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				svcTransforms.Add(1)
 				msg := svcFile.Get(snap)
 				return &durationpb.Duration{Seconds: msg.Seconds * 10}, nil
 			},
 		}).Register(ts.Registry)
-		(&cfgcache.ProjectPipeline[*timestamppb.Timestamp]{
+		(&ProjectPipeline[*timestamppb.Timestamp]{
 			ID:               "proj-cfg",
 			Store:            st,
-			Files:            []cfgcache.File{projFile},
+			Files:            []File{projFile},
 			TransformVersion: 1,
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*timestamppb.Timestamp, error) {
+			Transform: func(c *validation.Context, snap *Snapshot) (*timestamppb.Timestamp, error) {
 				projTransforms.Add(1)
 				msg := projFile.Get(snap)
 				return &timestamppb.Timestamp{Seconds: msg.Seconds}, nil
@@ -172,17 +171,17 @@ func TestIngestToStorage(t *testing.T) {
 
 	t.Run("TransformVersion bump forces re-ingestion of unchanged config", func(t *testing.T) {
 		t.Parallel()
-		ctx, tsV1 := cfgcache.TestingContext(t.Context())
+		ctx, tsV1 := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 
 		var transforms atomic.Int32
-		projFile := &cfgcache.SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
-		(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+		projFile := &SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
+		(&ProjectPipeline[*durationpb.Duration]{
 			ID:               "proj-cfg",
 			Store:            s,
-			Files:            []cfgcache.File{projFile},
+			Files:            []File{projFile},
 			TransformVersion: 1,
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				transforms.Add(1)
 				return projFile.Get(snap), nil
 			},
@@ -195,13 +194,13 @@ func TestIngestToStorage(t *testing.T) {
 		assert.That(t, transforms.Load(), should.Equal[int32](1))
 
 		// New Registry with TransformVersion bumped to 2 against the same store/cfgclient.
-		_, tsV2 := cfgcache.TestingContext(ctx)
-		(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+		_, tsV2 := TestingContext(ctx)
+		(&ProjectPipeline[*durationpb.Duration]{
 			ID:               "proj-cfg",
 			Store:            s,
-			Files:            []cfgcache.File{projFile},
+			Files:            []File{projFile},
 			TransformVersion: 2,
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				transforms.Add(1)
 				return projFile.Get(snap), nil
 			},
@@ -212,20 +211,20 @@ func TestIngestToStorage(t *testing.T) {
 
 		metas, err := s.LoadMeta(ctx, "proj-cfg")
 		assert.NoErr(t, err)
-		assert.That(t, metas[p1CS].TransformVersion, should.Equal(2))
+		assert.Loosely(t, metas[p1CS].TransformVersion, should.Equal(2))
 	})
 
 	t.Run("validation warnings do not block ingestion", func(t *testing.T) {
 		t.Parallel()
-		ctx, ts := cfgcache.TestingContext(t.Context())
+		ctx, ts := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 
-		svcFile := &cfgcache.SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-		(&cfgcache.ServicePipeline[*durationpb.Duration]{
+		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
+		(&ServicePipeline[*durationpb.Duration]{
 			ID:    "svc",
 			Store: s,
-			Files: []cfgcache.File{svcFile},
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Files: []File{svcFile},
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				c.Warningf("non-fatal warning")
 				return svcFile.Get(snap), nil
 			},
@@ -242,17 +241,17 @@ func TestIngestToStorage(t *testing.T) {
 
 	t.Run("multi-file project pipeline ingests combined files", func(t *testing.T) {
 		t.Parallel()
-		ctx, ts := cfgcache.TestingContext(t.Context())
+		ctx, ts := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 
-		fA := &cfgcache.SingleFile[*durationpb.Duration]{Path: "a.cfg", NewDefault: func() *durationpb.Duration { return &durationpb.Duration{Seconds: 1} }}
-		fB := &cfgcache.SingleFile[*durationpb.Duration]{Path: "b.cfg", NewDefault: func() *durationpb.Duration { return &durationpb.Duration{Seconds: 2} }}
-		(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+		fA := &SingleFile[*durationpb.Duration]{Path: "a.cfg", NewDefault: func() *durationpb.Duration { return &durationpb.Duration{Seconds: 1} }}
+		fB := &SingleFile[*durationpb.Duration]{Path: "b.cfg", NewDefault: func() *durationpb.Duration { return &durationpb.Duration{Seconds: 2} }}
+		(&ProjectPipeline[*durationpb.Duration]{
 			ID:               "proj-ab",
 			Store:            s,
-			Files:            []cfgcache.File{fA, fB},
+			Files:            []File{fA, fB},
 			TransformVersion: 1,
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				return &durationpb.Duration{Seconds: fA.Get(snap).Seconds + fB.Get(snap).Seconds}, nil
 			},
 		}).Register(ts.Registry)
@@ -273,18 +272,18 @@ func TestIngestToStorage(t *testing.T) {
 		assert.Loosely(t, abMetas, should.ContainKey(p2CS))
 	})
 
-	t.Run("cfgcache.RegexFile project pipeline fetches matching files across all projects", func(t *testing.T) {
+	t.Run("RegexFile project pipeline fetches matching files across all projects", func(t *testing.T) {
 		t.Parallel()
-		ctx, ts := cfgcache.TestingContext(t.Context())
+		ctx, ts := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 
-		rxF := &cfgcache.RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}
-		(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+		rxF := &RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}
+		(&ProjectPipeline[*durationpb.Duration]{
 			ID:               "proj-rx",
 			Store:            s,
-			Files:            []cfgcache.File{rxF},
+			Files:            []File{rxF},
 			TransformVersion: 1,
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				var sum int64
 				for _, m := range rxF.Get(snap) {
 					sum += m.Seconds
@@ -309,23 +308,23 @@ func TestIngestToStorage(t *testing.T) {
 
 		t.Run("multiple non-regex project pipelines share one GetProjects and per-project GetConfigs sweep", func(t *testing.T) {
 			t.Parallel()
-			ctx, ts := cfgcache.TestingContext(t.Context())
+			ctx, ts := TestingContext(t.Context())
 			s1 := &memstore.Store[*durationpb.Duration]{}
 			s2 := &memstore.Store[*durationpb.Duration]{}
 
-			fShared := &cfgcache.SingleFile[*durationpb.Duration]{Path: "shared.cfg"}
-			fOnly2 := &cfgcache.SingleFile[*durationpb.Duration]{Path: "only2.cfg", NewDefault: func() *durationpb.Duration { return &durationpb.Duration{} }}
-			(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+			fShared := &SingleFile[*durationpb.Duration]{Path: "shared.cfg"}
+			fOnly2 := &SingleFile[*durationpb.Duration]{Path: "only2.cfg", NewDefault: func() *durationpb.Duration { return &durationpb.Duration{} }}
+			(&ProjectPipeline[*durationpb.Duration]{
 				ID:    "proj-1",
 				Store: s1,
-				Files: []cfgcache.File{fShared},
+				Files: []File{fShared},
 			}).Register(ts.Registry)
-			(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+			(&ProjectPipeline[*durationpb.Duration]{
 				ID:               "proj-2",
 				Store:            s2,
-				Files:            []cfgcache.File{fShared, fOnly2},
+				Files:            []File{fShared, fOnly2},
 				TransformVersion: 1,
-				Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+				Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 					return &durationpb.Duration{Seconds: fShared.Get(snap).Seconds + fOnly2.Get(snap).Seconds}, nil
 				},
 			}).Register(ts.Registry)
@@ -365,18 +364,18 @@ func TestIngestToStorage(t *testing.T) {
 
 		t.Run("regex and single-file project pipelines share one GetProjects and per-project GetConfigs sweep", func(t *testing.T) {
 			t.Parallel()
-			ctx, ts := cfgcache.TestingContext(t.Context())
+			ctx, ts := TestingContext(t.Context())
 			s1 := &memstore.Store[*durationpb.Duration]{}
 			s2 := &memstore.Store[*durationpb.Duration]{}
 
-			rxF := &cfgcache.RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}
-			singleF := &cfgcache.SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
-			(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+			rxF := &RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}
+			singleF := &SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
+			(&ProjectPipeline[*durationpb.Duration]{
 				ID:               "proj-rx",
 				Store:            s1,
-				Files:            []cfgcache.File{rxF},
+				Files:            []File{rxF},
 				TransformVersion: 1,
-				Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+				Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 					var sum int64
 					for _, m := range rxF.Get(snap) {
 						sum += m.Seconds
@@ -384,10 +383,10 @@ func TestIngestToStorage(t *testing.T) {
 					return &durationpb.Duration{Seconds: sum}, nil
 				},
 			}).Register(ts.Registry)
-			(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+			(&ProjectPipeline[*durationpb.Duration]{
 				ID:    "proj-single",
 				Store: s2,
-				Files: []cfgcache.File{singleF},
+				Files: []File{singleF},
 			}).Register(ts.Registry)
 			assert.NoErr(t, ts.Initialize(ctx))
 
@@ -426,16 +425,16 @@ func TestIngestToStorage(t *testing.T) {
 
 	t.Run("concurrent change where fetched config matches existing Meta skips Transform", func(t *testing.T) {
 		t.Parallel()
-		ctx, ts := cfgcache.TestingContext(t.Context())
+		ctx, ts := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 
 		var transforms int
-		svcFile := &cfgcache.SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-		(&cfgcache.ServicePipeline[*durationpb.Duration]{
+		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
+		(&ServicePipeline[*durationpb.Duration]{
 			ID:    "svc",
 			Store: s,
-			Files: []cfgcache.File{svcFile},
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Files: []File{svcFile},
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				transforms++
 				return svcFile.Get(snap), nil
 			},
@@ -467,16 +466,16 @@ func TestIngestToStorage(t *testing.T) {
 
 	t.Run("concurrent deletion between fetchMeta and GetConfigs skips config set", func(t *testing.T) {
 		t.Parallel()
-		ctx, ts := cfgcache.TestingContext(t.Context())
+		ctx, ts := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 
 		var transforms int
-		svcFile := &cfgcache.SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-		(&cfgcache.ServicePipeline[*durationpb.Duration]{
+		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
+		(&ServicePipeline[*durationpb.Duration]{
 			ID:    "svc",
 			Store: s,
-			Files: []cfgcache.File{svcFile},
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Files: []File{svcFile},
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				transforms++
 				return svcFile.Get(snap), nil
 			},
@@ -501,18 +500,18 @@ func TestIngestToStorage(t *testing.T) {
 
 	t.Run("memory semaphore caps oversized snapshots and limits concurrency", func(t *testing.T) {
 		t.Parallel()
-		ctx, ts := cfgcache.TestingContext(t.Context())
+		ctx, ts := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 		ts.MaxIngestMemoryMB = 64
 
 		var active, maxActive atomic.Int32
-		projFile := &cfgcache.SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
-		(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+		projFile := &SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
+		(&ProjectPipeline[*durationpb.Duration]{
 			ID:               "proj",
 			Store:            s,
-			Files:            []cfgcache.File{projFile},
+			Files:            []File{projFile},
 			TransformVersion: 1,
-			Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 				cur := active.Add(1)
 				for {
 					prev := maxActive.Load()
@@ -551,14 +550,14 @@ func TestIngestToStorage(t *testing.T) {
 		t.Parallel()
 
 		t.Run("blocking validation error", func(t *testing.T) {
-			ctx, ts := cfgcache.TestingContext(t.Context())
+			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			svcFile := &cfgcache.SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-			(&cfgcache.ServicePipeline[*durationpb.Duration]{
+			svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
+			(&ServicePipeline[*durationpb.Duration]{
 				ID:    "svc",
 				Store: s,
-				Files: []cfgcache.File{svcFile},
-				Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+				Files: []File{svcFile},
+				Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 					c.Errorf("negative seconds")
 					return svcFile.Get(snap), nil
 				},
@@ -569,12 +568,12 @@ func TestIngestToStorage(t *testing.T) {
 		})
 
 		t.Run("service GetConfigs metaOnly=true error", func(t *testing.T) {
-			ctx, ts := cfgcache.TestingContext(t.Context())
+			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&cfgcache.ServicePipeline[*durationpb.Duration]{
+			(&ServicePipeline[*durationpb.Duration]{
 				ID:    "svc",
 				Store: s,
-				Files: []cfgcache.File{&cfgcache.SingleFile[*durationpb.Duration]{Path: "settings.cfg"}},
+				Files: []File{&SingleFile[*durationpb.Duration]{Path: "settings.cfg"}},
 			}).Register(ts.Registry)
 			assert.NoErr(t, ts.Initialize(ctx))
 			errCtx := cfgclient.Use(ctx, &fakeCfgClient{
@@ -587,12 +586,12 @@ func TestIngestToStorage(t *testing.T) {
 		})
 
 		t.Run("single-file project GetProjectConfigs error", func(t *testing.T) {
-			ctx, ts := cfgcache.TestingContext(t.Context())
+			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+			(&ProjectPipeline[*durationpb.Duration]{
 				ID:    "proj",
 				Store: s,
-				Files: []cfgcache.File{&cfgcache.SingleFile[*durationpb.Duration]{Path: "proj.cfg"}},
+				Files: []File{&SingleFile[*durationpb.Duration]{Path: "proj.cfg"}},
 			}).Register(ts.Registry)
 			assert.NoErr(t, ts.Initialize(ctx))
 			errCtx := cfgclient.Use(ctx, &fakeCfgClient{
@@ -604,15 +603,15 @@ func TestIngestToStorage(t *testing.T) {
 			assert.ErrIsLike(t, ts.IngestToStorage(errCtx), "project meta boom")
 		})
 
-		t.Run("cfgcache.RegexFile project GetProjects error", func(t *testing.T) {
-			ctx, ts := cfgcache.TestingContext(t.Context())
+		t.Run("RegexFile project GetProjects error", func(t *testing.T) {
+			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+			(&ProjectPipeline[*durationpb.Duration]{
 				ID:               "proj-rx",
 				Store:            s,
-				Files:            []cfgcache.File{&cfgcache.RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}},
+				Files:            []File{&RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}},
 				TransformVersion: 1,
-				Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+				Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 					return &durationpb.Duration{}, nil
 				},
 			}).Register(ts.Registry)
@@ -626,15 +625,15 @@ func TestIngestToStorage(t *testing.T) {
 			assert.ErrIsLike(t, ts.IngestToStorage(errCtx), "get projects boom")
 		})
 
-		t.Run("cfgcache.RegexFile project GetConfigs metaOnly=true error", func(t *testing.T) {
-			ctx, ts := cfgcache.TestingContext(t.Context())
+		t.Run("RegexFile project GetConfigs metaOnly=true error", func(t *testing.T) {
+			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&cfgcache.ProjectPipeline[*durationpb.Duration]{
+			(&ProjectPipeline[*durationpb.Duration]{
 				ID:               "proj-rx",
 				Store:            s,
-				Files:            []cfgcache.File{&cfgcache.RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}},
+				Files:            []File{&RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}},
 				TransformVersion: 1,
-				Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*durationpb.Duration, error) {
+				Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
 					return &durationpb.Duration{}, nil
 				},
 			}).Register(ts.Registry)
@@ -650,12 +649,12 @@ func TestIngestToStorage(t *testing.T) {
 		})
 
 		t.Run("full fetch GetConfigs metaOnly=false error", func(t *testing.T) {
-			ctx, ts := cfgcache.TestingContext(t.Context())
+			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&cfgcache.ServicePipeline[*durationpb.Duration]{
+			(&ServicePipeline[*durationpb.Duration]{
 				ID:    "svc",
 				Store: s,
-				Files: []cfgcache.File{&cfgcache.SingleFile[*durationpb.Duration]{Path: "settings.cfg"}},
+				Files: []File{&SingleFile[*durationpb.Duration]{Path: "settings.cfg"}},
 			}).Register(ts.Registry)
 			assert.NoErr(t, ts.Initialize(ctx))
 			ts.SetConfig("services/my-app", "settings.cfg", &durationpb.Duration{Seconds: 1})
@@ -673,12 +672,12 @@ func TestIngestToStorage(t *testing.T) {
 		})
 
 		t.Run("context canceled before semaphore acquire", func(t *testing.T) {
-			ctx, ts := cfgcache.TestingContext(t.Context())
+			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&cfgcache.ServicePipeline[*durationpb.Duration]{
+			(&ServicePipeline[*durationpb.Duration]{
 				ID:    "svc",
 				Store: s,
-				Files: []cfgcache.File{&cfgcache.SingleFile[*durationpb.Duration]{Path: "settings.cfg"}},
+				Files: []File{&SingleFile[*durationpb.Duration]{Path: "settings.cfg"}},
 			}).Register(ts.Registry)
 			assert.NoErr(t, ts.Initialize(ctx))
 			ts.SetConfig("services/my-app", "settings.cfg", &durationpb.Duration{Seconds: 1})

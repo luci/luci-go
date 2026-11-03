@@ -26,11 +26,13 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
+
+	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 )
 
 // loadedStoreMeta maps a pipelineID to any per-config.Set metadata for that
 // pipeline.
-type loadedStoreMeta map[string]map[config.Set]Meta
+type loadedStoreMeta map[string]map[config.Set]*cfgcachepb.Meta
 
 // IngestToStorage fetches the latest config(s) for entries from LUCI Config,
 // runs Transform on changed snapshots, and updates storage.
@@ -118,7 +120,7 @@ func (r *Registry) findIngestDelta(ctx context.Context, client config.Interface)
 			}
 
 			// Trim out any configsets from want that already match the Meta we have.
-			if wantMeta.SameInput(haveMeta) {
+			if SameInputs(wantMeta, haveMeta) {
 				delete(want, cs)
 			}
 		}
@@ -203,7 +205,7 @@ func (r *Registry) doIngest(ctx context.Context, client config.Interface, delta 
 				}
 				// Check to see if `meta` now matches what we actually have stored - if
 				// it does, then skip the transformation.
-				if stored, ok := delta.inStoreMeta[ic.id][cs]; ok && stored.SameInput(meta) {
+				if stored, ok := delta.inStoreMeta[ic.id][cs]; ok && SameInputs(stored, meta) {
 					continue
 				}
 
@@ -230,7 +232,7 @@ func (r *Registry) doIngest(ctx context.Context, client config.Interface, delta 
 				// group is full, so we would have to use another group, then waiting
 				// for them both to finish is hard because we would have to wait for
 				// them both at the same time, etc.)
-				meta.ContentSize = int64(proto.Size(out))
+				meta.TransformedSize = int64(proto.Size(out))
 				logging.Infof(ctx, "Storing %+v.", cs, meta)
 				if err := ic.store.Put(ctx, ic.id, cs, meta, out); err != nil {
 					return err

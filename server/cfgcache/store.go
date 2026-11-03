@@ -21,33 +21,19 @@ import (
 
 	"go.chromium.org/luci/config"
 
+	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 	"go.chromium.org/luci/server/module"
 )
 
-// Meta holds the version metadata for a stored config snapshot.
-type Meta struct {
-	// InputHash is the combined content hash of the source config names and
-	// files in the snapshot.
-	InputHash string
-
-	// InputSize is the combined size of the input configuration files.
-	InputSize int64
-
-	// TransformVersion is the [ServicePipeline.TransformVersion] or
-	// [ProjectPipeline.TransformVersion] that produced the stored config.
-	TransformVersion int
-
-	// ContentSize is the size in bytes of the *stored* config message.
-	ContentSize int64
-}
-
-// SameInput indicates that m and other had the same set of inputs.
+// SameInputs indicates that `a` and `b` had the same inputs.
 //
-// ContentSize is a computed output, and so is not considered.
-func (m Meta) SameInput(other Meta) bool {
-	return m.TransformVersion == other.TransformVersion &&
-		m.InputHash == other.InputHash &&
-		m.InputSize == other.InputSize
+// NOTE: input_revision and transformed_hash are intentionally ignored - only
+// the input hash, input_size and transform_version are inputs to the
+// transformation algorithm.
+func SameInputs(a, b *cfgcachepb.Meta) bool {
+	return a.TransformVersion == b.TransformVersion &&
+		a.InputHash == b.InputHash &&
+		a.InputSize == b.InputSize
 }
 
 // Store manages persistence (to durable storage, like a database) of
@@ -57,25 +43,18 @@ type Store[StoreMsg proto.Message] interface {
 	// ModuleDependencies should return any module dependencies it needs.
 	ModuleDependencies() []module.Dependency
 
-	// LoadMeta returns the stored Metas for config sets currently stored in this
+	// LoadMeta returns the stored *cfgcachepb.Metas for config sets currently stored in this
 	// store for `pipelineID`.
-	LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]Meta, error)
+	LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]*cfgcachepb.Meta, error)
 
 	// Put persists `out` for `(pipelineID, cs)` at the given `m`.
 	//
 	// Ownership of `out` is given to the Store.
-	Put(ctx context.Context, pipelineID string, cs config.Set, m Meta, out StoreMsg) error
+	Put(ctx context.Context, pipelineID string, cs config.Set, m *cfgcachepb.Meta, out StoreMsg) error
 
 	// Delete removes all stored records and metadata associated with `sets` in
 	// `pipelineID`.
 	Delete(ctx context.Context, pipelineID string, sets []config.Set) error
-}
-
-// StoredConfig holds a stored config value and its version metadata.
-type StoredConfig[StoreMsg proto.Message] struct {
-	ConfigSet config.Set
-	Meta      Meta
-	Config    StoreMsg
 }
 
 // genericStore is a type-erased [Store] stored on [ingestConfig].
@@ -85,6 +64,6 @@ type storeAdapter[StoreMsg proto.Message] struct {
 	Store[StoreMsg]
 }
 
-func (c storeAdapter[StoreMsg]) Put(ctx context.Context, pipelineID string, cs config.Set, m Meta, out proto.Message) error {
+func (c storeAdapter[StoreMsg]) Put(ctx context.Context, pipelineID string, cs config.Set, m *cfgcachepb.Meta, out proto.Message) error {
 	return c.Store.Put(ctx, pipelineID, cs, m, out.(StoreMsg))
 }

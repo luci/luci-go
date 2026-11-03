@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/config"
 
+	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 	"go.chromium.org/luci/server/module"
 )
 
@@ -32,11 +33,11 @@ func (*noopStore[T]) ModuleDependencies() []module.Dependency {
 	return []module.Dependency{module.OptionalDependency(ModuleName)}
 }
 
-func (*noopStore[T]) LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]Meta, error) {
+func (*noopStore[T]) LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]*cfgcachepb.Meta, error) {
 	return nil, nil
 }
 
-func (s *noopStore[T]) Put(ctx context.Context, pipelineID string, cs config.Set, m Meta, out T) error {
+func (s *noopStore[T]) Put(ctx context.Context, pipelineID string, cs config.Set, m *cfgcachepb.Meta, out T) error {
 	s.lastPut = out
 	return nil
 }

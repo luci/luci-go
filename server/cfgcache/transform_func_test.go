@@ -38,7 +38,7 @@ func TestTransformFunc(t *testing.T) {
 		cases := []struct {
 			name     string
 			xfrm     TransformFunc[*timestamppb.Timestamp]
-			xfrmVers int
+			xfrmVers int64
 			files    []File
 			wantErr  string
 		}{

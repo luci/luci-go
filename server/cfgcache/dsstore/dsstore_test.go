@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/server/cfgcache"
+	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 )
 
 func TestStore(t *testing.T) {
@@ -35,8 +35,8 @@ func TestStore(t *testing.T) {
 	pid := "svc-pipeline"
 	cs := config.Set("services/my-app")
 	msg := &durationpb.Duration{Seconds: 42}
-	m := cfgcache.Meta{TransformVersion: 1, InputHash: "abc123", ContentSize: int64(proto.Size(msg))}
-	wantMeta := cfgcache.Meta{TransformVersion: 1, ContentSize: 2, InputHash: "abc123"}
+	m := &cfgcachepb.Meta{TransformVersion: 1, InputHash: "abc123", TransformedSize: int64(proto.Size(msg))}
+	wantMeta := &cfgcachepb.Meta{TransformVersion: 1, TransformedSize: 2, InputHash: "abc123"}
 
 	t.Run("Put and LoadMeta round-trip and no-op rewrite", func(t *testing.T) {
 		t.Parallel()
@@ -51,7 +51,7 @@ func TestStore(t *testing.T) {
 
 		hashes, err := c.LoadMeta(ctx, pid)
 		assert.NoErr(t, err)
-		assert.That(t, hashes, should.Match(map[config.Set]cfgcache.Meta{cs: wantMeta}))
+		assert.That(t, hashes, should.Match(map[config.Set]*cfgcachepb.Meta{cs: wantMeta}))
 	})
 
 	t.Run("LoadMeta isolates by pipelineID", func(t *testing.T) {
@@ -66,7 +66,7 @@ func TestStore(t *testing.T) {
 
 		got, err := c.LoadMeta(ctx, "pipe-a")
 		assert.NoErr(t, err)
-		assert.That(t, got, should.Match(map[config.Set]cfgcache.Meta{
+		assert.That(t, got, should.Match(map[config.Set]*cfgcachepb.Meta{
 			"projects/p1": wantMeta,
 			"projects/p2": wantMeta,
 		}))
@@ -83,7 +83,7 @@ func TestStore(t *testing.T) {
 
 		hashes, err := c.LoadMeta(ctx, pid)
 		assert.NoErr(t, err)
-		assert.That(t, hashes, should.Match(map[config.Set]cfgcache.Meta{}))
+		assert.That(t, hashes, should.Match(map[config.Set]*cfgcachepb.Meta{}))
 
 		assert.NoErr(t, c.Delete(ctx, pid, nil))
 	})

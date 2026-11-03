@@ -1,0 +1,52 @@
+// Copyright 2026 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.server.cfgcache;
+
+option go_package = "go.chromium.org/luci/server/cfgcache/proto;cfgcachepb";
+
+// Meta holds the version metadata for a stored config snapshot.
+message Meta {
+  // input_revision is the revision of the config snapshot.
+  //
+  // Used purely for informational purposes. cfgcache will only update the
+  // stored data if one of (input_hash, input_size, transform_version) change.
+  string input_revision = 1;
+
+	// input_hash is the combined content hash of the source config names and
+	// files in the snapshot.
+  //
+  // Files which were included in the the transformed data are sorted by path
+  // within the config set, and then appended to a sha256 hasher like:
+  //
+  //   path || NUL || content_hash || NUL
+  //
+  // Where `content_hash` is the hash of the individual input file.
+	string input_hash = 2;
+
+	// input_size is the combined size of the input configuration files' content.
+	int64 input_size = 3;
+
+  // transform_version is the [ServicePipeline.TransformVersion] or
+  // [ProjectPipeline.TransformVersion] that produced the stored config.
+	int64 transform_version = 4;
+
+  // transformed_size is the size in bytes of the *stored* config message
+  // (result of transforming the inputs with the algorithm identified by
+  // transform_version).
+	int64 transformed_size = 5;
+}
+

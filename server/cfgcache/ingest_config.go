@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
+	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 )
 
 type resolvedFile struct {
@@ -58,7 +59,7 @@ type ingestConfig struct {
 	files []*resolvedFile
 
 	// Original TransformVersion and a genericized version of TransformFunc.
-	transformVersion int
+	transformVersion int64
 	transformFunc    genericTransformFunc
 	store            genericStore
 
@@ -118,14 +119,14 @@ func compileFilesRegex(ics []*ingestConfig) *regexp.Regexp {
 // allDesiredMeta computes the Meta for the subset of snapshots matching ic.
 //
 // Does not populate [Meta.ContentSize].
-func (ic *ingestConfig) allDesiredMeta(snaps loadedConfig) (ret map[config.Set]Meta) {
+func (ic *ingestConfig) allDesiredMeta(snaps loadedConfig) (ret map[config.Set]*cfgcachepb.Meta) {
 	var configSets iter.Seq2[config.Set, flatSnapshot]
 	if ic.serviceName != "" {
 		configSets = snaps.serviceConfigs(ic.serviceName)
-		ret = make(map[config.Set]Meta, 1)
+		ret = make(map[config.Set]*cfgcachepb.Meta, 1)
 	} else {
 		configSets = snaps.projectConfigs
-		ret = make(map[config.Set]Meta, len(snaps))
+		ret = make(map[config.Set]*cfgcachepb.Meta, len(snaps))
 	}
 
 	for cs, configs := range configSets {
@@ -141,23 +142,26 @@ func (ic *ingestConfig) allDesiredMeta(snaps loadedConfig) (ret map[config.Set]M
 // desiredMeta computes the Meta for the subset of files in snap matching ic.
 //
 // Does not populate [Meta.ContentSize].
-func (ic *ingestConfig) desiredMeta(snap flatSnapshot) (Meta, bool) {
+func (ic *ingestConfig) desiredMeta(snap flatSnapshot) (*cfgcachepb.Meta, bool) {
 	h := sha256.New()
 	var totalSize int64
-	var matchedAny bool
+	var revision string
 	for _, cfg := range snap {
 		if !ic.matchesPath(cfg.Path) {
 			continue
 		}
-		matchedAny = true
+		if revision == "" {
+			revision = cfg.Revision
+		}
 		fmt.Fprintf(h, "%s\x00%s\x00", cfg.Path, cfg.ContentHash)
 		totalSize += cfg.ContentSize
 	}
 
-	if !matchedAny {
-		return Meta{}, false
+	if revision == "" {
+		return nil, false
 	}
-	return Meta{
+	return &cfgcachepb.Meta{
+		InputRevision:    revision,
 		InputHash:        hex.EncodeToString(h.Sum(nil)),
 		InputSize:        totalSize,
 		TransformVersion: ic.transformVersion,

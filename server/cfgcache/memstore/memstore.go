@@ -22,7 +22,8 @@ import (
 
 	"go.chromium.org/luci/config"
 
-	"go.chromium.org/luci/server/cfgcache"
+	cfgcachecommon "go.chromium.org/luci/server/cfgcache/common"
+	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 	"go.chromium.org/luci/server/module"
 )
 
@@ -34,16 +35,14 @@ type Store[StoreMsg proto.Message] struct {
 	mu sync.Mutex
 
 	// pipelineID -> config.Set -> Meta + Value
-	data map[string]map[config.Set]*cfgcache.StoredConfig[StoreMsg]
+	data map[string]map[config.Set]*cfgcachecommon.StoredConfig[StoreMsg]
 }
-
-var _ cfgcache.Store[proto.Message] = (*Store[proto.Message])(nil)
 
 // ModuleDependencies implements cfgcache.Store.
 func (*Store[StoreMsg]) ModuleDependencies() []module.Dependency { return nil }
 
 // LoadMeta implements [cfgcache.Store].
-func (s *Store[StoreMsg]) LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]cfgcache.Meta, error) {
+func (s *Store[StoreMsg]) LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]*cfgcachepb.Meta, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -52,7 +51,7 @@ func (s *Store[StoreMsg]) LoadMeta(ctx context.Context, pipelineID string) (map[
 		return nil, nil
 	}
 
-	ret := make(map[config.Set]cfgcache.Meta, len(s.data[pipelineID]))
+	ret := make(map[config.Set]*cfgcachepb.Meta, len(s.data[pipelineID]))
 	for cs, sc := range pipeline {
 		ret[cs] = sc.Meta
 	}
@@ -61,21 +60,21 @@ func (s *Store[StoreMsg]) LoadMeta(ctx context.Context, pipelineID string) (map[
 }
 
 // Put implements [cfgcache.Store].
-func (s *Store[StoreMsg]) Put(ctx context.Context, pipelineID string, cs config.Set, m cfgcache.Meta, out StoreMsg) error {
+func (s *Store[StoreMsg]) Put(ctx context.Context, pipelineID string, cs config.Set, m *cfgcachepb.Meta, out StoreMsg) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	pipeline := s.data[pipelineID]
 	if pipeline == nil {
 		if s.data == nil {
-			s.data = map[string]map[config.Set]*cfgcache.StoredConfig[StoreMsg]{}
+			s.data = map[string]map[config.Set]*cfgcachecommon.StoredConfig[StoreMsg]{}
 		}
 
-		pipeline = map[config.Set]*cfgcache.StoredConfig[StoreMsg]{}
+		pipeline = map[config.Set]*cfgcachecommon.StoredConfig[StoreMsg]{}
 		s.data[pipelineID] = pipeline
 	}
 
-	pipeline[cs] = &cfgcache.StoredConfig[StoreMsg]{ConfigSet: cs, Meta: m, Config: out}
+	pipeline[cs] = &cfgcachecommon.StoredConfig[StoreMsg]{ConfigSet: cs, Meta: m, Config: out}
 
 	return nil
 }

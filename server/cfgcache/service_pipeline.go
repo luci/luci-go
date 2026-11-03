@@ -71,7 +71,7 @@ type ServicePipeline[StoreMsg proto.Message] struct {
 	//
 	// This may be unset (0) if Files consists of a single [*SingleFile] whose
 	// type is StoreMsg. Otherwise this is required to be positive.
-	TransformVersion int
+	TransformVersion int64
 
 	// Transform validates the parsed [Snapshot] and transforms it into the
 	// StoreMsg proto to be cached in storage.

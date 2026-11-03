@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 
-	"go.chromium.org/luci/server/cfgcache"
+	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 )
 
 func TestMemstore(t *testing.T) {
@@ -34,31 +34,31 @@ func TestMemstore(t *testing.T) {
 
 	s := &Store[*durationpb.Duration]{}
 
-	assert.NoErr(t, s.Put(t.Context(), "pipe1", "services/whatever", cfgcache.Meta{
+	assert.NoErr(t, s.Put(t.Context(), "pipe1", "services/whatever", &cfgcachepb.Meta{
 		InputHash:        "potato",
 		TransformVersion: 7,
-		ContentSize:      100,
+		TransformedSize:  100,
 	}, durationpb.New(10*time.Second)))
 
-	assert.NoErr(t, s.Put(t.Context(), "pipe2", "services/whatever", cfgcache.Meta{
+	assert.NoErr(t, s.Put(t.Context(), "pipe2", "services/whatever", &cfgcachepb.Meta{
 		InputHash:        "beans",
 		TransformVersion: 70,
-		ContentSize:      200,
+		TransformedSize:  200,
 	}, durationpb.New(20*time.Second)))
 
 	got, err := s.LoadMeta(t.Context(), "pipe1")
 	assert.NoErr(t, err)
-	assert.That(t, got, should.Match(map[config.Set]cfgcache.Meta{
+	assert.That(t, got, should.Match(map[config.Set]*cfgcachepb.Meta{
 		"services/whatever": {
 			InputHash:        "potato",
 			TransformVersion: 7,
-			ContentSize:      100,
+			TransformedSize:  100,
 		},
 	}))
 
 	got, err = s.LoadMeta(t.Context(), "notreal")
 	assert.NoErr(t, err)
-	assert.That(t, got, should.Match(map[config.Set]cfgcache.Meta(nil)))
+	assert.That(t, got, should.Match(map[config.Set]*cfgcachepb.Meta(nil)))
 
 	assert.NoErr(t, s.Delete(t.Context(), "pipe2", []config.Set{
 		"services/whatever",
@@ -67,15 +67,15 @@ func TestMemstore(t *testing.T) {
 
 	got, err = s.LoadMeta(t.Context(), "pipe2")
 	assert.NoErr(t, err)
-	assert.That(t, got, should.Match(map[config.Set]cfgcache.Meta(nil)))
+	assert.That(t, got, should.Match(map[config.Set]*cfgcachepb.Meta(nil)))
 
 	got, err = s.LoadMeta(t.Context(), "pipe1")
 	assert.NoErr(t, err)
-	assert.That(t, got, should.Match(map[config.Set]cfgcache.Meta{
+	assert.That(t, got, should.Match(map[config.Set]*cfgcachepb.Meta{
 		"services/whatever": {
 			InputHash:        "potato",
 			TransformVersion: 7,
-			ContentSize:      100,
+			TransformedSize:  100,
 		},
 	}))
 }
