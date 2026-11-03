@@ -478,6 +478,38 @@ func TestQueryArtifacts(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.list in realm of root invocation "rootInvocations/inv1"`))
 			})
 
+			t.Run(`Limited permission upgraded to full access with WorkUnits filter`, func(t *ftt.Test) {
+				req.Invocations = nil
+				req.Parent = "rootInvocations/inv1"
+				req.Predicate.WorkUnits = []string{"rootInvocations/inv1/workUnits/wu1"}
+
+				t.Run(`denied without PermGetArtifact on work unit`, func(t *ftt.Test) {
+					ctxLimited := auth.WithState(ctx, &authtest.FakeState{
+						Identity: "user:someone@example.com",
+						IdentityPermissions: []authtest.RealmPermission{
+							{Realm: "testproject:testrealm", Permission: rdbperms.PermListLimitedArtifacts},
+						},
+					})
+					_, err := srv.QueryArtifacts(ctxLimited, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.get in realm "testproject:testrealm" of work unit "rootInvocations/inv1/workUnits/wu1" (trying to upgrade limited access to full access)`))
+				})
+
+				t.Run(`allowed with PermGetArtifact on work unit`, func(t *ftt.Test) {
+					ctxUpgraded := auth.WithState(ctx, &authtest.FakeState{
+						Identity: "user:someone@example.com",
+						IdentityPermissions: []authtest.RealmPermission{
+							{Realm: "testproject:testrealm", Permission: rdbperms.PermListLimitedArtifacts},
+							{Realm: "testproject:testrealm", Permission: rdbperms.PermGetArtifact},
+						},
+					})
+					ctxUpgraded = context.WithValue(ctxUpgraded, &gsutil.MockedGSClientKey, &gsutil.MockClient{})
+					res, err := srv.QueryArtifacts(ctxUpgraded, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.Artifacts, should.HaveLength(2))
+				})
+			})
+
 			t.Run(`Root invocation not found`, func(t *ftt.Test) {
 				req.Invocations = nil
 				req.Parent = "rootInvocations/not-found"

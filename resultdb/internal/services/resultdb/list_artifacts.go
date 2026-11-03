@@ -80,6 +80,10 @@ func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
 		return appstatus.BadRequest(errors.Fmt("page_size: %w", err))
 	}
 
+	if err := pbutil.ValidateListArtifactPredicate(req.GetPredicate()); err != nil {
+		return appstatus.BadRequest(errors.Fmt("predicate: %w", err))
+	}
+
 	return nil
 }
 
@@ -134,13 +138,16 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 
 	// Prepare the query.
 	q := artifacts.Query{
-		PageSize:       pagination.AdjustPageSize(in.PageSize),
-		PageToken:      in.PageToken,
-		InvocationIDs:  invocations.NewIDSet(queryInvocationID),
-		ParentIDRegexp: parentIDRegexp,
-		WithGcsURI:     includeGcsURI != mask.Exclude || includeFetchURL != mask.Exclude,
-		WithRbeURI:     includeRbeURI != mask.Exclude || includeFetchURL != mask.Exclude,
-		Mask:           readMask,
+		PageSize:           pagination.AdjustPageSize(in.PageSize),
+		PageToken:          in.PageToken,
+		InvocationIDs:      invocations.NewIDSet(queryInvocationID),
+		ParentIDRegexp:     parentIDRegexp,
+		ContentTypeRegexp:  in.GetPredicate().GetContentTypeRegexp(),
+		ArtifactIDRegexp:   in.GetPredicate().GetArtifactIdRegexp(),
+		ArtifactTypeRegexp: in.GetPredicate().GetArtifactTypeRegexp(),
+		WithGcsURI:         includeGcsURI != mask.Exclude || includeFetchURL != mask.Exclude,
+		WithRbeURI:         includeRbeURI != mask.Exclude || includeFetchURL != mask.Exclude,
+		Mask:               readMask,
 	}
 
 	// Read artifacts.

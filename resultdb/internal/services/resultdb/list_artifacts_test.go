@@ -114,6 +114,24 @@ func TestListArtifacts(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike(`page_size: negative`))
 				})
 			})
+			t.Run(`predicate`, func(t *ftt.Test) {
+				t.Run(`invalid artifact_id_regexp`, func(t *ftt.Test) {
+					req.Predicate = &pb.ArtifactPredicate{
+						ArtifactIdRegexp: ")",
+					}
+					_, err := srv.ListArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`predicate: artifact_id_regexp: error parsing regexp`))
+				})
+				t.Run(`work_units not supported`, func(t *ftt.Test) {
+					req.Predicate = &pb.ArtifactPredicate{
+						WorkUnits: []string{"rootInvocations/root-inv1/workUnits/wu1"},
+					}
+					_, err := srv.ListArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`predicate: work_units: not supported for ListArtifacts`))
+				})
+			})
 		})
 
 		t.Run(`request authorization`, func(t *ftt.Test) {
@@ -195,6 +213,36 @@ func TestListArtifacts(t *testing.T) {
 					assert.Loosely(t, arts[0].FetchUrl, should.HavePrefix("https://signed-url.example.com/rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/a"))
 					assert.Loosely(t, arts[1].FetchUrl, should.HavePrefix("https://fake-signed-url/bucket1/file2.txt?x-project=testproject"))
 					assert.Loosely(t, arts[2].FetchUrl, should.HavePrefix("https://signed-url.example.com/rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/f"))
+				})
+
+				t.Run(`Filters work unit and test result artifacts with predicate`, func(t *ftt.Test) {
+					testutil.MustApply(ctx, t,
+						insert.Artifact(wu.ID.LegacyInvocationID(), "", "logcat_1.txt", map[string]any{
+							"ContentType":  "text/plain",
+							"ArtifactType": "LOGCAT",
+						}),
+						insert.Artifact(wu.ID.LegacyInvocationID(), "tr/t t/r", "logcat_tr.txt", map[string]any{
+							"ContentType":  "text/plain",
+							"ArtifactType": "LOGCAT",
+						}),
+					)
+
+					req.Parent = "rootInvocations/root-inv1/workUnits/wu1"
+					req.Predicate = &pb.ArtifactPredicate{
+						ArtifactIdRegexp:   "logcat.*",
+						ArtifactTypeRegexp: "LOGCAT",
+						ContentTypeRegexp:  "text/.*",
+					}
+					arts, _ := mustFetch(req)
+					assert.Loosely(t, artifactsNames(arts), should.Match([]string{
+						"rootInvocations/root-inv1/workUnits/wu1/artifacts/logcat_1.txt",
+					}))
+
+					req.Parent = "rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r"
+					arts, _ = mustFetch(req)
+					assert.Loosely(t, artifactsNames(arts), should.Match([]string{
+						"rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/logcat_tr.txt",
+					}))
 				})
 			})
 		})

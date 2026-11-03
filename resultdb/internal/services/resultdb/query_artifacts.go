@@ -83,6 +83,23 @@ func verifyQueryArtifactsPermissions(ctx context.Context, in *pb.QueryArtifactsR
 	if err != nil {
 		return appstatus.BadRequest(errors.Fmt("parent: %w", err))
 	}
+	if len(in.GetPredicate().GetWorkUnits()) > 0 {
+		wuIDs := make([]workunits.ID, 0, len(in.Predicate.WorkUnits))
+		for _, name := range in.Predicate.WorkUnits {
+			wuID, err := workunits.ParseName(name)
+			if err != nil {
+				return appstatus.BadRequest(errors.Fmt("predicate: work_units: %q: %w", name, err))
+			}
+			if wuID.RootInvocationID != rootInvID {
+				return appstatus.BadRequest(errors.Fmt("predicate.work_units: %q is not in parent root invocation %q", name, in.Parent))
+			}
+			wuIDs = append(wuIDs, wuID)
+		}
+		if _, err := permissions.VerifyWorkUnitsAccess(ctx, wuIDs, permissions.ListArtifactsAccessModel, permissions.FullAccess); err != nil {
+			return err
+		}
+		return nil
+	}
 	if _, err = permissions.VerifyAllWorkUnitsAccess(ctx, rootInvID, permissions.ListArtifactsAccessModel, permissions.FullAccess); err != nil {
 		return err
 	}
