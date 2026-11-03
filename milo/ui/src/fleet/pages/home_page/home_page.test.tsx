@@ -87,6 +87,7 @@ describe('<HomePage />', () => {
             ready: 800,
             needRepair: 50,
             repairFailed: 50,
+            needManualRepair: 100,
           },
           androidCount: {
             totalDevices: 500,
@@ -101,6 +102,13 @@ describe('<HomePage />', () => {
       total: 200,
       swarmingState: { total: 200, alive: 150 },
     });
+
+    FleetConsoleMockAPI.setFixture('ListRepairQueue', () => ({
+      repairQueueItems: [],
+      nextPageToken: '',
+      totalSize: 125,
+      inProgressCount: 0,
+    }));
 
     FleetConsoleMockAPI.setFixture(
       'CountAndroidDevices',
@@ -184,6 +192,16 @@ describe('<HomePage />', () => {
       expect(
         within(chromeosCard).getByText('Total Devices').closest('a'),
       ).toHaveAttribute('href', '/ui/fleet/p/chromeos/devices');
+      expect(
+        screen.getByRole('link', {
+          name: 'View all repairs in ChromeOS platform',
+        }),
+      ).toHaveAttribute('href', '/ui/fleet/p/chromeos/repairs');
+      expect(
+        screen
+          .getByLabelText('Need manual repair in ChromeOS platform')
+          .closest('a'),
+      ).toHaveAttribute('href', '/ui/fleet/p/chromeos/repairs');
 
       const browserCard = screen
         .getByText('Browser')
@@ -257,6 +275,7 @@ describe('<HomePage />', () => {
     localStorage.removeItem('featureFlag:fleet-console:pte-support');
 
     expect(await screen.findByText('1,000')).toBeInTheDocument();
+    expect(await screen.findByText('125')).toBeInTheDocument();
     expect(await screen.findByText('200')).toBeInTheDocument();
     expect((await screen.findAllByText('500')).length).toBeGreaterThan(0);
 
@@ -318,6 +337,10 @@ describe('<HomePage />', () => {
     FleetConsoleMockAPI.setFixture('CountAndroidDevices', {
       totalDevices: 0,
     });
+    FleetConsoleMockAPI.setFixture('ListRepairQueue', {
+      repairQueueItems: [],
+      totalSize: 0,
+    });
 
     render(
       <FakeContextProvider>
@@ -326,10 +349,10 @@ describe('<HomePage />', () => {
     );
 
     const countElements = await screen.findAllByText('0');
-    expect(countElements.length).toBe(6);
+    expect(countElements.length).toBe(7);
 
     const warningIcons = screen.getAllByTestId('InfoOutlinedIcon');
-    expect(warningIcons.length).toBe(6);
+    expect(warningIcons.length).toBe(7);
   });
 
   it('rounds healthy percentage and applies correct color status', async () => {
@@ -404,7 +427,7 @@ describe('<HomePage />', () => {
     expect(screen.getByText('5')).toBeInTheDocument();
 
     const manualRepairLabels = screen.getAllByText('Need manual repair');
-    expect(manualRepairLabels.length).toBe(2);
+    expect(manualRepairLabels.length).toBe(3);
 
     const androidCard = screen
       .getByText('Android')
@@ -419,5 +442,51 @@ describe('<HomePage />', () => {
     expect(
       within(pixelCard).getByText('Need manual repair').closest('a'),
     ).toHaveAttribute('href', '/ui/fleet/p/pixel/repairs');
+  });
+
+  it('hides ChromeOS manual repair option when chromeos-repairs-dashboard feature flag is disabled', async () => {
+    const listRepairQueueSpy = jest.fn();
+    FleetConsoleMockAPI.setFixture('ListRepairQueue', listRepairQueueSpy);
+    localStorage.setItem(
+      'featureFlag:fleet-console:chromeos-repairs-dashboard',
+      'off',
+    );
+
+    render(
+      <FakeContextProvider>
+        <HomePage />
+      </FakeContextProvider>,
+    );
+
+    expect(await screen.findByText('1,000')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'View all devices in ChromeOS platform',
+      }),
+    ).toHaveAttribute('href', '/ui/fleet/p/chromeos/devices');
+    expect(
+      screen.queryByRole('link', {
+        name: 'View all repairs in ChromeOS platform',
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Need manual repair in ChromeOS platform'),
+    ).not.toBeInTheDocument();
+    expect(listRepairQueueSpy).not.toHaveBeenCalled();
+  });
+
+  it('displays the error state on ChromeOS card when ListRepairQueue fails', async () => {
+    FleetConsoleMockAPI.setFixture('ListRepairQueue', null);
+
+    render(
+      <FakeContextProvider>
+        <HomePage />
+      </FakeContextProvider>,
+    );
+
+    const errorMessages = await screen.findAllByText('Error loading data');
+    expect(errorMessages.length).toBe(1);
+    expect(await screen.findByText('200')).toBeInTheDocument();
+    expect(await screen.findByText('500')).toBeInTheDocument();
   });
 });

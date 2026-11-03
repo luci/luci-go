@@ -29,13 +29,20 @@ import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
 import pixelLogo from '@/fleet/assets/logos/pixel.png';
 import { NotSignedInPage } from '@/fleet/components/logged_in_boundary';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
-import { enableAndroidHealthMetrics, enablePTE } from '@/fleet/features';
+import {
+  enableAndroidHealthMetrics,
+  enableChromeOsRepairsDashboard,
+  enablePTE,
+} from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
 import { combineAipFilters } from '@/fleet/utils/search_param';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  ListRepairQueueRequest,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { workspaces } from '../../workspaces';
 
@@ -48,6 +55,9 @@ export const HomePage = () => {
   const isAndroidHealthMetricsEnabled = useFeatureFlag(
     enableAndroidHealthMetrics,
   );
+  const isChromeOsRepairsEnabled = useFeatureFlag(
+    enableChromeOsRepairsDashboard,
+  );
 
   const chromeosQuery = useQuery({
     ...client.CountDevices.query({
@@ -55,6 +65,15 @@ export const HomePage = () => {
       platform: Platform.CHROMEOS,
     }),
     enabled: !isAnonymous,
+  });
+
+  const chromeosRepairQueueQuery = useQuery({
+    ...client.ListRepairQueue.query(
+      ListRepairQueueRequest.fromPartial({
+        pageSize: 1,
+      }),
+    ),
+    enabled: !isAnonymous && isChromeOsRepairsEnabled,
   });
 
   const browserQuery = useQuery({
@@ -128,6 +147,14 @@ export const HomePage = () => {
           Math.max(0, (chromeosMetrics.healthy / chromeosTotal) * 100),
         )
       : undefined;
+  const chromeosRepairQueueTotal =
+    chromeosRepairQueueQuery.data?.totalSize ?? 0;
+  const chromeosIsLoading = isChromeOsRepairsEnabled
+    ? chromeosQuery.isPending || chromeosRepairQueueQuery.isPending
+    : chromeosQuery.isPending;
+  const chromeosIsError = isChromeOsRepairsEnabled
+    ? chromeosQuery.isError || chromeosRepairQueueQuery.isError
+    : chromeosQuery.isError;
 
   const browserTotal = browserQuery.data?.total ?? 0;
 
@@ -235,11 +262,20 @@ export const HomePage = () => {
                   logoSrc={chromeosLogo}
                   total={chromeosTotal}
                   healthyPercentage={chromeosHealthy}
-                  isLoading={chromeosQuery.isPending}
-                  isError={chromeosQuery.isError}
+                  isLoading={chromeosIsLoading}
+                  isError={chromeosIsError}
                   linkTo="/ui/fleet/p/chromeos/devices"
                   linkText="View all devices"
                   linkIcon={<DevicesIcon />}
+                  {...(isChromeOsRepairsEnabled
+                    ? {
+                        secondaryLinkTo: '/ui/fleet/p/chromeos/repairs',
+                        secondaryLinkText: 'View all repairs',
+                        secondaryLinkIcon: <ConstructionIcon />,
+                        secondTotalText: 'Need manual repair',
+                        secondTotal: chromeosRepairQueueTotal,
+                      }
+                    : {})}
                 />
               </Grid2>
               {/* Browser Card */}
