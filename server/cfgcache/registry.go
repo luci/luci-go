@@ -30,9 +30,19 @@ import (
 	"go.chromium.org/luci/config/vars"
 )
 
+// defaultMaxIngestMemoryMB is the default maximum memory (in MiB) of raw config
+// snapshots to ingest concurrently during [Registry.IngestToStorage].
+const defaultMaxIngestMemoryMB = 64
+
 // Registry holds registered [ServicePipeline] and [ProjectPipeline]
 // definitions.
 type Registry struct {
+	// MaxIngestMemoryMB is the maximum total memory (in MiB) of raw config
+	// snapshots to ingest concurrently during [Registry.IngestToStorage].
+	//
+	// If <= 0, defaults to 64.
+	MaxIngestMemoryMB int64
+
 	mu                   sync.Mutex
 	errs                 []error
 	finishedRegistration bool
@@ -181,6 +191,11 @@ func (r *Registry) Initialize(ctx context.Context, v *vars.VarSet) (err error) {
 			r.errs = append(r.errs, err)
 		}
 	}()
+	if r.MaxIngestMemoryMB <= 0 {
+		r.MaxIngestMemoryMB = defaultMaxIngestMemoryMB
+	}
+	r.MaxIngestMemoryMB = max(1, r.MaxIngestMemoryMB)
+
 	v = cmp.Or(v, &vars.Vars)
 	csToIC := map[config.Set][]*ingestConfig{}
 	var projectICs []*ingestConfig
@@ -277,4 +292,12 @@ func (r *Registry) checkInitialized() {
 	if err := errors.Join(r.errs...); err != nil {
 		panic(errors.Fmt("registry failed to initialize: %w", err))
 	}
+}
+
+// clampedSizeMB converts contentSize in bytes to MiB, clamped to
+// [1, r.MaxIngestMemoryMB].
+func (r *Registry) clampedSizeMB(contentSize int64) int64 {
+	const mib = 1 << 20
+	mb := (contentSize + mib - 1) / mib
+	return min(r.MaxIngestMemoryMB, max(1, mb))
 }

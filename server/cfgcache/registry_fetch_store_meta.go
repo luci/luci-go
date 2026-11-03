@@ -20,24 +20,30 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/common/logging"
 )
 
 // fetchStoreMeta loads stored Meta from each pipeline's Store.
 //
 // Returns a map of pipelineID->config.Set->Meta.
-func (r *Registry) fetchStoreMeta(ctx context.Context) (map[string]map[config.Set]Meta, error) {
+func (r *Registry) fetchStoreMeta(ctx context.Context) (loadedStoreMeta, error) {
 	var mu sync.Mutex
-	ret := map[string]map[config.Set]Meta{}
+	ret := loadedStoreMeta{}
 
-	var eg errgroup.Group
+	eg, ctx := errgroup.WithContext(ctx)
 	eg.SetLimit(8)
 
 	for _, ic := range r.ingestConfigs {
 		eg.Go(func() error {
+			ctx := logging.SetField(ctx, "pipeline", ic.id)
+			logging.Infof(ctx, "Requesting stored metadata.")
 			have, err := ic.store.LoadMeta(ctx, ic.id)
 			if err != nil {
 				return err
+			}
+			if len(have) == 0 {
+				logging.Infof(ctx, "No stored metadata.")
+				return nil
 			}
 			mu.Lock()
 			ret[ic.id] = have

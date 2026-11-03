@@ -77,15 +77,18 @@ func TestValidationAndTransform(t *testing.T) {
 	t.Run("SingleFile zero default", func(t *testing.T) {
 		t.Parallel()
 		reg := &Registry{}
+		called := false
 
 		noDefault := &SingleFile[string]{Path: "label.txt"}
+		trigger := &SingleFile[string]{Path: "trigger.txt"}
 
 		(&ProjectPipeline[*durationpb.Duration]{
 			ID:               "proj-defaults",
 			Store:            &noopStore[*durationpb.Duration]{},
-			Files:            []File{noDefault},
+			Files:            []File{noDefault, trigger},
 			TransformVersion: 1,
 			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
+				called = true
 				val := noDefault.Get(snap)
 				assert.That(t, val, should.Equal(""))
 				return durationpb.New(3 * time.Second), nil
@@ -95,32 +98,38 @@ func TestValidationAndTransform(t *testing.T) {
 		rules := initRules(t, reg)
 
 		valCtx := &validation.Context{Context: t.Context()}
-		assert.NoErr(t, rules.ValidateConfigSet(valCtx, "projects/chromium", nil))
+		assert.NoErr(t, rules.ValidateConfigSet(valCtx, "projects/chromium", map[string][]byte{
+			"trigger.txt": []byte("present"),
+		}))
 		assert.NoErr(t, valCtx.Finalize())
+		assert.That(t, called, should.BeTrue)
 	})
 
 	t.Run("SingleFile NewDefault", func(t *testing.T) {
 		t.Parallel()
 		reg := &Registry{}
+		called := false
 
-		// *string is a silly type, but we want something nillable which isn't a
-		// proto.
+		// `*string` is a silly type, but we want something which is easy to show
+		// that NewDefault generates new values each time.
 		defaulted := &SingleFile[*string]{
 			Path:       "label.txt",
-			NewDefault: func() *string { ret := "banana"; return &ret },
 			Unmarshal:  func(raw []byte) (*string, error) { ret := string(raw); return &ret, nil },
+			NewDefault: func() *string { ret := "banana"; return &ret },
 		}
+		trigger := &SingleFile[string]{Path: "trigger.txt"}
 
 		(&ProjectPipeline[*durationpb.Duration]{
 			ID:               "proj-defaults",
 			Store:            &noopStore[*durationpb.Duration]{},
-			Files:            []File{defaulted},
+			Files:            []File{defaulted, trigger},
 			TransformVersion: 1,
 			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
+				called = true
 				valA := defaulted.Get(snap)
 				valB := defaulted.Get(snap)
-				assert.That(t, *valA, should.Equal("banana"))
-				assert.That(t, *valB, should.Equal("banana"))
+				assert.That(t, *valA, should.Match("banana"))
+				assert.That(t, *valB, should.Match("banana"))
 				assert.That(t, valA, should.NotEqual(valB))
 				return durationpb.New(3 * time.Second), nil
 			},
@@ -129,8 +138,11 @@ func TestValidationAndTransform(t *testing.T) {
 		rules := initRules(t, reg)
 
 		valCtx := &validation.Context{Context: t.Context()}
-		assert.NoErr(t, rules.ValidateConfigSet(valCtx, "projects/chromium", nil))
+		assert.NoErr(t, rules.ValidateConfigSet(valCtx, "projects/chromium", map[string][]byte{
+			"trigger.txt": []byte("present"),
+		}))
 		assert.NoErr(t, valCtx.Finalize())
+		assert.That(t, called, should.BeTrue)
 	})
 
 	t.Run("RegexFile aggregates matching files and reports unmarshal errors", func(t *testing.T) {

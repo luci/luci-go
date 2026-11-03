@@ -22,6 +22,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 )
 
@@ -33,7 +34,7 @@ func (r *Registry) fetchConfigMeta(ctx context.Context, client config.Interface)
 	ret := loadedConfig{}
 	var mu sync.Mutex
 
-	var eg errgroup.Group
+	eg, ctx := errgroup.WithContext(ctx)
 	eg.SetLimit(8)
 
 	// csToRegex will hold all our service config sets to the regex of files
@@ -56,9 +57,14 @@ func (r *Registry) fetchConfigMeta(ctx context.Context, client config.Interface)
 		// Otherwise, our project config set only cares about one file, so we can
 		// use the slightly more optimal GetProjectConfigs.
 		eg.Go(func() error {
+			logging.Infof(ctx, "Requesting config file %q across all projects.", r.singleProjectFile)
 			cfgs, err := client.GetProjectConfigs(ctx, r.singleProjectFile, true)
-			if err != nil || len(cfgs) == 0 {
+			if err != nil {
 				return err
+			}
+			if len(cfgs) == 0 {
+				logging.Infof(ctx, "No projects found with file %q.", r.singleProjectFile)
+				return nil
 			}
 
 			byCfgSet := loadedConfigFromConfigs(cfgs)
@@ -73,9 +79,15 @@ func (r *Registry) fetchConfigMeta(ctx context.Context, client config.Interface)
 	// Finally, launch all of our known-config.Set ingestConfigs.
 	for cs, re := range csToRegex {
 		eg.Go(func() error {
+			ctx := logging.SetField(ctx, "config.Set", cs)
+			logging.Infof(ctx, "Requesting config metadata matching %q.", re.String())
 			configs, err := client.GetConfigs(ctx, cs, re.MatchString, true)
-			if err := errors.Filter(err, config.ErrNoConfig); err != nil || len(configs) == 0 {
+			if err := errors.Filter(err, config.ErrNoConfig); err != nil {
 				return err
+			}
+			if len(configs) == 0 {
+				logging.Infof(ctx, "No config meta metadata matching %q.", re.String())
+				return nil
 			}
 
 			flattened := flatSnapshotFromMap(configs)

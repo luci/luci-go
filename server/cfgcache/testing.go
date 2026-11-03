@@ -79,6 +79,10 @@ func (s *TestingState) SetConfig(cs config.Set, path string, data any) {
 // do not initialize the server module via server.Main, and returns a
 // [*TestingState].
 //
+// Tests populate configs via [TestingState.SetConfig] and invoke
+// [Registry.IngestToStorage] to exercise the full Transform and storage
+// pipeline.
+//
 // Sets `${appid}` to `my-app` in the returned [TestingState.Vars].
 //
 // Exposed for testing.

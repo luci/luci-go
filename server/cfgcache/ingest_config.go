@@ -15,6 +15,10 @@
 package cfgcache
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"iter"
 	"maps"
 	"regexp"
 	"slices"
@@ -67,6 +71,16 @@ func (ic *ingestConfig) String() string {
 	return ic.desc
 }
 
+// matchesPath returns true if this ingestConfig wants the config file `path`.
+func (ic *ingestConfig) matchesPath(path string) bool {
+	for _, rf := range ic.files {
+		if rf.pat.Match(path) {
+			return true
+		}
+	}
+	return false
+}
+
 // multiFile returns true if this ingestConfig consumes more than one file
 // from config.
 func (ic *ingestConfig) multiFile() bool {
@@ -99,6 +113,55 @@ func compileFilesRegex(ics []*ingestConfig) *regexp.Regexp {
 	slices.Sort(branches)
 	branches = slices.Compact(branches)
 	return regexp.MustCompile("^(?:" + strings.Join(branches, "|") + ")$")
+}
+
+// allDesiredMeta computes the Meta for the subset of snapshots matching ic.
+//
+// Does not populate [Meta.ContentSize].
+func (ic *ingestConfig) allDesiredMeta(snaps loadedConfig) (ret map[config.Set]Meta) {
+	var configSets iter.Seq2[config.Set, flatSnapshot]
+	if ic.serviceName != "" {
+		configSets = snaps.serviceConfigs(ic.serviceName)
+		ret = make(map[config.Set]Meta, 1)
+	} else {
+		configSets = snaps.projectConfigs
+		ret = make(map[config.Set]Meta, len(snaps))
+	}
+
+	for cs, configs := range configSets {
+		meta, ok := ic.desiredMeta(configs)
+		if ok {
+			ret[cs] = meta
+		}
+	}
+
+	return ret
+}
+
+// desiredMeta computes the Meta for the subset of files in snap matching ic.
+//
+// Does not populate [Meta.ContentSize].
+func (ic *ingestConfig) desiredMeta(snap flatSnapshot) (Meta, bool) {
+	h := sha256.New()
+	var totalSize int64
+	var matchedAny bool
+	for _, cfg := range snap {
+		if !ic.matchesPath(cfg.Path) {
+			continue
+		}
+		matchedAny = true
+		fmt.Fprintf(h, "%s\x00%s\x00", cfg.Path, cfg.ContentHash)
+		totalSize += cfg.ContentSize
+	}
+
+	if !matchedAny {
+		return Meta{}, false
+	}
+	return Meta{
+		InputHash:        hex.EncodeToString(h.Sum(nil)),
+		InputSize:        totalSize,
+		TransformVersion: ic.transformVersion,
+	}, true
 }
 
 // validateAndTransform unmarshals all files in rawFiles into a [Snapshot] and
