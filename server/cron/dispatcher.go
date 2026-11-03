@@ -114,6 +114,16 @@ func (d *Dispatcher) RegisterHandler(id string, h Handler) {
 	d.h[id] = h
 }
 
+// HasHandler just returns `true` if the Dispatcher already has a handler
+// installed with this ID.
+//
+// Intended for writing tests that check module wiring.
+func (d *Dispatcher) HasHandler(id string) bool {
+	d.m.Lock()
+	defer d.m.Unlock()
+	return d.h[id] != nil
+}
+
 // InstallCronRoutes installs routes that handle requests from Cloud Scheduler.
 func (d *Dispatcher) InstallCronRoutes(r *router.Router, prefix string) {
 	if prefix == "" {

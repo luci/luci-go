@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/config/vars"
 
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
 )
 
@@ -36,10 +37,11 @@ func TestServerModule(t *testing.T) {
 		v := &vars.VarSet{}
 		v.Register("appid", func(context.Context) (string, error) { return "my-app", nil })
 		rules := &validation.RuleSet{Vars: v}
-		return &ModuleOptions{Registry: &Registry{}, Vars: v, Rules: rules}
+		disp := &cron.Dispatcher{}
+		return &ModuleOptions{Registry: &Registry{}, Vars: v, Rules: rules, CronDispatcher: disp}
 	}
 
-	t.Run("default options install validation rules", func(t *testing.T) {
+	t.Run("default options install validation rules and cron handler", func(t *testing.T) {
 		t.Parallel()
 		ctx := t.Context()
 		opts := newTestOpts()
@@ -63,6 +65,8 @@ func TestServerModule(t *testing.T) {
 		patterns, err := opts.Rules.ConfigPatterns(ctx)
 		assert.NoErr(t, err)
 		assert.That(t, len(patterns), should.Equal(1))
+
+		assert.That(t, opts.CronDispatcher.HasHandler(CronHandlerID), should.BeTrue)
 	})
 
 	t.Run("ModuleOptions.Register parses flags", func(t *testing.T) {
@@ -80,16 +84,24 @@ func TestServerModule(t *testing.T) {
 
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		opts.Register(fs)
-		assert.NoErr(t, fs.Parse([]string{"-cfgcache-disable-validation"}))
+		assert.NoErr(t, fs.Parse([]string{
+			"-cfgcache-disable-validation",
+			"-cfgcache-disable-cron",
+			"-cfgcache-max-ingest-memory-mb=128",
+		}))
 
 		mod := NewModule(opts)
 		outCtx, err := mod.Initialize(ctx, nil, module.HostOptions{})
 		assert.NoErr(t, err)
 		assert.That(t, outCtx, should.Equal(ctx))
+		assert.That(t, opts.Registry.MaxIngestMemoryMB, should.Equal(int64(128)))
 
 		patterns, err := opts.Rules.ConfigPatterns(ctx)
 		assert.NoErr(t, err)
 		assert.That(t, len(patterns), should.Equal(0))
+
+		// Cron handler was not registered because -cfgcache-disable-cron was set.
+		opts.CronDispatcher.RegisterHandler(CronHandlerID, opts.Registry.IngestToStorage)
 	})
 
 	t.Run("Initialize propagates Registry.Initialize error", func(t *testing.T) {

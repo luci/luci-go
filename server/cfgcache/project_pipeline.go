@@ -90,6 +90,7 @@ func (pp *ProjectPipeline[StoreMsg]) String() string {
 //
 // Registering enables the pipeline when the Registry is used with the server:
 //   - Validation handlers will call TransformFunc.
+//   - Cron job will fetch and transform committed configs.
 func (pp *ProjectPipeline[StoreMsg]) Register(r *Registry) {
 	register(r, pp.Files, pp.Transform, pp.Store, &ingestConfig{
 		id:               pp.ID,

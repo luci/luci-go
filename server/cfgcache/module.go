@@ -18,6 +18,7 @@ import (
 	"cmp"
 	"context"
 	"flag"
+	"fmt"
 
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/config/validation"
@@ -26,6 +27,9 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
 )
+
+// CronHandlerID is the server/cron handler ID registered by this module.
+const CronHandlerID = "cfgcache"
 
 // ModuleName can be used to refer to this module when declaring dependencies.
 var ModuleName = module.RegisterName("go.chromium.org/luci/server/cfgcache")
@@ -56,21 +60,43 @@ type ModuleOptions struct {
 	// want to replace `Rules` then you should replace `Vars` as well.
 	Rules *validation.RuleSet
 
+	// CronDispatcher is the cron Dispatcher to use when installing cron handlers.
+	//
+	// Default is [cron.Default].
+	CronDispatcher *cron.Dispatcher
+
 	// DisableValidation, if true, causes the module initialization to skip
 	// registration of config validation rules with [validation.Rules].
 	//
 	// You can use this for backend deployments which won't serve validation
 	// requests.
 	DisableValidation bool
+
+	// DisableCron, if true, causes the module initialization to skip
+	// registration of the "cfgcache" endpoint with [cron.RegisterHandler].
+	//
+	// You can use this for frontend deployments which won't serve cron.
+	DisableCron bool
+
+	// MaxIngestMemoryMB is the maximum total memory (in MiB) of raw config
+	// snapshots to ingest concurrently in the cron handler.
+	//
+	// If <= 0, defaults to 64.
+	MaxIngestMemoryMB int64
 }
 
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	f.BoolVar(&o.DisableValidation, "cfgcache-disable-validation", false,
 		"Disables registration of config validation rules.")
+	f.BoolVar(&o.DisableCron, "cfgcache-disable-cron", false,
+		fmt.Sprintf("Disables the %q cron handler.", CronHandlerID))
+	f.Int64Var(&o.MaxIngestMemoryMB, "cfgcache-max-ingest-memory-mb", defaultMaxIngestMemoryMB,
+		"Maximum total memory (in MiB) of raw config snapshots to ingest concurrently in the cron handler.")
 }
 
-// NewModule returns a server module that registers cfgcache validation rules.
+// NewModule returns a server module that registers cfgcache validation rules
+// and the [CronHandlerID] cron handler.
 //
 // `reg` is required! Remember to explicitly register all your
 // [ServicePipeline] and [ProjectPipeline] configs with `reg` before
@@ -123,7 +149,9 @@ func (m *serverModule) Dependencies() []module.Dependency {
 	}
 
 	add(module.RequiredDependency(cfgmodule.ModuleName))
-	add(module.OptionalDependency(cron.ModuleName))
+	if !m.opts.DisableCron {
+		add(module.RequiredDependency(cron.ModuleName))
+	}
 	for _, ic := range reg.ingestConfigs {
 		for _, dep := range ic.store.ModuleDependencies() {
 			add(dep)
@@ -136,6 +164,7 @@ func (m *serverModule) Dependencies() []module.Dependency {
 // Initialize is part of module.Module interface.
 func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	reg := m.registry()
+	reg.MaxIngestMemoryMB = cmp.Or(m.opts.MaxIngestMemoryMB, reg.MaxIngestMemoryMB, int64(defaultMaxIngestMemoryMB))
 
 	if m.vars() != cmp.Or(m.rules().Vars, &vars.Vars) {
 		panic("ModuleOptions: Vars != Rules.Vars")
@@ -147,6 +176,9 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	if !m.opts.DisableValidation {
 		reg.InstallValidationRules(m.rules())
+	}
+	if !m.opts.DisableCron {
+		m.cron().RegisterHandler(CronHandlerID, reg.IngestToStorage)
 	}
 	return ctx, nil
 }
@@ -161,4 +193,8 @@ func (m *serverModule) rules() *validation.RuleSet {
 
 func (m *serverModule) vars() *vars.VarSet {
 	return cmp.Or(m.opts.Vars, &vars.Vars)
+}
+
+func (m *serverModule) cron() *cron.Dispatcher {
+	return cmp.Or(m.opts.CronDispatcher, &cron.Default)
 }
