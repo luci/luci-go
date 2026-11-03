@@ -26,9 +26,12 @@ import (
 
 // Meta holds the version metadata for a stored config snapshot.
 type Meta struct {
-	// InputHash is the combined content hash of the source config files in the
-	// snapshot.
+	// InputHash is the combined content hash of the source config names and
+	// files in the snapshot.
 	InputHash string
+
+	// InputSize is the combined size of the input configuration files.
+	InputSize int64
 
 	// TransformVersion is the [ServicePipeline.TransformVersion] or
 	// [ProjectPipeline.TransformVersion] that produced the stored config.
@@ -42,7 +45,9 @@ type Meta struct {
 //
 // ContentSize is a computed output, and so is not considered.
 func (m Meta) SameInput(other Meta) bool {
-	return m.TransformVersion == other.TransformVersion && m.InputHash == other.InputHash
+	return m.TransformVersion == other.TransformVersion &&
+		m.InputHash == other.InputHash &&
+		m.InputSize == other.InputSize
 }
 
 // Store manages persistence (to durable storage, like a database) of

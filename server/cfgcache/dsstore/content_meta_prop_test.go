@@ -34,12 +34,13 @@ func TestContentMetaProperty(t *testing.T) {
 			PipelineID: "stuff",
 			Meta: cfgcache.Meta{
 				InputHash:        "coolbeans",
+				InputSize:        20,
 				TransformVersion: 10,
 				ContentSize:      1000,
 			},
 		}
 
-		propEnc := "c3R1ZmY|coolbeans|10|1000"
+		propEnc := "c3R1ZmY|coolbeans|20|10|1000"
 
 		assert.That(t, prop.String(), should.Equal(propEnc))
 
@@ -47,5 +48,10 @@ func TestContentMetaProperty(t *testing.T) {
 		assert.NoErr(t, dec.FromProperty(datastore.MkProperty(propEnc)))
 
 		assert.That(t, dec, should.Match(prop))
+		assert.That(t, dec.SameInput(prop.Meta), should.BeTrue)
+
+		diffInputSize := prop.Meta
+		diffInputSize.InputSize = 21
+		assert.That(t, dec.SameInput(diffInputSize), should.BeFalse)
 	})
 }

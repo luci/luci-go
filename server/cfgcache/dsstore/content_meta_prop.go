@@ -28,7 +28,7 @@ import (
 
 // contentMetaProperty renders to:
 //
-// "base64URL(PipelineID)|InputHash|TransformVersion|ContentSize"
+// "base64URL(PipelineID)|InputHash|InputSize|TransformVersion|ContentSize"
 //
 // Including base64URL(PipelineID) as the prefix allows LoadMeta to execute a
 // range scan on the built-in single-property "Meta" index while projecting
@@ -46,9 +46,9 @@ func (c contentMetaProperty) String() string {
 	// datastore library to properly handle the PropertyConverter protocol; we
 	// use a value receiver just for String() to allow this to be printed nicely
 	// in logs/errors without needing to take its address.
-	return fmt.Sprintf("%s|%s|%d|%d",
+	return fmt.Sprintf("%s|%s|%d|%d|%d",
 		base64.RawURLEncoding.EncodeToString([]byte(c.PipelineID)),
-		c.InputHash, c.TransformVersion, c.ContentSize)
+		c.InputHash, c.InputSize, c.TransformVersion, c.ContentSize)
 }
 
 func (c *contentMetaProperty) ToProperty() (datastore.Property, error) {
@@ -61,22 +61,24 @@ func (c *contentMetaProperty) FromProperty(p datastore.Property) error {
 		return err
 	}
 	toks := bytes.Split(raw.([]byte), []byte("|"))
-	if len(toks) != 4 {
-		return errors.Fmt("contentMetaProperty: expected 4 tokens: %q", raw)
+	if len(toks) != 5 {
+		return errors.Fmt("contentMetaProperty: expected 5 tokens: %q", raw)
 	}
 	id, err := base64.RawURLEncoding.AppendDecode(nil, toks[0])
 	if err != nil {
 		return err
 	}
 	hash := string(toks[1])
-	vers, err1 := strconv.Atoi(string(toks[2]))
-	size, err2 := strconv.ParseInt(string(toks[3]), 10, 64)
-	if err := errors.Join(err1, err2); err != nil {
+	inSize, err1 := strconv.ParseInt(string(toks[2]), 10, 64)
+	vers, err2 := strconv.Atoi(string(toks[3]))
+	contentSize, err3 := strconv.ParseInt(string(toks[4]), 10, 64)
+	if err := errors.Join(err1, err2, err3); err != nil {
 		return err
 	}
 	c.PipelineID = string(id)
 	c.InputHash = hash
+	c.InputSize = inSize
 	c.TransformVersion = vers
-	c.ContentSize = size
+	c.ContentSize = contentSize
 	return nil
 }
