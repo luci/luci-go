@@ -135,7 +135,7 @@ func (ic *ingestConfig) validateAndTransform(ctx *validation.Context, configSet 
 				continue
 			}
 			ctx.SetFile(path)
-			val, err := file.unmarshal(string(rawFiles[path]))
+			val, err := file.unmarshal(rawFiles[path])
 			if err != nil {
 				ctx.Errorf("failed to unmarshal: %s", err)
 				hasUnmarshalErr = true

@@ -108,7 +108,7 @@ func TestValidationAndTransform(t *testing.T) {
 		defaulted := &SingleFile[*string]{
 			Path:       "label.txt",
 			NewDefault: func() *string { ret := "banana"; return &ret },
-			Unmarshal:  func(raw string) (*string, error) { return &raw, nil },
+			Unmarshal:  func(raw []byte) (*string, error) { ret := string(raw); return &ret, nil },
 		}
 
 		(&ProjectPipeline[*durationpb.Duration]{
@@ -139,7 +139,9 @@ func TestValidationAndTransform(t *testing.T) {
 
 		projShards := &RegexFile[int]{
 			PathRegex: `silly/.*\.txt`,
-			Unmarshal: strconv.Atoi,
+			Unmarshal: func(raw []byte) (int, error) {
+				return strconv.Atoi(string(raw))
+			},
 		}
 		var gotSum int
 		(&ProjectPipeline[*timestamppb.Timestamp]{
@@ -184,7 +186,9 @@ func TestValidationAndTransform(t *testing.T) {
 		}
 		intLike := &RegexFile[int]{
 			PathRegex: `over/a.*`,
-			Unmarshal: strconv.Atoi,
+			Unmarshal: func(raw []byte) (int, error) {
+				return strconv.Atoi(string(raw))
+			},
 		}
 		(&ServicePipeline[*durationpb.Duration]{
 			ID:               "svc-overlap",

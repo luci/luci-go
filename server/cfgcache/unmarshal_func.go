@@ -15,6 +15,8 @@
 package cfgcache
 
 import (
+	"bytes"
+
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
@@ -24,7 +26,7 @@ import (
 type (
 	// UnmarshalFunc is the type of function used to unmarshal raw config data
 	// from LUCI Config into a `T`.
-	UnmarshalFunc[T any] func(raw string) (T, error)
+	UnmarshalFunc[T any] func(raw []byte) (T, error)
 
 	// genericUnmarshalFunc is a type-erased UnmarshalFunc.
 	genericUnmarshalFunc = UnmarshalFunc[any]
@@ -32,7 +34,7 @@ type (
 
 func (u UnmarshalFunc[T]) asGeneric() (genericUnmarshalFunc, error) {
 	if u != nil {
-		return func(raw string) (any, error) {
+		return func(raw []byte) (any, error) {
 			return u(raw)
 		}, nil
 	}
@@ -40,9 +42,9 @@ func (u UnmarshalFunc[T]) asGeneric() (genericUnmarshalFunc, error) {
 	var zero T
 	if pm, ok := any(zero).(proto.Message); ok && pm.ProtoReflect() != nil {
 		mt := pm.ProtoReflect().Type()
-		return func(raw string) (any, error) {
+		return func(raw []byte) (any, error) {
 			ret := mt.New().Interface()
-			if err := prototext.Unmarshal([]byte(raw), ret); err != nil {
+			if err := prototext.Unmarshal(raw, ret); err != nil {
 				return nil, errors.Fmt("as text proto: %w", err)
 			}
 			return ret, nil
@@ -51,12 +53,12 @@ func (u UnmarshalFunc[T]) asGeneric() (genericUnmarshalFunc, error) {
 
 	switch any(zero).(type) {
 	case string:
-		return func(raw string) (any, error) {
-			return raw, nil
+		return func(raw []byte) (any, error) {
+			return string(raw), nil
 		}, nil
 	case []byte:
-		return func(raw string) (any, error) {
-			return []byte(raw), nil
+		return func(raw []byte) (any, error) {
+			return bytes.Clone(raw), nil
 		}, nil
 	default:
 		return nil, errors.Fmt("Unmarshal must be set for non-proto type %T", zero)

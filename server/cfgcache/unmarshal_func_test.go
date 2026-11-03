@@ -32,11 +32,11 @@ func TestUnmarshalFuncAsGeneric(t *testing.T) {
 		fn, err := (UnmarshalFunc[*durationpb.Duration](nil)).asGeneric()
 		assert.NoErr(t, err)
 
-		got, err := fn("seconds: 42")
+		got, err := fn([]byte("seconds: 42"))
 		assert.NoErr(t, err)
 		assert.Loosely(t, got, should.Match(&durationpb.Duration{Seconds: 42}))
 
-		_, err = fn("not_a_field: 42")
+		_, err = fn([]byte("not_a_field: 42"))
 		assert.ErrIsLike(t, err, "as text proto")
 	})
 
@@ -45,7 +45,7 @@ func TestUnmarshalFuncAsGeneric(t *testing.T) {
 		fn, err := (UnmarshalFunc[string](nil)).asGeneric()
 		assert.NoErr(t, err)
 
-		got, err := fn("hello")
+		got, err := fn([]byte("hello"))
 		assert.NoErr(t, err)
 		assert.Loosely(t, got, should.Equal("hello"))
 	})
@@ -55,21 +55,26 @@ func TestUnmarshalFuncAsGeneric(t *testing.T) {
 		fn, err := (UnmarshalFunc[[]byte](nil)).asGeneric()
 		assert.NoErr(t, err)
 
-		got, err := fn("world")
+		in := []byte("world")
+		got, err := fn(in)
 		assert.NoErr(t, err)
-		assert.Loosely(t, got, should.Match([]byte("world")))
+		gotBytes := got.([]byte)
+		assert.That(t, gotBytes, should.Match([]byte("world")))
+		assert.That(t, &gotBytes[0], should.NotEqual(&in[0]))
 	})
 
 	t.Run("custom", func(t *testing.T) {
 		t.Parallel()
-		fn, err := UnmarshalFunc[int](strconv.Atoi).asGeneric()
+		fn, err := UnmarshalFunc[int](func(raw []byte) (int, error) {
+			return strconv.Atoi(string(raw))
+		}).asGeneric()
 		assert.NoErr(t, err)
 
-		got, err := fn("123")
+		got, err := fn([]byte("123"))
 		assert.NoErr(t, err)
 		assert.Loosely(t, got, should.Equal(123))
 
-		_, err = fn("bad")
+		_, err = fn([]byte("bad"))
 		assert.ErrIsLike(t, err, "invalid syntax")
 	})
 
