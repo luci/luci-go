@@ -96,7 +96,7 @@ func (r ReachableInvocations) Batches() []ReachableInvocations {
 // IDSet returns the set of invocation IDs included in the list of
 // reachable invocations.
 func (r ReachableInvocations) IDSet() (invocations.IDSet, error) {
-	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+	// Yes, this is an artificial limit.  With 40,000 invocations you are already likely
 	// to run into problems if you try to process all of these in one go (e.g. in a
 	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
 	if len(r.Invocations) > MaxNodes {
@@ -125,7 +125,7 @@ func (r ReachableInvocations) WithTestResultsIDSet() (invocations.IDSet, error) 
 			result[id] = struct{}{}
 		}
 	}
-	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+	// Yes, this is an artificial limit.  With 40,000 invocations you are already likely
 	// to run into problems if you try to process all of these in one go (e.g. in a
 	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
 	if len(result) > MaxNodes {
@@ -143,7 +143,7 @@ func (r ReachableInvocations) WithExonerationsIDSet() (invocations.IDSet, error)
 			result[id] = struct{}{}
 		}
 	}
-	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+	// Yes, this is an artificial limit.  With 40,000 invocations you are already likely
 	// to run into problems if you try to process all of these in one go (e.g. in a
 	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
 	if len(result) > MaxNodes {
@@ -161,7 +161,7 @@ func (r ReachableInvocations) WithArtifactsIDSet() (invocations.IDSet, error) {
 			result[id] = struct{}{}
 		}
 	}
-	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+	// Yes, this is an artificial limit.  With 40,000 invocations you are already likely
 	// to run into problems if you try to process all of these in one go (e.g. in a
 	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
 	if len(result) > MaxNodes {

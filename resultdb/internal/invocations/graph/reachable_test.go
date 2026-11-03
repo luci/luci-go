@@ -15,6 +15,7 @@
 package graph
 
 import (
+	"strconv"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -97,6 +98,59 @@ func TestReachableInvocations(t *testing.T) {
 			invIDs, err := invs.WithArtifactsIDSet()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, invIDs, should.Match(invocations.NewIDSet("0", "2", "3")))
+		})
+		t.Run(`MaxNodes limit`, func(t *ftt.Test) {
+			large := NewReachableInvocations()
+			for i := range MaxNodes {
+				large.Invocations[invocations.ID(strconv.Itoa(i))] = ReachableInvocation{
+					HasTestResults:      true,
+					HasTestExonerations: true,
+					HasArtifacts:        true,
+				}
+			}
+
+			invIDs, err := large.IDSet()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invIDs, should.HaveLength(MaxNodes))
+
+			// Adding an empty invocation pushes total nodes past MaxNodes, while
+			// filtered ID sets stay at MaxNodes.
+			extraID := invocations.ID(strconv.Itoa(MaxNodes))
+			large.Invocations[extraID] = ReachableInvocation{}
+
+			_, err = large.IDSet()
+			assert.Loosely(t, err, should.ErrLike("more than 40000 invocations match"))
+			assert.Loosely(t, TooManyTag.In(err), should.BeTrue)
+
+			invIDs, err = large.WithTestResultsIDSet()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invIDs, should.HaveLength(MaxNodes))
+
+			invIDs, err = large.WithExonerationsIDSet()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invIDs, should.HaveLength(MaxNodes))
+
+			invIDs, err = large.WithArtifactsIDSet()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invIDs, should.HaveLength(MaxNodes))
+
+			large.Invocations[extraID] = ReachableInvocation{
+				HasTestResults:      true,
+				HasTestExonerations: true,
+				HasArtifacts:        true,
+			}
+
+			_, err = large.WithTestResultsIDSet()
+			assert.Loosely(t, err, should.ErrLike("more than 40000 invocations match"))
+			assert.Loosely(t, TooManyTag.In(err), should.BeTrue)
+
+			_, err = large.WithExonerationsIDSet()
+			assert.Loosely(t, err, should.ErrLike("more than 40000 invocations match"))
+			assert.Loosely(t, TooManyTag.In(err), should.BeTrue)
+
+			_, err = large.WithArtifactsIDSet()
+			assert.Loosely(t, err, should.ErrLike("more than 40000 invocations match"))
+			assert.Loosely(t, TooManyTag.In(err), should.BeTrue)
 		})
 	})
 	ftt.Run(`Union`, t, func(t *ftt.Test) {
