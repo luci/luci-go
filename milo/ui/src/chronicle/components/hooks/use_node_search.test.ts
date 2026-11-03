@@ -24,6 +24,9 @@ import {
 } from '../../utils/search_index_worker';
 
 import {
+  buildMatchIndexMap,
+  findNextMatchIndex,
+  getNodeMatchIndex,
   SearchableNode,
   UseNodeSearchOptions,
   useNodeSearch,
@@ -108,16 +111,18 @@ describe('useNodeSearch', () => {
       'check-beta',
       'check-gamma',
     ]);
-    // Before debounce elapses, auto-selection has not fired yet.
-    expect(result.current.selectedNodeId).toBeUndefined();
+    // When nothing is selected, typing text that matches at least one node immediately selects the first result.
+    expect(result.current.selectedNodeId).toBe('check-alpha');
+    expect(result.current.safeMatchIndex).toBe(0);
+    expect(result.current.isCurrentMatchSelected).toBe(true);
 
     act(() => {
       jest.advanceTimersByTime(350);
     });
 
-    // Automatically selects the first match after query debounce.
     expect(result.current.selectedNodeId).toBe('check-alpha');
     expect(result.current.safeMatchIndex).toBe(0);
+    expect(result.current.isCurrentMatchSelected).toBe(true);
   });
 
   it('preserves existing selection on search if the selected node already matches', () => {
@@ -403,17 +408,6 @@ describe('useNodeSearch', () => {
       valueDataMap: undefined,
     });
 
-    // User types a query and debounce elapses before the background worker finishes.
-    act(() => {
-      result.current.handleSearchChange('gamma');
-    });
-    act(() => {
-      jest.advanceTimersByTime(350);
-    });
-
-    expect(result.current.matchedNodeIds).toEqual([]);
-    expect(result.current.selectedNodeId).toBeUndefined();
-
     // Background worker finishes and posts the precomputed searchIndexMap.
     act(() => {
       workerInstance!.onmessage?.({
@@ -425,6 +419,12 @@ describe('useNodeSearch', () => {
 
     expect(workerInstance!.terminate).toHaveBeenCalled();
     expect(result.current.isIndexReady).toBe(true);
+
+    // User types a query once the background worker finishes and input enables.
+    act(() => {
+      result.current.handleSearchChange('gamma');
+    });
+
     expect(result.current.matchedNodeIds).toEqual(['check-gamma']);
     expect(result.current.selectedNodeId).toBe('check-gamma');
   });
@@ -488,5 +488,473 @@ describe('useNodeSearch', () => {
     expect(result.current.matchedNodeIds).toEqual(['check-gamma']);
     expect(result.current.selectedNodeId).toBe('check-gamma');
     expect(onSettledMatch).toHaveBeenCalledWith('check-gamma');
+  });
+
+  it('does not hijack a manual non-matching selection when new nodes are retrieved from the backend', () => {
+    let currentNodes = SAMPLE_NODES;
+    const { result, rerender } = renderHook(() =>
+      useTestNodeSearch({ nodes: currentNodes }),
+    );
+
+    // 1. Search 'build' -> check-alpha selected
+    act(() => {
+      result.current.handleSearchChange('build');
+    });
+    expect(result.current.selectedNodeId).toBe('check-alpha');
+
+    // 2. User manually selects non-matching node 'stage-deploy'
+    act(() => {
+      result.current.setSelectedNodeId('stage-deploy');
+    });
+    expect(result.current.selectedNodeId).toBe('stage-deploy');
+    expect(result.current.isCurrentMatchSelected).toBe(false);
+
+    // 3. Updated workplan arrives (nodes update)
+    currentNodes = [
+      ...SAMPLE_NODES,
+      { id: 'check-delta', label: 'Build Delta' },
+    ];
+    rerender();
+
+    // Manual selection must NOT be hijacked
+    expect(result.current.selectedNodeId).toBe('stage-deploy');
+    expect(result.current.isCurrentMatchSelected).toBe(false);
+
+    // 4. Stepping to next match returns to the search match
+    act(() => {
+      result.current.handleNextMatch();
+    });
+    expect(result.current.selectedNodeId).toBe('check-alpha');
+    expect(result.current.isCurrentMatchSelected).toBe(true);
+  });
+
+  describe('tracking selection via search results across keystrokes and manual selection', () => {
+    it('tracks whether current selection was selected because of search results through all state transitions', () => {
+      const { result } = renderHook(() => useTestNodeSearch());
+
+      // 1) when nothing is selected and user types text that matches at least one node:
+      // selects first result
+      act(() => {
+        result.current.handleSearchChange('build');
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+      expect(result.current.safeMatchIndex).toBe(0);
+
+      // If currently selected item was selected because of search results and remains a result after key is pressed,
+      // it should remain selected.
+      act(() => {
+        result.current.handleSearchChange('build a');
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+      expect(result.current.safeMatchIndex).toBe(0);
+
+      // If it was selected because of the search results and is no longer a result, we should select the first result.
+      act(() => {
+        result.current.handleSearchChange('build b');
+      });
+      expect(result.current.selectedNodeId).toBe('check-beta');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+      expect(result.current.safeMatchIndex).toBe(0);
+
+      // User manually selects a node that is NOT a search result ('stage-deploy' for 'build b').
+      act(() => {
+        result.current.setSelectedNodeId('stage-deploy');
+      });
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+
+      // If the currently selected item was not selected because of the search results and still is not a result,
+      // it should remain selected and remain not selected because of the search results, with "? of X" displayed.
+      act(() => {
+        result.current.handleSearchChange('build beta');
+      });
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+      expect(result.current.matchedNodeIds).toEqual(['check-beta']);
+
+      // If the currently selected item was not selected because of the search results and but is now a result,
+      // it should remain selected and should now be considered selected because of the search results.
+      act(() => {
+        result.current.handleSearchChange('deploy');
+      });
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+      expect(result.current.safeMatchIndex).toBe(0);
+
+      // User clears search by emptying input
+      act(() => {
+        result.current.handleSearchChange('');
+      });
+      expect(result.current.selectedNodeId).toBeUndefined();
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+    });
+
+    it('considers selection via search when user clicks next/prev buttons or manually selects a search result', () => {
+      const { result } = renderHook(() => useTestNodeSearch());
+
+      act(() => {
+        result.current.handleSearchChange('build');
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+
+      // 2) when the user uses the next/prev buttons in the search results panel
+      act(() => {
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-beta');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+
+      act(() => {
+        result.current.handlePrevMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+
+      // 3) when the user manually selects a node that is a search result
+      act(() => {
+        result.current.setSelectedNodeId('check-gamma');
+      });
+      expect(result.current.selectedNodeId).toBe('check-gamma');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+      expect(result.current.safeMatchIndex).toBe(2);
+
+      // Deselecting by clicking canvas background sets selection to undefined
+      act(() => {
+        result.current.setSelectedNodeId(undefined);
+      });
+      expect(result.current.selectedNodeId).toBeUndefined();
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+      // "? of 3"
+      expect(result.current.safeMatchIndex).toBe(2);
+
+      // Pressing Next returns to stored match (check-gamma) and re-enables search selection
+      act(() => {
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-gamma');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+    });
+
+    it('clears selection when an item selected via search becomes non-matching and there are 0 matches', () => {
+      const { result } = renderHook(() => useTestNodeSearch());
+
+      act(() => {
+        result.current.handleSearchChange('gamma');
+      });
+      expect(result.current.selectedNodeId).toBe('check-gamma');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+
+      act(() => {
+        result.current.handleSearchChange('gammaxyz');
+      });
+      expect(result.current.matchedNodeIds).toEqual([]);
+      expect(result.current.selectedNodeId).toBeUndefined();
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+    });
+
+    it('advances to the next match in graph order when the query changes and the selected match no longer matches', () => {
+      const { result } = renderHook(() => useTestNodeSearch());
+
+      act(() => {
+        result.current.handleSearchChange('build');
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+
+      // Step to check-beta (index 1 of [check-alpha, check-beta, check-gamma])
+      act(() => {
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-beta');
+
+      // Now change search to 'gamma': check-beta no longer matches.
+      // Next match in graph order after check-beta is check-gamma.
+      act(() => {
+        result.current.handleSearchChange('gamma');
+      });
+      expect(result.current.selectedNodeId).toBe('check-gamma');
+      expect(result.current.safeMatchIndex).toBe(0);
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+
+      // From check-gamma, change query to 'alpha': next match wraps around to check-alpha.
+      act(() => {
+        result.current.handleSearchChange('alpha');
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+      expect(result.current.safeMatchIndex).toBe(0);
+    });
+
+    it('handles search terms changing while non-matching item is selected, preserving match memory if still matching', () => {
+      const { result } = renderHook(() => useTestNodeSearch());
+
+      // Search 'build' -> [check-alpha, check-beta, check-gamma]
+      act(() => {
+        result.current.handleSearchChange('build');
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+
+      // Step to check-gamma (index 2)
+      act(() => {
+        result.current.handleNextMatch();
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-gamma');
+
+      // User selects a non-matching item (stage-deploy)
+      act(() => {
+        result.current.setSelectedNodeId('stage-deploy');
+      });
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+
+      // Now user modifies search terms to 'build b':
+      // stage-deploy is still non-matching, so selection remains stage-deploy.
+      // But matched index is reset to 0 (pointing to check-beta).
+      act(() => {
+        result.current.handleSearchChange('build b');
+      });
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+      expect(result.current.matchedNodeIds).toEqual(['check-beta']);
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+
+      // Pressing Next advances to the next matching node (check-beta)
+      act(() => {
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-beta');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+
+      // Select stage-deploy again and change search to 'build'
+      act(() => {
+        result.current.setSelectedNodeId('stage-deploy');
+      });
+      act(() => {
+        result.current.handleSearchChange('build');
+      });
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+
+      // Pressing Prev from stage-deploy returns to the previously navigated match (check-beta)
+      act(() => {
+        result.current.handlePrevMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-beta');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+
+      // Pressing Prev again steps to the previous match before check-beta (check-alpha)
+      act(() => {
+        result.current.handlePrevMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+    });
+
+    it('returns to Match 0 symmetrically when clicking off-match canvas node while on Match 0', () => {
+      const { result } = renderHook(() => useTestNodeSearch());
+
+      // Search 'build' -> [check-alpha, check-beta, check-gamma]
+      act(() => {
+        result.current.handleSearchChange('build');
+      });
+      // Match 0 (check-alpha) is auto-selected
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+      expect(result.current.safeMatchIndex).toBe(0);
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+
+      // User clicks non-matching canvas node (stage-deploy)
+      act(() => {
+        result.current.setSelectedNodeId('stage-deploy');
+      });
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+      expect(result.current.safeMatchIndex).toBe(0);
+
+      // Pressing Next returns to Match 0 (check-alpha) rather than skipping ahead
+      act(() => {
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+      expect(result.current.safeMatchIndex).toBe(0);
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+
+      // Click off-match node again and verify Prev also returns to Match 0
+      act(() => {
+        result.current.setSelectedNodeId('stage-deploy');
+      });
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+
+      act(() => {
+        result.current.handlePrevMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+      expect(result.current.safeMatchIndex).toBe(0);
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+    });
+
+    it('preserves the last-selected match when typing more after clicking canvas (no node selected)', () => {
+      const { result } = renderHook(() => useTestNodeSearch());
+
+      // 1. Type query 'build' -> [check-alpha, check-beta, check-gamma]
+      act(() => {
+        result.current.handleSearchChange('build');
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+
+      // 2. Click Next -> steps to check-beta
+      act(() => {
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-beta');
+
+      // 3. Select canvas (no node selected)
+      act(() => {
+        result.current.setSelectedNodeId(undefined);
+      });
+      expect(result.current.selectedNodeId).toBeUndefined();
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+
+      // 4. Type some more (query refined to 'build b') where check-beta is still a valid match
+      act(() => {
+        result.current.handleSearchChange('build b');
+      });
+      // Should NOT switch to the first match if check-beta is still valid; it should select check-beta
+      expect(result.current.selectedNodeId).toBe('check-beta');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+    });
+
+    it('advances to next match in graph order when typing more after clicking canvas if last-selected match no longer matches', () => {
+      const { result } = renderHook(() => useTestNodeSearch());
+
+      // Type 'build' -> [check-alpha, check-beta, check-gamma]
+      act(() => {
+        result.current.handleSearchChange('build');
+      });
+      // Step to check-beta
+      act(() => {
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-beta');
+
+      // Click canvas (no node selected)
+      act(() => {
+        result.current.setSelectedNodeId(undefined);
+      });
+      expect(result.current.selectedNodeId).toBeUndefined();
+
+      // Type 'gamma': check-beta no longer matches. Next match in graph order after check-beta is check-gamma.
+      act(() => {
+        result.current.handleSearchChange('gamma');
+      });
+      expect(result.current.selectedNodeId).toBe('check-gamma');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+    });
+
+    it('returns to previously navigated match on Next after selecting non-matching node and typing more text', () => {
+      const { result } = renderHook(() => useTestNodeSearch());
+
+      // 1. Type query 'build' -> [check-alpha, check-beta, check-gamma]
+      act(() => {
+        result.current.handleSearchChange('build');
+      });
+      expect(result.current.selectedNodeId).toBe('check-alpha');
+
+      // 2. Click Next -> steps to check-beta
+      act(() => {
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-beta');
+
+      // 3. Select non-matching node (stage-deploy) on canvas
+      act(() => {
+        result.current.setSelectedNodeId('stage-deploy');
+      });
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+
+      // 4. Type some more ('build b') where check-beta is still a match
+      act(() => {
+        result.current.handleSearchChange('build b');
+      });
+      // Selection should remain on stage-deploy (manual selection not hijacked)
+      expect(result.current.selectedNodeId).toBe('stage-deploy');
+      expect(result.current.isCurrentMatchSelected).toBe(false);
+
+      // 5. Click Next -> should return to check-beta (the previously navigated match)
+      act(() => {
+        result.current.handleNextMatch();
+      });
+      expect(result.current.selectedNodeId).toBe('check-beta');
+      expect(result.current.isCurrentMatchSelected).toBe(true);
+    });
+  });
+
+  describe('buildMatchIndexMap and getNodeMatchIndex', () => {
+    it('maps direct IDs and base IDs without prefix to match indices', () => {
+      const matchMap = buildMatchIndexMap(['Ccheck123:R1', 'Sstage456']);
+      expect(matchMap.get('Ccheck123:R1')).toBe(0);
+      expect(matchMap.get('check123')).toBe(0);
+      expect(matchMap.get('Sstage456')).toBe(1);
+      expect(matchMap.get('stage456')).toBe(1);
+      expect(matchMap.get('nonexistent')).toBeUndefined();
+    });
+
+    it('preserves the earliest index for duplicates or base ID collisions', () => {
+      const matchMap = buildMatchIndexMap(['Ccheck123:R1', 'check123']);
+      expect(matchMap.get('Ccheck123:R1')).toBe(0);
+      expect(matchMap.get('check123')).toBe(0);
+    });
+
+    it('finds node match index using either array or precomputed Map', () => {
+      const matches = ['check123', 'stage456'];
+      const matchMap = buildMatchIndexMap(matches);
+
+      expect(getNodeMatchIndex('check123', matches)).toBe(0);
+      expect(getNodeMatchIndex('Ccheck123:R1', matches)).toBe(0);
+      expect(getNodeMatchIndex('stage456', matches)).toBe(1);
+      expect(getNodeMatchIndex('Sstage456:A1', matches)).toBe(1);
+      expect(getNodeMatchIndex('nonexistent', matches)).toBe(-1);
+
+      expect(getNodeMatchIndex('check123', matchMap)).toBe(0);
+      expect(getNodeMatchIndex('Ccheck123:R1', matchMap)).toBe(0);
+      expect(getNodeMatchIndex('stage456', matchMap)).toBe(1);
+      expect(getNodeMatchIndex('Sstage456:A1', matchMap)).toBe(1);
+      expect(getNodeMatchIndex('nonexistent', matchMap)).toBe(-1);
+    });
+  });
+
+  describe('findNextMatchIndex', () => {
+    const testNodes: SearchableNode[] = [
+      { id: 'node-0', label: 'Node 0' },
+      { id: 'node-1', label: 'Node 1' },
+      { id: 'node-2', label: 'Node 2' },
+      { id: 'node-3', label: 'Node 3' },
+      { id: 'node-4', label: 'Node 4' },
+    ];
+    const matches = ['node-1', 'node-3'];
+
+    it('finds the next match after a selected node', () => {
+      // Selected node-0 -> next match in nodes is node-1 (match index 0)
+      expect(findNextMatchIndex('node-0', testNodes, matches)).toBe(0);
+      // Selected node-1 -> next match in nodes is node-3 (match index 1)
+      expect(findNextMatchIndex('node-1', testNodes, matches)).toBe(1);
+      // Selected node-2 -> next match in nodes is node-3 (match index 1)
+      expect(findNextMatchIndex('node-2', testNodes, matches)).toBe(1);
+    });
+
+    it('wraps around to the first match when at or past the last match', () => {
+      // Selected node-3 -> next match wraps around to node-1 (match index 0)
+      expect(findNextMatchIndex('node-3', testNodes, matches)).toBe(0);
+      // Selected node-4 -> next match wraps around to node-1 (match index 0)
+      expect(findNextMatchIndex('node-4', testNodes, matches)).toBe(0);
+    });
+
+    it('returns 0 when selectedId is undefined', () => {
+      expect(findNextMatchIndex(undefined, testNodes, matches)).toBe(0);
+    });
+
+    it('handles empty matches gracefully', () => {
+      expect(findNextMatchIndex('node-1', testNodes, [])).toBe(0);
+    });
   });
 });

@@ -576,4 +576,118 @@ describe('GraphView filter match navigation', () => {
 
     expect(searchInput).toBeEnabled();
   });
+
+  it('does not alternate between selecting and unselecting across consecutive keystrokes', async () => {
+    render(<TestWrapper />);
+
+    await screen.findByText('Alpha Stage 1');
+
+    const searchInput = screen.getByPlaceholderText('Search nodes...');
+    const matchDisplay = () => screen.getByTestId('search-match-display');
+    const selectedNodeId = () => screen.getByTestId('selected-node-id');
+
+    // Keystroke 1: nothing selected -> selects first match immediately
+    fireEvent.change(searchInput, { target: { value: 'Alpha' } });
+    expect(matchDisplay()).toHaveTextContent('Match 1 of 3');
+    expect(selectedNodeId()).toHaveTextContent('stage-alpha-1');
+
+    // Keystroke 2: remains a result -> remains selected (no unselecting/alternating)
+    fireEvent.change(searchInput, { target: { value: 'Alpha S' } });
+    expect(matchDisplay()).toHaveTextContent('Match 1 of 3');
+    expect(selectedNodeId()).toHaveTextContent('stage-alpha-1');
+
+    // Keystroke 3: stage-alpha-1 is no longer a result -> selects first match (stage-alpha-2)
+    fireEvent.change(searchInput, { target: { value: 'Alpha Stage 2' } });
+    expect(matchDisplay()).toHaveTextContent('Match 1 of 1');
+    expect(selectedNodeId()).toHaveTextContent('stage-alpha-2');
+
+    // Click non-matching node Beta Check 1
+    fireEvent.click(screen.getByText('Beta Check 1'));
+    expect(selectedNodeId()).toHaveTextContent('check-beta-1');
+    expect(matchDisplay()).toHaveTextContent('Match ? of 1');
+
+    // Keystroke 4: non-matching selection still does not match -> remains selected with "? of X"
+    fireEvent.change(searchInput, { target: { value: 'Alpha' } });
+    expect(selectedNodeId()).toHaveTextContent('check-beta-1');
+    expect(matchDisplay()).toHaveTextContent('Match ? of 3');
+
+    // Keystroke 5: query now matches the selected node -> remains selected and becomes selected via search
+    fireEvent.change(searchInput, { target: { value: 'Beta' } });
+    expect(selectedNodeId()).toHaveTextContent('check-beta-1');
+    expect(matchDisplay()).toHaveTextContent('Match 1 of 1');
+  });
+
+  it('preserves the last-selected match when typing more after unselecting selection (no node selected)', async () => {
+    const { container } = render(<TestWrapper />);
+
+    await screen.findByText('Alpha Stage 1');
+
+    const searchInput = screen.getByPlaceholderText('Search nodes...');
+    const matchDisplay = () => screen.getByTestId('search-match-display');
+    const selectedNodeId = () => screen.getByTestId('selected-node-id');
+
+    // 1. Type 'Alpha' -> selects stage-alpha-1
+    fireEvent.change(searchInput, { target: { value: 'Alpha' } });
+    expect(matchDisplay()).toHaveTextContent('Match 1 of 3');
+    expect(selectedNodeId()).toHaveTextContent('stage-alpha-1');
+
+    // 2. Click Next -> steps to stage-alpha-2
+    const nextButton = screen.getByRole('button', { name: 'Next match' });
+    fireEvent.click(nextButton);
+    expect(matchDisplay()).toHaveTextContent('Match 2 of 3');
+    expect(selectedNodeId()).toHaveTextContent('stage-alpha-2');
+
+    // 3. Unselect (clicking the pane or clicking the selected node)
+    const pane = container.querySelector('.react-flow__pane');
+    if (pane) {
+      fireEvent.click(pane);
+    } else {
+      fireEvent.click(screen.getByText('Alpha Stage 2'));
+    }
+    expect(selectedNodeId()).toHaveTextContent('none');
+    expect(matchDisplay()).toHaveTextContent('Match ? of 3');
+
+    // 4. Type some more where stage-alpha-2 is still a match ('Alpha Stage')
+    fireEvent.change(searchInput, { target: { value: 'Alpha Stage' } });
+    // Should NOT jump to Match 1 of 3 (stage-alpha-1); should select the last-selected match (stage-alpha-2)
+    expect(selectedNodeId()).toHaveTextContent('stage-alpha-2');
+    expect(matchDisplay()).toHaveTextContent('Match 2 of 3');
+  });
+
+  it('returns to previously navigated match on Next after selecting non-matching node and typing more text', async () => {
+    render(<TestWrapper />);
+
+    await screen.findByText('Alpha Stage 1');
+
+    const searchInput = screen.getByPlaceholderText('Search nodes...');
+    const matchDisplay = () => screen.getByTestId('search-match-display');
+    const selectedNodeId = () => screen.getByTestId('selected-node-id');
+
+    // 1. Type 'Alpha' -> selects stage-alpha-1
+    fireEvent.change(searchInput, { target: { value: 'Alpha' } });
+    expect(matchDisplay()).toHaveTextContent('Match 1 of 3');
+    expect(selectedNodeId()).toHaveTextContent('stage-alpha-1');
+
+    // 2. Click Next -> steps to stage-alpha-2
+    const nextButton = screen.getByRole('button', { name: 'Next match' });
+    fireEvent.click(nextButton);
+    expect(matchDisplay()).toHaveTextContent('Match 2 of 3');
+    expect(selectedNodeId()).toHaveTextContent('stage-alpha-2');
+
+    // 3. Select non-matching node (Beta Check 1)
+    fireEvent.click(screen.getByText('Beta Check 1'));
+    expect(selectedNodeId()).toHaveTextContent('check-beta-1');
+    expect(matchDisplay()).toHaveTextContent('Match ? of 3');
+
+    // 4. Type some more where stage-alpha-2 is still a match ('Alpha Stage')
+    fireEvent.change(searchInput, { target: { value: 'Alpha Stage' } });
+    // Should retain manual selection check-beta-1 without hijacking
+    expect(selectedNodeId()).toHaveTextContent('check-beta-1');
+    expect(matchDisplay()).toHaveTextContent('Match ? of 3');
+
+    // 5. Click Next -> returns to stage-alpha-2 (the previously navigated match)
+    fireEvent.click(nextButton);
+    expect(selectedNodeId()).toHaveTextContent('stage-alpha-2');
+    expect(matchDisplay()).toHaveTextContent('Match 2 of 3');
+  });
 });
