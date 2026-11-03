@@ -130,6 +130,16 @@ import {
 } from "./chromeos.pb";
 import { ListCustomerSlosRequest, ListCustomerSlosResponse } from "./customer_slos.pb";
 import {
+  CreatePhysicalSiteRequest,
+  CreatePhysicalSiteResponse,
+  DeletePhysicalSiteRequest,
+  DeletePhysicalSiteResponse,
+  ListPhysicalSitesRequest,
+  ListPhysicalSitesResponse,
+  UpdatePhysicalSiteRequest,
+  UpdatePhysicalSiteResponse,
+} from "./physicalsite.pb";
+import {
   CountResourceRequestsRequest,
   CountResourceRequestsResponse,
   GetGceProductCatalogFilterValuesRequest,
@@ -444,6 +454,10 @@ export interface FleetConsole {
   CreateAndroidPriorityRule(request: CreateAndroidPriorityRuleRequest): Promise<CreateAndroidPriorityRuleResponse>;
   UpdateAndroidPriorityRule(request: UpdateAndroidPriorityRuleRequest): Promise<UpdateAndroidPriorityRuleResponse>;
   DeleteAndroidPriorityRule(request: DeleteAndroidPriorityRuleRequest): Promise<DeleteAndroidPriorityRuleResponse>;
+  CreatePhysicalSite(request: CreatePhysicalSiteRequest): Promise<CreatePhysicalSiteResponse>;
+  ListPhysicalSites(request: ListPhysicalSitesRequest): Promise<ListPhysicalSitesResponse>;
+  UpdatePhysicalSite(request: UpdatePhysicalSiteRequest): Promise<UpdatePhysicalSiteResponse>;
+  DeletePhysicalSite(request: DeletePhysicalSiteRequest): Promise<DeletePhysicalSiteResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -528,6 +542,10 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.CreateAndroidPriorityRule = this.CreateAndroidPriorityRule.bind(this);
     this.UpdateAndroidPriorityRule = this.UpdateAndroidPriorityRule.bind(this);
     this.DeleteAndroidPriorityRule = this.DeleteAndroidPriorityRule.bind(this);
+    this.CreatePhysicalSite = this.CreatePhysicalSite.bind(this);
+    this.ListPhysicalSites = this.ListPhysicalSites.bind(this);
+    this.UpdatePhysicalSite = this.UpdatePhysicalSite.bind(this);
+    this.DeletePhysicalSite = this.DeletePhysicalSite.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -981,6 +999,30 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = DeleteAndroidPriorityRuleRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "DeleteAndroidPriorityRule", data);
     return promise.then((data) => DeleteAndroidPriorityRuleResponse.fromJSON(data));
+  }
+
+  CreatePhysicalSite(request: CreatePhysicalSiteRequest): Promise<CreatePhysicalSiteResponse> {
+    const data = CreatePhysicalSiteRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CreatePhysicalSite", data);
+    return promise.then((data) => CreatePhysicalSiteResponse.fromJSON(data));
+  }
+
+  ListPhysicalSites(request: ListPhysicalSitesRequest): Promise<ListPhysicalSitesResponse> {
+    const data = ListPhysicalSitesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListPhysicalSites", data);
+    return promise.then((data) => ListPhysicalSitesResponse.fromJSON(data));
+  }
+
+  UpdatePhysicalSite(request: UpdatePhysicalSiteRequest): Promise<UpdatePhysicalSiteResponse> {
+    const data = UpdatePhysicalSiteRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdatePhysicalSite", data);
+    return promise.then((data) => UpdatePhysicalSiteResponse.fromJSON(data));
+  }
+
+  DeletePhysicalSite(request: DeletePhysicalSiteRequest): Promise<DeletePhysicalSiteResponse> {
+    const data = DeletePhysicalSiteRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "DeletePhysicalSite", data);
+    return promise.then((data) => DeletePhysicalSiteResponse.fromJSON(data));
   }
 }
 

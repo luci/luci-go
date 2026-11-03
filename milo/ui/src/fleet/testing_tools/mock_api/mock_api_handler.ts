@@ -111,6 +111,10 @@ export interface FleetConsoleMockFixtures {
   UpdateHealthSlice: unknown;
   DeleteHealthSlice: unknown;
   ReorderHealthSlices: unknown;
+  ListPhysicalSites: unknown;
+  CreatePhysicalSite: unknown;
+  UpdatePhysicalSite: unknown;
+  DeletePhysicalSite: unknown;
   [method: string]: unknown;
 }
 

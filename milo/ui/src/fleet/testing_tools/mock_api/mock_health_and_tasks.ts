@@ -24,6 +24,11 @@ export interface MockHealthSlice {
   displayOrder: number;
 }
 
+export interface MockPhysicalSite {
+  id: string;
+  name: string;
+}
+
 const MODEL_TREND_SPECS = [
   {
     name: 'sim-model-nine',
@@ -478,58 +483,65 @@ export function applyHealthSliceMutation(
   reqPayload: Record<string, unknown>,
   fixtures: Record<string, unknown>,
 ): Record<string, unknown> | null {
-  const listFixture = (fixtures.ListHealthSlices as {
-    healthSlices?: MockHealthSlice[];
-  }) || { healthSlices: [] };
-  const currentSlices: MockHealthSlice[] = Array.isArray(
-    listFixture.healthSlices,
-  )
-    ? [...listFixture.healthSlices]
-    : [];
+  if (
+    method === 'CreateHealthSlice' ||
+    method === 'UpdateHealthSlice' ||
+    method === 'DeleteHealthSlice' ||
+    method === 'ReorderHealthSlices'
+  ) {
+    const listFixture = (fixtures.ListHealthSlices as {
+      healthSlices?: MockHealthSlice[];
+    }) || { healthSlices: [] };
+    const currentSlices: MockHealthSlice[] = Array.isArray(
+      listFixture.healthSlices,
+    )
+      ? [...listFixture.healthSlices]
+      : [];
 
-  if (method === 'CreateHealthSlice') {
-    const incoming = (reqPayload.healthSlice || {}) as Partial<MockHealthSlice>;
-    const created: MockHealthSlice = {
-      id: incoming.id || `slice-${currentSlices.length + 1}`,
-      name: incoming.name || 'New Slice',
-      filter: incoming.filter || '',
-      displayOrder:
-        typeof incoming.displayOrder === 'number'
-          ? incoming.displayOrder
-          : currentSlices.length,
-    };
-    fixtures.ListHealthSlices = {
-      healthSlices: [...currentSlices, created],
-    };
-    return { healthSlice: created };
-  }
+    if (method === 'CreateHealthSlice') {
+      const incoming = (reqPayload.healthSlice ||
+        {}) as Partial<MockHealthSlice>;
+      const created: MockHealthSlice = {
+        id: incoming.id || `slice-${currentSlices.length + 1}`,
+        name: incoming.name || 'New Slice',
+        filter: incoming.filter || '',
+        displayOrder:
+          typeof incoming.displayOrder === 'number'
+            ? incoming.displayOrder
+            : currentSlices.length,
+      };
+      fixtures.ListHealthSlices = {
+        healthSlices: [...currentSlices, created],
+      };
+      return { healthSlice: created };
+    }
 
-  if (method === 'UpdateHealthSlice') {
-    const incoming = (reqPayload.healthSlice || {}) as Partial<MockHealthSlice>;
-    const updated: MockHealthSlice = {
-      id: incoming.id || 'slice-quota',
-      name: incoming.name || 'Updated Slice',
-      filter: incoming.filter ?? '',
-      displayOrder: incoming.displayOrder ?? 1,
-    };
-    const exists = currentSlices.some((s) => s.id === updated.id);
-    fixtures.ListHealthSlices = {
-      healthSlices: exists
-        ? currentSlices.map((s) => (s.id === updated.id ? updated : s))
-        : [...currentSlices, updated],
-    };
-    return { healthSlice: updated };
-  }
+    if (method === 'UpdateHealthSlice') {
+      const incoming = (reqPayload.healthSlice ||
+        {}) as Partial<MockHealthSlice>;
+      const updated: MockHealthSlice = {
+        id: incoming.id || 'slice-quota',
+        name: incoming.name || 'Updated Slice',
+        filter: incoming.filter ?? '',
+        displayOrder: incoming.displayOrder ?? 1,
+      };
+      const exists = currentSlices.some((s) => s.id === updated.id);
+      fixtures.ListHealthSlices = {
+        healthSlices: exists
+          ? currentSlices.map((s) => (s.id === updated.id ? updated : s))
+          : [...currentSlices, updated],
+      };
+      return { healthSlice: updated };
+    }
 
-  if (method === 'DeleteHealthSlice') {
-    const targetId = String(reqPayload.id || '');
-    fixtures.ListHealthSlices = {
-      healthSlices: currentSlices.filter((s) => s.id !== targetId),
-    };
-    return {};
-  }
+    if (method === 'DeleteHealthSlice') {
+      const targetId = String(reqPayload.id || '');
+      fixtures.ListHealthSlices = {
+        healthSlices: currentSlices.filter((s) => s.id !== targetId),
+      };
+      return {};
+    }
 
-  if (method === 'ReorderHealthSlices') {
     const sliceIds = Array.isArray(reqPayload.sliceIds)
       ? (reqPayload.sliceIds as string[])
       : [];
@@ -549,8 +561,68 @@ export function applyHealthSliceMutation(
     return { healthSlices: reordered };
   }
 
-  return null;
+  if (
+    method !== 'CreatePhysicalSite' &&
+    method !== 'UpdatePhysicalSite' &&
+    method !== 'DeletePhysicalSite'
+  ) {
+    return null;
+  }
+
+  const sitesFixture = (fixtures.ListPhysicalSites as {
+    physicalSites?: MockPhysicalSite[];
+  }) || { physicalSites: [] };
+  const currentSites: MockPhysicalSite[] = Array.isArray(
+    sitesFixture.physicalSites,
+  )
+    ? [...sitesFixture.physicalSites]
+    : [];
+
+  if (method === 'CreatePhysicalSite') {
+    const incoming = (reqPayload.physicalSite ||
+      {}) as Partial<MockPhysicalSite>;
+    const created: MockPhysicalSite = {
+      id: incoming.id?.trim() || `SITE-${currentSites.length + 1}`,
+      name: incoming.name?.trim() || 'New Site',
+    };
+    const nextSites = [
+      ...currentSites.filter((s) => s.id !== created.id),
+      created,
+    ].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    fixtures.ListPhysicalSites = { physicalSites: nextSites };
+    return { physicalSite: created };
+  }
+
+  if (method === 'UpdatePhysicalSite') {
+    const incoming = (reqPayload.physicalSite ||
+      {}) as Partial<MockPhysicalSite>;
+    const id = incoming.id?.trim() || 'MTV';
+    const existing = currentSites.find((s) => s.id === id);
+    const updated: MockPhysicalSite = {
+      id,
+      name: incoming.name?.trim() || existing?.name || 'Updated Site',
+    };
+    const nextSites = (
+      existing
+        ? currentSites.map((s) => (s.id === updated.id ? updated : s))
+        : [...currentSites, updated]
+    ).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    fixtures.ListPhysicalSites = { physicalSites: nextSites };
+    return { physicalSite: updated };
+  }
+
+  const targetId = String(reqPayload.id || '').trim();
+  fixtures.ListPhysicalSites = {
+    physicalSites: currentSites.filter((s) => s.id !== targetId),
+  };
+  return {};
 }
+
+const INITIAL_PHYSICAL_SITES: MockPhysicalSite[] = [
+  { id: 'LAB1', name: 'Central Lab 1' },
+  { id: 'MTV', name: 'Mountain View MTV' },
+  { id: 'EM25', name: 'Palo Alto EM25' },
+];
 
 const INITIAL_HEALTH_SLICES: MockHealthSlice[] = [
   {
@@ -621,6 +693,22 @@ export const HEALTH_AND_TASK_DEFAULT_FIXTURES = {
   ReorderHealthSlices: {
     healthSlices: INITIAL_HEALTH_SLICES,
   },
+  ListPhysicalSites: {
+    physicalSites: INITIAL_PHYSICAL_SITES,
+  },
+  CreatePhysicalSite: {
+    physicalSite: {
+      id: 'MTV',
+      name: 'Mountain View MTV',
+    },
+  },
+  UpdatePhysicalSite: {
+    physicalSite: {
+      id: 'MTV',
+      name: 'Mountain View MTV',
+    },
+  },
+  DeletePhysicalSite: {},
   ListTaskHistory: {
     tasks: [
       {

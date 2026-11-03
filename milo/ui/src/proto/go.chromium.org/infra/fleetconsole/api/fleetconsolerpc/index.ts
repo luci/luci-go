@@ -17,6 +17,7 @@ export * from "./android.pb";
 export * from "./chromebrowser.pb";
 export * from "./chromeos.pb";
 export * from "./common_types.pb";
+export * from "./physicalsite.pb";
 export * from "./resourcedelivery.pb";
 export * from "./service.pb";
 export * from "./taskhistory.pb";

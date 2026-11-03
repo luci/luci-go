@@ -19,6 +19,7 @@ import {
 } from '../../../proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { createIrmFake } from './fake_irm';
+import { createPhysicalSitesFake } from './fake_physical_sites';
 import {
   Aip160Matcher,
   createPriorityRulesFake,
@@ -28,7 +29,12 @@ import {
 import { createRepairQueueFake } from './fake_repair_queue';
 import { FleetConsoleMockAPI } from './mock_api_handler';
 
-export { createIrmFake, createPriorityRulesFake, createRepairQueueFake };
+export {
+  createIrmFake,
+  createPhysicalSitesFake,
+  createPriorityRulesFake,
+  createRepairQueueFake,
+};
 export type { Aip160Matcher, RpcJsonHandler };
 
 const DEFAULT_AUTH_STATE = {
@@ -103,6 +109,7 @@ export function createFakeFleetConsoleBackend(
     getCurrentUserEmail: () => authState.email || 'user@example.com',
   });
   const irm = createIrmFake();
+  const physicalSites = createPhysicalSitesFake();
   const permissions = createPermissionsFake();
 
   const staticResponses = new Map<string, unknown>();
@@ -117,6 +124,7 @@ export function createFakeFleetConsoleBackend(
     ...priorityRules.handlers,
     ...repairQueue.handlers,
     ...irm.handlers,
+    ...physicalSites.handlers,
     ...permissions.handlers,
   };
 
@@ -129,6 +137,7 @@ export function createFakeFleetConsoleBackend(
       nextPageToken: '',
     });
     irm.seed([]);
+    physicalSites.seed([]);
     permissions.reset();
     staticResponses.clear();
     errors.clear();
@@ -142,6 +151,7 @@ export function createFakeFleetConsoleBackend(
     priorityRules,
     repairQueue,
     irm,
+    physicalSites,
     permissions,
     setAuthState(override: Partial<typeof DEFAULT_AUTH_STATE>) {
       authState = { ...authState, ...override };
