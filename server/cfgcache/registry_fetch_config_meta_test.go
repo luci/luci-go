@@ -96,8 +96,8 @@ func TestRegistryFetchConfigMeta(t *testing.T) {
 
 		snap := got["services/my-app"]
 		// "unrelated" was not fetched.
-		assert.That(t, slices.Sorted(maps.Keys(snap)), should.Match([]string{"spam"}))
-		spam := snap["spam"]
+		assert.That(t, snap.paths(), should.Match([]string{"spam"}))
+		spam := snap.get("spam")
 		assert.Loosely(t, spam.ContentSize, should.Equal(len("egggs")))
 		assert.That(t, spam.Content, should.Equal(""))
 	})
@@ -130,37 +130,78 @@ func TestRegistryFetchConfigMeta(t *testing.T) {
 		}))
 
 		snap := got["services/my-app"]
-		assert.That(t, slices.Sorted(maps.Keys(snap)), should.Match([]string{"spam"}))
-		spam := snap["spam"]
+		assert.That(t, snap.paths(), should.Match([]string{"spam"}))
+		spam := snap.get("spam")
 		assert.Loosely(t, spam.ContentSize, should.Equal(len("egggs")))
 		assert.That(t, spam.Content, should.Equal(""))
 
 		snap = got["projects/proj1"]
-		assert.That(t, slices.Sorted(maps.Keys(snap)), should.Match([]string{
+		assert.That(t, snap.paths(), should.Match([]string{
 			"re-spam-spam",
 			"spam",
 		}))
-		spam = snap["spam"]
+		spam = snap.get("spam")
 		assert.Loosely(t, spam.ContentSize, should.Equal(len("egggs")))
 		assert.That(t, spam.Content, should.Equal(""))
-		spam = snap["re-spam-spam"]
+		spam = snap.get("re-spam-spam")
 		assert.Loosely(t, spam.ContentSize, should.Equal(len("eggs-eggs")))
 		assert.That(t, spam.Content, should.Equal(""))
 
 		snap = got["projects/proj2"]
-		assert.That(t, slices.Sorted(maps.Keys(snap)), should.Match([]string{
+		assert.That(t, snap.paths(), should.Match([]string{
 			"re-spam-spam",
 			"re-spam-spam-spam",
 			"spam",
 		}))
-		spam = snap["spam"]
+		spam = snap.get("spam")
 		assert.Loosely(t, spam.ContentSize, should.Equal(len("egggs")))
 		assert.That(t, spam.Content, should.Equal(""))
-		spam = snap["re-spam-spam"]
+		spam = snap.get("re-spam-spam")
 		assert.Loosely(t, spam.ContentSize, should.Equal(len("eggs-eggs")))
 		assert.That(t, spam.Content, should.Equal(""))
-		spam = snap["re-spam-spam-spam"]
+		spam = snap.get("re-spam-spam-spam")
 		assert.Loosely(t, spam.ContentSize, should.Equal(len("eggs-eggs-eggs")))
+		assert.That(t, spam.Content, should.Equal(""))
+	})
+}
+
+func TestRegistryFetchConfigMetaSingleProject(t *testing.T) {
+	t.Parallel()
+
+	// There is some special-case code which handles a single ProjectPipeline of
+	// exactly one config file.
+	setup := func(t testing.TB) (context.Context, *TestingState) {
+		ctx, ts := TestingContext(t.Context())
+
+		(&ProjectPipeline[*durationpb.Duration]{
+			ID:    "proj-single",
+			Store: &noopStore[*durationpb.Duration]{},
+			Files: []File{
+				&SingleFile[*durationpb.Duration]{Path: "dur.cfg"},
+			},
+		}).Register(ts.Registry)
+
+		assert.NoErr(t, ts.Initialize(ctx))
+		return ctx, ts
+	}
+
+	t.Run(`project - single`, func(t *testing.T) {
+		t.Parallel()
+		ctx, ts := setup(t)
+		client := cfgclient.Client(ctx)
+
+		ts.SetConfig("projects/proj1", "unrelated", "bleh")
+		ts.SetConfig("projects/proj1", "dur.cfg", "seconds: 10")
+		// no re-spam
+
+		got, err := ts.Registry.fetchConfigMeta(ctx, client)
+		assert.NoErr(t, err)
+
+		snap := got["projects/proj1"]
+		// "unrelated" was not fetched.
+		assert.That(t, snap.paths(), should.Match([]string{"dur.cfg"}))
+		spam := snap.get("dur.cfg")
+		assert.Loosely(t, spam.ContentSize, should.Equal(len("seconds: 10")))
 		assert.That(t, spam.Content, should.Equal(""))
 	})
 }

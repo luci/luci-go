@@ -25,13 +25,12 @@ import (
 	"go.chromium.org/luci/config"
 )
 
-// fetchConfigMeta loads stored Meta from each pipeline's Store and fetches the
-// current upstream file metadata from LUCI Config.
+// fetchConfigMeta fetches the current upstream file metadata from LUCI Config.
 //
-// Returns a map of config.Set->file->Config(Meta only) (for any files wanted
-// by any registered pipeline) for files in LUCI Config.
-func (r *Registry) fetchConfigMeta(ctx context.Context, client config.Interface) (map[config.Set]map[string]config.Config, error) {
-	ret := make(map[config.Set]map[string]config.Config)
+// Returns loadedConfig (with only metadata populated) for any files wanted
+// by *any* registered pipeline for files in LUCI Config.
+func (r *Registry) fetchConfigMeta(ctx context.Context, client config.Interface) (loadedConfig, error) {
+	ret := loadedConfig{}
 	var mu sync.Mutex
 
 	var eg errgroup.Group
@@ -62,17 +61,11 @@ func (r *Registry) fetchConfigMeta(ctx context.Context, client config.Interface)
 				return err
 			}
 
+			byCfgSet := loadedConfigFromConfigs(cfgs)
+
 			mu.Lock()
 			defer mu.Unlock()
-
-			for _, cfg := range cfgs {
-				filesByCS := ret[cfg.ConfigSet]
-				if filesByCS == nil {
-					filesByCS = map[string]config.Config{}
-					ret[cfg.ConfigSet] = filesByCS
-				}
-				filesByCS[cfg.Path] = cfg
-			}
+			maps.Insert(ret, maps.All(byCfgSet))
 			return nil
 		})
 	}
@@ -85,9 +78,11 @@ func (r *Registry) fetchConfigMeta(ctx context.Context, client config.Interface)
 				return err
 			}
 
+			flattened := flatSnapshotFromMap(configs)
+
 			mu.Lock()
 			defer mu.Unlock()
-			ret[cs] = configs
+			ret[cs] = flattened
 			return nil
 		})
 	}
