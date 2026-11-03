@@ -15,6 +15,7 @@
 package artifact
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -31,6 +32,15 @@ import (
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// maxInlineAncestorArtifacts is the maximum number of artifacts printed inline
+// for each ancestor work unit in PrintAncestorWorkUnitNotices.
+const maxInlineAncestorArtifacts = 15
+
+// DefaultMaxOutputBytes is the default overall stdout byte cap (9.5 KB / 9,500 B)
+// for `luci artifact list` responses so output stays within Jetski's 10 KB
+// (9,728 B usable stdout) tool truncation threshold without middle-truncation.
+const DefaultMaxOutputBytes = 9500
 
 func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 	var usage, desc, longDesc string
@@ -156,8 +166,10 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	}
 
 	maxArtifacts := r.maxArtifacts
+	maxOutputBytes := DefaultMaxOutputBytes
 	if r.allArtifacts {
 		maxArtifacts = 0
+		maxOutputBytes = 0
 	}
 
 	out := r.out
@@ -175,14 +187,30 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 		format.SortArtifacts(trArtifacts)
 
 		r.extracted.EnrichFromArtifactName(cleanTarget, "")
-		ids.PrintDerivedIDs(out, r.extracted)
-		displayedCount := printArtifactHeaderTo(out, "Test Result", format.FormatTestResultBreadcrumb(cleanTarget), len(trArtifacts), maxArtifacts)
-		format.PrintArtifactListTo(out, trArtifacts[:displayedCount])
+		var derivedBuf bytes.Buffer
+		ids.PrintDerivedIDs(&derivedBuf, r.extracted)
+		fmt.Fprint(out, derivedBuf.String())
+		if maxOutputBytes > 0 {
+			maxOutputBytes = max(maxOutputBytes-derivedBuf.Len(), 0)
+		}
+
+		totalCount := len(trArtifacts)
+		displayed := trArtifacts
+		if maxArtifacts > 0 && len(displayed) > maxArtifacts {
+			displayed = displayed[:maxArtifacts]
+		}
 
 		if resolved.Legacy {
-			PrintImmediateParentInvocationNotice(ctx, client, cleanTarget, out)
+			var parentBuf bytes.Buffer
+			PrintImmediateParentInvocationNotice(ctx, client, cleanTarget, &parentBuf)
+			primaryBudget := maxOutputBytes
+			if primaryBudget > 0 && parentBuf.Len() > 0 {
+				primaryBudget = max(primaryBudget-parentBuf.Len(), 0)
+			}
+			fmt.Fprint(out, renderPrimaryArtifactSection("Test Result", format.FormatTestResultBreadcrumb(cleanTarget), cleanTarget, displayed, totalCount, false, maxArtifacts, false, primaryBudget))
+			fmt.Fprint(out, parentBuf.String())
 		} else {
-			PrintAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, out)
+			writePrimaryAndAncestorNotices(ctx, client, "Test Result", format.FormatTestResultBreadcrumb(cleanTarget), cleanTarget, displayed, totalCount, maxArtifacts, effectiveParentType, maxOutputBytes, out)
 		}
 		return 0
 	}
@@ -197,21 +225,36 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 			invArtifacts = FilterArtifacts(invArtifacts, filterRe)
 			format.SortArtifacts(invArtifacts)
 
-			ids.PrintDerivedIDs(out, r.extracted)
-			displayedCount := printArtifactHeaderTo(out, "Invocation", format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), maxArtifacts)
-			format.PrintArtifactListTo(out, invArtifacts[:displayedCount])
+			var derivedBuf bytes.Buffer
+			ids.PrintDerivedIDs(&derivedBuf, r.extracted)
+			fmt.Fprint(out, derivedBuf.String())
+			if maxOutputBytes > 0 {
+				maxOutputBytes = max(maxOutputBytes-derivedBuf.Len(), 0)
+			}
+
+			totalCount := len(invArtifacts)
+			displayed := invArtifacts
+			if maxArtifacts > 0 && len(displayed) > maxArtifacts {
+				displayed = displayed[:maxArtifacts]
+			}
+			fmt.Fprint(out, renderPrimaryArtifactSection("Invocation", format.FormatInvocationBreadcrumb(cleanTarget), cleanTarget, displayed, totalCount, false, maxArtifacts, false, maxOutputBytes))
 			return 0
 		}
 
-		invArtifacts, hasMore, err := QueryInvocationArtifacts(ctx, client, cleanTarget, serverRegexp, maxArtifacts)
+		invArtifacts, totalFetched, hasMorePages, err := queryInvocationArtifactsSorted(ctx, client, cleanTarget, serverRegexp, maxArtifacts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to list artifacts for invocation %q: %s\n", cleanTarget, err)
 			return 1
 		}
 
-		ids.PrintDerivedIDs(out, r.extracted)
-		printInvocationArtifactHeader(out, format.FormatInvocationBreadcrumb(cleanTarget), len(invArtifacts), hasMore)
-		format.PrintInvocationArtifactListTo(out, invArtifacts)
+		var derivedBuf bytes.Buffer
+		ids.PrintDerivedIDs(&derivedBuf, r.extracted)
+		fmt.Fprint(out, derivedBuf.String())
+		if maxOutputBytes > 0 {
+			maxOutputBytes = max(maxOutputBytes-derivedBuf.Len(), 0)
+		}
+
+		fmt.Fprint(out, renderPrimaryArtifactSection("Invocation", format.FormatInvocationBreadcrumb(cleanTarget), cleanTarget, invArtifacts, totalFetched, hasMorePages, maxArtifacts, true, maxOutputBytes))
 		return 0
 	}
 
@@ -224,12 +267,142 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	wuArtifacts = FilterArtifacts(wuArtifacts, filterRe)
 	format.SortArtifacts(wuArtifacts)
 
-	ids.PrintDerivedIDs(out, r.extracted)
-	displayedCount := printArtifactHeaderTo(out, "Work Unit", format.FormatWorkUnitBreadcrumb(cleanTarget), len(wuArtifacts), maxArtifacts)
-	format.PrintArtifactListTo(out, wuArtifacts[:displayedCount])
+	var derivedBuf bytes.Buffer
+	ids.PrintDerivedIDs(&derivedBuf, r.extracted)
+	fmt.Fprint(out, derivedBuf.String())
+	if maxOutputBytes > 0 {
+		maxOutputBytes = max(maxOutputBytes-derivedBuf.Len(), 0)
+	}
 
-	PrintAncestorWorkUnitNotices(ctx, client, cleanTarget, effectiveParentType, out)
+	totalCount := len(wuArtifacts)
+	displayed := wuArtifacts
+	if maxArtifacts > 0 && len(displayed) > maxArtifacts {
+		displayed = displayed[:maxArtifacts]
+	}
+
+	writePrimaryAndAncestorNotices(ctx, client, "Work Unit", format.FormatWorkUnitBreadcrumb(cleanTarget), cleanTarget, displayed, totalCount, maxArtifacts, effectiveParentType, maxOutputBytes, out)
 	return 0
+}
+
+func writePrimaryAndAncestorNotices(ctx context.Context, client rdbpb.ResultDBClient, category, breadcrumb, cleanTarget string, artifacts []*rdbpb.Artifact, totalCount, maxArtifacts int, parentType ParentType, totalBudget int, out io.Writer) {
+	withArtifacts, targetTestID, targetResultID := fetchAncestorWorkUnitArtifacts(ctx, client, cleanTarget, parentType)
+	ancFull := formatAncestorWorkUnitNotices(withArtifacts, targetTestID, targetResultID, parentType, 0)
+
+	primaryBudget := totalBudget
+	if totalBudget > 0 && len(ancFull) > 0 {
+		ancReserve := min(len(ancFull), totalBudget/2)
+		primaryBudget = max(totalBudget-ancReserve, 0)
+	}
+
+	primaryOut := renderPrimaryArtifactSection(category, breadcrumb, cleanTarget, artifacts, totalCount, false, maxArtifacts, false, primaryBudget)
+	fmt.Fprint(out, primaryOut)
+
+	if len(ancFull) == 0 {
+		return
+	}
+	ancOut := ancFull
+	if totalBudget > 0 {
+		remaining := max(totalBudget-len(primaryOut), 0)
+		if len(ancOut) > remaining {
+			ancOut = formatAncestorWorkUnitNotices(withArtifacts, targetTestID, targetResultID, parentType, remaining)
+		}
+	}
+	fmt.Fprint(out, ancOut)
+}
+
+func formatOmittedArtifactsLine(out io.Writer, cleanTarget string, omitted int, hasMore bool) {
+	meta := base.ExtractArtifactMetadata(cleanTarget)
+	if meta.InvocationID == "" {
+		return
+	}
+	quotedInv := base.ShellQuoteIfNeeded(meta.InvocationID)
+	flags := meta.FormatFlags()
+	if flags != "" {
+		flags = " " + flags
+	}
+	viewAllCmd := fmt.Sprintf("luci artifact list -invocationid=%s%s -all [-filter=...]", quotedInv, flags)
+	inWUPart := ""
+	if meta.WorkUnitID != "" && meta.TestID == "" {
+		inWUPart = fmt.Sprintf(" in work unit %s", meta.WorkUnitID)
+	}
+	if omitted > 0 {
+		omittedStr := fmt.Sprintf("%d", omitted)
+		otherLabel := "artifacts"
+		if hasMore {
+			omittedStr += "+"
+		} else if omitted == 1 {
+			otherLabel = "artifact"
+		}
+		fmt.Fprintf(out, "  ... and %s other %s%s; run '%s' to view all\n", omittedStr, otherLabel, inWUPart, viewAllCmd)
+	} else if hasMore {
+		fmt.Fprintf(out, "  ... and more artifacts%s; run '%s' to view all\n", inWUPart, viewAllCmd)
+	}
+}
+
+func renderPrimaryArtifactSection(category, breadcrumb, cleanTarget string, artifacts []*rdbpb.Artifact, totalCount int, hasMore bool, maxArtifacts int, includeMetadata bool, maxBytes int) string {
+	if len(artifacts) == 0 {
+		var buf bytes.Buffer
+		if includeMetadata {
+			printInvocationArtifactHeader(&buf, breadcrumb, 0, hasMore)
+		} else {
+			printArtifactHeaderTo(&buf, category, breadcrumb, 0, maxArtifacts)
+		}
+		fmt.Fprintf(&buf, "  (no artifacts)\n\n")
+		return buf.String()
+	}
+
+	build := func(k int) string {
+		var b bytes.Buffer
+		truncated := k < totalCount || hasMore
+		if includeMetadata {
+			if truncated && !hasMore && totalCount > k {
+				fmt.Fprintf(&b, "Invocation Artifacts (%s) (showing %d of %d, use -all to see all):\n", breadcrumb, k, totalCount)
+			} else {
+				printInvocationArtifactHeader(&b, breadcrumb, k, truncated)
+			}
+		} else {
+			if truncated {
+				fmt.Fprintf(&b, "%s Artifacts (%s) (showing %d of %d, use -all to see all):\n", category, breadcrumb, k, totalCount)
+			} else {
+				fmt.Fprintf(&b, "%s Artifacts (%s) (%d):\n", category, breadcrumb, totalCount)
+			}
+		}
+		if k > 0 {
+			format.PrintArtifactTableTo(&b, artifacts[:k], includeMetadata)
+		}
+		if truncated {
+			formatOmittedArtifactsLine(&b, cleanTarget, totalCount-k, hasMore)
+		}
+		fmt.Fprintln(&b)
+		if k > 0 {
+			if hint := format.FormatArtifactFetchHint(artifacts[0].GetName(), includeMetadata); hint != "" {
+				fmt.Fprintf(&b, "To fetch an artifact:\n  %s\n\n", hint)
+			}
+		}
+		return b.String()
+	}
+
+	full := build(len(artifacts))
+	if maxBytes <= 0 || len(full) <= maxBytes {
+		return full
+	}
+
+	lo, hi := 1, len(artifacts)-1
+	best := ""
+	for lo <= hi {
+		mid := (lo + hi) / 2
+		cand := build(mid)
+		if len(cand) <= maxBytes {
+			best = cand
+			lo = mid + 1
+		} else {
+			hi = mid - 1
+		}
+	}
+	if best != "" {
+		return best
+	}
+	return build(0)
 }
 
 func printInvocationArtifactHeader(out io.Writer, breadcrumb string, count int, hasMore bool) {
@@ -281,15 +454,23 @@ func PrintImmediateParentInvocationNotice(ctx context.Context, client rdbpb.Resu
 	}
 }
 
-func PrintAncestorWorkUnitNotices(ctx context.Context, client rdbpb.ResultDBClient, target string, parentType ParentType, out io.Writer) {
+type ancestorWUInfo struct {
+	name      string
+	artifacts []*rdbpb.Artifact
+	more      bool
+}
+
+func fetchAncestorWorkUnitArtifacts(ctx context.Context, client rdbpb.ResultDBClient, target string, parentType ParentType) ([]ancestorWUInfo, string, string) {
 	var wuToCheck []string
 	visited := make(map[string]bool)
+	var targetTestID, targetResultID string
 
 	if parentType == ParentTypeTestResult {
 		idx := strings.Index(target, "/tests/")
 		if idx == -1 {
-			return
+			return nil, "", ""
 		}
+		_, targetTestID, targetResultID = base.ExtractTestResultComponents(target)
 		parentWU := target[:idx]
 		visited[parentWU] = true
 		wuToCheck = append(wuToCheck, parentWU)
@@ -311,49 +492,186 @@ func PrintAncestorWorkUnitNotices(ctx context.Context, client rdbpb.ResultDBClie
 	}
 
 	if len(wuToCheck) == 0 {
-		return
+		return nil, targetTestID, targetResultID
 	}
 
-	type wuInfo struct {
-		name  string
-		count int
-		more  bool
-	}
-	var withArtifacts []wuInfo
-
+	var withArtifacts []ancestorWUInfo
 	for _, wuName := range wuToCheck {
 		res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
 			Parent:   wuName,
 			PageSize: 1000,
 		})
 		if err == nil && len(res.Artifacts) > 0 {
-			withArtifacts = append(withArtifacts, wuInfo{
-				name:  wuName,
-				count: len(res.Artifacts),
-				more:  res.NextPageToken != "",
+			withArtifacts = append(withArtifacts, ancestorWUInfo{
+				name:      wuName,
+				artifacts: res.Artifacts,
+				more:      res.NextPageToken != "",
 			})
 		}
 	}
+	return withArtifacts, targetTestID, targetResultID
+}
 
-	if len(withArtifacts) > 0 {
-		fmt.Fprintln(out, "Work Unit Artifacts:")
-		for _, info := range withArtifacts {
-			artLabel := "artifacts"
-			countStr := fmt.Sprintf("%d", info.count)
-			if info.more {
-				countStr = fmt.Sprintf("%d+", info.count)
-			} else if info.count == 1 {
-				artLabel = "artifact"
+// PrintAncestorWorkUnitNotices queries ancestor work units of target and prints
+// their artifacts inline (all artifacts when <= maxInlineAncestorArtifacts, or
+// up to maxInlineAncestorArtifacts high-priority diagnostic artifacts plus a
+// 1-line summary when > maxInlineAncestorArtifacts), bounded by
+// DefaultMaxOutputBytes.
+func PrintAncestorWorkUnitNotices(ctx context.Context, client rdbpb.ResultDBClient, target string, parentType ParentType, out io.Writer) {
+	PrintAncestorWorkUnitNoticesWithBudget(ctx, client, target, parentType, DefaultMaxOutputBytes, out)
+}
+
+// PrintAncestorWorkUnitNoticesWithBudget queries ancestor work units of target
+// and prints their artifacts inline within maxBytes (0 for unlimited).
+func PrintAncestorWorkUnitNoticesWithBudget(ctx context.Context, client rdbpb.ResultDBClient, target string, parentType ParentType, maxBytes int, out io.Writer) {
+	withArtifacts, targetTestID, targetResultID := fetchAncestorWorkUnitArtifacts(ctx, client, target, parentType)
+	if len(withArtifacts) == 0 {
+		return
+	}
+	fmt.Fprint(out, formatAncestorWorkUnitNotices(withArtifacts, targetTestID, targetResultID, parentType, maxBytes))
+}
+
+func formatAncestorWorkUnitNotices(withArtifacts []ancestorWUInfo, targetTestID, targetResultID string, parentType ParentType, maxBytes int) string {
+	if len(withArtifacts) == 0 {
+		return ""
+	}
+
+	sectionHeader := "Work Unit Artifacts:"
+	fetchHeader := "To fetch a work unit artifact:"
+	if parentType == ParentTypeWorkUnit {
+		sectionHeader = "Ancestor Work Unit Artifacts:"
+		fetchHeader = "To fetch an ancestor work unit artifact:"
+	}
+
+	candidates := make([][]*rdbpb.Artifact, len(withArtifacts))
+	canPrintAll := make([]bool, len(withArtifacts))
+	counts := make([]int, len(withArtifacts))
+
+	for i, info := range withArtifacts {
+		if !info.more && len(info.artifacts) <= maxInlineAncestorArtifacts {
+			sorted := make([]*rdbpb.Artifact, len(info.artifacts))
+			copy(sorted, info.artifacts)
+			format.SortArtifacts(sorted)
+			candidates[i] = sorted
+			canPrintAll[i] = true
+		} else {
+			recommended := format.FilterRecommendedDebugArtifacts(info.artifacts, targetTestID, targetResultID)
+			if len(recommended) > maxInlineAncestorArtifacts {
+				recommended = recommended[:maxInlineAncestorArtifacts]
 			}
+			candidates[i] = recommended
+			canPrintAll[i] = false
+		}
+		counts[i] = len(candidates[i])
+	}
+
+	renderWithCounts := func(curCounts []int) string {
+		var b bytes.Buffer
+		fmt.Fprintln(&b, sectionHeader)
+
+		var inlineWUIDs []string
+		var sampleInvID string
+		recordInline := func(qInv, qWU string) {
+			inlineWUIDs = append(inlineWUIDs, qWU)
+			if sampleInvID == "" {
+				sampleInvID = qInv
+			}
+		}
+
+		for i, info := range withArtifacts {
 			invID, wuID := base.ExtractWorkUnitComponents(info.name)
+			quotedInv := base.ShellQuoteIfNeeded(invID)
+			quotedWU := base.ShellQuoteIfNeeded(wuID)
 			wuLabel := "Root work unit"
-			if wuID != "" && wuID != "root" {
+			if wuID == "root" {
+				wuLabel = "Root work unit (root)"
+			} else if wuID != "" {
 				wuLabel = fmt.Sprintf("Work unit %s", wuID)
 			}
-			fmt.Fprintf(out, "  - %s contains %s %s. Run 'luci work-unit artifact list -invocationid %s -workunitid %s' to view.\n", wuLabel, countStr, artLabel, invID, wuID)
+			allFlag := ""
+			if info.more || len(info.artifacts) > DefaultMaxArtifacts {
+				allFlag = " -all"
+			}
+			viewAllCmd := fmt.Sprintf("luci artifact list -invocationid=%s -workunitid=%s%s [-filter=...]", quotedInv, quotedWU, allFlag)
+
+			showCount := curCounts[i]
+			totalStr := fmt.Sprintf("%d", len(info.artifacts))
+			if info.more {
+				totalStr = fmt.Sprintf("%d+", len(info.artifacts))
+			}
+
+			if canPrintAll[i] && showCount == len(info.artifacts) {
+				artLabel := "artifacts"
+				if len(info.artifacts) == 1 {
+					artLabel = "artifact"
+				}
+				fmt.Fprintf(&b, "  %s (%d %s):\n", wuLabel, len(info.artifacts), artLabel)
+				format.PrintArtifactTableTo(&b, candidates[i], false)
+				recordInline(quotedInv, quotedWU)
+			} else if !canPrintAll[i] && len(candidates[i]) == 0 {
+				fmt.Fprintf(&b, "  %s (%s artifacts, none matching default diagnostic types); run '%s' to view all\n", wuLabel, totalStr, viewAllCmd)
+			} else if showCount == 0 {
+				artLabel := "artifacts"
+				if !info.more && len(info.artifacts) == 1 {
+					artLabel = "artifact"
+				}
+				fmt.Fprintf(&b, "  %s (%s %s); run '%s' to view all\n", wuLabel, totalStr, artLabel, viewAllCmd)
+			} else {
+				fmt.Fprintf(&b, "  %s (showing %d of %s artifacts):\n", wuLabel, showCount, totalStr)
+				format.PrintArtifactTableTo(&b, candidates[i][:showCount], false)
+				recordInline(quotedInv, quotedWU)
+				inWUPart := ""
+				if wuID != "" {
+					inWUPart = fmt.Sprintf(" in work unit %s", wuID)
+				}
+				omitted := len(info.artifacts) - showCount
+				if omitted > 0 {
+					omittedStr := fmt.Sprintf("%d", omitted)
+					otherLabel := "artifacts"
+					if info.more {
+						omittedStr += "+"
+					} else if omitted == 1 {
+						otherLabel = "artifact"
+					}
+					fmt.Fprintf(&b, "  ... and %s other %s%s; run '%s' to view all\n", omittedStr, otherLabel, inWUPart, viewAllCmd)
+				} else if info.more {
+					fmt.Fprintf(&b, "  ... and more artifacts%s; run '%s' to view all\n", inWUPart, viewAllCmd)
+				}
+			}
+			fmt.Fprintln(&b)
 		}
-		fmt.Fprintln(out)
+
+		if len(inlineWUIDs) > 0 && sampleInvID != "" {
+			wuFlagVal := "<WORK_UNIT_ID>"
+			if len(inlineWUIDs) == 1 {
+				wuFlagVal = inlineWUIDs[0]
+			}
+			fmt.Fprintf(&b, "%s\n  luci artifact <get|head|tail> -invocationid=%s -workunitid=%s -artifactid=<ARTIFACT_ID>\n\n",
+				fetchHeader, sampleInvID, wuFlagVal)
+		}
+		return b.String()
 	}
+
+	outStr := renderWithCounts(counts)
+	if maxBytes <= 0 || len(outStr) <= maxBytes {
+		return outStr
+	}
+
+	// Pass 1: trim inline rows from farthest ancestor down to 1 row per ancestor.
+	for i := len(counts) - 1; i >= 0 && len(outStr) > maxBytes; i-- {
+		for counts[i] > 1 && len(outStr) > maxBytes {
+			counts[i]--
+			outStr = renderWithCounts(counts)
+		}
+	}
+	// Pass 2: collapse ancestors to 1-line summary from farthest ancestor if still over budget.
+	for i := len(counts) - 1; i >= 0 && len(outStr) > maxBytes; i-- {
+		if counts[i] > 0 {
+			counts[i] = 0
+			outStr = renderWithCounts(counts)
+		}
+	}
+	return outStr
 }
 
 func QueryAllArtifacts(ctx context.Context, client rdbpb.ResultDBClient, parent string) ([]*rdbpb.Artifact, error) {
@@ -392,6 +710,15 @@ func QueryAllArtifacts(ctx context.Context, client rdbpb.ResultDBClient, parent 
 // LOGCAT or BUGREPORT) later in the page are promoted ahead of lower-priority
 // artifacts prior to truncation.
 func QueryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, cleanTarget, artifactIDRegexp string, maxArtifacts int) ([]*rdbpb.Artifact, bool, error) {
+	artifacts, totalFetched, hasMorePages, err := queryInvocationArtifactsSorted(ctx, client, cleanTarget, artifactIDRegexp, maxArtifacts)
+	if err != nil {
+		return nil, false, err
+	}
+	hasMore := hasMorePages || totalFetched > len(artifacts)
+	return artifacts, hasMore, nil
+}
+
+func queryInvocationArtifactsSorted(ctx context.Context, client rdbpb.ResultDBClient, cleanTarget, artifactIDRegexp string, maxArtifacts int) ([]*rdbpb.Artifact, int, bool, error) {
 	var predicate *rdbpb.ArtifactPredicate
 	if artifactIDRegexp != "" {
 		predicate = &rdbpb.ArtifactPredicate{
@@ -402,16 +729,16 @@ func QueryInvocationArtifacts(ctx context.Context, client rdbpb.ResultDBClient, 
 	if maxArtifacts > 0 && fetchLimit < maxQueryArtifactsPageSize {
 		fetchLimit = maxQueryArtifactsPageSize
 	}
-	artifacts, hasMore, err := queryInvocationArtifacts(ctx, client, cleanTarget, predicate, &fieldmaskpb.FieldMask{
+	artifacts, hasMorePages, err := queryInvocationArtifacts(ctx, client, cleanTarget, predicate, &fieldmaskpb.FieldMask{
 		Paths: []string{"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines"},
 	}, fetchLimit)
 	if err != nil {
-		return nil, false, err
+		return nil, 0, false, err
 	}
+	totalFetched := len(artifacts)
 	format.SortArtifacts(artifacts)
 	if maxArtifacts > 0 && len(artifacts) > maxArtifacts {
 		artifacts = artifacts[:maxArtifacts]
-		hasMore = true
 	}
-	return artifacts, hasMore, nil
+	return artifacts, totalFetched, hasMorePages, nil
 }

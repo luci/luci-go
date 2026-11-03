@@ -498,6 +498,10 @@ func TestPrintFailureReason(t *testing.T) {
 					Name:       "rootInvocations/ants-i1/workUnits/wu1/artifacts/untyped_logcat_fallback.txt",
 					ArtifactId: "untyped_logcat_fallback.txt",
 				},
+				{
+					Name:       "rootInvocations/ants-i1/workUnits/wu1/tests/t1/results/0/artifacts/testFailed_trace",
+					ArtifactId: "testFailed_trace",
+				},
 			}
 			SortArtifacts(arts)
 			var gotIDs []string
@@ -511,9 +515,54 @@ func TestPrintFailureReason(t *testing.T) {
 				"bugreport.zip",               // BUGREPORTZ
 				"screenshot.png",              // SCREENSHOT
 				"host_adb_log.txt",            // HOST_LOG
-				"injectables.txt",             // other typed (TEXT)
-				"zebra.bin",                   // untyped
+				"testFailed_trace",            // test-result artifact before low-priority work-unit artifacts
+				"injectables.txt",             // other typed work-unit (TEXT)
+				"zebra.bin",                   // untyped work-unit
 			}))
+		})
+
+		t.Run(`FilterRecommendedDebugArtifacts filters diagnostic and target-matching artifacts with target matches first`, func(t *ftt.Test) {
+			mkArt := func(id, artType string) *rdbpb.Artifact {
+				return &rdbpb.Artifact{Name: "rootInvocations/ants-i1/workUnits/wu1/artifacts/" + id, ArtifactId: id, ArtifactType: artType}
+			}
+			arts := []*rdbpb.Artifact{
+				mkArt("16502346/test-mapping-presubmit/inv_1/injectables-999123999.json", "TEXT"),
+				mkArt("otherTest_dump.txt", ""),
+				mkArt("device_logcat_setup.txt", "LOGCAT"),
+				mkArt("bugreport.zip", "BUGREPORTZ"),
+				mkArt("cvd_bugreport_builder.log", "CUTTLEFISH_LOG"),
+				mkArt("failure-screenshot.png", "PNG"),
+				mkArt("debug-hostlog-on-failure.txt", "TEXT"),
+				mkArt("CombinedEventsTest_testCombinedEvents_001_trace.txt", "TEXT"),
+				mkArt("res-abc-123_dump.bin", ""),
+			}
+			got := FilterRecommendedDebugArtifacts(
+				arts,
+				":CtsJdwpTestCases!junit:org.apache.harmony.jpda.tests.jdwp.Events:CombinedEventsTest#testCombinedEvents_001[0]",
+				"res-abc-123",
+			)
+			var gotIDs []string
+			for _, a := range got {
+				gotIDs = append(gotIDs, a.ArtifactId)
+			}
+			assert.Loosely(t, gotIDs, should.Resemble([]string{
+				"CombinedEventsTest_testCombinedEvents_001_trace.txt",
+				"res-abc-123_dump.bin",
+				"device_logcat_setup.txt",
+				"bugreport.zip",
+				"failure-screenshot.png",
+				"debug-hostlog-on-failure.txt",
+			}))
+
+			gotGeneric := FilterRecommendedDebugArtifacts([]*rdbpb.Artifact{
+				mkArt("16502346/test-mapping-presubmit/inv_1/injectables-999123999.json", "TEXT"),
+				mkArt("otherTest_metric_0.json", ""),
+				mkArt("device_logcat_test_oriole.txt", "LOGCAT"),
+				mkArt("WidgetCheck_test_dump.txt", "TEXT"),
+			}, ":Module!junit:com.example:WidgetCheck#test", "123")
+			assert.Loosely(t, len(gotGeneric), should.Equal(2))
+			assert.Loosely(t, gotGeneric[0].ArtifactId, should.Equal("WidgetCheck_test_dump.txt"))
+			assert.Loosely(t, gotGeneric[1].ArtifactId, should.Equal("device_logcat_test_oriole.txt"))
 		})
 	})
 

@@ -304,7 +304,9 @@ func TestPrintTestResult(t *testing.T) {
 
 			assert.Loosely(t, out, should.ContainSubstring(`Artifact Count: 1 (run 'luci test-result artifact list -invocationid ants-i123 -testid "test1" -resultid res1' to view)`))
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
-			assert.Loosely(t, out, should.ContainSubstring("Work unit wu-1 contains 2 artifacts. Run 'luci work-unit artifact list -invocationid ants-i123 -workunitid wu-1' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("  Work unit wu-1 (2 artifacts):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("host_log.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("tradefed-expanded.xml"))
 		})
 
 		t.Run(`with 0 test result artifacts and artifacts only on ancestor wu_1 (wu_1 -> wu_2 -> wu_3 -> tr_1)`, func(t *ftt.Test) {
@@ -345,9 +347,10 @@ func TestPrintTestResult(t *testing.T) {
 
 			assert.Loosely(t, out, should.ContainSubstring("Artifact Count: 0\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
-			assert.Loosely(t, out, should.ContainSubstring("Work unit wu_1 contains 1 artifact. Run 'luci work-unit artifact list -invocationid ants-i123 -workunitid wu_1' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("  Work unit wu_1 (1 artifact):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("host_log.txt"))
 			assert.Loosely(t, out, should.NotContainSubstring("wu_2"))
-			assert.Loosely(t, out, should.NotContainSubstring("wu_3 contains"))
+			assert.Loosely(t, out, should.NotContainSubstring("Work unit wu_3"))
 		})
 
 		t.Run(`gates RootInvocation metadata behind -show-metadata`, func(t *ftt.Test) {

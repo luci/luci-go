@@ -17,6 +17,7 @@ package artifact
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -404,6 +405,133 @@ func TestListCmd(t *testing.T) {
 			assert.Loosely(t, outTR, should.ContainSubstring("Test ID:           :ModA!junit:pkg:Cls#testOne"))
 			assert.Loosely(t, outTR, should.ContainSubstring("Result ID:         res-1"))
 		})
+
+		t.Run(`enforces 9.5 KB (DefaultMaxOutputBytes) stdout cap across invocation-wide and work-unit artifact list while prioritizing test-result and diagnostic artifacts`, func(t *ftt.Test) {
+			var invArts []*rdbpb.Artifact
+			for i := 0; i < 120; i++ {
+				id := fmt.Sprintf("16502346/test-mapping-presubmit/inv_18332426392137930719/injectables-deviceinfo-bundle-%03d_10101285828505166678.json", i)
+				invArts = append(invArts, &rdbpb.Artifact{
+					Name:         "rootInvocations/ants-i26000010636495227/workUnits/ants-wu97100270499472114/artifacts/" + id,
+					ArtifactId:   id,
+					ArtifactType: "TEXT",
+					ContentType:  "application/json",
+					SizeBytes:    2048,
+				})
+			}
+			invArts = append(invArts,
+				&rdbpb.Artifact{
+					Name:        "rootInvocations/ants-i26000010636495227/workUnits/ants-wu97100270499472114/tests/com.android.FooTest%23testBar/results/res-1/artifacts/testFailed_trace",
+					ArtifactId:  "testFailed_trace",
+					ContentType: "text/plain",
+					SizeBytes:   8600,
+				},
+				&rdbpb.Artifact{
+					Name:         "rootInvocations/ants-i26000010636495227/workUnits/ants-wu97100270499472114/artifacts/16502346/test-mapping-presubmit/inv_18332426392137930719/device_logcat_test.txt",
+					ArtifactId:   "16502346/test-mapping-presubmit/inv_18332426392137930719/device_logcat_test.txt",
+					ArtifactType: "LOGCAT",
+					ContentType:  "text/plain",
+					SizeBytes:    3670016,
+				},
+				&rdbpb.Artifact{
+					Name:         "rootInvocations/ants-i26000010636495227/workUnits/ants-wu97100270499472114/artifacts/16502346/test-mapping-presubmit/inv_18332426392137930719/host_log.txt",
+					ArtifactId:   "16502346/test-mapping-presubmit/inv_18332426392137930719/host_log.txt",
+					ArtifactType: "HOST_LOG",
+					ContentType:  "text/plain",
+					SizeBytes:    1048576,
+				},
+			)
+
+			invClient := &mockResultDBClient{
+				queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+					cp := make([]*rdbpb.Artifact, len(invArts))
+					copy(cp, invArts)
+					return &rdbpb.QueryArtifactsResponse{Artifacts: cp}, nil
+				},
+			}
+
+			var invBuf bytes.Buffer
+			invRun := &artifactListRun{
+				artifactCommonRun: artifactCommonRun{
+					client:       invClient,
+					out:          &invBuf,
+					parentType:   ParentTypeInvocation,
+					invocationID: "ants-i26000010636495227",
+				},
+				maxArtifacts: DefaultMaxArtifacts,
+			}
+			assert.Loosely(t, invRun.Run(nil, nil, nil), should.Equal(0))
+			invOut := invBuf.String()
+			assert.Loosely(t, len(invOut) <= DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, invOut, should.ContainSubstring("device_logcat_test.txt"))
+			assert.Loosely(t, invOut, should.ContainSubstring("host_log.txt"))
+			assert.Loosely(t, invOut, should.ContainSubstring("testFailed_trace"))
+			assert.Loosely(t, invOut, should.ContainSubstring("other artifacts; run 'luci artifact list -invocationid=ants-i26000010636495227 -all [-filter=...]' to view all\n"))
+			assert.Loosely(t, invOut, should.ContainSubstring("To fetch an artifact:\n  luci artifact <get|head|tail> -invocationid=ants-i26000010636495227 -artifactid=<ARTIFACT_ID> [FLAGS]\n"))
+
+			// Passing -all bypasses the 9.5 KB cap and displays all 123 artifacts.
+			var allBuf bytes.Buffer
+			allRun := &artifactListRun{
+				artifactCommonRun: artifactCommonRun{
+					client:       invClient,
+					out:          &allBuf,
+					parentType:   ParentTypeInvocation,
+					invocationID: "ants-i26000010636495227",
+				},
+				maxArtifacts: DefaultMaxArtifacts,
+				allArtifacts: true,
+			}
+			assert.Loosely(t, allRun.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, len(allBuf.String()) > DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, allBuf.String(), should.ContainSubstring("injectables-deviceinfo-bundle-119"))
+
+			// Work unit + ancestor work unit combined stdout also stays <= 9.5 KB.
+			wuClient := &mockResultDBClient{
+				queryWorkUnits: func(ctx context.Context, in *rdbpb.QueryWorkUnitsRequest) (*rdbpb.QueryWorkUnitsResponse, error) {
+					return &rdbpb.QueryWorkUnitsResponse{
+						WorkUnits: []*rdbpb.WorkUnit{{Name: "rootInvocations/ants-i26000010636495227/workUnits/root"}},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
+					if in.Parent == "rootInvocations/ants-i26000010636495227/workUnits/ants-wu97100270499472114" {
+						cp := make([]*rdbpb.Artifact, len(invArts))
+						copy(cp, invArts)
+						return &rdbpb.ListArtifactsResponse{Artifacts: cp}, nil
+					}
+					if in.Parent == "rootInvocations/ants-i26000010636495227/workUnits/root" {
+						return &rdbpb.ListArtifactsResponse{
+							Artifacts: []*rdbpb.Artifact{
+								{
+									Name:         "rootInvocations/ants-i26000010636495227/workUnits/root/artifacts/root_bugreport.zip",
+									ArtifactId:   "root_bugreport.zip",
+									ArtifactType: "BUGREPORTZ",
+									SizeBytes:    4096,
+								},
+							},
+						}, nil
+					}
+					return &rdbpb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			var wuBuf bytes.Buffer
+			wuRunCap := &artifactListRun{
+				artifactCommonRun: artifactCommonRun{
+					client:       wuClient,
+					out:          &wuBuf,
+					parentType:   ParentTypeWorkUnit,
+					invocationID: "ants-i26000010636495227",
+					workUnitID:   "ants-wu97100270499472114",
+				},
+				maxArtifacts: DefaultMaxArtifacts,
+			}
+			assert.Loosely(t, wuRunCap.Run(nil, nil, nil), should.Equal(0))
+			wuOut := wuBuf.String()
+			assert.Loosely(t, len(wuOut) <= DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, wuOut, should.ContainSubstring("device_logcat_test.txt"))
+			assert.Loosely(t, wuOut, should.ContainSubstring("other artifacts in work unit ants-wu97100270499472114; run 'luci artifact list -invocationid=ants-i26000010636495227 -workunitid=ants-wu97100270499472114 -all [-filter=...]' to view all\n"))
+			assert.Loosely(t, wuOut, should.ContainSubstring("Ancestor Work Unit Artifacts:\n"))
+			assert.Loosely(t, wuOut, should.ContainSubstring("root_bugreport.zip"))
+		})
 	})
 }
 
@@ -621,43 +749,83 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 	ftt.Run(`printAncestorWorkUnitNotices`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		t.Run(`test result with parent and ancestor artifacts`, func(t *ftt.Test) {
+		mkArt := func(wu, id, artType string) *rdbpb.Artifact {
+			return &rdbpb.Artifact{Name: fmt.Sprintf("rootInvocations/build-123/workUnits/%s/artifacts/%s", wu, id), ArtifactId: id, ArtifactType: artType}
+		}
+
+		t.Run(`prints <= 15 ancestor artifacts inline and filters > 15 to recommended diagnostic artifacts with 1-line summary`, func(t *ftt.Test) {
+			var manyArts []*rdbpb.Artifact
+			for i := 0; i < 18; i++ {
+				manyArts = append(manyArts, mkArt("build-root", fmt.Sprintf("otherTest_metric_%d.json", i), ""))
+			}
+			manyArts = append(manyArts,
+				mkArt("build-root", "bugreport.zip", "BUGREPORTZ"),
+				mkArt("build-root", "mySpecialTest_trace.txt", ""),
+			)
+
 			client := &mockResultDBClient{
 				queryWorkUnits: func(ctx context.Context, in *rdbpb.QueryWorkUnitsRequest) (*rdbpb.QueryWorkUnitsResponse, error) {
 					return &rdbpb.QueryWorkUnitsResponse{
-						WorkUnits: []*rdbpb.WorkUnit{
-							{Name: "rootInvocations/build-123/workUnits/build-root"},
-						},
+						WorkUnits: []*rdbpb.WorkUnit{{Name: "rootInvocations/build-123/workUnits/build-root"}},
 					}, nil
 				},
 				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
 					if in.Parent == "rootInvocations/build-123/workUnits/step-1" {
 						return &rdbpb.ListArtifactsResponse{
 							Artifacts: []*rdbpb.Artifact{
-								{ArtifactId: "stdout"},
-								{ArtifactId: "stderr"},
+								mkArt("step-1", "stdout", "TEXT"),
+								mkArt("step-1", "device_logcat.txt", "LOGCAT"),
 							},
 						}, nil
 					}
 					if in.Parent == "rootInvocations/build-123/workUnits/build-root" {
-						return &rdbpb.ListArtifactsResponse{
-							Artifacts: []*rdbpb.Artifact{
-								{ArtifactId: "build-summary"},
-							},
-							NextPageToken: "more",
-						}, nil
+						return &rdbpb.ListArtifactsResponse{Artifacts: manyArts}, nil
 					}
 					return &rdbpb.ListArtifactsResponse{}, nil
 				},
 			}
 
 			var buf bytes.Buffer
-			PrintAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1/tests/test1/results/0", ParentTypeTestResult, &buf)
+			PrintAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1/tests/mySpecialTest/results/0", ParentTypeTestResult, &buf)
 			out := buf.String()
 
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
-			assert.Loosely(t, out, should.ContainSubstring("Work unit step-1 contains 2 artifacts. Run 'luci work-unit artifact list -invocationid build-123 -workunitid step-1' to view."))
-			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root contains 1+ artifacts. Run 'luci work-unit artifact list -invocationid build-123 -workunitid build-root' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("  Work unit step-1 (2 artifacts):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("device_logcat.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("stdout"))
+			assert.Loosely(t, out, should.ContainSubstring("  Work unit build-root (showing 2 of 20 artifacts):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("mySpecialTest_trace.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("bugreport.zip"))
+			assert.Loosely(t, out, should.NotContainSubstring("otherTest_metric_0.json"))
+			assert.Loosely(t, out, should.ContainSubstring("  ... and 18 other artifacts in work unit build-root; run 'luci artifact list -invocationid=build-123 -workunitid=build-root [-filter=...]' to view all\n"))
+			assert.Loosely(t, out, should.ContainSubstring("To fetch a work unit artifact:\n  luci artifact <get|head|tail> -invocationid=build-123 -workunitid=<WORK_UNIT_ID> -artifactid=<ARTIFACT_ID>\n"))
+		})
+
+		t.Run(`> 100 ancestor artifacts with 0 recommended matches prints clean 1-line summary with -all`, func(t *ftt.Test) {
+			var noiseArts []*rdbpb.Artifact
+			for i := 0; i < 105; i++ {
+				noiseArts = append(noiseArts, mkArt("step-heavy", fmt.Sprintf("metric_%d.profraw", i), ""))
+			}
+
+			client := &mockResultDBClient{
+				queryWorkUnits: func(ctx context.Context, in *rdbpb.QueryWorkUnitsRequest) (*rdbpb.QueryWorkUnitsResponse, error) {
+					return &rdbpb.QueryWorkUnitsResponse{}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
+					if in.Parent == "rootInvocations/build-123/workUnits/step-heavy" {
+						return &rdbpb.ListArtifactsResponse{Artifacts: noiseArts}, nil
+					}
+					return &rdbpb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			PrintAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-heavy/tests/myTest/results/0", ParentTypeTestResult, &buf)
+			out := buf.String()
+
+			assert.Loosely(t, out, should.ContainSubstring("  Work unit step-heavy (105 artifacts, none matching default diagnostic types); run 'luci artifact list -invocationid=build-123 -workunitid=step-heavy -all [-filter=...]' to view all\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("showing 0 of"))
+			assert.Loosely(t, out, should.NotContainSubstring("To fetch a work unit artifact:"))
 		})
 
 		t.Run(`work unit only checks ancestors, not target itself`, func(t *ftt.Test) {
@@ -687,7 +855,10 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			PrintAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit, &buf)
 			out := buf.String()
 
-			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root contains 1 artifact. Run 'luci work-unit artifact list -invocationid build-123 -workunitid build-root' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("Ancestor Work Unit Artifacts:\n"))
+			assert.Loosely(t, out, should.ContainSubstring("  Work unit build-root (1 artifact):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("root-log"))
+			assert.Loosely(t, out, should.ContainSubstring("To fetch an ancestor work unit artifact:\n  luci artifact <get|head|tail> -invocationid=build-123 -workunitid=build-root -artifactid=<ARTIFACT_ID>\n"))
 			assert.Loosely(t, out, should.NotContainSubstring("step-1"))
 		})
 
@@ -714,7 +885,8 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			PrintAncestorWorkUnitNotices(ctx, client, "rootInvocations/build-123/workUnits/step-1", ParentTypeWorkUnit, &buf)
 			out := buf.String()
 
-			assert.Loosely(t, out, should.ContainSubstring("Root work unit contains 1 artifact. Run 'luci work-unit artifact list -invocationid build-123 -workunitid root' to view."))
+			assert.Loosely(t, out, should.ContainSubstring("  Root work unit (root) (1 artifact):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("root.log"))
 		})
 
 		t.Run(`no notice printed when ancestors have zero artifacts`, func(t *ftt.Test) {
@@ -736,6 +908,30 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			out := buf.String()
 
 			assert.Loosely(t, out, should.Equal(""))
+		})
+
+		t.Run(`trims inline ancestor artifacts from farthest ancestor when output exceeds maxBytes`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				queryWorkUnits: func(ctx context.Context, in *rdbpb.QueryWorkUnitsRequest) (*rdbpb.QueryWorkUnitsResponse, error) {
+					return &rdbpb.QueryWorkUnitsResponse{
+						WorkUnits: []*rdbpb.WorkUnit{{Name: "rootInvocations/build-123/workUnits/build-root"}},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
+					var arts []*rdbpb.Artifact
+					for i := 0; i < 10; i++ {
+						arts = append(arts, mkArt("wu", fmt.Sprintf("path/to/some/very/long/diagnostic/logcat_segment_%02d.txt", i), "LOGCAT"))
+					}
+					return &rdbpb.ListArtifactsResponse{Artifacts: arts}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			PrintAncestorWorkUnitNoticesWithBudget(ctx, client, "rootInvocations/build-123/workUnits/step-1/tests/t1/results/0", ParentTypeTestResult, 950, &buf)
+			out := buf.String()
+			assert.Loosely(t, len(out) <= 950, should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("Work unit step-1"))
+			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root"))
 		})
 	})
 }

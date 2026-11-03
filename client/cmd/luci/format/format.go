@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"regexp"
 	"sort"
 	"strings"
@@ -710,43 +711,143 @@ func artifactDisplayName(art *rdbpb.Artifact) string {
 	return art.GetName()
 }
 
+func isGenericFormatArtifactType(artType string) bool {
+	switch artType {
+	case "", "TEXT", "PNG", "JPEG", "JPG", "WEBP", "ZIP", "GZIP":
+		return true
+	default:
+		return false
+	}
+}
+
 // effectiveArtifactTypeAndPriority returns the normalized artifact type and
-// priority tier for sorting. When ArtifactType is empty, it falls back to
-// filename-based inference matching Huckle ATI's getRecommendedDebugArtifacts.
+// priority tier for sorting. When ArtifactType is empty or a generic file-format
+// type (e.g. TEXT, PNG, ZIP), it falls back to filename-based inference so
+// PNG-typed screenshots or TEXT-typed host logs are promoted to their diagnostic
+// priority tier without overriding specific domain types like CUTTLEFISH_LOG.
 func effectiveArtifactTypeAndPriority(art *rdbpb.Artifact) (string, int) {
 	artType := strings.ToUpper(strings.TrimSpace(art.GetArtifactType()))
-	if artType != "" {
-		if p, ok := artifactTypeSortOrder[artType]; ok {
-			return artType, p
-		}
-		return artType, otherTypedArtifactPriority
+	if p, ok := artifactTypeSortOrder[artType]; ok {
+		return artType, p
 	}
 
-	lowerName := strings.ToLower(artifactDisplayName(art))
-	switch {
-	case strings.Contains(lowerName, "logcat"):
-		return "LOGCAT", artifactTypeSortOrder["LOGCAT"]
-	case strings.Contains(lowerName, "bugreport"):
-		return "BUGREPORT", artifactTypeSortOrder["BUGREPORT"]
-	case strings.Contains(lowerName, "screenshot") && strings.HasSuffix(lowerName, ".png"):
-		return "SCREENSHOT", artifactTypeSortOrder["SCREENSHOT"]
-	case strings.Contains(lowerName, "host_log"):
-		return "HOST_LOG", artifactTypeSortOrder["HOST_LOG"]
-	default:
-		return "", untypedArtifactPriority
+	if isGenericFormatArtifactType(artType) {
+		lowerName := strings.ToLower(artifactDisplayName(art))
+		switch {
+		case strings.Contains(lowerName, "logcat"):
+			return "LOGCAT", artifactTypeSortOrder["LOGCAT"]
+		case strings.Contains(lowerName, "bugreport"):
+			return "BUGREPORT", artifactTypeSortOrder["BUGREPORT"]
+		case strings.Contains(lowerName, "screenshot"):
+			return "SCREENSHOT", artifactTypeSortOrder["SCREENSHOT"]
+		case strings.Contains(lowerName, "host_log") || strings.Contains(lowerName, "hostlog"):
+			return "HOST_LOG", artifactTypeSortOrder["HOST_LOG"]
+		}
 	}
+
+	if artType != "" {
+		return artType, otherTypedArtifactPriority
+	}
+	return "", untypedArtifactPriority
 }
 
 func isTestResultArtifact(art *rdbpb.Artifact) bool {
 	return strings.Contains(art.GetName(), "/tests/")
 }
 
+func isHighPriorityDiagnosticArtifact(art *rdbpb.Artifact) bool {
+	_, prio := effectiveArtifactTypeAndPriority(art)
+	return prio < otherTypedArtifactPriority
+}
+
+func isLowerAlphaNum(b byte) bool {
+	return (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9')
+}
+
+// containsToken reports whether lowercased s contains lowercased tok bounded by
+// non-alphanumeric ASCII characters (or string start/end).
+func containsToken(s, tok string) bool {
+	for off := 0; tok != "" && off+len(tok) <= len(s); {
+		i := strings.Index(s[off:], tok)
+		if i < 0 {
+			return false
+		}
+		st, end := off+i, off+i+len(tok)
+		if (st == 0 || !isLowerAlphaNum(s[st-1])) && (end == len(s) || !isLowerAlphaNum(s[end])) {
+			return true
+		}
+		off = st + 1
+	}
+	return false
+}
+
+func matchesTestToken(lowerBase, tok string) bool {
+	return len(tok) >= 6 && tok != "hosttest" && tok != "devicetest" && containsToken(lowerBase, tok)
+}
+
+func matchesTargetTestOrResult(art *rdbpb.Artifact, targetTestID, targetResultID string) bool {
+	lowerBase := strings.ToLower(path.Base(artifactDisplayName(art)))
+	if len(targetResultID) >= 6 && containsToken(lowerBase, strings.ToLower(targetResultID)) {
+		return true
+	}
+	if targetTestID == "" {
+		return false
+	}
+	id := strings.ToLower(targetTestID)
+	if before, method, ok := strings.Cut(id, "#"); ok {
+		if i := strings.LastIndexAny(before, ".:/!"); i >= 0 {
+			before = before[i+1:]
+		}
+		if i := strings.IndexAny(method, "[("); i > 0 {
+			method = method[:i]
+		}
+		if before != "" && method != "" {
+			for _, sep := range []string{"#", ".", "_", "-"} {
+				if containsToken(lowerBase, before+sep+method) {
+					return true
+				}
+			}
+		}
+		return matchesTestToken(lowerBase, before) || matchesTestToken(lowerBase, method)
+	}
+	for {
+		i := strings.LastIndexAny(id, ":/!")
+		if i < 0 || len(id[i+1:]) >= 4 {
+			if i >= 0 {
+				id = id[i+1:]
+			}
+			break
+		}
+		id = id[:i]
+	}
+	return matchesTestToken(lowerBase, id) || matchesTestToken(lowerBase, strings.ReplaceAll(id, ".", "_"))
+}
+
+// FilterRecommendedDebugArtifacts returns a new slice containing only the
+// recommended diagnostic artifacts from artifacts, sorted with target-test/result
+// matches first followed by Huckle ATI artifact priority ordering.
+func FilterRecommendedDebugArtifacts(artifacts []*rdbpb.Artifact, targetTestID, targetResultID string) []*rdbpb.Artifact {
+	var targetMatches, diagnostic []*rdbpb.Artifact
+	checkTarget := targetTestID != "" || targetResultID != ""
+	for _, art := range artifacts {
+		if checkTarget && matchesTargetTestOrResult(art, targetTestID, targetResultID) {
+			targetMatches = append(targetMatches, art)
+		} else if isHighPriorityDiagnosticArtifact(art) {
+			diagnostic = append(diagnostic, art)
+		}
+	}
+	SortArtifacts(targetMatches)
+	SortArtifacts(diagnostic)
+	return append(targetMatches, diagnostic...)
+}
+
 // SortArtifacts sorts artifacts in place using Huckle ATI's priority ordering:
 //  1. Priority artifact types first: LOGCAT (0) -> BUGREPORT/BUGREPORTZ (1) ->
-//     SCREENSHOT (2) -> HOST_LOG (3) -> other typed artifacts (100, sorted
-//     alphabetically by ArtifactType) -> untyped artifacts (101). Untyped
-//     artifacts with recognizable names (logcat, bugreport, screenshot*.png,
-//     host_log) are promoted to their corresponding priority tier.
+//     SCREENSHOT (2) -> HOST_LOG (3) -> non-diagnostic test-result artifacts ->
+//     other typed work-unit artifacts (100, sorted alphabetically by
+//     ArtifactType) -> untyped work-unit artifacts (101). Untyped artifacts with
+//     recognizable names (logcat, bugreport, screenshot*.png, host_log) are
+//     promoted to their corresponding priority tier.
 //  2. Within the same type tier, test-result-scoped artifacts come before
 //     work-unit-scoped artifacts (since test-level logs are more targeted).
 //  3. Alphabetical by ArtifactId (case-insensitive, with case-sensitive and
@@ -756,13 +857,16 @@ func SortArtifacts(artifacts []*rdbpb.Artifact) {
 		a, b := artifacts[i], artifacts[j]
 		typeA, prioA := effectiveArtifactTypeAndPriority(a)
 		typeB, prioB := effectiveArtifactTypeAndPriority(b)
+		trA, trB := isTestResultArtifact(a), isTestResultArtifact(b)
+		if prioA >= otherTypedArtifactPriority && prioB >= otherTypedArtifactPriority && trA != trB {
+			return trA
+		}
 		if prioA != prioB {
 			return prioA < prioB
 		}
 		if prioA == otherTypedArtifactPriority && typeA != typeB {
 			return typeA < typeB
 		}
-		trA, trB := isTestResultArtifact(a), isTestResultArtifact(b)
 		if trA != trB {
 			return trA
 		}
@@ -832,23 +936,19 @@ func PrintInvocationArtifactListTo(out io.Writer, artifacts []*rdbpb.Artifact) {
 	printArtifactList(out, artifacts, true)
 }
 
-func printArtifactList(out io.Writer, artifacts []*rdbpb.Artifact, includeMetadata bool) {
+// PrintArtifactTableTo prints the compact 1-line-per-artifact table rows for
+// artifacts in their given order, without sorting or printing a footer hint.
+func PrintArtifactTableTo(out io.Writer, artifacts []*rdbpb.Artifact, includeMetadata bool) {
 	if len(artifacts) == 0 {
-		fmt.Fprintf(out, "  (no artifacts)\n\n")
 		return
 	}
-
-	sorted := make([]*rdbpb.Artifact, len(artifacts))
-	copy(sorted, artifacts)
-	SortArtifacts(sorted)
-
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	if includeMetadata {
 		fmt.Fprintln(tw, "  ARTIFACT ID\tTYPE\tSIZE\tCONTENT-TYPE\tFLAGS")
 	} else {
 		fmt.Fprintln(tw, "  ARTIFACT ID\tTYPE\tSIZE\tCONTENT-TYPE")
 	}
-	for _, art := range sorted {
+	for _, art := range artifacts {
 		artType := art.GetArtifactType()
 		if artType == "" {
 			artType = "-"
@@ -873,6 +973,19 @@ func printArtifactList(out io.Writer, artifacts []*rdbpb.Artifact, includeMetada
 		}
 	}
 	_ = tw.Flush()
+}
+
+func printArtifactList(out io.Writer, artifacts []*rdbpb.Artifact, includeMetadata bool) {
+	if len(artifacts) == 0 {
+		fmt.Fprintf(out, "  (no artifacts)\n\n")
+		return
+	}
+
+	sorted := make([]*rdbpb.Artifact, len(artifacts))
+	copy(sorted, artifacts)
+	SortArtifacts(sorted)
+
+	PrintArtifactTableTo(out, sorted, includeMetadata)
 	fmt.Fprintln(out)
 
 	if hint := FormatArtifactFetchHint(sorted[0].GetName(), includeMetadata); hint != "" {
