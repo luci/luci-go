@@ -17,11 +17,13 @@ package recorder
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -52,31 +55,21 @@ func (s *recorderServer) BatchCreateWorkUnits(ctx context.Context, in *pb.BatchC
 	if err := validateBatchCreateWorkUnitsRequest(in, cfg); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	ids, err := createWorkUnitsIdempotent(ctx, in, s.ExpectedResultsExpiration)
+	wuRows, err := createWorkUnitsIdempotent(ctx, in, s.ExpectedResultsExpiration)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: The response is read in a separate transaction
-	// from the creation. This means a duplicate request may not receive an
-	// identical response if the invocation was updated in the meantime.
-	// While AIP-155 (https://google.aip.dev/155#stale-success-responses)
-	// permits returning the most current data, we could instead construct the
-	// response from the request data for better consistency.
-	wuRows, err := workunits.ReadBatch(span.Single(ctx), ids, workunits.AllFields)
-	if err != nil {
-		return nil, err
-	}
 	workUnits := make([]*pb.WorkUnit, len(in.Requests))
 	updateTokens := make([]string, len(in.Requests))
 
-	for i, id := range ids {
-		token, err := generateWorkUnitUpdateToken(ctx, id)
+	for i, wuRow := range wuRows {
+		token, err := generateWorkUnitUpdateToken(ctx, wuRow.ID)
 		if err != nil {
 			return nil, err
 		}
 		updateTokens[i] = token
-		workUnits[i] = masking.WorkUnit(wuRows[i], permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL, cfg)
+		workUnits[i] = masking.WorkUnit(wuRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL, cfg)
 	}
 	return &pb.BatchCreateWorkUnitsResponse{
 		WorkUnits:    workUnits,
@@ -91,13 +84,14 @@ func createWorkUnitsIdempotent(
 	ctx context.Context,
 	in *pb.BatchCreateWorkUnitsRequest,
 	uninterestingTestVerdictsExpirationTime time.Duration,
-) (createdIDs []workunits.ID, err error) {
+) (wuRows []*workunits.WorkUnitRow, err error) {
 	now := clock.Now(ctx)
 	createdBy := string(auth.CurrentIdentity(ctx))
 
 	parentIDs := make([]workunits.ID, 0, len(in.Requests))
 	ids := make([]workunits.ID, 0, len(in.Requests))
-	for _, r := range in.Requests {
+	createdIDsToIndex := make(map[workunits.ID]int, len(in.Requests))
+	for i, r := range in.Requests {
 		parentID := workunits.MustParseName(r.Parent)
 		createdID := workunits.ID{
 			RootInvocationID: parentID.RootInvocationID,
@@ -105,6 +99,7 @@ func createWorkUnitsIdempotent(
 		}
 		parentIDs = append(parentIDs, parentID)
 		ids = append(ids, createdID)
+		createdIDsToIndex[createdID] = i
 	}
 
 	logging.Infof(ctx, "%s", prepareWorkUnitCreationLogMessage(parentIDs, ids))
@@ -116,7 +111,10 @@ func createWorkUnitsIdempotent(
 	parentsToCheckSet.RemoveAll(workunits.NewIDSet(ids...))
 	parentsToCheck := parentsToCheckSet.SortedByRowID()
 
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		// Reset variables in case the transaction gets retried.
+		wuRows = make([]*workunits.WorkUnitRow, len(in.Requests))
+
 		dedup, err = deduplicateCreateWorkUnits(ctx, ids, in.RequestId, createdBy)
 		if err != nil {
 			return err
@@ -221,20 +219,44 @@ func createWorkUnitsIdempotent(
 				ExpectedTestResultsExpirationTime: now.Add(uninterestingTestVerdictsExpirationTime),
 			}
 			span.BufferWrite(ctx, workunits.Create(wuRow, legacyCreateOpts)...)
+			wuRows[i] = wuRow
+			if parentCreateIdx, ok := createdIDsToIndex[parentIDs[i]]; ok {
+				wuRows[parentCreateIdx].ChildWorkUnits = append(wuRows[parentCreateIdx].ChildWorkUnits, ids[i])
+			}
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	if !dedup {
-		for _, r := range in.Requests {
-			spanutil.IncRowCount(ctx, 1, spanutil.WorkUnits, spanutil.Inserted, r.WorkUnit.Realm)
-			// One shadow legacy invocation for the work unit.
-			spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, r.WorkUnit.Realm)
-		}
+	if dedup {
+		// On duplicate requests, read the existing work units from Spanner.
+		// Note that if the work units were modified between the original request
+		// and this retry, this returns the most current data (permitted by
+		// AIP-155 https://google.aip.dev/155#stale-success-responses).
+		return workunits.ReadBatch(span.Single(ctx), ids, workunits.AllFields)
 	}
-	return ids, nil
+	for _, wuRow := range wuRows {
+		// Populate output-only and normalized fields that workunits.ReadBatch
+		// would otherwise populate when reading back from Spanner.
+		wuRow.CreateTime = commitTimestamp
+		wuRow.LastUpdated = commitTimestamp
+		if wuRow.ModuleID != nil {
+			wuRow.ModuleID = proto.Clone(wuRow.ModuleID).(*pb.ModuleIdentifier)
+			pbutil.PopulateModuleIdentifierHashes(wuRow.ModuleID)
+		}
+		wuRow.ProducerResource = pbutil.RemoveProducerResourceOutputOnlyFields(wuRow.ProducerResource)
+		wuRow.Instructions = instructionutil.InstructionsWithNames(wuRow.Instructions, wuRow.ID.Name())
+		if len(wuRow.ChildWorkUnits) > 1 {
+			slices.SortFunc(wuRow.ChildWorkUnits, func(a, b workunits.ID) int {
+				return strings.Compare(a.WorkUnitID, b.WorkUnitID)
+			})
+		}
+		spanutil.IncRowCount(ctx, 1, spanutil.WorkUnits, spanutil.Inserted, wuRow.Realm)
+		// One shadow legacy invocation for the work unit.
+		spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, wuRow.Realm)
+	}
+	return wuRows, nil
 }
 
 func validateBatchCreateWorkUnitsPermissions(ctx context.Context, req *pb.BatchCreateWorkUnitsRequest, cfg *config.CompiledServiceConfig) error {

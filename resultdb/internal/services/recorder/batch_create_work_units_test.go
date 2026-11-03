@@ -840,6 +840,13 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				},
 			))
 
+			// Verify that a deduplicated retry (which reads back from Spanner via
+			// workunits.ReadBatch) produces the exact same response as the initial
+			// in-memory construction.
+			resRetry, err := recorder.BatchCreateWorkUnits(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, resRetry, should.Match(res))
+
 			// Check the database.
 			readCtx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
