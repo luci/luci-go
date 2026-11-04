@@ -66,11 +66,19 @@ import {
   fontSizes,
   iconSizes,
   radii,
-  StatusTone,
 } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
+import {
+  copyTextToClipboard,
+  formatProductCategory,
+  formatUnitCost,
+  GCE_ONLY_ACCESSORS,
+  getPlmStatusTone,
+  HARDWARE_ONLY_ACCESSORS,
+  resolveProductType,
+} from './catalog_details_helpers';
 import { CatalogPhotoEditDialog } from './catalog_edit_prompt_dialog';
 import {
   ALLOWED_PLM_STATUSES,
@@ -86,8 +94,8 @@ import {
   validatePhotoDimensions,
   validatePhotoUrlInput,
 } from './catalog_edit_validation';
+import { CategoryIllustration } from './category_illustration';
 import { OrderForm } from './order_form';
-import { CategoryIllustration } from './product_catalogue_card_view';
 import { COLUMNS } from './product_catalogue_columns';
 import { UnifiedProductCatalogEntry } from './types';
 import { UnsavedChangesToast } from './unsaved_changes_toast';
@@ -113,85 +121,6 @@ interface DetailValueCellProps {
     value: string,
   ) => void;
 }
-
-const GCE_ONLY_ACCESSORS = new Set<keyof UnifiedProductCatalogEntry>([
-  'cpuType',
-  'cpuNumPerVm',
-  'memoryGbPerVm',
-]);
-
-const HARDWARE_ONLY_ACCESSORS = new Set<keyof UnifiedProductCatalogEntry>([
-  'gpn',
-  'resourceType',
-  'r11n',
-  'numberOfDevicesPerRack',
-  'unitCost',
-]);
-
-const getPlmStatusTone = (status?: string): StatusTone => {
-  switch (status?.toUpperCase()) {
-    case 'GA':
-    case 'ACTIVE':
-      return 'success';
-    case 'LA':
-      return 'warning';
-    case 'NPI':
-      return 'info';
-    default:
-      return 'neutral';
-  }
-};
-
-const resolveProductType = (
-  productType?: string,
-  productCatalogId?: string,
-): string => {
-  const explicit = (productType || '').trim().toLowerCase();
-  if (explicit) return explicit;
-  const upperId = (productCatalogId || '').trim().toUpperCase();
-  if (upperId.startsWith('ATB-')) return 'android-testbed';
-  if (upperId.startsWith('TB-')) return 'os-testbed';
-  if (upperId.startsWith('PH-')) return 'hardware';
-  if (upperId.startsWith('PP-')) return 'peripherals';
-  if (upperId.startsWith('GCE-')) return 'gce';
-  return '';
-};
-
-const formatProductCategory = (
-  productType?: string,
-  productCatalogId?: string,
-) => {
-  const prodType = resolveProductType(productType, productCatalogId);
-  switch (prodType) {
-    case 'android-testbed':
-      return 'Android Testbed';
-    case 'os-testbed':
-      return 'OS Testbed';
-    case 'hardware':
-      return 'DUT & Host Hardware';
-    case 'peripherals':
-      return 'Lab Peripheral & Fixture';
-    case 'gce':
-      return 'GCE Virtual Machine';
-    default:
-      return productType || 'Catalog Item';
-  }
-};
-
-const formatUnitCost = (unitCost?: string) => {
-  if (!unitCost || unitCost === '0') return '—';
-  const trimmed = unitCost.trim();
-  if (!trimmed) return '—';
-  if (trimmed.startsWith('$')) return trimmed;
-  const numeric = Number(trimmed.replace(/,/g, ''));
-  if (Number.isNaN(numeric)) {
-    return trimmed;
-  }
-  if (numeric > 0) {
-    return `$${numeric.toLocaleString('en-US')}`;
-  }
-  return '—';
-};
 
 const DetailValueCell = ({
   row,
@@ -1267,24 +1196,8 @@ export const ProductCatalogDetailsPage = () => {
   }, [generatedPrompt]);
 
   const handleCopyPrompt = async () => {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(generatedPrompt);
-        setCopiedPrompt(true);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = generatedPrompt;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        const copied = document.execCommand?.('copy') ?? false;
-        document.body.removeChild(textarea);
-        setCopiedPrompt(copied);
-      }
-    } catch {
-      setCopiedPrompt(false);
-    }
+    const ok = await copyTextToClipboard(generatedPrompt);
+    setCopiedPrompt(ok);
   };
 
   const resolvedProductType = resolveProductType(

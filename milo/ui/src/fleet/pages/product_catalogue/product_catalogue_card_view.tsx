@@ -15,11 +15,7 @@
 import styled from '@emotion/styled';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import DevicesIcon from '@mui/icons-material/Devices';
-import DnsIcon from '@mui/icons-material/Dns';
-import LaptopIcon from '@mui/icons-material/Laptop';
-import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import {
   Box,
   Card,
@@ -47,9 +43,10 @@ import {
   fontSizes,
   iconSizes,
   radii,
-  StatusTone,
 } from '@/fleet/theme/tokens';
 
+import { formatUnitCost, getPlmStatusTone } from './catalog_details_helpers';
+import { CategoryIllustration, ProductTypeIcon } from './category_illustration';
 import { UnifiedProductCatalogEntry } from './types';
 
 enum PlmStatus {
@@ -58,64 +55,6 @@ enum PlmStatus {
   NPI = 'NPI',
   ACTIVE = 'ACTIVE',
 }
-
-enum ProductType {
-  ANDROID_TESTBED = 'android-testbed',
-  OS_TESTBED = 'os-testbed',
-  HARDWARE = 'hardware',
-  PERIPHERALS = 'peripherals',
-  GCE = 'gce',
-}
-
-const getPlmStatusTone = (status?: string): StatusTone => {
-  switch (status?.toUpperCase()) {
-    case PlmStatus.GA:
-    case PlmStatus.ACTIVE:
-      return 'success';
-    case PlmStatus.LA:
-      return 'warning';
-    case PlmStatus.NPI:
-      return 'info';
-    default:
-      return 'neutral';
-  }
-};
-
-const formatUnitCost = (unitCost?: string) => {
-  if (!unitCost || unitCost === '0') return null;
-  const trimmed = unitCost.trim();
-  if (trimmed.startsWith('$')) {
-    return trimmed;
-  }
-  const numeric = Number(trimmed.replace(/,/g, ''));
-  if (!Number.isNaN(numeric) && numeric > 0) {
-    return `$${numeric.toLocaleString('en-US')}`;
-  }
-  return `$${trimmed}`;
-};
-
-const getProductIcon = (productType?: string) => {
-  const prodType = (productType || '').trim().toLowerCase();
-  const iconSx = {
-    fontSize: 40,
-    color: fleetColors.primary,
-    flexShrink: 0,
-    display: 'block',
-  };
-  switch (prodType) {
-    case ProductType.ANDROID_TESTBED:
-      return <PhoneAndroidIcon sx={iconSx} />;
-    case ProductType.OS_TESTBED:
-      return <DnsIcon sx={iconSx} />;
-    case ProductType.GCE:
-      return <CloudOutlinedIcon sx={iconSx} />;
-    case ProductType.HARDWARE:
-      return <LaptopIcon sx={iconSx} />;
-    case ProductType.PERIPHERALS:
-    default:
-      return <DevicesIcon sx={iconSx} />;
-  }
-};
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [20, 50, 100];
 
@@ -186,30 +125,6 @@ const getPathnameWithParams = () => {
   return window.location.href.toString().split(window.location.host)[1];
 };
 
-export interface CategoryIllustrationProps {
-  readonly productType?: string;
-  readonly productCatalogId: string;
-}
-
-export const CategoryIllustration = ({
-  productType,
-  productCatalogId,
-}: CategoryIllustrationProps) => {
-  return (
-    <Box
-      data-testid={`catalog-photo-fallback-${productCatalogId}`}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        my: 'auto',
-      }}
-    >
-      {getProductIcon(productType)}
-    </Box>
-  );
-};
-
 interface CatalogEntryCardProps {
   readonly entry: UnifiedProductCatalogEntry;
 }
@@ -230,7 +145,9 @@ const CatalogEntryCard = ({ entry }: CatalogEntryCardProps) => {
     ...(entry.r11n && entry.r11n.length > 0
       ? [{ label: 'R11N', value: entry.r11n.join(', ') }]
       : []),
-    ...(formattedCost ? [{ label: 'Unit Cost', value: formattedCost }] : []),
+    ...(formattedCost && formattedCost !== '—'
+      ? [{ label: 'Unit Cost', value: formattedCost }]
+      : []),
     ...(entry.numberOfDevicesPerRack !== undefined &&
     entry.numberOfDevicesPerRack !== 0
       ? [{ label: 'Per Rack', value: entry.numberOfDevicesPerRack }]
@@ -698,7 +615,7 @@ const LegacyProductCatalogueCardView = ({
                 data-testid={`legacy-catalog-card-${entry.productCatalogId}`}
               >
                 <LegacyImageSection>
-                  {getProductIcon(entry.productType)}
+                  <ProductTypeIcon productType={entry.productType} />
                 </LegacyImageSection>
                 <ContentSection>
                   <Box>

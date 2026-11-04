@@ -18,6 +18,7 @@ import { useMemo } from 'react';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { formatAipClause } from '@/fleet/utils/search_param';
 
+import { resolveProductType } from './catalog_details_helpers';
 import {
   UnifiedProductCatalogEntry,
   fromStandardCatalogEntry,
@@ -43,15 +44,19 @@ export const useProductCatalogDetailsData = (
   const client = useFleetConsoleClient();
 
   const filter = formatAipClause('product_catalog_id', [id]);
+  const inferredType = resolveProductType(undefined, id);
+  const enableStandard = Boolean(id) && inferredType !== 'gce';
+  const enableGce =
+    Boolean(id) && (inferredType === 'gce' || inferredType === '');
 
   const standardQuery = useQuery({
     ...client.ListProductCatalogEntries.query({ filter }),
-    enabled: !!id,
+    enabled: enableStandard,
   });
 
   const gceQuery = useQuery({
     ...client.ListGceProductCatalogEntries.query({ filter }),
-    enabled: !!id,
+    enabled: enableGce,
   });
 
   const entry = useMemo(() => {
@@ -66,10 +71,29 @@ export const useProductCatalogDetailsData = (
 
   const hasEntry = !!entry;
 
-  return {
-    error: standardQuery.error || gceQuery.error,
-    isError: !hasEntry && Boolean(standardQuery.isError || gceQuery.isError),
-    isLoading: !hasEntry && (standardQuery.isLoading || gceQuery.isLoading),
-    entry,
-  };
+  const isAnyLoading =
+    (enableStandard && standardQuery.isLoading) ||
+    (enableGce && gceQuery.isLoading);
+  const isError =
+    !hasEntry &&
+    !isAnyLoading &&
+    Boolean(
+      (enableStandard && standardQuery.isError) ||
+        (enableGce && gceQuery.isError),
+    );
+  const error = isError
+    ? (enableStandard ? standardQuery.error : undefined) ||
+      (enableGce ? gceQuery.error : undefined)
+    : undefined;
+  const isLoading = !hasEntry && isAnyLoading;
+
+  return useMemo(
+    () => ({
+      error,
+      isError,
+      isLoading,
+      entry,
+    }),
+    [entry, error, isError, isLoading],
+  );
 };

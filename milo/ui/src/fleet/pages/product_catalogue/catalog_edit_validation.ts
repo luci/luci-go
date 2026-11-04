@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CatalogDiffItem } from './catalog_edit_prompt_dialog';
 import { UnifiedProductCatalogEntry } from './types';
+
+export interface CatalogDiffItem {
+  readonly label: string;
+  readonly before: string;
+  readonly after: string;
+}
 
 export const MIN_PHOTO_WIDTH = 220;
 export const MIN_PHOTO_HEIGHT = 140;
