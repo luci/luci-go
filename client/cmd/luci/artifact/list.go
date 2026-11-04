@@ -178,7 +178,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	}
 
 	if effectiveParentType == ParentTypeTestResult {
-		trArtifacts, err := QueryAllArtifacts(ctx, client, cleanTarget)
+		trArtifacts, err := queryParentArtifacts(ctx, client, cleanTarget, serverRegexp)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to list artifacts for test result %q: %s\n", cleanTarget, err)
 			return 1
@@ -217,7 +217,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 
 	if effectiveParentType == ParentTypeInvocation {
 		if resolved.Legacy {
-			invArtifacts, err := QueryAllArtifacts(ctx, client, cleanTarget)
+			invArtifacts, err := queryParentArtifacts(ctx, client, cleanTarget, serverRegexp)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to list artifacts for invocation %q: %s\n", cleanTarget, err)
 				return 1
@@ -259,7 +259,7 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 	}
 
 	// Work unit
-	wuArtifacts, err := QueryAllArtifacts(ctx, client, cleanTarget)
+	wuArtifacts, err := queryParentArtifacts(ctx, client, cleanTarget, serverRegexp)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to list artifacts for work unit %q: %s\n", cleanTarget, err)
 		return 1
@@ -675,6 +675,19 @@ func formatAncestorWorkUnitNotices(withArtifacts []ancestorWUInfo, targetTestID,
 }
 
 func QueryAllArtifacts(ctx context.Context, client rdbpb.ResultDBClient, parent string) ([]*rdbpb.Artifact, error) {
+	return queryParentArtifacts(ctx, client, parent, "")
+}
+
+// queryParentArtifacts lists all artifacts directly under parent using
+// ResultDB.ListArtifacts, optionally filtered on the server by artifactIDRegexp
+// (a case-insensitive RE2 fragment for ArtifactPredicate.ArtifactIdRegexp).
+func queryParentArtifacts(ctx context.Context, client rdbpb.ResultDBClient, parent, artifactIDRegexp string) ([]*rdbpb.Artifact, error) {
+	var predicate *rdbpb.ArtifactPredicate
+	if artifactIDRegexp != "" {
+		predicate = &rdbpb.ArtifactPredicate{
+			ArtifactIdRegexp: artifactIDRegexp,
+		}
+	}
 	var all []*rdbpb.Artifact
 	pageToken := ""
 	for {
@@ -682,6 +695,7 @@ func QueryAllArtifacts(ctx context.Context, client rdbpb.ResultDBClient, parent 
 			Parent:    parent,
 			PageSize:  1000,
 			PageToken: pageToken,
+			Predicate: predicate,
 		})
 		if err != nil {
 			if base.IsPermissionDenied(err) {

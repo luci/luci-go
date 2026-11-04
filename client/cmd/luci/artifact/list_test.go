@@ -294,22 +294,28 @@ func TestListCmd(t *testing.T) {
 			assert.Loosely(t, invRun.Run(nil, nil, nil), should.Equal(0))
 			assert.Loosely(t, gotRegexp, should.Equal(`(?i).*(?:-logcat-on-failure_.*\.txt)`))
 
-			// 2. Work unit filters ListArtifacts results client-side with -filter before maxArtifacts truncation.
+			// 2. Work unit passes Predicate.ArtifactIdRegexp to ListArtifacts and filters client-side with -filter before maxArtifacts truncation.
+			var gotWURegexp string
 			wuClient := &mockResultDBClient{
 				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
-					return &rdbpb.ListArtifactsResponse{
-						Artifacts: []*rdbpb.Artifact{
-							{ArtifactId: "stdout.txt", Name: in.Parent + "/artifacts/stdout.txt"},
-							{ArtifactId: "bugreport_1.zip", Name: in.Parent + "/artifacts/bugreport_1.zip"},
-							{ArtifactId: "HOST_LOG.txt", Name: in.Parent + "/artifacts/HOST_LOG.txt"},
-						},
-					}, nil
+					if in.Parent == "rootInvocations/ants-i123/workUnits/wu-1" {
+						gotWURegexp = in.GetPredicate().GetArtifactIdRegexp()
+						return &rdbpb.ListArtifactsResponse{
+							Artifacts: []*rdbpb.Artifact{
+								{ArtifactId: "stdout.txt", Name: in.Parent + "/artifacts/stdout.txt"},
+								{ArtifactId: "bugreport_1.zip", Name: in.Parent + "/artifacts/bugreport_1.zip"},
+								{ArtifactId: "HOST_LOG.txt", Name: in.Parent + "/artifacts/HOST_LOG.txt"},
+							},
+						}, nil
+					}
+					return &rdbpb.ListArtifactsResponse{}, nil
 				},
 			}
+			var wuOut bytes.Buffer
 			wuRun := &artifactListRun{
 				artifactCommonRun: artifactCommonRun{
 					client:       wuClient,
-					out:          &bytes.Buffer{},
+					out:          &wuOut,
 					parentType:   ParentTypeWorkUnit,
 					invocationID: "ants-i123",
 					workUnitID:   "wu-1",
@@ -318,22 +324,32 @@ func TestListCmd(t *testing.T) {
 				maxArtifacts: DefaultMaxArtifacts,
 			}
 			assert.Loosely(t, wuRun.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, gotWURegexp, should.Equal(`(?i).*(?:bugreport|host_log).*`))
+			assert.Loosely(t, wuOut.String(), should.ContainSubstring("bugreport_1.zip"))
+			assert.Loosely(t, wuOut.String(), should.ContainSubstring("HOST_LOG.txt"))
+			assert.Loosely(t, wuOut.String(), should.NotContainSubstring("stdout.txt"))
 
-			// 3. Test result filters ListArtifacts results client-side with -filter.
+			// 3. Test result passes Predicate.ArtifactIdRegexp to ListArtifacts and filters client-side with -filter.
+			var gotTRRegexp string
 			trClient := &mockResultDBClient{
 				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
-					return &rdbpb.ListArtifactsResponse{
-						Artifacts: []*rdbpb.Artifact{
-							{ArtifactId: "screenshot.png", Name: in.Parent + "/artifacts/screenshot.png"},
-							{ArtifactId: "test_logcat.txt", Name: in.Parent + "/artifacts/test_logcat.txt"},
-						},
-					}, nil
+					if in.Parent == "rootInvocations/ants-i123/workUnits/wu-1/tests/t1/results/0" {
+						gotTRRegexp = in.GetPredicate().GetArtifactIdRegexp()
+						return &rdbpb.ListArtifactsResponse{
+							Artifacts: []*rdbpb.Artifact{
+								{ArtifactId: "screenshot.png", Name: in.Parent + "/artifacts/screenshot.png"},
+								{ArtifactId: "test_logcat.txt", Name: in.Parent + "/artifacts/test_logcat.txt"},
+							},
+						}, nil
+					}
+					return &rdbpb.ListArtifactsResponse{}, nil
 				},
 			}
+			var trOut bytes.Buffer
 			trRun := &artifactListRun{
 				artifactCommonRun: artifactCommonRun{
 					client:       trClient,
-					out:          &bytes.Buffer{},
+					out:          &trOut,
 					parentType:   ParentTypeTestResult,
 					invocationID: "ants-i123",
 					workUnitID:   "wu-1",
@@ -344,6 +360,9 @@ func TestListCmd(t *testing.T) {
 				maxArtifacts: DefaultMaxArtifacts,
 			}
 			assert.Loosely(t, trRun.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, gotTRRegexp, should.Equal(`(?i).*(?:LOGCAT).*`))
+			assert.Loosely(t, trOut.String(), should.ContainSubstring("test_logcat.txt"))
+			assert.Loosely(t, trOut.String(), should.NotContainSubstring("screenshot.png"))
 		})
 
 		t.Run(`accepts positional targets and prints derived IDs for invocation, work unit, and test result`, func(t *ftt.Test) {
@@ -683,6 +702,28 @@ func TestQueryAllArtifacts(t *testing.T) {
 			_, err := QueryAllArtifacts(ctx, client, "parent")
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("permission denied"))
+		})
+
+		t.Run(`queryParentArtifacts passes Predicate.ArtifactIdRegexp when non-empty`, func(t *ftt.Test) {
+			var gotPred *rdbpb.ArtifactPredicate
+			client := &mockResultDBClient{
+				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
+					gotPred = in.GetPredicate()
+					return &rdbpb.ListArtifactsResponse{
+						Artifacts: []*rdbpb.Artifact{
+							{ArtifactId: "logcat.txt", Name: "parent/artifacts/logcat.txt"},
+						},
+					}, nil
+				},
+			}
+			arts, err := queryParentArtifacts(ctx, client, "parent", `(?i).*(?:logcat).*`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(arts), should.Equal(1))
+			assert.Loosely(t, gotPred.GetArtifactIdRegexp(), should.Equal(`(?i).*(?:logcat).*`))
+
+			_, err = queryParentArtifacts(ctx, client, "parent", "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, gotPred, should.BeNil)
 		})
 	})
 }
