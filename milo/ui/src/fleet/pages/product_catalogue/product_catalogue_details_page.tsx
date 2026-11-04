@@ -35,7 +35,7 @@ import {
   MRT_ColumnDef,
   MRT_Row,
 } from 'material-react-table';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
@@ -71,7 +71,6 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import {
-  copyTextToClipboard,
   formatProductCategory,
   formatUnitCost,
   GCE_ONLY_ACCESSORS,
@@ -82,23 +81,15 @@ import {
 import { CatalogPhotoEditDialog } from './catalog_edit_prompt_dialog';
 import {
   ALLOWED_PLM_STATUSES,
-  arePhotoListsEqual,
-  buildCatalogPhotoEditPrompt,
   CatalogEditableFieldKey,
-  CatalogEditableFields,
-  computeCatalogSpecDiffs,
-  createCatalogEditableDraft,
   EDITABLE_SPEC_FIELD_BY_HEADER,
-  MAX_PHOTOS_PER_ENTRY,
-  validateAllCatalogSpecFields,
-  validatePhotoDimensions,
-  validatePhotoUrlInput,
 } from './catalog_edit_validation';
 import { CategoryIllustration } from './category_illustration';
 import { OrderForm } from './order_form';
 import { COLUMNS } from './product_catalogue_columns';
 import { UnifiedProductCatalogEntry } from './types';
 import { UnsavedChangesToast } from './unsaved_changes_toast';
+import { useCatalogEditState } from './use_catalog_edit_state';
 import { useProductCatalogDetailsData } from './use_product_catalog_details_data';
 
 interface DetailRow {
@@ -1003,202 +994,7 @@ export const ProductCatalogDetailsPage = () => {
   };
 
   const { error, isError, isLoading, entry } = useProductCatalogDetailsData(id);
-
-  const originalPhotos = useMemo(
-    () => entry?.photoDataUris ?? [],
-    [entry?.photoDataUris],
-  );
-
-  const [isPhotoEditorOpen, setIsPhotoEditorOpen] = useState(false);
-  const [isEditingSpecs, setIsEditingSpecs] = useState(false);
-  const [stagedPhotosOverride, setStagedPhotosOverride] = useState<
-    readonly string[] | undefined
-  >(undefined);
-  const [specDraftOverride, setSpecDraftOverride] = useState<
-    CatalogEditableFields | undefined
-  >(undefined);
-  const [photoUrlDraft, setPhotoUrlDraft] = useState('');
-  const [photoInputError, setPhotoInputError] = useState<string | undefined>(
-    undefined,
-  );
-  const [photoDimensionErrors, setPhotoDimensionErrors] = useState<
-    Record<string, string>
-  >({});
-  const [copiedPrompt, setCopiedPrompt] = useState(false);
-
-  // Reset staged edits when switching catalog entries.
-  useEffect(() => {
-    setStagedPhotosOverride(undefined);
-    setSpecDraftOverride(undefined);
-    setIsPhotoEditorOpen(false);
-    setIsEditingSpecs(false);
-    setPhotoUrlDraft('');
-    setPhotoInputError(undefined);
-    setPhotoDimensionErrors({});
-    setCopiedPrompt(false);
-  }, [id]);
-
-  const baselineSpecDraft = useMemo(
-    () =>
-      entry
-        ? createCatalogEditableDraft(entry)
-        : {
-            productName: '',
-            descriptiveName: '',
-            gpn: '',
-            resourceType: '',
-            fleetPlmStatus: '',
-            r11n: '',
-            numberOfDevicesPerRack: '',
-            unitCost: '',
-          },
-    [entry],
-  );
-  const activeSpecDraft = specDraftOverride ?? baselineSpecDraft;
-
-  const specErrors = useMemo(
-    () =>
-      specDraftOverride
-        ? validateAllCatalogSpecFields(activeSpecDraft, baselineSpecDraft)
-        : {},
-    [activeSpecDraft, baselineSpecDraft, specDraftOverride],
-  );
-
-  const specDiffs = useMemo(
-    () =>
-      entry && specDraftOverride
-        ? computeCatalogSpecDiffs(entry, activeSpecDraft)
-        : [],
-    [activeSpecDraft, entry, specDraftOverride],
-  );
-
-  const displayEntry = useMemo<UnifiedProductCatalogEntry | undefined>(() => {
-    if (!entry) return undefined;
-    if (!specDraftOverride) return entry;
-    const rawRackCount = activeSpecDraft.numberOfDevicesPerRack.trim();
-    const parsedRackCount = Number(rawRackCount);
-    return {
-      ...entry,
-      productName: activeSpecDraft.productName.trim(),
-      descriptiveName: activeSpecDraft.descriptiveName.trim(),
-      gpn: activeSpecDraft.gpn.trim(),
-      resourceType: activeSpecDraft.resourceType.trim(),
-      fleetPlmStatus: activeSpecDraft.fleetPlmStatus.trim(),
-      r11n: activeSpecDraft.r11n
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
-      numberOfDevicesPerRack:
-        rawRackCount !== '' && !Number.isNaN(parsedRackCount)
-          ? parsedRackCount
-          : undefined,
-      unitCost: activeSpecDraft.unitCost.trim(),
-    };
-  }, [activeSpecDraft, entry, specDraftOverride]);
-
-  const stagedPhotos = stagedPhotosOverride ?? originalPhotos;
-  const hasPhotoChanges =
-    entry !== undefined && !arePhotoListsEqual(originalPhotos, stagedPhotos);
-  const dirtyCount = specDiffs.length + (hasPhotoChanges ? 1 : 0);
-
-  const activeDimensionErrorMessages = stagedPhotos
-    .filter(
-      (uri) =>
-        Boolean(photoDimensionErrors[uri]) && !originalPhotos.includes(uri),
-    )
-    .map((uri) => photoDimensionErrors[uri]);
-  const specErrorMessages = Object.values(specErrors).filter(
-    (msg): msg is string => Boolean(msg),
-  );
-  const validationErrorCount =
-    activeDimensionErrorMessages.length + specErrorMessages.length;
-  const firstValidationErrorMessage =
-    specErrorMessages[0] ?? activeDimensionErrorMessages[0];
-
-  const handleSpecFieldChange = useCallback(
-    (field: CatalogEditableFieldKey, value: string) => {
-      setSpecDraftOverride((prev) => ({
-        ...(prev ?? baselineSpecDraft),
-        [field]: value,
-      }));
-    },
-    [baselineSpecDraft],
-  );
-
-  const handleStagePhotoUrl = () => {
-    const err = validatePhotoUrlInput(photoUrlDraft, stagedPhotos);
-    if (err) {
-      setPhotoInputError(err);
-      return;
-    }
-    const trimmed = photoUrlDraft.trim();
-    setStagedPhotosOverride([...stagedPhotos, trimmed]);
-    setPhotoUrlDraft('');
-    setPhotoInputError(undefined);
-  };
-
-  const handleRemoveStagedPhoto = (idx: number) => {
-    const removedUri = stagedPhotos[idx];
-    const next = stagedPhotos.filter((_, i) => i !== idx);
-    setStagedPhotosOverride(next);
-    setPhotoInputError(undefined);
-    if (removedUri) {
-      setPhotoDimensionErrors((prev) => {
-        if (!prev[removedUri]) return prev;
-        const copy = { ...prev };
-        delete copy[removedUri];
-        return copy;
-      });
-    }
-  };
-
-  const handleSetPrimaryPhoto = (idx: number) => {
-    if (idx <= 0 || idx >= stagedPhotos.length) return;
-    const target = stagedPhotos[idx];
-    const rest = stagedPhotos.filter((_, i) => i !== idx);
-    setStagedPhotosOverride([target, ...rest]);
-  };
-
-  const handleDiscardEdits = () => {
-    setStagedPhotosOverride(undefined);
-    setSpecDraftOverride(undefined);
-    setPhotoUrlDraft('');
-    setPhotoInputError(undefined);
-    setPhotoDimensionErrors({});
-    setCopiedPrompt(false);
-  };
-
-  const handlePhotoDimensionsEvaluated = (
-    uri: string,
-    width: number,
-    height: number,
-  ) => {
-    const dimErr = validatePhotoDimensions(width, height);
-    setPhotoDimensionErrors((prev) => {
-      if (dimErr ? prev[uri] === dimErr : !prev[uri]) return prev;
-      const next = { ...prev };
-      if (dimErr) {
-        next[uri] = dimErr;
-      } else {
-        delete next[uri];
-      }
-      return next;
-    });
-  };
-
-  const generatedPrompt = useMemo(() => {
-    if (!entry) return '';
-    return buildCatalogPhotoEditPrompt(entry, stagedPhotos, specDiffs);
-  }, [entry, specDiffs, stagedPhotos]);
-
-  useEffect(() => {
-    setCopiedPrompt(false);
-  }, [generatedPrompt]);
-
-  const handleCopyPrompt = async () => {
-    const ok = await copyTextToClipboard(generatedPrompt);
-    setCopiedPrompt(ok);
-  };
+  const editState = useCatalogEditState(id, entry);
 
   const resolvedProductType = resolveProductType(
     entry?.productType,
@@ -1252,7 +1048,7 @@ export const ProductCatalogDetailsPage = () => {
         Header:
           isRevampEnabled && !isGceEntry
             ? () => {
-                const editLabel = isEditingSpecs
+                const editLabel = editState.isEditingSpecs
                   ? 'Done editing specifications'
                   : 'Edit specifications';
                 return (
@@ -1268,17 +1064,23 @@ export const ProductCatalogDetailsPage = () => {
                     <span>Value</span>
                     <Tooltip title={editLabel}>
                       <Button
-                        variant={isEditingSpecs ? 'contained' : 'outlined'}
+                        variant={
+                          editState.isEditingSpecs ? 'contained' : 'outlined'
+                        }
                         color="primary"
                         size="small"
                         aria-label={editLabel}
-                        onClick={() => setIsEditingSpecs((prev) => !prev)}
+                        onClick={editState.handleToggleEditingSpecs}
                         data-testid="toggle-spec-editor-btn"
                         startIcon={
-                          isEditingSpecs ? <CheckIcon /> : <EditOutlinedIcon />
+                          editState.isEditingSpecs ? (
+                            <CheckIcon />
+                          ) : (
+                            <EditOutlinedIcon />
+                          )
                         }
                       >
-                        {isEditingSpecs ? 'Done' : 'Edit'}
+                        {editState.isEditingSpecs ? 'Done' : 'Edit'}
                       </Button>
                     </Tooltip>
                   </Box>
@@ -1304,19 +1106,27 @@ export const ProductCatalogDetailsPage = () => {
           <DetailValueCell
             row={row}
             isRevampEnabled={isRevampEnabled}
-            isEditingSpecs={isEditingSpecs}
-            onStartEditingSpecs={() => setIsEditingSpecs(true)}
-            onStopEditingSpecs={() => setIsEditingSpecs(false)}
-            onSpecFieldChange={handleSpecFieldChange}
+            isEditingSpecs={editState.isEditingSpecs}
+            onStartEditingSpecs={editState.handleStartEditingSpecs}
+            onStopEditingSpecs={editState.handleStopEditingSpecs}
+            onSpecFieldChange={editState.handleSpecFieldChange}
           />
         ),
       },
     ],
-    [handleSpecFieldChange, isEditingSpecs, isGceEntry, isRevampEnabled],
+    [
+      editState.handleSpecFieldChange,
+      editState.handleStartEditingSpecs,
+      editState.handleStopEditingSpecs,
+      editState.handleToggleEditingSpecs,
+      editState.isEditingSpecs,
+      isGceEntry,
+      isRevampEnabled,
+    ],
   );
 
   const data = useMemo<DetailRow[]>(() => {
-    const activeEntry = displayEntry ?? entry;
+    const activeEntry = editState.displayEntry ?? entry;
     if (!activeEntry) return [];
     const resolvedType = resolveProductType(
       activeEntry.productType,
@@ -1344,18 +1154,22 @@ export const ProductCatalogDetailsPage = () => {
         key: header,
         rawValue: val,
         entry: activeEntry,
-        draftValue: editableKey ? activeSpecDraft[editableKey] : undefined,
-        baselineValue: editableKey ? baselineSpecDraft[editableKey] : undefined,
-        errorMsg: editableKey ? specErrors[editableKey] : undefined,
+        draftValue: editableKey
+          ? editState.activeSpecDraft[editableKey]
+          : undefined,
+        baselineValue: editableKey
+          ? editState.baselineSpecDraft[editableKey]
+          : undefined,
+        errorMsg: editableKey ? editState.specErrors[editableKey] : undefined,
       };
     });
   }, [
-    activeSpecDraft,
-    baselineSpecDraft,
-    displayEntry,
+    editState.activeSpecDraft,
+    editState.baselineSpecDraft,
+    editState.displayEntry,
+    editState.specErrors,
     entry,
     isRevampEnabled,
-    specErrors,
   ]);
 
   const table = useFCDataTable({
@@ -1510,10 +1324,18 @@ export const ProductCatalogDetailsPage = () => {
     );
   }
 
-  const activeHeroEntry = displayEntry ?? entry;
+  const activeHeroEntry = editState.displayEntry ?? entry;
 
   return (
-    <Box sx={{ p: 3, pb: dirtyCount > 0 || validationErrorCount > 0 ? 12 : 3 }}>
+    <Box
+      sx={{
+        p: 3,
+        pb:
+          editState.dirtyCount > 0 || editState.validationErrorCount > 0
+            ? 12
+            : 3,
+      }}
+    >
       <Box
         sx={{
           display: 'flex',
@@ -1590,9 +1412,11 @@ export const ProductCatalogDetailsPage = () => {
           <CatalogDetailsHero
             key={activeHeroEntry.productCatalogId}
             entry={activeHeroEntry}
-            stagedPhotos={stagedPhotos}
-            onOpenPhotoEditor={() => setIsPhotoEditorOpen(true)}
-            onPhotoDimensionsEvaluated={handlePhotoDimensionsEvaluated}
+            stagedPhotos={editState.stagedPhotos}
+            onOpenPhotoEditor={editState.handleOpenPhotoEditor}
+            onPhotoDimensionsEvaluated={
+              editState.handlePhotoDimensionsEvaluated
+            }
           />
           <Box
             sx={{
@@ -1621,53 +1445,42 @@ export const ProductCatalogDetailsPage = () => {
           </Box>
 
           <CatalogPhotoEditDialog
-            open={isPhotoEditorOpen}
-            onClose={() => setIsPhotoEditorOpen(false)}
-            onCopyPrompt={handleCopyPrompt}
-            copiedPrompt={copiedPrompt}
-            prompt={generatedPrompt}
+            open={editState.isPhotoEditorOpen}
+            onClose={editState.handleClosePhotoEditor}
+            onCopyPrompt={editState.handleCopyPrompt}
+            copiedPrompt={editState.copiedPrompt}
+            prompt={editState.generatedPrompt}
             productCatalogId={activeHeroEntry.productCatalogId}
             productName={
               activeHeroEntry.productName || activeHeroEntry.descriptiveName
             }
             resolvedProductType={resolvedProductType}
-            originalPhotos={originalPhotos}
-            stagedPhotos={stagedPhotos}
-            photoUrlDraft={photoUrlDraft}
-            photoInputError={photoInputError}
-            photoDimensionErrors={photoDimensionErrors}
-            onPhotoUrlDraftChange={(val) => {
-              setPhotoUrlDraft(val);
-              if (photoInputError) setPhotoInputError(undefined);
-            }}
-            onStagePhotoUrl={handleStagePhotoUrl}
-            onStageUploadedDataUrl={(dataUrl) => {
-              if (stagedPhotos.length >= MAX_PHOTOS_PER_ENTRY) return;
-              setStagedPhotosOverride([...stagedPhotos, dataUrl]);
-              setPhotoInputError(undefined);
-            }}
-            onRemoveStagedPhoto={handleRemoveStagedPhoto}
-            onSetPrimaryPhoto={handleSetPrimaryPhoto}
-            onResetPhotos={() => {
-              setStagedPhotosOverride(undefined);
-              setPhotoUrlDraft('');
-              setPhotoInputError(undefined);
-              setPhotoDimensionErrors({});
-              setCopiedPrompt(false);
-            }}
-            onPhotoDimensionsEvaluated={handlePhotoDimensionsEvaluated}
+            originalPhotos={editState.originalPhotos}
+            stagedPhotos={editState.stagedPhotos}
+            photoUrlDraft={editState.photoUrlDraft}
+            photoInputError={editState.photoInputError}
+            photoDimensionErrors={editState.photoDimensionErrors}
+            onPhotoUrlDraftChange={editState.handlePhotoUrlDraftChange}
+            onStagePhotoUrl={editState.handleStagePhotoUrl}
+            onStageUploadedDataUrl={editState.handleStageUploadedDataUrl}
+            onRemoveStagedPhoto={editState.handleRemoveStagedPhoto}
+            onSetPrimaryPhoto={editState.handleSetPrimaryPhoto}
+            onResetPhotos={editState.handleResetPhotos}
+            onPhotoDimensionsEvaluated={
+              editState.handlePhotoDimensionsEvaluated
+            }
           />
 
-          {!isPhotoEditorOpen && (
+          {!editState.isPhotoEditorOpen && (
             <UnsavedChangesToast
-              dirtyCount={dirtyCount}
-              validationErrorCount={validationErrorCount}
-              errorSummaryText={firstValidationErrorMessage}
+              dirtyCount={editState.dirtyCount}
+              validationErrorCount={editState.validationErrorCount}
+              errorSummaryText={editState.firstValidationErrorMessage}
               productCatalogId={activeHeroEntry.productCatalogId}
-              prompt={generatedPrompt}
-              copiedPrompt={copiedPrompt}
-              onDiscard={handleDiscardEdits}
-              onCopyPrompt={handleCopyPrompt}
+              prompt={editState.generatedPrompt}
+              copiedPrompt={editState.copiedPrompt}
+              onDiscard={editState.handleDiscardEdits}
+              onCopyPrompt={editState.handleCopyPrompt}
             />
           )}
         </>
