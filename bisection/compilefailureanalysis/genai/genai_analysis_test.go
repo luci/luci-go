@@ -539,13 +539,13 @@ func TestGenAiAnalysisWithRoll(t *testing.T) {
 		FirstFailed: &buildbucketpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
-			Ref:     "refs/heads/main",
+			Ref:     "refs/tags/v2.0.0",
 			Id:      "abc123def456",
 		},
 		LastPassed: &buildbucketpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
-			Ref:     "refs/heads/main",
+			Ref:     "refs/tags/v1.0.0",
 			Id:      "def456ghi789",
 		},
 	}
@@ -582,6 +582,7 @@ func TestGenAiAnalysisWithRoll(t *testing.T) {
 	assert.Loosely(t, suspects[0].GitilesCommit.Id, should.Equal("abc123def456"))
 	assert.Loosely(t, suspects[0].GitilesCommit.Host, should.Equal("chromium.googlesource.com"))
 	assert.Loosely(t, suspects[0].GitilesCommit.Project, should.Equal("chromium/src"))
+	assert.Loosely(t, suspects[0].GitilesCommit.Ref, should.Equal("refs/tags/v2.0.0"))
 	assert.Loosely(t, suspects[0].SubCommit, should.Equal("subcommit123"))
 	assert.Loosely(t, suspects[0].ReviewUrl, should.Equal("https://chromium-review.googlesource.com/c/chromium/src/+/123456"))
 }

@@ -185,10 +185,14 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 		ReviewTitle:    reviewTitle,
 		Justification:  justification,
 		Score:          score,
+		// Use FirstFailed instead of LastPassed because on tag-based
+		// builders, LastPassed.Ref may point to an older tag, whereas
+		// suspect commits are ancestors of FirstFailed. Verification
+		// reruns must be scheduled against the failed build's ref.
 		GitilesCommit: buildbucketpb.GitilesCommit{
-			Host:    regressionRange.LastPassed.Host,
-			Project: regressionRange.LastPassed.Project,
-			Ref:     regressionRange.LastPassed.Ref,
+			Host:    regressionRange.FirstFailed.Host,
+			Project: regressionRange.FirstFailed.Project,
+			Ref:     regressionRange.FirstFailed.Ref,
 			Id:      suspectCommitIDForVerification,
 		},
 		VerificationStatus: model.SuspectVerificationStatus_Unverified,
