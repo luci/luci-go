@@ -158,7 +158,7 @@ func (c *client) ListChanges(ctx context.Context, req *gerritpb.ListChangesReque
 
 func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
 	*gerritpb.ChangeInfo, error) {
-	if err := checkArgs(opts, req); err != nil {
+	if err := checkArgs(opts, gerritpb.ValidateGetChangeRequest(req)); err != nil {
 		return nil, err
 	}
 
@@ -267,7 +267,7 @@ func (c *client) DeleteReviewer(ctx context.Context, req *gerritpb.DeleteReviewe
 }
 
 func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
-	if err := checkArgs(opts, in); err != nil {
+	if err := checkArgs(opts, gerritpb.ValidateSetReviewRequest(in)); err != nil {
 		return nil, err
 	}
 	path := fmt.Sprintf("/changes/%s/revisions/%s/review", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
@@ -302,7 +302,7 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 }
 
 func (c *client) AddToAttentionSet(ctx context.Context, req *gerritpb.AttentionSetRequest, opts ...grpc.CallOption) (*gerritpb.AccountInfo, error) {
-	if err := checkArgs(opts, req); err != nil {
+	if err := checkArgs(opts, gerritpb.ValidateAttentionSetRequest(req)); err != nil {
 		return nil, err
 	}
 	path := fmt.Sprintf("/changes/%s/attention", gerritChangeIDForRouting(req.Number, req.Project))
@@ -325,7 +325,7 @@ func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeReq
 }
 
 func (c *client) RevertChange(ctx context.Context, req *gerritpb.RevertChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
-	if err := checkArgs(opts, req); err != nil {
+	if err := checkArgs(opts, gerritpb.ValidateRevertChangeRequest(req)); err != nil {
 		return nil, err
 	}
 
@@ -481,7 +481,7 @@ func (c *client) GetRefInfo(ctx context.Context, req *gerritpb.RefInfoRequest, o
 }
 
 func (c *client) GetMetaDiff(ctx context.Context, req *gerritpb.GetMetaDiffRequest, opts ...grpc.CallOption) (*gerritpb.MetaDiff, error) {
-	if err := checkArgs(opts, req); err != nil {
+	if err := checkArgs(opts, gerritpb.ValidateGetMetaDiffRequest(req)); err != nil {
 		return nil, err
 	}
 	changeID := gerritChangeIDForRouting(req.GetNumber(), req.GetProject())
@@ -693,10 +693,6 @@ func (c *client) buildURL(path string, params url.Values, opts []grpc.CallOption
 	return url.String()
 }
 
-type validatable interface {
-	Validate() error
-}
-
 type gerritMirrorOption struct {
 	grpc.EmptyCallOption // to implement a grpc.CallOption
 	altHost              func(host string) string
@@ -711,14 +707,14 @@ func UseGerritMirror(altHost func(host string) string) grpc.CallOption {
 	return &gerritMirrorOption{altHost: altHost}
 }
 
-func checkArgs(opts []grpc.CallOption, req validatable) error {
+func checkArgs(opts []grpc.CallOption, validationErr error) error {
 	for _, opt := range opts {
 		if _, ok := opt.(*gerritMirrorOption); !ok {
 			return errors.New("gerrit.client supports only UseGerritMirror option")
 		}
 	}
-	if err := req.Validate(); err != nil {
-		return errors.Fmt("request is invalid: %w", err)
+	if validationErr != nil {
+		return errors.Fmt("request is invalid: %w", validationErr)
 	}
 	return nil
 }

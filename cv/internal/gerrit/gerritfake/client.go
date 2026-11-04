@@ -123,7 +123,7 @@ func (client *Client) ListChanges(ctx context.Context, in *gerritpb.ListChangesR
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
 func (client *Client) GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
-	if err := in.Validate(); err != nil {
+	if err := gerritpb.ValidateGetChangeRequest(in); err != nil {
 		return nil, err
 	}
 	client.f.m.Lock()
@@ -245,7 +245,7 @@ func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesReque
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
 func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
-	if err := in.Validate(); err != nil {
+	if err := gerritpb.ValidateSetReviewRequest(in); err != nil {
 		return nil, err
 	}
 	client.f.m.Lock()

@@ -18,8 +18,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// Validate returns an error if r is invalid.
-func (r *GetChangeRequest) Validate() error {
+// ValidateGetChangeRequest returns an error if r is invalid.
+func ValidateGetChangeRequest(r *GetChangeRequest) error {
 	switch {
 	case r.Number <= 0:
 		return errors.New("number must be positive")
@@ -28,66 +28,66 @@ func (r *GetChangeRequest) Validate() error {
 	}
 }
 
-// Validate returns an error if r is invalid.
-func (r *SetReviewRequest) Validate() error {
+// ValidateSetReviewRequest returns an error if r is invalid.
+func ValidateSetReviewRequest(r *SetReviewRequest) error {
 	if r.Number <= 0 {
 		return errors.New("number must be positive")
 	}
-	if err := r.GetNotifyDetails().Validate(); err != nil {
+	if err := ValidateNotifyDetails(r.GetNotifyDetails()); err != nil {
 		return err
 	}
 	for _, att := range r.GetAddToAttentionSet() {
-		if err := att.Validate(); err != nil {
+		if err := ValidateAttentionSetInput(att); err != nil {
 			return err
 		}
 	}
 	for _, att := range r.GetRemoveFromAttentionSet() {
-		if err := att.Validate(); err != nil {
+		if err := ValidateAttentionSetInput(att); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// Validate returns an error if r is invalid.
-func (r *RevertChangeRequest) Validate() error {
+// ValidateRevertChangeRequest returns an error if r is invalid.
+func ValidateRevertChangeRequest(r *RevertChangeRequest) error {
 	if r.Number <= 0 {
 		return errors.New("number must be positive")
 	}
 	return nil
 }
 
-// Validate returns an error if n is invalid.
-func (n *NotifyDetails) Validate() error {
+// ValidateNotifyDetails returns an error if n is invalid.
+func ValidateNotifyDetails(n *NotifyDetails) error {
 	for _, r := range n.GetRecipients() {
-		if err := r.Validate(); err != nil {
+		if err := ValidateNotifyDetailsRecipient(r); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// Validate returns an error if n is invalid.
-func (n *NotifyDetails_Recipient) Validate() error {
+// ValidateNotifyDetailsRecipient returns an error if n is invalid.
+func ValidateNotifyDetailsRecipient(n *NotifyDetails_Recipient) error {
 	if n.GetRecipientType() == NotifyDetails_RECIPIENT_TYPE_UNSPECIFIED {
 		return errors.New("must specify recipient type")
 	}
 	return nil
 }
 
-// Validate returns an error if r is invalid.
-func (r *AttentionSetRequest) Validate() error {
+// ValidateAttentionSetRequest returns an error if r is invalid.
+func ValidateAttentionSetRequest(r *AttentionSetRequest) error {
 	if r.Number <= 0 {
 		return errors.New("number must be positive")
 	}
 	if r.GetInput() == nil {
 		return errors.New("input is required")
 	}
-	return r.GetInput().Validate()
+	return ValidateAttentionSetInput(r.GetInput())
 }
 
-// Validate returns an error if i is invalid.
-func (i *AttentionSetInput) Validate() error {
+// ValidateAttentionSetInput returns an error if i is invalid.
+func ValidateAttentionSetInput(i *AttentionSetInput) error {
 	if i.GetUser() == "" {
 		return errors.New("user is required")
 	}
@@ -97,8 +97,8 @@ func (i *AttentionSetInput) Validate() error {
 	return nil
 }
 
-// Validate returns an error if r is invalid.
-func (r *GetMetaDiffRequest) Validate() error {
+// ValidateGetMetaDiffRequest returns an error if r is invalid.
+func ValidateGetMetaDiffRequest(r *GetMetaDiffRequest) error {
 	switch {
 	case r.Number <= 0:
 		return errors.New("number must be positive")
