@@ -10,7 +10,15 @@
       window.__FCON_EASY_MOCK__ = true;
       (function () {
         var defaultRoute = __FCON_DEFAULT_ROUTE__;
+        var defaultLiveData = __FCON_DEFAULT_LIVE_DATA__;
         var params = new URLSearchParams(location.search);
+        var fconDataParam = params.get('fcon_data');
+        window.__FCON_LIVE_DATA__ =
+          fconDataParam === 'live'
+            ? true
+            : fconDataParam === 'mock'
+              ? false
+              : Boolean(window.__FCON_LIVE_DATA__ || defaultLiveData);
         var rawHash = location.hash ? location.hash.slice(1) : '';
         var hashRoute =
           rawHash.indexOf('/ui/') === 0

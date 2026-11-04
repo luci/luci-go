@@ -39,6 +39,7 @@ export interface BuildPrototypeOptions {
   readonly title: string;
   readonly description: string;
   readonly route: string;
+  readonly liveData?: boolean;
 }
 
 /**
@@ -50,6 +51,7 @@ export interface PrototypeMetaManifest {
   readonly description: string;
   readonly defaultRoute: string;
   readonly timestamp: string;
+  readonly liveData?: boolean;
   readonly baseCommitSha?: string;
   readonly modifiedFiles?: readonly string[];
 }
@@ -191,7 +193,7 @@ export function validateOutDir(uiDir: string, outDir: string): void {
 export function buildPrototypeMetadata(
   options: Pick<
     BuildPrototypeOptions,
-    'slug' | 'title' | 'description' | 'route'
+    'slug' | 'title' | 'description' | 'route' | 'liveData'
   >,
   timestamp = new Date().toISOString(),
 ): PrototypeMetaManifest {
@@ -208,16 +210,18 @@ export function buildPrototypeMetadata(
       `Fleet Console static UI mock (${cleanSlug})`,
     defaultRoute: options.route.trim() || DEFAULT_FLEET_ROUTE,
     timestamp,
+    ...(options.liveData ? { liveData: true } : {}),
   };
 }
 
 /**
  * Renders `prototype_index.html` with `defaultRoute` injected as the fallback
- * initial route.
+ * initial route and optional `liveData` default flag.
  */
 export function buildPrototypeIndexHtml(
   defaultRoute = DEFAULT_FLEET_ROUTE,
   uiDir = process.cwd(),
+  liveData = false,
 ): string {
   const templatePath = resolveScriptAsset('prototype_index.html', uiDir);
   const template = fs.readFileSync(templatePath, 'utf-8');
@@ -225,7 +229,9 @@ export function buildPrototypeIndexHtml(
     /</g,
     '\\u003c',
   );
-  return template.replace('__FCON_DEFAULT_ROUTE__', safeDefaultRoute);
+  return template
+    .replace('__FCON_DEFAULT_ROUTE__', safeDefaultRoute)
+    .replace('__FCON_DEFAULT_LIVE_DATA__', liveData ? 'true' : 'false');
 }
 
 /**
@@ -473,7 +479,8 @@ export async function runPrototypeBuild(
     },
     transformIndexHtml: {
       order: 'pre' as const,
-      handler: (): string => buildPrototypeIndexHtml(defaultRoute, uiDir),
+      handler: (): string =>
+        buildPrototypeIndexHtml(defaultRoute, uiDir, Boolean(options.liveData)),
     },
   };
 
@@ -574,6 +581,10 @@ export function parseCliArgs(
     description:
       parsed.description ?? 'Standalone Fleet Console UI prototype bundle',
     route: parsed.route ?? parsed['entry-point'] ?? DEFAULT_FLEET_ROUTE,
+    liveData:
+      parsed['live-data'] === 'true' ||
+      parsed['live-data'] === '1' ||
+      process.env.FCON_EASY_MOCK_LIVE_DATA === '1',
   };
 }
 

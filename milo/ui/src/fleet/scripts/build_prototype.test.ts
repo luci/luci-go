@@ -36,13 +36,22 @@ describe('build_prototype utilities', () => {
     expect(html).toContain('window.__FCON_EASY_MOCK__ = true;');
     expect(html).toContain('<script id="fcon-inline-settings">');
     expect(html).toContain('var defaultRoute = "/ui/fleet/catalog";');
+    expect(html).toContain('var defaultLiveData = false;');
     expect(html).toContain('chromeos-swarming.appspot.com');
     expect(html).toContain('chrome-swarming.appspot.com');
     expect(html).toContain('src="/src/main.tsx"');
     expect(html).not.toContain('__FCON_DEFAULT_ROUTE__');
+    expect(html).not.toContain('__FCON_DEFAULT_LIVE_DATA__');
     expect(html).not.toContain('Content-Security-Policy');
     expect(html).not.toContain('googletagmanager.com');
     expect(html).not.toContain('apis.google.com');
+
+    const liveHtml = buildPrototypeIndexHtml(
+      '/ui/fleet/catalog',
+      process.cwd(),
+      true,
+    );
+    expect(liveHtml).toContain('var defaultLiveData = true;');
   });
 
   it('strips crossorigin attributes emitted by vite:build-html', () => {
@@ -203,12 +212,13 @@ describe('build_prototype utilities', () => {
     validateOutDir('/workspace/ui', '/workspace/ui/.tmp/dist_proto');
 
     const opts = parseCliArgs(
-      ['--slug', 'demo-mock', '--title', 'Demo Title'],
+      ['--slug', 'demo-mock', '--title', 'Demo Title', '--live-data'],
       '/workspace/ui',
     );
 
     expect(opts.slug).toBe('demo-mock');
     expect(opts.title).toBe('Demo Title');
+    expect(opts.liveData).toBe(true);
     expect(opts.outDir).toBe('/workspace/ui/.tmp/dist_proto');
   });
 });

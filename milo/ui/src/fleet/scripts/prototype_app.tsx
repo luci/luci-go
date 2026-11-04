@@ -55,6 +55,37 @@ const MOCK_AUTH_CTX: AuthStateContextValue = {
 
 const DEFAULT_FLEET_ROUTE = '/ui/fleet/p/chromeos/devices';
 
+interface PrototypeWindow extends Window {
+  __FCON_INITIAL_ROUTE__?: string;
+  __FCON_LIVE_DATA__?: boolean;
+  __FCON_LIVE_AUTH_CTX__?: AuthStateContextValue;
+}
+
+/**
+ * Returns true when the prototype bundle is running in opt-in live-data mode
+ * (`--live-data` build flag or `?fcon_data=live` URL parameter).
+ */
+function isLiveDataPrototypeMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  const fconData = params.get('fcon_data');
+  if (fconData === 'live') return true;
+  if (fconData === 'mock') return false;
+  return Boolean((window as PrototypeWindow).__FCON_LIVE_DATA__);
+}
+
+/**
+ * Returns the active `AuthStateContextValue` for the prototype shell, delegating
+ * to host-injected live OAuth credentials when running in live-data mode.
+ */
+function getPrototypeAuthContext(): AuthStateContextValue {
+  if (typeof window !== 'undefined' && isLiveDataPrototypeMode()) {
+    const injected = (window as PrototypeWindow).__FCON_LIVE_AUTH_CTX__;
+    if (injected) return injected;
+  }
+  return MOCK_AUTH_CTX;
+}
+
 /**
  * Renders the standalone Fleet Console application shell for offline prototype
  * bundles, syncing the in-memory router state with `window.location.hash`.
@@ -64,9 +95,11 @@ export function App(): JSX.Element {
     () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
   );
 
-  if (!FleetConsoleMockAPI.isPrototypeMode()) {
+  const liveDataMode = isLiveDataPrototypeMode();
+  if (!liveDataMode && !FleetConsoleMockAPI.isPrototypeMode()) {
     FleetConsoleMockAPI.initPrototypeMode({ authState: MOCK_AUTH_STATE });
   }
+  const authCtx = getPrototypeAuthContext();
 
   const initialRoute = getInitialRoute();
   const [router] = useState(() =>
@@ -79,7 +112,7 @@ export function App(): JSX.Element {
           HydrateFallback: () => null,
           element: (
             <SyncedSearchParamsProvider>
-              <AuthStateContext.Provider value={MOCK_AUTH_CTX}>
+              <AuthStateContext.Provider value={authCtx}>
                 <FeatureFlagsProvider>
                   <RecoverableErrorBoundary>
                     <FleetLayout />
