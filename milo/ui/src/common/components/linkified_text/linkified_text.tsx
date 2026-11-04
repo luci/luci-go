@@ -19,9 +19,11 @@ import { Fragment } from 'react';
 // WARNING: Be strict with what is accepted here.  If you are too liberal you
 // will enable XSS attacks.
 const patterns = [
-  'go/[a-zA-Z0-9-_]+',
-  'b/[0-9]+',
-  'crrev.com/[ci]/[0-9]+',
+  '(?<=^|\\s)go/[a-zA-Z0-9-_]+',
+  '(?<=^|\\s)b/[0-9]+',
+  '(?<=^|\\s)irm/[a-zA-Z0-9/.\\-_]*[a-zA-Z0-9_]',
+  '(?<=^|\\s)omg/[0-9]+',
+  '(?<=^|\\s)crrev.com/[ci]/[0-9]+',
   'https?://[a-z0-9.-]+/?[a-zA-Z0-9/.\\-_+]*',
 ];
 

@@ -89,6 +89,28 @@ it('linkifies buganizer links', async () => {
   );
 });
 
+it('linkifies irm links', async () => {
+  render(
+    <LinkifiedText text="See irm/i_abc123 and irm/incidents/a.SituBuR1aQiG3fM6eiyn." />,
+  );
+  expect(screen.getByRole('link', { name: 'irm/i_abc123' })).toHaveAttribute(
+    'href',
+    'http://irm/i_abc123',
+  );
+  expect(
+    screen.getByRole('link', { name: 'irm/incidents/a.SituBuR1aQiG3fM6eiyn' }),
+  ).toHaveAttribute('href', 'http://irm/incidents/a.SituBuR1aQiG3fM6eiyn');
+  expect(screen.getByText('.')).toBeInTheDocument();
+});
+
+it('linkifies omg links', async () => {
+  render(<LinkifiedText text="omg/1234" />);
+  expect(screen.getByRole('link', { name: 'omg/1234' })).toHaveAttribute(
+    'href',
+    'http://omg/1234',
+  );
+});
+
 it('linkifies crrev links', async () => {
   render(<LinkifiedText text="crrev.com/c/1234" />);
   expect(
@@ -115,4 +137,12 @@ it('linkifies bare links with dashes', async () => {
     'href',
     'https://ci.chromium.org/ui/p/chromium/builders/ci/chromeos-octopus-rel/31214/overview',
   );
+});
+
+it('does not linkify shortlink prefix when not preceded by whitespace', async () => {
+  const sample =
+    'see nab/123 in infra/luci/luci-go/milo or confirm/123 or somg/1234 or foo.crrev.com/c/1234';
+  render(<LinkifiedText text={sample} />);
+  expect(screen.queryByRole('link')).toBeNull();
+  expect(screen.getByText(sample)).toBeInTheDocument();
 });

@@ -43,6 +43,7 @@ import {
 import { EnvironmentSelectorDialog } from '../components/environment_selector_dialog';
 import { FailedEnvironmentsList } from '../components/failed_environments_list';
 import { ChronicleContextProvider } from '../components/provider';
+import { SemaphoreBanner } from '../components/semaphore_banner';
 import { isWorknodeStage } from '../utils/check_utils';
 import {
   fromString,
@@ -368,6 +369,7 @@ export function ChroniclePage() {
   const { workplanId } = useParams<{ workplanId: string }>();
   return (
     <ChronicleContextProvider key={workplanId || ''}>
+      <SemaphoreBanner />
       <ChroniclePageContent />
     </ChronicleContextProvider>
   );
