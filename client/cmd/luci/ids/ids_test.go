@@ -211,6 +211,19 @@ func newMockAntsServer() *httptest.Server {
 					"aggregationLevel": "MODULE"
 				}
 			}`))
+		case "/v4/tests/TR90273623688894017":
+			// DTC / Mobly Blaze target exported to ResultDB with flat scheme
+			_, _ = w.Write([]byte(`{
+				"testResultId": "TR90273623688894017",
+				"invocationId": "I92200010628191158",
+				"workUnitId": "WU16000270089411220",
+				"testStatus": "FAIL",
+				"testIdentifier": {
+					"module": "//wireless/android/desktop/testgen_test/system_ui:albat_plus_tests_emulator",
+					"testClass": "TestMetaRunner",
+					"method": "test_x"
+				}
+			}`))
 		case "/v4/workunits/WU17100269020689387":
 			_, _ = w.Write([]byte(`{
 				"id": "WU17100269020689387",
@@ -742,6 +755,49 @@ func TestExtractIDs(t *testing.T) {
 			assert.Loosely(t, idsNoModule.TestID, should.Equal(":no-module-name!junit:no-package-name:SdvFWBaselineDHIOneVMTest#test_stop_start_vm"))
 			assert.Loosely(t, idsNoModule.ResultID, should.Equal("15e59e62-00003"))
 			assert.Loosely(t, idsNoModule.VariantHash, should.Equal("varhash-nomod"))
+
+			// 7. Flat-scheme DTC / Mobly AnTS test result (Blaze target with TestIdStructured on TestVerdict)
+			wantFlatTestID := `://wireless/android/desktop/testgen_test/system_ui\:albat_plus_tests_emulator!flat::#TestMetaRunner\#test_x`
+			clientFlat := &mockResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					assert.Loosely(t, in.Parent, should.Equal("rootInvocations/ants-i92200010628191158"))
+					assert.Loosely(t, in.Predicate.GetContainsTestResultFilter(), should.Equal(`test_id_structured.module_name = "//wireless/android/desktop/testgen_test/system_ui:albat_plus_tests_emulator" AND (test_id_structured.case_name = "test_x" OR test_id_structured.case_name = "TestMetaRunner#test_x")`))
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: wantFlatTestID,
+								TestIdStructured: &pb.TestIdentifier{
+									ModuleName:        "//wireless/android/desktop/testgen_test/system_ui:albat_plus_tests_emulator",
+									ModuleScheme:      "flat",
+									CaseName:          "TestMetaRunner#test_x",
+									ModuleVariantHash: "e02a3b4506a29c18",
+								},
+								Results: []*pb.TestResult{
+									{
+										Name:     "rootInvocations/ants-i92200010628191158/workUnits/ants-wu16000270089411220/tests/flat/results/TR90273623688894017",
+										ResultId: "TR90273623688894017",
+										StatusV2: pb.TestResult_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			flatATIURL := "https://android-build.corp.google.com/test_investigate/invocation/I92200010628191158/test/TR90273623688894017/"
+			idsFlat, err := ExtractIDs(ctx, clientFlat, nil, flatATIURL, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsFlat.InvocationID, should.Equal("ants-i92200010628191158"))
+			assert.Loosely(t, idsFlat.WorkUnitID, should.Equal("ants-wu16000270089411220"))
+			assert.Loosely(t, idsFlat.TestID, should.Equal(wantFlatTestID))
+			assert.Loosely(t, idsFlat.ResultID, should.Equal("TR90273623688894017"))
+			assert.Loosely(t, idsFlat.VariantHash, should.Equal("e02a3b4506a29c18"))
+
+			var flatTextBuf, flatJSONBuf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&flatTextBuf, idsFlat, false), should.BeNil)
+			assert.Loosely(t, flatTextBuf.String(), should.ContainSubstring("Test ID:           "+wantFlatTestID+"\n"))
+			assert.Loosely(t, printExtractedIDs(&flatJSONBuf, idsFlat, true), should.BeNil)
+			assert.Loosely(t, flatJSONBuf.String(), should.ContainSubstring(`"test_id": "://wireless/android/desktop/testgen_test/system_ui\\:albat_plus_tests_emulator!flat::#TestMetaRunner\\#test_x"`))
 		})
 
 		t.Run(`Android Build tests view URL with query param`, func(t *ftt.Test) {
@@ -1313,6 +1369,12 @@ func TestPrintExtractedIDs(t *testing.T) {
 			buf.Reset()
 			PrintMissingFlagsError(&buf, &ExtractedIDs{InvocationID: "ants-i123", TestID: ":Mod!junit:pkg:Cls#m", ResultID: "r1"}, "flag -artifactid is required (or a positional URL/ID containing an artifact ID)")
 			assert.Loosely(t, buf.String(), should.ContainSubstring(`luci artifact list -invocationid ants-i123 -testid ":Mod!junit:pkg:Cls#m" -resultid r1`))
+
+			buf.Reset()
+			PrintMissingFlagsError(&buf, &ExtractedIDs{InvocationID: "ants-i92200010628191158"}, "flag -buildid or a positional target is required")
+			assert.Loosely(t, buf.String(), should.ContainSubstring("not a Buildbucket build; use 'luci work-unit get' / 'luci verdict list'"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("luci work-unit get -invocationid ants-i92200010628191158 -workunitid root"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("luci verdict list -invocationid ants-i92200010628191158"))
 		})
 	})
 }

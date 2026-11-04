@@ -427,6 +427,15 @@ func nextStepHint(extracted *ExtractedIDs, msg string) string {
 		return ""
 	}
 
+	// 4b. Command expects -buildid (luci build get / luci build log) on an Android (ants-i...) invocation.
+	if strings.Contains(msg, "-buildid") && strings.HasPrefix(extracted.InvocationID, "ants-i") {
+		wuID := extracted.WorkUnitID
+		if wuID == "" {
+			wuID = "root"
+		}
+		return fmt.Sprintf("Hint: %s is an Android (AnTS) invocation, not a Buildbucket build; use 'luci work-unit get' / 'luci verdict list':\n  luci work-unit get -invocationid %s -workunitid %s\n  luci verdict list -invocationid %s", extracted.InvocationID, extracted.InvocationID, wuID, extracted.InvocationID)
+	}
+
 	verdictGetCmd := func() string {
 		cmd := fmt.Sprintf("luci verdict get -invocationid %s -testid %q", extracted.InvocationID, extracted.TestID)
 		if extracted.VariantHash != "" {
@@ -1407,6 +1416,11 @@ func extractFromInvocationResourceName(clean string, extracted *ExtractedIDs) bo
 func queryAntsResultDBVerdict(ctx context.Context, client pb.ResultDBClient, rootInvID string, info *base.AntsTestResultInfo) ([]*pb.TestResult, []*pb.TestExoneration, error) {
 	rootInvName := "rootInvocations/" + base.NormalizeInvocation(rootInvID)
 
+	flatCaseName := ""
+	if info.ClassName != "" && info.MethodName != "" {
+		flatCaseName = info.ClassName + "#" + info.MethodName
+	}
+
 	var filter string
 	if info.ModuleName != "" {
 		filter = fmt.Sprintf("test_id_structured.module_name = %q", info.ModuleName)
@@ -1415,7 +1429,11 @@ func queryAntsResultDBVerdict(ctx context.Context, client pb.ResultDBClient, roo
 		if filter != "" {
 			filter += " AND "
 		}
-		filter += fmt.Sprintf("test_id_structured.case_name = %q", info.MethodName)
+		if flatCaseName != "" {
+			filter += fmt.Sprintf("(test_id_structured.case_name = %q OR test_id_structured.case_name = %q)", info.MethodName, flatCaseName)
+		} else {
+			filter += fmt.Sprintf("test_id_structured.case_name = %q", info.MethodName)
+		}
 	}
 
 	matchModuleName := func(trModuleName string) bool {
@@ -1425,9 +1443,13 @@ func queryAntsResultDBVerdict(ctx context.Context, client pb.ResultDBClient, roo
 		return trModuleName == info.ModuleName
 	}
 
+	matchCaseName := func(trCaseName string) bool {
+		return trCaseName == info.MethodName || (flatCaseName != "" && trCaseName == flatCaseName)
+	}
+
 	matchFunc := func(tr *pb.TestResult) bool {
 		if info.MethodName != "" {
-			if tr.TestIdStructured != nil && tr.TestIdStructured.CaseName == info.MethodName && matchModuleName(tr.TestIdStructured.ModuleName) {
+			if tr.TestIdStructured != nil && matchCaseName(tr.TestIdStructured.CaseName) && matchModuleName(tr.TestIdStructured.ModuleName) {
 				return true
 			}
 			if info.ModuleName == "" {
@@ -1477,6 +1499,9 @@ func queryAntsResultDBVerdict(ctx context.Context, client pb.ResultDBClient, roo
 		for _, tv := range res.TestVerdicts {
 			matched := false
 			for _, tr := range tv.Results {
+				if tr.TestIdStructured == nil && tv.TestIdStructured != nil {
+					tr.TestIdStructured = tv.TestIdStructured
+				}
 				if tr.VariantHash == "" && tv.TestIdStructured != nil {
 					tr.VariantHash = tv.TestIdStructured.ModuleVariantHash
 				}
