@@ -239,6 +239,7 @@ describe('ProductCatalogDetailsPage', () => {
       >
         <SettingsProvider>
           <ShortcutProvider>
+            <AvailableFlags />
             <ProductCatalogDetailsPage />
           </ShortcutProvider>
         </SettingsProvider>
@@ -246,6 +247,15 @@ describe('ProductCatalogDetailsPage', () => {
     );
 
     const backButton = await screen.findByRole('button', { name: /go back/i });
+    fireEvent.click(
+      screen.getByRole('button', { name: /toggle feature flags/i }),
+    );
+    const flagSwitch = screen.getByTitle(
+      'fleet-console:product-catalog-revamp switch',
+    );
+    const switchInput =
+      within(flagSwitch).queryByRole('checkbox') ?? flagSwitch;
+    fireEvent.click(switchInput);
     fireEvent.click(backButton);
 
     expect(await screen.findByTestId('location-display')).toHaveTextContent(
