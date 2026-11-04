@@ -26,6 +26,8 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util"
@@ -45,7 +47,16 @@ func GetChangeLogs(c context.Context, repoUrl string, startRevision string, endR
 			"name-status": "1",   // We set name-status so the detailed changelogs are return
 			"format":      "json",
 		}
-		data, err := gitilesClient.sendRequest(c, url, params)
+		var data string
+		err := retry.Retry(c, transient.Only(retry.Default), func() error {
+			var err error
+			data, err = gitilesClient.sendRequest(c, url, params)
+			// Gitiles can return 404 for fresh commits due to replication lag.
+			if status, ok := util.HTTPStatusTag.Value(err); ok && status == http.StatusNotFound {
+				return transient.Tag.Apply(err)
+			}
+			return err
+		}, retry.LogCallback(c, "gitiles.GetChangeLogs"))
 		if err != nil {
 			return nil, err
 		}
@@ -99,7 +110,7 @@ func GetParentCommit(c context.Context, repoURL string, childCommit string) (str
 }
 
 func GetClient(c context.Context) Client {
-	if mockClient, ok := c.Value(MockedGitilesClientKey).(*MockedGitilesClient); ok {
+	if mockClient, ok := c.Value(MockedGitilesClientKey).(Client); ok {
 		return mockClient
 	}
 	return &GitilesClient{}

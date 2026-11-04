@@ -24,10 +24,14 @@ import (
 
 	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 )
+
+// HTTPStatusTag attaches the HTTP status code to an error returned by SendHTTPRequest.
+var HTTPStatusTag = errtag.Make[int]("HTTP status code", 0)
 
 func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration, useAuth bool) (string, error) {
 	c, cancel := context.WithTimeout(c, timeout)
@@ -63,10 +67,11 @@ func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration
 		}
 		logging.Errorf(c, "HTTP request failed for URL %s with status %d. Body: %s", req.URL.String(), status, bodyStr)
 
+		err := HTTPStatusTag.ApplyValue(errors.Reason("Bad response code: %v", status), status)
 		if status >= 500 || status == http.StatusTooManyRequests {
-			return "", transient.Tag.Apply(errors.Reason("Bad response code: %v", status))
+			return "", transient.Tag.Apply(err)
 		}
-		return "", fmt.Errorf("Bad response code: %v", status)
+		return "", err
 	}
 
 	body, err := io.ReadAll(resp.Body)
