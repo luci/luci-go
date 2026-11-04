@@ -111,6 +111,10 @@ declare const SETTINGS: {
     readonly authDomain: string;
     readonly storageBucket: string;
   };
+  readonly chronicle?: {
+    readonly semaphoreHost?: string;
+    readonly semaphoreApiKey?: string;
+  };
 };
 
 /**

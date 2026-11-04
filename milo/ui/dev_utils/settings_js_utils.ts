@@ -144,6 +144,14 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
       authDomain: env['VITE_FIREBASE_AUTH_DOMAIN'] || '',
       storageBucket: env['VITE_FIREBASE_STORAGE_BUCKET'] || '',
     },
+    ...(env['VITE_SEMAPHORE_HOST'] || env['VITE_SEMAPHORE_API_KEY']
+      ? {
+          chronicle: {
+            semaphoreHost: env['VITE_SEMAPHORE_HOST'] || undefined,
+            semaphoreApiKey: env['VITE_SEMAPHORE_API_KEY'] || undefined,
+          },
+        }
+      : {}),
   };
 
   const localDevSettingsJs = `self.SETTINGS = Object.freeze(${JSON.stringify(

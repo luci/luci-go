@@ -159,6 +159,15 @@ serverInjectedVars.SETTINGS = Object.freeze({
     authDomain: process.env['VITE_FIREBASE_AUTH_DOMAIN'] || '',
     storageBucket: process.env['VITE_FIREBASE_STORAGE_BUCKET'] || '',
   },
+  ...(process.env['VITE_SEMAPHORE_HOST'] ||
+  process.env['VITE_SEMAPHORE_API_KEY']
+    ? {
+        chronicle: {
+          semaphoreHost: process.env['VITE_SEMAPHORE_HOST'] || undefined,
+          semaphoreApiKey: process.env['VITE_SEMAPHORE_API_KEY'] || undefined,
+        },
+      }
+    : {}),
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by

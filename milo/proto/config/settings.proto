@@ -196,4 +196,13 @@ message Settings {
     string storage_bucket = 6;
   }
   Firebase firebase = 19;
+
+  message Chronicle {
+    // semaphore_host is the bare hostname (without scheme or trailing slash,
+    // e.g. semaphore.example.com) of the Semaphore instance we're pointing to.
+    string semaphore_host = 1;
+    // semaphore_api_key is the browser API key used for Semaphore requests.
+    string semaphore_api_key = 2;
+  }
+  Chronicle chronicle = 20;
 }

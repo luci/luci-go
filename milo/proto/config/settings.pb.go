@@ -55,6 +55,7 @@ type Settings struct {
 	Ufs             *Settings_UFS             `protobuf:"bytes,17,opt,name=ufs,proto3" json:"ufs,omitempty"`
 	TestInvestigate *Settings_TestInvestigate `protobuf:"bytes,18,opt,name=test_investigate,json=testInvestigate,proto3" json:"test_investigate,omitempty"`
 	Firebase        *Settings_Firebase        `protobuf:"bytes,19,opt,name=firebase,proto3" json:"firebase,omitempty"`
+	Chronicle       *Settings_Chronicle       `protobuf:"bytes,20,opt,name=chronicle,proto3" json:"chronicle,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -204,6 +205,13 @@ func (x *Settings) GetTestInvestigate() *Settings_TestInvestigate {
 func (x *Settings) GetFirebase() *Settings_Firebase {
 	if x != nil {
 		return x.Firebase
+	}
+	return nil
+}
+
+func (x *Settings) GetChronicle() *Settings_Chronicle {
+	if x != nil {
+		return x.Chronicle
 	}
 	return nil
 }
@@ -1206,11 +1214,66 @@ func (x *Settings_Firebase) GetStorageBucket() string {
 	return ""
 }
 
+type Settings_Chronicle struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// semaphore_host is the bare hostname (without scheme or trailing slash,
+	// e.g. semaphore.example.com) of the Semaphore instance we're pointing to.
+	SemaphoreHost string `protobuf:"bytes,1,opt,name=semaphore_host,json=semaphoreHost,proto3" json:"semaphore_host,omitempty"`
+	// semaphore_api_key is the browser API key used for Semaphore requests.
+	SemaphoreApiKey string `protobuf:"bytes,2,opt,name=semaphore_api_key,json=semaphoreApiKey,proto3" json:"semaphore_api_key,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *Settings_Chronicle) Reset() {
+	*x = Settings_Chronicle{}
+	mi := &file_go_chromium_org_luci_milo_proto_config_settings_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Settings_Chronicle) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Settings_Chronicle) ProtoMessage() {}
+
+func (x *Settings_Chronicle) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_milo_proto_config_settings_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Settings_Chronicle.ProtoReflect.Descriptor instead.
+func (*Settings_Chronicle) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDescGZIP(), []int{0, 18}
+}
+
+func (x *Settings_Chronicle) GetSemaphoreHost() string {
+	if x != nil {
+		return x.SemaphoreHost
+	}
+	return ""
+}
+
+func (x *Settings_Chronicle) GetSemaphoreApiKey() string {
+	if x != nil {
+		return x.SemaphoreApiKey
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_milo_proto_config_settings_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDesc = "" +
 	"\n" +
-	"5go.chromium.org/luci/milo/proto/config/settings.proto\x12\x10luci.milo.config\"\xd6\x14\n" +
+	"5go.chromium.org/luci/milo/proto/config/settings.proto\x12\x10luci.milo.config\"\xfa\x15\n" +
 	"\bSettings\x12H\n" +
 	"\vbuildbucket\x18\x02 \x01(\v2&.luci.milo.config.Settings.BuildbucketR\vbuildbucket\x12?\n" +
 	"\bswarming\x18\x03 \x01(\v2#.luci.milo.config.Settings.SwarmingR\bswarming\x12F\n" +
@@ -1231,7 +1294,8 @@ const file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDesc = "" +
 	"\rfleet_console\x18\x10 \x01(\v2'.luci.milo.config.Settings.FleetConsoleR\ffleetConsole\x120\n" +
 	"\x03ufs\x18\x11 \x01(\v2\x1e.luci.milo.config.Settings.UFSR\x03ufs\x12U\n" +
 	"\x10test_investigate\x18\x12 \x01(\v2*.luci.milo.config.Settings.TestInvestigateR\x0ftestInvestigate\x12?\n" +
-	"\bfirebase\x18\x13 \x01(\v2#.luci.milo.config.Settings.FirebaseR\bfirebase\x1aO\n" +
+	"\bfirebase\x18\x13 \x01(\v2#.luci.milo.config.Settings.FirebaseR\bfirebase\x12B\n" +
+	"\tchronicle\x18\x14 \x01(\v2$.luci.milo.config.Settings.ChronicleR\tchronicle\x1aO\n" +
 	"\vBuildbucket\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04host\x18\x02 \x01(\tR\x04host\x12\x18\n" +
@@ -1292,7 +1356,10 @@ const file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDesc = "" +
 	"project_id\x18\x04 \x01(\tR\tprojectId\x12\x1f\n" +
 	"\vauth_domain\x18\x05 \x01(\tR\n" +
 	"authDomain\x12%\n" +
-	"\x0estorage_bucket\x18\x06 \x01(\tR\rstorageBucketJ\x04\b\x01\x10\x02J\x04\b\x06\x10\aB1Z/go.chromium.org/luci/milo/proto/config;configpbb\x06proto3"
+	"\x0estorage_bucket\x18\x06 \x01(\tR\rstorageBucket\x1a^\n" +
+	"\tChronicle\x12%\n" +
+	"\x0esemaphore_host\x18\x01 \x01(\tR\rsemaphoreHost\x12*\n" +
+	"\x11semaphore_api_key\x18\x02 \x01(\tR\x0fsemaphoreApiKeyJ\x04\b\x01\x10\x02J\x04\b\x06\x10\aB1Z/go.chromium.org/luci/milo/proto/config;configpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDescOnce sync.Once
@@ -1306,7 +1373,7 @@ func file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDescGZIP() []
 	return file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_milo_proto_config_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_go_chromium_org_luci_milo_proto_config_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_go_chromium_org_luci_milo_proto_config_settings_proto_goTypes = []any{
 	(*Settings)(nil),                 // 0: luci.milo.config.Settings
 	(*Settings_Buildbucket)(nil),     // 1: luci.milo.config.Settings.Buildbucket
@@ -1327,6 +1394,7 @@ var file_go_chromium_org_luci_milo_proto_config_settings_proto_goTypes = []any{
 	(*Settings_UFS)(nil),             // 16: luci.milo.config.Settings.UFS
 	(*Settings_TestInvestigate)(nil), // 17: luci.milo.config.Settings.TestInvestigate
 	(*Settings_Firebase)(nil),        // 18: luci.milo.config.Settings.Firebase
+	(*Settings_Chronicle)(nil),       // 19: luci.milo.config.Settings.Chronicle
 }
 var file_go_chromium_org_luci_milo_proto_config_settings_proto_depIdxs = []int32{
 	1,  // 0: luci.milo.config.Settings.buildbucket:type_name -> luci.milo.config.Settings.Buildbucket
@@ -1346,15 +1414,16 @@ var file_go_chromium_org_luci_milo_proto_config_settings_proto_depIdxs = []int32
 	16, // 14: luci.milo.config.Settings.ufs:type_name -> luci.milo.config.Settings.UFS
 	17, // 15: luci.milo.config.Settings.test_investigate:type_name -> luci.milo.config.Settings.TestInvestigate
 	18, // 16: luci.milo.config.Settings.firebase:type_name -> luci.milo.config.Settings.Firebase
-	14, // 17: luci.milo.config.Settings.FleetConsole.hats:type_name -> luci.milo.config.Settings.HaTSConfig
-	14, // 18: luci.milo.config.Settings.TestInvestigate.hats_positive_recs:type_name -> luci.milo.config.Settings.HaTSConfig
-	14, // 19: luci.milo.config.Settings.TestInvestigate.hats_negative_recs:type_name -> luci.milo.config.Settings.HaTSConfig
-	14, // 20: luci.milo.config.Settings.TestInvestigate.hats_cuj:type_name -> luci.milo.config.Settings.HaTSConfig
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	19, // 17: luci.milo.config.Settings.chronicle:type_name -> luci.milo.config.Settings.Chronicle
+	14, // 18: luci.milo.config.Settings.FleetConsole.hats:type_name -> luci.milo.config.Settings.HaTSConfig
+	14, // 19: luci.milo.config.Settings.TestInvestigate.hats_positive_recs:type_name -> luci.milo.config.Settings.HaTSConfig
+	14, // 20: luci.milo.config.Settings.TestInvestigate.hats_negative_recs:type_name -> luci.milo.config.Settings.HaTSConfig
+	14, // 21: luci.milo.config.Settings.TestInvestigate.hats_cuj:type_name -> luci.milo.config.Settings.HaTSConfig
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_milo_proto_config_settings_proto_init() }
@@ -1368,7 +1437,7 @@ func file_go_chromium_org_luci_milo_proto_config_settings_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDesc), len(file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
