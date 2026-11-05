@@ -91,4 +91,40 @@ describe('AppDetails', () => {
     expect(screen.queryByLabelText('menu')).not.toBeInTheDocument();
     expect(screen.getByText('LUCI')).toBeInTheDocument();
   });
+
+  it('should display custom app name and home link', async () => {
+    render(
+      <FakeContextProvider>
+        <AppDetails
+          open={true}
+          handleSidebarChanged={(_: boolean) => {}}
+          appName="My App"
+          appHomeLink="/ui/my-app"
+        />
+      </FakeContextProvider>,
+    );
+    await screen.findByLabelText('menu');
+    expect(screen.queryByText('LUCI')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'My App' })).toHaveAttribute(
+      'href',
+      '/ui/my-app',
+    );
+  });
+
+  it('should hide project when hideProject is true', async () => {
+    render(
+      <FakeContextProvider>
+        <ProjectSetter project="chrome" />
+        <AppDetails
+          open={true}
+          handleSidebarChanged={(_: boolean) => {}}
+          appName="My App"
+          hideProject={true}
+        />
+      </FakeContextProvider>,
+    );
+    await screen.findByLabelText('menu');
+    expect(screen.getByText('My App')).toBeInTheDocument();
+    expect(screen.queryByText('chrome')).not.toBeInTheDocument();
+  });
 });

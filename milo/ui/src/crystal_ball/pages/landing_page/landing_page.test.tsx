@@ -16,6 +16,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { TopBar } from '@/crystal_ball/components/layout/top_bar';
 import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import {
   useCreateDashboardWorkflow,
   useDeleteDashboardState,
@@ -144,7 +145,7 @@ describe('<LandingPage />', () => {
     );
 
     expect(
-      await screen.findByRole('link', { name: /CrystalBall Dashboards/i }),
+      await screen.findByRole('heading', { name: COMMON_MESSAGES.DASHBOARDS }),
     ).toBeInTheDocument();
 
     expect(

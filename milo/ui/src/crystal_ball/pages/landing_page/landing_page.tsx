@@ -24,6 +24,7 @@ import {
   RequireLogin,
   useTopBarConfig,
 } from '@/crystal_ball/components';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import {
   useCreateDashboardWorkflow,
   useGenerateDashboardWorkflow,
@@ -121,7 +122,7 @@ export function LandingPage() {
     [handleOpenDialog, handleOpenGenerateDialog],
   );
 
-  useTopBarConfig(null, actions);
+  useTopBarConfig(COMMON_MESSAGES.DASHBOARDS, actions);
 
   const getTabName = (index: number): 'active' | 'starred' | 'deleted' => {
     switch (index) {

@@ -60,27 +60,10 @@ describe('TopBar', () => {
     );
   };
 
-  it('renders "CrystalBall Dashboards" on landing page', () => {
-    renderTopBar([CRYSTAL_BALL_ROUTES.LANDING]);
-    expect(
-      screen.getByText(COMMON_MESSAGES.CRYSTAL_BALL_DASHBOARDS),
-    ).toBeInTheDocument();
-  });
-
-  it('renders home icon on other pages', () => {
+  it('does not render app-level branding', () => {
     renderTopBar([CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL('123')]);
-    expect(screen.getByTitle('Home')).toBeInTheDocument();
-  });
-
-  it('shows tooltip "CrystalBall Dashboards" on hover', async () => {
-    renderTopBar([CRYSTAL_BALL_ROUTES.LANDING]);
-
-    const logo = screen.getByText(COMMON_MESSAGES.CRYSTAL_BALL_DASHBOARDS);
-    fireEvent.mouseOver(logo);
-
-    expect(
-      await screen.findByRole('tooltip', { name: 'CrystalBall Dashboards' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByText(COMMON_MESSAGES.CRYSTAL_BALL)).toBeNull();
+    expect(screen.queryByTitle('Home')).toBeNull();
   });
 
   it('renders page title when provided', () => {
@@ -92,12 +75,6 @@ describe('TopBar', () => {
     const actionButton = <button>My Action</button>;
     renderTopBar([CRYSTAL_BALL_ROUTES.LANDING], undefined, actionButton);
     expect(screen.getByText('My Action')).toBeInTheDocument();
-  });
-
-  it('renders divider when title is present', () => {
-    renderTopBar([CRYSTAL_BALL_ROUTES.LANDING], 'Title');
-    const divider = screen.getByRole('separator');
-    expect(divider).toBeInTheDocument();
   });
 
   it('renders menu items when provided', () => {

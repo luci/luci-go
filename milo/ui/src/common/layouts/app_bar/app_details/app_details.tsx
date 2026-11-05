@@ -27,16 +27,41 @@ import { getProjectURLPath } from '@/common/tools/url_utils';
 
 import { PAGE_LABEL_MAP } from '../../constants';
 
+/**
+ * The default app name displayed in the app bar.
+ */
+export const DEFAULT_APP_NAME = 'LUCI';
+
+/**
+ * The default link target of the app name in the app bar.
+ */
+export const DEFAULT_APP_HOME_LINK = '/ui/';
+
 interface Props {
   open: boolean;
   handleSidebarChanged: (isOpen: boolean) => void;
   showSidebarToggle?: boolean;
+  /**
+   * The app name displayed in the app bar. Defaults to `LUCI`.
+   */
+  appName?: string;
+  /**
+   * The link target of the app name. Defaults to `/ui/`.
+   */
+  appHomeLink?: string;
+  /**
+   * Hides the LUCI project breadcrumb. Defaults to `false`.
+   */
+  hideProject?: boolean;
 }
 
 export const AppDetails = ({
   open,
   handleSidebarChanged,
   showSidebarToggle = true,
+  appName = DEFAULT_APP_NAME,
+  appHomeLink = DEFAULT_APP_HOME_LINK,
+  hideProject = false,
 }: Props) => {
   const activePage = useActivePageId();
   const project = useProjectCtx();
@@ -55,13 +80,13 @@ export const AppDetails = ({
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <StyledAppBarLink
           component={RouterLink}
-          to="/ui/"
+          to={appHomeLink}
           underline="none"
           sx={{ pr: 2, pl: 2 }}
         >
-          LUCI
+          {appName}
         </StyledAppBarLink>
-        {project && (
+        {!hideProject && project && (
           <>
             <StyledVerticalDivider
               flexItem

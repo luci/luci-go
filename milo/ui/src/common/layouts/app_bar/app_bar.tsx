@@ -40,16 +40,26 @@ const StyledMuiAppBar = styled(MuiAppBar)(() => ({
 
 interface Props {
   open: boolean;
+  appName?: string;
+  appHomeLink?: string;
   handleSidebarChanged: (isOpen: boolean) => void;
   showSidebarToggle?: boolean;
   hideGlobalFeedback?: boolean;
+  hideAppMenu?: boolean;
+  hideFeatureFlags?: boolean;
+  hideProject?: boolean;
 }
 
 export const AppBar = ({
   open,
+  appName,
+  appHomeLink,
   handleSidebarChanged,
   showSidebarToggle = true,
   hideGlobalFeedback = false,
+  hideAppMenu = false,
+  hideFeatureFlags = false,
+  hideProject = false,
 }: Props) => {
   const authState = useAuthState();
 
@@ -74,15 +84,18 @@ export const AppBar = ({
             open={open}
             handleSidebarChanged={handleSidebarChanged}
             showSidebarToggle={showSidebarToggle}
+            appName={appName}
+            appHomeLink={appHomeLink}
+            hideProject={hideProject}
           />
         </ItemGroup>
         <Box sx={{ flexGrow: 1 }}></Box>
         <ItemGroup
           sx={{ right: 'calc(var(--accumulated-right) + 30px)', gap: 1 }}
         >
-          <AvailableFlags />
+          {!hideFeatureFlags && <AvailableFlags />}
           {!hideGlobalFeedback && <FeedbackButton />}
-          <AppMenu />
+          {!hideAppMenu && <AppMenu />}
           <LoginStatus
             identity={authState.identity}
             email={authState.email}

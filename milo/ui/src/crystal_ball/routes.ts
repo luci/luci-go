@@ -15,7 +15,9 @@
 import { createElement } from 'react';
 import type { RouteObject } from 'react-router';
 
+import type { LayoutHandle } from '@/common/layouts/base_layout';
 import { Layout } from '@/crystal_ball/components/layout/layout';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 
 export const CRYSTAL_BALL_BASE_PATH = '/ui/crystal-ball';
 
@@ -26,14 +28,18 @@ export const CRYSTAL_BALL_ROUTES = {
     `${CRYSTAL_BALL_BASE_PATH}/dashboards/${dashboardId}`,
 } as const;
 
-export const isLandingPage = (pathname: string) =>
-  pathname === CRYSTAL_BALL_BASE_PATH ||
-  pathname === `${CRYSTAL_BALL_BASE_PATH}/`;
-
 export const crystalBallRoutes: RouteObject[] = [
   {
     element: createElement(Layout),
-    handle: { defaultSidebarOpen: false, hideGlobalFeedback: true },
+    handle: {
+      appHomeLink: CRYSTAL_BALL_BASE_PATH,
+      appName: COMMON_MESSAGES.CRYSTAL_BALL,
+      hideAppMenu: true,
+      hideFeatureFlags: true,
+      hideGlobalFeedback: true,
+      hideProject: true,
+      hideSidebar: true,
+    } satisfies LayoutHandle,
     children: [
       {
         path: '',

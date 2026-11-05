@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
-import {
-  CRYSTAL_BALL_BASE_PATH,
-  CRYSTAL_BALL_ROUTES,
-} from '@/crystal_ball/routes';
+import { CRYSTAL_BALL_BASE_PATH } from '@/crystal_ball/routes';
 import { QueuedStickyScrollingBase } from '@/generic_libs/components/queued_sticky';
 
 import { Layout } from './layout';
@@ -63,12 +60,13 @@ describe('Layout', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByTitle('Home')).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByText('Content')).toBeInTheDocument();
   });
 
-  it('displays "CrystalBall Dashboards" on landing page', () => {
+  it('does not render app-level branding in the page TopBar', () => {
     renderWithStickyContext(
-      <MemoryRouter initialEntries={[CRYSTAL_BALL_ROUTES.LANDING]}>
+      <MemoryRouter initialEntries={[CRYSTAL_BALL_BASE_PATH]}>
         <Routes>
           <Route path={CRYSTAL_BALL_BASE_PATH} element={<Layout />}>
             <Route index element={<div>Landing Page</div>} />
@@ -77,26 +75,7 @@ describe('Layout', () => {
       </MemoryRouter>,
     );
 
-    const title = screen.getByText(COMMON_MESSAGES.CRYSTAL_BALL_DASHBOARDS);
-    expect(title).toBeInTheDocument();
-  });
-
-  it('displays home icon on other pages and shows tooltip on hover', async () => {
-    renderWithStickyContext(
-      <MemoryRouter initialEntries={[`${CRYSTAL_BALL_BASE_PATH}/other`]}>
-        <Routes>
-          <Route path={CRYSTAL_BALL_BASE_PATH} element={<Layout />}>
-            <Route path="other" element={<div>Other Page</div>} />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    const logo = screen.getByTitle('Home');
-    fireEvent.mouseOver(logo);
-
-    expect(
-      await screen.findByRole('tooltip', { name: 'CrystalBall Dashboards' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByText(COMMON_MESSAGES.CRYSTAL_BALL)).toBeNull();
+    expect(screen.queryByTitle('Home')).toBeNull();
   });
 });

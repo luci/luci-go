@@ -14,16 +14,26 @@
 
 import { render, screen } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
-import { useMatches } from 'react-router';
+import { Route, Routes, useMatches } from 'react-router';
 
 import * as PageMeta from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
+import { createFeatureFlag } from '@/common/feature_flags';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { SIDE_BAR_OPEN_CACHE_KEY } from './base_layout';
 import { BaseLayout } from './base_layout';
 import { PAGE_LABEL_MAP } from './constants';
+
+// Register a flag so that the feature flags button is rendered.
+createFeatureFlag({
+  description: 'Test flag',
+  namespace: 'baseLayoutTest',
+  name: 'test-flag',
+  percentage: 0,
+  trackingBug: '123455',
+});
 
 jest.mock('@/common/tools/logging', () => ({
   logging: {
@@ -296,5 +306,185 @@ describe('<BaseLayout />', () => {
     );
 
     expect(screen.queryByTitle('Send feedback')).not.toBeInTheDocument();
+  });
+
+  it('should hide the sidebar and its toggle when hideSidebar is specified in handle', async () => {
+    storageList.set(SIDE_BAR_OPEN_CACHE_KEY, 'true');
+    useMatchesMock.mockImplementation(() => [
+      {
+        id: '',
+        pathname: '',
+        params: {},
+        data: '',
+        handle: {
+          hideSidebar: true,
+        },
+        loaderData: [],
+      },
+    ]);
+    (PageMeta.useProjectCtx as jest.Mock).mockReturnValue('chromium');
+
+    render(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    await screen.findByText('LUCI');
+
+    expect(screen.queryByLabelText('menu')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(PAGE_LABEL_MAP[UiPage.BuilderSearch]),
+    ).not.toBeInTheDocument();
+  });
+
+  it('should display appName and appHomeLink from handle', async () => {
+    useMatchesMock.mockImplementation(() => [
+      {
+        id: '',
+        pathname: '',
+        params: {},
+        data: '',
+        handle: {
+          appHomeLink: '/ui/my-app',
+          appName: 'My App',
+        },
+        loaderData: [],
+      },
+    ]);
+
+    render(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    const appLink = await screen.findByRole('link', { name: 'My App' });
+    expect(appLink).toHaveAttribute('href', '/ui/my-app');
+    expect(screen.queryByText('LUCI')).not.toBeInTheDocument();
+    expect(document.title).toBe('My App');
+  });
+
+  it('should hide the app menu and feature flags button when specified in handle', async () => {
+    useMatchesMock.mockImplementation(() => [
+      {
+        id: '',
+        pathname: '',
+        params: {},
+        data: '',
+        handle: {
+          hideAppMenu: true,
+          hideFeatureFlags: true,
+        },
+        loaderData: [],
+      },
+    ]);
+
+    render(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    await screen.findByText('LUCI');
+
+    expect(screen.queryByLabelText('Open menu')).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Toggle feature flags'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('should show the app menu and feature flags button by default', async () => {
+    useMatchesMock.mockImplementation(() => []);
+
+    render(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    await screen.findByText('LUCI');
+
+    expect(screen.getByLabelText('Open menu')).toBeInTheDocument();
+    expect(screen.getByLabelText('Toggle feature flags')).toBeInTheDocument();
+  });
+
+  it('should let page-level <title> override the appName title', async () => {
+    useMatchesMock.mockImplementation(() => [
+      {
+        id: '',
+        pathname: '',
+        params: {},
+        data: '',
+        handle: {
+          appName: 'My App',
+        },
+        loaderData: [],
+      },
+    ]);
+
+    render(
+      <StoreProvider value={store}>
+        <FakeContextProvider mountedPath="/*">
+          <Routes>
+            <Route element={<BaseLayout />}>
+              <Route index element={<title>My Page | My App</title>} />
+            </Route>
+          </Routes>
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    await screen.findByText('My App');
+
+    expect(document.title).toBe('My Page | My App');
+  });
+
+  it('should default the browser tab title to LUCI and update it in place', async () => {
+    useMatchesMock.mockImplementation(() => [
+      {
+        id: '',
+        pathname: '',
+        params: {},
+        data: '',
+        handle: {
+          appName: 'My App',
+        },
+        loaderData: [],
+      },
+    ]);
+
+    const { rerender } = render(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    await screen.findByText('My App');
+    expect(document.title).toBe('My App');
+
+    // Simulate navigating to a route without `appName`.
+    useMatchesMock.mockImplementation(() => []);
+    rerender(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    await screen.findByText('LUCI');
+    expect(document.title).toBe('LUCI');
+    expect(document.head.querySelectorAll('title')).toHaveLength(1);
   });
 });

@@ -19,7 +19,7 @@ import { createContext, useContext, ReactNode, useEffect } from 'react';
  */
 interface TopBarContextType {
   /**
-   * The current title displayed in the TopBar, separarted by a pipe from the logo.
+   * The current page title displayed in the TopBar.
    */
   title: ReactNode | null;
   /**
