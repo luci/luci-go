@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 
 import { genericThen } from '@/fleet/testing_tools/integration/fleet_integration_test';
 
@@ -36,6 +36,16 @@ export const then = {
     expect(card).toHaveAttribute('aria-label', name);
     expect(within(card).getByRole('heading', { name })).toBeInTheDocument();
     expect(within(card).getByText(id)).toBeInTheDocument();
+  },
+
+  async siteCardIsRemoved(name: string) {
+    await waitFor(() => {
+      expect(screen.queryByRole('article', { name })).not.toBeInTheDocument();
+    });
+  },
+
+  siteCardIsNotVisible(name: string) {
+    expect(screen.queryByRole('article', { name })).not.toBeInTheDocument();
   },
 
   async siteCardOrderIs(expectedNames: string[]) {

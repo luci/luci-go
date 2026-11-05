@@ -18,6 +18,7 @@ import { useMemo } from 'react';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
   CreatePhysicalSiteRequest,
+  DeletePhysicalSiteRequest,
   PhysicalSite,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -49,11 +50,18 @@ export const usePhysicalSites = () => {
     onSuccess: invalidate,
   });
 
+  const deleteSiteMutation = useMutation({
+    mutationFn: (id: string) =>
+      client.DeletePhysicalSite(DeletePhysicalSiteRequest.fromPartial({ id })),
+    onSuccess: invalidate,
+  });
+
   return {
     sites,
     isLoading: sitesQuery.isLoading,
     isError: sitesQuery.isError,
     error: sitesQuery.error,
     createSiteMutation,
+    deleteSiteMutation,
   };
 };

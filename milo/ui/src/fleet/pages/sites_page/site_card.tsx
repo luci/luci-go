@@ -12,19 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
-import { Box, Tooltip, Typography } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
-import { actionRowSx, surfaceCardSx } from '@/fleet/theme/recipes';
+import {
+  actionRowSx,
+  iconButtonSx,
+  surfaceCardSx,
+} from '@/fleet/theme/recipes';
 import { fleetColors, fontFamilies, iconSizes } from '@/fleet/theme/tokens';
 import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export interface SiteCardProps {
   readonly site: PhysicalSite;
+  readonly onDelete?: (site: PhysicalSite) => void;
 }
 
-export const SiteCard = ({ site }: SiteCardProps) => {
+export const SiteCard = ({ site, onDelete }: SiteCardProps) => {
   return (
     <Box
       component="article"
@@ -67,6 +73,21 @@ export const SiteCard = ({ site }: SiteCardProps) => {
             </Typography>
           </Tooltip>
         </Box>
+
+        {onDelete && (
+          <Box sx={{ ...actionRowSx, gap: 0.5, flexShrink: 0 }}>
+            <Tooltip title="Delete site">
+              <IconButton
+                size="small"
+                aria-label={`Delete ${site.name}`}
+                onClick={() => onDelete(site)}
+                sx={iconButtonSx}
+              >
+                <DeleteOutlineIcon sx={{ fontSize: iconSizes.control }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
       </Box>
 
       <Box sx={actionRowSx}>

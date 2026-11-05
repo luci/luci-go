@@ -44,6 +44,30 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.textIsVisible('4 sites');
   });
 
+  it('filters physical site cards by name or building code and supports clearing the filter', async () => {
+    given.sites([
+      { id: 'MTV', name: 'Mountain View MTV' },
+      { id: 'EM25', name: 'Palo Alto EM25' },
+    ]);
+
+    when.pageIsRendered();
+    await then.siteCardIsVisible('Mountain View MTV', 'MTV');
+
+    await when.userSearchesSites('EM25');
+
+    await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
+    then.siteCardIsNotVisible('Mountain View MTV');
+    await then.textIsVisible('1 site');
+
+    await when.userSearchesSites('nonexistent');
+
+    await then.textIsVisible('No sites match "nonexistent".');
+    await when.userClicksButton('Clear filter');
+
+    await then.siteCardIsVisible('Mountain View MTV', 'MTV');
+    await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
+  });
+
   it('creates a new physical site and refreshes the sorted card grid', async () => {
     given.sites([{ id: 'MTV', name: 'Mountain View MTV' }]);
 
@@ -59,6 +83,23 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     });
     await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
     await then.siteCardOrderIs(['Mountain View MTV', 'Palo Alto EM25']);
+  });
+
+  it('deletes a physical site after confirmation', async () => {
+    given.sites([
+      { id: 'MTV', name: 'Mountain View MTV' },
+      { id: 'EM25', name: 'Palo Alto EM25' },
+    ]);
+
+    when.pageIsRendered();
+    await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
+
+    await when.userOpensDeleteSiteDialog('Palo Alto EM25');
+    await when.userConfirmsDeleteSite();
+
+    then.rpcWasCalledWith('DeletePhysicalSite', { id: 'EM25' });
+    await then.siteCardIsRemoved('Palo Alto EM25');
+    await then.siteCardIsVisible('Mountain View MTV', 'MTV');
   });
 
   it('prevents duplicate site codes and surfaces server errors in the form dialog', async () => {
@@ -79,7 +120,7 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.textIsVisible(/Site write rejected/);
   });
 
-  it('prompts for admin access when a user without admin task permission clicks Add site', async () => {
+  it('prompts for admin access when a user without admin task permission clicks Add or Delete site', async () => {
     given.sites([{ id: 'MTV', name: 'Mountain View MTV' }]);
     given.withoutAdminTaskPermission();
 
@@ -87,9 +128,12 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.siteCardIsVisible('Mountain View MTV', 'MTV');
 
     await when.userClicksButton('Add site');
-
     await then.textIsVisible('Admin access required');
     await then.textIsVisible('fleet-console-admin-tasks-policy');
+    await when.userClicksButton('Close');
+
+    await when.userOpensDeleteSiteDialog('Mountain View MTV');
+    await then.textIsVisible('Admin access required');
   });
 
   it('renders an error alert when ListPhysicalSites fails', async () => {

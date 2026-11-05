@@ -13,11 +13,16 @@
 // limitations under the License.
 
 import AddIcon from '@mui/icons-material/Add';
+import ClearIcon from '@mui/icons-material/Clear';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
+  IconButton,
+  InputAdornment,
+  TextField,
   Typography,
 } from '@mui/material';
 import { useCallback, useMemo, useState } from 'react';
@@ -33,7 +38,9 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { PageNotFoundPage } from '@/fleet/pages/not_found_page';
 import {
   actionRowSx,
+  iconButtonSx,
   pageHeaderSx,
+  pillInputSx,
   surfaceCardSx,
 } from '@/fleet/theme/recipes';
 import { borders, fleetColors, iconSizes } from '@/fleet/theme/tokens';
@@ -41,6 +48,7 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { DeleteSiteDialog } from './delete_site_dialog';
 import { SiteCard } from './site_card';
 import { SiteFormDialog } from './site_form_dialog';
 import { usePhysicalSites } from './use_physical_sites';
@@ -56,18 +64,39 @@ import { usePhysicalSites } from './use_physical_sites';
 //    string ID (matching Device.id hostnames) paired with a human-readable
 //    display name (e.g. "Palo Alto EM25").
 export const SitesPage = () => {
-  const { sites, isLoading, isError, error, createSiteMutation } =
-    usePhysicalSites();
+  const {
+    sites,
+    isLoading,
+    isError,
+    error,
+    createSiteMutation,
+    deleteSiteMutation,
+  } = usePhysicalSites();
   const { hasPermission: hasAdminPermission, fetchPermissions } =
     useAdminTaskPermission();
+  const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [deletingSite, setDeletingSite] = useState<PhysicalSite | null>(null);
   const [isAdminAccessDialogOpen, setIsAdminAccessDialogOpen] = useState(false);
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
 
   const sortedSites = useMemo(() => {
     return [...sites].sort(
       (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
     );
   }, [sites]);
+
+  const filteredSites = useMemo(() => {
+    if (!trimmedQuery) {
+      return sortedSites;
+    }
+    return sortedSites.filter(
+      (site) =>
+        site.name.toLowerCase().includes(trimmedQuery) ||
+        site.id.toLowerCase().includes(trimmedQuery),
+    );
+  }, [sortedSites, trimmedQuery]);
 
   const runWithAdminPermission = useCallback(
     async (action: () => void) => {
@@ -116,6 +145,35 @@ export const SitesPage = () => {
     [createSiteMutation],
   );
 
+  const handleOpenDelete = useCallback(
+    (site: PhysicalSite) => {
+      void runWithAdminPermission(() => {
+        deleteSiteMutation.reset();
+        setDeletingSite(site);
+      });
+    },
+    [deleteSiteMutation, runWithAdminPermission],
+  );
+
+  const handleCloseDelete = useCallback(() => {
+    if (deleteSiteMutation.isPending) {
+      return;
+    }
+    setDeletingSite(null);
+  }, [deleteSiteMutation.isPending]);
+
+  const handleConfirmDelete = useCallback(
+    async (id: string) => {
+      try {
+        await deleteSiteMutation.mutateAsync(id);
+        setDeletingSite(null);
+      } catch {
+        // Error is surfaced inside DeleteSiteDialog via mutation state.
+      }
+    },
+    [deleteSiteMutation],
+  );
+
   return (
     <Box
       component="main"
@@ -145,14 +203,48 @@ export const SitesPage = () => {
             </Typography>
             {!isLoading && !isError && (
               <StatusPill tone="neutral" dot={false}>
-                {`${sortedSites.length} ${
-                  sortedSites.length === 1 ? 'site' : 'sites'
+                {`${filteredSites.length} ${
+                  filteredSites.length === 1 ? 'site' : 'sites'
                 }`}
               </StatusPill>
             )}
           </Box>
 
           <Box sx={actionRowSx}>
+            <TextField
+              size="small"
+              placeholder="Filter by site name or code..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              inputProps={{ 'aria-label': 'Filter physical sites' }}
+              slotProps={{
+                input: {
+                  sx: { ...pillInputSx, minWidth: 260 },
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon
+                        sx={{
+                          fontSize: iconSizes.inline,
+                          color: fleetColors.textTertiary,
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchQuery ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        aria-label="Clear site filter"
+                        onClick={() => setSearchQuery('')}
+                        sx={iconButtonSx}
+                      >
+                        <ClearIcon sx={{ fontSize: iconSizes.control }} />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : undefined,
+                },
+              }}
+            />
             <Button
               variant="toolbar"
               startIcon={<AddIcon sx={{ fontSize: iconSizes.control }} />}
@@ -180,11 +272,34 @@ export const SitesPage = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress size={28} aria-label="Loading physical sites" />
           </Box>
-        ) : sortedSites.length === 0 ? (
+        ) : sites.length === 0 ? (
           <Box sx={{ ...surfaceCardSx, p: 4, textAlign: 'center' }}>
             <Typography variant="body1" color="text.secondary">
               No physical sites registered yet.
             </Typography>
+          </Box>
+        ) : filteredSites.length === 0 ? (
+          <Box
+            sx={{
+              ...surfaceCardSx,
+              p: 4,
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 1.5,
+            }}
+          >
+            <Typography variant="body1" color="text.secondary">
+              {`No sites match "${searchQuery.trim()}".`}
+            </Typography>
+            <Button
+              variant="toolbar"
+              color="inherit"
+              onClick={() => setSearchQuery('')}
+            >
+              Clear filter
+            </Button>
           </Box>
         ) : (
           <Box
@@ -194,8 +309,8 @@ export const SitesPage = () => {
               gap: 2,
             }}
           >
-            {sortedSites.map((site) => (
-              <SiteCard key={site.id} site={site} />
+            {filteredSites.map((site) => (
+              <SiteCard key={site.id} site={site} onDelete={handleOpenDelete} />
             ))}
           </Box>
         )}
@@ -209,6 +324,14 @@ export const SitesPage = () => {
         error={createSiteMutation.error}
         onClose={handleCloseForm}
         onSave={handleSaveSite}
+      />
+
+      <DeleteSiteDialog
+        site={deletingSite}
+        isDeleting={deleteSiteMutation.isPending}
+        error={deleteSiteMutation.error}
+        onClose={handleCloseDelete}
+        onConfirmDelete={handleConfirmDelete}
       />
 
       <AdminAccessRequiredDialog

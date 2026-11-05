@@ -32,6 +32,17 @@ export const when = {
     return genericWhen.renderPage(<SitesRouteComponent />);
   },
 
+  async userSearchesSites(query: string) {
+    const input = await screen.findByRole('textbox', {
+      name: 'Filter physical sites',
+    });
+    const user = getUser();
+    await user.clear(input);
+    if (query) {
+      await user.type(input, query);
+    }
+  },
+
   async userOpensAddSiteDialog() {
     await genericWhen.userClicksButton('Add site');
   },
@@ -61,5 +72,17 @@ export const when = {
       name: /Add site/i,
     });
     await getUser().click(submitBtn);
+  },
+
+  async userOpensDeleteSiteDialog(siteName: string) {
+    await genericWhen.userClicksButton(`Delete ${siteName}`);
+  },
+
+  async userConfirmsDeleteSite() {
+    const dialog = await screen.findByRole('dialog');
+    const deleteBtn = within(dialog).getByRole('button', {
+      name: 'Delete site',
+    });
+    await getUser().click(deleteBtn);
   },
 };
