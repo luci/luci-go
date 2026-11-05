@@ -149,6 +149,8 @@ def main():
     env["UV_NO_BUILD"] = "true"
     env["UV_KEYRING_PROVIDER"] = "disabled"
     env["UV_NO_CACHE"] = "true"
+    # Don't let user or system uv.toml files affect the venv build.
+    env["UV_NO_CONFIG"] = "true"
 
     temp_dir = tempfile.gettempdir()
     env.setdefault("TMP", temp_dir)
