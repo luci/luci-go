@@ -20,6 +20,7 @@ import {
   CreatePhysicalSiteRequest,
   DeletePhysicalSiteRequest,
   PhysicalSite,
+  UpdatePhysicalSiteRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const PHYSICAL_SITES_QUERY_KEY = ['ListPhysicalSites'] as const;
@@ -50,6 +51,14 @@ export const usePhysicalSites = () => {
     onSuccess: invalidate,
   });
 
+  const updateSiteMutation = useMutation({
+    mutationFn: (physicalSite: PhysicalSite) =>
+      client.UpdatePhysicalSite(
+        UpdatePhysicalSiteRequest.fromPartial({ physicalSite }),
+      ),
+    onSuccess: invalidate,
+  });
+
   const deleteSiteMutation = useMutation({
     mutationFn: (id: string) =>
       client.DeletePhysicalSite(DeletePhysicalSiteRequest.fromPartial({ id })),
@@ -62,6 +71,7 @@ export const usePhysicalSites = () => {
     isError: sitesQuery.isError,
     error: sitesQuery.error,
     createSiteMutation,
+    updateSiteMutation,
     deleteSiteMutation,
   };
 };

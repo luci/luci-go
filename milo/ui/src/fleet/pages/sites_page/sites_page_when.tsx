@@ -69,9 +69,13 @@ export const when = {
   async userSubmitsSiteForm() {
     const dialog = await screen.findByRole('dialog');
     const submitBtn = within(dialog).getByRole('button', {
-      name: /Add site/i,
+      name: /Add site|Save changes/i,
     });
     await getUser().click(submitBtn);
+  },
+
+  async userOpensEditSiteDialog(siteName: string) {
+    await genericWhen.userClicksButton(`Edit ${siteName}`);
   },
 
   async userOpensDeleteSiteDialog(siteName: string) {

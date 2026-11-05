@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 
@@ -27,10 +28,11 @@ import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fle
 
 export interface SiteCardProps {
   readonly site: PhysicalSite;
+  readonly onEdit?: (site: PhysicalSite) => void;
   readonly onDelete?: (site: PhysicalSite) => void;
 }
 
-export const SiteCard = ({ site, onDelete }: SiteCardProps) => {
+export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
   return (
     <Box
       component="article"
@@ -74,18 +76,32 @@ export const SiteCard = ({ site, onDelete }: SiteCardProps) => {
           </Tooltip>
         </Box>
 
-        {onDelete && (
+        {(onEdit || onDelete) && (
           <Box sx={{ ...actionRowSx, gap: 0.5, flexShrink: 0 }}>
-            <Tooltip title="Delete site">
-              <IconButton
-                size="small"
-                aria-label={`Delete ${site.name}`}
-                onClick={() => onDelete(site)}
-                sx={iconButtonSx}
-              >
-                <DeleteOutlineIcon sx={{ fontSize: iconSizes.control }} />
-              </IconButton>
-            </Tooltip>
+            {onEdit && (
+              <Tooltip title="Edit site">
+                <IconButton
+                  size="small"
+                  aria-label={`Edit ${site.name}`}
+                  onClick={() => onEdit(site)}
+                  sx={iconButtonSx}
+                >
+                  <EditOutlinedIcon sx={{ fontSize: iconSizes.control }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {onDelete && (
+              <Tooltip title="Delete site">
+                <IconButton
+                  size="small"
+                  aria-label={`Delete ${site.name}`}
+                  onClick={() => onDelete(site)}
+                  sx={iconButtonSx}
+                >
+                  <DeleteOutlineIcon sx={{ fontSize: iconSizes.control }} />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         )}
       </Box>

@@ -70,12 +70,14 @@ export const SitesPage = () => {
     isError,
     error,
     createSiteMutation,
+    updateSiteMutation,
     deleteSiteMutation,
   } = usePhysicalSites();
   const { hasPermission: hasAdminPermission, fetchPermissions } =
     useAdminTaskPermission();
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingSite, setEditingSite] = useState<PhysicalSite | null>(null);
   const [deletingSite, setDeletingSite] = useState<PhysicalSite | null>(null);
   const [isAdminAccessDialogOpen, setIsAdminAccessDialogOpen] = useState(false);
 
@@ -125,24 +127,44 @@ export const SitesPage = () => {
   const handleOpenCreate = useCallback(() => {
     void runWithAdminPermission(() => {
       createSiteMutation.reset();
+      updateSiteMutation.reset();
+      setEditingSite(null);
       setIsFormOpen(true);
     });
-  }, [createSiteMutation, runWithAdminPermission]);
+  }, [createSiteMutation, runWithAdminPermission, updateSiteMutation]);
+
+  const handleOpenEdit = useCallback(
+    (site: PhysicalSite) => {
+      void runWithAdminPermission(() => {
+        createSiteMutation.reset();
+        updateSiteMutation.reset();
+        setEditingSite(site);
+        setIsFormOpen(true);
+      });
+    },
+    [createSiteMutation, runWithAdminPermission, updateSiteMutation],
+  );
 
   const handleCloseForm = useCallback(() => {
     setIsFormOpen(false);
+    setEditingSite(null);
   }, []);
 
   const handleSaveSite = useCallback(
     async (site: PhysicalSite) => {
       try {
-        await createSiteMutation.mutateAsync(site);
+        if (editingSite) {
+          await updateSiteMutation.mutateAsync(site);
+        } else {
+          await createSiteMutation.mutateAsync(site);
+        }
         setIsFormOpen(false);
+        setEditingSite(null);
       } catch {
         // Error is surfaced inside SiteFormDialog via mutation state.
       }
     },
-    [createSiteMutation],
+    [createSiteMutation, editingSite, updateSiteMutation],
   );
 
   const handleOpenDelete = useCallback(
@@ -173,6 +195,11 @@ export const SitesPage = () => {
     },
     [deleteSiteMutation],
   );
+
+  const formError = editingSite
+    ? updateSiteMutation.error
+    : createSiteMutation.error;
+  const isSaving = createSiteMutation.isPending || updateSiteMutation.isPending;
 
   return (
     <Box
@@ -310,18 +337,30 @@ export const SitesPage = () => {
             }}
           >
             {filteredSites.map((site) => (
-              <SiteCard key={site.id} site={site} onDelete={handleOpenDelete} />
+              <SiteCard
+                key={site.id}
+                site={site}
+                onEdit={handleOpenEdit}
+                onDelete={handleOpenDelete}
+              />
             ))}
           </Box>
         )}
       </Box>
 
       <SiteFormDialog
-        key={isFormOpen ? 'create-open' : 'create-closed'}
+        key={
+          editingSite
+            ? `edit-${editingSite.id}`
+            : isFormOpen
+              ? 'create-open'
+              : 'create-closed'
+        }
         open={isFormOpen}
+        editingSite={editingSite}
         existingSites={sites}
-        isSaving={createSiteMutation.isPending}
-        error={createSiteMutation.error}
+        isSaving={isSaving}
+        error={formError}
         onClose={handleCloseForm}
         onSave={handleSaveSite}
       />

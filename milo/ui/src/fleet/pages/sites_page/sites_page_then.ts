@@ -68,10 +68,16 @@ export const then = {
     );
   },
 
+  async siteIdInputIsDisabled() {
+    const dialog = await screen.findByRole('dialog');
+    const idInput = within(dialog).getByLabelText(/Site code \(ID\)/i);
+    expect(idInput).toBeDisabled();
+  },
+
   async siteFormSubmitIsDisabled() {
     const dialog = await screen.findByRole('dialog');
     const submitBtn = within(dialog).getByRole('button', {
-      name: /Add site/i,
+      name: /Add site|Save changes/i,
     });
     expect(submitBtn).toBeDisabled();
   },

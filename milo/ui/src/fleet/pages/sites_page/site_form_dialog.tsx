@@ -29,6 +29,7 @@ import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fle
 
 export interface SiteFormDialogProps {
   readonly open: boolean;
+  readonly editingSite: PhysicalSite | null;
   readonly existingSites: readonly PhysicalSite[];
   readonly isSaving: boolean;
   readonly error: unknown;
@@ -38,33 +39,37 @@ export interface SiteFormDialogProps {
 
 export const SiteFormDialog = ({
   open,
+  editingSite,
   existingSites,
   isSaving,
   error,
   onClose,
   onSave,
 }: SiteFormDialogProps) => {
-  const [siteId, setSiteId] = useState('');
-  const [siteName, setSiteName] = useState('');
+  const [siteId, setSiteId] = useState(editingSite?.id ?? '');
+  const [siteName, setSiteName] = useState(editingSite?.name ?? '');
 
+  const isEditing = Boolean(editingSite);
   const trimmedId = siteId.trim();
   const trimmedName = siteName.trim();
 
   const isDuplicateId = useMemo(() => {
-    if (!trimmedId) {
+    if (isEditing || !trimmedId) {
       return false;
     }
     const target = trimmedId.toLowerCase();
     return existingSites.some((s) => s.id.trim().toLowerCase() === target);
-  }, [existingSites, trimmedId]);
+  }, [existingSites, isEditing, trimmedId]);
 
   const isDuplicateName = useMemo(() => {
     if (!trimmedName) {
       return false;
     }
     const target = trimmedName.toLowerCase();
-    return existingSites.some((s) => s.name.trim().toLowerCase() === target);
-  }, [existingSites, trimmedName]);
+    return existingSites.some(
+      (s) => s.id !== editingSite?.id && s.name.trim().toLowerCase() === target,
+    );
+  }, [editingSite, existingSites, trimmedName]);
 
   const canSave =
     trimmedId !== '' &&
@@ -79,11 +84,11 @@ export const SiteFormDialog = ({
     }
     onSave(
       PhysicalSite.fromPartial({
-        id: trimmedId,
+        id: isEditing ? editingSite!.id : trimmedId,
         name: trimmedName,
       }),
     );
-  }, [canSave, onSave, trimmedId, trimmedName]);
+  }, [canSave, editingSite, isEditing, onSave, trimmedId, trimmedName]);
 
   return (
     <Dialog
@@ -93,7 +98,9 @@ export const SiteFormDialog = ({
       fullWidth
       TransitionProps={{ timeout: 0 }}
     >
-      <DialogTitle sx={{ pb: 1 }}>Add physical site</DialogTitle>
+      <DialogTitle sx={{ pb: 1 }}>
+        {isEditing ? 'Edit physical site' : 'Add physical site'}
+      </DialogTitle>
       <DialogContent
         onKeyDown={(e) => {
           if (e.key === 'Enter' && canSave) {
@@ -116,12 +123,14 @@ export const SiteFormDialog = ({
           placeholder="e.g. EM25"
           value={siteId}
           onChange={(e) => setSiteId(e.target.value)}
-          disabled={isSaving}
+          disabled={isEditing || isSaving}
           error={isDuplicateId}
           helperText={
-            isDuplicateId
-              ? 'A site with this code already exists.'
-              : 'Building or site code used in URLs (e.g. EM25, MTV).'
+            isEditing
+              ? 'Site code is the primary identifier and cannot be changed.'
+              : isDuplicateId
+                ? 'A site with this code already exists.'
+                : 'Building or site code used in URLs (e.g. EM25, MTV).'
           }
           slotProps={{
             htmlInput: {
@@ -147,7 +156,10 @@ export const SiteFormDialog = ({
         />
         {Boolean(error) && (
           <Alert severity="error">
-            {getErrorMessage(error, 'create physical site')}
+            {getErrorMessage(
+              error,
+              isEditing ? 'update physical site' : 'create physical site',
+            )}
           </Alert>
         )}
       </DialogContent>
@@ -161,7 +173,7 @@ export const SiteFormDialog = ({
           Cancel
         </Button>
         <Button variant="contained" onClick={handleSave} disabled={!canSave}>
-          Add site
+          {isEditing ? 'Save changes' : 'Add site'}
         </Button>
       </DialogActions>
     </Dialog>

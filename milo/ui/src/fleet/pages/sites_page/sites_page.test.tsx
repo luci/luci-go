@@ -85,6 +85,23 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.siteCardOrderIs(['Mountain View MTV', 'Palo Alto EM25']);
   });
 
+  it('updates an existing physical site name while keeping site code immutable', async () => {
+    given.sites([{ id: 'EM25', name: 'Palo Alto' }]);
+
+    when.pageIsRendered();
+    await then.siteCardIsVisible('Palo Alto', 'EM25');
+
+    await when.userOpensEditSiteDialog('Palo Alto');
+    await then.siteIdInputIsDisabled();
+    await when.userFillsSiteForm({ name: 'Palo Alto EM25' });
+    await when.userSubmitsSiteForm();
+
+    then.rpcWasCalledWith('UpdatePhysicalSite', {
+      physicalSite: { id: 'EM25', name: 'Palo Alto EM25' },
+    });
+    await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
+  });
+
   it('deletes a physical site after confirmation', async () => {
     given.sites([
       { id: 'MTV', name: 'Mountain View MTV' },
@@ -130,6 +147,10 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await when.userClicksButton('Add site');
     await then.textIsVisible('Admin access required');
     await then.textIsVisible('fleet-console-admin-tasks-policy');
+    await when.userClicksButton('Close');
+
+    await when.userOpensEditSiteDialog('Mountain View MTV');
+    await then.textIsVisible('Admin access required');
     await when.userClicksButton('Close');
 
     await when.userOpensDeleteSiteDialog('Mountain View MTV');
