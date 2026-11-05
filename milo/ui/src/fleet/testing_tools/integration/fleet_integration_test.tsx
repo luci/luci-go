@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 
@@ -37,6 +38,19 @@ import { createMockAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 export { fleetFeedback, fleetFilterBar, fleetTable };
 
+const createIntegrationQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: Infinity,
+      },
+      mutations: {
+        gcTime: Infinity,
+      },
+    },
+  });
+
 export interface DeferredRpcController {
   resolveWith: (data: unknown) => Promise<void>;
   rejectWithError: (grpcCode: number, message: string) => Promise<void>;
@@ -44,6 +58,7 @@ export interface DeferredRpcController {
 
 const nav = fakeNavigation();
 let analytics: ReturnType<typeof fakeGoogleAnalytics> | undefined;
+let activeQueryClient: QueryClient | undefined;
 let currentAuthState: AuthState = createMockAuthState();
 let currentInitialUrl = '/';
 let currentMountedPath: string | undefined;
@@ -72,12 +87,16 @@ const setupFleetIntegrationTest = () => {
     currentInitialUrl = '/';
     currentMountedPath = undefined;
     analytics = fakeGoogleAnalytics();
+    activeQueryClient = createIntegrationQueryClient();
     fakeFleetConsoleBackend.reset();
     fakeFleetConsoleBackend.install();
     fakeFleetConsoleBackend.permissions.setDefaultPermission(true);
   });
 
   afterEach(() => {
+    cleanup();
+    activeQueryClient?.clear();
+    activeQueryClient = undefined;
     jest.useRealTimers();
     analytics?.clear();
     window.localStorage.clear();
@@ -154,20 +173,24 @@ export const genericGiven = {
 
 export const genericWhen = {
   renderPage(ui: React.ReactElement) {
+    const queryClient = activeQueryClient ?? createIntegrationQueryClient();
+    activeQueryClient = queryClient;
     return render(
       <FakeContextProvider
         mountedPath={currentMountedPath}
         routerOptions={{ initialEntries: [currentInitialUrl] }}
         siblingRoutes={nav.siblingRoutes}
       >
-        <FakeAuthStateProvider value={currentAuthState}>
-          <SettingsProvider>
-            <ShortcutProvider>
-              {nav.observerElement}
-              {ui}
-            </ShortcutProvider>
-          </SettingsProvider>
-        </FakeAuthStateProvider>
+        <QueryClientProvider client={queryClient}>
+          <FakeAuthStateProvider value={currentAuthState}>
+            <SettingsProvider>
+              <ShortcutProvider>
+                {nav.observerElement}
+                {ui}
+              </ShortcutProvider>
+            </SettingsProvider>
+          </FakeAuthStateProvider>
+        </QueryClientProvider>
       </FakeContextProvider>,
     );
   },

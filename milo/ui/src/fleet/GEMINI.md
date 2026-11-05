@@ -75,6 +75,10 @@ The canonical guide is [theme/README.md](./theme/README.md). In short:
   - **No redundant thin-wrapper unit tests**: Do not add separate unit tests for thin presentational wrappers (`FilterChip`, individual table cells/rows) that have no independent business logic and are already exercised through parent integration tests.
   - **No hardcoded domain/config lists**: Iterate over exported constants/enums dynamically rather than duplicating literal values in tests.
   - **No internal hook mocking**: Do not mock internal helper hooks (`jest.mock('./use_...')`) when testing components; test through the user-facing interface (`getByRole`, `getByLabelText`, `findByText`, `userEvent`).
+- **Integration Test Performance & Suite Sizing**:
+  - **Keep Suites Parallelizable**: Jest parallelizes across files, not across `it()` blocks within a single file. Split large integration test files into focused domain suites once a single file exceeds ~30–40s so Jest workers run in parallel.
+  - **Preserve Accessible Role Queries**: Do not weaken role and accessible-name queries (`findByRole`, accessible names) in an attempt to micro-optimize DOM lookups; JSDOM query tweaks do not measurably improve test runtime. Always prefer `userEvent` over `fireEvent`.
+  - **Deterministic Test Mock & Cache Cleanup**: Clear React Query cache deterministically between tests (`QueryClient` in [`fleet_integration_test.tsx`](./testing_tools/integration/fleet_integration_test.tsx)) and restore mocks in `afterEach()` hooks.
 
 ### 5. Temporary File Hygiene
 - Do not run `rm` commands to delete temporary files.
